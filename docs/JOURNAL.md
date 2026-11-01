@@ -202,7 +202,7 @@ The screen-by-screen list is `design/reference/INVENTORY.md`, "Known differences
 
 ### 1.1 Shared (the api lane keeps this block)
 
-**Updated:** 2026-11-01 22:42 UTC, draft/b0-plan
+**Updated:** 2026-11-01 22:45 UTC, draft/b0-plan
 
 - **Stage:** B0 Foundations, not started. Next gate: Gate 0 (`docs/MILESTONES.md`).
 - **Lanes:** none yet; one session until Gate 0.
@@ -391,6 +391,14 @@ Newest first within each section. One entry per commit, written in that commit, 
 ```
 
 ### 3.1 Shared and B0
+
+#### 2026-11-01 22:45 UTC · shared · draft/b0-plan · PR none
+**Did:** In `docs/plans/B0.md` section 4, spike S6's "waits for" column no longer waits for F4's domain: it waits for a build with `tadayo.app` in its Associated Domains, now that the domain and its Cloudflare DNS exist (ADR-017). Rewrote section 1.1's "Updated" line.
+**Why:** The previous entry says S6 no longer waits for a domain, but that commit left S6's own row unchanged. This commit makes the plan match the entry.
+**Verified:** `grep -n "F4's domain" docs/plans/B0.md`: no match. `python3 tools/ci/journal_check.py --all` and `--branch`: exit 0.
+**Not verified:** None.
+**Decisions and questions:** None.
+**Next:** After the founder merges PR #1: `git fetch origin`, `git switch -c plan/b0 origin/main`, `git checkout origin/draft/b0-plan -- docs/plans/B0.md`, write the journal entry, push, and open the PR `docs: plan B0` with its independent review. Done when that PR says it's ready for the founder. Leave `draft/b0-plan` as it is.
 
 #### 2026-11-01 22:42 UTC · shared · draft/b0-plan · PR none
 **Did:** Brought `docs/plans/B0.md` in line with what the founder did and said on 1 November 2026. `dev` is in US East, nearest the founder in Virginia: the Supabase project `tadayo-dev` in `us-east-1` and the Fly app `tadayo-api-dev` in `iad`, with `primary_region = "iad"` in slice 10a and in the steps after 10b. The domain is `tadayo.app`, registered on Cloudflare. F4 now asks only for a yes to the identifiers, and spike S6 no longer waits for a domain. Resend verifies `tadayo.app` in `us-east-1` through Cloudflare's DNS, and Cloudflare's row is done. F2 is done: `main`'s rule is on. Section 6's protection check now records the rule as on. Rewrote section 1.1 of this journal for this branch.
