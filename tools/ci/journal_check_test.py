@@ -30,7 +30,7 @@ def read(path):
 def as_the_handoff_wrote_it(text):
     """The pack's journal before any session's commit: no log entry but the handoff's, every block
     "Updated" by the handoff. The repository's own journal has moved on since."""
-    text = re.sub(r"^#### \d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC · .*\n(?:(?!#{2,4} |---$).*\n)*", "", text,
+    text = re.sub(r"^#### \d{4}-\d{2}-\d{2}(?: \d{2}:\d{2} UTC)? · (?!handoff · ).*\n(?:(?!#{2,4} |---$).*\n)*", "", text,
                   flags=re.M)
     return re.sub(r"^\*\*Updated:\*\* .*$", "**Updated:** 2026-11-01, by the handoff.", text, flags=re.M)
 
@@ -264,6 +264,10 @@ class JournalCheckTest(unittest.TestCase):
         self.c.work_commit(1, heading="#### Monday · api · branch")
         self.assertFails("heading doesn't follow the template")
 
+    def test_heading_without_its_time(self):
+        self.c.work_commit(1, heading="#### 2026-11-02 · shared · shared/b0-slice · PR none")
+        self.assertFails("heading doesn't follow the template")
+
     def test_main_entry_changed(self):
         self.c.edit_journal("**Why:** To start B0 with the specs", "**Why:** To start B0, with the specs")
         self.c.work_commit(1)
@@ -288,8 +292,8 @@ class JournalCheckTest(unittest.TestCase):
 
     def test_spec_row_swapped(self):
         c = self.c
-        c.edit_journal("|---|---|---|---|---|\n\n---\n\n## 3. Log",
-                       "|---|---|---|---|---|\n| spec 06 Submission cutoff | db | t | built | |\n\n---\n\n## 3. Log")
+        header = "| Section | Code | Tests | Status | Notes |\n|---|---|---|---|---|\n"
+        c.edit_journal(header, header + "| spec 06 Submission cutoff | db | t | built | |\n")
         c.work_commit(1)
         c.squash_merge("feature", "shared: spec 06 (#1)")
         c.run("git", "checkout", "-q", "-B", "next", "origin/main")
@@ -329,7 +333,7 @@ class JournalCheckTest(unittest.TestCase):
         self.assertIn("**Why:** is missing", err)
         self.c.edit_journal("## 5. How to audit this project", "## 5. Auditing")
         code, err = self.c.check("--all")
-        self.assertIn("is missing", err)
+        self.assertIn("'## 5. How to audit this project' is missing", err)
 
     def test_usage(self):
         code, _ = self.c.check("--nothing")

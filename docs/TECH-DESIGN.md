@@ -222,15 +222,15 @@ Spec 31's entities, with these implementation choices:
 - **Limits.** `contribution_counters (occurrence_id, interval_id)` holds the totals and external counts, reserved and committed. They're updated only under the counter's row lock inside the commit or the reservation (T17).
 - **Highlights.** `highlights (occurrence_id, interval_id)` is unique, with a foreign key to the drop and a check that the drop is the contributor's own, in the same occurrence (T22).
 - **Tombstones and audit.** `deletion_tombstones` is mirrored to the R2 log (ADR-010). `operator_actions` is the audit trail for every moderation script (FQ27).
-- **Idempotency.** `idempotency_receipts (actor, operation, key)` is unique, with the request hash and the stored response (T19).
+- **Idempotency.** `idempotency_receipts (actor, operation, key)` is unique, with the request hash and the stored response (T19). A mutation's response, and so the stored response, carries identities, versions, the target and the status, never a caption's or comment's text: the client already holds the text it sent, which a replay's body must match. An account's receipts are purged with the account (T27).
 - **The contract.** Spec 32's endpoints, plus what the screens need:
     - invitations (create, preview with the token in the body, accept, revoke);
     - the club list for the switcher, and schedule proposals and confirmation;
     - leave with keep or withdraw; blocks; pictured removal and hide-for-me;
-    - comment edit and delete, thread mute;
+    - reading a drop's comment thread, with its replies (spec 16); comment edit and delete, thread mute;
     - favourites list; memory search;
     - `GET` and `PATCH /v1/me` and the authored-contributions list;
-    - device registration with the device's zone; notification preferences per account, club and thread;
+    - device registration with the device's zone, and its removal at logout or account switch, sent before the session credential is dropped; a device token belongs to one account at a time, so registering it moves it from any other account, which covers a logout made offline; notification preferences per account, club and thread;
     - `POST /v1/sources/resolve` for the composer's and the share extension's links (section 5);
     - `GET /v1/config` for flags and provider switches;
     - a small events endpoint for client-side analytics (spec 36).
@@ -261,11 +261,11 @@ Both Supabase projects live in one organization on the Pro plan, because a free 
 |---|---|---|
 | Domain | Vitest, pure | The read predicate; time (ADR-008's zones, both DST rules, nonexistent and ambiguous 01:00 in Europe/London); schedules (Q01, Q02, Q04); limits; next-date targeting; caption rules, with grapheme counts that match Swift's (T13); the idea helper's batches (Q24); the copy lint |
 | Integration | Vitest against Postgres in Docker, with the time module's fake clock, connected as a non-superuser role that owns the `app` tables, as `tadayo_app` does in Supabase (ADR-015) | Every command; the cutoff under the lock; idempotent replays after the cutoff and after midnight (Q12); upload crossing 7 AM (Q13); reveal and close with workers stopped (Q18); removal propagation (Q19); deletion jobs (Q27); restore with tombstone replay (Q28) |
-| Privacy matrix | A table-driven test generated from the OpenAPI paths: every route × every role × three phases (collecting, open, past). Roles: author, star, member in the audience, member who joined after the commit, rejoined member, former member, invited but unaccepted, stranger from another club, blocked, deletion pending | Identical not-found for every unauthorized case (T14). A route with no matrix row fails the build. Q05, Q06, Q08, Q09 |
-| Leak scanner | Runs over every response the matrix produces for a non-author before the reveal. It covers the Tadayo API's responses; Supabase's own endpoints are the probe's | No field outside spec 14's whitelist, no URL, no provider id, no dimensions or colours (T10, T16; Q07) |
+| Privacy matrix | A table-driven test generated from the OpenAPI paths: every route × every role × three phases (collecting, open, past) × six states of the drop (active, withdrawn, removed, held, its occurrence suspended, its club suspended), so the SQL fragments that filter reads meet every condition of T9. Roles: author, star, member in the audience, member who joined after the commit, rejoined member, former member, invited but unaccepted, stranger from another club, blocked, deletion pending | Identical not-found for every unauthorized case (T14). A route with no matrix row fails the build. Q05, Q06, Q08, Q09 |
+| Leak scanner | Runs over every response the matrix produces before the reveal, the author role's included, and checks all of each response except the drops the viewer authored, which T10 and T40 let carry more. So another member's drop in an author's Home or occurrence manifest is checked too, and the fixture's occurrence holds drops from at least two contributors. It covers the Tadayo API's responses; Supabase's own endpoints are the probe's | No field outside spec 14's whitelist, no URL, no provider id, no dimensions or colours (T10, T16; Q07) |
 | Supabase probe | `tools/ops/supabase-probe`, run against a real project where its service key lives: on a Fly machine of that environment's API app, started by `deploy-dev` and `deploy-prod` after each deploy, and by `ops` on request. It creates a probe user with the service key, signs it in without email (the admin API's generated code), and puts one test object in each bucket. Then, with the public key and with the user's token, it reads the `app` tables through REST and GraphQL, and lists the buckets and their objects, downloads the object, signs a URL for it and uploads over it. Finally it deletes the object and the user | Every call is refused or comes back empty (T53, ADR-015). Its results on `dev` go in the Gate 0 report, and on `prod` in Gate D's |
 | Concurrency | Parallel clients against Postgres | Last-slot races give at most six drops and two links (Q10); reservation expiry; highlight replacement (Q15); exactly one commit per key |
-| Worker | Duplicate, out-of-order and poisoned events; stopped workers | No duplicate pushes on retry (Q17); no audience change; no reopened submission |
+| Worker | Duplicate, out-of-order and poisoned events; stopped workers; every push payload the dispatcher builds, for each event in spec 21's table, before and after the reveal, with previews off and on | No duplicate pushes on retry (Q17); no audience change; no reopened submission; with previews off, names and timing only (T37); before the reveal, no media, URL, provider id or source in a non-author's payload, and a caption only with text previews on and only one the recipient may read (T16; spec 14, 21) |
 | Logs | A test that greps log output | No captions, comments, notes, URLs or tokens (T52) |
 | Swift logic | XCTest on Linux and macOS | `TadayoCore`: countdowns from `server_now`, exact-date labels, next collecting date, target recalculation, the upload queue's states (pending, uploading, processing, added, failed), draft encryption round-trip, account purge (Q26) |
 | Screens | swift-snapshot-testing on the simulator | Every inventory state in light, dark and the largest text size at 393 points, and the representative set at 320 and 430 points (section 2), with the fixture cast and the stress fixtures (book p6, p27: long names, a text screenshot, no caption, a dark ordinary photo). Snapshots use the runner's newest iOS. Before each gate, the UI tests also run once on the oldest iOS simulator the runner offers at or above the minimum (FQ4), and on iOS 18, the founder's version (ADR-018), when the runner offers it; the gate report names those versions |
@@ -282,7 +282,7 @@ Workflows (GitHub Actions), one file each in `.github/workflows/`:
 | Workflow | When it runs | What it does |
 |---|---|---|
 | `ci` (required) | Every push to every branch except `evidence`. No `pull_request` trigger | See below |
-| `ios` | Pushes that change `apps/ios/**`, `packages/swift/**` or `design/reference/**`, filtered with `on.push.paths`. It isn't a required check, so a skipped run is fine | On `macos-26`: XcodeGen, build both targets, unit, snapshot and UI tests, then the contact sheets (render beside snapshot per state). Pushes PNGs, sheets and logs to the evidence branch under `<branch>/<short-sha>/ios/` |
+| `ios` | Pushes that change `apps/ios/**`, `packages/swift/**`, `packages/contracts/**` or `design/reference/**`, filtered with `on.push.paths`. It isn't a required check, so a skipped run is fine | On `macos-26`: XcodeGen, build both targets, unit, snapshot and UI tests, then the contact sheets (render beside snapshot per state). Pushes PNGs, sheets and logs to the evidence branch under `<branch>/<short-sha>/ios/` |
 | `ios-release` | Run by hand on a chosen branch | Archive, export with `destination: upload`, TestFlight. Needs the App Store Connect API key |
 | `deploy-dev` | On push to `main` | Migrations to `tadayo-dev`, Fly deploy of `api` and `worker`, then the Supabase probe on a Fly machine (section 8), and the Cloudflare Pages deploy |
 | `deploy-prod` | Run by hand | The same against `prod`, after the founder asks |
@@ -308,6 +308,7 @@ Rules for every workflow:
 - least-privilege `permissions`;
 - third-party actions pinned to commit SHAs;
 - secrets only in workflows run by hand or by a push to `main`, never in `ci` or `ios`;
+- once `prod` exists (Gate D), no key that reaches `prod` is available to a run on any branch but `main`. Each environment's keys are secrets of a GitHub environment of the same name (`dev`, `prod`), not repository secrets, and reach only that environment: a Fly deploy token per app (`fly tokens create deploy -a <app>`), and that environment's project ref and database URL. A key that reaches both Supabase projects, such as the account access token, is given only to jobs that run on `main`. The `prod` environment's only deployment branch is `main`, so a `prod` run executes merged code only. Starting or re-running anything against `prod` still waits for the founder's word (`CLAUDE.md`, "Ask me first");
 - never print a secret;
 - keep workflow files thin and put the logic in `tools/ci/`, because cloud sessions can't push workflow files (`docs/GITHUB.md`, "Workflow files").
 
@@ -356,7 +357,7 @@ Spec 35's budgets, which are proposed engineering targets, not promises, plus tw
 
 ## 12. Security checklist for every feature
 
-- **Who can call this?** Is the membership interval in the drop's audience and still active? Has `reveal_at` passed for anything beyond the caption? Does it touch Supabase directly? Only sign-in may (T53).
+- **Who can call this?** Is the membership interval in the drop's audience and still active? Has `reveal_at` passed for anything beyond the caption? Does it touch Supabase directly? Only sign-in may (T53), and the client's own pending upload to the signed upload URL the API issued for it: one object, write only, with overwriting off (ADR-009, T12).
 - **Does the unauthorized case** return the same not-found as a missing object?
 - **Can a retry, a double tap, a lost response or a queued send** duplicate anything, or retarget it?
 - **Can two writes race?** The last slot, a commit against the cutoff, a withdrawal against a highlight, a removal against a favourite.

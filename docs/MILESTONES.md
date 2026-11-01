@@ -75,7 +75,8 @@ How the lanes fit together:
     - whether Docker's daemon runs in the session;
     - whether the session can start a workflow by hand through REST;
     - whether it can read `main`'s branch protection;
-    - whether the journal hook fires, in the first session started after the starter-pack PR is merged (sessions start from `main`, and Claude Code reads hooks only when a session starts);
+    - whether the journal hook fires and the CodeRabbit plugin is off, in the first session started after the starter-pack PR is merged (sessions start from `main`, and Claude Code reads project settings only when a session starts);
+    - whether the session reaches the hosts the first session was refused (Supabase, Fly, Cloudflare and swift.org), once the founder has selected the Tadayo environment;
     - the one Swift version, pinned everywhere.
 
 **Spikes.** Each spike gets a one-page report in `docs/spikes/` with its evidence. S1 to S4 and S6 run on the founder's iPhone, so they follow the first TestFlight build. Spike code merges only if it's clean enough to keep.
@@ -226,7 +227,7 @@ How the lanes fit together:
 
 - **api:** spec 21.
     - APNs dispatch with aggregation, the two-a-day budget across clubs (FQ30), and quiet hours in the device's zone, with the reveal push deferred.
-    - The access recheck at dispatch; preferences per account, club and thread; previews off by default; device registration.
+    - The access recheck at dispatch; preferences per account, club and thread; previews off by default; device registration, and its removal at logout or account switch.
     - Tests: Q22, and T36's never-cases.
 - **ios:**
     - The permission offer after the first contribution (`F02-added` and its first-time variant).
@@ -242,7 +243,7 @@ How the lanes fit together:
 - **Incident playbooks** in `docs/runbooks/` for spec 34's list.
 - **The events dictionary** and the weekly trial report script (ADR-012).
 - **The privacy pages and in-app explanations** (FQ6).
-- **`prod`** in the FQ3 region, with its data API turned off by the founder and the Supabase probe green on it.
+- **`prod`** in the FQ3 region, with its data API turned off by the founder and the Supabase probe green on it. No key that reaches it is available to a run on a branch other than `main` (`docs/TECH-DESIGN.md` section 9).
 - **App Store Connect:**
     - the privacy details;
     - the external testing group;

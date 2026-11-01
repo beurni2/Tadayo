@@ -74,7 +74,7 @@ Paths are relative to `design/reference/`:
 | F02 Upcoming day | `F02-upcoming` | Captions now, photos on Friday | `2.1/F02-upcoming.png` | 2.1 #08 | received | B4 | FQ21: Highlight label; brand version requested in handoff 0 |
 | F02 Upcoming day | `F02-upcoming-dark` | Upcoming day, dark | `screens/F02-upcoming-dark.png` |  | missing | B4 | Brand version requested in handoff 0 |
 | F02 Upcoming day | `F02-upcoming-xl` | Upcoming day at the largest text | `screens/F02-upcoming-xl.png` |  | missing | B4 |  |
-| F02 Upcoming day | `F02-added` | Compact receipt after a repeat contribution | `2.1/F02-added.png` | 2.1 #10 | received | B4 |  |
+| F02 Upcoming day | `F02-added` | Compact receipt after a repeat contribution | `2.1/F02-added.png` | 2.1 #10 | received | B4 | FQ21: Highlight label |
 | F02 Upcoming day | `F02-first-receipt` | First contribution: receipt and the notification offer | `screens/F02-first-receipt.png` |  | missing | B8 | T50 |
 | F02 Upcoming day | `F02-your-drops` | The author's own drops | `2.1/F02-your-drops.png` | 2.1 #12 | received | B4 |  |
 | F02 Upcoming day | `F02-empty` | No captions yet | `screens/F02-empty.png` |  | missing | B4 |  |
@@ -104,6 +104,7 @@ Paths are relative to `design/reference/`:
 | C04 Share extension | `C04-signed-out` | Signed out | `screens/C04-signed-out.png` |  | missing | B4 |  |
 | C04 Share extension | `C04-added` | Added for Debby's Friday, then back to the source | `screens/C04-added.png` |  | missing | B4 | T20 |
 | C04 Share extension | `C04-pending` | No connection: kept, not added | `screens/C04-pending.png` |  | missing | B4 | T20 |
+| C04 Share extension | `C04-failed` | The add failed: kept for retry, not added | `screens/C04-failed.png` |  | missing | B4 | T20 |
 | C05 Private drafts | `C05-drafts` | Private drafts | `2.1/C05-drafts.png` | 2.1 #39 | received | B4 |  |
 | C05 Private drafts | `C05-private-draft` | Private draft composer | `2.1/C05-private-draft.png` | 2.1 #51 | received | B4 |  |
 | C05 Private drafts | `C05-empty` | No drafts | `screens/C05-empty.png` |  | missing | B4 |  |
@@ -190,7 +191,7 @@ Screen O01, the operator console, is not designed for the trial: the operator us
 
 Where a 2.1 render breaks a rule, or the spec and the book disagree, build what this list says, not what's drawn. Each item stays listed until a render that matches arrives:
 - **"Her pick", "her day", "Revisit her day", "reminded you of her", "She'll see"** (`H01-open`, `H01-open-dark`, `G06-switcher`, `R01-blank-caption`, `R01-past-day`, `A01-welcome`, `H01-after-close`, `H01-first-drop`, `G03-approve`): names instead (FQ20, T42).
-- **The Highlight label on someone else's collecting card** (`F02-upcoming`): before the reveal it shows only on the viewer's own drops (FQ21, T10).
+- **The Highlight label on someone else's collecting card** (`F02-upcoming`, `F02-added`): before the reveal it shows only on the viewer's own drops (FQ21, T10).
 - **The highlight rail's order** (`H01-open`, `H01-open-dark`, `G06-switcher`, `R01-blank-caption`, `R01-past-day`): the star's pick, then the club's schedule order from Monday. On Debby's Friday: Debby's pick, then Ben, Maya and Sam (FQ26).
 - **The Share icon** in the feed and the photo viewer (`H01-open`, `R02-photo` and others): not in the trial (FQ14).
 - **The tab bar, status bar and device frame:** iOS draws its own, and older iOS versions draw them differently again (T45).
@@ -201,6 +202,6 @@ Where a 2.1 render breaks a rule, or the spec and the book disagree, build what 
 
 ## Counts
 
-- Trial states: 146. With a 2.1 render: 50 (one of them, `C03-system-picker`, is a reference for the system picker and isn't built). Missing: 96.
+- Trial states: 147. With a 2.1 render: 50 (one of them, `C03-system-picker`, is a reference for the system picker and isn't built). Missing: 97.
 - Later states: 6, of which 3 have 2.1 renders.
 - Brand assets: 4, none received.

@@ -43,7 +43,7 @@ Decision:
 - **Resend:** sign-in emails.
 - **APNs:** push, sent directly.
 - **Cloudflare:** Pages for the invitation and policy pages, DNS, and one R2 bucket for the deletion log (ADR-010).
-The app calls Supabase only to sign in; everything else goes through the Tadayo API with the session token. Supabase's own data API stays closed (ADR-015). The API, the worker and the workflows reach Postgres through Supabase's session pooler, because the direct database host is IPv6-only and GitHub's runners have no IPv6.
+The app calls Supabase only to sign in and to put its own pending upload at the one-object signed upload URL the API gives it (ADR-009); everything else goes through the Tadayo API with the session token. Supabase's own data API stays closed (ADR-015). The API, the worker and the workflows reach Postgres through Supabase's session pooler, because the direct database host is IPv6-only and GitHub's runners have no IPv6.
 Alternatives: Neon with Clerk and S3, which means more vendors. Supabase Edge Functions as the API, which have no long-running worker. Cloudflare R2 for media, which has zero egress fees but adds a second media store; revisit it if egress grows.
 Consequences:
 - Small bills at trial size: Supabase on its Pro plan from B0, because free projects pause after about a week without activity and the founder's TestFlight builds point at `dev`; Fly; a domain.

@@ -2,9 +2,9 @@
 """Tests for tools/ci/journal_hook.py. Run: python3 tools/ci/journal_hook_test.py
 
 Each case builds a scratch repository in a named state, feeds the hook a Bash tool call as Claude
-Code would, and then, unless it's marked not to run, runs the command for real with bash and asks
-git whether a commit without docs/JOURNAL.md was made. So every case is checked against what git
-really does:
+Code would, and then, unless it's marked not to run or it's "unsure", runs the command for real
+with bash and asks git whether a commit without docs/JOURNAL.md was made. So every case it runs is
+checked against what git really does:
 - "refuse": the hook exits 2, and the command really makes a commit without the journal;
 - "allow": the hook exits 0, and the command makes no such commit;
 - "unsure": the hook exits 0 by design, because it can't tell (the `ci` guard still holds the rule).

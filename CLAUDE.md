@@ -62,7 +62,7 @@ I'm the founder. I approve every gate and merge every pull request, after you've
 - **The pre-reveal whitelist (T10).** Every field you add to a drop's DTO is a possible leak: a thumbnail, dimensions, a colour, a URL, a provider id, alt text, a highlight flag. The leak scanner fails on any field outside the whitelist. Never widen it to make a test pass.
 - **One read predicate (T9).** Every route, job, push, search and widget calls the authorization module. Never re-implement a check in a handler.
 - **Media only through the API (T12).** No signed read URL or media token ever reaches a client; the media route checks every request. The only storage URL the app ever gets is the signed upload URL for its own pending upload.
-- **Supabase stays closed (T53).** The app uses Supabase only to sign in. Tables live in the `app` schema, owned by the API's role `tadayo_app`; Supabase's data API is off; and the Supabase probe proves it on each project.
+- **Supabase stays closed (T53).** The app uses Supabase only to sign in and to put its own pending upload at the signed upload URL (T12). Tables live in the `app` schema, owned by the API's role `tadayo_app`; Supabase's data API is off; and the Supabase probe proves it on each project.
 - **Server time (T1).** Access, cutoff and Home come from `reveal_at`, `close_at` and the server's clock. The device clock decides nothing; countdowns run from `server_now`.
 - **The cutoff under the lock (T3), no silent retargeting (T4).** Sample the clock after taking the occurrence lock. A late upload becomes a draft with a question, never a drop for next week.
 - **Six and two in one transaction (T17); one commit per idempotency key (T19).** The key is created when the action starts and reused on every retry.

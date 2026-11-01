@@ -143,7 +143,7 @@ The full list is `docs/INVARIANTS.md`. These are the ones a mistake breaks first
 - **The right person and date.** Every add names the club, the person and the exact date. Nothing moves silently, "Added" means committed, six and two hold in one transaction, and each idempotency key commits once (T4, T17 to T20, T31).
 - **Audiences don't change after commit,** and removal reaches every surface at once (T8, T24).
 - **Nothing is counted, ranked or chased** (T15, T33, T37).
-- **Supabase stays closed:** the app uses it only to sign in (T53).
+- **Supabase stays closed:** the app uses it only to sign in and to put its own pending upload at the signed upload URL (T53, T12).
 - **Claude Design designs; Claude Code never does,** and no stock or generated imagery enters the app (T46).
 - **Checks only get stronger,** and CI configuration changes alone (T58).
 
@@ -205,11 +205,11 @@ The screen-by-screen list is `design/reference/INVENTORY.md`, "Known differences
 
 ### 1.1 Shared (the api lane keeps this block)
 
-**Updated:** 2026-11-01 23:27 UTC, starter-pack
+**Updated:** 2026-11-01 23:30 UTC, starter-pack
 
 - **Stage:** B0 Foundations, not started. Next gate: Gate 0 (`docs/MILESTONES.md`).
 - **Lanes:** none yet; one session until Gate 0.
-- **PRs:** #1, `docs: add the Tadayo starter pack` from `starter-pack`, open. Its independent review has reported; its row in section 4 says `to open` until the review is recorded.
+- **PRs:** #1, `docs: add the Tadayo starter pack` from `starter-pack`, open. Its independent review is recorded, with its findings fixed or answered; the fixes go to a second review.
 - **Branches:** `main` holds one commit, `Initial commit` (`README.md` only), made from the session at the founder's request on 2026-11-01 because the repository was created empty. `starter-pack` adds the pack and its document fixes. `draft/b0-plan`, made from `starter-pack` at the founder's request, holds the draft of `docs/plans/B0.md`, updated for the founder's answers; it is never merged or opened as a PR, and stays as it is once the plan moves to `plan/b0`.
 - **`main`'s protection:** on, read back on 2026-11-01 through the summary (`docs/GITHUB.md`): no required check yet. Squash merges only, and merged branches are deleted.
 - **Environments:** `dev` being set up by the founder in US East (Supabase `us-east-1`, Fly `iad`; ADR-016). `prod` not created (Gate D).
@@ -217,14 +217,14 @@ The screen-by-screen list is `design/reference/INVENTORY.md`, "Known differences
 - **TestFlight:** no build yet.
 - **`ci` on `main`:** not set up yet; B0 adds it.
 
-**What exists and works (verified).** On `starter-pack`, the starter pack unpacked at the repository root by the commit `docs: unpack the Tadayo starter pack`. Its tree matched a separate unzip of `tadayo-starter-pack.zip` (`diff -r`, no difference) until that commit rewrote this journal's section 1.1 and added its log entry; the document fixes since are in the log. The journal tools' tests pass: `python3 tools/ci/journal_hook_test.py` (6 tests) and `python3 tools/ci/journal_check_test.py` (28 tests), Python 3.13.18, git 2.43.0. Nothing else is built.
+**What exists and works (verified).** On `starter-pack`, the starter pack unpacked at the repository root by the commit `docs: unpack the Tadayo starter pack`. Its tree matched a separate unzip of `tadayo-starter-pack.zip` (`diff -r`, no difference) until that commit rewrote this journal's section 1.1 and added its log entry; the document fixes since are in the log. The journal tools' tests pass: `python3 tools/ci/journal_hook_test.py` (6 tests) and `python3 tools/ci/journal_check_test.py` (29 tests), Python 3.13.18, git 2.43.0. Nothing else is built.
 
-**In progress.** PR #1: fixing or answering its independent review's findings (`docs/GITHUB.md`).
+**In progress.** PR #1: a second independent review, of the commits since the first one (`docs/GITHUB.md`, step 5).
 
 **Next, in order:**
-1. On `starter-pack`, fix or answer each finding of PR #1's independent review, and record the review in a commit that fills in the PR's row in section 4; review the fixes again with fresh reviewers if they changed a lot. Done when the PR says it's ready for the founder.
+1. On `starter-pack`, review the commits since PR #1's first review with fresh reviewers (`git diff 8e4a0c7..HEAD`), fix or answer each finding, record it in a commit with the PR's row in section 4, and fill in the PR's "Review" and "Ready for the founder" sections. Done when the PR says it's ready for the founder.
 2. After the founder merges it: `git fetch origin`, `git switch -c plan/b0 origin/main`, then `git checkout origin/draft/b0-plan -- docs/plans/B0.md`; write its journal entry, and open its PR with its own review. Leave `draft/b0-plan` as it is.
-3. In the first session the founder starts after merging the starter-pack PR, check that the journal hook fires (a `git commit` without `docs/JOURNAL.md` staged is refused by `tools/ci/journal_hook.py`), and record the result in `docs/LIMITATIONS.md`.
+3. In the first session the founder starts after merging the starter-pack PR, check that the journal hook fires (a `git commit` without `docs/JOURNAL.md` staged is refused by `tools/ci/journal_hook.py`) and that the CodeRabbit skills no longer appear, and record both in `docs/LIMITATIONS.md`.
 4. The B0 slices, in the order `docs/plans/B0.md` sets.
 
 **Blocked or waiting for the founder:**
@@ -233,7 +233,7 @@ The screen-by-screen list is `design/reference/INVENTORY.md`, "Known differences
 - Accounts for B0 (`docs/TECH-DESIGN.md` section 10): Apple's approval of the founder's enrolment, then the App Store Connect API key and the APNs key; Resend's verification of `tadayo.app`; a yes to FQ5's identifiers. The B0 plan names each account and secret exactly.
 - The trial members' iPhone models and iOS versions (FQ4), which matter only if one can't run iOS 17. The founder's is an iPhone 13 on iOS 18.3.2 (ADR-018).
 - Design handoff 0 in Claude Design. Gate 0 waits for its icon frames: the first TestFlight upload needs the icon, and spikes S1 to S4 and S6 need that build.
-- Open questions with defaults in `docs/QUESTIONS.md`; the defaults apply until answered.
+- Open questions with defaults in `docs/QUESTIONS.md`; the defaults apply until answered. FQ31 to FQ36 are the conflicts the starter-pack PR found whose fix would loosen a rule.
 
 **How to run and check everything.**
 - The journal: `python3 tools/ci/journal_check.py --all`, and `--branch` on a branch; the hook's and the check's tests: `python3 tools/ci/journal_hook_test.py` and `python3 tools/ci/journal_check_test.py`.
@@ -259,7 +259,7 @@ Not started (after Gate 0). Its block will hold its PRs, what's in progress, wha
 Not started (after Gate 0). Until then, the B0 session keeps the design line here:
 - **Design** (`design/reference/INVENTORY.md`):
     - handoffs sent: none. Design handoff 0 (the brand) is ready in `docs/DESIGN-HANDOFF.md` and in the founder's guide;
-    - trial states: 146, of which 50 have 2.1 renders (49 to build, plus the system picker's reference) and 96 are missing;
+    - trial states: 147, of which 50 have 2.1 renders (49 to build, plus the system picker's reference) and 97 are missing;
     - built from spec: 0. Brand assets received: 0 of 4.
 
 ---
@@ -349,7 +349,7 @@ One row per invariant, per acceptance test and per spec section with code. Statu
 | Q08 Sender own preview cannot be reused by another account. | | | planned | B3 |
 | Q09 Manipulated device clock cannot reveal content. | | | planned | B2, B3 |
 | Q10 Competing final slot submissions produce at most six total and two links. | | | planned | B2, B3 |
-| Q11 Multi select counts each photo separately and reports partial failure. | | | planned | B4 |
+| Q11 Multi select counts each photo separately and reports partial failure. | | | planned | B3, B4 |
 | Q12 Idempotent retry returns original drop after cutoff. | | | planned | B2, B3 |
 | Q13 Upload crossing 7 AM preserves draft and requires next date confirmation. | | | planned | B4 |
 | Q14 Star own posts follow same limits and remain hidden to others. | | | planned | B4, B5 |
@@ -394,6 +394,41 @@ Newest first within each section. One entry per commit, written in that commit, 
 ```
 
 ### 3.1 Shared and B0
+
+#### 2026-11-01 23:30 UTC · shared · starter-pack · PR #1
+**Did:** Recorded PR #1's independent review and fixed its findings. Five fresh reviewers (process, design, stages, the journal tools, and privacy and security) reported 27 findings. A separate reader checked each one, and 26 held. The fixes:
+- `docs/QUESTIONS.md`: FQ31 to FQ36, each with a default that loosens nothing. Four are the conflicts this PR leaves for the founder: editing `INVENTORY.md`, T9 and the operator's case access, T62's dismissals, and the weekly report against `prod`. Two came from the review: adding 2.1's own pack, and what `dev` holds. `CLAUDE.md` asks for such conflicts to be questions, not only lines in a PR.
+- Supabase: `CLAUDE.md`, `docs/DECISIONS.md` ADR-003, this journal's section 0 and `docs/TECH-DESIGN.md` section 12 said the app uses Supabase only to sign in, but ADR-009 and T12 have it upload its own pending upload to a signed upload URL. All four now say so.
+- `docs/TECH-DESIGN.md` section 6:
+    - the contract gains reading a drop's comment thread (spec 16, R04), and removing a device's push registration at logout or account switch (spec 23), also in `docs/MILESTONES.md` B8;
+    - stored idempotency responses never hold caption or comment text, and an account's receipts are purged with it (T19, T27).
+- `docs/TECH-DESIGN.md` section 8:
+    - the privacy matrix adds six drop states (active, withdrawn, removed, held, occurrence suspended, club suspended), so the SQL read filters meet all of T9;
+    - the leak scanner covers the author role's responses, every drop but the viewer's own;
+    - the Worker tests check every push payload (T16, T37; spec 14, 21).
+- `docs/TECH-DESIGN.md` section 9:
+    - `ios` also runs on `packages/contracts/**`, so a contract change builds the app;
+    - from Gate D, no key that reaches `prod` is available to a run on any branch but `main`. That means GitHub environments, per-app Fly tokens, and `main` as `prod`'s only deployment branch. `docs/MILESTONES.md` repeats it in B9's `prod` line.
+- `docs/GITHUB.md`: the PR-body file goes in `/tmp`, never in the working tree.
+- `docs/MILESTONES.md` B0's environment checks add the CodeRabbit switch and the hosts the first session was refused. `docs/LIMITATIONS.md` marks the CodeRabbit row "to confirm", and the hosts row names those checks.
+- `design/reference/INVENTORY.md`: the new state `C04-failed` (B4, MILESTONES), with the counts now 147 trial states and 97 missing; `F02-added` added to the Highlight-label difference and to FQ21. This journal's audit map gives Q11 the stages B3 and B4.
+- `tools/ci/`:
+    - `journal_check.py` refuses a shared, api or ios heading without its time (test added: `test_heading_without_its_time`);
+    - the first-PR fixture strips untimed entries too;
+    - `test_spec_row_swapped` anchors on the table's header, so it survives the first spec row;
+    - `test_all_mode` asserts the missing section by name;
+    - `journal_hook_test.py`'s docstring says the "unsure" cases aren't run.
+- Filled in this PR's row in section 4. Rewrote section 1.1.
+**Why:** `docs/GITHUB.md` steps 3 to 5: decide each finding on its merits, fix the valid ones, and record the review in a commit. Where a finding's own fix would loosen a rule, the commit doesn't make it; it adds a question with a strict default, as `CLAUDE.md` asks.
+**Verified:**
+- `python3 tools/ci/journal_check_test.py`: 29 tests, OK. With the new heading rule removed, `test_heading_without_its_time` fails. With the check for a missing section removed, `test_all_mode` fails.
+- `python3 tools/ci/journal_hook_test.py`: 6 tests, OK.
+- `python3 tools/ci/journal_check.py --all` and `--branch`: exit 0.
+- The inventory's counts, recomputed from its rows: 147 trial states, 97 missing.
+- The one finding that didn't hold is answered in the PR: the reviewer's brief doesn't ban CodeRabbit, but the CLI isn't installed and the skill stops without it.
+**Not verified:** GitHub's plan limits for environments on a private repository (docs.github.com is refused by the session's proxy). Gate D's work checks it before `prod` exists. The second review of these fixes is still to come.
+**Decisions and questions:** FQ31 to FQ36 added to `docs/QUESTIONS.md`. `docs/LIMITATIONS.md`: the CodeRabbit row is back to "to confirm", and the hosts row is reworded.
+**Next:** Review `git diff 8e4a0c7..HEAD` with fresh reviewers (`docs/GITHUB.md`, step 5), fix or answer what they find, and record it in a commit with the PR's row. Then fill in the PR's "Review" and "Ready for the founder" sections. Done when the PR says it's ready for the founder.
 
 #### 2026-11-01 23:27 UTC · shared · starter-pack · PR none
 **Did:** Recorded three of the founder's answers from 1 November 2026, each in `docs/QUESTIONS.md` and as an ADR in `docs/DECISIONS.md`, as `docs/QUESTIONS.md` asks:
@@ -470,7 +505,7 @@ The index an auditor uses to find the proof behind section 2.
 
 | PR | Branch | What it changed | Review findings | Evidence |
 |---|---|---|---|---|
-| to open | `starter-pack` | The starter pack (`CLAUDE.md`, `docs/`, `design/reference/`, the PR template, `.claude/settings.json`, `.yamllint.yaml`, `tools/ci/`), with the document fixes its body lists | Recorded with the review | None: documents and the journal tools, whose tests the log lists |
+| #1 | `starter-pack` | The starter pack (`CLAUDE.md`, `docs/`, `design/reference/`, the PR template, `.claude/settings.json`, `.yamllint.yaml`, `tools/ci/`), with the document fixes its body lists, and the founder's answers to FQ3, FQ4 and FQ5 (ADR-016 to ADR-018) | First review: five fresh reviewers (process, design, stages, the journal tools, privacy and security), each finding checked by a separate reader. 27 findings, 26 confirmed: 24 fixed, 2 whose fixes would loosen a rule turned into FQ35 and FQ36 (with FQ31 to FQ34 for the conflicts the PR lists); the one not confirmed (the reviewer's brief and CodeRabbit) answered in the PR. Second review of the fixes: to come | None: documents and the journal tools, whose tests the log lists |
 
 ### 4.2 Pull requests: the ios lane
 

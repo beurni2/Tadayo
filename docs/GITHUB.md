@@ -93,11 +93,11 @@ The session's GitHub proxy blocks GitHub's GraphQL API, including `gh pr ...` an
 # The PR's head commit
 gh api repos/{owner}/{repo}/pulls/{n} --jq .head.sha
 
-# Open a PR, with the body written from .github/pull_request_template.md
-gh api -X POST repos/{owner}/{repo}/pulls -f title='…' -f head='<branch>' -f base=main -F body=@pr-body.md
+# Open a PR, with the body written from .github/pull_request_template.md into /tmp, never into the working tree
+gh api -X POST repos/{owner}/{repo}/pulls -f title='…' -f head='<branch>' -f base=main -F body=@/tmp/pr-body.md
 
 # Update the PR's description
-gh api -X PATCH repos/{owner}/{repo}/pulls/{n} -F body=@pr-body.md
+gh api -X PATCH repos/{owner}/{repo}/pulls/{n} -F body=@/tmp/pr-body.md
 
 # Checks on a commit, with their titles
 gh api repos/{owner}/{repo}/commits/{sha}/check-runs --jq '.check_runs[] | [.name, .status, .conclusion, .output.title] | @tsv'

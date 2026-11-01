@@ -111,7 +111,7 @@ Each question has a default. Claude Code builds on the default until the founder
     Default: built with the right-hand wording. The brand handoff asks Claude Design how "Deborah-Anne's pick" fits a 91-point cover.
 
     Needed by: B1.
-- **FQ21. The Highlight label before the reveal.** `F02-upcoming` shows Ben a "Highlight" label on Maya's collecting card. The spec's pre-reveal whitelist for non-authors doesn't include it (spec 14, T10).
+- **FQ21. The Highlight label before the reveal.** `F02-upcoming` and `F02-added` show Ben a "Highlight" label on Maya's collecting card. The spec's pre-reveal whitelist for non-authors doesn't include it (spec 14, T10).
     - Default: before the reveal, the label shows only on the viewer's own drops.
     - Needed by: B4.
 - **FQ22. Reactions.** D07: one emoji reaction per viewer per drop, changeable or removable. The set isn't defined; 2.1 shows only a heart labelled React.
@@ -151,3 +151,26 @@ Each question has a default. Claude Code builds on the default until the founder
 - **FQ30. The two-a-day budget with several devices.** Spec 21 counts pushes "per member per device local day".
     - Default: one budget per member, counted in the zone of the member's most recently active device. Quiet hours apply per device, in that device's zone.
     - Needed by: B8.
+
+## Raised by the starter-pack PR
+
+Each is a place where two sources disagree and the fix would loosen one of them, so it waits for the founder. The default holds until then.
+
+- **FQ31. Keeping `INVENTORY.md` current.** `CLAUDE.md` ("Repository layout") and `design/reference/README.md` forbid editing anything in `design/reference/`, `INVENTORY.md` included. `CLAUDE.md` ("The rules easiest to break by accident"), `INVENTORY.md` itself, `docs/DESIGN-HANDOFF.md` and the definition of done in `docs/MILESTONES.md` require keeping it current.
+    - Default: Claude Code keeps `INVENTORY.md` current in the same commit as the change, adding rows and never deleting one. Nothing else already in `design/reference/` is edited, moved or renamed. The starter-pack PR's edits to it were part of the founder's request to fix the documents.
+    - Needed by: B0.
+- **FQ32. The operator's case access.** T9 names the author's preview as the read rule's only exception. Spec 07 gives the moderation operator "restricted audited case access" before and after the reveal, and T55 has an `operator` role.
+    - Default: T9 as written. No route serves a drop's content to the operator; the `ops` moderation scripts (FQ27) hold or remove a drop by its id and write an audit row. If a report can't be handled without seeing the content, Claude Code asks the founder first.
+    - Needed by: B9.
+- **FQ33. Which dismissals are durable.** T62 says "Dismissals are durable". Spec 19 has two controls: Dismiss hides the suggestion, and "Don't suggest this day again" stores the one durable per-user exclusion.
+    - Default: T62 as written: every dismissal is durable.
+    - Needed by: M1.5 (Remember this).
+- **FQ34. The weekly trial report against `prod`.** ADR-012 and `docs/TECH-DESIGN.md` section 1 run the weekly trial report through `ops`, and the trial lives in `prod`. Section 9 lets `ops` act on `prod` only for the moderation scripts, the Supabase probe and the review-access switch.
+    - Default: the report runs on `dev`'s seeded data (Gate D's "trial report on seeded data"), and against `prod` only once the founder answers.
+    - Needed by: Gate E.
+- **FQ35. Adding 2.1's own pack.** FQ25's default has the founder attach 2.1's pack, with its HTML reference and tokens file in `design/reference/pack/`. `CLAUDE.md` ("Repository layout") and `design/reference/README.md` let Claude Code add only handoff deliveries and the files made from them. The README's table gives `pack/` to the founder, who can't create a folder from GitHub's upload page on a phone (`docs/DESIGN-HANDOFF.md`).
+    - Default: build from the PDF, as FQ25 says. If the founder attaches the pack, Claude Code asks before committing it.
+    - Needed by: B0.
+- **FQ36. What `dev` holds.** `docs/TECH-DESIGN.md` section 7 says `dev` holds synthetic data only. ADR-004 and ADR-011 point the founder's builds, and so the founder's own account, at `dev` until Gate D. FQ28 adds a friend as an internal tester. Their email addresses, photos, captions and comments are real.
+    - Default: everything the founder and the internal tester add on `dev` is personal data. It never goes into logs, PRs, the journal or evidence (T52), and scripts and seeds never read or change their accounts. Everything else on `dev` stays synthetic.
+    - Needed by: B0.

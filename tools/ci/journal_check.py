@@ -128,7 +128,7 @@ def lane_of(heading):
 
 def entry_problems(heading, body):
     problems = []
-    if not HEADING.match(heading):
+    if not HEADING.match(heading) or (lane_of(heading) != "handoff" and " UTC · " not in heading):
         problems.append(f"{heading!r}: the heading doesn't follow the template "
                         "(#### YYYY-MM-DD HH:MM UTC · lane · branch · PR #n or PR none)")
     content = collections.OrderedDict()
