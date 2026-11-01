@@ -15,17 +15,18 @@ Each question has a default. Claude Code builds on the default until the founder
 ## Setup and accounts
 
 - **FQ3. Where the servers live.**
-    - Default for `dev`: Paris (Supabase `eu-west-3`, Fly `cdg`), the region nearest the founder, who runs every device check.
+    - For `dev`: the region nearest the founder, who runs every device check. Answered by the founder on 1 November 2026: they are in Virginia, US, so `dev` is in US East (Supabase `us-east-1`, Fly `iad`; ADR-016).
     - For `prod`: the region where most trial members live. That's the US East region (Supabase `us-east-1`, Fly `iad`) for the US, and Paris for West Africa or Europe. The founder confirms it before `prod` is created at Gate D.
     - A Supabase project can't move region, only be recreated; for `dev`, which holds only test data, that's about an hour's work.
     - Needed by: B0 for `dev`; Gate D for `prod`.
 - **FQ4. Your iPhone and iOS version, and the trial members'.** The app's minimum iOS decides which phones can install it, the founder's included. The founder's iPhone can't open Claude Docs, whose viewer asks him to update iOS, so it may not be on a recent version.
+    - Answered in part by the founder on 1 November 2026: their iPhone is an iPhone 13 on iOS 18.3.2, so the iOS 17 minimum stands (ADR-018). The trial members' phones are still unknown.
     - Default: iOS 17 minimum, which runs on the iPhone XS, XR and later, built with the newest SDK so that newer iPhones get the current system look. The app's view models use Apple's Observation framework, which needs iOS 17.
     - If the founder's or a trial member's iPhone can't run iOS 17 (an iPhone 8 or X stops at iOS 16), tell Claude Code before B0. The app then needs iOS 16 and a slightly different structure.
     - Needed by: B0.
 - **FQ5. Domain, identifiers and the name.**
-    - Default: `tadayo.app` as a placeholder until the founder buys a domain.
-    - Bundle id `app.tadayo`, with `app.tadayo.share` and `app.tadayo.widgets`; app group `group.app.tadayo`. The bundle id can't change after the App Store record exists.
+    - The domain: `tadayo.app`. Answered by the founder on 1 November 2026, who registered it on Cloudflare (ADR-017).
+    - Default: bundle id `app.tadayo`, with `app.tadayo.share` and `app.tadayo.widgets`; app group `group.app.tadayo`. The bundle id can't change after the App Store record exists.
     - A search on 1 November 2026 found no App Store app named Tadayo, but similar names exist: Tadayou (a meditation app), Tayo Tayo and Tadaday. Trademark clearance stays a prelaunch task (spec intro).
     - Needed by: B0.
 - **FQ6. Privacy policy, terms and a support contact.** Apple asks for a privacy policy URL and a contact before external testers.

@@ -162,3 +162,24 @@ Decision:
 Alternatives: Row-level security policies as the authorization layer, which would duplicate the read predicate in a second place and drift from it. Granting the API's role `BYPASSRLS`, which works but makes the backstop depend on one attribute nobody sees.
 Consequences: B0's bootstrap creates `tadayo_app`, the `app` schema and `pg_trgm`; its first migration sets the grants and row-level security. The founder turns the data API off in each project's settings. The probe runs after every deploy, and its results on `dev` and `prod` are part of Gate 0 and Gate D.
 Links: T53; spec 30, 33.
+
+## ADR-016 · `dev` in US East, near the founder · 2026-11-01 · decided
+Context: FQ3 puts `dev` in the region nearest the founder, who runs every device check, and the pack assumed that was Paris. On 1 November 2026 the founder said they are in Virginia, US, while creating `tadayo-dev`.
+Decision: `dev` is in US East: the Supabase project `tadayo-dev` in `us-east-1` and the Fly app `tadayo-api-dev` in `iad`, the same place as the database. `prod`'s region stays open under FQ3, confirmed before Gate D.
+Alternatives: Paris (Supabase `eu-west-3`, Fly `cdg`), the pack's assumption: farther from the founder for every device check, with no gain for `dev`'s synthetic data.
+Consequences: A Supabase project can't move region, only be recreated; for `dev`, which holds only test data, that's about an hour's work. The Fly app's `primary_region` is `iad`.
+Links: FQ3; ADR-003; `docs/TECH-DESIGN.md` section 7.
+
+## ADR-017 · The domain `tadayo.app` · 2026-11-01 · decided
+Context: FQ5 used `tadayo.app` as a placeholder until the founder bought a domain. On 1 November 2026 the founder registered `tadayo.app` on Cloudflare.
+Decision: `tadayo.app` is Tadayo's domain, registered on Cloudflare, with its DNS there. The universal links, the invitation page, the API host and the policy pages use it (`docs/TECH-DESIGN.md` section 10), and Resend sends the sign-in codes from it. The bundle id, the app group and the name stay FQ5's defaults until the founder confirms them.
+Alternatives: None: the founder chose it. It matches the bundle id's prefix, `app.tadayo`.
+Consequences: Every DNS record the build needs (Pages, the API host, Resend's sending records) goes in Cloudflare. `.app` is on browsers' HSTS preload list, so every host on it must serve HTTPS. Moving to another domain later would change every universal link and the `apple-app-site-association` file.
+Links: FQ5; ADR-003; `docs/TECH-DESIGN.md` sections 1, 4 and 10.
+
+## ADR-018 · iOS 17 stays the minimum; the founder's iPhone runs iOS 18 · 2026-11-01 · decided
+Context: FQ4 asked for the founder's and the trial members' iPhones, because the minimum iOS decides who can install the app. On 1 November 2026 the founder said their iPhone is an iPhone 13 on iOS 18.3.2. The trial members' phones are still unknown.
+Decision: The minimum stays iOS 17, FQ4's default (ADR-001). The founder's phone runs it, and the lower minimum lets in more of the members' phones.
+Alternatives: iOS 18 as the minimum: the app needs nothing from it (Observation needs iOS 17), and it would shut out any member still on iOS 17.
+Consequences: The founder's phone draws iOS 18's system look, not the newest SDK's look that the snapshots show (`docs/LIMITATIONS.md`). So before each gate the UI tests also run on an iOS 18 simulator, the founder's version, when the runner offers one (`docs/TECH-DESIGN.md` section 8). If a member's iPhone can't run iOS 17, FQ4's fallback to iOS 16 applies.
+Links: FQ4; ADR-001; `docs/TECH-DESIGN.md` sections 1 and 8.

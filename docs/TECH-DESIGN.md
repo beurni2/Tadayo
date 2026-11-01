@@ -241,7 +241,7 @@ Spec 31's entities, with these implementation choices:
 
 | Environment | Supabase | Fly apps | Who uses it |
 |---|---|---|---|
-| `dev` | `tadayo-dev`, in Paris near the founder (FQ3) | `tadayo-api-dev`, one app with the process groups `api` and `worker` (section 1, ADR-003) | Claude Code; synthetic data only; the founder's TestFlight builds point here until Gate D. The dev clock exists only here |
+| `dev` | `tadayo-dev`, in US East (Supabase `us-east-1`, Fly `iad`) near the founder (FQ3, ADR-016) | `tadayo-api-dev`, one app with the process groups `api` and `worker` (section 1, ADR-003) | Claude Code; synthetic data only; the founder's TestFlight builds point here until Gate D. The dev clock exists only here |
 | `prod` | `tadayo-prod` | `tadayo-api`, with the same two process groups | The trial; created at Gate D in the FQ3 region |
 
 Both Supabase projects live in one organization on the Pro plan, because a free project pauses after about a week without activity.
@@ -268,7 +268,7 @@ Both Supabase projects live in one organization on the Pro plan, because a free 
 | Worker | Duplicate, out-of-order and poisoned events; stopped workers | No duplicate pushes on retry (Q17); no audience change; no reopened submission |
 | Logs | A test that greps log output | No captions, comments, notes, URLs or tokens (T52) |
 | Swift logic | XCTest on Linux and macOS | `TadayoCore`: countdowns from `server_now`, exact-date labels, next collecting date, target recalculation, the upload queue's states (pending, uploading, processing, added, failed), draft encryption round-trip, account purge (Q26) |
-| Screens | swift-snapshot-testing on the simulator | Every inventory state in light, dark and the largest text size at 393 points, and the representative set at 320 and 430 points (section 2), with the fixture cast and the stress fixtures (book p6, p27: long names, a text screenshot, no caption, a dark ordinary photo). Snapshots use the runner's newest iOS. Before each gate, the UI tests also run once on the oldest iOS simulator the runner offers at or above the minimum (FQ4), and the gate report names that version |
+| Screens | swift-snapshot-testing on the simulator | Every inventory state in light, dark and the largest text size at 393 points, and the representative set at 320 and 430 points (section 2), with the fixture cast and the stress fixtures (book p6, p27: long names, a text screenshot, no caption, a dark ordinary photo). Snapshots use the runner's newest iOS. Before each gate, the UI tests also run once on the oldest iOS simulator the runner offers at or above the minimum (FQ4), and on iOS 18, the founder's version (ADR-018), when the runner offers it; the gate report names those versions |
 | Accessibility | XCUITest on the simulator | The accessibility tree of hidden-drop states announces author and opening time only (Q07); the cover's action names; VoiceOver order on Home (Q30) |
 | Device | The founder, with a checklist in each gate report | Share extension from TikTok and Photos, background upload, the TikTok player (signed out, no app, deleted source, login required, restricted network), push, VoiceOver, largest text (Q20, Q21, Q30) |
 | Load | k6 against `dev` before Gate D | Spec 35's budgets for list reads; query plans inspected |
@@ -322,7 +322,7 @@ The founder creates these and adds the keys when you ask, naming exactly which s
 | Fly.io | `api` and `worker` | `FLY_API_TOKEN` in GitHub secrets |
 | Resend | Sign-in code emails through Supabase Auth's SMTP | Supabase settings |
 | Cloudflare | Pages for `apps/web`, DNS for the domain, the R2 bucket for the deletion log | `CLOUDFLARE_API_TOKEN` in GitHub secrets; R2 keys in Fly secrets |
-| A domain (FQ5) | Universal links, the invitation page, the API host, the policy pages | Cloudflare DNS |
+| The domain `tadayo.app` (FQ5, ADR-017) | Universal links, the invitation page, the API host, the policy pages, the sign-in emails' sender | Registered on Cloudflare; Cloudflare DNS |
 
 **The Claude Code cloud environment.** The founder sets it up once, from the handoff guide:
 - the Claude GitHub App installed on the repository;

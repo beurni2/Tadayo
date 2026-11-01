@@ -165,9 +165,12 @@ The full list is `docs/INVARIANTS.md`. These are the ones a mistake breaks first
     - ADR-013: a clock that only `dev` can move.
     - ADR-014: photos prepared on the device.
     - ADR-015: Supabase's own data API stays closed.
-- **The founder's answers:** FQ1, iPhone first; FQ2, keep 2.1's screens and add the brand. Both on 1 November 2026.
-- **Defaults in force until he answers** (`docs/QUESTIONS.md`, FQ3 to FQ30). The ones that shape the trial most:
-    - iOS 17 as the minimum (FQ4);
+    - ADR-016: `dev` in US East, near the founder.
+    - ADR-017: the domain `tadayo.app`.
+    - ADR-018: iOS 17 stays the minimum; the founder's iPhone runs iOS 18.
+- **The founder's answers:** FQ1, iPhone first; FQ2, keep 2.1's screens and add the brand; FQ3 for `dev`, US East (the founder is in Virginia, US); FQ4 for the founder's phone, an iPhone 13 on iOS 18.3.2; FQ5's domain, `tadayo.app`. All on 1 November 2026.
+- **Defaults in force until he answers** (`docs/QUESTIONS.md`: FQ3 for `prod`, and FQ4 to FQ30). The ones that shape the trial most:
+    - iOS 17 as the minimum (FQ4; the founder's phone runs iOS 18.3.2, the trial members' are unknown);
     - no photo-scanning provider in the closed trial, with his written acceptance (FQ8);
     - widgets after the trial (FQ9);
     - Live Photos as stills (FQ10);
@@ -202,23 +205,24 @@ The screen-by-screen list is `design/reference/INVENTORY.md`, "Known differences
 
 ### 1.1 Shared (the api lane keeps this block)
 
-**Updated:** 2026-11-01 22:26 UTC, starter-pack
+**Updated:** 2026-11-01 23:27 UTC, starter-pack
 
 - **Stage:** B0 Foundations, not started. Next gate: Gate 0 (`docs/MILESTONES.md`).
 - **Lanes:** none yet; one session until Gate 0.
-- **PRs:** `docs: add the Tadayo starter pack` from `starter-pack`, opening now (its row in section 4 says `to open` until its review is recorded).
-- **Branches:** `main` holds one commit, `Initial commit` (`README.md` only), made from the session at the founder's request on 2026-11-01 because the repository was created empty. `starter-pack` adds the pack and its document fixes. `draft/b0-plan`, made from `starter-pack` at the founder's request, holds the draft of `docs/plans/B0.md`; it is never merged or opened as a PR, and stays as it is.
+- **PRs:** #1, `docs: add the Tadayo starter pack` from `starter-pack`, open. Its independent review has reported; its row in section 4 says `to open` until the review is recorded.
+- **Branches:** `main` holds one commit, `Initial commit` (`README.md` only), made from the session at the founder's request on 2026-11-01 because the repository was created empty. `starter-pack` adds the pack and its document fixes. `draft/b0-plan`, made from `starter-pack` at the founder's request, holds the draft of `docs/plans/B0.md`, updated for the founder's answers; it is never merged or opened as a PR, and stays as it is once the plan moves to `plan/b0`.
 - **`main`'s protection:** on, read back on 2026-11-01 through the summary (`docs/GITHUB.md`): no required check yet. Squash merges only, and merged branches are deleted.
-- **Environments:** `dev` not created. `prod` not created (Gate D).
+- **Environments:** `dev` being set up by the founder in US East (Supabase `us-east-1`, Fly `iad`; ADR-016). `prod` not created (Gate D).
+- **The domain:** `tadayo.app`, registered by the founder on Cloudflare on 2026-11-01 (ADR-017).
 - **TestFlight:** no build yet.
 - **`ci` on `main`:** not set up yet; B0 adds it.
 
 **What exists and works (verified).** On `starter-pack`, the starter pack unpacked at the repository root by the commit `docs: unpack the Tadayo starter pack`. Its tree matched a separate unzip of `tadayo-starter-pack.zip` (`diff -r`, no difference) until that commit rewrote this journal's section 1.1 and added its log entry; the document fixes since are in the log. The journal tools' tests pass: `python3 tools/ci/journal_hook_test.py` (6 tests) and `python3 tools/ci/journal_check_test.py` (28 tests), Python 3.13.18, git 2.43.0. Nothing else is built.
 
-**In progress.** The starter-pack PR: opening it, then its independent review (`docs/GITHUB.md`).
+**In progress.** PR #1: fixing or answering its independent review's findings (`docs/GITHUB.md`).
 
 **Next, in order:**
-1. Open the PR titled `docs: add the Tadayo starter pack` from `starter-pack` to `main` (`gh api -X POST repos/beurni2/tadayo/pulls`), with its body from `.github/pull_request_template.md`. Run the independent review, fix or answer each finding, and record the review in a commit that fills in the PR's row in section 4. Done when the PR says it's ready for the founder.
+1. On `starter-pack`, fix or answer each finding of PR #1's independent review, and record the review in a commit that fills in the PR's row in section 4; review the fixes again with fresh reviewers if they changed a lot. Done when the PR says it's ready for the founder.
 2. After the founder merges it: `git fetch origin`, `git switch -c plan/b0 origin/main`, then `git checkout origin/draft/b0-plan -- docs/plans/B0.md`; write its journal entry, and open its PR with its own review. Leave `draft/b0-plan` as it is.
 3. In the first session the founder starts after merging the starter-pack PR, check that the journal hook fires (a `git commit` without `docs/JOURNAL.md` staged is refused by `tools/ci/journal_hook.py`), and record the result in `docs/LIMITATIONS.md`.
 4. The B0 slices, in the order `docs/plans/B0.md` sets.
@@ -226,8 +230,8 @@ The screen-by-screen list is `design/reference/INVENTORY.md`, "Known differences
 **Blocked or waiting for the founder:**
 - Reviewing and merging the starter-pack PR once it says it's ready, and deciding the rule changes it lists for the founder.
 - Selecting the Tadayo environment for the project, with Supabase, Fly, Cloudflare, Resend and swift.org allowed: the first session's environment refused them (`docs/LIMITATIONS.md`).
-- Accounts for B0 (`docs/TECH-DESIGN.md` section 10): Apple Developer Program with the App Store Connect API key and the APNs key, Supabase on Pro with `tadayo-dev`, Fly.io, Resend, Cloudflare, the domain (FQ5). The B0 plan names each account and secret exactly.
-- The iPhone models and iOS versions (FQ4), which set the app's minimum iOS.
+- Accounts for B0 (`docs/TECH-DESIGN.md` section 10): Apple's approval of the founder's enrolment, then the App Store Connect API key and the APNs key; Resend's verification of `tadayo.app`; a yes to FQ5's identifiers. The B0 plan names each account and secret exactly.
+- The trial members' iPhone models and iOS versions (FQ4), which matter only if one can't run iOS 17. The founder's is an iPhone 13 on iOS 18.3.2 (ADR-018).
 - Design handoff 0 in Claude Design. Gate 0 waits for its icon frames: the first TestFlight upload needs the icon, and spikes S1 to S4 and S6 need that build.
 - Open questions with defaults in `docs/QUESTIONS.md`; the defaults apply until answered.
 
@@ -390,6 +394,18 @@ Newest first within each section. One entry per commit, written in that commit, 
 ```
 
 ### 3.1 Shared and B0
+
+#### 2026-11-01 23:27 UTC · shared · starter-pack · PR none
+**Did:** Recorded three of the founder's answers from 1 November 2026, each in `docs/QUESTIONS.md` and as an ADR in `docs/DECISIONS.md`, as `docs/QUESTIONS.md` asks:
+- FQ3 for `dev`: the founder is in Virginia, US, so `dev` is in US East (Supabase `us-east-1`, Fly `iad`), not Paris (ADR-016). `docs/TECH-DESIGN.md` section 7's `dev` row says so. `prod`'s region stays open.
+- FQ5's domain: the founder registered `tadayo.app` on Cloudflare (ADR-017). `docs/TECH-DESIGN.md` section 10's domain row names it. The identifiers stay FQ5's defaults until the founder confirms them.
+- FQ4 for the founder's phone: an iPhone 13 on iOS 18.3.2, so iOS 17 stays the minimum (ADR-018). Before each gate, the UI tests also run on an iOS 18 simulator, the founder's version (`docs/TECH-DESIGN.md` section 8). The trial members' phones are still unknown.
+- This journal's section 0.7 lists ADR-016 to ADR-018 and the answers; section 1.1 is rewritten.
+**Why:** The founder's answers in the setup thread, relayed on 2026-11-01: "in Virginia US", "done with tadayo.app", and "iPhone 13" with "iOS Version 18.3.2". FQ3's default puts `dev` nearest the founder, and the pack had assumed Paris.
+**Verified:** `grep -n "Paris\|cdg\|eu-west" docs/TECH-DESIGN.md docs/QUESTIONS.md`: only FQ3's `prod` line, which names Paris as the choice for West Africa or Europe. `python3 tools/ci/journal_check.py --all` and `--branch`: exit 0. `python3 tools/ci/journal_check_test.py`: 28 tests, OK.
+**Not verified:** That the Supabase project and the Fly app are in those regions: the founder is creating them, and the session's proxy refuses both hosts. The B0 plan's `ops` scripts and the Supabase probe read them back in slice 10.
+**Decisions and questions:** ADR-016, ADR-017 and ADR-018 added (decided by the founder's answers). FQ3, FQ4 and FQ5 updated with the answers; FQ3's `prod` region, FQ4's trial members and FQ5's identifiers stay open.
+**Next:** Fix or answer each finding of PR #1's independent review, and record the review in a commit with the PR's row in section 4. Done when the PR says it's ready for the founder.
 
 #### 2026-11-01 22:26 UTC · shared · starter-pack · PR none
 **Did:** Fixed real mistakes in the pack's documents: contradictions and wrong references, none relaxing a rule or a decision. Each is listed in the PR's body:
