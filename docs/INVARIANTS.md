@@ -294,7 +294,7 @@ How sources are cited:
     (spec 30, 34; Q17)
 - **T55. Serializers whitelist.** Every DTO is an explicit field list per viewer role: author, star, member before the reveal, member after it, operator. Nothing is serialized by default. (spec 14, 32)
 - **T56. Secrets stay out** of the repository, binaries, logs and PRs (`docs/TECH-DESIGN.md` section 10).
-- **T57. Migrations expand, migrate, contract.** Destructive changes need the founder's approval in the PR. No authorization fix waits on an app update. (spec 31)
+- **T57. Migrations expand, migrate, contract.** Destructive changes need the founder's approval in the PR. No authorization fix waits on an app update. (spec 31; `docs/TECH-DESIGN.md` section 3; `CLAUDE.md`, "Git")
 - **T58. Checks only get stronger.**
     - Logic changes come with tests.
     - Never weaken a test, a check or a lint rule to get a PR through.

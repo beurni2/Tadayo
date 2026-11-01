@@ -97,7 +97,7 @@ A pnpm workspace for the TypeScript side, with the Swift packages beside it:
 The evidence branch must not grow without limit:
 - A pushed run carries only the states the branch touches. Full sets go up only for gates.
 - Contact sheets are JPEG.
-- Once a month, with the founder's yes (it is a destructive action), the branch is replaced by a fresh one that keeps only `gates/`.
+- Once a month, with the founder's yes (it is a destructive action), the branch is replaced by a fresh one that keeps only `gates/`: the session copies `gates/` out, the founder deletes `evidence` on GitHub, and the session pushes a fresh orphan `evidence` holding only `gates/`. Never force-push it (`CLAUDE.md`, "Git").
 
 ## 4. The iOS app
 
@@ -231,6 +231,7 @@ Spec 31's entities, with these implementation choices:
     - favourites list; memory search;
     - `GET` and `PATCH /v1/me` and the authored-contributions list;
     - device registration with the device's zone; notification preferences per account, club and thread;
+    - `POST /v1/sources/resolve` for the composer's and the share extension's links (section 5);
     - `GET /v1/config` for flags and provider switches;
     - a small events endpoint for client-side analytics (spec 36).
 
@@ -240,8 +241,8 @@ Spec 31's entities, with these implementation choices:
 
 | Environment | Supabase | Fly apps | Who uses it |
 |---|---|---|---|
-| `dev` | `tadayo-dev`, in Paris near the founder (FQ3) | `tadayo-api-dev`, `tadayo-worker-dev` | Claude Code; synthetic data only; the founder's TestFlight builds point here until Gate D. The dev clock exists only here |
-| `prod` | `tadayo-prod` | `tadayo-api`, `tadayo-worker` | The trial; created at Gate D in the FQ3 region |
+| `dev` | `tadayo-dev`, in Paris near the founder (FQ3) | `tadayo-api-dev`, one app with the process groups `api` and `worker` (section 1, ADR-003) | Claude Code; synthetic data only; the founder's TestFlight builds point here until Gate D. The dev clock exists only here |
+| `prod` | `tadayo-prod` | `tadayo-api`, with the same two process groups | The trial; created at Gate D in the FQ3 region |
 
 Both Supabase projects live in one organization on the Pro plan, because a free project pauses after about a week without activity.
 
@@ -249,10 +250,10 @@ Both Supabase projects live in one organization on the Pro plan, because a free 
 - **Deploys.** `deploy-dev` runs on a push to `main`: it applies migrations, deploys the image and publishes the web pages. `deploy-prod` is run by hand, at the founder's request, after a gate.
 - **Secrets** live in:
     - GitHub Actions secrets: deploy tokens and the App Store Connect key;
-    - Fly secrets: the database URL (the session pooler's), the Supabase service key, the APNs key, the R2 keys, the analytics HMAC key and the Resend key;
-    - Supabase settings: SMTP.
+    - Fly secrets: the database URL (the session pooler's), the Supabase service key, the APNs key, the R2 keys and the analytics HMAC key;
+    - Supabase settings: SMTP, with the Resend key as its password (section 10).
 
-    The app holds only its identifiers and the API base URL. Never commit, print or paste a key (T56).
+    The app holds only its identifiers, the API base URL, and Supabase's project URL and public key for sign-in (ADR-015, T53). Never commit, print or paste a key (T56).
 
 ## 8. Testing
 

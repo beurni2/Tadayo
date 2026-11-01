@@ -19,7 +19,7 @@ After Gate 0, two lanes can run in parallel, each in its own Claude Code session
 
 | Lane | Owns |
 |---|---|
-| **api** | `services/`, `packages/domain`, `packages/contracts`, `db/`, `tests/`, `apps/web`, `tools/ops/`, `infra/` |
+| **api** | `services/`, `packages/domain`, `packages/contracts`, `db/`, `tests/`, `apps/web`, `tools/ops/`, `infra/`, `Dockerfile`, `fly.toml` |
 | **ios** | `apps/ios/`, `packages/swift/`, `design/reference/INVENTORY.md`, the design handoffs |
 
 A third party designs: **Claude Design**, driven by the founder (`docs/DESIGN-HANDOFF.md`). The ios lane writes the handoff for a stage's missing states at the start of that stage, and builds from the spec and the book's contracts while the renders are made. Nothing waits, and Claude Code designs nothing.
@@ -143,7 +143,7 @@ How the lanes fit together:
     - The media route: the read predicate on every request, the bytes streamed with private, no-store caching, nothing before the reveal, and no signed read URL ever leaving the server (ADR-009).
     - `sources/resolve`, with TikTok and Instagram normalization and the safe fetcher.
     - The duplicate checks and the caption-source rule.
-    - The leak scanner over every new route. Tests: Q05 to Q08, Q10 to Q12.
+    - The leak scanner over every new route. Tests: Q05 to Q12.
 - **ios:** the upload client: picker in its compatible representation, JPEG at up to 4096 px, GPS removed, PNG screenshots, a background session, the queue's states in `TadayoCore`.
 
 ## B4: Contributing (step 4) → part of Gate B

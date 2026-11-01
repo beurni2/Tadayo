@@ -202,29 +202,31 @@ The screen-by-screen list is `design/reference/INVENTORY.md`, "Known differences
 
 ### 1.1 Shared (the api lane keeps this block)
 
-**Updated:** 2026-11-01 21:22 UTC, starter-pack
+**Updated:** 2026-11-01 22:26 UTC, starter-pack
 
 - **Stage:** B0 Foundations, not started. Next gate: Gate 0 (`docs/MILESTONES.md`).
 - **Lanes:** none yet; one session until Gate 0.
-- **PRs:** none open yet. The first, `docs: add the Tadayo starter pack` from `starter-pack`, opens once the pack's document fixes and its row in section 4 are committed.
-- **Branches:** `main` holds one commit, `Initial commit` (`README.md` only), made from the session at the founder's request on 2026-11-01 because the repository was created empty. `starter-pack` adds the pack.
+- **PRs:** `docs: add the Tadayo starter pack` from `starter-pack`, opening now (its row in section 4 says `to open` until its review is recorded).
+- **Branches:** `main` holds one commit, `Initial commit` (`README.md` only), made from the session at the founder's request on 2026-11-01 because the repository was created empty. `starter-pack` adds the pack and its document fixes. `draft/b0-plan`, made from `starter-pack` at the founder's request, holds the draft of `docs/plans/B0.md`; it is never merged or opened as a PR, and stays as it is.
+- **`main`'s protection:** on, read back on 2026-11-01 through the summary (`docs/GITHUB.md`): no required check yet. Squash merges only, and merged branches are deleted.
 - **Environments:** `dev` not created. `prod` not created (Gate D).
 - **TestFlight:** no build yet.
 - **`ci` on `main`:** not set up yet; B0 adds it.
 
-**What exists and works (verified).** On `starter-pack`, the starter pack unpacked at the repository root, byte-identical to `tadayo-starter-pack.zip` (`diff -r` against a separate unzip, no difference). The journal tools' tests pass: `python3 tools/ci/journal_hook_test.py` (6 tests) and `python3 tools/ci/journal_check_test.py` (28 tests), Python 3.13.18, git 2.43.0. Nothing else is built.
+**What exists and works (verified).** On `starter-pack`, the starter pack unpacked at the repository root by the commit `docs: unpack the Tadayo starter pack`. Its tree matched a separate unzip of `tadayo-starter-pack.zip` (`diff -r`, no difference) until that commit rewrote this journal's section 1.1 and added its log entry; the document fixes since are in the log. The journal tools' tests pass: `python3 tools/ci/journal_hook_test.py` (6 tests) and `python3 tools/ci/journal_check_test.py` (28 tests), Python 3.13.18, git 2.43.0. Nothing else is built.
 
-**In progress.** The starter-pack PR: fixing real mistakes in the documents, then the PR and its independent review (`docs/GITHUB.md`).
+**In progress.** The starter-pack PR: opening it, then its independent review (`docs/GITHUB.md`).
 
 **Next, in order:**
-1. On `starter-pack`, commit the document fixes with their journal entry, add the PR's row in section 4, run `python3 tools/ci/journal_check.py --branch`, push, and open the PR titled `docs: add the Tadayo starter pack` with its body from `.github/pull_request_template.md`. Then run the independent review and record it in a commit. Done when the PR says it's ready for the founder.
-2. Draft `docs/plans/B0.md` on `draft/b0-plan`, made from `starter-pack`, while the first PR is reviewed. After the merge, bring it to `plan/b0`, a fresh branch from `main` (`git fetch origin`, then `git checkout origin/draft/b0-plan -- docs/plans/B0.md`), write its journal entry, and open its PR. Leave `draft/b0-plan` as it is.
+1. Open the PR titled `docs: add the Tadayo starter pack` from `starter-pack` to `main` (`gh api -X POST repos/beurni2/tadayo/pulls`), with its body from `.github/pull_request_template.md`. Run the independent review, fix or answer each finding, and record the review in a commit that fills in the PR's row in section 4. Done when the PR says it's ready for the founder.
+2. After the founder merges it: `git fetch origin`, `git switch -c plan/b0 origin/main`, then `git checkout origin/draft/b0-plan -- docs/plans/B0.md`; write its journal entry, and open its PR with its own review. Leave `draft/b0-plan` as it is.
 3. In the first session the founder starts after merging the starter-pack PR, check that the journal hook fires (a `git commit` without `docs/JOURNAL.md` staged is refused by `tools/ci/journal_hook.py`), and record the result in `docs/LIMITATIONS.md`.
 4. The B0 slices, in the order `docs/plans/B0.md` sets.
 
 **Blocked or waiting for the founder:**
-- Reviewing and merging the starter-pack PR, once it says it's ready.
-- Accounts for B0 (`docs/TECH-DESIGN.md` section 10): Apple Developer Program with the App Store Connect API key and the APNs key, Supabase on Pro with `tadayo-dev`, Fly.io, Resend, Cloudflare, the domain (FQ5).
+- Reviewing and merging the starter-pack PR once it says it's ready, and deciding the rule changes it lists for the founder.
+- Selecting the Tadayo environment for the project, with Supabase, Fly, Cloudflare, Resend and swift.org allowed: the first session's environment refused them (`docs/LIMITATIONS.md`).
+- Accounts for B0 (`docs/TECH-DESIGN.md` section 10): Apple Developer Program with the App Store Connect API key and the APNs key, Supabase on Pro with `tadayo-dev`, Fly.io, Resend, Cloudflare, the domain (FQ5). The B0 plan names each account and secret exactly.
 - The iPhone models and iOS versions (FQ4), which set the app's minimum iOS.
 - Design handoff 0 in Claude Design. Gate 0 waits for its icon frames: the first TestFlight upload needs the icon, and spikes S1 to S4 and S6 need that build.
 - Open questions with defaults in `docs/QUESTIONS.md`; the defaults apply until answered.
@@ -337,7 +339,7 @@ One row per invariant, per acceptance test and per spec section with code. Statu
 | Q02 One star per assigned day; Sunday has no generated reveal. | | | planned | B2 |
 | Q03 Club zone opens 7 AM closes next day 1 AM including midnight travel and DST cases. | | | planned | B0, B2 |
 | Q04 Roster threshold change preserves submitted occurrences. | | | planned | B2 |
-| Q05 Nonmember invite token cannot read caption or media. | | | planned | B1 |
+| Q05 Nonmember invite token cannot read caption or media. | | | planned | B1, B3 |
 | Q06 New and rejoined membership intervals cannot inherit earlier drops. | | | planned | B3 |
 | Q07 Caption visible before reveal but no media URL source identity or preview leaks. | | | planned | B3 |
 | Q08 Sender own preview cannot be reused by another account. | | | planned | B3 |
@@ -389,6 +391,28 @@ Newest first within each section. One entry per commit, written in that commit, 
 
 ### 3.1 Shared and B0
 
+#### 2026-11-01 22:26 UTC · shared · starter-pack · PR none
+**Did:** Fixed real mistakes in the pack's documents: contradictions and wrong references, none relaxing a rule or a decision. Each is listed in the PR's body:
+- `docs/DECISIONS.md` ADR-002: the privacy and security review's triggers now match `docs/GITHUB.md` (time, idempotency and the video viewer added).
+- `docs/TECH-DESIGN.md` section 7: `dev` and `prod` each have one Fly app with the process groups `api` and `worker`, as section 1 and ADR-003 say; the Resend key is Supabase's SMTP password, not a Fly secret, as section 10 says; the app also holds Supabase's project URL and public key for sign-in (ADR-015, T53).
+- `docs/TECH-DESIGN.md` section 3: the monthly reset of `evidence` without a force-push (the founder deletes the branch, the session pushes a fresh orphan with `gates/`). Section 6: `POST /v1/sources/resolve` added to the contract list, which `docs/MILESTONES.md` calls the whole OpenAPI v1.
+- `CLAUDE.md`: "Ask me only about" now names the ADRs, the third-party SDKs that see personal data and the destructive or shared actions that the same file asks about; the repository layout names `design/reference/pack/` (FQ25).
+- `docs/MILESTONES.md`: `Dockerfile` and `fly.toml` in the api lane (section 3 of `docs/TECH-DESIGN.md`); B3 tests Q09, as the audit map says.
+- `docs/INVARIANTS.md` T57: cites `docs/TECH-DESIGN.md` section 3 and `CLAUDE.md`, "Git", where its rules are stated.
+- `docs/QUESTIONS.md` FQ19: says spec 05 doesn't say how the club's zone is chosen; the default (the creator's device) is unchanged.
+- `docs/GITHUB.md`: the protection summary shows only whether the rule is on and its required checks, so the screenshot covers the rest.
+- `design/reference/INVENTORY.md`: `global-unavailable` is built in B8, with the deep links that reach it (`docs/MILESTONES.md`); the rail-order difference names the five renders that show it.
+- This journal: the audit map gives Q05 the stages B1 and B3, as `docs/MILESTONES.md` does.
+- `tools/ci/journal_check_test.py`: `FirstPullRequestTest` builds the first PR from the journal as the handoff wrote it, not from the live journal, which every commit changes. Its assertions are unchanged (T58; this first PR may carry CI configuration).
+- `docs/LIMITATIONS.md`: the GraphQL row confirmed, the Docker and branch-protection rows with what this session saw, and a new row for the environment's refused hosts. `docs/PROGRESS.md`: the shared section. Section 1.1, and the PR's row in section 4.
+
+Two earlier entries claim more than their commits show, and the log is append-only, so they are corrected here. The 21:22 entry's `diff -r` and `journal_check_test.py` ran before that commit rewrote this journal: at that commit the tree matches the zip except `docs/JOURNAL.md`, and two tests failed (`test_unpack_without_an_entry` and `test_state_left_as_the_handoff_wrote_it`, "0 != 1"), because they read the live journal; this commit fixes the test. The handoff entry says the hook's tests run all 88 commands for real: `tools/ci/journal_hook_test.py` runs 84, and only feeds the hook the `gh api` case marked not to run and the 3 it can't tell.
+**Why:** Step 3 of the founder's first message: fix real mistakes in the documents and list every change, never relaxing a rule or a decision. The mistakes were found by a sweep of the documents through seven lenses, each finding checked by a second reader; 24 of 32 held up. The ones whose fix would relax a rule or a decision aren't changed here and are listed for the founder in the PR.
+**Verified:** `python3 tools/ci/journal_check_test.py`: 28 tests, OK (2 failed before the fix). `python3 tools/ci/journal_hook_test.py`: 6 tests, OK. `python3 tools/ci/journal_check.py --all` and `--branch`: exit 0. For `docs/LIMITATIONS.md`: `gh api graphql` refused (HTTP 403); `gh api repos/beurni2/tadayo/branches/main/protection` refused (HTTP 403), the summary showed protection on with no required check; `docker info` found no daemon; `curl` through the proxy got `CONNECT tunnel failed, response 403` for `api.supabase.com`, `api.fly.io`, `api.cloudflare.com`, `api.resend.com` and `download.swift.org`, and 200 from `registry.npmjs.org`. Python 3.13.18, git 2.43.0.
+**Not verified:** The journal hook (this session started before `.claude/settings.json` existed). Whether the session may start a workflow by hand (there is no workflow yet). Whether the Tadayo environment allows the refused hosts (it isn't selected for the project yet).
+**Decisions and questions:** `docs/LIMITATIONS.md`: three rows updated and one added (above). `docs/QUESTIONS.md` FQ19: its citation corrected, its default unchanged. Not changed, for the founder to decide (in the PR): T9's single exception and the operator's case access (spec 07, T55); T62's durable dismissals and spec 19's two controls; editing `INVENTORY.md`, which `CLAUDE.md` and `design/reference/README.md` forbid and other rules require; the weekly trial report against `prod` through `ops`.
+**Next:** Open the PR titled `docs: add the Tadayo starter pack` (`gh api -X POST repos/beurni2/tadayo/pulls`, base `main`, head `starter-pack`), then run its independent review (`docs/GITHUB.md`). Done when the review is recorded in a commit and the PR says it's ready for the founder.
+
 #### 2026-11-01 21:22 UTC · shared · starter-pack · PR none
 **Did:** Unpacked `tadayo-starter-pack.zip` into the repository root with `unzip -o`, keeping every path, so the pack's `README.md` replaced the one-line `README.md` on `main`. The pack adds `CLAUDE.md`, `docs/` (the spec, the book and the operating documents), `design/reference/` (the 53 renders of 2.1, the two wireframes, `INVENTORY.md` and the folder READMEs), `.github/pull_request_template.md`, `.claude/settings.json`, `.yamllint.yaml` and `tools/ci/` (the journal hook, the journal check and their tests). Rewrote section 1.1 of this journal. The zip itself was never in the repository: the repository was created empty, so the session made `main` with a README-only first commit and `starter-pack` from it, as the founder asked on 2026-11-01, and unpacked the copy of the zip the founder attached to the session (SHA-256 `0e4aac683de1c22b2cf48fc2bfdb9080cc6240392434855aa96ff678118bfd59`). There was no zip commit to delete.
 **Why:** Step 1 of the founder's first message: put the starter pack on `starter-pack` for its PR to `main`.
@@ -430,6 +454,7 @@ The index an auditor uses to find the proof behind section 2.
 
 | PR | Branch | What it changed | Review findings | Evidence |
 |---|---|---|---|---|
+| to open | `starter-pack` | The starter pack (`CLAUDE.md`, `docs/`, `design/reference/`, the PR template, `.claude/settings.json`, `.yamllint.yaml`, `tools/ci/`), with the document fixes its body lists | Recorded with the review | None: documents and the journal tools, whose tests the log lists |
 
 ### 4.2 Pull requests: the ios lane
 

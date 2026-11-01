@@ -126,7 +126,7 @@ gh api -X PATCH repos/{owner}/{repo}/pulls/{n} -f state=closed
 
 # Branch protection on main. It needs the session's GitHub access to read the repository's administration settings.
 # If it's refused, the shorter summary is in: gh api repos/{owner}/{repo}/branches/main --jq .protection
-# That summary doesn't show bypassing, force pushes or deletion: ask the founder for a screenshot of the rule for those.
+# That summary shows only whether the rule is on and its required checks: ask the founder for a screenshot of the rule for the rest (pull request and approvals, up to date, bypassing, force pushes, deletion).
 gh api repos/{owner}/{repo}/branches/main/protection --jq '{
   approvals: .required_pull_request_reviews.required_approving_review_count,
   checks: .required_status_checks.checks, up_to_date: .required_status_checks.strict,

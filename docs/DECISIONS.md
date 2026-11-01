@@ -30,7 +30,7 @@ Links: `docs/TECH-DESIGN.md` sections 1, 2, 9; spec 30; FQ4.
 
 ## ADR-002 · No outside code reviewer · 2026-11-01 · decided
 Context: The founder's rule from his earlier projects: no CodeRabbit.
-Decision: Every PR gets an independent review from a fresh Claude Code subagent. A change that touches authorization, the database, media, time, tokens, notifications or caches also gets a privacy and security review (`docs/GITHUB.md`). The founder merges.
+Decision: Every PR gets an independent review from a fresh Claude Code subagent. A change that touches authorization, the database, time, idempotency, media, caches, tokens, notifications or the video viewer also gets a privacy and security review (`docs/GITHUB.md`). The founder merges.
 Alternatives: CodeRabbit's GitHub App with a required approval check, which the founder dropped.
 Consequences: Review quality rests on the reviewer brief in `docs/GITHUB.md`, the privacy matrix and the leak scanner. Adding an outside reviewer later is a CI-configuration PR.
 Links: T58.

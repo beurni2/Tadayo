@@ -94,7 +94,7 @@ Each question has a default. Claude Code builds on the default until the founder
 - **FQ18. Data export.** Spec 23 lists "export request" in the account settings without defining it.
     - Default: an export of the person's own drops, captions and comments, as a download, in M1. Not in the trial.
     - Needed by: M1.
-- **FQ19. Changing a club's timezone.** The zone is set from the creator's device when the club is made (spec 05).
+- **FQ19. Changing a club's timezone.** Spec 05 stores one IANA zone per club without saying how it's chosen; the build sets it from the creator's device when the club is made.
     - Default: no zone change in the trial. In M1, a change goes through the same confirmation as a schedule change and never moves an announced reveal.
     - Needed by: M1.
 

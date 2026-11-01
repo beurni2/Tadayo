@@ -169,7 +169,7 @@ Paths are relative to `design/reference/`:
 | S03 Account settings | `S03-appearance` | Appearance | `screens/S03-appearance.png` |  | missing | B6 |  |
 | S03 Account settings | `S03-sound-haptics` | Sound and haptics | `screens/S03-sound-haptics.png` |  | missing | B6 | Spec 24 |
 | S04 Delete account | `S04-delete` | Consequences and final confirmation | `screens/S04-delete.png` |  | missing | B6 | T27 |
-| Global | `global-unavailable` | This drop is no longer available, Back to club | `screens/global-unavailable.png` |  | missing | B5 | T38 |
+| Global | `global-unavailable` | This drop is no longer available, Back to club | `screens/global-unavailable.png` |  | missing | B8 | T38 |
 | Global | `global-offline` | Offline banner | `screens/global-offline.png` |  | missing | B5 |  |
 | Global | `global-error` | A failed action with retry, input kept | `screens/global-error.png` |  | missing | B4 | T43 |
 
@@ -191,7 +191,7 @@ Screen O01, the operator console, is not designed for the trial: the operator us
 Where a 2.1 render breaks a rule, or the spec and the book disagree, build what this list says, not what's drawn. Each item stays listed until a render that matches arrives:
 - **"Her pick", "her day", "Revisit her day", "reminded you of her", "She'll see"** (`H01-open`, `H01-open-dark`, `G06-switcher`, `R01-blank-caption`, `R01-past-day`, `A01-welcome`, `H01-after-close`, `H01-first-drop`, `G03-approve`): names instead (FQ20, T42).
 - **The Highlight label on someone else's collecting card** (`F02-upcoming`): before the reveal it shows only on the viewer's own drops (FQ21, T10).
-- **The highlight rail's order** (`H01-open`): the star's pick, then the club's schedule order from Monday. On Debby's Friday: Debby's pick, then Ben, Maya and Sam (FQ26).
+- **The highlight rail's order** (`H01-open`, `H01-open-dark`, `G06-switcher`, `R01-blank-caption`, `R01-past-day`): the star's pick, then the club's schedule order from Monday. On Debby's Friday: Debby's pick, then Ben, Maya and Sam (FQ26).
 - **The Share icon** in the feed and the photo viewer (`H01-open`, `R02-photo` and others): not in the trial (FQ14).
 - **The tab bar, status bar and device frame:** iOS draws its own, and older iOS versions draw them differently again (T45).
 - **Reduce Motion:** the spec says a short crossfade (spec 15); the book says the photo appears at once (book p19, p36). The book's version is built (T47).

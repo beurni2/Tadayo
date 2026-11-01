@@ -7,6 +7,7 @@ CI configuration: change this file only in its own PR (docs/INVARIANTS.md T58).
 """
 
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -24,6 +25,14 @@ STATE_BLOCKS = {"shared": "### 1.1 ", "api": "### 1.2 ", "ios": "### 1.3 "}
 def read(path):
     with open(path, encoding="utf-8") as f:
         return f.read()
+
+
+def as_the_handoff_wrote_it(text):
+    """The pack's journal before any session's commit: no log entry but the handoff's, every block
+    "Updated" by the handoff. The repository's own journal has moved on since."""
+    text = re.sub(r"^#### \d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC · .*\n(?:(?!#{2,4} |---$).*\n)*", "", text,
+                  flags=re.M)
+    return re.sub(r"^\*\*Updated:\*\* .*$", "**Updated:** 2026-11-01, by the handoff.", text, flags=re.M)
 
 
 def entry(n, lane="shared", drop=None, empty=None, heading=None, extra=None):
@@ -334,7 +343,7 @@ class FirstPullRequestTest(unittest.TestCase):
         self.c = Clone(with_journal=False)
         self.c.write("tadayo-starter-pack.zip", "zip\n")
         self.c.commit("Add files via upload", web=True)
-        self.c.write("docs/JOURNAL.md", read(JOURNAL))
+        self.c.write("docs/JOURNAL.md", as_the_handoff_wrote_it(read(JOURNAL)))
         os.remove(self.c.path("tadayo-starter-pack.zip"))
 
     def tearDown(self):

@@ -209,7 +209,7 @@ I read on my iPhone, and I can't open Claude Docs, so send files.
 - **Evidence I can open:** snapshots, contact sheets, short MP4s and PDF reports on the `evidence` branch (under `<branch>/<short-sha>/` or `gates/`), linked from the PR. Never merge evidence into `main`. Binaries the app or its tests need (snapshot references, the icon, fixture photographs) go in with the code that uses them.
 - **Things I need to feel** (the share extension, the 7 AM reveal, the video player, push) go in TestFlight, with the steps to try them.
 - **Design handoffs** are messages for Claude Design that I paste there. Each is complete on its own, in one code block, and names every frame you expect back (`docs/DESIGN-HANDOFF.md`). Put each one in the plan or the PR and in your report, and tell me how to send the result: from Claude Design to Claude Code on the web, or as an export to the branch you name.
-- **Ask me only about** product decisions, gates, accounts, secrets and design handoffs. Decide everything else and note it in the PR.
+- **Ask me only about** product decisions, gates, accounts, secrets, design handoffs, ADRs, third-party SDKs that see personal data, and anything destructive or shared ("Git"). Decide everything else and note it in the PR.
 
 ## Repository layout
 
@@ -221,7 +221,7 @@ The full layout is in `docs/TECH-DESIGN.md` section 3.
 - The backend: `services/api/`, `services/worker/`, `packages/domain/`, `packages/contracts/`, `db/`, `tests/`.
 - `tools/ci/`: the scripts the workflows and the hook call.
 - `tools/ops/`: the scripts the `ops` workflow runs.
-- `design/reference/`: `2.1/`, `claude-design/`, `screens/`, `brand/`, `wireframes/` and `INVENTORY.md`. Don't edit, move or rename what's there, except to move an export the founder uploaded into `claude-design/` into its `handoff-<n>/` folder. Add only what arrives through a handoff, and the named files you make from it.
+- `design/reference/`: `2.1/`, `claude-design/`, `screens/`, `brand/`, `wireframes/`, `pack/` (2.1's own design pack, if the founder supplies it: FQ25) and `INVENTORY.md`. Don't edit, move or rename what's there, except to move an export the founder uploaded into `claude-design/` into its `handoff-<n>/` folder. Add only what arrives through a handoff, and the named files you make from it.
 - `docs/`: the spec, the book and every document above.
 - `.github/`: the PR template and the workflows, which reach GitHub through me.
 - `.claude/settings.json`: Claude Code's project settings. It turns the CodeRabbit plugin off and runs the journal hook (`tools/ci/journal_hook.py`, tested by `tools/ci/journal_hook_test.py`) before every Bash command, where it checks each `git commit`.
