@@ -202,7 +202,7 @@ The screen-by-screen list is `design/reference/INVENTORY.md`, "Known differences
 
 ### 1.1 Shared (the api lane keeps this block)
 
-**Updated:** 2026-11-01 22:48 UTC, draft/b0-plan
+**Updated:** 2026-11-01 23:31 UTC, draft/b0-plan
 
 - **Stage:** B0 Foundations, not started. Next gate: Gate 0 (`docs/MILESTONES.md`).
 - **Lanes:** none yet; one session until Gate 0.
@@ -391,6 +391,14 @@ Newest first within each section. One entry per commit, written in that commit, 
 ```
 
 ### 3.1 Shared and B0
+
+#### 2026-11-01 23:31 UTC · shared · draft/b0-plan · PR none
+**Did:** Brought `docs/plans/B0.md` in line with fixes from PR #1's independent review. `ios.yml` now also runs on pushes that change `packages/contracts/**`, so a contract change builds the app. Section 6 adds two environment checks that `docs/MILESTONES.md` B0 now lists: the CodeRabbit switch, next to the journal hook, and the hosts the first session was refused. Rewrote section 1.1's "Updated" line.
+**Why:** PR #1's review fixed `docs/TECH-DESIGN.md` section 9 (the `ios` trigger) and `docs/MILESTONES.md` B0's environment checks. The plan must match them when it moves to `plan/b0`.
+**Verified:** `grep -n "packages/contracts/\*\*" docs/plans/B0.md`: the `ios.yml` row. `python3 tools/ci/journal_check.py --all` and `--branch`: exit 0.
+**Not verified:** None.
+**Decisions and questions:** None on this branch. FQ31 to FQ36 are on `starter-pack` (PR #1).
+**Next:** After the founder merges PR #1: `git fetch origin`, `git switch -c plan/b0 origin/main`, `git checkout origin/draft/b0-plan -- docs/plans/B0.md`, write the journal entry, push, and open the PR `docs: plan B0` with its independent review. Done when that PR says it's ready for the founder. Leave `draft/b0-plan` as it is.
 
 #### 2026-11-01 22:48 UTC · shared · draft/b0-plan · PR none
 **Did:** Brought `docs/plans/B0.md` in line with the founder's answer to FQ4. F3 now asks only for the trial friends' phones: the founder's is an iPhone 13 on iOS 18.3.2, so the minimum stays iOS 17. Slice 11 sets iOS 17 as the minimum. Slice 9's `ios.yml` input runs the gate's UI tests on the oldest simulator and on iOS 18, the founder's version. Section 6's simulator check now looks for an iOS 18 simulator. Rewrote section 1.1 for this branch.
