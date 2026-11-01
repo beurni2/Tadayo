@@ -202,7 +202,7 @@ The screen-by-screen list is `design/reference/INVENTORY.md`, "Known differences
 
 ### 1.1 Shared (the api lane keeps this block)
 
-**Updated:** 2026-11-01 22:45 UTC, draft/b0-plan
+**Updated:** 2026-11-01 22:48 UTC, draft/b0-plan
 
 - **Stage:** B0 Foundations, not started. Next gate: Gate 0 (`docs/MILESTONES.md`).
 - **Lanes:** none yet; one session until Gate 0.
@@ -228,7 +228,7 @@ The screen-by-screen list is `design/reference/INVENTORY.md`, "Known differences
 - Reviewing and merging the starter-pack PR once it says it's ready, and deciding the rule changes it lists for the founder.
 - Selecting the Tadayo environment for the project, with Supabase, Fly, Cloudflare, Resend and swift.org allowed: the first session's environment refused them (`docs/LIMITATIONS.md`).
 - Accounts for B0 (`docs/TECH-DESIGN.md` section 10): Apple Developer Program with the App Store Connect API key and the APNs key, Supabase on Pro with `tadayo-dev`, Fly.io, Resend on `tadayo.app`, and a yes to FQ5's identifiers. The B0 plan names each account and secret exactly.
-- The iPhone models and iOS versions (FQ4), which set the app's minimum iOS.
+- The trial members' iPhone models and iOS versions (FQ4), which matter only if one can't run iOS 17. The founder's is an iPhone 13 on iOS 18.3.2, so the minimum stays iOS 17.
 - Design handoff 0 in Claude Design. Gate 0 waits for its icon frames: the first TestFlight upload needs the icon, and spikes S1 to S4 and S6 need that build.
 - Open questions with defaults in `docs/QUESTIONS.md`; the defaults apply until answered.
 
@@ -391,6 +391,14 @@ Newest first within each section. One entry per commit, written in that commit, 
 ```
 
 ### 3.1 Shared and B0
+
+#### 2026-11-01 22:48 UTC · shared · draft/b0-plan · PR none
+**Did:** Brought `docs/plans/B0.md` in line with the founder's answer to FQ4. F3 now asks only for the trial friends' phones: the founder's is an iPhone 13 on iOS 18.3.2, so the minimum stays iOS 17. Slice 11 sets iOS 17 as the minimum. Slice 9's `ios.yml` input runs the gate's UI tests on the oldest simulator and on iOS 18, the founder's version. Section 6's simulator check now looks for an iOS 18 simulator. Rewrote section 1.1 for this branch.
+**Why:** The founder's answer to FQ4 ("iPhone 13" and "iOS Version 18.3.2"), relayed on 2026-11-01. PR #1 records it as ADR-018, which the plan cites.
+**Verified:** `grep -n "ADR-018" docs/plans/B0.md`: F3, slices 9 and 11. `python3 tools/ci/journal_check.py --all` and `--branch`: exit 0.
+**Not verified:** Which iOS simulators the `macos-26` runner offers; slice 9 records it.
+**Decisions and questions:** None on this branch. ADR-018, with FQ4 updated, goes to `starter-pack` (PR #1).
+**Next:** After the founder merges PR #1: `git fetch origin`, `git switch -c plan/b0 origin/main`, `git checkout origin/draft/b0-plan -- docs/plans/B0.md`, write the journal entry, push, and open the PR `docs: plan B0` with its independent review. Done when that PR says it's ready for the founder. Leave `draft/b0-plan` as it is.
 
 #### 2026-11-01 22:45 UTC · shared · draft/b0-plan · PR none
 **Did:** In `docs/plans/B0.md` section 4, spike S6's "waits for" column no longer waits for F4's domain: it waits for a build with `tadayo.app` in its Associated Domains, now that the domain and its Cloudflare DNS exist (ADR-017). Rewrote section 1.1's "Updated" line.
