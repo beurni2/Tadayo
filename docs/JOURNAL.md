@@ -202,29 +202,32 @@ The screen-by-screen list is `design/reference/INVENTORY.md`, "Known differences
 
 ### 1.1 Shared (the api lane keeps this block)
 
-**Updated:** 2026-11-01 21:48 UTC, draft/b0-plan
+**Updated:** 2026-11-01 22:42 UTC, draft/b0-plan
 
 - **Stage:** B0 Foundations, not started. Next gate: Gate 0 (`docs/MILESTONES.md`).
 - **Lanes:** none yet; one session until Gate 0.
-- **PRs:** none open yet. The first, `docs: add the Tadayo starter pack` from `starter-pack`, opens once the pack's document fixes and its row in section 4 are committed.
-- **Branches:** `main` holds one commit, `Initial commit` (`README.md` only), made from the session at the founder's request on 2026-11-01 because the repository was created empty. `starter-pack` adds the pack.
-- **Environments:** `dev` not created. `prod` not created (Gate D).
+- **PRs:** #1, `docs: add the Tadayo starter pack` from `starter-pack`, open, in its independent review.
+- **Branches:** `main` holds one commit, `Initial commit` (`README.md` only), made from the session at the founder's request on 2026-11-01 because the repository was created empty. `starter-pack` adds the pack and its document fixes. `draft/b0-plan`, made from `starter-pack` at the founder's request, holds the draft of `docs/plans/B0.md`; it is never merged or opened as a PR, and stays as it is.
+- **`main`'s protection:** on, read back on 2026-11-01 through the summary (`docs/GITHUB.md`): no required check yet. Squash merges only, and merged branches are deleted.
+- **Environments:** `dev` being set up by the founder in US East (Supabase `us-east-1`, Fly `iad`; FQ3). `prod` not created (Gate D).
+- **The domain:** `tadayo.app`, registered by the founder on Cloudflare on 2026-11-01 (FQ5).
 - **TestFlight:** no build yet.
 - **`ci` on `main`:** not set up yet; B0 adds it.
 
-**What exists and works (verified).** On `starter-pack`, the starter pack unpacked at the repository root, byte-identical to `tadayo-starter-pack.zip` (`diff -r` against a separate unzip, no difference). The journal tools' tests pass: `python3 tools/ci/journal_hook_test.py` (6 tests) and `python3 tools/ci/journal_check_test.py` (28 tests), Python 3.13.18, git 2.43.0. Nothing else is built.
+**What exists and works (verified).** On `starter-pack`, the starter pack unpacked at the repository root by the commit `docs: unpack the Tadayo starter pack`. Its tree matched a separate unzip of `tadayo-starter-pack.zip` (`diff -r`, no difference) until that commit rewrote this journal's section 1.1 and added its log entry. The document fixes since are on `starter-pack` (PR #1), not on this branch. Here, `python3 tools/ci/journal_hook_test.py` passes (6 tests) and `python3 tools/ci/journal_check_test.py` fails 2 of its 28 tests, `test_unpack_without_an_entry` and `test_state_left_as_the_handoff_wrote_it`, because their fixture reads the live journal; PR #1 fixes the fixture. Python 3.13.18, git 2.43.0. Nothing else is built.
 
-**In progress.** The starter-pack PR, on `starter-pack`: fixing real mistakes in the documents, then the PR and its independent review (`docs/GITHUB.md`). On `draft/b0-plan`, a branch that is never opened as a PR (the founder's instruction of 2026-11-01), the B0 plan `docs/plans/B0.md` is drafted; it reaches `main` through `plan/b0` after the starter-pack PR merges.
+**In progress.** PR #1's independent review, on `starter-pack`. On `draft/b0-plan`, a branch that is never opened as a PR (the founder's instruction of 2026-11-01), the B0 plan `docs/plans/B0.md`; it reaches `main` through `plan/b0` after PR #1 merges.
 
 **Next, in order:**
-1. On `starter-pack`, commit the document fixes with their journal entry, add the PR's row in section 4, run `python3 tools/ci/journal_check.py --branch`, push, and open the PR titled `docs: add the Tadayo starter pack` with its body from `.github/pull_request_template.md`. Then run the independent review and record it in a commit. Done when the PR says it's ready for the founder.
-2. `docs/plans/B0.md` is drafted on `draft/b0-plan`. After the starter-pack PR merges, bring it to `plan/b0`, a fresh branch from `main` (`git fetch origin`, then `git checkout origin/draft/b0-plan -- docs/plans/B0.md`), write its journal entry, and open its PR. Leave `draft/b0-plan` as it is.
+1. On `starter-pack`, finish PR #1's independent review: fix or answer each finding, and record the review in a commit that fills in the PR's row in section 4. Done when the PR says it's ready for the founder.
+2. After the founder merges it: `git fetch origin`, `git switch -c plan/b0 origin/main`, then `git checkout origin/draft/b0-plan -- docs/plans/B0.md`; write its journal entry, and open its PR with its own review. Leave `draft/b0-plan` as it is.
 3. In the first session the founder starts after merging the starter-pack PR, check that the journal hook fires (a `git commit` without `docs/JOURNAL.md` staged is refused by `tools/ci/journal_hook.py`), and record the result in `docs/LIMITATIONS.md`.
 4. The B0 slices, in the order `docs/plans/B0.md` sets.
 
 **Blocked or waiting for the founder:**
-- Reviewing and merging the starter-pack PR, once it says it's ready.
-- Accounts for B0 (`docs/TECH-DESIGN.md` section 10): Apple Developer Program with the App Store Connect API key and the APNs key, Supabase on Pro with `tadayo-dev`, Fly.io, Resend, Cloudflare, the domain (FQ5).
+- Reviewing and merging the starter-pack PR once it says it's ready, and deciding the rule changes it lists for the founder.
+- Selecting the Tadayo environment for the project, with Supabase, Fly, Cloudflare, Resend and swift.org allowed: the first session's environment refused them (`docs/LIMITATIONS.md`).
+- Accounts for B0 (`docs/TECH-DESIGN.md` section 10): Apple Developer Program with the App Store Connect API key and the APNs key, Supabase on Pro with `tadayo-dev`, Fly.io, Resend on `tadayo.app`, and a yes to FQ5's identifiers. The B0 plan names each account and secret exactly.
 - The iPhone models and iOS versions (FQ4), which set the app's minimum iOS.
 - Design handoff 0 in Claude Design. Gate 0 waits for its icon frames: the first TestFlight upload needs the icon, and spikes S1 to S4 and S6 need that build.
 - Open questions with defaults in `docs/QUESTIONS.md`; the defaults apply until answered.
@@ -388,6 +391,14 @@ Newest first within each section. One entry per commit, written in that commit, 
 ```
 
 ### 3.1 Shared and B0
+
+#### 2026-11-01 22:42 UTC · shared · draft/b0-plan · PR none
+**Did:** Brought `docs/plans/B0.md` in line with what the founder did and said on 1 November 2026. `dev` is in US East, nearest the founder in Virginia: the Supabase project `tadayo-dev` in `us-east-1` and the Fly app `tadayo-api-dev` in `iad`, with `primary_region = "iad"` in slice 10a and in the steps after 10b. The domain is `tadayo.app`, registered on Cloudflare. F4 now asks only for a yes to the identifiers, and spike S6 no longer waits for a domain. Resend verifies `tadayo.app` in `us-east-1` through Cloudflare's DNS, and Cloudflare's row is done. F2 is done: `main`'s rule is on. Section 6's protection check now records the rule as on. Rewrote section 1.1 of this journal for this branch.
+**Why:** The founder's answers to FQ3 for `dev` ("in Virginia US") and FQ5's domain ("done with tadayo.app"), relayed on 2026-11-01. The plan must match the accounts being made now. PR #1 records both answers as ADR-016 and ADR-017, which the plan cites.
+**Verified:** `gh api repos/beurni2/tadayo/branches/main --jq .protection` at 22:25 UTC: `{"enabled":true,"required_status_checks":{"checks":[],"contexts":[],"enforcement_level":"everyone"}}`. `grep -n -i "paris\|cdg\|eu-west" docs/plans/B0.md`: no match. `python3 tools/ci/journal_check.py --all` and `--branch`: exit 0. On this branch `python3 tools/ci/journal_check_test.py` fails 2 of 28 tests (the fixture fixed on `starter-pack`, PR #1).
+**Not verified:** Resend's regions and Fly's `iad` against their current documentation, because the session's proxy refuses both hosts. The slices that use them check this.
+**Decisions and questions:** None on this branch. ADR-016 and ADR-017, with FQ3 and FQ5 updated, are on `starter-pack` (PR #1).
+**Next:** After the founder merges PR #1: `git fetch origin`, `git switch -c plan/b0 origin/main`, `git checkout origin/draft/b0-plan -- docs/plans/B0.md`, write the journal entry, push, and open the PR `docs: plan B0` with its independent review. Done when that PR says it's ready for the founder. Leave `draft/b0-plan` as it is.
 
 #### 2026-11-01 21:48 UTC · shared · draft/b0-plan · PR none
 **Did:** Wrote `docs/plans/B0.md`, the plan for stage B0 (`docs/MILESTONES.md`, "B0: Foundations"): what the founder provides and when, with every account and secret named and placed (section 1); the slices in order, with branches, invariants, tests written first and what each waits for, arranged so that each workflow PR goes up with no other PR open (section 2, `docs/GITHUB.md` "Workflow files"); the five workflow files the founder will add (section 3); spikes S1 to S6 in order, with the server and app code each needs and the TestFlight build each runs on (section 4); Design handoff 0, copied from `docs/DESIGN-HANDOFF.md`, with its branch `ios/b0-brand`, and Design handoff 1 for the screens B0 and B1 build (A02, A03, the tabs before a club exists, and the missing B1 states), with its branch `ios/b1-handoff-1` (section 5); the environment checks MILESTONES lists, with the results known so far (section 6); and Gate 0's evidence (section 7). Rewrote section 1.1 of this journal for this branch.
