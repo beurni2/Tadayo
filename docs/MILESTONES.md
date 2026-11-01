@@ -1,0 +1,297 @@
+# Tadayo stages and gates
+
+Version 1.0 · 1 November 2026
+
+The spec builds in nine dependency steps (spec 38) towards the closed trial, which it calls M0 (spec 02). Here the steps become build stages B1 to B9, after a foundations stage B0. They are grouped into gates the founder checks on his iPhone, and split into two lanes that run in parallel after Gate 0. The trial's scope is ADR-007. The founder alone passes a gate. At each gate:
+- stop and post the evidence;
+- put a short PDF report, readable on an iPhone, on the `evidence` branch under `gates/`, and link it in the PR;
+- wait for his answer;
+- record it in `docs/GATES.md`.
+
+Nothing from a later stage merges before the earlier gate passes, except the parallel lanes described below. Each stage starts with a short plan in `docs/plans/<stage>.md`, opened as its own PR. The plan lists:
+- the slices in order and the risks;
+- the design handoff for the stage's missing states;
+- anything you need from the founder, named exactly.
+
+## Lanes
+
+After Gate 0, two lanes can run in parallel, each in its own Claude Code session:
+
+| Lane | Owns |
+|---|---|
+| **api** | `services/`, `packages/domain`, `packages/contracts`, `db/`, `tests/`, `apps/web`, `tools/ops/`, `infra/` |
+| **ios** | `apps/ios/`, `packages/swift/`, `design/reference/INVENTORY.md`, the design handoffs |
+
+A third party designs: **Claude Design**, driven by the founder (`docs/DESIGN-HANDOFF.md`). The ios lane writes the handoff for a stage's missing states at the start of that stage, and builds from the spec and the book's contracts while the renders are made. Nothing waits, and Claude Code designs nothing.
+
+How the lanes fit together:
+- **The contract is the seam.** B0 writes the whole OpenAPI v1 into `packages/contracts/openapi.yaml`: spec 32 plus the endpoints in `docs/TECH-DESIGN.md` section 6. It also builds a mock server (Prism) with the book's fixture clubs: Sunday people (Ben, Maya, Alex, Sam, Debby, Nina) and Kitchen table (five members, with Leila proposed).
+    - The ios lane builds every screen against the mock first, and switches to `dev` as each endpoint lands.
+    - The api lane changes the contract only in its own PR, and the ios lane regenerates `TadayoAPI` from it.
+- **Shared documents.**
+    - Each lane edits only its own section of `docs/PROGRESS.md`; the api lane keeps the "Shared" section.
+    - Each lane writes only its own parts of `docs/JOURNAL.md`: its block of the state, its rows of the audit map, its own PR table in section 4 and its own log section. The api lane also keeps the shared block and section 0, where each lane edits the lines about its own work (the journal's layout keeps the lanes' edits apart). It adds to `docs/DECISIONS.md`, `docs/QUESTIONS.md` and `docs/LIMITATIONS.md` inside its slice PRs, at the end of each file.
+    - When a merge leaves the other lane's PR in conflict, that lane merges `main` into its branch, keeps both sides' journal and log entries, and pushes once.
+    - The rulebook documents (the spec, the book, `CLAUDE.md`, `INVARIANTS`, `TECH-DESIGN`, `MILESTONES`, `GITHUB`, `DESIGN-HANDOFF`) change only in their own PRs.
+    - CI configuration (`.yamllint.yaml`, `.github/`, `.claude/`, `tools/ci/`) changes in a PR with nothing else but the logs (T58).
+- **Requests between lanes** go in `docs/PROGRESS.md` under "Needs from the other lane".
+- **A branch behind `main`:** merge `main` into it (never rebase) and push once, only when the PR conflicts or needs something new from `main`.
+- **Joint gates.** Gates A to D need both lanes. The lane that finishes first writes its half of the report and waits.
+
+## B0: Foundations → Gate 0
+
+**Goal:** the skeleton runs on the founder's iPhone against `dev`, every PR goes through CI and an independent review, the contract exists, and the native unknowns are retired.
+
+**Build:**
+- **The repository.** The pnpm workspace and the Swift packages from `docs/TECH-DESIGN.md` section 3.
+    - TypeScript strict, lint and format.
+    - The copy lint over every string file: the banned vocabulary of T41, gendered pronouns in system copy (T42), "Sent" as a drop state, and exclamation marks in system copy.
+    - `docs/PROGRESS.md`, `docs/DECISIONS.md` and `docs/GATES.md` started; the `evidence` branch.
+- **CI.** The `ci`, `ios`, `ios-release` and `ops` workflows (`docs/TECH-DESIGN.md` section 9), including the two `ci` guards and the journal tools' tests.
+    - Workflow files likely reach GitHub through the founder (`docs/GITHUB.md`, "Workflow files"), so keep them thin, with their logic in `tools/ci/`.
+    - The `ios` workflow pushes snapshots and contact sheets to the evidence branch.
+- **The contract.** `openapi.yaml` for every endpoint and error code, the mock server with the fixture clubs, and the generated Swift client building on CI.
+- **The database.**
+    - A bootstrap step creates the `tadayo_app` role, the `app` schema it owns and `pg_trgm` (in CI, also Supabase's `anon`, `authenticated` and `service_role`). The first migration, run as `tadayo_app`, closes Supabase's data API: no grants for the public roles or `service_role`, and row-level security with no policies (ADR-015). The founder turns the data API off in the project's settings (his guide).
+    - Migrations for spec 31's entities, with the constraints and indexes in `docs/TECH-DESIGN.md` section 6.
+    - The authorization module with unit tests.
+    - The time module with ADR-008's zones.
+    - The privacy-matrix harness and the leak scanner, running green on the empty routes.
+    - The Supabase probe (`docs/TECH-DESIGN.md` section 8), run on `dev` after each deploy.
+- **Auth.** Supabase email codes end to end.
+    - The API verifies the JWT, creates the user on first sign-in, and stores the 18-or-older confirmation (FQ13).
+    - `GET /v1/me` and `PATCH /v1/me`.
+- **The app.**
+    - `project.yml`, with the app and share extension targets building on CI, at the minimum iOS the founder confirms (FQ4). Both targets carry a privacy manifest and `ITSAppUsesNonExemptEncryption = NO`.
+    - `TadayoDesign` with book p35's tokens and the components of `docs/TECH-DESIGN.md` section 4, in the Lab (only in builds that point at `dev`), light and dark, with the fixture cast and photos (FQ24).
+    - Sign-in and the profile (screens A02 and A03), built from spec until their renders arrive.
+    - The three tabs with truthful empty states.
+    - Snapshot tests producing PNGs and render-beside-snapshot contact sheets.
+    - A TestFlight build on the founder's iPhone. App Store Connect refuses an upload without an app icon, and the only icon allowed is handoff 0's (T46), so the first upload waits for it, and so do the spikes that need the founder's iPhone (S1 to S4 and S6). Until then, the app is built and tested on CI.
+- **The brand handoff.** Design handoff 0 is ready in the founder's guide, so he can start it on day one. Copy it into `docs/plans/B0.md`. Gate 0 waits for its icon frames: if the rest of the brand takes longer, the founder can send the design as soon as those three frames are done, and the rest later.
+- **The B1 handoff.** Write it in the B0 plan, for screens A02 and A03 and the club states B1 needs. Send it to the founder only once handoff 0's `brand-tokens.md` and `brand-components.png` are on `main`, because it builds on them.
+- **Deploy.** `dev` on Supabase and Fly, connected through the session pooler, and `deploy-dev` on merge to `main`.
+- **Confirm the environment.** Record each result in `docs/LIMITATIONS.md`:
+    - whether Docker's daemon runs in the session;
+    - whether the session can start a workflow by hand through REST;
+    - whether it can read `main`'s branch protection;
+    - whether the journal hook fires, in the first session started after the starter-pack PR is merged (sessions start from `main`, and Claude Code reads hooks only when a session starts);
+    - the one Swift version, pinned everywhere.
+
+**Spikes.** Each spike gets a one-page report in `docs/spikes/` with its evidence. S1 to S4 and S6 run on the founder's iPhone, so they follow the first TestFlight build. Spike code merges only if it's clean enough to keep.
+
+| Spike | Prove |
+|---|---|
+| S1 Share extension | From TikTok's share sheet and from Photos, the compact composer shows club, person and exact date in under 500 ms on the founder's iPhone. A photo keeps uploading in the background after the sheet closes. The receipt appears only after the commit |
+| S2 Photo pipeline | A 48-megapixel photo from an iPhone camera reaches the server as a JPEG of at most 4096 px with no GPS. The worker validates it and makes the renditions within the chosen Fly machine's memory, with the time measured (ADR-014) |
+| S3 Video viewer | The TikTok Embed Player plays in the isolated web view on the founder's iPhone, signed out. Close, pause on background and Open original work. The player's messages are received with the origin checked; top-level navigation is intercepted. Records how TikTok treats the bundled shell's origin, and whether a hosted page is needed |
+| S4 Push | A push with previews off reaches the founder's iPhone from the worker through APNs and opens the exact club and day. A 7 AM reveal push is deferred to 8 AM by quiet hours, shown with the dev clock |
+| S5 Time | Reveal and close instants for the six zones of ADR-008, including Europe/London's missing and doubled 01:00. On `dev` with workers stopped, Home switches at the instant |
+| S6 Links | A universal link opens the invitation in the app. Without the app, the web page shows the inviter's name and a "Get Tadayo" link: a placeholder until Gate E, when the external testing group's public TestFlight link exists. The token never reaches a server log |
+
+**Gate 0 evidence:**
+- the TestFlight build on the founder's iPhone: sign in with an email code, the three tabs, the Lab;
+- the spike reports in one PDF, with the measured times;
+- CI green, and the privacy matrix and leak scanner green on the empty routes;
+- the Supabase probe's result on `dev`: every REST, GraphQL and Storage call refused or empty, and the data API off;
+- a PR that went through the independent review, with every finding fixed or answered;
+- `main`'s branch protection read back from GitHub, matching `docs/GITHUB.md` ("Check the protection");
+- the Lab beside book p35's tokens and the 2.1 components.
+
+## B1: Clubs (spec 38 step 1) → part of Gate A
+
+- **api:** spec 04 and 07.
+    - Users and profiles.
+    - Clubs with proposed rosters, roster revisions and approvals, and membership intervals.
+    - Invitations: create a link per candidate, preview after sign-in with the token in the body, accept the exact revision, approve, decline, expire and revoke.
+    - The activation rule; the club list for the switcher; club details; leaving, with the end of the membership interval. The withdraw-on-leave cascade comes in B6.
+    - Privacy-matrix rows for every club route, including the unaccepted invitee and the stranger (Q05).
+- **ios:**
+    - Screen A01 (`A01-welcome`, with the labelled example, FQ23). Screens A02 and A03 are brought to their renders as they arrive.
+    - G01 (`G01-create`, then inviting people), G02 (`G02-invitation`, plus expired, changed and full), G03 (`G03-approve`, plus waiting and declined), G05 (`G05-club-details` and its members list) and G06 (`G06-switcher`).
+    - `apps/web`'s invitation page, with the api lane.
+
+## B2: Calendar and slots (step 2) → part of Gate A
+
+- **api:** spec 05, 06 and 11.
+    - Schedule proposals for one and two days, confirmation, visible conflicts.
+    - Schedule versions and transitions at a safe boundary; the club paused under two members (FQ16).
+    - Occurrence generation several weeks ahead.
+    - `GET /v1/clubs/{id}/home` with `server_now`, the active or next occurrence and the countdown fields.
+    - Reservations and counters, the six-and-two transaction (exercised with test uploads), the cutoff under the lock, idempotency.
+    - Tests: Q01 to Q04, Q09 and Q10, Q12, and Q18 with workers stopped; ADR-008's zones.
+- **ios:**
+    - G04 (`G04-one-day`, `G04-two-days`, the conflict state).
+    - H01 waiting states (`H01-waiting`, `H01-after-close`, `H01-sunday`, awaiting activation, club paused), with countdowns from `server_now` and a VoiceOver label giving the target date.
+    - F01 (`F01-friends`, `F01-long-names`, `F01-friends-xl`) with the next dates; the F02 header with the exact date; C01 (`C01-picker`).
+
+**Gate A: clubs and the calendar.** The founder checks:
+- two accounts form a club through an invitation link, approve the same roster, confirm their days, and see the same next dates;
+- a third person needs everyone's approval;
+- Home counts down to the next person's exact date;
+- the dev clock moves a day open and shut with workers stopped;
+- the report holds the zone and DST table, and the privacy-matrix report for club routes.
+
+## B3: Media and manifests (step 3) → part of Gate B
+
+- **api:** spec 14 and 33.
+    - Upload intents, direct upload, quarantine, preparation in the worker (signature, 20 MiB, 64 megapixels, metadata stripped, renditions, content hash, safety provider set to `none`), ready and held states.
+    - Live Photos as stills (FQ10).
+    - The author-preview endpoint (no-store).
+    - The commit with the immutable audience and the sealing trigger.
+    - Viewer-filtered manifests with the pre-reveal DTO.
+    - The media route: the read predicate on every request, the bytes streamed with private, no-store caching, nothing before the reveal, and no signed read URL ever leaving the server (ADR-009).
+    - `sources/resolve`, with TikTok and Instagram normalization and the safe fetcher.
+    - The duplicate checks and the caption-source rule.
+    - The leak scanner over every new route. Tests: Q05 to Q08, Q10 to Q12.
+- **ios:** the upload client: picker in its compatible representation, JPEG at up to 4096 px, GPS removed, PNG screenshots, a background session, the queue's states in `TadayoCore`.
+
+## B4: Contributing (step 4) → part of Gate B
+
+- **ios:**
+    - C02 (`C02-photo`, `C02-keyboard`, plus link, several photos with caption review, the star's own composer, unsupported link, duplicate and external limit).
+    - C03 (`C03-sources`, camera; the system picker in place of `C03-system-picker`).
+    - C04 (`C04-link`, plus photos from Photos, signed out, receipt, pending and failed).
+    - C05 (`C05-drafts`, `C05-private-draft`, empty, retarget).
+    - C06 (`C06-ideas`, More ideas, the end of the batches, the star's set).
+    - C07 (`C07-uploading`, `C07-failed`, `C07-missed-cutoff`, `C07-limit`, processing, pending offline, partial batch, returned from hold) and C08.
+    - F02 (`F02-upcoming`, `F02-added`, `F02-your-drops`, author preview, caption edit, replace, withdraw, the note for a member who joined later).
+    - `H01-first-drop`.
+- **api:**
+    - `PATCH` and `DELETE /v1/drops/{id}` while collecting; `PUT /v1/occurrences/{id}/highlight`.
+    - The idea helper's aggregate events.
+    - Tests: Q11, Q13, Q14, Q15, Q24.
+
+**Gate B: contributing.** The founder checks:
+- adding a photo for Debby from the app and from Photos' share sheet;
+- a TikTok link from TikTok's share sheet;
+- the caption visible to the others at once, and the photo hidden. The report shows:
+    - the leak scanner's results;
+    - a network capture from a non-author account;
+    - the author's preview staying with the author;
+- Drafts, kept and resumed;
+- the allowance at six and two, with the race test's results;
+- an upload crossing 7 AM on the dev clock, kept in Drafts with the next date offered;
+- the idea helper.
+
+## B5: The reveal (step 5) → part of Gate C
+
+- **api:** spec 06 and 15.
+    - Reveal and close as instants, with manifests and events materialized idempotently by the worker.
+    - The highlight order: the star's pick, then schedule order (FQ26).
+    - The star's own contributions; the moderation-hold exclusion.
+    - Opening and closing outbox events, with no closing push.
+    - Tests: Q14 to Q18.
+- **ios:**
+    - H01 during a day: `H01-open`, `H01-open-dark`, `H01-your-day` and `H01-quiet`, with the feed directly on Home.
+    - R01: `R01-blank-caption`, `R01-past-day`, the end line, the removed placeholder, the video card, the large-text rail as a list.
+    - R02 (`R02-photo`, `R02-screenshot`, removed while open, the author's own view).
+    - R03 (`R03-opening`: the 650 ms fold, skip, Reduce Motion, repeat).
+    - Safe transitions at 7 AM and 1 AM; the offline cached state.
+
+## B6: Responses, Memories and removal (step 6) → part of Gate C
+
+- **api:** spec 16, 18, 22 and 23.
+    - Reactions from an allowlisted palette (FQ22); comments with replies, edit and delete, thread mute and report.
+    - Favourites; Memories with member and month filters and For me; search over names, dates and caption text.
+    - Removal propagation for withdrawal, pictured removal, hiding for oneself, moderation, the end of a membership, blocks, and account deletion with the tombstone log (ADR-010).
+    - Leave with keep or withdraw; reports.
+    - Tests: Q19, Q22, Q23, Q25, Q27.
+- **ios:**
+    - R04 (`R04-comments`, empty, edit, reply, report, mute) and the reactions.
+    - M01 (`M01-memories`, `M01-search`, `M01-empty`, filters, no results) and M02 (`M02-favourites`, empty, the one-time explanation).
+    - S01 (`S01-pictured-removal`, the author's menu, other members' menu, report, withdraw after the reveal).
+    - S02 block and leave; G05's leave flow.
+    - S03 (`S03-account`, privacy and safety, your contributions, appearance, sound and haptics) and S04. `S03-notifications` comes with B8.
+    - Logout and account switching purge every cache and the roster cache, and leave the previous account's drafts unreadable (Q26).
+
+**Gate C: the whole loop.** The founder checks:
+- at 7 AM on the dev clock, Home becomes Debby's day;
+- the highlights open with the fold, the photo viewer works, and reactions and comments work;
+- at 1 AM, Home moves on and the day is in Memories;
+- favourites and search work;
+- a withdrawal and a pictured removal, with a before and after report of every surface;
+- leave, block and delete account;
+- the screens PDF: every state's render beside its snapshot, with the differences listed, and the inventory with no state left at `built from spec` without a stated reason.
+
+## B7: Videos (step 7) → part of Gate D
+
+- **api:** spec 17. The embed endpoint after the reveal only, the TikTok adapter, provider switches in `GET /v1/config`, Instagram as a link (FQ11). Tests: Q20.
+- **ios:**
+    - E01: `E01-entry` and `E01-unavailable`, plus loading, playing, login required, timeout and Instagram as a link.
+    - The isolated web view's rules (T39).
+    - Device tests: signed out, restricted network, app installed and absent, deleted source, region. Tests: Q20, Q21.
+
+## B8: Notifications (step 8, without widgets) → part of Gate D
+
+- **api:** spec 21.
+    - APNs dispatch with aggregation, the two-a-day budget across clubs (FQ30), and quiet hours in the device's zone, with the reveal push deferred.
+    - The access recheck at dispatch; preferences per account, club and thread; previews off by default; device registration.
+    - Tests: Q22, and T36's never-cases.
+- **ios:**
+    - The permission offer after the first contribution (`F02-added` and its first-time variant).
+    - The notification settings (`S03-notifications`, `G05-notifications`).
+    - Routing of deep links with the access recheck, and the not-available screen. Q29 waits for widgets in M1.
+
+## B9: Trial readiness (step 9) → Gate D
+
+- **Accessibility:** VoiceOver, the largest text sizes, an external keyboard, Reduce Motion, error recovery (Q30).
+- **Security:** the privacy matrix on every route, the leak scanner, TECH-DESIGN section 12 applied to every feature, a security reviewer's pass over the whole API.
+- **The restore drill**, with tombstone replay on a temporary project (Q28).
+- **The moderation exercise:** a report, a hold or removal through the `ops` scripts, and the audit trail (FQ27).
+- **Incident playbooks** in `docs/runbooks/` for spec 34's list.
+- **The events dictionary** and the weekly trial report script (ADR-012).
+- **The privacy pages and in-app explanations** (FQ6).
+- **`prod`** in the FQ3 region, with its data API turned off by the founder and the Supabase probe green on it.
+- **App Store Connect:**
+    - the privacy details;
+    - the external testing group;
+    - the review account, its review club with the founder's own photos, and the review notes (FQ29);
+    - the beta review submission.
+
+**Gate D: ready for the trial.** The founder checks:
+- the TikTok player on his iPhone in its failure states, and an Instagram link;
+- notifications with previews off and on: the deferred 8 AM push, the budget and the grouping;
+- the accessibility report;
+- the restore drill report;
+- the moderation exercise;
+- the trial report on seeded data;
+- FQ8 answered in writing;
+- `prod` created, with the Supabase probe's result on it.
+
+## Gate E: the trial starts
+
+The founder runs the usability round (book p39) on the Gate D build, Claude Code fixes what it finds, and the first clubs join as external TestFlight testers (FQ28). Gate E's evidence:
+- the fixes from the usability round;
+- the beta review passed;
+- the first weekly trial report.
+
+The trial then runs two weeks, and at least six more weeks for the clubs that consent (spec 36). During it, Claude Code works only on fixes and on what the trial reports show, each through the normal PR loop.
+
+## After the trial
+
+M1, the first production release (spec 02), is planned from the trial's evidence, in its own PR, for the founder's approval. It starts from:
+- widgets (screen W01 and the widget states, Q29);
+- Sign in with Apple and Google;
+- resumable uploads with a persisted queue;
+- the full accessibility audit;
+- an image-safety provider (FQ8);
+- embedded Instagram if Meta approves (FQ11);
+- Live Photo motion with video checks (FQ10);
+- data export (FQ18), and the operator console if a second operator exists (FQ27);
+- external sharing behind `external_share` (FQ14, T61);
+- a staging environment;
+- the Android app, native Kotlin, against the same contract.
+
+M1.5 adds Remember this (spec 19, T62), broader search and the paid experiments, each behind its flag.
+
+## Definition of done (every PR)
+
+- It does what the spec section says, and keeps every invariant it touches.
+- Tests cover the logic, and `ci` is green (once it exists). A new route has its privacy-matrix rows and passes the leak scanner.
+- **For anything visible:**
+    - snapshots on the `evidence` branch, linked from the PR, beside their renders and checked against the book's contracts;
+    - `design/reference/INVENTORY.md` updated;
+    - the handoff written for any state without a render.
+- **It's documented where needed:** `docs/DECISIONS.md`, `docs/PROGRESS.md`, `docs/QUESTIONS.md`. Every commit has its entry in `docs/JOURNAL.md`.
+- **An independent review** by a fresh subagent, with every finding fixed or answered in the PR (`docs/GITHUB.md`).
