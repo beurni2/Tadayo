@@ -168,9 +168,9 @@ The full list is `docs/INVARIANTS.md`. These are the ones a mistake breaks first
     - ADR-016: `dev` in US East, near the founder.
     - ADR-017: the domain `tadayo.app`.
     - ADR-018: iOS 17 stays the minimum; the founder's iPhone runs iOS 18.
-- **The founder's answers:** FQ1, iPhone first; FQ2, keep 2.1's screens and add the brand; FQ3 for `dev`, US East (the founder is in Virginia, US); FQ4 for the founder's phone, an iPhone 13 on iOS 18.3.2; FQ5's domain, `tadayo.app`. All on 1 November 2026.
-- **Defaults in force until he answers** (`docs/QUESTIONS.md`: FQ3 for `prod`, and FQ4 to FQ30). The ones that shape the trial most:
-    - iOS 17 as the minimum (FQ4; the founder's phone runs iOS 18.3.2, the trial members' are unknown);
+- **The founder's answers:** FQ1, iPhone first; FQ2, keep 2.1's screens and add the brand; FQ3 for `dev`, US East, near the founder; FQ4 for the founder's phone, which runs iOS 18; FQ5's domain, `tadayo.app`. All on 1 November 2026.
+- **Defaults in force until he answers** (`docs/QUESTIONS.md`: FQ3 for `prod`, and FQ4 to FQ36). The ones that shape the trial most:
+    - iOS 17 as the minimum (FQ4; the founder's phone runs iOS 18, the trial members' are unknown);
     - no photo-scanning provider in the closed trial, with his written acceptance (FQ8);
     - widgets after the trial (FQ9);
     - Live Photos as stills (FQ10);
@@ -194,6 +194,8 @@ Each departure has a reason and a record. This list is meant to be complete: any
 - **Photo safety:** spec 33 quarantines every upload until safety checks pass, and the closed trial runs with no scanning provider (FQ8).
 - **Club setup:** no club cover (FQ17, against spec 04's optional cover), and no change of a club's time zone (FQ19).
 - **Drafts:** on the device, per account, where the book makes them account-wide (FQ15).
+- **The operator's access:** no route serves a drop's content to the moderation operator, where spec 07 gives "restricted audited case access"; the `ops` scripts hold or remove a drop by its id (T9, FQ32).
+- **Remember this:** every dismissal is durable, where spec 19 makes only "Don't suggest this day again" durable (T62, FQ33).
 - **Where 2.1's renders break a rule:** names instead of "Her pick" and the other gendered strings, the Highlight label only on the viewer's own cards, the rail's order, and no Share icon.
 - **Where the book wins over the spec:** Reduce Motion opens the photo at once, where spec 15 says a crossfade; and "Added for", where spec 10 says "Added to".
 
@@ -205,11 +207,11 @@ The screen-by-screen list is `design/reference/INVENTORY.md`, "Known differences
 
 ### 1.1 Shared (the api lane keeps this block)
 
-**Updated:** 2026-11-01 23:30 UTC, starter-pack
+**Updated:** 2026-11-02 00:15 UTC, starter-pack
 
 - **Stage:** B0 Foundations, not started. Next gate: Gate 0 (`docs/MILESTONES.md`).
 - **Lanes:** none yet; one session until Gate 0.
-- **PRs:** #1, `docs: add the Tadayo starter pack` from `starter-pack`, open. Its independent review is recorded, with its findings fixed or answered; the fixes go to a second review.
+- **PRs:** #1, `docs: add the Tadayo starter pack` from `starter-pack`, open. Its first and second independent reviews are recorded, with their findings fixed or answered; the second review's fixes go to a third review.
 - **Branches:** `main` holds one commit, `Initial commit` (`README.md` only), made from the session at the founder's request on 2026-11-01 because the repository was created empty. `starter-pack` adds the pack and its document fixes. `draft/b0-plan`, made from `starter-pack` at the founder's request, holds the draft of `docs/plans/B0.md`, updated for the founder's answers; it is never merged or opened as a PR, and stays as it is once the plan moves to `plan/b0`.
 - **`main`'s protection:** on, read back on 2026-11-01 through the summary (`docs/GITHUB.md`): no required check yet. Squash merges only, and merged branches are deleted.
 - **Environments:** `dev` being set up by the founder in US East (Supabase `us-east-1`, Fly `iad`; ADR-016). `prod` not created (Gate D).
@@ -219,19 +221,20 @@ The screen-by-screen list is `design/reference/INVENTORY.md`, "Known differences
 
 **What exists and works (verified).** On `starter-pack`, the starter pack unpacked at the repository root by the commit `docs: unpack the Tadayo starter pack`. Its tree matched a separate unzip of `tadayo-starter-pack.zip` (`diff -r`, no difference) until that commit rewrote this journal's section 1.1 and added its log entry; the document fixes since are in the log. The journal tools' tests pass: `python3 tools/ci/journal_hook_test.py` (6 tests) and `python3 tools/ci/journal_check_test.py` (29 tests), Python 3.13.18, git 2.43.0. Nothing else is built.
 
-**In progress.** PR #1: a second independent review, of the commits since the first one (`docs/GITHUB.md`, step 5).
+**In progress.** PR #1: a third independent review, of the second review's fixes (`docs/GITHUB.md`, step 5).
 
 **Next, in order:**
-1. On `starter-pack`, review the commits since PR #1's first review with fresh reviewers (`git diff 8e4a0c7..HEAD`), fix or answer each finding, record it in a commit with the PR's row in section 4, and fill in the PR's "Review" and "Ready for the founder" sections. Done when the PR says it's ready for the founder.
+1. On `starter-pack`, review the commit that records the second review with fresh reviewers (`git diff 4559931..HEAD`), fix or answer each finding, record it in a commit with the PR's row in section 4, and fill in the PR's "Review" and "Ready for the founder" sections. Done when the PR says it's ready for the founder.
 2. After the founder merges it: `git fetch origin`, `git switch -c plan/b0 origin/main`, then `git checkout origin/draft/b0-plan -- docs/plans/B0.md`; write its journal entry, and open its PR with its own review. Leave `draft/b0-plan` as it is.
 3. In the first session the founder starts after merging the starter-pack PR, check that the journal hook fires (a `git commit` without `docs/JOURNAL.md` staged is refused by `tools/ci/journal_hook.py`) and that the CodeRabbit skills no longer appear, and record both in `docs/LIMITATIONS.md`.
 4. The B0 slices, in the order `docs/plans/B0.md` sets.
 
 **Blocked or waiting for the founder:**
 - Reviewing and merging the starter-pack PR once it says it's ready, and deciding the rule changes it lists for the founder.
-- Selecting the Tadayo environment for the project, with Supabase, Fly, Cloudflare, Resend and swift.org allowed: the first session's environment refused them (`docs/LIMITATIONS.md`).
-- Accounts for B0 (`docs/TECH-DESIGN.md` section 10): Apple's approval of the founder's enrolment, then the App Store Connect API key and the APNs key; Resend's verification of `tadayo.app`; a yes to FQ5's identifiers. The B0 plan names each account and secret exactly.
-- The trial members' iPhone models and iOS versions (FQ4), which matter only if one can't run iOS 17. The founder's is an iPhone 13 on iOS 18.3.2 (ADR-018).
+- Selecting the Tadayo environment for the project, with the hosts in `docs/TECH-DESIGN.md` section 10's network list allowed: the first session's environment refused them (`docs/LIMITATIONS.md`).
+- FQ31, before design handoff 0 starts: until the founder answers, nothing in `design/reference/INVENTORY.md` changes, so handoff 0's rows can't go to `requested 0`.
+- Accounts for B0 (`docs/TECH-DESIGN.md` section 10). In the setup thread on 2026-11-01 the founder reported submitting the Apple Developer Program enrolment, putting the Supabase organization on the Pro plan with `tadayo-dev` in `us-east-1` and its data API off, signing up on Fly.io, and adding `tadayo.app` in Resend. None of it is verified: the session's proxy refuses those hosts, and B0's environment checks and the Supabase probe read it back. Still waiting: Apple's approval of the enrolment, then the App Store Connect API key and the APNs key; Resend's verification of `tadayo.app`; a yes to FQ5's identifiers. The B0 plan names each account and secret exactly.
+- The trial members' iPhone models and iOS versions (FQ4), which matter only if one can't run iOS 17. The founder's runs iOS 18 (ADR-018).
 - Design handoff 0 in Claude Design. Gate 0 waits for its icon frames: the first TestFlight upload needs the icon, and spikes S1 to S4 and S6 need that build.
 - Open questions with defaults in `docs/QUESTIONS.md`; the defaults apply until answered. FQ31 to FQ36 are the conflicts the starter-pack PR found whose fix would loosen a rule.
 
@@ -243,8 +246,6 @@ The screen-by-screen list is `design/reference/INVENTORY.md`, "Known differences
     - the `ios` workflow, and where its snapshots and contact sheets land;
     - the `ops` workflow's scripts, including the dev clock and the Supabase probe;
     - how to read the evidence branch.
-
-**Known limits and risks.** See `docs/LIMITATIONS.md`. The two that shape the work: cloud sessions can't push workflow files, and they can't compile SwiftUI. `docs/TECH-DESIGN.md` sections 2 and 9 handle both. The session that unpacked the pack started before `.claude/settings.json` existed, so the journal hook didn't run on its commits; `tools/ci/journal_check.py --branch` checked them instead.
 
 ### 1.2 api lane
 
@@ -395,6 +396,34 @@ Newest first within each section. One entry per commit, written in that commit, 
 
 ### 3.1 Shared and B0
 
+#### 2026-11-02 00:15 UTC · shared · starter-pack · PR #1
+**Did:** Recorded PR #1's second independent review, of `git diff 8e4a0c7..4559931`, and fixed its findings. Three fresh reviewers (the documents, the journal tools, and privacy and security) reported 17 findings, and a separate reader checked each one: 14 held, and the journal tools' reviewer found nothing. The fixes:
+- `docs/TECH-DESIGN.md` section 6: registering a device token covers an account switch, not a logout made offline. That logout now queues the removal, authorized by a removal secret the app sent with the registration (the server keeps only its hash), and a background `URLSession` sends it when the network returns. Until it lands, the old account's pushes can still reach the device, and the section says so.
+- `docs/TECH-DESIGN.md` section 6: `POST /v1/uploads`'s stored response leaves out the signed upload URL; a replay signs a new one only while the upload is still pending, and otherwise returns no URL (T12). The reviewer's own fix signed one on every replay, which would loosen T12.
+- `docs/TECH-DESIGN.md` section 8:
+    - the leak scanner's exemption also covers the viewer's own upload intent and the link the viewer resolved (T12, T40), which it would otherwise fail;
+    - the push-payload test applies before and after the reveal and to every recipient, the author included, and a caption or comment must still be readable at dispatch (T9, T37). It keeps "no URL": the reviewer's fix narrowed it to media and source URLs.
+- `docs/TECH-DESIGN.md` section 10: the Supabase and Fly key rows say where the keys move before `prod` exists (section 9). The reader didn't confirm this finding, since section 9's rule starts at Gate D; the pointer keeps the table from being read against it.
+- `docs/QUESTIONS.md`:
+    - FQ31's default is now strict: until the founder answers, nothing already in `design/reference/` is edited, `INVENTORY.md` included, apart from moving an uploaded export into its `handoff-<n>/` folder, which `CLAUDE.md` allows. Work that would change an inventory row waits.
+    - FQ36's default keeps `dev` synthetic apart from the founder's and the internal tester's sign-in addresses: they add only test content there. FQ36 cites ADR-003 and ADR-004, not ADR-011.
+- Resend: `docs/MILESTONES.md` B0 and `docs/LIMITATIONS.md` say why B0 doesn't check it (section 10's network list leaves it out, because the session never calls it). This block and `docs/PROGRESS.md` ask the founder for section 10's hosts, not a list with Resend.
+- This journal's section 0.7: the defaults in force run to FQ36, and the founder's answers name only `dev`'s region and the phone's major iOS version. Section 0.8 adds the operator's access (FQ32) and Remember this (FQ33).
+- Filled in the second review in this PR's row in section 4. Rewrote section 1.1, which now records the accounts the founder reported, not verified.
+
+Corrections to the 23:30 entry, since the log is append-only:
+- It said each of FQ31 to FQ36 had a default that loosens nothing. FQ31's loosened `CLAUDE.md`'s rule on `design/reference/`, and FQ36's accepted real content on `dev`. Both are now strict.
+- It said the Worker tests check every push payload, but the row it added checked media and sources only before the reveal. It does now.
+- The 23:27 entry names the founder's location and phone more precisely than the journal's rule on personal data allows. It can't be rewritten without the founder's word, so the PR lists it for the founder.
+**Why:** `docs/GITHUB.md` step 5: review the fixes again, decide each finding on its merits, and record the review in a commit. Where a finding's own fix would loosen a rule, the commit makes the reader's tighter fix instead.
+**Verified:**
+- `python3 tools/ci/journal_check_test.py`: 29 tests, OK. `python3 tools/ci/journal_hook_test.py`: 6 tests, OK.
+- `python3 tools/ci/journal_check.py --all` and `--branch`: exit 0.
+- A `grep` of `docs/JOURNAL.md` for the founder's state, phone model and exact iOS version finds them only in the 23:27 entry.
+**Not verified:** That a background `URLSession` delivers the queued removal after the app is suspended: B8 builds it, and its device check is where that's measured.
+**Decisions and questions:** FQ31's and FQ36's defaults made strict. For the founder, in the PR: whether the 23:27 entry may be rewritten to drop the personal data.
+**Next:** Review `git diff 4559931..HEAD` with fresh reviewers (`docs/GITHUB.md`, step 5), fix or answer what they find, and record it in a commit with the PR's row. Then fill in the PR's "Review" and "Ready for the founder" sections. Done when the PR says it's ready for the founder.
+
 #### 2026-11-01 23:30 UTC · shared · starter-pack · PR #1
 **Did:** Recorded PR #1's independent review and fixed its findings. Five fresh reviewers (process, design, stages, the journal tools, and privacy and security) reported 27 findings. A separate reader checked each one, and 26 held. The fixes:
 - `docs/QUESTIONS.md`: FQ31 to FQ36, each with a default that loosens nothing. Four are the conflicts this PR leaves for the founder: editing `INVENTORY.md`, T9 and the operator's case access, T62's dismissals, and the weekly report against `prod`. Two came from the review: adding 2.1's own pack, and what `dev` holds. `CLAUDE.md` asks for such conflicts to be questions, not only lines in a PR.
@@ -505,7 +534,7 @@ The index an auditor uses to find the proof behind section 2.
 
 | PR | Branch | What it changed | Review findings | Evidence |
 |---|---|---|---|---|
-| #1 | `starter-pack` | The starter pack (`CLAUDE.md`, `docs/`, `design/reference/`, the PR template, `.claude/settings.json`, `.yamllint.yaml`, `tools/ci/`), with the document fixes its body lists, and the founder's answers to FQ3, FQ4 and FQ5 (ADR-016 to ADR-018) | First review: five fresh reviewers (process, design, stages, the journal tools, privacy and security), each finding checked by a separate reader. 27 findings, 26 confirmed: 24 fixed, 2 whose fixes would loosen a rule turned into FQ35 and FQ36 (with FQ31 to FQ34 for the conflicts the PR lists); the one not confirmed (the reviewer's brief and CodeRabbit) answered in the PR. Second review of the fixes: to come | None: documents and the journal tools, whose tests the log lists |
+| #1 | `starter-pack` | The starter pack (`CLAUDE.md`, `docs/`, `design/reference/`, the PR template, `.claude/settings.json`, `.yamllint.yaml`, `tools/ci/`), with the document fixes its body lists, and the founder's answers to FQ3, FQ4 and FQ5 (ADR-016 to ADR-018) | First review: five fresh reviewers (process, design, stages, the journal tools, privacy and security), each finding checked by a separate reader. 27 findings, 26 confirmed: 24 fixed, 2 whose fixes would loosen a rule turned into FQ35 and FQ36 (with FQ31 to FQ34 for the conflicts the PR lists); the one not confirmed (the reviewer's brief and CodeRabbit) answered in the PR. Second review, of the first review's fixes: three fresh reviewers (the documents, the journal tools, privacy and security), each finding checked by a separate reader. 17 findings, 14 confirmed and fixed (two with the reader's tighter fix, where the reviewer's own would have loosened a rule); the 3 not confirmed answered in the PR. Third review, of those fixes: to come | None: documents and the journal tools, whose tests the log lists |
 
 ### 4.2 Pull requests: the ios lane
 

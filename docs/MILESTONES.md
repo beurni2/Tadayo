@@ -76,7 +76,7 @@ How the lanes fit together:
     - whether the session can start a workflow by hand through REST;
     - whether it can read `main`'s branch protection;
     - whether the journal hook fires and the CodeRabbit plugin is off, in the first session started after the starter-pack PR is merged (sessions start from `main`, and Claude Code reads project settings only when a session starts);
-    - whether the session reaches the hosts the first session was refused (Supabase, Fly, Cloudflare and swift.org), once the founder has selected the Tadayo environment;
+    - whether the session reaches the hosts the first session was refused that `docs/TECH-DESIGN.md` section 10's network list names (Supabase, Fly, Cloudflare and swift.org), once the founder has selected the Tadayo environment. Resend, refused too, isn't checked: the list leaves it out because the session never calls it (its key is only Supabase's SMTP password);
     - the one Swift version, pinned everywhere.
 
 **Spikes.** Each spike gets a one-page report in `docs/spikes/` with its evidence. S1 to S4 and S6 run on the founder's iPhone, so they follow the first TestFlight build. Spike code merges only if it's clean enough to keep.
