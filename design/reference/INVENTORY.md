@@ -16,10 +16,10 @@ Paths are relative to `design/reference/`:
 
 | Asset | File in `brand/` | Status | Handoff |
 |---|---|---|---|
-| Wordmark, light and dark | `brand-wordmark.pdf`, `brand-wordmark-dark.pdf` | missing | 0 |
-| App icon, light, dark and tinted | `brand-icon-1024.png`, `brand-icon-dark-1024.png`, `brand-icon-tinted-1024.png` | missing | 0 |
-| Colour tokens, light and dark, with the six cover colours | `brand-tokens.md` | missing | 0 |
-| Component sheet: plaque, folded card, highlight cover, avatar fallback, button, allowance line | `brand-components.png` | missing | 0 |
+| Wordmark, light and dark | `brand-wordmark.pdf`, `brand-wordmark-dark.pdf` | received | 0 |
+| App icon, light, dark and tinted | `brand-icon-1024.png`, `brand-icon-dark-1024.png`, `brand-icon-tinted-1024.png` | received | 0 |
+| Colour tokens, light and dark, with the six cover colours | `brand-tokens.md` | received | 0 |
+| Component sheet: plaque, folded card, highlight cover, avatar fallback, button, allowance line | `brand-components.png` | received | 0 |
 | The Welcome example photograph | One of the founder's own photographs, before Gate D (FQ23); builds that point at `dev` show the book's chair fixture until then | waiting for the founder | |
 
 ## Screens and states for the trial
@@ -55,8 +55,8 @@ Paths are relative to `design/reference/`:
 | G06 Club switcher | `G06-switcher` | Your clubs | `2.1/G06-switcher.png` | 2.1 #45 | received | B1 | FQ20: shows "Her pick" behind the sheet |
 | G06 Club switcher | `G06-no-club` | Signed in with no club: create or join | `screens/G06-no-club.png` |  | missing | B1 |  |
 | H01 Home | `H01-first-drop` | After joining: something for Debby | `2.1/H01-first-drop.png` | 2.1 #04 | received | B4 | FQ20: "reminded you of Debby" |
-| H01 Home | `H01-open` | Debby's day, the feed directly | `2.1/H01-open.png` | 2.1 #05 | received | B5 | FQ20, FQ26; brand version requested in handoff 0 |
-| H01 Home | `H01-open-dark` | Debby's day, dark | `2.1/H01-open-dark.png` | 2.1 #23 | received | B5 | FQ20; brand version requested in handoff 0 |
+| H01 Home | `H01-open` | Debby's day, the feed directly | `screens/H01-open.png` | Handoff 0 (2.1 #05 before) | received | B5 | FQ20, FQ26: handoff 0's render follows both. Layout: `2.1/H01-open.png` where no rule decides (FQ40). Its differences are under "Known differences" |
+| H01 Home | `H01-open-dark` | Debby's day, dark | `screens/H01-open-dark.png` | Handoff 0 (2.1 #23 before) | received | B5 | FQ20: handoff 0's render follows it. Layout: `2.1/H01-open-dark.png` where no rule decides (FQ40). As `H01-open` |
 | H01 Home | `H01-open-xl` | Debby's day at the largest text: the rail as a list | `screens/H01-open-xl.png` |  | missing | B5 |  |
 | H01 Home | `H01-waiting` | Up next with countdown | `2.1/H01-waiting.png` | 2.1 #06 | received | B2 |  |
 | H01 Home | `H01-quiet` | Open day with nothing added | `2.1/H01-quiet.png` | 2.1 #21 | received | B5 |  |
@@ -71,8 +71,8 @@ Paths are relative to `design/reference/`:
 | F01 Friends | `F01-friends-dark` | Roster, dark | `screens/F01-friends-dark.png` |  | missing | B2 |  |
 | F01 Friends | `F01-friends-xl` | Roster at a large text size | `2.1/F01-friends-xl.png` | 2.1 #24 | received | B2 |  |
 | F01 Friends | `F01-long-names` | Long names wrap | `2.1/F01-long-names.png` | 2.1 #41 | received | B2 |  |
-| F02 Upcoming day | `F02-upcoming` | Captions now, photos on Friday | `2.1/F02-upcoming.png` | 2.1 #08 | received | B4 | FQ21: Highlight label; brand version requested in handoff 0 |
-| F02 Upcoming day | `F02-upcoming-dark` | Upcoming day, dark | `screens/F02-upcoming-dark.png` |  | missing | B4 | Brand version requested in handoff 0 |
+| F02 Upcoming day | `F02-upcoming` | Captions now, photos on Friday | `screens/F02-upcoming.png` | Handoff 0 (2.1 #08 before) | received | B4 | FQ21: handoff 0's render shows the Highlight label only on Ben's own card. Layout: `2.1/F02-upcoming.png` where no rule decides (FQ40), and for the blank-caption card. Its differences are under "Known differences" |
+| F02 Upcoming day | `F02-upcoming-dark` | Upcoming day, dark | `screens/F02-upcoming-dark.png` | Handoff 0 | received | B4 | As `F02-upcoming` |
 | F02 Upcoming day | `F02-upcoming-xl` | Upcoming day at the largest text | `screens/F02-upcoming-xl.png` |  | missing | B4 |  |
 | F02 Upcoming day | `F02-added` | Compact receipt after a repeat contribution | `2.1/F02-added.png` | 2.1 #10 | received | B4 | FQ21: Highlight label |
 | F02 Upcoming day | `F02-first-receipt` | First contribution: receipt and the notification offer | `screens/F02-first-receipt.png` |  | missing | B8 | T50 |
@@ -190,18 +190,37 @@ Screen O01, the operator console, is not designed for the trial: the operator us
 ## Known differences
 
 Where a 2.1 render breaks a rule, or the spec and the book disagree, build what this list says, not what's drawn. Each item stays listed until a render that matches arrives:
-- **"Her pick", "her day", "Revisit her day", "reminded you of her", "She'll see"** (`H01-open`, `H01-open-dark`, `G06-switcher`, `R01-blank-caption`, `R01-past-day`, `A01-welcome`, `H01-after-close`, `H01-first-drop`, `G03-approve`): names instead (FQ20, T42).
-- **The Highlight label on someone else's collecting card** (`F02-upcoming`, `F02-added`): before the reveal it shows only on the viewer's own drops (FQ21, T10).
-- **The highlight rail's order** (`H01-open`, `H01-open-dark`, `G06-switcher`, `R01-blank-caption`, `R01-past-day`): the star's pick, then the club's schedule order from Monday. On Debby's Friday: Debby's pick, then Ben, Maya and Sam (FQ26).
-- **The Share icon** in the feed and the photo viewer (`H01-open`, `R02-photo` and others): not in the trial (FQ14).
+- **"Her pick", "her day", "Revisit her day", "reminded you of her", "She'll see"** (`G06-switcher`, `R01-blank-caption`, `R01-past-day`, `A01-welcome`, `H01-after-close`, `H01-first-drop`, `G03-approve`): names instead (FQ20, T42). Handoff 0's `H01-open` and `H01-open-dark` say "Debby's pick".
+- **The Highlight label on someone else's collecting card** (`F02-added`): before the reveal it shows only on the viewer's own drops (FQ21, T10). Handoff 0's `F02-upcoming` and `F02-upcoming-dark` follow it.
+- **The highlight rail's order** (`G06-switcher`, `R01-blank-caption`, `R01-past-day`): the star's pick, then the club's schedule order from Monday. On Debby's Friday: Debby's pick, then Ben, Maya and Sam (FQ26). Handoff 0's `H01-open` and `H01-open-dark` follow it.
+- **The Share icon** in the feed and the photo viewer (`R02-photo` and other 2.1 renders): not in the trial (FQ14). Handoff 0's `H01-open` and `H01-open-dark` leave it out.
 - **The tab bar, status bar and device frame:** iOS draws its own, and older iOS versions draw them differently again (T45).
 - **Reduce Motion:** the spec says a short crossfade (spec 15); the book says the photo appears at once (book p19, p36). The book's version is built (T47).
 - **"Added to" or "Added for":** spec 10 says "Added to Debby's Friday"; the book and `F02-added` say "Added for Debby's Friday". The book's wording is built everywhere, the share extension included (T20).
 - **The type face:** the renders use Arimo as a stand-in; the app uses the system font (book p50).
-- **Colours:** once the brand tokens arrive (handoff 0), they replace 2.1's colours everywhere, so colour differences against 2.1 renders are expected; layout differences are what count.
+- **Colours:** the brand's tokens arrived with handoff 0 (`brand/brand-tokens.md`) and replace 2.1's colours everywhere, so colour differences against 2.1 renders are expected; layout differences are what count. They keep book p35's palette and add a dark accent, a dark input border and the six cover colours, so the covers change most: Maya's card, yellow in 2.1, is her cover, lavender.
+- **Handoff 0's renders** (`screens/H01-open.png`, `screens/H01-open-dark.png`, `screens/F02-upcoming.png`, `screens/F02-upcoming-dark.png`, and `brand/brand-components.png`) set the brand: the tokens, the cover colours and the components. Where they change 2.1's layout and no rule decides, 2.1's layout is built with the brand (FQ40). Where a rule applies, the rule is built. Each item below goes in the next handoff that covers its screen:
+    - **The drop's ··· menu** is missing from H01's feed. Every revealed drop keeps it, opening the safety menu (S01) with no Share item (spec 15 and 22, T25, FQ14).
+    - **F02's top bar** is Home's club bar, with no back button and no person in it. F02 is pushed from the tab that opened it, with the system back button and the title "Debby’s Friday", as 2.1 has it (spec 03 and 09, book p34, T45).
+    - **The Highlight label after the reveal** is missing from Maya's photo in H01's feed. After the reveal, every highlight carries it in the feed, as 2.1 draws it (spec 15, book p6); FQ21's rule applies only before the reveal. No token pair exists yet for a label on a photograph.
+    - **The club switcher's chevron** is missing beside "Sunday people". The club name stays a button with 2.1's chevron (spec 03, book p7).
+    - **The action row** shows the words "Comment" and "Save", and no bookmark. The favourite control is the bookmark, filled when saved and labelled "Save to Favourites" (spec 18, book p8 and p36); the heart stays alone (FQ22); the comment control follows FQ40.
+    - **"Locked · Opens Fri 13 Nov"** on F02's cards, with no lock glyph, where the component sheet's card says "Opens Fri 13 Nov". Built as 2.1 and the sheet: the lock glyph and "Opens Fri 13 Nov", without "Locked" (spec 03's "Opens with date", book p6). A tap on a card explains the time, "Photo opens Friday 13 Nov at 7 AM" (spec 14, book p8): built from spec.
+    - **The star glyph** beside "Highlight" and on the star's pick cover is gone. It stays, beside the text (book p6, spec 24).
+    - **The feed photo's corners** are square. Built at the photo radius, 14 (book p35, and the delivery's own list).
+    - **People appear only as initials.** A member's photo shows when they have one; the initial is the fallback (spec 29's A03, book p8).
+    - **The avatar fallback's circle** is cover2 everywhere, so it vanishes on Maya's cover2 card and rail cover, and H01-open-dark's rail uses the light value. Built as delivered, with the theme's cover2, until a handoff gives a fill that shows on every cover. Its sizes differ too: 36 points on the sheet, 28 and 18 in the screens.
+    - **Text on a cover** is always that cover's ink: secondaryText is under 4.5:1 on every cover (`brand/brand-tokens.md`).
+    - **Sizes no type role names:** the card's status line (about 11 points, 12 on the sheet, where book p35's metadata is 13/18), the plaque's two lines (about 10 and 25), F02's date title (about 25), the header's club name and "+ Add" (16 and 15) and the button's label (16). Built at the drawn sizes, as named tokens that scale with Dynamic Type. The card radius: the frames draw 14, the delivery's text and spec 24 say 16, book p35 has a "ticket 18"; built at 14.
+    - **F02's audience line:** FQ43. **The cover colour each sender gets:** FQ41; the sheet's specimen colours are only illustrative, and the screens' mapping is the reference. **Dates and times:** FQ44.
+    - **The blank-caption card** (2.1's "A photo for Debby.", book p13's "Photo for Debby") has no handoff 0 render: built from 2.1's `F02-upcoming` with the brand's covers. **"Past days"** (spec 09) is in neither render: built from spec.
+    - **Apostrophes:** the frames draw ', the book's copy ’. The app's strings use ’.
+    - **The tab bar's glyphs** are schematic: the system tab bar with the SF Symbols the delivery names (house, person.2, photo.on.rectangle), as the tab-bar item above says (T45).
+    - **The delivery's notes** that reach beyond appearance aren't product rules: the stored cover slot (FQ41), how the highlight label is authorized (T9, T10, T55, FQ21) and the rail's order (FQ26). Its "These targeted directions supersede conflicting brand examples in the 2.1 book" covers colours, the wordmark, the icon and how components look.
+    - **The brand assets:** the wordmark is traced from a raster: clean at the sizes the delivery names (96 points at least, 144 on Welcome, 120 CSS pixels on the invitation page), with uneven curves when drawn about 2,400 pixels wide. Its accessible name is "Tadayo", not its SVG title, "Tadayo design frame". The dark icon is an opaque square, where Apple asks for a dark icon with a transparent background: it goes in the asset catalog as delivered. Where the marks came from is FQ42.
 
 ## Counts
 
-- Trial states: 147. With a 2.1 render: 50 (one of them, `C03-system-picker`, is a reference for the system picker and isn't built). Missing: 97.
+- Trial states: 147. With a render: 51. 50 have a 2.1 render (one of them, `C03-system-picker`, is a reference for the system picker and isn't built), and three of those (`H01-open`, `H01-open-dark`, `F02-upcoming`) now also have handoff 0's, in `screens/`. `F02-upcoming-dark` has handoff 0's only. Missing: 96.
 - Later states: 6, of which 3 have 2.1 renders.
-- Brand assets: 4, none received.
+- Brand assets: 4, all received (handoff 0).

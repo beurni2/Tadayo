@@ -111,6 +111,8 @@ Each question has a default. Claude Code builds on the default until the founder
 
     Default: built with the right-hand wording. The brand handoff asks Claude Design how "Deborah-Anne's pick" fits a 91-point cover.
 
+    Handoff 0 answered on 2 November 2026 (`design/reference/brand/brand-components.png`): at the default size the label wraps after the hyphen, "Deborah-" then "Anne's pick", at 12/14 bold, without shrinking or an ellipsis; at large text the rail becomes full-width rows, at least 96 points high and growing.
+
     Needed by: B1.
 - **FQ21. The Highlight label before the reveal.** `F02-upcoming` and `F02-added` show Ben a "Highlight" label on Maya's collecting card. The spec's pre-reveal whitelist for non-authors doesn't include it (spec 14, T10).
     - Default: before the reveal, the label shows only on the viewer's own drops.
@@ -130,6 +132,7 @@ Each question has a default. Claude Code builds on the default until the founder
     - Needed by: B0.
 - **FQ26. The order of the highlight rail.** Spec 15 says the star's pick, then stable roster order. `H01-open` shows Debby's pick, then Maya, Sam and Ben, which isn't the Friends order (Ben, Maya, Alex, Sam, Debby, Nina).
     - Default: the star's pick, then the club's schedule order from Monday, so Ben, Maya, Sam. The render is a known difference in the inventory.
+    - Also, raised by handoff 0's notes: in a club of two or three, each member has two days, and a contributor can have no day that week (a member whose days start later, or a former member whose drops stay). Default: by each contributor's earliest weekday in that occurrence's schedule; anyone without a day follows, in the order they joined; the order is fixed for each occurrence.
     - Needed by: B5.
 
 ## Operations and the trial
@@ -198,3 +201,21 @@ Each is a place where two sources disagree and the fix would loosen one of them,
 - **FQ39. Where the founder approves a destructive change.** T57 says destructive changes "need the founder's approval in the PR". Until ADR-022, that approval was the founder's merge (`docs/GITHUB.md`: "his merge is the approval"). ADR-022 moves each PR's approval to the project's thread, because nothing on GitHub can show that the founder wrote it.
     - Default: no PR with a destructive migration is merged until the founder answers. Claude Code proposes that the founder's approval in the thread names the destructive change itself, and that the PR quotes it with its date and time; `docs/INVARIANTS.md` T57 would then be reworded in a rulebook PR of its own (`docs/MILESTONES.md`, "Lanes"); the rulebook PR that brings `CLAUDE.md`, `docs/GITHUB.md` and `README.md` in line with ADR-022 (PR #3) leaves T57 unchanged.
     - Needed by: the first destructive migration (none in B0).
+
+## Raised by design handoff 0
+
+- **FQ40. Which layout handoff 0's four screens set.** The brief asked for `H01-open` and `F02-upcoming` "with the brand applied, light and dark, so the system is seen in place", and said "The book's screens are the layouts we keep" (ADR-006). `design/reference/README.md` and `design/reference/INVENTORY.md` say a render in `screens/` wins over `2.1/`. Where no rule decides, handoff 0's screens change 2.1's layout: no photograph of Debby beside "Debby's Friday", smaller avatars, the word "Comment" in place of the comment bubble, and no line above F02's footer. Where a rule decides, the rule is built either way (`INVENTORY.md`, "Known differences").
+    - Default: 2.1's layout with handoff 0's colours, cover colours and components, and the rule fixes the brief asked for (Debby's pick, the rail's order, no Share, the Highlight label only on your own cards before the reveal).
+    - Needed by: B4.
+- **FQ41. Which cover colour each sender gets.** Book p13: "Colours follow stable sender positions and never hidden media." Handoff 0 colours each card and rail cover by its sender, in the club's roster order (Ben cover 1, Maya 2, Sam 4, Debby 5), and its notes ask for a slot stored on each membership that is never given to anyone else after a departure. With six colours, a full club whose membership changes would then have no colour for its newcomer. Spec 31's membership has no such field.
+    - Default: each membership keeps one of the six colours for as long as it lasts. A club's founding members take them in the club's roster order, as handoff 0's screens do; a newcomer takes the lowest colour no current member holds; a departure never changes anyone else's colour; a former member's drops that stay keep the colour their membership had. The colour travels with the club's member list, never with a drop (T10), and a name always shows beside it (spec 24). It's added to the membership by an expand-only migration (T57) before B4; slice 4 builds spec 31's membership as written.
+    - Needed by: B4.
+- **FQ42. Where the brand's identity boards came from.** Handoff 0's document says the wordmark and the icon are "a cleaned, flat reconstruction" of "two supplied identity boards", and keeps "the supplied identity", a folded t, rather than the plaque the brief suggested. The boards aren't in the delivery or the repository.
+    - Default: the folded t and the wordmark stand as delivered, as Claude Design's work through the founder (T46), in `dev` and internal TestFlight builds. Before the first build reaches anyone outside the internal testers (Gate D), the founder confirms where the boards came from and that Tadayo may use the marks, with FQ5's trademark clearance. If the founder uploads the boards, they go in `design/reference/claude-design/handoff-0/`.
+    - Needed by: Gate D.
+- **FQ43. F02's audience line.** Spec 09: "A short audience line reads Captions now. Photos and videos open for this club on Friday." 2.1 and handoff 0 draw "Captions now. Photos on Friday." above "Shared with Sunday people"; book p8 has "Caption visible to Sunday people now. Photo opens Friday 13 Nov at 7 AM."
+    - Default: spec 09's sentence, above "Shared with Sunday people": a contract wins over a render until the founder decides (`design/reference/README.md`), and only its wording stays true when the day has video links.
+    - Needed by: B4.
+- **FQ44. Dates and times on iPhones set to other regions.** The renders write dates one way: "Friday 13 November", "Fri 13 Nov", "FRIDAY, 6 NOVEMBER", with "7 AM". iOS formats dates by the phone's region and its 12- or 24-hour setting: a US iPhone writes "Friday, November 13", and a UK one "07:00". No source says which applies.
+    - Default: the phone's own region and clock settings, through iOS's date templates, with the weekday and the month always as words, never numbers, so a date stays exact (T41). Snapshot tests fix one region. Changing it later touches one formatter.
+    - Needed by: B0 (slice 11's date labels).
