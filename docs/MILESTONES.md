@@ -1,6 +1,6 @@
 # Tadayo stages and gates
 
-Version 1.0 · 1 November 2026
+Version 1.1 · 2 November 2026
 
 The spec builds in nine dependency steps (spec 38) towards the closed trial, which it calls M0 (spec 02). Here the steps become build stages B1 to B9, after a foundations stage B0. They are grouped into gates the founder checks on his iPhone, and split into two lanes that run in parallel after Gate 0. The trial's scope is ADR-007. The founder alone passes a gate. At each gate:
 - stop and post the evidence;
@@ -40,7 +40,7 @@ How the lanes fit together:
 
 ## B0: Foundations → Gate 0
 
-**Goal:** the skeleton runs on the founder's iPhone against `dev`, every PR goes through CI and an independent review, the contract exists, and the native unknowns are retired.
+**Goal:** the skeleton runs on the founder's iPhone against `dev`, every PR goes through CI and an independent review, the contract exists, and spikes S3, S5 and S6 have retired the native unknowns B0 can reach. Spikes S1, S2 and S4 follow before Gate A (ADR-024).
 
 **Build:**
 - **The repository.** The pnpm workspace and the Swift packages from `docs/TECH-DESIGN.md` section 3.
@@ -67,7 +67,7 @@ How the lanes fit together:
     - Sign-in and the profile (screens A02 and A03), built from spec until their renders arrive.
     - The three tabs with truthful empty states.
     - Snapshot tests producing PNGs and render-beside-snapshot contact sheets.
-    - A TestFlight build on the founder's iPhone. App Store Connect refuses an upload without an app icon, and the only icon allowed is handoff 0's (T46), so the first upload waits for it, and so do the spikes that need the founder's iPhone (S1 to S4 and S6). Until then, the app is built and tested on CI.
+    - A TestFlight build on the founder's iPhone. App Store Connect refuses an upload without an app icon, and the only icon allowed is handoff 0's (T46), so the first upload waits for it, and so do the spikes that need the founder's iPhone (S3 and S6 in B0, and S1, S2 and S4 before Gate A). Until then, the app is built and tested on CI.
 - **The brand handoff.** Design handoff 0 is ready in the founder's guide, so he can start it on day one. Copy it into `docs/plans/B0.md`. Gate 0 waits for its icon frames: if the rest of the brand takes longer, the founder can send the design as soon as those three frames are done, and the rest later.
 - **The B1 handoff.** Write it in the B0 plan, for screens A02 and A03 and the club states B1 needs. Send it to the founder only once handoff 0's `brand-tokens.md` and `brand-components.png` are on `main`, because it builds on them.
 - **Deploy.** `dev` on Supabase and Fly, connected through the session pooler, and `deploy-dev` on merge to `main`.
@@ -79,7 +79,7 @@ How the lanes fit together:
     - whether the session reaches the hosts the first session was refused that `docs/TECH-DESIGN.md` section 10's network list names (Supabase, Fly, Cloudflare, swift.org and GitHub's documentation), once the founder has selected the Tadayo environment. Resend, refused too, isn't checked: the list leaves it out because the session never calls it (its key is only Supabase's SMTP password);
     - the one Swift version, pinned everywhere.
 
-**Spikes.** Each spike gets a one-page report in `docs/spikes/` with its evidence. S1 to S4 and S6 run on the founder's iPhone, so they follow the first TestFlight build. Spike code merges only if it's clean enough to keep.
+**Spikes.** Each spike gets a one-page report in `docs/spikes/` with its evidence. S1 to S4 and S6 run on the founder's iPhone, so they follow the first TestFlight build. Spike code merges only if it's clean enough to keep. S3, S5 and S6 run in B0. S1, S2 and S4 need the founder's account in an active club on `dev` with the founder's day in its calendar, which only B1 and B2 build, and no script or seed may put it there (ADR-021). So they run once B1 and B2 are on `dev`, before Gate A, and before B3 and B4 build media and contributing on them (B2, "Spikes S1, S2 and S4"; ADR-024).
 
 | Spike | Prove |
 |---|---|
@@ -92,7 +92,7 @@ How the lanes fit together:
 
 **Gate 0 evidence:**
 - the TestFlight build on the founder's iPhone: sign in with an email code, the three tabs, the Lab;
-- the spike reports in one PDF, with the measured times;
+- the reports of spikes S3, S5 and S6 in one PDF, with the measured times;
 - CI green, and the privacy matrix and leak scanner green on the empty routes;
 - the Supabase probe's result on `dev`: every REST, GraphQL and Storage call refused or empty, and the data API off;
 - a PR that went through the independent review, with every finding fixed or answered;
@@ -126,12 +126,15 @@ How the lanes fit together:
     - H01 waiting states (`H01-waiting`, `H01-after-close`, `H01-sunday`, awaiting activation, club paused), with countdowns from `server_now` and a VoiceOver label giving the target date.
     - F01 (`F01-friends`, `F01-long-names`, `F01-friends-xl`) with the next dates; the F02 header with the exact date; C01 (`C01-picker`).
 
+**Spikes S1, S2 and S4, before Gate A.** Both lanes, once B1 and B2 are on `dev` (ADR-024). The founder's account joins its club in the app, the way Gate A's own check forms a club: two accounts through an invitation link, the same roster approved, the days confirmed (spec 04 and 05; T6, T7). No script or seed touches the founder's account (ADR-021). Each spike proves what B0's table says, with a one-page report in `docs/spikes/`, and its code merges only if it's clean enough to keep. The B2 plan schedules them. If one shows that a native assumption fails, the stages that build on it (B3 and B4 for S1, B3 for S2, B8 for S4) are re-planned before they start.
+
 **Gate A: clubs and the calendar.** The founder checks:
 - two accounts form a club through an invitation link, approve the same roster, confirm their days, and see the same next dates;
 - a third person needs everyone's approval;
 - Home counts down to the next person's exact date;
 - the dev clock moves a day open and shut with workers stopped;
-- the report holds the zone and DST table, and the privacy-matrix report for club routes.
+- the report holds the zone and DST table, and the privacy-matrix report for club routes;
+- the reports of spikes S1, S2 and S4, with the measured times (ADR-024).
 
 ## B3: Media and manifests (step 3) → part of Gate B
 

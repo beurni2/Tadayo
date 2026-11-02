@@ -30,4 +30,4 @@ A private club of two to six friends, where each member has a day:
 - CI must be green, and every PR gets an independent review before the founder sees it (`docs/GITHUB.md`).
 - Every commit updates `docs/JOURNAL.md`: a hook refuses a commit without it, and CI refuses a branch whose entries are missing or incomplete.
 - CI configuration (`.yamllint.yaml`, `.github/`, `.claude/`, `tools/ci/`) changes only in its own PR.
-- The founder merges.
+- The founder approves each PR in the project's thread, and Claude Code then merges it (ADR-022).
