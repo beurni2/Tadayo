@@ -202,11 +202,11 @@ The screen-by-screen list is `design/reference/INVENTORY.md`, "Known differences
 
 ### 1.1 Shared (the api lane keeps this block)
 
-**Updated:** 2026-11-02 00:54 UTC, draft/b0-plan
+**Updated:** 2026-11-02 01:12 UTC, draft/b0-plan
 
 - **Stage:** B0 Foundations, not started. Next gate: Gate 0 (`docs/MILESTONES.md`).
 - **Lanes:** none yet; one session until Gate 0.
-- **PRs:** #1, `docs: add the Tadayo starter pack` from `starter-pack`, open: four independent reviews are recorded, and a fifth reviews the fourth one's fixes and the PR's body.
+- **PRs:** #1, `docs: add the Tadayo starter pack` from `starter-pack`, open: five independent reviews are recorded, and a sixth reviews the fifth one's fixes and the PR's body.
 - **Branches:** `main` holds one commit, `Initial commit` (`README.md` only), made from the session at the founder's request on 2026-11-01 because the repository was created empty. `starter-pack` adds the pack and its document fixes. `draft/b0-plan`, made from `starter-pack` at the founder's request, holds the draft of `docs/plans/B0.md`; it is never merged or opened as a PR, and stays as it is.
 - **`main`'s protection:** on, read back on 2026-11-01 through the summary (`docs/GITHUB.md`): no required check yet. Squash merges only, and merged branches are deleted.
 - **Environments:** `dev` being set up by the founder in US East (Supabase `us-east-1`, Fly `iad`; FQ3). `prod` not created (Gate D).
@@ -216,10 +216,10 @@ The screen-by-screen list is `design/reference/INVENTORY.md`, "Known differences
 
 **What exists and works (verified).** On `starter-pack`, the starter pack unpacked at the repository root by the commit `docs: unpack the Tadayo starter pack`. Its tree matched a separate unzip of `tadayo-starter-pack.zip` (`diff -r`, no difference) until that commit rewrote this journal's section 1.1 and added its log entry. The document fixes since are on `starter-pack` (PR #1), not on this branch. Here, `python3 tools/ci/journal_hook_test.py` passes (6 tests) and `python3 tools/ci/journal_check_test.py` fails 2 of its 28 tests, `test_unpack_without_an_entry` and `test_state_left_as_the_handoff_wrote_it`, because their fixture reads the live journal; PR #1 fixes the fixture. Python 3.13.18, git 2.43.0. Nothing else is built.
 
-**In progress.** PR #1's fifth independent review, on `starter-pack`. On `draft/b0-plan`, a branch that is never opened as a PR (the founder's instruction of 2026-11-01), the B0 plan `docs/plans/B0.md`; it reaches `main` through `plan/b0` after PR #1 merges.
+**In progress.** PR #1's sixth independent review, on `starter-pack`. On `draft/b0-plan`, a branch that is never opened as a PR (the founder's instruction of 2026-11-01), the B0 plan `docs/plans/B0.md`; it reaches `main` through `plan/b0` after PR #1 merges.
 
 **Next, in order:**
-1. On `starter-pack`, finish PR #1's fifth independent review: fix or answer each finding, and record the review in a commit that fills in the PR's row in section 4. Done when the PR says it's ready for the founder.
+1. On `starter-pack`, finish PR #1's sixth independent review: fix or answer each finding, and record the review in a commit that fills in the PR's row in section 4. Done when the PR says it's ready for the founder.
 2. After the founder merges it: `git fetch origin`, `git switch -c plan/b0 origin/main`, then `git checkout origin/draft/b0-plan -- docs/plans/B0.md`; write its journal entry, and open its PR with its own review. Leave `draft/b0-plan` as it is.
 3. In the first session the founder starts after merging the starter-pack PR, check that the journal hook fires (a `git commit` without `docs/JOURNAL.md` staged is refused by `tools/ci/journal_hook.py`), and record the result in `docs/LIMITATIONS.md`.
 4. The B0 slices, in the order `docs/plans/B0.md` sets.
@@ -392,6 +392,14 @@ Newest first within each section. One entry per commit, written in that commit, 
 ```
 
 ### 3.1 Shared and B0
+
+#### 2026-11-02 01:12 UTC · shared · draft/b0-plan · PR none
+**Did:** Corrected `docs/plans/B0.md` section 1.2's Resend row: until `tadayo.app` is verified, Resend refuses to send from it at all, so no code arrives, and the first code that reaches the founder shows the domain is verified. The row had said codes reach only the founder's own address, which holds only for Resend's `resend.dev` test sender. Rewrote section 1.1's PR and progress lines.
+**Why:** PR #1's fifth review found the same mistake in the journal on `starter-pack`, traced to this row.
+**Verified:** `python3 tools/ci/journal_check.py --all` and `--branch`: exit 0.
+**Not verified:** Resend's behaviour comes from its documentation as PR #1's reviewer read it; the session's proxy refuses `api.resend.com`. Slice 8 shows it.
+**Decisions and questions:** None.
+**Next:** After the founder merges PR #1: `git fetch origin`, `git switch -c plan/b0 origin/main`, `git checkout origin/draft/b0-plan -- docs/plans/B0.md`, write the journal entry, push, and open the PR `docs: plan B0` with its independent review. Done when that PR says it's ready for the founder. Leave `draft/b0-plan` as it is.
 
 #### 2026-11-02 00:54 UTC · shared · draft/b0-plan · PR none
 **Did:** Brought `docs/plans/B0.md` in line with PR #1's third and fourth reviews. F7 (FQ36) now says everything the founder's and the tester's accounts add on `dev`, test content included, is treated as personal data, so spike reports and gate evidence show only fixture content. Section 6's host check adds `docs.github.com`. Rewrote section 1.1, which names the refused hosts that were actually tried.
