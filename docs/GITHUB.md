@@ -1,12 +1,12 @@
 # Pull requests and GitHub
 
-Version 1.0 · 1 November 2026
+Version 1.1 · 2 November 2026
 
-This is how you, Claude Code, get work onto `main` from a cloud session. The founder merges every pull request. No outside service reviews the code: before he sees a PR, you have it reviewed by an independent reviewer that hasn't seen your work.
+This is how you, Claude Code, get work onto `main` from a cloud session. The founder approves every pull request in the project's thread, and then you merge it (ADR-022). No outside service reviews the code: before he sees a PR, you have it reviewed by an independent reviewer that hasn't seen your work.
 
 ## What GitHub enforces
 
-You push and open PRs as the founder's GitHub account, so GitHub sees him as the author of every PR. Authors can't approve their own PRs, so no approval is required; his merge is the approval.
+You push and open PRs as the founder's GitHub account, so GitHub sees him as the author of every PR. Authors can't approve their own PRs, so no approval is required on GitHub. The founder's approval is a message in the project's thread (step 6): everything you post on GitHub appears under the founder's account, so nothing there can show that the founder wrote it, and nothing there approves a PR.
 
 Branch protection on `main`, which he sets from his guide:
 - a pull request is required to change `main`;
@@ -58,7 +58,9 @@ Branch protection on `main`, which he sets from his guide:
     - every finding is fixed or answered;
     - the evidence is linked.
 
-    Fill in the PR's "Ready for the founder" section: what changed, the evidence, what the review found (fixed or answered), the risks, and what you need from him. Bring the PR's row in the journal's section 4 up to date in the same push. He merges with squash and merge.
+    Fill in the PR's "Ready for the founder" section: what changed, the evidence, what the review found (fixed or answered), the risks, and what you need from him. Bring the PR's row in the journal's section 4 up to date in the same push.
+
+    The founder approves the PR in a message in the project's thread, naming it or answering your message about it. Then squash-merge it through REST at the head the founder approved, with a merge message that holds no personal data: `gh api -X PUT repos/beurni2/tadayo/pulls/<n>/merge -f merge_method=squash -f sha=<head> -f commit_title='<PR title> (#<n>)' -F commit_message=@<file>` (ADR-022), with each `'` in the title written as `'\''`. A push after the approval needs a new approval. If GitHub refuses the merge of a PR that changes `.github/workflows/`, don't work around it: ask the founder to merge that PR with **Squash and merge** at the approved head. The merge of the first workflow PR in B0 (`ci.yml`, the B0 plan's slice 2) is the one-time test: record in `docs/LIMITATIONS.md` whether GitHub accepted it, as for the push ("Workflow files", "Test it once"; ADR-022).
 7. **Answer his comments.** Read the founder's comments on the PR (commands below) and answer each one on the PR, signed "— Claude Code". When he asks for a change, push it and tell him.
 
 ## Workflow files
@@ -136,12 +138,12 @@ gh api repos/{owner}/{repo}/branches/main/protection --jq '{
 
 ## Never
 
-- Never push to `main`, merge, force-push, rebase or rewrite published history. When a branch needs something new from `main`, or conflicts with it, merge `main` into it and push once.
+- Never push to `main`, force-push, rebase or rewrite published history, and never merge a PR the founder hasn't approved in the project's thread at its current head (ADR-022). When a branch needs something new from `main`, or conflicts with it, merge `main` into it and push once.
 - Never post a commit status or a check run, and never resolve the founder's comments for him. Everything you post comes from his account.
 - Never weaken a test, a check, a lint rule, the privacy matrix, the leak scanner, the `ci` guards or the journal hook to get a PR through (T58).
 - Never change CI configuration (`.yamllint.yaml`, `.github/`, `.claude/`, `tools/ci/`) in a feature PR. It goes in its own PR, for the founder to read. Nothing else may change with it except the logs `docs/DECISIONS.md`, `docs/LIMITATIONS.md` and `docs/JOURNAL.md`.
 - Never commit without the journal entry, and never get around the hook: don't edit it outside its own CI-configuration PR, and don't reshape a commit so the hook can't read it.
-- Never ask the founder to merge with `ci` red or a review finding unanswered.
+- Never ask the founder to approve a PR with `ci` red or a review finding unanswered.
 - Never use the CodeRabbit plugin. Tadayo doesn't use CodeRabbit, and `.claude/settings.json` turns the plugin off; if its skills appear anyway, ignore them.
 
 ## Keeping PRs reviewable

@@ -14,7 +14,7 @@ The first build is a native iPhone app with a share extension, on a TypeScript A
 
 Your job is to build them, at a quality people notice.
 
-I'm the founder. I approve every gate and merge every pull request, after you've had it reviewed independently (`docs/GITHUB.md`).
+I'm the founder. I approve every gate and every pull request, after you've had it reviewed independently (`docs/GITHUB.md`). I approve a pull request in our project's thread, and then you merge it (ADR-022).
 
 ## What matters most
 
@@ -85,7 +85,7 @@ I'm the founder. I approve every gate and merge every pull request, after you've
 
 ## Order of work
 
-- **B0 first** (`docs/MILESTONES.md`): the repository, CI, the contract, the schema, the authorization and time modules, auth, the design system in the Lab, a TestFlight build, and the spikes S1 to S6 that retire the native unknowns.
+- **B0 first** (`docs/MILESTONES.md`): the repository, CI, the contract, the schema, the authorization and time modules, auth, the design system in the Lab, a TestFlight build, and the spikes S3, S5 and S6 that retire the native unknowns B0 can reach. Spikes S1, S2 and S4 need a club and its days, so they run once B1 and B2 have built them, before Gate A (ADR-024).
 - **Then two lanes in parallel:** api and ios, through B1 to B9, joined at Gates A, B, C and D. Gate D is trial readiness; Gate E is the trial itself.
 - **Only I can pass a gate.** At each gate:
     - stop and post the evidence;
@@ -109,7 +109,7 @@ Every slice follows the same loop:
     - **Snapshot every state:** empty, loading, error, offline, hidden, removed, largest text, dark.
 4. **Critique it** like a careful privacy reviewer and a demanding designer. Name the three weakest things, fix them and look again.
 5. **Verify:** tests, CI, the privacy matrix and leak scanner for new routes, the snapshots, and the device checks that apply.
-6. **Open the PR when the slice is complete and `ci` is green on your last push** (once `ci` exists). **Then have it reviewed by a fresh subagent** that hasn't seen your work (`docs/GITHUB.md`). Tell me it's ready only when every finding is fixed or answered in the PR.
+6. **Open the PR when the slice is complete and `ci` is green on your last push** (once `ci` exists). **Then have it reviewed by a fresh subagent** that hasn't seen your work (`docs/GITHUB.md`). Tell me it's ready only when every finding is fixed or answered in the PR. Once I've approved it in our thread, squash-merge it at the head I approved (`docs/GITHUB.md`, step 6).
 
 Use every tool that helps:
 - **Backend:** Docker for Postgres, Vitest, k6, the OpenAPI toolchain, Prism for the mock.
@@ -154,7 +154,7 @@ Put your ambition into craft: the privacy proofs, the cutoff races, the reveal a
 
 - One branch and one PR per slice, with small commits. Branch names are `<lane>/<stage>-<slice>`, for example `api/b3-media-route` or `ios/b4-composer`.
 - **Start every branch from `main`** (`git fetch origin`, then `git switch -c <branch> origin/main`), never from another branch that hasn't merged.
-- **Never** merge, push to `main`, force-push, rebase or rewrite published history. Amending your own last commit before it's pushed is fine. When a branch needs something new from `main`, or conflicts with it, merge `main` into it and push once. If GitHub refuses that push because the merge brings in workflow changes, ask me to tap **Update branch** on the PR (`docs/GITHUB.md`, "Workflow files").
+- **Never** push to `main`, force-push, rebase or rewrite published history, and never merge a pull request I haven't approved in our thread at its current head (ADR-022). Amending your own last commit before it's pushed is fine. When a branch needs something new from `main`, or conflicts with it, merge `main` into it and push once. If GitHub refuses that push because the merge brings in workflow changes, ask me to tap **Update branch** on the PR (`docs/GITHUB.md`, "Workflow files").
 - **To undo a commit,** revert it without its journal change, because the log is append-only: `git revert --no-commit <sha>`, then `git checkout HEAD -- docs/JOURNAL.md`, then write a new entry that says what was reverted and why, and commit.
 - **Ask me first** before anything destructive or shared:
     - a database reset or a destructive migration;
