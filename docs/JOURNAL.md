@@ -202,11 +202,11 @@ The screen-by-screen list is `design/reference/INVENTORY.md`, "Known differences
 
 ### 1.1 Shared (the api lane keeps this block)
 
-**Updated:** 2026-11-02 00:10 UTC, draft/b0-plan
+**Updated:** 2026-11-02 00:54 UTC, draft/b0-plan
 
 - **Stage:** B0 Foundations, not started. Next gate: Gate 0 (`docs/MILESTONES.md`).
 - **Lanes:** none yet; one session until Gate 0.
-- **PRs:** #1, `docs: add the Tadayo starter pack` from `starter-pack`, open: its first two independent reviews are recorded, and a third reviews the second one's fixes.
+- **PRs:** #1, `docs: add the Tadayo starter pack` from `starter-pack`, open: four independent reviews are recorded, and a fifth reviews the fourth one's fixes and the PR's body.
 - **Branches:** `main` holds one commit, `Initial commit` (`README.md` only), made from the session at the founder's request on 2026-11-01 because the repository was created empty. `starter-pack` adds the pack and its document fixes. `draft/b0-plan`, made from `starter-pack` at the founder's request, holds the draft of `docs/plans/B0.md`; it is never merged or opened as a PR, and stays as it is.
 - **`main`'s protection:** on, read back on 2026-11-01 through the summary (`docs/GITHUB.md`): no required check yet. Squash merges only, and merged branches are deleted.
 - **Environments:** `dev` being set up by the founder in US East (Supabase `us-east-1`, Fly `iad`; FQ3). `prod` not created (Gate D).
@@ -216,17 +216,17 @@ The screen-by-screen list is `design/reference/INVENTORY.md`, "Known differences
 
 **What exists and works (verified).** On `starter-pack`, the starter pack unpacked at the repository root by the commit `docs: unpack the Tadayo starter pack`. Its tree matched a separate unzip of `tadayo-starter-pack.zip` (`diff -r`, no difference) until that commit rewrote this journal's section 1.1 and added its log entry. The document fixes since are on `starter-pack` (PR #1), not on this branch. Here, `python3 tools/ci/journal_hook_test.py` passes (6 tests) and `python3 tools/ci/journal_check_test.py` fails 2 of its 28 tests, `test_unpack_without_an_entry` and `test_state_left_as_the_handoff_wrote_it`, because their fixture reads the live journal; PR #1 fixes the fixture. Python 3.13.18, git 2.43.0. Nothing else is built.
 
-**In progress.** PR #1's third independent review, on `starter-pack`. On `draft/b0-plan`, a branch that is never opened as a PR (the founder's instruction of 2026-11-01), the B0 plan `docs/plans/B0.md`; it reaches `main` through `plan/b0` after PR #1 merges.
+**In progress.** PR #1's fifth independent review, on `starter-pack`. On `draft/b0-plan`, a branch that is never opened as a PR (the founder's instruction of 2026-11-01), the B0 plan `docs/plans/B0.md`; it reaches `main` through `plan/b0` after PR #1 merges.
 
 **Next, in order:**
-1. On `starter-pack`, finish PR #1's third independent review: fix or answer each finding, and record the review in a commit that fills in the PR's row in section 4. Done when the PR says it's ready for the founder.
+1. On `starter-pack`, finish PR #1's fifth independent review: fix or answer each finding, and record the review in a commit that fills in the PR's row in section 4. Done when the PR says it's ready for the founder.
 2. After the founder merges it: `git fetch origin`, `git switch -c plan/b0 origin/main`, then `git checkout origin/draft/b0-plan -- docs/plans/B0.md`; write its journal entry, and open its PR with its own review. Leave `draft/b0-plan` as it is.
 3. In the first session the founder starts after merging the starter-pack PR, check that the journal hook fires (a `git commit` without `docs/JOURNAL.md` staged is refused by `tools/ci/journal_hook.py`), and record the result in `docs/LIMITATIONS.md`.
 4. The B0 slices, in the order `docs/plans/B0.md` sets.
 
 **Blocked or waiting for the founder:**
 - Reviewing and merging the starter-pack PR once it says it's ready, and deciding the rule changes it lists for the founder.
-- Selecting the Tadayo environment for the project, with the hosts in `docs/TECH-DESIGN.md` section 10's network list allowed: the first session's environment refused them (`docs/LIMITATIONS.md`).
+- Selecting the Tadayo environment for the project, with the hosts in `docs/TECH-DESIGN.md` section 10's network list allowed: the first session's environment refused Supabase, Fly, Cloudflare, swift.org, `docs.github.com` and `images.unsplash.com` among them (`docs/LIMITATIONS.md` on `starter-pack`).
 - FQ31 on `starter-pack`, before design handoff 0 starts: until the founder answers, no inventory row changes (`docs/plans/B0.md`, F6).
 - Accounts for B0 (`docs/TECH-DESIGN.md` section 10): Apple Developer Program with the App Store Connect API key and the APNs key, Supabase on Pro with `tadayo-dev`, Fly.io, Resend on `tadayo.app`, and a yes to FQ5's identifiers. The B0 plan names each account and secret exactly.
 - The trial members' iPhone models and iOS versions (FQ4), which matter only if one can't run iOS 17. The founder's runs iOS 18, so the minimum stays iOS 17.
@@ -392,6 +392,14 @@ Newest first within each section. One entry per commit, written in that commit, 
 ```
 
 ### 3.1 Shared and B0
+
+#### 2026-11-02 00:54 UTC · shared · draft/b0-plan · PR none
+**Did:** Brought `docs/plans/B0.md` in line with PR #1's third and fourth reviews. F7 (FQ36) now says everything the founder's and the tester's accounts add on `dev`, test content included, is treated as personal data, so spike reports and gate evidence show only fixture content. Section 6's host check adds `docs.github.com`. Rewrote section 1.1, which names the refused hosts that were actually tried.
+**Why:** PR #1's third review restored FQ36's handling of everything the two accounts add, and its fourth added `docs.github.com` to the refused hosts (`docs/LIMITATIONS.md` and `docs/MILESTONES.md` B0 on `starter-pack`). The plan must match them when it moves to `plan/b0`.
+**Verified:** `curl https://images.unsplash.com/` from the session on 2026-11-02: `CONNECT tunnel failed, response 403`, as F1 says. `python3 tools/ci/journal_check.py --all` and `--branch`: exit 0.
+**Not verified:** None.
+**Decisions and questions:** None on this branch. FQ36 and FQ37 are on `starter-pack` (PR #1); FQ37 is needed by Gate D, not B0.
+**Next:** After the founder merges PR #1: `git fetch origin`, `git switch -c plan/b0 origin/main`, `git checkout origin/draft/b0-plan -- docs/plans/B0.md`, write the journal entry, push, and open the PR `docs: plan B0` with its independent review. Done when that PR says it's ready for the founder. Leave `draft/b0-plan` as it is.
 
 #### 2026-11-02 00:10 UTC · shared · draft/b0-plan · PR none
 **Did:** Brought `docs/plans/B0.md` in line with PR #1's second review. Section 1.1 adds two rows for the founder:
