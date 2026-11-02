@@ -1,0 +1,11 @@
+# The TypeScript workspace (docs/TECH-DESIGN.md section 3). The Swift packages sit beside it.
+packages:
+  - apps/web
+  - packages/domain
+  - packages/contracts
+  - services/api
+  - services/worker
+minimumReleaseAgeExclude:
+  - "@vitest/mocker@5.1.0"
+  - "@vitest/spy@5.1.0"
+  - vitest@5.1.0
