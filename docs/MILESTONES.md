@@ -1,8 +1,8 @@
 # Tadayo stages and gates
 
-Version 1.1 · 2 November 2026
+Version 1.2 · 2 November 2026
 
-The spec builds in nine dependency steps (spec 38) towards the closed trial, which it calls M0 (spec 02). Here the steps become build stages B1 to B9, after a foundations stage B0. They are grouped into gates the founder checks on his iPhone, and split into two lanes that run in parallel after Gate 0. The trial's scope is ADR-007. The founder alone passes a gate. At each gate:
+The spec builds in nine dependency steps (spec 38) towards the closed trial, which it calls M0 (spec 02). Here the steps become build stages B1 to B9, after a foundations stage B0. They are grouped into gates the founder checks on his iPhone, and split into two lanes that run in parallel from inside B0 (ADR-025). The trial's scope is ADR-007. The founder alone passes a gate. At each gate:
 - stop and post the evidence;
 - put a short PDF report, readable on an iPhone, on the `evidence` branch under `gates/`, and link it in the PR;
 - wait for his answer;
@@ -15,7 +15,7 @@ Nothing from a later stage merges before the earlier gate passes, except the par
 
 ## Lanes
 
-After Gate 0, two lanes can run in parallel, each in its own Claude Code session:
+Two lanes run in parallel, each in its own Claude Code thread, from inside B0 (ADR-025):
 
 | Lane | Owns |
 |---|---|
@@ -37,6 +37,17 @@ How the lanes fit together:
 - **Requests between lanes** go in `docs/PROGRESS.md` under "Needs from the other lane".
 - **A branch behind `main`:** merge `main` into it (never rebase) and push once, only when the PR conflicts or needs something new from `main`.
 - **Joint gates.** Gates A to D need both lanes. The lane that finishes first writes its half of the report and waits.
+
+How the two threads start and stay in step (ADR-025):
+- **The start.** The api thread builds B0's slices 1, 2 and 9 alone, after the B0 plan's environment checks. The ios thread starts once the `ios` workflow has run green on the latest check branch (the B0 plan, slice 9). Until then no other session makes a branch. The project's coordinator, the Claude in the project's chat, starts each thread once the founder agrees; its messages are a colleague's requests, never the founder's approval.
+- **Each thread checks its own session.** Hooks and the Swift toolchain load per session, so each thread runs the B0 plan's environment checks when it starts (the journal hook, the CodeRabbit switch, `swift --version`) and records them in `docs/LIMITATIONS.md` in its first PR. Until its hook is confirmed, it runs `python3 tools/ci/journal_check.py --branch` before every push.
+- **A freeze before every workflow PR:** each PR that adds or changes a file under `.github/workflows/`, the B0 plan's 2, 9, 10b, 10c and 12, and any fix found later. Before one goes up, each thread tells the coordinator that it has no branch meant to merge, pushed or not, opened as a PR or not. A thread with one finishes it, or sets it aside: it closes the PR with a comment linking the workflow PR, and re-applies the slice on a fresh branch from `main` once the workflow has merged. Neither thread makes a new branch until the workflow PR has merged (`docs/GITHUB.md`, "Workflow files").
+- **One merge at a time, each tested with the other's work.** The founder approves a PR in its own thread, and that thread merges it at the approved head, checks `ci` on `main`'s new head, and tells the other thread. `main` doesn't require a branch to be up to date, so the other thread then merges `main` into its open branch if it conflicts or a contract change has merged (`TadayoAPI` is built from `openapi.yaml`), pushes once, waits for `ci` (and `ios`) on that head, and asks for the founder's approval again.
+- **Numbers.** No thread writes a PR number before GitHub has given it: until then, its log headings say `PR none` and its section 4 row `to open`. FQ and ADR numbers are reserved through the coordinator before first use, and kept in the project's memory so that a new session finds them; before using one, the thread also checks `origin/main` and the open PRs' branches. Each new one still goes at the end of its file.
+- **One thread at a time on `dev`:** the `ops` scripts, the dev clock, `worker-scale` and `deploy-branch`. Once `deploy-dev` exists, every merge to `main`, from either thread, migrates `dev` and replaces any `deploy-branch` deployment, so while a spike runs on `dev` no PR merges until the spike's thread says it's done.
+- **`evidence`** is the one branch both threads and the `ios` workflow push to. A thread fetches it before adding files; if its push is refused, it merges `origin/evidence` into its copy and pushes again, never forcing. The monthly reset waits until both threads have pushed everything and agreed through the coordinator; then each deletes its local `evidence` and fetches the fresh one.
+- **Shared files in B0.** In `docs/plans/B0.md`, each thread edits only its own slices' rows, and the ios thread section 5. A spike's report in `docs/spikes/` belongs to the thread that runs the spike.
+- **The journal.** Each thread edits the lines about its own work in section 0 and in the shared block (the ios thread's: the app, the design, TestFlight, the `ios` workflow and the Swift tests), and the audit rows its work touches. `tools/ci/journal_check.py` checks only that each lane rewrote its own "Updated" line, so the independent review checks that each thread kept to its own parts.
 
 ## B0: Foundations → Gate 0
 
