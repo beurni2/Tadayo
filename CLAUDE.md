@@ -14,7 +14,7 @@ The first build is a native iPhone app with a share extension, on a TypeScript A
 
 Your job is to build them, at a quality people notice.
 
-I'm the founder. I approve every gate and every pull request, after you've had it reviewed independently (`docs/GITHUB.md`). I approve a pull request in our project's thread, and then you merge it (ADR-022).
+I'm the founder. I approve every gate and every pull request, after you've had it reviewed independently (`docs/GITHUB.md`). I approve a pull request in our project, in the thread where you reported it, and then you merge it (ADR-022, ADR-025).
 
 ## What matters most
 
@@ -86,7 +86,7 @@ I'm the founder. I approve every gate and every pull request, after you've had i
 ## Order of work
 
 - **B0 first** (`docs/MILESTONES.md`): the repository, CI, the contract, the schema, the authorization and time modules, auth, the design system in the Lab, a TestFlight build, and the spikes S3, S5 and S6 that retire the native unknowns B0 can reach. Spikes S1, S2 and S4 need a club and its days, so they run once B1 and B2 have built them, before Gate A (ADR-024).
-- **Then two lanes in parallel:** api and ios, through B1 to B9, joined at Gates A, B, C and D. Gate D is trial readiness; Gate E is the trial itself.
+- **Two lanes in parallel, from inside B0:** api and ios, each in its own thread, through B0 to B9, joined at Gates 0, A, B, C and D. The api thread builds B0's first slices alone, until the `ios` workflow has run green (the B0 plan's slice 9); then the ios thread starts beside it (ADR-025). `docs/MILESTONES.md`, "Lanes", says how the two stay apart and in step. Gate D is trial readiness; Gate E is the trial itself.
 - **Only I can pass a gate.** At each gate:
     - stop and post the evidence;
     - put a short PDF report on the `evidence` branch and link it in the PR;
@@ -109,7 +109,7 @@ Every slice follows the same loop:
     - **Snapshot every state:** empty, loading, error, offline, hidden, removed, largest text, dark.
 4. **Critique it** like a careful privacy reviewer and a demanding designer. Name the three weakest things, fix them and look again.
 5. **Verify:** tests, CI, the privacy matrix and leak scanner for new routes, the snapshots, and the device checks that apply.
-6. **Open the PR when the slice is complete and `ci` is green on your last push** (once `ci` exists). **Then have it reviewed by a fresh subagent** that hasn't seen your work (`docs/GITHUB.md`). Tell me it's ready only when every finding is fixed or answered in the PR. Once I've approved it in our thread, squash-merge it at the head I approved (`docs/GITHUB.md`, step 6).
+6. **Open the PR when the slice is complete and `ci` is green on your last push** (once `ci` exists). **Then have it reviewed by a fresh subagent** that hasn't seen your work (`docs/GITHUB.md`). Tell me it's ready only when every finding is fixed or answered in the PR. Once I've approved it in its thread, squash-merge it at the head I approved (`docs/GITHUB.md`, step 6).
 
 Use every tool that helps:
 - **Backend:** Docker for Postgres, Vitest, k6, the OpenAPI toolchain, Prism for the mock.
@@ -154,9 +154,9 @@ Put your ambition into craft: the privacy proofs, the cutoff races, the reveal a
 
 - One branch and one PR per slice, with small commits. Branch names are `<lane>/<stage>-<slice>`, for example `api/b3-media-route` or `ios/b4-composer`.
 - **Start every branch from `main`** (`git fetch origin`, then `git switch -c <branch> origin/main`), never from another branch that hasn't merged.
-- **Never** push to `main`, force-push, rebase or rewrite published history, and never merge a pull request I haven't approved in our thread at its current head (ADR-022). Amending your own last commit before it's pushed is fine. When a branch needs something new from `main`, or conflicts with it, merge `main` into it and push once. If GitHub refuses that push because the merge brings in workflow changes, ask me to tap **Update branch** on the PR (`docs/GITHUB.md`, "Workflow files").
+- **Never** push to `main`, force-push, rebase or rewrite published history, and never merge a pull request I haven't approved in its thread at its current head (ADR-022, ADR-025). Amending your own last commit before it's pushed is fine. When a branch needs something new from `main`, or conflicts with it, merge `main` into it and push once. If GitHub refuses that push because the merge brings in workflow changes, ask me to tap **Update branch** on the PR (`docs/GITHUB.md`, "Workflow files").
 - **To undo a commit,** revert it without its journal change, because the log is append-only: `git revert --no-commit <sha>`, then `git checkout HEAD -- docs/JOURNAL.md`, then write a new entry that says what was reverted and why, and commit.
-- **Ask me first** before anything destructive or shared:
+- **Ask me first** before anything destructive or shared, and act only on my own answer to your question in the thread that will do it. A yes I gave another thread, or one the coordinator or another Claude passes on, isn't one (ADR-025):
     - a database reset or a destructive migration;
     - deleting storage objects;
     - changing App Store Connect settings, certificates or the bundle id;
@@ -178,13 +178,13 @@ At every commit, before you stage:
     - **what's next, in order, each step exact enough to carry out from the journal alone:** the command to run or the file to open, and what done looks like;
     - what's blocked, and on whom.
 
-    The shared block (the one session's until Gate 0, then the api lane's) also holds the stage and the next gate, the environments, TestFlight, `ci` on `main`, how to run and check everything, and the known limits. The design line, with the inventory's counts, is in the ios lane's block.
+    The shared block (the one session's until the ios thread starts in B0, then the api lane's: ADR-025) also holds the stage and the next gate, the environments, TestFlight, `ci` on `main`, how to run and check everything, and the known limits. The design line, with the inventory's counts, is in the ios lane's block.
 2. **Update the audit map** (section 2) for every invariant, acceptance test or spec section the commit touched: where it's enforced (file and function), where it's tested (test name), and its status.
 3. **Add a log entry** (section 3) with all six fields: Did, Why, Verified, Not verified, Decisions and questions, Next. Write "None" where a field has nothing.
 4. **Update the orientation** (section 0) when the commit changes anything it describes: the product as built, the stack, the layout, the documents, a decision, or a departure from the sources. Each lane edits the lines about its own work.
 5. **Update section 4:** your PR's row in your last commit before you open the PR, and its number and review findings in the commit that records the review; a gate's row when its report is posted; and a new kind of evidence when it appears.
 
-Write for someone who has never seen the repository: files and functions, commands, test names, PR numbers, evidence paths, spec sections, book pages. Facts only; "verified" means you ran it. Each lane rewrites only its own block of the state, and writes only in its own log section and PR table; after Gate 0 the api lane keeps the shared block and section 0. On a merge conflict in the journal, rebuild it from the two whole versions (`git show :2:docs/JOURNAL.md` and `:3:`), not from the conflict markers: keep every log entry and section 4 row from both sides, each once and whole, merge an audit-map row both lanes changed into one row, and rewrite your block of the state so it's true after the merge. The log is append-only: correct a mistake with a new entry. No secrets and no personal data.
+Write for someone who has never seen the repository: files and functions, commands, test names, PR numbers, evidence paths, spec sections, book pages. Facts only; "verified" means you ran it. Each lane rewrites only its own block of the state, and writes only in its own log section and PR table; once the ios thread has started in B0, the api lane keeps the shared block and section 0, where each lane edits the lines about its own work. On a merge conflict in the journal, rebuild it from the two whole versions (`git show :2:docs/JOURNAL.md` and `:3:`), not from the conflict markers: keep every log entry and section 4 row from both sides, each once and whole, merge an audit-map row both lanes changed into one row, and rewrite your block of the state so it's true after the merge; in the shared block and section 0, keep the lines about the other lane's work as `main` has them, and rewrite those about your own work so they're true after the merge. The log is append-only: correct a mistake with a new entry. No secrets and no personal data.
 
 ## Between sessions
 
