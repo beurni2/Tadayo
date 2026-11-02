@@ -233,6 +233,7 @@ How the lanes fit together:
     - The permission offer after the first contribution (`F02-added` and its first-time variant).
     - The notification settings (`S03-notifications`, `G05-notifications`).
     - Routing of deep links with the access recheck, and the not-available screen. Q29 waits for widgets in M1.
+    - The queued removal of the push registration after a logout made offline (`docs/TECH-DESIGN.md` section 6). Device test: it lands once the network returns while the app is suspended, and at the next launch after a force-quit, and then no push for the old account reaches the iPhone.
 
 ## B9: Trial readiness (step 9) → Gate D
 
