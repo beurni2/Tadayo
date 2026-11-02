@@ -53,7 +53,7 @@ Paths are relative to `design/reference/`:
 | G05 Club information | `G05-notifications` | Notifications for this club | `screens/G05-notifications.png` |  | missing | B8 |  |
 | G05 Club information | `G05-leave` | Leave: keep or withdraw my contributions | `screens/G05-leave.png` |  | missing | B6 | T26 |
 | G06 Club switcher | `G06-switcher` | Your clubs | `2.1/G06-switcher.png` | 2.1 #45 | received | B1 | FQ20: shows "Her pick" behind the sheet |
-| G06 Club switcher | `G06-no-club` | Signed in with no club: create or join | `screens/G06-no-club.png` |  | requested 1 | B1 |  |
+| G06 Club switcher | `G06-no-club` | Signed in with no club: create or join | `screens/G06-no-club.png` |  | requested 1 | B0 |  |
 | H01 Home | `H01-first-drop` | After joining: something for Debby | `2.1/H01-first-drop.png` | 2.1 #04 | received | B4 | FQ20: "reminded you of Debby" |
 | H01 Home | `H01-open` | Debby's day, the feed directly | `screens/H01-open.png` | Handoff 0 (2.1 #05 before) | received | B5 | FQ20, FQ26: handoff 0's render follows both. Layout: `2.1/H01-open.png` where no rule decides (FQ40). Its differences are under "Known differences" |
 | H01 Home | `H01-open-dark` | Debby's day, dark | `screens/H01-open-dark.png` | Handoff 0 (2.1 #23 before) | received | B5 | FQ20: handoff 0's render follows it. Layout: `2.1/H01-open-dark.png` where no rule decides (FQ40). As `H01-open` |
