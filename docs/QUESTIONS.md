@@ -155,7 +155,7 @@ Each question has a default. Claude Code builds on the default until the founder
 
 ## Raised by the starter-pack PR
 
-Each is a place where two sources disagree and the fix would loosen one of them, so it waits for the founder. The default holds until then.
+Each is a place where two sources disagree and the fix would loosen one of them, so it waited for the founder, who answered each on 2 November 2026.
 
 - **FQ31. Keeping `INVENTORY.md` current.** `CLAUDE.md` ("Repository layout") and `design/reference/README.md` forbid editing anything in `design/reference/`, `INVENTORY.md` included. `CLAUDE.md` ("The rules easiest to break by accident"), `INVENTORY.md` itself, `docs/DESIGN-HANDOFF.md` and the definition of done in `docs/MILESTONES.md` require keeping it current.
     - Answered by the founder on 2 November 2026: Claude Code may edit `INVENTORY.md` to keep it current, never deleting a row (ADR-020). Nothing else already in `design/reference/` is edited, moved or renamed, except to move an export the founder uploaded into `claude-design/` into its `handoff-<n>/` folder, which `CLAUDE.md` ("Repository layout") allows.
@@ -170,7 +170,7 @@ Each is a place where two sources disagree and the fix would loosen one of them,
     - Default: T62 as written: every dismissal is durable.
     - Needed by: M1.5 (Remember this).
 - **FQ34. The weekly trial report against `prod`.** ADR-012 and `docs/TECH-DESIGN.md` section 1 run the weekly trial report through `ops`, and the trial lives in `prod`. Section 9 lets `ops` act on `prod` only for the moderation scripts, the Supabase probe and the review-access switch.
-    - Answered by the founder on 2 November 2026: the default. The report runs on `dev`'s seeded data, and running it against `prod` would need a new answer.
+    - Answered by the founder on 2 November 2026: the default. The report runs on `dev`'s seeded data, and running it against `prod` would need a new answer. Gate E's first weekly trial report (`docs/MILESTONES.md`) reads the trial in `prod`, so Claude Code asks for that answer before Gate E.
     - Default: the report runs on `dev`'s seeded data (Gate D's "trial report on seeded data"), and against `prod` only once the founder answers.
     - Needed by: Gate E.
 - **FQ35. Adding 2.1's own pack.** FQ25's default has the founder attach 2.1's pack, with its HTML reference and tokens file in `design/reference/pack/`. `CLAUDE.md` ("Repository layout") and `design/reference/README.md` let Claude Code add only handoff deliveries and the files made from them. The README's table gives `pack/` to the founder, who can't create a folder from GitHub's upload page on a phone (`docs/DESIGN-HANDOFF.md`).

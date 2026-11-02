@@ -23,7 +23,7 @@ Follow it. To change a decision, write an ADR in `docs/DECISIONS.md` with your r
 | Hosting | Fly.io, one Docker image, two process groups: `api` and `worker`. Region per FQ3 | Close to the database; cheap at trial size |
 | Push | APNs directly, token-based (`.p8` key), from the worker, to Apple's production host (`api.push.apple.com`) in every environment, because TestFlight builds use production push. The key covers the production environment | No third-party push SDK sees names or events |
 | Web | `apps/web`: the signed-out invitation page, `apple-app-site-association`, and the privacy, terms and support pages, static on Cloudflare Pages. The invitation token travels in the URL fragment (`/i#<token>`), which never reaches a server or a log; the page's script shows only the inviter's name, fetched with the token in a request body | T7; spec 04 |
-| Deletion log | One Cloudflare R2 bucket, append-only, written by the worker | ADR-010; spec 23 |
+| Deletion log | One Cloudflare R2 bucket per environment, append-only, written by that environment's worker (FQ37, ADR-021, section 10) | ADR-010; spec 23 |
 | Images | `sharp` (libvips) in the worker, with `limitInputPixels` at 64 megapixels. Renditions: `display` (1290 px wide) and `full` (2560 px on the long edge), JPEG; `widget` (720 px) comes with widgets in M1 | D09; spec 33 |
 | Image safety | A provider interface in the upload pipeline, set to `none` for the closed trial (FQ8) | Spec 33 |
 | Video providers | Adapters per provider behind flags. TikTok: the official Embed Player (`https://www.tiktok.com/player/v1/{post_id}`) in an isolated web view. Instagram: accepted and normalized, opened as the original after the reveal (FQ11) | Spec 17; refs R01, R02 |
@@ -247,7 +247,7 @@ Spec 31's entities, with these implementation choices:
 
 | Environment | Supabase | Fly apps | Who uses it |
 |---|---|---|---|
-| `dev` | `tadayo-dev`, in US East (Supabase `us-east-1`, Fly `iad`) near the founder (FQ3, ADR-016) | `tadayo-api-dev`, one app with the process groups `api` and `worker` (section 1, ADR-003) | Claude Code; synthetic data only; the founder's TestFlight builds point here until Gate D. The dev clock exists only here |
+| `dev` | `tadayo-dev`, in US East (Supabase `us-east-1`, Fly `iad`) near the founder (FQ3, ADR-016) | `tadayo-api-dev`, one app with the process groups `api` and `worker` (section 1, ADR-003) | Claude Code; synthetic data only, apart from the founder's and the internal tester's sign-in addresses: their accounts add only test content, and their addresses and everything those accounts add are treated as personal data (FQ36, ADR-021, T52); the founder's TestFlight builds point here until Gate D. The dev clock exists only here |
 | `prod` | `tadayo-prod` | `tadayo-api`, with the same two process groups | The trial; created at Gate D in the FQ3 region |
 
 Both Supabase projects live in one organization on the Pro plan, because a free project pauses after about a week without activity.

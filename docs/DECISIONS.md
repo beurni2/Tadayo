@@ -197,3 +197,16 @@ Decision: Claude Code edits `design/reference/INVENTORY.md` to keep each state's
 Alternatives: FQ31's default, no edits until answered, which would have stopped design handoff 0's rows going to `requested 0`.
 Consequences: Handoff 0's rows can go to `requested 0`, and every slice that builds a state updates its row in the same PR. A row is never deleted; a state that goes away is marked, not removed.
 Links: FQ31; `CLAUDE.md`; `docs/DESIGN-HANDOFF.md`; `design/reference/INVENTORY.md`.
+
+## ADR-021 · FQ32 to FQ37 keep their defaults · 2026-11-02 · decided
+Context: FQ32 to FQ37 are places where two sources disagree and the fix would loosen one of them. On 2 November 2026 the founder chose each default.
+Decision: Each default stands as `docs/QUESTIONS.md` states it in full:
+- FQ32: T9 as written. No route serves a drop's content to the operator; the `ops` moderation scripts (FQ27) hold or remove a drop by its id and write an audit row. If a report can't be handled without seeing the content, Claude Code asks the founder first.
+- FQ33: T62 as written: every dismissal is durable.
+- FQ34: the weekly trial report runs on `dev`'s seeded data; running it against `prod` needs a new answer.
+- FQ35: build from the PDF, as FQ25 says. If the founder attaches 2.1's pack, Claude Code asks before committing it.
+- FQ36: `dev` stays synthetic apart from the founder's and the internal tester's sign-in addresses. They add only test content there: photos with no people in them, and captions and comments written as tests. Their addresses, and everything their accounts add, test content included, are treated as personal data: they never go into logs, PRs, the journal or evidence (T52), and scripts and seeds never read or change their accounts.
+- FQ37: one deletion-log bucket per environment. Before `prod` exists, `prod`'s deletion log gets a bucket of its own, used for nothing else, and no key in `dev`'s app reaches it.
+Alternatives: None: the founder chose each default.
+Consequences: `docs/JOURNAL.md` section 0.8 lists FQ32's and FQ33's departures from spec 07 and spec 19. ADR-003's and `docs/TECH-DESIGN.md` section 1's one R2 bucket for the deletion log is read as one per environment, and section 7's synthetic `dev` as holding the two sign-in addresses.
+Links: FQ32 to FQ37; T9, T52, T62; ADR-003, ADR-004, ADR-010, ADR-012, ADR-013; spec 07, 19; `docs/TECH-DESIGN.md` sections 1, 7, 9 and 10.
