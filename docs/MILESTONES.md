@@ -228,12 +228,12 @@ How the lanes fit together:
 - **api:** spec 21.
     - APNs dispatch with aggregation, the two-a-day budget across clubs (FQ30), and quiet hours in the device's zone, with the reveal push deferred.
     - The access recheck at dispatch; preferences per account, club and thread; previews off by default; device registration, and its removal at logout or account switch.
-    - Tests: Q22, and T36's never-cases.
+    - Tests: Q22, and T36's never-cases; and that a removal secret removes only the registration it was sent with (`docs/TECH-DESIGN.md` section 6): a removal carrying an earlier sign-in's secret, after the token moved to another account, gets the neutral `NOT_FOUND` and leaves that registration in place, and a registration that carries a removed registration's secret is refused.
 - **ios:**
     - The permission offer after the first contribution (`F02-added` and its first-time variant).
     - The notification settings (`S03-notifications`, `G05-notifications`).
     - Routing of deep links with the access recheck, and the not-available screen. Q29 waits for widgets in M1.
-    - The queued removal of the push registration after a logout made offline (`docs/TECH-DESIGN.md` section 6). Device test, in three cases: it lands once the network returns while the app is suspended, at the next launch after a force-quit, and once the network returns after a force-quit followed by a launch made offline; in each, no push for the old account reaches the iPhone afterwards. A logic test covers a removal that ends with a 5xx, a 429 or a timeout: each is queued again, with a delay, and the secret is kept; and one whose secret the server refuses: the secret is deleted and the removal isn't queued again.
+    - The pending removal of the push registration after every logout (`docs/TECH-DESIGN.md` section 6). Device test, in four cases: a logout made online; one made offline, with the removal landing once the network returns while the app is suspended; the same with a force-quit and a relaunch made online; and with a force-quit and a relaunch made offline. In each, no push for the old account reaches the iPhone once the removal lands. Logic tests: every registration of one sign-in sends that sign-in's secret, and the next sign-in a new one; a removal that ends any other way than the server's removal or its neutral `NOT_FOUND` (a 5xx, a 429, another 4xx such as a 400 or a 401, a timeout, a dropped connection, a cancelled transfer) is sent again, with a delay, and the secret is kept; the server's removal and its `NOT_FOUND` each end it and delete the secret.
 
 ## B9: Trial readiness (step 9) → Gate D
 
