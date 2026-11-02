@@ -15,18 +15,19 @@ Each question has a default. Claude Code builds on the default until the founder
 ## Setup and accounts
 
 - **FQ3. Where the servers live.**
-    - For `dev`: the region nearest the founder, who runs every device check. Answered by the founder on 1 November 2026: they are in Virginia, US, so `dev` is in US East (Supabase `us-east-1`, Fly `iad`; ADR-016).
+    - For `dev`: the region nearest the founder, who runs every device check. Answered by the founder on 1 November 2026: they are in US East, so `dev` is there too (Supabase `us-east-1`, Fly `iad`; ADR-016).
     - For `prod`: the region where most trial members live. That's the US East region (Supabase `us-east-1`, Fly `iad`) for the US, and Paris for West Africa or Europe. The founder confirms it before `prod` is created at Gate D.
     - A Supabase project can't move region, only be recreated; for `dev`, which holds only test data, that's about an hour's work.
     - Needed by: B0 for `dev`; Gate D for `prod`.
 - **FQ4. Your iPhone and iOS version, and the trial members'.** The app's minimum iOS decides which phones can install it, the founder's included. The founder's iPhone can't open Claude Docs, whose viewer asks him to update iOS, so it may not be on a recent version.
-    - Answered in part by the founder on 1 November 2026: their iPhone is an iPhone 13 on iOS 18.3.2, so the iOS 17 minimum stands (ADR-018). The trial members' phones are still unknown.
+    - Answered in part by the founder on 1 November 2026: their iPhone runs iOS 18, so the iOS 17 minimum stands (ADR-018). The trial members' phones are still unknown.
     - Default: iOS 17 minimum, which runs on the iPhone XS, XR and later, built with the newest SDK so that newer iPhones get the current system look. The app's view models use Apple's Observation framework, which needs iOS 17.
     - If the founder's or a trial member's iPhone can't run iOS 17 (an iPhone 8 or X stops at iOS 16), tell Claude Code before B0. The app then needs iOS 16 and a slightly different structure.
     - Needed by: B0.
 - **FQ5. Domain, identifiers and the name.**
     - The domain: `tadayo.app`. Answered by the founder on 1 November 2026, who registered it on Cloudflare (ADR-017).
-    - Default: bundle id `app.tadayo`, with `app.tadayo.share` and `app.tadayo.widgets`; app group `group.app.tadayo`. The bundle id can't change after the App Store record exists.
+    - The identifiers: bundle id `app.tadayo`, with `app.tadayo.share` and `app.tadayo.widgets`; app group `group.app.tadayo`. Answered by the founder on 2 November 2026, who confirmed them (ADR-019). The bundle id can't change after the App Store record exists.
+    - The name: Tadayo, the default.
     - A search on 1 November 2026 found no App Store app named Tadayo, but similar names exist: Tadayou (a meditation app), Tayo Tayo and Tadaday. Trademark clearance stays a prelaunch task (spec intro).
     - Needed by: B0.
 - **FQ6. Privacy policy, terms and a support contact.** Apple asks for a privacy policy URL and a contact before external testers.
@@ -157,23 +158,30 @@ Each question has a default. Claude Code builds on the default until the founder
 Each is a place where two sources disagree and the fix would loosen one of them, so it waits for the founder. The default holds until then.
 
 - **FQ31. Keeping `INVENTORY.md` current.** `CLAUDE.md` ("Repository layout") and `design/reference/README.md` forbid editing anything in `design/reference/`, `INVENTORY.md` included. `CLAUDE.md` ("The rules easiest to break by accident"), `INVENTORY.md` itself, `docs/DESIGN-HANDOFF.md` and the definition of done in `docs/MILESTONES.md` require keeping it current.
-    - Default: until the founder answers, Claude Code edits nothing already in `design/reference/`, `INVENTORY.md` included, except to move an export the founder uploaded into `claude-design/` into its `handoff-<n>/` folder, which `CLAUDE.md` ("Repository layout") allows. Work that would add or change an inventory row waits for the answer, and its PR says so. The starter-pack PR's edits to `INVENTORY.md` were part of the founder's request to fix the documents.
+    - Answered by the founder on 2 November 2026: Claude Code may edit `INVENTORY.md` to keep it current, never deleting a row (ADR-020). Nothing else already in `design/reference/` is edited, moved or renamed, except to move an export the founder uploaded into `claude-design/` into its `handoff-<n>/` folder, which `CLAUDE.md` ("Repository layout") allows.
+    - The default until then was that nothing already in `design/reference/` changed, `INVENTORY.md` included, so work that would add or change an inventory row waited. The starter-pack PR's edits to `INVENTORY.md` were part of the founder's request to fix the documents.
     - Needed by: B0, before design handoff 0 starts (its rows go to `requested 0`).
 - **FQ32. The operator's case access.** T9 names the author's preview as the read rule's only exception. Spec 07 gives the moderation operator "restricted audited case access" before and after the reveal, and T55 has an `operator` role.
+    - Answered by the founder on 2 November 2026: the default.
     - Default: T9 as written. No route serves a drop's content to the operator; the `ops` moderation scripts (FQ27) hold or remove a drop by its id and write an audit row. If a report can't be handled without seeing the content, Claude Code asks the founder first.
     - Needed by: B9.
 - **FQ33. Which dismissals are durable.** T62 says "Dismissals are durable". Spec 19 has two controls: Dismiss hides the suggestion, and "Don't suggest this day again" stores the one durable per-user exclusion.
+    - Answered by the founder on 2 November 2026: the default.
     - Default: T62 as written: every dismissal is durable.
     - Needed by: M1.5 (Remember this).
 - **FQ34. The weekly trial report against `prod`.** ADR-012 and `docs/TECH-DESIGN.md` section 1 run the weekly trial report through `ops`, and the trial lives in `prod`. Section 9 lets `ops` act on `prod` only for the moderation scripts, the Supabase probe and the review-access switch.
+    - Answered by the founder on 2 November 2026: the default. The report runs on `dev`'s seeded data, and running it against `prod` would need a new answer.
     - Default: the report runs on `dev`'s seeded data (Gate D's "trial report on seeded data"), and against `prod` only once the founder answers.
     - Needed by: Gate E.
 - **FQ35. Adding 2.1's own pack.** FQ25's default has the founder attach 2.1's pack, with its HTML reference and tokens file in `design/reference/pack/`. `CLAUDE.md` ("Repository layout") and `design/reference/README.md` let Claude Code add only handoff deliveries and the files made from them. The README's table gives `pack/` to the founder, who can't create a folder from GitHub's upload page on a phone (`docs/DESIGN-HANDOFF.md`).
+    - Answered by the founder on 2 November 2026: the default.
     - Default: build from the PDF, as FQ25 says. If the founder attaches the pack, Claude Code asks before committing it.
     - Needed by: B0.
 - **FQ36. What `dev` holds.** `docs/TECH-DESIGN.md` section 7 says `dev` holds synthetic data only. ADR-003 and ADR-004 point the founder's builds, and so the founder's own account, at `dev` until Gate D. FQ28 adds a friend as an internal tester. Their email addresses, photos, captions and comments are real.
+    - Answered by the founder on 2 November 2026: the default.
     - Default: `dev` stays synthetic apart from the founder's and the internal tester's sign-in addresses. Because `dev`'s keys reach workflows run by hand on any branch, and the dev clock can reveal a drop early (ADR-013), they add only test content there: photos with no people in them, and captions and comments written as tests. Their addresses, and everything their accounts add, test content included, are treated as personal data: they never go into logs, PRs, the journal or evidence (T52), and scripts and seeds never read or change their accounts.
     - Needed by: B0.
 - **FQ37. One deletion-log bucket for both environments.** ADR-003 and `docs/TECH-DESIGN.md` section 1 name one R2 bucket for the deletion log (ADR-010). Both environments' workers write that log, with R2 keys in their Fly secrets, and `dev`'s app is reachable from workflows run by hand on any branch. From Gate D, section 9 lets no key that reaches `prod` be available to a run on any branch but `main`.
+    - Answered by the founder on 2 November 2026: the default.
     - Default: one bucket per environment. Before `prod` exists, `prod`'s deletion log gets a bucket of its own, used for nothing else, and no key in `dev`'s app reaches it.
     - Needed by: Gate D.

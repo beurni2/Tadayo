@@ -164,7 +164,7 @@ Consequences: B0's bootstrap creates `tadayo_app`, the `app` schema and `pg_trgm
 Links: T53; spec 30, 33.
 
 ## ADR-016 · `dev` in US East, near the founder · 2026-11-01 · decided
-Context: FQ3 puts `dev` in the region nearest the founder, who runs every device check, and the pack assumed that was Paris. On 1 November 2026 the founder said they are in Virginia, US, while creating `tadayo-dev`.
+Context: FQ3 puts `dev` in the region nearest the founder, who runs every device check, and the pack assumed that was Paris. On 1 November 2026 the founder said they are in US East, while creating `tadayo-dev`.
 Decision: `dev` is in US East: the Supabase project `tadayo-dev` in `us-east-1` and the Fly app `tadayo-api-dev` in `iad`, the same place as the database. `prod`'s region stays open under FQ3, confirmed before Gate D.
 Alternatives: Paris (Supabase `eu-west-3`, Fly `cdg`), the pack's assumption: farther from the founder for every device check, with no gain for `dev`'s synthetic data.
 Consequences: A Supabase project can't move region, only be recreated; for `dev`, which holds only test data, that's about an hour's work. The Fly app's `primary_region` is `iad`.
@@ -178,8 +178,22 @@ Consequences: Every DNS record the build needs (Pages, the API host, Resend's se
 Links: FQ5; ADR-003; `docs/TECH-DESIGN.md` sections 1, 4 and 10.
 
 ## ADR-018 · iOS 17 stays the minimum; the founder's iPhone runs iOS 18 · 2026-11-01 · decided
-Context: FQ4 asked for the founder's and the trial members' iPhones, because the minimum iOS decides who can install the app. On 1 November 2026 the founder said their iPhone is an iPhone 13 on iOS 18.3.2. The trial members' phones are still unknown.
+Context: FQ4 asked for the founder's and the trial members' iPhones, because the minimum iOS decides who can install the app. On 1 November 2026 the founder said their iPhone runs iOS 18. The trial members' phones are still unknown.
 Decision: The minimum stays iOS 17, FQ4's default (ADR-001). The founder's phone runs it, and the lower minimum lets in more of the members' phones.
 Alternatives: iOS 18 as the minimum: the app needs nothing from it (Observation needs iOS 17), and it would shut out any member still on iOS 17.
 Consequences: The founder's phone draws iOS 18's system look, not the newest SDK's look that the snapshots show (`docs/LIMITATIONS.md`). So before each gate the UI tests also run on an iOS 18 simulator, the founder's version, when the runner offers one (`docs/TECH-DESIGN.md` section 8). If a member's iPhone can't run iOS 17, FQ4's fallback to iOS 16 applies.
 Links: FQ4; ADR-001; `docs/TECH-DESIGN.md` sections 1 and 8.
+
+## ADR-019 · The identifiers `app.tadayo` · 2026-11-02 · decided
+Context: FQ5 proposed the app's identifiers, and ADR-017 kept them as defaults until the founder confirmed them. The bundle id can't change once the App Store record exists. On 2 November 2026 the founder confirmed them.
+Decision: The bundle id is `app.tadayo`, the share extension's `app.tadayo.share`, the widget extension's `app.tadayo.widgets`, and the app group `group.app.tadayo` (`docs/TECH-DESIGN.md` section 4).
+Alternatives: None: the founder chose FQ5's default, which matches the domain `tadayo.app` (ADR-017).
+Consequences: The App Store Connect record, the provisioning profiles and `apps/ios/project.yml` use these ids. Changing the bundle id after the record exists means a new App Store record. The name stays FQ5's default, Tadayo, with trademark clearance a prelaunch task.
+Links: FQ5; ADR-017; `docs/TECH-DESIGN.md` section 4.
+
+## ADR-020 · `INVENTORY.md` is kept current · 2026-11-02 · decided
+Context: `CLAUDE.md` ("Repository layout") and `design/reference/README.md` forbade editing anything in `design/reference/`, `INVENTORY.md` included, while `CLAUDE.md`, the inventory itself, `docs/DESIGN-HANDOFF.md` and the definition of done require keeping the inventory current (FQ31). On 2 November 2026 the founder answered that Claude Code may edit `INVENTORY.md` to keep it current, never deleting a row.
+Decision: Claude Code edits `design/reference/INVENTORY.md` to keep each state's render and status current, never deleting a row. Nothing else in `design/reference/` is edited, moved or renamed, apart from the export move `CLAUDE.md` already allows. `CLAUDE.md`'s "Repository layout" says so; `design/reference/README.md`, which the answer doesn't cover, is read with this exception.
+Alternatives: FQ31's default, no edits until answered, which would have stopped design handoff 0's rows going to `requested 0`.
+Consequences: Handoff 0's rows can go to `requested 0`, and every slice that builds a state updates its row in the same PR. A row is never deleted; a state that goes away is marked, not removed.
+Links: FQ31; `CLAUDE.md`; `docs/DESIGN-HANDOFF.md`; `design/reference/INVENTORY.md`.
