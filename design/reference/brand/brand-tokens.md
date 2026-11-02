@@ -1,6 +1,6 @@
 # Brand tokens
 
-Tadayo's colour tokens, light and dark, by role, in hex, with the six cover colours and their ink. The table is copied exactly from design handoff 0's delivery (`../claude-design/handoff-0/IMPLEMENTATION.md`, "brand-tokens"), and holds the same values as its `brand-tokens.json` and its `frames/brand-tokens.svg`. They replace book p35's proposal (`docs/DESIGN-HANDOFF.md`).
+Tadayo's colour tokens, light and dark, by role, in hex, with the six cover colours and their ink. The table is copied exactly from design handoff 0's delivery (`../claude-design/handoff-0/IMPLEMENTATION.md`, "brand-tokens"), and holds the same values as its `brand-tokens.json` and its `frames/brand-tokens.svg`. They replace book p35's proposal (`docs/DESIGN-HANDOFF.md`). What the app builds where the delivery and a rule differ is in `../INVENTORY.md`, "Known differences".
 
 | Role | Light | Dark |
 |---|---|---|
@@ -24,13 +24,11 @@ Tadayo's colour tokens, light and dark, by role, in hex, with the six cover colo
 
 ## Contrast
 
-- The delivery's own check (`../claude-design/handoff-0/contrast-checks.json`): 28 text pairs, each at least 4.5:1, the lowest 4.64:1 (secondaryText on surface, light). Claude Code recomputed all 28 with WCAG 2's formula on 2026-11-02 and got the same ratios.
-- Not in that check, measured by Claude Code: action as text on canvas is 6.43:1 light and 9.57:1 dark. secondaryText on any cover is below 4.5:1 (4.06 to 4.21 light, about 1.3 dark), so text on a cover uses that cover's ink, as every delivered frame does.
+- The delivery's own check (`../claude-design/handoff-0/contrast-checks.json`): 28 text pairs, each at least 4.5:1, the lowest 4.64:1 (secondaryText on surface, light).
 - The tokens frame adds: "Separators and input borders are non-text roles. Never use them as caption ink."
-- inputBorder, a control boundary rather than text, measured by Claude Code: 3.17:1 on canvas and 2.92:1 on surface in light, 5.93:1 and 4.76:1 in dark.
 
 ## Other notes
 
 - **The icon's yellow,** #F0D968, is used only by the app icon (`../claude-design/handoff-0/assets/brand-icon.svg` and `brand-icon-dark.svg`); it isn't a token.
-- **The six covers** are numbered 1 to 6 here; `brand-tokens.json`'s note counts the same six slots as 0 to 5. Which cover a sender gets is `docs/QUESTIONS.md` FQ41.
-- **The delivery's own note on the tokens,** as written: "Cobalt remains the light action. Dark action is a lighter cobalt for contrast. Six calm covers retain dark #182B25 ink in both themes. Persist a colour slot on the sender membership record; a departure must not reshuffle existing senders. Store cover index independently of hidden content, highlight status, popularity or reactions. Separators are decorative; input borders are control boundaries, not text colours. Destructive is a foreground on canvas or surface, not a filled button background. The JSON is the implementation source." Its rule on storing slots waits for FQ41.
+- **The six covers** are numbered 1 to 6 here; `brand-tokens.json` counts the same six slots as 0 to 5.
+- **The delivery's own notes on the tokens,** as written. `IMPLEMENTATION.md`: "Cobalt remains the light action. Dark action is a lighter cobalt for contrast. Six calm covers retain dark #182B25 ink in both themes. Persist a colour slot on the sender membership record; a departure must not reshuffle existing senders. Store cover index independently of hidden content, highlight status, popularity or reactions. Separators are decorative; input borders are control boundaries, not text colours. Destructive is a foreground on canvas or surface, not a filled button background. The JSON is the implementation source." `brand-tokens.json`, "coverAssignment": "Persist sender membership slot 0..5; do not compact slots after departure or reuse a historical slot for a different sender. Colours carry no state or content metadata."

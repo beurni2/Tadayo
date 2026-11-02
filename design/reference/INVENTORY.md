@@ -71,6 +71,7 @@ Paths are relative to `design/reference/`:
 | F01 Friends | `F01-friends-dark` | Roster, dark | `screens/F01-friends-dark.png` |  | missing | B2 |  |
 | F01 Friends | `F01-friends-xl` | Roster at a large text size | `2.1/F01-friends-xl.png` | 2.1 #24 | received | B2 |  |
 | F01 Friends | `F01-long-names` | Long names wrap | `2.1/F01-long-names.png` | 2.1 #41 | received | B2 |  |
+| F01 Friends | `F01-no-club` | The Friends tab with no club yet: no example roster | `screens/F01-no-club.png` |  | missing | B0 |  |
 | F02 Upcoming day | `F02-upcoming` | Captions now, photos on Friday | `screens/F02-upcoming.png` | Handoff 0 (2.1 #08 before) | received | B4 | FQ21: handoff 0's render shows the Highlight label only on Ben's own card. Layout: `2.1/F02-upcoming.png` where no rule decides (FQ40), and for the blank-caption card. Its differences are under "Known differences" |
 | F02 Upcoming day | `F02-upcoming-dark` | Upcoming day, dark | `screens/F02-upcoming-dark.png` | Handoff 0 | received | B4 | As `F02-upcoming` |
 | F02 Upcoming day | `F02-upcoming-xl` | Upcoming day at the largest text | `screens/F02-upcoming-xl.png` |  | missing | B4 |  |
@@ -153,6 +154,7 @@ Paths are relative to `design/reference/`:
 | M01 Memories | `M01-empty` | Your first memories are ahead | `2.1/M01-empty.png` | 2.1 #50 | received | B6 |  |
 | M01 Memories | `M01-filters` | Member, month, For me | `screens/M01-filters.png` |  | missing | B6 |  |
 | M01 Memories | `M01-no-results` | Search with no results | `screens/M01-no-results.png` |  | missing | B6 |  |
+| M01 Memories | `M01-no-club` | The Memories tab with no club yet: no fabricated history | `screens/M01-no-club.png` |  | missing | B0 |  |
 | M02 Favourites | `M02-favourites` | Saved privately | `2.1/M02-favourites.png` | 2.1 #18 | received | B6 |  |
 | M02 Favourites | `M02-empty` | Save a revealed drop to find it here | `screens/M02-empty.png` |  | missing | B6 |  |
 | M02 Favourites | `M02-explainer` | One-time explanation | `screens/M02-explainer.png` |  | missing | B6 |  |
@@ -210,8 +212,11 @@ Where a 2.1 render breaks a rule, or the spec and the book disagree, build what 
     - **The feed photo's corners** are square. Built at the photo radius, 14 (book p35, and the delivery's own list).
     - **People appear only as initials.** A member's photo shows when they have one; the initial is the fallback (spec 29's A03, book p8).
     - **The avatar fallback's circle** is cover2 everywhere, so it vanishes on Maya's cover2 card and rail cover, and H01-open-dark's rail uses the light value. Built as delivered, with the theme's cover2, until a handoff gives a fill that shows on every cover. Its sizes differ too: 36 points on the sheet, 28 and 18 in the screens.
-    - **Text on a cover** is always that cover's ink: secondaryText is under 4.5:1 on every cover (`brand/brand-tokens.md`).
-    - **Sizes no type role names:** the card's status line (about 11 points, 12 on the sheet, where book p35's metadata is 13/18), the plaque's two lines (about 10 and 25), F02's date title (about 25), the header's club name and "+ Add" (16 and 15) and the button's label (16). Built at the drawn sizes, as named tokens that scale with Dynamic Type. The card radius: the frames draw 14, the delivery's text and spec 24 say 16, book p35 has a "ticket 18"; built at 14.
+    - **Text on a cover** is always that cover's ink: secondaryText is under 4.5:1 on every cover (4.06 to 4.21:1 light, 1.23 to 1.32:1 dark, measured by Claude Code with WCAG 2's formula).
+    - **The input border** is a control boundary, not text: 3.17:1 on canvas and 2.92:1 on surface in light, 5.93:1 and 4.76:1 in dark (measured by Claude Code), so on surface in light it's under the 3:1 a control's boundary needs. Handoff 1 asks which border a field on surface takes.
+    - **Sizes no type role names:** the plaque's two lines (about 10 and 25), F02's date title (about 25), the header's club name and "+ Add" (16 and 15) and the button's label (16). Built at the drawn sizes, as named tokens that scale with Dynamic Type, until handoff 1 names them.
+    - **The card's status line** is drawn at about 11 points (12 on the sheet). Built at the metadata role, 13/18, which book p35 and the delivery both name, and which sits in spec 24's 13 to 15 points for secondary labels.
+    - **The card radius:** the frames draw 14; the delivery's named token ("card 16") and spec 24 say 16; book p35 has a "ticket 18". Built at 16: the delivery asks for its "semantic tokens rather than tracing screenshots", and a render that differs from the spec doesn't change what's built (`docs/DESIGN-HANDOFF.md`). Handoff 1 asks.
     - **F02's audience line:** FQ43. **The cover colour each sender gets:** FQ41; the sheet's specimen colours are only illustrative, and the screens' mapping is the reference. **Dates and times:** FQ44.
     - **The blank-caption card** (2.1's "A photo for Debby.", book p13's "Photo for Debby") has no handoff 0 render: built from 2.1's `F02-upcoming` with the brand's covers. **"Past days"** (spec 09) is in neither render: built from spec.
     - **Apostrophes:** the frames draw ', the book's copy ’. The app's strings use ’.
@@ -221,6 +226,6 @@ Where a 2.1 render breaks a rule, or the spec and the book disagree, build what 
 
 ## Counts
 
-- Trial states: 147. With a render: 51. 50 have a 2.1 render (one of them, `C03-system-picker`, is a reference for the system picker and isn't built), and three of those (`H01-open`, `H01-open-dark`, `F02-upcoming`) now also have handoff 0's, in `screens/`. `F02-upcoming-dark` has handoff 0's only. Missing: 96.
+- Trial states: 149. With a render: 51. 50 have a 2.1 render (one of them, `C03-system-picker`, is a reference for the system picker and isn't built), and three of those (`H01-open`, `H01-open-dark`, `F02-upcoming`) now also have handoff 0's, in `screens/`. `F02-upcoming-dark` has handoff 0's only. Missing: 98.
 - Later states: 6, of which 3 have 2.1 renders.
 - Brand assets: 4, all received (handoff 0).
