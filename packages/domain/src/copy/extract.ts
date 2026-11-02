@@ -63,6 +63,13 @@ function fromStrings(content: string): string[] {
       while (j < content.length && content[j] !== '"') {
         if (content[j] === "\\" && j + 1 < content.length) {
           const next = content[j + 1] ?? "";
+          const hex = /^[0-9a-f]{4}$/iu.exec(content.slice(j + 2, j + 6));
+          if ((next === "U" || next === "u") && hex) {
+            // Apple's \U0021 escape: the character itself is what people read.
+            text += String.fromCharCode(parseInt(hex[0], 16));
+            j += 6;
+            continue;
+          }
           text += next === "n" ? "\n" : next === "t" ? "\t" : next;
           j += 2;
         } else {
@@ -79,7 +86,8 @@ function fromStrings(content: string): string[] {
   return out;
 }
 
-const READ_ATTRIBUTES = /\s(?:alt|title|aria-label|placeholder|content|value)\s*=\s*("([^"]*)"|'([^']*)')/giu;
+const READ_ATTRIBUTES =
+  /\s(?:alt|title|label|placeholder|content|value|aria-label|aria-description|aria-roledescription|aria-valuetext|aria-placeholder)\s*=\s*("([^"]*)"|'([^']*)')/giu;
 
 function fromHtml(content: string): string[] {
   const body = content

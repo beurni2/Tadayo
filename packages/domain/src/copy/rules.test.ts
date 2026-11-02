@@ -54,9 +54,12 @@ describe("T42: names, not inferred pronouns", () => {
 });
 
 describe("T43: no exclamation marks", () => {
-  it.each(["It's your day!", "Welcome！", "Done‼"])("refuses %j", (text) => {
-    expect(rules(text)).toEqual([expect.stringMatching(/^exclamation:/u)]);
-  });
+  it.each(["It's your day!", "Welcome！", "Done‼", "Really⁉", "Open now❗", "Open now❕", "Small﹗"])(
+    "refuses %j",
+    (text) => {
+      expect(rules(text)).toEqual([expect.stringMatching(/^exclamation:/u)]);
+    },
+  );
 
   it.each(["It's your day", "Nothing added for this day", "Photo opens Friday at 7 AM."])("lets %j through", (text) => {
     expect(rules(text)).toEqual([]);

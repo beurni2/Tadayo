@@ -20,9 +20,9 @@ const BANNED_WORDS = /\b(dressing[\s-]+rooms?|editions?|publications?|quotas?|se
 // ("Debby's pick", not "Her pick").
 const GENDERED_PRONOUNS = /\b(he|him|his|himself|she|her|hers|herself)\b/giu;
 
-// T43: the voice is plain; no staged enthusiasm. Covers the ASCII mark, the full-width
-// and the doubled forms.
-const EXCLAMATION = /[!！‼]/gu;
+// T43: the voice is plain; no staged enthusiasm. Covers the ASCII mark and its other
+// forms: full-width, small, doubled, with a question mark, and the two emoji.
+const EXCLAMATION = /[!！﹗‼⁉❗❕]/gu;
 
 export function lintString(text: string): CopyFinding[] {
   const findings: CopyFinding[] = [];

@@ -57,6 +57,18 @@ describe(".strings", () => {
     expect(extractStrings("a.strings", file)).toEqual(["title", 'It"s your day', "body", "Two\nlines"]);
   });
 
+  it("decodes Apple's \\U escapes", () => {
+    expect(extractStrings("a.strings", '"a" = "Open\\U0021";')).toEqual(["a", "Open!"]);
+  });
+
+  it("decodes UTF-16 without a byte-order mark", () => {
+    const le = Buffer.from('"a" = "Sent";', "utf16le");
+    const be = Buffer.from(le);
+    be.swap16();
+    expect(decode(le)).toBe('"a" = "Sent";');
+    expect(decode(be)).toBe('"a" = "Sent";');
+  });
+
   it("decodes UTF-16 with a byte-order mark", () => {
     const le = Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from('"a" = "Sent";', "utf16le")]);
     const be = Buffer.from(le);
@@ -73,13 +85,18 @@ describe(".html", () => {
       <meta name="description" content="A club of friends">
       <style>a::after { content: "!"; }</style><script>alert("!")</script></head>
       <body><!-- Sent! --><img src="x.png" alt="Debby&#39;s pick"><p>Get &excl; Tadayo</p>
-      <input placeholder='Your name'></body></html>`;
+      <input placeholder='Your name'><p aria-description="Opens Friday">x</p>
+      <select><option label="Kitchen table">k</option></select></body></html>`;
     expect(extractStrings("i.html", page)).toEqual([
       "A club of friends",
       "Debby's pick",
       "Your name",
+      "Opens Friday",
+      "Kitchen table",
       "Tadayo",
       "Get ! Tadayo",
+      "x",
+      "k",
     ]);
   });
 });

@@ -8,12 +8,22 @@ import { join } from "node:path";
 import { extractStrings, isStringFile } from "./extract.ts";
 import { lintString } from "./rules.ts";
 
-const SKIPPED = ["design/reference/", "node_modules/"];
+// Renders and deliveries at the top of the repository are never shipped; dependencies anywhere.
+function skipped(path: string): boolean {
+  return path.startsWith("design/reference/") || path.startsWith("node_modules/") || path.includes("/node_modules/");
+}
 
 export function decode(bytes: Buffer): string {
   if (bytes[0] === 0xff && bytes[1] === 0xfe) return bytes.subarray(2).toString("utf16le");
   if (bytes[0] === 0xfe && bytes[1] === 0xff) {
     const swapped = Buffer.from(bytes.subarray(2));
+    swapped.swap16();
+    return swapped.toString("utf16le");
+  }
+  // UTF-16 without a byte-order mark: ASCII text leaves every other byte zero.
+  if (bytes.length >= 2 && bytes[1] === 0 && bytes[0] !== 0) return bytes.toString("utf16le");
+  if (bytes.length >= 2 && bytes[0] === 0 && bytes[1] !== 0) {
+    const swapped = Buffer.from(bytes.subarray(0, bytes.length - (bytes.length % 2)));
     swapped.swap16();
     return swapped.toString("utf16le");
   }
@@ -28,7 +38,7 @@ function stringFiles(root: string): string[] {
   return listed
     .split("\0")
     .filter((path) => path !== "" && isStringFile(path))
-    .filter((path) => !SKIPPED.some((prefix) => path.startsWith(prefix) || path.includes(`/${prefix}`)))
+    .filter((path) => !skipped(path))
     .sort();
 }
 

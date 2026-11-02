@@ -43,10 +43,12 @@ it("passes clean string files, and skips design/reference and ignored files", ()
 it("fails on each finding, naming the file and the rule", () => {
   write("apps/ios/Tadayo/Localizable.xcstrings", JSON.stringify({ strings: { "Her pick": {} } }));
   write("apps/web/index.html", "<p>Sent!</p>");
+  write("apps/web/design/reference/page.html", "<p>Her day</p>");
   const { status, out } = run();
   expect(status).toBe(1);
   expect(out).toContain("apps/ios/Tadayo/Localizable.xcstrings: [gendered-pronoun]");
   expect(out).toContain("apps/web/index.html: [banned-word]");
   expect(out).toContain("apps/web/index.html: [exclamation]");
-  expect(out).toContain("copy lint: 2 string file(s), 3 finding(s)");
+  expect(out).toContain("apps/web/design/reference/page.html: [gendered-pronoun]");
+  expect(out).toContain("copy lint: 3 string file(s), 4 finding(s)");
 });
