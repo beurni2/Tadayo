@@ -185,3 +185,12 @@ Each is a place where two sources disagree and the fix would loosen one of them,
     - Answered by the founder on 2 November 2026: the default.
     - Default: one bucket per environment. Before `prod` exists, `prod`'s deletion log gets a bucket of its own, used for nothing else, and no key in `dev`'s app reaches it.
     - Needed by: Gate D.
+
+## Raised by the B0 plan PR
+
+- **FQ38. How the founder's account joins a club for spikes S1, S2 and S4.** S1's commit, S2's upload through S1's build, and S4's push that opens the exact club and day (`docs/MILESTONES.md`, "Spikes") need the account signed in on the founder's iPhone to be a member of a club on `dev`: the commit checks membership and audience (`docs/TECH-DESIGN.md` section 5), and a link opens its club or day only after access is rechecked (T38). Clubs and joining arrive in B1. The fixture clubs are seeded, and Sunday people is full at six (A01). ADR-021 (FQ36) says scripts and seeds never read or change the founder's account. Each way round changes something the founder decided:
+    - (a) the spike build lets the founder create a club on `dev` from the app, a minimal form of B1's club creation built early, so the founder's account changes only through the founder's own action. The founder is its only member and the star of the founder's own day, which S1 adds to and S4's push opens. It brings part of B1 into B0's spikes (`docs/MILESTONES.md`).
+    - (b) one `ops` run adds the founder's account to a seeded club with a free place and a free day, with the founder's yes for that one change. It relaxes ADR-021 once.
+    - (c) S1's commit and S4's deep link move to B1, once clubs exist. It changes Gate 0's evidence (`docs/MILESTONES.md`).
+    - Default: nothing reads or changes the founder's account, and S1, S2 and S4 wait for the answer while the other spikes go ahead. Claude Code recommends (a).
+    - Needed by: B0, before spike S1.
