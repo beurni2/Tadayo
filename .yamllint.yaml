@@ -1,0 +1,13 @@
+# yamllint settings for this repository, used by local runs (docs/GITHUB.md, "Workflow files").
+# CI configuration: change it only in its own PR (docs/INVARIANTS.md T58).
+extends: default
+rules:
+  line-length:
+    max: 200
+    level: warning
+  document-start: disable
+  truthy:
+    check-keys: false  # GitHub Actions uses `on:` as a key
+  # Workflow files are pasted into GitHub's web editor by the founder, and a pasted file
+  # usually loses its final line break (docs/GITHUB.md, "Workflow files").
+  new-line-at-end-of-file: disable

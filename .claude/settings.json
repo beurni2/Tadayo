@@ -1,0 +1,18 @@
+{
+  "enabledPlugins": {
+    "coderabbit@synced": false
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=\"${CLAUDE_PROJECT_DIR:-.}/tools/ci/journal_hook.py\"; test -f \"$f\" || exit 0; command -v python3 >/dev/null 2>&1 || exit 0; exec python3 -I \"$f\""
+          }
+        ]
+      }
+    ]
+  }
+}
