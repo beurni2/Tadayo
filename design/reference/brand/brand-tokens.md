@@ -1,6 +1,6 @@
 # Brand tokens
 
-Tadayo's colour tokens, light and dark, by role, in hex, with the six cover colours and their ink. The table is copied exactly from design handoff 0's delivery (`../claude-design/handoff-0/IMPLEMENTATION.md`, "brand-tokens"), and holds the same values as its `brand-tokens.json` and its `frames/brand-tokens.svg`. They replace book p35's proposal (`docs/DESIGN-HANDOFF.md`). What the app builds where the delivery and a rule differ is in `../INVENTORY.md`, "Known differences".
+Tadayo's colour tokens, light and dark, by role, in hex, with the six cover colours and their ink. The table is copied exactly from design handoff 0's delivery (`../claude-design/handoff-0/IMPLEMENTATION.md`, "brand-tokens"), and holds the same values as its `brand-tokens.json` and its `frames/brand-tokens.svg`. They replace book p35's proposal (`docs/DESIGN-HANDOFF.md`).
 
 | Role | Light | Dark |
 |---|---|---|
@@ -30,5 +30,5 @@ Tadayo's colour tokens, light and dark, by role, in hex, with the six cover colo
 ## Other notes
 
 - **The icon's yellow,** #F0D968, is used only by the app icon (`../claude-design/handoff-0/assets/brand-icon.svg` and `brand-icon-dark.svg`); it isn't a token.
-- **The six covers** are numbered 1 to 6 here; `brand-tokens.json` counts the same six slots as 0 to 5.
+- **The six covers** are numbered 1 to 6 here; `brand-tokens.json`'s "coverAssignment" counts the same six slots as 0 to 5.
 - **The delivery's own notes on the tokens,** as written. `IMPLEMENTATION.md`: "Cobalt remains the light action. Dark action is a lighter cobalt for contrast. Six calm covers retain dark #182B25 ink in both themes. Persist a colour slot on the sender membership record; a departure must not reshuffle existing senders. Store cover index independently of hidden content, highlight status, popularity or reactions. Separators are decorative; input borders are control boundaries, not text colours. Destructive is a foreground on canvas or surface, not a filled button background. The JSON is the implementation source." `brand-tokens.json`, "coverAssignment": "Persist sender membership slot 0..5; do not compact slots after departure or reuse a historical slot for a different sender. Colours carry no state or content metadata."
