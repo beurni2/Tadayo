@@ -27,33 +27,33 @@ Paths are relative to `design/reference/`:
 | Screen | State | Shows | Render | Source | Status | Stage | Notes |
 |---|---|---|---|---|---|---|---|
 | A01 Welcome | `A01-welcome` | Welcome with the labelled example | `2.1/A01-welcome.png` | 2.1 #01 | received | B1 | FQ20: "before and on the day"; FQ23: example photograph |
-| A02 Authentication | `A02-email` | Email entry | `screens/A02-email.png` |  | missing | B0 |  |
-| A02 Authentication | `A02-code` | Six-digit code | `screens/A02-code.png` |  | missing | B0 | ADR-011 |
-| A02 Authentication | `A02-code-error` | Wrong or expired code, resend | `screens/A02-code-error.png` |  | missing | B0 |  |
-| A02 Authentication | `A02-age` | 18 or older confirmation | `screens/A02-age.png` |  | missing | B0 | FQ13 |
-| A03 Profile | `A03-profile` | Name and optional photo | `screens/A03-profile.png` |  | missing | B0 |  |
+| A02 Authentication | `A02-email` | Email entry | `screens/A02-email.png` |  | requested 1 | B0 |  |
+| A02 Authentication | `A02-code` | Six-digit code | `screens/A02-code.png` |  | requested 1 | B0 | ADR-011 |
+| A02 Authentication | `A02-code-error` | Wrong or expired code, resend | `screens/A02-code-error.png` |  | requested 1 | B0 |  |
+| A02 Authentication | `A02-age` | 18 or older confirmation | `screens/A02-age.png` |  | requested 1 | B0 | FQ13 |
+| A03 Profile | `A03-profile` | Name and optional photo | `screens/A03-profile.png` |  | requested 1 | B0 |  |
 | G01 Club creation | `G01-create` | Name the club | `2.1/G01-create.png` | 2.1 #47 | received | B1 | No cover in the trial (FQ17) |
-| G01 Club creation | `G01-invite-people` | Make and share a link per person | `screens/G01-invite-people.png` |  | missing | B1 |  |
-| G01 Club creation | `G01-pending` | Before activation; prepared work stays in Drafts | `screens/G01-pending.png` |  | missing | B1 |  |
+| G01 Club creation | `G01-invite-people` | Make and share a link per person | `screens/G01-invite-people.png` |  | requested 1 | B1 |  |
+| G01 Club creation | `G01-pending` | Before activation; prepared work stays in Drafts | `screens/G01-pending.png` |  | requested 1 | B1 |  |
 | G02 Invite landing | `G02-invitation` | Inviter, club and exact roster | `2.1/G02-invitation.png` | 2.1 #02 | received | B1 |  |
-| G02 Invite landing | `G02-expired` | Expired invitation | `screens/G02-expired.png` |  | missing | B1 |  |
-| G02 Invite landing | `G02-changed` | The roster changed; review again | `screens/G02-changed.png` |  | missing | B1 |  |
-| G02 Invite landing | `G02-full` | The club already has six | `screens/G02-full.png` |  | missing | B1 |  |
-| G02 Invite landing | `G02-web` | Signed-out web page (apps/web) | `screens/G02-web.png` |  | missing | B1 | Shows the inviter's name only (T7) |
+| G02 Invite landing | `G02-expired` | Expired invitation | `screens/G02-expired.png` |  | requested 1 | B1 |  |
+| G02 Invite landing | `G02-changed` | The roster changed; review again | `screens/G02-changed.png` |  | requested 1 | B1 |  |
+| G02 Invite landing | `G02-full` | The club already has six | `screens/G02-full.png` |  | requested 1 | B1 |  |
+| G02 Invite landing | `G02-web` | Signed-out web page (apps/web) | `screens/G02-web.png` |  | requested 1 | B1 | Shows the inviter's name only (T7) |
 | G03 Roster approval | `G03-approve` | Existing member approves a proposed member | `2.1/G03-approve.png` | 2.1 #30 | received | B1 | FQ20: "Leila will see only drops shared after joining" |
-| G03 Roster approval | `G03-waiting` | Candidate waiting for the members | `screens/G03-waiting.png` |  | missing | B1 |  |
-| G03 Roster approval | `G03-declined` | Neutral: the invitation didn't go ahead | `screens/G03-declined.png` |  | missing | B1 | Never says who declined |
+| G03 Roster approval | `G03-waiting` | Candidate waiting for the members | `screens/G03-waiting.png` |  | requested 1 | B1 |  |
+| G03 Roster approval | `G03-declined` | Neutral: the invitation didn't go ahead | `screens/G03-declined.png` |  | requested 1 | B1 | Never says who declined |
 | G04 Schedule proposal | `G04-one-day` | Confirm one day (four to six members) | `2.1/G04-one-day.png` | 2.1 #03 | received | B2 |  |
 | G04 Schedule proposal | `G04-two-days` | Choose two days (two or three members) | `2.1/G04-two-days.png` | 2.1 #32 | received | B2 |  |
 | G04 Schedule proposal | `G04-conflict` | Two members want the same day | `screens/G04-conflict.png` |  | missing | B2 | Shown, never swapped (T6) |
 | G04 Schedule proposal | `G04-change` | Membership changed: confirm days from a future date | `screens/G04-change.png` |  | missing | B2 |  |
 | G05 Club information | `G05-club-details` | Members, schedule, notifications, widget, drafts, leave | `2.1/G05-club-details.png` | 2.1 #20 | received | B1 | The Widget row waits for M1 (FQ9) |
-| G05 Club information | `G05-members` | Roster with proposals | `screens/G05-members.png` |  | missing | B1 |  |
+| G05 Club information | `G05-members` | Roster with proposals | `screens/G05-members.png` |  | requested 1 | B1 |  |
 | G05 Club information | `G05-schedule` | The club's week | `screens/G05-schedule.png` |  | missing | B2 |  |
 | G05 Club information | `G05-notifications` | Notifications for this club | `screens/G05-notifications.png` |  | missing | B8 |  |
 | G05 Club information | `G05-leave` | Leave: keep or withdraw my contributions | `screens/G05-leave.png` |  | missing | B6 | T26 |
 | G06 Club switcher | `G06-switcher` | Your clubs | `2.1/G06-switcher.png` | 2.1 #45 | received | B1 | FQ20: shows "Her pick" behind the sheet |
-| G06 Club switcher | `G06-no-club` | Signed in with no club: create or join | `screens/G06-no-club.png` |  | missing | B1 |  |
+| G06 Club switcher | `G06-no-club` | Signed in with no club: create or join | `screens/G06-no-club.png` |  | requested 1 | B0 |  |
 | H01 Home | `H01-first-drop` | After joining: something for Debby | `2.1/H01-first-drop.png` | 2.1 #04 | received | B4 | FQ20: "reminded you of Debby" |
 | H01 Home | `H01-open` | Debby's day, the feed directly | `screens/H01-open.png` | Handoff 0 (2.1 #05 before) | received | B5 | FQ20, FQ26: handoff 0's render follows both. Layout: `2.1/H01-open.png` where no rule decides (FQ40). Its differences are under "Known differences" |
 | H01 Home | `H01-open-dark` | Debby's day, dark | `screens/H01-open-dark.png` | Handoff 0 (2.1 #23 before) | received | B5 | FQ20: handoff 0's render follows it. Layout: `2.1/H01-open-dark.png` where no rule decides (FQ40). As `H01-open` |
@@ -71,7 +71,7 @@ Paths are relative to `design/reference/`:
 | F01 Friends | `F01-friends-dark` | Roster, dark | `screens/F01-friends-dark.png` |  | missing | B2 |  |
 | F01 Friends | `F01-friends-xl` | Roster at a large text size | `2.1/F01-friends-xl.png` | 2.1 #24 | received | B2 |  |
 | F01 Friends | `F01-long-names` | Long names wrap | `2.1/F01-long-names.png` | 2.1 #41 | received | B2 |  |
-| F01 Friends | `F01-no-club` | The Friends tab with no club yet: no example roster | `screens/F01-no-club.png` |  | missing | B0 |  |
+| F01 Friends | `F01-no-club` | The Friends tab with no club yet: no example roster | `screens/F01-no-club.png` |  | requested 1 | B0 |  |
 | F02 Upcoming day | `F02-upcoming` | Captions now, photos on Friday | `screens/F02-upcoming.png` | Handoff 0 (2.1 #08 before) | received | B4 | FQ21: handoff 0's render shows the Highlight label only on Ben's own card. Layout: `2.1/F02-upcoming.png` where no rule decides (FQ40), and for the blank-caption card. Its differences are under "Known differences" |
 | F02 Upcoming day | `F02-upcoming-dark` | Upcoming day, dark | `screens/F02-upcoming-dark.png` | Handoff 0 | received | B4 | As `F02-upcoming` |
 | F02 Upcoming day | `F02-upcoming-xl` | Upcoming day at the largest text | `screens/F02-upcoming-xl.png` |  | missing | B4 |  |
@@ -154,7 +154,7 @@ Paths are relative to `design/reference/`:
 | M01 Memories | `M01-empty` | Your first memories are ahead | `2.1/M01-empty.png` | 2.1 #50 | received | B6 |  |
 | M01 Memories | `M01-filters` | Member, month, For me | `screens/M01-filters.png` |  | missing | B6 |  |
 | M01 Memories | `M01-no-results` | Search with no results | `screens/M01-no-results.png` |  | missing | B6 |  |
-| M01 Memories | `M01-no-club` | The Memories tab with no club yet: no fabricated history | `screens/M01-no-club.png` |  | missing | B0 |  |
+| M01 Memories | `M01-no-club` | The Memories tab with no club yet: no fabricated history | `screens/M01-no-club.png` |  | requested 1 | B0 |  |
 | M02 Favourites | `M02-favourites` | Saved privately | `2.1/M02-favourites.png` | 2.1 #18 | received | B6 |  |
 | M02 Favourites | `M02-empty` | Save a revealed drop to find it here | `screens/M02-empty.png` |  | missing | B6 |  |
 | M02 Favourites | `M02-explainer` | One-time explanation | `screens/M02-explainer.png` |  | missing | B6 |  |
@@ -226,6 +226,6 @@ Where a 2.1 render breaks a rule, or the spec and the book disagree, build what 
 
 ## Counts
 
-- Trial states: 149. With a render: 51. 50 have a 2.1 render (one of them, `C03-system-picker`, is a reference for the system picker and isn't built), and three of those (`H01-open`, `H01-open-dark`, `F02-upcoming`) now also have handoff 0's, in `screens/`. `F02-upcoming-dark` has handoff 0's only. Missing: 98.
+- Trial states: 149. With a render: 51. 50 have a 2.1 render (one of them, `C03-system-picker`, is a reference for the system picker and isn't built), and three of those (`H01-open`, `H01-open-dark`, `F02-upcoming`) now also have handoff 0's, in `screens/`. `F02-upcoming-dark` has handoff 0's only. Requested: 17, from handoff 1. Missing: 81.
 - Later states: 6, of which 3 have 2.1 renders.
 - Brand assets: 4, all received (handoff 0).
