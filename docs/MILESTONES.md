@@ -233,7 +233,7 @@ How the lanes fit together:
     - The permission offer after the first contribution (`F02-added` and its first-time variant).
     - The notification settings (`S03-notifications`, `G05-notifications`).
     - Routing of deep links with the access recheck, and the not-available screen. Q29 waits for widgets in M1.
-    - The queued removal of the push registration after a logout made offline (`docs/TECH-DESIGN.md` section 6). Device test: it lands once the network returns while the app is suspended, also after a force-quit followed by a launch made offline, and then no push for the old account reaches the iPhone.
+    - The queued removal of the push registration after a logout made offline (`docs/TECH-DESIGN.md` section 6). Device test, in three cases: it lands once the network returns while the app is suspended, at the next launch after a force-quit, and once the network returns after a force-quit followed by a launch made offline; in each, no push for the old account reaches the iPhone afterwards. A logic test covers a removal the server answers with an error: it's queued again, with a delay, and the secret is kept.
 
 ## B9: Trial readiness (step 9) → Gate D
 
@@ -244,7 +244,7 @@ How the lanes fit together:
 - **Incident playbooks** in `docs/runbooks/` for spec 34's list.
 - **The events dictionary** and the weekly trial report script (ADR-012).
 - **The privacy pages and in-app explanations** (FQ6).
-- **`prod`** in the FQ3 region, with its data API turned off by the founder and the Supabase probe green on it. No key that reaches it is available to a run on a branch other than `main` (`docs/TECH-DESIGN.md` section 9).
+- **`prod`** in the FQ3 region, with its data API turned off by the founder and the Supabase probe green on it. No key that reaches it is available to a run on a branch other than `main` (`docs/TECH-DESIGN.md` section 9). Before it exists, its deletion log gets an R2 bucket of its own, and each app's R2 keys, read back in Cloudflare, reach only their own environment's bucket, so no key in `dev`'s app reaches `prod`'s (section 10, FQ37).
 - **App Store Connect:**
     - the privacy details;
     - the external testing group;
