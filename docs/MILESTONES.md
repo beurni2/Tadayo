@@ -233,7 +233,7 @@ How the lanes fit together:
     - The permission offer after the first contribution (`F02-added` and its first-time variant).
     - The notification settings (`S03-notifications`, `G05-notifications`).
     - Routing of deep links with the access recheck, and the not-available screen. Q29 waits for widgets in M1.
-    - The queued removal of the push registration after a logout made offline (`docs/TECH-DESIGN.md` section 6). Device test, in three cases: it lands once the network returns while the app is suspended, at the next launch after a force-quit, and once the network returns after a force-quit followed by a launch made offline; in each, no push for the old account reaches the iPhone afterwards. A logic test covers a removal the server answers with an error: it's queued again, with a delay, and the secret is kept.
+    - The queued removal of the push registration after a logout made offline (`docs/TECH-DESIGN.md` section 6). Device test, in three cases: it lands once the network returns while the app is suspended, at the next launch after a force-quit, and once the network returns after a force-quit followed by a launch made offline; in each, no push for the old account reaches the iPhone afterwards. A logic test covers a removal that ends with a 5xx, a 429 or a timeout: each is queued again, with a delay, and the secret is kept; and one whose secret the server refuses: the secret is deleted and the removal isn't queued again.
 
 ## B9: Trial readiness (step 9) → Gate D
 
