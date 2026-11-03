@@ -38,6 +38,8 @@ public struct FoldedCard: View {
         self.cover = cover
     }
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     public var body: some View {
         PinnedFooterLayout(
             minHeight: Size.foldedCardMinHeight - 2 * Spacing.l, spacing: Spacing.xxl
@@ -65,7 +67,13 @@ public struct FoldedCard: View {
                 .padding(.trailing, Size.fold)
                 captionText
             }
-            HStack(alignment: .top, spacing: Spacing.m) {
+            // At the accessibility sizes the name takes the card's full width under the avatar,
+            // so a long name like "Alexandria-Rose" isn't broken mid-word (book p26).
+            let footer =
+                dynamicTypeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: Spacing.s))
+                : AnyLayout(HStackLayout(alignment: .top, spacing: Spacing.m))
+            footer {
                 Avatar(name: sender, photo: senderPhoto, size: .card, on: .cover)
                 Text(sender).textRole(.row)
                     .fixedSize(horizontal: false, vertical: true)

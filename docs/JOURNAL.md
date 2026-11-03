@@ -288,7 +288,7 @@ Not started. The api thread builds slices 1, 2 and 9 as the one session, in bloc
 
 ### 1.3 ios lane
 
-**Updated:** 2026-11-03 12:34 UTC, ios/b0-app
+**Updated:** 2026-11-03 13:01 UTC, ios/b0-app
 
 - **Started:** 2026-11-03 at 11:03 UTC, by the coordinator (ADR-025).
 - **PRs:** #12 `ios/b0-adr-027` (ADR-027) and #13 `ios/b0-handoffs-1-4` (handoffs 1 to 4, brand 1.1) open, waiting for the founder; #13 merges after #12. This branch, `ios/b0-app` (slice 11's first part), work in progress, no PR.
@@ -1349,6 +1349,14 @@ Two earlier entries claim more than their commits show, and the log is append-on
 ### 3.2 api lane
 
 ### 3.3 ios lane
+
+#### 2026-11-03 13:01 UTC · ios · ios/b0-app · PR none
+**Did:** Read `ios` run 41636804154 (at `20b508c`): builds; the 32 Lab snapshots fail only for want of references; `ci` run 41636804152 green. The snapshots under `ios/b0-app/20b508c/ios/snapshots/` on `evidence` show the three fixes holding: the highlight tiles take their labels' height, the card's tag sits under the status at accessibility sizes, avatars' circles hold their initials, and the Lab's avatar rows stay inside 393 points. One more defect seen there: at the largest size a long name beside the card's avatar broke mid-word ("Alexandri a-Rose"). `FoldedCard` now puts the name under the avatar at the accessibility sizes (`AnyLayout`). This journal: block 1.3's Updated line, this entry.
+**Why:** CLAUDE.md's loop, step 4: look again after the fixes.
+**Verified:** `swift format lint -r packages/swift`: no warnings. `python3 tools/ci/journal_check.py --branch` and the hook by hand: exit 0. The earlier fixes, in run 41636804154's snapshots.
+**Not verified:** This change, until this push's `ios` run draws it.
+**Decisions and questions:** None.
+**Next:** After #12 and #13 merge: merge `main`, read the run's sheets, commit the references, review, PR.
 
 #### 2026-11-03 12:34 UTC · ios · ios/b0-app · PR none
 **Did:** Read `ios` run 41632722316 (at `39ef60b`): the app, the share extension and the snapshot tests now build ("TEST BUILD SUCCEEDED"); the 32 Lab snapshots fail only for having no reference, as record mode `never` requires; the sheets are on `evidence` under `ios/b0-app/39ef60b/ios/`. `ci` run 41632722317: green. Looked at every Lab section's snapshot in light, dark and the largest accessibility size, and fixed the three weakest things:
