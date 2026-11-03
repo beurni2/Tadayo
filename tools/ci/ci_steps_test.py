@@ -199,6 +199,45 @@ class PnpmSettingsTest(StepsTest):
                 self.repo.write("pnpm-workspace.yaml", WORKSPACE + line + "\n")
                 self.assertEveryPnpmStepRefuses("pnpm-workspace.yaml")
 
+    def test_allow_builds_may_deny_a_dependency_s_build_script(self):
+        # pnpm 12's strictDepBuilds fails an install on a build script nobody has ruled on, and
+        # Prism's @scarf/scarf has one: the workspace denies it, and the steps run.
+        denials = ("allowBuilds:   # denied, so they never run\n"
+                   '  "@scarf/scarf": false\n'
+                   "  '@x/quoted': false  # a comment\n"
+                   "  core-js: false\n"
+                   "  nx@21.6.0 || 21.6.1: false\n"
+                   "\n"
+                   "  esbuild : false\n")
+        for text in [WORKSPACE + denials, denials + WORKSPACE]:
+            with self.subTest(text=text):
+                self.repo.write("pnpm-workspace.yaml", text)
+                self.test_the_workspace_s_own_settings_run_the_steps()
+                steps = ci_steps.Steps(self.repo.root, self.shell, environ={})
+                self.assertEqual(steps.workspace_packages(),
+                                 ["apps/web", "packages/contracts", "packages/domain",
+                                  "services/api", "tests"])
+
+    def test_allow_builds_that_could_let_a_build_script_run_is_refused(self):
+        # Anything but a plain `false` might run the script: YAML 1.2 reads `no` and `"false"` as
+        # strings, and `False` or a tag is left to pnpm's parser. Approving a build is a
+        # CI-configuration PR (T58).
+        for entry in ["esbuild: true", "esbuild: True", "esbuild: False", "esbuild: no",
+                      'esbuild: "false"', "esbuild: !!bool false", "esbuild: {}",
+                      "esbuild:false", "esbuild: false extra", "esbuild: false\n    x: true",
+                      '"a b": false', "'a b': false", "&a esbuild: false", "*a: false", "<<: false", "<<: *x",
+                      "!!str esbuild: false", "? esbuild: false", "? esbuild\n  : false",
+                      "esbuild:", "- esbuild", "${PKG}: false", "pkg${X}: false", "esbuild: ${ALLOW}",
+                      "esbuild: set this to true or false"]:
+            with self.subTest(entry=entry):
+                self.repo.write("pnpm-workspace.yaml", WORKSPACE + "allowBuilds:\n  " + entry + "\n")
+                self.assertEveryPnpmStepRefuses("allowBuilds may only deny", "(T58)")
+        for text in ["allowBuilds: {esbuild: false}\n", "allowBuilds: false\n",
+                     "allowBuilds: true\n"]:
+            with self.subTest(text=text):
+                self.repo.write("pnpm-workspace.yaml", WORKSPACE + text)
+                self.assertEveryPnpmStepRefuses("can't read the line")
+
     def test_an_entry_outside_the_packages_list_is_refused(self):
         self.repo.write("pnpm-workspace.yaml", "  - packages/stray\n" + WORKSPACE)
         self.assertEveryPnpmStepRefuses("can't read the line")

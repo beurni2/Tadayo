@@ -121,7 +121,13 @@ RETIRED_TARGETS = set()
 # `updateConfig`), and pnpm-workspace.yaml and a root pnpmfile aren't CI configuration to guard 1.
 # So the pnpm steps refuse any pnpm-workspace.yaml setting not listed here, and any root pnpmfile:
 # adding one is a CI-configuration PR (T58). pnpm 12 ignores such settings in .npmrc.
-PNPM_SETTINGS = {"packages"}
+PNPM_SETTINGS = {"packages", "allowBuilds"}
+# allowBuilds may only deny: each entry is a package matcher and `false`, so a dependency's build
+# script never runs (pnpm 12's strictDepBuilds fails an install on a build nobody ruled on). An
+# entry that lets one run (`true`, or anything but `false`) is refused, so approving a build is a
+# CI-configuration PR (T58).
+DENIED_BUILD = re.compile(r"""^\s+(?:'([^'\s]+)'|"([^"\s]+)"|([@A-Za-z0-9][@A-Za-z0-9._/|^~<>= -]*?))"""
+                          r":\s+false\s*(?:#.*)?$")
 PACKAGE_MANAGER = re.compile(r"^pnpm@(\d+\.\d+\.\d+)(?:\+sha\d+\.[0-9a-f]+)?$")
 
 
@@ -186,7 +192,7 @@ class Steps:
         """The directories pnpm-workspace.yaml lists that hold a package.json, sorted."""
         with open(self.path("pnpm-workspace.yaml"), encoding="utf-8") as f:
             lines = f.read().splitlines()
-        patterns, inside = [], False
+        patterns, inside = [], None
         for line in lines:
             if not line.strip() or line.lstrip().startswith("#"):
                 continue
@@ -199,9 +205,16 @@ class Steps:
                                      "tools/ci/ci_steps.py, in a CI-configuration PR (T58)")
                 if not key:
                     raise ValueError(f"pnpm-workspace.yaml: can't read the line {line!r}")
-                inside = key.group(1) == "packages"
+                inside = key.group(1)
                 continue
-            if not inside:
+            if inside == "allowBuilds":
+                if not DENIED_BUILD.match(line):
+                    raise ValueError(f"pnpm-workspace.yaml: allowBuilds may only deny a "
+                                     f"dependency's build script (`<package>: false`); {line!r} "
+                                     "isn't one, and approving a build is a CI-configuration PR "
+                                     "(T58)")
+                continue
+            if inside != "packages":
                 raise ValueError(f"pnpm-workspace.yaml: can't read the line {line!r}")
             match = re.match(r"^\s*-\s*(['\"]?)([A-Za-z0-9_.*][A-Za-z0-9_./*-]*)\1\s*(?:#.*)?$", line)
             if not match:
