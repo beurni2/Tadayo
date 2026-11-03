@@ -37,15 +37,16 @@ final class LabSnapshotTests: XCTestCase {
         }
 
         var traits: UITraitCollection {
-            UITraitCollection { traits in
-                traits.userInterfaceStyle = self == .dark ? .dark : .light
-                traits.preferredContentSizeCategory =
-                    switch self {
-                    case .light, .dark: .large
-                    case .large: .extraExtraExtraLarge
-                    case .xl: .accessibilityExtraExtraExtraLarge
-                    }
-            }
+            let category: UIContentSizeCategory =
+                switch self {
+                case .light, .dark: .large
+                case .large: .extraExtraExtraLarge
+                case .xl: .accessibilityExtraExtraExtraLarge
+                }
+            return UITraitCollection(traitsFrom: [
+                UITraitCollection(userInterfaceStyle: self == .dark ? .dark : .light),
+                UITraitCollection(preferredContentSizeCategory: category),
+            ])
         }
     }
 

@@ -288,7 +288,7 @@ Not started. The api thread builds slices 1, 2 and 9 as the one session, in bloc
 
 ### 1.3 ios lane
 
-**Updated:** 2026-11-03 11:40 UTC, ios/b0-app
+**Updated:** 2026-11-03 12:04 UTC, ios/b0-app
 
 - **Started:** 2026-11-03 at 11:03 UTC, by the coordinator (ADR-025).
 - **PRs:** #12 `ios/b0-adr-027` (ADR-027) and #13 `ios/b0-handoffs-1-4` (handoffs 1 to 4, brand 1.1) open, waiting for the founder; #13 merges after #12. This branch, `ios/b0-app` (slice 11's first part), work in progress, no PR.
@@ -1349,6 +1349,18 @@ Two earlier entries claim more than their commits show, and the log is append-on
 ### 3.2 api lane
 
 ### 3.3 ios lane
+
+#### 2026-11-03 12:04 UTC · ios · ios/b0-app · PR none
+**Did:** Fixed the first runs on this branch.
+- `ios` run 41629420884 failed in its build step: `Fixtures.xcassets: error: None of the input catalogs contained a matching ... app icon set ... named "AppIcon"` (XcodeGen's default icon name). `apps/ios/project.yml`: `ASSETCATALOG_COMPILER_APPICON_NAME` set empty for `Tadayo` until slice 11b brings the icon.
+- The same run warned that `LabSnapshotTests.Variant.traits` mutated main-actor trait properties from a nonisolated closure; it now combines two trait collections instead.
+- `ci` run 41629420837 failed its `node` job's `format` step: Prettier on the 11 `Contents.json` files of `apps/ios/Fixtures/Fixtures.xcassets`. Formatted with the repository's Prettier.
+- This journal: block 1.3's Updated line, this entry.
+**Why:** The build and `ci` must be green before the sheets can be read.
+**Verified:** `pnpm exec prettier --check apps/ios`: clean. `swift format lint -r apps/ios packages/swift`: no warnings. `python3 tools/ci/journal_check.py --branch` and the hook by hand: exit 0.
+**Not verified:** The build itself, on this push's `ios` run. `UITraitCollection(traitsFrom:)` may warn as deprecated on iOS 17; read in the run's log.
+**Decisions and questions:** None.
+**Next:** Read this push's `ios` and `ci` runs; then the sheets on `evidence`.
 
 #### 2026-11-03 11:40 UTC · ios · ios/b0-app · PR none
 **Did:** Slice 11's first part (`docs/plans/B0.md` slice 11), as work in progress on its own branch, no PR yet:

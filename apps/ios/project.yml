@@ -76,6 +76,9 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.tadayo
+        # No app icon until slice 11b brings it from design/reference/brand/ (XcodeGen's default
+        # names AppIcon, which no catalog holds yet).
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""
   TadayoShare:
     type: app-extension
     platform: iOS
