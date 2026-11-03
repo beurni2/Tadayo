@@ -1,6 +1,6 @@
 # Design handoffs: Claude Code and Claude Design
 
-Version 1.1 · 1 November 2026
+Version 1.2 · 3 November 2026
 
 **Design revision 2.1 and Claude Design do the UI and UX design. You, Claude Code, implement it.**
 - The founder decided (FQ2, ADR-006) that 2.1's 53 screens stay the reference. Claude Design makes the brand first, then every state 2.1 doesn't show.
@@ -15,7 +15,7 @@ This document is the protocol.
 | | Design revision 2.1 | Claude Design, driven by the founder | Claude Code |
 |---|---|---|---|
 | Layouts and states | The 53 renders in `design/reference/2.1/`, with the book's contracts | Every state the inventory lists as missing, and any 2.1 state the founder chooses to redraw | Builds each state from its render and the book's contracts; never invents a layout |
-| The brand: wordmark, app icon, colour tokens, cover colours, component sheet | Proposed tokens only (book p35); no wordmark design, no icon | Designs them (Design handoff 0). Once converted, they live in `design/reference/brand/`, the source every later handoff names; a design system the founder saves in Claude is a convenience, not a dependency | Extracts them from the delivery into `design/reference/brand/`, the asset catalog and `TadayoDesign`; never draws or generates them |
+| The brand: wordmark, app icon, colour tokens, cover colours, component sheet | Proposed tokens only (book p35); no wordmark design, no icon | Designs them (Design handoff 0), and revises them when a handoff asks it a brand question. Once converted, they live in `design/reference/brand/`, the source every later handoff names; a design system the founder saves in Claude is a convenience, not a dependency | Extracts them from the delivery into `design/reference/brand/`, the asset catalog and `TadayoDesign`; never draws or generates them. A brand revision the founder adopts replaces the files in `brand/`, remade from it under the same names (ADR-027) |
 | States you discover | | Designs them from your handoff | Writes the handoff; builds from the spec and the contracts meanwhile, marked "built from spec" |
 | A render that disagrees with the spec or a rule | | The founder decides | Builds the rule, lists the difference in the inventory, the journal and the next handoff |
 
@@ -70,6 +70,7 @@ Below the code block, outside it, tell the founder where the result goes: the br
 - **States outside the spec's ids:** `global-…`. The external-share screens use the new id `S05`.
 - **Brand assets:** in `design/reference/brand/`: `brand-wordmark.pdf`, `brand-wordmark-dark.pdf`, `brand-icon-1024.png`, `brand-icon-dark-1024.png`, `brand-icon-tinted-1024.png`, `brand-tokens.md`, `brand-components.png`.
 - **Deliveries** stay as they arrived, in `design/reference/claude-design/handoff-<n>/`, so anyone can check a PNG against its source.
+- **A brand revision** (a later handoff's `brand-tokens.json` with a new version, or a whole brand frame sent again): once the founder adopts it, the brand files above are remade from it, under the same names, in the PR that brings that delivery in, and the revision's number goes in `brand/README.md`. The earlier revision stays in its own handoff's folder. Until the founder adopts it, it stays only in its handoff's folder (ADR-027).
 - **The 2.1 renders** keep the names the inventory gave them, in `design/reference/2.1/`. Never change them.
 
 ## The inventory
