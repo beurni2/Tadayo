@@ -1,6 +1,6 @@
 # Tadayo stages and gates
 
-Version 1.2 · 2 November 2026
+Version 1.3 · 3 November 2026
 
 The spec builds in nine dependency steps (spec 38) towards the closed trial, which it calls M0 (spec 02). Here the steps become build stages B1 to B9, after a foundations stage B0. They are grouped into gates the founder checks on his iPhone, and split into two lanes that run in parallel from inside B0 (ADR-025). The trial's scope is ADR-007. The founder alone passes a gate. At each gate:
 - stop and post the evidence;

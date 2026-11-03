@@ -1,6 +1,6 @@
 # Pull requests and GitHub
 
-Version 1.2 · 2 November 2026
+Version 1.3 · 3 November 2026
 
 This is how you, Claude Code, get work onto `main` from a cloud session. The founder approves every pull request in the project, in the thread that reported it, and then you merge it (ADR-022, ADR-025). No outside service reviews the code: before he sees a PR, you have it reviewed by an independent reviewer that hasn't seen your work.
 
@@ -67,18 +67,25 @@ Branch protection on `main`, which he sets from his guide:
 
 ## Workflow files
 
-Other cloud sessions have been refused pushes that add or change files under `.github/workflows/`: GitHub answered "refusing to allow an OAuth App to create or update workflow … without `workflow` scope". In this project it accepted them: the session pushed `ci.yml` and merged its PR (PR #8, on 2026-11-03; `docs/LIMITATIONS.md`). So you push workflow files yourself:
+Other cloud sessions have been refused pushes that add or change files under `.github/workflows/`: GitHub answered "refusing to allow an OAuth App to create or update workflow … without `workflow` scope", and the session's GitHub tools were refused the same way. In this project it accepted them: the session pushed `ci.yml` and merged its PR (PR #8, on 2026-11-03; `docs/LIMITATIONS.md`). So you push workflow files yourself:
 - **Each in its own CI-configuration PR** (T58), under a freeze (below).
 - **Thin:** triggers, permissions, runners, and steps that call scripts in `tools/ci/`, where the logic lives and is tested (`docs/TECH-DESIGN.md` section 9).
 - **Checked before the push** with `actionlint`, `zizmor` and `yamllint`, using the repository's `.yamllint.yaml` (install them with pip if they're missing).
 
 **Merge timing.** Tell the founder a workflow PR is ready only when neither lane has another branch meant to merge, opened as a PR or not, and make no new branch in either lane until it has merged (`docs/MILESTONES.md`, "Lanes"). Once a workflow change merges, every open branch has to merge `main`, and a branch made before a workflow reached `main` doesn't run that workflow until it does. Whether GitHub accepts the session's push of such a merge hasn't been tested: the freeze keeps it from arising.
-- **If GitHub refuses that push,** ask the founder to tap **Update branch** on the PR.
+- **If GitHub refuses that push,** drop the unpushed merge (`git reset --keep HEAD^1`, which keeps the branch's own commits), push what's left of the branch's own work, and ask the founder to tap **Update branch** on the PR. Then `git pull --ff-only`.
 - **If that PR also conflicts with `main`,** for example in the journal, GitHub offers no Update branch. Re-apply the slice on a fresh branch from `main`, open a new PR, and close the old one with a comment linking the new one.
 
-**If GitHub refuses a workflow push,** as it has other sessions (the refusal belongs to the session's GitHub access, which can change), never work around it: no other token, no contents API, no bot. If the refused commit isn't pushed, undo it with `git reset HEAD~1`, which keeps your files but unstages them, and move the workflow file out of the repository (to `/tmp`, keeping it to send). Commit a journal entry and a `docs/LIMITATIONS.md` row recording the refusal. Then, while the refusal holds, to add or change a workflow file:
-1. Write it in `/tmp`, never in the repository's working tree, and check it there with `actionlint`, `zizmor` and `yamllint`. Fix what they find, because every later fix costs the founder another paste.
-2. Push the branch without the workflow file. It holds CI configuration only (T58): a new branch from `main` with the `tools/ci/` scripts the workflow calls, if any. Add a journal entry naming the workflow file the founder is adding, because the hook and the `ci` guard need one. Put the file's SHA-256 in it, computed with exactly one final line break: `printf '%s\n' "$(cat /tmp/<file>)" | sha256sum`.
+**If GitHub refuses a workflow push,** as it has other sessions (the refusal belongs to the session's GitHub access, which can change), never work around it: no other token, no contents API, no bot, and not the session's GitHub tools. That holds for every refusal: a workflow PR's own push, the push of a merge of `main` ("Merge timing", above, says what to do then), and a merge (step 6).
+
+When the refused push is a workflow PR's own branch:
+- **If no earlier push put the workflow change on GitHub,** put the branch back to the last commit GitHub accepted, keeping your files: `git reset origin/<branch>`, or `git reset $(git merge-base HEAD origin/main)` if the branch was never pushed. Then take your version of the workflow file out of the repository (to `/tmp`, keeping it to send), and put back the version that commit has (`git checkout HEAD -- .github/workflows/<file>`), or none if the file is new. The branch carries on without the workflow change.
+- **If an earlier push did,** leave that branch as it is, because a push that takes the file out would be refused too. Carry on from a new branch from `main` with everything but the workflow change, and close the old branch's PR, if it has one, with a comment linking the new one.
+- Either way, the next commit's journal entry and a `docs/LIMITATIONS.md` row record the refusal.
+
+Then, while the refusal holds, to add or change a workflow file:
+1. Write it in `/tmp`, never in the repository's working tree, and check it there with `actionlint`, `zizmor` and `yamllint -c <the repository>/.yamllint.yaml`, the repository's settings and not yamllint's defaults. Fix what they find, because every later fix costs the founder another paste.
+2. Push the branch without the workflow file. It holds CI configuration only (T58): a branch from `main` with the `tools/ci/` scripts the workflow calls, if any. Add a journal entry naming the workflow file the founder is adding, because the hook and the `ci` guard need one. Put the file's SHA-256 in it, computed with exactly one final line break: `printf '%s\n' "$(cat /tmp/<file>)" | sha256sum`.
 3. Send the founder the branch name, the file's path and the whole file in one code block, with the steps to add it on GitHub.
 4. Keep that copy in `/tmp` while you wait. A cloud session checks at the end of every turn that everything in the repository is committed and pushed: an untracked workflow file would trip that check, and it would make `git pull` refuse the founder's commit. A later session won't have the copy; the hash in the journal is the check then.
 5. Commit nothing to that branch while you wait. When he says it's added, run `git pull --ff-only` and check the file: against your copy, or in a later session against the journal's hash, computed the same way. A missing final line break is fine. If it differs, send the file again. Then open the PR.

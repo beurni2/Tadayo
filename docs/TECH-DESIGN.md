@@ -1,6 +1,6 @@
 # Tadayo technical design
 
-Version 1.1 · 2 November 2026
+Version 1.2 · 3 November 2026
 
 The build specification (`docs/tadayo-build-spec-v3.md`, "the spec") fixes the product rules, the data model, the API contracts and the acceptance tests. The design book (`docs/tadayo-design-book-2.1.md`, "the book") fixes the visual system and the interaction contracts. This document is the founder's CTO layer on top of them. It covers:
 - the concrete stack and the hosting;
