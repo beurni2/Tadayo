@@ -38,4 +38,4 @@
 
 ## Ready for the founder
 
-<!-- Filled in when the review is done and `ci` is green (once it exists): what changed, the evidence, what the review found (fixed / answered), and what you need from the founder. -->
+<!-- Filled in when the review is done and `ci` is green (once it exists): what changed, the evidence, what the review found (fixed / answered), the risks, and what you need from the founder. -->
