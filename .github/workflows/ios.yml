@@ -62,7 +62,9 @@ jobs:
     needs: gate
     if: needs.gate.outputs.build == 'true'
     runs-on: macos-26
-    timeout-minutes: 75
+    # Each step that can hang has its own timeout, which fails the step and lets collect and the
+    # upload run; the job's own, a backstop, cancels the job, and then nothing is published.
+    timeout-minutes: 110
     permissions:
       contents: read
     env:
@@ -72,10 +74,15 @@ jobs:
         with:
           persist-credentials: false
       - run: python3 tools/ci/ios_steps.py toolchain
+        timeout-minutes: 5
       - run: python3 tools/ci/ios_steps.py xcodegen
+        timeout-minutes: 5
       - run: python3 tools/ci/ios_steps.py simulator
+        timeout-minutes: 35  # an older iOS's download takes 10 to 15 minutes, and may take two
       - run: python3 tools/ci/ios_steps.py build
+        timeout-minutes: 25
       - run: python3 tools/ci/ios_steps.py test
+        timeout-minutes: 30
       - if: ${{ !cancelled() }}
         run: python3 tools/ci/ios_steps.py collect
       - if: ${{ !cancelled() }}
@@ -109,12 +116,15 @@ jobs:
           fetch-depth: 0  # the sheets compare the branch with origin/main
           filter: blob:none
           persist-credentials: false
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+      - id: results
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         with:
           name: ios-results
           path: ${{ runner.temp }}/ios-out
       - run: python3 tools/ci/ios_steps.py imagemagick
-      - run: python3 tools/ci/ios_steps.py sheets
+      # Even when ImageMagick didn't install: the logs and snapshots still go up, without sheets.
+      - if: ${{ !cancelled() && steps.results.outcome == 'success' }}
+        run: python3 tools/ci/ios_steps.py sheets
       - if: ${{ !cancelled() }}
         env:
           GITHUB_TOKEN: ${{ github.token }}

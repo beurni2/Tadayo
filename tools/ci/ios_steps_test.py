@@ -2,14 +2,16 @@
 """Tests for tools/ci/ios_steps.py. Run: python3 tools/ci/ios_steps_test.py
 
 Each test builds a scratch repository with only the files a step looks for, and runs the step
-with a fake shell that records the commands and answers them from fixtures. The contact-sheet
-tests run ImageMagick for real on a 2.1 render and a sample PNG when `montage` is installed (the
-session has it; `ci`'s Linux runner doesn't, so there they skip, and the `ios` workflow's
-evidence job installs it). The publish tests run real git against a scratch bare repository.
+with a fake shell that records the commands and answers them from fixtures. Two of the
+contact-sheet tests run ImageMagick for real on a 2.1 render and a sample PNG when `montage` is
+installed (the session has it; `ci`'s Linux runner doesn't, so there those two skip, and the
+`ios` workflow's evidence job installs it); the others read the montage commands a fake shell
+records, and run everywhere. The publish tests run real git against a scratch bare repository.
 One test class reads .github/workflows/ios.yml itself.
 CI configuration: change this file only in its own PR (docs/INVARIANTS.md T58).
 """
 
+import base64
 import contextlib
 import hashlib
 import io
@@ -321,7 +323,7 @@ class XcodegenTest(StepsTest):
 
 class SimulatorTest(StepsTest):
     def shell(self, runtimes=RUNTIMES, after_download=None, devices=None, create=(0, UDID + "\n", ""),
-              download_code=0, works_with=None):
+              download_code=0, works_with=None, sdk=(0, "26.5\n", "")):
         """after_download: the runtimes once a download that works has run; works_with: the
         download only works with these extra arguments (by default, any download works)."""
         state = {"downloaded": False}
@@ -339,7 +341,8 @@ class SimulatorTest(StepsTest):
                      (starts("xcrun", "simctl", "list", "devices", "--json"),
                       (0, json.dumps({"devices": devices or {}}), "")),
                      (starts("xcrun", "simctl", "create"), create),
-                     (starts("xcrun", "simctl", "list"), (0, "== Runtimes ==\niOS 26.5\n", ""))],
+                     (starts("xcrun", "simctl", "list"), (0, "== Runtimes ==\niOS 26.5\n", "")),
+                     (starts("xcrun", "--sdk", "iphonesimulator", "--show-sdk-version"), sdk)],
             codes=[(has("-downloadPlatform"), download)])
 
     def test_with_no_version_the_newest_ios_on_the_pinned_iphone(self):
@@ -350,10 +353,24 @@ class SimulatorTest(StepsTest):
         self.assertEqual(create[3:], ["Tadayo iPhone 17", "com.apple.CoreSimulator.SimDeviceType.iPhone-17",
                                       "com.apple.CoreSimulator.SimRuntime.iOS-26-5"])
         record = self.read_record()
-        self.assertEqual((record["ios"], record["device"], record["udid"], record["requested"]),
-                         ("26.5", "iPhone 17", UDID, None))
+        self.assertEqual((record["ios"], record["device"], record["udid"], record["requested"], record["sdk"]),
+                         ("26.5", "iPhone 17", UDID, None, "26.5"))
         self.assertIn(["xcrun", "simctl", "bootstatus", UDID, "-b"], shell.commands)
         self.assertFalse(any("-downloadPlatform" in c for c in shell.commands))
+
+    def test_a_newer_xcode_s_runtime_on_the_image_isn_t_taken(self):
+        # GitHub's images carry other Xcodes' runtimes (macos-15 has iOS 26 beside Xcode 16.4's
+        # SDK 18.5): with no version asked for, the newest of the pinned Xcode's major is taken.
+        newer = dict(RUNTIMES["runtimes"][1], identifier="com.apple.CoreSimulator.SimRuntime.iOS-27-0",
+                     version="27.0", name="iOS 27.0")
+        code, out = self.step("simulator", self.shell(runtimes={"runtimes": RUNTIMES["runtimes"] + [newer]}))
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.read_record()["ios"], "26.5")
+
+    def test_an_unreadable_sdk_fails(self):
+        for sdk in [(1, "", "xcrun: error"), (0, "\n", ""), (0, "iphonesimulator\n", "")]:
+            with self.subTest(sdk=sdk):
+                self.assertEqual(self.step("simulator", self.shell(sdk=sdk))[0], 1)
 
     def test_the_simulators_the_runner_offers_are_recorded(self):
         self.step("simulator", self.shell())
@@ -438,6 +455,14 @@ class PickTest(unittest.TestCase):
         self.assertIsNone(ios_steps.pick_runtime(runtimes, "27"))  # not available
         self.assertIsNone(ios_steps.pick_runtime(runtimes, "26.1"))
         self.assertIsNone(ios_steps.pick_runtime(runtimes, "2"))  # 26.x isn't version 2
+        newer = dict(runtimes[1], version="27.0", isAvailable=True)
+        self.assertEqual(ios_steps.pick_runtime(runtimes + [newer], "", newest_major=26)["version"], "26.5")
+        self.assertEqual(ios_steps.pick_runtime(runtimes + [newer], "")["version"], "27.0")
+        # A newer minor of the pinned major stays: Xcode runs it (iOS 18.6 on Xcode 16.4's 18.5).
+        self.assertEqual(ios_steps.pick_runtime([IOS_18], "", newest_major=18)["version"], "18.6")
+        self.assertEqual(ios_steps.pick_runtime(runtimes, "", newest_major=26)["version"], "26.5")
+        # An asked-for version isn't bounded: it is what the run is for.
+        self.assertEqual(ios_steps.pick_runtime(runtimes + [newer], "27", newest_major=26)["version"], "27.0")
 
     def test_pick_device_type(self):
         self.assertEqual(ios_steps.pick_device_type(IOS_18, "iPhone 17")["name"], "iPhone 16")
@@ -450,6 +475,7 @@ class BuildAndTestSteps(StepsTest):
         super().setUp()
         self.repo.write("apps/ios/project.yml", "name: Tadayo\n")
         self.repo.mkdir("apps/ios/Tadayo.xcodeproj/xcshareddata/xcschemes")
+        self.write_scheme(scheme(("TadayoTests", False)))
         self.record(udid=UDID, ios="26.5", device="iPhone 17")
 
     def products(self, extension=True):
@@ -481,6 +507,25 @@ class BuildAndTestSteps(StepsTest):
         shell = FakeShell()
         self.assertEqual((self.step("build", shell)[0], shell.commands), (1, []))
 
+    def test_a_scheme_with_no_tests_is_built_without_testing(self):
+        # xcodebuild refuses build-for-testing for a scheme with no test target, as the check
+        # branch's minimal app and the app's first commits have.
+        self.write_scheme(scheme())
+        shell = FakeShell(effects=[(starts("xcodebuild", "build"), lambda cmd: self.products())])
+        code, out = self.step("build", shell)
+        self.assertEqual(code, 0, out)
+        self.assertEqual(shell.commands[0][:2], ["xcodebuild", "build"])
+        self.assertEqual(len(shell.commands), 1)
+        code, out = self.step("test", FakeShell())
+        self.assertEqual(code, 0, out)
+        self.assertIn("no tests yet", out)
+
+    def test_only_skipped_testables_is_no_tests(self):
+        self.write_scheme(scheme(("Disabled", True)))
+        shell = FakeShell(effects=[(starts("xcodebuild", "build"), lambda cmd: self.products())])
+        self.assertEqual(self.step("build", shell)[0], 0)
+        self.assertEqual(shell.commands[0][1], "build")
+
     def write_scheme(self, text):
         self.repo.write("apps/ios/Tadayo.xcodeproj/xcshareddata/xcschemes/Tadayo.xcscheme", text)
 
@@ -493,7 +538,13 @@ class BuildAndTestSteps(StepsTest):
         self.assertEqual(self.read_record()["tests"], "none")
 
     def test_a_missing_scheme_fails(self):
-        self.assertEqual(self.step("test")[0], 1)
+        os.remove(os.path.join(self.repo.root, *"apps/ios/Tadayo.xcodeproj/xcshareddata/xcschemes/Tadayo.xcscheme".split("/")))
+        for step in ("build", "test"):
+            with self.subTest(step=step):
+                shell = FakeShell()
+                code, out = self.step(step, shell)
+                self.assertEqual((code, shell.commands), (1, []))
+                self.assertIn("no shared scheme", out)
 
     def test_tests_run_with_snapshot_recording_off(self):
         self.write_scheme(scheme(("TadayoTests", False), ("TadayoSnapshotTests", False),
@@ -503,6 +554,8 @@ class BuildAndTestSteps(StepsTest):
         self.assertEqual(code, 0, out)
         cmd, env = shell.commands[0], shell.envs[0]
         self.assertEqual(cmd[:2], ["xcodebuild", "test-without-building"])
+        self.assertIn(["git", "status", "--porcelain", "-z", "--untracked-files=all", "--", "apps/ios"],
+                      shell.commands)
         self.assertNotIn("-skip-testing", cmd)
         self.assertEqual(env["TEST_RUNNER_SNAPSHOT_TESTING_RECORD"], "never")
         self.assertEqual(env["TEST_RUNNER_SNAPSHOT_ARTIFACTS"], os.path.join(self.repo.out, "artifacts"))
@@ -526,7 +579,14 @@ class BuildAndTestSteps(StepsTest):
                      "withSnapshotTesting(record: .missing) {",
                      "isRecording = true",
                      "setenv(\"SNAPSHOT_TESTING_RECORD\", \"all\", 1)",
-                     ".snapshots(record: .failed)"]:
+                     ".snapshots(record: .failed)",
+                     # A Bool maps to a mode too: false is .missing, which also overrides never.
+                     "assertSnapshot(of: v, as: .image, record: false)",
+                     "isRecording = false",
+                     "withSnapshotTesting(record: false) {",
+                     "@Suite(.snapshots(record: false))",
+                     "record = true",
+                     "SnapshotTesting.isRecording = false"]:
             with self.subTest(line=line):
                 self.repo.write("apps/ios/TadayoSnapshotTests/HomeTests.swift", f"func t() {{\n  {line}\n}}\n")
                 shell = FakeShell()
@@ -537,8 +597,26 @@ class BuildAndTestSteps(StepsTest):
     def test_record_never_and_comments_are_fine(self):
         self.write_scheme(scheme(("TadayoSnapshotTests", False)))
         self.repo.write("apps/ios/TadayoSnapshotTests/HomeTests.swift",
-                        "assertSnapshot(of: v, as: .image, record: .never)\n// record: .all is what local runs use\n")
+                        "assertSnapshot(of: v, as: .image, record: .never)\n// record: .all is what local runs use\n"
+                        "let record = false\nif isRecording == true {}\n")
         self.assertEqual(self.step("test", FakeShell())[0], 0)
+
+    def test_a_run_that_wrote_a_reference_fails_whatever_set_the_mode(self):
+        # A computed mode (`record: mode`) gets past RECORDING; under never, nothing is written.
+        self.write_scheme(scheme(("TadayoSnapshotTests", False)))
+        written = "?? apps/ios/T/__Snapshots__/HomeTests/testHome.H01-open.png\0" \
+                  "?? apps/ios/Tadayo.xcodeproj/project.pbxproj\0?? apps/ios/Tadayo/Generated/icon.png\0"
+        code, out = self.step("test", FakeShell(answers=[(starts("git", "status"), (0, written, ""))]))
+        self.assertEqual(code, 1)
+        self.assertIn("testHome.H01-open.png", out)
+        self.assertNotIn("project.pbxproj", out)
+        self.assertNotIn("icon.png", out)  # only a __Snapshots__ folder holds references
+        self.assertEqual(self.read_record()["tests"], "failed")
+        elsewhere = "?? apps/ios/Tadayo/Generated/icon.png\0 M apps/ios/Tadayo/Info.plist\0"
+        self.assertEqual(self.step("test", FakeShell(answers=[(starts("git", "status"), (0, elsewhere, ""))]))[0], 0)
+        changed = " M apps/ios/T/__Snapshots__/HomeTests/testHome.H01-open.png\0"
+        self.assertEqual(self.step("test", FakeShell(answers=[(starts("git", "status"), (0, changed, ""))]))[0], 1)
+        self.assertEqual(self.step("test", FakeShell(answers=[(starts("git", "status"), (128, "", "fatal"))]))[0], 1)
 
     def test_failing_tests_fail_the_step(self):
         self.write_scheme(scheme(("TadayoTests", False)))
@@ -589,6 +667,7 @@ class StateTest(unittest.TestCase):
     def test_evidence_path(self):
         self.assertEqual(ios_steps.evidence_path("ios/b0-ios-check", SHA, ""), "ios/b0-ios-check/0123456/ios")
         self.assertEqual(ios_steps.evidence_path("main", SHA, "18.6"), "main/0123456/ios-18.6")
+        self.assertEqual(ios_steps.evidence_path("main", SHA, "", full=True), "main/0123456/ios-full")
         for branch, sha, requested in [("", SHA, ""), ("a/../b", SHA, ""), ("/a", SHA, ""),
                                        ("a", "0123456", ""), ("a", SHA, "18;x")]:
             with self.subTest(branch=branch, sha=sha, requested=requested):
@@ -607,6 +686,18 @@ class StateTest(unittest.TestCase):
         self.assertIn("book p26", ios_steps.no_render_note("A02-email-xl", inventory))
         self.assertIn("not a state", ios_steps.no_render_note("Z99-nothing", inventory))
         self.assertIn("not a state", ios_steps.no_render_note(None, inventory))
+        # A -dark or -xl state that is an inventory row of its own is awaiting its render.
+        self.assertEqual(ios_steps.no_render_note("A02-email-xl", inventory | {"A02-email-xl"}),
+                         "built from spec, awaiting render")
+
+    def test_a_missing_program_is_a_failed_command(self):
+        shell = ios_steps.Shell(ROOT)
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(shell.run(["tadayo-no-such-program"]), 127)
+            log = os.path.join(tempfile.mkdtemp(prefix="ios-steps-"), "x.log")
+            self.addCleanup(shutil.rmtree, os.path.dirname(log), True)
+            self.assertEqual(shell.run(["tadayo-no-such-program"], log=log), 127)
+        self.assertEqual(shell.capture(["tadayo-no-such-program"])[0], 127)
 
 
 class CollectTest(StepsTest):
@@ -658,6 +749,23 @@ class CollectTest(StepsTest):
         self.assertTrue(os.path.isfile(os.path.join(self.repo.out, *new["image"].split("/"))))
         # The manifest is kept with the logs, so the first run on the runner shows its shape.
         self.assertTrue(os.path.isfile(os.path.join(self.repo.out, "logs", "attachments-manifest.json")))
+
+    def test_a_reference_the_run_wrote_isn_t_committed(self):
+        snaps = "apps/ios/T/__Snapshots__/HomeTests"
+        self.png(f"{snaps}/testHome.H01-open.png")
+        self.png(f"{snaps}/testHome.H01-open-dark.png")
+        self.png(f"{snaps}/testHome.H01-open-xl.png")
+        status = (f"?? {snaps}/testHome.H01-open-dark.png\0 M {snaps}/testHome.H01-open-xl.png\0")
+        code, out = self.step("collect", FakeShell(answers=[(starts("git", "status"), (0, status, ""))]))
+        self.assertEqual(code, 0, out)
+        entries = self.entries()
+        self.assertEqual(entries["testHome.H01-open.png"]["status"], "committed")
+        new, changed = entries["testHome.H01-open-dark.png"], entries["testHome.H01-open-xl.png"]
+        self.assertEqual((new["status"], new["reference"]), ("new", None))
+        self.assertEqual((changed["status"], changed["reference"]), ("changed", f"{snaps}/testHome.H01-open-xl.png"))
+        for entry in (new, changed):
+            self.assertTrue(entry["image"].startswith("snapshots/"))
+            self.assertTrue(os.path.isfile(os.path.join(self.repo.out, *entry["image"].split("/"))))
 
     def test_nothing_drawn_still_lists_the_committed_references(self):
         self.png("apps/ios/T/__Snapshots__/HomeTests/testHome.H01-open.png")
@@ -741,8 +849,7 @@ class SheetsTest(StepsTest):
                               capture_output=True, text=True, check=True).stdout
         self.assertEqual(int(info), 3 * (600 + 2 * 24))
 
-    @unittest.skipUnless(HAS_MAGICK, "ImageMagick isn't installed here; the evidence job installs it")
-    def test_a_state_with_no_render_shows_its_snapshot_alone_marked(self):
+    def test_a_state_with_no_render_shows_its_snapshot_alone_marked(self):  # runs in ci too
         self.snapshots([self.entry("A02-email", "new")])
         shell = FakeShell()
         code, out = self.step("sheets", shell)
@@ -757,6 +864,84 @@ class SheetsTest(StepsTest):
         # state alone, and the run's details are lines of the snapshot's label.
         self.assertEqual(montage[montage.index("-title") + 1], "A02-email")
         self.assertIn("iOS 26.5 · iPhone 17\nios/b0-ios-check @ 0123456", labels[0])
+
+    def test_a_changed_snapshot_s_sheet_has_three_panels(self):  # without ImageMagick, so in ci too
+        reference = self.sample("apps/ios/S/__Snapshots__/XTests/testX.F02-upcoming.png", color="#888")
+        self.snapshots([self.entry("F02-upcoming", "changed", reference=reference),
+                        self.entry("H01-open", "new", reference=reference)])
+        shell = FakeShell()
+        code, out = self.step("sheets", shell)
+        self.assertEqual(code, 0, out)
+        changed, new = [c for c in shell.commands if c[0] == "montage"]
+        self.assertEqual(changed[changed.index("-tile") + 1], "3x1")
+        self.assertEqual([changed[i + 1].split("\n")[0] for i, c in enumerate(changed) if c == "-label"],
+                         ["Render", "Before", "Snapshot"])
+        self.assertIn("png:" + os.path.abspath(os.path.join(self.repo.root, *reference.split("/"))), changed)
+        # A new snapshot has no Before panel, even with a reference named (H01-open has no render here).
+        self.assertEqual(new[new.index("-tile") + 1], "1x1")
+        self.assertEqual([new[i + 1].split("\n")[0] for i, c in enumerate(new) if c == "-label"], ["Snapshot"])
+
+    def test_the_index_says_which_file_each_image_belongs_to(self):
+        reference = self.sample("apps/ios/S/__Snapshots__/XTests/testX.F02-upcoming.png")
+        self.snapshots([self.entry("F02-upcoming", "changed", reference=reference),
+                        self.entry("A02-email", "new")])
+        self.assertEqual(self.step("sheets", FakeShell())[0], 0)
+        with open(os.path.join(self.stage(), "index.md")) as f:
+            index = f.read()
+        self.assertIn("| `F02-upcoming` | changed | `apps/ios/S/__Snapshots__/XTests/testX.F02-upcoming.png` |", index)
+        self.assertIn("| `A02-email` | new | `XTests/testX.A02-email.png` |", index)
+
+    def test_paths_from_the_build_job_are_checked_again(self):
+        # snapshots.json comes from the macOS job; this job can write, so it trusts no path in it.
+        outside = self.repo.write("secret.txt", "not evidence")
+        self.repo.write("apps/ios/T/x.png", "not evidence")  # in apps/ios, but no reference
+        entries = [
+            {"state": "A02-email", "test": "X", "file": "testX.A02-email.png", "status": "new",
+             "image": "../secret.txt", "reference": None},
+            {"state": "A02-email", "test": "X", "file": "testY.A02-email.png", "status": "new",
+             "image": "snapshots/../../../secret.txt", "reference": None},
+            {"state": "A02-email", "test": "X", "file": "testZ.A02-email.png", "status": "new",
+             "image": "apps/ios/T/x.png", "reference": None},
+            dict(self.entry("F02-upcoming", "changed"), reference="../secret.txt"),
+            {"state": "../" * 7 + "planted", "test": "X", "file": "testX.A.png", "status": "new",
+             "image": self.sample("snapshots/X/testX.A.png"), "reference": None},
+            "not an entry"]
+        shell = FakeShell()
+        self.snapshots(entries)
+        code, out = self.step("sheets", shell, environ={"GITHUB_EVENT_NAME": "workflow_dispatch"})
+        self.assertEqual(code, 1, out)
+        stage = os.path.join(self.repo.out, "evidence", "ios", "b0-ios-check", "0123456", "ios-full")
+        copied = [os.path.join(d, n) for d, _, ns in os.walk(stage) for n in ns]
+        for path in copied:
+            with open(path, "rb") as f:
+                self.assertNotIn(b"not evidence", f.read(), path)
+        planted = [os.path.join(d, n) for d, _, ns in os.walk(self.repo.root) for n in ns if n.startswith("planted")]
+        self.assertEqual(planted, [])
+        before = [c for c in shell.commands if c[0] == "montage" and any("Before" in a for a in c)]
+        self.assertEqual(before, [])  # the reference outside apps/ios is never shown
+        for cmd in (c for c in shell.commands if c[0] == "montage"):
+            for arg in cmd:
+                if arg.startswith(("png:", "jpg:")):
+                    self.assertTrue(arg[4:].startswith((self.repo.out + os.sep, os.path.join(self.repo.root, "design") + os.sep)), arg)
+        self.assertTrue(os.path.isfile(outside))
+
+    def test_a_missing_snapshot_list_is_said_and_fails_after_the_rest(self):
+        code, out = self.step("sheets", FakeShell())
+        self.assertEqual(code, 1)
+        with open(os.path.join(self.stage(), "index.md")) as f:
+            self.assertIn("collect step didn't finish", f.read())
+        self.assertTrue(os.path.isfile(os.path.join(self.stage(), "logs", "test.log")))
+        self.assertTrue(os.path.isfile(os.path.join(self.repo.out, "evidence.json")))
+
+    def test_without_imagemagick_the_rest_still_goes_up(self):
+        # The imagemagick step failed: montage isn't there, so each sheet fails, and the logs,
+        # the snapshots and the index still reach the evidence branch.
+        self.snapshots([self.entry("F02-upcoming", "new")])
+        code, out = self.step("sheets", FakeShell(codes=[(starts("montage"), 127)]))
+        self.assertEqual(code, 1)
+        self.assertTrue(os.path.isfile(os.path.join(self.stage(), "snapshots", "F02-upcoming.png")))
+        with open(os.path.join(self.stage(), "index.md")) as f:
+            self.assertIn("ImageMagick couldn't make its sheet", f.read())
 
     def test_screens_wins_over_2_1(self):
         self.repo.copy(os.path.join(ROOT, *RENDER.split("/")), "design/reference/screens/F02-upcoming.png")
@@ -811,6 +996,9 @@ class SheetsTest(StepsTest):
         _, _, montaged, _ = self.run_sheets(entries, environ={"GITHUB_EVENT_NAME": "workflow_dispatch"},
                                             shell=FakeShell())
         self.assertEqual(montaged, ["F02-upcoming.jpg"])
+        # In its own folder, so a push's touched set of the same commit can't replace it.
+        with open(os.path.join(self.repo.out, "evidence.json")) as f:
+            self.assertEqual(json.load(f)["path"], "ios/b0-ios-check/0123456/ios-full")
 
     def test_a_compatibility_run_carries_logs_and_no_sheets(self):
         code, out, montaged, _ = self.run_sheets([self.entry("A02-email", "new")],
@@ -933,11 +1121,18 @@ class PublishTest(StepsTest):
         self.assertIn("nothing forced", out)
 
     def test_the_token_never_reaches_a_command_line(self):
-        shell = FakeShell(codes=[(has("diff"), 0)])
-        self.step("publish", shell, environ={"GITHUB_TOKEN": "ghs_secretvalue"})
-        self.assertFalse([c for c in shell.commands if any("ghs_secretvalue" in a for a in c)])
-        self.assertTrue(any(env and "GIT_CONFIG_VALUE_0" in env for env in shell.envs))
-        self.assertFalse(any("ghs_secretvalue" in (env or {}).get("GIT_CONFIG_VALUE_0", "") for env in shell.envs))
+        del self.environ["EVIDENCE_REMOTE"]  # the URL the workflow builds, not the scratch remote
+        # Every push refused, so each attempt's commit, push, fetch and reset is seen.
+        shell = FakeShell(codes=[(has("diff"), 1), (has("push"), 1)])
+        token = "ghs_secretvalue"
+        basic = base64.b64encode(f"x-access-token:{token}".encode()).decode()
+        self.step("publish", shell, environ={"GITHUB_TOKEN": token, "GITHUB_REPOSITORY": "beurni2/tadayo"})
+        for word in ("clone", "commit", "push", "fetch", "reset"):
+            self.assertTrue([c for c in shell.commands if word in c], word)
+        self.assertIn("https://github.com/beurni2/tadayo.git", next(c for c in shell.commands if "clone" in c))
+        self.assertFalse([c for c in shell.commands if any(token in a or basic in a for a in c)])
+        for cmd, env in zip(shell.commands, shell.envs):
+            self.assertEqual((env or {}).get("GIT_CONFIG_VALUE_0"), f"AUTHORIZATION: basic {basic}", cmd)
 
     def test_the_same_evidence_twice_pushes_nothing_new(self):
         self.assertEqual(self.step("publish", ios_steps.Shell(self.repo.root))[0], 0)
@@ -1006,15 +1201,66 @@ class WorkflowFileTest(unittest.TestCase):
         self.assertIn("    branches-ignore:\n      - evidence\n", on)
         self.assertIn("  workflow_dispatch:\n", on)
 
+    def permissions_of(self, lines):
+        """A job's `permissions:` block as {scope: level}; a line it can't read fails the test."""
+        block = {}
+        for line in lines[lines.index("    permissions:") + 1:]:
+            if not line.strip() or line.strip().startswith("#"):
+                continue
+            if not line.startswith("      "):
+                break
+            found = re.fullmatch(r"      ([a-z-]+): *(['\"]?)([a-z-]+)\2 *(?:#.*)?", line)
+            self.assertIsNotNone(found, f"a permissions line this test can't read: {line!r}")
+            block[found.group(1)] = found.group(3)
+        return block
+
     def test_permissions_are_least_privilege(self):
         self.assertIn("\npermissions: {}\n", self.text)
-        writes = [job for job, lines in self.jobs.items()
-                  if any(re.match(r"^      contents: write(\s|$)", line) for line in lines)]
-        self.assertEqual(writes, ["evidence"])
-        for job, lines in self.jobs.items():
-            with self.subTest(job=job):
-                self.assertIn("    permissions:", lines)
+        self.assertNotRegex(self.text, r"(?:read|write)-all")
+        self.assertEqual({job: self.permissions_of(lines) for job, lines in self.jobs.items()},
+                         {"gate": {"contents": "read"}, "build": {"contents": "read"},
+                          "evidence": {"contents": "write"}})
         self.assertNotIn("secrets.", self.text)  # never a secret in ios (TECH-DESIGN section 9)
+
+    def step_block(self, needle):
+        """The step whose lines hold needle, as text."""
+        step = re.search(r"\n      - ((?:(?!\n      - |\n  [a-z]).)*?" + re.escape(needle) + r"(?:(?!\n      - |\n  [a-z]).)*)",
+                         self.text, flags=re.S)
+        self.assertIsNotNone(step, needle)
+        return step.group(1)
+
+    def test_the_gate_decides_whether_the_build_runs(self):
+        # The B0 plan's slice 9 test, "the first job's skip": the step's output reaches both jobs.
+        gate = "\n".join(self.jobs["gate"]) + "\n"
+        self.assertIn("    outputs:\n      build: ${{ steps.gate.outputs.build }}\n", gate)
+        self.assertIn("      - id: gate\n        run: python3 tools/ci/ios_steps.py gate\n", gate)
+        self.assertIn("    needs: gate", self.jobs["build"])
+        self.assertIn("    if: needs.gate.outputs.build == 'true'", self.jobs["build"])
+        self.assertIn("    needs: [gate, build]", self.jobs["evidence"])
+        self.assertIn("    if: ${{ !cancelled() && needs.gate.outputs.build == 'true' }}", self.jobs["evidence"])
+
+    def test_what_a_failed_step_drew_still_reaches_the_evidence_branch(self):
+        for needle in ("run: python3 tools/ci/ios_steps.py collect", "uses: actions/upload-artifact@",
+                       "run: python3 tools/ci/ios_steps.py publish"):
+            with self.subTest(step=needle):
+                self.assertIn("if: ${{ !cancelled() }}", self.step_block(needle))
+        self.assertIn("if: ${{ !cancelled() && steps.results.outcome == 'success' }}",
+                      self.step_block("run: python3 tools/ci/ios_steps.py sheets"))
+        self.assertIn("id: results", self.step_block("uses: actions/download-artifact@"))
+        self.assertNotIn("continue-on-error", self.text)
+
+    def test_a_step_that_hangs_times_out_before_the_job(self):
+        # A step's timeout fails the step, and the job goes on to collect and upload; the job's
+        # own timeout cancels it, and then nothing reaches the evidence branch.
+        build = "\n".join(self.jobs["build"])
+        job = int(re.search(r"^    timeout-minutes: ([0-9]+)$", build, flags=re.M).group(1))
+        total = 0
+        for step in ("toolchain", "xcodegen", "simulator", "build", "test"):
+            with self.subTest(step=step):
+                found = re.search(r"timeout-minutes: ([0-9]+)", self.step_block(f"ios_steps.py {step}\n"))
+                self.assertIsNotNone(found)
+                total += int(found.group(1))
+        self.assertLessEqual(total + 10, job)  # checkout, collect and the upload fit after them
 
     def test_actions_are_pinned_to_commits(self):
         uses = re.findall(r"uses: (\S+)", self.text)

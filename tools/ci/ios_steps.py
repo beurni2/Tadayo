@@ -26,39 +26,52 @@ The steps:
                SHA-256 is toolchain.XCODEGEN_SHA256 and it reports that version, and generates
                the project from PROJECT_SPEC, failing if XcodeGen says its presets didn't load.
   simulator    Records the simulators the runner offers (logs/simulators.txt), then picks one:
-               with no $IOS_VERSION, the newest iOS runtime installed; with one ("18", "18.6",
+               with no $IOS_VERSION, the newest iOS runtime installed whose major is at most
+               the pinned Xcode's simulator SDK's (a newer Xcode's runtimes can sit on the same
+               image, and the snapshots' iOS mustn't change under them); with one ("18", "18.6",
                "26.2"), the newest installed runtime of that version, downloaded first with
                `xcodebuild -downloadPlatform iOS -buildVersion` when the runner hasn't got it
                (docs/TECH-DESIGN.md section 8: the pre-gate runs on older iOS), and read back
                from simctl, never assumed from the download's exit code. The device is
                toolchain.SIMULATOR_DEVICE when that runtime supports it, else the newest plain
                "iPhone <n>" it supports. It boots the device and writes it to run.json.
-  build        `xcodebuild build-for-testing` of SCHEME, then fails unless the app holds the
-               share extension, so both targets were built.
+  build        `xcodebuild build-for-testing` of SCHEME, or `xcodebuild build` while the
+               scheme has no test target (xcodebuild refuses build-for-testing then), then fails
+               unless the app holds the share extension, so both targets were built.
   test         `xcodebuild test-without-building` of the scheme's tests, when it has any, with
                swift-snapshot-testing's record mode `never` (a snapshot with no committed
                reference fails; TECH-DESIGN section 2) and its artifacts directory in OUT. It
                fails first if a Swift file under apps/ios sets a record mode of its own, which
-               would override `never` (RECORDING). A run
-               with $IOS_VERSION is a compatibility run: it skips the test targets named
+               would override `never` (RECORDING), and after the tests if the run wrote a
+               reference under a __Snapshots__ folder all the same (a mode set some other way).
+               A run with $IOS_VERSION is a compatibility run: it skips the test targets named
                *SnapshotTests (SNAPSHOT_TARGET_SUFFIX), since snapshots use the newest iOS
                (TECH-DESIGN section 8).
   collect      Lists every snapshot in snapshots.json, with its state and status (below), and
-               copies the images this run drew into OUT/snapshots/. Runs even when a step before
-               it failed.
+               copies the images this run drew into OUT/snapshots/, a reference the run wrote
+               itself included. Runs even when a step before it failed.
   imagemagick  Installs ImageMagick on the Linux runner, which doesn't have it.
   sheets       Makes the contact sheets (docs/DESIGN-HANDOFF.md, "Snapshot comparison"): per
                state, the render on the left, from design/reference/screens/ if it is there,
                else from design/reference/2.1/; the committed reference in the middle when this
                run's snapshot differs from it; this run's snapshot on the right. A state with no
-               render shows its snapshot alone, marked "built from spec, awaiting render". JPEG
-               (TECH-DESIGN section 3). A push carries only the states the branch touches; a run
-               by hand with no $IOS_VERSION carries the full set, for gates; a compatibility run
-               carries no sheets, only its logs. Writes index.md, which links every file.
+               render shows its snapshot alone with a note: an inventory state's is "built from
+               spec, awaiting render" (T46); a -dark or -xl variant that has no inventory row of
+               its own while its base state has one says it is judged against book p26's rules
+               (design/reference/INVENTORY.md); anything else says it isn't an inventory state.
+               JPEG (TECH-DESIGN section 3). A push carries only the states the branch touches;
+               a run by hand with no $IOS_VERSION carries the full set, for gates; a
+               compatibility run carries no sheets, only its logs. Every path in snapshots.json is
+               checked again here, since this job can write. Writes index.md, which links every
+               file and says which file each image belongs to. Fails, after staging the rest,
+               when an image is missing, a sheet couldn't be made or snapshots.json is missing.
   publish      Pushes the sheets, the touched snapshots and the logs to the `evidence` branch
-               under <branch>/<short-sha>/ios/ (ios-<version>/ for a compatibility run), with
-               the job's GITHUB_TOKEN. Never forces: when the push is refused because another run
-               pushed first, it fetches the branch again, puts its files back on top and retries.
+               under <branch>/<short-sha>/ios/ (ios-full/ for a run by hand's full set,
+               ios-<version>/ for a compatibility run), with the job's GITHUB_TOKEN. Never
+               forces: when the push is refused because another run pushed first, it fetches the
+               branch again, puts its files back on top and retries. $EVIDENCE_REMOTE replaces
+               the remote, for a scratch repository; by hand, run it only with one, since only
+               the workflow's evidence job pushes to the real branch.
 
 Files pass between the macOS job's steps in OUT ($IOS_OUT, else $RUNNER_TEMP/ios-out), which the
 job uploads as the artifact `ios-results` and the evidence job downloads to the same place:
@@ -128,9 +141,13 @@ STATE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 # dotted one ("a.b_0_<UUID>.png", Xcode 27.1). It is stripped wherever it is.
 EXPORT_SUFFIX = re.compile(r"_[0-9]+_[0-9A-Fa-f]{8}(-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}")
 # A test that sets its own record mode would override CI's `never` (swift-snapshot-testing reads
-# the environment last), so the test step refuses one. `record: .never` is allowed.
-RECORDING = re.compile(r"\brecord\s*:\s*(true\b|\.(all|missing|failed)\b)|"
-                       r"\bisRecording\s*=\s*true\b|SNAPSHOT_TESTING_RECORD")
+# the environment last), so the test step refuses one: `record:` with a Bool (true is .all, false
+# is .missing) or .all, .missing or .failed; any assignment to `isRecording`; the deprecated global
+# `record = ...`; the environment variable. `record: .never` is allowed. A computed mode
+# (`record: mode`) gets past this, so the test step also fails when the run wrote a reference.
+RECORDING = re.compile(r"\brecord\s*:\s*(true\b|false\b|\.(all|missing|failed)\b)|"
+                       r"\bisRecording\s*=(?!=)|^\s*(SnapshotTesting\.)?record\s*=(?!=)|"
+                       r"SNAPSHOT_TESTING_RECORD")
 SHOWN = re.compile(r"error:|warning:|\*\* [A-Z ]+ \*\*|Test Case .*(failed|passed)|"
                    r"Executed [0-9]+ test|Test Suite .*(failed|passed)|✘|Testing failed")
 
@@ -145,24 +162,34 @@ class Shell:
         """Runs cmd. With a log file, writes all of its output there and prints only the lines
         that say what happened (SHOWN), so a 10 MB build log stays readable on GitHub."""
         print("+ " + " ".join(cmd), flush=True)
-        if log is None:
-            return subprocess.run(cmd, cwd=cwd or self.root, env=self._env(env)).returncode
-        os.makedirs(os.path.dirname(log), exist_ok=True)
-        with open(log, "a", encoding="utf-8") as f:
-            f.write("+ " + " ".join(cmd) + "\n")
-            f.flush()
-            process = subprocess.Popen(cmd, cwd=cwd or self.root, env=self._env(env),
-                                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                       text=True, errors="replace")
-            for line in process.stdout:
-                f.write(line)
-                if SHOWN.search(line):
-                    print(line.rstrip("\n"), flush=True)
-            return process.wait()
+        try:
+            if log is None:
+                return subprocess.run(cmd, cwd=cwd or self.root, env=self._env(env)).returncode
+            os.makedirs(os.path.dirname(log), exist_ok=True)
+            with open(log, "a", encoding="utf-8") as f:
+                f.write("+ " + " ".join(cmd) + "\n")
+                f.flush()
+                process = subprocess.Popen(cmd, cwd=cwd or self.root, env=self._env(env),
+                                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                           text=True, errors="replace")
+                for line in process.stdout:
+                    f.write(line)
+                    f.flush()  # a step killed by its timeout still leaves its log
+                    if SHOWN.search(line):
+                        print(line.rstrip("\n"), flush=True)
+                return process.wait()
+        except FileNotFoundError:
+            # A missing program fails its command, as in a shell, so the step can still record
+            # what it has (ImageMagick's install failing leaves the sheets step without montage).
+            print(f"ios: {cmd[0]} isn't installed", flush=True)
+            return 127
 
     def capture(self, cmd, env=None, cwd=None):
-        result = subprocess.run(cmd, cwd=cwd or self.root, env=self._env(env),
-                                capture_output=True, text=True, errors="replace")
+        try:
+            result = subprocess.run(cmd, cwd=cwd or self.root, env=self._env(env),
+                                    capture_output=True, text=True, errors="replace")
+        except FileNotFoundError:
+            return 127, "", f"{cmd[0]} isn't installed"
         return result.returncode, result.stdout, result.stderr
 
     @staticmethod
@@ -228,9 +255,11 @@ def no_render_note(state, inventory):
     return "not a state in design/reference/INVENTORY.md"
 
 
-def pick_runtime(runtimes, requested):
+def pick_runtime(runtimes, requested, newest_major=None):
     """The newest available iOS runtime, or the newest whose version is `requested` or starts
-    with it (18 matches 18.6; 18.6 matches 18.6 and 18.6.1)."""
+    with it (18 matches 18.6; 18.6 matches 18.6 and 18.6.1). With no version requested and
+    newest_major given (the pinned Xcode's simulator SDK's major), a runtime of a later major is
+    passed over: a newer Xcode's runtimes can sit on the same image."""
     found = []
     for runtime in runtimes:
         if not runtime.get("isAvailable", False):
@@ -240,6 +269,9 @@ def pick_runtime(runtimes, requested):
             continue
         version = str(runtime.get("version", ""))
         if requested and version != requested and not version.startswith(requested + "."):
+            continue
+        if not requested and newest_major is not None and \
+                version_key(version)[:1] > (newest_major,):
             continue
         found.append(runtime)
     return max(found, key=lambda r: version_key(r.get("version")), default=None)
@@ -292,8 +324,10 @@ def snapshot_file_from_attachment(name):
     return stem + ".png"
 
 
-def evidence_path(branch, sha, requested):
-    """<branch>/<short-sha>/ios/, or ios-<version>/ for a compatibility run."""
+def evidence_path(branch, sha, requested, full=False):
+    """<branch>/<short-sha>/ios/ for a push; ios-full/ for a run by hand that carries every
+    snapshot (a gate's set), so neither replaces the other; ios-<version>/ for a compatibility
+    run."""
     parts = [p for p in branch.split("/")]
     if not branch or any(p in ("", ".", "..") for p in parts):
         raise ValueError(f"can't make an evidence path from the branch {branch!r}")
@@ -301,7 +335,8 @@ def evidence_path(branch, sha, requested):
         raise ValueError(f"not a full commit SHA: {sha!r}")
     if requested and not VERSION.match(requested):
         raise ValueError(f"not an iOS version: {requested!r}")
-    return f"{branch}/{sha[:7]}/" + (f"ios-{requested}" if requested else "ios")
+    return f"{branch}/{sha[:7]}/" + (f"ios-{requested}" if requested else
+                                     "ios-full" if full else "ios")
 
 
 def magick_text(text):
@@ -530,10 +565,19 @@ class Steps:
                     ["xcrun", "simctl", "list", "devices", "available"]):
             code, out, err = self.shell.capture(cmd, env=env)
             self.write_log("simulators.txt", "+ " + " ".join(cmd) + "\n" + out + err)
+        code, sdk, err = self.shell.capture(["xcrun", "--sdk", "iphonesimulator",
+                                             "--show-sdk-version"], env=env)
+        sdk = sdk.strip()
+        self.write_log("simulators.txt", f"+ xcrun --sdk iphonesimulator --show-sdk-version\n"
+                                         f"{sdk}{err}")
+        if code != 0 or not VERSION.match(sdk):
+            print(f"ios: simulator: can't read Xcode {toolchain.XCODE_VERSION}'s simulator SDK: "
+                  f"{(sdk + err).strip()[:200]!r}")
+            return 1
         runtimes = self.runtimes()
         if runtimes is None:
             return 1
-        runtime = pick_runtime(runtimes, requested)
+        runtime = pick_runtime(runtimes, requested, newest_major=version_key(sdk)[0])
         if runtime is None and requested:
             runtime = self.download(requested)
         if runtime is None:
@@ -557,7 +601,8 @@ class Steps:
             print(f"ios: simulator: {udid} didn't boot (logs/simulators.txt)")
             return 1
         self.update_run_record(ios=runtime.get("version"), runtime=runtime.get("identifier"),
-                               device=device_type["name"], udid=udid, requested=requested or None)
+                               device=device_type["name"], udid=udid, requested=requested or None,
+                               sdk=sdk)
         print(f"ios: simulator: iOS {runtime.get('version')} on {device_type['name']} ({udid})")
         return 0
 
@@ -608,18 +653,30 @@ class Steps:
                 return device.get("udid")
         return None
 
+    def scheme_targets(self, project):
+        """The test targets of the shared scheme SCHEME that XcodeGen wrote into project."""
+        scheme = self.path(*project.split("/"), "xcshareddata", "xcschemes", f"{SCHEME}.xcscheme")
+        if not os.path.isfile(scheme):
+            raise ValueError(f"no shared scheme {SCHEME} in {project} (XcodeGen writes it "
+                             "when project.yml declares it)")
+        return scheme_test_targets(scheme, self.path(*IOS_DIR.split("/")))
+
     def build(self):
         try:
             project, destination = self.project(), self.destination()
-        except (OSError, ValueError) as error:
+            targets = self.scheme_targets(project)
+        except (OSError, ValueError, ElementTree.ParseError, KeyError) as error:
             print(f"ios: build: {error}")
             return 1
-        code = self.shell.run(["xcodebuild", "build-for-testing", "-project", project,
+        # xcodebuild refuses build-for-testing for a scheme with no test target ("not currently
+        # configured for the build-for-testing action"), as the app's first commits have.
+        action = "build-for-testing" if targets else "build"
+        code = self.shell.run(["xcodebuild", action, "-project", project,
                                "-scheme", SCHEME, "-destination", destination,
                                "-derivedDataPath", self.derived_data()],
                               env=self.xcode_env(), log=self.log("build.log"))
         if code != 0:
-            print("ios: build: xcodebuild build-for-testing failed (logs/build.log)")
+            print(f"ios: build: xcodebuild {action} failed (logs/build.log)")
             return code
         products = os.path.join(self.derived_data(), "Build", "Products")
         apps = [os.path.join(products, d, APP_PRODUCT) for d in sorted(os.listdir(products))
@@ -640,11 +697,7 @@ class Steps:
         try:
             project, destination = self.project(), self.destination()
             requested = self.requested_version()
-            scheme = self.path(*project.split("/"), "xcshareddata", "xcschemes", f"{SCHEME}.xcscheme")
-            if not os.path.isfile(scheme):
-                raise ValueError(f"no shared scheme {SCHEME} in {project} (XcodeGen writes it "
-                                 "when project.yml declares it)")
-            targets = scheme_test_targets(scheme, self.path(*IOS_DIR.split("/")))
+            targets = self.scheme_targets(project)
         except (OSError, ValueError, ElementTree.ParseError, KeyError) as error:
             print(f"ios: test: {error}")
             return 1
@@ -686,7 +739,41 @@ class Steps:
         if code != 0:
             print("ios: test: tests failed (logs/test.log, logs/test-summary.json); the evidence "
                   "job still publishes what they drew")
-        return code
+            return code
+        # The backstop for a record mode RECORDING can't see: under `never`, nothing is written
+        # under __Snapshots__.
+        recorded = self.recorded_snapshots()
+        if recorded is None:
+            print("ios: test: git couldn't say whether the run wrote a reference")
+            return 1
+        if recorded:
+            self.update_run_record(tests="failed")
+            print("ios: test: the run wrote these references although CI never records (a "
+                  "record mode set in code): " + "; ".join(sorted(recorded)[:10]))
+            return 1
+        return 0
+
+    def recorded_snapshots(self):
+        """{path: "new" or "changed"} for each PNG under a __Snapshots__ folder in apps/ios that
+        the working tree adds or changes, which only a run that recorded does; None when git
+        can't tell."""
+        code, out, _ = self.shell.capture(["git", "status", "--porcelain", "-z",
+                                           "--untracked-files=all", "--", IOS_DIR])
+        if code != 0:
+            return None
+        found, items = {}, out.split("\0")
+        index = 0
+        while index < len(items):
+            item = items[index]
+            index += 1
+            if len(item) < 4:
+                continue
+            status, path = item[:2], item[3:]
+            if status[0] in "RC":
+                index += 1  # a rename's or copy's second path is its old one
+            if "/__Snapshots__/" in f"/{path}" and path.endswith(".png"):
+                found[path] = "new" if status in ("??", "A ") else "changed"
+        return found
 
     def recording_tests(self):
         """file:line for each Swift line under apps/ios that sets a record mode other than
@@ -705,16 +792,27 @@ class Steps:
 
     def collect(self):
         entries, by_key = [], {}
+        # A reference the run wrote itself (the test step fails such a run) isn't a committed
+        # one: it is kept as this run's image, `new`, or `changed` against the committed file.
+        recorded = self.recorded_snapshots()
+        if recorded is None:
+            print("ios: collect: git couldn't say which references are committed; listing all")
+            recorded = {}
         for directory, _, files in sorted(os.walk(self.path(*IOS_DIR.split("/")))):
             if os.path.basename(os.path.dirname(directory)) != "__Snapshots__":
                 continue
             for name in sorted(files):
                 if not name.endswith(".png"):
                     continue
-                reference = os.path.relpath(os.path.join(directory, name), self.root).replace(os.sep, "/")
+                full = os.path.join(directory, name)
+                reference = os.path.relpath(full, self.root).replace(os.sep, "/")
                 entry = {"state": state_of(name), "test": os.path.basename(directory),
                          "file": name, "status": "committed", "image": reference,
                          "reference": reference}
+                written = recorded.get(reference)
+                if written:
+                    entry.update(status=written, image=self.keep(full, entry["test"], name),
+                                 reference=reference if written == "changed" else None)
                 by_key[(entry["test"], name)] = entry
                 entries.append(entry)
         artifacts = self.out_path("artifacts")
@@ -816,24 +914,32 @@ class Steps:
     def sheets(self):
         try:
             requested = self.requested_version()
+            if requested:
+                mode = "none"
+            elif self.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch":
+                mode = "full"
+            else:
+                mode = "touched"
             path = evidence_path(self.environ.get("GITHUB_REF_NAME", ""),
-                                 self.environ.get("GITHUB_SHA", ""), requested)
+                                 self.environ.get("GITHUB_SHA", ""), requested,
+                                 full=mode == "full")
         except ValueError as error:
             print(f"ios: sheets: {error}")
             return 1
         record = self.run_record()
+        changed, notes = [], []
         try:
             with open(self.out_path("snapshots.json"), encoding="utf-8") as f:
                 entries = json.load(f)["entries"]
-        except (OSError, ValueError, KeyError):
-            entries = []
-        if requested:
-            mode = "none"
-        elif self.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch":
-            mode = "full"
-        else:
-            mode = "touched"
-        changed, notes = [], []
+            if not isinstance(entries, list):
+                raise ValueError("entries isn't a list")
+            entries = [self.checked_entry(e) for e in entries]
+            list_missing = False
+        except (OSError, ValueError, KeyError, TypeError):
+            entries, list_missing = [], True
+            notes.append("The build job's collect step didn't finish, so this run's snapshot "
+                         "list is missing: the snapshots it drew and the states this branch "
+                         "touches aren't here.")
         if mode == "touched":
             changed = self.changed_paths()
             if changed is None:
@@ -852,7 +958,12 @@ class Steps:
         rows, failed, taken = [], 0, set()
         for entry in chosen:
             name = sheet_name(entry, taken)
-            snapshot = self.image_path(entry["image"])
+            snapshot = self.image_path(entry["image"]) if entry["image"] else None
+            if snapshot is None:
+                rows.append((entry, name, None, None,
+                             "its image isn't where collect puts snapshots"))
+                failed += 1
+                continue
             if not os.path.isfile(snapshot):
                 rows.append((entry, name, None, None, "its image is missing from this run"))
                 failed += 1
@@ -863,7 +974,7 @@ class Steps:
             render = render_for(self.root, entry.get("state"))
             note = None if render else no_render_note(entry.get("state"), inventory)
             panels = [("Render", render, self.path(*render.split("/")))] if render else []
-            if entry["status"] == "changed" and entry.get("reference") and \
+            if entry["status"] == "changed" and entry["reference"] and \
                     os.path.isfile(self.path(*entry["reference"].split("/"))):
                 panels.append(("Before", "the committed reference",
                                self.path(*entry["reference"].split("/"))))
@@ -892,7 +1003,42 @@ class Steps:
             json.dump({"path": path, "stage": stage}, f)
         print(f"ios: sheets: {len(rows) - failed} sheet(s) for {path} ({mode}); {left_out} "
               "snapshot(s) this run doesn't carry")
-        return 1 if failed else 0
+        if list_missing:
+            print("ios: sheets: no snapshots.json: the build job's collect step didn't finish")
+        return 1 if failed or list_missing else 0
+
+    def checked_entry(self, entry):
+        """An entry of snapshots.json, which the macOS job wrote, with every path this job
+        writes or reads checked again: the state a plain state name, the image under OUT's
+        snapshots/ or a committed __Snapshots__ folder, the reference in one. What fails is
+        dropped (None)."""
+        entry = dict(entry) if isinstance(entry, dict) else {}
+        state = entry.get("state")
+        entry["state"] = state if isinstance(state, str) and STATE.fullmatch(state) else None
+        entry["file"] = entry.get("file") if isinstance(entry.get("file"), str) and \
+            entry.get("file") else "snapshot.png"
+        entry["test"] = entry.get("test") if isinstance(entry.get("test"), str) else None
+        if entry.get("status") not in ("changed", "new", "committed"):
+            entry["status"] = "new"
+        entry["image"] = self.contained(entry.get("image"))
+        reference = self.contained(entry.get("reference"))
+        entry["reference"] = reference if reference and not reference.startswith("snapshots/") \
+            else None
+        return entry
+
+    def contained(self, image):
+        """image, when it is under OUT's snapshots/ (`snapshots/...`) or under a __Snapshots__
+        folder in apps/ios; else None."""
+        if not isinstance(image, str) or not image or "\0" in image:
+            return None
+        if image.startswith("snapshots/"):
+            base = os.path.realpath(self.out_path("snapshots"))
+        else:
+            base = os.path.realpath(self.path(*IOS_DIR.split("/")))
+            if "__Snapshots__" not in image.split("/"):
+                return None
+        full = os.path.realpath(self.image_path(image))
+        return image if os.path.commonpath([full, base]) == base and full != base else None
 
     def image_path(self, image):
         if image.startswith("snapshots/"):
@@ -923,13 +1069,18 @@ class Steps:
                  f"- Carries {what}; {left_out} snapshot(s) not carried", ""]
         lines += [f"{n}" for n in notes] + ([""] if notes else [])
         if rows:
-            lines += ["| State | Status | Render | Sheet | Snapshot |", "|---|---|---|---|---|"]
+            # File: where the image belongs in the repository, its committed reference's path
+            # or, for a new snapshot, its test class and file name (the reference goes in that
+            # class's file's __Snapshots__ folder).
+            lines += ["| State | Status | File | Render | Sheet | Snapshot |",
+                      "|---|---|---|---|---|---|"]
             for entry, name, sheet, kept, note in rows:
                 render = render_for(self.root, entry.get("state")) or (note or "none")
                 sheet_link = f"[{name}.jpg]({base}/{sheet})" if sheet else (note or "none")
                 kept_link = f"[{name}.png]({base}/{kept})" if kept else "none"
+                target = entry.get("reference") or f"{entry.get('test') or '?'}/{entry['file']}"
                 lines.append(f"| `{entry.get('state') or entry['file']}` | {entry['status']} | "
-                             f"{render} | {sheet_link} | {kept_link} |")
+                             f"`{target}` | {render} | {sheet_link} | {kept_link} |")
             lines.append("")
         if os.path.isdir(os.path.join(stage, "logs")):
             lines += ["Logs: " + ", ".join(f"[{n}]({base}/logs/{urllib.parse.quote(n)})"
