@@ -35,7 +35,8 @@ const comment = (id: string, who: "debby" | "maya" | "ben", text: string, extra:
   author: people[who],
   text,
   edited: false,
-  version: 1,
+  // The version is only on the caller's own comments.
+  ...(who === "ben" ? { version: 1 } : {}),
   ...extra,
 });
 
@@ -48,7 +49,7 @@ export const AFTER_EXAMPLES: Record<string, Examples> = {
   },
   clearReaction: {
     cleared: {
-      summary: "Ben's heart removed; Debby's is still there",
+      summary: "Ben's heart removed; another member's is still there, with no name",
       value: { drop_id: "drp_sam_hill", reactions: [{ reaction: "heart" }] },
     },
   },
@@ -61,6 +62,7 @@ export const AFTER_EXAMPLES: Record<string, Examples> = {
           comment("cmt_maya_1", "maya", "I’m saving this as evidence.", {
             reply_to: { comment_id: "cmt_debby_1", author: people.debby },
           }),
+          comment("cmt_ben_1", "ben", "Count me in."),
         ],
         thread_muted: false,
       },
@@ -99,7 +101,7 @@ export const AFTER_EXAMPLES: Record<string, Examples> = {
       value: {
         items: [
           { occurrence: day("sundayPeople", "nina", 7, "past"), cover_drop_id: "drp_nina_7" },
-          { occurrence: debby6Past, cover_drop_id: "drp_maya_chair" },
+          { occurrence: debby6Past, cover_drop_id: "drp_debby_6_own" },
           { occurrence: day("sundayPeople", "sam", 5, "past"), cover_drop_id: "drp_maya_5" },
           { occurrence: day("sundayPeople", "alex", 4, "past"), cover_drop_id: "drp_alex_4" },
           { occurrence: day("sundayPeople", "maya", 3, "past"), cover_drop_id: "drp_maya_3" },

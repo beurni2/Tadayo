@@ -17,8 +17,9 @@ export const ERRORS = {
   ],
   NOT_ALLOWED: [
     403,
-    "Something the caller can see but can't do now: reacting to their own drop (spec 16), or confirming a " +
-      "day that clashes with another member's choice (FQ55).",
+    "Something the caller can see but can't do now: reacting to their own drop (spec 16), confirming a " +
+      "day that clashes with another member's choice (FQ55), or revoking a link the candidate has already " +
+      "used to join.",
   ],
   NOT_FOUND: [
     404,
@@ -29,13 +30,21 @@ export const ERRORS = {
     "The day's cutoff has passed (T3). `target` is the day asked for and `next_target` the same person's next " +
       "day, for the person to confirm; nothing was moved (T4).",
   ],
-  QUOTA_FULL: [409, "Six drops already, live reservations included (T17). `target` and the caller's `allowance`."],
-  EXTERNAL_LIMIT: [409, "Two video links already (T17). `target` and the caller's `allowance`."],
+  QUOTA_FULL: [
+    409,
+    "Six drops already, live reservations included (T17). `target`, the caller's `allowance`, and " +
+      "`next_target`, the same person's next day, for the person to confirm; nothing was moved (T4).",
+  ],
+  EXTERNAL_LIMIT: [
+    409,
+    "Two video links already (T17). `target`, the caller's `allowance`, and `next_target`, the same " +
+      "person's next day, for the person to confirm; nothing was moved (T4).",
+  ],
   MEDIA_NOT_READY: [409, "The upload isn't ready yet: wait for `GET /v1/uploads/{upload_id}` to say ready."],
   VERSION_CONFLICT: [409, "Someone changed it first. `current_version` is the version now."],
   MEMBERSHIP_CHANGED: [
     409,
-    "A membership changed since the action started: the person's, so the target must be chosen again (T4, " +
+    "A membership changed since the action started: the person's, so `target`, the day asked for, must be chosen again (T4, " +
       "spec 32); the club's, so a newer schedule proposal (`current_id`) replaced this one; or the clubs a " +
       "block would leave.",
   ],
@@ -51,7 +60,8 @@ export const ERRORS = {
   ],
   IDEMPOTENCY_CONFLICT: [
     409,
-    "The same Idempotency-Key came with a different request (T19): it conflicts with what the key already holds.",
+    "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. " +
+      "A key is the caller's own.",
   ],
   INVITATION_EXPIRED: [
     410,

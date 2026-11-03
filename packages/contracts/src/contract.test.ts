@@ -7,13 +7,13 @@ import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
 
 import { buildDocument } from "./document.ts";
-import { ERROR_CODES, ApiError } from "./errors.ts";
+import { ERRORS, ERROR_CODES, ApiError } from "./errors.ts";
 import { standardErrors } from "./operation.ts";
 import { OPERATIONS } from "./operations.ts";
 import { registry } from "./registry.ts";
 import { renderOpenApi } from "./render.ts";
-import { CandidateLabel } from "./schemas/clubs.ts";
-import { ClubName, DisplayName, NAME_PATTERN, Person } from "./common.ts";
+import { CandidateLabel, ChosenWeekdays } from "./schemas/clubs.ts";
+import { ClubName, DisplayName, NAME_PATTERN, Person, Timezone } from "./common.ts";
 import { DropCaption } from "./schemas/days.ts";
 import { unknownKeys } from "./strict.ts";
 import { allSuccessExamples, errorExample } from "./fixtures/examples.ts";
@@ -104,6 +104,13 @@ describe("the document", () => {
     }
   });
 
+  it("bounds a highlight rail by its contributors, not by six: members can leave and join while a day collects (T22)", () => {
+    const day = schemas.RevealedDay as JsonObject;
+    const rail = (day.properties as JsonObject).highlights as JsonObject;
+    expect(rail.type).toBe("array");
+    expect(rail.maxItems).toBeUndefined();
+  });
+
   it("lists its schemas in code-unit order, the same in every locale", () => {
     const names = Object.keys(schemas);
     expect(names).toEqual([...names].sort());
@@ -182,7 +189,11 @@ describe("the document", () => {
         expect(declared["Cache-Control"], where).toEqual({ $ref: "#/components/headers/CacheControl" });
         const types = Object.keys(answer.content as JsonObject);
         if (types.includes("image/jpeg")) {
-          expect(declared.ETag, where).toEqual({ $ref: "#/components/headers/ETag" });
+          // A required ETag on an answer that may be a link's JSON would make the generated client refuse
+          // the link, which has no image version to send.
+          const etag = types.includes("application/json") ? "ImageETag" : "ETag";
+          expect(declared.ETag, where).toEqual({ $ref: `#/components/headers/${etag}` });
+          expect((headers[etag] as JsonObject).required, where).toBe(etag === "ETag");
           expect(types[0], `${where}: JSON comes before the image`).toBe(
             types.includes("application/json") ? "application/json" : "image/jpeg",
           );
@@ -311,7 +322,7 @@ describe("the document", () => {
       previewInvitation: ["NOT_FOUND"],
       proposeRoster: ["CLUB_FULL", "VERSION_CONFLICT"],
       resolveSource: ["PROVIDER_UNSUPPORTED"],
-      revokeInvitation: ["VERSION_CONFLICT"],
+      revokeInvitation: ["NOT_ALLOWED"],
       searchMemories: ["NOT_FOUND"],
       setClubNotificationPreferences: ["VERSION_CONFLICT"],
       setHighlight: ["MEMBERSHIP_CHANGED", "OCCURRENCE_CLOSED", "VERSION_CONFLICT"],
@@ -331,6 +342,20 @@ describe("the document", () => {
   });
 
   it("names, in a schema's description, every rule on a request the document can't carry", () => {
+    // Each refined schema, with the words its description must use to say the rule.
+    const names = /grapheme clusters.*at least one visible character/s;
+    const RULES: Record<string, RegExp> = {
+      AgeConfirmation: /only `true`/,
+      CandidateLabel: names,
+      Caption: /grapheme clusters/,
+      ChosenWeekdays: /each only once/,
+      ClubName: names,
+      CommentText: /grapheme clusters/,
+      DisplayName: names,
+      ReportNote: /grapheme clusters/,
+      SearchText: /grapheme clusters/,
+      Timezone: /an IANA time zone the server can resolve/,
+    };
     // Grapheme counts and "only true" are zod refinements: the document can't say them, so Prism and
     // the Swift client don't check them, and the API answers INVALID_REQUEST. Each sits in a named
     // schema whose description says the rule, for the app to keep.
@@ -347,7 +372,7 @@ describe("the document", () => {
       if ((def.checks ?? []).some((check) => check._zod.def.check === "custom")) {
         const meta = registry.get(schema);
         refined.push(meta ? meta.id : `${path} (unnamed)`);
-        if (meta) expect(meta.description, meta.id).toMatch(/grapheme clusters|only `true`/);
+        if (meta) expect(meta.description, meta.id).toMatch(RULES[meta.id] ?? /a rule this test doesn't know/);
       }
       for (const [key, child] of Object.entries(def.shape ?? {})) visit(child, `${path}.${key}`);
       if (def.innerType) visit(def.innerType, path);
@@ -355,16 +380,7 @@ describe("the document", () => {
       for (const option of def.options ?? []) visit(option, path);
     };
     for (const op of OPERATIONS) if (op.body) visit(op.body, op.id);
-    expect([...new Set(refined)].sort()).toEqual([
-      "AgeConfirmation",
-      "CandidateLabel",
-      "Caption",
-      "ClubName",
-      "CommentText",
-      "DisplayName",
-      "ReportNote",
-      "SearchText",
-    ]);
+    expect([...new Set(refined)].sort()).toEqual(Object.keys(RULES).sort());
   });
 });
 
@@ -468,6 +484,15 @@ describe("names (FQ70)", () => {
     "\u2066x",
     "a\u200Fb",
     "x\u2028y",
+    // Nothing to see: a zero-width space, a word joiner, a soft hyphen, the blank fillers.
+    "\u200B",
+    "\u2060\u2060",
+    "\u00AD",
+    "\u115F",
+    "\u3164",
+    "\u2800",
+    "\uFFA0",
+    "\u200B\u200D\u200B",
   ];
   const documentPattern = new RegExp((schemas.DisplayName as JsonObject).pattern as string, "u");
 
@@ -481,6 +506,55 @@ describe("names (FQ70)", () => {
       }
     });
   }
+});
+
+describe("other request rules", () => {
+  it("takes only a time zone the server can resolve, since a club's is fixed (FQ19)", () => {
+    for (const zone of ["America/New_York", "Europe/London", "Asia/Kolkata", "UTC"]) {
+      expect(Timezone.safeParse(zone).success, zone).toBe(true);
+    }
+    for (const zone of ["Mars/Base", "Not_A_Zone", "America/Nowhere"]) {
+      expect(Timezone.safeParse(zone).success, zone).toBe(false);
+    }
+  });
+
+  it("takes each weekday only once in a choice (T6)", () => {
+    expect(ChosenWeekdays.safeParse(["monday", "thursday"]).success).toBe(true);
+    expect(ChosenWeekdays.safeParse(["monday", "monday"]).success).toBe(false);
+  });
+
+  it("puts no free text in a URL: every path and query parameter has a fixed shape (T52)", () => {
+    // Search text, captions, notes and comments travel in bodies. A parameter is an enum, an integer, or a
+    // string whose anchored pattern refuses a space, so none of them can carry what someone wrote.
+    const resolve = (node: JsonObject): JsonObject => {
+      const target = node.$ref;
+      return typeof target === "string"
+        ? resolve(schemas[target.slice("#/components/schemas/".length)] as JsonObject)
+        : node;
+    };
+    for (const operation of operations) {
+      for (const parameter of (operation.parameters ?? []) as JsonObject[]) {
+        if (parameter.$ref) continue; // the Idempotency-Key header
+        const where = JSON.stringify([operation.operationId, parameter.in, parameter.name]);
+        expect(["path", "query"], where).toContain(parameter.in);
+        const schema = resolve(parameter.schema as JsonObject);
+        if (Array.isArray(schema.enum) || schema.type === "integer") continue;
+        expect(schema.type, where).toBe("string");
+        const pattern = typeof schema.pattern === "string" ? schema.pattern : "";
+        expect(pattern, where).toMatch(/^\^.*\$$/);
+        expect(new RegExp(pattern, "u").test("two words"), where).toBe(false);
+      }
+    }
+  });
+
+  it("gives a signed upload URL only in createUpload's answer (T12)", () => {
+    for (const operation of operations) {
+      for (const response of Object.values(operation.responses as JsonObject)) {
+        const reached = reachable([response]);
+        if (reached.has("SignedUpload")) expect(operation.operationId).toBe("createUpload");
+      }
+    }
+  });
 });
 
 describe("the examples", () => {
@@ -508,6 +582,23 @@ describe("the examples", () => {
       });
     }
   }
+
+  it("give each error only the fields its code names, and a missed or full day its next date (T4)", () => {
+    const fields = Object.keys(ApiError.shape).filter((key) => key !== "code");
+    for (const code of ERROR_CODES) {
+      const named = new Set([...ERRORS[code][1].matchAll(/`([a-z_]+)`/g)].map((match) => match[1]));
+      const present = Object.keys(errorExample(code) as JsonObject).filter((key) => key !== "code");
+      for (const key of present) {
+        expect(fields, `${code}.${key}`).toContain(key);
+        expect(named.has(key), `${code} names ${key}`).toBe(true);
+      }
+    }
+    for (const code of ["OCCURRENCE_CLOSED", "QUOTA_FULL", "EXTERNAL_LIMIT"] as const) {
+      expect(Object.keys(errorExample(code) as JsonObject), code).toEqual(
+        expect.arrayContaining(["target", "next_target"]),
+      );
+    }
+  });
 
   for (const code of ERROR_CODES) {
     it(`the ${code} example is a valid error with its own code`, () => {
@@ -544,6 +635,18 @@ describe("the examples", () => {
               `${id}.${name}`,
             );
           }
+          // Every scene is Ben's, so a day has one cover for him wherever it appears (D08).
+          if (
+            typeof node.cover_drop_id === "string" &&
+            node.occurrence !== null &&
+            typeof node.occurrence === "object"
+          ) {
+            remember(
+              `cover ${JSON.stringify((node.occurrence as JsonObject).id)}`,
+              node.cover_drop_id,
+              `${id}.${name}`,
+            );
+          }
           // A candidate's link names its invitation by `id`; a link and a preview, by `invitation_id`.
           const invitation = typeof node.invitation_id === "string" ? node.invitation_id : node.id;
           if (typeof invitation === "string" && invitation.startsWith("inv_") && typeof node.expires_at === "string") {
@@ -552,6 +655,35 @@ describe("the examples", () => {
         });
       }
     }
+  });
+
+  it("give a comment's version only to its author, Ben", () => {
+    for (const [id, set] of Object.entries(examples)) {
+      for (const [name, example] of Object.entries(set)) {
+        walk(example.value as Json, (node) => {
+          if (typeof node.text !== "string" || typeof node.edited !== "boolean") return;
+          const author = (node.author as JsonObject).membership_id;
+          const own = typeof author === "string" && author.endsWith("_ben");
+          expect("version" in node, `${id}.${name}: ${JSON.stringify(node.id)}`).toBe(own);
+        });
+      }
+    }
+  });
+
+  it("name a taken day's owner and a clash's other member, and nobody on any other day (book p11, FQ46, FQ78)", () => {
+    let taken = 0;
+    for (const [id, set] of Object.entries(examples)) {
+      for (const [name, example] of Object.entries(set)) {
+        walk(example.value as Json, (node) => {
+          if (typeof node.weekday !== "string" || typeof node.suggested !== "boolean") return;
+          const where = `${id}.${name}: ${node.weekday}`;
+          if (node.state === "taken") taken += 1;
+          expect("owner" in node, where).toBe(node.state === "taken");
+          expect("clash_with" in node, where).toBe(node.state === "clash");
+        });
+      }
+    }
+    expect(taken).toBeGreaterThan(0);
   });
 
   it("show who reacted only to the drop's author, Ben, and never to anyone else (FQ73)", () => {

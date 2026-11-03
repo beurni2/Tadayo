@@ -24,11 +24,11 @@ Rules every endpoint keeps:
 - Authentication: a Supabase session's access token as a bearer token (T53), except where an operation says it's public.
 - Unauthorized looks like missing: anything the caller may not see is the neutral NOT_FOUND (T14).
 - Before the reveal, others get a drop's caption and nothing else (T10); media streams only through this API and no storage URL for reading ever reaches the app (T12).
-- Every mutation a retry could duplicate takes an Idempotency-Key, created when the action starts and reused on every retry: the same key and body return the original response; a different body is IDEMPOTENCY_CONFLICT (T19). Edits carry the version they read.
+- Every mutation a retry could duplicate takes an Idempotency-Key, created when the action starts and reused on every retry. A key is the caller's own: the same operation with the same path, query and body returns the original response; any difference is IDEMPOTENCY_CONFLICT (T19). Edits carry the version they read.
 - Times are UTC instants; the server's clock decides (T1). Ids are opaque and random.
 - Errors carry a code and facts, never copy: the app owns its words (T41 to T43).
 - Lists are cursor-paged and filtered for the caller (T14). A cursor is opaque and carries no time.
-- Every answer with a body says Cache-Control: private, no-store, and every image its ETag.
+- Every answer with a body says Cache-Control: private, no-store, and every image its ETag; a link's JSON has none.
 - Requests refuse unknown fields; answers may gain fields, so an app ignores the ones it doesn't know.`;
 
 function strip(node: Json): Json {
@@ -149,6 +149,14 @@ const HEADERS: JsonObject = {
     schema: { type: "string" },
     example: '"mv_drp_sam_hill_1"',
   },
+  ImageETag: {
+    description:
+      "On the image answer only: the image's content version (`media_version` or `avatar_version`) as an " +
+      "entity tag. A link's JSON answer has no image and carries none.",
+    required: false,
+    schema: { type: "string" },
+    example: '"mv_drp_sam_hill_1"',
+  },
   RetryAfter: {
     description: "Seconds to wait before trying again.",
     required: true,
@@ -173,7 +181,8 @@ function success(op: Operation): JsonObject {
   }
   if ("binary" in ok) content[ok.binary] = { schema: { type: "string", format: "binary" } };
   const headers: JsonObject = { "Cache-Control": headerRef("CacheControl") };
-  if ("binary" in ok) headers.ETag = headerRef("ETag");
+  // An answer that is either a link's JSON or an image has an ETag only when it is the image.
+  if ("binary" in ok) headers.ETag = headerRef("json" in ok ? "ImageETag" : "ETag");
   return { [String(ok.status)]: { description: op.summary, headers, content } };
 }
 
@@ -247,8 +256,9 @@ export function buildDocument(): JsonObject {
           in: "header",
           required: true,
           description:
-            "Created when the action starts and reused on every retry of it (T19). The same key and body return " +
-            "the original response, even after the cutoff; a different body is IDEMPOTENCY_CONFLICT.",
+            "Created when the action starts and reused on every retry of it (T19), and the caller's own. The " +
+            "same operation with the same path, query and body returns the original response, even after the " +
+            "cutoff; any difference is IDEMPOTENCY_CONFLICT.",
           schema: { type: "string", format: "uuid" },
         },
       },

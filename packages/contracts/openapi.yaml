@@ -13,11 +13,11 @@ info:
     - Authentication: a Supabase session's access token as a bearer token (T53), except where an operation says it's public.
     - Unauthorized looks like missing: anything the caller may not see is the neutral NOT_FOUND (T14).
     - Before the reveal, others get a drop's caption and nothing else (T10); media streams only through this API and no storage URL for reading ever reaches the app (T12).
-    - Every mutation a retry could duplicate takes an Idempotency-Key, created when the action starts and reused on every retry: the same key and body return the original response; a different body is IDEMPOTENCY_CONFLICT (T19). Edits carry the version they read.
+    - Every mutation a retry could duplicate takes an Idempotency-Key, created when the action starts and reused on every retry. A key is the caller's own: the same operation with the same path, query and body returns the original response; any difference is IDEMPOTENCY_CONFLICT (T19). Edits carry the version they read.
     - Times are UTC instants; the server's clock decides (T1). Ids are opaque and random.
     - Errors carry a code and facts, never copy: the app owns its words (T41 to T43).
     - Lists are cursor-paged and filtered for the caller (T14). A cursor is opaque and carries no time.
-    - Every answer with a body says Cache-Control: private, no-store, and every image its ETag.
+    - Every answer with a body says Cache-Control: private, no-store, and every image its ETag; a link's JSON has none.
     - Requests refuse unknown fields; answers may gain fields, so an app ignores the ones it doesn't know.
 servers:
   - url: https://api-dev.tadayo.app
@@ -95,7 +95,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): it conflicts with what the key already holds."
+                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
                   value:
                     code: IDEMPOTENCY_CONFLICT
         "429":
@@ -214,11 +214,11 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): it conflicts with what the key already holds."
+                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 MEMBERSHIP_CHANGED:
-                  summary: "A membership changed since the action started: the person's, so the target must be chosen again (T4, spec 32); the club's, so a newer schedule proposal (`current_id`) replaced this one; or the clubs a block would leave."
+                  summary: "A membership changed since the action started: the person's, so `target`, the day asked for, must be chosen again (T4, spec 32); the club's, so a newer schedule proposal (`current_id`) replaced this one; or the clubs a block would leave."
                   value:
                     code: MEMBERSHIP_CHANGED
                     target:
@@ -565,7 +565,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): it conflicts with what the key already holds."
+                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
                   value:
                     code: IDEMPOTENCY_CONFLICT
         "429":
@@ -1533,7 +1533,7 @@ paths:
     post:
       operationId: createInvitation
       summary: A share link for one candidate
-      description: Only the member who proposed the candidate can make or revoke its link (T7). A new link replaces the candidate's earlier one, after a revoke or an expiry (Create new link) or when the app no longer holds it (FQ77). A retry with the same key returns a new link (InvitationLink, FQ77).
+      description: Only the member who proposed the candidate can make or revoke its link (T7). A new link replaces the candidate's earlier one, after a revoke or an expiry (Create new link) or when the app no longer holds it (FQ77). A retry with the same key returns the first answer without its `url`, and makes nothing new (InvitationLink, T19, FQ77).
       parameters:
         - name: club_id
           in: path
@@ -1564,6 +1564,12 @@ paths:
                     invitation_id: inv_kt_leila
                     candidate_id: cnd_kt_leila
                     url: https://tadayo.app/i#q7Vb2xKp9LmN4wRt6YsA1cDe8FgH3jZu5oIi0nQvXkM
+                    expires_at: 2026-11-13T14:41:00Z
+                replayed:
+                  summary: "A retry with the same key: the first answer without its link, which the app offers to remake (FQ77)"
+                  value:
+                    invitation_id: inv_kt_leila
+                    candidate_id: cnd_kt_leila
                     expires_at: 2026-11-13T14:41:00Z
         "400":
           description: INVALID_REQUEST
@@ -1632,7 +1638,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): it conflicts with what the key already holds."
+                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
                   value:
                     code: IDEMPOTENCY_CONFLICT
         "429":
@@ -1754,7 +1760,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): it conflicts with what the key already holds."
+                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
                   value:
                     code: IDEMPOTENCY_CONFLICT
         "429":
@@ -2526,7 +2532,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): it conflicts with what the key already holds."
+                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 VERSION_CONFLICT:
@@ -2683,7 +2689,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): it conflicts with what the key already holds."
+                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 VERSION_CONFLICT:
@@ -2774,7 +2780,7 @@ paths:
                             membership_id: mem_sp_nina
                             display_name: Nina
                 confirm_one_day:
-                  summary: "Kitchen table's proposal after Leila joins: Ben chooses Monday; days others confirmed name nobody (G04, FQ78)"
+                  summary: "Kitchen table's proposal after Leila joins: Ben chooses Monday; the days others confirmed name their owners (G04, FQ78)"
                   value:
                     server_now: 2026-11-06T14:41:00Z
                     club:
@@ -2820,10 +2826,16 @@ paths:
                           suggested: true
                         - weekday: tuesday
                           state: taken
+                          owner:
+                            membership_id: mem_kt_alex
+                            display_name: Alex
                           first_date: 2026-11-17
                           suggested: false
                         - weekday: wednesday
                           state: taken
+                          owner:
+                            membership_id: mem_kt_sam
+                            display_name: Sam
                           first_date: 2026-11-18
                           suggested: false
                         - weekday: thursday
@@ -2836,6 +2848,10 @@ paths:
                           suggested: false
                         - weekday: saturday
                           state: taken
+                          owner:
+                            membership_id: mem_kt_maya
+                            display_name: Maya
+                            avatar_version: av_maya_1
                           first_date: 2026-11-21
                           suggested: false
                       my_days:
@@ -3018,7 +3034,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): it conflicts with what the key already holds."
+                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 VERSION_CONFLICT:
@@ -3608,7 +3624,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): it conflicts with what the key already holds."
+                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 OCCURRENCE_CLOSED:
@@ -3638,7 +3654,7 @@ paths:
                       close_at: 2026-11-14T06:00:00Z
                       phase: collecting
                 MEMBERSHIP_CHANGED:
-                  summary: "A membership changed since the action started: the person's, so the target must be chosen again (T4, spec 32); the club's, so a newer schedule proposal (`current_id`) replaced this one; or the clubs a block would leave."
+                  summary: "A membership changed since the action started: the person's, so `target`, the day asked for, must be chosen again (T4, spec 32); the club's, so a newer schedule proposal (`current_id`) replaced this one; or the clubs a block would leave."
                   value:
                     code: MEMBERSHIP_CHANGED
                     target:
@@ -3801,7 +3817,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): it conflicts with what the key already holds."
+                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
                   value:
                     code: IDEMPOTENCY_CONFLICT
         "429":
@@ -3839,7 +3855,7 @@ paths:
             Cache-Control:
               $ref: "#/components/headers/CacheControl"
             ETag:
-              $ref: "#/components/headers/ETag"
+              $ref: "#/components/headers/ImageETag"
           content:
             application/json:
               schema:
@@ -3972,7 +3988,6 @@ paths:
                           avatar_version: av_debby_1
                         text: Next summer. No excuses.
                         edited: false
-                        version: 1
                       - id: cmt_maya_1
                         author:
                           membership_id: mem_sp_maya
@@ -3980,13 +3995,20 @@ paths:
                           avatar_version: av_maya_1
                         text: I’m saving this as evidence.
                         edited: false
-                        version: 1
                         reply_to:
                           comment_id: cmt_debby_1
                           author:
                             membership_id: mem_sp_debby
                             display_name: Debby
                             avatar_version: av_debby_1
+                      - id: cmt_ben_1
+                        author:
+                          membership_id: mem_sp_ben
+                          display_name: Ben
+                          avatar_version: av_ben_1
+                        text: Count me in.
+                        edited: false
+                        version: 1
                     thread_muted: false
                 empty:
                   summary: No comments yet (R04-empty)
@@ -4168,7 +4190,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): it conflicts with what the key already holds."
+                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
                   value:
                     code: IDEMPOTENCY_CONFLICT
         "429":
@@ -4577,7 +4599,7 @@ paths:
                   value:
                     code: PROFILE_INCOMPLETE
                 NOT_ALLOWED:
-                  summary: "Something the caller can see but can't do now: reacting to their own drop (spec 16), or confirming a day that clashes with another member's choice (FQ55)."
+                  summary: "Something the caller can see but can't do now: reacting to their own drop (spec 16), confirming a day that clashes with another member's choice (FQ55), or revoking a link the candidate has already used to join."
                   value:
                     code: NOT_ALLOWED
         "404":
@@ -4633,7 +4655,7 @@ paths:
                 $ref: "#/components/schemas/ReactionState"
               examples:
                 cleared:
-                  summary: Ben's heart removed; Debby's is still there
+                  summary: Ben's heart removed; another member's is still there, with no name
                   value:
                     drop_id: drp_sam_hill
                     reactions:
@@ -5339,7 +5361,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): it conflicts with what the key already holds."
+                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 ROSTER_CHANGED:
@@ -5663,7 +5685,7 @@ paths:
     delete:
       operationId: revokeInvitation
       summary: Revoke a link
-      description: The link stops working; the candidate keeps their place, and the proposer can make a new link (G01-invite-people). Repeating the revoke returns the same answer. VERSION_CONFLICT once the candidate has accepted, when there's nothing left to revoke.
+      description: The link stops working; the candidate keeps their place, and the proposer can make a new link (G01-invite-people). Repeating the revoke returns the same answer. NOT_ALLOWED once the candidate has accepted, when there's nothing left to revoke.
       parameters:
         - name: invitation_id
           in: path
@@ -5715,7 +5737,7 @@ paths:
                   value:
                     code: UNAUTHENTICATED
         "403":
-          description: PROFILE_INCOMPLETE
+          description: PROFILE_INCOMPLETE, NOT_ALLOWED
           headers:
             Cache-Control:
               $ref: "#/components/headers/CacheControl"
@@ -5728,6 +5750,10 @@ paths:
                   summary: "The account hasn't confirmed it's 18 or older (FQ13) or has no name yet: finish `PATCH /v1/me` first."
                   value:
                     code: PROFILE_INCOMPLETE
+                NOT_ALLOWED:
+                  summary: "Something the caller can see but can't do now: reacting to their own drop (spec 16), confirming a day that clashes with another member's choice (FQ55), or revoking a link the candidate has already used to join."
+                  value:
+                    code: NOT_ALLOWED
         "404":
           description: NOT_FOUND
           headers:
@@ -5742,21 +5768,6 @@ paths:
                   summary: "Missing, or not the caller's to see: the two are the same answer, and say nothing about hidden content (T14)."
                   value:
                     code: NOT_FOUND
-        "409":
-          description: VERSION_CONFLICT
-          headers:
-            Cache-Control:
-              $ref: "#/components/headers/CacheControl"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-              examples:
-                VERSION_CONFLICT:
-                  summary: Someone changed it first. `current_version` is the version now.
-                  value:
-                    code: VERSION_CONFLICT
-                    current_version: 3
         "429":
           description: RATE_LIMITED
           headers:
@@ -5933,7 +5944,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): it conflicts with what the key already holds."
+                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 MEDIA_NOT_READY:
@@ -6408,7 +6419,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): it conflicts with what the key already holds."
+                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 VERSION_CONFLICT:
@@ -6504,7 +6515,7 @@ paths:
                           reveal_at: 2026-11-06T12:00:00Z
                           close_at: 2026-11-07T06:00:00Z
                           phase: past
-                        cover_drop_id: drp_maya_chair
+                        cover_drop_id: drp_debby_6_own
                       - occurrence:
                           id: occ_sp_sam_2026_11_05
                           club_id: club_sunday_people
@@ -7405,7 +7416,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): it conflicts with what the key already holds."
+                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 OCCURRENCE_CLOSED:
@@ -7435,7 +7446,7 @@ paths:
                       close_at: 2026-11-14T06:00:00Z
                       phase: collecting
                 MEMBERSHIP_CHANGED:
-                  summary: "A membership changed since the action started: the person's, so the target must be chosen again (T4, spec 32); the club's, so a newer schedule proposal (`current_id`) replaced this one; or the clubs a block would leave."
+                  summary: "A membership changed since the action started: the person's, so `target`, the day asked for, must be chosen again (T4, spec 32); the club's, so a newer schedule proposal (`current_id`) replaced this one; or the clubs a block would leave."
                   value:
                     code: MEMBERSHIP_CHANGED
                     target:
@@ -7459,7 +7470,7 @@ paths:
                     code: DUPLICATE_DROP
                     existing_drop_id: drp_ben_13
                 QUOTA_FULL:
-                  summary: Six drops already, live reservations included (T17). `target` and the caller's `allowance`.
+                  summary: Six drops already, live reservations included (T17). `target`, the caller's `allowance`, and `next_target`, the same person's next day, for the person to confirm; nothing was moved (T4).
                   value:
                     code: QUOTA_FULL
                     target:
@@ -7473,6 +7484,17 @@ paths:
                       reveal_at: 2026-11-13T12:00:00Z
                       close_at: 2026-11-14T06:00:00Z
                       phase: collecting
+                    next_target:
+                      id: occ_sp_debby_2026_11_20
+                      club_id: club_sunday_people
+                      star:
+                        membership_id: mem_sp_debby
+                        display_name: Debby
+                        avatar_version: av_debby_1
+                      local_date: 2026-11-20
+                      reveal_at: 2026-11-20T12:00:00Z
+                      close_at: 2026-11-21T06:00:00Z
+                      phase: collecting
                     allowance:
                       added: 6
                       reserved: 0
@@ -7481,7 +7503,7 @@ paths:
                       external_reserved: 0
                       external_limit: 2
                 EXTERNAL_LIMIT:
-                  summary: Two video links already (T17). `target` and the caller's `allowance`.
+                  summary: Two video links already (T17). `target`, the caller's `allowance`, and `next_target`, the same person's next day, for the person to confirm; nothing was moved (T4).
                   value:
                     code: EXTERNAL_LIMIT
                     target:
@@ -7494,6 +7516,17 @@ paths:
                       local_date: 2026-11-13
                       reveal_at: 2026-11-13T12:00:00Z
                       close_at: 2026-11-14T06:00:00Z
+                      phase: collecting
+                    next_target:
+                      id: occ_sp_debby_2026_11_20
+                      club_id: club_sunday_people
+                      star:
+                        membership_id: mem_sp_debby
+                        display_name: Debby
+                        avatar_version: av_debby_1
+                      local_date: 2026-11-20
+                      reveal_at: 2026-11-20T12:00:00Z
+                      close_at: 2026-11-21T06:00:00Z
                       phase: collecting
                     allowance:
                       added: 3
@@ -7620,7 +7653,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): it conflicts with what the key already holds."
+                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 OCCURRENCE_CLOSED:
@@ -7650,7 +7683,7 @@ paths:
                       close_at: 2026-11-14T06:00:00Z
                       phase: collecting
                 MEMBERSHIP_CHANGED:
-                  summary: "A membership changed since the action started: the person's, so the target must be chosen again (T4, spec 32); the club's, so a newer schedule proposal (`current_id`) replaced this one; or the clubs a block would leave."
+                  summary: "A membership changed since the action started: the person's, so `target`, the day asked for, must be chosen again (T4, spec 32); the club's, so a newer schedule proposal (`current_id`) replaced this one; or the clubs a block would leave."
                   value:
                     code: MEMBERSHIP_CHANGED
                     target:
@@ -7974,7 +8007,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): it conflicts with what the key already holds."
+                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 OCCURRENCE_CLOSED:
@@ -8004,7 +8037,7 @@ paths:
                       close_at: 2026-11-14T06:00:00Z
                       phase: collecting
                 QUOTA_FULL:
-                  summary: Six drops already, live reservations included (T17). `target` and the caller's `allowance`.
+                  summary: Six drops already, live reservations included (T17). `target`, the caller's `allowance`, and `next_target`, the same person's next day, for the person to confirm; nothing was moved (T4).
                   value:
                     code: QUOTA_FULL
                     target:
@@ -8018,6 +8051,17 @@ paths:
                       reveal_at: 2026-11-13T12:00:00Z
                       close_at: 2026-11-14T06:00:00Z
                       phase: collecting
+                    next_target:
+                      id: occ_sp_debby_2026_11_20
+                      club_id: club_sunday_people
+                      star:
+                        membership_id: mem_sp_debby
+                        display_name: Debby
+                        avatar_version: av_debby_1
+                      local_date: 2026-11-20
+                      reveal_at: 2026-11-20T12:00:00Z
+                      close_at: 2026-11-21T06:00:00Z
+                      phase: collecting
                     allowance:
                       added: 6
                       reserved: 0
@@ -8026,7 +8070,7 @@ paths:
                       external_reserved: 0
                       external_limit: 2
                 EXTERNAL_LIMIT:
-                  summary: Two video links already (T17). `target` and the caller's `allowance`.
+                  summary: Two video links already (T17). `target`, the caller's `allowance`, and `next_target`, the same person's next day, for the person to confirm; nothing was moved (T4).
                   value:
                     code: EXTERNAL_LIMIT
                     target:
@@ -8040,6 +8084,17 @@ paths:
                       reveal_at: 2026-11-13T12:00:00Z
                       close_at: 2026-11-14T06:00:00Z
                       phase: collecting
+                    next_target:
+                      id: occ_sp_debby_2026_11_20
+                      club_id: club_sunday_people
+                      star:
+                        membership_id: mem_sp_debby
+                        display_name: Debby
+                        avatar_version: av_debby_1
+                      local_date: 2026-11-20
+                      reveal_at: 2026-11-20T12:00:00Z
+                      close_at: 2026-11-21T06:00:00Z
+                      phase: collecting
                     allowance:
                       added: 3
                       reserved: 0
@@ -8048,7 +8103,7 @@ paths:
                       external_reserved: 0
                       external_limit: 2
                 MEMBERSHIP_CHANGED:
-                  summary: "A membership changed since the action started: the person's, so the target must be chosen again (T4, spec 32); the club's, so a newer schedule proposal (`current_id`) replaced this one; or the clubs a block would leave."
+                  summary: "A membership changed since the action started: the person's, so `target`, the day asked for, must be chosen again (T4, spec 32); the club's, so a newer schedule proposal (`current_id`) replaced this one; or the clubs a block would leave."
                   value:
                     code: MEMBERSHIP_CHANGED
                     target:
@@ -8175,7 +8230,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): it conflicts with what the key already holds."
+                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
                   value:
                     code: IDEMPOTENCY_CONFLICT
         "429":
@@ -8599,7 +8654,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): it conflicts with what the key already holds."
+                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 VERSION_CONFLICT:
@@ -8761,7 +8816,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): it conflicts with what the key already holds."
+                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 VERSION_CONFLICT:
@@ -8835,10 +8890,16 @@ paths:
                         suggested: true
                       - weekday: tuesday
                         state: taken
+                        owner:
+                          membership_id: mem_kt_alex
+                          display_name: Alex
                         first_date: 2026-11-17
                         suggested: false
                       - weekday: wednesday
                         state: taken
+                        owner:
+                          membership_id: mem_kt_sam
+                          display_name: Sam
                         first_date: 2026-11-18
                         suggested: false
                       - weekday: thursday
@@ -8851,6 +8912,10 @@ paths:
                         suggested: false
                       - weekday: saturday
                         state: taken
+                        owner:
+                          membership_id: mem_kt_maya
+                          display_name: Maya
+                          avatar_version: av_maya_1
                         first_date: 2026-11-21
                         suggested: false
                     my_days:
@@ -8924,7 +8989,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): it conflicts with what the key already holds."
+                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 VERSION_CONFLICT:
@@ -8933,7 +8998,7 @@ paths:
                     code: VERSION_CONFLICT
                     current_version: 3
                 MEMBERSHIP_CHANGED:
-                  summary: "A membership changed since the action started: the person's, so the target must be chosen again (T4, spec 32); the club's, so a newer schedule proposal (`current_id`) replaced this one; or the clubs a block would leave."
+                  summary: "A membership changed since the action started: the person's, so `target`, the day asked for, must be chosen again (T4, spec 32); the club's, so a newer schedule proposal (`current_id`) replaced this one; or the clubs a block would leave."
                   value:
                     code: MEMBERSHIP_CHANGED
                     target:
@@ -9008,10 +9073,16 @@ paths:
                         suggested: true
                       - weekday: tuesday
                         state: taken
+                        owner:
+                          membership_id: mem_kt_alex
+                          display_name: Alex
                         first_date: 2026-11-17
                         suggested: false
                       - weekday: wednesday
                         state: taken
+                        owner:
+                          membership_id: mem_kt_sam
+                          display_name: Sam
                         first_date: 2026-11-18
                         suggested: false
                       - weekday: thursday
@@ -9024,6 +9095,10 @@ paths:
                         suggested: false
                       - weekday: saturday
                         state: taken
+                        owner:
+                          membership_id: mem_kt_maya
+                          display_name: Maya
+                          avatar_version: av_maya_1
                         first_date: 2026-11-21
                         suggested: false
                     my_days:
@@ -9073,7 +9148,7 @@ paths:
                   value:
                     code: PROFILE_INCOMPLETE
                 NOT_ALLOWED:
-                  summary: "Something the caller can see but can't do now: reacting to their own drop (spec 16), or confirming a day that clashes with another member's choice (FQ55)."
+                  summary: "Something the caller can see but can't do now: reacting to their own drop (spec 16), confirming a day that clashes with another member's choice (FQ55), or revoking a link the candidate has already used to join."
                   value:
                     code: NOT_ALLOWED
         "404":
@@ -9101,7 +9176,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): it conflicts with what the key already holds."
+                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 VERSION_CONFLICT:
@@ -9110,7 +9185,7 @@ paths:
                     code: VERSION_CONFLICT
                     current_version: 3
                 MEMBERSHIP_CHANGED:
-                  summary: "A membership changed since the action started: the person's, so the target must be chosen again (T4, spec 32); the club's, so a newer schedule proposal (`current_id`) replaced this one; or the clubs a block would leave."
+                  summary: "A membership changed since the action started: the person's, so `target`, the day asked for, must be chosen again (T4, spec 32); the club's, so a newer schedule proposal (`current_id`) replaced this one; or the clubs a block would leave."
                   value:
                     code: MEMBERSHIP_CHANGED
                     target:
@@ -9339,7 +9414,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): it conflicts with what the key already holds."
+                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 OCCURRENCE_CLOSED:
@@ -9369,7 +9444,7 @@ paths:
                       close_at: 2026-11-14T06:00:00Z
                       phase: collecting
                 MEMBERSHIP_CHANGED:
-                  summary: "A membership changed since the action started: the person's, so the target must be chosen again (T4, spec 32); the club's, so a newer schedule proposal (`current_id`) replaced this one; or the clubs a block would leave."
+                  summary: "A membership changed since the action started: the person's, so `target`, the day asked for, must be chosen again (T4, spec 32); the club's, so a newer schedule proposal (`current_id`) replaced this one; or the clubs a block would leave."
                   value:
                     code: MEMBERSHIP_CHANGED
                     target:
@@ -9420,7 +9495,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Upload"
+                $ref: "#/components/schemas/UploadStatus"
               examples:
                 ready:
                   summary: Ready to commit
@@ -9523,7 +9598,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Upload"
+                $ref: "#/components/schemas/UploadStatus"
               examples:
                 preparing:
                   summary: Being checked
@@ -9754,7 +9829,7 @@ components:
       required:
         - block_id
         - name
-      description: Someone the caller has blocked, by their current name (S02-blocked-list). There is no unblock in the trial (FQ72).
+      description: Someone the caller has blocked, by the name they had when the block took effect, which left every club the two shared, so a later change of name doesn't reach the caller (S02-blocked-list, FQ75). There is no unblock in the trial (FQ72).
     BlockedAccounts:
       type: object
       properties:
@@ -9800,7 +9875,7 @@ components:
       minLength: 1
       maxLength: 640
       pattern: ^(?!\s)(?!.*\s$)[^\u0000-\u001F\u007F-\u009F\u061C\u200E\u200F\u2028-\u202E\u2066-\u2069]+$
-      description: "The name the proposer types for someone they're inviting: 1 to 40 grapheme clusters, with no space at either end and no control, bidirectional-control or line-separator character (FQ70's default)."
+      description: "The name the proposer types for someone they're inviting: 1 to 40 grapheme clusters, with no space at either end, no control, bidirectional-control or line-separator character, and at least one visible character (FQ70's default)."
     CandidateLinkState:
       type: string
       enum:
@@ -9813,6 +9888,13 @@ components:
       minLength: 0
       maxLength: 2240
       description: "A caption: at most 140 grapheme clusters, counted as the app counts them (T13, D09). It can't contain the drop's own source URL (CAPTION_CONTAINS_SOURCE)."
+    ChosenWeekdays:
+      minItems: 1
+      maxItems: 2
+      type: array
+      items:
+        $ref: "#/components/schemas/Weekday"
+      description: "One or two weekdays, each only once: the API refuses the same weekday twice (T6)."
     ClientEvent:
       oneOf:
         - $ref: "#/components/schemas/DraftSavedEvent"
@@ -9884,7 +9966,7 @@ components:
       minLength: 1
       maxLength: 640
       pattern: ^(?!\s)(?!.*\s$)[^\u0000-\u001F\u007F-\u009F\u061C\u200E\u200F\u2028-\u202E\u2066-\u2069]+$
-      description: "A club's name: 1 to 40 grapheme clusters, with no space at either end and no control, bidirectional-control or line-separator character (FQ70's default)."
+      description: "A club's name: 1 to 40 grapheme clusters, with no space at either end, no control, bidirectional-control or line-separator character, and at least one visible character (FQ70's default)."
     ClubNotificationPreferences:
       type: object
       properties:
@@ -9988,8 +10070,7 @@ components:
         - author
         - text
         - edited
-        - version
-      description: A comment on a revealed drop, seen by the drop's audience (spec 16). `edited` shows the Edited label; earlier text is never served (spec 31). No time and no seen state.
+      description: "A comment on a revealed drop, seen by the drop's audience (spec 16). `edited` shows the Edited label; earlier text is never served (spec 31). No time and no seen state. `version` is only on the caller's own comments, for editing them: nobody else learns how often a comment changed."
     CommentPage:
       type: object
       properties:
@@ -10147,7 +10228,8 @@ components:
       type: string
       minLength: 1
       maxLength: 512
-      description: "An opaque page cursor, bound to the viewer and the list it came from (T14): a random handle the server keeps, or an encrypted and authenticated value only the server can read. Never a readable key, so it carries no time, order key or count (T10, T15)."
+      pattern: ^[A-Za-z0-9_-]+$
+      description: "An opaque page cursor, bound to the viewer and the list it came from (T14): a random handle the server keeps, or an encrypted and authenticated value only the server can read, in base64url. Never a readable key, so it carries no time, order key or count (T10, T15)."
     Day:
       oneOf:
         - $ref: "#/components/schemas/UpcomingDay"
@@ -10203,7 +10285,7 @@ components:
       minLength: 1
       maxLength: 640
       pattern: ^(?!\s)(?!.*\s$)[^\u0000-\u001F\u007F-\u009F\u061C\u200E\u200F\u2028-\u202E\u2066-\u2069]+$
-      description: "A person's name as they gave it, the same in every club (spec 23): 1 to 40 grapheme clusters, with no space at either end and no control, bidirectional-control or line-separator character (FQ70's default). The app trims before sending; the API refuses a name rather than changing it. Names aren't unique."
+      description: "A person's name as they gave it, the same in every club (spec 23): 1 to 40 grapheme clusters, with no space at either end, no control, bidirectional-control or line-separator character, and at least one visible character (FQ70's default). The app trims before sending; the API refuses a name rather than changing it. Names aren't unique."
     DraftSavedEvent:
       type: object
       properties:
@@ -10512,18 +10594,18 @@ components:
         PROVIDER_UNSUPPORTED (400): Not a link Tadayo can add, or its provider is switched off (spec 17, 33).
         UNAUTHENTICATED (401): No valid session: sign in again.
         PROFILE_INCOMPLETE (403): The account hasn't confirmed it's 18 or older (FQ13) or has no name yet: finish `PATCH /v1/me` first.
-        NOT_ALLOWED (403): Something the caller can see but can't do now: reacting to their own drop (spec 16), or confirming a day that clashes with another member's choice (FQ55).
+        NOT_ALLOWED (403): Something the caller can see but can't do now: reacting to their own drop (spec 16), confirming a day that clashes with another member's choice (FQ55), or revoking a link the candidate has already used to join.
         NOT_FOUND (404): Missing, or not the caller's to see: the two are the same answer, and say nothing about hidden content (T14).
         OCCURRENCE_CLOSED (409): The day's cutoff has passed (T3). `target` is the day asked for and `next_target` the same person's next day, for the person to confirm; nothing was moved (T4).
-        QUOTA_FULL (409): Six drops already, live reservations included (T17). `target` and the caller's `allowance`.
-        EXTERNAL_LIMIT (409): Two video links already (T17). `target` and the caller's `allowance`.
+        QUOTA_FULL (409): Six drops already, live reservations included (T17). `target`, the caller's `allowance`, and `next_target`, the same person's next day, for the person to confirm; nothing was moved (T4).
+        EXTERNAL_LIMIT (409): Two video links already (T17). `target`, the caller's `allowance`, and `next_target`, the same person's next day, for the person to confirm; nothing was moved (T4).
         MEDIA_NOT_READY (409): The upload isn't ready yet: wait for `GET /v1/uploads/{upload_id}` to say ready.
         VERSION_CONFLICT (409): Someone changed it first. `current_version` is the version now.
-        MEMBERSHIP_CHANGED (409): A membership changed since the action started: the person's, so the target must be chosen again (T4, spec 32); the club's, so a newer schedule proposal (`current_id`) replaced this one; or the clubs a block would leave.
+        MEMBERSHIP_CHANGED (409): A membership changed since the action started: the person's, so `target`, the day asked for, must be chosen again (T4, spec 32); the club's, so a newer schedule proposal (`current_id`) replaced this one; or the clubs a block would leave.
         ROSTER_CHANGED (409): The roster revision was replaced by a newer one (`current_id`): review the new roster and decide again (T7).
         CLUB_FULL (409): The club already has six members (A01, T6).
         DUPLICATE_DROP (409): The caller already added this photo or link to this day (T21). `existing_drop_id` is the caller's own drop, to offer View existing.
-        IDEMPOTENCY_CONFLICT (409): The same Idempotency-Key came with a different request (T19): it conflicts with what the key already holds.
+        IDEMPOTENCY_CONFLICT (409): The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own.
         INVITATION_EXPIRED (410): The link expired before anyone used it (G02-expired, FQ71). A revoked link, or one another account has used, is NOT_FOUND, like an unknown one (FQ59, T7).
         RATE_LIMITED (429): Too many requests: try again after `retry_after_seconds`.
     ExternalVideoMedia:
@@ -10630,7 +10712,7 @@ components:
         - drop_id
         - author
         - star_pick
-      description: "One entry of a revealed day's highlight rail: a pointer to a drop this viewer can read (T22). The star's pick comes first, then the club's schedule order (FQ26). A contributor without a highlight has no entry. Only in a RevealedDay, never before the reveal (T10, FQ21)."
+      description: "One entry of a revealed day's highlight rail: a pointer to a drop this viewer can read (T22). The star's pick comes first, then the club's schedule order (FQ26). A contributor without a highlight has no entry. Only in a RevealedDay, never before the reveal (T10, FQ21). One entry per contributor's membership interval (T22): no more than six at once, but a day can have more when members left, keeping their drops, and others joined while it was collecting (spec 07, 22), so the rail has no fixed bound."
     HighlightPointer:
       type: object
       properties:
@@ -10923,9 +11005,8 @@ components:
       required:
         - invitation_id
         - candidate_id
-        - url
         - expires_at
-      description: "The link to share, returned to its proposer once: the token rides in the URL's fragment, so it never reaches a server log (T7, T52), and the server keeps only its hash. The app keeps the link for Share again, in its per-account store, until it's used, revoked or expired (FQ77's default). A retry with the same key, while the candidate hasn't accepted, returns a new link and the earlier one stops working: a second exception to T19 beside the upload's, because no stored receipt holds a token (FQ77). `expires_at` is the server's setting (FQ71)."
+      description: "The link to share, returned to its proposer once: the token rides in the URL's fragment, so it never reaches a server log (T7, T52), and the server keeps only its hash (the contract's choice, FQ77). The app keeps the link for Share again, in its per-account store, until it's used, revoked or expired (FQ77's default). A retry with the same key returns this same answer without `url`, as an upload's replay does once it's complete (TECH-DESIGN section 6), and changes nothing (T19): the app then offers Create new link, under a new key. `expires_at` is the server's setting (FQ71)."
     InvitationOpen:
       type: object
       properties:
@@ -11677,7 +11758,6 @@ components:
         next_cursor:
           $ref: "#/components/schemas/Cursor"
         highlights:
-          maxItems: 6
           type: array
           items:
             $ref: "#/components/schemas/HighlightEntry"
@@ -11806,7 +11886,7 @@ components:
       required:
         - server_now
         - club
-      description: "The club's week (G04, G05-schedule): the schedule in force, if any, and the open proposal, if any. The same for every active member, except each one's own slots (T55). The schedule-proposal shapes are settled in B2's contract PR, with two known gaps: the proposed week naming each member's suggested day (G04-one-day, G04-change), and whether taken days may show at all, since they tell how many members have confirmed (FQ78)."
+      description: "The club's week (G04, G05-schedule): the schedule in force, if any, and the open proposal, if any. The same for every active member, except each one's own slots (T55). The schedule-proposal shapes are settled in B2's contract PR, with two known gaps: the proposed week naming each member's suggested day (G04-one-day, G04-change), and the owner a G04 error names (\"{weekday} is now {ownerName}'s day\"), which the app reads from the schedule it fetches again (FQ78)."
     ScheduleAssignment:
       type: object
       properties:
@@ -11824,11 +11904,7 @@ components:
         expected_version:
           $ref: "#/components/schemas/Version"
         weekdays:
-          minItems: 1
-          maxItems: 2
-          type: array
-          items:
-            $ref: "#/components/schemas/Weekday"
+          $ref: "#/components/schemas/ChosenWeekdays"
       required:
         - expected_version
         - weekdays
@@ -11893,7 +11969,7 @@ components:
         - my_days
         - my_state
         - state
-      description: "A proposed schedule each member confirms (spec 05; G04): at activation, or after a membership change, from a future boundary with no submitted day affected (FQ61, FQ62). Every active member confirms, the new one included, and the current days continue until then (FQ56). Nothing names who has or hasn't confirmed (T33, FQ78's default). `my_days` are the caller's chosen weekdays, one per member in clubs of four to six and two in clubs of two or three (spec 05's table)."
+      description: "A proposed schedule each member confirms (spec 05; G04): at activation, or after a membership change, from a future boundary with no submitted day affected (FQ61, FQ62). Every active member confirms, the new one included, and the current days continue until then (FQ56). A taken day names its owner (book p11); nothing else says who hasn't confirmed, counts them or waits on anyone (T33, FQ78). `my_days` are the caller's chosen weekdays, one per member in clubs of four to six and two in clubs of two or three (spec 05's table)."
     ScheduleSlot:
       type: object
       properties:
@@ -11901,6 +11977,8 @@ components:
           $ref: "#/components/schemas/Weekday"
         state:
           $ref: "#/components/schemas/ScheduleSlotState"
+        owner:
+          $ref: "#/components/schemas/Person"
         clash_with:
           $ref: "#/components/schemas/Person"
         first_date:
@@ -11912,7 +11990,7 @@ components:
         - state
         - first_date
         - suggested
-      description: A weekday of the proposal. `clash_with` is the other member who chose it, shown only to the two of them (FQ46); a taken day names nobody (FQ78). `first_date` is the first local date it would open, which can move until the proposal applies. `suggested` marks the spaced days proposed to the caller (spec 05). Never Sunday.
+      description: 'A weekday of the proposal. `owner` is the member who confirmed a taken day (book p11: "Occupied days identify their owner"; FQ78). `clash_with` is the other member who chose it, shown only to the two of them (FQ46). `first_date` is the first local date it would open, which can move until the proposal applies. `suggested` marks the spaced days proposed to the caller (spec 05). Never Sunday.'
     ScheduleSlotState:
       type: string
       enum:
@@ -11921,7 +11999,7 @@ components:
         - available
         - clash
         - no_reveal
-      description: "One weekday in an open proposal, as the caller sees it: yours (chosen by the caller), taken (confirmed by another member, who isn't named, FQ78; a day only proposed to someone isn't taken, FQ48), available, clash (the caller and one other member chose it, so neither can confirm it until one chooses again, FQ55), or no_reveal (two other members chose it: the caller sees only that it has no reveal scheduled, FQ46)."
+      description: "One weekday in an open proposal, as the caller sees it: yours (chosen by the caller), taken (confirmed by another member, its owner, book p11, FQ78; a day only proposed to someone isn't taken, FQ48), available, clash (the caller and one other member chose it, so neither can confirm it until one chooses again, FQ55), or no_reveal (two other members chose it: the caller sees only that it has no reveal scheduled, FQ46)."
     SearchMemoriesRequest:
       type: object
       properties:
@@ -12038,7 +12116,7 @@ components:
       minLength: 1
       maxLength: 64
       pattern: ^[A-Za-z0-9_+-]+(?:\/[A-Za-z0-9_+-]+)*$
-      description: The club's IANA timezone, such as America/New_York (spec 05, T2).
+      description: "The club's IANA timezone, such as America/New_York (spec 05, T2): an IANA time zone the server can resolve, refused otherwise, since a club's zone is fixed once it's made (FQ19)."
     UnavailableDay:
       type: object
       properties:
@@ -12092,7 +12170,7 @@ components:
         - club
         - viewer
         - drops
-      description: "A day that hasn't opened (phase collecting), for this viewer (spec 08, 09, 32): others' captions and the caller's own drops, in commit order with the id as a tiebreak (T35), a page at a time. Nothing else, ever: no revealed card, no highlight rail, nothing that counts what's hidden (T10, T15). Withdrawn and held drops are simply absent (T24, T29). `add_target` is the day itself (spec 08)."
+      description: "A day that hasn't opened (phase collecting), for this viewer (spec 08, 09, 32): others' captions and the caller's own drops, in commit order with the id as a tiebreak (T35), a page at a time. Nothing else, ever: no revealed card, no highlight rail, nothing that counts what's hidden (T10, T15). Removed, withdrawn and held drops are simply absent (T24, T29). `add_target` is the day itself (spec 08)."
     UpcomingDropCard:
       oneOf:
         - $ref: "#/components/schemas/DropCaption"
@@ -12163,7 +12241,7 @@ components:
         - purpose
         - state
         - expires_at
-      description: The caller's own upload, which nobody else can see (T12). `signed_upload` is present only while it's pending, in the response that created it or its replay. An upload nobody commits lapses at `expires_at`; the device's draft keeps the photo (FQ15).
+      description: The caller's own upload, which nobody else can see (T12), as `createUpload` answers it. `signed_upload` is present only while it's pending, in the response that created it or its replay. An upload nobody commits lapses at `expires_at`; the device's draft keeps the photo (FQ15).
     UploadContentType:
       type: string
       enum:
@@ -12195,6 +12273,25 @@ components:
         - held
         - rejected
       description: "pending: waiting for the bytes. preparing: being checked, decoded, stripped of metadata and scanned (spec 33). ready: can be committed. held: on a moderation hold, with no reason (T29). rejected: can't be used; `rejection` says why."
+    UploadStatus:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        purpose:
+          $ref: "#/components/schemas/UploadPurpose"
+        state:
+          $ref: "#/components/schemas/UploadState"
+        rejection:
+          $ref: "#/components/schemas/UploadRejection"
+        expires_at:
+          $ref: "#/components/schemas/Instant"
+      required:
+        - id
+        - purpose
+        - state
+        - expires_at
+      description: "The caller's own upload and its state, as reading it or completing it answers: never a URL (T12; TECH-DESIGN section 6)."
     Version:
       type: integer
       minimum: 0
@@ -12244,6 +12341,12 @@ components:
       schema:
         type: string
       example: '"mv_drp_sam_hill_1"'
+    ImageETag:
+      description: "On the image answer only: the image's content version (`media_version` or `avatar_version`) as an entity tag. A link's JSON answer has no image and carries none."
+      required: false
+      schema:
+        type: string
+      example: '"mv_drp_sam_hill_1"'
     RetryAfter:
       description: Seconds to wait before trying again.
       required: true
@@ -12257,7 +12360,7 @@ components:
       name: Idempotency-Key
       in: header
       required: true
-      description: Created when the action starts and reused on every retry of it (T19). The same key and body return the original response, even after the cutoff; a different body is IDEMPOTENCY_CONFLICT.
+      description: Created when the action starts and reused on every retry of it (T19), and the caller's own. The same operation with the same path, query and body returns the original response, even after the cutoff; any difference is IDEMPOTENCY_CONFLICT.
       schema:
         type: string
         format: uuid

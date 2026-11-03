@@ -105,7 +105,8 @@ export const Member = named(
 export const CandidateLabel = named(
   "CandidateLabel",
   "The name the proposer types for someone they're inviting: 1 to 40 grapheme clusters, with no space at " +
-    "either end and no control, bidirectional-control or line-separator character (FQ70's default).",
+    "either end, no control, bidirectional-control or line-separator character, and at least one visible " +
+    "character (FQ70's default).",
   name(40),
 );
 
@@ -216,18 +217,19 @@ export const CreateInvitationRequest = named(
 export const InvitationLink = named(
   "InvitationLink",
   "The link to share, returned to its proposer once: the token rides in the URL's fragment, so it never " +
-    "reaches a server log (T7, T52), and the server keeps only its hash. The app keeps the link for Share " +
-    "again, in its per-account store, until it's used, revoked or expired (FQ77's default). A retry with " +
-    "the same key, while the candidate hasn't accepted, returns a new link and the earlier one stops " +
-    "working: a second exception to T19 beside the upload's, because no stored receipt holds a token " +
-    "(FQ77). `expires_at` is the server's setting (FQ71).",
+    "reaches a server log (T7, T52), and the server keeps only its hash (the contract's choice, FQ77). The " +
+    "app keeps the link for Share again, in its per-account store, until it's used, revoked or expired " +
+    "(FQ77's default). A retry with the same key returns this same answer without `url`, as an upload's " +
+    "replay does once it's complete (TECH-DESIGN section 6), and changes nothing (T19): the app then offers " +
+    "Create new link, under a new key. `expires_at` is the server's setting (FQ71).",
   z.object({
     invitation_id: Id,
     candidate_id: Id,
     url: z
       .url({ protocol: /^https$/, hostname: /^tadayo\.app$/ })
       .max(512)
-      .regex(/^https:\/\/tadayo\.app\/i#[A-Za-z0-9_-]{43,128}$/),
+      .regex(/^https:\/\/tadayo\.app\/i#[A-Za-z0-9_-]{43,128}$/)
+      .optional(),
     expires_at: Instant,
   }),
 );
@@ -373,7 +375,7 @@ export const CurrentSchedule = named(
 export const ScheduleSlotState = named(
   "ScheduleSlotState",
   "One weekday in an open proposal, as the caller sees it: yours (chosen by the caller), taken (confirmed " +
-    "by another member, who isn't named, FQ78; a day only proposed to someone isn't taken, FQ48), " +
+    "by another member, its owner, book p11, FQ78; a day only proposed to someone isn't taken, FQ48), " +
     "available, clash (the caller and one other member chose it, so neither can confirm it until one " +
     "chooses again, FQ55), or no_reveal (two other members chose it: the caller sees only that it has no " +
     "reveal scheduled, FQ46).",
@@ -382,13 +384,15 @@ export const ScheduleSlotState = named(
 
 export const ScheduleSlot = named(
   "ScheduleSlot",
-  "A weekday of the proposal. `clash_with` is the other member who chose it, shown only to the two of " +
-    "them (FQ46); a taken day names nobody (FQ78). `first_date` is the first local date it would open, " +
+  'A weekday of the proposal. `owner` is the member who confirmed a taken day (book p11: "Occupied days ' +
+    'identify their owner"; FQ78). `clash_with` is the other member who chose it, shown only to the two of ' +
+    "them (FQ46). `first_date` is the first local date it would open, " +
     "which can move until the proposal applies. `suggested` marks the spaced days proposed to the caller " +
     "(spec 05). Never Sunday.",
   z.object({
     weekday: Weekday,
     state: ScheduleSlotState,
+    owner: Person.optional(),
     clash_with: Person.optional(),
     first_date: LocalDate,
     suggested: z.boolean(),
@@ -399,8 +403,8 @@ export const ScheduleProposal = named(
   "ScheduleProposal",
   "A proposed schedule each member confirms (spec 05; G04): at activation, or after a membership change, " +
     "from a future boundary with no submitted day affected (FQ61, FQ62). Every active member confirms, the " +
-    "new one included, and the current days continue until then (FQ56). Nothing names who has or hasn't " +
-    "confirmed (T33, FQ78's default). `my_days` are the caller's chosen weekdays, one per member in clubs " +
+    "new one included, and the current days continue until then (FQ56). A taken day names its owner (book " +
+    "p11); nothing else says who hasn't confirmed, counts them or waits on anyone (T33, FQ78). `my_days` are the caller's chosen weekdays, one per member in clubs " +
     "of four to six and two in clubs of two or three (spec 05's table).",
   z.object({
     id: Id,
@@ -420,8 +424,8 @@ export const Schedule = named(
   "The club's week (G04, G05-schedule): the schedule in force, if any, and the open proposal, if any. The " +
     "same for every active member, except each one's own slots (T55). The schedule-proposal shapes are " +
     "settled in B2's contract PR, with two known gaps: the proposed week naming each member's suggested day " +
-    "(G04-one-day, G04-change), and whether taken days may show at all, since they tell how many members " +
-    "have confirmed (FQ78).",
+    '(G04-one-day, G04-change), and the owner a G04 error names ("{weekday} is now {ownerName}\'s day"), ' +
+    "which the app reads from the schedule it fetches again (FQ78).",
   z.object({
     server_now: Instant,
     club: ClubRef,
@@ -430,11 +434,21 @@ export const Schedule = named(
   }),
 );
 
+export const ChosenWeekdays = named(
+  "ChosenWeekdays",
+  "One or two weekdays, each only once: the API refuses the same weekday twice (T6).",
+  z
+    .array(Weekday)
+    .min(1)
+    .max(2)
+    .refine((days) => new Set(days).size === days.length, "each weekday only once"),
+);
+
 export const ScheduleChoiceRequest = named(
   "ScheduleChoiceRequest",
   "Choose the caller's own day or days in the proposal they saw, from slots that are theirs or available. " +
     "Exactly `days_per_member` distinct weekdays; never Sunday (T6).",
-  z.strictObject({ expected_version: Version, weekdays: z.array(Weekday).min(1).max(2) }),
+  z.strictObject({ expected_version: Version, weekdays: ChosenWeekdays }),
 );
 
 export const ScheduleConfirmRequest = named(
@@ -486,8 +500,9 @@ export const BlockRequest = named(
 
 export const BlockedAccount = named(
   "BlockedAccount",
-  "Someone the caller has blocked, by their current name (S02-blocked-list). There is no unblock in the " +
-    "trial (FQ72).",
+  "Someone the caller has blocked, by the name they had when the block took effect, which left every club " +
+    "the two shared, so a later change of name doesn't reach the caller (S02-blocked-list, FQ75). There is " +
+    "no unblock in the trial (FQ72).",
   z.object({ block_id: Id, name: DisplayName }),
 );
 

@@ -89,15 +89,23 @@ const invitationRoster = (state: "open" | "changed" | "waiting") => ({
 });
 
 // Kitchen table's proposal from Monday 16 November once Ben has chosen: Alex, Sam and Maya have confirmed
-// Tuesday, Wednesday and Saturday, and nobody is named (FQ78).
+// Tuesday, Wednesday and Saturday, each named as the day's owner (book p11, FQ78).
+const ktOwners: Partial<Record<string, "alex" | "sam" | "maya">> = {
+  tuesday: "alex",
+  wednesday: "sam",
+  saturday: "maya",
+};
 const ktSlots = (["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"] as const).map(
-  (weekday, index) => ({
-    weekday,
-    state:
-      weekday === "monday" ? "yours" : ["tuesday", "wednesday", "saturday"].includes(weekday) ? "taken" : "available",
-    first_date: `2026-11-${String(16 + index)}`,
-    suggested: weekday === "monday",
-  }),
+  (weekday, index) => {
+    const owner = ktOwners[weekday];
+    return {
+      weekday,
+      state: weekday === "monday" ? "yours" : owner ? "taken" : "available",
+      ...(owner ? { owner: member("kitchenTable", owner) } : {}),
+      first_date: `2026-11-${String(16 + index)}`,
+      suggested: weekday === "monday",
+    };
+  },
 );
 
 const spSchedule = rosters.sundayPeople.map(([who, weekday]) => ({ weekday, person: member("sundayPeople", who) }));
@@ -251,6 +259,10 @@ export const CLUB_EXAMPLES: { home: Examples; operations: Record<string, Example
           expires_at: "2026-11-13T14:41:00Z",
         },
       },
+      replayed: {
+        summary: "A retry with the same key: the first answer without its link, which the app offers to remake (FQ77)",
+        value: { invitation_id: "inv_kt_leila", candidate_id: "cnd_kt_leila", expires_at: "2026-11-13T14:41:00Z" },
+      },
     },
     revokeInvitation: {
       revoked: { summary: "The link no longer works", value: { invitation_id: "inv_kt_leila", state: "revoked" } },
@@ -315,7 +327,7 @@ export const CLUB_EXAMPLES: { home: Examples; operations: Record<string, Example
       },
       confirm_one_day: {
         summary:
-          "Kitchen table's proposal after Leila joins: Ben chooses Monday; days others confirmed name nobody (G04, FQ78)",
+          "Kitchen table's proposal after Leila joins: Ben chooses Monday; the days others confirmed name their owners (G04, FQ78)",
         value: {
           server_now: at.friday6Morning,
           club: kt,
@@ -332,29 +344,7 @@ export const CLUB_EXAMPLES: { home: Examples; operations: Record<string, Example
             reason: "membership_change",
             effective_from: "2026-11-16",
             days_per_member: 1,
-            slots: [
-              { weekday: "monday", state: "yours", first_date: "2026-11-16", suggested: true },
-              {
-                weekday: "tuesday",
-                state: "taken",
-                first_date: "2026-11-17",
-                suggested: false,
-              },
-              {
-                weekday: "wednesday",
-                state: "taken",
-                first_date: "2026-11-18",
-                suggested: false,
-              },
-              { weekday: "thursday", state: "available", first_date: "2026-11-19", suggested: false },
-              { weekday: "friday", state: "available", first_date: "2026-11-20", suggested: false },
-              {
-                weekday: "saturday",
-                state: "taken",
-                first_date: "2026-11-21",
-                suggested: false,
-              },
-            ],
+            slots: ktSlots,
             my_days: ["monday"],
             my_state: "choosing",
             state: "open",

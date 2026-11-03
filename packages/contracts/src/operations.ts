@@ -53,6 +53,7 @@ import {
   Source,
   UpdateDropRequest,
   Upload,
+  UploadStatus,
 } from "./schemas/contributing.ts";
 import { Day, DropDetail, Embed, ExternalVideoPreview, Home, HighlightPointer, OwnDay } from "./schemas/days.ts";
 import { CLUB_OPERATIONS } from "./operations-clubs.ts";
@@ -266,7 +267,7 @@ const CONTRIBUTING: Operation[] = [
     summary: "The caller's upload and its state",
     description: "Only its owner; never a URL (T12).",
     beforeProfile: true,
-    ok: { status: 200, json: Upload },
+    ok: { status: 200, json: UploadStatus },
   },
   {
     id: "completeUpload",
@@ -277,7 +278,7 @@ const CONTRIBUTING: Operation[] = [
       "Begin the checks and return the preparing state (spec 32, 33). Repeating it returns the current state. " +
       "MEDIA_NOT_READY while the bytes aren't in storage yet.",
     beforeProfile: true,
-    ok: { status: 202, json: Upload },
+    ok: { status: 202, json: UploadStatus },
     errors: ["MEDIA_NOT_READY"],
   },
   {

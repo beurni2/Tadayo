@@ -105,7 +105,7 @@ describe("the Prism mock", () => {
     expect(answer.headers.get("cache-control")).toBe("private, no-store");
   });
 
-  it("sends the contract's own header values: no-store on every answer, an ETag on every image", async () => {
+  it("sends the contract's own header values: no-store on every answer with a body, an ETag on every image", async () => {
     const me = await call("GET", "/v1/me", signedIn);
     expect(me.headers.get("cache-control")).toBe("private, no-store");
     const avatar = await call("GET", "/v1/me/avatar", { ...signedIn, accept: "image/jpeg" });

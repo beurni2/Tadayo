@@ -28,14 +28,15 @@ export const ReplyTo = named(
 export const Comment = named(
   "Comment",
   "A comment on a revealed drop, seen by the drop's audience (spec 16). `edited` shows the Edited label; " +
-    "earlier text is never served (spec 31). No time and no seen state.",
+    "earlier text is never served (spec 31). No time and no seen state. `version` is only on the caller's " +
+    "own comments, for editing them: nobody else learns how often a comment changed.",
   z.object({
     id: Id,
     author: Person,
     text: CommentText,
     reply_to: ReplyTo.optional(),
     edited: z.boolean(),
-    version: Version,
+    version: Version.optional(),
   }),
 );
 

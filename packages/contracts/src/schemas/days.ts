@@ -129,7 +129,9 @@ export const HighlightEntry = named(
   "HighlightEntry",
   "One entry of a revealed day's highlight rail: a pointer to a drop this viewer can read (T22). The " +
     "star's pick comes first, then the club's schedule order (FQ26). A contributor without a highlight has " +
-    "no entry. Only in a RevealedDay, never before the reveal (T10, FQ21).",
+    "no entry. Only in a RevealedDay, never before the reveal (T10, FQ21). One entry per contributor's " +
+    "membership interval (T22): no more than six at once, but a day can have more when members left, keeping " +
+    "their drops, and others joined while it was collecting (spec 07, 22), so the rail has no fixed bound.",
   z.object({ drop_id: Id, author: Person, star_pick: z.boolean() }),
 );
 
@@ -154,7 +156,7 @@ export const UpcomingDay = named(
   "A day that hasn't opened (phase collecting), for this viewer (spec 08, 09, 32): others' captions and " +
     "the caller's own drops, in commit order with the id as a tiebreak (T35), a page at a time. Nothing " +
     "else, ever: no revealed card, no highlight rail, nothing that counts what's hidden (T10, T15). " +
-    "Withdrawn and held drops are simply absent (T24, T29). `add_target` is the day itself (spec 08).",
+    "Removed, withdrawn and held drops are simply absent (T24, T29). `add_target` is the day itself (spec 08).",
   z.object({
     stage: tag("upcoming"),
     ...dayBase,
@@ -177,7 +179,7 @@ export const RevealedDay = named(
     add_target: Occurrence.optional(),
     drops: z.array(DropRevealed).max(36),
     next_cursor: Cursor.optional(),
-    highlights: z.array(HighlightEntry).max(6),
+    highlights: z.array(HighlightEntry),
   }),
 );
 

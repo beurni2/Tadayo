@@ -18,6 +18,7 @@ const tiktok = "https://www.tiktok.com/@scout2015/video/6718335390845095173";
 // Debby's Friday 6 November, open, as Ben sees it at 9:41 AM (H01-open, R02-photo).
 export const debby6Open = day("sundayPeople", "debby", 6, "open");
 export const debby13 = day("sundayPeople", "debby", 13, "collecting");
+const debby20 = day("sundayPeople", "debby", 20, "collecting");
 
 const photo = (width: number, height: number, version: string) => ({ width, height, media_version: version });
 
@@ -549,8 +550,10 @@ const ERROR_SCENES: Partial<Record<ErrorCodeName, unknown>> = {
     target: debby6Open,
     next_target: debby13,
   },
-  QUOTA_FULL: { code: "QUOTA_FULL", target: debby13, allowance: allowance(6, 1) }, // C07-limit
-  EXTERNAL_LIMIT: { code: "EXTERNAL_LIMIT", target: debby13, allowance: allowance(3, 2) }, // C02-external-limit
+  // C07-limit: Friday 13 November is full for Ben; Friday 20 November offered for review (T4).
+  QUOTA_FULL: { code: "QUOTA_FULL", target: debby13, next_target: debby20, allowance: allowance(6, 1) },
+  // C02-external-limit
+  EXTERNAL_LIMIT: { code: "EXTERNAL_LIMIT", target: debby13, next_target: debby20, allowance: allowance(3, 2) },
   DUPLICATE_DROP: { code: "DUPLICATE_DROP", existing_drop_id: "drp_ben_13" }, // C02-duplicate
   VERSION_CONFLICT: { code: "VERSION_CONFLICT", current_version: 3 },
   ROSTER_CHANGED: { code: "ROSTER_CHANGED", current_id: "rev_kt_leila_2" }, // G02-changed

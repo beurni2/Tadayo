@@ -133,7 +133,8 @@ export const CLUB_OPERATIONS: Operation[] = [
     description:
       "Only the member who proposed the candidate can make or revoke its link (T7). A new link replaces the " +
       "candidate's earlier one, after a revoke or an expiry (Create new link) or when the app no longer holds " +
-      "it (FQ77). A retry with the same key returns a new link (InvitationLink, FQ77).",
+      "it (FQ77). A retry with the same key returns the first answer without its `url`, and makes nothing " +
+      "new (InvitationLink, T19, FQ77).",
     idempotent: true,
     body: CreateInvitationRequest,
     ok: { status: 201, json: InvitationLink },
@@ -145,10 +146,10 @@ export const CLUB_OPERATIONS: Operation[] = [
     summary: "Revoke a link",
     description:
       "The link stops working; the candidate keeps their place, and the proposer can make a new link " +
-      "(G01-invite-people). Repeating the revoke returns the same answer. VERSION_CONFLICT once the candidate " +
+      "(G01-invite-people). Repeating the revoke returns the same answer. NOT_ALLOWED once the candidate " +
       "has accepted, when there's nothing left to revoke.",
     ok: { status: 200, json: RevokedInvitation },
-    errors: ["VERSION_CONFLICT"],
+    errors: ["NOT_ALLOWED"],
   },
   {
     id: "previewInvitationWeb",

@@ -81,19 +81,27 @@ export const SignedUpload = named(
   }),
 );
 
+const uploadFields = {
+  id: Id,
+  purpose: UploadPurpose,
+  state: UploadState,
+  rejection: UploadRejection.optional(),
+  expires_at: Instant,
+};
+
 export const Upload = named(
   "Upload",
-  "The caller's own upload, which nobody else can see (T12). `signed_upload` is present only while it's " +
-    "pending, in the response that created it or its replay. An upload nobody commits lapses at " +
-    "`expires_at`; the device's draft keeps the photo (FQ15).",
-  z.object({
-    id: Id,
-    purpose: UploadPurpose,
-    state: UploadState,
-    rejection: UploadRejection.optional(),
-    expires_at: Instant,
-    signed_upload: SignedUpload.optional(),
-  }),
+  "The caller's own upload, which nobody else can see (T12), as `createUpload` answers it. `signed_upload` " +
+    "is present only while it's pending, in the response that created it or its replay. An upload nobody " +
+    "commits lapses at `expires_at`; the device's draft keeps the photo (FQ15).",
+  z.object({ ...uploadFields, signed_upload: SignedUpload.optional() }),
+);
+
+export const UploadStatus = named(
+  "UploadStatus",
+  "The caller's own upload and its state, as reading it or completing it answers: never a URL (T12; " +
+    "TECH-DESIGN section 6).",
+  z.object(uploadFields),
 );
 
 export const ResolveSourceRequest = named(

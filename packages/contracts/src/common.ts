@@ -32,9 +32,15 @@ export function text(min: number, max: number): z.ZodString {
 const NOT_IN_A_NAME = "\\u0000-\\u001F\\u007F-\\u009F\\u061C\\u200E\\u200F\\u2028-\\u202E\\u2066-\\u2069";
 export const NAME_PATTERN = new RegExp(`^(?!\\s)(?!.*\\s$)[^${NOT_IN_A_NAME}]+$`);
 
-/** A name: 1 to `max` grapheme clusters, trimmed, with nothing that can disguise it (FQ70). */
+// A name that shows nothing can't say who someone is (FQ70): one made only of spaces, format characters
+// such as U+200B ZERO WIDTH SPACE, or the blank fillers (U+115F, U+1160, U+2800, U+3164, U+FFA0).
+const VISIBLE = /[^\p{Cc}\p{Cf}\p{Z}\u115F\u1160\u2800\u3164\uFFA0]/u;
+
+/** A name: 1 to `max` grapheme clusters, trimmed, with something to see and nothing that can disguise it (FQ70). */
 export function name(max: number): z.ZodString {
-  return text(1, max).regex(NAME_PATTERN);
+  return text(1, max)
+    .regex(NAME_PATTERN)
+    .refine((value) => VISIBLE.test(value), "at least one visible character");
 }
 
 export const Id = named(
@@ -61,14 +67,25 @@ export const LocalDate = named(
   z.iso.date(),
 );
 
+function resolvable(zone: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: zone });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export const Timezone = named(
   "Timezone",
-  "The club's IANA timezone, such as America/New_York (spec 05, T2).",
+  "The club's IANA timezone, such as America/New_York (spec 05, T2): an IANA time zone the server can " +
+    "resolve, refused otherwise, since a club's zone is fixed once it's made (FQ19).",
   z
     .string()
     .min(1)
     .max(64)
-    .regex(/^[A-Za-z0-9_+-]+(?:\/[A-Za-z0-9_+-]+)*$/),
+    .regex(/^[A-Za-z0-9_+-]+(?:\/[A-Za-z0-9_+-]+)*$/)
+    .refine(resolvable, "an IANA time zone the server can resolve"),
 );
 
 export const Weekday = named(
@@ -86,9 +103,13 @@ export const Version = named(
 export const Cursor = named(
   "Cursor",
   "An opaque page cursor, bound to the viewer and the list it came from (T14): a random handle the server " +
-    "keeps, or an encrypted and authenticated value only the server can read. Never a readable key, so it " +
-    "carries no time, order key or count (T10, T15).",
-  z.string().min(1).max(512),
+    "keeps, or an encrypted and authenticated value only the server can read, in base64url. Never a readable " +
+    "key, so it carries no time, order key or count (T10, T15).",
+  z
+    .string()
+    .min(1)
+    .max(512)
+    .regex(/^[A-Za-z0-9_-]+$/),
 );
 
 export const MediaClass = named(
@@ -113,16 +134,16 @@ export const Reaction = named(
 export const DisplayName = named(
   "DisplayName",
   "A person's name as they gave it, the same in every club (spec 23): 1 to 40 grapheme clusters, with no " +
-    "space at either end and no control, bidirectional-control or line-separator character (FQ70's " +
-    "default). The app trims before sending; the API refuses a name rather than changing it. Names " +
+    "space at either end, no control, bidirectional-control or line-separator character, and at least one " +
+    "visible character (FQ70's default). The app trims before sending; the API refuses a name rather than changing it. Names " +
     "aren't unique.",
   name(40),
 );
 
 export const ClubName = named(
   "ClubName",
-  "A club's name: 1 to 40 grapheme clusters, with no space at either end and no control, " +
-    "bidirectional-control or line-separator character (FQ70's default).",
+  "A club's name: 1 to 40 grapheme clusters, with no space at either end, no control, " +
+    "bidirectional-control or line-separator character, and at least one visible character (FQ70's default).",
   name(40),
 );
 
