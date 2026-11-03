@@ -125,9 +125,12 @@ PNPM_SETTINGS = {"packages", "allowBuilds"}
 # allowBuilds may only deny: each entry is a package matcher and `false`, so a dependency's build
 # script never runs (pnpm 12's strictDepBuilds fails an install on a build nobody ruled on). An
 # entry that lets one run (`true`, or anything but `false`) is refused, so approving a build is a
-# CI-configuration PR (T58).
-DENIED_BUILD = re.compile(r"""^\s+(?:'([^'\s]+)'|"([^"\s]+)"|([@A-Za-z0-9][@A-Za-z0-9._/|^~<>= -]*?))"""
-                          r":\s+false\s*(?:#.*)?$")
+# CI-configuration PR (T58). The matcher is bare, single-quoted or double-quoted, and none of the
+# three can hold a backslash (a double-quoted key's escape, which would hide where the key ends),
+# `$` or braces. The file is read as YAML reads it: printable ASCII only, so no other character can
+# end a line, act as a space, or hide text in what looks like a comment (`workspace_packages`).
+DENIED_BUILD = re.compile(r"""^ +(?:'([^'\\\s${}]+)'|"([^"\\\s${}]+)"|([@A-Za-z0-9][@A-Za-z0-9._/|^~<>= -]*?))"""
+                          r": +false(?: +#[ -~]*| *)$")
 PACKAGE_MANAGER = re.compile(r"^pnpm@(\d+\.\d+\.\d+)(?:\+sha\d+\.[0-9a-f]+)?$")
 
 
@@ -190,10 +193,18 @@ class Steps:
 
     def workspace_packages(self):
         """The directories pnpm-workspace.yaml lists that hold a package.json, sorted."""
+        # Universal newlines turn \r\n and \r into \n, as YAML reads them. Any other character
+        # outside printable ASCII is refused: str.splitlines(), str.strip() and \s treat some as line
+        # ends or spaces where pnpm's YAML parser doesn't, which could hide text from this check.
         with open(self.path("pnpm-workspace.yaml"), encoding="utf-8") as f:
-            lines = f.read().splitlines()
+            text = f.read()
+        for number, line in enumerate(text.split("\n"), start=1):
+            if re.search(r"[^ -~]", line):
+                raise ValueError(f"pnpm-workspace.yaml: line {number} holds a character other than "
+                                 "printable ASCII (a tab, a control character or non-ASCII text); "
+                                 "write it in printable ASCII only")
         patterns, inside = [], None
-        for line in lines:
+        for line in text.split("\n"):
             if not line.strip() or line.lstrip().startswith("#"):
                 continue
             if not line.startswith((" ", "-")):

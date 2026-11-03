@@ -209,7 +209,8 @@ class PnpmSettingsTest(StepsTest):
                    "  nx@21.6.0 || 21.6.1: false\n"
                    "\n"
                    "  esbuild : false\n")
-        for text in [WORKSPACE + denials, denials + WORKSPACE]:
+        # Windows line ends read as YAML reads them.
+        for text in [WORKSPACE + denials, denials + WORKSPACE, (WORKSPACE + denials).replace("\n", "\r\n")]:
             with self.subTest(text=text):
                 self.repo.write("pnpm-workspace.yaml", text)
                 self.test_the_workspace_s_own_settings_run_the_steps()
@@ -228,7 +229,13 @@ class PnpmSettingsTest(StepsTest):
                       '"a b": false', "'a b': false", "&a esbuild: false", "*a: false", "<<: false", "<<: *x",
                       "!!str esbuild: false", "? esbuild: false", "? esbuild\n  : false",
                       "esbuild:", "- esbuild", "${PKG}: false", "pkg${X}: false", "esbuild: ${ALLOW}",
-                      "esbuild: set this to true or false"]:
+                      "esbuild: set this to true or false",
+                      # A double-quoted key's backslash escapes its quote, so YAML's key runs on past
+                      # what looks like `: false` and the real value follows it.
+                      '"a\\": false #": true', '"a\\\\\\": false #": true', '"dep@file:a\\": false #": true',
+                      "'a\\b': false", "'${PKG}': false", '"${PKG}": false', "'{a}': false", '"{a}": false',
+                      # YAML reads a `#` straight after a value as part of it.
+                      "core-js: false#x", "core-js: false#"]:
             with self.subTest(entry=entry):
                 self.repo.write("pnpm-workspace.yaml", WORKSPACE + "allowBuilds:\n  " + entry + "\n")
                 self.assertEveryPnpmStepRefuses("allowBuilds may only deny", "(T58)")
@@ -237,6 +244,21 @@ class PnpmSettingsTest(StepsTest):
             with self.subTest(text=text):
                 self.repo.write("pnpm-workspace.yaml", WORKSPACE + text)
                 self.assertEveryPnpmStepRefuses("can't read the line")
+
+    def test_a_workspace_file_with_anything_but_printable_ascii_is_refused(self):
+        # Python's splitlines(), strip() and \s treat these as line ends or spaces where pnpm's YAML
+        # parser doesn't, so text this check took for a comment or a denial would reach pnpm as
+        # something else.
+        for entry in ["core-js: false\u2028# hidden: true", "core-js: false\u2029# hidden: true",
+                      "core-js: false\x85# hidden: true", "core-js: false\v# hidden: true",
+                      "core-js: false\f# hidden: true", "core-js: false\x1c# hidden: true",
+                      "core-js:\xa0false", "core-js: false\u3000#x", "core-js:\tfalse",
+                      "core-js: false # caf\u00e9"]:
+            with self.subTest(entry=entry):
+                self.repo.write("pnpm-workspace.yaml", WORKSPACE + "allowBuilds:\n  " + entry + "\n")
+                self.assertEveryPnpmStepRefuses("printable ASCII")
+        self.repo.write("pnpm-workspace.yaml", "# caf\u00e9\n" + WORKSPACE)
+        self.assertEveryPnpmStepRefuses("line 1", "printable ASCII")
 
     def test_an_entry_outside_the_packages_list_is_refused(self):
         self.repo.write("pnpm-workspace.yaml", "  - packages/stray\n" + WORKSPACE)
