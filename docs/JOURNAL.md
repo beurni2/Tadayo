@@ -217,7 +217,7 @@ The screen-by-screen list is `design/reference/INVENTORY.md`, "Known differences
 
 ### 1.1 Shared (the api lane keeps this block)
 
-**Updated:** 2026-11-03 01:05 UTC, api/b0-ci
+**Updated:** 2026-11-03 01:10 UTC, api/b0-ci
 
 - **Stage:** B0 Foundations (`docs/plans/B0.md`). Slice 1 merged (PR #7). Slice 2 (`api/b0-ci`, `ci.yml`) in progress, under a freeze: the project's coordinator confirmed at 00:06 UTC on 2026-11-03 that no other thread starts or merges a branch until the `ci.yml` PR merges (`docs/MILESTONES.md`, "Lanes"). Then slice 9. Next gate: Gate 0, a joint gate.
 - **Lanes:** the api thread started on 2026-11-02 at 23:28 UTC and is the one session until `ios.yml` has run green on the latest check branch, writing this block, log section 3.1 (lane `shared`) and table 4.1 (ADR-025). The ios thread hasn't started.
@@ -414,6 +414,14 @@ Newest first within each section. One entry per commit, written in that commit, 
 ```
 
 ### 3.1 Shared and B0
+
+#### 2026-11-03 01:10 UTC · shared · api/b0-ci · PR none
+**Did:** Added slice 2's PR row to section 4.1 (`to open`), before the PR is opened, as the journal's Rules ask; section 1.1's "Updated" line.
+**Why:** The journal's Rules: a PR's row goes in the last commit before the PR opens.
+**Verified:** `python3 tools/ci/journal_check.py --all` and `--branch`: exit 0.
+**Not verified:** None.
+**Decisions and questions:** None.
+**Next:** Open slice 2's PR, `ci: the ci workflow, its steps and guard 1`, once `ci` is green on this commit (`gh api -X POST repos/beurni2/tadayo/pulls`). Done when it's open and its independent review is under way.
 
 #### 2026-11-03 01:05 UTC · shared · api/b0-ci · PR none
 **Did:** Recorded the one-time push test: GitHub accepted `.github/workflows/ci.yml` from the session, and ran it green. `docs/LIMITATIONS.md`'s workflow-files row now says so: the session pushes workflow files itself, each in its own PR. This journal's section 1.1: the result, `ci`'s first run, the next steps (the founder no longer pastes `ci.yml`).
@@ -1109,6 +1117,7 @@ The index an auditor uses to find the proof behind section 2.
 | #5 | `ios/b0-handoff-1-requested` | Design handoff 1's 17 states (`docs/plans/B0.md` section 5.2) from `missing` to `requested 1` in `design/reference/INVENTORY.md`, with its counts; section 5.2 says when the brief was sent; `docs/PROGRESS.md`'s shared section; this journal's sections 1.1, 1.3, 3.1 and 4.1. After its review: `G06-no-club`'s stage to B0; section 5.2 says how the export comes back; the times of PR #4's merge and of the brief; the state's step on handoff 1's export | Two fresh reviewers (the inventory and the plan; the records, the PR's body and privacy), each finding checked by a separate reader. 6 findings, all confirmed, which come to 4 problems, all fixed | None: documents |
 | #6 | `plan/b0-lanes` | The founder's choice of two threads from the B0 plan's slice 9, recorded as ADR-025 and carried into `CLAUDE.md` ("Order of work", "Git" with "Ask me first", "The journal", the approval sentences), `README.md`, `docs/GITHUB.md` (the approval sentences, steps 1 and 3, "Merge timing"), `docs/MILESTONES.md` (its introduction, and "Lanes" with the rules the two threads keep and Gate 0 as a joint gate), `docs/TECH-DESIGN.md` section 9's `ios` row, `docs/plans/B0.md` (the order, sections 1.2, 2, 3, 4, 6 and 7), `docs/PROGRESS.md`'s shared section, and this journal's rules and sections 0.5, 0.7, 1.1, 1.2, 1.3, 3.1 and 4.1; `main` merged in after PR #5 (`501179a`) | Four fresh reviewers (the rulebook's consistency, the B0 plan's order, safety and security, the records and the PR's body), each finding checked by a separate reader. 29 findings, 24 confirmed, which come to 18 problems, all fixed: the approval only in the PR's own thread (the relay removed), when the lanes start, Gate 0 as a joint gate, the reviewer's lane check, the shared block's conflict rule, the B0 plan's owners and the spikes', `dev` claimed through the coordinator, the `evidence` reset, the founder's yes for "Ask me first", the keys' and slice 11b's timing, the set-aside rule, the end of `ios.yml`'s skip, and the records; the 5 not confirmed answered in the PR. Ready to merge | None: documents |
 | #7 | `api/b0-workspace` | Slice 1: the pnpm workspace (`package.json`, `pnpm-workspace.yaml`, `pnpm-lock.yaml`, `.nvmrc`, `tsconfig.base.json`, `eslint.config.js`, Prettier), the empty packages of `docs/TECH-DESIGN.md` section 3, and the copy lint (`packages/domain/src/copy/`, `pnpm copy-lint`; T41 to T43); the environment checks in `docs/LIMITATIONS.md`; `docs/PROGRESS.md`; this journal's sections 1.1, 2, 3.1 and 4.1. After its review: `tests/` and `tools/ops/` in the workspace, vitest 5.0.5, `.prettierignore` narrowed to `tools/ci/`, and the copy lint's gaps closed (more HTML attributes, every exclamation form, `\U` escapes, UTF-16 without a mark, the skip list) | One fresh reviewer. 10 findings: 7 fixed (vitest 5.1.0 let past pnpm's release-age policy, `tests/` and `tools/ops/` outside the workspace, `tools/` wholly unformatted, HTML attributes, exclamation forms, `.strings` escapes and UTF-16 without a mark, a too-broad skip); 3 answered in the PR (copy outside string files, written into the T41 to T43 audit rows for the slices that bring it; keys linted as copy, kept on purpose while the trial is English-only; "Sent" in every form, kept strict and flagged to the founder) | None: the session's runs, in the log |
+| to open | `api/b0-ci` | Slice 2, CI configuration only (T58): `.github/workflows/ci.yml` (jobs `node`, `postgres`, `swift`, `tools`, `guards` and the final `ci`), pushed by the session; `tools/ci/ci_config_guard.py` (guard 1), `tools/ci/ci_steps.py` (the steps `ci.yml` calls, later targets passing empty until slice 12) and `tools/ci/toolchain.py` (Xcode 26.6, Swift 6.3.3, Postgres 17), with their tests; `docs/LIMITATIONS.md` (workflow files pushable, the simulators, `supabase.com` and `apt.postgresql.org` refused, the session's PostgreSQL 16, the Swift pin); this journal's sections 1.1, 2, 3.1 and 4.1 | To review | `ci`'s first run, 41551742269, green |
 
 ### 4.2 Pull requests: the ios lane
 
