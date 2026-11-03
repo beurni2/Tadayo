@@ -41,7 +41,7 @@ A handoff is a message the founder pastes into a Claude conversation where he as
 ```
 Design handoff <n>: <title>
 
-Sources: the linked Tadayo repository: docs/tadayo-design-book-2.1.md, docs/tadayo-build-spec-v3.md, and design/reference/, with the 2.1 renders and the brand from design handoff 0 in design/reference/brand/ (brand-tokens.md, brand-components.png, the wordmark and the icon). If the repository isn't linked: the attached Tadayo_UI_UX_Design_Book.pdf (design revision 2.1), Tadayo_v3_Build_and_Design.pdf, brand-tokens.md and brand-components.png. Use the brand's tokens, cover colours and components as they are; if you have Tadayo's design system, it holds the same brand.
+Sources: the linked Tadayo repository: docs/tadayo-design-book-2.1.md, docs/tadayo-build-spec-v3.md, and design/reference/, with the 2.1 renders and the brand in design/reference/brand/ (revision 1.1, from design handoffs 1 to 4) (brand-tokens.md, brand-components.png, the wordmark and the icon). If the repository isn't linked: the attached Tadayo_UI_UX_Design_Book.pdf (design revision 2.1), Tadayo_v3_Build_and_Design.pdf, brand-tokens.md and brand-components.png. Use the brand's tokens, cover colours and components as they are; if you have Tadayo's design system, it holds the same brand.
 
 What to design: one frame per state, 393×852 points, each titled with the state's exact name, in the order listed below (if an export loses the titles, the order identifies the frames).
 - <state name>, for example "F02-star: Debby's own upcoming Friday, seen by Debby". Screen F02 of the spec (section 09), closest 2.1 screen: state 08 (book p13).
@@ -70,7 +70,7 @@ Below the code block, outside it, tell the founder where the result goes: the br
 - **States outside the spec's ids:** `global-…`. The external-share screens use the new id `S05`.
 - **Brand assets:** in `design/reference/brand/`: `brand-wordmark.pdf`, `brand-wordmark-dark.pdf`, `brand-icon-1024.png`, `brand-icon-dark-1024.png`, `brand-icon-tinted-1024.png`, `brand-tokens.md`, `brand-components.png`.
 - **Deliveries** stay as they arrived, in `design/reference/claude-design/handoff-<n>/`, so anyone can check a PNG against its source.
-- **A brand revision** (a later handoff's `brand-tokens.json` with a new version, or a whole brand frame sent again): once the founder adopts it, the brand files above are remade from it, under the same names, in the PR that brings that delivery in, and the revision's number goes in `brand/README.md`. The earlier revision stays in its own handoff's folder. Until the founder adopts it, it stays only in its handoff's folder (ADR-027).
+- **A brand revision** (a later handoff's `brand-tokens.json` with a new version, or a whole brand frame sent again): once the founder adopts it, the brand files above are remade from it, under the same names, in the PR that brings that delivery in, and the revision's number goes in `brand/README.md`. `brand-tokens.md` then holds the revision's whole token set (colours, type roles and geometry), copied exactly. The earlier revision stays in its own handoff's folder. Until the founder adopts it, it stays only in its handoff's folder (ADR-027).
 - **The 2.1 renders** keep the names the inventory gave them, in `design/reference/2.1/`. Never change them.
 
 ## The inventory
