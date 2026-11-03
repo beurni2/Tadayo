@@ -1387,6 +1387,14 @@ Two earlier entries claim more than their commits show, and the log is append-on
 ### 3.3 ios lane
 
 #### 2026-11-03 14:00 UTC · ios · ios/b0-handoffs-1-4 · PR #13
+**Did:** A correction to the 14:00 entry, whose text stays as it is: the `docs/QUESTIONS.md` line it changed (line 114) is in FQ20's answer (2.1 strings that infer a gender, and the highlight label "Deborah-Anne's pick"), not FQ19's. Block 1.3's Updated line, this entry.
+**Why:** The log is append-only, so a wrong reference is corrected in a new entry (CLAUDE.md, "The journal").
+**Verified:** `awk` over `docs/QUESTIONS.md`: the last FQ heading before line 114 is FQ20's, at line 105. `python3 tools/ci/journal_check.py --branch` and the hook by hand: exit 0.
+**Not verified:** `ci` on this commit, until its run.
+**Decisions and questions:** None.
+**Next:** Check `ci` on this push, update PR #13's Review section, and tell the founder #13 is ready.
+
+#### 2026-11-03 14:00 UTC · ios · ios/b0-handoffs-1-4 · PR #13
 **Did:** Fixed what a second independent check of this branch at `224a842` confirmed (two checkers: the merge's resolution, and whether the documents are true once #13 merges; each finding put to an independent refuter; 6 confirmed, 4 refuted):
 - This journal, 0.7: the defaults in force now include FQ46 to FQ63 and FQ65 to FQ69 (FQ64 unused); the ios thread's card was posted at 11:07 UTC (the thread's record: 11:07:51), not 11:06.
 - The shared block's open questions: FQ46 to FQ69 added, and ADR-027 is PR #12, not the deleted branch `ios/b0-adr-027`. Its Design line: handoffs 3 and 4 delivered at 05:49 UTC (`design/handoff-3/export/`) and checked at 06:44 UTC (`design/handoff-3/check/`), handoff 5's brief written at 09:03 UTC (`design/handoff-5/`), the folders' times.
