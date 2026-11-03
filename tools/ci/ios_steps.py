@@ -63,14 +63,14 @@ The steps:
                states the branch touches; a run by hand with no $IOS_VERSION carries the full
                set, for gates; a compatibility run carries no sheets, only its logs. Every field
                of snapshots.json and every value of run.json is checked again here, since this
-               job can write: an entry with a field or a pairing collect can't have written
-               fails its row and is neither copied nor drawn; run.json is staged with only its
-               checked values; only the logs the steps write are copied, and any other entry in
-               logs/ is counted, never named. Stages everything in the evidence job's own
-               folder, beside OUT (WORK below). Writes index.md, which links every file and says
-               which file each image belongs to. Fails, after staging the rest, when an entry
-               fails its checks, an image is missing, a sheet couldn't be made, snapshots.json
-               is missing or logs/ holds anything else.
+               job can write: an entry with a field, or fields together, that collect can't
+               have written fails its row and is neither copied nor drawn; run.json is staged
+               with only its checked values; only the logs the steps write are copied, and any
+               other entry in logs/ is counted, never named. Stages everything in the evidence
+               job's own folder, beside OUT (WORK below). Writes index.md, which links every
+               file and says which file each image belongs to. Fails, after staging the rest,
+               when an entry fails its checks, an image is missing, a sheet couldn't be made,
+               snapshots.json is missing or logs/ holds anything else.
   publish      Pushes what sheets staged (index.md, the sheets, the checked entries' snapshots,
                run.json's checked values and the steps' logs, as they are) to the
                `evidence` branch under <branch>/<short-sha>/ios/ (ios-full/ for a run by hand's
@@ -243,6 +243,11 @@ def state_of(file_name):
     if named.isdigit() or not STATE.match(named):
         return None
     return named
+
+
+def kept_image(test, name):
+    """Where collect keeps an image this run drew, in OUT: snapshots/<test, made plain>/<name>."""
+    return f"snapshots/{re.sub(r'[^A-Za-z0-9._-]', '_', test)}/{name}"
 
 
 def read_inventory(text):
@@ -902,7 +907,7 @@ class Steps:
         return 0
 
     def keep(self, source, test, name):
-        image = f"snapshots/{re.sub(r'[^A-Za-z0-9._-]', '_', test)}/{name}"
+        image = kept_image(test, name)
         os.makedirs(os.path.dirname(self.out_path(*image.split("/"))), exist_ok=True)
         shutil.copyfile(source, self.out_path(*image.split("/")))
         return image
@@ -1089,10 +1094,11 @@ class Steps:
         test a path of plain names (PLAIN) or none; the file a plain name ending .png; the
         status changed, new or committed; the image under OUT's snapshots/ or a __Snapshots__
         folder in apps/ios (contained); the reference in such a folder, or none. A field that
-        fails is set to None and named in problems, and sheets fails the entry's row. Then the
-        three together must be a pairing collect writes, else the status fails: committed, the
-        image is its own reference in apps/ios; changed, the image is under snapshots/; new,
-        the image is under snapshots/ and there is no reference."""
+        fails is set to None and named in problems, and sheets fails the entry's row. When every
+        field passes, they must also fit together as collect writes them, else "pairing" is
+        named: the state is the file's (state_of); a committed image is its own reference; a
+        changed or new image is where collect keeps it (kept_image); a reference is the file's,
+        in its test's folder; a new snapshot has none."""
         if not isinstance(entry, dict):
             return dict.fromkeys(("state", "test", "file", "status", "image", "reference")), \
                 ["the entry isn't an object"]
@@ -1114,13 +1120,17 @@ class Steps:
             else:
                 checked[field] = None
                 problems.append(field)
-        if not {"status", "image", "reference"} & set(problems):
+        if not problems:
+            state, test, file = checked["state"], checked["test"], checked["file"]
             status, image, reference = checked["status"], checked["image"], checked["reference"]
-            ran = image.startswith("snapshots/")
-            if not {"committed": not ran and image == reference, "changed": ran,
-                    "new": ran and reference is None}[status]:
-                checked["status"] = None
-                problems.append("status")
+            kept = test is not None and image == kept_image(test, file)
+            in_place = reference is None or reference.split("/")[-2:] == [test, file]
+            # A reference is never under snapshots/ (its own check), so neither is a committed
+            # image that is its own reference.
+            fits = {"committed": image == reference, "changed": kept,
+                    "new": kept and reference is None}[status]
+            if state != state_of(file) or not in_place or not fits:
+                problems.append("pairing")
         return checked, problems
 
     def contained(self, image):

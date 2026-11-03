@@ -936,41 +936,58 @@ class SheetsTest(StepsTest):
 
     def test_paths_from_the_build_job_are_checked_again(self):
         # snapshots.json comes from the macOS job; this job can write, so it trusts no path in it.
+        # Each entry is one collect could write but for the fields named beside it, and fails
+        # exactly those: no other check can hide one that lets its field through.
+        steps = self.steps()
         outside = self.repo.write("secret.txt", "not evidence")
-        self.repo.write("apps/ios/T/x.png", "not evidence")  # in apps/ios, but no reference
+        self.repo.write("apps/ios/T/testB.A02-email.png", "not evidence")  # in apps/ios, in no __Snapshots__ folder
+        self.repo.write("apps/ios/T/x.png", "not evidence")
         self.repo.write("apps/ios/Tadayo/Info.plist", "not evidence")
         self.repo.mkdir("apps/ios/T/__Snapshots__/XTests")
-        os.symlink(outside, os.path.join(self.repo.root, "apps", "ios", "T", "__Snapshots__", "link.png"))
+        folder = os.path.join(self.repo.root, "apps", "ios", "T", "__Snapshots__", "XTests")
+        os.symlink(outside, os.path.join(folder, "testF.A02-email.png"))  # a link out of the repository
         os.symlink(os.path.join(self.repo.root, "apps", "ios", "T", "x.png"),
-                   os.path.join(self.repo.root, "apps", "ios", "T", "__Snapshots__", "XTests", "inside.png"))
+                   os.path.join(folder, "testG.A02-email.png"))  # a link out of the folder, into apps/ios
 
-        def new(file, image, **fields):
-            return dict({"state": "A02-email", "test": "X", "file": file, "status": "new",
-                         "image": image, "reference": None}, **fields)
-        entries = [
-            new("testA.A02-email.png", "snapshots/../../../secret.txt"),
-            new("testB.A02-email.png", "apps/ios/T/x.png"),
-            new("testC.A02-email.png", "apps/ios/T/__Snapshots__/../../../secret.txt"),
-            new("testD.A02-email.png", "apps/ios/T/__Snapshots__/../../Tadayo/Info.plist"),
-            new("testE.A02-email.png", "apps/ios/T/__Snapshots__/../x.png"),
-            new("testF.A02-email.png", "apps/ios/T/__Snapshots__/link.png"),  # a link out of the repository
-            new("testG.A02-email.png", "apps/ios/T/__Snapshots__/XTests/inside.png"),  # a link out of the folder
-            new("testH.A02-email.png", "/" + outside.lstrip("/")),
-            dict(self.entry("F01-friends", "changed"), reference="secret.txt"),
-            dict(self.entry("F02-upcoming", "changed"), reference="apps/ios/T/__Snapshots__/../../Tadayo/Info.plist"),
-            dict(self.entry("H01-open", "changed"), reference="snapshots/XTests/testX.H01-open.png"),
-            new("testX.A.png", self.sample("snapshots/X/testX.A.png"), state="../" * 7 + "planted"),
+        def new(file, **fields):
+            return dict({"state": ios_steps.state_of(file), "test": "X", "file": file, "status": "new",
+                         "image": f"snapshots/X/{file}", "reference": None}, **fields)
+
+        def committed(file, image):
+            return {"state": ios_steps.state_of(file), "test": "XTests", "file": file,
+                    "status": "committed", "image": image, "reference": image}
+        both = ["image", "reference"]
+        cases = [
+            (new("testA.A02-email.png", image="snapshots/../../../secret.txt"), ["image"]),
+            (committed("testB.A02-email.png", "apps/ios/T/testB.A02-email.png"), both),
+            (committed("testC.A02-email.png", "apps/ios/T/__Snapshots__/../../../secret.txt"), both),
+            (committed("testD.A02-email.png", "apps/ios/T/__Snapshots__/../../Tadayo/Info.plist"), both),
+            (committed("testE.A02-email.png", "apps/ios/T/__Snapshots__/../x.png"), both),
+            (committed("testF.A02-email.png", "apps/ios/T/__Snapshots__/XTests/testF.A02-email.png"), both),
+            (committed("testG.A02-email.png", "apps/ios/T/__Snapshots__/XTests/testG.A02-email.png"), both),
+            (new("testH.A02-email.png", image="/" + outside.lstrip("/")), ["image"]),
+            (dict(self.entry("F01-friends", "changed"), reference="secret.txt"), ["reference"]),
+            (dict(self.entry("F02-upcoming", "changed"), reference="apps/ios/T/__Snapshots__/../../Tadayo/Info.plist"),
+             ["reference"]),
+            (dict(self.entry("H01-open", "changed"), reference="snapshots/XTests/testX.H01-open.png"), ["reference"]),
+            (new("testX.A.png", state="../" * 7 + "planted"), ["state"]),
             # Names that would write markdown of their own into index.md, or crash the step.
-            new("a` | [Open the fix](https://example.invalid) |\n# Gate passed\n`.png", self.sample("snapshots/X/m.png")),
-            new("testI.A02-email.png", self.sample("snapshots/X/i.png"), test="X` | [Open](https://example.invalid)"),
+            (new("a` | [Open the fix](https://example.invalid) |\n# Gate passed\n`.png", image="snapshots/X/m.png"),
+             ["file"]),
+            (new("testI.A02-email.png", test="X` | [Open](https://example.invalid)"), ["test"]),
             # Each whole value is checked, not only its start: no `/` to split on, a line break.
-            new("testK.A02-email.png", self.sample("snapshots/X/k.png"), test="X` | [Open](x.md) | `"),
-            new("testL.A02-email.png", self.sample("snapshots/X/l.png"), test="X\n# Gate passed"),
-            new("testN.A02-email.png", self.sample("snapshots/X/n.png"), state="A02-email\n"),
-            dict(self.entry("F03-x", "changed"), reference="apps/ios/X/__Snapshots__/a` [Open](https://example.invalid).png"),
-            new("x\ud800.png", self.sample("snapshots/X/s.png")),
-            new("testJ.A02-email.png", self.sample("snapshots/X/j.png"), status="passed"),
-            "not an entry"]
+            (new("testK.A02-email.png", test="X` | [Open](x.md) | `"), ["test"]),
+            (new("testL.A02-email.png", test="X\n# Gate passed"), ["test"]),
+            (new("testN.A02-email.png", state="A02-email\n"), ["state"]),
+            (dict(self.entry("F03-x", "changed"), reference="apps/ios/X/__Snapshots__/a` [Open](https://example.invalid).png"),
+             ["reference"]),
+            (new("x\ud800.png", image="snapshots/X/s.png"), ["file"]),
+            (new("testJ.A02-email.png", status="passed"), ["status"]),
+            ("not an entry", ["the entry isn't an object"])]
+        for entry, expected in cases:
+            with self.subTest(entry=entry):
+                self.assertEqual(steps.checked_entry(entry)[1], expected)
+        entries = [entry for entry, _ in cases]
         shell = FakeShell()
         self.snapshots(entries)
         code, out = self.step("sheets", shell, environ={"GITHUB_EVENT_NAME": "workflow_dispatch"})
@@ -1015,43 +1032,60 @@ class SheetsTest(StepsTest):
         entry, problems = steps.checked_entry(self.entry("F02-upcoming", "new"))
         self.assertEqual(problems, [])
         self.assertEqual(entry["state"], "F02-upcoming")
-        entry, problems = steps.checked_entry({"state": None, "test": None, "file": "testX.1.png",
+        entry, problems = steps.checked_entry({"state": None, "test": "XTests", "file": "testX.1.png",
                                                "status": "new", "reference": None,
                                                "image": self.sample("snapshots/XTests/testX.1.png")})
-        self.assertEqual(problems, [])  # an unnamed snapshot and no test class are collect's own
+        self.assertEqual(problems, [])  # an unnamed snapshot, numbered by the library, is collect's own
 
-    def test_status_image_and_reference_must_pair_as_collect_writes_them(self):
+    def test_an_entry_s_fields_must_fit_together_as_collect_writes_them(self):
         steps = self.steps()
         ran = self.sample("snapshots/XTests/testX.F02-upcoming.png")
         committed = self.sample("apps/ios/S/__Snapshots__/XTests/testX.F02-upcoming.png")
-        other = self.sample("apps/ios/S/__Snapshots__/XTests/testY.F02-upcoming.png")
-        good = [("committed", committed, committed), ("changed", ran, committed), ("changed", ran, None),
-                ("new", ran, None)]
-        bad = [("committed", ran, committed),  # a committed image is its own reference, in apps/ios
-               ("committed", committed, other), ("committed", committed, None),
-               ("changed", committed, committed),  # a changed or new image is this run's, in OUT
-               ("new", committed, None),
-               ("new", ran, committed)]  # a new snapshot has no committed reference
-        for status, image, reference in good + bad:
-            with self.subTest(status=status, image=image, reference=reference):
-                entry, problems = steps.checked_entry(self.entry("F02-upcoming", status, image=image,
-                                                                 reference=reference))
-                self.assertEqual(problems, [] if (status, image, reference) in good else ["status"])
-                self.assertEqual(entry["status"], status if not problems else None)
-        self.snapshots([self.entry("F02-upcoming", status, image=image, reference=reference)
-                        for status, image, reference in bad])
+        other = self.sample("apps/ios/S/__Snapshots__/YTests/testY.F02-upcoming.png")  # another test's
+        mine = self.sample("apps/ios/S/__Snapshots__/XTests/testX.A02-email.png")  # another state's
+        twin = self.sample("apps/ios/S/__Snapshots__/YTests/testX.F02-upcoming.png")  # its name, another test's
+
+        def entry(status, image, reference, **fields):
+            return dict(self.entry("F02-upcoming", status, image=image, reference=reference), **fields)
+        good = [entry("committed", committed, committed), entry("changed", ran, committed),
+                entry("changed", ran, None), entry("new", ran, None),
+                # A test in a folder of its own: collect keeps its image under a plain name.
+                entry("new", self.sample("snapshots/Sub_XTests/testX.F02-upcoming.png"), None, test="Sub/XTests")]
+        bad = [entry("committed", ran, committed),  # a committed image is its own reference, in apps/ios
+               entry("committed", committed, other), entry("committed", committed, None),
+               entry("changed", committed, committed),  # a changed or new image is this run's, in OUT
+               entry("new", committed, None),
+               entry("new", ran, committed),  # a new snapshot has no committed reference
+               # Names and paths that don't fit: another state's or another test's committed file
+               # shown as this one's, an image this run drew kept somewhere collect doesn't keep it.
+               entry("committed", other, other), entry("changed", ran, other), entry("changed", ran, mine),
+               entry("committed", mine, mine), entry("committed", twin, twin), entry("changed", ran, twin),
+               entry("committed", committed, committed, state="A02-email"),
+               entry("new", ran, None, state="A02-email"), entry("new", ran, None, test="YTests"),
+               entry("new", self.sample("snapshots/XTests/testX.A02-email.png"), None),
+               entry("changed", self.sample("snapshots/Other/testX.F02-upcoming.png"), committed)]
+        for fields in good + bad:
+            with self.subTest(fields=fields):
+                checked, problems = steps.checked_entry(fields)
+                self.assertEqual(problems, [] if fields in good else ["pairing"])
+                self.assertEqual(checked, fields)  # each field passed on its own
+        self.snapshots(bad)
         shell = FakeShell()
         code, out = self.step("sheets", shell, environ={"GITHUB_EVENT_NAME": "workflow_dispatch"})
         self.assertEqual(code, 1, out)
         self.assertEqual([c for c in shell.commands if c[0] == "montage"], [])
-        self.assertEqual(self.index("ios-full").count("its entry failed this job's checks: status |"), len(bad))
+        self.assertFalse(os.path.isdir(os.path.join(self.stage("ios-full"), "snapshots")))
+        self.assertEqual(self.index("ios-full").count("its entry failed this job's checks: pairing |"), len(bad))
 
     def test_run_json_s_values_are_checked_too(self):
         self.snapshots([self.entry("F02-upcoming", "new")])
-        facts = {"ios": "26.5", "device": "iPhone 17", "xcode": "26.6", "swift": "6.3.3"}
-        # Each fails FACT on one count only: line breaks, a tab, a trailing line break, length.
+        facts = {"ios": "26.5", "device": "iPhone 17", "xcode": "26.6", "swift": "6.3.3", "sdk": "26.5",
+                 "requested": "26.5", "udid": UDID, "runtime": "com.apple.CoreSimulator.SimRuntime.iOS-26-5"}
+        # Each fails FACT on one count only: line breaks, a tab, a trailing line break, length, a
+        # backtick (which would end index.md's code span).
         for tests in ("failed\n# Gate passed\n[Open](https://example.invalid)",
-                      "failed\n\nGate A passed\n---", "failed\n", "failed\t", "f" * 65):
+                      "failed\n\nGate A passed\n---", "failed\n", "failed\t", "f" * 65,
+                      "failed` www.phish.example `x"):
             with self.subTest(tests=tests):
                 # A key no step writes isn't kept either, whatever its value.
                 self.record(tests=tests, **facts, **{"Gate A passed": "yes", "notes": "plain"})
@@ -1059,6 +1093,7 @@ class SheetsTest(StepsTest):
                 index = self.index()
                 self.assertNotIn("example.invalid", index)
                 self.assertNotIn("Gate A passed", index)
+                self.assertNotIn("phish", index)
                 self.assertEqual(index.splitlines()[4:6],
                                  ["- Xcode `26.6`, Swift `6.3.3`, iOS `26.5` on `iPhone 17`",
                                   "- Tests: `not run`"])
@@ -1088,7 +1123,7 @@ class SheetsTest(StepsTest):
                      "toolchain.txt"):
             with open(os.path.join(logs, name), "w") as f:
                 f.write("Gate 0 passed\n" if name != "toolchain.txt" else "Xcode 26.6\n")
-        os.makedirs(os.path.join(logs, "build.log.d"))
+        os.makedirs(os.path.join(logs, "xcodegen.txt"))  # a step's name, but a folder
         os.symlink(outside, os.path.join(logs, "build.log"))  # a step's name, but not a file it wrote
         code, out = self.step("sheets", FakeShell())
         self.assertEqual(code, 1, out)
@@ -1208,10 +1243,12 @@ class SheetsTest(StepsTest):
 
     def test_a_missing_image_or_a_failed_sheet_fails_the_step_after_the_rest(self):
         entries = [{"state": "A02-email", "test": "X", "file": "testX.A02-email.png", "status": "new",
-                    "image": "snapshots/X/gone.png", "reference": None},
+                    "image": "snapshots/X/testX.A02-email.png", "reference": None},  # never drawn
                    self.entry("F02-upcoming", "new")]
         code, _, montaged, _ = self.run_sheets(entries)
         self.assertEqual((code, montaged), (1, ["F02-upcoming.jpg"]))
+        self.assertIn("| `A02-email` | new | `X/testX.A02-email.png` | built from spec, awaiting render | "
+                      "its image is missing from this run |", self.index())
         code, _, _, _ = self.run_sheets([self.entry("F02-upcoming", "new")],
                                         shell=FakeShell(codes=[(starts("montage"), 1)]))
         self.assertEqual(code, 1)
