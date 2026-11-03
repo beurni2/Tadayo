@@ -724,13 +724,19 @@ class CollectTest(StepsTest):
 
     def entries(self):
         with open(os.path.join(self.repo.out, "snapshots.json")) as f:
-            return {e["file"]: e for e in json.load(f)["entries"]}
+            listed = json.load(f)["entries"]
+        # Whatever collect writes, the evidence job's checks let through (Steps.checked_entry).
+        for entry in listed:
+            self.assertEqual(self.steps().checked_entry(entry)[1], [], entry)
+        return {e["file"]: e for e in listed}
 
     def test_committed_changed_and_new_snapshots(self):
-        snaps = "apps/ios/TadayoSnapshotTests/__Snapshots__/UpcomingTests"
+        # A test file's folder as Swift names one (`UpcomingView+Snapshots.swift`), which collect
+        # keeps under a plain name.
+        snaps = "apps/ios/TadayoSnapshotTests/__Snapshots__/Upcoming+Snapshots"
         self.png(f"{snaps}/testUpcoming.F02-upcoming.png")
         self.png(f"{snaps}/testUpcoming.F02-upcoming-dark.png")
-        self.png(os.path.join(self.repo.out, "artifacts", "UpcomingTests", "testUpcoming.F02-upcoming-dark.png"), "#000")
+        self.png(os.path.join(self.repo.out, "artifacts", "Upcoming+Snapshots", "testUpcoming.F02-upcoming-dark.png"), "#000")
         os.makedirs(os.path.join(self.repo.out, "Tests.xcresult"))
 
         def export(cmd):
@@ -754,8 +760,9 @@ class CollectTest(StepsTest):
         self.assertEqual((committed["status"], committed["state"], committed["image"]),
                          ("committed", "F02-upcoming", f"{snaps}/testUpcoming.F02-upcoming.png"))
         changed = entries["testUpcoming.F02-upcoming-dark.png"]
-        self.assertEqual((changed["status"], changed["reference"]),
-                         ("changed", f"{snaps}/testUpcoming.F02-upcoming-dark.png"))
+        self.assertEqual((changed["status"], changed["reference"], changed["image"]),
+                         ("changed", f"{snaps}/testUpcoming.F02-upcoming-dark.png",
+                          "snapshots/Upcoming_Snapshots/testUpcoming.F02-upcoming-dark.png"))
         self.assertTrue(os.path.isfile(os.path.join(self.repo.out, *changed["image"].split("/"))))
         new = entries["testFriends.F01-friends.png"]
         self.assertEqual((new["status"], new["state"], new["test"], new["reference"]),
@@ -1044,6 +1051,7 @@ class SheetsTest(StepsTest):
         other = self.sample("apps/ios/S/__Snapshots__/YTests/testY.F02-upcoming.png")  # another test's
         mine = self.sample("apps/ios/S/__Snapshots__/XTests/testX.A02-email.png")  # another state's
         twin = self.sample("apps/ios/S/__Snapshots__/YTests/testX.F02-upcoming.png")  # its name, another test's
+        unnamed = self.sample("apps/ios/S/__Snapshots__/XTests/testX.1.png")  # numbered: no state
 
         def entry(status, image, reference, **fields):
             return dict(self.entry("F02-upcoming", status, image=image, reference=reference), **fields)
@@ -1061,6 +1069,8 @@ class SheetsTest(StepsTest):
                entry("committed", other, other), entry("changed", ran, other), entry("changed", ran, mine),
                entry("committed", mine, mine), entry("committed", twin, twin), entry("changed", ran, twin),
                entry("committed", committed, committed, state="A02-email"),
+               entry("new", ran, None, state=None),  # a named file's state is its name's
+               dict(entry("committed", unnamed, unnamed), file="testX.1.png"),  # an unnamed file has none
                entry("new", ran, None, state="A02-email"), entry("new", ran, None, test="YTests"),
                entry("new", self.sample("snapshots/XTests/testX.A02-email.png"), None),
                entry("changed", self.sample("snapshots/Other/testX.F02-upcoming.png"), committed)]
@@ -1106,6 +1116,8 @@ class SheetsTest(StepsTest):
         self.assertEqual(self.index().splitlines()[4:6],
                          ["- Xcode `26.6`, Swift `6.3.3`, iOS `26.5` on `www.phish.example`",
                           "- Tests: `www.phish.example`"])
+        with open(os.path.join(self.stage(), "run.json")) as f:  # every key the steps write
+            self.assertEqual(json.load(f), dict(facts, device="www.phish.example", tests="www.phish.example"))
         with open(os.path.join(self.repo.out, "run.json"), "w") as f:
             json.dump(["not", "an", "object"], f)
         code, out = self.step("sheets", FakeShell())
