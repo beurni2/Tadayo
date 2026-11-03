@@ -288,13 +288,16 @@ Not started. The api thread builds slices 1, 2 and 9 as the one session, in bloc
 
 ### 1.3 ios lane
 
-**Updated:** 2026-11-03 03:40 UTC, plan/b0-rulebook-ci (the B0 session's design line)
+**Updated:** 2026-11-03 11:19 UTC, ios/b0-handoffs-1-4
 
-Not started. It starts inside B0, once slice 9's `ios.yml` has run green on the latest check branch (ADR-025). Until then, the B0 session keeps the design line here:
-- **Design** (`design/reference/INVENTORY.md`):
-    - handoffs sent: 0 (the brand), delivered on 2026-11-02 and merged as PR #4 (`7ab4bdc`); 1 (sign-in and clubs, `docs/plans/B0.md` section 5.2), given to the founder on 2026-11-02 after that merge and started the same day, its 17 states `requested 1` on `main` since PR #5 (`3d43860`), delivered on 2026-11-02 at 23:34 UTC and checked, kept in the project's files (`design/handoff-1/`); 2 (corrections to handoff 1), delivered on 2026-11-03 at 01:43 UTC and checked, kept there too (`design/handoff-2/`). Neither is in the repository until `docs/plans/B0.md` section 5.2 allows, so the counts below are unchanged. Handoffs 3 and 4 are reserved for the briefs of the project's first thread ("Prepare the next design handoffs"), started on 2026-11-03; the ios thread's next brief is 5. FQ45 is answered, adopt revision 1.1, but when it applies, before slice 11b as the coordinator planned or when handoff 1 comes in after slice 12 as the card says, is open (section 0.7): put it to the founder in ADR-027's PR before slice 11b starts; without an answer, 11b builds from handoff 0's files in `design/reference/brand/`;
-    - trial states: 149, of which 51 have a render, 17 are requested from handoff 1 and 81 are missing. 50 have a 2.1 render (49 to build, plus the system picker's reference), and three of those (`H01-open`, `H01-open-dark`, `F02-upcoming`) also have handoff 0's; `F02-upcoming-dark` has handoff 0's only. `F01-no-club` and `M01-no-club` were added in PR #4, for handoff 1;
-    - built from spec: 0. Brand assets received: 4 of 4.
+- **Started:** 2026-11-03 at 11:03 UTC, by the coordinator (ADR-025). Environment: Swift 6.3.3 from swift.org's signed release tarball; the journal hook isn't confirmed to fire in this session, so it runs by hand before each commit.
+- **PRs:** none merged yet. Open or pushed: `ios/b0-adr-027` (rulebook: ADR-027, FQ45 recorded), waiting for its review and the founder. This branch, `ios/b0-handoffs-1-4` (the design PR ADR-027 asks for), in progress, no PR number yet. Started locally, not pushed: `ios/b0-app` (slice 11's first part).
+- **Next, in order:**
+    1. Finish this branch, one commit each: unpack handoffs 2, 3 and 4 into `design/reference/claude-design/handoff-<n>/` (from `/mnt/project-files/design/handoff-<n>/export/`); copy each state's 786×1704 PNG into `design/reference/screens/<state>.png`, the newest handoff winning; remake `design/reference/brand/` from revision 1.1; bring `design/reference/INVENTORY.md` up to date; add FQ46 to FQ63 and FQ65 to FQ69 to `docs/QUESTIONS.md` (FQ64 is FQ54 and stays unused). Done when `python3 tools/ci/journal_check.py --branch` passes and `ci` is green on the last push.
+    2. Independent review (`docs/GITHUB.md` step 3), PR, the founder's approval, merge, after `ios/b0-adr-027` has merged.
+    3. Slice 11's first part on `ios/b0-app`, with revision 1.1's tokens.
+- **Blocked or waiting:** the founder's approval of `ios/b0-adr-027`, then of this branch's PR.
+- **Design** (`design/reference/INVENTORY.md`): this branch brings handoffs 1 to 4 in (ADR-027); the counts are rewritten in the commit that updates the inventory. Until then: 149 trial states, 51 with a render, 17 requested from handoff 1, 81 missing; built from spec 0; brand assets 4 of 4 (handoff 0's).
 
 ---
 
@@ -1346,6 +1349,14 @@ Two earlier entries claim more than their commits show, and the log is append-on
 ### 3.2 api lane
 
 ### 3.3 ios lane
+
+#### 2026-11-03 11:19 UTC · ios · ios/b0-handoffs-1-4 · PR none
+**Did:** Unpacked design handoff 1's pack (`/mnt/project-files/design/handoff-1/export/Tadayo_Handoff_1_Pack.zip`, 56 files) as it arrived into `design/reference/claude-design/handoff-1/`, and added the PDF the founder attached beside it, which is a newer render of the pack's own, as `attached/Tadayo_Handoff_1_Implementation.pdf`. This journal: block 1.3, this entry.
+**Why:** ADR-027: the founder chose on 2026-11-03 at 11:15 UTC to bring handoffs 1 to 4 into the repository before slice 11's screens. `docs/DESIGN-HANDOFF.md`, "How renders come back", step 2: each delivery is unpacked as it arrived, in its own commit.
+**Verified:** `unzip -Z1` lists 56 files and 56 are in the folder, plus the attached PDF (57). `grep -rl "<script"` finds none. The attached PDF's SHA-256 differs from the pack's PDF, as `/mnt/project-files/design/handoff-1/check/handoff-1-check.md` section 1 says (a newer render, identical text). `python3 tools/ci/journal_check.py --branch` and the hook by hand, exit 0.
+**Not verified:** `ci` on this commit: its push runs it. The `ios` workflow runs on the push (it changes `design/reference/**`) and its `gate` job skips the macOS job, since this branch has no `apps/ios/project.yml`.
+**Decisions and questions:** This branch is made from `main` before `ios/b0-adr-027` (which records ADR-027) has merged, so it merges `main` once that PR has; its PR goes to the founder only after. FQ64 to FQ69 reserved by the coordinator for handoff 1's check's six product questions; FQ64 (when a club starts) is FQ54 already and stays unused.
+**Next:** Block 1.3, Next step 1: unpack handoff 2 in its own commit.
 
 ---
 
