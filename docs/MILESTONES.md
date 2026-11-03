@@ -1,6 +1,6 @@
 # Tadayo stages and gates
 
-Version 1.2 · 2 November 2026
+Version 1.3 · 3 November 2026
 
 The spec builds in nine dependency steps (spec 38) towards the closed trial, which it calls M0 (spec 02). Here the steps become build stages B1 to B9, after a foundations stage B0. They are grouped into gates the founder checks on his iPhone, and split into two lanes that run in parallel from inside B0 (ADR-025). The trial's scope is ADR-007. The founder alone passes a gate. At each gate:
 - stop and post the evidence;
@@ -60,7 +60,7 @@ How the two threads start and stay in step (ADR-025):
     - The copy lint over every string file: the banned vocabulary of T41, gendered pronouns in system copy (T42), "Sent" as a drop state, and exclamation marks in system copy.
     - `docs/PROGRESS.md`, `docs/DECISIONS.md` and `docs/GATES.md` started; the `evidence` branch.
 - **CI.** The `ci`, `ios`, `ios-release` and `ops` workflows (`docs/TECH-DESIGN.md` section 9), including the two `ci` guards and the journal tools' tests.
-    - Workflow files likely reach GitHub through the founder (`docs/GITHUB.md`, "Workflow files"), so keep them thin, with their logic in `tools/ci/`.
+    - The session pushes workflow files itself, each in its own PR under a freeze (`docs/GITHUB.md`, "Workflow files"); keep them thin, with their logic in `tools/ci/`.
     - The `ios` workflow pushes snapshots and contact sheets to the evidence branch.
 - **The contract.** `openapi.yaml` for every endpoint and error code, the mock server with the fixture clubs, and the generated Swift client building on CI.
 - **The database.**

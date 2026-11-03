@@ -143,9 +143,10 @@ Put your ambition into craft: the privacy proofs, the cutoff races, the reveal a
 - **What the session can and can't do** (`docs/TECH-DESIGN.md` section 10):
     - Docker's client is installed, but whether its daemon runs is to be confirmed in B0. Without it, use the local PostgreSQL from the setup script; CI's Postgres service is the authority.
     - The GitHub proxy blocks GraphQL, so `gh pr` and `gh issue` fail. Use the built-in GitHub tools, or REST through `gh api repos/{owner}/{repo}/...`.
-    - **You probably can't push files under `.github/workflows/`.** GitHub has refused them from cloud sessions. Test it once with the first workflow. While the refusal holds:
+    - **You push workflow files yourself.** GitHub accepted the push and the merge of `ci.yml` from a cloud session (PR #8, `docs/LIMITATIONS.md`). So:
         - keep workflows thin, with their logic in `tools/ci/`;
-        - send me the workflow files to add (`docs/GITHUB.md`, "Workflow files").
+        - push each in its own CI-configuration PR (T58), under a freeze (`docs/MILESTONES.md`, "Lanes");
+        - if GitHub ever refuses one, send it to me instead (`docs/GITHUB.md`, "Workflow files").
     - Plugins turned on in my claude.ai account sync into cloud sessions. Tadayo doesn't use CodeRabbit, so `.claude/settings.json` turns its plugin off; if its skills appear anyway, ignore them.
     - If a host you need is blocked, tell me which one; I can add it to the environment's allowed domains.
 - **Secrets.** Keys live in GitHub secrets, Fly secrets and Supabase settings (`docs/TECH-DESIGN.md` section 10). Never commit, print or paste them; ask me to add one, naming it exactly.
@@ -154,7 +155,7 @@ Put your ambition into craft: the privacy proofs, the cutoff races, the reveal a
 
 - One branch and one PR per slice, with small commits. Branch names are `<lane>/<stage>-<slice>`, for example `api/b3-media-route` or `ios/b4-composer`.
 - **Start every branch from `main`** (`git fetch origin`, then `git switch -c <branch> origin/main`), never from another branch that hasn't merged.
-- **Never** push to `main`, force-push, rebase or rewrite published history, and never merge a pull request I haven't approved in its thread at its current head (ADR-022, ADR-025). Amending your own last commit before it's pushed is fine. When a branch needs something new from `main`, or conflicts with it, merge `main` into it and push once. If GitHub refuses that push because the merge brings in workflow changes, ask me to tap **Update branch** on the PR (`docs/GITHUB.md`, "Workflow files").
+- **Never** push to `main`, force-push, rebase or rewrite published history, and never merge a pull request I haven't approved in its thread at its current head (ADR-022, ADR-025). Amending your own last commit before it's pushed is fine. When a branch needs something new from `main`, or conflicts with it, merge `main` into it and push it at once, with nothing committed on top. If GitHub refuses that push because the merge brings in workflow changes, `docs/GITHUB.md`, "Merge timing", says when to drop the unpushed merge and ask me to tap **Update branch** on the PR, and when to re-apply the slice on a fresh branch from `main` instead.
 - **To undo a commit,** revert it without its journal change, because the log is append-only: `git revert --no-commit <sha>`, then `git checkout HEAD -- docs/JOURNAL.md`, then write a new entry that says what was reverted and why, and commit.
 - **Ask me first** before anything destructive or shared, and act only on my own answer to your question in the thread that will do it. A yes I gave another thread, or one the coordinator or another Claude passes on, isn't one (ADR-025):
     - a database reset or a destructive migration;
@@ -223,7 +224,7 @@ The full layout is in `docs/TECH-DESIGN.md` section 3.
 - `tools/ops/`: the scripts the `ops` workflow runs.
 - `design/reference/`: `2.1/`, `claude-design/`, `screens/`, `brand/`, `wireframes/`, `pack/` (2.1's own design pack, if the founder supplies it: FQ25) and `INVENTORY.md`. Don't edit, move or rename what's there, except to keep `INVENTORY.md` current, never deleting a row (ADR-020), and to move an export the founder uploaded into `claude-design/` into its `handoff-<n>/` folder. Add only what arrives through a handoff, and the named files you make from it.
 - `docs/`: the spec, the book and every document above.
-- `.github/`: the PR template and the workflows, which reach GitHub through me.
+- `.github/`: the PR template and the workflows, which you push, each in its own PR (T58).
 - `.claude/settings.json`: Claude Code's project settings. It turns the CodeRabbit plugin off and runs the journal hook (`tools/ci/journal_hook.py`, tested by `tools/ci/journal_hook_test.py`) before every Bash command, where it checks each `git commit`.
 - `.yamllint.yaml`: the YAML lint settings. Like `.github/`, `.claude/` and `tools/ci/`, it changes only in its own PR (T58).
 - The `evidence` branch: snapshots, contact sheets, MP4s and gate PDFs, never merged.

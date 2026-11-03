@@ -1,6 +1,6 @@
 # Tadayo technical design
 
-Version 1.1 · 2 November 2026
+Version 1.2 · 3 November 2026
 
 The build specification (`docs/tadayo-build-spec-v3.md`, "the spec") fixes the product rules, the data model, the API contracts and the acceptance tests. The design book (`docs/tadayo-design-book-2.1.md`, "the book") fixes the visual system and the interaction contracts. This document is the founder's CTO layer on top of them. It covers:
 - the concrete stack and the hosting;
@@ -316,7 +316,7 @@ Rules for every workflow:
 - secrets only in workflows run by hand or by a push to `main`, never in `ci` or `ios`;
 - once `prod` exists (Gate D), no key that reaches `prod` is available to a run on any branch but `main`. Each environment's keys are secrets of a GitHub environment of the same name (`dev`, `prod`), not repository secrets, and reach only that environment: a Fly deploy token per app (`fly tokens create deploy -a <app>`), and that environment's project ref and database URL. A key that reaches both Supabase projects, such as the account access token, is given only to jobs that run on `main`. The `prod` environment's only deployment branch is `main`, so a `prod` run executes merged code only. Starting or re-running anything against `prod` still waits for the founder's word (`CLAUDE.md`, "Ask me first");
 - never print a secret;
-- keep workflow files thin and put the logic in `tools/ci/`, because cloud sessions can't push workflow files (`docs/GITHUB.md`, "Workflow files").
+- keep workflow files thin and put the logic in `tools/ci/`, where it is tested and guarded (T58), and where a fix doesn't need a workflow PR and its freeze (`docs/GITHUB.md`, "Workflow files").
 
 ## 10. Accounts and secrets
 
@@ -341,7 +341,7 @@ In B0, pin one Swift version everywhere: the one in the Xcode the `ios` workflow
 What cloud sessions can and can't do:
 - Docker's client is there, but whether its daemon runs is to be confirmed in B0. Without it, use the local PostgreSQL from the setup script (CI's Postgres service at Supabase's major version stays the authority) and the Swift toolchain directly.
 - The session's GitHub proxy blocks GraphQL, so use REST (`docs/GITHUB.md`).
-- Pushes that add or change files under `.github/workflows/` have been refused. While that holds, the founder adds workflow files (`docs/GITHUB.md`, "Workflow files").
+- Pushes that add or change files under `.github/workflows/` have been refused to other cloud sessions; this project's session pushed `ci.yml` and merged its PR (PR #8, `docs/LIMITATIONS.md`), so the session pushes workflow files itself. If GitHub refuses one, the founder adds it (`docs/GITHUB.md`, "Workflow files").
 - Plugins turned on in the founder's claude.ai account sync into cloud sessions. Tadayo doesn't use CodeRabbit, so `.claude/settings.json` turns its plugin off.
 - There's no simulator and no Xcode. Screens are judged from the snapshots the `ios` workflow produces (section 2).
 
