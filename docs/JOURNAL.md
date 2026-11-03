@@ -1351,6 +1351,14 @@ Two earlier entries claim more than their commits show, and the log is append-on
 ### 3.3 ios lane
 
 #### 2026-11-03 11:19 UTC · ios · ios/b0-handoffs-1-4 · PR none
+**Did:** Unpacked design handoff 2's pack (`/mnt/project-files/design/handoff-2/export/`) as it arrived into `design/reference/claude-design/handoff-2/` and added the PDF the founder attached beside it, a newer render of the pack's own (`/mnt/project-files/design/handoff-2/check/handoff-2-check.md` section 1), as `attached/Tadayo_Handoff_2_Corrections.pdf`. This journal: block 1.3's Updated line, this entry.
+**Why:** ADR-027; `docs/DESIGN-HANDOFF.md`, "How renders come back", step 2: each delivery unpacked as it arrived, in its own commit.
+**Verified:** `unzip -Z1` lists 45 files and 45 are in the folder, plus the attached PDF (46). `grep -rl "<script"` finds none. `python3 tools/ci/journal_check.py --branch` and the hook by hand, exit 0.
+**Not verified:** `ci` on this commit: the branch's push runs it.
+**Decisions and questions:** None.
+**Next:** Block 1.3, Next step 1: the next unpack, then the screens, the brand, the inventory and the questions.
+
+#### 2026-11-03 11:19 UTC · ios · ios/b0-handoffs-1-4 · PR none
 **Did:** Unpacked design handoff 1's pack (`/mnt/project-files/design/handoff-1/export/Tadayo_Handoff_1_Pack.zip`, 56 files) as it arrived into `design/reference/claude-design/handoff-1/`, and added the PDF the founder attached beside it, which is a newer render of the pack's own, as `attached/Tadayo_Handoff_1_Implementation.pdf`. This journal: block 1.3, this entry.
 **Why:** ADR-027: the founder chose on 2026-11-03 at 11:15 UTC to bring handoffs 1 to 4 into the repository before slice 11's screens. `docs/DESIGN-HANDOFF.md`, "How renders come back", step 2: each delivery is unpacked as it arrived, in its own commit.
 **Verified:** `unzip -Z1` lists 56 files and 56 are in the folder, plus the attached PDF (57). `grep -rl "<script"` finds none. The attached PDF's SHA-256 differs from the pack's PDF, as `/mnt/project-files/design/handoff-1/check/handoff-1-check.md` section 1 says (a newer render, identical text). `python3 tools/ci/journal_check.py --branch` and the hook by hand, exit 0.
