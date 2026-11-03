@@ -288,13 +288,16 @@ Not started. The api thread builds slices 1, 2 and 9 as the one session, in bloc
 
 ### 1.3 ios lane
 
-**Updated:** 2026-11-03 03:40 UTC, plan/b0-rulebook-ci (the B0 session's design line)
+**Updated:** 2026-11-03 11:40 UTC, ios/b0-app
 
-Not started. It starts inside B0, once slice 9's `ios.yml` has run green on the latest check branch (ADR-025). Until then, the B0 session keeps the design line here:
-- **Design** (`design/reference/INVENTORY.md`):
-    - handoffs sent: 0 (the brand), delivered on 2026-11-02 and merged as PR #4 (`7ab4bdc`); 1 (sign-in and clubs, `docs/plans/B0.md` section 5.2), given to the founder on 2026-11-02 after that merge and started the same day, its 17 states `requested 1` on `main` since PR #5 (`3d43860`), delivered on 2026-11-02 at 23:34 UTC and checked, kept in the project's files (`design/handoff-1/`); 2 (corrections to handoff 1), delivered on 2026-11-03 at 01:43 UTC and checked, kept there too (`design/handoff-2/`). Neither is in the repository until `docs/plans/B0.md` section 5.2 allows, so the counts below are unchanged. Handoffs 3 and 4 are reserved for the briefs of the project's first thread ("Prepare the next design handoffs"), started on 2026-11-03; the ios thread's next brief is 5. FQ45 is answered, adopt revision 1.1, but when it applies, before slice 11b as the coordinator planned or when handoff 1 comes in after slice 12 as the card says, is open (section 0.7): put it to the founder in ADR-027's PR before slice 11b starts; without an answer, 11b builds from handoff 0's files in `design/reference/brand/`;
-    - trial states: 149, of which 51 have a render, 17 are requested from handoff 1 and 81 are missing. 50 have a 2.1 render (49 to build, plus the system picker's reference), and three of those (`H01-open`, `H01-open-dark`, `F02-upcoming`) also have handoff 0's; `F02-upcoming-dark` has handoff 0's only. `F01-no-club` and `M01-no-club` were added in PR #4, for handoff 1;
-    - built from spec: 0. Brand assets received: 4 of 4.
+- **Started:** 2026-11-03 at 11:03 UTC, by the coordinator (ADR-025).
+- **PRs:** #12 `ios/b0-adr-027` (ADR-027) and #13 `ios/b0-handoffs-1-4` (handoffs 1 to 4, brand 1.1) open, waiting for the founder; #13 merges after #12. This branch, `ios/b0-app` (slice 11's first part), work in progress, no PR.
+- **Next, in order:**
+    1. Read this branch's `ios` run (`gh api repos/beurni2/tadayo/actions/runs?branch=ios/b0-app`) and its sheets on `evidence` under `ios/b0-app/<short-sha>/ios/`; fix what doesn't compile. Done when the build step is green.
+    2. After #13 merges: merge `main` into this branch, commit the snapshot references the sheets show are right, list every difference against the renders, then review and PR.
+    3. Slice 11's second part (TadayoAPI, sign-in, profile, the empty tabs) after the api lane's slice 3.
+- **Blocked or waiting:** the founder's approval of #12, then #13.
+- **Design** (`design/reference/INVENTORY.md` on `main`, unchanged by this branch): 149 trial states, 51 with a render; on #13, 179 states, 86 with a render, 93 missing.
 
 ---
 
@@ -1346,6 +1349,20 @@ Two earlier entries claim more than their commits show, and the log is append-on
 ### 3.2 api lane
 
 ### 3.3 ios lane
+
+#### 2026-11-03 11:40 UTC · ios · ios/b0-app · PR none
+**Did:** Slice 11's first part (`docs/plans/B0.md` slice 11), as work in progress on its own branch, no PR yet:
+- `apps/ios/project.yml` (XcodeGen): configurations Debug, Dev and Release; the app `Tadayo`, the share extension `TadayoShare` (activation rule: up to 6 images, 1 web URL, text; no TRUEPREDICATE) and `TadayoSnapshotTests`; swift-snapshot-testing 1.19.7 pinned exactly; local packages `TadayoCore` and `TadayoDesign`; `ITSAppUsesNonExemptEncryption` false; privacy manifests with no tracking. Fixture photographs (book p50) excluded from Release.
+- `packages/swift/TadayoCore`: `LocalDate`, `ServerClock` (time from `server_now` plus a monotonic clock, T1), `Countdown`, `DateLabels` (exact dates, the region's own formats, FQ44), with 18 Swift Testing tests.
+- `packages/swift/TadayoDesign`: `Palette`, `TypeRole` and `Metrics` from brand revision 1.1 (`design/reference/brand/brand-tokens.md` on PR #13, and handoff 4's `component-contracts.json` for every type role's Dynamic Type style and the fold line); the components the plan names: weekday plaque, avatar (1.1's placement colours on canvas or on a cover, sizes 68, 36, 28, 18), folded card, highlight cover, primary button (pressed, disabled, keyboard focus ring), allowance line.
+- `apps/ios/Tadayo/Lab/` (under `LAB` only) and `LabSnapshotTests` (light, dark, large and accessibility text).
+- `.swift-format` (4 spaces, 100 columns) in `apps/ios/` and `packages/swift/`; `packages/swift/.gitignore`.
+- This journal: block 1.3, this entry.
+**Why:** The plan's slice 11, built on 1.1 as the founder chose at 11:15 UTC (ADR-027). Committed now so the work is on the remote while PRs #12 and #13 wait.
+**Verified:** `swift test --package-path packages/swift/TadayoCore` (Swift 6.3.3 on Linux): 18 tests in 4 suites pass. `swift format lint -r packages/swift apps/ios`: no warnings. `python3 tools/ci/journal_check.py --branch` and the hook by hand: exit 0.
+**Not verified:** `TadayoDesign` and the app compile only on the `ios` workflow (UIKit); this push is their first build. No snapshot references are committed, so with record mode `never` every snapshot test fails until its references are, by design; the sheets on `evidence` are what to read. VoiceOver, the focus ring with a hardware keyboard and Dynamic Type on a device are not checked.
+**Decisions and questions:** The branch stays without a PR until #13 merges; then `main` is merged into it, and the plan's second part (sign-in, profile, the empty tabs) follows the api lane's slice 3. The avatar's roles keep names by use (`avatarRow` for 1.1's `avatar36`, and so on).
+**Next:** Read this push's `ios` run and its sheets under `ios/b0-app/<short-sha>/ios/` on `evidence`; fix compile errors; after #13 merges, merge `main`, commit the reviewed snapshot references, add the LIMITATIONS row on the Swift toolchain, the audit rows T1, T44, T47, independent review, PR.
 
 ---
 
