@@ -217,7 +217,7 @@ The screen-by-screen list is `design/reference/INVENTORY.md`, "Known differences
 
 ### 1.1 Shared (the api lane keeps this block)
 
-**Updated:** 2026-11-03 00:50 UTC, api/b0-ci
+**Updated:** 2026-11-03 00:55 UTC, api/b0-ci
 
 - **Stage:** B0 Foundations (`docs/plans/B0.md`). Slice 1 merged (PR #7). Slice 2 (`api/b0-ci`, `ci.yml`) in progress, under a freeze: the project's coordinator confirmed at 00:06 UTC on 2026-11-03 that no other thread starts or merges a branch until the `ci.yml` PR merges (`docs/MILESTONES.md`, "Lanes"). Then slice 9. Next gate: Gate 0, a joint gate.
 - **Lanes:** the api thread started on 2026-11-02 at 23:28 UTC and is the one session until `ios.yml` has run green on the latest check branch, writing this block, log section 3.1 (lane `shared`) and table 4.1 (ADR-025). The ios thread hasn't started.
@@ -415,6 +415,14 @@ Newest first within each section. One entry per commit, written in that commit, 
 ```
 
 ### 3.1 Shared and B0
+
+#### 2026-11-03 00:55 UTC · shared · api/b0-ci · PR none
+**Did:** Added `.github/workflows/ci.yml`, as written and checked in the previous entry, for the one-time test of whether a cloud session can push a workflow file (`docs/GITHUB.md`, "Workflow files", "Test it once"; the B0 plan's slice 2).
+**Why:** The B0 plan's slice 2: `ci.yml`'s first push is that test, and its result goes in `docs/LIMITATIONS.md`.
+**Verified:** The file is byte for byte `/tmp/claude-0/wf/ci.yml`, which passed `actionlint`, `yamllint` and `zizmor` (previous entry). Its SHA-256, with exactly one final line break, is in the next entry, with the push's result.
+**Not verified:** Whether GitHub accepts the push: this commit is the test.
+**Decisions and questions:** None.
+**Next:** Push `api/b0-ci`. If GitHub refuses it, `git reset HEAD~1`, keep the file in `/tmp/claude-0/wf/ci.yml`, and commit only a journal entry and a `docs/LIMITATIONS.md` row recording the refusal; if it accepts it, record that. Done when the result is in `docs/LIMITATIONS.md`.
 
 #### 2026-11-03 00:50 UTC · shared · api/b0-ci · PR none
 **Did:** Slice 2 of `docs/plans/B0.md`, CI configuration only (T58), before `ci.yml` itself:
