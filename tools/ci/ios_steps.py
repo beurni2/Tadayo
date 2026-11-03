@@ -55,22 +55,24 @@ The steps:
                state, the render on the left, from design/reference/screens/ if it is there,
                else from design/reference/2.1/; the committed reference in the middle when this
                run's snapshot differs from it; this run's snapshot on the right. A state with no
-               render has no Render panel, and its snapshot carries a note: an inventory state's
-               is "built from spec, awaiting render" (T46); a -dark or -xl variant that has no
-               inventory row of its own while its base state has one says it is judged against
-               book p26's rules (design/reference/INVENTORY.md); anything else says it isn't an
-               inventory state. Such a snapshot is shown alone, or beside its committed
-               reference when it changed. JPEG (TECH-DESIGN section 3). A push carries only the
+               render shows its snapshot alone (TECH-DESIGN section 2), with a note: an inventory
+               state's is "built from spec, awaiting render" (T46); a -dark or -xl variant that
+               has no inventory row of its own while its base state has one says it is judged
+               against book p26's rules (design/reference/INVENTORY.md); anything else says it
+               isn't an inventory state. JPEG (TECH-DESIGN section 3). A push carries only the
                states the branch touches; a run by hand with no $IOS_VERSION carries the full
                set, for gates; a compatibility run carries no sheets, only its logs. Every field
-               of snapshots.json and every value of run.json it shows is checked again here,
-               since this job can write: an entry with a field collect can't have written fails
-               its row and is neither copied nor drawn. Stages everything in the evidence job's
-               own folder, beside OUT (WORK below). Writes index.md, which links every file and
-               says which file each image belongs to. Fails, after staging the rest, when an
-               entry fails its checks, an image is missing, a sheet couldn't be made or
-               snapshots.json is missing.
-  publish      Pushes what sheets staged (the sheets, the touched snapshots and the logs) to the
+               of snapshots.json and every value of run.json is checked again here, since this
+               job can write: an entry with a field or a pairing collect can't have written
+               fails its row and is neither copied nor drawn; run.json is staged with only its
+               checked values; only the logs the steps write are copied, and any other entry in
+               logs/ is counted, never named. Stages everything in the evidence job's own
+               folder, beside OUT (WORK below). Writes index.md, which links every file and says
+               which file each image belongs to. Fails, after staging the rest, when an entry
+               fails its checks, an image is missing, a sheet couldn't be made, snapshots.json
+               is missing or logs/ holds anything else.
+  publish      Pushes what sheets staged (index.md, the sheets, the checked entries' snapshots,
+               run.json's checked values and the steps' logs, as they are) to the
                `evidence` branch under <branch>/<short-sha>/ios/ (ios-full/ for a run by hand's
                full set, ios-<version>/ for a compatibility run), with the job's GITHUB_TOKEN.
                The folder comes from the run's environment, as in sheets, never from a file;
@@ -85,7 +87,7 @@ job uploads as the artifact `ios-results` and the evidence job downloads to the 
 
   run.json        what the run used: the Xcode, the simulator, the tests' result
   logs/           toolchain.txt, xcodegen.txt, simulators.txt, build.log, test.log,
-                  test-summary.json
+                  test-summary.json, attachments-manifest.json (LOG_NAMES)
   artifacts/      swift-snapshot-testing's SNAPSHOT_ARTIFACTS: the images that differ from their
                   committed reference
   snapshots/      the images this run drew that differ from, or have no, committed reference
@@ -153,7 +155,13 @@ STATE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 # build job's snapshots.json into index.md and the sheets' labels.
 PLAIN = re.compile(r"[\w+-][\w.+-]*")
 # A value of run.json that reaches index.md or a label: a version, a device's name, a result.
+# index.md shows each in a code span, so GitHub never makes a link of one.
 FACT = re.compile(r"[\w.() -]{1,64}")
+# The keys the steps write in run.json: the only ones the evidence job reads or stages.
+RUN_KEYS = ("xcode", "swift", "ios", "runtime", "device", "udid", "requested", "sdk", "tests")
+# The files the steps write in OUT's logs/: the only ones the evidence job copies or links.
+LOG_NAMES = ("toolchain.txt", "xcodegen.txt", "simulators.txt", "build.log", "test.log",
+             "test-summary.json", "attachments-manifest.json")
 # Xcode adds "_<n>_<UUID>" to an attachment's suggested name when it exports it: at the end of a
 # name without a dot ("Launch Screen_0_<UUID>.png", Xcode 26.2), and before the last dot of a
 # dotted one ("a.b_0_<UUID>.png", Xcode 27.1). It is stripped wherever it is.
@@ -444,10 +452,11 @@ class Steps:
         return record if isinstance(record, dict) else {}
 
     def run_facts(self):
-        """run.json's values for index.md and the sheets' labels: the build job wrote them, so
-        only plain text (FACT) is kept; anything else shows as unknown."""
+        """run.json's values for index.md, the sheets' labels and the stage's run.json: the build
+        job wrote them, so only the keys the steps write (RUN_KEYS) with plain text (FACT) are
+        kept; anything else shows as unknown."""
         return {k: v for k, v in self.run_record().items()
-                if isinstance(v, str) and FACT.fullmatch(v)}
+                if k in RUN_KEYS and isinstance(v, str) and FACT.fullmatch(v)}
 
     def update_run_record(self, **values):
         record = self.run_record()
@@ -1020,8 +1029,11 @@ class Steps:
             kept = f"snapshots/{name}.png"
             os.makedirs(os.path.join(stage, "snapshots"), exist_ok=True)
             shutil.copyfile(snapshot, os.path.join(stage, *kept.split("/")))
+            # A state with no render shows its snapshot alone (TECH-DESIGN section 2,
+            # docs/DESIGN-HANDOFF.md), so the committed reference sits between a render and the
+            # snapshot only when there is a render.
             panels = [("Render", render, self.path(*render.split("/")))] if render else []
-            if entry["status"] == "changed" and entry["reference"] and \
+            if render and entry["status"] == "changed" and entry["reference"] and \
                     os.path.isfile(self.path(*entry["reference"].split("/"))):
                 panels.append(("Before", "the committed reference",
                                self.path(*entry["reference"].split("/"))))
@@ -1039,11 +1051,24 @@ class Steps:
                 failed += 1
                 continue
             rows.append((entry, name, sheet, kept, note, None))
-        logs = self.out_path("logs")
-        if os.path.isdir(logs):
-            shutil.copytree(logs, os.path.join(stage, "logs"))
+        # Only the logs the steps write, each a regular file; anything else in logs/ is counted,
+        # never named, since a name is the build job's text.
+        logs, strays = self.out_path("logs"), 0
+        for name in sorted(os.listdir(logs)) if os.path.isdir(logs) else []:
+            source = os.path.join(logs, name)
+            if name in LOG_NAMES and os.path.isfile(source) and not os.path.islink(source):
+                os.makedirs(os.path.join(stage, "logs"), exist_ok=True)
+                shutil.copyfile(source, os.path.join(stage, "logs", name))
+            else:
+                strays += 1
+        if strays:
+            notes.append(f"The build job's logs/ held {strays} other entr"
+                         f"{'y' if strays == 1 else 'ies'}, not a log its steps write, so "
+                         f"{'it is' if strays == 1 else 'they are'} left out and this step fails.")
+        # run.json's checked values, never the file as the build job wrote it.
         if os.path.isfile(self.out_path("run.json")):
-            shutil.copyfile(self.out_path("run.json"), os.path.join(stage, "run.json"))
+            with open(os.path.join(stage, "run.json"), "w", encoding="utf-8") as f:
+                json.dump(record, f, indent=2, sort_keys=True)
         left_out = len(good) - len(chosen)
         self.write_index(stage, path, mode, record, rows, left_out, notes)
         # Written last, so publish knows this step finished for this run's folder.
@@ -1053,7 +1078,10 @@ class Steps:
               "snapshot(s) this run doesn't carry")
         if list_missing:
             print("ios: sheets: no snapshots.json: the build job's collect step didn't finish")
-        return 1 if failed or list_missing else 0
+        if strays:
+            print(f"ios: sheets: {strays} entr{'y' if strays == 1 else 'ies'} in logs/ that no "
+                  "step writes, left out")
+        return 1 if failed or list_missing or strays else 0
 
     def checked_entry(self, entry):
         """(entry, problems) for an entry of snapshots.json, which the macOS job wrote: this job
@@ -1061,7 +1089,10 @@ class Steps:
         test a path of plain names (PLAIN) or none; the file a plain name ending .png; the
         status changed, new or committed; the image under OUT's snapshots/ or a __Snapshots__
         folder in apps/ios (contained); the reference in such a folder, or none. A field that
-        fails is set to None and named in problems, and sheets fails the entry's row."""
+        fails is set to None and named in problems, and sheets fails the entry's row. Then the
+        three together must be a pairing collect writes, else the status fails: committed, the
+        image is its own reference in apps/ios; changed, the image is under snapshots/; new,
+        the image is under snapshots/ and there is no reference."""
         if not isinstance(entry, dict):
             return dict.fromkeys(("state", "test", "file", "status", "image", "reference")), \
                 ["the entry isn't an object"]
@@ -1083,6 +1114,13 @@ class Steps:
             else:
                 checked[field] = None
                 problems.append(field)
+        if not {"status", "image", "reference"} & set(problems):
+            status, image, reference = checked["status"], checked["image"], checked["reference"]
+            ran = image.startswith("snapshots/")
+            if not {"committed": not ran and image == reference, "changed": ran,
+                    "new": ran and reference is None}[status]:
+                checked["status"] = None
+                problems.append("status")
         return checked, problems
 
     def contained(self, image):
@@ -1124,9 +1162,10 @@ class Steps:
         lines = [f"# {path}", "",
                  f"The `ios` workflow's evidence for `{self.environ.get('GITHUB_SHA', '')}` "
                  f"({run}).", "",
-                 f"- Xcode {record.get('xcode', '?')}, Swift {record.get('swift', '?')}, iOS "
-                 f"{record.get('ios', '?')} on {record.get('device', '?')}",
-                 f"- Tests: {record.get('tests', 'not run')}",
+                 # Each value passed FACT, which has no backtick, and sits in a code span.
+                 f"- Xcode `{record.get('xcode', '?')}`, Swift `{record.get('swift', '?')}`, "
+                 f"iOS `{record.get('ios', '?')}` on `{record.get('device', '?')}`",
+                 f"- Tests: `{record.get('tests', 'not run')}`",
                  f"- Carries {what}; {left_out} snapshot(s) not carried", ""]
         lines += [f"{n}" for n in notes] + ([""] if notes else [])
         if rows:
@@ -1145,6 +1184,7 @@ class Steps:
                              f"{entry['status'] or '?'} | `{target}` | {render} | {sheet_link} | "
                              f"{kept_link} |")
             lines.append("")
+        # Only LOG_NAMES are staged, so these names are the steps' own.
         if os.path.isdir(os.path.join(stage, "logs")):
             lines += ["Logs: " + ", ".join(f"[{n}]({base}/logs/{urllib.parse.quote(n)})"
                                            for n in sorted(os.listdir(os.path.join(stage, "logs")))), ""]
