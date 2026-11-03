@@ -10,4 +10,4 @@ The wordmark, the app icon, the tokens and the component sheet, from brand revis
 | `brand-tokens.md` | `brand-tokens.json` revision 1.1 (handoffs 1 to 4, byte-identical) |
 | `brand-components.png` | Design handoff 4's component sheet (`../claude-design/handoff-4/frames/brand-components.png`), which holds every earlier sheet's components and the contracts handoffs 2 to 4 added |
 
-Handoff 0's earlier files stay in `../claude-design/handoff-0/`.
+Handoff 0's delivery stays as it arrived in `../claude-design/handoff-0/`. The files converted from it that revision 1.1 replaced (the earlier `brand-components.png`, `brand-icon-dark-1024.png` and the `brand-tokens.md` table) are in git history only, at `main` before this change.

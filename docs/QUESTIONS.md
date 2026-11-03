@@ -225,7 +225,7 @@ Each is a place where two sources disagree and the fix would loosen one of them,
 
 ## Raised by design handoffs 1 to 4
 
-Brought in with the handoffs (ADR-027). Their sources are in the project's files: the briefs (`design/handoff-3/handoff-3-and-4-briefs.md`), and the checks of handoff 1 (`design/handoff-1/check/handoff-1-check.md`, section 5) and of handoffs 3 and 4 (`design/handoff-3/check/handoff-3-4-check.md`, section 4). The numbers were reserved through the coordinator. FQ64 was reserved for handoff 1's first question, "when a club starts", which is FQ54, so FQ64 stays unused.
+Brought in with the handoffs (ADR-027). Their sources are in the project's files, not in the repository: the briefs (`design/handoff-3/handoff-3-and-4-briefs.md`), and the checks of handoff 1 (`design/handoff-1/check/handoff-1-check.md`, section 5) and of handoffs 3 and 4 (`design/handoff-3/check/handoff-3-4-check.md`, section 4). The numbers were reserved through the coordinator. FQ64 was reserved for handoff 1's first question, "when a club starts", which is FQ54, so FQ64 stays unused.
 
 - **FQ46. Who sees a clash over a day, and whether with names.** `G04-conflict` shows "Day choice conflict: Ben and Debby" to the club, which tells the club who hasn't confirmed.
     - Default: only the two members involved see the clash with names; the others see only that the day has no reveal scheduled (`G04-conflict-others`).
@@ -248,7 +248,7 @@ Brought in with the handoffs (ADR-027). Their sources are in the project's files
 - **FQ52. A pending schedule change is easy to miss.** There's no push, by the rules, and Home doesn't mention it; it shows only under Schedule and in Club details.
     - Default: as delivered.
     - Needed by: B2.
-- **FQ53. Plain screens.** The waiting and paused Homes show none of the book's objects: no plaque, card or photographs (book p5). The same call is open for the empty Home.
+- **FQ53. Plain screens.** The waiting and paused Homes show none of the book's objects: no plaque, card or photographs (book p5). The same call is open for the empty Home (handoff 1's check, section 6, optional ask; kept in the project's files, not in the repository).
     - Default: as delivered.
     - Needed by: B2.
 - **FQ54. When a club starts** (handoff 1's check, question 1).
@@ -270,16 +270,16 @@ Brought in with the handoffs (ADR-027). Their sources are in the project's files
     - Default: it looks exactly like an unknown link, or one another account has already used. It says neither "expired" nor the inviter's name, in the app and on the web page (`G02-revoked`, `G02-web-revoked`; T7).
     - Needed by: B1.
 - **FQ60. Whether a member who proposes an addition must also approve it** (`G03-approve`).
-    - Default: none given in the briefs. Until the founder answers, nothing is built that depends on it, and the snapshot fixture's approver is a member other than the proposer (Maya), which holds either way.
+    - Default (Claude Code's; the briefs gave none): proposing counts as the proposer's approval, so the proposer isn't asked again and every other current member still approves. It is reversible: an explicit approval step for the proposer can be added later without changing anyone's data. The snapshot fixture's approver is a member other than the proposer (Maya), which holds either way.
     - Needed by: B1.
 - **FQ61. What "announced" means at a schedule change's boundary.**
-    - Default: none given in the briefs. Until the founder answers, nothing is built that depends on it.
+    - Default (Claude Code's; the briefs gave none): every occurrence already generated is announced, whether or not anything was added to it, so a change never alters a generated occurrence's date, reveal_at or close_at, and takes effect from the first week after them (spec 05: "Existing announced reveal times remain fixed"). It is the reading that moves nothing anyone may have seen, and a looser reading can replace it later.
     - Needed by: B2.
 - **FQ62. Whether drops can be added between a schedule change's proposal and its confirmation.**
-    - Default: none given in the briefs. Until the founder answers, nothing is built that depends on it.
+    - Default (Claude Code's; the briefs gave none): yes, to the current schedule's occurrences, which a pending change never touches (FQ61's default); once the change is confirmed, its boundary is still found with no submitted occurrence affected (spec 05), and no drop is moved (T4). Nothing is blocked, so nothing has to be undone if the founder chooses otherwise.
     - Needed by: B2.
 - **FQ63. What happens to the announced days of a member who leaves.**
-    - Default: none given in the briefs. Until the founder answers, nothing is built that depends on it.
+    - Default (Claude Code's; the briefs gave none): their days that haven't opened are held, neither opened nor deleted, and every drop added for them stays hidden and stays with its author (T4, T8), until the founder answers; no reveal happens for someone no longer in the club, and nothing is removed that can't be brought back. Nothing that depends on it is built before B6.
     - Needed by: B2, and B6 for leaving.
 - **FQ65. The order of accepting and approving.** In `G03-waiting`, Leila accepts first; in 2.1's `G03-approve`, she accepts after the members approve.
     - Default: either order works, on one roster revision; no rule fixes the order.

@@ -208,7 +208,7 @@ Each departure has a reason and a record. This list is meant to be complete: any
 - **Remember this:** every dismissal is durable, where spec 19 makes only "Don't suggest this day again" durable (T62, FQ33, the founder's choice on 2 November 2026).
 - **Where 2.1's renders break a rule:** names instead of "Her pick" and the other gendered strings, the Highlight label only on the viewer's own cards, the rail's order, and no Share icon.
 - **Where the book wins over the spec:** Reduce Motion opens the photo at once, where spec 15 says a crossfade; and "Added for", where spec 10 says "Added to".
-- **Where design handoff 0's renders differ from a rule or from 2.1's layout:** the rule is built, or 2.1's layout with the brand where no rule decides (FQ40); a newcomer can take a departed member's cover colour, where the delivery's note says never (FQ41); F02 says spec 09's audience line, not the render's (FQ43); the folded card is built at the delivery's named radius and spec 24's, 16, and its status line at the metadata role, 13/18, where the frames draw 14 and about 11 (handoff 1 asks).
+- **Where design handoff 0's renders differ from a rule or from 2.1's layout:** the rule is built, or 2.1's layout with the brand where no rule decides (FQ40); a newcomer can take a departed member's cover colour, where the delivery's note says never (FQ41); F02 says spec 09's audience line, not the render's (FQ43); the folded card's radius is 16 and its status line 13/18, where handoff 0's frames draw 14 and about 11: revision 1.1 names both (`cardRadius`, `cardStatus`; ADR-027, `design/reference/brand/brand-tokens.md`).
 
 The screen-by-screen list is `design/reference/INVENTORY.md`, "Known differences".
 
@@ -288,16 +288,16 @@ Not started. The api thread builds slices 1, 2 and 9 as the one session, in bloc
 
 ### 1.3 ios lane
 
-**Updated:** 2026-11-03 11:31 UTC, ios/b0-handoffs-1-4
+**Updated:** 2026-11-03 11:38 UTC, ios/b0-handoffs-1-4
 
 - **Started:** 2026-11-03 at 11:03 UTC, by the coordinator (ADR-025). Environment: Swift 6.3.3 from swift.org's signed release tarball; the journal hook isn't confirmed to fire in this session, so it runs by hand before each commit.
-- **PRs:** none merged yet. Open: #12 `ios/b0-adr-027` (rulebook: ADR-027, FQ45 recorded), waiting for the founder. This branch, `ios/b0-handoffs-1-4` (the design PR ADR-027 asks for): complete, under review, no PR number yet. Started locally, not pushed: `ios/b0-app` (slice 11's first part).
+- **PRs:** none merged yet. Open: #12 `ios/b0-adr-027` (rulebook: ADR-027, FQ45 recorded), waiting for the founder. This branch, `ios/b0-handoffs-1-4` (the design PR ADR-027 asks for): reviewed once, findings fixed, PR opening next. Started locally, not pushed: `ios/b0-app` (slice 11's first part).
 - **Next, in order:**
     1. Independent review of this branch by a fresh subagent (`docs/GITHUB.md` step 3); fix or answer every finding; open the PR with the template's sections; add its row to section 4.2. Done when `ci` is green on the last push and the founder has the link.
     2. When #12 merges, merge `main` into this branch (rebuild the journal from both sides, CLAUDE.md "The journal"), push, then the founder's approval and a squash merge at the approved head.
     3. Slice 11's first part on `ios/b0-app`, from `main` after this branch merges: `TadayoDesign`'s `Palette` and `TypeRole` from `design/reference/brand/brand-tokens.md` (revision 1.1), then push and read the `ios` run's sheets on `evidence`.
 - **Blocked or waiting:** the founder's approval of #12, then of this branch's PR.
-- **Design** (`design/reference/INVENTORY.md`): handoffs 1 to 4 in on this branch (ADR-027). 179 trial states, 86 with a render (50 from 2.1, 36 only in `screens/`), 0 requested, 93 missing; built from spec 0; brand assets 4 of 4 (revision 1.1). Open design questions FQ46 to FQ69 (FQ64 unused), each with a default.
+- **Design** (`design/reference/INVENTORY.md`): handoffs 1 to 4 in on this branch (ADR-027). 179 trial states, 86 with a render (50 from 2.1, 36 only in `screens/`), 0 requested, 93 missing; built from spec 0; brand assets 4 of 4 (revision 1.1). Open design questions FQ46 to FQ69 (FQ64 unused), each with a default (FQ60 to FQ63 Claude Code's own).
 
 ---
 
@@ -1349,6 +1349,18 @@ Two earlier entries claim more than their commits show, and the log is append-on
 ### 3.2 api lane
 
 ### 3.3 ios lane
+
+#### 2026-11-03 11:38 UTC · ios · ios/b0-handoffs-1-4 · PR none
+**Did:** Fixed the independent review of this branch (a fresh subagent, `docs/GITHUB.md` step 3; 8 findings and 2 notes, listed in its PR).
+- `docs/QUESTIONS.md`: FQ60 to FQ63 each given a default, Claude Code's own since the briefs gave none, each the reading that moves or deletes nothing (FQ60 proposing counts as the proposer's approval; FQ61 every generated occurrence is announced; FQ62 drops can still be added, a pending change touching nothing; FQ63 a leaver's unopened days held, neither opened nor deleted). FQ53's "empty Home" now names its source. The section intro says its sources are in the project's files, not the repository.
+- `design/reference/brand/brand-tokens.md`: the `supersedes` key named; the contrast checks (`handoff-1/contrast-checks.json`), the non-text roles and the icon's own yellow stated; 1.1's cover rule change flagged against FQ41.
+- `design/reference/brand/README.md` and `design/reference/INVENTORY.md`'s intro: the converted files 1.1 replaced are in git history only, not in `claude-design/handoff-0/`. INVENTORY's 1.1 bullet notes the cover rule change; its handoffs bullet says the checks are outside the repository.
+- This journal: section 0's line on where handoff 0's renders differ (the card's radius and status line, which 1.1 now names), block 1.3, this entry.
+**Why:** The review found FQ60 to FQ63 without the default CLAUDE.md requires, which the journal claimed they had, and records that said more than the files show.
+**Verified:** `grep -c 'Default: none' docs/QUESTIONS.md` among FQ46 to FQ69: 0. `python3 tools/ci/journal_check.py --branch` and the hook run by hand: exit 0.
+**Not verified:** None.
+**Decisions and questions:** Deferred to the merge of `main` after PR #12 merges, because PR #12 rewrites the same lines: section 0's FQ45 line and the shared block's Design line and Next item 7, the audit map's T44 row, and `docs/PROGRESS.md`'s ios section (findings 2 to 4). The defaults of FQ60 to FQ63 are Claude Code's and go to the founder in the PR.
+**Next:** Push, check `ci`, open the PR.
 
 #### 2026-11-03 11:31 UTC · ios · ios/b0-handoffs-1-4 · PR none
 **Did:** Brought `design/reference/INVENTORY.md` and `docs/QUESTIONS.md` up to date with design handoffs 1 to 4 (ADR-027).

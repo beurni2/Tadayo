@@ -1,8 +1,10 @@
 # Brand tokens
 
-Tadayo's tokens, revision 1.1, which the founder adopted on 3 November 2026 (FQ45, ADR-027). Every value is copied exactly from `brand-tokens.json` revision 1.1, byte-identical in design handoffs 1 to 4 (`../claude-design/handoff-1/brand-tokens.json` to `../claude-design/handoff-4/brand-tokens.json`). It replaces handoff 0's table (still in `../claude-design/handoff-0/`).
+Tadayo's tokens, revision 1.1, which the founder adopted on 3 November 2026 (FQ45, ADR-027). Every value is copied exactly from `brand-tokens.json` revision 1.1, byte-identical in design handoffs 1 to 4 (`../claude-design/handoff-1/brand-tokens.json` to `../claude-design/handoff-4/brand-tokens.json`). It replaces handoff 0's table, which stays in git history; handoff 0's delivery (`brand-tokens.json` and its notes) stays in `../claude-design/handoff-0/`.
 
-`brand-tokens.json` says: "Handoff 0 colour, component and dark icon definitions only".
+`brand-tokens.json`'s `supersedes`: "Handoff 0 colour, component and dark icon definitions only". Its contrast checks (58: text pairs at 4.5:1 or more, field and focus boundaries and avatars on covers at 3:1 or more) are in `../claude-design/handoff-1/contrast-checks.json`. Separators and input borders are non-text roles. The icon's own yellow is part of the icon artwork, not a token.
+
+Revision 1.1's cover rule (below) drops handoff 0's "or reuse a historical slot for a different sender": a slot stays with its membership. This bears on FQ41, which stays open.
 
 ## Colours
 
