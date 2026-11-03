@@ -40,6 +40,14 @@ const comment = (id: string, who: "debby" | "maya" | "ben", text: string, extra:
   ...extra,
 });
 
+// The thread on Sam's photo as R04-comments shows it.
+const samHillThread = [
+  comment("cmt_debby_1", "debby", "Next summer. No excuses."),
+  comment("cmt_maya_1", "maya", "I’m saving this as evidence.", {
+    reply_to: { comment_id: "cmt_debby_1", author: people.debby },
+  }),
+];
+
 export const AFTER_EXAMPLES: Record<string, Examples> = {
   setReaction: {
     heart: {
@@ -56,16 +64,12 @@ export const AFTER_EXAMPLES: Record<string, Examples> = {
   listComments: {
     thread: {
       summary: "The thread on Sam's photo (R04-comments)",
-      value: {
-        items: [
-          comment("cmt_debby_1", "debby", "Next summer. No excuses."),
-          comment("cmt_maya_1", "maya", "I’m saving this as evidence.", {
-            reply_to: { comment_id: "cmt_debby_1", author: people.debby },
-          }),
-          comment("cmt_ben_1", "ben", "Count me in."),
-        ],
-        thread_muted: false,
-      },
+      value: { items: samHillThread, thread_muted: false },
+    },
+    with_own: {
+      summary:
+        "The same thread once Ben has commented: only Ben's own comment carries its version, for editing (R04-edit)",
+      value: { items: [...samHillThread, comment("cmt_ben_1", "ben", "Count me in.")], thread_muted: false },
     },
     empty: { summary: "No comments yet (R04-empty)", value: { items: [], thread_muted: false } },
   },

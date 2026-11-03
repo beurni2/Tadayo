@@ -60,8 +60,8 @@ export const ERRORS = {
   ],
   IDEMPOTENCY_CONFLICT: [
     409,
-    "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. " +
-      "A key is the caller's own.",
+    "The same Idempotency-Key came again for the same operation with a different path, query or body " +
+      "(T19). A key is the caller's own, for one operation.",
   ],
   INVITATION_EXPIRED: [
     410,

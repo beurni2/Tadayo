@@ -131,7 +131,8 @@ export const CLUB_OPERATIONS: Operation[] = [
     path: "/v1/clubs/{club_id}/invitations",
     summary: "A share link for one candidate",
     description:
-      "Only the member who proposed the candidate can make or revoke its link (T7). A new link replaces the " +
+      "Only the member who proposed the candidate can make or revoke its link, from their own invitation list " +
+      "(G01; T7 makes the link single-use). A new link replaces the " +
       "candidate's earlier one, after a revoke or an expiry (Create new link) or when the app no longer holds " +
       "it (FQ77). A retry with the same key returns the first answer without its `url`, and makes nothing " +
       "new (InvitationLink, T19, FQ77).",

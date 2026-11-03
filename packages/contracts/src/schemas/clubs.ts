@@ -404,7 +404,9 @@ export const ScheduleProposal = named(
   "A proposed schedule each member confirms (spec 05; G04): at activation, or after a membership change, " +
     "from a future boundary with no submitted day affected (FQ61, FQ62). Every active member confirms, the " +
     "new one included, and the current days continue until then (FQ56). A taken day names its owner (book " +
-    "p11); nothing else says who hasn't confirmed, counts them or waits on anyone (T33, FQ78). `my_days` are the caller's chosen weekdays, one per member in clubs " +
+    "p11); nothing else says who hasn't confirmed, counts them or waits on anyone (T33). Named owners still " +
+    "tell each member, by elimination, who hasn't confirmed, and so who clashed when just two others haven't " +
+    "(FQ78, FQ46). `my_days` are the caller's chosen weekdays, one per member in clubs " +
     "of four to six and two in clubs of two or three (spec 05's table).",
   z.object({
     id: Id,
@@ -423,9 +425,11 @@ export const Schedule = named(
   "Schedule",
   "The club's week (G04, G05-schedule): the schedule in force, if any, and the open proposal, if any. The " +
     "same for every active member, except each one's own slots (T55). The schedule-proposal shapes are " +
-    "settled in B2's contract PR, with two known gaps: the proposed week naming each member's suggested day " +
-    '(G04-one-day, G04-change), and the owner a G04 error names ("{weekday} is now {ownerName}\'s day"), ' +
-    "which the app reads from the schedule it fetches again (FQ78).",
+    "settled in B2's contract PR, with these known gaps: the proposed week naming each member's suggested " +
+    'day (G04-one-day, G04-change); the owner a G04 error names ("{weekday} is now {ownerName}\'s day"), ' +
+    "which the app reads from the schedule it fetches again (FQ78); which answer refuses a day another member " +
+    "confirmed meanwhile, apart from a changed week (G04's chooseTaken, confirmTaken and revision); and what " +
+    "moves `version`, so that nobody learns from it how others are choosing (T33).",
   z.object({
     server_now: Instant,
     club: ClubRef,

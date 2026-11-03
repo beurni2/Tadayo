@@ -33,8 +33,10 @@ const NOT_IN_A_NAME = "\\u0000-\\u001F\\u007F-\\u009F\\u061C\\u200E\\u200F\\u202
 export const NAME_PATTERN = new RegExp(`^(?!\\s)(?!.*\\s$)[^${NOT_IN_A_NAME}]+$`);
 
 // A name that shows nothing can't say who someone is (FQ70): one made only of spaces, format characters
-// such as U+200B ZERO WIDTH SPACE, or the blank fillers (U+115F, U+1160, U+2800, U+3164, U+FFA0).
-const VISIBLE = /[^\p{Cc}\p{Cf}\p{Z}\u115F\u1160\u2800\u3164\uFFA0]/u;
+// such as U+200B ZERO WIDTH SPACE, combining marks with nothing to sit on, other characters Unicode says
+// to draw as nothing (Default_Ignorable_Code_Point, such as U+034F or U+FE0F), or the blank fillers
+// (U+115F, U+1160, U+2800, U+3164, U+FFA0).
+const VISIBLE = /[^\p{Cc}\p{Cf}\p{Z}\p{M}\p{Default_Ignorable_Code_Point}\u115F\u1160\u2800\u3164\uFFA0]/u;
 
 /** A name: 1 to `max` grapheme clusters, trimmed, with something to see and nothing that can disguise it (FQ70). */
 export function name(max: number): z.ZodString {
@@ -79,12 +81,13 @@ function resolvable(zone: string): boolean {
 export const Timezone = named(
   "Timezone",
   "The club's IANA timezone, such as America/New_York (spec 05, T2): an IANA time zone the server can " +
-    "resolve, refused otherwise, since a club's zone is fixed once it's made (FQ19).",
+    "resolve, starting with a letter, so never a bare offset such as +05; refused otherwise, since a club's " +
+    "zone is fixed once it's made (FQ19).",
   z
     .string()
     .min(1)
     .max(64)
-    .regex(/^[A-Za-z0-9_+-]+(?:\/[A-Za-z0-9_+-]+)*$/)
+    .regex(/^[A-Za-z][A-Za-z0-9_+-]*(?:\/[A-Za-z0-9_+-]+)*$/)
     .refine(resolvable, "an IANA time zone the server can resolve"),
 );
 

@@ -13,7 +13,7 @@ info:
     - Authentication: a Supabase session's access token as a bearer token (T53), except where an operation says it's public.
     - Unauthorized looks like missing: anything the caller may not see is the neutral NOT_FOUND (T14).
     - Before the reveal, others get a drop's caption and nothing else (T10); media streams only through this API and no storage URL for reading ever reaches the app (T12).
-    - Every mutation a retry could duplicate takes an Idempotency-Key, created when the action starts and reused on every retry. A key is the caller's own: the same operation with the same path, query and body returns the original response; any difference is IDEMPOTENCY_CONFLICT (T19). Edits carry the version they read.
+    - Every mutation a retry could duplicate takes an Idempotency-Key, created when the action starts and reused on every retry. A key is the caller's own, for one operation, and each action has its own: the same path, query and body return the original response; a different path, query or body is IDEMPOTENCY_CONFLICT (T19). Edits carry the version they read.
     - Times are UTC instants; the server's clock decides (T1). Ids are opaque and random.
     - Errors carry a code and facts, never copy: the app owns its words (T41 to T43).
     - Lists are cursor-paged and filtered for the caller (T14). A cursor is opaque and carries no time.
@@ -95,7 +95,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
+                  summary: The same Idempotency-Key came again for the same operation with a different path, query or body (T19). A key is the caller's own, for one operation.
                   value:
                     code: IDEMPOTENCY_CONFLICT
         "429":
@@ -214,7 +214,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
+                  summary: The same Idempotency-Key came again for the same operation with a different path, query or body (T19). A key is the caller's own, for one operation.
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 MEMBERSHIP_CHANGED:
@@ -565,7 +565,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
+                  summary: The same Idempotency-Key came again for the same operation with a different path, query or body (T19). A key is the caller's own, for one operation.
                   value:
                     code: IDEMPOTENCY_CONFLICT
         "429":
@@ -1533,7 +1533,7 @@ paths:
     post:
       operationId: createInvitation
       summary: A share link for one candidate
-      description: Only the member who proposed the candidate can make or revoke its link (T7). A new link replaces the candidate's earlier one, after a revoke or an expiry (Create new link) or when the app no longer holds it (FQ77). A retry with the same key returns the first answer without its `url`, and makes nothing new (InvitationLink, T19, FQ77).
+      description: Only the member who proposed the candidate can make or revoke its link, from their own invitation list (G01; T7 makes the link single-use). A new link replaces the candidate's earlier one, after a revoke or an expiry (Create new link) or when the app no longer holds it (FQ77). A retry with the same key returns the first answer without its `url`, and makes nothing new (InvitationLink, T19, FQ77).
       parameters:
         - name: club_id
           in: path
@@ -1638,7 +1638,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
+                  summary: The same Idempotency-Key came again for the same operation with a different path, query or body (T19). A key is the caller's own, for one operation.
                   value:
                     code: IDEMPOTENCY_CONFLICT
         "429":
@@ -1760,7 +1760,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
+                  summary: The same Idempotency-Key came again for the same operation with a different path, query or body (T19). A key is the caller's own, for one operation.
                   value:
                     code: IDEMPOTENCY_CONFLICT
         "429":
@@ -2532,7 +2532,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
+                  summary: The same Idempotency-Key came again for the same operation with a different path, query or body (T19). A key is the caller's own, for one operation.
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 VERSION_CONFLICT:
@@ -2689,7 +2689,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
+                  summary: The same Idempotency-Key came again for the same operation with a different path, query or body (T19). A key is the caller's own, for one operation.
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 VERSION_CONFLICT:
@@ -3034,7 +3034,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
+                  summary: The same Idempotency-Key came again for the same operation with a different path, query or body (T19). A key is the caller's own, for one operation.
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 VERSION_CONFLICT:
@@ -3624,7 +3624,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
+                  summary: The same Idempotency-Key came again for the same operation with a different path, query or body (T19). A key is the caller's own, for one operation.
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 OCCURRENCE_CLOSED:
@@ -3817,7 +3817,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
+                  summary: The same Idempotency-Key came again for the same operation with a different path, query or body (T19). A key is the caller's own, for one operation.
                   value:
                     code: IDEMPOTENCY_CONFLICT
         "429":
@@ -3979,6 +3979,31 @@ paths:
               examples:
                 thread:
                   summary: The thread on Sam's photo (R04-comments)
+                  value:
+                    items:
+                      - id: cmt_debby_1
+                        author:
+                          membership_id: mem_sp_debby
+                          display_name: Debby
+                          avatar_version: av_debby_1
+                        text: Next summer. No excuses.
+                        edited: false
+                      - id: cmt_maya_1
+                        author:
+                          membership_id: mem_sp_maya
+                          display_name: Maya
+                          avatar_version: av_maya_1
+                        text: I’m saving this as evidence.
+                        edited: false
+                        reply_to:
+                          comment_id: cmt_debby_1
+                          author:
+                            membership_id: mem_sp_debby
+                            display_name: Debby
+                            avatar_version: av_debby_1
+                    thread_muted: false
+                with_own:
+                  summary: "The same thread once Ben has commented: only Ben's own comment carries its version, for editing (R04-edit)"
                   value:
                     items:
                       - id: cmt_debby_1
@@ -4190,7 +4215,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
+                  summary: The same Idempotency-Key came again for the same operation with a different path, query or body (T19). A key is the caller's own, for one operation.
                   value:
                     code: IDEMPOTENCY_CONFLICT
         "429":
@@ -5361,7 +5386,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
+                  summary: The same Idempotency-Key came again for the same operation with a different path, query or body (T19). A key is the caller's own, for one operation.
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 ROSTER_CHANGED:
@@ -5944,7 +5969,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
+                  summary: The same Idempotency-Key came again for the same operation with a different path, query or body (T19). A key is the caller's own, for one operation.
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 MEDIA_NOT_READY:
@@ -6419,7 +6444,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
+                  summary: The same Idempotency-Key came again for the same operation with a different path, query or body (T19). A key is the caller's own, for one operation.
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 VERSION_CONFLICT:
@@ -7416,7 +7441,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
+                  summary: The same Idempotency-Key came again for the same operation with a different path, query or body (T19). A key is the caller's own, for one operation.
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 OCCURRENCE_CLOSED:
@@ -7653,7 +7678,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
+                  summary: The same Idempotency-Key came again for the same operation with a different path, query or body (T19). A key is the caller's own, for one operation.
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 OCCURRENCE_CLOSED:
@@ -8007,7 +8032,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
+                  summary: The same Idempotency-Key came again for the same operation with a different path, query or body (T19). A key is the caller's own, for one operation.
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 OCCURRENCE_CLOSED:
@@ -8230,7 +8255,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
+                  summary: The same Idempotency-Key came again for the same operation with a different path, query or body (T19). A key is the caller's own, for one operation.
                   value:
                     code: IDEMPOTENCY_CONFLICT
         "429":
@@ -8654,7 +8679,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
+                  summary: The same Idempotency-Key came again for the same operation with a different path, query or body (T19). A key is the caller's own, for one operation.
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 VERSION_CONFLICT:
@@ -8816,7 +8841,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
+                  summary: The same Idempotency-Key came again for the same operation with a different path, query or body (T19). A key is the caller's own, for one operation.
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 VERSION_CONFLICT:
@@ -8989,7 +9014,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
+                  summary: The same Idempotency-Key came again for the same operation with a different path, query or body (T19). A key is the caller's own, for one operation.
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 VERSION_CONFLICT:
@@ -9176,7 +9201,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
+                  summary: The same Idempotency-Key came again for the same operation with a different path, query or body (T19). A key is the caller's own, for one operation.
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 VERSION_CONFLICT:
@@ -9414,7 +9439,7 @@ paths:
                 $ref: "#/components/schemas/Error"
               examples:
                 IDEMPOTENCY_CONFLICT:
-                  summary: "The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own."
+                  summary: The same Idempotency-Key came again for the same operation with a different path, query or body (T19). A key is the caller's own, for one operation.
                   value:
                     code: IDEMPOTENCY_CONFLICT
                 OCCURRENCE_CLOSED:
@@ -10605,7 +10630,7 @@ components:
         ROSTER_CHANGED (409): The roster revision was replaced by a newer one (`current_id`): review the new roster and decide again (T7).
         CLUB_FULL (409): The club already has six members (A01, T6).
         DUPLICATE_DROP (409): The caller already added this photo or link to this day (T21). `existing_drop_id` is the caller's own drop, to offer View existing.
-        IDEMPOTENCY_CONFLICT (409): The same Idempotency-Key came with a different request (T19): another operation, path, query or body. A key is the caller's own.
+        IDEMPOTENCY_CONFLICT (409): The same Idempotency-Key came again for the same operation with a different path, query or body (T19). A key is the caller's own, for one operation.
         INVITATION_EXPIRED (410): The link expired before anyone used it (G02-expired, FQ71). A revoked link, or one another account has used, is NOT_FOUND, like an unknown one (FQ59, T7).
         RATE_LIMITED (429): Too many requests: try again after `retry_after_seconds`.
     ExternalVideoMedia:
@@ -11886,7 +11911,7 @@ components:
       required:
         - server_now
         - club
-      description: "The club's week (G04, G05-schedule): the schedule in force, if any, and the open proposal, if any. The same for every active member, except each one's own slots (T55). The schedule-proposal shapes are settled in B2's contract PR, with two known gaps: the proposed week naming each member's suggested day (G04-one-day, G04-change), and the owner a G04 error names (\"{weekday} is now {ownerName}'s day\"), which the app reads from the schedule it fetches again (FQ78)."
+      description: "The club's week (G04, G05-schedule): the schedule in force, if any, and the open proposal, if any. The same for every active member, except each one's own slots (T55). The schedule-proposal shapes are settled in B2's contract PR, with these known gaps: the proposed week naming each member's suggested day (G04-one-day, G04-change); the owner a G04 error names (\"{weekday} is now {ownerName}'s day\"), which the app reads from the schedule it fetches again (FQ78); which answer refuses a day another member confirmed meanwhile, apart from a changed week (G04's chooseTaken, confirmTaken and revision); and what moves `version`, so that nobody learns from it how others are choosing (T33)."
     ScheduleAssignment:
       type: object
       properties:
@@ -11969,7 +11994,7 @@ components:
         - my_days
         - my_state
         - state
-      description: "A proposed schedule each member confirms (spec 05; G04): at activation, or after a membership change, from a future boundary with no submitted day affected (FQ61, FQ62). Every active member confirms, the new one included, and the current days continue until then (FQ56). A taken day names its owner (book p11); nothing else says who hasn't confirmed, counts them or waits on anyone (T33, FQ78). `my_days` are the caller's chosen weekdays, one per member in clubs of four to six and two in clubs of two or three (spec 05's table)."
+      description: "A proposed schedule each member confirms (spec 05; G04): at activation, or after a membership change, from a future boundary with no submitted day affected (FQ61, FQ62). Every active member confirms, the new one included, and the current days continue until then (FQ56). A taken day names its owner (book p11); nothing else says who hasn't confirmed, counts them or waits on anyone (T33). Named owners still tell each member, by elimination, who hasn't confirmed, and so who clashed when just two others haven't (FQ78, FQ46). `my_days` are the caller's chosen weekdays, one per member in clubs of four to six and two in clubs of two or three (spec 05's table)."
     ScheduleSlot:
       type: object
       properties:
@@ -12115,8 +12140,8 @@ components:
       type: string
       minLength: 1
       maxLength: 64
-      pattern: ^[A-Za-z0-9_+-]+(?:\/[A-Za-z0-9_+-]+)*$
-      description: "The club's IANA timezone, such as America/New_York (spec 05, T2): an IANA time zone the server can resolve, refused otherwise, since a club's zone is fixed once it's made (FQ19)."
+      pattern: ^[A-Za-z][A-Za-z0-9_+-]*(?:\/[A-Za-z0-9_+-]+)*$
+      description: "The club's IANA timezone, such as America/New_York (spec 05, T2): an IANA time zone the server can resolve, starting with a letter, so never a bare offset such as +05; refused otherwise, since a club's zone is fixed once it's made (FQ19)."
     UnavailableDay:
       type: object
       properties:
@@ -12360,7 +12385,7 @@ components:
       name: Idempotency-Key
       in: header
       required: true
-      description: Created when the action starts and reused on every retry of it (T19), and the caller's own. The same operation with the same path, query and body returns the original response, even after the cutoff; any difference is IDEMPOTENCY_CONFLICT.
+      description: "Created when the action starts and reused on every retry of it (T19): the caller's own, for this operation. The same path, query and body return the original response, even after the cutoff; a different path, query or body is IDEMPOTENCY_CONFLICT."
       schema:
         type: string
         format: uuid

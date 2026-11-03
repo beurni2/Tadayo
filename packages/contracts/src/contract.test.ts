@@ -471,7 +471,7 @@ describe("the pre-reveal whitelist (T10)", () => {
 });
 
 describe("names (FQ70)", () => {
-  const good = ["Ben", "Ana María", "Zoë", "李", "Debby O'Neil", "👨‍👩‍👧"];
+  const good = ["Ben", "Ana María", "Zoë", "Zoe\u0308", "李", "क्", "Debby O'Neil", "👨‍👩‍👧"];
   const bad = [
     "",
     "   ",
@@ -484,7 +484,8 @@ describe("names (FQ70)", () => {
     "\u2066x",
     "a\u200Fb",
     "x\u2028y",
-    // Nothing to see: a zero-width space, a word joiner, a soft hyphen, the blank fillers.
+    // Nothing to see: a zero-width space, a word joiner, a soft hyphen, the blank fillers, marks with nothing
+    // to sit on, and characters Unicode says to draw as nothing.
     "\u200B",
     "\u2060\u2060",
     "\u00AD",
@@ -493,6 +494,14 @@ describe("names (FQ70)", () => {
     "\u2800",
     "\uFFA0",
     "\u200B\u200D\u200B",
+    "\u0308",
+    "\u034F",
+    "\uFE0F",
+    "\uFE00\uFE01",
+    "\u17B4",
+    "\u180B",
+    "\u{E0100}",
+    "\u{16FE4}",
   ];
   const documentPattern = new RegExp((schemas.DisplayName as JsonObject).pattern as string, "u");
 
@@ -510,10 +519,10 @@ describe("names (FQ70)", () => {
 
 describe("other request rules", () => {
   it("takes only a time zone the server can resolve, since a club's is fixed (FQ19)", () => {
-    for (const zone of ["America/New_York", "Europe/London", "Asia/Kolkata", "UTC"]) {
+    for (const zone of ["America/New_York", "Europe/London", "Asia/Kolkata", "UTC", "Etc/GMT+5"]) {
       expect(Timezone.safeParse(zone).success, zone).toBe(true);
     }
-    for (const zone of ["Mars/Base", "Not_A_Zone", "America/Nowhere"]) {
+    for (const zone of ["Mars/Base", "Not_A_Zone", "America/Nowhere", "+05", "-05", "+0500", "-0500"]) {
       expect(Timezone.safeParse(zone).success, zone).toBe(false);
     }
   });
@@ -658,16 +667,19 @@ describe("the examples", () => {
   });
 
   it("give a comment's version only to its author, Ben", () => {
+    let own = 0;
     for (const [id, set] of Object.entries(examples)) {
       for (const [name, example] of Object.entries(set)) {
         walk(example.value as Json, (node) => {
           if (typeof node.text !== "string" || typeof node.edited !== "boolean") return;
           const author = (node.author as JsonObject).membership_id;
-          const own = typeof author === "string" && author.endsWith("_ben");
-          expect("version" in node, `${id}.${name}: ${JSON.stringify(node.id)}`).toBe(own);
+          const bens = typeof author === "string" && author.endsWith("_ben");
+          if (bens) own += 1;
+          expect("version" in node, `${id}.${name}: ${JSON.stringify(node.id)}`).toBe(bens);
         });
       }
     }
+    expect(own).toBeGreaterThan(0);
   });
 
   it("name a taken day's owner and a clash's other member, and nobody on any other day (book p11, FQ46, FQ78)", () => {

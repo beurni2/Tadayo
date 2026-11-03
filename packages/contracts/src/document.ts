@@ -24,7 +24,7 @@ Rules every endpoint keeps:
 - Authentication: a Supabase session's access token as a bearer token (T53), except where an operation says it's public.
 - Unauthorized looks like missing: anything the caller may not see is the neutral NOT_FOUND (T14).
 - Before the reveal, others get a drop's caption and nothing else (T10); media streams only through this API and no storage URL for reading ever reaches the app (T12).
-- Every mutation a retry could duplicate takes an Idempotency-Key, created when the action starts and reused on every retry. A key is the caller's own: the same operation with the same path, query and body returns the original response; any difference is IDEMPOTENCY_CONFLICT (T19). Edits carry the version they read.
+- Every mutation a retry could duplicate takes an Idempotency-Key, created when the action starts and reused on every retry. A key is the caller's own, for one operation, and each action has its own: the same path, query and body return the original response; a different path, query or body is IDEMPOTENCY_CONFLICT (T19). Edits carry the version they read.
 - Times are UTC instants; the server's clock decides (T1). Ids are opaque and random.
 - Errors carry a code and facts, never copy: the app owns its words (T41 to T43).
 - Lists are cursor-paged and filtered for the caller (T14). A cursor is opaque and carries no time.
@@ -256,9 +256,9 @@ export function buildDocument(): JsonObject {
           in: "header",
           required: true,
           description:
-            "Created when the action starts and reused on every retry of it (T19), and the caller's own. The " +
-            "same operation with the same path, query and body returns the original response, even after the " +
-            "cutoff; any difference is IDEMPOTENCY_CONFLICT.",
+            "Created when the action starts and reused on every retry of it (T19): the caller's own, for this " +
+            "operation. The same path, query and body return the original response, even after the cutoff; a " +
+            "different path, query or body is IDEMPOTENCY_CONFLICT.",
           schema: { type: "string", format: "uuid" },
         },
       },
