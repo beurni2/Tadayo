@@ -1,0 +1,705 @@
++ xcodebuild build -project apps/ios/Tadayo.xcodeproj -scheme Tadayo -destination platform=iOS Simulator,id=062CFAA4-9ACF-40ED-A1E2-3625F5ED4DA9 -derivedDataPath /Users/runner/work/_temp/DerivedData
+Command line invocation:
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/xcodebuild build -project apps/ios/Tadayo.xcodeproj -scheme Tadayo -destination "platform=iOS Simulator,id=062CFAA4-9ACF-40ED-A1E2-3625F5ED4DA9" -derivedDataPath /Users/runner/work/_temp/DerivedData
+
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:iOS Simulator, arch:arm64, id:062CFAA4-9ACF-40ED-A1E2-3625F5ED4DA9, OS:26.5, name:iPhone 17 }
+{ platform:iOS Simulator, arch:x86_64, id:062CFAA4-9ACF-40ED-A1E2-3625F5ED4DA9, OS:26.5, name:iPhone 17 }
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (2 targets)
+    Target 'Tadayo' in project 'Tadayo'
+        ➜ Explicit dependency on target 'TadayoShare' in project 'Tadayo'
+    Target 'TadayoShare' in project 'Tadayo' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+Build description signature: eef6391228be7ce387409970d247d989
+Build description path: /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/XCBuildData/eef6391228be7ce387409970d247d989.xcbuilddata
+CreateBuildDirectory /Users/runner/work/_temp/DerivedData/Build/Products
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios/Tadayo.xcodeproj
+    builtin-create-build-directory /Users/runner/work/_temp/DerivedData/Build/Products
+
+CreateBuildDirectory /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios/Tadayo.xcodeproj
+    builtin-create-build-directory /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex
+
+ClangStatCache /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk /Users/runner/work/_temp/DerivedData/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-688ef53f1462e2c8f657fdc38a81448ff45c64a1807a658693f2a61704f17a36.sdkstatcache
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios/Tadayo.xcodeproj
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -o /Users/runner/work/_temp/DerivedData/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-688ef53f1462e2c8f657fdc38a81448ff45c64a1807a658693f2a61704f17a36.sdkstatcache
+
+CreateBuildDirectory /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios/Tadayo.xcodeproj
+    builtin-create-build-directory /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator
+
+CreateBuildDirectory /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios/Tadayo.xcodeproj
+    builtin-create-build-directory /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+
+CreateBuildDirectory /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/ExplicitPrecompiledModules
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios/Tadayo.xcodeproj
+    builtin-create-build-directory /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/ExplicitPrecompiledModules
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo-a1e861a38be86df0a531e39d978592ab-VFS-iphonesimulator/all-product-headers.yaml
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios/Tadayo.xcodeproj
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo-a1e861a38be86df0a531e39d978592ab-VFS-iphonesimulator/all-product-headers.yaml
+
+CreateBuildDirectory /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios/Tadayo.xcodeproj
+    builtin-create-build-directory /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare.hmap (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare.hmap
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare.DependencyMetadataFileList (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare.DependencyMetadataFileList
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare.DependencyStaticMetadataFileList (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare.DependencyStaticMetadataFileList
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-project-headers.hmap (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-project-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-own-target-headers.hmap (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-own-target-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-generated-files.hmap (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-generated-files.hmap
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-all-target-headers.hmap (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-all-target-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-all-non-framework-target-headers.hmap (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-all-non-framework-target-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-DebugEntryPoint-normal-arm64.txt (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-DebugEntryPoint-normal-arm64.txt
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-DebugDylibPath-normal-arm64.txt (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-DebugDylibPath-normal-arm64.txt
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-DebugDylibInstallName-normal-arm64.txt (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-DebugDylibInstallName-normal-arm64.txt
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare_const_extract_protocols.json (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare_const_extract_protocols.json
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare.SwiftFileList (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare.SwiftFileList
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare.SwiftConstValuesFileList (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare.SwiftConstValuesFileList
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare.LinkFileList (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare.LinkFileList
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare-OutputFileMap.json (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare-OutputFileMap.json
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/DerivedSources/Entitlements-Simulated.plist (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/DerivedSources/Entitlements-Simulated.plist
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/empty-Tadayo.plist (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/empty-Tadayo.plist
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo.hmap (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo.hmap
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo.DependencyStaticMetadataFileList (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo.DependencyStaticMetadataFileList
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo.DependencyMetadataFileList (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo.DependencyMetadataFileList
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-project-headers.hmap (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-project-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-own-target-headers.hmap (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-own-target-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-generated-files.hmap (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-generated-files.hmap
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-all-target-headers.hmap (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-all-target-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-all-non-framework-target-headers.hmap (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-all-non-framework-target-headers.hmap
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-DebugDylibPath-normal-arm64.txt (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-DebugDylibPath-normal-arm64.txt
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-DebugDylibInstallName-normal-arm64.txt (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-DebugDylibInstallName-normal-arm64.txt
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo_const_extract_protocols.json (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo_const_extract_protocols.json
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo.SwiftFileList (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo.SwiftFileList
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo.SwiftConstValuesFileList (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo.SwiftConstValuesFileList
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo.LinkFileList (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo.LinkFileList
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo-OutputFileMap.json (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo-OutputFileMap.json
+
+WriteAuxiliaryFile /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/DerivedSources/Entitlements-Simulated.plist (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    write-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/DerivedSources/Entitlements-Simulated.plist
+
+MkDir /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.appex (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    /bin/mkdir -p /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.appex
+
+MkDir /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/PlugIns (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    /bin/mkdir -p /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/PlugIns
+
+MkDir /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    /bin/mkdir -p /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app
+
+ProcessProductPackaging "" /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare.appex-Simulated.xcent (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    
+    Entitlements:
+    
+    {
+    "application-identifier" = "FAKETEAMID.app.tadayo.share";
+}
+    
+    builtin-productPackagingUtility -entitlements -format xml -o /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare.appex-Simulated.xcent
+
+ProcessProductPackagingDER /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare.appex-Simulated.xcent /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare.appex-Simulated.xcent.der (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    /usr/bin/derq query -f xml -i /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare.appex-Simulated.xcent -o /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare.appex-Simulated.xcent.der --raw
+
+Ld /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.appex/__preview.dylib normal (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0-simulator -dynamiclib -isysroot /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -O0 -L/Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator -F/Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator -install_name @rpath/TadayoShare.debug.dylib -Xlinker -dead_strip -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -dependency_info -Xlinker /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare_dependency_info.dat -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __entitlements -Xlinker /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare.appex-Simulated.xcent -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __ents_der -Xlinker /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare.appex-Simulated.xcent.der -Xlinker -no_adhoc_codesign -o /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.appex/__preview.dylib
+
+ProcessInfoPlistFile /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.appex/Info.plist /Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoShare/Info.plist (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    builtin-infoPlistUtility /Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoShare/Info.plist -producttype com.apple.product-type.app-extension -expandbuildsettings -format binary -platform iphonesimulator -o /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.appex/Info.plist
+
+SwiftDriver TadayoShare normal arm64 com.apple.xcode.tools.swift.compiler (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    builtin-SwiftDriver -- /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name TadayoShare -Onone @/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare.SwiftFileList -DDEBUG -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path /Users/runner/work/_temp/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -application-extension -enable-testing -index-store-path /Users/runner/work/_temp/DerivedData/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 6 -I /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator -F /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator -parse-as-library -c -j5 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/runner/work/_temp/DerivedData/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-688ef53f1462e2c8f657fdc38a81448ff45c64a1807a658693f2a61704f17a36.sdkstatcache -output-file-map /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/runner/work/_temp/DerivedData/ModuleCache.noindex -sdk-module-cache-path /Users/runner/work/_temp/DerivedData/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-generated-files.hmap -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-own-target-headers.hmap -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-all-target-headers.hmap -Xcc -iquote -Xcc /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-project-headers.hmap -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare-Swift.h -working-directory /Users/runner/work/Tadayo/Tadayo/apps/ios -experimental-emit-module-separately -disable-cmo
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/DeveloperToolsSupport-8ZG4RSI7G18E8QS0NZNKK4T1R.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/_Builtin_float-EETLANNEEOEGVKWMWLU5QA9QI.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/_Builtin_stdbool-C8S749RPQQSY04EW0WXTMHGTC.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/_AvailabilityInternal-DMOWTR68PACTN9765XXUV2A8E.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/SwiftShims-2BY85PM81PY38Y1ZYQ3AZ7SHL.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/_SwiftConcurrencyShims-CNEEZ97Y5XE4JHZ6ZQ4E4U585.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/ptrauth-1KC00GZDLT34JG32PBHAUX52X.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/_Builtin_stdarg-CRWTF87U2MU2Y39QPWNMRYQUU.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/_Builtin_stddef-B71QIACYD5WOEP4VZ73KMEIJW.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/ptrcheck-3BJRPN2279MIJVTARHZ14ASJJ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/_DarwinFoundation1-5IFQCEZGA3EZHQYZDVSW22SZO.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/_Builtin_limits-7B4NNTMXWGAGD2VWHEU0UE427.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/_DarwinFoundation2-9YFSN83BH20IZV6I2VQ0PGFII.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/_Builtin_tgmath-R35T3VO25YXGM5O420ON6B83.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/_Builtin_stdint-CABKN0KKIW1PY6BV7A4AC0G12.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/sys_types-84AIB0P7IDOL53JYKK35E57BM.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/_Builtin_intrinsics-BUCDECDREIG4W8CM7D4V6XMOB.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/_DarwinFoundation3-37XAY41AVYWQ78EGG4KYZJ7OV.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/_Builtin_stdatomic-AT44EOMAL973WOCS3S52TVGUL.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/_Builtin_inttypes-4AC6EU60TYLSFA7D8H6C5R3P1.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/Darwin-6V2BOYJ1KUXQI4HWQ3AOBDBP1.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/simd-VDWAEIMIYZZNIX9KM7V43CNT.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/MachO-1BW91BWBVCGXKE9R5TQPT9MGO.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/ObjectiveC-BEQLAUB529HY6JC0R25PSQ10G.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/os_object-93WHYL810MSTALBP5QMSOG93U.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/os_workgroup-V9CZOLN2XE5L540WDN0F8F91.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/Spatial-E1JMXO38QP0RNKNOC87X1TGA7.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/Dispatch-3YFGILAO1ZML16MATGJS514Y2.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/CoreFoundation-95KQRLSHMF4NMADSI1CNZRG4T.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/XPC-B6JPNNSAALD5JZ68OXSZ1870.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/os-11DX0IEIT4L8IJVHQ7JW63CKA.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/Security-3R54GVR4TGD0OMRFIOQNPFLSX.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/CoreGraphics-C8XO6MBH18SIPUFH7W1UDLVBN.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/CFNetwork-3QNKFSIVBN1IGYPNU52D9IEQG.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/Foundation-E14DCS8YEAUZVBCAVL3VP23MA.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/ImageIO-A9KI53312XBKKNTDM61BBRN7P.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/CoreText-9F89TDG5XQDFOWSMJ7OBBSGFT.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/OSLog-BEVZLO3VR7B0QLBRUZRGGBNFT.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/UniformTypeIdentifiers-BCHIFR9RZNPGXAWQYIMG2WU67.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/IOSurface-7NP3ZIR0J4YGS45695M4X0Q7Q.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/OpenGLES-1JX8A7NY345EHBVQWLC9Q54OH.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/UserNotifications-54ZFRASGEAWVBZ38PUTKM5WI.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/CoreTransferable-AD5OLRMEDYGXQV9QGCO3J0IXG.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/UIUtilities-EEGCKQ9VD22BSNK1P0LIOKIRH.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/Metal-E4XMQLOZ3HV5EJ981KK9NXR1T.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/DataDetection-BNCDNCNV4W3IOQUUH6SE8TE81.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/Accessibility-4ZC1WE8UUMEF2204MY0QKJMWW.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/Symbols-A2ISZVOCOX54TU4ZRSH6IKI8C.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/FileProvider-D66535YKWBFRH9FFGL0AKZW9S.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/CoreVideo-919HG6VCOGBIK4SEZORZ8F07F.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/CoreImage-663EYCNFOSTYWIL2UIZR2MBAN.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/QuartzCore-1S5O49QW5RF8I396EOUJI4KBI.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/SwiftUICore-DERZG64U88TJX3VCDFUULUYQJ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/UIKit-BSB8593YF4FFN2GNQMKCYE9CN.pcm
+
+SwiftEmitModule normal arm64 Emitting\ module\ for\ TadayoShare (in target 'TadayoShare' from project 'Tadayo')
+
+SwiftCompile normal arm64 /Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoShare/ShareViewController.swift (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    
+
+SwiftCompile normal arm64 Compiling\ ShareViewController.swift /Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoShare/ShareViewController.swift (in target 'TadayoShare' from project 'Tadayo')
+SwiftCompile normal arm64 /Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoShare/ShareViewController.swift (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    
+
+SwiftDriverJobDiscovery normal arm64 Emitting module for TadayoShare (in target 'TadayoShare' from project 'Tadayo')
+
+SwiftDriver\ Compilation\ Requirements TadayoShare normal arm64 com.apple.xcode.tools.swift.compiler (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    builtin-Swift-Compilation-Requirements -- /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name TadayoShare -Onone @/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare.SwiftFileList -DDEBUG -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path /Users/runner/work/_temp/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -application-extension -enable-testing -index-store-path /Users/runner/work/_temp/DerivedData/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 6 -I /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator -F /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator -parse-as-library -c -j5 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/runner/work/_temp/DerivedData/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-688ef53f1462e2c8f657fdc38a81448ff45c64a1807a658693f2a61704f17a36.sdkstatcache -output-file-map /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/runner/work/_temp/DerivedData/ModuleCache.noindex -sdk-module-cache-path /Users/runner/work/_temp/DerivedData/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-generated-files.hmap -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-own-target-headers.hmap -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-all-target-headers.hmap -Xcc -iquote -Xcc /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-project-headers.hmap -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare-Swift.h -working-directory /Users/runner/work/Tadayo/Tadayo/apps/ios -experimental-emit-module-separately -disable-cmo
+
+SwiftMergeGeneratedHeaders /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/DerivedSources/TadayoShare-Swift.h /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare-Swift.h (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    builtin-swiftHeaderTool -arch arm64 /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare-Swift.h -o /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/DerivedSources/TadayoShare-Swift.h
+
+Copy /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.swiftmodule/arm64-apple-ios-simulator.swiftmodule /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare.swiftmodule (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare.swiftmodule /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.swiftmodule/arm64-apple-ios-simulator.swiftmodule
+
+Copy /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.swiftmodule/arm64-apple-ios-simulator.swiftdoc /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare.swiftdoc (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare.swiftdoc /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.swiftmodule/arm64-apple-ios-simulator.swiftdoc
+
+Copy /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.swiftmodule/arm64-apple-ios-simulator.abi.json /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare.abi.json (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare.abi.json /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.swiftmodule/arm64-apple-ios-simulator.abi.json
+
+Copy /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare.swiftsourceinfo (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare.swiftsourceinfo /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo
+
+ProcessProductPackaging "" /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo.app-Simulated.xcent (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    
+    Entitlements:
+    
+    {
+    "application-identifier" = "FAKETEAMID.app.tadayo";
+}
+    
+    builtin-productPackagingUtility -entitlements -format xml -o /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo.app-Simulated.xcent
+
+ProcessProductPackagingDER /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo.app-Simulated.xcent /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo.app-Simulated.xcent.der (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    /usr/bin/derq query -f xml -i /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo.app-Simulated.xcent -o /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo.app-Simulated.xcent.der --raw
+
+SwiftDriver Tadayo normal arm64 com.apple.xcode.tools.swift.compiler (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    builtin-SwiftDriver -- /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name Tadayo -Onone @/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo.SwiftFileList -DDEBUG -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path /Users/runner/work/_temp/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/runner/work/_temp/DerivedData/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 6 -I /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator -F /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator -parse-as-library -c -j5 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/runner/work/_temp/DerivedData/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-688ef53f1462e2c8f657fdc38a81448ff45c64a1807a658693f2a61704f17a36.sdkstatcache -output-file-map /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/runner/work/_temp/DerivedData/ModuleCache.noindex -sdk-module-cache-path /Users/runner/work/_temp/DerivedData/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-generated-files.hmap -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-own-target-headers.hmap -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-all-target-headers.hmap -Xcc -iquote -Xcc /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-project-headers.hmap -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo-Swift.h -working-directory /Users/runner/work/Tadayo/Tadayo/apps/ios -experimental-emit-module-separately -disable-cmo
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/DeveloperToolsSupport-87KM1E70O81JJA1KX63YUNE95.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/ptrauth-RH6HYNA1BZXANLZGBTC6DONF.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/_Builtin_stdarg-STLMPAD4374A0FSSBQ2AWQUI.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/_Builtin_stdbool-3MREDPFFJGPT48ORW19QYHAQH.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/_SwiftConcurrencyShims-27ZO6NRPSBF3I72DG56BAME45.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/_AvailabilityInternal-6WNEWW0OYNX4J2ANK4DLYBT6O.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/_Builtin_float-19QSBNWFP91OMTV6Y1Y4AOWZI.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/ptrcheck-7MG9MUAV2M6NEGM5IW3BJOHDM.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/SwiftShims-6KKEYJ6Q9TZ39H5FZ9N1HOV9I.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/_Builtin_stddef-EF2DE421VYYFUULBTO75F0JOJ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/_DarwinFoundation1-9QJ4JVO37RDNYP7QO1SKQEC38.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/_DarwinFoundation2-DKTKU4E13C0B75XU43W9QDYXL.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/_Builtin_limits-AEKZCWZGX3RP3RQ9H5LFIZZKR.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/_Builtin_tgmath-99QOSAVGKQDR4IV1PJO2JVTD4.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/sys_types-12GV9FZ9MB4OCAWNG3SEFKSSV.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/_Builtin_stdint-6C7CNCN5TKT7LX16R5BID9K90.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/_Builtin_intrinsics-AV6VU20EE3DL81QW9UDT0S1A7.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/_DarwinFoundation3-BUSGGCYKSGIOC3O9KYFH0D3F7.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/_Builtin_stdatomic-BP30M7NFQYKAJISKPY7OFBA0.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/_Builtin_inttypes-DQF0UU2Y6LAH4SEGTRS8Z9LFG.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/Darwin-20LGDNH0W5C0IZRHRJCM2XCB8.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/simd-AHAVKUVZ43YDPTXRZ63VK2UBI.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/MachO-ANM6ZPHEFZNDFTIC9A5TFDEV0.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/ObjectiveC-EYYGIADFQES9YUS6KXWB4POXB.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/os_object-9Z625TMECMN6SG7EGE2XEUWAN.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/Spatial-77L9Q21CXBZKYTXMRBS0WGHIG.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/os_workgroup-BRLBN6OR033S9ZF4FM48AL35A.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/Dispatch-8E2CCCVSP8KEV435V80NQB7AY.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/XPC-6Q9MTCWDMLETDYRC38W8582KL.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/CoreFoundation-BRQIQDRMTNXJ0MIEYPVCQ0VD5.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/os-AYU488E7450BXN4L9UCY36REM.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/CFNetwork-3IHKW57DNPQ4SOVBRLYYLUO5T.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/Security-BLE1SF7CU18IRAAJ0QSGQ0GDF.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/CoreGraphics-2KJ3ELF5B9B9CGB77HPLJ465Z.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/Foundation-8W8E9DNE5EHPEHYWLC2918N4Y.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/CoreText-8AY2PVN2TQDZ31BNN6WEVQ7KB.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/ImageIO-7KH562UESXKKKCR8Y4T2PAS1W.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/OpenGLES-2LPFVMQSEJP6HLZOOEAK7FQR1.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/Symbols-2U42S6QLFUUSAU7UMU5QVTSSR.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/OSLog-C6I18WG3RYFRXCFLFE3MMFDFS.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/UIUtilities-A8RTMEOVNJI64REWYC8SIEHGE.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/DataDetection-4UEONK82UTJ8WTWF09J2MXJ9I.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/CoreTransferable-Z7X9K9C27CE0VJYC6IGVMD7A.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/Accessibility-806M7HQ7YFA34XUROOLTGT0NV.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/FileProvider-18GQ0PSTRPQUUZEGX6KGXTO80.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/UserNotifications-79JJH6K4759JH7Z29XISSX7P7.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/IOSurface-6REKDPPRWM0NAR12M3O3PPT9S.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/CoreData-7YUNZLJK9WHWHT5V2S9KXXYG4.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/UniformTypeIdentifiers-CA34X5GJ8Y025TC5ASPVM7FGK.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/Metal-1OE9CZ0Y0Z0M7O0GIUJ18TNFS.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/CoreVideo-CMLNAAJVTOFT44Y98C7I36YR0.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/QuartzCore-F038S3MY7DJLKC43OHZIK22WQ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/CoreImage-8O7U7QQ8WXZ0UB8TEBSGKA7OL.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/SwiftUICore-5PD9G9CF7PDN4WU7BXRY3AHI6.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/UIKit-9IME2CHUYQLZZZDLGX14SQP5Q.pcm
+
+SwiftDriverJobDiscovery normal arm64 Compiling ShareViewController.swift (in target 'TadayoShare' from project 'Tadayo')
+
+SwiftDriver\ Compilation TadayoShare normal arm64 com.apple.xcode.tools.swift.compiler (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    builtin-Swift-Compilation -- /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name TadayoShare -Onone @/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare.SwiftFileList -DDEBUG -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path /Users/runner/work/_temp/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -application-extension -enable-testing -index-store-path /Users/runner/work/_temp/DerivedData/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 6 -I /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator -F /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator -parse-as-library -c -j5 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/runner/work/_temp/DerivedData/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-688ef53f1462e2c8f657fdc38a81448ff45c64a1807a658693f2a61704f17a36.sdkstatcache -output-file-map /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/runner/work/_temp/DerivedData/ModuleCache.noindex -sdk-module-cache-path /Users/runner/work/_temp/DerivedData/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-generated-files.hmap -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-own-target-headers.hmap -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-all-target-headers.hmap -Xcc -iquote -Xcc /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-project-headers.hmap -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare-Swift.h -working-directory /Users/runner/work/Tadayo/Tadayo/apps/ios -experimental-emit-module-separately -disable-cmo
+
+Ld /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.appex/TadayoShare.debug.dylib normal (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0-simulator -dynamiclib -isysroot /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -O0 -L/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -L/Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator -F/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -F/Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator -filelist /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare.LinkFileList -install_name @rpath/TadayoShare.debug.dylib -Xlinker -rpath -Xlinker /usr/lib/swift -Xlinker -rpath -Xlinker @executable_path/Frameworks -Xlinker -rpath -Xlinker @executable_path/../../Frameworks -Xlinker -dead_strip -Xlinker -object_path_lto -Xlinker /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare_lto.o -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -dependency_info -Xlinker /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare_dependency_info.dat -fapplication-extension -fobjc-link-runtime -L/Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphonesimulator -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare.swiftmodule @/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare-linker-args.resp -Xlinker -alias -Xlinker _NSExtensionMain -Xlinker ___debug_main_executable_dylib_entry_point -Xlinker -no_adhoc_codesign -o /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.appex/TadayoShare.debug.dylib
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/SwiftUI-33L9T3V3TWZ9JIPN5TRM0IYZ2.pcm
+
+SwiftEmitModule normal arm64 Emitting\ module\ for\ Tadayo (in target 'Tadayo' from project 'Tadayo')
+
+SwiftCompile normal arm64 /Users/runner/work/Tadayo/Tadayo/apps/ios/Tadayo/TadayoApp.swift (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    
+
+SwiftCompile normal arm64 Compiling\ TadayoApp.swift /Users/runner/work/Tadayo/Tadayo/apps/ios/Tadayo/TadayoApp.swift (in target 'Tadayo' from project 'Tadayo')
+SwiftCompile normal arm64 /Users/runner/work/Tadayo/Tadayo/apps/ios/Tadayo/TadayoApp.swift (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    
+
+SwiftDriverJobDiscovery normal arm64 Emitting module for Tadayo (in target 'Tadayo' from project 'Tadayo')
+
+SwiftDriver\ Compilation\ Requirements Tadayo normal arm64 com.apple.xcode.tools.swift.compiler (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    builtin-Swift-Compilation-Requirements -- /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name Tadayo -Onone @/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo.SwiftFileList -DDEBUG -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path /Users/runner/work/_temp/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/runner/work/_temp/DerivedData/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 6 -I /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator -F /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator -parse-as-library -c -j5 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/runner/work/_temp/DerivedData/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-688ef53f1462e2c8f657fdc38a81448ff45c64a1807a658693f2a61704f17a36.sdkstatcache -output-file-map /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/runner/work/_temp/DerivedData/ModuleCache.noindex -sdk-module-cache-path /Users/runner/work/_temp/DerivedData/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-generated-files.hmap -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-own-target-headers.hmap -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-all-target-headers.hmap -Xcc -iquote -Xcc /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-project-headers.hmap -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo-Swift.h -working-directory /Users/runner/work/Tadayo/Tadayo/apps/ios -experimental-emit-module-separately -disable-cmo
+
+SwiftMergeGeneratedHeaders /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/DerivedSources/Tadayo-Swift.h /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo-Swift.h (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    builtin-swiftHeaderTool -arch arm64 /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo-Swift.h -o /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/DerivedSources/Tadayo-Swift.h
+
+Copy /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.swiftmodule/arm64-apple-ios-simulator.swiftmodule /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo.swiftmodule (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo.swiftmodule /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.swiftmodule/arm64-apple-ios-simulator.swiftmodule
+
+Copy /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.swiftmodule/arm64-apple-ios-simulator.swiftdoc /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo.swiftdoc (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo.swiftdoc /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.swiftmodule/arm64-apple-ios-simulator.swiftdoc
+
+Copy /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.swiftmodule/arm64-apple-ios-simulator.abi.json /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo.abi.json (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo.abi.json /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.swiftmodule/arm64-apple-ios-simulator.abi.json
+
+Copy /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo.swiftsourceinfo (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo.swiftsourceinfo /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo
+
+ConstructStubExecutorLinkFileList /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-ExecutorLinkFileList-normal-arm64.txt (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    construct-stub-executor-link-file-list /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.appex/TadayoShare.debug.dylib /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libPreviewsJITStubExecutor_no_swift_entry_point.a /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libPreviewsJITStubExecutor.a --output /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-ExecutorLinkFileList-normal-arm64.txt
+note: Using stub executor library without Swift entry point. (in target 'TadayoShare' from project 'Tadayo')
+
+Ld /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.appex/TadayoShare normal (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0-simulator -isysroot /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -O0 -L/Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator -F/Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator -Xlinker -rpath -Xlinker @executable_path -Xlinker -rpath -Xlinker @executable_path/Frameworks -Xlinker -rpath -Xlinker @executable_path/../../Frameworks -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -e ___debug_blank_executor_main -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_dylib -Xlinker /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-DebugDylibPath-normal-arm64.txt -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_entry -Xlinker /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-DebugEntryPoint-normal-arm64.txt -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_instlnm -Xlinker /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-DebugDylibInstallName-normal-arm64.txt -Xlinker -filelist -Xlinker /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare-ExecutorLinkFileList-normal-arm64.txt -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __entitlements -Xlinker /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare.appex-Simulated.xcent -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __ents_der -Xlinker /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare.appex-Simulated.xcent.der /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.appex/TadayoShare.debug.dylib -Xlinker -no_adhoc_codesign -o /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.appex/TadayoShare
+
+ExtractAppIntentsMetadata (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.6.109.0.25wbRE/Metal.xctoolchain --module-name TadayoShare --sdk-root /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk --xcode-version 17F113 --platform-family iOS --deployment-target 17.0 --bundle-identifier app.tadayo.share --output /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.appex --target-triple arm64-apple-ios17.0-simulator --binary-file /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.appex/TadayoShare --dependency-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare_dependency_info.dat --stringsdata-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare.SwiftFileList --metadata-file-list /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare.DependencyMetadataFileList --static-metadata-file-list /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare.DependencyStaticMetadataFileList --swift-const-vals-list /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/Objects-normal/arm64/TadayoShare.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
+2026-11-03 11:00:02.697 appintentsmetadataprocessor[4421:18846] Starting appintentsmetadataprocessor export
+2026-11-03 11:00:02.704 appintentsmetadataprocessor[4421:18846] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+
+AppIntentsSSUTraining (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsnltrainingprocessor --infoplist-path /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.appex/Info.plist --temp-dir-path /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/ssu --bundle-id app.tadayo.share --product-path /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.appex --extracted-metadata-path /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.appex/Metadata.appintents --metadata-file-list /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/TadayoShare.build/TadayoShare.DependencyMetadataFileList --source-file /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.appex/Info.plist --archive-ssu-assets
+2026-11-03 11:00:02.745 appintentsnltrainingprocessor[4445:18893] Parsing options for appintentsnltrainingprocessor
+2026-11-03 11:00:02.746 appintentsnltrainingprocessor[4445:18893] Starting AppIntents SSU YAML Generation
+2026-11-03 11:00:02.749 appintentsnltrainingprocessor[4445:18893] No AppShortcuts found - Skipping.
+
+CodeSign /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.appex/TadayoShare.debug.dylib (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.appex/TadayoShare.debug.dylib
+
+CodeSign /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.appex/__preview.dylib (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.appex/__preview.dylib
+
+CodeSign /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.appex (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.appex
+
+RegisterExecutionPolicyException /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.appex (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    builtin-RegisterExecutionPolicyException /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.appex
+
+Touch /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.appex (in target 'TadayoShare' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    /usr/bin/touch -c /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.appex
+
+Ld /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/__preview.dylib normal (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0-simulator -dynamiclib -isysroot /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -O0 -L/Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator -F/Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator -install_name @rpath/Tadayo.debug.dylib -Xlinker -dead_strip -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -dependency_info -Xlinker /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo_dependency_info.dat -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __entitlements -Xlinker /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo.app-Simulated.xcent -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __ents_der -Xlinker /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo.app-Simulated.xcent.der -Xlinker -no_adhoc_codesign -o /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/__preview.dylib
+
+SwiftDriverJobDiscovery normal arm64 Compiling TadayoApp.swift (in target 'Tadayo' from project 'Tadayo')
+
+SwiftDriver\ Compilation Tadayo normal arm64 com.apple.xcode.tools.swift.compiler (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    builtin-Swift-Compilation -- /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name Tadayo -Onone @/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo.SwiftFileList -DDEBUG -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path /Users/runner/work/_temp/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/runner/work/_temp/DerivedData/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 6 -I /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator -F /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator -parse-as-library -c -j5 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/runner/work/_temp/DerivedData/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-688ef53f1462e2c8f657fdc38a81448ff45c64a1807a658693f2a61704f17a36.sdkstatcache -output-file-map /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/runner/work/_temp/DerivedData/ModuleCache.noindex -sdk-module-cache-path /Users/runner/work/_temp/DerivedData/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/runner/work/_temp/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo_const_extract_protocols.json -Xcc -iquote -Xcc /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-generated-files.hmap -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-own-target-headers.hmap -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-all-target-headers.hmap -Xcc -iquote -Xcc /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-project-headers.hmap -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/DerivedSources-normal/arm64 -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/DerivedSources/arm64 -Xcc -I/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo-Swift.h -working-directory /Users/runner/work/Tadayo/Tadayo/apps/ios -experimental-emit-module-separately -disable-cmo
+
+Ld /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/Tadayo.debug.dylib normal (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0-simulator -dynamiclib -isysroot /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -O0 -L/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -L/Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator -F/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -F/Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator -filelist /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo.LinkFileList -install_name @rpath/Tadayo.debug.dylib -Xlinker -rpath -Xlinker /usr/lib/swift -Xlinker -rpath -Xlinker @executable_path/Frameworks -Xlinker -dead_strip -Xlinker -object_path_lto -Xlinker /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo_lto.o -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -dependency_info -Xlinker /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo_dependency_info.dat -fobjc-link-runtime -L/Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphonesimulator -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo.swiftmodule @/Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo-linker-args.resp -Xlinker -alias -Xlinker _main -Xlinker ___debug_main_executable_dylib_entry_point -Xlinker -no_adhoc_codesign -o /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/Tadayo.debug.dylib
+
+ConstructStubExecutorLinkFileList /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-ExecutorLinkFileList-normal-arm64.txt (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    construct-stub-executor-link-file-list /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/Tadayo.debug.dylib /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libPreviewsJITStubExecutor_no_swift_entry_point.a /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libPreviewsJITStubExecutor.a --output /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-ExecutorLinkFileList-normal-arm64.txt
+note: Using stub executor library with Swift entry point. (in target 'Tadayo' from project 'Tadayo')
+
+Ld /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/Tadayo normal (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios17.0-simulator -isysroot /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -O0 -L/Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator -F/Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator -Xlinker -rpath -Xlinker @executable_path -Xlinker -rpath -Xlinker @executable_path/Frameworks -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -e ___debug_blank_executor_main -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_dylib -Xlinker /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-DebugDylibPath-normal-arm64.txt -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_instlnm -Xlinker /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-DebugDylibInstallName-normal-arm64.txt -Xlinker -filelist -Xlinker /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo-ExecutorLinkFileList-normal-arm64.txt -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __entitlements -Xlinker /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo.app-Simulated.xcent -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __ents_der -Xlinker /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo.app-Simulated.xcent.der /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/Tadayo.debug.dylib -Xlinker -no_adhoc_codesign -o /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/Tadayo
+
+Copy /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/PlugIns/TadayoShare.appex /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.appex (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks -remove-static-executable /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/TadayoShare.appex /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/PlugIns
+
+ProcessInfoPlistFile /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/Info.plist /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/empty-Tadayo.plist (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    builtin-infoPlistUtility /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/empty-Tadayo.plist -producttype com.apple.product-type.application -genpkginfo /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/PkgInfo -expandbuildsettings -format binary -platform iphonesimulator -scanforprivacyfile /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/PlugIns/TadayoShare.appex -o /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/Info.plist
+
+ExtractAppIntentsMetadata (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.6.109.0.25wbRE/Metal.xctoolchain --module-name Tadayo --sdk-root /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk --xcode-version 17F113 --platform-family iOS --deployment-target 17.0 --bundle-identifier app.tadayo --output /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app --target-triple arm64-apple-ios17.0-simulator --binary-file /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/Tadayo --dependency-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo_dependency_info.dat --stringsdata-file /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo.SwiftFileList --metadata-file-list /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo.DependencyMetadataFileList --static-metadata-file-list /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo.DependencyStaticMetadataFileList --swift-const-vals-list /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Objects-normal/arm64/Tadayo.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
+2026-11-03 11:00:12.282 appintentsmetadataprocessor[4679:19647] Starting appintentsmetadataprocessor export
+2026-11-03 11:00:12.285 appintentsmetadataprocessor[4679:19647] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+
+CopySwiftLibs /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    builtin-swiftStdLibTool --copy --verbose --sign - --scan-executable /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/Tadayo.debug.dylib --scan-folder /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/Frameworks --scan-folder /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/PlugIns --scan-folder /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/SystemExtensions --scan-folder /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/Extensions --platform iphonesimulator --toolchain /var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.6.109.0.25wbRE/Metal.xctoolchain --toolchain /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
+
+AppIntentsSSUTraining (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsnltrainingprocessor --infoplist-path /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/Info.plist --temp-dir-path /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/ssu --bundle-id app.tadayo --product-path /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app --extracted-metadata-path /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/Metadata.appintents --metadata-file-list /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/Tadayo.build/Debug-iphonesimulator/Tadayo.build/Tadayo.DependencyMetadataFileList --source-file /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/Info.plist --archive-ssu-assets
+2026-11-03 11:00:12.615 appintentsnltrainingprocessor[4682:19681] Parsing options for appintentsnltrainingprocessor
+2026-11-03 11:00:12.615 appintentsnltrainingprocessor[4682:19681] Starting AppIntents SSU YAML Generation
+2026-11-03 11:00:12.616 appintentsnltrainingprocessor[4682:19681] No AppShortcuts found - Skipping.
+
+CodeSign /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/Tadayo.debug.dylib (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/Tadayo.debug.dylib
+
+CodeSign /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/__preview.dylib (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/__preview.dylib
+
+CodeSign /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app
+
+ValidateEmbeddedBinary /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/PlugIns/TadayoShare.appex (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/embeddedBinaryValidationUtility /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/PlugIns/TadayoShare.appex -signing-cert - -info-plist-path /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app/Info.plist
+warning: Embedded binary's NSExtensionActivationRule is TRUEPREDICATE. Before you submit your containing app to the App Store, be sure to replace all uses of TRUEPREDICATE with specific predicate statements or NSExtensionActivationRule keys. If any extensions in your containing app include TRUEPREDICATE, the app will be rejected.
+
+RegisterExecutionPolicyException /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    builtin-RegisterExecutionPolicyException /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app
+
+Validate /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    builtin-validationUtility /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app -shallow-bundle -infoplist-subpath Info.plist
+
+Touch /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app (in target 'Tadayo' from project 'Tadayo')
+    cd /Users/runner/work/Tadayo/Tadayo/apps/ios
+    /usr/bin/touch -c /Users/runner/work/_temp/DerivedData/Build/Products/Debug-iphonesimulator/Tadayo.app
+
+** BUILD SUCCEEDED **
+
