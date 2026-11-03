@@ -222,3 +222,77 @@ Each is a place where two sources disagree and the fix would loosen one of them,
 - **FQ45. Where a later handoff's change to the brand goes.** Handoff 1 asks Claude Design about the avatar fallback's fills, the button's states, a label on a photograph, cover1 and the accent, and the dark icon's background (`docs/plans/B0.md` section 5.2), so its answer may change or add to the brand. ADR-006 makes `design/reference/brand/` the brand every later handoff names. `CLAUDE.md` and `design/reference/README.md` ("Don't") forbid editing a file there, and the naming rule (`docs/DESIGN-HANDOFF.md`) gives each brand asset one name.
     - Default: `design/reference/brand/` keeps handoff 0's files, and the app and the next handoff's brief keep to it until the founder answers, as ADR-006 says ("The brand lives in the repository, in `design/reference/brand/`, and every later handoff names those files as its source"). Anything handoff 1 changes or adds stays as it arrived in `design/reference/claude-design/handoff-1/`, and the inventory names it beside the brand file it would change; what the inventory builds until handoff 1 answers stays built that way until the founder answers this question. Claude Code proposes that the app build from what handoff 1 changes or adds, and that the next brief cite both. That departs from ADR-006 and from `docs/DESIGN-HANDOFF.md`, "Who does what" (once converted, the brand lives in `design/reference/brand/`), so nothing is built from it before the founder answers; if the founder takes it, a new ADR records it and `docs/DESIGN-HANDOFF.md` changes in a rulebook PR of its own. Any other answer changes `CLAUDE.md` and the design reference rules in a rulebook PR of its own.
     - Needed by: handoff 1's delivery.
+
+## Raised by design handoffs 1 to 4
+
+Brought in with the handoffs (ADR-027). Their sources are in the project's files: the briefs (`design/handoff-3/handoff-3-and-4-briefs.md`), and the checks of handoff 1 (`design/handoff-1/check/handoff-1-check.md`, section 5) and of handoffs 3 and 4 (`design/handoff-3/check/handoff-3-4-check.md`, section 4). The numbers were reserved through the coordinator. FQ64 was reserved for handoff 1's first question, "when a club starts", which is FQ54, so FQ64 stays unused.
+
+- **FQ46. Who sees a clash over a day, and whether with names.** `G04-conflict` shows "Day choice conflict: Ben and Debby" to the club, which tells the club who hasn't confirmed.
+    - Default: only the two members involved see the clash with names; the others see only that the day has no reveal scheduled (`G04-conflict-others`).
+    - Needed by: B2.
+- **FQ47. Photos in an invitation's member list.** Handoff 4 shows the members as initials only to someone who hasn't joined; the book's `G02-invitation` shows their photos.
+    - Default: initials, the stricter reading.
+    - Needed by: B1.
+- **FQ48. A day proposed for someone else.** `G04-conflict` shows Ben's proposed Monday as "Available", so Debby could take it.
+    - Default: only confirmed days are taken.
+    - Needed by: B2.
+- **FQ49. A schedule change that isn't confirmed by its start date.**
+    - Default: as delivered: Claude Design proposes a new start date, and everyone confirms again.
+    - Needed by: B2.
+- **FQ50. A paused club that still has an announced day.** The day is kept, and nothing says what Home shows or whether you can still add for it.
+    - Default: Home shows that day as usual until it passes, then shows the pause.
+    - Needed by: B2.
+- **FQ51. Invitations still out once a club has started.** `G01-invite-people-revoked` has Debby accepted, so under FQ54 the club has started, but the screen still says "Create a club". Nothing says whether the others now need approval, or where Ben manages their links.
+    - Default: the invitation list is reached only during setup.
+    - Needed by: B1.
+- **FQ52. A pending schedule change is easy to miss.** There's no push, by the rules, and Home doesn't mention it; it shows only under Schedule and in Club details.
+    - Default: as delivered.
+    - Needed by: B2.
+- **FQ53. Plain screens.** The waiting and paused Homes show none of the book's objects: no plaque, card or photographs (book p5). The same call is open for the empty Home.
+    - Default: as delivered.
+    - Needed by: B2.
+- **FQ54. When a club starts** (handoff 1's check, question 1).
+    - Default: the creator's proposal counts as the creator's approval. So under T7 a club starts as soon as one person accepts, and the waiting-to-start screens show only while nobody has accepted.
+    - Needed by: B1.
+- **FQ55. Two members want the same day.**
+    - Default: while two members have chosen the same day, neither can confirm it. The conflict ends only when one of them chooses another day. Until then that day has no reveal, and every confirmed day goes ahead. Nobody is moved, and nobody is asked to give way (T6).
+    - Needed by: B2.
+- **FQ56. Who confirms a membership change.**
+    - Default: every active member confirms, including the new one. The current days continue until everyone has.
+    - Needed by: B2.
+- **FQ57. The club's week in the trial.**
+    - Default: read-only. Days change only through a membership change.
+    - Needed by: B2.
+- **FQ58. Home while loading.**
+    - Default: only the club's name and your own photo, and nothing else until the server answers (`H01-loading`).
+    - Needed by: B2.
+- **FQ59. A revoked invitation link.**
+    - Default: it looks exactly like an unknown link, or one another account has already used. It says neither "expired" nor the inviter's name, in the app and on the web page (`G02-revoked`, `G02-web-revoked`; T7).
+    - Needed by: B1.
+- **FQ60. Whether a member who proposes an addition must also approve it** (`G03-approve`).
+    - Default: none given in the briefs. Until the founder answers, nothing is built that depends on it, and the snapshot fixture's approver is a member other than the proposer (Maya), which holds either way.
+    - Needed by: B1.
+- **FQ61. What "announced" means at a schedule change's boundary.**
+    - Default: none given in the briefs. Until the founder answers, nothing is built that depends on it.
+    - Needed by: B2.
+- **FQ62. Whether drops can be added between a schedule change's proposal and its confirmation.**
+    - Default: none given in the briefs. Until the founder answers, nothing is built that depends on it.
+    - Needed by: B2.
+- **FQ63. What happens to the announced days of a member who leaves.**
+    - Default: none given in the briefs. Until the founder answers, nothing is built that depends on it.
+    - Needed by: B2, and B6 for leaving.
+- **FQ65. The order of accepting and approving.** In `G03-waiting`, Leila accepts first; in 2.1's `G03-approve`, she accepts after the members approve.
+    - Default: either order works, on one roster revision; no rule fixes the order.
+    - Needed by: B1.
+- **FQ66. Whose name the roster shows.** Ben types a name for each link. If the link is forwarded and someone else accepts, the roster could show the wrong person.
+    - Default: once someone accepts, the roster shows their own profile name. A changed name is a new roster revision, which everyone accepts again.
+    - Needed by: B1.
+- **FQ67. Copying a link counts as Shared.** If Ben copies an invitation link instead of sending it, the delivery still marks it Shared, which never means "delivered".
+    - Default: yes, as the delivery says.
+    - Needed by: B1.
+- **FQ68. "Sent to ben@example.com".** T41 bans the word Sent, and the ban comes from book p41, which is about drop states.
+    - Default: the ban covers drop states, so this sign-in line stays, and the copy lint says so openly.
+    - Needed by: B0 (slice 11's sign-in).
+- **FQ69. An account that stops at the 18-or-older step.** By then Supabase has already created the account with its email.
+    - Default: such an account can only finish setup or leave. How long it's kept is proposed, with a default, when sign-in is built (slice 8).
+    - Needed by: B0 (slice 8).
