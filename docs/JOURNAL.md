@@ -288,7 +288,7 @@ Not started. The api thread builds slices 1, 2 and 9 as the one session, in bloc
 
 ### 1.3 ios lane
 
-**Updated:** 2026-11-03 11:21 UTC, ios/b0-handoffs-1-4
+**Updated:** 2026-11-03 11:27 UTC, ios/b0-handoffs-1-4
 
 - **Started:** 2026-11-03 at 11:03 UTC, by the coordinator (ADR-025). Environment: Swift 6.3.3 from swift.org's signed release tarball; the journal hook isn't confirmed to fire in this session, so it runs by hand before each commit.
 - **PRs:** none merged yet. Open or pushed: `ios/b0-adr-027` (rulebook: ADR-027, FQ45 recorded), waiting for its review and the founder. This branch, `ios/b0-handoffs-1-4` (the design PR ADR-027 asks for), in progress, no PR number yet. Started locally, not pushed: `ios/b0-app` (slice 11's first part).
@@ -1349,6 +1349,14 @@ Two earlier entries claim more than their commits show, and the log is append-on
 ### 3.2 api lane
 
 ### 3.3 ios lane
+
+#### 2026-11-03 11:27 UTC · ios · ios/b0-handoffs-1-4 · PR none
+**Did:** Made the named files from handoffs 1 to 4 (`docs/DESIGN-HANDOFF.md`, "How renders come back", step 3). `design/reference/screens/`: 37 PNGs, each a state's frame as the delivery renders it at 786×1704 (`claude-design/handoff-<n>/frames/<state>.png`), copied in handoff order so a later frame of a state replaces an earlier one: handoff 2's `A02-code-error`, `F01-no-club`, `G02-changed`, `G03-waiting` and `M01-no-club` replace handoff 1's, and handoff 4's `G01-pending`, `G03-approve` and `G06-no-club` replace handoff 1's or 2's (`G03-approve` and handoff 3's `F01-friends` now win over their 2.1 renders, as `screens/` does). `design/reference/brand/` remade from revision 1.1 (ADR-027): `brand-tokens.md` (every colour of both themes, the type roles, the geometry, the avatar, the cover rule and the wordmark, copied from `brand-tokens.json` 1.1), `brand-icon-dark-1024.png` (1.1's transparent master's own 1024-pixel PNG), `brand-components.png` (handoff 4's sheet, which holds every earlier one) and `README.md` (where each file comes from). The wordmark PDFs and the light and tinted icons stay handoff 0's, which 1.1 keeps.
+**Why:** ADR-027. The deliveries' own PNGs are used rather than re-rendered: each pack renders its SVG frames at 2×, and `/mnt/project-files/design/handoff-1/check/handoff-1-check.md` section 1 checked that they match the SVGs.
+**Verified:** `identify` gives 786x1704 for every copied frame and 1024x1024 with an alpha channel (`srgba`, not opaque) for the dark icon. The SHA-256 of `assets/brand-icon-dark.svg` and of `brand-tokens.json` is the same in all four handoffs (530fc9b7… and e6d05848…). `python3 tools/ci/journal_check.py --branch` and the hook by hand, exit 0.
+**Not verified:** That every copied PNG matches its SVG pixel for pixel: taken from the design thread's check of handoffs 1 and 2 and the packs' own validation reports for 3 and 4, not re-run here. `ci` on this commit: the branch's push runs it.
+**Decisions and questions:** Handoff 4's component sheet is the brand's, since it holds every earlier one (ADR-027's context). `design/reference/INVENTORY.md` follows in the next commit.
+**Next:** Block 1.3, Next step 1: the inventory and the questions.
 
 #### 2026-11-03 11:21 UTC · ios · ios/b0-handoffs-1-4 · PR none
 **Did:** Unpacked design handoff 4's pack (`/mnt/project-files/design/handoff-4/export/`) as it arrived into `design/reference/claude-design/handoff-4/`. This journal: block 1.3's Updated line, this entry.
