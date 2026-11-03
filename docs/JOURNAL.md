@@ -289,12 +289,12 @@ Not started. The api thread builds slices 1, 2 and 9 as the one session, in bloc
 
 ### 1.3 ios lane
 
-**Updated:** 2026-11-03 11:24 UTC, ios/b0-adr-027
+**Updated:** 2026-11-03 11:26 UTC, ios/b0-adr-027
 
 - **Started:** 2026-11-03 at 11:03 UTC, by the coordinator, once the check branch's `ios` run was green (ADR-025). Its own environment checks: Swift 6.3.3 installed from swift.org's signed release tarball (swiftly's key import failed), the journal hook not confirmed to fire, and CodeRabbit's skills still listed: all three in `docs/LIMITATIONS.md`'s row of 2026-11-03 for the ios thread. The hook runs by hand before each commit.
-- **PRs:** none merged yet. In progress: this branch, `ios/b0-adr-027`, reviewed once, findings fixed (rulebook: ADR-027, FQ45 recorded, `docs/DESIGN-HANDOFF.md` 1.2, `design/reference/README.md`, `CLAUDE.md`'s layout line, `docs/plans/B0.md` slices 11 and 11b and section 5.2, `docs/PROGRESS.md`'s ios section), no PR number yet. Started locally, not pushed: `ios/b0-app` (slice 11's first part: `apps/ios/project.yml`, `TadayoCore` with 18 Swift Testing tests passing on Linux, `TadayoDesign`, the Lab, the snapshot tests, the fixture photographs).
+- **PRs:** none merged yet. In progress: this branch, `ios/b0-adr-027`, PR #12, reviewed once, findings fixed (rulebook: ADR-027, FQ45 recorded, `docs/DESIGN-HANDOFF.md` 1.2, `design/reference/README.md`, `CLAUDE.md`'s layout line, `docs/plans/B0.md` slices 11 and 11b and section 5.2, `docs/PROGRESS.md`'s ios section), no PR number yet. Started locally, not pushed: `ios/b0-app` (slice 11's first part: `apps/ios/project.yml`, `TadayoCore` with 18 Swift Testing tests passing on Linux, `TadayoDesign`, the Lab, the snapshot tests, the fixture photographs).
 - **Next, in order:**
-    1. Push `ios/b0-adr-027`, check `ci` on its head (`gh api repos/beurni2/tadayo/commits/<sha>/check-runs`), open its PR and tell the founder, raising ADR-027's proposal on later handoffs. Done when the founder has approved it in this thread and it is squash-merged.
+    1. Check `ci` on PR #12's head (`gh api repos/beurni2/tadayo/commits/<sha>/check-runs`) and tell the founder it is ready, raising ADR-027's proposal on later handoffs. Done when the founder has approved it in the ios thread and it is squash-merged at the approved head (`docs/GITHUB.md` step 6). Done when the founder has approved it in this thread and it is squash-merged.
     2. The design PR, `ios/b0-handoffs-1-4` from `main`: unpack `/mnt/project-files/design/handoff-<n>/export/*.zip` (n = 1 to 4) into `design/reference/claude-design/handoff-<n>/`, each in its own commit; copy each state's 786×1704 frame PNG into `design/reference/screens/<state>.png`, a later handoff's frame of the same state replacing an earlier one (handoff 2 corrects handoff 1, handoff 4 redraws `G01-pending`, `G03-approve` and `G06-no-club`); remake `design/reference/brand/` from revision 1.1 (`brand-tokens.md` from `brand-tokens.json` 1.1, `brand-components.png` from handoff 4's sheet, which holds every earlier one, `brand-icon-dark-1024.png` from 1.1's transparent master); bring `design/reference/INVENTORY.md` up to date (the delivered states to `received`, new rows for handoff 2's 7 and handoff 4's 4 new states and the written-only states of the project's file `design/handoff-3/check/handoff-3-4-check.md` section 5); add to `docs/QUESTIONS.md` FQ46 to FQ53 (that file's section 4), FQ54 to FQ63 (`design/handoff-3/handoff-3-and-4-briefs.md` sections 2 and 5) and FQ65 to FQ69 (`design/handoff-1/check/handoff-1-check.md` section 5, questions 2 to 6; its question 1 is FQ54, so FQ64 stays unused). Done when it is merged.
     3. Slice 11's first part, `ios/b0-app`, on top of the design PR's `main`, with revision 1.1's tokens; push, read the `ios` run's sheets on `evidence`, commit the references.
 - **Blocked or waiting:** the founder's approval of this PR; then of the design PR.
@@ -1354,6 +1354,14 @@ Two earlier entries claim more than their commits show, and the log is append-on
 
 ### 3.3 ios lane
 
+#### 2026-11-03 11:26 UTC · ios · ios/b0-adr-027 · PR #12
+**Did:** Opened PR #12 for this branch (body from `.github/pull_request_template.md`, with ADR-027's proposal on later handoffs raised for the founder), assigned it to the founder and asked for the founder's review on GitHub; table 4.2's row and block 1.3 now carry the number.
+**Why:** `docs/MILESTONES.md`, "Lanes" ("Numbers"): a PR number is written only once GitHub has given it.
+**Verified:** `gh api -X POST repos/beurni2/tadayo/pulls` returned 12. `ci` green at `45fd758` (every job: node, postgres, swift, tools, guards, ci). `python3 tools/ci/journal_check.py --branch` and the hook by hand, exit 0.
+**Not verified:** `ci` on this commit: its push runs it.
+**Decisions and questions:** None.
+**Next:** Once `ci` is green on this commit, tell the founder PR #12 is ready (block 1.3, Next step 1).
+
 #### 2026-11-03 11:24 UTC · ios · ios/b0-adr-027 · PR none
 **Did:** Fixed the 11 findings of the independent review of `3860ee4` (a fresh subagent given the diff, the rules and the founder's two answers; `docs/GITHUB.md` step 3): (1) section 0.7's FQ45 sentences that the answer made false rewritten, not appended to; (2) block 1.1's design lines (Design, Next step 7, FQ45 in Blocked) rewritten for ADR-027, and `docs/PROGRESS.md`'s Shared lines asked of the api lane under the ios section's "Needs from the other lane"; (3) ADR-027's rule for handoff 5 and later turned into a proposal for the founder, not a decision; (4) `docs/MILESTONES.md`'s B0 list, its icon line and Gate 0's Lab line, and `docs/DESIGN-HANDOFF.md`'s brief template, say revision 1.1; (5) ADR-027 no longer claims F5 changed, and asks the api lane for it; (6) block 1.3's Next step 2 names which component sheet, how later frames replace earlier ones, and where each FQ's text is; (7) the B0 plan's slice 11 row no longer contradicts itself, 11b is retitled, section 5.2's "built from spec" sentence is marked superseded; (8) table 4.2 has this PR's row; (9) the audit map's T44 and T46 rows; (10) `docs/LIMITATIONS.md` records the ios thread's environment (Swift install, the hook, CodeRabbit); (11) ADR-027's context names 1.1's geometry, type scale, cover-rule wording and the fuller component sheets, and `docs/DESIGN-HANDOFF.md` says `brand-tokens.md` holds the whole token set. Left as it is: `docs/INVARIANTS.md` T44 ("book p35 now, the brand handoff's values once they arrive" stays true), and `design/reference/INVENTORY.md` line 11 and `design/reference/brand/README.md`, which the design PR rewrites with `brand/`.
 **Why:** `docs/GITHUB.md` steps 4 and 5: every finding fixed or answered, in a commit that records the review.
@@ -1398,7 +1406,7 @@ The index an auditor uses to find the proof behind section 2.
 
 | PR | Branch | What it changed | Review findings | Evidence |
 |---|---|---|---|---|
-| to open | `ios/b0-adr-027` | ADR-027: FQ45's answer (brand revision 1.1) and the founder's choice to bring handoffs 1 to 4 in before slice 11's screens; `docs/QUESTIONS.md`, `docs/DESIGN-HANDOFF.md` 1.2, `design/reference/README.md`, `CLAUDE.md`, `docs/MILESTONES.md`, the B0 plan's slices 11 and 11b and section 5.2, `docs/LIMITATIONS.md` (the ios thread's environment) | One independent review: 11 findings (6 medium, 5 low), all fixed (the 3860ee4 + 1 commit's entry lists them) | None: documents only |
+| #12 | `ios/b0-adr-027` | ADR-027: FQ45's answer (brand revision 1.1) and the founder's choice to bring handoffs 1 to 4 in before slice 11's screens; `docs/QUESTIONS.md`, `docs/DESIGN-HANDOFF.md` 1.2, `design/reference/README.md`, `CLAUDE.md`, `docs/MILESTONES.md`, the B0 plan's slices 11 and 11b and section 5.2, `docs/LIMITATIONS.md` (the ios thread's environment) | One independent review: 11 findings (6 medium, 5 low), all fixed in `45fd758` (its log entry lists them); `ci` green at `45fd758` | None: documents only |
 
 ### 4.3 Gates
 
