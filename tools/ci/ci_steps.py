@@ -121,7 +121,25 @@ RETIRED_TARGETS = set()
 # `updateConfig`), and pnpm-workspace.yaml and a root pnpmfile aren't CI configuration to guard 1.
 # So the pnpm steps refuse any pnpm-workspace.yaml setting not listed here, and any root pnpmfile:
 # adding one is a CI-configuration PR (T58). pnpm 12 ignores such settings in .npmrc.
-PNPM_SETTINGS = {"packages"}
+PNPM_SETTINGS = {"packages", "allowBuilds"}
+# pnpm-workspace.yaml is read line by line in a strict form that YAML reads one way only
+# (`workspace_settings`), and the pnpm steps refuse it unless pnpm's own reading of `packages` and
+# `allowBuilds` is the same (`pnpm_settings_problem`). A comment starts only after a space, as in
+# YAML, where `a#b` and `a:#b` are each one value, and entries are indented by exactly two spaces,
+# so no line can continue the one above it.
+SETTING_HEADER = re.compile(r"^([A-Za-z][A-Za-z0-9_-]*):(?: +#[ -~]*| *)$")
+# A packages entry: a pattern bare, single-quoted or double-quoted. A bare one can't start with `*`,
+# which YAML reads as an alias.
+PACKAGES_ENTRY = re.compile(r"""^  - (?:'([A-Za-z0-9_.*][A-Za-z0-9_./*-]*)'|"([A-Za-z0-9_.*][A-Za-z0-9_./*-]*)"|"""
+                            r"""([A-Za-z0-9_.][A-Za-z0-9_./*-]*))(?: +#[ -~]*| *)$""")
+# allowBuilds may only deny: each entry is a package matcher and `false`, so a dependency's build
+# script never runs (pnpm 12's strictDepBuilds fails an install on a build nobody ruled on). An
+# entry that lets one run (`true`, or anything but `false`) is refused, so approving a build is a
+# CI-configuration PR (T58). The matcher is bare, single-quoted or double-quoted, and none of the
+# three can hold a backslash (a double-quoted key's escape, which would hide where the key ends),
+# `$` or braces; a bare one holds no `:` or `#`, so it can't hide `: true` before a comment.
+DENIED_BUILD = re.compile(r"""^  (?:'([^'\\\s${}]+)'|"([^"\\\s${}]+)"|([@A-Za-z0-9][@A-Za-z0-9._/|^~<>= -]*?))"""
+                          r": +false(?: +#[ -~]*| *)$")
 PACKAGE_MANAGER = re.compile(r"^pnpm@(\d+\.\d+\.\d+)(?:\+sha\d+\.[0-9a-f]+)?$")
 
 
@@ -182,31 +200,65 @@ class Steps:
         print(f"ci: {step}: {target} isn't here yet ({slice_name}), so this step passes empty")
         return 0
 
-    def workspace_packages(self):
-        """The directories pnpm-workspace.yaml lists that hold a package.json, sorted."""
+    def workspace_settings(self):
+        """(the package patterns, the denied builds) pnpm-workspace.yaml lists, read strictly.
+
+        Each line is one of five forms, each read the one way YAML reads it: a blank line, a comment
+        line, a setting's header (`name:`), a packages entry (`  - <pattern>`) or a denial
+        (`  <package>: false`). A comment follows only a space, as in YAML, where `a#b` is one value.
+        Entries are indented by exactly two spaces, so no line continues the one before it, and a
+        setting is listed once. Anything else is refused rather than guessed at, and the pnpm steps
+        also ask pnpm for its own reading and refuse any difference (`pnpm_settings_problem`).
+        """
+        # Universal newlines turn \r\n and \r into \n, as YAML reads them. Any other character
+        # outside printable ASCII is refused: str.splitlines(), str.strip() and \s treat some as line
+        # ends or spaces where pnpm's YAML parser doesn't, which could hide text from this check.
         with open(self.path("pnpm-workspace.yaml"), encoding="utf-8") as f:
-            lines = f.read().splitlines()
-        patterns, inside = [], False
-        for line in lines:
+            text = f.read()
+        for number, line in enumerate(text.split("\n"), start=1):
+            if re.search(r"[^ -~]", line):
+                raise ValueError(f"pnpm-workspace.yaml: line {number} holds a character other than "
+                                 "printable ASCII (a tab, a control character or non-ASCII text); "
+                                 "write it in printable ASCII only")
+        patterns, denied, seen, inside = [], {}, set(), None
+        for line in text.split("\n"):
             if not line.strip() or line.lstrip().startswith("#"):
                 continue
-            if not line.startswith((" ", "-")):
-                key = re.match(r"^([A-Za-z][A-Za-z0-9_-]*):\s*(#.*)?$", line.rstrip())
+            if not line.startswith(" "):
                 setting = re.match(r"^([A-Za-z][A-Za-z0-9_-]*):", line)
                 if setting and setting.group(1) not in PNPM_SETTINGS:
                     raise ValueError(f"pnpm-workspace.yaml: the setting `{setting.group(1)}` can "
                                      "change how scripts run; add it to PNPM_SETTINGS in "
                                      "tools/ci/ci_steps.py, in a CI-configuration PR (T58)")
-                if not key:
+                header = SETTING_HEADER.match(line)
+                if not header:
                     raise ValueError(f"pnpm-workspace.yaml: can't read the line {line!r}")
-                inside = key.group(1) == "packages"
+                inside = header.group(1)
+                if inside in seen:
+                    raise ValueError(f"pnpm-workspace.yaml: `{inside}` is listed twice")
+                seen.add(inside)
                 continue
-            if not inside:
+            if inside == "allowBuilds":
+                denial = DENIED_BUILD.match(line)
+                if not denial:
+                    raise ValueError(f"pnpm-workspace.yaml: allowBuilds may only deny a "
+                                     f"dependency's build script (`<package>: false`); {line!r} "
+                                     "isn't one, and approving a build is a CI-configuration PR "
+                                     "(T58)")
+                name = next(group for group in denial.groups() if group is not None).rstrip(" ")
+                if name in denied:
+                    raise ValueError(f"pnpm-workspace.yaml: allowBuilds lists `{name}` twice")
+                denied[name] = False
+                continue
+            entry = PACKAGES_ENTRY.match(line) if inside == "packages" else None
+            if not entry:
                 raise ValueError(f"pnpm-workspace.yaml: can't read the line {line!r}")
-            match = re.match(r"^\s*-\s*(['\"]?)([A-Za-z0-9_.*][A-Za-z0-9_./*-]*)\1\s*(?:#.*)?$", line)
-            if not match:
-                raise ValueError(f"pnpm-workspace.yaml: can't read the line {line!r}")
-            patterns.append(match.group(2))
+            patterns.append(next(group for group in entry.groups() if group is not None))
+        return patterns, denied
+
+    def workspace_packages(self):
+        """The directories pnpm-workspace.yaml lists that hold a package.json, sorted."""
+        patterns, _ = self.workspace_settings()
         if not patterns:
             raise ValueError("pnpm-workspace.yaml lists no packages")
         found = set()
@@ -294,9 +346,21 @@ class Steps:
             return (f"{', '.join(pnpmfiles)} can change how scripts run; a pnpmfile is refused "
                     "here (T58)")
         try:
+            patterns, denied = self.workspace_settings()
             self.workspace_packages()
         except (OSError, ValueError) as error:
             return str(error)
+        # pnpm's own reading must be this check's, so no line means one thing here and another to
+        # pnpm. `pnpm config get <setting> --json` prints `null` for a setting that isn't there.
+        for setting, mine in (("packages", patterns), ("allowBuilds", denied or None)):
+            code, out = self.shell.output(["pnpm", "config", "get", setting, "--json"])
+            try:
+                theirs = json.loads(out) if code == 0 else None
+            except ValueError:
+                theirs = None
+            if code != 0 or theirs != mine:
+                return (f"pnpm reads pnpm-workspace.yaml's `{setting}` as {out.strip()!r}, and this "
+                        f"check reads {json.dumps(mine)}: write the file so both read it the same")
         return None
 
     def pnpm(self, step, args, env=None):
