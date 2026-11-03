@@ -32,14 +32,19 @@ packages:
   - 'services/api'
   - "tests"   # a comment
 """
+# What pnpm itself reads in WORKSPACE (`pnpm config get <setting> --json`).
+WORKSPACE_READING = {"packages": ["apps/web", "packages/*", "services/api", "tests"]}
 
 
 class FakeShell:
-    def __init__(self, codes=None, outputs=None):
+    def __init__(self, codes=None, outputs=None, pnpm_reading=None):
         self.commands = []
         self.envs = []
         self.codes = codes or {}
         self.outputs = outputs or {}
+        # The pnpm steps ask pnpm how it reads pnpm-workspace.yaml: kept apart from `commands`.
+        self.queries = []
+        self.pnpm_reading = WORKSPACE_READING if pnpm_reading is None else pnpm_reading
 
     def run(self, cmd, env=None):
         self.commands.append(cmd)
@@ -47,6 +52,11 @@ class FakeShell:
         return self.codes.get(cmd[-1], 0) if cmd else 0
 
     def output(self, cmd, env=None):
+        if cmd[:3] == ["pnpm", "config", "get"]:
+            self.queries.append(cmd)
+            if callable(self.pnpm_reading):
+                return self.pnpm_reading(cmd)
+            return 0, json.dumps(self.pnpm_reading.get(cmd[3]), indent=2) + "\n"
         self.commands.append(cmd)
         return self.outputs.get(cmd[0], (0, ""))
 
@@ -167,22 +177,28 @@ class PnpmSettingsTest(StepsTest):
                                       ["openapi:check", "test", "build", "test:db",
                                        "test:privacy"]})
 
-    def assertEveryPnpmStepRefuses(self, *named):
+    QUERIES = [["pnpm", "config", "get", "packages", "--json"],
+               ["pnpm", "config", "get", "allowBuilds", "--json"]]
+
+    def assertEveryPnpmStepRefuses(self, *named, pnpm_reading=None):
         for step in self.PNPM_STEPS:
             with self.subTest(step=step):
-                shell = FakeShell()
+                shell = FakeShell(pnpm_reading=pnpm_reading)
                 code, out = self.step(step, shell=shell)
                 self.assertEqual(code, 1, out)
                 self.assertEqual(shell.commands, [])
                 for text in named:
                     self.assertIn(text, out)
 
-    def test_the_workspace_s_own_settings_run_the_steps(self):
+    def test_the_workspace_s_own_settings_run_the_steps(self, pnpm_reading=None):
         for step in self.PNPM_STEPS:
             with self.subTest(step=step):
-                shell = FakeShell()
-                self.assertEqual(self.step(step, shell=shell)[0], 0)
+                shell = FakeShell(pnpm_reading=pnpm_reading)
+                code, out = self.step(step, shell=shell)
+                self.assertEqual(code, 0, out)
                 self.assertEqual(len(shell.commands), 1)
+                # Each step asked pnpm for its own reading of both settings first.
+                self.assertEqual(shell.queries, self.QUERIES)
 
     def test_a_setting_not_listed_is_refused(self):
         for setting in ["scriptShell: /bin/true", "nodeOptions: --require ./x.cjs",
@@ -199,6 +215,120 @@ class PnpmSettingsTest(StepsTest):
                 self.repo.write("pnpm-workspace.yaml", WORKSPACE + line + "\n")
                 self.assertEveryPnpmStepRefuses("pnpm-workspace.yaml")
 
+    def test_allow_builds_may_deny_a_dependency_s_build_script(self):
+        # pnpm 12's strictDepBuilds fails an install on a build script nobody has ruled on, and
+        # Prism's @scarf/scarf has one: the workspace denies it, and the steps run.
+        denials = ("allowBuilds:   # denied, so they never run\n"
+                   '  "@scarf/scarf": false\n'
+                   "  '@x/quoted': false  # a comment\n"
+                   "  core-js: false\n"
+                   "  nx@21.6.0 || 21.6.1: false\n"
+                   "\n"
+                   "  esbuild : false\n")
+        reading = dict(WORKSPACE_READING, allowBuilds={
+            "@scarf/scarf": False, "@x/quoted": False, "core-js": False, "nx@21.6.0 || 21.6.1": False,
+            "esbuild": False})
+        # Windows line ends read as YAML reads them.
+        for text in [WORKSPACE + denials, denials + WORKSPACE, (WORKSPACE + denials).replace("\n", "\r\n")]:
+            with self.subTest(text=text):
+                self.repo.write("pnpm-workspace.yaml", text)
+                self.test_the_workspace_s_own_settings_run_the_steps(pnpm_reading=reading)
+                steps = ci_steps.Steps(self.repo.root, self.shell, environ={})
+                self.assertEqual(steps.workspace_packages(),
+                                 ["apps/web", "packages/contracts", "packages/domain",
+                                  "services/api", "tests"])
+
+    def test_allow_builds_that_could_let_a_build_script_run_is_refused(self):
+        # Anything but a plain `false` might run the script: YAML 1.2 reads `no` and `"false"` as
+        # strings, and `False` or a tag is left to pnpm's parser. Approving a build is a
+        # CI-configuration PR (T58).
+        for entry in ["esbuild: true", "esbuild: True", "esbuild: False", "esbuild: no",
+                      'esbuild: "false"', "esbuild: !!bool false", "esbuild: {}",
+                      "esbuild:false", "esbuild: false extra", "esbuild: false\n    x: true",
+                      '"a b": false', "'a b': false", "&a esbuild: false", "*a: false", "<<: false", "<<: *x",
+                      "!!str esbuild: false", "? esbuild: false", "? esbuild\n  : false",
+                      "esbuild:", "- esbuild", "${PKG}: false", "pkg${X}: false", "esbuild: ${ALLOW}",
+                      "esbuild: set this to true or false",
+                      # A double-quoted key's backslash escapes its quote, so YAML's key runs on past
+                      # what looks like `: false` and the real value follows it.
+                      '"a\\": false #": true', '"a\\\\\\": false #": true', '"dep@file:a\\": false #": true',
+                      "'a\\b': false", "'${PKG}': false", '"${PKG}": false', "'{a}': false", '"{a}": false',
+                      # YAML reads a `#` straight after a value as part of it.
+                      "core-js: false#x", "core-js: false#",
+                      # A bare key holds no `:` or `#`, so it can't hide `: true` before a comment.
+                      "esbuild: true #: false", "dep@file:../dep: true #: false",
+                      # Indented further, a line would continue the one above it.
+                      "  esbuild: false", "esbuild: false\n    core-js: false"]:
+            with self.subTest(entry=entry):
+                self.repo.write("pnpm-workspace.yaml", WORKSPACE + "allowBuilds:\n  " + entry + "\n")
+                self.assertEveryPnpmStepRefuses("allowBuilds may only deny", "(T58)")
+        for text in ["allowBuilds: {esbuild: false}\n", "allowBuilds: false\n",
+                     "allowBuilds: true\n"]:
+            with self.subTest(text=text):
+                self.repo.write("pnpm-workspace.yaml", WORKSPACE + text)
+                self.assertEveryPnpmStepRefuses("can't read the line")
+
+    def test_a_workspace_file_with_anything_but_printable_ascii_is_refused(self):
+        # Python's splitlines(), strip() and \s treat these as line ends or spaces where pnpm's YAML
+        # parser doesn't, so text this check took for a comment or a denial would reach pnpm as
+        # something else.
+        for entry in ["core-js: false\u2028# hidden: true", "core-js: false\u2029# hidden: true",
+                      "core-js: false\x85# hidden: true", "core-js: false\v# hidden: true",
+                      "core-js: false\f# hidden: true", "core-js: false\x1c# hidden: true",
+                      "core-js:\xa0false", "core-js: false\u3000#x", "core-js:\tfalse",
+                      "core-js: false # caf\u00e9"]:
+            with self.subTest(entry=entry):
+                self.repo.write("pnpm-workspace.yaml", WORKSPACE + "allowBuilds:\n  " + entry + "\n")
+                self.assertEveryPnpmStepRefuses("printable ASCII")
+        self.repo.write("pnpm-workspace.yaml", "# caf\u00e9\n" + WORKSPACE)
+        self.assertEveryPnpmStepRefuses("line 1", "printable ASCII")
+
+    def test_a_packages_entry_yaml_reads_differently_is_refused(self):
+        # The second review's cases. YAML reads `tests#x` as one pattern, which matches nothing,
+        # so pnpm would leave out a package this check counts and run none of its tests.
+        for entry in ["  - tests#x", "  - tests#", "  - 'tests'#x", "  -tests", "- tests", "   - tests",
+                      "  -  tests", "  - *a", "  - tests\n    - x", "  - tests\n    x", "  - &a tests",
+                      "  - !!str tests", "  - ? tests", "  - tests: x", "  - 'tests", '  - "tests\'']:
+            with self.subTest(entry=entry):
+                self.repo.write("pnpm-workspace.yaml", "packages:\n  - apps/web\n" + entry + "\n")
+                self.assertEveryPnpmStepRefuses("can't read the line")
+
+    def test_a_header_yaml_reads_differently_is_refused(self):
+        # YAML reads `packages:#:` as the key `packages:#`, so the real `packages` would be gone.
+        for text in ["packages:#:\n  - tests\n", "packages:#\n  - tests\n",
+                     WORKSPACE + "allowBuilds:#: {esbuild: true}\n",
+                     'allowBuilds:#: &a "**"\n' + WORKSPACE + "  - *a\n"]:
+            with self.subTest(text=text):
+                self.repo.write("pnpm-workspace.yaml", text)
+                self.assertEveryPnpmStepRefuses("can't read the line")
+
+    def test_a_setting_or_a_denial_listed_twice_is_refused(self):
+        # YAML refuses a key listed twice, or keeps one of the two: either way not this check's
+        # reading, even when pnpm's answer would match it.
+        packages = ["apps/web", "packages/*", "services/api", "tests"]
+        for text, reading, named in [
+                (WORKSPACE + "packages:\n  - tools/ops\n", {"packages": packages + ["tools/ops"]},
+                 "`packages` is listed twice"),
+                (WORKSPACE + "allowBuilds:\n  core-js: false\nallowBuilds:\n  esbuild: false\n",
+                 dict(WORKSPACE_READING, allowBuilds={"core-js": False, "esbuild": False}),
+                 "`allowBuilds` is listed twice"),
+                (WORKSPACE + "allowBuilds:\n  core-js: false\n  'core-js': false\n",
+                 dict(WORKSPACE_READING, allowBuilds={"core-js": False}), "lists `core-js` twice")]:
+            with self.subTest(text=text):
+                self.repo.write("pnpm-workspace.yaml", text)
+                self.assertEveryPnpmStepRefuses(named, pnpm_reading=reading)
+
+    def test_a_workspace_pnpm_reads_otherwise_is_refused(self):
+        # If pnpm's own reading of either setting differs from this check's, nothing runs.
+        for reading in [{"packages": ["apps/web", "packages/*", "services/api", "tests#x"]},
+                        {"packages": None}, {},
+                        dict(WORKSPACE_READING, allowBuilds={"esbuild": True}),
+                        dict(WORKSPACE_READING, allowBuilds={}),
+                        lambda cmd: (1, "ERR_PNPM_UNRECOGNIZED_WORKSPACE_SETTINGS"),
+                        lambda cmd: (0, "[WARN] ignored\n" + json.dumps(WORKSPACE_READING.get(cmd[3])))]:
+            with self.subTest(reading=reading):
+                self.assertEveryPnpmStepRefuses("pnpm reads pnpm-workspace.yaml's", pnpm_reading=reading)
+
     def test_an_entry_outside_the_packages_list_is_refused(self):
         self.repo.write("pnpm-workspace.yaml", "  - packages/stray\n" + WORKSPACE)
         self.assertEveryPnpmStepRefuses("can't read the line")
@@ -209,6 +339,57 @@ class PnpmSettingsTest(StepsTest):
                 self.repo.write(name, "module.exports = {}\n")
                 self.assertEveryPnpmStepRefuses(name, "pnpmfile")
                 os.remove(os.path.join(self.repo.root, name))
+
+
+def pinned_pnpm():
+    """True when the pnpm on PATH is the one package.json pins, so a scratch repo uses it as is."""
+    try:
+        with open(os.path.join(HERE, "..", "..", "package.json"), encoding="utf-8") as f:
+            match = ci_steps.PACKAGE_MANAGER.match(json.load(f).get("packageManager", ""))
+        result = subprocess.run(["pnpm", "--version"], capture_output=True, text=True)
+    except (OSError, ValueError):
+        return False
+    return bool(match) and result.returncode == 0 and result.stdout.strip() == match.group(1)
+
+
+@unittest.skipUnless(pinned_pnpm(), "needs the pinned pnpm on PATH (ci's node job asks it on every run)")
+class PnpmReadingLiveTest(unittest.TestCase):
+    """The pinned pnpm reads each form this check accepts as the check does, and the files the
+    second review built read differently and are refused before pnpm is asked."""
+
+    def setUp(self):
+        self.repo = Repo()
+        with open(os.path.join(HERE, "..", "..", "package.json"), encoding="utf-8") as f:
+            manager = json.load(f)["packageManager"]
+        # The pin, so pnpm runs as itself and refuses settings it doesn't know.
+        self.repo.write("package.json", json.dumps({"name": "root", "packageManager": manager}))
+
+    def tearDown(self):
+        self.repo.close()
+
+    def problem(self, text):
+        self.repo.write("pnpm-workspace.yaml", text)
+        return ci_steps.Steps(self.repo.root, ci_steps.Shell(self.repo.root), environ={}).pnpm_settings_problem()
+
+    def test_pnpm_reads_the_accepted_forms_as_this_check_does(self):
+        denials = ("allowBuilds:   # denied\n"
+                   '  "@scarf/scarf": false\n'
+                   "  '@x/quoted': false  # a comment\n"
+                   "  core-js: false\n"
+                   "  nx@21.6.0 || 21.6.1: false\n"
+                   "\n"
+                   "  esbuild : false\n")
+        for text in [WORKSPACE, WORKSPACE + denials, denials + WORKSPACE,
+                     (WORKSPACE + denials).replace("\n", "\r\n")]:
+            with self.subTest(text=text):
+                self.assertIsNone(self.problem(text))
+
+    def test_the_review_s_files_are_refused(self):
+        for text in ["packages:\n  - apps/web#x\n  - tests\n", "packages:#:\n  - tests\n",
+                     "packages:\n  - apps/web\n    - x\n",
+                     'allowBuilds:#: &a "**"\npackages:\n  - tests\n  - *a\n']:
+            with self.subTest(text=text):
+                self.assertIn("pnpm-workspace.yaml", self.problem(text) or "")
 
 
 class TargetsTest(unittest.TestCase):
