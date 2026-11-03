@@ -111,7 +111,7 @@ Each question has a default. Claude Code builds on the default until the founder
 
     Default: built with the right-hand wording. The brand handoff asks Claude Design how "Deborah-Anne's pick" fits a 91-point cover.
 
-    Handoff 0 answered on 2 November 2026 (`design/reference/brand/brand-components.png`): at the default size the label wraps after the hyphen, "Deborah-" then "Anne's pick", at 12/14 bold, without shrinking or an ellipsis; at large text the rail becomes full-width rows, at least 96 points high and growing.
+    Handoff 0 answered on 2 November 2026 (its component sheet, now `design/reference/claude-design/handoff-0/frames/brand-components.png`; `design/reference/brand/brand-components.png` is handoff 4's since revision 1.1): at the default size the label wraps after the hyphen, "Deborah-" then "Anne's pick", at 12/14 bold, without shrinking or an ellipsis; at large text the rail becomes full-width rows, at least 96 points high and growing.
 
     Needed by: B1.
 - **FQ21. The Highlight label before the reveal.** `F02-upcoming` and `F02-added` show Ben a "Highlight" label on Maya's collecting card. The spec's pre-reveal whitelist for non-authors doesn't include it (spec 14, T10).
