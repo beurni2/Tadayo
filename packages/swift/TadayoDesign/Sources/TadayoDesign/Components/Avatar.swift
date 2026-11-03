@@ -13,6 +13,9 @@ public struct Avatar: View {
     let photo: Image?
     let size: AvatarSize
     let placement: Placement
+    /// The circle grows with the text, as its initial does, so the initial always fits inside it
+    /// (book p26, T47).
+    @ScaledMetric private var diameter: CGFloat
 
     public init(
         name: String, photo: Image? = nil, size: AvatarSize, on placement: Placement = .canvas
@@ -21,6 +24,8 @@ public struct Avatar: View {
         self.photo = photo
         self.size = size
         self.placement = placement
+        _diameter = ScaledMetric(
+            wrappedValue: size.rawValue, relativeTo: Avatar.role(for: size).textStyle)
     }
 
     public var body: some View {
@@ -29,7 +34,7 @@ public struct Avatar: View {
                 photo.resizable().scaledToFill()
             } else {
                 Text(Avatar.initial(of: name))
-                    .textRole(role)
+                    .textRole(Avatar.role(for: size))
                     .foregroundStyle(
                         placement == .cover ? Palette.onAvatarOnCover : Palette.onAvatarCanvas
                     )
@@ -38,12 +43,12 @@ public struct Avatar: View {
                     .background(placement == .cover ? Palette.avatarOnCover : Palette.avatarCanvas)
             }
         }
-        .frame(width: size.rawValue, height: size.rawValue)
+        .frame(width: diameter, height: diameter)
         .clipShape(Circle())
         .accessibilityHidden(true)
     }
 
-    private var role: TypeRole {
+    static func role(for size: AvatarSize) -> TypeRole {
         switch size {
         case .profile: .avatarProfile
         case .row: .avatarRow

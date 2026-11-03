@@ -130,16 +130,32 @@
     }
 
     struct LabAvatars: View {
+        @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+        /// Avatars grow with the text, about three times at the largest size, so the grid's
+        /// columns do too.
+        private func column(_ size: CGFloat) -> GridItem {
+            GridItem(
+                .adaptive(minimum: size * (dynamicTypeSize.isAccessibilitySize ? 3.2 : 1)),
+                spacing: Spacing.m)
+        }
+
         var body: some View {
             LabGroup(title: "Avatars") {
                 ForEach(AvatarSize.allCases, id: \.self) { size in
-                    HStack(spacing: Spacing.m) {
+                    LazyVGrid(
+                        columns: [column(size.rawValue)],
+                        alignment: .leading, spacing: Spacing.m
+                    ) {
                         ForEach(FixtureCast.sundayPeople) { person in
                             Avatar(name: person.name, photo: person.image, size: size)
                         }
                     }
                 }
-                HStack(spacing: Spacing.m) {
+                LazyVGrid(
+                    columns: [column(52)],
+                    alignment: .leading, spacing: Spacing.m
+                ) {
                     ForEach(0..<Palette.covers.count, id: \.self) { slot in
                         Avatar(name: "Ben", size: .row, on: .cover)
                             .padding(Spacing.s)

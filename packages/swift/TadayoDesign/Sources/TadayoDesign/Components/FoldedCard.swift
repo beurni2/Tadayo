@@ -43,19 +43,32 @@ public struct FoldedCard: View {
             minHeight: Size.foldedCardMinHeight - 2 * Spacing.l, spacing: Spacing.xxl
         ) {
             VStack(alignment: .leading, spacing: Spacing.l) {
-                HStack(alignment: .firstTextBaseline, spacing: Spacing.s) {
-                    Text(status).textRole(.cardStatus)
-                    Spacer(minLength: 0)
-                    if let tag {
-                        Text(tag).textRole(.highlight)
+                // The tag sits beside the status while both fit on one line, and under it when
+                // they don't, so neither word is ever broken (book p26).
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .firstTextBaseline, spacing: Spacing.s) {
+                        Text(status).textRole(.cardStatus).fixedSize()
+                        Spacer(minLength: 0)
+                        if let tag {
+                            Text(tag).textRole(.highlight).fixedSize()
+                        }
+                    }
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        Text(status).textRole(.cardStatus)
+                            .fixedSize(horizontal: false, vertical: true)
+                        if let tag {
+                            Text(tag).textRole(.highlight)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                     }
                 }
                 .padding(.trailing, Size.fold)
                 captionText
             }
-            HStack(spacing: Spacing.m) {
+            HStack(alignment: .top, spacing: Spacing.m) {
                 Avatar(name: sender, photo: senderPhoto, size: .card, on: .cover)
                 Text(sender).textRole(.row)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .foregroundStyle(cover.ink)

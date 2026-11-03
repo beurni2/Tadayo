@@ -43,7 +43,7 @@ public struct HighlightCover: View {
 
     private var tile: some View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
-            Avatar(name: sender, photo: senderPhoto, size: .rail)
+            Avatar(name: sender, photo: senderPhoto, size: .rail, on: .cover)
             Text(label).textRole(.highlight)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -55,13 +55,15 @@ public struct HighlightCover: View {
             alignment: .topLeading
         )
         .frame(width: Size.highlightCover.width)
+        // A label that wraps past three lines makes the tile taller, never spills out of it.
+        .fixedSize(horizontal: false, vertical: true)
         .foldedBackground(cover, radius: Radius.card)
         .contentShape(Rectangle())
     }
 
     private var row: some View {
         HStack(spacing: Spacing.l) {
-            Avatar(name: sender, photo: senderPhoto, size: .row)
+            Avatar(name: sender, photo: senderPhoto, size: .row, on: .cover)
             Text(label).textRole(.caption)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)

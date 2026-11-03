@@ -288,7 +288,7 @@ Not started. The api thread builds slices 1, 2 and 9 as the one session, in bloc
 
 ### 1.3 ios lane
 
-**Updated:** 2026-11-03 12:04 UTC, ios/b0-app
+**Updated:** 2026-11-03 12:34 UTC, ios/b0-app
 
 - **Started:** 2026-11-03 at 11:03 UTC, by the coordinator (ADR-025).
 - **PRs:** #12 `ios/b0-adr-027` (ADR-027) and #13 `ios/b0-handoffs-1-4` (handoffs 1 to 4, brand 1.1) open, waiting for the founder; #13 merges after #12. This branch, `ios/b0-app` (slice 11's first part), work in progress, no PR.
@@ -1349,6 +1349,18 @@ Two earlier entries claim more than their commits show, and the log is append-on
 ### 3.2 api lane
 
 ### 3.3 ios lane
+
+#### 2026-11-03 12:34 UTC · ios · ios/b0-app · PR none
+**Did:** Read `ios` run 41632722316 (at `39ef60b`): the app, the share extension and the snapshot tests now build ("TEST BUILD SUCCEEDED"); the 32 Lab snapshots fail only for having no reference, as record mode `never` requires; the sheets are on `evidence` under `ios/b0-app/39ef60b/ios/`. `ci` run 41632722317: green. Looked at every Lab section's snapshot in light, dark and the largest accessibility size, and fixed the three weakest things:
+- `HighlightCover`: a label that wraps past the tile's 69 points spilled out of it ("Deborah-Anne's pick"); the tile now takes its label's height. Its avatar now uses 1.1's on-cover colours, as the folded card's does.
+- `FoldedCard` at accessibility sizes: the tag broke mid-word beside the status ("Highlig ht"), and the 28-point avatar's initial outgrew its circle. The tag now sits under the status when the two don't fit on one line (`ViewThatFits`), and `Avatar`'s circle scales with its initial's text style (`@ScaledMetric`), at every size.
+- The Lab's avatar rows ran off the 393-point width at 68 points; they are grids now, with wider columns at accessibility sizes.
+- This journal: block 1.3's Updated line, this entry.
+**Why:** CLAUDE.md's loop, steps 3 and 4: look at every snapshot, name the weakest things, fix them and look again.
+**Verified:** `swift format lint -r apps/ios packages/swift`: no warnings. `python3 tools/ci/journal_check.py --branch` and the hook by hand: exit 0. The defects above were seen in the snapshots of run 41632722316.
+**Not verified:** The fixes themselves: this push's `ios` run draws them. `UITraitCollection(traitsFrom:)` warns as deprecated on iOS 17; kept, because the closure form warned of main-actor mutation in a nonisolated closure.
+**Decisions and questions:** The avatar's circle scales with Dynamic Type (1.1 gives its sizes at the default text size only); recorded here, and to be listed in the PR.
+**Next:** Read this push's run and its sheets; then, once #13 merges, merge `main` and commit the references.
 
 #### 2026-11-03 12:04 UTC · ios · ios/b0-app · PR none
 **Did:** Fixed the first runs on this branch.
