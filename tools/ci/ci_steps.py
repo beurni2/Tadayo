@@ -7,7 +7,7 @@
 arrives in a later slice finds it instead of naming it, and passes while it is absent, so the
 slices that bring the targets turn their steps on without touching tools/ci/ (guard 1):
 
-  step          target                                         arrives in
+  step          target (TARGETS)                               arrives in
   openapi       a workspace package's `openapi:check` script     slice 3
   unit          a workspace package's `test` script              slice 1 (domain), 5, 6
   web           a workspace package's `build` script             slice 10a
@@ -17,23 +17,35 @@ slices that bring the targets turn their steps on without touching tools/ci/ (gu
   swift         packages/swift/TadayoCore, TadayoAPI's Package.swift   slice 11
 
 Slice 12 sets REQUIRE_TARGETS, and then every one of them fails when its target is missing
-(T58). The other steps always have their targets:
+(T58). Until then the ratchet keeps a target that has arrived from going away: a branch fails
+when a target present where it left main (`git merge-base origin/main HEAD`) is missing from
+it, so a step can't switch itself off by passing empty. The other steps always have their
+targets:
 
   setup-pnpm    installs the pnpm that package.json's `packageManager` names
   install       pnpm install --frozen-lockfile
   lint, typecheck, format, copy-lint   the root scripts of the same names (format: format:check)
   db-check      the Postgres service answers, at toolchain.POSTGRES_MAJOR
-  tools-tests   every tools/ci/*_test.py
-  guards        guard 1 (ci_config_guard.py) and guard 2 (journal_check.py --branch);
-                both skipped on main
+  tools-tests   every tools/ci/*_test.py, each through `python3 -m unittest`, which fails when
+                a file runs no test
+  guards        guard 1 (ci_config_guard.py), guard 2 (journal_check.py --branch) and the
+                ratchet; all three skipped on main
+  ratchet       the ratchet alone, as the guards step runs it
   verdict       the final `ci` job: fails unless every job in $NEEDS (the workflow's
-                `toJSON(needs)`) succeeded
+                `toJSON(needs)`) succeeded. ci_steps_test.py checks that ci.yml's `ci` job
+                needs every other job.
+
+The package steps run `pnpm -r run <script>` without --if-present, so pnpm itself fails if it
+finds no package with the script that this file found. The database steps (db-tests, privacy)
+run one package at a time (--workspace-concurrency=1), because every package gets the same
+database.
 
 The database steps run against the `postgres` service that ci.yml declares on localhost:5432
-with the password `postgres`. Before db/bootstrap.sql they create Supabase's roles `anon`,
+with the password `postgres`. db-bootstrap first creates Supabase's roles `anon`,
 `authenticated` and `service_role` as Supabase has them (no login; service_role bypasses
-row-level security), so db/bootstrap.sql is the same file `ops` runs against `dev` and doesn't
-create them. It is run as the superuser with
+row-level security), on every run, so Postgres 17 runs that SQL before db/bootstrap.sql exists.
+db/bootstrap.sql is the same file `ops` runs against `dev`, where Supabase has made those roles,
+so it doesn't create them. It is run as the superuser with
 `psql -v ON_ERROR_STOP=1 -v app_password=<password> -f db/bootstrap.sql`, and must give the role
 `tadayo_app` that password. The tests then get DATABASE_URL (as `tadayo_app`) and
 DATABASE_ADMIN_URL (the superuser). The password is CI's own, not a secret: the service lives
@@ -49,8 +61,10 @@ import glob
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -77,6 +91,15 @@ BEGIN
 END
 $$;
 """
+# The targets that arrive in later slices: (step, kind, target, the slice that brings it).
+TARGETS = [
+    ("openapi", "script", "openapi:check", "slice 3"),
+    ("unit", "script", "test", "slice 1"),
+    ("web", "script", "build", "slice 10a"),
+    ("db-bootstrap", "file", "db/bootstrap.sql", "slice 4"),
+    ("db-tests", "script", "test:db", "slice 4"),
+    ("privacy", "script", "test:privacy", "slice 7"),
+] + [("swift", "file", f"{package}/Package.swift", "slice 11") for package in SWIFT_PACKAGES]
 PACKAGE_MANAGER = re.compile(r"^pnpm@(\d+\.\d+\.\d+)(?:\+sha\d+\.[0-9a-f]+)?$")
 
 
@@ -143,9 +166,17 @@ class Steps:
             raise ValueError("pnpm-workspace.yaml lists no packages")
         found = set()
         for pattern in patterns:
+            # pnpm matches these differently from glob.glob, so a package could be run that this
+            # file doesn't see: refuse them rather than disagree.
             if pattern.startswith("!"):
                 raise ValueError("pnpm-workspace.yaml: exclusions aren't supported here")
+            if "**" in pattern:
+                raise ValueError("pnpm-workspace.yaml: `**` isn't supported here")
             for directory in glob.glob(self.path(pattern)):
+                if any(os.path.isfile(os.path.join(directory, name))
+                       for name in ("package.yaml", "package.json5")):
+                    raise ValueError(f"{os.path.relpath(directory, self.root)}: only package.json "
+                                     "manifests are supported here")
                 if os.path.isfile(os.path.join(directory, "package.json")):
                     found.add(os.path.relpath(directory, self.root))
         return sorted(found)
@@ -158,12 +189,28 @@ class Steps:
                     names.append(directory)
         return names
 
-    def package_script(self, step, script, slice_name, env=None):
+    def package_script(self, step, script, slice_name, env=None, one_at_a_time=False):
         packages = self.packages_with_script(script)
         if not packages:
             return self.absent(step, f"a workspace package's `{script}` script", slice_name)
         print(f"ci: {step}: `{script}` in " + ", ".join(packages))
-        return self.shell.run(["pnpm", "-r", "--if-present", "run", script], env=env)
+        # No --if-present: if pnpm finds no package with the script, it fails instead of passing.
+        command = ["pnpm", "-r"]
+        if one_at_a_time:
+            command.append("--workspace-concurrency=1")
+        return self.shell.run(command + ["run", script], env=env)
+
+    def present_targets(self):
+        """The (step, target) pairs of TARGETS that this tree has."""
+        present = set()
+        for step, kind, target, _ in TARGETS:
+            if kind == "file":
+                found = os.path.isfile(self.path(*target.split("/")))
+            else:
+                found = bool(self.packages_with_script(target))
+            if found:
+                present.add((step, target))
+        return present
 
     def root_script(self, script):
         return self.shell.run(["pnpm", "run", script])
@@ -228,27 +275,33 @@ class Steps:
         return 0
 
     def db_bootstrap(self):
-        if not os.path.isfile(self.path("db", "bootstrap.sql")):
-            return self.absent("db-bootstrap", "db/bootstrap.sql", "slice 4")
+        # Supabase's roles on every run, so Postgres 17 runs this SQL before db/bootstrap.sql exists.
         code = self.shell.run(["psql", ADMIN_URL, "-v", "ON_ERROR_STOP=1", "-c", SUPABASE_ROLES_SQL])
         if code != 0:
             return code
+        if not os.path.isfile(self.path("db", "bootstrap.sql")):
+            return self.absent("db-bootstrap", "db/bootstrap.sql", "slice 4")
         return self.shell.run(["psql", ADMIN_URL, "-v", "ON_ERROR_STOP=1",
                                "-v", f"app_password={APP_PASSWORD}", "-f", "db/bootstrap.sql"])
 
     def db_tests(self):
-        return self.package_script("db-tests", "test:db", "slice 4", env=self.database_env())
+        return self.package_script("db-tests", "test:db", "slice 4", env=self.database_env(),
+                                   one_at_a_time=True)
 
     def privacy(self):
-        return self.package_script("privacy", "test:privacy", "slice 7", env=self.database_env())
+        return self.package_script("privacy", "test:privacy", "slice 7", env=self.database_env(),
+                                   one_at_a_time=True)
 
     def tools_tests(self):
         tests = sorted(glob.glob(self.path("tools", "ci", "*_test.py")))
         if not tests:
             print("ci: tools-tests: no tools/ci/*_test.py found")
             return 1
+        # unittest exits 5 when a file runs no test, so a file that forgets unittest.main() or
+        # holds pytest-style functions fails instead of passing empty.
         failed = [t for t in tests
-                  if self.shell.run([sys.executable, os.path.relpath(t, self.root)]) != 0]
+                  if self.shell.run([sys.executable, "-m", "unittest",
+                                     os.path.relpath(t, self.root)]) != 0]
         for test in failed:
             print(f"ci: tools-tests: {os.path.relpath(test, self.root)} failed")
         return 1 if failed else 0
@@ -271,7 +324,41 @@ class Steps:
             return 0
         guard_1 = self.shell.run([sys.executable, "tools/ci/ci_config_guard.py"])
         guard_2 = self.shell.run([sys.executable, "tools/ci/journal_check.py", "--branch"])
-        return 1 if guard_1 or guard_2 else 0
+        ratchet = self.shell.run([sys.executable, "tools/ci/ci_steps.py", "ratchet"])
+        return 1 if guard_1 or guard_2 or ratchet else 0
+
+    def ratchet(self):
+        code, out = self.shell.output(["git", "merge-base", "origin/main", "HEAD"])
+        base = out.strip()
+        if code != 0 or not re.fullmatch(r"[0-9a-f]{40,64}", base):
+            print("ci: ratchet: can't find where this branch left origin/main "
+                  "(fetch it with full history)")
+            return 1
+        scratch = tempfile.mkdtemp(prefix="ci-ratchet-")
+        tree = os.path.join(scratch, "base")
+        try:
+            code, out = self.shell.output(["git", "worktree", "add", "--detach", tree, base])
+            if code != 0:
+                print(f"ci: ratchet: can't check out {base[:12]}: {out.strip()}")
+                return 1
+            try:
+                before = Steps(tree, self.shell).present_targets()
+                now = self.present_targets()
+            except (OSError, ValueError) as error:
+                print(f"ci: ratchet: can't read the targets: {error}")
+                return 1
+        finally:
+            self.shell.output(["git", "worktree", "remove", "--force", tree])
+            shutil.rmtree(scratch, ignore_errors=True)
+        lost = sorted(before - now)
+        for step, target in lost:
+            print(f"ci: ratchet: `{step}`'s target {target} is on main at {base[:12]} but not on "
+                  "this branch, so the step would pass empty (T58)")
+        if lost:
+            return 1
+        print(f"ci: ratchet: passed: each of the {len(before)} target(s) on main at {base[:12]} is "
+              f"still here ({len(now)} here)")
+        return 0
 
     def verdict(self):
         try:
@@ -298,7 +385,7 @@ STEPS = {
     "openapi": Steps.openapi, "unit": Steps.unit, "web": Steps.web, "db-check": Steps.db_check,
     "db-bootstrap": Steps.db_bootstrap, "db-tests": Steps.db_tests, "privacy": Steps.privacy,
     "tools-tests": Steps.tools_tests, "swift": Steps.swift, "guards": Steps.guards,
-    "verdict": Steps.verdict,
+    "ratchet": Steps.ratchet, "verdict": Steps.verdict,
 }
 
 

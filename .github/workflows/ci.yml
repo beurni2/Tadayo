@@ -10,8 +10,10 @@ on:
 
 permissions: {}
 
+# A branch keeps only its newest run. Each commit on main gets its own group, so a merge's run
+# is never dropped while it waits behind another.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.ref == 'refs/heads/main' && github.sha || github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 defaults:

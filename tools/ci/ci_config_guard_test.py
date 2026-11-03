@@ -153,6 +153,22 @@ class GuardTest(unittest.TestCase):
         self.clone.git("merge", "-q", "--no-edit", "origin/main")
         self.assertPasses()
 
+    def test_main_moving_ahead_without_a_merge_is_not_the_branch_s_change(self):
+        # Another PR changed package.json on main after this branch left it, and the branch
+        # hasn't merged main: the guard compares with where the branch left main (three dots).
+        self.clone.git("checkout", "-q", "main")
+        self.clone.change("package.json")
+        self.clone.git("push", "-q", "origin", "HEAD:main")
+        self.clone.git("checkout", "-q", "feature")
+        self.clone.change(".github/workflows/ci.yml", "docs/JOURNAL.md")
+        self.clone.git("fetch", "-q", "origin")
+        self.assertPasses()
+
+    def test_a_path_git_would_quote_still_counts(self):
+        # Without -z, git quotes `tools/ci/é x.py`, which would then not start with tools/ci/.
+        self.clone.change("tools/ci/é x.py", "package.json")
+        self.assertFails("package.json")
+
     def test_skipped_on_main(self):
         self.clone.git("checkout", "-q", "main")
         self.clone.change(".github/workflows/ci.yml", "package.json")
