@@ -18,6 +18,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -53,8 +54,9 @@ class FakeShell:
 
 
 class Repo:
-    def __init__(self):
-        self.root = tempfile.mkdtemp(prefix="ci-steps-")
+    def __init__(self, parent=None):
+        self.top = tempfile.mkdtemp(prefix="ci-steps-")
+        self.root = os.path.join(self.top, parent) if parent else self.top
         self.write("package.json", json.dumps({"packageManager": "pnpm@12.16.1"}))
         self.write("pnpm-workspace.yaml", WORKSPACE)
         for directory in ["apps/web", "packages/domain", "packages/contracts", "services/api",
@@ -72,7 +74,15 @@ class Repo:
         self.write(f"{directory}/package.json", json.dumps({"name": directory, "scripts": scripts}))
 
     def close(self):
-        shutil.rmtree(self.root, ignore_errors=True)
+        shutil.rmtree(self.top, ignore_errors=True)
+
+
+class QuietShell(ci_steps.Shell):
+    """A real shell whose commands print nothing, so a test's own runs don't fill CI's log."""
+
+    def run(self, cmd, env=None):
+        return subprocess.run(cmd, cwd=self.root, env=self._env(env), stdout=subprocess.DEVNULL,
+                              stderr=subprocess.DEVNULL).returncode
 
 
 class StepsTest(unittest.TestCase):
@@ -129,6 +139,17 @@ class WorkspaceTest(StepsTest):
                     steps.workspace_packages()
                 os.remove(os.path.join(self.repo.root, "packages", "other", name))
 
+    def test_a_root_holding_glob_characters_is_read_as_a_path(self):
+        # glob reads `[x]` as a character class; the root mustn't be read as a pattern.
+        repo = Repo(parent="odd [x] *")
+        try:
+            steps = ci_steps.Steps(repo.root, self.shell, environ={})
+            self.assertEqual(steps.workspace_packages(),
+                             ["apps/web", "packages/contracts", "packages/domain", "services/api",
+                              "tests"])
+        finally:
+            repo.close()
+
     def test_a_matched_directory_without_package_json_is_left_out(self):
         # packages/* matches packages/swift, which holds Swift packages, not a pnpm package.
         self.repo.write("packages/swift/TadayoCore/Package.swift", "// swift-tools-version:6.0")
@@ -136,9 +157,21 @@ class WorkspaceTest(StepsTest):
         self.assertNotIn("packages/swift", steps.workspace_packages())
 
 
+class TargetsTest(unittest.TestCase):
+    def test_every_target_belongs_to_a_step_and_the_package_steps_are_all_listed(self):
+        for step, kind, _, _ in ci_steps.TARGETS:
+            self.assertIn(step, ci_steps.STEPS)
+            self.assertIn(kind, {"script", "file"})
+        self.assertEqual({s for s, kind, _, _ in ci_steps.TARGETS if kind == "script"},
+                         {"openapi", "unit", "web", "db-tests", "privacy"})
+
+    def test_nothing_is_retired_yet(self):
+        self.assertEqual(ci_steps.RETIRED_TARGETS, set())
+
+
 class PackageScriptStepsTest(StepsTest):
-    CASES = [("openapi", "openapi:check"), ("unit", "test"), ("web", "build"),
-             ("db-tests", "test:db"), ("privacy", "test:privacy")]
+    # From TARGETS, so a step can't run one script while the ratchet keeps another.
+    CASES = [(step, target) for step, kind, target, _ in ci_steps.TARGETS if kind == "script"]
 
     def test_each_passes_empty_while_its_script_is_absent(self):
         for step, script in self.CASES:
@@ -237,62 +270,125 @@ class DatabaseStepsTest(StepsTest):
         code, _ = self.step("db-check", shell=FakeShell(outputs={"psql": (2, "refused")}))
         self.assertEqual(code, 1)
 
-    def test_bootstrap_makes_supabase_s_roles_and_passes_while_the_file_is_absent(self):
-        # The roles' SQL runs on every run, so Postgres 17 checks it before slice 4.
-        code, out = self.step("db-bootstrap")
-        self.assertEqual(code, 0)
-        self.assertIn("db/bootstrap.sql", out)
-        self.assertEqual(self.shell.commands,
-                         [["psql", ci_steps.ADMIN_URL, "-v", "ON_ERROR_STOP=1", "-c",
-                           ci_steps.SUPABASE_ROLES_SQL]])
+    # db-bootstrap asks `postgres` whether it is a superuser; "f" is Postgres's no.
+    NOT_SUPER = {"psql": (0, "f\n")}
 
-    def test_bootstrap_fails_when_the_roles_fail_while_the_file_is_absent(self):
-        shell = FakeShell(codes={ci_steps.SUPABASE_ROLES_SQL: 3})
-        self.assertEqual(self.step("db-bootstrap", shell=shell)[0], 3)
+    def bootstrap(self, codes=None, outputs=None, require=False):
+        shell = FakeShell(codes=codes, outputs=self.NOT_SUPER if outputs is None else outputs)
+        code, out = self.step("db-bootstrap", require=require, shell=shell)
+        return code, out, shell.commands
+
+    def test_the_urls(self):
+        # ADR-026: the superuser is supabase_admin; the file runs as Supabase's `postgres`.
+        self.assertTrue(ci_steps.ADMIN_URL.startswith("postgresql://supabase_admin:"))
+        self.assertTrue(ci_steps.BOOTSTRAP_URL.startswith("postgresql://postgres:"))
+        self.assertTrue(ci_steps.APP_URL.startswith("postgresql://tadayo_app:"))
+
+    def test_supabase_sql_makes_the_roles_as_supabase_s_image_has_them(self):
+        sql = " ".join(ci_steps.SUPABASE_SQL.split())
+        for line in ["CREATE ROLE anon NOLOGIN INHERIT;",
+                     "CREATE ROLE authenticated NOLOGIN INHERIT;",
+                     "CREATE ROLE service_role NOLOGIN INHERIT BYPASSRLS;",
+                     "CREATE ROLE postgres NOSUPERUSER CREATEDB CREATEROLE LOGIN REPLICATION "
+                     "BYPASSRLS PASSWORD 'postgres';",
+                     "ALTER DATABASE postgres OWNER TO postgres;",
+                     "GRANT ALL ON DATABASE postgres TO postgres;",
+                     "GRANT anon, authenticated, service_role, pg_monitor, pg_read_all_data, "
+                     "pg_signal_backend TO postgres WITH ADMIN OPTION;"]:
+            self.assertIn(line, sql)
+        # A plain CREATE ROLE, so a role already there (a server's first role) fails the step.
+        self.assertNotIn("IF NOT EXISTS", sql.upper())
+
+    def test_bootstrap_makes_the_roles_checks_postgres_and_passes_while_the_file_is_absent(self):
+        # On every run, so Postgres 17 runs this before slice 4.
+        code, out, commands = self.bootstrap()
+        self.assertEqual(code, 0, out)
+        self.assertIn("db/bootstrap.sql", out)
+        self.assertEqual(commands, [
+            ["psql", ci_steps.ADMIN_URL, "-v", "ON_ERROR_STOP=1", "-c", ci_steps.SUPABASE_SQL],
+            ["psql", ci_steps.BOOTSTRAP_URL, "-v", "ON_ERROR_STOP=1", "-tAc",
+             ci_steps.NOT_SUPERUSER_SQL]])
+
+    def test_bootstrap_fails_when_the_roles_fail(self):
+        for present in [False, True]:
+            with self.subTest(file_present=present):
+                if present:
+                    self.repo.write("db/bootstrap.sql", "select 1;")
+                code, _, commands = self.bootstrap(codes={ci_steps.SUPABASE_SQL: 3})
+                self.assertEqual(code, 3)
+                self.assertEqual(len(commands), 1)
+
+    def test_bootstrap_refuses_a_superuser_postgres_or_no_answer(self):
+        # A service whose first role is `postgres` would run the file as a superuser (ADR-026).
+        self.repo.write("db/bootstrap.sql", "select 1;")
+        for answer in [(0, "t\n"), (0, ""), (2, "connection refused")]:
+            with self.subTest(answer=answer):
+                code, out, commands = self.bootstrap(outputs={"psql": answer})
+                self.assertEqual(code, 1)
+                self.assertIn("superuser", out)
+                self.assertEqual(len(commands), 2)
 
     def test_bootstrap_fails_when_absent_from_slice_12(self):
-        self.assertEqual(self.step("db-bootstrap", require=True)[0], 1)
+        self.assertEqual(self.bootstrap(require=True)[0], 1)
 
-    def test_bootstrap_makes_supabase_s_roles_then_runs_the_file(self):
+    def test_bootstrap_runs_the_file_as_postgres(self):
         self.repo.write("db/bootstrap.sql", "select 1;")
-        code, _ = self.step("db-bootstrap")
+        code, _, commands = self.bootstrap()
         self.assertEqual(code, 0)
-        roles, bootstrap = self.shell.commands
-        sql = roles[-1]
-        for role in ["anon", "authenticated", "service_role"]:
-            self.assertIn(f"CREATE ROLE {role} NOLOGIN NOINHERIT", sql)
-        self.assertIn("service_role NOLOGIN NOINHERIT BYPASSRLS", sql)
-        self.assertEqual(bootstrap, ["psql", ci_steps.ADMIN_URL, "-v", "ON_ERROR_STOP=1", "-v",
-                                     f"app_password={ci_steps.APP_PASSWORD}", "-f",
-                                     "db/bootstrap.sql"])
+        self.assertEqual(commands[-1], ["psql", ci_steps.BOOTSTRAP_URL, "-v", "ON_ERROR_STOP=1",
+                                        "-v", f"app_password={ci_steps.APP_PASSWORD}", "-f",
+                                        "db/bootstrap.sql"])
+        self.assertEqual(len(commands), 3)
 
-    def test_bootstrap_stops_when_the_roles_fail(self):
+    def test_a_failing_file_fails_the_step(self):
         self.repo.write("db/bootstrap.sql", "select 1;")
-        shell = FakeShell(codes={ci_steps.SUPABASE_ROLES_SQL: 3})
-        self.assertEqual(self.step("db-bootstrap", shell=shell)[0], 3)
-        self.assertEqual(len(shell.commands), 1)
+        self.assertEqual(self.bootstrap(codes={"db/bootstrap.sql": 1})[0], 1)
 
 
-@unittest.skipUnless(shutil.which("psql") and os.environ.get("CI_STEPS_LIVE_POSTGRES") == "1",
-                     "opt-in: set CI_STEPS_LIVE_POSTGRES=1 with a server at ci_steps.ADMIN_URL")
-class SupabaseRolesLiveTest(unittest.TestCase):
-    """Opt-in, for a session's local server: runs the roles' SQL twice, to show it can run again
-    on a server that already has the roles, and reads the roles' attributes back. `ci` runs the
-    SQL once per run, on a fresh Postgres 17 service, in db-bootstrap."""
+LIVE = os.environ.get("CI_STEPS_LIVE_POSTGRES") == "1" and shutil.which("psql")
 
-    def test_roles_sql_is_valid_repeatable_and_makes_supabase_s_roles(self):
-        for _ in range(2):
-            result = subprocess.run(["psql", ci_steps.ADMIN_URL, "-v", "ON_ERROR_STOP=1", "-c",
-                                     ci_steps.SUPABASE_ROLES_SQL], capture_output=True, text=True)
-            self.assertEqual(result.returncode, 0, result.stderr)
-        result = subprocess.run(
-            ["psql", ci_steps.ADMIN_URL, "-tA", "-F", " ", "-c",
-             "SELECT rolname, rolcanlogin, rolinherit, rolbypassrls, rolsuper FROM pg_roles "
-             "WHERE rolname IN ('anon', 'authenticated', 'service_role') ORDER BY rolname"],
-            capture_output=True, text=True)
+
+@unittest.skipUnless(LIVE, "opt-in: set CI_STEPS_LIVE_POSTGRES=1 with a server made like ci's "
+                           "at ci_steps.ADMIN_URL (docs/JOURNAL.md section 1.1)")
+class SupabaseSqlLiveTest(unittest.TestCase):
+    """Opt-in, for a server made like ci's service (`initdb --username=supabase_admin`): runs
+    SUPABASE_SQL in a transaction it rolls back, so the server is left as it was. `ci` runs it
+    for real in db-bootstrap, on a fresh Postgres 17 service, on every run."""
+
+    CHECKS = """
+SELECT rolname, rolcanlogin, rolinherit, rolbypassrls, rolsuper, rolcreaterole, rolcreatedb,
+       rolreplication
+  FROM pg_roles WHERE rolname IN ('anon', 'authenticated', 'service_role', 'postgres')
+  ORDER BY rolname;
+SELECT 'owner', pg_get_userbyid(datdba) FROM pg_database WHERE datname = 'postgres';
+SELECT 'admin of', r.rolname, m.admin_option FROM pg_auth_members m
+  JOIN pg_roles r ON r.oid = m.roleid
+  WHERE m.member = (SELECT oid FROM pg_roles WHERE rolname = 'postgres') ORDER BY r.rolname;
+"""
+
+    def psql(self, script):
+        return subprocess.run(["psql", ci_steps.ADMIN_URL, "-q", "-tA", "-F", " ", "-v",
+                               "ON_ERROR_STOP=1", "-f", "-"], input=script, capture_output=True,
+                              text=True)
+
+    def test_supabase_sql_makes_supabase_s_roles_and_postgres(self):
+        result = self.psql("BEGIN;\n" + ci_steps.SUPABASE_SQL + self.CHECKS + "ROLLBACK;\n")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout.split("\n")[:3],
-                         ["anon f f f f", "authenticated f f f f", "service_role f f t f"])
+        self.assertEqual(result.stdout.split(), " ".join([
+            "anon f t f f f f f", "authenticated f t f f f f f", "postgres t t t f t t t",
+            "service_role f t t f f f f", "owner postgres",
+            "admin of anon t", "admin of authenticated t", "admin of pg_monitor t",
+            "admin of pg_read_all_data t", "admin of pg_signal_backend t",
+            "admin of service_role t"]).split())
+
+    def test_postgres_can_t_give_a_new_role_a_schema_without_a_grant(self):
+        # Why ADR-026 exists: on 16 and later, Supabase's `postgres` can't run this as written,
+        # where a superuser can.
+        result = self.psql("BEGIN;\n" + ci_steps.SUPABASE_SQL + "SET ROLE postgres;\n"
+                           "CREATE ROLE live_test_app LOGIN;\n"
+                           "CREATE SCHEMA live_test AUTHORIZATION live_test_app;\nROLLBACK;\n")
+        self.assertNotEqual(result.returncode, 0, result.stdout)
+        self.assertIn("must be able to SET ROLE", result.stderr)
 
 
 class SwiftStepTest(StepsTest):
@@ -349,7 +445,7 @@ class ToolsTestsStepTest(StepsTest):
 
     def run_real(self, text):
         self.repo.write("tools/ci/c_test.py", text)
-        return self.step("tools-tests", shell=ci_steps.Shell(self.repo.root))
+        return self.step("tools-tests", shell=QuietShell(self.repo.root))
 
     def test_a_file_that_runs_no_test_fails(self):
         # pytest-style functions, or a TestCase file without unittest.main(), run nothing when
@@ -434,8 +530,10 @@ class Clone:
         with open(full, "w", encoding="utf-8") as f:
             f.write(text)
 
-    def package(self, directory, **scripts):
-        self.write(f"{directory}/package.json", json.dumps({"name": directory, "scripts": scripts}))
+    def package(self, directory, name=None, **scripts):
+        self.write(f"{directory}/package.json",
+                   json.dumps({"name": name or f"@tadayo/{os.path.basename(directory)}",
+                               "scripts": scripts}))
 
     def commit(self):
         self.git("add", "-A")
@@ -490,19 +588,36 @@ class RatchetTest(unittest.TestCase):
         self.assertPasses()
 
     def test_renaming_the_only_test_script_fails(self):
-        # The review's case: `unit` would pass empty while every domain test stopped running.
+        # The first review's case: `unit` would pass empty while every domain test stopped.
         self.clone.package("packages/domain", **{"test:unit": "vitest run"})
         self.clone.commit()
-        self.assertFails("`unit`", "test")
+        self.assertFails("@tadayo/domain's `test` script (the `unit` step)", "RETIRED_TARGETS")
+
+    def test_one_package_losing_a_script_another_keeps_fails(self):
+        # The second review's case: `unit` still runs, but no longer runs domain's tests.
+        self.clone.to_main(lambda: self.clone.package("tests", test="vitest run"))
+        self.clone.git("merge", "-q", "--no-edit", "origin/main")
+        self.assertPasses()
+        self.clone.package("packages/domain", **{"test:unit": "vitest run"})
+        self.clone.commit()
+        self.assertFails("@tadayo/domain's `test` script")
 
     def test_dropping_the_package_from_the_workspace_fails(self):
         self.clone.write("pnpm-workspace.yaml", "packages:\n  - tests\n")
         self.clone.commit()
-        self.assertFails("`unit`")
+        self.assertFails("@tadayo/domain's `test` script")
 
-    def test_moving_a_script_to_another_package_passes(self):
+    def test_moving_a_script_to_another_package_fails_unless_retired(self):
         self.clone.package("packages/domain")
         self.clone.package("tests", test="vitest run")
+        self.clone.commit()
+        self.assertFails("@tadayo/domain's `test` script")
+        with mock.patch.object(ci_steps, "RETIRED_TARGETS", {("unit", "@tadayo/domain", "test")}):
+            self.assertPasses()
+
+    def test_moving_a_package_s_directory_keeps_its_targets(self):
+        # A script counts by the package's name, not its directory.
+        self.clone.git("mv", "packages/domain", "packages/core")
         self.clone.commit()
         self.assertPasses()
 
@@ -521,7 +636,7 @@ class RatchetTest(unittest.TestCase):
                 self.assertPasses()
                 self.clone.git("rm", "-q", path)
                 self.clone.commit()
-                self.assertFails(f"`{step}`", path)
+                self.assertFails(f"{path} (the `{step}` step)")
                 self.clone.write(path, "x\n")
                 self.clone.commit()
 
@@ -540,34 +655,58 @@ class RatchetTest(unittest.TestCase):
         self.assertFails("origin/main")
 
 
-class WorkflowTest(unittest.TestCase):
-    """The final `ci` job judges only the jobs it needs, so it must need every other job."""
+def read_ci_job(lines):
+    """The job ids under `jobs:`, and the `ci` job's `needs` and job-level `if: always()`."""
+    if "jobs:" not in lines:
+        raise AssertionError("ci.yml has no top-level `jobs:`")
+    jobs, current, needs, always = [], None, None, False
+    for line in lines[lines.index("jobs:") + 1:]:
+        if line and not line.startswith(" ") and not line.startswith("#"):
+            break  # the next top-level key
+        job = re.match(r"^  ([A-Za-z0-9_-]+):\s*(?:#.*)?$", line)
+        if job:
+            current = job.group(1)
+            jobs.append(current)
+        elif current == "ci" and line.startswith("    needs:"):
+            listed = re.match(r"^    needs: \[([A-Za-z0-9_, -]*)\]\s*$", line)
+            if not listed:
+                raise AssertionError(f"can't read the ci job's needs: {line!r}")
+            needs = [n.strip() for n in listed.group(1).split(",") if n.strip()]
+        elif current == "ci" and re.match(r"^    if: always\(\)\s*(?:#.*)?$", line):
+            always = True  # the job's own key, at the job's indentation, not a step's
+    return jobs, needs, always
 
-    def test_the_ci_job_needs_every_other_job_and_always_runs(self):
+
+class WorkflowTest(unittest.TestCase):
+    """The final `ci` job judges only the jobs it needs, so it must need every other job, and it
+    must run when one of them fails."""
+
+    def ci_yml(self):
         path = os.path.join(os.path.dirname(os.path.dirname(HERE)), ".github", "workflows",
                             "ci.yml")
         with open(path, encoding="utf-8") as f:
-            lines = f.read().splitlines()
-        self.assertIn("jobs:", lines, "ci.yml has no top-level `jobs:`")
-        jobs, current, needs, always = [], None, None, False
-        for line in lines[lines.index("jobs:") + 1:]:
-            if line and not line.startswith(" ") and not line.startswith("#"):
-                break  # the next top-level key
-            job = re.match(r"^  ([A-Za-z0-9_-]+):\s*(?:#.*)?$", line)
-            if job:
-                current = job.group(1)
-                jobs.append(current)
-            elif current == "ci" and line.startswith("    needs:"):
-                listed = re.match(r"^    needs: \[([A-Za-z0-9_, -]*)\]\s*$", line)
-                self.assertIsNotNone(listed, f"can't read the ci job's needs: {line!r}")
-                needs = [n.strip() for n in listed.group(1).split(",") if n.strip()]
-            elif current == "ci" and line.strip() == "if: always()":
-                always = True
+            return f.read()
+
+    def test_the_ci_job_needs_every_other_job_and_always_runs(self):
+        jobs, needs, always = read_ci_job(self.ci_yml().splitlines())
         self.assertIn("ci", jobs, "ci.yml has no `ci` job")
         self.assertIsNotNone(needs, "the ci job has no `needs: [...]` line")
         self.assertEqual(sorted(needs), sorted(j for j in jobs if j != "ci"))
         self.assertEqual(len(needs), len(set(needs)))
         self.assertTrue(always, "the ci job doesn't have `if: always()`")
+
+    def test_a_step_s_if_always_isn_t_the_job_s(self):
+        lines = ["jobs:", "  node:", "    runs-on: x", "  ci:", "    needs: [node]", "    steps:",
+                 "      - name: note", "        if: always()", "        run: |",
+                 "          if: always()"]
+        self.assertEqual(read_ci_job(lines), (["node", "ci"], ["node"], False))
+
+    def test_the_postgres_service_is_made_like_supabase_s(self):
+        # ADR-026: the service's first role is supabase_admin, ADMIN_URL's user.
+        text = self.ci_yml()
+        self.assertIn("          POSTGRES_USER: supabase_admin\n", text)
+        self.assertIn("          POSTGRES_DB: postgres\n", text)
+        self.assertIn('--health-cmd "pg_isready -U supabase_admin"', text)
 
 
 class VerdictStepTest(StepsTest):

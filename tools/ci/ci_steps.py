@@ -5,7 +5,8 @@
 
 .github/workflows/ci.yml stays thin: each of its steps calls one step here. A step whose target
 arrives in a later slice finds it instead of naming it, and passes while it is absent, so the
-slices that bring the targets turn their steps on without touching tools/ci/ (guard 1):
+slices that bring the targets turn their steps on without touching tools/ci/ (guard 1). TARGETS
+is the one list of them, and each step reads its own target from it:
 
   step          target (TARGETS)                               arrives in
   openapi       a workspace package's `openapi:check` script     slice 3
@@ -17,10 +18,12 @@ slices that bring the targets turn their steps on without touching tools/ci/ (gu
   swift         packages/swift/TadayoCore, TadayoAPI's Package.swift   slice 11
 
 Slice 12 sets REQUIRE_TARGETS, and then every one of them fails when its target is missing
-(T58). Until then the ratchet keeps a target that has arrived from going away: a branch fails
-when a target present where it left main (`git merge-base origin/main HEAD`) is missing from
-it, so a step can't switch itself off by passing empty. The other steps always have their
-targets:
+(T58). The ratchet keeps a target from going away once it has arrived: a branch fails when a
+target present where it left main (`git merge-base origin/main HEAD`) is missing from it. A
+file counts by its path, and a script once per package that has it, by the package's `name`, so
+no package can lose a script that another keeps. A target is retired on purpose only by adding
+it to RETIRED_TARGETS, in a CI-configuration PR of its own (T58). The other steps always have
+their targets:
 
   setup-pnpm    installs the pnpm that package.json's `packageManager` names
   install       pnpm install --frozen-lockfile
@@ -33,23 +36,26 @@ targets:
   ratchet       the ratchet alone, as the guards step runs it
   verdict       the final `ci` job: fails unless every job in $NEEDS (the workflow's
                 `toJSON(needs)`) succeeded. ci_steps_test.py checks that ci.yml's `ci` job
-                needs every other job.
+                needs every other job and runs `if: always()`.
 
 The package steps run `pnpm -r run <script>` without --if-present, so pnpm itself fails if it
 finds no package with the script that this file found. The database steps (db-tests, privacy)
 run one package at a time (--workspace-concurrency=1), because every package gets the same
 database.
 
-The database steps run against the `postgres` service that ci.yml declares on localhost:5432
-with the password `postgres`. db-bootstrap first creates Supabase's roles `anon`,
-`authenticated` and `service_role` as Supabase has them (no login; service_role bypasses
-row-level security), on every run, so Postgres 17 runs that SQL before db/bootstrap.sql exists.
-db/bootstrap.sql is the same file `ops` runs against `dev`, where Supabase has made those roles,
-so it doesn't create them. It is run as the superuser with
-`psql -v ON_ERROR_STOP=1 -v app_password=<password> -f db/bootstrap.sql`, and must give the role
-`tadayo_app` that password. The tests then get DATABASE_URL (as `tadayo_app`) and
-DATABASE_ADMIN_URL (the superuser). The password is CI's own, not a secret: the service lives
-only for the job.
+The database (ADR-026). ci.yml's `postgres` service on localhost:5432 is made like Supabase's:
+its superuser is `supabase_admin`, and every password is `postgres`, CI's own and not a secret,
+since the service lives only for the job. On every run, before it looks for db/bootstrap.sql,
+db-bootstrap, as `supabase_admin`, runs SUPABASE_SQL: Supabase's API roles `anon`,
+`authenticated` and `service_role` as Supabase's image has them, and the role `postgres` as
+Supabase's image makes it, not a superuser but the database's owner. Each is made with a plain
+CREATE ROLE, so a role already there fails the step. It then checks, connected as `postgres`,
+that `postgres` isn't a superuser. db/bootstrap.sql is the file `ops` runs against `dev`, where
+Supabase has made those roles, so it doesn't make them. db-bootstrap runs it as `postgres` with
+`psql -v ON_ERROR_STOP=1 -v app_password=<password> -f db/bootstrap.sql`, and the file must give
+the role `tadayo_app` that password. The tests then get DATABASE_URL (as `tadayo_app`) and
+DATABASE_ADMIN_URL (`supabase_admin`, the superuser). A local run needs a server made the same
+way (`initdb --username=supabase_admin`); see docs/JOURNAL.md section 1.1.
 
 Exit 0 when the step passes or is skipped, 1 when it fails, 2 on bad usage.
 
@@ -72,25 +78,32 @@ import toolchain  # noqa: E402
 
 REQUIRE_TARGETS = False  # slice 12 turns this on (T58)
 
-ADMIN_URL = "postgresql://postgres:postgres@localhost:5432/postgres"
+ADMIN_URL = "postgresql://supabase_admin:postgres@localhost:5432/postgres"
+BOOTSTRAP_URL = "postgresql://postgres:postgres@localhost:5432/postgres"
 APP_PASSWORD = "tadayo-app-ci-only"
 APP_URL = f"postgresql://tadayo_app:{APP_PASSWORD}@localhost:5432/postgres"
-SWIFT_PACKAGES = ["packages/swift/TadayoCore", "packages/swift/TadayoAPI"]
-SUPABASE_ROLES_SQL = """
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'anon') THEN
-    CREATE ROLE anon NOLOGIN NOINHERIT;
-  END IF;
-  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'authenticated') THEN
-    CREATE ROLE authenticated NOLOGIN NOINHERIT;
-  END IF;
-  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'service_role') THEN
-    CREATE ROLE service_role NOLOGIN NOINHERIT BYPASSRLS;
-  END IF;
-END
-$$;
+# Run as supabase_admin, in one transaction (ADR-026; supabase/postgres, migrations/db/).
+SUPABASE_SQL = """
+-- Supabase's API roles as its image has them: made without login by its initial schema
+-- (init-scripts/00000000000000-initial-schema.sql), then made to inherit
+-- (migrations/20230529180330_alter_api_roles_for_inherit.sql); service_role bypasses row-level
+-- security.
+CREATE ROLE anon NOLOGIN INHERIT;
+CREATE ROLE authenticated NOLOGIN INHERIT;
+CREATE ROLE service_role NOLOGIN INHERIT BYPASSRLS;
+-- Supabase's `postgres`: made a superuser that owns the database (migrate.sh), then demoted
+-- (migrations/10000000000000_demote-postgres.sql), and on 16 and later given these roles with
+-- the ADMIN option (migrations/20250605172253_grant_with_admin_to_postgres_16_and_above.sql,
+-- less `authenticator`, which CI doesn't make).
+CREATE ROLE postgres NOSUPERUSER CREATEDB CREATEROLE LOGIN REPLICATION BYPASSRLS
+  PASSWORD 'postgres';
+ALTER DATABASE postgres OWNER TO postgres;
+GRANT ALL ON DATABASE postgres TO postgres;
+GRANT anon, authenticated, service_role, pg_monitor, pg_read_all_data, pg_signal_backend
+  TO postgres WITH ADMIN OPTION;
 """
+NOT_SUPERUSER_SQL = "SELECT rolsuper FROM pg_roles WHERE rolname = current_user"
+SWIFT_PACKAGES = ["packages/swift/TadayoCore", "packages/swift/TadayoAPI"]
 # The targets that arrive in later slices: (step, kind, target, the slice that brings it).
 TARGETS = [
     ("openapi", "script", "openapi:check", "slice 3"),
@@ -100,7 +113,24 @@ TARGETS = [
     ("db-tests", "script", "test:db", "slice 4"),
     ("privacy", "script", "test:privacy", "slice 7"),
 ] + [("swift", "file", f"{package}/Package.swift", "slice 11") for package in SWIFT_PACKAGES]
+# Targets the ratchet lets go, each retired on purpose in a CI-configuration PR of its own (T58):
+# (step, package name, script) for a script, (step, "", path) for a file.
+RETIRED_TARGETS = set()
 PACKAGE_MANAGER = re.compile(r"^pnpm@(\d+\.\d+\.\d+)(?:\+sha\d+\.[0-9a-f]+)?$")
+
+
+def targets_of(step):
+    """The step's (kind, target, slice) entries in TARGETS."""
+    found = [(kind, target, slice_name) for s, kind, target, slice_name in TARGETS if s == step]
+    if not found:
+        raise KeyError(f"no target for the step {step!r} in TARGETS")
+    return found
+
+
+def describe(target):
+    step, package, name = target
+    what = f"{package}'s `{name}` script" if package else name
+    return f"{what} (the `{step}` step)"
 
 
 class Shell:
@@ -172,24 +202,31 @@ class Steps:
                 raise ValueError("pnpm-workspace.yaml: exclusions aren't supported here")
             if "**" in pattern:
                 raise ValueError("pnpm-workspace.yaml: `**` isn't supported here")
-            for directory in glob.glob(self.path(pattern)):
-                if any(os.path.isfile(os.path.join(directory, name))
+            # Relative to the root, so a root path holding `[`, `*` or `?` isn't read as a pattern.
+            for directory in glob.glob(pattern, root_dir=self.root):
+                if any(os.path.isfile(self.path(directory, name))
                        for name in ("package.yaml", "package.json5")):
-                    raise ValueError(f"{os.path.relpath(directory, self.root)}: only package.json "
-                                     "manifests are supported here")
-                if os.path.isfile(os.path.join(directory, "package.json")):
-                    found.add(os.path.relpath(directory, self.root))
+                    raise ValueError(f"{directory}: only package.json manifests are supported here")
+                if os.path.isfile(self.path(directory, "package.json")):
+                    found.add(os.path.normpath(directory))
         return sorted(found)
 
-    def packages_with_script(self, script):
-        names = []
+    def manifests(self):
+        """(directory, package name, scripts) for each workspace package."""
+        result = []
         for directory in self.workspace_packages():
             with open(self.path(directory, "package.json"), encoding="utf-8") as f:
-                if script in (json.load(f).get("scripts") or {}):
-                    names.append(directory)
-        return names
+                manifest = json.load(f)
+            result.append((directory, manifest.get("name") or directory,
+                           manifest.get("scripts") or {}))
+        return result
 
-    def package_script(self, step, script, slice_name, env=None, one_at_a_time=False):
+    def packages_with_script(self, script):
+        return [directory for directory, _, scripts in self.manifests() if script in scripts]
+
+    def package_step(self, step, env=None, one_at_a_time=False):
+        (kind, script, slice_name), = targets_of(step)
+        assert kind == "script", step
         packages = self.packages_with_script(script)
         if not packages:
             return self.absent(step, f"a workspace package's `{script}` script", slice_name)
@@ -201,15 +238,20 @@ class Steps:
         return self.shell.run(command + ["run", script], env=env)
 
     def present_targets(self):
-        """The (step, target) pairs of TARGETS that this tree has."""
+        """The targets of TARGETS this tree has: (step, "", path) for each file, and
+        (step, package name, script) for each workspace package that has a step's script."""
         present = set()
+        manifests = None
         for step, kind, target, _ in TARGETS:
             if kind == "file":
-                found = os.path.isfile(self.path(*target.split("/")))
-            else:
-                found = bool(self.packages_with_script(target))
-            if found:
-                present.add((step, target))
+                if os.path.isfile(self.path(*target.split("/"))):
+                    present.add((step, "", target))
+                continue
+            if manifests is None:
+                manifests = self.manifests()
+            for _, name, scripts in manifests:
+                if target in scripts:
+                    present.add((step, name, target))
         return present
 
     def root_script(self, script):
@@ -252,13 +294,13 @@ class Steps:
         return self.root_script("copy-lint")
 
     def openapi(self):
-        return self.package_script("openapi", "openapi:check", "slice 3")
+        return self.package_step("openapi")
 
     def unit(self):
-        return self.package_script("unit", "test", "slice 1")
+        return self.package_step("unit")
 
     def web(self):
-        return self.package_script("web", "build", "slice 10a")
+        return self.package_step("web")
 
     def db_check(self):
         code, out = self.shell.output(
@@ -275,44 +317,50 @@ class Steps:
         return 0
 
     def db_bootstrap(self):
-        # Supabase's roles on every run, so Postgres 17 runs this SQL before db/bootstrap.sql exists.
-        code = self.shell.run(["psql", ADMIN_URL, "-v", "ON_ERROR_STOP=1", "-c", SUPABASE_ROLES_SQL])
+        # Supabase's roles and its `postgres` on every run (ADR-026), so Postgres 17 runs this
+        # before db/bootstrap.sql exists.
+        code = self.shell.run(["psql", ADMIN_URL, "-v", "ON_ERROR_STOP=1", "-c", SUPABASE_SQL])
         if code != 0:
             return code
-        if not os.path.isfile(self.path("db", "bootstrap.sql")):
-            return self.absent("db-bootstrap", "db/bootstrap.sql", "slice 4")
-        return self.shell.run(["psql", ADMIN_URL, "-v", "ON_ERROR_STOP=1",
-                               "-v", f"app_password={APP_PASSWORD}", "-f", "db/bootstrap.sql"])
+        code, out = self.shell.output(
+            ["psql", BOOTSTRAP_URL, "-v", "ON_ERROR_STOP=1", "-tAc", NOT_SUPERUSER_SQL])
+        if code != 0 or out.strip() != "f":
+            print("ci: db-bootstrap: `postgres` must answer and not be a superuser, as on Supabase "
+                  f"(ADR-026); it answered: {out.strip()!r}")
+            return 1
+        print("ci: db-bootstrap: `postgres` is made as Supabase makes it, not a superuser")
+        (_, bootstrap, slice_name), = targets_of("db-bootstrap")
+        if not os.path.isfile(self.path(*bootstrap.split("/"))):
+            return self.absent("db-bootstrap", bootstrap, slice_name)
+        return self.shell.run(["psql", BOOTSTRAP_URL, "-v", "ON_ERROR_STOP=1",
+                               "-v", f"app_password={APP_PASSWORD}", "-f", bootstrap])
 
     def db_tests(self):
-        return self.package_script("db-tests", "test:db", "slice 4", env=self.database_env(),
-                                   one_at_a_time=True)
+        return self.package_step("db-tests", env=self.database_env(), one_at_a_time=True)
 
     def privacy(self):
-        return self.package_script("privacy", "test:privacy", "slice 7", env=self.database_env(),
-                                   one_at_a_time=True)
+        return self.package_step("privacy", env=self.database_env(), one_at_a_time=True)
 
     def tools_tests(self):
-        tests = sorted(glob.glob(self.path("tools", "ci", "*_test.py")))
+        tests = sorted(glob.glob(os.path.join("tools", "ci", "*_test.py"), root_dir=self.root))
         if not tests:
             print("ci: tools-tests: no tools/ci/*_test.py found")
             return 1
         # unittest exits 5 when a file runs no test, so a file that forgets unittest.main() or
         # holds pytest-style functions fails instead of passing empty.
         failed = [t for t in tests
-                  if self.shell.run([sys.executable, "-m", "unittest",
-                                     os.path.relpath(t, self.root)]) != 0]
+                  if self.shell.run([sys.executable, "-m", "unittest", t]) != 0]
         for test in failed:
-            print(f"ci: tools-tests: {os.path.relpath(test, self.root)} failed")
+            print(f"ci: tools-tests: {test} failed")
         return 1 if failed else 0
 
     def swift(self):
-        present = [p for p in SWIFT_PACKAGES if os.path.isfile(self.path(p, "Package.swift"))]
         result = 0
-        for package in SWIFT_PACKAGES:
-            if package not in present:
-                result |= self.absent("swift", f"{package}/Package.swift", "slice 11")
-        for package in present:
+        for _, manifest, slice_name in targets_of("swift"):
+            package = os.path.dirname(manifest)
+            if not os.path.isfile(self.path(*manifest.split("/"))):
+                result |= self.absent("swift", manifest, slice_name)
+                continue
             result |= self.shell.run(["docker", "run", "--rm", "-v", f"{self.root}:/work", "-w",
                                       "/work", toolchain.SWIFT_IMAGE, "swift", "test",
                                       "--package-path", package])
@@ -350,14 +398,15 @@ class Steps:
         finally:
             self.shell.output(["git", "worktree", "remove", "--force", tree])
             shutil.rmtree(scratch, ignore_errors=True)
-        lost = sorted(before - now)
-        for step, target in lost:
-            print(f"ci: ratchet: `{step}`'s target {target} is on main at {base[:12]} but not on "
-                  "this branch, so the step would pass empty (T58)")
+        lost = sorted(before - now - RETIRED_TARGETS)
+        for target in lost:
+            print(f"ci: ratchet: {describe(target)} is on main at {base[:12]} but not on this "
+                  "branch (T58). To retire it on purpose, add it to RETIRED_TARGETS in "
+                  "tools/ci/ci_steps.py, in a CI-configuration PR of its own")
         if lost:
             return 1
         print(f"ci: ratchet: passed: each of the {len(before)} target(s) on main at {base[:12]} is "
-              f"still here ({len(now)} here)")
+              f"still here or retired ({len(now)} here)")
         return 0
 
     def verdict(self):

@@ -55,12 +55,16 @@ jobs:
       postgres:
         # Supabase's major version for new projects (tools/ci/toolchain.py); db-check fails if they differ.
         image: postgres:17.11@sha256:3b0cda93be7c8dba2ed484d19393d93845dc3dafb88973e248ba8e6d99d784e1
+        # Made like Supabase's (ADR-026): its superuser is supabase_admin, and db-bootstrap makes
+        # `postgres`. The password is CI's own throwaway server's, not a secret (tools/ci/ci_steps.py).
         env:
-          POSTGRES_PASSWORD: postgres  # CI's own throwaway server, not a secret (tools/ci/ci_steps.py)
+          POSTGRES_USER: supabase_admin
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U postgres"
+          --health-cmd "pg_isready -U supabase_admin"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 12
