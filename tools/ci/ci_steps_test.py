@@ -168,10 +168,17 @@ class TargetsTest(unittest.TestCase):
     def test_nothing_is_retired_yet(self):
         self.assertEqual(ci_steps.RETIRED_TARGETS, set())
 
+    def test_the_package_steps_look_for_the_documented_scripts(self):
+        # The scripts later slices build to (the docstring's table): pinned here by name, and
+        # tied to TARGETS, which the steps and the ratchet both read.
+        self.assertEqual(PackageScriptStepsTest.CASES,
+                         [(s, t) for s, kind, t, _ in ci_steps.TARGETS if kind == "script"])
+
 
 class PackageScriptStepsTest(StepsTest):
-    # From TARGETS, so a step can't run one script while the ratchet keeps another.
-    CASES = [(step, target) for step, kind, target, _ in ci_steps.TARGETS if kind == "script"]
+    # The documented scripts, by name; TargetsTest ties them to TARGETS.
+    CASES = [("openapi", "openapi:check"), ("unit", "test"), ("web", "build"),
+             ("db-tests", "test:db"), ("privacy", "test:privacy")]
 
     def test_each_passes_empty_while_its_script_is_absent(self):
         for step, script in self.CASES:
@@ -649,6 +656,26 @@ class RatchetTest(unittest.TestCase):
         self.clone.write("pnpm-workspace.yaml", "packages:\n  - 'packages/**'\n")
         self.clone.commit()
         self.assertFails("can't read the targets")
+
+    def test_two_packages_with_one_name_fail(self):
+        # The third review's case: one could lose `test` while the other keeps it, unseen.
+        self.clone.package("packages/worker", name="@tadayo/domain", test="vitest run")
+        self.clone.commit()
+        self.assertFails("can't read the targets",
+                         "packages/domain and packages/worker are both named @tadayo/domain")
+
+    def test_a_package_without_a_name_fails(self):
+        self.clone.write("packages/nameless/package.json", json.dumps({"scripts": {}}))
+        self.clone.commit()
+        self.assertFails("can't read the targets", "packages/nameless/package.json has no `name`")
+
+    def test_a_manifest_that_isn_t_an_object_fails(self):
+        for text in ["[]", '{"name": "@tadayo/odd", "scripts": []}',
+                     '{"name": "@tadayo/odd", "scripts": ["test"]}', "{"]:
+            with self.subTest(text=text):
+                self.clone.write("packages/odd/package.json", text)
+                self.clone.commit()
+                self.assertFails("can't read the targets")
 
     def test_missing_origin_main_fails(self):
         self.clone.git("update-ref", "-d", "refs/remotes/origin/main")

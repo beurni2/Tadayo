@@ -21,9 +21,10 @@ Slice 12 sets REQUIRE_TARGETS, and then every one of them fails when its target 
 (T58). The ratchet keeps a target from going away once it has arrived: a branch fails when a
 target present where it left main (`git merge-base origin/main HEAD`) is missing from it. A
 file counts by its path, and a script once per package that has it, by the package's `name`, so
-no package can lose a script that another keeps. A target is retired on purpose only by adding
-it to RETIRED_TARGETS, in a CI-configuration PR of its own (T58). The other steps always have
-their targets:
+no package can lose a script that another keeps; the ratchet fails if a workspace package has no
+`name`, or shares one with another. A target is retired on purpose only by adding it to
+RETIRED_TARGETS, in a CI-configuration PR of its own (T58). The other steps always have their
+targets:
 
   setup-pnpm    installs the pnpm that package.json's `packageManager` names
   install       pnpm install --frozen-lockfile
@@ -212,13 +213,19 @@ class Steps:
         return sorted(found)
 
     def manifests(self):
-        """(directory, package name, scripts) for each workspace package."""
+        """(directory, package name or None, scripts) for each workspace package."""
         result = []
         for directory in self.workspace_packages():
             with open(self.path(directory, "package.json"), encoding="utf-8") as f:
                 manifest = json.load(f)
-            result.append((directory, manifest.get("name") or directory,
-                           manifest.get("scripts") or {}))
+            if not isinstance(manifest, dict):
+                raise ValueError(f"{directory}/package.json isn't a JSON object")
+            scripts = manifest.get("scripts")
+            if scripts is None:
+                scripts = {}
+            if not isinstance(scripts, dict):
+                raise ValueError(f"{directory}/package.json: `scripts` isn't an object")
+            result.append((directory, manifest.get("name"), scripts))
         return result
 
     def packages_with_script(self, script):
@@ -240,15 +247,22 @@ class Steps:
     def present_targets(self):
         """The targets of TARGETS this tree has: (step, "", path) for each file, and
         (step, package name, script) for each workspace package that has a step's script."""
+        manifests = self.manifests()
+        # A script counts by its package's name, so each package needs a name of its own:
+        # without one, or with another's, a package could lose a script unseen.
+        named = {}
+        for directory, name, _ in manifests:
+            if not isinstance(name, str) or not name:
+                raise ValueError(f"{directory}/package.json has no `name`")
+            if name in named:
+                raise ValueError(f"{named[name]} and {directory} are both named {name}")
+            named[name] = directory
         present = set()
-        manifests = None
         for step, kind, target, _ in TARGETS:
             if kind == "file":
                 if os.path.isfile(self.path(*target.split("/"))):
                     present.add((step, "", target))
                 continue
-            if manifests is None:
-                manifests = self.manifests()
             for _, name, scripts in manifests:
                 if target in scripts:
                     present.add((step, name, target))
