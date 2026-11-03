@@ -1,0 +1,135 @@
+# ios: builds and tests the iPhone app on macOS, and puts its snapshots, contact sheets and logs on
+# the evidence branch (docs/TECH-DESIGN.md sections 2, 3 and 9; the B0 plan's slice 9).
+# Thin on purpose: every step calls tools/ci/ios_steps.py, where the logic and its tests live.
+# Not a required check, and no secret reaches it (TECH-DESIGN section 9).
+# CI configuration: change this file only in its own PR (docs/INVARIANTS.md T58).
+name: ios
+
+on:
+  push:
+    branches-ignore:
+      - evidence
+    paths:
+      - 'apps/ios/**'
+      - 'packages/swift/**'
+      - 'packages/contracts/**'
+      - 'design/reference/**'
+  workflow_dispatch:
+    inputs:
+      ios_version:
+        description: >-
+          Empty: the newest iOS simulator, with every snapshot on the evidence branch (a gate's
+          full set). Or a version such as 18.6 or 26.2: the UI and unit tests on that iOS,
+          without the snapshot tests, downloading its simulator if the runner hasn't got it.
+        type: string
+        required: false
+        default: ''
+
+permissions: {}
+
+# A branch keeps only its newest run of each kind: a push's (`push`), a run by hand's full set
+# (`full`) and each iOS version's, so none of them cancels another's evidence. Each commit on
+# main gets its own group, so a merge's run is never dropped while it waits behind another.
+concurrency:
+  group: ios-${{ github.ref == 'refs/heads/main' && github.sha || github.ref }}-${{ inputs.ios_version || (github.event_name == 'workflow_dispatch' && 'full') || 'push' }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  gate:
+    name: gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      build: ${{ steps.gate.outputs.build }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /tools/ci/
+            /apps/ios/project.yml
+      - id: gate
+        run: python3 tools/ci/ios_steps.py gate
+
+  build:
+    name: build
+    needs: gate
+    if: needs.gate.outputs.build == 'true'
+    runs-on: macos-26
+    # Each step that can hang has its own timeout, which fails the step and lets collect and the
+    # upload run; the job's own, a backstop, cancels the job, and then nothing is published.
+    timeout-minutes: 115
+    permissions:
+      contents: read
+    env:
+      IOS_VERSION: ${{ inputs.ios_version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - run: python3 tools/ci/ios_steps.py toolchain
+        timeout-minutes: 5
+      - run: python3 tools/ci/ios_steps.py xcodegen
+        timeout-minutes: 5
+      - run: python3 tools/ci/ios_steps.py simulator
+        timeout-minutes: 35  # an older iOS's download takes 10 to 15 minutes, and may take two
+      - run: python3 tools/ci/ios_steps.py build
+        timeout-minutes: 25
+      - run: python3 tools/ci/ios_steps.py test
+        timeout-minutes: 30
+      - if: ${{ !cancelled() }}
+        run: python3 tools/ci/ios_steps.py collect
+        timeout-minutes: 5
+      - if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: ios-results
+          path: |
+            ${{ runner.temp }}/ios-out/run.json
+            ${{ runner.temp }}/ios-out/snapshots.json
+            ${{ runner.temp }}/ios-out/logs/
+            ${{ runner.temp }}/ios-out/snapshots/
+          retention-days: 7
+
+  evidence:
+    name: evidence
+    needs: [gate, build]
+    if: ${{ !cancelled() && needs.gate.outputs.build == 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write  # the push to the evidence branch, and nothing else
+    # Every run pushes to the one evidence branch, so the pushes take turns.
+    concurrency:
+      group: ios-evidence
+      cancel-in-progress: false
+    env:
+      IOS_VERSION: ${{ inputs.ios_version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0  # the sheets compare the branch with origin/main
+          filter: blob:none
+          persist-credentials: false
+      - id: results
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with:
+          name: ios-results
+          path: ${{ runner.temp }}/ios-out
+      # Its own timeout, as in the build job: a stalled install fails the step, not the job.
+      - run: python3 tools/ci/ios_steps.py imagemagick
+        timeout-minutes: 5
+      # Even when ImageMagick didn't install: the logs and snapshots still go up, without sheets.
+      - if: ${{ !cancelled() && steps.results.outcome == 'success' }}
+        run: python3 tools/ci/ios_steps.py sheets
+      - if: ${{ !cancelled() }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 tools/ci/ios_steps.py publish

@@ -8,6 +8,7 @@ rules:
   document-start: disable
   truthy:
     check-keys: false  # GitHub Actions uses `on:` as a key
-  # Workflow files are pasted into GitHub's web editor by the founder, and a pasted file
-  # usually loses its final line break (docs/GITHUB.md, "Workflow files").
+  # When GitHub refuses the session's push of a workflow file, the founder adds it through
+  # GitHub's web editor, and a file added that way usually loses its final line break
+  # (docs/GITHUB.md, "If GitHub refuses a workflow push"). Off while that fallback stands.
   new-line-at-end-of-file: disable
