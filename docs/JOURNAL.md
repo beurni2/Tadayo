@@ -288,7 +288,7 @@ Not started. The api thread builds slices 1, 2 and 9 as the one session, in bloc
 
 ### 1.3 ios lane
 
-**Updated:** 2026-11-03 11:20 UTC, ios/b0-handoffs-1-4
+**Updated:** 2026-11-03 11:21 UTC, ios/b0-handoffs-1-4
 
 - **Started:** 2026-11-03 at 11:03 UTC, by the coordinator (ADR-025). Environment: Swift 6.3.3 from swift.org's signed release tarball; the journal hook isn't confirmed to fire in this session, so it runs by hand before each commit.
 - **PRs:** none merged yet. Open or pushed: `ios/b0-adr-027` (rulebook: ADR-027, FQ45 recorded), waiting for its review and the founder. This branch, `ios/b0-handoffs-1-4` (the design PR ADR-027 asks for), in progress, no PR number yet. Started locally, not pushed: `ios/b0-app` (slice 11's first part).
@@ -1349,6 +1349,14 @@ Two earlier entries claim more than their commits show, and the log is append-on
 ### 3.2 api lane
 
 ### 3.3 ios lane
+
+#### 2026-11-03 11:21 UTC · ios · ios/b0-handoffs-1-4 · PR none
+**Did:** Unpacked design handoff 4's pack (`/mnt/project-files/design/handoff-4/export/`) as it arrived into `design/reference/claude-design/handoff-4/`. This journal: block 1.3's Updated line, this entry.
+**Why:** ADR-027; `docs/DESIGN-HANDOFF.md`, "How renders come back", step 2: each delivery unpacked as it arrived, in its own commit.
+**Verified:** `unzip -Z1` lists 32 files and 32 are in the folder; `sha256sum -c SHA256SUMS.txt` in the folder passes for every file; the attached PDF is byte-identical to the pack's (`/mnt/project-files/design/handoff-3/check/handoff-3-4-check.md` section 1), so only the pack's is kept. `grep -rl "<script"` finds none. `python3 tools/ci/journal_check.py --branch` and the hook by hand, exit 0.
+**Not verified:** `ci` on this commit: the branch's push runs it.
+**Decisions and questions:** None.
+**Next:** Block 1.3, Next step 1: the next unpack, then the screens, the brand, the inventory and the questions.
 
 #### 2026-11-03 11:20 UTC · ios · ios/b0-handoffs-1-4 · PR none
 **Did:** Unpacked design handoff 3's pack (`/mnt/project-files/design/handoff-3/export/`) as it arrived into `design/reference/claude-design/handoff-3/`. This journal: block 1.3's Updated line, this entry.
