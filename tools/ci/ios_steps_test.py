@@ -129,6 +129,7 @@ class Repo:
     def __init__(self):
         self.root = tempfile.mkdtemp(prefix="ios-steps-")
         self.out = os.path.join(self.root, "_runner_temp", "ios-out")
+        self.work = os.path.join(self.root, "_runner_temp", "ios-evidence")
 
     def write(self, path, text):
         full = os.path.join(self.root, *path.split("/"))
@@ -357,6 +358,11 @@ class SimulatorTest(StepsTest):
                          ("26.5", "iPhone 17", UDID, None, "26.5"))
         self.assertIn(["xcrun", "simctl", "bootstatus", UDID, "-b"], shell.commands)
         self.assertFalse(any("-downloadPlatform" in c for c in shell.commands))
+        # Every command, the SDK's read among them, runs with the pinned Xcode, not the image's
+        # default, which could be a newer one whose SDK would let its runtimes in.
+        pinned = {"DEVELOPER_DIR": f"/Applications/Xcode_{toolchain.XCODE_VERSION}.app/Contents/Developer"}
+        self.assertIn(["xcrun", "--sdk", "iphonesimulator", "--show-sdk-version"], shell.commands)
+        self.assertEqual([(c, e) for c, e in zip(shell.commands, shell.envs) if e != pinned], [])
 
     def test_a_newer_xcode_s_runtime_on_the_image_isn_t_taken(self):
         # GitHub's images carry other Xcodes' runtimes (macos-15 has iOS 26 beside Xcode 16.4's
@@ -586,6 +592,7 @@ class BuildAndTestSteps(StepsTest):
                      "withSnapshotTesting(record: false) {",
                      "@Suite(.snapshots(record: false))",
                      "record = true",
+                     "SnapshotTesting.record = true",
                      "SnapshotTesting.isRecording = false"]:
             with self.subTest(line=line):
                 self.repo.write("apps/ios/TadayoSnapshotTests/HomeTests.swift", f"func t() {{\n  {line}\n}}\n")
@@ -809,8 +816,16 @@ class SheetsTest(StepsTest):
         return {"state": state, "test": "XTests", "file": file, "status": status,
                 "image": image or self.sample(f"snapshots/XTests/{file}"), "reference": reference}
 
-    def stage(self):
-        return os.path.join(self.repo.out, "evidence", "ios", "b0-ios-check", "0123456", "ios")
+    def stage(self, folder="ios"):
+        return os.path.join(self.repo.work, "stage", "ios", "b0-ios-check", "0123456", folder)
+
+    def finished(self):
+        with open(os.path.join(self.repo.work, "evidence.json")) as f:
+            return json.load(f)
+
+    def index(self, folder="ios"):
+        with open(os.path.join(self.stage(folder), "index.md")) as f:
+            return f.read()
 
     def git_diff(self, paths, base=SHA):
         return FakeShell(answers=[
@@ -881,6 +896,20 @@ class SheetsTest(StepsTest):
         self.assertEqual(new[new.index("-tile") + 1], "1x1")
         self.assertEqual([new[i + 1].split("\n")[0] for i, c in enumerate(new) if c == "-label"], ["Snapshot"])
 
+    def test_a_changed_snapshot_with_no_render_sits_beside_its_reference(self):  # in ci too
+        for state, note in (("A02-email", "built from spec, awaiting render"),
+                            ("A02-email-dark", "judged against book p26")):
+            with self.subTest(state=state):
+                reference = self.sample(f"apps/ios/S/__Snapshots__/XTests/testX.{state}.png", color="#888")
+                self.snapshots([self.entry(state, "changed", reference=reference)])
+                shell = FakeShell()
+                self.assertEqual(self.step("sheets", shell)[0], 0)
+                montage = next(c for c in shell.commands if c[0] == "montage")
+                self.assertEqual(montage[montage.index("-tile") + 1], "2x1")
+                labels = [montage[i + 1] for i, c in enumerate(montage) if c == "-label"]
+                self.assertEqual([label.split("\n")[0] for label in labels], ["Before", "Snapshot"])
+                self.assertIn(note, labels[1])
+
     def test_the_index_says_which_file_each_image_belongs_to(self):
         reference = self.sample("apps/ios/S/__Snapshots__/XTests/testX.F02-upcoming.png")
         self.snapshots([self.entry("F02-upcoming", "changed", reference=reference),
@@ -895,35 +924,98 @@ class SheetsTest(StepsTest):
         # snapshots.json comes from the macOS job; this job can write, so it trusts no path in it.
         outside = self.repo.write("secret.txt", "not evidence")
         self.repo.write("apps/ios/T/x.png", "not evidence")  # in apps/ios, but no reference
+        self.repo.write("apps/ios/Tadayo/Info.plist", "not evidence")
+        self.repo.mkdir("apps/ios/T/__Snapshots__/XTests")
+        os.symlink(outside, os.path.join(self.repo.root, "apps", "ios", "T", "__Snapshots__", "link.png"))
+        os.symlink(os.path.join(self.repo.root, "apps", "ios", "T", "x.png"),
+                   os.path.join(self.repo.root, "apps", "ios", "T", "__Snapshots__", "XTests", "inside.png"))
+
+        def new(file, image, **fields):
+            return dict({"state": "A02-email", "test": "X", "file": file, "status": "new",
+                         "image": image, "reference": None}, **fields)
         entries = [
-            {"state": "A02-email", "test": "X", "file": "testX.A02-email.png", "status": "new",
-             "image": "../secret.txt", "reference": None},
-            {"state": "A02-email", "test": "X", "file": "testY.A02-email.png", "status": "new",
-             "image": "snapshots/../../../secret.txt", "reference": None},
-            {"state": "A02-email", "test": "X", "file": "testZ.A02-email.png", "status": "new",
-             "image": "apps/ios/T/x.png", "reference": None},
-            dict(self.entry("F02-upcoming", "changed"), reference="../secret.txt"),
-            {"state": "../" * 7 + "planted", "test": "X", "file": "testX.A.png", "status": "new",
-             "image": self.sample("snapshots/X/testX.A.png"), "reference": None},
+            new("testA.A02-email.png", "snapshots/../../../secret.txt"),
+            new("testB.A02-email.png", "apps/ios/T/x.png"),
+            new("testC.A02-email.png", "apps/ios/T/__Snapshots__/../../../secret.txt"),
+            new("testD.A02-email.png", "apps/ios/T/__Snapshots__/../../Tadayo/Info.plist"),
+            new("testE.A02-email.png", "apps/ios/T/__Snapshots__/../x.png"),
+            new("testF.A02-email.png", "apps/ios/T/__Snapshots__/link.png"),  # a link out of the repository
+            new("testG.A02-email.png", "apps/ios/T/__Snapshots__/XTests/inside.png"),  # a link out of the folder
+            new("testH.A02-email.png", "/" + outside.lstrip("/")),
+            dict(self.entry("F01-friends", "changed"), reference="secret.txt"),
+            dict(self.entry("F02-upcoming", "changed"), reference="apps/ios/T/__Snapshots__/../../Tadayo/Info.plist"),
+            dict(self.entry("H01-open", "changed"), reference="snapshots/XTests/testX.H01-open.png"),
+            new("testX.A.png", self.sample("snapshots/X/testX.A.png"), state="../" * 7 + "planted"),
+            # Names that would write markdown of their own into index.md, or crash the step.
+            new("a` | [Open the fix](https://example.invalid) |\n# Gate passed\n`.png", self.sample("snapshots/X/m.png")),
+            new("testI.A02-email.png", self.sample("snapshots/X/i.png"), test="X` | [Open](https://example.invalid)"),
+            dict(self.entry("F03-x", "changed"), reference="apps/ios/X/__Snapshots__/a` [Open](https://example.invalid).png"),
+            new("x\ud800.png", self.sample("snapshots/X/s.png")),
+            new("testJ.A02-email.png", self.sample("snapshots/X/j.png"), status="passed"),
             "not an entry"]
         shell = FakeShell()
         self.snapshots(entries)
         code, out = self.step("sheets", shell, environ={"GITHUB_EVENT_NAME": "workflow_dispatch"})
         self.assertEqual(code, 1, out)
-        stage = os.path.join(self.repo.out, "evidence", "ios", "b0-ios-check", "0123456", "ios-full")
+        stage = self.stage("ios-full")
         copied = [os.path.join(d, n) for d, _, ns in os.walk(stage) for n in ns]
         for path in copied:
             with open(path, "rb") as f:
                 self.assertNotIn(b"not evidence", f.read(), path)
         planted = [os.path.join(d, n) for d, _, ns in os.walk(self.repo.root) for n in ns if n.startswith("planted")]
         self.assertEqual(planted, [])
-        before = [c for c in shell.commands if c[0] == "montage" and any("Before" in a for a in c)]
-        self.assertEqual(before, [])  # the reference outside apps/ios is never shown
-        for cmd in (c for c in shell.commands if c[0] == "montage"):
-            for arg in cmd:
-                if arg.startswith(("png:", "jpg:")):
-                    self.assertTrue(arg[4:].startswith((self.repo.out + os.sep, os.path.join(self.repo.root, "design") + os.sep)), arg)
+        self.assertEqual([c for c in shell.commands if c[0] == "montage"], [])  # every entry failed
+        index = self.index("ios-full")
+        self.assertNotIn("example.invalid", index)
+        self.assertEqual([line for line in index.splitlines() if line.startswith("#")],
+                         ["# ios/b0-ios-check/0123456/ios-full"])
+        self.assertEqual(index.count("its entry failed this job's checks"), len(entries))
         self.assertTrue(os.path.isfile(outside))
+
+    def test_only_what_collect_writes_gets_through(self):
+        steps = self.steps()
+        self.repo.mkdir("apps/ios/T/__Snapshots__/HomeView+Snapshots")
+        for image in ("snapshots/XTests/testX.F02-upcoming.png", "snapshots/Home_Tests/testé.F02-upcoming.png",
+                      "apps/ios/T/__Snapshots__/HomeView+Snapshots/testHome.F02-upcoming.png"):
+            with self.subTest(image=image):
+                self.assertEqual(steps.contained(image), image)
+        for image in ("snapshots", "snapshots/", "apps/ios/T/__Snapshots__", "apps/ios/T/__Snapshots__/",
+                      "apps/ios/T/./__Snapshots__/x.png", "apps/ios//T/__Snapshots__/x.png", "", None, 3,
+                      "apps/ios/T/__Snapshots__/x\0.png", "apps/ios/T/__Snapshots__/a b.png"):
+            with self.subTest(image=image):
+                self.assertIsNone(steps.contained(image))
+        # A link anywhere else is followed and refused, even into another __Snapshots__ folder.
+        outside = self.repo.write("elsewhere/__Snapshots__/x.png", "not evidence")
+        os.makedirs(os.path.join(self.repo.out, "snapshots", "X"), exist_ok=True)
+        os.symlink(outside, os.path.join(self.repo.out, "snapshots", "X", "out.png"))
+        os.symlink(outside, os.path.join(self.repo.root, "apps", "ios", "T", "__Snapshots__", "far.png"))
+        os.symlink(os.path.join(self.repo.out, "snapshots"), os.path.join(self.repo.out, "snapshots", "X", "up"))
+        for image in ("snapshots/X/out.png", "apps/ios/T/__Snapshots__/far.png", "snapshots/X/up"):
+            with self.subTest(image=image):
+                self.assertIsNone(steps.contained(image))
+        entry, problems = steps.checked_entry(self.entry("F02-upcoming", "new"))
+        self.assertEqual(problems, [])
+        self.assertEqual(entry["state"], "F02-upcoming")
+        entry, problems = steps.checked_entry({"state": None, "test": None, "file": "testX.1.png",
+                                               "status": "committed", "reference": None,
+                                               "image": self.sample("snapshots/XTests/testX.1.png")})
+        self.assertEqual(problems, [])  # an unnamed snapshot and no test class are collect's own
+
+    def test_run_json_s_values_are_checked_too(self):
+        self.snapshots([self.entry("F02-upcoming", "new")])
+        self.record(ios="26.5", device="iPhone 17", xcode="26.6", swift="6.3.3",
+                    tests="failed\n# Gate passed\n[Open](https://example.invalid)")
+        shell = FakeShell()
+        self.assertEqual(self.step("sheets", shell)[0], 0)
+        index = self.index()
+        self.assertNotIn("example.invalid", index)
+        self.assertIn("- Tests: not run", index)
+        self.assertIn("- Xcode 26.6, Swift 6.3.3, iOS 26.5 on iPhone 17", index)
+        with open(os.path.join(self.repo.out, "run.json"), "w") as f:
+            json.dump(["not", "an", "object"], f)
+        code, out = self.step("sheets", FakeShell())
+        self.assertEqual(code, 0, out)
+        self.assertIn("- Xcode ?, Swift ?, iOS ? on ?", self.index())
 
     def test_a_missing_snapshot_list_is_said_and_fails_after_the_rest(self):
         code, out = self.step("sheets", FakeShell())
@@ -931,17 +1023,27 @@ class SheetsTest(StepsTest):
         with open(os.path.join(self.stage(), "index.md")) as f:
             self.assertIn("collect step didn't finish", f.read())
         self.assertTrue(os.path.isfile(os.path.join(self.stage(), "logs", "test.log")))
-        self.assertTrue(os.path.isfile(os.path.join(self.repo.out, "evidence.json")))
+        self.assertEqual(self.finished(), {"path": "ios/b0-ios-check/0123456/ios"})
 
     def test_without_imagemagick_the_rest_still_goes_up(self):
         # The imagemagick step failed: montage isn't there, so each sheet fails, and the logs,
-        # the snapshots and the index still reach the evidence branch.
-        self.snapshots([self.entry("F02-upcoming", "new")])
-        code, out = self.step("sheets", FakeShell(codes=[(starts("montage"), 127)]))
+        # every snapshot and the index still reach the evidence branch.
+        states = ["A02-email", "A03-code", "F02-upcoming"]
+        self.snapshots([self.entry(state, "new") for state in states])
+        shell = FakeShell(codes=[(starts("montage"), 127)])
+        code, out = self.step("sheets", shell)
         self.assertEqual(code, 1)
-        self.assertTrue(os.path.isfile(os.path.join(self.stage(), "snapshots", "F02-upcoming.png")))
-        with open(os.path.join(self.stage(), "index.md")) as f:
-            self.assertIn("ImageMagick couldn't make its sheet", f.read())
+        self.assertEqual(len([c for c in shell.commands if c[0] == "montage"]), len(states))
+        index = self.index()
+        for state in states:
+            with self.subTest(state=state):
+                self.assertTrue(os.path.isfile(os.path.join(self.stage(), "snapshots", f"{state}.png")))
+        # The Render column still says what the sheet would have: T46's mark for a state with
+        # no render; the Sheet column says what failed.
+        self.assertIn("| `A02-email` | new | `XTests/testX.A02-email.png` | built from spec, awaiting render | "
+                      "ImageMagick couldn't make its sheet | [A02-email.png](", index)
+        self.assertIn("| `F02-upcoming` | new | `XTests/testX.F02-upcoming.png` | design/reference/2.1/F02-upcoming.png | "
+                      "ImageMagick couldn't make its sheet |", index)
 
     def test_screens_wins_over_2_1(self):
         self.repo.copy(os.path.join(ROOT, *RENDER.split("/")), "design/reference/screens/F02-upcoming.png")
@@ -997,14 +1099,13 @@ class SheetsTest(StepsTest):
                                             shell=FakeShell())
         self.assertEqual(montaged, ["F02-upcoming.jpg"])
         # In its own folder, so a push's touched set of the same commit can't replace it.
-        with open(os.path.join(self.repo.out, "evidence.json")) as f:
-            self.assertEqual(json.load(f)["path"], "ios/b0-ios-check/0123456/ios-full")
+        self.assertEqual(self.finished(), {"path": "ios/b0-ios-check/0123456/ios-full"})
 
     def test_a_compatibility_run_carries_logs_and_no_sheets(self):
         code, out, montaged, _ = self.run_sheets([self.entry("A02-email", "new")],
                                                  environ={"IOS_VERSION": "18.6"}, shell=FakeShell())
         self.assertEqual((code, montaged), (0, []))
-        stage = os.path.join(self.repo.out, "evidence", "ios", "b0-ios-check", "0123456", "ios-18.6")
+        stage = self.stage("ios-18.6")
         self.assertTrue(os.path.isfile(os.path.join(stage, "logs", "test.log")))
         self.assertTrue(os.path.isfile(os.path.join(stage, "index.md")))
 
@@ -1031,8 +1132,7 @@ class SheetsTest(StepsTest):
     def test_no_snapshots_yet_still_publishes_the_logs(self):
         code, out, montaged, _ = self.run_sheets([])
         self.assertEqual((code, montaged), (0, []))
-        with open(os.path.join(self.repo.out, "evidence.json")) as f:
-            self.assertEqual(json.load(f)["path"], "ios/b0-ios-check/0123456/ios")
+        self.assertEqual(self.finished(), {"path": "ios/b0-ios-check/0123456/ios"})
 
     def test_two_snapshots_of_one_state_get_two_sheets(self):
         first, second = self.entry("F02-upcoming", "new"), self.entry("F02-upcoming", "new")
@@ -1064,16 +1164,21 @@ class PublishTest(StepsTest):
         self.git("push", "--quiet", self.remote, "evidence", cwd=seed)
         self.seed = seed
         self.path = "ios/b0-ios-check/0123456/ios"
-        self.stage_dir = os.path.join(self.repo.out, "evidence", *self.path.split("/"))
+        self.stage_dir = os.path.join(self.repo.work, "stage", *self.path.split("/"))
         os.makedirs(os.path.join(self.stage_dir, "sheets"))
         with open(os.path.join(self.stage_dir, "index.md"), "w") as f:
             f.write("# index\n")
         with open(os.path.join(self.stage_dir, "sheets", "A02-email.jpg"), "w") as f:
             f.write("jpeg")
-        with open(os.path.join(self.repo.out, "evidence.json"), "w") as f:
-            json.dump({"path": self.path, "stage": self.stage_dir}, f)
+        self.finish(self.path)
         self.environ.update({"EVIDENCE_REMOTE": "file://" + self.remote, "GITHUB_RUN_ID": "42",
-                             "GITHUB_SHA": SHA})
+                             "GITHUB_SHA": SHA, "GITHUB_REF_NAME": "ios/b0-ios-check",
+                             "GITHUB_EVENT_NAME": "push"})
+
+    def finish(self, path):
+        """What sheets writes last, in the evidence job's own folder."""
+        with open(os.path.join(self.repo.work, "evidence.json"), "w") as f:
+            json.dump({"path": path}, f)
 
     def remote_files(self):
         return set(self.git("ls-tree", "-r", "--name-only", "evidence", cwd=self.remote).split())
@@ -1131,8 +1236,14 @@ class PublishTest(StepsTest):
             self.assertTrue([c for c in shell.commands if word in c], word)
         self.assertIn("https://github.com/beurni2/tadayo.git", next(c for c in shell.commands if "clone" in c))
         self.assertFalse([c for c in shell.commands if any(token in a or basic in a for a in c)])
+        header = {"GIT_CONFIG_COUNT": "1", "GIT_CONFIG_KEY_0": "http.extraheader",
+                  "GIT_CONFIG_VALUE_0": f"AUTHORIZATION: basic {basic}"}
         for cmd, env in zip(shell.commands, shell.envs):
-            self.assertEqual((env or {}).get("GIT_CONFIG_VALUE_0"), f"AUTHORIZATION: basic {basic}", cmd)
+            self.assertEqual({k: v for k, v in (env or {}).items() if k.startswith("GIT_CONFIG_")}, header, cmd)
+        # And git itself reads it as the header it sends.
+        found = subprocess.run(["git", "config", "--get-all", "http.extraheader"], capture_output=True,
+                               text=True, cwd=self.repo.root, env=dict(os.environ, **shell.envs[0]))
+        self.assertEqual(found.stdout.strip(), f"AUTHORIZATION: basic {basic}")
 
     def test_the_same_evidence_twice_pushes_nothing_new(self):
         self.assertEqual(self.step("publish", ios_steps.Shell(self.repo.root))[0], 0)
@@ -1143,8 +1254,34 @@ class PublishTest(StepsTest):
         self.assertEqual(self.git("rev-parse", "evidence", cwd=self.remote), before)
 
     def test_without_the_sheets_step_s_record_it_fails(self):
-        os.remove(os.path.join(self.repo.out, "evidence.json"))
-        self.assertEqual(self.step("publish", FakeShell())[0], 1)
+        os.remove(os.path.join(self.repo.work, "evidence.json"))
+        shell = FakeShell()
+        self.assertEqual(self.step("publish", shell)[0], 1)
+        self.assertEqual(shell.commands, [])
+
+    def test_its_folder_comes_from_the_run_never_from_a_file(self):
+        # OUT is where the build job's artifact lands: an evidence.json or a staged folder in it
+        # is never what publish pushes, and a record of another folder isn't this run's.
+        planted = os.path.join(self.repo.out, "evidence", "gates")
+        os.makedirs(planted)
+        with open(os.path.join(planted, "gate-a.pdf"), "w") as f:
+            f.write("planted")
+        with open(os.path.join(self.repo.out, "evidence.json"), "w") as f:
+            json.dump({"path": "gates", "stage": planted}, f)
+        code, out = self.step("publish", ios_steps.Shell(self.repo.root))
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.remote_files(), {"ios/b0-brand-ref/a16bf78/design/x.jpg",
+                                               f"{self.path}/index.md", f"{self.path}/sheets/A02-email.jpg"})
+        for record in ({"path": "gates"}, {"path": "ios/b0-ios-check/0123456/ios-full"}, ["x"], "x"):
+            with self.subTest(record=record):
+                with open(os.path.join(self.repo.work, "evidence.json"), "w") as f:
+                    json.dump(record, f)
+                shell = FakeShell()
+                self.assertEqual(self.step("publish", shell)[0], 1)
+                self.assertEqual(shell.commands, [])
+        self.finish(self.path)
+        shutil.rmtree(self.stage_dir)
+        self.assertEqual(self.step("publish", FakeShell())[0], 1)  # recorded, but nothing staged
 
 
 def workflow():
@@ -1223,15 +1360,21 @@ class WorkflowFileTest(unittest.TestCase):
         self.assertNotIn("secrets.", self.text)  # never a secret in ios (TECH-DESIGN section 9)
 
     def step_block(self, needle):
-        """The step whose lines hold needle, as text."""
-        step = re.search(r"\n      - ((?:(?!\n      - |\n  [a-z]).)*?" + re.escape(needle) + r"(?:(?!\n      - |\n  [a-z]).)*)",
-                         self.text, flags=re.S)
-        self.assertIsNotNone(step, needle)
-        return step.group(1)
+        """The one step whose lines hold needle (which may end in a line break), as text: the
+        file cut before each step and each job, so a step's block never runs into the next."""
+        blocks = re.split(r"\n(?=      - |  [a-z]|[a-z])", self.text)
+        found = [b for b in blocks if b.startswith("      - ") and needle in b + "\n"]
+        self.assertEqual(len(found), 1, needle)
+        return found[0]
 
     def test_the_gate_decides_whether_the_build_runs(self):
         # The B0 plan's slice 9 test, "the first job's skip": the step's output reaches both jobs.
         gate = "\n".join(self.jobs["gate"]) + "\n"
+        # The gate sees only its sparse checkout, so it must hold the file the gate looks for.
+        self.assertIn("          sparse-checkout-cone-mode: false\n", gate)
+        sparse = re.search(r"\n          sparse-checkout: \|\n((?:            \S[^\n]*\n)+)", gate)
+        self.assertIsNotNone(sparse)
+        self.assertEqual(sorted(sparse.group(1).split()), sorted(["/tools/ci/", "/" + ios_steps.PROJECT_SPEC]))
         self.assertIn("    outputs:\n      build: ${{ steps.gate.outputs.build }}\n", gate)
         self.assertIn("      - id: gate\n        run: python3 tools/ci/ios_steps.py gate\n", gate)
         self.assertIn("    needs: gate", self.jobs["build"])
@@ -1250,17 +1393,44 @@ class WorkflowFileTest(unittest.TestCase):
         self.assertNotIn("continue-on-error", self.text)
 
     def test_a_step_that_hangs_times_out_before_the_job(self):
-        # A step's timeout fails the step, and the job goes on to collect and upload; the job's
-        # own timeout cancels it, and then nothing reaches the evidence branch.
-        build = "\n".join(self.jobs["build"])
-        job = int(re.search(r"^    timeout-minutes: ([0-9]+)$", build, flags=re.M).group(1))
-        total = 0
-        for step in ("toolchain", "xcodegen", "simulator", "build", "test"):
-            with self.subTest(step=step):
-                found = re.search(r"timeout-minutes: ([0-9]+)", self.step_block(f"ios_steps.py {step}\n"))
-                self.assertIsNotNone(found)
-                total += int(found.group(1))
-        self.assertLessEqual(total + 10, job)  # checkout, collect and the upload fit after them
+        # A step's timeout fails the step, and the job goes on to the steps that run anyway; the
+        # job's own timeout cancels it, and then nothing reaches the evidence branch.
+        for job_id, steps in (("build", ("toolchain", "xcodegen", "simulator", "build", "test", "collect")),
+                              ("evidence", ("imagemagick",))):
+            lines = "\n".join(self.jobs[job_id])
+            job = int(re.search(r"^    timeout-minutes: ([0-9]+)$", lines, flags=re.M).group(1))
+            total = 0
+            for step in steps:
+                with self.subTest(step=step):
+                    block = self.step_block(f"ios_steps.py {step}\n")
+                    self.assertIn(block, lines)
+                    found = re.search(r"timeout-minutes: ([0-9]+)", block)
+                    self.assertIsNotNone(found)
+                    total += int(found.group(1))
+            # The build's checkout and upload, or the evidence's checkout, download, sheets and
+            # publish, fit after them.
+            self.assertLessEqual(total + 10, job, job_id)
+
+    def test_the_requested_ios_reaches_both_jobs(self):
+        # The simulator and test steps (build) and the evidence's folder, ios-<version>/ or
+        # ios-full/ (evidence), both read it; without it a run on an older iOS would land in
+        # ios-full/ and replace a gate's set.
+        for job in ("build", "evidence"):
+            with self.subTest(job=job):
+                self.assertIn("\n    env:\n      IOS_VERSION: ${{ inputs.ios_version }}\n",
+                              "\n" + "\n".join(self.jobs[job]) + "\n")
+
+    def test_each_kind_of_run_has_its_own_group(self):
+        # A push's, a run by hand's full set and each version's: none cancels another's evidence.
+        top = self.text.split("\njobs:\n", 1)[0]
+        self.assertIn("\nconcurrency:\n  group: ios-${{ github.ref == 'refs/heads/main' && github.sha || "
+                      "github.ref }}-${{ inputs.ios_version || (github.event_name == 'workflow_dispatch' "
+                      "&& 'full') || 'push' }}\n  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}\n", top)
+
+    def test_publish_has_the_job_s_token_and_nothing_else_does(self):
+        self.assertIn("env:\n          GITHUB_TOKEN: ${{ github.token }}",
+                      self.step_block("run: python3 tools/ci/ios_steps.py publish"))
+        self.assertEqual(self.text.count("github.token"), 1)
 
     def test_actions_are_pinned_to_commits(self):
         uses = re.findall(r"uses: (\S+)", self.text)

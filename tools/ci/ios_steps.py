@@ -55,23 +55,30 @@ The steps:
                state, the render on the left, from design/reference/screens/ if it is there,
                else from design/reference/2.1/; the committed reference in the middle when this
                run's snapshot differs from it; this run's snapshot on the right. A state with no
-               render shows its snapshot alone with a note: an inventory state's is "built from
-               spec, awaiting render" (T46); a -dark or -xl variant that has no inventory row of
-               its own while its base state has one says it is judged against book p26's rules
-               (design/reference/INVENTORY.md); anything else says it isn't an inventory state.
-               JPEG (TECH-DESIGN section 3). A push carries only the states the branch touches;
-               a run by hand with no $IOS_VERSION carries the full set, for gates; a
-               compatibility run carries no sheets, only its logs. Every path in snapshots.json is
-               checked again here, since this job can write. Writes index.md, which links every
-               file and says which file each image belongs to. Fails, after staging the rest,
-               when an image is missing, a sheet couldn't be made or snapshots.json is missing.
-  publish      Pushes the sheets, the touched snapshots and the logs to the `evidence` branch
-               under <branch>/<short-sha>/ios/ (ios-full/ for a run by hand's full set,
-               ios-<version>/ for a compatibility run), with the job's GITHUB_TOKEN. Never
-               forces: when the push is refused because another run pushed first, it fetches the
-               branch again, puts its files back on top and retries. $EVIDENCE_REMOTE replaces
-               the remote, for a scratch repository; by hand, run it only with one, since only
-               the workflow's evidence job pushes to the real branch.
+               render has no Render panel, and its snapshot carries a note: an inventory state's
+               is "built from spec, awaiting render" (T46); a -dark or -xl variant that has no
+               inventory row of its own while its base state has one says it is judged against
+               book p26's rules (design/reference/INVENTORY.md); anything else says it isn't an
+               inventory state. Such a snapshot is shown alone, or beside its committed
+               reference when it changed. JPEG (TECH-DESIGN section 3). A push carries only the
+               states the branch touches; a run by hand with no $IOS_VERSION carries the full
+               set, for gates; a compatibility run carries no sheets, only its logs. Every field
+               of snapshots.json and every value of run.json it shows is checked again here,
+               since this job can write: an entry with a field collect can't have written fails
+               its row and is neither copied nor drawn. Stages everything in the evidence job's
+               own folder, beside OUT (WORK below). Writes index.md, which links every file and
+               says which file each image belongs to. Fails, after staging the rest, when an
+               entry fails its checks, an image is missing, a sheet couldn't be made or
+               snapshots.json is missing.
+  publish      Pushes what sheets staged (the sheets, the touched snapshots and the logs) to the
+               `evidence` branch under <branch>/<short-sha>/ios/ (ios-full/ for a run by hand's
+               full set, ios-<version>/ for a compatibility run), with the job's GITHUB_TOKEN.
+               The folder comes from the run's environment, as in sheets, never from a file;
+               nothing goes up unless sheets finished for that folder. Never forces: when the
+               push is refused because another run pushed first, it fetches the branch again,
+               puts its files back on top and retries. $EVIDENCE_REMOTE replaces the remote, for
+               a scratch repository; by hand, run it only with one, since only the workflow's
+               evidence job pushes to the real branch.
 
 Files pass between the macOS job's steps in OUT ($IOS_OUT, else $RUNNER_TEMP/ios-out), which the
 job uploads as the artifact `ios-results` and the evidence job downloads to the same place:
@@ -83,6 +90,10 @@ job uploads as the artifact `ios-results` and the evidence job downloads to the 
                   committed reference
   snapshots/      the images this run drew that differ from, or have no, committed reference
   snapshots.json  every snapshot, each {state, test, file, status, image, reference}
+
+The evidence job keeps its own files in WORK, ios-evidence/ beside OUT, never in OUT, where the
+artifact lands: stage/<path>/ (what publish pushes), evidence.json (sheets finished, for that
+path) and branch/ (publish's clone of the `evidence` branch).
 
 A snapshot's state is its swift-snapshot-testing name: the tests call
 `assertSnapshot(of:as:named:)` with the inventory state (`named: "F02-upcoming-dark"`), and the
@@ -136,6 +147,13 @@ AWAITING_RENDER = "built from spec, awaiting render"
 
 VERSION = re.compile(r"^[0-9]{1,2}(\.[0-9]{1,2}){0,2}$")
 STATE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
+# A file or folder name as swift-snapshot-testing and Swift files have them (`\w` is Unicode's
+# word characters, as the library keeps; `+` as in `HomeView+Snapshots.swift`), never `.` or `..`,
+# and never a character markdown or ImageMagick reads: the evidence job writes names from the
+# build job's snapshots.json into index.md and the sheets' labels.
+PLAIN = re.compile(r"[\w+-][\w.+-]*")
+# A value of run.json that reaches index.md or a label: a version, a device's name, a result.
+FACT = re.compile(r"[\w.() -]{1,64}")
 # Xcode adds "_<n>_<UUID>" to an attachment's suggested name when it exports it: at the end of a
 # name without a dot ("Launch Screen_0_<UUID>.png", Xcode 26.2), and before the last dot of a
 # dotted one ("a.b_0_<UUID>.png", Xcode 27.1). It is stripped wherever it is.
@@ -391,6 +409,9 @@ class Steps:
             self.out = self.environ["IOS_OUT"]
         else:
             self.out = os.path.join(self.environ.get("RUNNER_TEMP") or "/tmp", "ios-out")
+        # The evidence job's own files, beside OUT and never in it: OUT is where the build job's
+        # artifact is downloaded, so nothing in it can stand in for what sheets staged.
+        self.work = os.path.join(os.path.dirname(os.path.abspath(self.out)), "ios-evidence")
 
     # Helpers
 
@@ -399,6 +420,12 @@ class Steps:
 
     def out_path(self, *parts):
         return os.path.join(self.out, *parts)
+
+    def work_path(self, *parts):
+        return os.path.join(self.work, *parts)
+
+    def stage_path(self, path):
+        return self.work_path("stage", *path.split("/"))
 
     def log(self, name):
         return self.out_path("logs", name)
@@ -411,9 +438,16 @@ class Steps:
     def run_record(self):
         try:
             with open(self.out_path("run.json"), encoding="utf-8") as f:
-                return json.load(f)
+                record = json.load(f)
         except (OSError, ValueError):
             return {}
+        return record if isinstance(record, dict) else {}
+
+    def run_facts(self):
+        """run.json's values for index.md and the sheets' labels: the build job wrote them, so
+        only plain text (FACT) is kept; anything else shows as unknown."""
+        return {k: v for k, v in self.run_record().items()
+                if isinstance(v, str) and FACT.fullmatch(v)}
 
     def update_run_record(self, **values):
         record = self.run_record()
@@ -438,6 +472,21 @@ class Steps:
         if requested and not VERSION.match(requested):
             raise ValueError(f"IOS_VERSION {requested!r} isn't an iOS version like 18, 18.6 or 26.2")
         return requested
+
+    def evidence_target(self):
+        """(path on the evidence branch, mode), from the run's own environment alone: a
+        compatibility run's (`none`), a run by hand's full set (`full`) or a push's touched set
+        (`touched`). sheets and publish both use it, so neither takes the folder from a file."""
+        requested = self.requested_version()
+        if requested:
+            mode = "none"
+        elif self.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch":
+            mode = "full"
+        else:
+            mode = "touched"
+        path = evidence_path(self.environ.get("GITHUB_REF_NAME", ""),
+                             self.environ.get("GITHUB_SHA", ""), requested, full=mode == "full")
+        return path, mode
 
     def project(self):
         found = sorted(n for n in os.listdir(self.path(*IOS_DIR.split("/")))
@@ -912,31 +961,24 @@ class Steps:
         return None if code != 0 else [p for p in out.split("\0") if p]
 
     def sheets(self):
+        # Whatever an earlier run on this runner left: the evidence job's own folder is rebuilt.
+        shutil.rmtree(self.work, ignore_errors=True)
         try:
-            requested = self.requested_version()
-            if requested:
-                mode = "none"
-            elif self.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch":
-                mode = "full"
-            else:
-                mode = "touched"
-            path = evidence_path(self.environ.get("GITHUB_REF_NAME", ""),
-                                 self.environ.get("GITHUB_SHA", ""), requested,
-                                 full=mode == "full")
+            path, mode = self.evidence_target()
         except ValueError as error:
             print(f"ios: sheets: {error}")
             return 1
-        record = self.run_record()
-        changed, notes = [], []
+        record = self.run_facts()
+        changed, notes, checked = [], [], []
         try:
             with open(self.out_path("snapshots.json"), encoding="utf-8") as f:
-                entries = json.load(f)["entries"]
-            if not isinstance(entries, list):
+                listed = json.load(f)["entries"]
+            if not isinstance(listed, list):
                 raise ValueError("entries isn't a list")
-            entries = [self.checked_entry(e) for e in entries]
+            checked = [self.checked_entry(e) for e in listed]
             list_missing = False
         except (OSError, ValueError, KeyError, TypeError):
-            entries, list_missing = [], True
+            list_missing = True
             notes.append("The build job's collect step didn't finish, so this run's snapshot "
                          "list is missing: the snapshots it drew and the states this branch "
                          "touches aren't here.")
@@ -946,33 +988,38 @@ class Steps:
                 notes.append("Couldn't compare this branch with main, so only the snapshots this "
                              "run drew (changed, new) are here.")
                 changed = []
-        chosen = select(entries, mode, changed)
-        stage = self.out_path("evidence", *path.split("/"))
-        shutil.rmtree(self.out_path("evidence"), ignore_errors=True)
+        good = [entry for entry, problems in checked if not problems]
+        chosen = select(good, mode, changed)
+        carried = {id(entry) for entry in chosen}
+        stage = self.stage_path(path)
         os.makedirs(stage)
         try:
             with open(self.path(*INVENTORY.split("/")), encoding="utf-8") as f:
                 inventory = read_inventory(f.read())
         except OSError:
             inventory = set()
+        # A row: (entry, sheet name, sheet, kept snapshot, the no-render note, what failed).
         rows, failed, taken = [], 0, set()
-        for entry in chosen:
-            name = sheet_name(entry, taken)
-            snapshot = self.image_path(entry["image"]) if entry["image"] else None
-            if snapshot is None:
-                rows.append((entry, name, None, None,
-                             "its image isn't where collect puts snapshots"))
+        for entry, problems in checked:
+            if not problems and id(entry) not in carried:
+                continue
+            render = render_for(self.root, entry["state"])
+            note = None if render else no_render_note(entry["state"], inventory)
+            if problems:
+                # Whatever mode: an entry collect can't have written is neither copied nor drawn.
+                rows.append((entry, None, None, None, note,
+                             "its entry failed this job's checks: " + ", ".join(problems)))
                 failed += 1
                 continue
+            name = sheet_name(entry, taken)
+            snapshot = self.image_path(entry["image"])
             if not os.path.isfile(snapshot):
-                rows.append((entry, name, None, None, "its image is missing from this run"))
+                rows.append((entry, name, None, None, note, "its image is missing from this run"))
                 failed += 1
                 continue
             kept = f"snapshots/{name}.png"
             os.makedirs(os.path.join(stage, "snapshots"), exist_ok=True)
             shutil.copyfile(snapshot, os.path.join(stage, *kept.split("/")))
-            render = render_for(self.root, entry.get("state"))
-            note = None if render else no_render_note(entry.get("state"), inventory)
             panels = [("Render", render, self.path(*render.split("/")))] if render else []
             if entry["status"] == "changed" and entry["reference"] and \
                     os.path.isfile(self.path(*entry["reference"].split("/"))):
@@ -984,23 +1031,24 @@ class Steps:
                    f"{self.environ.get('GITHUB_REF_NAME', '')} @ "
                    f"{self.environ.get('GITHUB_SHA', '')[:7]}")
             panels.append(("Snapshot", f"{self.status_words(entry, note)}\n{run}", snapshot))
-            title = entry.get("state") or entry["file"]
+            title = entry["state"] or entry["file"]
             sheet = f"sheets/{name}.jpg"
             os.makedirs(os.path.join(stage, "sheets"), exist_ok=True)
             if self.shell.run(montage_command(title, panels, os.path.join(stage, *sheet.split("/")))) != 0:
-                rows.append((entry, name, None, kept, "ImageMagick couldn't make its sheet"))
+                rows.append((entry, name, None, kept, note, "ImageMagick couldn't make its sheet"))
                 failed += 1
                 continue
-            rows.append((entry, name, sheet, kept, note))
+            rows.append((entry, name, sheet, kept, note, None))
         logs = self.out_path("logs")
         if os.path.isdir(logs):
             shutil.copytree(logs, os.path.join(stage, "logs"))
         if os.path.isfile(self.out_path("run.json")):
             shutil.copyfile(self.out_path("run.json"), os.path.join(stage, "run.json"))
-        left_out = len(entries) - len(chosen)
+        left_out = len(good) - len(chosen)
         self.write_index(stage, path, mode, record, rows, left_out, notes)
-        with open(self.out_path("evidence.json"), "w", encoding="utf-8") as f:
-            json.dump({"path": path, "stage": stage}, f)
+        # Written last, so publish knows this step finished for this run's folder.
+        with open(self.work_path("evidence.json"), "w", encoding="utf-8") as f:
+            json.dump({"path": path}, f)
         print(f"ios: sheets: {len(rows) - failed} sheet(s) for {path} ({mode}); {left_out} "
               "snapshot(s) this run doesn't carry")
         if list_missing:
@@ -1008,37 +1056,50 @@ class Steps:
         return 1 if failed or list_missing else 0
 
     def checked_entry(self, entry):
-        """An entry of snapshots.json, which the macOS job wrote, with every path this job
-        writes or reads checked again: the state a plain state name, the image under OUT's
-        snapshots/ or a committed __Snapshots__ folder, the reference in one. What fails is
-        dropped (None)."""
-        entry = dict(entry) if isinstance(entry, dict) else {}
-        state = entry.get("state")
-        entry["state"] = state if isinstance(state, str) and STATE.fullmatch(state) else None
-        entry["file"] = entry.get("file") if isinstance(entry.get("file"), str) and \
-            entry.get("file") else "snapshot.png"
-        entry["test"] = entry.get("test") if isinstance(entry.get("test"), str) else None
-        if entry.get("status") not in ("changed", "new", "committed"):
-            entry["status"] = "new"
-        entry["image"] = self.contained(entry.get("image"))
-        reference = self.contained(entry.get("reference"))
-        entry["reference"] = reference if reference and not reference.startswith("snapshots/") \
-            else None
-        return entry
+        """(entry, problems) for an entry of snapshots.json, which the macOS job wrote: this job
+        can write, so every field is checked again. The state is a plain state name or none; the
+        test a path of plain names (PLAIN) or none; the file a plain name ending .png; the
+        status changed, new or committed; the image under OUT's snapshots/ or a __Snapshots__
+        folder in apps/ios (contained); the reference in such a folder, or none. A field that
+        fails is set to None and named in problems, and sheets fails the entry's row."""
+        if not isinstance(entry, dict):
+            return dict.fromkeys(("state", "test", "file", "status", "image", "reference")), \
+                ["the entry isn't an object"]
+        checks = {
+            "state": lambda v: v is None or isinstance(v, str) and STATE.fullmatch(v),
+            "test": lambda v: v is None or isinstance(v, str) and
+            all(PLAIN.fullmatch(part) for part in v.split("/")),
+            "file": lambda v: isinstance(v, str) and PLAIN.fullmatch(v) and v.endswith(".png"),
+            "status": lambda v: v in ("changed", "new", "committed"),
+            "image": lambda v: self.contained(v) is not None,
+            "reference": lambda v: v is None or self.contained(v) is not None and
+            not v.startswith("snapshots/"),
+        }
+        checked, problems = {}, []
+        for field, ok in checks.items():
+            value = entry.get(field)
+            if ok(value):
+                checked[field] = value
+            else:
+                checked[field] = None
+                problems.append(field)
+        return checked, problems
 
     def contained(self, image):
-        """image, when it is under OUT's snapshots/ (`snapshots/...`) or under a __Snapshots__
+        """image, when each of its parts is a plain name (PLAIN) and it resolves, symbolic links
+        followed, to a path under OUT's snapshots/ (`snapshots/...`) or inside a __Snapshots__
         folder in apps/ios; else None."""
-        if not isinstance(image, str) or not image or "\0" in image:
+        if not isinstance(image, str) or not all(PLAIN.fullmatch(p) for p in image.split("/")):
             return None
-        if image.startswith("snapshots/"):
-            base = os.path.realpath(self.out_path("snapshots"))
-        else:
-            base = os.path.realpath(self.path(*IOS_DIR.split("/")))
-            if "__Snapshots__" not in image.split("/"):
-                return None
+        in_out = image.startswith("snapshots/")
+        base = os.path.realpath(self.out_path("snapshots") if in_out
+                                else self.path(*IOS_DIR.split("/")))
         full = os.path.realpath(self.image_path(image))
-        return image if os.path.commonpath([full, base]) == base and full != base else None
+        if full == base or os.path.commonpath([full, base]) != base:
+            return None
+        if not in_out and "__Snapshots__" not in os.path.relpath(full, base).split(os.sep)[:-1]:
+            return None
+        return image
 
     def image_path(self, image):
         if image.startswith("snapshots/"):
@@ -1074,13 +1135,15 @@ class Steps:
             # class's file's __Snapshots__ folder).
             lines += ["| State | Status | File | Render | Sheet | Snapshot |",
                       "|---|---|---|---|---|---|"]
-            for entry, name, sheet, kept, note in rows:
-                render = render_for(self.root, entry.get("state")) or (note or "none")
-                sheet_link = f"[{name}.jpg]({base}/{sheet})" if sheet else (note or "none")
+            # Every name here passed checked_entry, so none can break the table.
+            for entry, name, sheet, kept, note, failure in rows:
+                render = render_for(self.root, entry["state"]) or (note or "none")
+                sheet_link = f"[{name}.jpg]({base}/{sheet})" if sheet else (failure or "none")
                 kept_link = f"[{name}.png]({base}/{kept})" if kept else "none"
-                target = entry.get("reference") or f"{entry.get('test') or '?'}/{entry['file']}"
-                lines.append(f"| `{entry.get('state') or entry['file']}` | {entry['status']} | "
-                             f"`{target}` | {render} | {sheet_link} | {kept_link} |")
+                target = entry["reference"] or f"{entry['test'] or '?'}/{entry['file'] or '?'}"
+                lines.append(f"| `{entry['state'] or entry['file'] or '?'}` | "
+                             f"{entry['status'] or '?'} | `{target}` | {render} | {sheet_link} | "
+                             f"{kept_link} |")
             lines.append("")
         if os.path.isdir(os.path.join(stage, "logs")):
             lines += ["Logs: " + ", ".join(f"[{n}]({base}/logs/{urllib.parse.quote(n)})"
@@ -1089,12 +1152,23 @@ class Steps:
             f.write("\n".join(lines))
 
     def publish(self):
+        # The folder comes from the run's environment, as in sheets, and the files from what
+        # sheets staged in the evidence job's own folder: never from a file in OUT, where the
+        # build job's artifact was downloaded.
         try:
-            with open(self.out_path("evidence.json"), encoding="utf-8") as f:
-                evidence = json.load(f)
-            path, stage = evidence["path"], evidence["stage"]
-        except (OSError, ValueError, KeyError):
-            print("ios: publish: no evidence.json: the sheets step didn't finish")
+            path, _ = self.evidence_target()
+        except ValueError as error:
+            print(f"ios: publish: {error}")
+            return 1
+        stage = self.stage_path(path)
+        try:
+            with open(self.work_path("evidence.json"), encoding="utf-8") as f:
+                finished = json.load(f)
+        except (OSError, ValueError):
+            finished = None
+        if not isinstance(finished, dict) or finished.get("path") != path or \
+                not os.path.isdir(stage):
+            print(f"ios: publish: the sheets step didn't finish for {path}, so nothing goes up")
             return 1
         token = self.environ.get("GITHUB_TOKEN")
         url = self.environ.get("EVIDENCE_REMOTE") or (
@@ -1108,7 +1182,7 @@ class Steps:
             env.update({"GIT_CONFIG_COUNT": "1",
                         "GIT_CONFIG_KEY_0": "http.extraheader",
                         "GIT_CONFIG_VALUE_0": f"AUTHORIZATION: basic {basic}"})
-        clone = self.out_path("evidence-branch")
+        clone = self.work_path("branch")
         shutil.rmtree(clone, ignore_errors=True)
         if self.shell.run(["git", "clone", "--quiet", "--depth", "1", "--filter=blob:none",
                            "--sparse", "--single-branch", "--branch", EVIDENCE_BRANCH, url, clone],

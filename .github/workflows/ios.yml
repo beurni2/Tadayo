@@ -27,10 +27,11 @@ on:
 
 permissions: {}
 
-# A branch keeps only its newest run of each kind. Each commit on main gets its own group, so a
-# merge's run is never dropped while it waits behind another.
+# A branch keeps only its newest run of each kind: a push's (`push`), a run by hand's full set
+# (`full`) and each iOS version's, so none of them cancels another's evidence. Each commit on
+# main gets its own group, so a merge's run is never dropped while it waits behind another.
 concurrency:
-  group: ios-${{ github.ref == 'refs/heads/main' && github.sha || github.ref }}-${{ inputs.ios_version || 'newest' }}
+  group: ios-${{ github.ref == 'refs/heads/main' && github.sha || github.ref }}-${{ inputs.ios_version || (github.event_name == 'workflow_dispatch' && 'full') || 'push' }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 defaults:
@@ -64,7 +65,7 @@ jobs:
     runs-on: macos-26
     # Each step that can hang has its own timeout, which fails the step and lets collect and the
     # upload run; the job's own, a backstop, cancels the job, and then nothing is published.
-    timeout-minutes: 110
+    timeout-minutes: 115
     permissions:
       contents: read
     env:
@@ -85,6 +86,7 @@ jobs:
         timeout-minutes: 30
       - if: ${{ !cancelled() }}
         run: python3 tools/ci/ios_steps.py collect
+        timeout-minutes: 5
       - if: ${{ !cancelled() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
@@ -121,7 +123,9 @@ jobs:
         with:
           name: ios-results
           path: ${{ runner.temp }}/ios-out
+      # Its own timeout, as in the build job: a stalled install fails the step, not the job.
       - run: python3 tools/ci/ios_steps.py imagemagick
+        timeout-minutes: 5
       # Even when ImageMagick didn't install: the logs and snapshots still go up, without sheets.
       - if: ${{ !cancelled() && steps.results.outcome == 'success' }}
         run: python3 tools/ci/ios_steps.py sheets
