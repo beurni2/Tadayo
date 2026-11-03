@@ -217,17 +217,17 @@ The screen-by-screen list is `design/reference/INVENTORY.md`, "Known differences
 
 ### 1.1 Shared (the api lane keeps this block)
 
-**Updated:** 2026-11-03 00:55 UTC, api/b0-ci
+**Updated:** 2026-11-03 01:05 UTC, api/b0-ci
 
 - **Stage:** B0 Foundations (`docs/plans/B0.md`). Slice 1 merged (PR #7). Slice 2 (`api/b0-ci`, `ci.yml`) in progress, under a freeze: the project's coordinator confirmed at 00:06 UTC on 2026-11-03 that no other thread starts or merges a branch until the `ci.yml` PR merges (`docs/MILESTONES.md`, "Lanes"). Then slice 9. Next gate: Gate 0, a joint gate.
 - **Lanes:** the api thread started on 2026-11-02 at 23:28 UTC and is the one session until `ios.yml` has run green on the latest check branch, writing this block, log section 3.1 (lane `shared`) and table 4.1 (ADR-025). The ios thread hasn't started.
-- **PRs:** #1 to #6 merged by squash on 2026-11-02, each at the founder's approval in its thread (#1 at the founder's "you can merge yourself"): #1 the starter pack (`0a6c91c`), #2 the B0 plan (`1c4a4b5`), #3 the rulebook for ADR-022 and ADR-024 (`208c809`), #4 design handoff 0 as reference files (`7ab4bdc`), #5 handoff 1's states requested (`3d43860`), #6 ADR-025's lanes (`fa47c87`). #7 `chore: the pnpm workspace and the copy lint` (slice 1), approved by the founder in the api thread ("approve PR #7", 00:05 UTC on 2026-11-03) and squash-merged by Claude Code at the approved head `9446744` as `674b226`; `main`'s tree equals that head's. Slice 2's PR from `api/b0-ci`: to open, once `ci` has run green on the branch.
+- **PRs:** #1 to #6 merged by squash on 2026-11-02, each at the founder's approval in its thread (#1 at the founder's "you can merge yourself"): #1 the starter pack (`0a6c91c`), #2 the B0 plan (`1c4a4b5`), #3 the rulebook for ADR-022 and ADR-024 (`208c809`), #4 design handoff 0 as reference files (`7ab4bdc`), #5 handoff 1's states requested (`3d43860`), #6 ADR-025's lanes (`fa47c87`). #7 `chore: the pnpm workspace and the copy lint` (slice 1), approved by the founder in the api thread ("approve PR #7", 00:05 UTC on 2026-11-03) and squash-merged by Claude Code at the approved head `9446744` as `674b226`; `main`'s tree equals that head's. Slice 2's PR from `api/b0-ci`: to open; `ci` ran green on the branch on its first run.
 - **Branches:** `main` at `674b226`. `api/b0-ci`, made from `main` at `674b226`: slice 2. `draft/b0-plan` (head `3a09601`) stays as it is, never merged. `evidence`, an orphan (head `4f6c991`), holds PR #4's comparison sheets; never merged, and its monthly reset needs the founder's yes (section 4.4).
-- **`main`'s protection:** on, read back on 2026-11-01 through the summary (`docs/GITHUB.md`): no required check yet. The founder adds `ci` once it has run on `api/b0-ci`.
+- **`main`'s protection:** on, read back on 2026-11-01 through the summary (`docs/GITHUB.md`): no required check yet. `ci` has now run on `api/b0-ci`, so the founder can add it as the required check.
 - **Environments:** `dev` being set up by the founder in US East (Supabase `us-east-1`, Fly `iad`; ADR-016), not yet reached by any slice. `prod` not created (Gate D). The session reaches Supabase's API, Fly, Cloudflare, swift.org, `docs.github.com` and `images.unsplash.com`; `supabase.com` itself (Supabase's documentation) and `apt.postgresql.org` are refused (`docs/LIMITATIONS.md`).
 - **The domain:** `tadayo.app`, registered by the founder on Cloudflare on 2026-11-01 (ADR-017).
 - **TestFlight:** no build yet.
-- **`ci` on `main`:** not yet; slice 2 brings `ci.yml`.
+- **`ci` on `main`:** not yet; slice 2 brings `ci.yml`. On `api/b0-ci`, its first run (41551742269, at `b484f66`) was green: every job (`node`, `postgres` on Postgres 17.11, `swift`, `tools`, `guards`) and the final `ci`. The session can push workflow files (`docs/LIMITATIONS.md`).
 - **Design:** design handoff 0 (the brand) is on `main` since PR #4. Design handoff 1 (sign-in and clubs, `docs/plans/B0.md` section 5.2) went to the founder on 2026-11-02 at 20:38 UTC and was started in Claude Design; its export hasn't arrived. The inventory's counts are in the design line of section 1.3.
 
 **What exists and works (verified).** On `main`: the starter pack, the B0 plan, the rulebook with ADR-022 to ADR-025, design handoff 0's reference files, handoff 1's states requested, and slice 1 (PR #7): the pnpm workspace (Node 26, pnpm 12.16.1, TypeScript 6.0 strict, ESLint 10, Prettier; the packages `@tadayo/domain`, `@tadayo/contracts`, `@tadayo/api`, `@tadayo/worker`, `@tadayo/web`, `@tadayo/tests`, `@tadayo/ops`) and the copy lint (`pnpm copy-lint`, `packages/domain/src/copy/`; T41 to T43). On `api/b0-ci`, run in the session:
@@ -235,18 +235,17 @@ The screen-by-screen list is `design/reference/INVENTORY.md`, "Known differences
 - `tools/ci/ci_steps.py`, every step `ci.yml` calls, each later target found rather than named and passing empty until it arrives: `python3 tools/ci/ci_steps_test.py`, 39 tests pass, 1 skipped (the live roles test, which passed against the local PostgreSQL 16 with `CI_STEPS_LIVE_POSTGRES=1`); each step run for real on this branch passed, `db-check` aside, which rightly refused the local server's 16;
 - `tools/ci/toolchain.py`, the pins: Xcode 26.6, Swift 6.3.3 (inferred, to be read on the runner in slice 9), the image `swift:6.3.3-noble` by digest, Postgres 17.
 
-**In progress.** Slice 2: `ci.yml` checked with `actionlint` 1.7.12, `yamllint` 1.38.0 (the repository's `.yamllint.yaml`) and `zizmor` 1.32.0 (pedantic): no findings. Next its one-time push test, then the independent review, then the founder adds it if the push is refused.
+**In progress.** Slice 2: `.github/workflows/ci.yml`, checked with `actionlint` 1.7.12, `yamllint` 1.38.0 and `zizmor` 1.32.0 (pedantic), no findings, pushed by the session and green on GitHub. Next: its PR and independent review.
 
 **Next, in order:**
-1. The one-time test (`docs/GITHUB.md`, "Workflow files", "Test it once"): commit `.github/workflows/ci.yml` with its journal entry on `api/b0-ci` and push. If GitHub refuses it, `git reset HEAD~1`, keep the file in `/tmp/claude-0/wf/ci.yml`, and commit only the journal entry and a `docs/LIMITATIONS.md` row recording the refusal, with the file's SHA-256 (`printf '%s\n' "$(cat <file>)" | sha256sum`). Done when the result is in `docs/LIMITATIONS.md`.
-2. The independent review of the branch and `ci.yml` (`docs/GITHUB.md` step 3), before the founder pastes anything, so one paste is enough; fix or answer every finding in a commit that records it.
-3. If the push was refused: send the founder the branch, the path and the whole file in one code block; wait; `git pull --ff-only` and check the file against the SHA-256. Done when `ci` has run green on `api/b0-ci`'s head.
-4. Open slice 2's PR, `ci: the ci workflow, its steps and guard 1`; ask the founder to add `ci` as the required check and read the protection back (`docs/GITHUB.md`, "Check the protection"); the founder approves; squash-merge (the one-time test of merging a workflow PR, recorded in `docs/LIMITATIONS.md`); tell the coordinator the freeze can end.
-5. Slice 9, `ios/b0-ios-workflow`, after slice 2 merged, under a new freeze: the `tools/ci/` scripts `ios.yml` calls and `ios.yml` itself, which also prints `xcrun swift --version` and fails unless it is `tools/ci/toolchain.py`'s `SWIFT_VERSION`; after its merge, push `ios/b0-ios-check` and tell the coordinator once `ios.yml` runs green there.
-6. When the founder attaches handoff 1's export: check it against the brief, keep it in the project's files; it enters the repository on `ios/b1-handoff-1` only when `docs/plans/B0.md` section 5.2 allows.
+1. Open slice 2's PR, `ci: the ci workflow, its steps and guard 1`, from `api/b0-ci`, with `ci` green on its head; then its independent review (`docs/GITHUB.md` step 3), every finding fixed or answered in a commit that records it, `ci` green again.
+2. Ask the founder to add `ci` (GitHub Actions) as `main`'s required check, then read the protection back (`docs/GITHUB.md`, "Check the protection").
+3. The founder approves the PR; squash-merge (the one-time test of merging a workflow PR, recorded in `docs/LIMITATIONS.md`); tell the coordinator the freeze can end.
+4. Slice 9, `ios/b0-ios-workflow`, after slice 2 merged, under a new freeze: the `tools/ci/` scripts `ios.yml` calls and `ios.yml` itself, which also prints `xcrun swift --version` and fails unless it is `tools/ci/toolchain.py`'s `SWIFT_VERSION`; after its merge, push `ios/b0-ios-check` and tell the coordinator once `ios.yml` runs green there.
+5. When the founder attaches handoff 1's export: check it against the brief, keep it in the project's files; it enters the repository on `ios/b1-handoff-1` only when `docs/plans/B0.md` section 5.2 allows.
 
 **Blocked or waiting for the founder:**
-- Slice 2's `ci.yml`, if the session can't push it (step 1 above), and then adding `ci` as `main`'s required check.
+- Adding `ci` as `main`'s required check, then approving slice 2's PR once it says it's ready.
 - Design handoff 1's export from Claude Design.
 - Accounts for B0 (`docs/TECH-DESIGN.md` section 10). The founder reported on 2026-11-01 submitting the Apple Developer Program enrolment, `tadayo-dev` on Supabase's Pro plan in `us-east-1` with its data API off, a Fly.io sign-up, and `tadayo.app` added in Resend. None is verified yet; each shows when B0 first uses it (the B0 plan's section 1). Still waiting: Apple's approval, then the App Store Connect API key and, before Gate A, the APNs key (ADR-024); Resend's verification of `tadayo.app`; the Supabase project's URL and publishable key (slice 8, or the ios thread's slice 11).
 - `supabase.com` in the environment's allowed domains: the founder's list names it, but the session is refused it (`docs/LIMITATIONS.md`).
@@ -265,7 +264,7 @@ The screen-by-screen list is `design/reference/INVENTORY.md`, "Known differences
 - A design delivery: check the unpacked files against the .zip with `sha256sum`, render SVG frames with the session's Chromium at a device scale factor of 2, and make PDFs with `rsvg-convert -f pdf` (`docs/DESIGN-HANDOFF.md`, "How renders come back"); compare with `compare -metric RMSE`.
 - To be written in B0: the backend tests against Postgres, the privacy matrix and the leak scanner; the Swift package tests; the `ios` workflow and where its snapshots land; the `ops` scripts; how to read the evidence branch.
 
-**Known limits and risks.** See `docs/LIMITATIONS.md`. The ones that shape the work: cloud sessions likely can't push workflow files, and can't compile SwiftUI (`docs/TECH-DESIGN.md` sections 2 and 9); the journal hook doesn't fire in this session, so `tools/ci/journal_check.py --branch` and running the hook by hand stand in for it; the session's PostgreSQL is 16 and can't be upgraded or replaced by a Docker image here, so CI's Postgres 17 is the authority; the runner image offers only iOS 26 simulators, which matters for the pre-gate runs on older iOS (slice 9).
+**Known limits and risks.** See `docs/LIMITATIONS.md`. The ones that shape the work: cloud sessions can't compile SwiftUI (`docs/TECH-DESIGN.md` sections 2 and 9); the journal hook doesn't fire in this session, so `tools/ci/journal_check.py --branch` and running the hook by hand stand in for it; the session's PostgreSQL is 16 and can't be upgraded or replaced by a Docker image here, so CI's Postgres 17 is the authority; the runner image offers only iOS 26 simulators, which matters for the pre-gate runs on older iOS (slice 9).
 
 ### 1.2 api lane
 
@@ -415,6 +414,14 @@ Newest first within each section. One entry per commit, written in that commit, 
 ```
 
 ### 3.1 Shared and B0
+
+#### 2026-11-03 01:05 UTC · shared · api/b0-ci · PR none
+**Did:** Recorded the one-time push test: GitHub accepted `.github/workflows/ci.yml` from the session, and ran it green. `docs/LIMITATIONS.md`'s workflow-files row now says so: the session pushes workflow files itself, each in its own PR. This journal's section 1.1: the result, `ci`'s first run, the next steps (the founder no longer pastes `ci.yml`).
+**Why:** `docs/GITHUB.md`, "Workflow files", "Test it once": the result goes in `docs/LIMITATIONS.md`.
+**Verified:** `git push origin api/b0-ci`: `8fc0e10..b484f66`, no refusal. The file's SHA-256 with one final line break: `771fe89a7f836924beb5a31a58bdd63d87a51a503d1b660826d92b38218ead7c`. Run 41551742269 (`gh api repos/beurni2/tadayo/actions/runs/41551742269/jobs`): `node`, `postgres`, `swift`, `tools`, `guards` and `ci` all `success`. Its logs: `node` ran Node v26.13.0 and pnpm 12.16.1 and the domain tests, and said `openapi:check` and `build` aren't here yet; `postgres`'s `db-check` read `170011`, and `db-bootstrap`, `db-tests` and `privacy` passed empty; `swift` passed empty; `tools` ran the four test files (14, 39 with 1 skipped, 29 and 6 tests, OK); `guards`: guard 1 passed and the journal check ran; `ci`: "every job succeeded: guards, node, postgres, swift, tools". `python3 tools/ci/journal_check.py --branch`: exit 0.
+**Not verified:** Whether the session can merge a workflow PR: tested at slice 2's merge (ADR-022).
+**Decisions and questions:** `docs/LIMITATIONS.md`: the workflow-files row's status. `CLAUDE.md` and `docs/GITHUB.md` still say the session probably can't push workflow files; they change only in a rulebook PR of their own, so slice 2's PR lists it for the founder.
+**Next:** Open slice 2's PR and have it reviewed independently (`docs/GITHUB.md` steps 2 and 3). Done when every finding is fixed or answered in a commit that records the review, with `ci` green.
 
 #### 2026-11-03 00:55 UTC · shared · api/b0-ci · PR none
 **Did:** Added `.github/workflows/ci.yml`, as written and checked in the previous entry, for the one-time test of whether a cloud session can push a workflow file (`docs/GITHUB.md`, "Workflow files", "Test it once"; the B0 plan's slice 2).
