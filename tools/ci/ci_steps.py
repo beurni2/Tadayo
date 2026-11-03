@@ -30,8 +30,8 @@ targets:
   install       pnpm install --frozen-lockfile
   lint, typecheck, format, copy-lint   the root scripts of the same names (format: format:check)
   db-check      the Postgres service answers, at toolchain.POSTGRES_MAJOR
-  tools-tests   every tools/ci/*_test.py, each through `python3 -m unittest`, which fails when
-                a file runs no test
+  tools-tests   every tools/ci/*_test.py, each through `python3 -I -m unittest discover` with
+                only tools/ci on the path, which fails when a file runs no test
   guards        guard 1 (ci_config_guard.py), guard 2 (journal_check.py --branch) and the
                 ratchet; all three skipped on main
   ratchet       the ratchet alone, as the guards step runs it
@@ -117,6 +117,11 @@ TARGETS = [
 # Targets the ratchet lets go, each retired on purpose in a CI-configuration PR of its own (T58):
 # (step, package name, script) for a script, (step, "", path) for a file.
 RETIRED_TARGETS = set()
+# pnpm's own settings can change how every script runs (`scriptShell`, `nodeOptions`, a pnpmfile's
+# `updateConfig`), and pnpm-workspace.yaml and a root pnpmfile aren't CI configuration to guard 1.
+# So the pnpm steps refuse any pnpm-workspace.yaml setting not listed here, and any root pnpmfile:
+# adding one is a CI-configuration PR (T58). pnpm 12 ignores such settings in .npmrc.
+PNPM_SETTINGS = {"packages"}
 PACKAGE_MANAGER = re.compile(r"^pnpm@(\d+\.\d+\.\d+)(?:\+sha\d+\.[0-9a-f]+)?$")
 
 
@@ -186,13 +191,22 @@ class Steps:
             if not line.strip() or line.lstrip().startswith("#"):
                 continue
             if not line.startswith((" ", "-")):
-                inside = line.rstrip() == "packages:"
-                continue
-            if inside:
-                match = re.match(r"^\s*-\s*(['\"]?)([A-Za-z0-9_./*-]+)\1\s*(?:#.*)?$", line)
-                if not match:
+                key = re.match(r"^([A-Za-z][A-Za-z0-9_-]*):\s*(#.*)?$", line.rstrip())
+                setting = re.match(r"^([A-Za-z][A-Za-z0-9_-]*):", line)
+                if setting and setting.group(1) not in PNPM_SETTINGS:
+                    raise ValueError(f"pnpm-workspace.yaml: the setting `{setting.group(1)}` can "
+                                     "change how scripts run; add it to PNPM_SETTINGS in "
+                                     "tools/ci/ci_steps.py, in a CI-configuration PR (T58)")
+                if not key:
                     raise ValueError(f"pnpm-workspace.yaml: can't read the line {line!r}")
-                patterns.append(match.group(2))
+                inside = key.group(1) == "packages"
+                continue
+            if not inside:
+                raise ValueError(f"pnpm-workspace.yaml: can't read the line {line!r}")
+            match = re.match(r"^\s*-\s*(['\"]?)([A-Za-z0-9_.*][A-Za-z0-9_./*-]*)\1\s*(?:#.*)?$", line)
+            if not match:
+                raise ValueError(f"pnpm-workspace.yaml: can't read the line {line!r}")
+            patterns.append(match.group(2))
         if not patterns:
             raise ValueError("pnpm-workspace.yaml lists no packages")
         found = set()
@@ -234,11 +248,16 @@ class Steps:
     def package_step(self, step, env=None, one_at_a_time=False):
         (kind, script, slice_name), = targets_of(step)
         assert kind == "script", step
+        problem = self.pnpm_settings_problem()
+        if problem:
+            print(f"ci: {step}: {problem}")
+            return 1
         packages = self.packages_with_script(script)
         if not packages:
             return self.absent(step, f"a workspace package's `{script}` script", slice_name)
         print(f"ci: {step}: `{script}` in " + ", ".join(packages))
         # No --if-present: if pnpm finds no package with the script, it fails instead of passing.
+        # pnpm's settings were checked above.
         command = ["pnpm", "-r"]
         if one_at_a_time:
             command.append("--workspace-concurrency=1")
@@ -268,8 +287,27 @@ class Steps:
                     present.add((step, name, target))
         return present
 
+    def pnpm_settings_problem(self):
+        """Why pnpm's settings can't be trusted to run the scripts as written, or None."""
+        pnpmfiles = sorted(glob.glob(".pnpmfile*", root_dir=self.root))
+        if pnpmfiles:
+            return (f"{', '.join(pnpmfiles)} can change how scripts run; a pnpmfile is refused "
+                    "here (T58)")
+        try:
+            self.workspace_packages()
+        except (OSError, ValueError) as error:
+            return str(error)
+        return None
+
+    def pnpm(self, step, args, env=None):
+        problem = self.pnpm_settings_problem()
+        if problem:
+            print(f"ci: {step}: {problem}")
+            return 1
+        return self.shell.run(["pnpm", *args], env=env)
+
     def root_script(self, script):
-        return self.shell.run(["pnpm", "run", script])
+        return self.pnpm(script, ["run", script])
 
     def database_env(self):
         return {"DATABASE_URL": APP_URL, "DATABASE_ADMIN_URL": ADMIN_URL}
@@ -293,7 +331,7 @@ class Steps:
         return self.shell.run(["npm", "install", "--global", f"pnpm@{match.group(1)}"])
 
     def install(self):
-        return self.shell.run(["pnpm", "install", "--frozen-lockfile"])
+        return self.pnpm("install", ["install", "--frozen-lockfile"])
 
     def lint(self):
         return self.root_script("lint")
@@ -361,9 +399,13 @@ class Steps:
             print("ci: tools-tests: no tools/ci/*_test.py found")
             return 1
         # unittest exits 5 when a file runs no test, so a file that forgets unittest.main() or
-        # holds pytest-style functions fails instead of passing empty.
+        # holds pytest-style functions fails instead of passing empty. -I and discover with
+        # tools/ci as the top level keep the root off the path, so neither a root unittest.py
+        # nor a tools/__init__.py (outside guard 1's paths) can stand in for the tests.
+        ci_dir = os.path.join("tools", "ci")
         failed = [t for t in tests
-                  if self.shell.run([sys.executable, "-m", "unittest", t]) != 0]
+                  if self.shell.run([sys.executable, "-I", "-m", "unittest", "discover", "-s",
+                                     ci_dir, "-t", ci_dir, "-p", os.path.basename(t)]) != 0]
         for test in failed:
             print(f"ci: tools-tests: {test} failed")
         return 1 if failed else 0

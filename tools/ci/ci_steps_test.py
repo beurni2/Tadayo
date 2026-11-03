@@ -31,8 +31,6 @@ packages:
   - packages/*
   - 'services/api'
   - "tests"   # a comment
-other:
-  - not/a/package
 """
 
 
@@ -155,6 +153,62 @@ class WorkspaceTest(StepsTest):
         self.repo.write("packages/swift/TadayoCore/Package.swift", "// swift-tools-version:6.0")
         steps = ci_steps.Steps(self.repo.root, self.shell, environ={})
         self.assertNotIn("packages/swift", steps.workspace_packages())
+
+
+class PnpmSettingsTest(StepsTest):
+    # The privacy and security review's case: one pnpm setting, or a pnpmfile, could make every
+    # pnpm script report success without running, outside guard 1's paths.
+    PNPM_STEPS = ["install", "lint", "typecheck", "format", "copy-lint", "openapi", "unit", "web",
+                  "db-tests", "privacy"]
+
+    def setUp(self):
+        super().setUp()
+        self.repo.package("tests", **{script: "true" for script in
+                                      ["openapi:check", "test", "build", "test:db",
+                                       "test:privacy"]})
+
+    def assertEveryPnpmStepRefuses(self, *named):
+        for step in self.PNPM_STEPS:
+            with self.subTest(step=step):
+                shell = FakeShell()
+                code, out = self.step(step, shell=shell)
+                self.assertEqual(code, 1, out)
+                self.assertEqual(shell.commands, [])
+                for text in named:
+                    self.assertIn(text, out)
+
+    def test_the_workspace_s_own_settings_run_the_steps(self):
+        for step in self.PNPM_STEPS:
+            with self.subTest(step=step):
+                shell = FakeShell()
+                self.assertEqual(self.step(step, shell=shell)[0], 0)
+                self.assertEqual(len(shell.commands), 1)
+
+    def test_a_setting_not_listed_is_refused(self):
+        for setting in ["scriptShell: /bin/true", "nodeOptions: --require ./x.cjs",
+                        "pnpmfile: x.cjs", "ignoreScripts: true", "other:\n  - not/a/package"]:
+            with self.subTest(setting=setting):
+                self.repo.write("pnpm-workspace.yaml", WORKSPACE + setting + "\n")
+                name = setting.split(":")[0]
+                self.assertEveryPnpmStepRefuses(f"the setting `{name}`", "PNPM_SETTINGS")
+
+    def test_a_line_that_isn_t_a_plain_setting_is_refused(self):
+        for line in ['"scriptShell": /bin/true', "{scriptShell: /bin/true}", "---",
+                     "packages: [apps/web]", "<<: *x"]:
+            with self.subTest(line=line):
+                self.repo.write("pnpm-workspace.yaml", WORKSPACE + line + "\n")
+                self.assertEveryPnpmStepRefuses("pnpm-workspace.yaml")
+
+    def test_an_entry_outside_the_packages_list_is_refused(self):
+        self.repo.write("pnpm-workspace.yaml", "  - packages/stray\n" + WORKSPACE)
+        self.assertEveryPnpmStepRefuses("can't read the line")
+
+    def test_a_root_pnpmfile_is_refused(self):
+        for name in [".pnpmfile.cjs", ".pnpmfile.mjs"]:
+            with self.subTest(name=name):
+                self.repo.write(name, "module.exports = {}\n")
+                self.assertEveryPnpmStepRefuses(name, "pnpmfile")
+                os.remove(os.path.join(self.repo.root, name))
 
 
 class TargetsTest(unittest.TestCase):
@@ -440,12 +494,13 @@ class ToolsTestsStepTest(StepsTest):
         self.repo.write("tools/ci/a_test.py", "")
         self.repo.write("tools/ci/b_test.py", "")
         self.repo.write("tools/ci/helper.py", "")
-        shell = FakeShell(codes={"tools/ci/b_test.py": 1})
+        shell = FakeShell(codes={"b_test.py": 1})
         code, out = self.step("tools-tests", shell=shell)
         self.assertEqual(code, 1)
-        self.assertEqual(shell.commands, [[sys.executable, "-m", "unittest", "tools/ci/a_test.py"],
-                                          [sys.executable, "-m", "unittest", "tools/ci/b_test.py"]])
-        self.assertIn("b_test.py failed", out)
+        isolated = [sys.executable, "-I", "-m", "unittest", "discover", "-s", "tools/ci", "-t",
+                    "tools/ci", "-p"]
+        self.assertEqual(shell.commands, [isolated + ["a_test.py"], isolated + ["b_test.py"]])
+        self.assertIn("tools/ci/b_test.py failed", out)
 
     def test_no_tests_is_a_failure(self):
         self.assertEqual(self.step("tools-tests")[0], 1)
@@ -458,6 +513,16 @@ class ToolsTestsStepTest(StepsTest):
         # pytest-style functions, or a TestCase file without unittest.main(), run nothing when
         # run as a script, and exit 0.
         code, out = self.run_real("def test_x():\n    assert False\n")
+        self.assertEqual(code, 1, out)
+        self.assertIn("c_test.py failed", out)
+
+    def test_nothing_outside_tools_ci_can_stand_in_for_the_tests(self):
+        # The privacy and security review's case: with the root on the path, a root unittest.py
+        # or a tools/__init__.py (outside guard 1's paths) ran instead of the tests.
+        self.repo.write("unittest.py", "import sys\nsys.exit(0)\n")
+        self.repo.write("tools/__init__.py", "import sys\nsys.exit(0)\n")
+        code, out = self.run_real("import unittest\n\nclass T(unittest.TestCase):\n"
+                                  "    def test_x(self):\n        self.fail()\n")
         self.assertEqual(code, 1, out)
         self.assertIn("c_test.py failed", out)
 
