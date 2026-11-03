@@ -288,10 +288,10 @@ Not started. The api thread builds slices 1, 2 and 9 as the one session, in bloc
 
 ### 1.3 ios lane
 
-**Updated:** 2026-11-03 11:38 UTC, ios/b0-handoffs-1-4
+**Updated:** 2026-11-03 11:39 UTC, ios/b0-handoffs-1-4
 
 - **Started:** 2026-11-03 at 11:03 UTC, by the coordinator (ADR-025). Environment: Swift 6.3.3 from swift.org's signed release tarball; the journal hook isn't confirmed to fire in this session, so it runs by hand before each commit.
-- **PRs:** none merged yet. Open: #12 `ios/b0-adr-027` (rulebook: ADR-027, FQ45 recorded), waiting for the founder. This branch, `ios/b0-handoffs-1-4` (the design PR ADR-027 asks for): reviewed once, findings fixed, PR opening next. Started locally, not pushed: `ios/b0-app` (slice 11's first part).
+- **PRs:** none merged yet. Open: #12 `ios/b0-adr-027` (rulebook: ADR-027, FQ45 recorded), waiting for the founder. #13, this branch `ios/b0-handoffs-1-4` (the design PR ADR-027 asks for): reviewed once, findings 1 and 5 to 8 fixed, 2 to 4 due at the merge of `main` after #12; merges after #12. Started locally, not pushed: `ios/b0-app` (slice 11's first part).
 - **Next, in order:**
     1. Independent review of this branch by a fresh subagent (`docs/GITHUB.md` step 3); fix or answer every finding; open the PR with the template's sections; add its row to section 4.2. Done when `ci` is green on the last push and the founder has the link.
     2. When #12 merges, merge `main` into this branch (rebuild the journal from both sides, CLAUDE.md "The journal"), push, then the founder's approval and a squash merge at the approved head.
@@ -1350,6 +1350,14 @@ Two earlier entries claim more than their commits show, and the log is append-on
 
 ### 3.3 ios lane
 
+#### 2026-11-03 11:39 UTC · ios · ios/b0-handoffs-1-4 · PR #13
+**Did:** Opened PR #13 (https://github.com/beurni2/Tadayo/pull/13) from this branch, with the template's sections and the review's findings, and assigned it to the founder. Section 4.2's row for #13. Block 1.3. A correction to PR #12's last entry (`ios/b0-adr-027`, 11:26 UTC): it says the founder's review was requested on GitHub, but that request returned 422 because the founder's account is the PR's author; PR #12 is assigned to the founder, and the founder approves in the thread (ADR-022), so nothing else is needed.
+**Why:** `docs/GITHUB.md`: the PR opens once the review's findings are fixed or answered; the log is append-only, so the 422 is corrected here.
+**Verified:** `gh api repos/beurni2/Tadayo/pulls` returned #13; its assignee is beurni2. `python3 tools/ci/journal_check.py --branch` and the hook by hand: exit 0.
+**Not verified:** `ci` on this commit, checked after the push.
+**Decisions and questions:** None.
+**Next:** When #12 merges: merge `main` into this branch, fixing the review's findings 2 to 4 in the same merge, push, and tell the founder #13 is ready.
+
 #### 2026-11-03 11:38 UTC · ios · ios/b0-handoffs-1-4 · PR none
 **Did:** Fixed the independent review of this branch (a fresh subagent, `docs/GITHUB.md` step 3; 8 findings and 2 notes, listed in its PR).
 - `docs/QUESTIONS.md`: FQ60 to FQ63 each given a default, Claude Code's own since the briefs gave none, each the reading that moves or deletes nothing (FQ60 proposing counts as the proposer's approval; FQ61 every generated occurrence is announced; FQ62 drops can still be added, a pending change touching nothing; FQ63 a leaver's unopened days held, neither opened nor deleted). FQ53's "empty Home" now names its source. The section intro says its sources are in the project's files, not the repository.
@@ -1441,6 +1449,7 @@ The index an auditor uses to find the proof behind section 2.
 
 | PR | Branch | What it changed | Review findings | Evidence |
 |---|---|---|---|---|
+| #13 | `ios/b0-handoffs-1-4` | Design handoffs 1 to 4 unpacked into `design/reference/claude-design/handoff-1/` to `handoff-4/`; 37 states' frames in `design/reference/screens/`; `design/reference/brand/` remade from revision 1.1 (ADR-027); `design/reference/INVENTORY.md` (179 trial states, 86 with a render, 93 missing); FQ46 to FQ63 and FQ65 to FQ69 in `docs/QUESTIONS.md` | One independent review at `4bbb025`: 8 findings and 2 notes; 1 and 5 to 8 fixed in `505a154`, 2 in part; the rest of 2, and 3 and 4, at the merge of `main` after #12; notes 9 and 10 answered (the PR's Review section) | The renders themselves; nothing on `evidence` |
 
 ### 4.3 Gates
 
