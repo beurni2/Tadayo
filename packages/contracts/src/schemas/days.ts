@@ -283,8 +283,9 @@ export const HomeAwaitingActivation = named(
 
 export const HomePaused = named(
   "HomePaused",
-  "Fewer than two members: no new days until someone joins, and Memories stays readable (FQ16). A day " +
-    "already announced still shows as usual until it passes (FQ50).",
+  "Fewer than two members: no new days until someone joins, and Memories stays readable (FQ16). A " +
+    "remaining member's day already announced still shows as usual until it passes (FQ50); a day held " +
+    "because its star left never opens and is never Home's day (FQ63).",
   z.object({ mode: tag("paused"), ...homeBase, recent_days: z.array(DayLink).max(6) }),
 );
 

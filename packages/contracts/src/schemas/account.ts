@@ -22,8 +22,9 @@ export const Me = named(
   "Me",
   "The caller's own account (spec 23): the only place its account id appears; everyone else knows the " +
     "caller by a membership interval (spec 31). No email address, ever. Until `age_confirmed` is true and " +
-    "there's a `display_name`, the club routes answer PROFILE_INCOMPLETE (FQ13). `version` is what an edit " +
-    "sends as `expected_version`.",
+    "there's a `display_name`, the account can only finish setup or leave (FQ13, FQ69): every other route " +
+    "answers PROFILE_INCOMPLETE, devices and analytics events included. `version` is what an edit sends as " +
+    "`expected_version`.",
   z.object({
     id: Id,
     display_name: DisplayName.optional(),
@@ -44,7 +45,9 @@ export const UpdateMeRequest = named(
   "UpdateMeRequest",
   "Change the caller's name or avatar, or confirm once that they're 18 or older (FQ13: `true` only, and " +
     "no birthdate). `avatar_upload_id` is a ready upload made for the avatar. A name or an avatar is taken " +
-    "only once the age is confirmed, in this request or before. Only the fields sent change.",
+    "only once the age is confirmed, in this request or before. Only the fields sent change. A new name for " +
+    "someone who has accepted a roster revision that's still open makes a new revision with that name, as " +
+    "accepting does (FQ66).",
   z.strictObject({
     expected_version: Version,
     display_name: DisplayName.optional(),

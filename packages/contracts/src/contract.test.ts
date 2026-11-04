@@ -272,7 +272,7 @@ describe("the document", () => {
     }
   });
 
-  it("works before the profile is complete for exactly the account's own setup routes (FQ13)", () => {
+  it("works before the profile is complete for exactly the account's own setup routes (FQ13, FQ69)", () => {
     expect(
       OPERATIONS.filter((op) => op.beforeProfile)
         .map((op) => op.id)
@@ -286,8 +286,6 @@ describe("the document", () => {
       "getMe",
       "getMyAvatar",
       "getUpload",
-      "registerDevice",
-      "sendEvents",
       "updateMe",
     ]);
   });
@@ -303,6 +301,7 @@ describe("the document", () => {
       chooseScheduleDays: ["MEMBERSHIP_CHANGED", "VERSION_CONFLICT"],
       completeUpload: ["MEDIA_NOT_READY"],
       confirmScheduleDays: ["MEMBERSHIP_CHANGED", "NOT_ALLOWED", "VERSION_CONFLICT"],
+      createInvitation: ["NOT_ALLOWED"],
       createDrop: [
         "CAPTION_CONTAINS_SOURCE",
         "DUPLICATE_DROP",
@@ -467,6 +466,23 @@ describe("the pre-reveal whitelist (T10)", () => {
         }[name],
       );
     }
+  });
+});
+
+describe("a roster revision's candidates (FQ66, handoff 1)", () => {
+  it("show every member a candidate's id and one name, and the link's state only in the proposer's part", () => {
+    // Every active member gets a revision's candidates. A field added here tells them something about a
+    // candidate, such as whether they have accepted, which handoff 1 keeps to the proposer.
+    expect(Object.keys((schemas.Candidate as JsonObject).properties as JsonObject).sort()).toEqual([
+      "id",
+      "invitation",
+      "name",
+    ]);
+    expect(Object.keys((schemas.CandidateInvitation as JsonObject).properties as JsonObject).sort()).toEqual([
+      "expires_at",
+      "id",
+      "state",
+    ]);
   });
 });
 
@@ -683,19 +699,39 @@ describe("the examples", () => {
   });
 
   it("name a taken day's owner and a clash's other member, and nobody on any other day (book p11, FQ46, FQ78)", () => {
-    let taken = 0;
+    const seen = { taken: 0, clash: 0, no_reveal: 0 };
     for (const [id, set] of Object.entries(examples)) {
       for (const [name, example] of Object.entries(set)) {
         walk(example.value as Json, (node) => {
           if (typeof node.weekday !== "string" || typeof node.suggested !== "boolean") return;
           const where = `${id}.${name}: ${node.weekday}`;
-          if (node.state === "taken") taken += 1;
+          if (node.state === "taken" || node.state === "clash" || node.state === "no_reveal") seen[node.state] += 1;
           expect("owner" in node, where).toBe(node.state === "taken");
           expect("clash_with" in node, where).toBe(node.state === "clash");
         });
       }
     }
-    expect(taken).toBeGreaterThan(0);
+    // Each view FQ46 and FQ78 define has a scene, so none of these checks is empty.
+    for (const count of Object.values(seen)) expect(count).toBeGreaterThan(0);
+  });
+
+  it("show a candidate's link, and whether it was accepted, only to the member who proposed them (handoff 1)", () => {
+    const seen = { proposer: 0, accepted: 0, others: 0 };
+    for (const [id, set] of Object.entries(examples)) {
+      for (const [name, example] of Object.entries(set)) {
+        walk(example.value as Json, (node) => {
+          if (!Array.isArray(node.candidates) || typeof node.proposed_by !== "object") return;
+          const viewer = (node.club as JsonObject).my_membership_id;
+          const proposer = viewer === (node.proposed_by as JsonObject).membership_id;
+          seen[proposer ? "proposer" : "others"] += 1;
+          for (const candidate of node.candidates as JsonObject[]) {
+            if (!proposer) expect("invitation" in candidate, `${id}.${name}`).toBe(false);
+            if ((candidate.invitation as JsonObject | undefined)?.state === "accepted") seen.accepted += 1;
+          }
+        });
+      }
+    }
+    for (const count of Object.values(seen)) expect(count).toBeGreaterThan(0);
   });
 
   it("show who reacted only to the drop's author, Ben, and never to anyone else (FQ73)", () => {

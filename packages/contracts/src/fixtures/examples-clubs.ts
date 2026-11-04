@@ -1,7 +1,7 @@
 // The club examples: Sunday people (six members) and Kitchen table (five, with Leila proposed by Ben,
 // book p30). Each is a scene of its own (book p12).
 import type { Examples } from "./examples.ts";
-import { at, club, clubs, day, member, people, rosters } from "./world.ts";
+import { at, changeFrom, club, clubs, day, member, people, rosters } from "./world.ts";
 
 const sp = clubs.sundayPeople;
 const kt = clubs.kitchenTable;
@@ -46,12 +46,15 @@ const ktNextDays = {
 } as const;
 
 // G05-members and G03-approve: Ben proposed Leila; Maya is the member who approves (FQ60's fixture).
+// `revision` is the one the server makes when Ben's link for Leila is forwarded and Debby accepts it,
+// naming Debby (FQ66).
 const leilaRevision = (
   viewer: "ben" | "maya",
   decision: "pending" | "approved" | "declined",
-  link: "live" | "revoked" = "live",
+  link: "live" | "accepted" | "revoked" = "live",
+  revision: { id: string; name: string } = { id: "rev_kt_leila", name: "Leila" },
 ) => ({
-  id: "rev_kt_leila",
+  id: revision.id,
   version: 1,
   club: club("kitchenTable", viewer),
   state: "open",
@@ -60,9 +63,9 @@ const leilaRevision = (
   candidates: [
     {
       id: "cnd_kt_leila",
-      label: "Leila",
-      // Only Ben, who proposed Leila, sees the link he made (T7): made at 9:41 AM on Friday 6 November,
-      // for seven days (FQ71).
+      name: revision.name,
+      // Only Ben, who proposed Leila, sees the link Ben made and where it stands (T7, handoff 1): made at
+      // 9:41 AM on Friday 6 November, for seven days (FQ71).
       ...(viewer === "ben"
         ? { invitation: { id: "inv_kt_leila", state: link, expires_at: "2026-11-13T14:41:00Z" } }
         : {}),
@@ -70,6 +73,7 @@ const leilaRevision = (
   ],
   my_decision: decision,
 });
+const debbyRevision = { id: "rev_kt_debby", name: "Debby" };
 
 const invitationRoster = (state: "open" | "changed" | "waiting") => ({
   state,
@@ -88,25 +92,52 @@ const invitationRoster = (state: "open" | "changed" | "waiting") => ({
   ],
 });
 
-// Kitchen table's proposal from Monday 16 November once Ben has chosen: Alex, Sam and Maya have confirmed
-// Tuesday, Wednesday and Saturday, each named as the day's owner (book p11, FQ78).
-const ktOwners: Partial<Record<string, "alex" | "sam" | "maya">> = {
+// Kitchen table's proposal after Leila joins, from Monday 7 December, the first week after the days
+// already announced (FQ61): Alex, Sam and Maya have confirmed Tuesday, Wednesday and Saturday, each named
+// as the day's owner (book p11, FQ78). `others` is the rest of the week as Ben sees it: by default Ben has
+// chosen Monday. In a clash, Ben's other member is Leila (FQ46).
+type WeekdayKey = "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday";
+const ktOwners: Partial<Record<WeekdayKey, "alex" | "sam" | "maya">> = {
   tuesday: "alex",
   wednesday: "sam",
   saturday: "maya",
 };
-const ktSlots = (["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"] as const).map(
-  (weekday, index) => {
+const changeDate = (index: number) =>
+  new Date(Date.parse(`${changeFrom}T12:00:00Z`) + index * 86_400_000).toISOString().slice(0, 10);
+const ktSlots = (others: Partial<Record<WeekdayKey, "yours" | "clash" | "no_reveal">> = { monday: "yours" }) =>
+  (["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"] as const).map((weekday, index) => {
     const owner = ktOwners[weekday];
+    const state = owner ? "taken" : (others[weekday] ?? "available");
     return {
       weekday,
-      state: weekday === "monday" ? "yours" : owner ? "taken" : "available",
+      state,
       ...(owner ? { owner: member("kitchenTable", owner) } : {}),
-      first_date: `2026-11-${String(16 + index)}`,
+      ...(state === "clash" ? { clash_with: member("kitchenTable", "leila") } : {}),
+      first_date: changeDate(index),
       suggested: weekday === "monday",
     };
+  });
+const ktProposal = (version: number, others?: Parameters<typeof ktSlots>[0], extra: Record<string, unknown> = {}) => ({
+  id: "spr_kt_2",
+  version,
+  reason: "membership_change",
+  effective_from: changeFrom,
+  days_per_member: 1,
+  slots: ktSlots(others),
+  my_days: ["monday"],
+  my_state: "choosing",
+  state: "open",
+  ...extra,
+});
+const ktSchedule = (proposal: Record<string, unknown>) => ({
+  server_now: at.friday6Morning,
+  club: kt,
+  current: {
+    effective_from: "2026-10-05",
+    assignments: rosters.kitchenTable.map(([who, weekday]) => ({ weekday, person: member("kitchenTable", who) })),
   },
-);
+  proposal,
+});
 
 const spSchedule = rosters.sundayPeople.map(([who, weekday]) => ({ weekday, person: member("sundayPeople", who) }));
 
@@ -236,8 +267,23 @@ export const CLUB_EXAMPLES: { home: Examples; operations: Record<string, Example
     getRosterRevision: {
       approve: { summary: "Maya is asked to approve Leila (G03-approve)", value: leilaRevision("maya", "pending") },
       link_revoked: {
-        summary: "Ben revoked Leila's link: Leila stays proposed, and Ben can make a new link (G01-invite-people)",
+        summary:
+          "Ben revoked Leila's link: Leila stays proposed, and Ben can make a new link (Link revoked; where a later addition's link is managed has no render yet, FQ51)",
         value: leilaRevision("ben", "approved", "revoked"),
+      },
+      another_name: {
+        summary:
+          "Ben's link for Leila was forwarded and Debby accepted it: Maya is asked to approve Debby, since a different name is a new revision (FQ66)",
+        value: leilaRevision("maya", "pending", "live", debbyRevision),
+      },
+      another_name_proposer: {
+        summary:
+          "The same revision as Ben sees it: Ben approves Debby too, and only Ben sees that the link was accepted (FQ66, handoff 1)",
+        value: leilaRevision("ben", "pending", "accepted", debbyRevision),
+      },
+      superseded: {
+        summary: "Leila's revision once Debby's replaced it: its approvals no longer count (FQ66, T7)",
+        value: { ...leilaRevision("maya", "approved"), state: "superseded", version: 2, superseded_by: "rev_kt_debby" },
       },
     },
     approveRoster: {
@@ -251,7 +297,7 @@ export const CLUB_EXAMPLES: { home: Examples; operations: Record<string, Example
     },
     createInvitation: {
       link: {
-        summary: "Leila's share link, for Ben to send (G01-invite-people)",
+        summary: "Leila's share link, for Ben to send (book p30)",
         value: {
           invitation_id: "inv_kt_leila",
           candidate_id: "cnd_kt_leila",
@@ -315,6 +361,11 @@ export const CLUB_EXAMPLES: { home: Examples; operations: Record<string, Example
           club: { ...kt, my_membership_id: "mem_kt_leila" },
         },
       },
+      another_name: {
+        summary:
+          "Debby accepted Ben's link for Leila: a new revision names Debby, and Debby waits while every member approves it (FQ66)",
+        value: { invitation_id: "inv_kt_leila", state: "waiting" },
+      },
     },
     getSchedule: {
       sunday_people: {
@@ -328,61 +379,24 @@ export const CLUB_EXAMPLES: { home: Examples; operations: Record<string, Example
       confirm_one_day: {
         summary:
           "Kitchen table's proposal after Leila joins: Ben chooses Monday; the days others confirmed name their owners (G04, FQ78)",
-        value: {
-          server_now: at.friday6Morning,
-          club: kt,
-          current: {
-            effective_from: "2026-10-05",
-            assignments: rosters.kitchenTable.map(([who, weekday]) => ({
-              weekday,
-              person: member("kitchenTable", who),
-            })),
-          },
-          proposal: {
-            id: "spr_kt_2",
-            version: 1,
-            reason: "membership_change",
-            effective_from: "2026-11-16",
-            days_per_member: 1,
-            slots: ktSlots,
-            my_days: ["monday"],
-            my_state: "choosing",
-            state: "open",
-          },
-        },
+        value: ktSchedule(ktProposal(1)),
+      },
+      clash: {
+        summary:
+          "Ben and Leila both chose Friday: neither can confirm it until one chooses again, and only the two of them see each other's name (FQ46, FQ55)",
+        value: ktSchedule(ktProposal(1, { friday: "clash" }, { my_days: ["friday"] })),
+      },
+      no_reveal: {
+        summary:
+          "Nina and Leila both chose Friday: Ben sees only that it has no reveal scheduled (G04-conflict-others, FQ46)",
+        value: ktSchedule(ktProposal(1, { monday: "yours", friday: "no_reveal" })),
       },
     },
     chooseScheduleDays: {
-      chosen: {
-        summary: "Ben chose Monday",
-        value: {
-          id: "spr_kt_2",
-          version: 2,
-          reason: "membership_change",
-          effective_from: "2026-11-16",
-          days_per_member: 1,
-          slots: ktSlots,
-          my_days: ["monday"],
-          my_state: "choosing",
-          state: "open",
-        },
-      },
+      chosen: { summary: "Ben chose Monday", value: ktProposal(2) },
     },
     confirmScheduleDays: {
-      confirmed: {
-        summary: "Ben confirmed Monday",
-        value: {
-          id: "spr_kt_2",
-          version: 3,
-          reason: "membership_change",
-          effective_from: "2026-11-16",
-          days_per_member: 1,
-          slots: ktSlots,
-          my_days: ["monday"],
-          my_state: "confirmed",
-          state: "open",
-        },
-      },
+      confirmed: { summary: "Ben confirmed Monday", value: ktProposal(3, undefined, { my_state: "confirmed" }) },
     },
     leaveClub: {
       kept: {

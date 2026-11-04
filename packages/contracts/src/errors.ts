@@ -13,13 +13,14 @@ export const ERRORS = {
   UNAUTHENTICATED: [401, "No valid session: sign in again."],
   PROFILE_INCOMPLETE: [
     403,
-    "The account hasn't confirmed it's 18 or older (FQ13) or has no name yet: finish `PATCH /v1/me` first.",
+    "The account hasn't confirmed it's 18 or older (FQ13) or has no name yet: finish `PATCH /v1/me` first. " +
+      "Until then it can only finish setup or leave (FQ69).",
   ],
   NOT_ALLOWED: [
     403,
     "Something the caller can see but can't do now: reacting to their own drop (spec 16), confirming a " +
-      "day that clashes with another member's choice (FQ55), or revoking a link the candidate has already " +
-      "used to join.",
+      "day that clashes with another member's choice (FQ55), or revoking or replacing a link the candidate " +
+      "has accepted with (handoff 4).",
   ],
   NOT_FOUND: [
     404,

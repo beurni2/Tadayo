@@ -125,9 +125,9 @@ const ACCOUNT: Operation[] = [
     path: "/v1/devices/current",
     summary: "Register this sign-in's device for pushes",
     description:
-      "One registration per sign-in, replaced by each new token (TECH-DESIGN section 6). B8 finishes the " +
-      "mechanism in its own contract PR, with its privacy and security review.",
-    beforeProfile: true,
+      "One registration per sign-in, replaced by each new token (TECH-DESIGN section 6), once the profile is " +
+      "complete: an account stopped at the age step keeps no device (FQ69). B8 finishes the mechanism in its " +
+      "own contract PR, with its privacy and security review.",
     body: RegisterDeviceRequest,
     ok: { status: 200, json: DeviceRegistration },
   },
@@ -157,8 +157,9 @@ const ACCOUNT: Operation[] = [
     method: "post",
     path: "/v1/events",
     summary: "Send the app's analytics events",
-    description: "Only spec 36's client-side events, pseudonymous, with no content (T51).",
-    beforeProfile: true,
+    description:
+      "Only spec 36's client-side events, pseudonymous, with no content (T51), and only once the profile is " +
+      "complete: nothing is recorded of an account stopped at the age step (FQ69).",
     body: ClientEventBatch,
     ok: { status: 204 },
   },

@@ -130,6 +130,13 @@ export function day(key: ClubKey, who: Who, date: number | string, phase: Phase)
   };
 }
 
+/**
+ * The first Monday a schedule change can start, seen from Friday 6 November. The fixtures take the worker
+ * to generate four weeks ahead (spec 05 says several weeks; B2 sets the worker's own), so every day to
+ * Saturday 5 December is announced and stays as it is (FQ61). G04-change shows 16 November, inside them.
+ */
+export const changeFrom = "2026-12-07";
+
 /** Times the book's scenes happen at (book p12, p29, p30). */
 export const at = {
   friday6Morning: "2026-11-06T14:41:00Z", // Friday 6 November, 9:41 AM: Debby's Friday is open

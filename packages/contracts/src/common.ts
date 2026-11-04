@@ -190,7 +190,9 @@ export const Person = named(
 
 export const ClubState = named(
   "ClubState",
-  "proposed: waiting for two people to approve the same roster (spec 04, 32, T7). active: it has days. " +
+  "proposed: waiting for two people to approve the same roster (spec 04, 32, T7); the creator's proposal " +
+    "counts as theirs, so the first acceptance starts it (FQ54). active: it has started, though its days " +
+    "may not be confirmed yet (HomeNoDays). " +
     "paused: fewer than two members, so no new days (FQ16). suspended: stopped by moderation (spec 22).",
   z.enum(["proposed", "active", "paused", "suspended"]),
 );
@@ -206,7 +208,8 @@ export const OccurrencePhase = named(
   "OccurrencePhase",
   "Where a day is, from the server's clock at the time of the response (T1, T5): collecting before " +
     "reveal_at, open until close_at, past after it. unavailable: cancelled or suspended (spec 06, 22), " +
-    "with no reason and nothing in it (T9). The app never computes this from its own clock, and counts " +
+    "with no reason and nothing in it (T9). A day held because its star left the club never opens (FQ63), " +
+    "and gets its stage with leaving, in B6. The app never computes this from its own clock, and counts " +
     "down from `server_now`.",
   z.enum(["collecting", "open", "past", "unavailable"]),
 );

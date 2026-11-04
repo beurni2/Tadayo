@@ -131,14 +131,17 @@ export const CLUB_OPERATIONS: Operation[] = [
     path: "/v1/clubs/{club_id}/invitations",
     summary: "A share link for one candidate",
     description:
-      "Only the member who proposed the candidate can make or revoke its link, from their own invitation list " +
-      "(G01; T7 makes the link single-use). A new link replaces the " +
-      "candidate's earlier one, after a revoke or an expiry (Create new link) or when the app no longer holds " +
-      "it (FQ77). A retry with the same key returns the first answer without its `url`, and makes nothing " +
-      "new (InvitationLink, T19, FQ77).",
+      "Only the member who proposed the candidate can make or revoke its link (T7 makes the link " +
+      "single-use): during setup from the invitation list (G01-invite-people), which FQ51's default reaches " +
+      "only then; for a later addition, such as Leila in Kitchen table (book p30), where the link is shared " +
+      "and managed has no render yet. A new link replaces the candidate's earlier one, after a revoke or an " +
+      "expiry (Create new link) or when the app no longer holds it (FQ77), and NOT_ALLOWED once the " +
+      "candidate has accepted with it (handoff 4). A retry with the same key returns the first answer " +
+      "without its `url`, and makes nothing new (InvitationLink, T19, FQ77).",
     idempotent: true,
     body: CreateInvitationRequest,
     ok: { status: 201, json: InvitationLink },
+    errors: ["NOT_ALLOWED"],
   },
   {
     id: "revokeInvitation",
@@ -146,9 +149,10 @@ export const CLUB_OPERATIONS: Operation[] = [
     path: "/v1/invitations/{invitation_id}",
     summary: "Revoke a link",
     description:
-      "The link stops working; the candidate keeps their place, and the proposer can make a new link " +
-      "(G01-invite-people). Repeating the revoke returns the same answer. NOT_ALLOWED once the candidate " +
-      "has accepted, when there's nothing left to revoke.",
+      "The link stops working; the candidate keeps their place, and the proposer can make a new link (Link " +
+      "revoked, G01-invite-people-revoked). Repeating the revoke returns the same answer. NOT_ALLOWED once " +
+      "the candidate has accepted with it, in this revision or an earlier one, since accepting isn't undone " +
+      "by revoking a link (handoff 4).",
     ok: { status: 200, json: RevokedInvitation },
     errors: ["NOT_ALLOWED"],
   },
@@ -185,8 +189,10 @@ export const CLUB_OPERATIONS: Operation[] = [
     path: "/v1/invitations/accept",
     summary: "Accept the exact roster",
     description:
-      "The candidate accepts the revision they saw (spec 04, T7). Retried with the same key, it returns the " +
-      "first answer, though the token is used.",
+      "The candidate accepts the revision they saw (spec 04, T7). An account named differently from the " +
+      "candidate makes a new revision with its name, which every member approves again (FQ66, " +
+      "AcceptInvitationRequest). Retried with the same key, it returns the first answer, though the token " +
+      "is used.",
     idempotent: true,
     body: AcceptInvitationRequest,
     ok: { status: 200, json: InvitationAcceptance },
@@ -206,7 +212,8 @@ export const CLUB_OPERATIONS: Operation[] = [
     path: "/v1/schedule-proposals/{proposal_id}/choice",
     summary: "Choose the caller's days",
     description:
-      "From slots that are the caller's or available; a clash is shown, never swapped (spec 05, T6, FQ55). " +
+      "From slots whose state is yours, clash or available: a clashed day may be kept, and a clash is shown, " +
+      "never swapped (spec 05, T6, FQ55). " +
       "MEMBERSHIP_CHANGED when a newer proposal replaced this one (`current_id`).",
     idempotent: true,
     body: ScheduleChoiceRequest,
@@ -218,7 +225,10 @@ export const CLUB_OPERATIONS: Operation[] = [
     method: "post",
     path: "/v1/schedule-proposals/{proposal_id}/confirmation",
     summary: "Confirm the caller's days",
-    description: "The proposal applies at its boundary once every active member has confirmed (spec 05, FQ56).",
+    description:
+      "At activation, each confirmed day goes ahead, while a clashed day has no reveal until one of its two " +
+      "members chooses again (FQ55). After a membership change, the proposal applies at its boundary once " +
+      "every active member has confirmed, and the current days continue until then (spec 05, FQ56).",
     idempotent: true,
     body: ScheduleConfirmRequest,
     ok: { status: 200, json: ScheduleProposal },
