@@ -300,12 +300,12 @@ And slice 9 (PR #10), run in the session before its merge, its tests also in `ci
 
 ### 1.3 ios lane
 
-**Updated:** 2026-11-04 21:05 UTC, ios/b2-handoffs-5-6
+**Updated:** 2026-11-04 21:07 UTC, ios/b2-handoffs-5-6
 
 - **Started:** 2026-11-03 at 11:03 UTC, by the coordinator (ADR-025). Environment: Swift 6.3.3 from swift.org's signed release tarball; the journal hook isn't confirmed to fire in this session, so it runs by hand before each commit.
 - **PRs:** #12 (ADR-027) merged as `17de7fd`; #13 (handoffs 1 to 4, brand 1.1) merged as `74943c8` on 2026-11-04 at the founder's "all PRs that are ready to be merged can be merged". Pushed, no PR: `ios/b0-app` (slice 11's first part). This branch, `ios/b2-handoffs-5-6`: handoffs 5 and 6, waiting on the founder's card.
 - **Next, in order:**
-    1. This branch: unpack handoff 6; copy the 786×1704 state frames of handoffs 5 and 6 into `design/reference/screens/` (handoff 6 winning) and handoff 6's component sheet into `design/reference/brand/brand-components.png`; then `design/reference/INVENTORY.md` and `docs/QUESTIONS.md` from `/mnt/project-files/design/handoff-5/check/handoff-5-check.md` section 8 and `/mnt/project-files/design/handoff-6/check/handoff-6-check.md` section 8, with FQ79 to FQ83 (reserved). Done when both checks' section 8 items are applied and an independent review passes.
+    1. This branch (handoffs 5 and 6 unpacked; their frames in `design/reference/screens/` and handoff 6's sheet in `design/reference/brand/`): `design/reference/INVENTORY.md` and `docs/QUESTIONS.md` from `/mnt/project-files/design/handoff-5/check/handoff-5-check.md` section 8 and `/mnt/project-files/design/handoff-6/check/handoff-6-check.md` section 8, with FQ79 to FQ83 (reserved). Done when both checks' section 8 items are applied and an independent review passes.
     2. `ios/b0-app`: read its `ios` run, commit the snapshot references, review, PR.
 - **Blocked or waiting:** the founder's card on bringing handoffs 5 and 6 in now.
 - **Design** (`design/reference/INVENTORY.md` on `main`): 179 trial states, 86 with a render, 93 missing; brand 1.1. Handoffs 5 and 6 on this branch.
@@ -1384,6 +1384,14 @@ Two earlier entries claim more than their commits show, and the log is append-on
 **Next:** Push, check `ci`, then PR #11's description and the founder (block 1.2's Next steps 1 and 2).
 
 ### 3.3 ios lane
+
+#### 2026-11-04 21:07 UTC · ios · ios/b2-handoffs-5-6 · PR none
+**Did:** Copied the 786×1704 state frames of handoffs 5 and 6 into `design/reference/screens/`, handoff 6's frame winning where both have one: 25 new files and 4 replaced (`F01-friends.png`, `G04-change.png`, `G04-conflict.png`, `G05-schedule.png`). Three come from handoff 5 only (`G04-confirmed-others.png`, `G05-members-proposed.png`, `G06-switcher-status.png`); the other 26 are handoff 6's. Replaced `design/reference/brand/brand-components.png` with handoff 6's component sheet (2400×19360) and rewrote its row in `design/reference/brand/README.md`: handoff 6's sheet keeps handoff 5's unchanged and adds samples of every new part, and handoff 5's kept handoff 4's except the two card samples. The README now says the tokens and the dark icon SVG are byte-identical in handoffs 1 to 6, and names PR #13 where it said "before this change".
+**Why:** `design/reference/README.md` makes `screens/` the named files converted from deliveries, winning over `2.1/`; the founder chose handoff 5's (now handoff 6's) G04-one-day and G04-two-days as the reference (FQ2, 2026-11-04 00:22 UTC). The inventory and questions follow in the next commit.
+**Verified:** `cmp` of each of the 29 screens against its source frame in `design/reference/claude-design/handoff-6/frames/` or `handoff-5/frames/`: all identical. `identify`: all 67 files in `screens/` are 786×1704. `cmp` of `brand/brand-components.png` against `handoff-6/frames/brand-components.png`: identical. `sha256sum` of `brand-tokens.json` in handoffs 1 to 6: all `e6d05848…`; `brand-icon-dark.svg` in handoffs 1 to 6: all `530fc9b7…`. `python3 tools/ci/journal_check.py --branch` and the hook by hand: pass.
+**Not verified:** The inventory doesn't yet point at the new files; that's the next commit.
+**Decisions and questions:** Handoff 6's frame wins over handoff 5's for the same state, since handoff 6 redrew them to its brief (`/mnt/project-files/design/handoff-6/check/handoff-6-check.md`). Handoff 4's sheet stays as it arrived under `claude-design/handoff-4/frames/`.
+**Next:** Apply section 8 of both checks to `design/reference/INVENTORY.md` and `docs/QUESTIONS.md` (FQ79 to FQ83), then an independent review.
 
 #### 2026-11-04 21:05 UTC · ios · ios/b2-handoffs-5-6 · PR none
 **Did:** Unpacked design handoff 6 (the rows handoff 5's check left, and redraws), as it arrived, into `design/reference/claude-design/handoff-6/`: `Tadayo_Handoff_6_Pack.zip` from `/mnt/project-files/design/handoff-6/export/` (SHA-256 `d96c3d9c142198c09ed6…`), 71 files: 27 frames (26 states and the component sheet) as PNG and SVG, `IMPLEMENTATION.md`, `README.md`, seven JSON files (`brand-tokens.json`, `component-contracts.json`, `copy-contracts.json`, `frame-manifest.json`, `screen-copy.json`, `source-provenance.json`, `validation-report.json`), `SHA256SUMS.txt`, the PDF and the assets. Block 1.3's Updated line, this entry.
