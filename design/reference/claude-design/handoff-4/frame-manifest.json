@@ -1,0 +1,199 @@
+{
+  "handoff": 4,
+  "coordinateSystem": "points",
+  "screenOrder": [
+    "G03-approve",
+    "G01-pending",
+    "G06-no-club",
+    "G02-link-entry-signed-in",
+    "G01-invite-people-revoked",
+    "G02-revoked",
+    "G02-web-revoked"
+  ],
+  "frames": [
+    {
+      "order": 1,
+      "name": "G03-approve",
+      "width": 393,
+      "height": 852,
+      "category": "screen",
+      "svg": "frames/G03-approve.svg",
+      "png": "frames/G03-approve.png",
+      "pngScale": 2,
+      "viewer": "Maya",
+      "base": "Handoff 2 G03-approve",
+      "changes": [
+        "Shield replaces lock",
+        "Hugging note with 16 pt insets; no 89 pt minimum"
+      ],
+      "retained": [
+        "28 pt Leila",
+        "13 pt club/count context",
+        "secondaryText note",
+        "No action hairline",
+        "Other positions and controls"
+      ],
+      "sha256": {
+        "svg": "a46631f3cd58434bfea9f8fdf82c660d3a4c3efcba9810669340ec2590712957",
+        "png": "7de88cd715c23a7ec47984dc255c19f1552f6d121bf5126b180e8dd1f8afc338"
+      }
+    },
+    {
+      "order": 2,
+      "name": "G01-pending",
+      "width": 393,
+      "height": 852,
+      "category": "screen",
+      "svg": "frames/G01-pending.svg",
+      "png": "frames/G01-pending.png",
+      "pngScale": 2,
+      "viewer": "Ben",
+      "base": "Handoff 1 G01-pending; H2/H3 contracts",
+      "acceptedInvitees": false,
+      "activationDefault": "Ben approval + first other acceptance of the same roster",
+      "primaryRoute": "G05-members proposed-roster review",
+      "sha256": {
+        "svg": "fe1884ee0589fae46078b9db58a0c28d94824324a341ce6d6c4464e14102fed2",
+        "png": "559aab65d00a7634960e6f26b006d647de497873d9d048bfb8d9281a1b96b9b6"
+      }
+    },
+    {
+      "order": 3,
+      "name": "G06-no-club",
+      "width": 393,
+      "height": 852,
+      "category": "screen",
+      "svg": "frames/G06-no-club.svg",
+      "png": "frames/G06-no-club.png",
+      "pngScale": 2,
+      "viewer": "Ben",
+      "base": "Handoff 1 G06-no-club; H2 contracts",
+      "changes": [
+        "No-club root header",
+        "Secondary invitation button",
+        "Private drafts row"
+      ],
+      "sha256": {
+        "svg": "cc4f4bcb23b6ab1a26801324f1f1b239b79953c08fb6a01cdf12a73ace619186",
+        "png": "a75c5252bc4faf0334bec7baf576719f96379caa3c358e671f9de3002f8f1bef"
+      }
+    },
+    {
+      "order": 4,
+      "name": "G02-link-entry-signed-in",
+      "width": 393,
+      "height": 852,
+      "category": "screen",
+      "svg": "frames/G02-link-entry-signed-in.svg",
+      "png": "frames/G02-link-entry-signed-in.png",
+      "pngScale": 2,
+      "base": "Handoff 2 G02-link-entry",
+      "signedIn": true,
+      "hasClub": false,
+      "changes": [
+        "Signed-in helper only"
+      ],
+      "noClubMetadata": true,
+      "sha256": {
+        "svg": "bd178d55e712ff3d44fe165c5e663ba95ccb76092027cb924a06d11c0599be96",
+        "png": "0297b1abdb91fbf78b42ed748f3d9f7defa547ba8064fd7eaf15c4e03774d391"
+      }
+    },
+    {
+      "order": 5,
+      "name": "G01-invite-people-revoked",
+      "width": 393,
+      "height": 852,
+      "category": "screen",
+      "svg": "frames/G01-invite-people-revoked.svg",
+      "png": "frames/G01-invite-people-revoked.png",
+      "pngScale": 2,
+      "viewer": "Ben",
+      "base": "Handoff 1 full G01-invite-people; H2 More control",
+      "revokedInvitee": "Alex",
+      "acceptedInvitee": "Debby",
+      "moreControls": [
+        "Maya",
+        "Alex",
+        "Sam",
+        "Nina"
+      ],
+      "statusGlyph": "xmark.circle",
+      "sha256": {
+        "svg": "3601423ee88b77c22ffed8f8ae5a2d4cff8366b19ed7d726179e14601009c23a",
+        "png": "28e016225430b2583853321d96e0741f7946874b515a44c03556959ecaeecaed"
+      }
+    },
+    {
+      "order": 6,
+      "name": "G02-revoked",
+      "width": 393,
+      "height": 852,
+      "category": "screen",
+      "svg": "frames/G02-revoked.svg",
+      "png": "frames/G02-revoked.png",
+      "pngScale": 2,
+      "viewer": "Alex",
+      "signedIn": true,
+      "hasClub": false,
+      "sharedWith": [
+        "unknown",
+        "already used by another account"
+      ],
+      "noInviter": true,
+      "noClubMetadata": true,
+      "sha256": {
+        "svg": "5b188228bf1f7f324c2ae7d85c24b66060609e772845e78628df8add622f9f6c",
+        "png": "4926bf4d77cb9ea0374d1f688b9bf63e6c383f6ff15fb4b59de2a8660e51878c"
+      }
+    },
+    {
+      "order": 7,
+      "name": "G02-web-revoked",
+      "width": 393,
+      "height": 852,
+      "category": "web",
+      "svg": "frames/G02-web-revoked.svg",
+      "png": "frames/G02-web-revoked.png",
+      "pngScale": 2,
+      "signedIn": false,
+      "noInviter": true,
+      "noClubMetadata": true,
+      "wordmarkWidth": 144,
+      "darkAndZoom": "Inherits H2 G02-web-dark and G02-web-xl, no additional frames",
+      "sha256": {
+        "svg": "f7fe0d83d471f4203a342e854788024c767fee183189b67cb6c60588e6523ce8",
+        "png": "03debc742104766dff8f22de4e7e7713edf50d4d4f8ae17859d1dd95f134e83a"
+      }
+    },
+    {
+      "order": 8,
+      "name": "brand-components",
+      "width": 1200,
+      "height": 5780,
+      "category": "brand",
+      "svg": "frames/brand-components.svg",
+      "png": "frames/brand-components.png",
+      "pngScale": 2,
+      "base": "Whole H2 sheet and additive H3 specimens, then H4 clarifications",
+      "paletteRevision": "1.1 unchanged",
+      "sha256": {
+        "svg": "a7993013e8c61265c2ef99029331e559f470452c29a9104b222ee3fad3499588",
+        "png": "38a43f16219483a4e682ebe879e3b23d29e375ec996ad3ac8c4d3176f04eb076"
+      }
+    }
+  ],
+  "font": "Arimo supplied and outlined in SVG; production iOS system font",
+  "brandRevision": "1.1",
+  "baseAssets": "Handoff 2, with H1 revision 1.1 tokens and wordmark/dark icon unchanged",
+  "darkPhoneFrames": [],
+  "largeTextPhoneFrames": [],
+  "noteReference": {
+    "width": 353,
+    "height": 68,
+    "textWidth": 289,
+    "lineCount": 2,
+    "inset": 16,
+    "gap": 12
+  }
+}

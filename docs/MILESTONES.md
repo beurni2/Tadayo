@@ -75,11 +75,11 @@ How the two threads start and stay in step (ADR-025):
     - `GET /v1/me` and `PATCH /v1/me`.
 - **The app.**
     - `project.yml`, with the app and share extension targets building on CI, at the minimum iOS the founder confirms (FQ4). Both targets carry a privacy manifest and `ITSAppUsesNonExemptEncryption = NO`.
-    - `TadayoDesign` with book p35's tokens and the components of `docs/TECH-DESIGN.md` section 4, in the Lab (only in builds that point at `dev`), light and dark, with the fixture cast and photos (FQ24).
+    - `TadayoDesign` with the brand's tokens (revision 1.1, ADR-027) and the components of `docs/TECH-DESIGN.md` section 4, in the Lab (only in builds that point at `dev`), light and dark, with the fixture cast and photos (FQ24).
     - Sign-in and the profile (screens A02 and A03), built from spec until their renders arrive.
     - The three tabs with truthful empty states.
     - Snapshot tests producing PNGs and render-beside-snapshot contact sheets.
-    - A TestFlight build on the founder's iPhone. App Store Connect refuses an upload without an app icon, and the only icon allowed is handoff 0's (T46), so the first upload waits for it, and so do the spikes that need the founder's iPhone (S3 and S6 in B0, and S1, S2 and S4 before Gate A). Until then, the app is built and tested on CI.
+    - A TestFlight build on the founder's iPhone. App Store Connect refuses an upload without an app icon, and the only icon allowed is Claude Design's (T46), from `design/reference/brand/` (revision 1.1 since ADR-027), so the first upload waits for it, and so do the spikes that need the founder's iPhone (S3 and S6 in B0, and S1, S2 and S4 before Gate A). Until then, the app is built and tested on CI.
 - **The brand handoff.** Design handoff 0 is ready in the founder's guide, so he can start it on day one. Copy it into `docs/plans/B0.md`. Gate 0 waits for its icon frames: if the rest of the brand takes longer, the founder can send the design as soon as those three frames are done, and the rest later.
 - **The B1 handoff.** Write it in the B0 plan, for screens A02 and A03 and the club states B1 needs. Send it to the founder only once handoff 0's `brand-tokens.md` and `brand-components.png` are on `main`, because it builds on them.
 - **Deploy.** `dev` on Supabase and Fly, connected through the session pooler, and `deploy-dev` on merge to `main`.
@@ -109,7 +109,7 @@ How the two threads start and stay in step (ADR-025):
 - the Supabase probe's result on `dev`: every REST, GraphQL and Storage call refused or empty, and the data API off;
 - a PR that went through the independent review, with every finding fixed or answered;
 - `main`'s branch protection read back from GitHub, matching `docs/GITHUB.md` ("Check the protection");
-- the Lab beside book p35's tokens and the 2.1 components.
+- the Lab beside the brand's tokens (revision 1.1, ADR-027) and its component sheet.
 
 ## B1: Clubs (spec 38 step 1) → part of Gate A
 

@@ -1,0 +1,209 @@
+{
+  "handoff": 3,
+  "coordinateSystem": "points",
+  "screenOrder": [
+    "G04-conflict",
+    "G04-change",
+    "G05-schedule",
+    "H01-awaiting-activation",
+    "H01-paused",
+    "H01-loading",
+    "F01-friends-dark",
+    "F01-friends"
+  ],
+  "frames": [
+    {
+      "order": 1,
+      "name": "G04-conflict",
+      "width": 393,
+      "height": 852,
+      "svg": "frames/G04-conflict.svg",
+      "png": "frames/G04-conflict.png",
+      "pngScale": 2,
+      "category": "screen",
+      "constructedFixture": true,
+      "theme": "light",
+      "primaryState": "disabled",
+      "native": "Single-selection weekday rows, readable unavailable assignments",
+      "copyPrefix": "G04.conflict",
+      "sha256": {
+        "svg": "fe91abc04940b4d5730bb398c484d3737c7cb43c3cb9bb38de28e529cb738d0e",
+        "png": "c9b3bf9e0908dac9a0362d259a4ea5450304693135164f4aa24777f4c0df1d5c"
+      }
+    },
+    {
+      "order": 2,
+      "name": "G04-change",
+      "width": 393,
+      "height": 852,
+      "svg": "frames/G04-change.svg",
+      "png": "frames/G04-change.png",
+      "pngScale": 2,
+      "category": "screen",
+      "constructedFixture": true,
+      "theme": "light",
+      "effectiveDate": "2026-11-16",
+      "unchangedAnnouncedDates": [
+        "2026-11-09",
+        "2026-11-12",
+        "2026-11-10",
+        "2026-11-13"
+      ],
+      "sha256": {
+        "svg": "a110bef71e9da6ad8d5b0d39c421e9d3a6808ecbd5cdb50b03d629e501988729",
+        "png": "f03c962ef389e2535224ab1c3184928c7f6554556da43a69d83220c23c637327"
+      }
+    },
+    {
+      "order": 3,
+      "name": "G05-schedule",
+      "width": 393,
+      "height": 852,
+      "svg": "frames/G05-schedule.svg",
+      "png": "frames/G05-schedule.png",
+      "pngScale": 2,
+      "category": "screen",
+      "readOnly": true,
+      "theme": "light",
+      "nextDates": false,
+      "weekOrder": "Monday–Sunday",
+      "sha256": {
+        "svg": "77f34a1a2c2b1824d6c9f5599d355b236c64784b1cfe76a4606495ecc41e1193",
+        "png": "5cff98432b896a3d3dcdd8b0ae509c4df63d0540aafd600baacf047eec944115"
+      }
+    },
+    {
+      "order": 4,
+      "name": "H01-awaiting-activation",
+      "width": 393,
+      "height": 852,
+      "svg": "frames/H01-awaiting-activation.svg",
+      "png": "frames/H01-awaiting-activation.png",
+      "pngScale": 2,
+      "category": "screen",
+      "theme": "light",
+      "primaryRoute": "G05-members proposed-roster review",
+      "noDate": true,
+      "noContentPreview": true,
+      "viewer": "Ben",
+      "sha256": {
+        "svg": "92cb07a0c9df45b328b9c34475e6db89d1343e37dbed5722b485365fde236499",
+        "png": "edf6ae0d3d00cdf5bc119d1a85c175aeb146b609e00dcbd06e5d00a4bf3181c4"
+      }
+    },
+    {
+      "order": 5,
+      "name": "H01-paused",
+      "width": 393,
+      "height": 852,
+      "svg": "frames/H01-paused.svg",
+      "png": "frames/H01-paused.png",
+      "pngScale": 2,
+      "category": "screen",
+      "theme": "light",
+      "constructedFixture": true,
+      "remainingActiveMember": "Ben",
+      "remainingAnnouncedDays": false,
+      "primaryRoute": "M01 authorized Kitchen table history",
+      "sha256": {
+        "svg": "05d94db138f1fa192c6c28f02ae2e8b425c15e2fe15fa906bc6184afb58ff222",
+        "png": "9c5592fb1ab6fb8833f535a31a7a730b9a0b11d1196bc9e0895240e4694aec79"
+      }
+    },
+    {
+      "order": 6,
+      "name": "H01-loading",
+      "width": 393,
+      "height": 852,
+      "svg": "frames/H01-loading.svg",
+      "png": "frames/H01-loading.png",
+      "pngScale": 2,
+      "category": "screen",
+      "theme": "light",
+      "oneNeutralShell": true,
+      "indicator": "Native indeterminate activity indicator",
+      "allowedPayload": [
+        "selected club name",
+        "own account photo"
+      ],
+      "sha256": {
+        "svg": "910ce5fdc81e3c73174b189d76a8056596a528f1cd1500d2098ccbb3e7cb2baf",
+        "png": "e3d8cd2456e1f3ae0fa8e62ee8ba34c9637975fc01da288481dd97a4a14d421e"
+      }
+    },
+    {
+      "order": 7,
+      "name": "F01-friends-dark",
+      "width": 393,
+      "height": 852,
+      "svg": "frames/F01-friends-dark.svg",
+      "png": "frames/F01-friends-dark.png",
+      "pngScale": 2,
+      "category": "screen",
+      "theme": "dark",
+      "fixtureDate": "2026-11-06",
+      "region": "en-US",
+      "clock": "12 hour",
+      "changes": [
+        "Schedule footer",
+        "Private drafts row",
+        "Ben · You",
+        "Plain Next up",
+        "Uniform photo-avatar edge"
+      ],
+      "sha256": {
+        "svg": "903b851fa8420c2002b597ca5259eb4c6929c6b823eb65a172300c6b5b1bfb87",
+        "png": "104534ea61c76768f531b3a25490aa7e653145e14c0b2c653025fa017e351ab9"
+      }
+    },
+    {
+      "order": 8,
+      "name": "F01-friends",
+      "width": 393,
+      "height": 852,
+      "svg": "frames/F01-friends.svg",
+      "png": "frames/F01-friends.png",
+      "pngScale": 2,
+      "category": "screen",
+      "theme": "light",
+      "fixtureDate": "2026-11-06",
+      "region": "en-US",
+      "clock": "12 hour",
+      "changes": [
+        "Schedule footer",
+        "Private drafts row",
+        "Ben · You",
+        "Plain Next up",
+        "Uniform photo-avatar edge"
+      ],
+      "sha256": {
+        "svg": "32cec3e09e595013cb2f27d20bfe7e4063b2e2a06944a883061033d4f380bfb4",
+        "png": "47ed0644aa0a1d7973d915ab86bcef568dcb3027079439094935b92621d66c3d"
+      }
+    },
+    {
+      "order": 9,
+      "name": "brand-components",
+      "width": 1200,
+      "height": 4670,
+      "svg": "frames/brand-components.svg",
+      "png": "frames/brand-components.png",
+      "pngScale": 2,
+      "category": "brand",
+      "base": "Whole handoff 2 brand-components with handoff 3 additions",
+      "basePalette": "revision 1.1 unchanged",
+      "sha256": {
+        "svg": "f01669f513e1a2992aca94559265664925c03d803d570b63023713ecfa279bf9",
+        "png": "0faa2a5f673fddb7aa7afb06d823d537a9dcb08bc2094cab4fd76258039ad700"
+      }
+    }
+  ],
+  "font": "Arimo variable, supplied; production uses iOS system font",
+  "textRendering": "Outlined SVG glyphs plus per-run aria labels; editable copy in JSON",
+  "sourceRevision": "bd3bd8063fe7726babe45d242265c4d6b2df94bd",
+  "brandRevision": "1.1",
+  "newDarkPhoneFrames": [
+    "F01-friends-dark"
+  ],
+  "largeTextPhoneFrames": []
+}
