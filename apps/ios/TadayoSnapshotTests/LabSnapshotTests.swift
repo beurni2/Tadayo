@@ -53,9 +53,12 @@ final class LabSnapshotTests: XCTestCase {
     func testLabSections() {
         for section in LabSection.allCases {
             for variant in Variant.allCases {
+                // The ideal height, as the Lab's scroll view gives it: under `.sizeThatFits` alone
+                // the height proposed is zero, so text stays on one line and photographs vanish.
                 let view = section.view
                     .padding(.vertical, 24)
                     .frame(width: 393)
+                    .fixedSize(horizontal: false, vertical: true)
                     .background(Palette.canvas)
                     .environment(\.colorScheme, variant.scheme)
                     .environment(\.dynamicTypeSize, variant.size)

@@ -170,7 +170,7 @@
         private let labels = DateLabels(locale: Locale(identifier: "en_US"))
 
         private var status: String {
-            "Locked · Opens \(labels.shortDate(FixtureCast.collecting))"
+            "Opens \(labels.shortDate(FixtureCast.collecting))"
         }
 
         var body: some View {
@@ -187,7 +187,7 @@
                     status: status, caption: .blank("Photo for Debby"),
                     sender: FixtureCast.sam.name, cover: Palette.cover(slot: FixtureCast.sam.slot))
                 FoldedCard(
-                    status: status, caption: .text("We said we'd go back here."),
+                    status: status, caption: .text("We said we’d go back here."),
                     sender: FixtureCast.alexandriaRose.name,
                     cover: Palette.cover(slot: FixtureCast.alexandriaRose.slot))
             }
@@ -195,12 +195,20 @@
     }
 
     struct LabHighlights: View {
+        @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+        /// A rail at the standard sizes; a vertical list at the accessibility sizes, as the
+        /// covers become full-width rows (book p26).
         var body: some View {
+            let rail =
+                dynamicTypeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: Spacing.m))
+                : AnyLayout(HStackLayout(alignment: .top, spacing: Spacing.m))
             LabGroup(title: "Highlight covers") {
-                HStack(alignment: .top, spacing: Spacing.m) {
-                    cover(FixtureCast.debby, label: "Debby's pick")
-                    cover(FixtureCast.maya, label: "Maya's highlight")
-                    cover(FixtureCast.deborahAnne, label: "Deborah-Anne's pick")
+                rail {
+                    cover(FixtureCast.debby, label: "Debby’s pick")
+                    cover(FixtureCast.maya, label: "Maya’s highlight")
+                    cover(FixtureCast.deborahAnne, label: "Deborah-Anne’s pick")
                 }
             }
         }
@@ -208,7 +216,7 @@
         private func cover(_ person: FixtureCast.Person, label: String) -> some View {
             HighlightCover(
                 label: label, sender: person.name, cover: Palette.cover(slot: person.slot),
-                accessibilityName: "Open \(person.name)'s highlight", action: {})
+                accessibilityName: "Open \(person.name)’s highlight", action: {})
         }
     }
 

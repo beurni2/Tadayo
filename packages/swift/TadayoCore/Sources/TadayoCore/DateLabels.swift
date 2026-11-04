@@ -38,10 +38,10 @@ public struct DateLabels: Sendable {
         (format(date, template: "EEE").uppercased(with: locale), format(date, template: "dd"))
     }
 
-    /// The person's day, as spec 03 names it: "Debby's Friday". The name is never replaced by a
-    /// pronoun (T42).
+    /// The person's day, as spec 03 names it: "Debby’s Friday", with the book's curly apostrophe.
+    /// The name is never replaced by a pronoun (T42).
     public func personDay(name: String, date: LocalDate) -> String {
-        "\(name)'s \(weekday(date))"
+        "\(name)’s \(weekday(date))"
     }
 
     /// The time of an instant in the club's zone: "7 AM" on a 12-hour phone, with the minutes only

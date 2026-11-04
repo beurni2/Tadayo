@@ -28,7 +28,7 @@ import Testing
     @Test func plaqueAndPersonDay() {
         let sixth = LocalDate(iso: "2026-11-06")!
         #expect(us.plaque(sixth) == ("FRI", "06"))
-        #expect(us.personDay(name: "Debby", date: friday) == "Debby's Friday")
+        #expect(us.personDay(name: "Debby", date: friday) == "Debby’s Friday")
     }
 
     @Test func dateNeverMovesWithTheDevicesZone() {

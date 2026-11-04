@@ -2,8 +2,9 @@ import SwiftUI
 
 /// A selected highlight's cover (book p6, p19, p34; handoff 0): a 91 by 69-point button with the
 /// sender's initial, a concise label such as "Debby's pick" and the folded corner. At the
-/// accessibility text sizes it becomes a full-width row, at least 96 high, and the label wraps
-/// rather than shrinks (book p26, T47). Its colour is the sender's cover, never a hint of the
+/// accessibility text sizes it becomes a full-width row, at least 96 high, with the label at
+/// `highlightExpanded` (20/26), wrapping rather than shrinking (book p26, T47; handoff 4's sheet:
+/// "Large text uses a vertical list"). Its colour is the sender's cover, never a hint of the
 /// hidden photo (book p34).
 public struct HighlightCover: View {
     let label: String
@@ -64,7 +65,7 @@ public struct HighlightCover: View {
     private var row: some View {
         HStack(spacing: Spacing.l) {
             Avatar(name: sender, photo: senderPhoto, size: .row, on: .cover)
-            Text(label).textRole(.caption)
+            Text(label).textRole(.highlightExpanded)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
         }

@@ -37,6 +37,8 @@ public enum Size {
     public static let highlightRowMinHeight: CGFloat = 96
     /// The folded corner, on the card and the highlight cover alike.
     public static let fold: CGFloat = 18
+    /// The lock before a card's status line: SF Symbol `lock.fill` at 12 points, 8 before the text.
+    public static let lockGlyph: CGFloat = 12
     /// The fold's edge (handoff 4's `foldCornerLine`).
     public static let foldLine: CGFloat = 0.75
     /// The keyboard focus ring: 2 points wide, outside a 2-point gap (1.1's `focusRingWidth`, `focusRingGap`).

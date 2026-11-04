@@ -3,8 +3,9 @@ import SwiftUI
 /// The folded card for a committed caption while the day is collecting (book p6, p13, p34;
 /// handoff 0's brand-components and `F02-upcoming`: 353 wide at 393, 151 minimum height, growing
 /// for text, 18 horizontal inset, caption 21/28). It shows what the audience may read before the
-/// reveal and nothing else (T10): the status line with the exact opening date, the caption and
-/// its sender. A drop with no caption shows the neutral line book p13 names ("Photo for Debby"),
+/// reveal and nothing else (T10): the lock and the status line with the exact opening date, the
+/// caption and its sender. The lock is the glyph, never the word "Locked" (INVENTORY.md's Known
+/// differences; book p6): `lock.fill` at 12 points, 8 before the text, in the cover's ink. A drop with no caption shows the neutral line book p13 names ("Photo for Debby"),
 /// in smaller text, and no placeholder joke (book p34).
 public struct FoldedCard: View {
     public enum Caption: Sendable {
@@ -22,7 +23,7 @@ public struct FoldedCard: View {
     let cover: Cover
 
     /// - Parameters:
-    ///   - status: the status line, such as "Locked · Opens Fri, Nov 13".
+    ///   - status: the status line after the lock, such as "Opens Fri, Nov 13".
     ///   - tag: a word at the status line's end, such as the author's own "Highlight", or nil.
     ///   - sender: the sender as the viewer reads them, such as "Maya" or "Ben · You".
     ///   - cover: the sender's cover (FQ41), never chosen from the hidden media.
@@ -39,6 +40,7 @@ public struct FoldedCard: View {
     }
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @ScaledMetric(relativeTo: TypeRole.cardStatus.textStyle) private var lockSize = Size.lockGlyph
 
     public var body: some View {
         PinnedFooterLayout(
@@ -49,6 +51,7 @@ public struct FoldedCard: View {
                 // they don't, so neither word is ever broken (book p26).
                 ViewThatFits(in: .horizontal) {
                     HStack(alignment: .firstTextBaseline, spacing: Spacing.s) {
+                        lock
                         Text(status).textRole(.cardStatus).fixedSize()
                         Spacer(minLength: 0)
                         if let tag {
@@ -56,8 +59,11 @@ public struct FoldedCard: View {
                         }
                     }
                     VStack(alignment: .leading, spacing: Spacing.xs) {
-                        Text(status).textRole(.cardStatus)
-                            .fixedSize(horizontal: false, vertical: true)
+                        HStack(alignment: .firstTextBaseline, spacing: Spacing.s) {
+                            lock
+                            Text(status).textRole(.cardStatus)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                         if let tag {
                             Text(tag).textRole(.highlight)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -85,6 +91,13 @@ public struct FoldedCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .foldedBackground(cover, radius: Radius.card)
         .accessibilityElement(children: .combine)
+    }
+
+    /// Decorative: the status line already says when the card opens.
+    private var lock: some View {
+        Image(systemName: "lock.fill")
+            .font(.system(size: lockSize))
+            .accessibilityHidden(true)
     }
 
     @ViewBuilder private var captionText: some View {
