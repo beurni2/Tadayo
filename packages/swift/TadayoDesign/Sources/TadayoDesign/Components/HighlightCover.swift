@@ -18,8 +18,6 @@ public struct HighlightCover: View {
     let action: () -> Void
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    @ScaledMetric(relativeTo: TypeRole.highlight.textStyle)
-    private var starSize = Size.highlightStar
 
     /// - Parameters:
     ///   - isStarPick: whether this is the star's own pick, which carries the star.
@@ -61,10 +59,12 @@ public struct HighlightCover: View {
         .accessibilityLabel(accessibilityName)
     }
 
-    /// Decorative: the label and the button's name say whose pick it is.
+    /// Decorative: the label and the button's name say whose pick it is. Like the avatar, it keeps
+    /// its size at every text size (handoff 4's `dynamicTypePolicy.avatarMarks`), so the label
+    /// keeps the room beside it and a name such as "Debby's" isn't broken at `.accessibility5`.
     private var star: some View {
         Image(systemName: "star.fill")
-            .font(.system(size: starSize))
+            .font(.system(size: Size.highlightStar))
             .accessibilityHidden(true)
     }
 
