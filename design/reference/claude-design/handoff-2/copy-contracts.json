@@ -1,0 +1,116 @@
+{
+  "codeVerificationFailure": "This code couldn't be verified. Try again or send a new one.",
+  "failureStates": [
+    {
+      "action": "Send a code · network",
+      "message": "Couldn't send a code. Check your connection and try again.",
+      "retainedState": "Keep the email; remain on A02-email. Retry uses the same address."
+    },
+    {
+      "action": "Send a code · server",
+      "message": "Couldn't send a code. Try again.",
+      "retainedState": "Keep the email. A server cooldown says: A code can’t be sent yet. Try again shortly."
+    },
+    {
+      "action": "Verify code · network",
+      "message": "Couldn't verify the code. Check your connection and try again.",
+      "retainedState": "Keep the email and all six digits. Do not label the code wrong or expired."
+    },
+    {
+      "action": "Resend · network",
+      "message": "Couldn't send a new code. Check your connection and try again.",
+      "retainedState": "Keep the address, old challenge and typed digits. Do not reset the wait until a new send is confirmed."
+    },
+    {
+      "action": "Resend · server",
+      "message": "Couldn't send a new code. Try again.",
+      "retainedState": "Same retained input. Respect a returned server cooldown; do not claim an email was sent."
+    },
+    {
+      "action": "Save profile",
+      "message": "Couldn't save your profile. Try again.",
+      "retainedState": "Keep the name and selected photo. For a network failure: Couldn’t save your profile. Check your connection and try again."
+    },
+    {
+      "action": "Upload profile photo",
+      "message": "Couldn't upload your profile photo. Try again or continue without a photo.",
+      "retainedState": "Keep the name and selected image. Offer Retry photo upload. Continue still works with the initial fallback."
+    },
+    {
+      "action": "Revoke link · server",
+      "message": "Couldn't revoke Alex's invitation link. Try again.",
+      "retainedState": "Keep Alex’s row, prepared link and all other invitation state. Do not show Link revoked."
+    },
+    {
+      "action": "Revoke link · uncertain network",
+      "message": "Couldn't confirm that Alex's invitation link was revoked. Check your connection and try again.",
+      "retainedState": "Keep the row and last known state. Recheck the token status; the request may have reached the server."
+    }
+  ],
+  "revokeLink": {
+    "confirmationTitle": "Revoke Alex's invitation link?",
+    "confirmationBody": "Alex won't be able to use this link. You can create a new link for Alex later.",
+    "confirm": "Revoke link",
+    "cancel": "Keep link",
+    "pending": "Revoking link…",
+    "success": "Alex's invitation link was revoked.",
+    "rowStatus": "Link revoked",
+    "nextAction": "Create new link",
+    "knownFailure": "Couldn't revoke Alex's invitation link. Try again.",
+    "uncertainNetworkFailure": "Couldn't confirm that Alex's invitation link was revoked. Check your connection and try again.",
+    "scope": "Only an unaccepted invitation token is revoked. Do not remove an accepted member or silently change a roster. Hide the revoke action after Accepted."
+  },
+  "invitationControlAccessibilityLabels": {
+    "Maya": {
+      "shareLink": "Share link for Maya",
+      "shareAgain": "Share again for Maya",
+      "more": "More options for Maya's invitation"
+    },
+    "Alex": {
+      "shareLink": "Share link for Alex",
+      "shareAgain": "Share again for Alex",
+      "more": "More options for Alex's invitation"
+    },
+    "Sam": {
+      "shareLink": "Share link for Sam",
+      "shareAgain": "Share again for Sam",
+      "more": "More options for Sam's invitation"
+    },
+    "Debby": {
+      "shareLink": "Share link for Debby",
+      "shareAgain": "Share again for Debby",
+      "more": "More options for Debby's invitation"
+    },
+    "Nina": {
+      "shareLink": "Share link for Nina",
+      "shareAgain": "Share again for Nina",
+      "more": "More options for Nina's invitation"
+    }
+  },
+  "createInvitation": {
+    "nameLabel": "Person's name",
+    "typedFixture": "Sam",
+    "button": "Create link and share",
+    "createFailure": "Couldn't create the invitation link for Sam. Try again.",
+    "retention": "Keep Sam and any prepared link; do not create a second token when returning from a canceled share sheet."
+  },
+  "linkEntry": {
+    "paste": "Paste",
+    "continue": "Continue",
+    "invalid": "That doesn't look like a Tadayo invitation link. Check the link and try again.",
+    "clipboardEmpty": "There isn't an invitation link to paste. Copy the link and try again.",
+    "cannotCheck": "Couldn't check the invitation link. Check your connection and try again.",
+    "retention": "Keep the pasted URL and pending invitation through authentication. No club or roster is shown before sign-in."
+  },
+  "historyBoundary": {
+    "display": "Days shared after you join a club will appear here after they open.",
+    "enforcement": "Per-drop membership interval; exclude pre-join submissions even when they reveal after joining."
+  },
+  "approval": {
+    "viewer": "Ben",
+    "candidate": "Leila",
+    "body": "Leila must accept the exact roster. Every existing member must approve the same roster. Either can happen first.",
+    "boundary": "Leila will see only drops shared after joining.",
+    "privacy": "We don't identify who declined. Nobody is asked to give a reason."
+  }
+}
