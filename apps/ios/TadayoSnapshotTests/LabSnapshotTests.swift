@@ -48,11 +48,12 @@ final class LabSnapshotTests: XCTestCase {
                 case .large: .extraExtraExtraLarge
                 case .xl: .accessibilityExtraExtraExtraLarge
                 }
-            return UITraitCollection(traitsFrom: [
-                UITraitCollection(userInterfaceStyle: self == .dark ? .dark : .light),
-                UITraitCollection(preferredContentSizeCategory: category),
-                UITraitCollection(displayGamut: .SRGB),
-            ])
+            let style: UIUserInterfaceStyle = self == .dark ? .dark : .light
+            return UITraitCollection(mutations: { traits in
+                traits.userInterfaceStyle = style
+                traits.preferredContentSizeCategory = category
+                traits.displayGamut = .SRGB
+            })
         }
     }
 
@@ -62,9 +63,7 @@ final class LabSnapshotTests: XCTestCase {
             for variant in variants {
                 let traits =
                     section == .photos
-                    ? UITraitCollection(traitsFrom: [
-                        variant.traits, UITraitCollection(displayScale: 1),
-                    ])
+                    ? variant.traits.modifyingTraits { $0.displayScale = 1 }
                     : variant.traits
                 // The ideal height, as the Lab's scroll view gives it: under `.sizeThatFits` alone
                 // the height proposed is zero, so text stays on one line and photographs vanish.

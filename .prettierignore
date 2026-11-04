@@ -8,3 +8,5 @@ tools/ci/
 *.md
 pnpm-lock.yaml
 .yamllint.yaml
+# SwiftPM's build output: packages/swift/.gitignore ignores it, but prettier reads only the root's.
+.build/
