@@ -12,7 +12,13 @@ import { standardErrors } from "./operation.ts";
 import { OPERATIONS } from "./operations.ts";
 import { registry } from "./registry.ts";
 import { renderOpenApi } from "./render.ts";
-import { CandidateLabel, ChosenWeekdays, InvitationAcceptance, RosterRevision } from "./schemas/clubs.ts";
+import {
+  CandidateLabel,
+  CandidateLinkState,
+  ChosenWeekdays,
+  InvitationAcceptance,
+  RosterRevision,
+} from "./schemas/clubs.ts";
 import { ClubName, DisplayName, NAME_PATTERN, Person, Timezone } from "./common.ts";
 import { DropCaption } from "./schemas/days.ts";
 import { unknownKeys } from "./strict.ts";
@@ -295,7 +301,7 @@ describe("the document", () => {
       OPERATIONS.filter((op) => op.errors).map((op) => [op.id, [...(op.errors ?? [])].sort()]),
     );
     expect(own).toEqual({
-      acceptInvitation: ["CLUB_FULL", "INVITATION_EXPIRED", "NOT_FOUND", "ROSTER_CHANGED"],
+      acceptInvitation: ["CLUB_FULL", "INVITATION_EXPIRED", "NOT_FOUND", "ROSTER_CHANGED", "VERSION_CONFLICT"],
       approveRoster: ["CLUB_FULL", "ROSTER_CHANGED", "VERSION_CONFLICT"],
       blockMember: ["MEMBERSHIP_CHANGED", "NOT_FOUND"],
       chooseScheduleDays: ["MEMBERSHIP_CHANGED", "VERSION_CONFLICT"],
@@ -782,7 +788,7 @@ describe("the examples", () => {
     expect(asked).toBeGreaterThan(0);
   });
 
-  it("show each answer to an acceptance, and a link used for an earlier revision, in some scene (FQ66, handoff 1)", () => {
+  it("show each answer to an acceptance, and each state of a candidate's link, in some scene (FQ66, FQ71, handoff 1)", () => {
     const states = new Set<unknown>();
     for (const scene of Object.values(examples.acceptInvitation ?? {})) states.add((scene.value as JsonObject).state);
     expect([...states].sort()).toEqual([...InvitationAcceptance.shape.state.options].sort());
@@ -802,7 +808,7 @@ describe("the examples", () => {
         });
       }
     }
-    for (const state of ["live", "accepted", "used", "revoked"]) expect(links.has(state), state).toBe(true);
+    for (const state of CandidateLinkState.options) expect(links.has(state), state).toBe(true);
   });
 
   it("agree on one version for an open revision, whoever reads it and whatever they've decided (T33)", () => {

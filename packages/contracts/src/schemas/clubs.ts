@@ -48,7 +48,8 @@ export const MyInvitationState = named(
     "the invitation's intent (handoff 1: invitation intent survives sign-in and retries) as FQ77 keeps a " +
     "proposer's link: in its per-account store, purged at logout and at an account switch, never in a log, " +
     "a crash or breadcrumb record or analytics (handoff 4), and dropped once the invitation has joined or " +
-    "ended. How an account that no longer holds it accepts again is B1's to settle.",
+    "ended. How an account that no longer holds it, after a logout, a reinstall or on another phone, " +
+    "accepts again is B1's to settle.",
   z.enum(["waiting", "roster_changed", "did_not_go_ahead"]),
 );
 
@@ -80,7 +81,9 @@ export const CreateClubRequest = named(
 export const ClubDetail = named(
   "ClubDetail",
   "Club information (G05-club-details). `roster_version` is what a proposal sends as " +
-    "`expected_roster_version`. `can_propose` is false when active members and open candidates already " +
+    "`expected_roster_version`: it moves when a membership starts or ends or the open revision is " +
+    "proposed, made, applied or ended, never on an approval or an acceptance, so it counts neither (T33). " +
+    "`can_propose` is false when active members and open candidates already " +
     "make six (A01, T6, book p24), or the club can't take proposals.",
   z.object({
     server_now: Instant,
@@ -186,9 +189,9 @@ export const RosterRevision = named(
     "`expected_version` on approving, declining and accepting checks only that. " +
     "`proposed_by` is the member who proposed the revision; in one the server made for a name, the " +
     "candidate's proposer, whose link was used (FQ84). B1 " +
-    "settles, with FQ51, how a first roster's other candidates go on once its first acceptance has started " +
-    "the club (FQ54): handoff 1 says starting adds nobody merely invited, and a broader roster still needs " +
-    "its approvals.",
+    "settles, with FQ51, how a first roster's other candidates go on once it has started (FQ54, FQ84), the " +
+    "account a revision was made for included, when another candidate's acceptance started it: handoff 1 " +
+    "says starting adds nobody merely invited, and a broader roster still needs its approvals.",
   z.object({
     id: Id,
     version: Version,

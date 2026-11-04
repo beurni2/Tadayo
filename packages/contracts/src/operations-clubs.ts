@@ -195,12 +195,14 @@ export const CLUB_OPERATIONS: Operation[] = [
     description:
       "The candidate accepts the revision they saw (spec 04, T7). An account named differently from the " +
       "candidate makes a new revision with its name, which everyone accepts again, that account included: " +
-      "the answer is `changed` (FQ66, FQ84, AcceptInvitationRequest). Retried with the same key, it returns " +
-      "the first answer, though the token is used.",
+      "the answer is `changed` (FQ66, FQ84, AcceptInvitationRequest). VERSION_CONFLICT when the revision " +
+      "ended or was applied since the caller read it: the app previews the token again, which says where it " +
+      "stands (RosterRevision). Retried with the same key, it returns the first answer, though the token is " +
+      "used.",
     idempotent: true,
     body: AcceptInvitationRequest,
     ok: { status: 200, json: InvitationAcceptance },
-    errors: ["NOT_FOUND", "INVITATION_EXPIRED", "ROSTER_CHANGED", "CLUB_FULL"],
+    errors: ["NOT_FOUND", "INVITATION_EXPIRED", "VERSION_CONFLICT", "ROSTER_CHANGED", "CLUB_FULL"],
   },
   {
     id: "getSchedule",

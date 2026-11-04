@@ -51,7 +51,7 @@ const ktNextDays = {
 const leilaRevision = (
   viewer: "ben" | "maya",
   decision: "pending" | "approved" | "declined",
-  link: "live" | "accepted" | "used" | "revoked" = "live",
+  link: "live" | "accepted" | "used" | "revoked" | "expired" = "live",
   revision: { id: string; name: string } = { id: "rev_kt_leila", name: "Leila" },
 ) => ({
   id: revision.id,
@@ -66,9 +66,15 @@ const leilaRevision = (
       name: revision.name,
       proposed_by: member("kitchenTable", "ben"),
       // Only Ben, who proposed Leila, sees the link Ben made and where it stands (T7, handoff 1): made at
-      // 9:41 AM on Friday 6 November, for seven days (FQ71).
+      // 9:41 AM on Friday 6 November, for seven days (FQ71). Before it, a first link made at 10 AM on Friday
+      // 30 October expired unused seven days later, at 9 AM on Friday 6 November, the clocks gone back.
       ...(viewer === "ben"
-        ? { invitation: { id: "inv_kt_leila", state: link, expires_at: "2026-11-13T14:41:00Z" } }
+        ? {
+            invitation:
+              link === "expired"
+                ? { id: "inv_kt_leila_first", state: link, expires_at: "2026-11-06T14:00:00Z" }
+                : { id: "inv_kt_leila", state: link, expires_at: "2026-11-13T14:41:00Z" },
+          }
         : {}),
     },
   ],
@@ -273,6 +279,11 @@ export const CLUB_EXAMPLES: { home: Examples; operations: Record<string, Example
         summary:
           "Ben revoked Leila's link: Leila stays proposed, and Ben can make a new link (Link revoked; where a later addition's link is managed has no render yet, FQ51)",
         value: leilaRevision("ben", "approved", "revoked"),
+      },
+      link_expired: {
+        summary:
+          "Leila's first link expired unused at 9 AM on Friday 6 November: Ben can make a new one (FQ71; no render shows this row yet)",
+        value: leilaRevision("ben", "approved", "expired"),
       },
       accepted: {
         summary: "Leila has accepted: only Ben, who proposed Leila, sees Accepted (handoff 1)",

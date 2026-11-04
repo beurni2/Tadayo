@@ -5481,7 +5481,7 @@ paths:
     post:
       operationId: acceptInvitation
       summary: Accept the exact roster
-      description: "The candidate accepts the revision they saw (spec 04, T7). An account named differently from the candidate makes a new revision with its name, which everyone accepts again, that account included: the answer is `changed` (FQ66, FQ84, AcceptInvitationRequest). Retried with the same key, it returns the first answer, though the token is used."
+      description: "The candidate accepts the revision they saw (spec 04, T7). An account named differently from the candidate makes a new revision with its name, which everyone accepts again, that account included: the answer is `changed` (FQ66, FQ84, AcceptInvitationRequest). VERSION_CONFLICT when the revision ended or was applied since the caller read it: the app previews the token again, which says where it stands (RosterRevision). Retried with the same key, it returns the first answer, though the token is used."
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
@@ -5578,7 +5578,7 @@ paths:
                   value:
                     code: NOT_FOUND
         "409":
-          description: IDEMPOTENCY_CONFLICT, ROSTER_CHANGED, CLUB_FULL
+          description: IDEMPOTENCY_CONFLICT, VERSION_CONFLICT, ROSTER_CHANGED, CLUB_FULL
           headers:
             Cache-Control:
               $ref: "#/components/headers/CacheControl"
@@ -5591,6 +5591,11 @@ paths:
                   summary: The same Idempotency-Key came again for the same operation with a different path, query or body (T19). A key is the caller's own, for one operation.
                   value:
                     code: IDEMPOTENCY_CONFLICT
+                VERSION_CONFLICT:
+                  summary: Someone changed it first. `current_version` is the version now.
+                  value:
+                    code: VERSION_CONFLICT
+                    current_version: 3
                 ROSTER_CHANGED:
                   summary: "The roster revision was replaced by a newer one (`current_id`): review the new roster and decide again (T7)."
                   value:
@@ -8717,6 +8722,46 @@ paths:
                           state: revoked
                           expires_at: 2026-11-13T14:41:00Z
                     my_decision: approved
+                link_expired:
+                  summary: "Leila's first link expired unused at 9 AM on Friday 6 November: Ben can make a new one (FQ71; no render shows this row yet)"
+                  value:
+                    id: rev_kt_leila
+                    version: 1
+                    club:
+                      id: club_kitchen_table
+                      name: Kitchen table
+                      timezone: America/New_York
+                      my_membership_id: mem_kt_ben
+                    state: open
+                    proposed_by:
+                      membership_id: mem_kt_ben
+                      display_name: Ben
+                      avatar_version: av_ben_1
+                    members:
+                      - membership_id: mem_kt_ben
+                        display_name: Ben
+                        avatar_version: av_ben_1
+                      - membership_id: mem_kt_alex
+                        display_name: Alex
+                      - membership_id: mem_kt_sam
+                        display_name: Sam
+                      - membership_id: mem_kt_nina
+                        display_name: Nina
+                      - membership_id: mem_kt_maya
+                        display_name: Maya
+                        avatar_version: av_maya_1
+                    candidates:
+                      - id: cnd_kt_leila
+                        name: Leila
+                        proposed_by:
+                          membership_id: mem_kt_ben
+                          display_name: Ben
+                          avatar_version: av_ben_1
+                        invitation:
+                          id: inv_kt_leila_first
+                          state: expired
+                          expires_at: 2026-11-06T14:00:00Z
+                    my_decision: approved
                 accepted:
                   summary: "Leila has accepted: only Ben, who proposed Leila, sees Accepted (handoff 1)"
                   value:
@@ -10368,7 +10413,7 @@ components:
         - club
         - roster_version
         - can_propose
-      description: Club information (G05-club-details). `roster_version` is what a proposal sends as `expected_roster_version`. `can_propose` is false when active members and open candidates already make six (A01, T6, book p24), or the club can't take proposals.
+      description: "Club information (G05-club-details). `roster_version` is what a proposal sends as `expected_roster_version`: it moves when a membership starts or ends or the open revision is proposed, made, applied or ended, never on an approval or an acceptance, so it counts neither (T33). `can_propose` is false when active members and open candidates already make six (A01, T6, book p24), or the club can't take proposals."
     ClubList:
       type: object
       properties:
@@ -11708,7 +11753,7 @@ components:
         - waiting
         - roster_changed
         - did_not_go_ahead
-      description: "Where an invitation the caller accepted stands: waiting for the members (G03-waiting), the roster changed and needs accepting again (G02-changed), or it didn't go ahead, which never says who declined (G03-declined, book p30). A link used to accept can't be revoked (CandidateLinkState), so a revoke never reaches it. Accepting a changed roster takes the link's token again, which the app keeps with the invitation's intent (handoff 1: invitation intent survives sign-in and retries) as FQ77 keeps a proposer's link: in its per-account store, purged at logout and at an account switch, never in a log, a crash or breadcrumb record or analytics (handoff 4), and dropped once the invitation has joined or ended. How an account that no longer holds it accepts again is B1's to settle."
+      description: "Where an invitation the caller accepted stands: waiting for the members (G03-waiting), the roster changed and needs accepting again (G02-changed), or it didn't go ahead, which never says who declined (G03-declined, book p30). A link used to accept can't be revoked (CandidateLinkState), so a revoke never reaches it. Accepting a changed roster takes the link's token again, which the app keeps with the invitation's intent (handoff 1: invitation intent survives sign-in and retries) as FQ77 keeps a proposer's link: in its per-account store, purged at logout and at an account switch, never in a log, a crash or breadcrumb record or analytics (handoff 4), and dropped once the invitation has joined or ended. How an account that no longer holds it, after a logout, a reinstall or on another phone, accepts again is B1's to settle."
     NotificationPreferences:
       type: object
       properties:
@@ -12292,7 +12337,7 @@ components:
         - members
         - candidates
         - my_decision
-      description: "An exact proposed roster (G03-approve, G05-members): the active members and the candidates, which every active member approves and each candidate accepts, in either order (spec 04, FQ65). It never says how other members decided, how many have approved, or who hasn't (book p30, T15, T33): its `version` moves only when its own `state` does, never on an approval or an acceptance, and `expected_version` on approving, declining and accepting checks only that. `proposed_by` is the member who proposed the revision; in one the server made for a name, the candidate's proposer, whose link was used (FQ84). B1 settles, with FQ51, how a first roster's other candidates go on once its first acceptance has started the club (FQ54): handoff 1 says starting adds nobody merely invited, and a broader roster still needs its approvals."
+      description: "An exact proposed roster (G03-approve, G05-members): the active members and the candidates, which every active member approves and each candidate accepts, in either order (spec 04, FQ65). It never says how other members decided, how many have approved, or who hasn't (book p30, T15, T33): its `version` moves only when its own `state` does, never on an approval or an acceptance, and `expected_version` on approving, declining and accepting checks only that. `proposed_by` is the member who proposed the revision; in one the server made for a name, the candidate's proposer, whose link was used (FQ84). B1 settles, with FQ51, how a first roster's other candidates go on once it has started (FQ54, FQ84), the account a revision was made for included, when another candidate's acceptance started it: handoff 1 says starting adds nobody merely invited, and a broader roster still needs its approvals."
     RosterRevisionState:
       type: string
       enum:
