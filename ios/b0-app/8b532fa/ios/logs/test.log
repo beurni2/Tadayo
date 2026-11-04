@@ -1,0 +1,109 @@
++ xcodebuild test-without-building -project apps/ios/Tadayo.xcodeproj -scheme Tadayo -destination platform=iOS Simulator,id=062CFAA4-9ACF-40ED-A1E2-3625F5ED4DA9 -derivedDataPath /Users/runner/work/_temp/DerivedData -resultBundlePath /Users/runner/work/_temp/ios-out/Tests.xcresult
+Command line invocation:
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/xcodebuild test-without-building -project apps/ios/Tadayo.xcodeproj -scheme Tadayo -destination "platform=iOS Simulator,id=062CFAA4-9ACF-40ED-A1E2-3625F5ED4DA9" -derivedDataPath /Users/runner/work/_temp/DerivedData -resultBundlePath /Users/runner/work/_temp/ios-out/Tests.xcresult
+
+Resolve Package Graph
+
+
+Resolved source packages:
+  swift-snapshot-testing: https://github.com/pointfreeco/swift-snapshot-testing @ 1.19.7
+  swift-custom-dump: https://github.com/pointfreeco/swift-custom-dump @ 1.7.3
+  xctest-dynamic-overlay: https://github.com/pointfreeco/xctest-dynamic-overlay @ 1.13.1
+  swift-syntax: https://github.com/swiftlang/swift-syntax @ 604.0.0
+  TadayoDesign: /Users/runner/work/Tadayo/Tadayo/packages/swift/TadayoDesign
+  TadayoCore: /Users/runner/work/Tadayo/Tadayo/packages/swift/TadayoCore
+
+Writing result bundle at path:
+	/Users/runner/work/_temp/ios-out/Tests.xcresult
+
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:iOS Simulator, arch:arm64, id:062CFAA4-9ACF-40ED-A1E2-3625F5ED4DA9, OS:26.5, name:iPhone 17 }
+{ platform:iOS Simulator, arch:x86_64, id:062CFAA4-9ACF-40ED-A1E2-3625F5ED4DA9, OS:26.5, name:iPhone 17 }
+Test Suite 'All tests' started at 2026-11-04 21:07:14.831.
+Test Suite 'TadayoSnapshotTests.xctest' started at 2026-11-04 21:07:14.832.
+Test Suite 'LabSnapshotTests' started at 2026-11-04 21:07:14.832.
+Test Case '-[TadayoSnapshotTests.LabSnapshotTests testLabSections]' started.
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:62: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+Test Case '-[TadayoSnapshotTests.LabSnapshotTests testLabSections]' failed (1.841 seconds).
+Test Suite 'LabSnapshotTests' failed at 2026-11-04 21:07:16.674.
+	 Executed 1 test, with 32 failures (0 unexpected) in 1.841 (1.842) seconds
+Test Suite 'TadayoSnapshotTests.xctest' failed at 2026-11-04 21:07:16.675.
+	 Executed 1 test, with 32 failures (0 unexpected) in 1.841 (1.843) seconds
+Test Suite 'All tests' failed at 2026-11-04 21:07:16.675.
+	 Executed 1 test, with 32 failures (0 unexpected) in 1.841 (1.844) seconds
+2026-11-04 21:07:16.689178+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x106ae8c00>.
+2026-11-04 21:07:16.690242+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x106ae9400>.
+2026-11-04 21:07:16.690569+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x106ae9c00>.
+2026-11-04 21:07:16.690811+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x106aea400>.
+2026-11-04 21:07:16.691042+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x106aeac00>.
+2026-11-04 21:07:16.691265+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x106aeb400>.
+2026-11-04 21:07:16.691512+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x106aebc00>.
+2026-11-04 21:07:16.783009+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1139fc400>.
+2026-11-04 21:07:16.783616+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1139fcc00>.
+2026-11-04 21:07:16.783975+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1139fd400>.
+2026-11-04 21:07:16.784294+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1139fdc00>.
+2026-11-04 21:07:16.784574+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1139fe400>.
+2026-11-04 21:07:16.784888+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1139fec00>.
+2026-11-04 21:07:16.785176+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1139ff400>.
+2026-11-04 21:07:16.788629+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1139ffc00>.
+2026-11-04 21:07:16.788952+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1177b0400>.
+2026-11-04 21:07:16.789176+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1177b0c00>.
+2026-11-04 21:07:16.789428+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1177b1400>.
+2026-11-04 21:07:16.789660+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1177b1c00>.
+2026-11-04 21:07:16.789880+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1177b2400>.
+2026-11-04 21:07:16.790101+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1177b2c00>.
+2026-11-04 21:07:16.790441+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1177b3400>.
+2026-11-04 21:07:16.790635+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1177b3c00>.
+2026-11-04 21:07:16.790821+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x11d574400>.
+2026-11-04 21:07:16.791110+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x11d574c00>.
+2026-11-04 21:07:16.791314+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x11d575400>.
+2026-11-04 21:07:16.791511+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x11d575c00>.
+2026-11-04 21:07:16.791751+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x11d576400>.
+2026-11-04 21:07:16.791994+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x11d576c00>.
+2026-11-04 21:07:16.792241+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x11d577400>.
+2026-11-04 21:07:16.792443+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x11d577c00>.
+2026-11-04 21:07:16.792714+0000 Tadayo[7575:27776] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x11d7cc400>.
+2026-11-04 21:07:33.182 xcodebuild[6935:25690] [MT] IDETestOperationsObserverDebug: 29.892 elapsed -- Testing started completed.
+2026-11-04 21:07:33.182 xcodebuild[6935:25690] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-04 21:07:33.182 xcodebuild[6935:25690] [MT] IDETestOperationsObserverDebug: 29.892 sec, +29.892 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/_temp/ios-out/Tests.xcresult
+
+Failing tests:
+	LabSnapshotTests.testLabSections()
+
+** TEST EXECUTE FAILED **
+
+Testing started
