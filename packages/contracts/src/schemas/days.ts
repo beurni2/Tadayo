@@ -242,7 +242,8 @@ const homeBase = {
 export const HomeDay = named(
   "HomeDay",
   "A day is open (reveal_at <= server_now < close_at): Home is that day's first page, with no card to open " +
-    "first (spec 08, T5). `next` is the club's next day (H01-quiet's \"Next: Nina\"). `recent_days` are " +
+    "first (spec 08, T5). `next` is the club's next day to open (H01-quiet's \"Next: Nina\"), never one " +
+    "held because its star left (FQ63). `recent_days` are " +
     "secondary links, newest first. H01-first-drop's prompt is the app's own, once, right after joining; " +
     "here it targets `day.add_target`.",
   z.object({
@@ -256,7 +257,8 @@ export const HomeDay = named(
 
 export const HomeWaiting = named(
   "HomeWaiting",
-  "No day is open: the next person, the exact date and the countdown from `server_now` (spec 08, T5), with " +
+  "No day is open: the next person, the exact date and the countdown from `server_now` (spec 08, T5), " +
+    "never a day held because its star left (FQ63), with " +
     "recent days as secondary links; after 1 AM and on Sunday too (book p29). Nothing here says whether " +
     "anyone has added, the caller included (T15, T33). H01-first-drop's prompt is the app's own, once, " +
     "right after joining; here it targets `next`.",
@@ -278,7 +280,8 @@ export const HomeNoDays = named(
 export const HomeAwaitingActivation = named(
   "HomeAwaitingActivation",
   "The club hasn't started: nobody has accepted its roster yet, or the first acceptance came under another " +
-    "name and its revision waits for the creator and that account (spec 04, 08; FQ54, FQ84).",
+    "name and the revision made for it waits for the creator's approval and a candidate's acceptance " +
+    "(spec 04, 08; FQ54, FQ84).",
   z.object({ mode: tag("awaiting_activation"), ...homeBase }),
 );
 

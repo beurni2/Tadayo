@@ -337,6 +337,19 @@ export const CLUB_EXAMPLES: { home: Examples; operations: Record<string, Example
           expires_at: "2026-11-13T14:41:00Z",
         },
       },
+      another_name: {
+        summary:
+          "Debby, whose acceptance of Ben's link for Leila made a revision under Debby's own name, reviews it and accepts again (G02-changed, FQ66, FQ84)",
+        value: {
+          ...invitationRoster("changed"),
+          revision_id: debbyRevision.id,
+          roster: [
+            ...invitationRoster("changed").roster.filter((entry) => !entry.is_you),
+            { name: debbyRevision.name, kind: "candidate", is_you: true },
+          ],
+          expires_at: "2026-11-13T14:41:00Z",
+        },
+      },
       waiting: {
         summary: "Leila has accepted and waits for the members (G03-waiting)",
         value: invitationRoster("waiting"),

@@ -45,8 +45,10 @@ export const MyInvitationState = named(
     "changed and needs accepting again (G02-changed), or it didn't go ahead, which never says who declined " +
     "(G03-declined, book p30). A link used to accept can't be revoked (CandidateLinkState), so a revoke " +
     "never reaches it. Accepting a changed roster takes the link's token again, which the app keeps with " +
-    "the invitation's intent (handoff 1: invitation intent survives sign-in and retries); how an account " +
-    "that no longer holds it accepts again is B1's to settle.",
+    "the invitation's intent (handoff 1: invitation intent survives sign-in and retries) as FQ77 keeps a " +
+    "proposer's link: in its per-account store, purged at logout and at an account switch, never in a log, " +
+    "a crash or breadcrumb record or analytics (handoff 4), and dropped once the invitation has joined or " +
+    "ended. How an account that no longer holds it accepts again is B1's to settle.",
   z.enum(["waiting", "roster_changed", "did_not_go_ahead"]),
 );
 
@@ -179,7 +181,9 @@ export const RosterRevision = named(
   "RosterRevision",
   "An exact proposed roster (G03-approve, G05-members): the active members and the candidates, which " +
     "every active member approves and each candidate accepts, in either order (spec 04, FQ65). It never " +
-    "says how other members decided, how many have approved, or who hasn't (book p30, T15, T33). " +
+    "says how other members decided, how many have approved, or who hasn't (book p30, T15, T33): its " +
+    "`version` moves only when its own `state` does, never on an approval or an acceptance, and " +
+    "`expected_version` on approving, declining and accepting checks only that. " +
     "`proposed_by` is the member who proposed the revision; in one the server made for a name, the " +
     "candidate's proposer, whose link was used (FQ84). B1 " +
     "settles, with FQ51, how a first roster's other candidates go on once its first acceptance has started " +
@@ -318,7 +322,8 @@ export const InvitationChanged = named(
 
 export const InvitationWaiting = named(
   "InvitationWaiting",
-  "The caller has accepted this roster and waits for the members (G03-waiting), with no progress shown.",
+  "The caller has accepted this roster and waits for the members (G03-waiting), with no progress shown: " +
+    "`revision_version` moves only with the revision's own state (RosterRevision).",
   z.object({ state: tag("waiting"), ...invitationRoster }),
 );
 
@@ -369,8 +374,12 @@ export const AcceptInvitationRequest = named(
   "Accept the exact roster the caller saw. The token binds to the first account that accepts; that account " +
     "can accept again after the roster changes, and every other account gets NOT_FOUND (T7). If the " +
     "account's profile name isn't the name the revision shows for its candidate, the server replaces the " +
-    "revision with one that shows the account's name, and binds the token to the account (FQ66; handoff " +
-    "1: a different identity goes through the roster again). The old revision is superseded and its " +
+    "revision with one that shows the account's name, and binds the token to the account (FQ66, after " +
+    "handoff 1's \"If the accepting identity differs from the reviewed candidate, require the roster " +
+    'process again"). The server compares names only, so a matching name proves nothing: someone holding a ' +
+    "forwarded link who gives the candidate's name accepts as the candidate, and the single-use link and " +
+    "the members' approval of the exact roster are what T7 relies on (FQ84). The old revision is " +
+    "superseded and its " +
     "approvals and acceptances no longer count: everyone accepts the new one again (FQ66's default), " +
     "every active member approving it, the proposer included, since nobody has approved that name (FQ84), " +
     "and every candidate accepting it, this account too, which then sees itself under its own name.",

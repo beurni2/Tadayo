@@ -48,8 +48,8 @@ export const CLUB_OPERATIONS: Operation[] = [
     summary: "Create a club",
     description:
       "A proposed club with the creator's membership (spec 32; G01-create). It starts once someone accepts " +
-      "its first roster (FQ54), or, if they're named differently, once the creator approves the revision made " +
-      "for their name and they accept it (FQ84).",
+      "its first roster (FQ54), or, if they're named differently, once the creator has approved the revision " +
+      "made for their name and a candidate has accepted it, they or another (FQ84).",
     idempotent: true,
     body: CreateClubRequest,
     ok: { status: 201, json: ClubDetail },

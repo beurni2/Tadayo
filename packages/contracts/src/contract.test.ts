@@ -12,7 +12,7 @@ import { standardErrors } from "./operation.ts";
 import { OPERATIONS } from "./operations.ts";
 import { registry } from "./registry.ts";
 import { renderOpenApi } from "./render.ts";
-import { CandidateLabel, ChosenWeekdays } from "./schemas/clubs.ts";
+import { CandidateLabel, ChosenWeekdays, InvitationAcceptance, RosterRevision } from "./schemas/clubs.ts";
 import { ClubName, DisplayName, NAME_PATTERN, Person, Timezone } from "./common.ts";
 import { DropCaption } from "./schemas/days.ts";
 import { unknownKeys } from "./strict.ts";
@@ -718,23 +718,109 @@ describe("the examples", () => {
 
   it("show a candidate's link, and whether it was accepted, only to the member who proposed them (handoff 1)", () => {
     const seen = { proposer: 0, accepted: 0, others: 0 };
+    const check = (node: JsonObject, where: string): void => {
+      if (!Array.isArray(node.candidates) || typeof node.club !== "object") return;
+      const viewer = (node.club as JsonObject).my_membership_id;
+      // Each candidate's own proposer, never the revision's: a candidate carried into a newer revision
+      // keeps the member who proposed them.
+      for (const candidate of node.candidates as JsonObject[]) {
+        const proposer = viewer === (candidate.proposed_by as JsonObject).membership_id;
+        seen[proposer ? "proposer" : "others"] += 1;
+        if (!proposer) expect("invitation" in candidate, where).toBe(false);
+        if ((candidate.invitation as JsonObject | undefined)?.state === "accepted") seen.accepted += 1;
+      }
+    };
     for (const [id, set] of Object.entries(examples)) {
       for (const [name, example] of Object.entries(set)) {
         walk(example.value as Json, (node) => {
-          if (!Array.isArray(node.candidates) || typeof node.club !== "object") return;
-          const viewer = (node.club as JsonObject).my_membership_id;
-          // Each candidate's own proposer, never the revision's: a candidate carried into a newer revision
-          // keeps the member who proposed them.
-          for (const candidate of node.candidates as JsonObject[]) {
-            const proposer = viewer === (candidate.proposed_by as JsonObject).membership_id;
-            seen[proposer ? "proposer" : "others"] += 1;
-            if (!proposer) expect("invitation" in candidate, `${id}.${name}`).toBe(false);
-            if ((candidate.invitation as JsonObject | undefined)?.state === "accepted") seen.accepted += 1;
-          }
+          check(node, `${id}.${name}`);
         });
       }
     }
     for (const count of Object.values(seen)) expect(count).toBeGreaterThan(0);
+    // Every scene's candidates were proposed by the revision's own proposer, so this one tells the two
+    // rules apart: Leila, whom Ben proposed, carried into a revision Maya proposed. Ben still sees the link.
+    const accepted = examples.getRosterRevision?.accepted?.value as JsonObject;
+    const maya = (accepted.members as JsonObject[]).find(
+      (person) => typeof person.membership_id === "string" && person.membership_id.endsWith("_maya"),
+    );
+    expect(maya).toBeDefined();
+    const carried: JsonObject = { ...accepted, proposed_by: maya ?? null };
+    expect(RosterRevision.safeParse(carried).success).toBe(true);
+    const before = seen.proposer;
+    check(carried, "Leila carried into Maya's revision");
+    expect(seen.proposer).toBe(before + 1);
+  });
+
+  it("ask a revision's proposer to approve it only when the server made it for a name (FQ60, FQ84)", () => {
+    // A revision the server made for a name supersedes one with the same candidates, one of them renamed.
+    const scenes: [string, JsonObject][] = [];
+    for (const [id, set] of Object.entries(examples)) {
+      for (const [name, example] of Object.entries(set)) {
+        walk(example.value as Json, (node) => {
+          if (Array.isArray(node.candidates) && typeof node.my_decision === "string")
+            scenes.push([`${id}.${name}`, node]);
+        });
+      }
+    }
+    const candidates = (node: JsonObject) => (node.candidates as JsonObject[]).map((c) => [c.id, c.name]);
+    const serverMade = new Set<string>();
+    for (const [, node] of scenes) {
+      const next = scenes.find(([, other]) => other.id === node.superseded_by)?.[1];
+      if (!next) continue;
+      const [was, now] = [candidates(node), candidates(next)];
+      const same = JSON.stringify(was.map(([id]) => id)) === JSON.stringify(now.map(([id]) => id));
+      if (same && JSON.stringify(was) !== JSON.stringify(now)) serverMade.add(JSON.stringify(next.id));
+    }
+    let asked = 0;
+    for (const [where, node] of scenes) {
+      if ((node.club as JsonObject).my_membership_id !== (node.proposed_by as JsonObject).membership_id) continue;
+      if (!serverMade.has(JSON.stringify(node.id))) expect(node.my_decision, where).not.toBe("pending");
+      else if (node.my_decision === "pending") asked += 1;
+    }
+    expect(serverMade.size).toBeGreaterThan(0);
+    expect(asked).toBeGreaterThan(0);
+  });
+
+  it("show each answer to an acceptance, and a link used for an earlier revision, in some scene (FQ66, handoff 1)", () => {
+    const states = new Set<unknown>();
+    for (const scene of Object.values(examples.acceptInvitation ?? {})) states.add((scene.value as JsonObject).state);
+    expect([...states].sort()).toEqual([...InvitationAcceptance.shape.state.options].sort());
+    const links = new Set<unknown>();
+    for (const set of Object.values(examples)) {
+      for (const example of Object.values(set)) {
+        walk(example.value as Json, (node) => {
+          // A candidate's link: its id, state and expiry, for its proposer (CandidateInvitation).
+          if (
+            typeof node.state === "string" &&
+            typeof node.expires_at === "string" &&
+            typeof node.id === "string" &&
+            node.id.startsWith("inv_")
+          ) {
+            links.add(node.state);
+          }
+        });
+      }
+    }
+    for (const state of ["live", "accepted", "used", "revoked"]) expect(links.has(state), state).toBe(true);
+  });
+
+  it("agree on one version for an open revision, whoever reads it and whatever they've decided (T33)", () => {
+    // A revision's version moves only with its own state, so it never counts approvals or acceptances.
+    const versions = new Map<string, unknown>();
+    for (const [id, set] of Object.entries(examples)) {
+      for (const [name, example] of Object.entries(set)) {
+        walk(example.value as Json, (node) => {
+          const open = Array.isArray(node.candidates) && node.state === "open";
+          const [revision, version] = open ? [node.id, node.version] : [node.revision_id, node.revision_version];
+          if (typeof revision !== "string" || version === undefined) return;
+          const earlier = versions.get(revision);
+          if (earlier === undefined) versions.set(revision, version);
+          else expect(version, `${revision} in ${id}.${name}`).toBe(earlier);
+        });
+      }
+    }
+    expect(versions.size).toBeGreaterThan(1);
   });
 
   it("show who reacted only to the drop's author, Ben, and never to anyone else (FQ73)", () => {
