@@ -277,7 +277,8 @@ export const HomeNoDays = named(
 
 export const HomeAwaitingActivation = named(
   "HomeAwaitingActivation",
-  "The club hasn't started: nobody has accepted its roster yet (spec 04, 08; FQ54).",
+  "The club hasn't started: nobody has accepted its roster yet, or the first acceptance came under another " +
+    "name and its revision waits for the creator and that account (spec 04, 08; FQ54, FQ84).",
   z.object({ mode: tag("awaiting_activation"), ...homeBase }),
 );
 
@@ -285,7 +286,8 @@ export const HomePaused = named(
   "HomePaused",
   "Fewer than two members: no new days until someone joins, and Memories stays readable (FQ16). A " +
     "remaining member's day already announced still shows as usual until it passes (FQ50); a day held " +
-    "because its star left never opens and is never Home's day (FQ63).",
+    "because its star left never opens, so it's never Home's `day` or `next` and never keeps Home waiting " +
+    "(FQ63).",
   z.object({ mode: tag("paused"), ...homeBase, recent_days: z.array(DayLink).max(6) }),
 );
 

@@ -47,7 +47,7 @@ export const UpdateMeRequest = named(
     "no birthdate). `avatar_upload_id` is a ready upload made for the avatar. A name or an avatar is taken " +
     "only once the age is confirmed, in this request or before. Only the fields sent change. A new name for " +
     "someone who has accepted a roster revision that's still open makes a new revision with that name, as " +
-    "accepting does (FQ66).",
+    "accepting does, which everyone accepts again, that account too (FQ66, FQ84).",
   z.strictObject({
     expected_version: Version,
     display_name: DisplayName.optional(),

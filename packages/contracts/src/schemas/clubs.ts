@@ -44,7 +44,9 @@ export const MyInvitationState = named(
   "Where an invitation the caller accepted stands: waiting for the members (G03-waiting), the roster " +
     "changed and needs accepting again (G02-changed), or it didn't go ahead, which never says who declined " +
     "(G03-declined, book p30). A link used to accept can't be revoked (CandidateLinkState), so a revoke " +
-    "never reaches it.",
+    "never reaches it. Accepting a changed roster takes the link's token again, which the app keeps with " +
+    "the invitation's intent (handoff 1: invitation intent survives sign-in and retries); how an account " +
+    "that no longer holds it accepts again is B1's to settle.",
   z.enum(["waiting", "roster_changed", "did_not_go_ahead"]),
 );
 
@@ -116,8 +118,9 @@ export const CandidateLinkState = named(
   "CandidateLinkState",
   "Where the candidate's latest link stands, for its proposer only, never for another member (handoff 1). " +
     "live: it works and hasn't been used. accepted: the candidate has accepted this revision with it " +
-    "(Accepted). used: the candidate accepted an earlier revision with it and hasn't accepted this one yet " +
-    "(they see G02-changed; no render shows the proposer's row yet). revoked: Link revoked, with Create new " +
+    "(Accepted). used: the candidate accepted an earlier revision with it and hasn't accepted this one yet, " +
+    "as after a roster change or a new revision for their name (they see G02-changed; no render shows the " +
+    "proposer's row yet). revoked: Link revoked, with Create new " +
     "link. expired: it expired before anyone used it (FQ71). A link used to accept can't be revoked or " +
     "replaced, since accepting isn't undone by revoking a link (handoff 4). Whether a live link is Not " +
     "shared or Shared is the app's own record of a completed share activity for that link, a copy included " +
@@ -128,8 +131,9 @@ export const CandidateLinkState = named(
 export const CandidateInvitation = named(
   "CandidateInvitation",
   "The candidate's latest link, by its id, state and expiry, never its token, which reaches the proposer " +
-    "once, when the link is made (T7, FQ77). Only for the member who proposed the candidate, so after a " +
-    "relaunch they can see it, revoke it or make a new one.",
+    "once, when the link is made (T7, FQ77). Only for the member who proposed the candidate (the " +
+    "candidate's own `proposed_by`, never the revision's), so after a relaunch they can see it, revoke it or " +
+    "make a new one.",
   z.object({ id: Id, state: CandidateLinkState, expires_at: Instant }),
 );
 
@@ -139,13 +143,16 @@ export const Candidate = named(
     "label, or the candidate's own profile name in a revision the server made because the account that " +
     "accepted is named differently (FQ66). So a revision's names never change, and nothing in it says who " +
     "has accepted, which only the proposer's `invitation` does (handoff 1). A new revision for a name does " +
-    "tell the members that someone accepted under it, as FQ66's default asks, so that they approve who'll " +
-    "join. Members see a candidate's initial, never their photo, before they join (G03-approve, handoff 4). " +
-    "`invitation` is present only for the proposer, once they've made a link; for a candidate with none, " +
-    "the app offers to make one.",
+    "tell the members and the other candidates that someone accepted under it, as FQ66's default asks, so " +
+    "that they approve and accept who'll join. `proposed_by` is the member who proposed this candidate " +
+    '("Proposed by Ben", handoff 1), which a candidate carried into a newer revision keeps. Members see a ' +
+    "candidate's initial, never their photo, before they join (G03-approve, handoff 4). `invitation` is " +
+    "present only for that member, once they've made a link; for a candidate with none, their app offers " +
+    "to make one.",
   z.object({
     id: Id,
     name: CandidateLabel,
+    proposed_by: Person,
     invitation: CandidateInvitation.optional(),
   }),
 );
@@ -162,7 +169,9 @@ export const RosterRevisionState = named(
 
 export const RosterDecision = named(
   "RosterDecision",
-  "The caller's own decision on a revision. Proposing counts as the proposer's approval (FQ60).",
+  "The caller's own decision on a revision. Proposing counts as the proposer's approval (FQ60), except in " +
+    "a revision the server made for a candidate's own name, where nobody has approved that name yet and " +
+    "the proposer is asked like every other member (FQ84).",
   z.enum(["pending", "approved", "declined"]),
 );
 
@@ -170,7 +179,9 @@ export const RosterRevision = named(
   "RosterRevision",
   "An exact proposed roster (G03-approve, G05-members): the active members and the candidates, which " +
     "every active member approves and each candidate accepts, in either order (spec 04, FQ65). It never " +
-    "says how other members decided, how many have approved, or who hasn't (book p30, T15, T33). B1 " +
+    "says how other members decided, how many have approved, or who hasn't (book p30, T15, T33). " +
+    "`proposed_by` is the member who proposed the revision; in one the server made for a name, the " +
+    "candidate's proposer, whose link was used (FQ84). B1 " +
     "settles, with FQ51, how a first roster's other candidates go on once its first acceptance has started " +
     "the club (FQ54): handoff 1 says starting adds nobody merely invited, and a broader roster still needs " +
     "its approvals.",
@@ -358,20 +369,21 @@ export const AcceptInvitationRequest = named(
   "Accept the exact roster the caller saw. The token binds to the first account that accepts; that account " +
     "can accept again after the roster changes, and every other account gets NOT_FOUND (T7). If the " +
     "account's profile name isn't the name the revision shows for its candidate, the server replaces the " +
-    "revision with one that shows the account's name (FQ66; handoff 1: a different identity goes through " +
-    "the roster again). The old revision is superseded and its approvals no longer count: every active " +
-    "member approves the new one, the proposer included, since nobody has approved that name, and every " +
-    "other candidate accepts it again. This account's acceptance carries over, since only its own name " +
-    "changed.",
+    "revision with one that shows the account's name, and binds the token to the account (FQ66; handoff " +
+    "1: a different identity goes through the roster again). The old revision is superseded and its " +
+    "approvals and acceptances no longer count: everyone accepts the new one again (FQ66's default), " +
+    "every active member approving it, the proposer included, since nobody has approved that name (FQ84), " +
+    "and every candidate accepting it, this account too, which then sees itself under its own name.",
   z.strictObject({ token: InvitationToken, revision_id: Id, expected_version: Version }),
 );
 
 export const InvitationAcceptance = named(
   "InvitationAcceptance",
   "joined: the membership started, a new interval that inherits nothing earlier (T8, Q06). waiting: the " +
-    "members haven't all approved yet (G03-waiting), which is always the answer when the acceptance made a " +
-    "new revision for the account's name (FQ66).",
-  z.object({ invitation_id: Id, state: z.enum(["joined", "waiting"]), club: ClubRef.optional() }),
+    "members haven't all approved yet (G03-waiting). changed: the account's profile name isn't the one the " +
+    "revision showed, so the server made a new revision with it (FQ66): the app previews the token again " +
+    "and the account reviews and accepts that revision (G02-changed).",
+  z.object({ invitation_id: Id, state: z.enum(["joined", "waiting", "changed"]), club: ClubRef.optional() }),
 );
 
 export const RevokedInvitation = named(
@@ -409,8 +421,10 @@ export const ScheduleSlot = named(
   "ScheduleSlot",
   'A weekday of the proposal. `owner` is the member who confirmed a taken day (book p11: "Occupied days ' +
     'identify their owner"; FQ78). `clash_with` is the other member who chose it, shown only to the two of ' +
-    "them (FQ46). `first_date` is the first local date it would open, which can move until the proposal " +
-    "applies (FQ49). `suggested` marks the spaced days proposed to the caller (spec 05). Never Sunday.",
+    "them (FQ46). `first_date` is the first local date it would open. At activation an unconfirmed day's " +
+    "moves to its next date as time passes; after a membership change it's fixed for the proposal's life, " +
+    "and changes only with a new proposal (FQ49). `suggested` marks the spaced days proposed to the caller " +
+    "(spec 05). Never Sunday.",
   z.object({
     weekday: Weekday,
     state: ScheduleSlotState,
@@ -457,7 +471,9 @@ export const Schedule = named(
     "which the app reads from the schedule it fetches again (FQ78); which answer refuses a day another member " +
     "confirmed meanwhile, apart from a changed week, or a confirmation after the start date passed (G04's " +
     "chooseTaken, confirmTaken, revision and pastStart; FQ49); how the days confirmed at activation are " +
-    "returned while others still choose, since `current` holds at least two (FQ55); whether a member in a " +
+    "returned while others still choose, since `current` holds at least two (FQ55); how the worker's rolling " +
+    "generation meets a pending change's fixed start, whether it holds off generating from `effective_from` " +
+    "or a new proposal replaces the old once generation reaches it (FQ49, FQ61, FQ62); whether a member in a " +
     "clash can confirm their other day in a club of two or three (FQ55); and what moves `version`, so that " +
     "nobody learns from it how others are choosing (T33).",
   z.object({

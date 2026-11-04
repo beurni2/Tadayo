@@ -479,7 +479,7 @@ paths:
     post:
       operationId: createClub
       summary: Create a club
-      description: A proposed club with the creator's membership (spec 32; G01-create). It starts once someone accepts its first roster (FQ54).
+      description: A proposed club with the creator's membership (spec 32; G01-create). It starts once someone accepts its first roster (FQ54), or, if they're named differently, once the creator approves the revision made for their name and they accept it (FQ84).
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
@@ -1533,7 +1533,7 @@ paths:
     post:
       operationId: createInvitation
       summary: A share link for one candidate
-      description: "Only the member who proposed the candidate can make or revoke its link (T7 makes the link single-use): during setup from the invitation list (G01-invite-people), which FQ51's default reaches only then; for a later addition, such as Leila in Kitchen table (book p30), where the link is shared and managed has no render yet. A new link replaces the candidate's earlier one, after a revoke or an expiry (Create new link) or when the app no longer holds it (FQ77), and NOT_ALLOWED once the candidate has accepted with it (handoff 4). A retry with the same key returns the first answer without its `url`, and makes nothing new (InvitationLink, T19, FQ77)."
+      description: "Only the member who proposed the candidate can make or revoke its link (T7 makes the link single-use): during setup from the invitation list (G01-invite-people), which FQ51's default reaches only then; for a later addition, such as Leila in Kitchen table (book p30), where the link is shared and managed has no render yet. A new link replaces the candidate's earlier one, after a revoke or an expiry (Create new link) or when the app no longer holds it (FQ77), and NOT_ALLOWED once the candidate has accepted with it (handoff 4). Anyone but the candidate's proposer gets NOT_FOUND, whatever the link's state, so the answer never tells another member that the candidate accepted (T14, handoff 1). A retry with the same key returns the first answer without its `url`, and makes nothing new (InvitationLink, T19, FQ77)."
       parameters:
         - name: club_id
           in: path
@@ -1614,7 +1614,7 @@ paths:
                   value:
                     code: PROFILE_INCOMPLETE
                 NOT_ALLOWED:
-                  summary: "Something the caller can see but can't do now: reacting to their own drop (spec 16), confirming a day that clashes with another member's choice (FQ55), or revoking or replacing a link the candidate has accepted with (handoff 4)."
+                  summary: "Something the caller can see but can't do now: reacting to their own drop (spec 16), confirming a day that clashes with another member's choice (FQ55), or, for the candidate's proposer alone, revoking or replacing a link the candidate has accepted with (handoff 4)."
                   value:
                     code: NOT_ALLOWED
         "404":
@@ -2041,6 +2041,10 @@ paths:
                       candidates:
                         - id: cnd_kt_leila
                           name: Leila
+                          proposed_by:
+                            membership_id: mem_kt_ben
+                            display_name: Ben
+                            avatar_version: av_ben_1
                           invitation:
                             id: inv_kt_leila
                             state: live
@@ -2621,6 +2625,10 @@ paths:
                     candidates:
                       - id: cnd_kt_leila
                         name: Leila
+                        proposed_by:
+                          membership_id: mem_kt_ben
+                          display_name: Ben
+                          avatar_version: av_ben_1
                         invitation:
                           id: inv_kt_leila
                           state: live
@@ -2945,7 +2953,7 @@ paths:
                       my_state: choosing
                       state: open
                 no_reveal:
-                  summary: "Nina and Leila both chose Friday: Ben sees only that it has no reveal scheduled (G04-conflict-others, FQ46)"
+                  summary: "Two of Maya, Nina and Leila chose Friday, and Maya hasn't confirmed Saturday: Ben sees only that Friday has no reveal scheduled, and can't tell which two (G04-conflict-others, FQ46, FQ78)"
                   value:
                     server_now: 2026-11-06T14:41:00Z
                     club:
@@ -3012,11 +3020,7 @@ paths:
                           first_date: 2026-12-11
                           suggested: false
                         - weekday: saturday
-                          state: taken
-                          owner:
-                            membership_id: mem_kt_maya
-                            display_name: Maya
-                            avatar_version: av_maya_1
+                          state: available
                           first_date: 2026-12-12
                           suggested: false
                       my_days:
@@ -4803,7 +4807,7 @@ paths:
                   value:
                     code: PROFILE_INCOMPLETE
                 NOT_ALLOWED:
-                  summary: "Something the caller can see but can't do now: reacting to their own drop (spec 16), confirming a day that clashes with another member's choice (FQ55), or revoking or replacing a link the candidate has accepted with (handoff 4)."
+                  summary: "Something the caller can see but can't do now: reacting to their own drop (spec 16), confirming a day that clashes with another member's choice (FQ55), or, for the candidate's proposer alone, revoking or replacing a link the candidate has accepted with (handoff 4)."
                   value:
                     code: NOT_ALLOWED
         "404":
@@ -5477,7 +5481,7 @@ paths:
     post:
       operationId: acceptInvitation
       summary: Accept the exact roster
-      description: The candidate accepts the revision they saw (spec 04, T7). An account named differently from the candidate makes a new revision with its name, which every member approves again (FQ66, AcceptInvitationRequest). Retried with the same key, it returns the first answer, though the token is used.
+      description: "The candidate accepts the revision they saw (spec 04, T7). An account named differently from the candidate makes a new revision with its name, which everyone accepts again, that account included: the answer is `changed` (FQ66, FQ84, AcceptInvitationRequest). Retried with the same key, it returns the first answer, though the token is used."
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
@@ -5513,10 +5517,10 @@ paths:
                       timezone: America/New_York
                       my_membership_id: mem_kt_leila
                 another_name:
-                  summary: "Debby accepted Ben's link for Leila: a new revision names Debby, and Debby waits while every member approves it (FQ66)"
+                  summary: "Debby accepted Ben's link for Leila: a new revision names Debby, which Debby reviews and accepts again (FQ66, G02-changed)"
                   value:
                     invitation_id: inv_kt_leila
-                    state: waiting
+                    state: changed
         "400":
           description: INVALID_REQUEST
           headers:
@@ -5908,7 +5912,7 @@ paths:
     delete:
       operationId: revokeInvitation
       summary: Revoke a link
-      description: The link stops working; the candidate keeps their place, and the proposer can make a new link (Link revoked, G01-invite-people-revoked). Repeating the revoke returns the same answer. NOT_ALLOWED once the candidate has accepted with it, in this revision or an earlier one, since accepting isn't undone by revoking a link (handoff 4).
+      description: The link stops working; the candidate keeps their place, and the proposer can make a new link (Link revoked, G01-invite-people-revoked). Repeating the revoke returns the same answer. NOT_ALLOWED once the candidate has accepted with it, in this revision or an earlier one, since accepting isn't undone by revoking a link (handoff 4). Anyone but the candidate's proposer gets NOT_FOUND, whatever the link's state (T14, handoff 1).
       parameters:
         - name: invitation_id
           in: path
@@ -5974,7 +5978,7 @@ paths:
                   value:
                     code: PROFILE_INCOMPLETE
                 NOT_ALLOWED:
-                  summary: "Something the caller can see but can't do now: reacting to their own drop (spec 16), confirming a day that clashes with another member's choice (FQ55), or revoking or replacing a link the candidate has accepted with (handoff 4)."
+                  summary: "Something the caller can see but can't do now: reacting to their own drop (spec 16), confirming a day that clashes with another member's choice (FQ55), or, for the candidate's proposer alone, revoking or replacing a link the candidate has accepted with (handoff 4)."
                   value:
                     code: NOT_ALLOWED
         "404":
@@ -8639,6 +8643,10 @@ paths:
                     candidates:
                       - id: cnd_kt_leila
                         name: Leila
+                        proposed_by:
+                          membership_id: mem_kt_ben
+                          display_name: Ben
+                          avatar_version: av_ben_1
                     my_decision: pending
                 link_revoked:
                   summary: "Ben revoked Leila's link: Leila stays proposed, and Ben can make a new link (Link revoked; where a later addition's link is managed has no render yet, FQ51)"
@@ -8671,9 +8679,53 @@ paths:
                     candidates:
                       - id: cnd_kt_leila
                         name: Leila
+                        proposed_by:
+                          membership_id: mem_kt_ben
+                          display_name: Ben
+                          avatar_version: av_ben_1
                         invitation:
                           id: inv_kt_leila
                           state: revoked
+                          expires_at: 2026-11-13T14:41:00Z
+                    my_decision: approved
+                accepted:
+                  summary: "Leila has accepted: only Ben, who proposed Leila, sees Accepted (handoff 1)"
+                  value:
+                    id: rev_kt_leila
+                    version: 1
+                    club:
+                      id: club_kitchen_table
+                      name: Kitchen table
+                      timezone: America/New_York
+                      my_membership_id: mem_kt_ben
+                    state: open
+                    proposed_by:
+                      membership_id: mem_kt_ben
+                      display_name: Ben
+                      avatar_version: av_ben_1
+                    members:
+                      - membership_id: mem_kt_ben
+                        display_name: Ben
+                        avatar_version: av_ben_1
+                      - membership_id: mem_kt_alex
+                        display_name: Alex
+                      - membership_id: mem_kt_sam
+                        display_name: Sam
+                      - membership_id: mem_kt_nina
+                        display_name: Nina
+                      - membership_id: mem_kt_maya
+                        display_name: Maya
+                        avatar_version: av_maya_1
+                    candidates:
+                      - id: cnd_kt_leila
+                        name: Leila
+                        proposed_by:
+                          membership_id: mem_kt_ben
+                          display_name: Ben
+                          avatar_version: av_ben_1
+                        invitation:
+                          id: inv_kt_leila
+                          state: accepted
                           expires_at: 2026-11-13T14:41:00Z
                     my_decision: approved
                 another_name:
@@ -8707,9 +8759,13 @@ paths:
                     candidates:
                       - id: cnd_kt_leila
                         name: Debby
+                        proposed_by:
+                          membership_id: mem_kt_ben
+                          display_name: Ben
+                          avatar_version: av_ben_1
                     my_decision: pending
                 another_name_proposer:
-                  summary: "The same revision as Ben sees it: Ben approves Debby too, and only Ben sees that the link was accepted (FQ66, handoff 1)"
+                  summary: "The same revision as Ben sees it: Ben approves Debby too, and Debby hasn't accepted this revision yet (FQ66, FQ84, handoff 1)"
                   value:
                     id: rev_kt_debby
                     version: 1
@@ -8739,9 +8795,13 @@ paths:
                     candidates:
                       - id: cnd_kt_leila
                         name: Debby
+                        proposed_by:
+                          membership_id: mem_kt_ben
+                          display_name: Ben
+                          avatar_version: av_ben_1
                         invitation:
                           id: inv_kt_leila
-                          state: accepted
+                          state: used
                           expires_at: 2026-11-13T14:41:00Z
                     my_decision: pending
                 superseded:
@@ -8775,6 +8835,10 @@ paths:
                     candidates:
                       - id: cnd_kt_leila
                         name: Leila
+                        proposed_by:
+                          membership_id: mem_kt_ben
+                          display_name: Ben
+                          avatar_version: av_ben_1
                     my_decision: approved
                     superseded_by: rev_kt_debby
         "400":
@@ -8910,6 +8974,10 @@ paths:
                     candidates:
                       - id: cnd_kt_leila
                         name: Leila
+                        proposed_by:
+                          membership_id: mem_kt_ben
+                          display_name: Ben
+                          avatar_version: av_ben_1
                     my_decision: approved
         "400":
           description: INVALID_REQUEST
@@ -9072,6 +9140,10 @@ paths:
                     candidates:
                       - id: cnd_kt_leila
                         name: Leila
+                        proposed_by:
+                          membership_id: mem_kt_ben
+                          display_name: Ben
+                          avatar_version: av_ben_1
                     my_decision: declined
         "400":
           description: INVALID_REQUEST
@@ -9472,7 +9544,7 @@ paths:
                   value:
                     code: PROFILE_INCOMPLETE
                 NOT_ALLOWED:
-                  summary: "Something the caller can see but can't do now: reacting to their own drop (spec 16), confirming a day that clashes with another member's choice (FQ55), or revoking or replacing a link the candidate has accepted with (handoff 4)."
+                  summary: "Something the caller can see but can't do now: reacting to their own drop (spec 16), confirming a day that clashes with another member's choice (FQ55), or, for the candidate's proposer alone, revoking or replacing a link the candidate has accepted with (handoff 4)."
                   value:
                     code: NOT_ALLOWED
         "404":
@@ -10020,7 +10092,7 @@ components:
         - revision_id
         - expected_version
       additionalProperties: false
-      description: "Accept the exact roster the caller saw. The token binds to the first account that accepts; that account can accept again after the roster changes, and every other account gets NOT_FOUND (T7). If the account's profile name isn't the name the revision shows for its candidate, the server replaces the revision with one that shows the account's name (FQ66; handoff 1: a different identity goes through the roster again). The old revision is superseded and its approvals no longer count: every active member approves the new one, the proposer included, since nobody has approved that name, and every other candidate accepts it again. This account's acceptance carries over, since only its own name changed."
+      description: "Accept the exact roster the caller saw. The token binds to the first account that accepts; that account can accept again after the roster changes, and every other account gets NOT_FOUND (T7). If the account's profile name isn't the name the revision shows for its candidate, the server replaces the revision with one that shows the account's name, and binds the token to the account (FQ66; handoff 1: a different identity goes through the roster again). The old revision is superseded and its approvals and acceptances no longer count: everyone accepts the new one again (FQ66's default), every active member approving it, the proposer included, since nobody has approved that name (FQ84), and every candidate accepting it, this account too, which then sees itself under its own name."
     AccountDeletion:
       type: object
       properties:
@@ -10172,12 +10244,15 @@ components:
           $ref: "#/components/schemas/Id"
         name:
           $ref: "#/components/schemas/CandidateLabel"
+        proposed_by:
+          $ref: "#/components/schemas/Person"
         invitation:
           $ref: "#/components/schemas/CandidateInvitation"
       required:
         - id
         - name
-      description: "Someone proposed in a roster revision, by the one name the revision shows (`name`): the proposer's label, or the candidate's own profile name in a revision the server made because the account that accepted is named differently (FQ66). So a revision's names never change, and nothing in it says who has accepted, which only the proposer's `invitation` does (handoff 1). A new revision for a name does tell the members that someone accepted under it, as FQ66's default asks, so that they approve who'll join. Members see a candidate's initial, never their photo, before they join (G03-approve, handoff 4). `invitation` is present only for the proposer, once they've made a link; for a candidate with none, the app offers to make one."
+        - proposed_by
+      description: "Someone proposed in a roster revision, by the one name the revision shows (`name`): the proposer's label, or the candidate's own profile name in a revision the server made because the account that accepted is named differently (FQ66). So a revision's names never change, and nothing in it says who has accepted, which only the proposer's `invitation` does (handoff 1). A new revision for a name does tell the members and the other candidates that someone accepted under it, as FQ66's default asks, so that they approve and accept who'll join. `proposed_by` is the member who proposed this candidate (\"Proposed by Ben\", handoff 1), which a candidate carried into a newer revision keeps. Members see a candidate's initial, never their photo, before they join (G03-approve, handoff 4). `invitation` is present only for that member, once they've made a link; for a candidate with none, their app offers to make one."
     CandidateInvitation:
       type: object
       properties:
@@ -10191,7 +10266,7 @@ components:
         - id
         - state
         - expires_at
-      description: The candidate's latest link, by its id, state and expiry, never its token, which reaches the proposer once, when the link is made (T7, FQ77). Only for the member who proposed the candidate, so after a relaunch they can see it, revoke it or make a new one.
+      description: The candidate's latest link, by its id, state and expiry, never its token, which reaches the proposer once, when the link is made (T7, FQ77). Only for the member who proposed the candidate (the candidate's own `proposed_by`, never the revision's), so after a relaunch they can see it, revoke it or make a new one.
     CandidateLabel:
       type: string
       minLength: 1
@@ -10206,7 +10281,7 @@ components:
         - used
         - revoked
         - expired
-      description: "Where the candidate's latest link stands, for its proposer only, never for another member (handoff 1). live: it works and hasn't been used. accepted: the candidate has accepted this revision with it (Accepted). used: the candidate accepted an earlier revision with it and hasn't accepted this one yet (they see G02-changed; no render shows the proposer's row yet). revoked: Link revoked, with Create new link. expired: it expired before anyone used it (FQ71). A link used to accept can't be revoked or replaced, since accepting isn't undone by revoking a link (handoff 4). Whether a live link is Not shared or Shared is the app's own record of a completed share activity for that link, a copy included (FQ67), kept with the link in its per-account store (FQ77): the server never knows which."
+      description: "Where the candidate's latest link stands, for its proposer only, never for another member (handoff 1). live: it works and hasn't been used. accepted: the candidate has accepted this revision with it (Accepted). used: the candidate accepted an earlier revision with it and hasn't accepted this one yet, as after a roster change or a new revision for their name (they see G02-changed; no render shows the proposer's row yet). revoked: Link revoked, with Create new link. expired: it expired before anyone used it (FQ71). A link used to accept can't be revoked or replaced, since accepting isn't undone by revoking a link (handoff 4). Whether a live link is Not shared or Shared is the app's own record of a completed share activity for that link, a copy included (FQ67), kept with the link in its per-account store (FQ77): the server never knows which."
     Caption:
       type: string
       minLength: 0
@@ -10344,7 +10419,7 @@ components:
         - active
         - paused
         - suspended
-      description: "proposed: waiting for two people to approve the same roster (spec 04, 32, T7); the creator's proposal counts as theirs, so the first acceptance starts it (FQ54). active: it has started, though its days may not be confirmed yet (HomeNoDays). paused: fewer than two members, so no new days (FQ16). suspended: stopped by moderation (spec 22)."
+      description: "proposed: waiting for two people to approve the same roster (spec 04, 32, T7); the creator's proposal counts as theirs, so the first acceptance starts it (FQ54), unless it came under another name, when it starts once the creator has approved the revision made for that name and the account has accepted it (FQ84). active: it has started, though its days may not be confirmed yet (HomeNoDays). paused: fewer than two members, so no new days (FQ16). suspended: stopped by moderation (spec 22)."
     ClubSummary:
       type: object
       properties:
@@ -10918,7 +10993,7 @@ components:
         PROVIDER_UNSUPPORTED (400): Not a link Tadayo can add, or its provider is switched off (spec 17, 33).
         UNAUTHENTICATED (401): No valid session: sign in again.
         PROFILE_INCOMPLETE (403): The account hasn't confirmed it's 18 or older (FQ13) or has no name yet: finish `PATCH /v1/me` first. Until then it can only finish setup or leave (FQ69).
-        NOT_ALLOWED (403): Something the caller can see but can't do now: reacting to their own drop (spec 16), confirming a day that clashes with another member's choice (FQ55), or revoking or replacing a link the candidate has accepted with (handoff 4).
+        NOT_ALLOWED (403): Something the caller can see but can't do now: reacting to their own drop (spec 16), confirming a day that clashes with another member's choice (FQ55), or, for the candidate's proposer alone, revoking or replacing a link the candidate has accepted with (handoff 4).
         NOT_FOUND (404): Missing, or not the caller's to see: the two are the same answer, and say nothing about hidden content (T14).
         OCCURRENCE_CLOSED (409): The day's cutoff has passed (T3). `target` is the day asked for and `next_target` the same person's next day, for the person to confirm; nothing was moved (T4).
         QUOTA_FULL (409): Six drops already, live reservations included (T17). `target`, the caller's `allowance`, and `next_target`, the same person's next day, for the person to confirm; nothing was moved (T4).
@@ -11083,7 +11158,7 @@ components:
         - server_now
         - club
         - club_today
-      description: "The club hasn't started: nobody has accepted its roster yet (spec 04, 08; FQ54)."
+      description: "The club hasn't started: nobody has accepted its roster yet, or the first acceptance came under another name and its revision waits for the creator and that account (spec 04, 08; FQ54, FQ84)."
     HomeDay:
       type: object
       properties:
@@ -11157,7 +11232,7 @@ components:
         - club
         - club_today
         - recent_days
-      description: "Fewer than two members: no new days until someone joins, and Memories stays readable (FQ16). A remaining member's day already announced still shows as usual until it passes (FQ50); a day held because its star left never opens and is never Home's day (FQ63)."
+      description: "Fewer than two members: no new days until someone joins, and Memories stays readable (FQ16). A remaining member's day already announced still shows as usual until it passes (FQ50); a day held because its star left never opens, so it's never Home's `day` or `next` and never keeps Home waiting (FQ63)."
     HomeUnavailable:
       type: object
       properties:
@@ -11226,12 +11301,13 @@ components:
           enum:
             - joined
             - waiting
+            - changed
         club:
           $ref: "#/components/schemas/ClubRef"
       required:
         - invitation_id
         - state
-      description: "joined: the membership started, a new interval that inherits nothing earlier (T8, Q06). waiting: the members haven't all approved yet (G03-waiting), which is always the answer when the acceptance made a new revision for the account's name (FQ66)."
+      description: "joined: the membership started, a new interval that inherits nothing earlier (T8, Q06). waiting: the members haven't all approved yet (G03-waiting). changed: the account's profile name isn't the one the revision showed, so the server made a new revision with it (FQ66): the app previews the token again and the account reviews and accepts that revision (G02-changed)."
     InvitationChanged:
       type: object
       properties:
@@ -11603,7 +11679,7 @@ components:
         - waiting
         - roster_changed
         - did_not_go_ahead
-      description: "Where an invitation the caller accepted stands: waiting for the members (G03-waiting), the roster changed and needs accepting again (G02-changed), or it didn't go ahead, which never says who declined (G03-declined, book p30). A link used to accept can't be revoked (CandidateLinkState), so a revoke never reaches it."
+      description: "Where an invitation the caller accepted stands: waiting for the members (G03-waiting), the roster changed and needs accepting again (G02-changed), or it didn't go ahead, which never says who declined (G03-declined, book p30). A link used to accept can't be revoked (CandidateLinkState), so a revoke never reaches it. Accepting a changed roster takes the link's token again, which the app keeps with the invitation's intent (handoff 1: invitation intent survives sign-in and retries); how an account that no longer holds it accepts again is B1's to settle."
     NotificationPreferences:
       type: object
       properties:
@@ -11672,7 +11748,7 @@ components:
         - open
         - past
         - unavailable
-      description: "Where a day is, from the server's clock at the time of the response (T1, T5): collecting before reveal_at, open until close_at, past after it. unavailable: cancelled or suspended (spec 06, 22), with no reason and nothing in it (T9). A day held because its star left the club never opens (FQ63), and gets its stage with leaving, in B6. The app never computes this from its own clock, and counts down from `server_now`."
+      description: "Where a day is, from the server's clock at the time of the response (T1, T5): collecting before reveal_at, open until close_at, past after it. unavailable: cancelled or suspended (spec 06, 22), with no reason and nothing in it (T9). A day held because its star left the club never opens (FQ63), and gets its stage with leaving, in B6, which also settles a deleted account's days. The app never computes this from its own clock, and counts down from `server_now`."
     OwnContribution:
       type: object
       properties:
@@ -12139,7 +12215,7 @@ components:
         - pending
         - approved
         - declined
-      description: The caller's own decision on a revision. Proposing counts as the proposer's approval (FQ60).
+      description: The caller's own decision on a revision. Proposing counts as the proposer's approval (FQ60), except in a revision the server made for a candidate's own name, where nobody has approved that name yet and the proposer is asked like every other member (FQ84).
     RosterDecisionRequest:
       type: object
       properties:
@@ -12187,7 +12263,7 @@ components:
         - members
         - candidates
         - my_decision
-      description: "An exact proposed roster (G03-approve, G05-members): the active members and the candidates, which every active member approves and each candidate accepts, in either order (spec 04, FQ65). It never says how other members decided, how many have approved, or who hasn't (book p30, T15, T33). B1 settles, with FQ51, how a first roster's other candidates go on once its first acceptance has started the club (FQ54): handoff 1 says starting adds nobody merely invited, and a broader roster still needs its approvals."
+      description: "An exact proposed roster (G03-approve, G05-members): the active members and the candidates, which every active member approves and each candidate accepts, in either order (spec 04, FQ65). It never says how other members decided, how many have approved, or who hasn't (book p30, T15, T33). `proposed_by` is the member who proposed the revision; in one the server made for a name, the candidate's proposer, whose link was used (FQ84). B1 settles, with FQ51, how a first roster's other candidates go on once its first acceptance has started the club (FQ54): handoff 1 says starting adds nobody merely invited, and a broader roster still needs its approvals."
     RosterRevisionState:
       type: string
       enum:
@@ -12210,7 +12286,7 @@ components:
       required:
         - server_now
         - club
-      description: "The club's week (G04, G05-schedule): the schedule in force, if any, and the open proposal, if any. The same for every active member, except each one's own slots (T55). The schedule-proposal shapes are settled in B2's contract PR, with these known gaps: the proposed week naming each member's suggested day (G04-one-day, G04-change); the owner a G04 error names (\"{weekday} is now {ownerName}'s day\"), which the app reads from the schedule it fetches again (FQ78); which answer refuses a day another member confirmed meanwhile, apart from a changed week, or a confirmation after the start date passed (G04's chooseTaken, confirmTaken, revision and pastStart; FQ49); how the days confirmed at activation are returned while others still choose, since `current` holds at least two (FQ55); whether a member in a clash can confirm their other day in a club of two or three (FQ55); and what moves `version`, so that nobody learns from it how others are choosing (T33)."
+      description: "The club's week (G04, G05-schedule): the schedule in force, if any, and the open proposal, if any. The same for every active member, except each one's own slots (T55). The schedule-proposal shapes are settled in B2's contract PR, with these known gaps: the proposed week naming each member's suggested day (G04-one-day, G04-change); the owner a G04 error names (\"{weekday} is now {ownerName}'s day\"), which the app reads from the schedule it fetches again (FQ78); which answer refuses a day another member confirmed meanwhile, apart from a changed week, or a confirmation after the start date passed (G04's chooseTaken, confirmTaken, revision and pastStart; FQ49); how the days confirmed at activation are returned while others still choose, since `current` holds at least two (FQ55); how the worker's rolling generation meets a pending change's fixed start, whether it holds off generating from `effective_from` or a new proposal replaces the old once generation reaches it (FQ49, FQ61, FQ62); whether a member in a clash can confirm their other day in a club of two or three (FQ55); and what moves `version`, so that nobody learns from it how others are choosing (T33)."
     ScheduleAssignment:
       type: object
       properties:
@@ -12314,7 +12390,7 @@ components:
         - state
         - first_date
         - suggested
-      description: 'A weekday of the proposal. `owner` is the member who confirmed a taken day (book p11: "Occupied days identify their owner"; FQ78). `clash_with` is the other member who chose it, shown only to the two of them (FQ46). `first_date` is the first local date it would open, which can move until the proposal applies (FQ49). `suggested` marks the spaced days proposed to the caller (spec 05). Never Sunday.'
+      description: "A weekday of the proposal. `owner` is the member who confirmed a taken day (book p11: \"Occupied days identify their owner\"; FQ78). `clash_with` is the other member who chose it, shown only to the two of them (FQ46). `first_date` is the first local date it would open. At activation an unconfirmed day's moves to its next date as time passes; after a membership change it's fixed for the proposal's life, and changes only with a new proposal (FQ49). `suggested` marks the spaced days proposed to the caller (spec 05). Never Sunday."
     ScheduleSlotState:
       type: string
       enum:
@@ -12544,7 +12620,7 @@ components:
       required:
         - expected_version
       additionalProperties: false
-      description: "Change the caller's name or avatar, or confirm once that they're 18 or older (FQ13: `true` only, and no birthdate). `avatar_upload_id` is a ready upload made for the avatar. A name or an avatar is taken only once the age is confirmed, in this request or before. Only the fields sent change. A new name for someone who has accepted a roster revision that's still open makes a new revision with that name, as accepting does (FQ66)."
+      description: "Change the caller's name or avatar, or confirm once that they're 18 or older (FQ13: `true` only, and no birthdate). `avatar_upload_id` is a ready upload made for the avatar. A name or an avatar is taken only once the age is confirmed, in this request or before. Only the fields sent change. A new name for someone who has accepted a roster revision that's still open makes a new revision with that name, as accepting does, which everyone accepts again, that account too (FQ66, FQ84)."
     Upload:
       type: object
       properties:

@@ -19,8 +19,8 @@ export const ERRORS = {
   NOT_ALLOWED: [
     403,
     "Something the caller can see but can't do now: reacting to their own drop (spec 16), confirming a " +
-      "day that clashes with another member's choice (FQ55), or revoking or replacing a link the candidate " +
-      "has accepted with (handoff 4).",
+      "day that clashes with another member's choice (FQ55), or, for the candidate's proposer alone, revoking " +
+      "or replacing a link the candidate has accepted with (handoff 4).",
   ],
   NOT_FOUND: [
     404,

@@ -47,11 +47,11 @@ const ktNextDays = {
 
 // G05-members and G03-approve: Ben proposed Leila; Maya is the member who approves (FQ60's fixture).
 // `revision` is the one the server makes when Ben's link for Leila is forwarded and Debby accepts it,
-// naming Debby (FQ66).
+// naming Debby, which everyone then accepts again, Debby too (FQ66, FQ84).
 const leilaRevision = (
   viewer: "ben" | "maya",
   decision: "pending" | "approved" | "declined",
-  link: "live" | "accepted" | "revoked" = "live",
+  link: "live" | "accepted" | "used" | "revoked" = "live",
   revision: { id: string; name: string } = { id: "rev_kt_leila", name: "Leila" },
 ) => ({
   id: revision.id,
@@ -64,6 +64,7 @@ const leilaRevision = (
     {
       id: "cnd_kt_leila",
       name: revision.name,
+      proposed_by: member("kitchenTable", "ben"),
       // Only Ben, who proposed Leila, sees the link Ben made and where it stands (T7, handoff 1): made at
       // 9:41 AM on Friday 6 November, for seven days (FQ71).
       ...(viewer === "ben"
@@ -94,8 +95,8 @@ const invitationRoster = (state: "open" | "changed" | "waiting") => ({
 
 // Kitchen table's proposal after Leila joins, from Monday 7 December, the first week after the days
 // already announced (FQ61): Alex, Sam and Maya have confirmed Tuesday, Wednesday and Saturday, each named
-// as the day's owner (book p11, FQ78). `others` is the rest of the week as Ben sees it: by default Ben has
-// chosen Monday. In a clash, Ben's other member is Leila (FQ46).
+// as the day's owner (book p11, FQ78). `others` is the rest of the week as Ben sees it, over those owners:
+// by default Ben has chosen Monday. In a clash, Ben's other member is Leila (FQ46).
 type WeekdayKey = "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday";
 const ktOwners: Partial<Record<WeekdayKey, "alex" | "sam" | "maya">> = {
   tuesday: "alex",
@@ -104,9 +105,11 @@ const ktOwners: Partial<Record<WeekdayKey, "alex" | "sam" | "maya">> = {
 };
 const changeDate = (index: number) =>
   new Date(Date.parse(`${changeFrom}T12:00:00Z`) + index * 86_400_000).toISOString().slice(0, 10);
-const ktSlots = (others: Partial<Record<WeekdayKey, "yours" | "clash" | "no_reveal">> = { monday: "yours" }) =>
+const ktSlots = (
+  others: Partial<Record<WeekdayKey, "yours" | "clash" | "no_reveal" | "available">> = { monday: "yours" },
+) =>
   (["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"] as const).map((weekday, index) => {
-    const owner = ktOwners[weekday];
+    const owner = others[weekday] ? undefined : ktOwners[weekday];
     const state = owner ? "taken" : (others[weekday] ?? "available");
     return {
       weekday,
@@ -271,6 +274,10 @@ export const CLUB_EXAMPLES: { home: Examples; operations: Record<string, Example
           "Ben revoked Leila's link: Leila stays proposed, and Ben can make a new link (Link revoked; where a later addition's link is managed has no render yet, FQ51)",
         value: leilaRevision("ben", "approved", "revoked"),
       },
+      accepted: {
+        summary: "Leila has accepted: only Ben, who proposed Leila, sees Accepted (handoff 1)",
+        value: leilaRevision("ben", "approved", "accepted"),
+      },
       another_name: {
         summary:
           "Ben's link for Leila was forwarded and Debby accepted it: Maya is asked to approve Debby, since a different name is a new revision (FQ66)",
@@ -278,8 +285,8 @@ export const CLUB_EXAMPLES: { home: Examples; operations: Record<string, Example
       },
       another_name_proposer: {
         summary:
-          "The same revision as Ben sees it: Ben approves Debby too, and only Ben sees that the link was accepted (FQ66, handoff 1)",
-        value: leilaRevision("ben", "pending", "accepted", debbyRevision),
+          "The same revision as Ben sees it: Ben approves Debby too, and Debby hasn't accepted this revision yet (FQ66, FQ84, handoff 1)",
+        value: leilaRevision("ben", "pending", "used", debbyRevision),
       },
       superseded: {
         summary: "Leila's revision once Debby's replaced it: its approvals no longer count (FQ66, T7)",
@@ -363,8 +370,8 @@ export const CLUB_EXAMPLES: { home: Examples; operations: Record<string, Example
       },
       another_name: {
         summary:
-          "Debby accepted Ben's link for Leila: a new revision names Debby, and Debby waits while every member approves it (FQ66)",
-        value: { invitation_id: "inv_kt_leila", state: "waiting" },
+          "Debby accepted Ben's link for Leila: a new revision names Debby, which Debby reviews and accepts again (FQ66, G02-changed)",
+        value: { invitation_id: "inv_kt_leila", state: "changed" },
       },
     },
     getSchedule: {
@@ -388,8 +395,8 @@ export const CLUB_EXAMPLES: { home: Examples; operations: Record<string, Example
       },
       no_reveal: {
         summary:
-          "Nina and Leila both chose Friday: Ben sees only that it has no reveal scheduled (G04-conflict-others, FQ46)",
-        value: ktSchedule(ktProposal(1, { monday: "yours", friday: "no_reveal" })),
+          "Two of Maya, Nina and Leila chose Friday, and Maya hasn't confirmed Saturday: Ben sees only that Friday has no reveal scheduled, and can't tell which two (G04-conflict-others, FQ46, FQ78)",
+        value: ktSchedule(ktProposal(1, { monday: "yours", friday: "no_reveal", saturday: "available" })),
       },
     },
     chooseScheduleDays: {

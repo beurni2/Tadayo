@@ -48,7 +48,8 @@ export const CLUB_OPERATIONS: Operation[] = [
     summary: "Create a club",
     description:
       "A proposed club with the creator's membership (spec 32; G01-create). It starts once someone accepts " +
-      "its first roster (FQ54).",
+      "its first roster (FQ54), or, if they're named differently, once the creator approves the revision made " +
+      "for their name and they accept it (FQ84).",
     idempotent: true,
     body: CreateClubRequest,
     ok: { status: 201, json: ClubDetail },
@@ -136,8 +137,10 @@ export const CLUB_OPERATIONS: Operation[] = [
       "only then; for a later addition, such as Leila in Kitchen table (book p30), where the link is shared " +
       "and managed has no render yet. A new link replaces the candidate's earlier one, after a revoke or an " +
       "expiry (Create new link) or when the app no longer holds it (FQ77), and NOT_ALLOWED once the " +
-      "candidate has accepted with it (handoff 4). A retry with the same key returns the first answer " +
-      "without its `url`, and makes nothing new (InvitationLink, T19, FQ77).",
+      "candidate has accepted with it (handoff 4). Anyone but the candidate's proposer gets NOT_FOUND, " +
+      "whatever the link's state, so the answer never tells another member that the candidate accepted " +
+      "(T14, handoff 1). A retry with the same key returns the first answer without its `url`, and makes " +
+      "nothing new (InvitationLink, T19, FQ77).",
     idempotent: true,
     body: CreateInvitationRequest,
     ok: { status: 201, json: InvitationLink },
@@ -152,7 +155,8 @@ export const CLUB_OPERATIONS: Operation[] = [
       "The link stops working; the candidate keeps their place, and the proposer can make a new link (Link " +
       "revoked, G01-invite-people-revoked). Repeating the revoke returns the same answer. NOT_ALLOWED once " +
       "the candidate has accepted with it, in this revision or an earlier one, since accepting isn't undone " +
-      "by revoking a link (handoff 4).",
+      "by revoking a link (handoff 4). Anyone but the candidate's proposer gets NOT_FOUND, whatever the " +
+      "link's state (T14, handoff 1).",
     ok: { status: 200, json: RevokedInvitation },
     errors: ["NOT_ALLOWED"],
   },
@@ -190,9 +194,9 @@ export const CLUB_OPERATIONS: Operation[] = [
     summary: "Accept the exact roster",
     description:
       "The candidate accepts the revision they saw (spec 04, T7). An account named differently from the " +
-      "candidate makes a new revision with its name, which every member approves again (FQ66, " +
-      "AcceptInvitationRequest). Retried with the same key, it returns the first answer, though the token " +
-      "is used.",
+      "candidate makes a new revision with its name, which everyone accepts again, that account included: " +
+      "the answer is `changed` (FQ66, FQ84, AcceptInvitationRequest). Retried with the same key, it returns " +
+      "the first answer, though the token is used.",
     idempotent: true,
     body: AcceptInvitationRequest,
     ok: { status: 200, json: InvitationAcceptance },

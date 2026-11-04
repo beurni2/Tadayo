@@ -470,13 +470,14 @@ describe("the pre-reveal whitelist (T10)", () => {
 });
 
 describe("a roster revision's candidates (FQ66, handoff 1)", () => {
-  it("show every member a candidate's id and one name, and the link's state only in the proposer's part", () => {
+  it("show every member a candidate's id, one name and proposer, and the link's state only in the proposer's part", () => {
     // Every active member gets a revision's candidates. A field added here tells them something about a
     // candidate, such as whether they have accepted, which handoff 1 keeps to the proposer.
     expect(Object.keys((schemas.Candidate as JsonObject).properties as JsonObject).sort()).toEqual([
       "id",
       "invitation",
       "name",
+      "proposed_by",
     ]);
     expect(Object.keys((schemas.CandidateInvitation as JsonObject).properties as JsonObject).sort()).toEqual([
       "expires_at",
@@ -720,11 +721,13 @@ describe("the examples", () => {
     for (const [id, set] of Object.entries(examples)) {
       for (const [name, example] of Object.entries(set)) {
         walk(example.value as Json, (node) => {
-          if (!Array.isArray(node.candidates) || typeof node.proposed_by !== "object") return;
+          if (!Array.isArray(node.candidates) || typeof node.club !== "object") return;
           const viewer = (node.club as JsonObject).my_membership_id;
-          const proposer = viewer === (node.proposed_by as JsonObject).membership_id;
-          seen[proposer ? "proposer" : "others"] += 1;
+          // Each candidate's own proposer, never the revision's: a candidate carried into a newer revision
+          // keeps the member who proposed them.
           for (const candidate of node.candidates as JsonObject[]) {
+            const proposer = viewer === (candidate.proposed_by as JsonObject).membership_id;
+            seen[proposer ? "proposer" : "others"] += 1;
             if (!proposer) expect("invitation" in candidate, `${id}.${name}`).toBe(false);
             if ((candidate.invitation as JsonObject | undefined)?.state === "accepted") seen.accepted += 1;
           }
