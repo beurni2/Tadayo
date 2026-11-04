@@ -1386,6 +1386,14 @@ Two earlier entries claim more than their commits show, and the log is append-on
 ### 3.3 ios lane
 
 #### 2026-11-04 21:05 UTC · ios · ios/b2-handoffs-5-6 · PR none
+**Did:** Unpacked design handoff 6 (the rows handoff 5's check left, and redraws), as it arrived, into `design/reference/claude-design/handoff-6/`: `Tadayo_Handoff_6_Pack.zip` from `/mnt/project-files/design/handoff-6/export/` (SHA-256 `d96c3d9c142198c09ed6…`), 71 files: 27 frames (26 states and the component sheet) as PNG and SVG, `IMPLEMENTATION.md`, `README.md`, seven JSON files (`brand-tokens.json`, `component-contracts.json`, `copy-contracts.json`, `frame-manifest.json`, `screen-copy.json`, `source-provenance.json`, `validation-report.json`), `SHA256SUMS.txt`, the PDF and the assets. Block 1.3's Updated line, this entry.
+**Why:** As the previous entry: the deliveries enter as they arrived (T46), on this branch while the founder's card waits.
+**Verified:** `sha256sum -c SHA256SUMS.txt` in the unpacked folder: every file OK. The pack's PDF is byte-identical to the export's (`c84176e7b40c322e…`). `brand-tokens.json` and the dark icon are byte-identical to handoffs 1 to 5's. Every state frame is 786×1704. `python3 tools/ci/journal_check.py --branch` and the hook by hand: exit 0.
+**Not verified:** `ci` on this commit, until its run.
+**Decisions and questions:** None.
+**Next:** The screens of handoffs 5 and 6 and the component sheet, then the inventory and the questions.
+
+#### 2026-11-04 21:05 UTC · ios · ios/b2-handoffs-5-6 · PR none
 **Did:** Unpacked design handoff 5 (B2's days and Home), as it arrived, into `design/reference/claude-design/handoff-5/`: `Tadayo_Handoff_5_Pack.zip` from `/mnt/project-files/design/handoff-5/export/` (SHA-256 `b49c5771b7fb794f7791…`), 44 files: 14 frames (13 states and the component sheet) as PNG and SVG, `IMPLEMENTATION.md`, `README.md`, the JSON contracts (`brand-tokens.json`, `component-contracts.json`, `copy-contracts.json`, `frame-manifest.json`, `screen-copy.json` and others), `SHA256SUMS.txt`, the PDF and the assets (wordmarks, the dark icon, Arimo with its OFL). Block 1.3, this entry.
 **Why:** Handoffs 5 and 6 are delivered and checked in the project's files; the founder has a card in the ios thread on bringing them in now (ADR-027's proposal), and this branch prepares that design PR while the card waits. The deliveries enter as they arrived, as handoffs 1 to 4 did (T46).
 **Verified:** `sha256sum -c SHA256SUMS.txt` in the unpacked folder: every file OK. The pack's PDF is byte-identical to the export's (`78c14c6d7d8c0f90…`), so no `attached/` copy. `brand-tokens.json` is byte-identical to handoffs 1 to 4's (revision 1.1, `e6d05848fe117702…`), and so is the dark icon PNG (`caf50bc57bbcbfc9…`). Every state frame is 786×1704. `python3 tools/ci/journal_check.py --branch` and the hook by hand: exit 0.
