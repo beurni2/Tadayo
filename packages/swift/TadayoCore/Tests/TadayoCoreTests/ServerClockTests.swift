@@ -24,13 +24,27 @@ import Testing
         #expect(reading == serverNow.addingTimeInterval(3600))
     }
 
-    @Test func keepsTheReadingThatArrivedLast() {
+    @Test func aSlowResponseThatLeftFirstCantWindTheClockBack() {
+        // The fast response left the server 2 seconds after the slow one and arrived first; the
+        // slow one arrives 2 seconds later still carrying the earlier server_now.
         let first = ContinuousClock.now
-        let older = ServerClock(serverNow: serverNow, receivedAt: first)
-        let newer = ServerClock(
-            serverNow: serverNow.addingTimeInterval(-5), receivedAt: first.advanced(by: .seconds(1))
+        let fast = ServerClock(serverNow: serverNow.addingTimeInterval(2), receivedAt: first)
+        let slow = ServerClock(serverNow: serverNow, receivedAt: first.advanced(by: .seconds(2)))
+        #expect(fast.updated(with: slow) == fast)
+        #expect(slow.updated(with: fast) == fast)
+        let later = first.advanced(by: .seconds(5))
+        #expect(fast.updated(with: slow).now(at: later) == serverNow.addingTimeInterval(7))
+    }
+
+    @Test func takesAReadingThatPutsTheServerLater() {
+        // A minute on, a response puts the server 5 seconds further on than the old reading did.
+        let first = ContinuousClock.now
+        let old = ServerClock(serverNow: serverNow, receivedAt: first)
+        let fresh = ServerClock(
+            serverNow: serverNow.addingTimeInterval(65),
+            receivedAt: first.advanced(by: .seconds(60))
         )
-        #expect(older.updated(with: newer) == newer)
-        #expect(newer.updated(with: older) == newer)
+        #expect(old.updated(with: fresh) == fresh)
+        #expect(fresh.updated(with: old) == fresh)
     }
 }

@@ -20,9 +20,38 @@ private struct PrimaryButton: View {
     @Environment(\.isFocused) private var isFocused
 
     var body: some View {
+        PrimaryButtonFace(
+            isPressed: configuration.isPressed, isFocused: isFocused, isEnabled: isEnabled
+        ) {
+            configuration.label
+        }
+        .focusEffectDisabled()
+    }
+}
+
+/// The primary button's appearance in one state, which `PrimaryButtonStyle` feeds from the
+/// button. The Lab draws each of the sheet's four states with it (default, pressed, disabled,
+/// keyboard focus), since a snapshot can't press a button or give it keyboard focus.
+public struct PrimaryButtonFace<Label: View>: View {
+    let isPressed: Bool
+    let isFocused: Bool
+    let isEnabled: Bool
+    let label: Label
+
+    public init(
+        isPressed: Bool = false, isFocused: Bool = false, isEnabled: Bool = true,
+        @ViewBuilder label: () -> Label
+    ) {
+        self.isPressed = isPressed
+        self.isFocused = isFocused
+        self.isEnabled = isEnabled
+        self.label = label()
+    }
+
+    public var body: some View {
         let shape = RoundedRectangle(cornerRadius: Radius.button)
         let ring = Size.focusRingGap + Size.focusRingWidth / 2
-        configuration.label
+        label
             .textRole(.button)
             .multilineTextAlignment(.center)
             .foregroundStyle(ink)
@@ -39,17 +68,16 @@ private struct PrimaryButton: View {
                         .accessibilityHidden(true)
                 }
             }
-            .focusEffectDisabled()
     }
 
     private var fill: Color {
         if !isEnabled { return Palette.actionDisabled }
-        return configuration.isPressed ? Palette.actionPressed : Palette.action
+        return isPressed ? Palette.actionPressed : Palette.action
     }
 
     private var ink: Color {
         if !isEnabled { return Palette.onActionDisabled }
-        return configuration.isPressed ? Palette.onActionPressed : Palette.onAction
+        return isPressed ? Palette.onActionPressed : Palette.onAction
     }
 }
 

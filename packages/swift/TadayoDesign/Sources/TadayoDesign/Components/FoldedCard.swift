@@ -5,8 +5,12 @@ import SwiftUI
 /// for text, 18 horizontal inset, caption 21/28). It shows what the audience may read before the
 /// reveal and nothing else (T10): the lock and the status line with the exact opening date, the
 /// caption and its sender. The lock is the glyph, never the word "Locked" (INVENTORY.md's Known
-/// differences; book p6): `lock.fill` at 12 points, 8 before the text, in the cover's ink. A drop with no caption shows the neutral line book p13 names ("Photo for Debby"),
-/// in smaller text, and no placeholder joke (book p34).
+/// differences; book p6): `lock.fill` at 12 points, 8 before the text, in the cover's ink
+/// (handoff 5's `collectingCardStatus.lock`). The author's own "Highlight" follows the labelled
+/// star (book p6; INVENTORY.md's Known differences). The sender's avatar keeps its size beside
+/// the name, level with its first line, at every text size (handoff 4's
+/// `dynamicTypePolicy.avatarMarks`). A drop with no caption shows the neutral line book p13 names
+/// ("Photo for Debby"), in smaller text, and no placeholder joke (book p34).
 public struct FoldedCard: View {
     public enum Caption: Sendable {
         /// The sender's caption.
@@ -24,7 +28,7 @@ public struct FoldedCard: View {
 
     /// - Parameters:
     ///   - status: the status line after the lock, such as "Opens Fri, Nov 13".
-    ///   - tag: a word at the status line's end, such as the author's own "Highlight", or nil.
+    ///   - tag: the author's own "Highlight" at the status line's end, after the star, or nil.
     ///   - sender: the sender as the viewer reads them, such as "Maya" or "Ben · You".
     ///   - cover: the sender's cover (FQ41), never chosen from the hidden media.
     public init(
@@ -39,8 +43,11 @@ public struct FoldedCard: View {
         self.cover = cover
     }
 
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @ScaledMetric(relativeTo: TypeRole.cardStatus.textStyle) private var lockSize = Size.lockGlyph
+    @ScaledMetric(relativeTo: TypeRole.highlight.textStyle)
+    private var starSize = Size.highlightStar
+    @ScaledMetric(relativeTo: TypeRole.highlight.textStyle)
+    private var starGap = Size.highlightStarGap
 
     public var body: some View {
         PinnedFooterLayout(
@@ -55,7 +62,7 @@ public struct FoldedCard: View {
                         Text(status).textRole(.cardStatus).fixedSize()
                         Spacer(minLength: 0)
                         if let tag {
-                            Text(tag).textRole(.highlight).fixedSize()
+                            highlightTag(tag).fixedSize()
                         }
                     }
                     VStack(alignment: .leading, spacing: Spacing.xs) {
@@ -65,21 +72,14 @@ public struct FoldedCard: View {
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                         if let tag {
-                            Text(tag).textRole(.highlight)
-                                .fixedSize(horizontal: false, vertical: true)
+                            highlightTag(tag).fixedSize(horizontal: false, vertical: true)
                         }
                     }
                 }
                 .padding(.trailing, Size.fold)
                 captionText
             }
-            // At the accessibility sizes the name takes the card's full width under the avatar,
-            // so a long name like "Alexandria-Rose" isn't broken mid-word (book p26).
-            let footer =
-                dynamicTypeSize.isAccessibilitySize
-                ? AnyLayout(VStackLayout(alignment: .leading, spacing: Spacing.s))
-                : AnyLayout(HStackLayout(alignment: .top, spacing: Spacing.m))
-            footer {
+            HStack(alignment: .firstLineCenter, spacing: Spacing.m) {
                 Avatar(name: sender, photo: senderPhoto, size: .card, on: .cover)
                 Text(sender).textRole(.row)
                     .fixedSize(horizontal: false, vertical: true)
@@ -98,6 +98,16 @@ public struct FoldedCard: View {
         Image(systemName: "lock.fill")
             .font(.system(size: lockSize))
             .accessibilityHidden(true)
+    }
+
+    /// The star is decorative: the word says it.
+    private func highlightTag(_ tag: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: starGap) {
+            Image(systemName: "star.fill")
+                .font(.system(size: starSize))
+                .accessibilityHidden(true)
+            Text(tag).textRole(.highlight)
+        }
     }
 
     @ViewBuilder private var captionText: some View {

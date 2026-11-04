@@ -31,12 +31,6 @@ import Testing
         #expect(us.personDay(name: "Debby", date: friday) == "Debby’s Friday")
     }
 
-    @Test func dateNeverMovesWithTheDevicesZone() {
-        // A local_date is the club's date; it is written as that date wherever the phone is.
-        let first = LocalDate(iso: "2026-01-01")!
-        #expect(us.fullDate(first) == "Thursday, January 1")
-    }
-
     // ICU, on iOS and on Linux, puts a narrow no-break space before AM and PM.
     let space = "\u{202F}"
 
@@ -50,5 +44,27 @@ import Testing
         #expect(us.time(half, in: newYork) == "1:30\(space)AM")
         #expect(!us.uses24HourClock)
         #expect(uk.uses24HourClock)
+    }
+}
+
+/// A local_date is the club's date, written as that date wherever the phone is (T41). These run
+/// one at a time, each with the process's default zone set to one far ahead of UTC and restored
+/// after: in ci's UTC container a formatter that followed the device's zone would still pass.
+/// Zones behind UTC add nothing, since the date is formatted at noon UTC.
+@Suite(.serialized) struct DateLabelsDeviceZoneTests {
+    let us = DateLabels(locale: Locale(identifier: "en_US"))
+
+    @Test(arguments: ["Pacific/Kiritimati", "Pacific/Auckland"])
+    func datesNeverMoveWithTheDevicesZone(zone: String) throws {
+        let saved = NSTimeZone.default
+        NSTimeZone.default = try #require(TimeZone(identifier: zone))
+        defer { NSTimeZone.default = saved }
+
+        #expect(us.fullDate(LocalDate(iso: "2026-01-01")!) == "Thursday, January 1")
+        let friday = LocalDate(iso: "2026-11-13")!
+        #expect(us.fullDate(friday) == "Friday, November 13")
+        #expect(us.shortDate(friday) == "Fri, Nov 13")
+        #expect(us.plaque(LocalDate(iso: "2026-11-06")!) == ("FRI", "06"))
+        #expect(us.personDay(name: "Debby", date: friday) == "Debby’s Friday")
     }
 }

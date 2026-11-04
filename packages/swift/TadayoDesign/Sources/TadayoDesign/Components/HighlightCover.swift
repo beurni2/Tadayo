@@ -1,41 +1,50 @@
 import SwiftUI
 
-/// A selected highlight's cover (book p6, p19, p34; handoff 0): a 91 by 69-point button with the
-/// sender's initial, a concise label such as "Debby's pick" and the folded corner. Above the
-/// default text size it becomes a full-width row, at least 96 high, with the label at
-/// `highlightExpanded` (20/26), wrapping rather than shrinking (book p26, T47; handoff 4's sheet:
-/// "Large text uses a vertical list"); see `usesList(at:)`. Its colour is the sender's cover, never
-/// a hint of the hidden photo (book p34).
+/// A selected highlight's cover (book p6, p19, p34; handoff 4's sheet): a 91 by 69-point button
+/// with the sender's avatar, a concise label such as "Debby's pick" at `highlight` (12/14), an
+/// 8-point inset, and the folded corner. Above the default text size it becomes a full-width row,
+/// at least 96 high, with the label at `highlightExpanded` (20/26) beside the avatar, wrapping
+/// rather than shrinking (book p26, T47; handoff 4's `highlightLargeText`: "Full-width vertical
+/// list"); see `usesList(at:)`. The star's own pick carries the labelled star (book p6;
+/// INVENTORY.md's Known differences). Its colour is the sender's cover, never a hint of the hidden
+/// photo (book p34).
 public struct HighlightCover: View {
     let label: String
     let sender: String
     let senderPhoto: Image?
     let cover: Cover
+    let isStarPick: Bool
     let accessibilityName: String
     let action: () -> Void
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @ScaledMetric(relativeTo: TypeRole.highlight.textStyle)
+    private var starSize = Size.highlightStar
 
-    /// - Parameter accessibilityName: the button's name, such as "Open Maya's highlight"
-    ///   (book p8, T47).
+    /// - Parameters:
+    ///   - isStarPick: whether this is the star's own pick, which carries the star.
+    ///   - accessibilityName: the button's name, such as "Open Maya's highlight" (book p8, T47).
     public init(
         label: String, sender: String, senderPhoto: Image? = nil, cover: Cover,
-        accessibilityName: String, action: @escaping () -> Void
+        isStarPick: Bool = false, accessibilityName: String, action: @escaping () -> Void
     ) {
         self.label = label
         self.sender = sender
         self.senderPhoto = senderPhoto
         self.cover = cover
+        self.isStarPick = isStarPick
         self.accessibilityName = accessibilityName
         self.action = action
     }
 
     /// Whether covers at this text size are full-width rows in a vertical list rather than tiles in
     /// a rail; the rail that holds them asks the same question. The tile and its 12/14 label are
-    /// drawn for the default size, and the label never shrinks (handoff 4's sheet: "No smaller
-    /// type"). At any larger size a word such as "highlight" outgrows the tile's 63-point text
-    /// width and breaks mid-word, so the list takes over there (book p26 and p34: "At large sizes
-    /// the rail becomes a labelled list"; handoff 0: "at large text move to a vertical list").
+    /// drawn for the default size, where a label of two lines fills its 69 points and its 75-point
+    /// text width holds "Debby's pick" on one line. The label never shrinks (handoff 4's sheet: "No
+    /// smaller type"), so at any larger size the tile would grow past the sheet's 69 points, and
+    /// from `.xxxLarge` a word such as "Deborah-" no longer fits the width and breaks; the list takes
+    /// over above the default (book p26 and p34: "At large sizes the rail becomes a labelled list";
+    /// handoff 4's sheet: "Large text uses a vertical list").
     public static func usesList(at size: DynamicTypeSize) -> Bool {
         size > .large
     }
@@ -52,6 +61,13 @@ public struct HighlightCover: View {
         .accessibilityLabel(accessibilityName)
     }
 
+    /// Decorative: the label and the button's name say whose pick it is.
+    private var star: some View {
+        Image(systemName: "star.fill")
+            .font(.system(size: starSize))
+            .accessibilityHidden(true)
+    }
+
     private var tile: some View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
             Avatar(name: sender, photo: senderPhoto, size: .rail, on: .cover)
@@ -59,31 +75,39 @@ public struct HighlightCover: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .foregroundStyle(cover.ink)
-        .padding(.horizontal, Spacing.m + 2)
-        .padding(.vertical, Spacing.s + 2)
+        .padding(Spacing.s)
         .frame(
             minWidth: Size.highlightCover.width, minHeight: Size.highlightCover.height,
             alignment: .topLeading
         )
         .frame(width: Size.highlightCover.width)
-        // A label that wraps past three lines makes the tile taller, never spills out of it.
+        // A label that wraps past two lines makes the tile taller, never spills out of it.
         .fixedSize(horizontal: false, vertical: true)
+        // The star sits level with the avatar, left of the fold, as 2.1 draws the star's pick.
+        .overlay(alignment: .topTrailing) {
+            if isStarPick {
+                star
+                    .foregroundStyle(cover.ink)
+                    .frame(height: AvatarSize.rail.rawValue)
+                    .padding(.top, Spacing.s)
+                    .padding(.trailing, Size.fold + Spacing.xs)
+            }
+        }
         .foldedBackground(cover, radius: Radius.card)
         .contentShape(Rectangle())
     }
 
     private var row: some View {
-        // At the accessibility sizes the avatar, which grows with the text, sits above the label,
-        // so the label keeps the row's whole width and a word such as "Deborah-" fits its line.
-        let stack =
-            dynamicTypeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: Spacing.m))
-            : AnyLayout(HStackLayout(spacing: Spacing.l))
-        return stack {
+        // The avatar keeps its size beside the label, level with its first line, at every size
+        // (handoff 4's `dynamicTypePolicy.avatarMarks`).
+        HStack(alignment: .firstLineCenter, spacing: Spacing.l) {
             Avatar(name: sender, photo: senderPhoto, size: .row, on: .cover)
             Text(label).textRole(.highlightExpanded)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
+            if isStarPick {
+                star
+            }
         }
         .foregroundStyle(cover.ink)
         .padding(.horizontal, Spacing.xxl)

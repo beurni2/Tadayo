@@ -130,14 +130,9 @@
     }
 
     struct LabAvatars: View {
-        @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-
-        /// Avatars grow with the text, about three times at the largest size, so the grid's
-        /// columns do too.
+        /// Avatars keep their size at every text size, so the grid's columns do too.
         private func column(_ size: CGFloat) -> GridItem {
-            GridItem(
-                .adaptive(minimum: size * (dynamicTypeSize.isAccessibilitySize ? 3.2 : 1)),
-                spacing: Spacing.m)
+            GridItem(.adaptive(minimum: size), spacing: Spacing.m)
         }
 
         var body: some View {
@@ -153,7 +148,7 @@
                     }
                 }
                 LazyVGrid(
-                    columns: [column(52)],
+                    columns: [column(AvatarSize.row.rawValue + 2 * Spacing.s)],
                     alignment: .leading, spacing: Spacing.m
                 ) {
                     ForEach(0..<Palette.covers.count, id: \.self) { slot in
@@ -206,29 +201,55 @@
                 : AnyLayout(HStackLayout(alignment: .top, spacing: Spacing.m))
             LabGroup(title: "Highlight covers") {
                 rail {
-                    cover(FixtureCast.debby, label: "Debby’s pick")
+                    cover(FixtureCast.debby, label: "Debby’s pick", isStarPick: true)
                     cover(FixtureCast.maya, label: "Maya’s highlight")
                     cover(FixtureCast.deborahAnne, label: "Deborah-Anne’s pick")
                 }
             }
         }
 
-        private func cover(_ person: FixtureCast.Person, label: String) -> some View {
+        private func cover(
+            _ person: FixtureCast.Person, label: String, isStarPick: Bool = false
+        ) -> some View {
             HighlightCover(
                 label: label, sender: person.name, cover: Palette.cover(slot: person.slot),
+                isStarPick: isStarPick,
                 accessibilityName: "Open \(person.name)’s highlight", action: {})
         }
     }
 
     struct LabActions: View {
+        /// The primary button's four states, as the sheet's "Primary button states" shows them.
+        /// A snapshot can't press a button or give it keyboard focus, so those two are drawn
+        /// with the button's face.
         var body: some View {
             LabGroup(title: "Actions") {
-                Button("Add for Debby") {}
-                    .buttonStyle(.tadayoPrimary)
-                Button("Verify code") {}
-                    .buttonStyle(.tadayoPrimary)
-                    .disabled(true)
+                state("Default") {
+                    Button("Add for Debby") {}
+                        .buttonStyle(.tadayoPrimary)
+                }
+                state("Pressed") {
+                    PrimaryButtonFace(isPressed: true) { Text("Add for Debby") }
+                }
+                state("Disabled") {
+                    Button("Verify code") {}
+                        .buttonStyle(.tadayoPrimary)
+                        .disabled(true)
+                }
+                state("Keyboard focus") {
+                    PrimaryButtonFace(isFocused: true) { Text("Add for Debby") }
+                }
                 AllowanceLine("2 of 6 drops · 0 of 2 video links")
+            }
+        }
+
+        private func state<Content: View>(
+            _ name: String, @ViewBuilder content: () -> Content
+        ) -> some View {
+            // The focus ring reaches 4 points beyond the button, so the label sits 8 above it.
+            VStack(alignment: .leading, spacing: Spacing.s) {
+                Text(name).textRole(.metadata).foregroundStyle(Palette.secondaryText)
+                content()
             }
         }
     }

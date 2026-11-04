@@ -3,6 +3,10 @@ import SwiftUI
 /// A person's photograph in a circle, or, with none, their initial on the fallback colours for
 /// where it sits (spec 29's A03; brand revision 1.1's avatar placement: canvas or surface, or any
 /// of the six covers). Decorative: the name beside it is what VoiceOver reads.
+///
+/// It keeps its size at every text size, initial included, while the name beside it grows
+/// (handoff 4's `dynamicTypePolicy.avatarMarks`). A photograph has a 1-point `separator` edge
+/// just outside its circle, in both themes (handoff 3's `photoAvatarEdge`).
 public struct Avatar: View {
     /// What the avatar sits on, which picks its fallback colours.
     public enum Placement: Sendable {
@@ -13,9 +17,6 @@ public struct Avatar: View {
     let photo: Image?
     let size: AvatarSize
     let placement: Placement
-    /// The circle grows with the text, as its initial does, so the initial always fits inside it
-    /// (book p26, T47).
-    @ScaledMetric private var diameter: CGFloat
 
     public init(
         name: String, photo: Image? = nil, size: AvatarSize, on placement: Placement = .canvas
@@ -24,17 +25,16 @@ public struct Avatar: View {
         self.photo = photo
         self.size = size
         self.placement = placement
-        _diameter = ScaledMetric(
-            wrappedValue: size.rawValue, relativeTo: Avatar.role(for: size).textStyle)
     }
 
     public var body: some View {
+        let role = Avatar.role(for: size)
         Group {
             if let photo {
                 photo.resizable().scaledToFill()
             } else {
                 Text(Avatar.initial(of: name))
-                    .textRole(Avatar.role(for: size))
+                    .font(.system(size: role.size, weight: role.weight))
                     .foregroundStyle(
                         placement == .cover ? Palette.onAvatarOnCover : Palette.onAvatarCanvas
                     )
@@ -43,8 +43,15 @@ public struct Avatar: View {
                     .background(placement == .cover ? Palette.avatarOnCover : Palette.avatarCanvas)
             }
         }
-        .frame(width: diameter, height: diameter)
+        .frame(width: size.rawValue, height: size.rawValue)
         .clipShape(Circle())
+        .overlay {
+            if photo != nil {
+                Circle()
+                    .strokeBorder(Palette.separator, lineWidth: Size.photoAvatarEdge)
+                    .padding(-Size.photoAvatarEdge)
+            }
+        }
         .accessibilityHidden(true)
     }
 

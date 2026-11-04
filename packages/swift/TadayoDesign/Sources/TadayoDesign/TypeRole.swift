@@ -100,11 +100,29 @@ struct TypeRoleModifier: ViewModifier {
     }
 
     func body(content: Content) -> some View {
-        let natural = UIFont.systemFont(ofSize: size, weight: role.uiWeight).lineHeight
+        let font = UIFont.systemFont(ofSize: size, weight: role.uiWeight)
+        let natural = font.lineHeight
+        let capHeight = font.capHeight
         return
             content
             .font(.system(size: size, weight: role.weight))
             .lineSpacing(max(0, lineHeight - natural))
+            .alignmentGuide(.firstLineCenter) { $0[.firstTextBaseline] - capHeight / 2 }
+    }
+}
+
+extension VerticalAlignment {
+    private enum FirstLineCenter: AlignmentID {
+        static func defaultValue(in context: ViewDimensions) -> CGFloat {
+            context[VerticalAlignment.center]
+        }
+    }
+
+    /// The middle of the first line of a text set with `textRole`, and the middle of anything
+    /// else. An avatar or a glyph beside a name aligns to the name's first line however far the
+    /// name wraps (handoff 3: at AX5 "the 36 pt avatar aligns to the first line").
+    public static var firstLineCenter: VerticalAlignment {
+        VerticalAlignment(FirstLineCenter.self)
     }
 }
 
