@@ -197,11 +197,11 @@
     struct LabHighlights: View {
         @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
-        /// A rail at the standard sizes; a vertical list at the accessibility sizes, as the
-        /// covers become full-width rows (book p26).
+        /// A rail at the default size and below; a vertical list above it, where the covers
+        /// become full-width rows (book p26; `HighlightCover.usesList(at:)`).
         var body: some View {
             let rail =
-                dynamicTypeSize.isAccessibilitySize
+                HighlightCover.usesList(at: dynamicTypeSize)
                 ? AnyLayout(VStackLayout(alignment: .leading, spacing: Spacing.m))
                 : AnyLayout(HStackLayout(alignment: .top, spacing: Spacing.m))
             LabGroup(title: "Highlight covers") {

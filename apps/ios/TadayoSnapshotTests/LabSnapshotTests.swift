@@ -12,6 +12,11 @@ import XCTest
 ///
 /// CI runs in record mode `never`: a snapshot with no committed reference fails, and its image
 /// goes to the evidence branch for review (`tools/ci/ios_steps.py test`).
+///
+/// Every snapshot renders in sRGB, as the renders are, so each reference is an 8-bit PNG: under
+/// the simulator's P3 gamut the photographs came out at 16 bits, 27 MB a variant. The photographs
+/// look the same in every variant (only their heading changes, and the other sections show that
+/// role in all four), so they're snapshotted once, light at the default size, and at 1x.
 @MainActor
 final class LabSnapshotTests: XCTestCase {
     enum Variant: CaseIterable {
@@ -46,13 +51,21 @@ final class LabSnapshotTests: XCTestCase {
             return UITraitCollection(traitsFrom: [
                 UITraitCollection(userInterfaceStyle: self == .dark ? .dark : .light),
                 UITraitCollection(preferredContentSizeCategory: category),
+                UITraitCollection(displayGamut: .SRGB),
             ])
         }
     }
 
     func testLabSections() {
         for section in LabSection.allCases {
-            for variant in Variant.allCases {
+            let variants: [Variant] = section == .photos ? [.light] : Variant.allCases
+            for variant in variants {
+                let traits =
+                    section == .photos
+                    ? UITraitCollection(traitsFrom: [
+                        variant.traits, UITraitCollection(displayScale: 1),
+                    ])
+                    : variant.traits
                 // The ideal height, as the Lab's scroll view gives it: under `.sizeThatFits` alone
                 // the height proposed is zero, so text stays on one line and photographs vanish.
                 let view = section.view
@@ -65,7 +78,7 @@ final class LabSnapshotTests: XCTestCase {
                 assertSnapshot(
                     of: view,
                     as: .image(
-                        perceptualPrecision: 0.98, layout: .sizeThatFits, traits: variant.traits),
+                        perceptualPrecision: 0.98, layout: .sizeThatFits, traits: traits),
                     named: "Lab-\(section.rawValue)\(variant.suffix)")
             }
         }
