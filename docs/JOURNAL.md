@@ -300,16 +300,15 @@ And slice 9 (PR #10), run in the session before its merge, its tests also in `ci
 
 ### 1.3 ios lane
 
-**Updated:** 2026-11-03 14:00 UTC, ios/b0-handoffs-1-4
+**Updated:** 2026-11-04 21:05 UTC, ios/b2-handoffs-5-6
 
-- **Started:** 2026-11-03 at 11:03 UTC, by the coordinator (ADR-025). Environment: Swift 6.3.3 from swift.org's signed release tarball; the journal hook isn't confirmed to fire in this session, so it runs by hand before each commit (`docs/LIMITATIONS.md`'s row of 2026-11-03 for the ios thread).
-- **PRs:** #12 `ios/b0-adr-027` (ADR-027, FQ45 recorded) approved by the founder in the ios thread ("PR #12 approved", 13:39 UTC on 2026-11-03) and squash-merged by Claude Code through REST at the approved head `e635039` as `17de7fd` (13:39:46 UTC). Open: #13, this branch `ios/b0-handoffs-1-4` (the design PR ADR-027 asks for), `main` merged in at `17de7fd`, every finding of its review fixed or answered. Pushed, no PR: `ios/b0-app` (slice 11's first part), building on the `ios` workflow.
+- **Started:** 2026-11-03 at 11:03 UTC, by the coordinator (ADR-025). Environment: Swift 6.3.3 from swift.org's signed release tarball; the journal hook isn't confirmed to fire in this session, so it runs by hand before each commit.
+- **PRs:** #12 (ADR-027) merged as `17de7fd`; #13 (handoffs 1 to 4, brand 1.1) merged as `74943c8` on 2026-11-04 at the founder's "all PRs that are ready to be merged can be merged". Pushed, no PR: `ios/b0-app` (slice 11's first part). This branch, `ios/b2-handoffs-5-6`: handoffs 5 and 6, waiting on the founder's card.
 - **Next, in order:**
-    1. Check `ci` on this branch's head (`gh api "repos/beurni2/tadayo/actions/runs?head_sha=<sha>"`) and tell the founder #13 is ready. Done when the founder approves #13 in the ios thread and it is squash-merged at the approved head (`docs/GITHUB.md` step 6).
-    2. Merge `main` into `ios/b0-app`, read its `ios` run's sheets on `evidence` under `ios/b0-app/<short-sha>/ios/`, commit the snapshot references the sheets show are right, then review and PR.
-    3. Slice 11's second part (TadayoAPI, sign-in, profile, the empty tabs) after the api lane's slice 3.
-- **Blocked or waiting:** the founder's approval of #13.
-- **Design** (`design/reference/INVENTORY.md`): handoffs 1 to 4 in on this branch (ADR-027). 179 trial states, 86 with a render (50 from 2.1, 36 only in `screens/`), 0 requested, 93 missing; built from spec 0; brand assets 4 of 4 (revision 1.1). Open design questions FQ46 to FQ69 (FQ64 unused), each with a default (FQ60 to FQ63 Claude Code's own). Next design handoff: 6.
+    1. This branch: unpack handoff 6; copy the 786×1704 state frames of handoffs 5 and 6 into `design/reference/screens/` (handoff 6 winning) and handoff 6's component sheet into `design/reference/brand/brand-components.png`; then `design/reference/INVENTORY.md` and `docs/QUESTIONS.md` from `/mnt/project-files/design/handoff-5/check/handoff-5-check.md` section 8 and `/mnt/project-files/design/handoff-6/check/handoff-6-check.md` section 8, with FQ79 to FQ83 (reserved). Done when both checks' section 8 items are applied and an independent review passes.
+    2. `ios/b0-app`: read its `ios` run, commit the snapshot references, review, PR.
+- **Blocked or waiting:** the founder's card on bringing handoffs 5 and 6 in now.
+- **Design** (`design/reference/INVENTORY.md` on `main`): 179 trial states, 86 with a render, 93 missing; brand 1.1. Handoffs 5 and 6 on this branch.
 
 ---
 
@@ -1385,6 +1384,14 @@ Two earlier entries claim more than their commits show, and the log is append-on
 **Next:** Push, check `ci`, then PR #11's description and the founder (block 1.2's Next steps 1 and 2).
 
 ### 3.3 ios lane
+
+#### 2026-11-04 21:05 UTC · ios · ios/b2-handoffs-5-6 · PR none
+**Did:** Unpacked design handoff 5 (B2's days and Home), as it arrived, into `design/reference/claude-design/handoff-5/`: `Tadayo_Handoff_5_Pack.zip` from `/mnt/project-files/design/handoff-5/export/` (SHA-256 `b49c5771b7fb794f7791…`), 44 files: 14 frames (13 states and the component sheet) as PNG and SVG, `IMPLEMENTATION.md`, `README.md`, the JSON contracts (`brand-tokens.json`, `component-contracts.json`, `copy-contracts.json`, `frame-manifest.json`, `screen-copy.json` and others), `SHA256SUMS.txt`, the PDF and the assets (wordmarks, the dark icon, Arimo with its OFL). Block 1.3, this entry.
+**Why:** Handoffs 5 and 6 are delivered and checked in the project's files; the founder has a card in the ios thread on bringing them in now (ADR-027's proposal), and this branch prepares that design PR while the card waits. The deliveries enter as they arrived, as handoffs 1 to 4 did (T46).
+**Verified:** `sha256sum -c SHA256SUMS.txt` in the unpacked folder: every file OK. The pack's PDF is byte-identical to the export's (`78c14c6d7d8c0f90…`), so no `attached/` copy. `brand-tokens.json` is byte-identical to handoffs 1 to 4's (revision 1.1, `e6d05848fe117702…`), and so is the dark icon PNG (`caf50bc57bbcbfc9…`). Every state frame is 786×1704. `python3 tools/ci/journal_check.py --branch` and the hook by hand: exit 0.
+**Not verified:** `ci` on this commit, until its run.
+**Decisions and questions:** Branch `ios/b2-handoffs-5-6` from `main` at `74943c8`: the states are B2's. It opens as a PR only if the founder chooses "Yes, now" on the card; otherwise it waits for B2's stage plan (ADR-027).
+**Next:** Unpack handoff 6 the same way, then the screens, the inventory and the questions (both checks' section 8).
 
 #### 2026-11-03 14:00 UTC · ios · ios/b0-handoffs-1-4 · PR #13
 **Did:** A correction to the 14:00 entry, whose text stays as it is: the `docs/QUESTIONS.md` line it changed (line 114) is in FQ20's answer (2.1 strings that infer a gender, and the highlight label "Deborah-Anne's pick"), not FQ19's. Block 1.3's Updated line, this entry.
