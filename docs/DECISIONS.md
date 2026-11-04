@@ -77,6 +77,7 @@ Decision: The founder chose to keep 2.1 and add the brand (FQ2).
 Alternatives: Redrawing every screen in Claude Design first, which would hold every screen until its render arrives. Claude Code designing the missing states from the book's contracts, which the founder rules out.
 Consequences: The brand's tokens replace 2.1's colours everywhere through `TadayoDesign`, so the 2.1 renders stay layout references after the brand arrives. Each stage's design handoff is on the founder's path.
 Links: `docs/DESIGN-HANDOFF.md`; book p40; T44 to T46.
+Later: on 4 November 2026 at 00:22 UTC, on a card in the design thread ("Use handoff 5's screens"), the founder chose Claude Design's day-picking screens over two of 2.1's: `G04-one-day` and `G04-two-days` replace 2.1 #03 and #32 as the reference, now as handoff 6 redrew them (FQ2). Every other 2.1 render stays the reference for its state.
 
 ## ADR-007 · What the closed trial includes · 2026-11-01 · decided
 Context: Spec 02 defines M0 as the instrumented closed trial and M1 as the first production release. Spec 38's build sequence lists widgets and push before the trial. Apple reviews a build before external TestFlight testers get it, and its rules ask apps with user content and accounts for report, block, a contact and in-app account deletion. Spec 02 puts moderation operations and account deletion in M1.
