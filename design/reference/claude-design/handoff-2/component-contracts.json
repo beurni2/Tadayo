@@ -1,0 +1,178 @@
+{
+  "base": "brand-tokens.json revision 1.1, byte-for-byte unchanged",
+  "supplementalTokens": {
+    "foldCornerLine": {
+      "light": "#8C8F84",
+      "dark": "#8C8F84",
+      "role": "decorative folded edge, not text or a control boundary",
+      "width": 0.75
+    }
+  },
+  "supplementalTypeRoles": {
+    "textAction": {
+      "size": 16,
+      "lineHeight": 22,
+      "weight": "regular",
+      "dynamicTextStyle": "body"
+    },
+    "rowAction": {
+      "size": 15,
+      "lineHeight": 20,
+      "weight": "regular",
+      "dynamicTextStyle": "subheadline"
+    },
+    "fieldLabel": {
+      "size": 13,
+      "lineHeight": 18,
+      "weight": "bold",
+      "dynamicTextStyle": "footnote"
+    },
+    "eyebrow": {
+      "size": 13,
+      "lineHeight": 18,
+      "weight": "bold",
+      "dynamicTextStyle": "footnote"
+    },
+    "proposedTag": {
+      "size": 13,
+      "lineHeight": 18,
+      "weight": "bold",
+      "dynamicTextStyle": "footnote"
+    }
+  },
+  "invitationRosterRow": {
+    "usedBy": [
+      "G02-changed",
+      "G02-invitation"
+    ],
+    "minimumHeight": 52,
+    "width": 353,
+    "avatar": 36,
+    "avatarInitialRole": "avatar36",
+    "nameRole": "row",
+    "nameInset": 49,
+    "growsWithText": true,
+    "candidateSuffix": " · You"
+  },
+  "privateDraftsEntry": {
+    "label": "Private drafts",
+    "subtitle": "Only you can see these.",
+    "minimumHeight": 76,
+    "radius": 12,
+    "fill": "surface",
+    "icon": "folder",
+    "trailingIcon": "chevron.right",
+    "titleRole": "row",
+    "subtitleRole": "metadata",
+    "usedBy": [
+      "F01-friends",
+      "F01-no-club",
+      "G06-no-club",
+      "G01-pending"
+    ],
+    "route": "account-private Drafts"
+  },
+  "invitationEntryAction": {
+    "label": "I have an invite",
+    "shape": "secondary button",
+    "minimumHeight": 50,
+    "radius": 13,
+    "fill": "surface",
+    "border": "inputBorder",
+    "borderWidth": 1,
+    "labelInk": "primaryText",
+    "labelRole": "button",
+    "usedBy": [
+      "A01-welcome",
+      "G06-no-club",
+      "F01-no-club"
+    ],
+    "route": "G02-link-entry"
+  },
+  "fieldFocus": {
+    "condition": "isFirstResponder, regardless of touch or keyboard input",
+    "outerRing": "focusRing",
+    "ringWidth": 2,
+    "ringGap": 2,
+    "invalidBorder": "destructive",
+    "errorDoesNotClearFocus": true
+  },
+  "buttonFocus": {
+    "condition": "keyboard focus is visible; not ordinary touch down"
+  },
+  "photoHighlightLabel": {
+    "word": "Highlight",
+    "symbol": "star.fill",
+    "symbolSize": 12,
+    "symbolGap": 4,
+    "typeRole": "photoLabel",
+    "fill": "photoLabel",
+    "ink": "onPhotoLabel",
+    "paddingVertical": 6,
+    "paddingHorizontal": 8,
+    "height": 26,
+    "width": "intrinsic",
+    "radius": 6,
+    "outline": false,
+    "sameBothThemes": true
+  },
+  "proposedMemberTag": {
+    "word": "Proposed",
+    "typeRole": "proposedTag",
+    "fill": "surface",
+    "ink": "primaryText",
+    "border": "inputBorder",
+    "paddingVertical": 5,
+    "paddingHorizontal": 8,
+    "minimumDefaultHeight": 28,
+    "width": "intrinsic",
+    "radius": 6,
+    "largeTextPlacement": "Below the name and proposer; leading aligned; grows with wrapping"
+  },
+  "noClubRootHeader": {
+    "leading": "outlined wordmark, width 96",
+    "trailing": [
+      "+ Add",
+      "Account avatar"
+    ],
+    "addRoute": "Normal Add picker with Private draft first and Open my drafts; no club roster"
+  },
+  "textWrapping": {
+    "rootWidthAt393": 353,
+    "extraCharacterLimit": null,
+    "lineLimit": null,
+    "smallerComponentRule": "available width after actual icon and padding insets",
+    "production": "natural native wrapping, no hard-coded artistic line breaks"
+  },
+  "xlReference": {
+    "category": "accessibilityExtraExtraExtraLarge / SwiftUI accessibility5",
+    "row": [
+      53,
+      65
+    ],
+    "metadata": [
+      44,
+      54
+    ],
+    "rowAction": [
+      49,
+      60
+    ],
+    "button": [
+      50,
+      61
+    ],
+    "nativeSizing": "UIFontMetrics without a maximumPointSize cap; device font line metrics may vary",
+    "proposedTagPlacement": "Below the name and Proposed by Ben; leading aligned; no trailing column"
+  },
+  "web": {
+    "dark": "prefers-color-scheme: dark",
+    "textZoomProof": 2,
+    "wordmarkWidthCSSPx": 144,
+    "bodyTitleRem": 2,
+    "linkRem": 1,
+    "noZoomRestriction": true,
+    "verticalScroll": true,
+    "clubMetadataBeforeSignIn": false
+  }
+}

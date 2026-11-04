@@ -1,6 +1,12 @@
 # Brand tokens
 
-Tadayo's colour tokens, light and dark, by role, in hex, with the six cover colours and their ink. The table is copied exactly from design handoff 0's delivery (`../claude-design/handoff-0/IMPLEMENTATION.md`, "brand-tokens"), and holds the same values as its `brand-tokens.json` and its `frames/brand-tokens.svg`. They replace book p35's proposal (`docs/DESIGN-HANDOFF.md`).
+Tadayo's tokens, revision 1.1, which the founder adopted on 3 November 2026 (FQ45, ADR-027). Every value is copied exactly from `brand-tokens.json` revision 1.1, byte-identical in design handoffs 1 to 4 (`../claude-design/handoff-1/brand-tokens.json` to `../claude-design/handoff-4/brand-tokens.json`). It replaces handoff 0's table, which stays in git history; handoff 0's delivery (`brand-tokens.json` and its notes) stays in `../claude-design/handoff-0/`.
+
+`brand-tokens.json`'s `supersedes`: "Handoff 0 colour, component and dark icon definitions only". Its contrast checks (58: text pairs at 4.5:1 or more, field and focus boundaries and avatars on covers at 3:1 or more) are in `../claude-design/handoff-1/contrast-checks.json`. Separators and input borders are non-text roles. The icon's own yellow is part of the icon artwork, not a token.
+
+Revision 1.1's cover rule (below) drops handoff 0's "or reuse a historical slot for a different sender": a slot stays with its membership. This bears on FQ41, which stays open.
+
+## Colours
 
 | Role | Light | Dark |
 |---|---|---|
@@ -14,21 +20,103 @@ Tadayo's colour tokens, light and dark, by role, in hex, with the six cover colo
 | accent | #F0E4A8 | #E4D8A2 |
 | onAccent | #182B25 | #182B25 |
 | destructive | #AD3529 | #FFB4A5 |
-| inputBorder | #849185 | #8C9B90 |
-| cover1 / ink | #F0E4A8 / #182B25 | #E4D8A2 / #182B25 |
-| cover2 / ink | #E1E5F6 / #182B25 | #D4D9EC / #182B25 |
-| cover3 / ink | #DFE7D9 / #182B25 | #D0DCC9 / #182B25 |
-| cover4 / ink | #F1DFD6 / #182B25 | #E5D2C8 / #182B25 |
-| cover5 / ink | #DCE9EB / #182B25 | #CCDEE1 / #182B25 |
-| cover6 / ink | #EADFED / #182B25 | #DDCFE2 / #182B25 |
+| inputBorder | #778579 | #8C9B90 |
+| cover1 | #EEDFC4 | #DFCFB3 |
+| onCover1 | #182B25 | #182B25 |
+| cover2 | #E1E5F6 | #D4D9EC |
+| onCover2 | #182B25 | #182B25 |
+| cover3 | #DFE7D9 | #D0DCC9 |
+| onCover3 | #182B25 | #182B25 |
+| cover4 | #F1DFD6 | #E5D2C8 |
+| onCover4 | #182B25 | #182B25 |
+| cover5 | #DCE9EB | #CCDEE1 |
+| onCover5 | #182B25 | #182B25 |
+| cover6 | #EADFED | #DDCFE2 |
+| onCover6 | #182B25 | #182B25 |
+| actionPressed | #203FB7 | #96A9F2 |
+| onActionPressed | #FFFFFF | #18233B |
+| actionDisabled | #E2E6DF | #35463A |
+| onActionDisabled | #4F5E55 | #BAC6BD |
+| focusRing | #284CDB | #AFBEFF |
+| avatarCanvas | #E1E5F6 | #35463A |
+| onAvatarCanvas | #182B25 | #F7F8F2 |
+| avatarOnCover | #182B25 | #182B25 |
+| onAvatarOnCover | #FAFBF8 | #FAFBF8 |
+| photoLabel | #FAFBF8 | #FAFBF8 |
+| onPhotoLabel | #182B25 | #182B25 |
 
-## Contrast
+## Type roles
 
-- The delivery's own check (`../claude-design/handoff-0/contrast-checks.json`): 28 text pairs, each at least 4.5:1, the lowest 4.64:1 (secondaryText on surface, light).
-- The tokens frame adds: "Separators and input borders are non-text roles. Never use them as caption ink."
+Size and line height in points, on the system font (Arimo stands in for it in the frames).
 
-## Other notes
+| Role | Size / line height | Weight |
+|---|---|---|
+| utilityTitle | 32/35 | bold |
+| dayTitle | 31/34 | bold |
+| dateTitle | 25/29 | bold |
+| emptyTitle | 25/30 | bold |
+| body | 17/23 | regular |
+| row | 17/22 | bold |
+| metadata | 13/18 | regular |
+| cardStatus | 13/18 | regular |
+| caption | 21/28 | bold |
+| highlight | 12/14 | bold |
+| plaqueWeekday | 10/12 | bold |
+| plaqueDay | 25/28 | bold |
+| clubHeader | 16/20 | bold |
+| headerAdd | 15/20 | bold |
+| button | 16/22 | bold |
+| tab | 11/14 | regular |
+| allowance | 12/17 | regular |
+| photoLabel | 11/14 | bold |
+| avatar36 | 16/20 | bold |
+| avatar28 | 13/18 | bold |
+| avatar18 | 9/11 | bold |
+| avatarProfile68 | 28/34 | bold |
 
-- **The icon's yellow,** #F0D968, is used only by the app icon (`../claude-design/handoff-0/assets/brand-icon.svg` and `brand-icon-dark.svg`); it isn't a token.
-- **The six covers** are numbered 1 to 6 here; `brand-tokens.json`'s "coverAssignment" counts the same six slots as 0 to 5.
-- **The delivery's own notes on the tokens,** as written. `IMPLEMENTATION.md`: "Cobalt remains the light action. Dark action is a lighter cobalt for contrast. Six calm covers retain dark #182B25 ink in both themes. Persist a colour slot on the sender membership record; a departure must not reshuffle existing senders. Store cover index independently of hidden content, highlight status, popularity or reactions. Separators are decorative; input borders are control boundaries, not text colours. Destructive is a foreground on canvas or surface, not a filled button background. The JSON is the implementation source." `brand-tokens.json`, "coverAssignment": "Persist sender membership slot 0..5; do not compact slots after departure or reuse a historical slot for a different sender. Colours carry no state or content metadata."
+## Geometry
+
+| Token | Value |
+|---|---|
+| screen | 393, 852 |
+| contentInset | 20 |
+| cardRadius | 16 |
+| ticketRadius | 18 |
+| photoRadius | 14 |
+| surfaceRadius | 12 |
+| buttonRadius | 13 |
+| inputRadius | 10 |
+| plaqueRadius | 9 |
+| primaryButtonMinimumHeight | 50 |
+| minimumTouchTarget | 44 |
+| focusRingWidth | 2 |
+| focusRingGap | 2 |
+
+## Avatar
+
+| Token | Value |
+|---|---|
+| sizes | {"profile": 68, "row": 36, "card": 28, "rail": 18} |
+| canvas | avatarCanvas / onAvatarCanvas |
+| surface | avatarCanvas / onAvatarCanvas |
+| allSixCovers | avatarOnCover / onAvatarOnCover |
+
+## Cover assignment
+
+Index base 0. "Persist the sender membership slot 0..5. Do not compact slots after a departure. Historical memberships retain their original slot. All author names remain visible. Colour conveys no status, popularity or hidden-content information."
+
+## Wordmark
+
+| Token | Value |
+|---|---|
+| welcomeWidth | 144 |
+| invitationWebWidth | 144 |
+| minimumWidth | 96 |
+| clearSpaceUnitSource | 44 |
+| viewBoxWidth | 915 |
+| clearSpaceReference | Width of the lower straight vertical stem of the first t below the crossbar, measured across the stem near source y=160. Excludes the upper diagonal shoulder and the horizontal arm. |
+| clearSpaceAt144 | 6.925 |
+
+## Later additions
+
+Handoffs 2 to 4 add supplemental tokens and type roles in their `component-contracts.json` (the newest, handoff 4's, holds every earlier entry): for example the fold line (`foldCornerLine`, #8C8F84 at 0.75 points in both themes) and the roles `textAction`, `rowAction`, `fieldLabel`, `eyebrow`, `proposedTag`, `personDisplay`, `highlightExpanded` and `nextUp`. They're read from that file, which stays as it arrived (`../claude-design/handoff-4/component-contracts.json`).
