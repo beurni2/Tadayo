@@ -310,17 +310,17 @@ And PR #11, run in the session before its merge, its tests also in `ci`'s `tools
 
 ### 1.3 ios lane
 
-**Updated:** 2026-11-05 00:48 UTC, ios/b0-app
+**Updated:** 2026-11-05 03:00 UTC, ios/b0-plugins-check
 
-- **Started:** 2026-11-03 at 11:03 UTC, by the coordinator (ADR-025). Environment: Swift 6.3.3 from swift.org's signed release tarball; the journal hook isn't confirmed to fire in this session, so it runs by hand before each commit (`docs/LIMITATIONS.md`'s row of 2026-11-03 for the ios thread).
-- **PRs:** #12 (ADR-027) merged as `17de7fd` on 2026-11-03. #13 (design handoffs 1 to 4, brand revision 1.1) squash-merged by Claude Code through REST at `80c3c8c` as `74943c8` (21:03:01 UTC on 2026-11-04), on the founder's message in the project's chat, "all PRs that are ready to be merged can be merged" (20:42 UTC on 2026-11-04), which the coordinator passed on: a departure from ADR-022 and ADR-025, which the founder confirmed in this thread at 00:28 UTC on 2026-11-05 ("yes it was fine"). This branch, `ios/b0-app` (slice 11's first part), is PR #15: three independent reviews at `e2ff6e1` (21 findings: 18 fixed or answered, 3 refuted) and a fresh check of the fixes (11 standing points, fixed at `c3a312d`); `ci` and `ios` green at `c3a312d`. The api lane's #14 merged as `7033c94` at 00:27:20 UTC on 2026-11-05, leaving this branch in conflict with `main`, and the founder approved `c3a312d` at 00:28 UTC, so `main` is merged in (`5340181`, `ci` and `ios` green there); the approval was of `c3a312d`, so the merged head needs the founder's approval too (`docs/GITHUB.md`, step 6). #16 (`ios/b2-handoffs-5-6`, handoffs 5 and 6) is open; its own branch's block 1.3 says where it stands.
+- **Started:** 2026-11-03 at 11:03 UTC, by the coordinator (ADR-025). Environment: Swift 6.3.3 from swift.org's signed release tarball; the journal hook isn't confirmed to fire in this session, so it runs by hand before each commit.
+- **This branch:** `ios/b0-plugins-check`, a check branch from `main` at `1f4ba1d` that never merges, for the Swift OpenAPI Generator's build plugin under Xcode on the `ios` workflow.
+- **PRs:** #15 (slice 11's first part) merged as `1f4ba1d`; #16 (handoffs 5 and 6) waits for the founder's approval at `08e9bf4`.
 - **Next, in order:**
-    1. Read this push's `ci` run (`gh api "repos/beurni2/Tadayo/actions/runs?head_sha=<full sha>"`): done when it is green (`ios` too, if the push starts it).
-    2. Ask the founder to approve PR #15 at this head: `c3a312d`'s slice with `main` merged in, and journal corrections only.
-    3. On that approval in this thread: squash-merge at the approved head (`docs/GITHUB.md`, step 6). Then #16 merges `main` in at once, rebuilding the journal from both versions and keeping both sides' questions.
-    4. Slice 11's second part, on a new branch from `main` once #15 has merged (#14 merged as `7033c94`): `TadayoAPI` (Swift OpenAPI Generator's first run on `packages/contracts/openapi.yaml`; anything it refuses goes to the api lane under "Needs from the other lane" in `docs/PROGRESS.md`), sign-in, the profile, the three tabs, and the rest of TECH-DESIGN section 4's components in the Lab (the day header, the drop card and its states, the person row, the target block, the compact receipt, the photo's Highlight label), before Gate 0; with it, the api lane's points for the inventory and B1's handoff (`docs/PROGRESS.md`'s api section).
-- **Blocked or waiting:** the founder's approval of PR #15 at its new head, once its runs are green.
-- **Design** (`design/reference/INVENTORY.md`): handoffs 1 to 4 on `main` (PR #13). 179 trial states, 86 with a render (50 from 2.1, 36 only in `screens/`), 0 requested, 93 missing; built from spec 0; brand assets 4 of 4 (revision 1.1). Open design questions FQ46 to FQ69 (FQ64 unused). Handoffs 5 and 6 delivered and checked in the project's files, and in PR #16 (204 trial states, 109 with a render, 95 missing; FQ79 to FQ83). Next design handoff: 7, which also takes slice 11a's four points: when the highlight rail becomes the list; the star's glyph and its place on the star's pick; the star's size at large text; the highlight tile's 6-point top inset, built at 8.
+    1. Read this push's `ios` run (`gh api "repos/beurni2/Tadayo/actions/runs?head_sha=<full sha>"`, then the `build` job's log): done when it shows whether Xcode refuses the plugin.
+    2. Add `-skipPackagePluginValidation` to `tools/ci/ios_steps.py`'s `build` call here and push: done when `ios` is green with the app linking `TadayoAPI`.
+    3. Open `ios/b0-ci-plugins` from `main` with only that change, its test and ADR-028.
+- **Blocked or waiting:** the founder's approval of PR #16; FQ68 and FQ85 on cards in the ios thread; `tadayo-dev`'s URL and publishable key.
+- **Design:** as on `main` (block 1.3 of `1f4ba1d`); handoff 7's needs are with the coordinator (`/mnt/project-files/design/handoff-7/ios-lane-needs.md` in the project's files).
 
 ---
 
@@ -1453,6 +1453,14 @@ Two earlier entries claim more than their commits show, and the log is append-on
 **Next:** Push, check `ci`, then PR #11's description and the founder (block 1.2's Next steps 1 and 2).
 
 ### 3.3 ios lane
+
+#### 2026-11-05 03:00 UTC · ios · ios/b0-plugins-check · PR none
+**Did:** Made `ios/b0-plugins-check` from `main` at `1f4ba1d`, a check branch that never merges (like `ios/b0-ios-check`): the smallest `packages/swift/TadayoAPI` that runs the Swift OpenAPI Generator's build plugin (1.14.3, with swift-openapi-runtime 1.13.4 and swift-openapi-urlsession 1.4.0, each pinned `exact:`) on `packages/contracts/openapi.yaml` through a relative symlink, `Sources/TadayoAPI/openapi.yaml` to `../../../../contracts/openapi.yaml`, with `openapi-generator-config.yaml` (types and client, `internal`, idiomatic names), one hand-written public type, `TadayoAPIClient`, and one test; and the app linking it (`apps/ios/project.yml`, and one reference in `TadayoApp.swift`). `tools/ci/` is unchanged, so this push's `ios` run shows what Xcode does with a build plugin it hasn't been told to trust.
+**Why:** Slice 11's second part needs `TadayoAPI` "generated from `packages/contracts/openapi.yaml` on every build" (`docs/TECH-DESIGN.md` section 4, ADR-005). The generator's FAQ says Xcode refuses a build plugin until it is enabled ("OpenAPIGenerator" is disabled), and `tools/ci/ios_steps.py` passes no flag that enables one. The CI-configuration PR that adds it (`ios/b0-ci-plugins`, ADR-028, T58) should carry a run that shows the failure and one that shows the fix.
+**Verified:** `swift test --package-path packages/swift/TadayoAPI` on Linux with Swift 6.3.3: the plugin generates the client from the symlinked contract and the test passes (1 test in 1 suite), with no warning from the generated code at `internal`. `swift format lint --strict` on the package and `TadayoApp.swift`.
+**Not verified:** Xcode on the runner: this push's `ios` run says. `ci`'s guards may fail on this branch, which changes nothing they check against `main`'s rules for a PR, since it never becomes one.
+**Decisions and questions:** A check branch rather than the slice's branches, so neither PR carries a commit made to fail. Nothing here merges: the CI-configuration PR is made from `main`, and `TadayoAPI` comes in with `ios/b0-api-client`. No new FQ.
+**Next:** Read this push's `ios` run; then add `-skipPackagePluginValidation` to `ios_steps.py`'s build on this branch and push again.
 
 #### 2026-11-05 00:48 UTC · ios · ios/b0-app · PR #15
 **Did:** Took in an independent check of the merge of `main` into this branch (`5340181`; one checker, each finding put to a skeptic): 3 findings, 2 standing, both in the journal, fixed here. Block 1.3's PRs line had #14 merging after the founder's approval of `c3a312d`; #14 merged first, at 00:27:20 UTC on 2026-11-05 (GitHub's `merged_at`), and the founder approved `c3a312d` at 00:28 UTC, when the branch already conflicted with `main`. Read the runs at `5340181`: `ci` 41941963599 and `ios` 41941963567 green, `testLabSections` passing against the 29 references.

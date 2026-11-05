@@ -40,6 +40,8 @@ settings:
 packages:
   TadayoCore:
     path: ../../packages/swift/TadayoCore
+  TadayoAPI:
+    path: ../../packages/swift/TadayoAPI
   TadayoDesign:
     path: ../../packages/swift/TadayoDesign
   SnapshotTesting:
@@ -56,6 +58,7 @@ targets:
     dependencies:
       - target: TadayoShare
       - package: TadayoCore
+      - package: TadayoAPI
       - package: TadayoDesign
     info:
       path: Tadayo/Info.plist

@@ -1,5 +1,9 @@
 import SwiftUI
+import TadayoAPI
 import TadayoDesign
+
+/// The check branch's one use of TadayoAPI, so the app links the generated client.
+let apiClientType = TadayoAPIClient.self
 
 /// The app's entry point. Slice 11's second part adds sign-in and the three tabs; until then a
 /// build that points at `dev` opens the Lab, and one that points at `prod` shows only the canvas.
