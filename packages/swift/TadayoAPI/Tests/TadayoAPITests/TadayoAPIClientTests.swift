@@ -294,6 +294,42 @@ final class RefreshingAuth: AuthService, @unchecked Sendable {
         }
     }
 
+    @Test func thePublicOperationsAreTheContracts() throws {
+        // The generator ignores `security`, so the list the middleware keeps is checked against
+        // the file the client is generated from: a public operation the contract adds fails here
+        // until the list has it, and no session's token goes with it (TECH-DESIGN section 6).
+        let contract = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appending(path: "Sources/TadayoAPI/openapi.yaml")
+        var operations: [String: [String]] = [:]
+        var inPaths = false
+        var block: [String] = []
+        func close() {
+            if let id = block.first(where: { $0.hasPrefix("operationId: ") }) {
+                operations[String(id.dropFirst("operationId: ".count))] = block.filter {
+                    $0.hasPrefix("security:")
+                }
+            }
+            block = []
+        }
+        for line in try String(contentsOf: contract, encoding: .utf8).split(separator: "\n") {
+            if !line.hasPrefix(" ") {
+                close()
+                inPaths = line == "paths:"
+            } else if inPaths, line.hasPrefix("    "), !line.hasPrefix("     ") {
+                close()
+            } else if inPaths, line.hasPrefix("      "), !line.hasPrefix("       ") {
+                block.append(String(line.dropFirst(6)))
+            }
+        }
+        close()
+        #expect(operations.count > 60)
+        #expect(["getMe", "updateMe", "listClubs"].allSatisfy { operations[$0] == [] })
+        #expect(operations.values.allSatisfy { $0 == [] || $0 == ["security: []"] })
+        let open = Set(operations.filter { $0.value == ["security: []"] }.keys)
+        #expect(open == BearerMiddleware.publicOperations)
+    }
+
     @Test func aFailureSaysNothingOfTheAnswer() {
         // T52: nothing a failure prints can carry an address, a name or a token.
         for failure in [

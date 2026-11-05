@@ -170,6 +170,40 @@ final class ManualContinuousClock: @unchecked Sendable {
         #expect(verified.sessions == [session])
     }
 
+    @Test func aBusyServerIsNeverAWrongCode() async {
+        // A 429 or 5xx said nothing about the code: the same digits can be tried again.
+        let auth = FakeAuth(verify: [.failure(.unavailable), .success(session)])
+        let verified = Verified()
+        let model = await onCode(auth, ManualContinuousClock(), verified)
+        model.code = "529614"
+        await model.verify()
+        #expect(model.failure == .verifyUnavailable)
+        #expect(model.code == "529614")
+        #expect(model.canVerify)
+        await model.verify()
+        #expect(model.failure == nil)
+        #expect(verified.sessions == [session])
+    }
+
+    @Test func theAddressCantChangeWhileACodeIsOnItsWay() async {
+        // T49: an answer that came back on A02-email would be a state it can't draw.
+        let gate = Gate()
+        let auth = FakeAuth(verify: [.failure(.codeNotVerified)])
+        let model = await onCode(auth)
+        auth.duringSignIn = { await gate.wait() }
+        model.code = "529614"
+        let verifying = Task { await model.verify() }
+        await gate.reached()
+        #expect(!model.canChangeEmail)
+        model.changeEmail()
+        #expect(model.step == .code)
+        gate.open()
+        await verifying.value
+        #expect(model.canChangeEmail)
+        #expect(model.step == .code)
+        #expect(model.failure == .codeNotVerified)
+    }
+
     @Test func changingTheAddressKeepsIt() async {
         let model = await onCode(FakeAuth())
         model.changeEmail()

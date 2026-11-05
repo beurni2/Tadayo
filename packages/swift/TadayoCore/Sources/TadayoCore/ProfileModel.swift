@@ -87,7 +87,7 @@ import Observation
         } catch .signedOut {
             pending = nil
             await signedOut()
-        } catch .versionConflict, .profileIncomplete {
+        } catch .versionConflict {
             pending = nil
             await reread(after: change)
         } catch {
@@ -96,9 +96,11 @@ import Observation
         }
     }
 
-    /// After a conflict, the account as it is now: if it already has the age, or a name (another
-    /// device gave them), or the name has to wait for the age, the root routes by it. Else the
-    /// save failed, and the next tap is a new action from the version read here.
+    /// After a conflict, the account as it is now. If it already holds what this save asked for
+    /// (the age, or this very name, from another device or from an earlier try whose answer was
+    /// lost), the root routes by it. Else the save failed, what was typed stays, and the next tap
+    /// is a new action from the version read here: a name saved elsewhere first never stands in
+    /// for the one typed here.
     private func reread(after change: AccountChange) async {
         guard let current = try? await accounts.me() else {
             failure = .other
@@ -108,7 +110,7 @@ import Observation
         switch change {
         case .confirmAge where current.ageConfirmed:
             await saved(current)
-        case .name where current.displayName != nil || !current.ageConfirmed:
+        case .name(let name, _) where current.displayName == name:
             await saved(current)
         default:
             failure = .other

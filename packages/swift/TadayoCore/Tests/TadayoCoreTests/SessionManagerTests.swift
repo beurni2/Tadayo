@@ -15,6 +15,8 @@ final class FakeAuth: AuthService, @unchecked Sendable {
     var duringSignIn: @Sendable () async -> Void = {}
     /// Runs inside each refresh, before it answers: another process writing the store, say.
     var duringRefresh: @Sendable () async -> Void = {}
+    /// Runs inside each sign-out, before it answers.
+    var duringSignOut: @Sendable () async -> Void = {}
 
     /// Each send answers from `send` (nil: the server accepted), then succeeds; each verify
     /// from `verify`, then refuses the code.
@@ -57,8 +59,81 @@ final class FakeAuth: AuthService, @unchecked Sendable {
 
     func signOut(_ session: AuthSession) async throws(AuthFailure) {
         record("signOut \(session.accessToken)")
+        await duringSignOut()
         let answer = lock.withLock { signOutAnswers.isEmpty ? nil : signOutAnswers.removeFirst() }
         if let answer { throw answer }
+    }
+}
+
+/// Holds each call that waits on it until the test opens it, and tells the test when a call has
+/// reached it, so a test can put two calls in a chosen order.
+final class Gate: @unchecked Sendable {
+    private let lock = NSLock()
+    private var opened = false
+    private var arrived = 0
+    private var held: [CheckedContinuation<Void, Never>] = []
+    private var watchers: [(count: Int, continuation: CheckedContinuation<Void, Never>)] = []
+
+    func wait() async {
+        await withCheckedContinuation { continuation in
+            let ready: [CheckedContinuation<Void, Never>] = lock.withLock {
+                arrived += 1
+                let due = watchers.filter { $0.count <= arrived }.map(\.continuation)
+                watchers.removeAll { $0.count <= arrived }
+                if opened { return due + [continuation] }
+                held.append(continuation)
+                return due
+            }
+            for waiting in ready { waiting.resume() }
+        }
+    }
+
+    /// Returns once `count` calls have reached the gate.
+    func reached(_ count: Int = 1) async {
+        await withCheckedContinuation { continuation in
+            let now = lock.withLock {
+                if arrived >= count { return true }
+                watchers.append((count, continuation))
+                return false
+            }
+            if now { continuation.resume() }
+        }
+    }
+
+    func open() {
+        let ready = lock.withLock {
+            opened = true
+            defer { held = [] }
+            return held
+        }
+        for waiting in ready { waiting.resume() }
+    }
+}
+
+/// A store whose delete fails its first `failures` times, as a keychain can.
+final class StubbornStore: SessionStore, @unchecked Sendable {
+    struct Refused: Error {}
+    private let lock = NSLock()
+    private let inner: InMemorySessionStore
+    private var failures: Int
+    private(set) var deletes = 0
+
+    init(_ session: AuthSession?, failures: Int) {
+        inner = InMemorySessionStore(session)
+        self.failures = failures
+    }
+
+    func load() throws -> AuthSession? { try inner.load() }
+    func save(_ session: AuthSession) throws { try inner.save(session) }
+    func delete() throws {
+        let refuse = lock.withLock {
+            deletes += 1
+            guard failures > 0 else { return false }
+            failures -= 1
+            return true
+        }
+        if refuse { throw Refused() }
+        try inner.delete()
     }
 }
 
@@ -81,7 +156,7 @@ final class ManualClock: @unchecked Sendable {
     }
 
     func manager(
-        _ auth: FakeAuth, _ store: InMemorySessionStore, _ clock: ManualClock
+        _ auth: FakeAuth, _ store: any SessionStore, _ clock: ManualClock
     ) -> SessionManager {
         SessionManager(auth: auth, store: store, now: { clock.now })
     }
@@ -199,13 +274,115 @@ final class ManualClock: @unchecked Sendable {
         #expect(try store.load() == nil)
     }
 
-    @Test func signingOutOfflineStillForgetsTheSession() async throws {
+    @Test func signingOutOfflineWithAnExpiredTokenStillForgetsIt() async throws {
         let store = InMemorySessionStore(session(1))
-        let auth = FakeAuth(refresh: [.failure(.network)], signOut: [.network])
-        await manager(auth, store, ManualClock(start + 3600)).signOut()
+        let auth = FakeAuth(refresh: [.failure(.network)])
+        #expect(await manager(auth, store, ManualClock(start + 3600)).signOut())
+        #expect(auth.calls == ["refresh refresh-1"])
         #expect(try store.load() == nil)
-        await manager(auth, InMemorySessionStore(session(1)), ManualClock(start)).signOut()
-        #expect(auth.calls.last == "signOut access-1")
+    }
+
+    @Test func signingOutWithNoAnswerFromTheServerStillForgetsIt() async throws {
+        let store = InMemorySessionStore(session(1))
+        let auth = FakeAuth(signOut: [.network])
+        #expect(await manager(auth, store, ManualClock(start)).signOut())
+        #expect(auth.calls == ["signOut access-1"])
+        #expect(try store.load() == nil)
+    }
+
+    @Test func aRefreshOnItsWayAtSignOutIsEndedAndNotKept() async throws {
+        // Spec 23: Log out leaves nothing for the next launch. The refresh lands first, so the
+        // session ended on the server is the newest one, and then it is forgotten.
+        let gate = Gate()
+        let auth = FakeAuth(refresh: [.success(session(2, expiresIn: 7200))])
+        auth.duringRefresh = { await gate.wait() }
+        let store = InMemorySessionStore(session(1, expiresIn: 20))
+        let manager = manager(auth, store, ManualClock(start))
+        let token = Task { try await manager.accessToken() }
+        await gate.reached()
+        let signOut = Task { await manager.signOut() }
+        while await manager.isSignedIn { await Task.yield() }
+        gate.open()
+        #expect(await signOut.value)
+        #expect(try await token.value == "access-2")
+        #expect(auth.calls == ["refresh refresh-1", "signOut access-2"])
+        #expect(try store.load() == nil)
+        #expect(await manager.isSignedIn == false)
+    }
+
+    @Test func aRefreshThatLandsAfterASignInLeavesTheNewSession() async throws {
+        // An account switch: the old session's late answer never replaces the new one.
+        let gate = Gate()
+        let auth = FakeAuth(refresh: [.success(session(2, expiresIn: 7200))])
+        auth.duringRefresh = { await gate.wait() }
+        let store = InMemorySessionStore(session(1, expiresIn: 20))
+        let manager = manager(auth, store, ManualClock(start))
+        let token = Task { try await manager.accessToken() }
+        await gate.reached()
+        try await manager.begin(session(9))
+        gate.open()
+        await #expect(throws: SessionError.signedOut) { try await token.value }
+        #expect(try store.load() == session(9))
+    }
+
+    @Test func aRefusedRefreshThatLandsAfterASignInForgetsNothing() async throws {
+        let gate = Gate()
+        let auth = FakeAuth(refresh: [.failure(.sessionEnded)])
+        auth.duringRefresh = { await gate.wait() }
+        let store = InMemorySessionStore(session(1, expiresIn: 20))
+        let manager = manager(auth, store, ManualClock(start))
+        let token = Task { try await manager.accessToken() }
+        await gate.reached()
+        try await manager.begin(session(9))
+        gate.open()
+        _ = try? await token.value
+        #expect(try store.load() == session(9))
+    }
+
+    @Test func noTokenIsHandedOutWhileSigningOut() async throws {
+        let gate = Gate()
+        let auth = FakeAuth()
+        auth.duringSignOut = { await gate.wait() }
+        let store = InMemorySessionStore(session(1))
+        let manager = manager(auth, store, ManualClock(start))
+        let signOut = Task { await manager.signOut() }
+        await gate.reached()
+        await #expect(throws: SessionError.signedOut) { try await manager.accessToken() }
+        await #expect(throws: SessionError.signedOut) {
+            try await manager.accessToken(afterRejecting: "access-1")
+        }
+        #expect(await manager.isSignedIn == false)
+        gate.open()
+        #expect(await signOut.value)
+        #expect(try store.load() == nil)
+    }
+
+    @Test func aSignInWhileSigningOutIsKept() async throws {
+        let gate = Gate()
+        let auth = FakeAuth()
+        auth.duringSignOut = { await gate.wait() }
+        let store = InMemorySessionStore(session(1))
+        let manager = manager(auth, store, ManualClock(start))
+        let signOut = Task { await manager.signOut() }
+        await gate.reached()
+        try await manager.begin(session(9))
+        gate.open()
+        #expect(await signOut.value)
+        #expect(try store.load() == session(9))
+    }
+
+    @Test func aStoreThatRefusesOnceIsAskedAgain() async throws {
+        let store = StubbornStore(session(1), failures: 1)
+        #expect(await manager(FakeAuth(), store, ManualClock(start)).signOut())
+        #expect(store.deletes == 2)
+        #expect(try store.load() == nil)
+    }
+
+    @Test func aStoreThatWontForgetIsSaidSo() async throws {
+        // SEC-5: the caller mustn't show sign-in over a session the device still keeps.
+        let store = StubbornStore(session(1), failures: 2)
+        #expect(await manager(FakeAuth(), store, ManualClock(start)).signOut() == false)
+        #expect(try store.load() == session(1))
     }
 
     @Test func aTokenTheServerRefusesAtSignOutIsRefreshedAndSentOnce() async throws {

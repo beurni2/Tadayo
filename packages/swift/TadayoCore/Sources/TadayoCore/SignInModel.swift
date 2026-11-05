@@ -20,6 +20,9 @@ import Observation
         case verifyNetwork
         /// `codeVerificationFailure`: Supabase answers a wrong code and an expired one alike.
         case codeNotVerified
+        /// Supabase was busy or failing (429 or 5xx), so it said nothing about the code: the
+        /// same digits can be tried again. Its words are handoff 7's to give.
+        case verifyUnavailable
         /// "Couldn’t send a new code. Check your connection and try again."
         case resendNetwork
         /// "Couldn’t send a new code. Try again." (`auth.resend.refused`)
@@ -77,7 +80,9 @@ import Observation
                 newValue.filter { $0.isASCII && $0.isWholeNumber }.prefix(Self.codeLength))
             guard typed != digits else { return }
             digits = typed
-            if failure == .codeNotVerified || failure == .verifyNetwork { failure = nil }
+            if [.codeNotVerified, .verifyNetwork, .verifyUnavailable].contains(failure) {
+                failure = nil
+            }
         }
     }
 
@@ -118,6 +123,8 @@ import Observation
             await verified(session)
         } catch .network {
             failure = .verifyNetwork
+        } catch .unavailable {
+            failure = .verifyUnavailable
         } catch {
             failure = .codeNotVerified
             refusedCode = code
@@ -141,8 +148,13 @@ import Observation
         isResending = false
     }
 
+    /// Change email address is offered while no code is being verified or sent: an answer that
+    /// came back on A02-email would belong to a screen no longer showing.
+    public var canChangeEmail: Bool { !isVerifying && !isResending }
+
     /// Change email address: back to A02-email with the address as it was.
     public func changeEmail() {
+        guard canChangeEmail else { return }
         step = .email
         failure = nil
     }

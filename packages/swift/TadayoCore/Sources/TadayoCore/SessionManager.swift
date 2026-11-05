@@ -47,6 +47,8 @@ public enum SessionError: Error, Sendable, Equatable {
 /// runs out and once after the API rejects it (401 `UNAUTHENTICATED`), one refresh at a time. The
 /// store is read before each refresh, since the share extension can refresh the same session.
 /// Only the codes that end a session forget it; a server that is busy or out of reach keeps it.
+/// Signing out and signing in win over a refresh still on its way: its answer is never stored
+/// over what they did (spec 23).
 public actor SessionManager {
     static let refreshMargin: TimeInterval = 30
 
@@ -54,6 +56,10 @@ public actor SessionManager {
     let store: any SessionStore
     let now: @Sendable () -> Date
     private var inFlight: Task<Result<AuthSession, SessionError>, Never>?
+    /// Moves on each sign-in and sign-out. A refresh stores or forgets a session only while it
+    /// hasn't moved since the refresh began.
+    private var generation = 0
+    private var signingOut = false
 
     public init(
         auth: any AuthService, store: any SessionStore,
@@ -64,16 +70,17 @@ public actor SessionManager {
         self.now = now
     }
 
-    public var isSignedIn: Bool { (try? store.load()) != nil }
+    public var isSignedIn: Bool { !signingOut && (try? store.load()) != nil }
 
     /// Keeps the session a verified code gave.
     public func begin(_ session: AuthSession) throws {
+        generation += 1
         try store.save(session)
     }
 
     /// An access token to send, refreshed first if it runs out within 30 seconds.
     public func accessToken() async throws(SessionError) -> String {
-        guard let session = try? store.load() else { throw .signedOut }
+        guard !signingOut, let session = try? store.load() else { throw .signedOut }
         if now() < session.expiresAt.addingTimeInterval(-Self.refreshMargin) {
             return session.accessToken
         }
@@ -83,21 +90,31 @@ public actor SessionManager {
     /// A token to send again after the API rejected `token`: the stored one if it has changed
     /// since, else a refreshed one.
     public func accessToken(afterRejecting token: String) async throws(SessionError) -> String {
-        guard let session = try? store.load() else { throw .signedOut }
+        guard !signingOut, let session = try? store.load() else { throw .signedOut }
         if session.accessToken != token { return session.accessToken }
         return try await refreshed(session).get().accessToken
     }
 
-    /// Signs out: refreshes an expired token first, ends this session on the server
-    /// (`scope=local`), then forgets it, even offline. The device's clock only guesses when the
-    /// token runs out, so a token the server refuses is refreshed once and sent again. The caller
-    /// purges every cache next (T11).
-    public func signOut() async {
-        guard var session = try? store.load() else { return }
+    /// Signs out: waits for a refresh on its way, so the session it ends is the newest, refreshes
+    /// an expired token first, ends this session on the server (`scope=local`), then forgets it,
+    /// even offline. The device's clock only guesses when the token runs out, so a token the
+    /// server refuses is refreshed once and sent again. While it runs, no token is handed out.
+    /// False when the device couldn't forget the session (its store refused, twice): the caller
+    /// says so rather than show sign-in over a session still kept. The caller purges every cache
+    /// next (T11).
+    @discardableResult public func signOut() async -> Bool {
+        signingOut = true
+        defer { signingOut = false }
+        if let pending = inFlight {
+            _ = await pending.value
+            if inFlight == pending { inFlight = nil }
+        }
+        generation += 1
+        let ending = generation
+        guard var session = try? store.load() else { return true }
         if now() >= session.expiresAt {
             guard case .success(let fresh) = await refreshed(session) else {
-                try? store.delete()
-                return
+                return forget(ending)
             }
             session = fresh
         }
@@ -108,35 +125,56 @@ public actor SessionManager {
                 try? await auth.signOut(fresh)
             }
         } catch {}
-        try? store.delete()
+        return forget(ending)
+    }
+
+    /// Deletes the stored session, trying a second time if the store refuses, unless someone has
+    /// signed in since `ending`.
+    private func forget(_ ending: Int) -> Bool {
+        guard generation == ending else { return true }
+        if (try? store.delete()) != nil { return true }
+        return (try? store.delete()) != nil
     }
 
     private func refreshed(_ session: AuthSession) async -> Result<AuthSession, SessionError> {
         if let inFlight { return await inFlight.value }
-        let task = Task { await self.refresh(session) }
+        let began = generation
+        let task = Task { await self.refresh(session, began: began) }
         inFlight = task
         let result = await task.value
-        inFlight = nil
+        if inFlight == task { inFlight = nil }
         return result
     }
 
-    private func refresh(_ session: AuthSession) async -> Result<AuthSession, SessionError> {
+    /// One refresh. Its answer is stored, or the session forgotten, only if nobody has signed in
+    /// or out since it `began`: else the session it refreshed is no longer the one kept.
+    private func refresh(
+        _ session: AuthSession, began: Int
+    ) async -> Result<AuthSession, SessionError> {
+        let answer: Result<AuthSession, AuthFailure>
         do {
-            let fresh = try await auth.refresh(session)
+            answer = .success(try await auth.refresh(session))
+        } catch {
+            answer = .failure(error)
+        }
+        guard generation == began else { return .failure(.signedOut) }
+        switch answer {
+        case .success(let fresh):
             try? store.save(fresh)
             return .success(fresh)
-        } catch .refreshTokenAlreadyUsed {
+        case .failure(.refreshTokenAlreadyUsed):
             if let stored = try? store.load(), stored.refreshToken != session.refreshToken {
                 return .success(stored)
             }
             try? store.delete()
             return .failure(.signedOut)
-        } catch .sessionEnded, .codeNotVerified, .refused, .accessTokenRejected {
+        case .failure(.sessionEnded), .failure(.codeNotVerified), .failure(.refused),
+            .failure(.accessTokenRejected):
             try? store.delete()
             return .failure(.signedOut)
-        } catch .network {
+        case .failure(.network):
             return .failure(.network)
-        } catch {
+        case .failure:
             return .failure(.unavailable)
         }
     }

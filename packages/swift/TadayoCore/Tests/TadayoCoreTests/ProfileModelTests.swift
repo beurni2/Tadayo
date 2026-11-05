@@ -11,6 +11,9 @@ final class FakeAccounts: AccountService, @unchecked Sendable {
     private var clubsAnswers: [Result<ClubList, APIFailure>]
     private(set) var calls: [String] = []
     private(set) var updates: [(change: AccountChange, key: IdempotencyKey)] = []
+    /// Run inside each update and each list of clubs, before it answers: a slow network, say.
+    var duringUpdate: @Sendable () async -> Void = {}
+    var duringClubs: @Sendable () async -> Void = {}
 
     init(
         me: [Result<Account, APIFailure>] = [], update: [Result<Account, APIFailure>] = [],
@@ -33,7 +36,8 @@ final class FakeAccounts: AccountService, @unchecked Sendable {
     }
 
     func update(_ change: AccountChange, key: IdempotencyKey) async throws(APIFailure) -> Account {
-        try lock.withLock {
+        await duringUpdate()
+        return try lock.withLock {
             calls.append("update")
             updates.append((change, key))
             return next(&updateAnswers)
@@ -41,7 +45,8 @@ final class FakeAccounts: AccountService, @unchecked Sendable {
     }
 
     func clubs() async throws(APIFailure) -> ClubList {
-        try lock.withLock {
+        await duringClubs()
+        return try lock.withLock {
             calls.append("clubs")
             return next(&clubsAnswers)
         }.get()
@@ -202,16 +207,40 @@ func account(name: String? = nil, age: Bool = false, version: Int = 0) -> Accoun
         #expect(accounts.updates.map(\.key) == [NumberedKeys.key(1), NumberedKeys.key(2)])
     }
 
-    @Test func aNameAnotherDeviceGaveMovesOn() async {
+    @Test func theNameAlreadySavedMovesOn() async {
+        // The first try committed, its answer was lost, and the retry raced another change.
         let accounts = FakeAccounts(
-            me: [.success(account(name: "Benjamin", age: true, version: 4))],
+            me: [.success(account(name: "Ben", age: true, version: 4))],
             update: [.failure(.versionConflict)])
+        let routes = Routes()
+        let model = model(accounts, account(age: true, version: 1), routes)
+        model.name = " Ben "
+        await model.saveName()
+        #expect(model.failure == nil)
+        #expect(routes.saved == [account(name: "Ben", age: true, version: 4)])
+    }
+
+    @Test func anotherNameSavedFirstKeepsWhatWasTyped() async {
+        // "Ben" committed with no answer; the person typed "Benji" instead, and that save
+        // conflicted with "Ben"'s. "Benji" is what they asked for, so it is saved next.
+        let accounts = FakeAccounts(
+            me: [.success(account(name: "Ben", age: true, version: 2))],
+            update: [
+                .failure(.network), .failure(.versionConflict),
+                .success(account(name: "Benji", age: true, version: 3)),
+            ])
         let routes = Routes()
         let model = model(accounts, account(age: true, version: 1), routes)
         model.name = "Ben"
         await model.saveName()
-        #expect(model.failure == nil)
-        #expect(routes.saved == [account(name: "Benjamin", age: true, version: 4)])
+        model.name = "Benji"
+        await model.saveName()
+        #expect(routes.saved.isEmpty)
+        #expect(model.failure == .other)
+        #expect(model.name == "Benji")
+        await model.saveName()
+        #expect(accounts.updates.last?.change == .name("Benji", expectedVersion: 2))
+        #expect(routes.saved == [account(name: "Benji", age: true, version: 3)])
     }
 
     @Test func anAgeAnotherDeviceRecordedMovesOn() async {
@@ -222,17 +251,6 @@ func account(name: String? = nil, age: Bool = false, version: Int = 0) -> Accoun
         await model.confirmAge()
         #expect(model.failure == nil)
         #expect(routes.saved == [account(age: true, version: 3)])
-    }
-
-    @Test func aNameBeforeTheAgeGoesBackForIt() async {
-        let accounts = FakeAccounts(
-            me: [.success(account(version: 2))], update: [.failure(.profileIncomplete)])
-        let routes = Routes()
-        let model = model(accounts, account(age: true, version: 1), routes)
-        model.name = "Ben"
-        await model.saveName()
-        #expect(routes.saved == [account(version: 2)])
-        #expect(model.name == "Ben")
     }
 
     @Test func anEndedSessionSignsOut() async {

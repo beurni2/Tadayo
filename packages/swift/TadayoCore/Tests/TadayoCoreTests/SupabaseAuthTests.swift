@@ -119,6 +119,23 @@ final class ScriptedTransport: HTTPTransport, @unchecked Sendable {
                     expiresAt: now.addingTimeInterval(3600)))
     }
 
+    @Test func aSessionPrintsNoToken() {
+        // T52: a session that reaches a log, a dump or a failed test's message says nothing of
+        // its tokens.
+        let session = AuthSession(
+            accessToken: "eyJ-access", refreshToken: "refresh-secret", expiresAt: now)
+        var dumped = ""
+        dump(session, to: &dumped)
+        for text in [
+            String(describing: session), String(reflecting: session), "\(session)", dumped,
+            String(describing: Optional(session)), String(describing: [session]),
+        ] {
+            #expect(!text.contains("eyJ-access"))
+            #expect(!text.contains("refresh-secret"))
+            #expect(text.contains("redacted"))
+        }
+    }
+
     @Test func keepsNothingOfTheUser() throws {
         // The response's user holds the address; the session keeps the tokens and expiry only.
         let data = try JSONEncoder().encode(
@@ -131,14 +148,25 @@ final class ScriptedTransport: HTTPTransport, @unchecked Sendable {
     @Test func anyRefusalOfACodeIsOneFailure() async {
         // Supabase answers a wrong code and an expired one alike (otp_expired), so the app can't
         // tell them apart and says neither.
-        for (status, code) in [
-            (403, "otp_expired"), (400, "validation_failed"), (429, "over_request_rate_limit"),
-            (500, "unexpected_failure"),
-        ] {
+        for (status, code) in [(403, "otp_expired"), (400, "validation_failed"), (401, "x")] {
             let transport = ScriptedTransport([
                 .response(status: status, body: #"{"code":"\#(code)","message":"x"}"#)
             ])
             await #expect(throws: AuthFailure.codeNotVerified) {
+                try await auth(transport).verify(email: "ben@example.com", code: "529614")
+            }
+        }
+    }
+
+    @Test func aBusyOrFailingServerSaysNothingOfTheCode() async {
+        // Handoff 1's error meaning: the wrong-code words only for a code the server refused.
+        for (status, code) in [
+            (429, "over_request_rate_limit"), (500, "unexpected_failure"), (503, "x"),
+        ] {
+            let transport = ScriptedTransport([
+                .response(status: status, body: #"{"code":"\#(code)","message":"x"}"#)
+            ])
+            await #expect(throws: AuthFailure.unavailable) {
                 try await auth(transport).verify(email: "ben@example.com", code: "529614")
             }
         }

@@ -20,7 +20,7 @@ import Testing
 
     func root(
         _ accounts: FakeAccounts, auth: FakeAuth = FakeAuth(),
-        store: InMemorySessionStore = InMemorySessionStore()
+        store: any SessionStore = InMemorySessionStore()
     ) -> RootModel {
         let clock = ManualContinuousClock()
         return RootModel(
@@ -174,5 +174,56 @@ import Testing
         #expect(root.route == .signIn)
         #expect(root.profile == nil)
         #expect(root.signIn?.email == "")
+    }
+
+    @Test func aSaveThatLandsAfterLeavingIsDropped() async throws {
+        // Spec 23: after Leave sign-in, nothing routes back into the account left.
+        let gate = Gate()
+        let store = InMemorySessionStore(stored)
+        let accounts = FakeAccounts(
+            me: [.success(account())], update: [.success(account(age: true, version: 1))])
+        let root = root(accounts, store: store)
+        await root.start()
+        let profile = try #require(root.profile)
+        accounts.duringUpdate = { await gate.wait() }
+        let saving = Task { await profile.confirmAge() }
+        await gate.reached()
+        await root.leave()
+        gate.open()
+        await saving.value
+        #expect(root.route == .signIn)
+        #expect(root.profile == nil)
+        #expect(try store.load() == nil)
+        #expect(accounts.calls == ["me", "update"])
+    }
+
+    @Test func aListThatLandsAfterLeavingIsDropped() async throws {
+        let gate = Gate()
+        let store = InMemorySessionStore(stored)
+        let accounts = FakeAccounts(me: [.success(named)], clubs: [.success(clubs(empty: true))])
+        accounts.duringClubs = { await gate.wait() }
+        let root = root(accounts, store: store)
+        let starting = Task { await root.start() }
+        await gate.reached()
+        await root.leave()
+        gate.open()
+        await starting.value
+        #expect(root.route == .signIn)
+        #expect(root.clubs == .loading)
+        #expect(try store.load() == nil)
+    }
+
+    @Test func aLeaveThatCantForgetTheSessionSaysSoAndRetries() async throws {
+        // SEC-5: sign-in isn't shown over a session the device still keeps.
+        let store = StubbornStore(stored, failures: 2)
+        let root = root(FakeAccounts(me: [.success(account())]), store: store)
+        await root.start()
+        await root.leave()
+        #expect(root.route == .failed(.other))
+        #expect(root.profile == nil)
+        #expect(try store.load() == stored)
+        await root.retry()
+        #expect(root.route == .signIn)
+        #expect(try store.load() == nil)
     }
 }

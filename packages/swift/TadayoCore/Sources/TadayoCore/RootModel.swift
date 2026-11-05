@@ -45,6 +45,12 @@ import Observation
     public private(set) var signIn: SignInModel?
     public private(set) var profile: ProfileModel?
 
+    /// Moves each time the app leaves an account. An answer to a call made before is dropped, so
+    /// nothing that lands after Leave sign-in can route back into the account left (spec 23).
+    private var epoch = 0
+    /// The last Leave sign-in couldn't forget the session on the device: Retry tries it again.
+    private var leaveFailed = false
+
     let session: SessionManager
     let auth: any AuthService
     let accounts: any AccountService
@@ -75,45 +81,74 @@ import Observation
         await readAccount()
     }
 
-    /// Retry, on the failure line: the account, or the clubs.
+    /// Retry, on the failure line: the account, the clubs, or a Leave sign-in that couldn't
+    /// finish.
     public func retry() async {
+        if leaveFailed { return await leave() }
         if route == .tabs { return await loadClubs() }
         await start()
     }
 
     /// Leave sign-in, and A02-age's back: ends the session on the server and here, then
-    /// A02-email (Welcome, A01, comes in B1). The caller purges every cache next (T11).
+    /// A02-email (Welcome, A01, comes in B1). If the device couldn't forget the session, the
+    /// failure line says so, with Retry, rather than show sign-in over a session still kept. The
+    /// caller purges every cache next (T11).
     public func leave() async {
-        await session.signOut()
+        epoch += 1
+        let leaving = epoch
+        signIn = nil
+        profile = nil
+        let forgotten = await session.signOut()
+        guard epoch == leaving else { return }
+        leaveFailed = !forgotten
+        guard forgotten else {
+            route = .failed(.other)
+            return
+        }
         showSignIn()
     }
 
     /// Home, Friends and Memories, each time the tabs show or Retry is tapped.
     public func loadClubs() async {
+        let asked = epoch
         clubs = .loading
+        let answer: Result<ClubList, APIFailure>
         do {
-            clubs = try await accounts.clubs().isEmpty ? .noClub : .notInThisBuild
-        } catch .profileIncomplete {
+            answer = .success(try await accounts.clubs())
+        } catch {
+            answer = .failure(error)
+        }
+        guard epoch == asked else { return }
+        switch answer {
+        case .success(let list):
+            clubs = list.isEmpty ? .noClub : .notInThisBuild
+        case .failure(.profileIncomplete):
             // The account changed since it was read. If it still reads as complete, the two
             // answers disagree: a failure, not a loop.
-            if let account = try? await accounts.me(), !Self.isComplete(account) {
+            let account = try? await accounts.me()
+            guard epoch == asked else { return }
+            if let account, !Self.isComplete(account) {
                 await show(account)
             } else {
                 clubs = .failed(.other)
             }
-        } catch .signedOut {
+        case .failure(.signedOut):
             await leave()
-        } catch {
-            clubs = .failed(error == .network ? .network : .other)
+        case .failure(let failure):
+            clubs = .failed(failure == .network ? .network : .other)
         }
     }
 
     private func showSignIn() {
         profile = nil
         clubs = .loading
+        let asked = epoch
         signIn = SignInModel(
-            auth: auth, verified: { [weak self] in await self?.signedIn($0) }, now: now,
-            sleep: sleep)
+            auth: auth,
+            verified: { [weak self] verified in
+                guard let self, self.epoch == asked else { return }
+                await self.signedIn(verified)
+            }, now: now, sleep: sleep)
         route = .signIn
     }
 
@@ -128,12 +163,21 @@ import Observation
     }
 
     private func readAccount() async {
+        let asked = epoch
+        let answer: Result<Account, APIFailure>
         do {
-            await show(try await accounts.me())
-        } catch .signedOut {
-            await leave()
+            answer = .success(try await accounts.me())
         } catch {
-            route = .failed(error == .network ? .network : .other)
+            answer = .failure(error)
+        }
+        guard epoch == asked else { return }
+        switch answer {
+        case .success(let account):
+            await show(account)
+        case .failure(.signedOut):
+            await leave()
+        case .failure(let failure):
+            route = .failed(failure == .network ? .network : .other)
         }
     }
 
@@ -146,10 +190,17 @@ import Observation
             if let profile {
                 profile.refresh(account)
             } else {
+                let asked = epoch
                 profile = ProfileModel(
                     account: account, accounts: accounts, makeKey: makeKey,
-                    saved: { [weak self] in await self?.show($0) },
-                    signedOut: { [weak self] in await self?.leave() })
+                    saved: { [weak self] account in
+                        guard let self, self.epoch == asked else { return }
+                        await self.show(account)
+                    },
+                    signedOut: { [weak self] in
+                        guard let self, self.epoch == asked else { return }
+                        await self.leave()
+                    })
             }
             route = account.ageConfirmed ? .profile : .confirmAge
             return

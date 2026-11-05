@@ -31,6 +31,14 @@ public struct AuthSession: Sendable, Equatable, Codable {
     }
 }
 
+/// A session printed, dumped or shown in a failed test says nothing of its tokens: the access
+/// token holds the address (T52).
+extension AuthSession: CustomStringConvertible, CustomDebugStringConvertible, CustomReflectable {
+    public var description: String { "AuthSession(tokens redacted, expiresAt: \(expiresAt))" }
+    public var debugDescription: String { description }
+    public var customMirror: Mirror { Mirror(self, children: ["expiresAt": expiresAt]) }
+}
+
 /// Why a sign-in call failed, in the terms the screens need. The server's own message is never
 /// read: it can hold the address (handoff 4's `authRefusal`: never show the server's prose).
 public enum AuthFailure: Error, Sendable, Equatable {
@@ -48,7 +56,7 @@ public enum AuthFailure: Error, Sendable, Equatable {
     /// Signing out, the server refused the access token itself (`bad_jwt`): refresh it and try
     /// once more, since the session behind it may still be live.
     case accessTokenRejected
-    /// The server is busy or failing: keep the session and try later.
+    /// The server is busy or failing (429 or 5xx): keep the session, or the code, and try later.
     case unavailable
 }
 
@@ -118,16 +126,16 @@ public struct SupabaseAuth: Sendable {
         guard (200..<300).contains(status) else { throw .refused }
     }
 
-    /// Exchanges the address and its code for a session.
+    /// Exchanges the address and its code for a session. Only a refusal is a code not verified:
+    /// a server that is busy or failing (429, 5xx) said nothing about the code.
     public func verify(email: String, code: String) async throws(AuthFailure) -> AuthSession {
         let request = VerifyRequest(
             type: "email", email: email.trimmingCharacters(in: .whitespacesAndNewlines),
             token: code)
         let (status, data, _) = try await call("verify", body: request)
-        guard (200..<300).contains(status), let session = session(from: data) else {
-            throw .codeNotVerified
-        }
-        return session
+        if (200..<300).contains(status), let session = session(from: data) { return session }
+        if status == 429 || status >= 500 { throw .unavailable }
+        throw .codeNotVerified
     }
 
     /// Exchanges the refresh token for a new session.
