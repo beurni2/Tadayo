@@ -20,10 +20,13 @@ describe("T8: the audience is sealed at the commit", () => {
       const w = await newWorld(tx);
       const drop = await commitDrop(tx, w, w.ben, { caption: "Your birthday picnic" });
       await checkAsAtCommit(tx);
+      // Sorted here, not by the server, whose collation (C locally, en_US in ci) orders random ids differently.
       const rows = await tx<{ interval_id: string }[]>`
-        SELECT interval_id FROM app.drop_audience WHERE drop_id = ${drop} ORDER BY interval_id
+        SELECT interval_id FROM app.drop_audience WHERE drop_id = ${drop}
       `;
-      expect(rows.map((row) => row.interval_id)).toEqual([w.ana.interval, w.ben.interval, w.cleo.interval].sort());
+      expect(rows.map((row) => row.interval_id).sort()).toEqual(
+        [w.ana.interval, w.ben.interval, w.cleo.interval].sort(),
+      );
     });
   });
 
