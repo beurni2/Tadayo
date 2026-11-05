@@ -1,0 +1,73 @@
++ xcodebuild test-without-building -project apps/ios/Tadayo.xcodeproj -scheme Tadayo -destination platform=iOS Simulator,id=23C8F95C-765D-46A9-AE82-0BEE2921C8D7 -derivedDataPath /Users/runner/work/_temp/DerivedData -resultBundlePath /Users/runner/work/_temp/ios-out/Tests.xcresult -skipPackagePluginValidation
+Command line invocation:
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/xcodebuild test-without-building -project apps/ios/Tadayo.xcodeproj -scheme Tadayo -destination "platform=iOS Simulator,id=23C8F95C-765D-46A9-AE82-0BEE2921C8D7" -derivedDataPath /Users/runner/work/_temp/DerivedData -resultBundlePath /Users/runner/work/_temp/ios-out/Tests.xcresult -skipPackagePluginValidation
+
+Resolve Package Graph
+
+
+Resolved source packages:
+  xctest-dynamic-overlay: https://github.com/pointfreeco/xctest-dynamic-overlay @ 1.13.1
+  swift-snapshot-testing: https://github.com/pointfreeco/swift-snapshot-testing @ 1.19.7
+  TadayoDesign: /Users/runner/work/Tadayo/Tadayo/packages/swift/TadayoDesign
+  swift-custom-dump: https://github.com/pointfreeco/swift-custom-dump @ 1.7.3
+  swift-syntax: https://github.com/swiftlang/swift-syntax @ 604.0.0
+  TadayoCore: /Users/runner/work/Tadayo/Tadayo/packages/swift/TadayoCore
+
+Writing result bundle at path:
+	/Users/runner/work/_temp/ios-out/Tests.xcresult
+
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:iOS Simulator, arch:arm64, id:23C8F95C-765D-46A9-AE82-0BEE2921C8D7, OS:26.5, name:iPhone 17 }
+{ platform:iOS Simulator, arch:x86_64, id:23C8F95C-765D-46A9-AE82-0BEE2921C8D7, OS:26.5, name:iPhone 17 }
+2026-11-05 06:08:37.318176+0000 Tadayo[8510:31559] [General] Failed to send CA Event for app launch measurements for ca_event_type: 0 event_name: com.apple.app_launch_measurement.FirstFramePresentationMetric
+2026-11-05 06:08:37.445219+0000 Tadayo[8510:31555] [General] Failed to send CA Event for app launch measurements for ca_event_type: 1 event_name: com.apple.app_launch_measurement.ExtendedLaunchMetrics
+Test Suite 'All tests' started at 2026-11-05 06:08:37.874.
+Test Suite 'TadayoSnapshotTests.xctest' started at 2026-11-05 06:08:37.874.
+Test Suite 'LabSnapshotTests' started at 2026-11-05 06:08:37.875.
+Test Case '-[TadayoSnapshotTests.LabSnapshotTests testLabSections]' started.
+Test Case '-[TadayoSnapshotTests.LabSnapshotTests testLabSections]' passed (1.837 seconds).
+Test Suite 'LabSnapshotTests' passed at 2026-11-05 06:08:39.712.
+	 Executed 1 test, with 0 failures (0 unexpected) in 1.837 (1.838) seconds
+Test Suite 'TadayoSnapshotTests.xctest' passed at 2026-11-05 06:08:39.712.
+	 Executed 1 test, with 0 failures (0 unexpected) in 1.837 (1.838) seconds
+Test Suite 'All tests' passed at 2026-11-05 06:08:39.713.
+	 Executed 1 test, with 0 failures (0 unexpected) in 1.837 (1.839) seconds
+2026-11-05 06:08:39.726009+0000 Tadayo[8510:31098] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x104eecc00>.
+2026-11-05 06:08:39.726464+0000 Tadayo[8510:31098] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x104eed400>.
+2026-11-05 06:08:39.726720+0000 Tadayo[8510:31098] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x104eedc00>.
+2026-11-05 06:08:39.727170+0000 Tadayo[8510:31098] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x104eee400>.
+2026-11-05 06:08:39.727477+0000 Tadayo[8510:31098] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x104eeec00>.
+2026-11-05 06:08:39.727809+0000 Tadayo[8510:31098] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x104eef400>.
+2026-11-05 06:08:39.728077+0000 Tadayo[8510:31098] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x104eefc00>.
+2026-11-05 06:08:39.728334+0000 Tadayo[8510:31098] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x12bc44400>.
+2026-11-05 06:08:39.734073+0000 Tadayo[8510:31098] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x12bc44c00>.
+2026-11-05 06:08:39.734360+0000 Tadayo[8510:31098] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x12bc45400>.
+2026-11-05 06:08:39.734593+0000 Tadayo[8510:31098] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x12bc45c00>.
+2026-11-05 06:08:39.734911+0000 Tadayo[8510:31098] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x12bc46400>.
+2026-11-05 06:08:39.735183+0000 Tadayo[8510:31098] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x12bc46c00>.
+2026-11-05 06:08:39.735481+0000 Tadayo[8510:31098] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x12bc47400>.
+2026-11-05 06:08:39.735735+0000 Tadayo[8510:31098] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x12bc47c00>.
+2026-11-05 06:08:39.735973+0000 Tadayo[8510:31098] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x12e23c400>.
+2026-11-05 06:08:39.736198+0000 Tadayo[8510:31098] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x12e23cc00>.
+2026-11-05 06:08:39.736416+0000 Tadayo[8510:31098] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x12e23d400>.
+2026-11-05 06:08:39.736620+0000 Tadayo[8510:31098] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x12e23dc00>.
+2026-11-05 06:08:39.736832+0000 Tadayo[8510:31098] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x12e23e400>.
+2026-11-05 06:08:39.737043+0000 Tadayo[8510:31098] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x12e23ec00>.
+2026-11-05 06:08:39.737239+0000 Tadayo[8510:31098] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x12e23f400>.
+2026-11-05 06:08:39.737456+0000 Tadayo[8510:31098] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x12e23fc00>.
+2026-11-05 06:08:39.737664+0000 Tadayo[8510:31098] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x13f08c400>.
+2026-11-05 06:08:39.737853+0000 Tadayo[8510:31098] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x13f08cc00>.
+2026-11-05 06:08:39.738046+0000 Tadayo[8510:31098] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x13f08d400>.
+2026-11-05 06:08:39.738243+0000 Tadayo[8510:31098] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x13f08dc00>.
+2026-11-05 06:08:39.738454+0000 Tadayo[8510:31098] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x13f08e400>.
+2026-11-05 06:08:39.738646+0000 Tadayo[8510:31098] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x13f08ec00>.
+2026-11-05 06:08:40.084 xcodebuild[7446:28162] [MT] IDETestOperationsObserverDebug: 15.166 elapsed -- Testing started completed.
+2026-11-05 06:08:40.084 xcodebuild[7446:28162] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-05 06:08:40.084 xcodebuild[7446:28162] [MT] IDETestOperationsObserverDebug: 15.166 sec, +15.166 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/_temp/ios-out/Tests.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started
