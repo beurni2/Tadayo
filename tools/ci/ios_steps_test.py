@@ -505,6 +505,13 @@ class BuildAndTestSteps(StepsTest):
         self.assertEqual(cmd[cmd.index("-project") + 1], "apps/ios/Tadayo.xcodeproj")
         self.assertEqual(cmd[cmd.index("-scheme") + 1], "Tadayo")
         self.assertEqual(cmd[cmd.index("-destination") + 1], f"platform=iOS Simulator,id={UDID}")
+        self.assertIn("-skipPackagePluginValidation", cmd)
+
+    def test_a_scheme_with_no_tests_still_lets_package_plugins_run(self):
+        self.write_scheme(scheme())
+        shell = FakeShell(effects=[(starts("xcodebuild", "build"), lambda cmd: self.products())])
+        self.assertEqual(self.step("build", shell)[0], 0)
+        self.assertIn("-skipPackagePluginValidation", shell.commands[0])
 
     def test_an_app_without_the_share_extension_fails(self):
         shell = FakeShell(effects=[(has("build-for-testing"), lambda cmd: self.products(False))])
@@ -570,6 +577,7 @@ class BuildAndTestSteps(StepsTest):
         self.assertIn(["git", "status", "--porcelain", "-z", "--untracked-files=all", "--", "apps/ios"],
                       shell.commands)
         self.assertNotIn("-skip-testing", cmd)
+        self.assertIn("-skipPackagePluginValidation", cmd)
         self.assertEqual(env["TEST_RUNNER_SNAPSHOT_TESTING_RECORD"], "never")
         self.assertEqual(env["TEST_RUNNER_SNAPSHOT_ARTIFACTS"], os.path.join(self.repo.out, "artifacts"))
         self.assertTrue(cmd[cmd.index("-resultBundlePath") + 1].endswith("Tests.xcresult"))
@@ -647,6 +655,43 @@ class BuildAndTestSteps(StepsTest):
         scheme_path = os.path.join(self.repo.root, "apps/ios/Tadayo.xcodeproj/xcshareddata/xcschemes/Tadayo.xcscheme")
         self.assertEqual(ios_steps.scheme_test_targets(scheme_path, os.path.join(self.repo.root, "apps/ios")),
                          ["TadayoSnapshotTests"])
+
+
+class LogFilterTest(unittest.TestCase):
+    # The end of `ios` run 41958887177's build log (ios/b0-plugins-check at ab8968c), where Xcode
+    # refused the OpenAPI generator's plugin and no line said `error:`.
+    UNTRUSTED_PLUGIN = [
+        "Prepare packages\n",
+        "\n",
+        "Validate plug-in \u201cOpenAPIGenerator\u201d in package \u201cswift-openapi-generator\u201d\n",
+        "\n",
+        "** TEST BUILD FAILED **\n",
+        "\n",
+        "\n",
+        "The following build commands failed:\n",
+        "\tValidate plug-in \u201cOpenAPIGenerator\u201d in package \u201cswift-openapi-generator\u201d\n",
+        "\tBuilding project Tadayo for testing with scheme Tadayo\n",
+        "(3 failures)\n",
+        "Prepare packages\n",
+    ]
+
+    def shown(self, lines):
+        log_filter = ios_steps.LogFilter()
+        return [line for line in lines if log_filter.show(line)]
+
+    def test_the_commands_that_failed_are_printed_with_the_list(self):
+        self.assertEqual(self.shown(self.UNTRUSTED_PLUGIN), [
+            "** TEST BUILD FAILED **\n",
+            "The following build commands failed:\n",
+            "\tValidate plug-in \u201cOpenAPIGenerator\u201d in package \u201cswift-openapi-generator\u201d\n",
+            "\tBuilding project Tadayo for testing with scheme Tadayo\n",
+            "(3 failures)\n",
+        ])
+
+    def test_indented_lines_elsewhere_stay_in_the_log_only(self):
+        self.assertEqual(self.shown(["\tcd /Users/runner/work\n", "    export PATH=/usr/bin\n",
+                                     "/a.swift:3:1: error: x\n", "\tnote\n"]),
+                         ["/a.swift:3:1: error: x\n"])
 
 
 class StateTest(unittest.TestCase):
