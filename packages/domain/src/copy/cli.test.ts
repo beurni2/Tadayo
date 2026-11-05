@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -78,19 +78,65 @@ it("allows FQ68's sign-in line, and says so on every run", () => {
   expect(run()).toEqual({ status: 0, out: fq68(1) + "copy lint: 1 string file(s), 0 finding(s)\n" });
 });
 
-it("refuses Sent anywhere but FQ68's exact line: another key, another value, another catalog, a key", () => {
-  const sentTo = "Sent to %@";
-  for (const [path, content] of [
-    ["apps/ios/Tadayo/Localizable.xcstrings", catalog({ "auth.code.sentTo": sentTo, "drop.state": sentTo })],
-    ["apps/ios/Tadayo/Localizable.xcstrings", catalog({ "auth.code.sentTo": "Sent to your inbox" })],
-    ["apps/ios/TadayoShare/Localizable.xcstrings", catalog({ "auth.code.sentTo": sentTo })],
-    ["apps/ios/Tadayo/Localizable.xcstrings", JSON.stringify({ strings: { [sentTo]: {} } })],
-  ] as const) {
-    rmSync(join(repo, "apps"), { recursive: true, force: true });
-    write(path, content);
-    const { status, out } = run();
-    expect(status).toBe(1);
-    expect(out).toContain(`${path}: [banned-word]`);
-    expect(out).toContain("copy lint: 1 string file(s), 1 finding(s)");
+// A refused line, as the lint prints it, for one "Sent" (in any case) in the text.
+const refusedSent = (path: string, word: string, text: string) =>
+  `${path}: [banned-word] "${word}" is outside the vocabulary (T41): use spec 03's nouns, and "Added" for a ` +
+  `committed drop\n    in: ${JSON.stringify(text)}\n`;
+
+const FQ68_PATH = "apps/ios/Tadayo/Localizable.xcstrings";
+const FQ68_VALUE = "Sent to %@";
+
+/** Each file on its own: the exact output, which names every refused line and FQ68's count. */
+function expectRefused(path: string, content: string, refused: readonly string[], excused: number): void {
+  for (const entry of readdirSync(repo)) {
+    if (entry !== ".git") rmSync(join(repo, entry), { recursive: true, force: true });
   }
+  write(path, content);
+  const lines = refused.flatMap((text) =>
+    Array.from(text.matchAll(/sent/giu), ([word]) => refusedSent(path, word, text)),
+  );
+  expect(run(), `${path}: ${content}`).toEqual({
+    status: 1,
+    out: lines.join("") + fq68(excused) + `copy lint: 1 string file(s), ${String(lines.length)} finding(s)\n`,
+  });
+}
+
+// The exception is matched exactly: a value, key or catalog that only contains, ends with, or
+// differs in case or spacing from FQ68's is still refused (review finding 1 of PR #20).
+it("refuses Sent in another key of FQ68's catalog, while allowing FQ68's line beside it", { timeout: 20_000 }, () => {
+  expectRefused(FQ68_PATH, catalog({ "auth.code.sentTo": FQ68_VALUE, "drop.state": FQ68_VALUE }), [FQ68_VALUE], 1);
+});
+
+it("refuses Sent in any other value of FQ68's key, however close", { timeout: 20_000 }, () => {
+  for (const value of [
+    "Sent to %@.",
+    "Sent to %@ now",
+    "Sent to %@ Sent",
+    "Sent To %@",
+    "sent to %@",
+    " Sent to %@",
+    "Sent to %@ ",
+    "Sent to your inbox",
+  ]) {
+    expectRefused(FQ68_PATH, catalog({ "auth.code.sentTo": value }), [value], 0);
+  }
+});
+
+it("refuses FQ68's value under any other key, however close", { timeout: 20_000 }, () => {
+  for (const key of ["auth.code.sentto", "x.auth.code.sentTo", "auth.code.sentTo.again", "auth.code"]) {
+    expectRefused(FQ68_PATH, catalog({ [key]: FQ68_VALUE }), [FQ68_VALUE], 0);
+  }
+});
+
+it("refuses FQ68's line in any other file, and as a catalog's key", { timeout: 20_000 }, () => {
+  for (const path of [
+    "apps/ios/TadayoShare/Localizable.xcstrings",
+    "x/apps/ios/Tadayo/Localizable.xcstrings",
+    "apps/ios/tadayo/Localizable.xcstrings",
+  ]) {
+    expectRefused(path, catalog({ "auth.code.sentTo": FQ68_VALUE }), [FQ68_VALUE], 0);
+  }
+  expectRefused(FQ68_PATH, JSON.stringify({ strings: { [FQ68_VALUE]: {} } }), [FQ68_VALUE], 0);
+  expectRefused("apps/ios/Tadayo/Localizable.strings", `"auth.code.sentTo" = "${FQ68_VALUE}";`, [FQ68_VALUE], 0);
+  expectRefused("apps/web/index.html", `<p>${FQ68_VALUE}</p>`, [FQ68_VALUE], 0);
 });
