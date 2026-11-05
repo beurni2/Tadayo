@@ -1,0 +1,104 @@
+[
+ [
+  "T53 file run directly, not through EXECUTE",
+  "tools/ops/src/migrate.ts",
+  "await tx.unsafe(\"DO $run$ BEGIN EXECUTE pg_catalog.current_setting('tadayo.migration'); END $run$\").simple();",
+  "await tx.unsafe(file.text).simple();"
+ ],
+ [
+  "T53 transaction commands not named",
+  "tools/ops/src/migrate.ts",
+  "if (/EXECUTE of transaction commands is not implemented|invalid transaction termination/.test(message)) {",
+  "if (/a message Postgres never sends/.test(message)) {"
+ ],
+ [
+  "T53 deferred checks left to the commit",
+  "tools/ops/src/migrate.ts",
+  "  await tx`SET CONSTRAINTS ALL IMMEDIATE`;\n",
+  ""
+ ],
+ [
+  "T53 schema checked before the deferred checks and the ledger",
+  "tools/ops/src/migrate.ts",
+  "  await tx`SET CONSTRAINTS ALL IMMEDIATE`;\n  await tx`\n    INSERT INTO app.schema_migrations (version, name, sha256)\n    VALUES (${file.version}, ${file.name}, ${file.sha256})\n  `;\n  const problems = await closedProblems(tx);\n  if (problems.length > 0) {\n    throw new Error(`migrate: ${fileName(file)} would leave the schema app open (T53): ` + problems.join(\"; \"));\n  }",
+  "  const problems = await closedProblems(tx);\n  if (problems.length > 0) {\n    throw new Error(`migrate: ${fileName(file)} would leave the schema app open (T53): ` + problems.join(\"; \"));\n  }\n  await tx`SET CONSTRAINTS ALL IMMEDIATE`;\n  await tx`\n    INSERT INTO app.schema_migrations (version, name, sha256)\n    VALUES (${file.version}, ${file.name}, ${file.sha256})\n  `;"
+ ],
+ [
+  "T53 ledger recorded after the check",
+  "tools/ops/src/migrate.ts",
+  "  await tx`\n    INSERT INTO app.schema_migrations (version, name, sha256)\n    VALUES (${file.version}, ${file.name}, ${file.sha256})\n  `;\n  const problems = await closedProblems(tx);\n  if (problems.length > 0) {\n    throw new Error(`migrate: ${fileName(file)} would leave the schema app open (T53): ` + problems.join(\"; \"));\n  }",
+  "  const problems = await closedProblems(tx);\n  if (problems.length > 0) {\n    throw new Error(`migrate: ${fileName(file)} would leave the schema app open (T53): ` + problems.join(\"; \"));\n  }\n  await tx`\n    INSERT INTO app.schema_migrations (version, name, sha256)\n    VALUES (${file.version}, ${file.name}, ${file.sha256})\n  `;"
+ ],
+ [
+  "T53 ledger trigger not checked",
+  "tools/ops/src/migrate.ts",
+  "     WHERE r.relname = 'schema_migrations' AND NOT t.tgisinternal",
+  "     WHERE r.relname = 'schema_migrations' AND NOT t.tgisinternal AND false"
+ ],
+ [
+  "T53 ledger rule not checked",
+  "tools/ops/src/migrate.ts",
+  "      FROM pg_catalog.pg_rewrite w JOIN relations r ON r.oid = w.ev_class\n     WHERE r.relname = 'schema_migrations'",
+  "      FROM pg_catalog.pg_rewrite w JOIN relations r ON r.oid = w.ev_class\n     WHERE r.relname = 'schema_migrations' AND false"
+ ],
+ [
+  "T53 system columns' grants not checked",
+  "tools/ops/src/migrate.ts",
+  "     WHERE att.attrelid = relations.oid AND att.attnum <> 0 AND NOT att.attisdropped",
+  "     WHERE att.attrelid = relations.oid AND att.attnum > 0 AND NOT att.attisdropped"
+ ],
+ [
+  "T3 highlight change keeps its instant",
+  "db/migrations/0006_contributions.sql",
+  "    IF NEW.updated_at <= OLD.updated_at THEN\n      RAISE EXCEPTION 'app.highlights: every change carries the instant it was made, later than the last (T1, T3)'",
+  "    IF false THEN\n      RAISE EXCEPTION 'app.highlights: every change carries the instant it was made, later than the last (T1, T3)'"
+ ],
+ [
+  "T3 highlight change at the same instant",
+  "db/migrations/0006_contributions.sql",
+  "    IF NEW.updated_at <= OLD.updated_at THEN",
+  "    IF NEW.updated_at < OLD.updated_at THEN"
+ ],
+ [
+  "T3 drop's new replacement needs no instant",
+  "db/migrations/0006_contributions.sql",
+  "            OR (NEW.pending_upload_id IS NOT NULL AND NEW.pending_upload_id IS DISTINCT FROM OLD.pending_upload_id)) THEN\n      RAISE EXCEPTION 'app.drops: a change to a drop''s content or state carries the instant it was made (T1, T3)'",
+  "            OR false) THEN\n      RAISE EXCEPTION 'app.drops: a change to a drop''s content or state carries the instant it was made (T1, T3)'"
+ ],
+ [
+  "T3 drop takes a new replacement after the reveal",
+  "db/migrations/0006_contributions.sql",
+  "            OR (NEW.pending_upload_id IS NOT NULL AND NEW.pending_upload_id IS DISTINCT FROM OLD.pending_upload_id)) THEN\n      RAISE EXCEPTION 'app.drops: the day opened at %, so the drop is frozen (T3)', reveal",
+  "            OR false) THEN\n      RAISE EXCEPTION 'app.drops: the day opened at %, so the drop is frozen (T3)', reveal"
+ ],
+ [
+  "spec 09 replacement can't be let go after the reveal (cc62976's freeze)",
+  "db/migrations/0006_contributions.sql",
+  "            OR (NEW.pending_upload_id IS NOT NULL AND NEW.pending_upload_id IS DISTINCT FROM OLD.pending_upload_id)) THEN\n      RAISE EXCEPTION 'app.drops: the day opened at %, so the drop is frozen (T3)', reveal",
+  "            OR NEW.pending_upload_id IS DISTINCT FROM OLD.pending_upload_id) THEN\n      RAISE EXCEPTION 'app.drops: the day opened at %, so the drop is frozen (T3)', reveal"
+ ],
+ [
+  "spec 09 letting a replacement go needs an instant (cc62976's rule)",
+  "db/migrations/0006_contributions.sql",
+  "            OR (NEW.pending_upload_id IS NOT NULL AND NEW.pending_upload_id IS DISTINCT FROM OLD.pending_upload_id)) THEN\n      RAISE EXCEPTION 'app.drops: a change to a drop''s content or state carries the instant it was made (T1, T3)'",
+  "            OR NEW.pending_upload_id IS DISTINCT FROM OLD.pending_upload_id) THEN\n      RAISE EXCEPTION 'app.drops: a change to a drop''s content or state carries the instant it was made (T1, T3)'"
+ ],
+ [
+  "T7 revision member row updated",
+  "db/migrations/0004_rosters.sql",
+  "  IF TG_OP = 'DELETE' OR (TG_OP = 'UPDATE' AND TG_TABLE_NAME = 'roster_revision_members') THEN",
+  "  IF TG_OP = 'DELETE' THEN"
+ ],
+ [
+  "FQ84 rename revision needs its departed proposer (cc62976's seal)",
+  "db/migrations/0004_rosters.sql",
+  "  IF revision.origin = 'proposal'\n     AND NOT EXISTS",
+  "  IF NOT EXISTS"
+ ],
+ [
+  "T7 proposal sealed without its proposer",
+  "db/migrations/0004_rosters.sql",
+  "  IF revision.origin = 'proposal'\n     AND NOT EXISTS",
+  "  IF false\n     AND NOT EXISTS"
+ ]
+]

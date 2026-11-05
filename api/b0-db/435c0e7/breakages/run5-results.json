@@ -1,0 +1,167 @@
+[
+ {
+  "name": "T53 file run directly, not through EXECUTE",
+  "file": "tools/ops/src/migrate.ts",
+  "verdict": "CAUGHT",
+  "failed": [
+   "the runner (T57) > checks the schema after the file's deferred triggers have run and the ledger has recorded it (T53)",
+   "the runner (T57) > rolls back a migration that begins, ends or splits its transaction, keeping nothing of it (T53)",
+   "the runner (T57) > rolls back a migration that fails part way, with nothing of it left",
+   "the runner (T57) > rolls back a migration that names a table without its schema",
+   "the runner (T57) > runs a function whose body is BEGIN ATOMIC ... END, whatever its statements end with"
+  ]
+ },
+ {
+  "name": "T53 transaction commands not named",
+  "file": "tools/ops/src/migrate.ts",
+  "verdict": "CAUGHT",
+  "failed": [
+   "the runner (T57) > rolls back a migration that begins, ends or splits its transaction, keeping nothing of it (T53)"
+  ]
+ },
+ {
+  "name": "T53 deferred checks left to the commit",
+  "file": "tools/ops/src/migrate.ts",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T53: anon, authenticated and service_role read nothing > gives anon no privilege on the schema or anything in it",
+   "T53: anon, authenticated and service_role read nothing > leaves the schema closed after every migration",
+   "T53: the runner's check finds whatever would open the schema > a default privilege that would grant what the owner makes later",
+   "T53: the runner's check finds whatever would open the schema > a function made after migration 0001 isn't PUBLIC's to execute",
+   "T53: the runner's check finds whatever would open the schema > a grant on a column, which a grant on the table doesn't show (review finding privacy 3 of PR #17)",
+   "T53: the runner's check finds whatever would open the schema > a grant on a system column, such as ctid, xmin or tableoid (review finding privacy 5 of PR #17's check)",
+   "T53: the runner's check finds whatever would open the schema > a grant on a table, a sequence, a function or the schema, to an API role or PUBLIC",
+   "T53: the runner's check finds whatever would open the schema > a grant on a type or domain",
+   "T53: the runner's check finds whatever would open the schema > a policy",
+   "T53: the runner's check finds whatever would open the schema > a table that forces it",
+   "T53: the runner's check finds whatever would open the schema > a table without row-level security",
+   "T53: the runner's check finds whatever would open the schema > a trigger or a rule on the ledger, which would run after the check",
+   "T53: the runner's check finds whatever would open the schema > a type made after migration 0001 isn't PUBLIC's to use",
+   "T53: the runner's check finds whatever would open the schema > an object another role owns",
+   "the runner (T57) > checks the schema after the file's deferred triggers have run and the ledger has recorded it (T53)",
+   "the runner (T57) > rolls back a migration that fails part way, with nothing of it left",
+   "the runner (T57) > rolls back a migration that names a table without its schema"
+  ]
+ },
+ {
+  "name": "T53 schema checked before the deferred checks and the ledger",
+  "file": "tools/ops/src/migrate.ts",
+  "verdict": "CAUGHT",
+  "failed": [
+   "the runner (T57) > checks the schema after the file's deferred triggers have run and the ledger has recorded it (T53)",
+   "the runner (T57) > rolls back a migration that fails part way, with nothing of it left",
+   "the runner (T57) > rolls back a migration that names a table without its schema"
+  ]
+ },
+ {
+  "name": "T53 ledger recorded after the check",
+  "file": "tools/ops/src/migrate.ts",
+  "verdict": "CAUGHT",
+  "failed": [
+   "the runner (T57) > checks the schema after the file's deferred triggers have run and the ledger has recorded it (T53)",
+   "the runner (T57) > rolls back a migration that fails part way, with nothing of it left",
+   "the runner (T57) > rolls back a migration that names a table without its schema"
+  ],
+  "note": "missed in the full run, because the ledger's trigger and rule check covers a trigger or rule; a check constraint on the ledger isn't one, so the test `checks the schema after the file's deferred triggers have run and the ledger has recorded it (T53)` now adds one that grants, and this breakage alone was run again and caught (this entry is that run)"
+ },
+ {
+  "name": "T53 ledger trigger not checked",
+  "file": "tools/ops/src/migrate.ts",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T53: the runner's check finds whatever would open the schema > a trigger or a rule on the ledger, which would run after the check",
+   "the runner (T57) > checks the schema after the file's deferred triggers have run and the ledger has recorded it (T53)",
+   "the runner (T57) > rolls back a migration that fails part way, with nothing of it left",
+   "the runner (T57) > rolls back a migration that names a table without its schema"
+  ]
+ },
+ {
+  "name": "T53 ledger rule not checked",
+  "file": "tools/ops/src/migrate.ts",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T53: the runner's check finds whatever would open the schema > a trigger or a rule on the ledger, which would run after the check"
+  ]
+ },
+ {
+  "name": "T53 system columns' grants not checked",
+  "file": "tools/ops/src/migrate.ts",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T53: the runner's check finds whatever would open the schema > a grant on a system column, such as ctid, xmin or tableoid (review finding privacy 5 of PR #17's check)"
+  ]
+ },
+ {
+  "name": "T3 highlight change keeps its instant",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T22: a highlight points to the contributor's own active drop, before the reveal > judges every change at its own instant, later than the last (T1, T3)"
+  ]
+ },
+ {
+  "name": "T3 highlight change at the same instant",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T22: a highlight points to the contributor's own active drop, before the reveal > judges every change at its own instant, later than the last (T1, T3)"
+  ]
+ },
+ {
+  "name": "T3 drop's new replacement needs no instant",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T3: the reveal is the cutoff > lets a replacement nobody committed go at any instant, and takes no new one from the reveal on (spec 09, T3)"
+  ]
+ },
+ {
+  "name": "T3 drop takes a new replacement after the reveal",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T3: the reveal is the cutoff > lets a replacement nobody committed go at any instant, and takes no new one from the reveal on (spec 09, T3)"
+  ]
+ },
+ {
+  "name": "spec 09 replacement can't be let go after the reveal (cc62976's freeze)",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T3: the reveal is the cutoff > lets a replacement nobody committed go at any instant, and takes no new one from the reveal on (spec 09, T3)"
+  ]
+ },
+ {
+  "name": "spec 09 letting a replacement go needs an instant (cc62976's rule)",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T3: the reveal is the cutoff > lets a replacement nobody committed go at any instant, and takes no new one from the reveal on (spec 09, T3)"
+  ]
+ },
+ {
+  "name": "T7 revision member row updated",
+  "file": "db/migrations/0004_rosters.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T7: an exact roster, sealed when it is made > never changes a revision's member rows, sealed or not (T7)"
+  ]
+ },
+ {
+  "name": "FQ84 rename revision needs its departed proposer (cc62976's seal)",
+  "file": "db/migrations/0004_rosters.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T7: an exact roster, sealed when it is made > seals a revision the server made for a name though the candidate's proposer has left, and a member's proposal only with its proposer (FQ84)"
+  ]
+ },
+ {
+  "name": "T7 proposal sealed without its proposer",
+  "file": "db/migrations/0004_rosters.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T7: an exact roster, sealed when it is made > refuses a revision made without its seal, its proposer or a candidate",
+   "T7: an exact roster, sealed when it is made > seals a revision the server made for a name though the candidate's proposer has left, and a member's proposal only with its proposer (FQ84)"
+  ]
+ }
+]

@@ -3,8 +3,8 @@
 # runner loading, is reported as BROKEN, never as caught.
 import os, re, shutil, subprocess, sys, json
 REPO = "/home/user/tadayo-contract"
-SCR = "/tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/s4"
-BACKUP = SCR + "/mut3/backup"
+SCR = os.path.dirname(os.path.abspath(__file__))  # the folder holding these files
+BACKUP = SCR + "/backup"
 M = "db/migrations/"
 R = "tools/ops/src/migrate.ts"
 MUT = [
@@ -117,7 +117,7 @@ try:
         results.append({"name": name, "file": f, "verdict": verdict, "failed": failed}); print(json.dumps(results[-1]), flush=True)
 finally:
     restore()
-json.dump(results, open(SCR + "/mut3/results.json", "w"), indent=1)
+json.dump(results, open(SCR + "/run3-results.json", "w"), indent=1)
 print("\n==== SUMMARY")
 for r in results:
     print(f"{r['verdict']:8} {r['name']}: {'; '.join(r['failed'])[:240]}")

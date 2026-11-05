@@ -17,8 +17,10 @@ The files are restored from a copy after each breakage and at the end; after bot
 
 1. Check out the commit above in a working tree, with Node 26 and pnpm 12.16.1 (`docs/JOURNAL.md`, block 1.1, "How to run and check everything"), and run `pnpm install`.
 2. Make a server like `ci`'s on port 5432. `pgci.sh` does it for the session's PostgreSQL 16 (as root): it stops and deletes the cluster at `/var/lib/postgresql/pgci`, then `initdb --username=supabase_admin` with the password `postgres` and starts it. Any server made like `ci`'s does (`docs/LIMITATIONS.md`, the row on the session's own cluster).
-3. `dbtest.sh` runs the database tests against it; with `FRESH=1` it remakes the server and runs `python3 tools/ci/ci_steps.py db-bootstrap` first. Change its `cd` and the path to `pgci.sh` to your own.
-4. `python3 run3.py` or `python3 run4.py` (run 4 reads `run4-list.json`), each with optional words that pick breakages by name. Change `REPO` and `SCR` at their top to your working tree and the folder holding these files. They write `results.json` beside them.
+3. `dbtest.sh` runs the database tests against it; with `FRESH=1` it remakes the server with `pgci.sh` beside it and runs `python3 tools/ci/ci_steps.py db-bootstrap` first. Change its `cd` to your working tree.
+4. `python3 run3.py` or `python3 run4.py`, each with optional words that pick breakages by name. Change `REPO` at their top to your working tree. Each reads its list (run 3's is in the script, run 4's is `run4-list.json`) and runs `dbtest.sh` from the folder holding it, keeps its copies of the files it changes in `backup/` there, and writes `run3-results.json` or `run4-results.json` there, over the published one.
+
+Corrected after `435c0e7`: as first published, `run3.py`, `run4.py` and `dbtest.sh` read and wrote under the session's scratch folder, so `run4.py` couldn't find its list (finding records 2 of the check of PR #17's fixes). Only those paths changed; the breakages and the results are the runs'.
 
 Each run takes about ten seconds a breakage on the session's machine.
 
