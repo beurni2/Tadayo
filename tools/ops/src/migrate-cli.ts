@@ -12,7 +12,15 @@ if (!url) {
   console.error("migrate: set DATABASE_URL to connect as tadayo_app");
   process.exit(2);
 }
-const sql = postgres(url, { max: 1, onnotice: () => undefined });
+// Postgres's warnings are shown, its routine notices (a table that already exists) aren't.
+const sql = postgres(url, {
+  max: 1,
+  onnotice: (notice) => {
+    if (notice["severity"] !== "NOTICE" && notice["severity"] !== "DEBUG" && notice["severity"] !== "LOG") {
+      console.error(`migrate: ${String(notice["severity"])}: ${String(notice.message)}`);
+    }
+  },
+});
 try {
   const applied = await migrate(sql, join(import.meta.dirname, "..", "..", "..", "db", "migrations"), console.log);
   console.log(applied.length === 0 ? "migrate: nothing to apply" : `migrate: ${String(applied.length)} applied`);

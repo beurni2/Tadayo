@@ -5,7 +5,7 @@
 import { copyFile, mkdtemp, readdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { migrate, readMigrations } from "@tadayo/ops";
+import { applyMigration, migrate, readMigrations } from "@tadayo/ops";
 import { afterAll, describe, expect, it } from "vitest";
 import { adminSql, appSql, MIGRATIONS } from "./harness.ts";
 
@@ -32,6 +32,11 @@ async function withExtra(text: string): Promise<string> {
 
 async function ledger(): Promise<{ version: number; name: string; sha256: string }[]> {
   return app`SELECT version, name, sha256 FROM app.schema_migrations ORDER BY version`;
+}
+
+async function left(name: string): Promise<number> {
+  const [row] = await app<{ n: number }[]>`SELECT count(*)::int AS n FROM pg_catalog.pg_class WHERE relname = ${name}`;
+  return row?.n ?? -1;
 }
 
 describe("the runner (T57)", () => {
@@ -68,13 +73,11 @@ describe("the runner (T57)", () => {
       /_probe\.sql would leave the schema app open \(T53\): the table app\.probe_open has no row-level security/,
     );
     expect(await ledger()).toEqual(before);
-    const [left] = await app<
-      { n: number }[]
-    >`SELECT count(*)::int AS n FROM pg_catalog.pg_class WHERE relname = 'probe_open'`;
-    expect(left?.n).toBe(0);
+    expect(await left("probe_open")).toBe(0);
   });
 
   it("rolls back a migration that grants anything to an API role (T53)", async () => {
+    const before = await ledger();
     const text = `
       CREATE TABLE app.probe_granted (id int);
       ALTER TABLE app.probe_granted ENABLE ROW LEVEL SECURITY;
@@ -83,6 +86,30 @@ describe("the runner (T57)", () => {
     await expect(migrate(app, await withExtra(text))).rejects.toThrow(
       /app\.probe_granted grants SELECT to authenticated/,
     );
+    expect(await ledger()).toEqual(before);
+    expect(await left("probe_granted")).toBe(0);
+  });
+
+  it("refuses a migration with its own BEGIN and COMMIT before running any of it (T53)", async () => {
+    const before = await ledger();
+    const text = `
+      BEGIN;
+      CREATE TABLE app.probe_committed (id int);
+      COMMIT;
+    `;
+    await expect(migrate(app, await withExtra(text))).rejects.toThrow(/_probe\.sql has its own BEGIN/);
+    expect(await ledger()).toEqual(before);
+    expect(await left("probe_committed")).toBe(0);
+  });
+
+  it("fails loudly if a file it runs ends its transaction, which readMigrations refuses first", async () => {
+    const before = await ledger();
+    // Only a COMMIT, so the transaction it ends had nothing of the file's to keep.
+    const file = { version: 99, name: "probe", sha256: "0".repeat(64), text: "COMMIT;" };
+    await expect(app.begin((tx) => applyMigration(tx, file))).rejects.toThrow(
+      /0099_probe\.sql ended the runner's transaction/,
+    );
+    expect(await ledger()).toEqual(before);
   });
 
   it("rolls back a migration that names a table without its schema", async () => {
@@ -100,10 +127,7 @@ describe("the runner (T57)", () => {
       SELECT 1 / 0;
     `;
     await expect(migrate(app, await withExtra(text))).rejects.toThrow(/division by zero/);
-    const [left] = await app<
-      { n: number }[]
-    >`SELECT count(*)::int AS n FROM pg_catalog.pg_class WHERE relname = 'probe_partial'`;
-    expect(left?.n).toBe(0);
+    expect(await left("probe_partial")).toBe(0);
   });
 
   it("refuses to go on when an applied migration's file has changed", async () => {

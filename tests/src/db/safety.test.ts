@@ -6,7 +6,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, describe, it } from "vitest";
 import { appSql, expectRefused, REFUSED, rolledBack, type Tx } from "./harness.ts";
-import { AT, checkAsAtCommit, commitDrop, newId, newWorld, type Member } from "./world.ts";
+import { AT, checkAsAtCommit, commitDrop, leave, newId, newUser, newWorld, type Member } from "./world.ts";
 
 const app = appSql();
 afterAll(async () => {
@@ -80,6 +80,20 @@ describe("T23 to T25: a removal is one audited record, and the drop's state agre
         refused,
       );
       await expectRefused(tx, REFUSED.integrity, (sp) => remove(sp, link, "pictured", w.cleo, "removed"), refused);
+    });
+  });
+
+  it("refuses a pictured removal by someone who has left (T9)", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await newWorld(tx);
+      const photo = await commitDrop(tx, w, w.ben);
+      await leave(tx, w.cleo, "Cleo", AT.opened);
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) => remove(sp, photo, "pictured", w.cleo, "removed", AT.close),
+        /is no longer a member, so removes nothing as pictured \(T9, T25\)/,
+      );
     });
   });
 
@@ -204,6 +218,70 @@ describe("D07, T8 and spec 16: reactions, comments and favourites, from the reve
     });
   });
 
+  it("adds nothing to a drop that isn't active, or from someone who has left, who can still take their own away (T9, T24)", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await newWorld(tx);
+      const [withdrawn, removed, held, live] = [
+        await commitDrop(tx, w, w.ben),
+        await commitDrop(tx, w, w.ben),
+        await commitDrop(tx, w, w.ben),
+        await commitDrop(tx, w, w.ben),
+      ];
+      await remove(tx, withdrawn, "withdraw", w.ben, "withdrawn", AT.edited);
+      await remove(tx, removed, "pictured", w.cleo, "removed");
+      await tx`UPDATE app.drops SET state = 'held', updated_at = ${AT.edited} WHERE id = ${held}`;
+      const inactive = /isn't active, so nothing is added to it \(T9, T24\)/;
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) =>
+          sp`INSERT INTO app.favourites (interval_id, drop_id, created_at) VALUES (${w.ana.interval}, ${withdrawn}, ${AT.opened})`,
+        inactive,
+      );
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) => sp`
+          INSERT INTO app.comments (id, drop_id, author_interval_id, body, created_at, updated_at)
+          VALUES (${newId("cmt")}, ${removed}, ${w.ana.interval}, 'Hi', ${AT.opened}, ${AT.opened})
+        `,
+        inactive,
+      );
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) =>
+          sp`INSERT INTO app.reactions (drop_id, interval_id, reaction, updated_at) VALUES (${held}, ${w.ana.interval}, 'heart', ${AT.opened})`,
+        inactive,
+      );
+      // Cleo reacts and comments, then leaves.
+      const comment = newId("cmt");
+      await tx`INSERT INTO app.reactions (drop_id, interval_id, reaction, updated_at) VALUES (${live}, ${w.cleo.interval}, 'heart', ${AT.opened})`;
+      await tx`
+        INSERT INTO app.comments (id, drop_id, author_interval_id, body, created_at, updated_at)
+        VALUES (${comment}, ${live}, ${w.cleo.interval}, 'So good', ${AT.opened}, ${AT.opened})
+      `;
+      await leave(tx, w.cleo, "Cleo", AT.opened);
+      const gone = /is no longer a member, so adds nothing \(T9\)/;
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) =>
+          sp`INSERT INTO app.favourites (interval_id, drop_id, created_at) VALUES (${w.cleo.interval}, ${live}, ${AT.close})`,
+        gone,
+      );
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) =>
+          sp`UPDATE app.comments SET body = 'Edited', version = 2, updated_at = ${AT.close} WHERE id = ${comment}`,
+        gone,
+      );
+      await tx`UPDATE app.reactions SET reaction = NULL, updated_at = ${AT.close} WHERE drop_id = ${live} AND interval_id = ${w.cleo.interval}`;
+      await tx`UPDATE app.comments SET state = 'deleted', body = NULL, ended_at = ${AT.close}, updated_at = ${AT.close} WHERE id = ${comment}`;
+    });
+  });
+
   it("lets a deleted comment only lose its text", async () => {
     await rolledBack(app, async (tx) => {
       const w = await newWorld(tx);
@@ -266,6 +344,74 @@ describe("spec 22 and FQ27: reports, cases and the operator's audit trail", () =
       ]) {
         await expectRefused(tx, REFUSED.integrity, statement, /the audit trail is append-only/);
       }
+    });
+  });
+});
+
+describe("FQ27: a moderation removal cites the operator's removal of that drop", () => {
+  it("refuses an action about anything else, and takes the one about that drop", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await newWorld(tx);
+      const [drop, other] = [await commitDrop(tx, w, w.ben), await commitDrop(tx, w, w.ben)];
+      const act = async (action: string, kind: string, target: string) => {
+        const id = newId("act");
+        await tx`
+          INSERT INTO app.operator_actions (id, operator, script, script_version, action, target_kind, target_id, policy, acted_at)
+          VALUES (${id}, 'founder', 'remove-drop', ${"0".repeat(40)}, ${action}, ${kind}, ${target}, 'trial.safety', ${AT.opened})
+        `;
+        return id;
+      };
+      const moderate = (sp: Tx, action: string) => sp`
+        INSERT INTO app.drop_removals (drop_id, reason, operator_action_id, removed_at)
+        VALUES (${drop}, 'moderation', ${action}, ${AT.opened})
+      `;
+      const cites = /a moderation removal cites the operator's removal of this drop \(FQ27\)/;
+      for (const action of [
+        await act("suspend_occurrence", "occurrence", w.day),
+        await act("hold_drop", "drop", drop),
+        await act("remove_drop", "drop", other),
+      ]) {
+        await expectRefused(tx, REFUSED.integrity, (sp) => moderate(sp, action), cites);
+      }
+      await moderate(tx, await act("remove_drop", "drop", drop));
+    });
+  });
+});
+
+describe("T27 and FQ13: an account's deletion goes one way", () => {
+  it("never brings a deleted account back, changes its sign-in identity, or takes back the age confirmation", async () => {
+    await rolledBack(app, async (tx) => {
+      const user = await newUser(tx, "Eve");
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) => sp`UPDATE app.users SET auth_subject = ${randomUUID()} WHERE id = ${user}`,
+        /an account's sign-in identity can't change/,
+      );
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) => sp`UPDATE app.users SET age_confirmed_at = NULL, display_name = NULL WHERE id = ${user}`,
+        /the age confirmation can't be taken back \(FQ13\)/,
+      );
+      await tx`UPDATE app.users SET state = 'deleting', deletion_requested_at = ${AT.edited} WHERE id = ${user}`;
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) => sp`UPDATE app.users SET state = 'active', deletion_requested_at = NULL WHERE id = ${user}`,
+        /an account goes from deleting back to active \(T27\)/,
+      );
+      await tx`
+        UPDATE app.users SET state = 'deleted', deleted_at = ${AT.opened}, auth_subject = NULL, age_confirmed_at = NULL,
+                             display_name = NULL
+         WHERE id = ${user}
+      `;
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) => sp`UPDATE app.users SET state = 'deleting' WHERE id = ${user}`,
+        /an account goes from deleted back to deleting \(T27\)/,
+      );
     });
   });
 });

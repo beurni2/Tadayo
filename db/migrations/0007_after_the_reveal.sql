@@ -63,11 +63,17 @@ ALTER TABLE app.favourites ENABLE ROW LEVEL SECURITY;
 CREATE INDEX favourites_by_drop ON app.favourites (drop_id);
 
 -- Written from the reveal on (D07); a reaction never on one's own drop (spec 16); an ended comment
--- only loses its text.
+-- only loses its text. Anything new (a reaction, a comment, an edit, a favourite) needs the drop
+-- still active and the writer still a member, read with locks that a withdrawal, a removal or a
+-- departure waits for, so nothing lands after a removal's purge (T9, T24). Clearing or deleting
+-- one's own needs neither. These guard writes only: who may read is the authorization module's
+-- (T9).
 CREATE FUNCTION app.after_reveal_guard() RETURNS trigger
   LANGUAGE plpgsql SET search_path = '' AS $$
 DECLARE
   written_at timestamptz;
+  writer app.id;
+  adds boolean;
 BEGIN
   IF TG_TABLE_NAME = 'comments' AND TG_OP = 'UPDATE' THEN
     IF OLD.state <> 'active' THEN
@@ -87,6 +93,28 @@ BEGIN
   IF written_at < app.drop_reveal_at(NEW.drop_id) THEN
     RAISE EXCEPTION 'app.%: drop %''s day hasn''t opened (D07)', TG_TABLE_NAME, NEW.drop_id
       USING ERRCODE = 'integrity_constraint_violation';
+  END IF;
+  IF TG_TABLE_NAME = 'comments' THEN
+    writer := NEW.author_interval_id;
+    adds := TG_OP = 'INSERT' OR (NEW.state = 'active' AND NEW.body IS DISTINCT FROM OLD.body);
+  ELSIF TG_TABLE_NAME = 'reactions' THEN
+    writer := NEW.interval_id;
+    adds := NEW.reaction IS NOT NULL AND (TG_OP = 'INSERT' OR NEW.reaction IS DISTINCT FROM OLD.reaction);
+  ELSE
+    writer := NEW.interval_id;
+    adds := true;
+  END IF;
+  IF adds THEN
+    PERFORM FROM app.drops WHERE id = NEW.drop_id AND state = 'active' FOR SHARE;
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'app.%: drop % isn''t active, so nothing is added to it (T9, T24)', TG_TABLE_NAME, NEW.drop_id
+        USING ERRCODE = 'integrity_constraint_violation';
+    END IF;
+    PERFORM FROM app.memberships WHERE interval_id = writer AND state = 'active' FOR SHARE;
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'app.%: % is no longer a member, so adds nothing (T9)', TG_TABLE_NAME, writer
+        USING ERRCODE = 'integrity_constraint_violation';
+    END IF;
   END IF;
   IF TG_TABLE_NAME = 'reactions' THEN
     IF EXISTS (SELECT FROM app.drops WHERE id = NEW.drop_id AND author_interval_id = NEW.interval_id) THEN

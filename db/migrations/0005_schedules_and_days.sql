@@ -21,6 +21,8 @@ CREATE TABLE app.schedule_versions (
 ALTER TABLE app.schedule_versions ENABLE ROW LEVEL SECURITY;
 CREATE TRIGGER schedule_versions_written_once BEFORE UPDATE OR DELETE ON app.schedule_versions
   FOR EACH ROW EXECUTE FUNCTION app.refuse_change('an announced week never changes; a change is a new version (spec 05)');
+CREATE TRIGGER schedule_versions_no_truncate BEFORE TRUNCATE ON app.schedule_versions
+  FOR EACH STATEMENT EXECUTE FUNCTION app.refuse_change('an announced week never changes; a change is a new version (spec 05)');
 
 -- One weekday of a version and its star, never Sunday (T6). At activation, a member's days join
 -- the version as they confirm (FQ55); a weekday has one star.
@@ -43,6 +45,8 @@ ALTER TABLE app.schedule_assignments ENABLE ROW LEVEL SECURITY;
 CREATE INDEX schedule_assignments_by_star ON app.schedule_assignments (star_interval_id);
 CREATE TRIGGER schedule_assignments_written_once BEFORE UPDATE OR DELETE ON app.schedule_assignments
   FOR EACH ROW EXECUTE FUNCTION app.refuse_change('a confirmed day never changes; a change is a new version (spec 05)');
+CREATE TRIGGER schedule_assignments_no_truncate BEFORE TRUNCATE ON app.schedule_assignments
+  FOR EACH STATEMENT EXECUTE FUNCTION app.refuse_change('a confirmed day never changes; a change is a new version (spec 05)');
 
 -- One person's day in one club. Its instants are resolved by the API's time module in the club's
 -- zone: reveal_at is 07:00 on local_date and close_at 01:00 the next morning, each resolved on its
@@ -78,7 +82,8 @@ CREATE INDEX occurrences_by_star ON app.occurrences (star_interval_id, close_at)
 
 -- A day is made only for the star whose weekday it is in the version in force on its date, from
 -- that weekday's first date on, while the star is a member (T6, FQ61, FQ63). Sunday is left to
--- the CHECK.
+-- the CHECK. It holds the club's row against a new version, which takes it to update
+-- (schedule_versions_insert_guard), so neither can pass the other's check unseen.
 CREATE FUNCTION app.occurrences_insert_guard() RETURNS trigger
   LANGUAGE plpgsql SET search_path = '' AS $$
 DECLARE
@@ -87,6 +92,7 @@ BEGIN
   IF EXTRACT(isodow FROM NEW.local_date) = 7 THEN
     RETURN NEW;
   END IF;
+  PERFORM FROM app.clubs WHERE id = NEW.club_id FOR KEY SHARE;
   SELECT * INTO version FROM app.schedule_versions WHERE id = NEW.schedule_version_id;
   IF version.effective_from > NEW.local_date
      OR EXISTS (SELECT FROM app.schedule_versions
@@ -134,11 +140,15 @@ CREATE TRIGGER occurrences_status_guard BEFORE UPDATE ON app.occurrences
   FOR EACH ROW EXECUTE FUNCTION app.occurrences_status_guard();
 CREATE TRIGGER occurrences_no_delete BEFORE DELETE ON app.occurrences
   FOR EACH ROW EXECUTE FUNCTION app.refuse_change('a day is never deleted: its drops and memories name it');
+CREATE TRIGGER occurrences_no_truncate BEFORE TRUNCATE ON app.occurrences
+  FOR EACH STATEMENT EXECUTE FUNCTION app.refuse_change('a day is never deleted: its drops and memories name it');
 
--- A new version starts after every day already made for the club (FQ61).
+-- A new version starts after every day already made for the club (FQ61), and holds the club's
+-- row until it commits, so no day is made meanwhile under the version it ends.
 CREATE FUNCTION app.schedule_versions_insert_guard() RETURNS trigger
   LANGUAGE plpgsql SET search_path = '' AS $$
 BEGIN
+  PERFORM FROM app.clubs WHERE id = NEW.club_id FOR UPDATE;
   IF EXISTS (SELECT FROM app.occurrences WHERE club_id = NEW.club_id AND local_date >= NEW.effective_from) THEN
     RAISE EXCEPTION 'app.schedule_versions: a version from % would move a day already announced (FQ61)', NEW.effective_from
       USING ERRCODE = 'integrity_constraint_violation';

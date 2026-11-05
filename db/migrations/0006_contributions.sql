@@ -169,6 +169,26 @@ CREATE TRIGGER uploads_once BEFORE UPDATE ON app.uploads
 CREATE TRIGGER uploads_state_guard BEFORE INSERT OR UPDATE ON app.uploads
   FOR EACH ROW EXECUTE FUNCTION app.uploads_state_guard();
 
+-- A drop's photo is uploaded into its owner's own slot, and a replacement by the drop's author
+-- (T12): an upload never belongs to one account and fill another's slot or drop.
+CREATE FUNCTION app.uploads_owner_guard() RETURNS trigger
+  LANGUAGE plpgsql SET search_path = '' AS $$
+BEGIN
+  IF (NEW.reservation_id IS NOT NULL
+      AND NOT EXISTS (SELECT FROM app.reservations r JOIN app.memberships m ON m.interval_id = r.interval_id
+                       WHERE r.id = NEW.reservation_id AND m.user_id = NEW.owner_user_id))
+     OR (NEW.replaces_drop_id IS NOT NULL
+         AND NOT EXISTS (SELECT FROM app.drops d JOIN app.memberships m ON m.interval_id = d.author_interval_id
+                          WHERE d.id = NEW.replaces_drop_id AND m.user_id = NEW.owner_user_id)) THEN
+    RAISE EXCEPTION 'app.uploads: an upload fills only its owner''s own slot or drop (T12)'
+      USING ERRCODE = 'integrity_constraint_violation';
+  END IF;
+  RETURN NEW;
+END
+$$;
+CREATE TRIGGER uploads_owner_guard BEFORE INSERT ON app.uploads
+  FOR EACH ROW EXECUTE FUNCTION app.uploads_owner_guard();
+
 -- A prepared upload's private derivatives, stripped of metadata and streamed only by the API's
 -- media routes (T12, ADR-009, ADR-014). Their sizes are served only after the reveal (T10).
 CREATE TABLE app.upload_renditions (
@@ -246,10 +266,32 @@ ALTER TABLE app.uploads
 ALTER TABLE app.users
   ADD CONSTRAINT users_avatar FOREIGN KEY (avatar_upload_id, id) REFERENCES app.uploads (id, owner_user_id);
 
+-- An avatar is a ready upload made to be one, never a drop's photo, which every member would then
+-- see before the reveal (T10, T12, FQ74). Ready is final, so it stays ready.
+CREATE FUNCTION app.users_avatar_guard() RETURNS trigger
+  LANGUAGE plpgsql SET search_path = '' AS $$
+BEGIN
+  IF NEW.avatar_upload_id IS NOT NULL
+     AND (TG_OP = 'INSERT' OR NEW.avatar_upload_id IS DISTINCT FROM OLD.avatar_upload_id)
+     AND NOT EXISTS (SELECT FROM app.uploads
+                      WHERE id = NEW.avatar_upload_id AND purpose = 'avatar' AND state = 'ready') THEN
+    RAISE EXCEPTION 'app.users: an avatar is a ready upload made as one (T12, FQ74)'
+      USING ERRCODE = 'integrity_constraint_violation';
+  END IF;
+  RETURN NEW;
+END
+$$;
+CREATE TRIGGER users_avatar_guard BEFORE INSERT OR UPDATE ON app.users
+  FOR EACH ROW EXECUTE FUNCTION app.users_avatar_guard();
+
 CREATE FUNCTION app.drops_guard() RETURNS trigger
   LANGUAGE plpgsql SET search_path = '' AS $$
 DECLARE
   reveal timestamptz;
+  author app.id;
+  new_upload boolean;
+  new_source boolean;
+  new_pending boolean;
 BEGIN
   SELECT reveal_at INTO reveal FROM app.occurrences WHERE id = NEW.occurrence_id;
   IF TG_OP = 'INSERT' THEN
@@ -257,10 +299,11 @@ BEGIN
       RAISE EXCEPTION 'app.drops: a drop is committed active, at version 1, before the reveal (T3)'
         USING ERRCODE = 'integrity_constraint_violation';
     END IF;
-    RETURN NEW;
-  END IF;
-  -- Withdrawn and removed are final; the purge only takes the content away (T23, T24).
-  IF OLD.state IN ('withdrawn', 'removed') THEN
+    new_upload := NEW.upload_id IS NOT NULL;
+    new_source := NEW.source_id IS NOT NULL;
+    new_pending := NEW.pending_upload_id IS NOT NULL;
+  ELSIF OLD.state IN ('withdrawn', 'removed') THEN
+    -- Withdrawn and removed are final; the purge only takes the content away (T23, T24).
     IF (NEW.state, NEW.version, NEW.updated_at, NEW.ended_at) IS DISTINCT FROM (OLD.state, OLD.version, OLD.updated_at, OLD.ended_at)
        OR (NEW.caption IS NOT NULL AND NEW.caption IS DISTINCT FROM OLD.caption)
        OR (NEW.upload_id IS NOT NULL AND NEW.upload_id IS DISTINCT FROM OLD.upload_id)
@@ -271,21 +314,63 @@ BEGIN
         USING ERRCODE = 'integrity_constraint_violation';
     END IF;
     RETURN NEW;
+  ELSE
+    IF NEW.version < OLD.version OR NEW.updated_at < OLD.updated_at THEN
+      RAISE EXCEPTION 'app.drops: a drop''s version and time never go back (T19)'
+        USING ERRCODE = 'integrity_constraint_violation';
+    END IF;
+    -- Every change to the content or the state carries the instant it was made, so the checks
+    -- below judge it at that instant (T1, T3, T29).
+    IF NEW.updated_at = OLD.updated_at
+       AND (NEW.caption, NEW.upload_id, NEW.source_id, NEW.pending_upload_id, NEW.dedupe_key, NEW.state)
+           IS DISTINCT FROM (OLD.caption, OLD.upload_id, OLD.source_id, OLD.pending_upload_id, OLD.dedupe_key, OLD.state) THEN
+      RAISE EXCEPTION 'app.drops: a change to a drop''s content or state carries the instant it was made (T1, T3)'
+        USING ERRCODE = 'integrity_constraint_violation';
+    END IF;
+    -- An edit of the caption or the media is a new version, which the next edit expects (T19).
+    IF NEW.state IN ('active', 'held') AND NEW.version <> OLD.version + 1
+       AND (NEW.caption, NEW.upload_id, NEW.source_id) IS DISTINCT FROM (OLD.caption, OLD.upload_id, OLD.source_id) THEN
+      RAISE EXCEPTION 'app.drops: an edit of a drop''s caption or media moves its version by one (T19)'
+        USING ERRCODE = 'integrity_constraint_violation';
+    END IF;
+    -- Frozen at the reveal: no edit, replacement or swap from then on (T3).
+    IF NEW.state IN ('active', 'held') AND NEW.updated_at >= reveal
+       AND (NEW.caption, NEW.upload_id, NEW.source_id, NEW.pending_upload_id, NEW.dedupe_key)
+           IS DISTINCT FROM (OLD.caption, OLD.upload_id, OLD.source_id, OLD.pending_upload_id, OLD.dedupe_key) THEN
+      RAISE EXCEPTION 'app.drops: the day opened at %, so the drop is frozen (T3)', reveal
+        USING ERRCODE = 'integrity_constraint_violation';
+    END IF;
+    -- A drop on hold at the reveal never appears afterwards (T29).
+    IF OLD.state = 'held' AND NEW.state = 'active' AND NEW.updated_at >= reveal THEN
+      RAISE EXCEPTION 'app.drops: a held drop never appears after the reveal (T29)'
+        USING ERRCODE = 'integrity_constraint_violation';
+    END IF;
+    new_upload := NEW.upload_id IS NOT NULL AND NEW.upload_id IS DISTINCT FROM OLD.upload_id;
+    new_source := NEW.source_id IS NOT NULL AND NEW.source_id IS DISTINCT FROM OLD.source_id;
+    new_pending := NEW.pending_upload_id IS NOT NULL AND NEW.pending_upload_id IS DISTINCT FROM OLD.pending_upload_id;
   END IF;
-  IF NEW.version < OLD.version OR NEW.updated_at < OLD.updated_at THEN
-    RAISE EXCEPTION 'app.drops: a drop''s version and time never go back (T19)'
+  -- The media is the author's own: a photo ready after preparation and uploaded for this day's
+  -- slot or as this drop's replacement, or a link the author resolved (T12, T40; TECH-DESIGN
+  -- section 5: only a ready upload is committed). Never another account's, an avatar or one held.
+  IF new_upload OR new_source OR new_pending THEN
+    SELECT user_id INTO author FROM app.memberships WHERE interval_id = NEW.author_interval_id;
+  END IF;
+  IF new_upload AND NOT EXISTS (
+       SELECT FROM app.uploads u
+        WHERE u.id = NEW.upload_id AND u.owner_user_id = author AND u.state = 'ready'
+          AND (u.replaces_drop_id = NEW.id
+               OR EXISTS (SELECT FROM app.reservations r
+                           WHERE r.id = u.reservation_id AND r.occurrence_id = NEW.occurrence_id
+                             AND r.interval_id = NEW.author_interval_id))) THEN
+    RAISE EXCEPTION 'app.drops: a drop''s photo is its author''s ready upload for this day or this drop (T12)'
       USING ERRCODE = 'integrity_constraint_violation';
   END IF;
-  -- Frozen at the reveal: no edit, replacement or swap from then on (T3).
-  IF NEW.state IN ('active', 'held') AND NEW.updated_at >= reveal
-     AND (NEW.caption, NEW.upload_id, NEW.source_id, NEW.pending_upload_id, NEW.dedupe_key)
-         IS DISTINCT FROM (OLD.caption, OLD.upload_id, OLD.source_id, OLD.pending_upload_id, OLD.dedupe_key) THEN
-    RAISE EXCEPTION 'app.drops: the day opened at %, so the drop is frozen (T3)', reveal
+  IF new_source AND NOT EXISTS (SELECT FROM app.sources WHERE id = NEW.source_id AND owner_user_id = author) THEN
+    RAISE EXCEPTION 'app.drops: a drop''s link is one its author resolved (T40)'
       USING ERRCODE = 'integrity_constraint_violation';
   END IF;
-  -- A drop on hold at the reveal never appears afterwards (T29).
-  IF OLD.state = 'held' AND NEW.state = 'active' AND NEW.updated_at >= reveal THEN
-    RAISE EXCEPTION 'app.drops: a held drop never appears after the reveal (T29)'
+  IF new_pending AND NOT EXISTS (SELECT FROM app.uploads WHERE id = NEW.pending_upload_id AND owner_user_id = author) THEN
+    RAISE EXCEPTION 'app.drops: a drop''s replacement is its author''s own upload (T12)'
       USING ERRCODE = 'integrity_constraint_violation';
   END IF;
   RETURN NEW;
@@ -300,6 +385,8 @@ CREATE TRIGGER drops_once BEFORE UPDATE ON app.drops
   FOR EACH ROW EXECUTE FUNCTION app.set_once('audience_sealed_at', 'ended_at');
 CREATE TRIGGER drops_no_delete BEFORE DELETE ON app.drops
   FOR EACH ROW EXECUTE FUNCTION app.refuse_change('a drop is withdrawn or removed, never deleted: its audience names it');
+CREATE TRIGGER drops_no_truncate BEFORE TRUNCATE ON app.drops
+  FOR EACH STATEMENT EXECUTE FUNCTION app.refuse_change('a drop is withdrawn or removed, never deleted: its audience names it');
 
 -- The intervals that may read a drop: every active member of its club at the commit, the
 -- author and the star among them (T8). The commit writes them and then seals the drop; from
@@ -423,11 +510,21 @@ BEGIN
         USING ERRCODE = 'integrity_constraint_violation';
     END IF;
   END IF;
-  -- Pointing it, but not clearing it, needs an active drop before the reveal (spec 31, T3).
+  -- Pointing it needs an active drop before the reveal (spec 31, T3).
   IF NEW.drop_id IS NOT NULL AND (TG_OP = 'INSERT' OR NEW.drop_id IS DISTINCT FROM OLD.drop_id) THEN
     SELECT state INTO drop_state FROM app.drops WHERE id = NEW.drop_id FOR SHARE;
     IF drop_state <> 'active' OR NEW.updated_at >= app.drop_reveal_at(NEW.drop_id) THEN
       RAISE EXCEPTION 'app.highlights: a highlight points to an active drop, before the reveal (T3, T22)'
+        USING ERRCODE = 'integrity_constraint_violation';
+    END IF;
+  END IF;
+  -- Clearing it from the reveal on comes only with the drop's withdrawal or removal, written
+  -- first in the same transaction (T3, T22, T24). A hold keeps it: the hold may lift before the
+  -- reveal, and the read side never shows a held drop (T29).
+  IF TG_OP = 'UPDATE' AND OLD.drop_id IS NOT NULL AND NEW.drop_id IS NULL THEN
+    SELECT state INTO drop_state FROM app.drops WHERE id = OLD.drop_id FOR SHARE;
+    IF drop_state NOT IN ('withdrawn', 'removed') AND NEW.updated_at >= app.drop_reveal_at(OLD.drop_id) THEN
+      RAISE EXCEPTION 'app.highlights: from the reveal on, a highlight is cleared only when its drop ends (T3, T22)'
         USING ERRCODE = 'integrity_constraint_violation';
     END IF;
   END IF;
@@ -438,6 +535,8 @@ CREATE TRIGGER highlights_guard BEFORE INSERT OR UPDATE OR DELETE ON app.highlig
   FOR EACH ROW EXECUTE FUNCTION app.highlights_guard();
 CREATE TRIGGER highlights_keep BEFORE UPDATE ON app.highlights
   FOR EACH ROW EXECUTE FUNCTION app.keep_columns('occurrence_id', 'interval_id');
+CREATE TRIGGER highlights_no_truncate BEFORE TRUNCATE ON app.highlights
+  FOR EACH STATEMENT EXECUTE FUNCTION app.refuse_change('a highlight is cleared, never deleted, so its version never goes back (T22)');
 
 -- A withdrawal or removal clears the highlight on the drop in the same transaction (T22, T24).
 CREATE FUNCTION app.drops_ended_unhighlighted() RETURNS trigger

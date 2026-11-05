@@ -95,6 +95,8 @@ CREATE TRIGGER clubs_once BEFORE UPDATE ON app.clubs
   FOR EACH ROW EXECUTE FUNCTION app.set_once('activated_at');
 CREATE TRIGGER clubs_no_delete BEFORE DELETE ON app.clubs
   FOR EACH ROW EXECUTE FUNCTION app.refuse_change('a club is never deleted: its days and audiences name it');
+CREATE TRIGGER clubs_no_truncate BEFORE TRUNCATE ON app.clubs
+  FOR EACH STATEMENT EXECUTE FUNCTION app.refuse_change('a club is never deleted: its days and audiences name it');
 
 -- One row per membership interval (TECH-DESIGN section 6): a rejoin is a new interval, which
 -- inherits nothing (T8, Q06). The contract calls its id `membership_id`.
@@ -164,6 +166,8 @@ CREATE TRIGGER memberships_guard BEFORE INSERT OR UPDATE ON app.memberships
   FOR EACH ROW EXECUTE FUNCTION app.memberships_guard();
 CREATE TRIGGER memberships_no_delete BEFORE DELETE ON app.memberships
   FOR EACH ROW EXECUTE FUNCTION app.refuse_change('an interval is never deleted: audiences name it (T8)');
+CREATE TRIGGER memberships_no_truncate BEFORE TRUNCATE ON app.memberships
+  FOR EACH STATEMENT EXECUTE FUNCTION app.refuse_change('an interval is never deleted: audiences name it (T8)');
 
 -- The creator's membership is made in the club's own transaction.
 ALTER TABLE app.clubs

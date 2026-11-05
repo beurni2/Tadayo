@@ -75,7 +75,13 @@ describe("T8: the audience is sealed at the commit", () => {
         (sp) => sp`DELETE FROM app.drop_audience WHERE drop_id = ${drop} AND interval_id = ${w.cleo.interval}`,
         never,
       );
-      await expectRefused(tx, REFUSED.integrity, (sp) => sp`TRUNCATE app.drop_audience CASCADE`, /truncate refused/);
+      // Its own trigger, which fires first: the cascade's other tables have theirs.
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) => sp`TRUNCATE app.drop_audience CASCADE`,
+        /^app\.drop_audience: truncate refused/,
+      );
     });
   });
 

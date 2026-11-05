@@ -27,6 +27,8 @@ CREATE TRIGGER candidates_once BEFORE UPDATE ON app.candidates
   FOR EACH ROW EXECUTE FUNCTION app.set_once('ended_at');
 CREATE TRIGGER candidates_no_delete BEFORE DELETE ON app.candidates
   FOR EACH ROW EXECUTE FUNCTION app.refuse_change('a candidate is ended, never deleted');
+CREATE TRIGGER candidates_no_truncate BEFORE TRUNCATE ON app.candidates
+  FOR EACH STATEMENT EXECUTE FUNCTION app.refuse_change('a candidate is ended, never deleted');
 CREATE INDEX candidates_by_proposer ON app.candidates (proposed_by_interval_id) WHERE state = 'open';
 
 -- An exact proposed roster. At most one is open per club; a new proposal supersedes it.
@@ -67,6 +69,21 @@ BEGIN
     RAISE EXCEPTION 'app.roster_revisions: a revision''s version moves by one with its state, and only then (T33)'
       USING ERRCODE = 'integrity_constraint_violation';
   END IF;
+  -- The seal: the members written are exactly the club's active members now (T7). Every
+  -- command that adds a member holds the club's row (0003), so nobody joins before this commits.
+  IF OLD.roster_sealed_at IS NULL AND NEW.roster_sealed_at IS NOT NULL THEN
+    PERFORM FROM app.clubs WHERE id = NEW.club_id FOR SHARE;
+    IF EXISTS (SELECT FROM app.memberships m
+                WHERE m.club_id = NEW.club_id AND m.state = 'active'
+                  AND NOT EXISTS (SELECT FROM app.roster_revision_members r
+                                   WHERE r.revision_id = NEW.id AND r.interval_id = m.interval_id))
+       OR EXISTS (SELECT FROM app.roster_revision_members r
+                    JOIN app.memberships m ON m.interval_id = r.interval_id
+                   WHERE r.revision_id = NEW.id AND m.state <> 'active') THEN
+      RAISE EXCEPTION 'app.roster_revisions: revision %''s roster isn''t exactly the club''s members (T7)', NEW.id
+        USING ERRCODE = 'integrity_constraint_violation';
+    END IF;
+  END IF;
   RETURN NEW;
 END
 $$;
@@ -78,6 +95,8 @@ CREATE TRIGGER roster_revisions_guard BEFORE UPDATE ON app.roster_revisions
   FOR EACH ROW EXECUTE FUNCTION app.roster_revisions_guard();
 CREATE TRIGGER roster_revisions_no_delete BEFORE DELETE ON app.roster_revisions
   FOR EACH ROW EXECUTE FUNCTION app.refuse_change('a revision is ended, never deleted (T7)');
+CREATE TRIGGER roster_revisions_no_truncate BEFORE TRUNCATE ON app.roster_revisions
+  FOR EACH STATEMENT EXECUTE FUNCTION app.refuse_change('a revision is ended, never deleted (T7)');
 
 -- The members a revision proposes the club to keep, as they were when it was made: the members
 -- who approve it, and the names its candidates see. Names are read live, never copied.
@@ -113,8 +132,10 @@ CREATE TABLE app.invitations (
     DEFERRABLE INITIALLY DEFERRED,
   CHECK (expires_at > created_at),
   CHECK ((bound_user_id IS NULL) = (bound_at IS NULL)),
-  -- A link used to accept can't be revoked or replaced (handoff 4).
+  -- A link used to accept can't be revoked or replaced (handoff 4), and an expired link can't be
+  -- used (FQ71).
   CHECK (bound_user_id IS NULL OR (revoked_at IS NULL AND replaced_by_id IS NULL)),
+  CONSTRAINT invitations_bound_before_expiry CHECK (bound_at IS NULL OR bound_at < expires_at),
   CHECK (replaced_by_id <> id)
 );
 ALTER TABLE app.invitations ENABLE ROW LEVEL SECURITY;
@@ -127,6 +148,8 @@ CREATE TRIGGER invitations_once BEFORE UPDATE ON app.invitations
   FOR EACH ROW EXECUTE FUNCTION app.set_once('revoked_at', 'replaced_by_id', 'bound_user_id', 'bound_at');
 CREATE TRIGGER invitations_no_delete BEFORE DELETE ON app.invitations
   FOR EACH ROW EXECUTE FUNCTION app.refuse_change('a link is revoked or replaced, never deleted');
+CREATE TRIGGER invitations_no_truncate BEFORE TRUNCATE ON app.invitations
+  FOR EACH STATEMENT EXECUTE FUNCTION app.refuse_change('a link is revoked or replaced, never deleted');
 
 -- Each candidate on a revision, with the one name that revision shows (FQ66) and that
 -- candidate's acceptance of this exact revision.
@@ -173,11 +196,16 @@ CREATE TABLE app.roster_approvals (
 ALTER TABLE app.roster_approvals ENABLE ROW LEVEL SECURITY;
 CREATE TRIGGER roster_approvals_written_once BEFORE UPDATE OR DELETE ON app.roster_approvals
   FOR EACH ROW EXECUTE FUNCTION app.refuse_change('a decision is made once');
+CREATE TRIGGER roster_approvals_no_truncate BEFORE TRUNCATE ON app.roster_approvals
+  FOR EACH STATEMENT EXECUTE FUNCTION app.refuse_change('a decision is made once');
 
 -- The seal (T7). Members and candidates join a revision only in the transaction that makes it,
 -- before it's sealed; an acceptance or approval counts only while it's open; and the
--- transaction that makes it seals it, with its proposer among its members and at least one
--- candidate, or doesn't commit.
+-- transaction that makes it seals it, with exactly the club's active members as its members
+-- when it's sealed (roster_revisions_guard), its proposer among them, and at least one
+-- candidate, or doesn't commit. Only a member who is
+-- still active decides, and only the proposer of a member's proposal approves by proposing
+-- (FQ60), never in a revision the server made (FQ84).
 CREATE FUNCTION app.roster_revision_rows_guard() RETURNS trigger
   LANGUAGE plpgsql SET search_path = '' AS $$
 DECLARE
@@ -201,6 +229,18 @@ BEGIN
   IF TG_TABLE_NAME = 'roster_approvals' AND revision.roster_sealed_at IS NULL THEN
     RAISE EXCEPTION 'app.roster_approvals: revision % isn''t sealed yet (T7)', NEW.revision_id
       USING ERRCODE = 'integrity_constraint_violation';
+  END IF;
+  IF TG_TABLE_NAME = 'roster_approvals' THEN
+    -- Held until this commits, so the member can't leave in between.
+    PERFORM FROM app.memberships WHERE interval_id = NEW.interval_id AND state = 'active' FOR SHARE;
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'app.roster_approvals: % is no longer a member, so doesn''t decide (T7)', NEW.interval_id
+        USING ERRCODE = 'integrity_constraint_violation';
+    END IF;
+    IF NEW.implicit AND (revision.origin <> 'proposal' OR NEW.interval_id <> revision.proposed_by_interval_id) THEN
+      RAISE EXCEPTION 'app.roster_approvals: only the proposer of a member''s proposal approves by proposing (FQ60, FQ84)'
+        USING ERRCODE = 'integrity_constraint_violation';
+    END IF;
   END IF;
   RETURN NEW;
 END
@@ -248,7 +288,9 @@ ALTER TABLE app.memberships
   REFERENCES app.roster_revision_candidates (revision_id, candidate_id);
 
 -- A candidate becomes a member only through the exact revision they accepted, with their own
--- link, once every member of that roster has approved it and it has been applied (T7).
+-- link, once every member of that roster has approved it and it has been applied, and only if
+-- every member the club has now approved it, apart from the candidates joining with them (T7).
+-- memberships_guard, which runs first, holds the club's row.
 CREATE FUNCTION app.memberships_join_guard() RETURNS trigger
   LANGUAGE plpgsql SET search_path = '' AS $$
 BEGIN
@@ -262,6 +304,12 @@ BEGIN
                  WHERE m.revision_id = NEW.joined_via_revision_id
                    AND NOT EXISTS (SELECT FROM app.roster_approvals a
                                     WHERE a.revision_id = m.revision_id AND a.interval_id = m.interval_id
+                                      AND a.decision = 'approved'))
+     OR EXISTS (SELECT FROM app.memberships m
+                 WHERE m.club_id = NEW.club_id AND m.state = 'active'
+                   AND m.joined_via_revision_id IS DISTINCT FROM NEW.joined_via_revision_id
+                   AND NOT EXISTS (SELECT FROM app.roster_approvals a
+                                    WHERE a.revision_id = NEW.joined_via_revision_id AND a.interval_id = m.interval_id
                                       AND a.decision = 'approved')) THEN
     RAISE EXCEPTION 'app.memberships: % joins only by an exact roster they accepted and every member approved (T7)',
       NEW.user_id

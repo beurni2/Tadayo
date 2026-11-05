@@ -168,6 +168,14 @@ describe("T4 and T6: an announced day never moves", () => {
           "star_interval_id",
           (sp: Tx) => sp`UPDATE app.occurrences SET star_interval_id = ${w.ben.interval} WHERE id = ${w.day}`,
         ],
+        [
+          "schedule_version_id",
+          (sp: Tx) => sp`UPDATE app.occurrences SET schedule_version_id = ${newId("sched")} WHERE id = ${w.day}`,
+        ],
+        [
+          "collecting_from",
+          (sp: Tx) => sp`UPDATE app.occurrences SET collecting_from = ${AT.created} WHERE id = ${w.day}`,
+        ],
       ] as const) {
         await expectRefused(tx, REFUSED.integrity, statement, new RegExp(`app\\.occurrences\\.${column} can't change`));
       }

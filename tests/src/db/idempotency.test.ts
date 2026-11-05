@@ -10,7 +10,7 @@ import { OPERATIONS } from "@tadayo/contracts";
 import { type IdempotentRequest, replayOutcome, requestHash } from "@tadayo/domain";
 import { afterAll, describe, expect, it } from "vitest";
 import { appSql, expectRefused, REFUSED, rolledBack, type Tx } from "./harness.ts";
-import { AT, checkAsAtCommit, commitDrop, newWorld } from "./world.ts";
+import { AT, checkAsAtCommit, commitDrop, newUser, newWorld } from "./world.ts";
 
 const app = appSql();
 afterAll(async () => {
@@ -113,16 +113,29 @@ describe("T19: the same key is the same request, or IDEMPOTENCY_CONFLICT", () =>
     });
   });
 
-  it("stores no caption, comment, note, link or token in a response", async () => {
+  it("stores no caption, comment, note, link or token in a response, under any key", async () => {
     await rolledBack(app, async (tx) => {
       const w = await newWorld(tx);
       for (const body of [
         { drop_id: "drp_x", caption: "Happy birthday" },
         { comment_id: "cmt_x", text: "So good" },
+        { report_id: "rpt_x", note: "Not ok" },
+        { comment: { body: "So good" } },
         { upload: { id: "upl_x", signed_upload: { method: "PUT" } } },
         { items: [{ link: { url: "https://example.invalid/a" } }] },
         { source: { original_url: "https://www.tiktok.com/@a/video/1" } },
+        { player: { player_url: "https://www.tiktok.com/embed/v2/1" } },
         { token: "secret" },
+        // What the exact names would miss (review finding privacy 5 of PR #17).
+        { Caption: "Happy birthday" },
+        { captions: ["Happy birthday"] },
+        { caption_preview: "Happy" },
+        { preview: "Happy birthday" },
+        { message: "So good" },
+        { signedUpload: { href: "https://storage.example.invalid/u" } },
+        { link: "https://tadayo.app/i#token" },
+        { next: "https://tadayo.app/i#token" },
+        { items: ["https://tadayo.app/i#token"] },
       ]) {
         const key = randomUUID();
         await begin(tx, w.ben.user, key, remove("drp_x", "withdraw"));
@@ -133,6 +146,57 @@ describe("T19: the same key is the same request, or IDEMPOTENCY_CONFLICT", () =>
           /idempotency_receipts_response_body_check/,
         );
       }
+    });
+  });
+
+  it("stores ids, states, flags and people's names, whatever a name holds", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await newWorld(tx);
+      const key = randomUUID();
+      await begin(tx, w.ben.user, key, remove("drp_x", "withdraw"));
+      await complete(tx, w.ben.user, key, "removeDrop", {
+        drop_id: "drp_x",
+        version: 2,
+        server_now: "2026-11-06T22:00:00Z",
+        text_previews: true,
+        accepting_links: false,
+        caption: null,
+        members: [{ membership_id: "mem_x", display_name: "ana://www" }],
+      });
+      await checkAsAtCommit(tx);
+    });
+  });
+
+  it("deletes an account's receipts before it becomes a shell, and keeps none for it after (T27)", async () => {
+    await rolledBack(app, async (tx) => {
+      const user = await newUser(tx, "Eve");
+      const key = randomUUID();
+      await begin(tx, user, key, remove("drp_x", "withdraw"));
+      await complete(tx, user, key, "removeDrop", { drop_id: "drp_x", state: "withdrawn" });
+      await tx`UPDATE app.users SET state = 'deleting', deletion_requested_at = ${AT.edited} WHERE id = ${user}`;
+      const shell = (sp: Tx) => sp`
+        UPDATE app.users SET state = 'deleted', deleted_at = ${AT.opened}, auth_subject = NULL, age_confirmed_at = NULL,
+                             display_name = NULL
+         WHERE id = ${user}
+      `;
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        async (sp) => {
+          await shell(sp);
+          await checkAsAtCommit(sp);
+        },
+        /was deleted with its receipts still kept \(T27\)/,
+      );
+      await tx`DELETE FROM app.idempotency_receipts WHERE actor_user_id = ${user}`;
+      await shell(tx);
+      await checkAsAtCommit(tx);
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) => begin(sp, user, randomUUID(), remove("drp_x", "withdraw")),
+        /is deleted, so keeps no receipts \(T27\)/,
+      );
     });
   });
 

@@ -28,6 +28,8 @@ CREATE TRIGGER moderation_cases_once BEFORE UPDATE ON app.moderation_cases
   FOR EACH ROW EXECUTE FUNCTION app.set_once('closed_at');
 CREATE TRIGGER moderation_cases_no_delete BEFORE DELETE ON app.moderation_cases
   FOR EACH ROW EXECUTE FUNCTION app.refuse_change('a case is closed, never deleted');
+CREATE TRIGGER moderation_cases_no_truncate BEFORE TRUNCATE ON app.moderation_cases
+  FOR EACH STATEMENT EXECUTE FUNCTION app.refuse_change('a case is closed, never deleted');
 
 -- The audit trail of every moderation script (FQ27): who ran which script at which commit, what
 -- it did to which id, and under which policy (T29). It holds ids and codes only (T52), and its
@@ -104,7 +106,8 @@ CREATE TABLE app.drop_removals (
   reason text NOT NULL CHECK (reason IN ('withdraw', 'leave', 'block', 'pictured', 'moderation', 'account_deletion')),
   -- The author, or the member in the photograph; none for moderation.
   actor_interval_id app.id,
-  operator_action_id app.id REFERENCES app.operator_actions,
+  -- The operator's remove_drop action on this drop, one per removal (FQ27).
+  operator_action_id app.id UNIQUE REFERENCES app.operator_actions,
   -- Server time under the day's lock (T3): before the reveal it frees the slot (T18).
   removed_at timestamptz NOT NULL,
   FOREIGN KEY (drop_id, actor_interval_id) REFERENCES app.drop_audience (drop_id, interval_id),
@@ -127,6 +130,21 @@ BEGIN
   IF NEW.reason = 'pictured' AND (NEW.actor_interval_id = d.author_interval_id OR d.media_class <> 'photo'
                                   OR NEW.removed_at < app.drop_reveal_at(d.id)) THEN
     RAISE EXCEPTION 'app.drop_removals: a member in a revealed photo, never its author, removes it as pictured (T25)'
+      USING ERRCODE = 'integrity_constraint_violation';
+  END IF;
+  IF NEW.reason = 'pictured' THEN
+    PERFORM FROM app.memberships WHERE interval_id = NEW.actor_interval_id AND state = 'active' FOR SHARE;
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'app.drop_removals: % is no longer a member, so removes nothing as pictured (T9, T25)',
+        NEW.actor_interval_id
+        USING ERRCODE = 'integrity_constraint_violation';
+    END IF;
+  END IF;
+  IF NEW.reason = 'moderation' AND NOT EXISTS (
+       SELECT FROM app.operator_actions
+        WHERE id = NEW.operator_action_id AND action = 'remove_drop' AND target_kind = 'drop'
+          AND target_id = NEW.drop_id) THEN
+    RAISE EXCEPTION 'app.drop_removals: a moderation removal cites the operator''s removal of this drop (FQ27)'
       USING ERRCODE = 'integrity_constraint_violation';
   END IF;
   RETURN NEW;

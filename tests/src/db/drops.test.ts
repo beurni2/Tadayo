@@ -7,12 +7,67 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import { afterAll, describe, expect, it } from "vitest";
 import { appSql, expectRefused, REFUSED, rolledBack, type Tx } from "./harness.ts";
-import { AT, checkAsAtCommit, commitDrop, newId, newWorld, type World } from "./world.ts";
+import { AT, checkAsAtCommit, commitDrop, newId, newWorld, type Member, type World } from "./world.ts";
 
 const app = appSql();
 afterAll(async () => {
   await app.end();
 });
+
+/** An instant `minutes` after `at`. */
+function after(at: Date, minutes = 1): Date {
+  return new Date(at.getTime() + minutes * 60_000);
+}
+
+/** A live photo slot for `member` on the world's day. */
+async function reserve(tx: Tx, w: World, member: Member): Promise<string> {
+  await tx`
+    INSERT INTO app.contribution_counters (occurrence_id, interval_id, club_id)
+    VALUES (${w.day}, ${member.interval}, ${w.club}) ON CONFLICT DO NOTHING
+  `;
+  const id = newId("rsv");
+  await tx`
+    INSERT INTO app.reservations (id, occurrence_id, interval_id, media_class, request_key, created_at, expires_at)
+    VALUES (${id}, ${w.day}, ${member.interval}, 'photo', ${randomUUID()}, ${AT.added}, ${AT.reveal})
+  `;
+  return id;
+}
+
+/** An upload of `owner`'s, for a slot, as a drop's replacement, or as an avatar, taken to `end`. */
+async function upload(
+  tx: Tx,
+  owner: string,
+  purpose: { reservation: string } | { replaces: string } | "avatar",
+  end: "pending" | "ready" | "held" = "ready",
+): Promise<string> {
+  const id = newId("upl");
+  const reservation = typeof purpose === "object" && "reservation" in purpose ? purpose.reservation : null;
+  const replaces = typeof purpose === "object" && "replaces" in purpose ? purpose.replaces : null;
+  const kind = reservation ? "drop_photo" : replaces ? "replacement" : "avatar";
+  await tx`
+    INSERT INTO app.uploads (id, owner_user_id, purpose, reservation_id, replaces_drop_id, content_type, byte_size, object_key,
+                             created_at, expires_at)
+    VALUES (${id}, ${owner}, ${kind}, ${reservation}, ${replaces}, 'image/jpeg', 1000, ${newId("uploads/raw")}, ${AT.added},
+            ${AT.close})
+  `;
+  if (end !== "pending") {
+    await tx`UPDATE app.uploads SET state = 'preparing' WHERE id = ${id}`;
+    await tx`
+      UPDATE app.uploads SET state = ${end}, content_hash = ${randomBytes(32)}, content_version = ${newId("v")} WHERE id = ${id}
+    `;
+  }
+  return id;
+}
+
+/** The drop row of a photo commit, alone: the guards it meets run before its foreign keys. */
+function insertPhotoDrop(tx: Tx, w: World, author: Member, uploadId: string, state = "active", version = 1) {
+  return tx`
+    INSERT INTO app.drops (id, occurrence_id, club_id, author_interval_id, media_class, upload_id, dedupe_key, state, version,
+                           submitted_at, updated_at)
+    VALUES (${newId("drp")}, ${w.day}, ${w.club}, ${author.interval}, 'photo', ${uploadId}, ${randomBytes(32)}, ${state},
+            ${version}, ${AT.added}, ${AT.added})
+  `;
+}
 
 function setHighlight(tx: Tx, w: World, drop: string | null, version: number, at: Date) {
   return tx`
@@ -54,6 +109,54 @@ describe("T3: the reveal is the cutoff", () => {
         (sp) => sp`UPDATE app.drops SET dedupe_key = ${randomBytes(32)}, updated_at = ${AT.opened} WHERE id = ${drop}`,
         /so the drop is frozen \(T3\)/,
       );
+    });
+  });
+
+  it("judges every change at its own instant, and an edit is a new version (T1, T3, T19)", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await newWorld(tx);
+      const drop = await commitDrop(tx, w, w.ben, { caption: "Picnic" });
+      const instant = /a change to a drop's content or state carries the instant it was made \(T1, T3\)/;
+      // An edit that kept the commit's instant would be judged at that instant, even after the reveal.
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) => sp`UPDATE app.drops SET caption = 'Late', version = 2 WHERE id = ${drop}`,
+        instant,
+      );
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) => sp`UPDATE app.drops SET state = 'held' WHERE id = ${drop}`,
+        instant,
+      );
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) => sp`UPDATE app.drops SET caption = 'Picnic!', updated_at = ${AT.edited} WHERE id = ${drop}`,
+        /an edit of a drop's caption or media moves its version by one \(T19\)/,
+      );
+      await tx`UPDATE app.drops SET caption = 'Picnic!', version = 2, updated_at = ${AT.edited} WHERE id = ${drop}`;
+      const back = /a drop's version and time never go back \(T19\)/;
+      await expectRefused(tx, REFUSED.integrity, (sp) => sp`UPDATE app.drops SET version = 1 WHERE id = ${drop}`, back);
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) => sp`UPDATE app.drops SET updated_at = ${AT.added} WHERE id = ${drop}`,
+        back,
+      );
+    });
+  });
+
+  it("commits a drop only active and at version 1", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await newWorld(tx);
+      const slot = await reserve(tx, w, w.ben);
+      const photo = await upload(tx, w.ben.user, { reservation: slot });
+      const refused = /a drop is committed active, at version 1, before the reveal \(T3\)/;
+      await expectRefused(tx, REFUSED.integrity, (sp) => insertPhotoDrop(sp, w, w.ben, photo, "held"), refused);
+      await expectRefused(tx, REFUSED.integrity, (sp) => insertPhotoDrop(sp, w, w.ben, photo, "active", 2), refused);
+      await insertPhotoDrop(tx, w, w.ben, photo);
     });
   });
 
@@ -105,9 +208,9 @@ describe("T29: a drop on hold at the reveal never appears afterwards", () => {
     await rolledBack(app, async (tx) => {
       const w = await newWorld(tx);
       const drop = await commitDrop(tx, w, w.ben);
-      await tx`UPDATE app.drops SET state = 'held', updated_at = ${AT.added} WHERE id = ${drop}`;
+      await tx`UPDATE app.drops SET state = 'held', updated_at = ${after(AT.added)} WHERE id = ${drop}`;
       await tx`UPDATE app.drops SET state = 'active', updated_at = ${AT.edited} WHERE id = ${drop}`;
-      await tx`UPDATE app.drops SET state = 'held', updated_at = ${AT.edited} WHERE id = ${drop}`;
+      await tx`UPDATE app.drops SET state = 'held', updated_at = ${after(AT.edited)} WHERE id = ${drop}`;
       await expectRefused(
         tx,
         REFUSED.integrity,
@@ -185,11 +288,11 @@ describe("T21: the same photo or link once per author and day", () => {
       await expectRefused(
         tx,
         REFUSED.unique,
-        (sp) => sp`UPDATE app.drops SET dedupe_key = ${row.dedupe_key} WHERE id = ${second}`,
+        (sp) => sp`UPDATE app.drops SET dedupe_key = ${row.dedupe_key}, updated_at = ${AT.edited} WHERE id = ${second}`,
         /drops_no_duplicate/,
       );
       const cleos = await commitDrop(tx, w, w.cleo, { media: "external_video", unsealed: true });
-      await tx`UPDATE app.drops SET dedupe_key = ${row.dedupe_key} WHERE id = ${cleos}`;
+      await tx`UPDATE app.drops SET dedupe_key = ${row.dedupe_key}, updated_at = ${AT.edited} WHERE id = ${cleos}`;
     });
   });
 });
@@ -201,11 +304,11 @@ describe("T22: a highlight points to the contributor's own active drop, before t
       const [first, second] = [await commitDrop(tx, w, w.ben), await commitDrop(tx, w, w.ben)];
       await setHighlight(tx, w, first, 1, AT.added);
       await setHighlight(tx, w, second, 2, AT.edited);
-      await setHighlight(tx, w, null, 3, AT.opened);
+      await setHighlight(tx, w, null, 3, after(AT.edited));
       await expectRefused(
         tx,
         REFUSED.integrity,
-        (sp) => setHighlight(sp, w, null, 3, AT.opened),
+        (sp) => setHighlight(sp, w, null, 3, after(AT.edited, 2)),
         /every change moves the version by one \(T22\)/,
       );
       await expectRefused(
@@ -214,6 +317,29 @@ describe("T22: a highlight points to the contributor's own active drop, before t
         (sp) => sp`DELETE FROM app.highlights WHERE occurrence_id = ${w.day}`,
         /cleared, never deleted/,
       );
+    });
+  });
+
+  it("clears it from the reveal on only when its drop ends (T3, T22, T24)", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await newWorld(tx);
+      const drop = await commitDrop(tx, w, w.ben);
+      await setHighlight(tx, w, drop, 1, AT.added);
+      const ends = /from the reveal on, a highlight is cleared only when its drop ends \(T3, T22\)/;
+      await expectRefused(tx, REFUSED.integrity, (sp) => setHighlight(sp, w, null, 2, AT.opened), ends);
+      // A hold keeps it (T29).
+      await tx`UPDATE app.drops SET state = 'held', updated_at = ${AT.opened} WHERE id = ${drop}`;
+      await expectRefused(tx, REFUSED.integrity, (sp) => setHighlight(sp, w, null, 2, AT.opened), ends);
+      // Cleo, in the photograph, removes it, and the highlight goes with it.
+      await tx`
+        INSERT INTO app.drop_removals (drop_id, reason, actor_interval_id, removed_at)
+        VALUES (${drop}, 'pictured', ${w.cleo.interval}, ${after(AT.opened)})
+      `;
+      await tx`
+        UPDATE app.drops SET state = 'removed', ended_at = ${after(AT.opened)}, updated_at = ${after(AT.opened)} WHERE id = ${drop}
+      `;
+      await setHighlight(tx, w, null, 2, after(AT.opened));
+      await checkAsAtCommit(tx);
     });
   });
 
@@ -228,7 +354,7 @@ describe("T22: a highlight points to the contributor's own active drop, before t
         (sp) => setHighlight(sp, w, cleos, 1, AT.added),
         /highlights_drop_id/,
       );
-      await tx`UPDATE app.drops SET state = 'held', updated_at = ${AT.added} WHERE id = ${held}`;
+      await tx`UPDATE app.drops SET state = 'held', updated_at = ${after(AT.added)} WHERE id = ${held}`;
       const refused = /points to an active drop, before the reveal \(T3, T22\)/;
       await expectRefused(tx, REFUSED.integrity, (sp) => setHighlight(sp, w, held, 1, AT.added), refused);
       const active = await commitDrop(tx, w, w.ben);
@@ -284,6 +410,89 @@ describe("T12 and T40: uploads and links keep nothing they shouldn't", () => {
           sp`UPDATE app.uploads SET state = 'pending' FROM app.drops WHERE drops.id = ${drop} AND uploads.id = drops.upload_id`,
         /an upload goes from ready to pending/,
       );
+    });
+  });
+
+  it("commits only the author's own ready upload, made for that day's slot or that drop (T12)", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await newWorld(tx);
+      const refused = /a drop's photo is its author's ready upload for this day or this drop \(T12\)/;
+      const bens = await reserve(tx, w, w.ben);
+      const cleosPhoto = await upload(tx, w.cleo.user, { reservation: await reserve(tx, w, w.cleo) });
+      const avatar = await upload(tx, w.ben.user, "avatar");
+      const held = await upload(tx, w.ben.user, { reservation: bens }, "held");
+      for (const other of [cleosPhoto, avatar, held]) {
+        await expectRefused(tx, REFUSED.integrity, (sp) => insertPhotoDrop(sp, w, w.ben, other), refused);
+      }
+      // A swap takes the author's ready replacement made for that drop, and nothing else.
+      const drop = await commitDrop(tx, w, w.ben);
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) =>
+          sp`UPDATE app.drops SET upload_id = ${cleosPhoto}, version = 2, updated_at = ${AT.edited} WHERE id = ${drop}`,
+        refused,
+      );
+      const replacement = await upload(tx, w.ben.user, { replaces: drop });
+      // Ben's own ready photo, but made to replace another drop, commits nothing new.
+      await expectRefused(tx, REFUSED.integrity, (sp) => insertPhotoDrop(sp, w, w.ben, replacement), refused);
+      await tx`
+        UPDATE app.drops SET upload_id = ${replacement}, dedupe_key = ${randomBytes(32)}, version = 2, updated_at = ${AT.edited}
+         WHERE id = ${drop}
+      `;
+    });
+  });
+
+  it("puts an upload only into its owner's own slot or drop (T12)", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await newWorld(tx);
+      const refused = /an upload fills only its owner's own slot or drop \(T12\)/;
+      const cleosSlot = await reserve(tx, w, w.cleo);
+      await expectRefused(tx, REFUSED.integrity, (sp) => upload(sp, w.ben.user, { reservation: cleosSlot }), refused);
+      const bensDrop = await commitDrop(tx, w, w.ben);
+      await expectRefused(tx, REFUSED.integrity, (sp) => upload(sp, w.cleo.user, { replaces: bensDrop }), refused);
+    });
+  });
+
+  it("commits only a link its author resolved (T40)", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await newWorld(tx);
+      const source = newId("src");
+      await tx`
+        INSERT INTO app.sources (id, owner_user_id, provider, provider_post_id, canonical_url, created_at, expires_at)
+        VALUES (${source}, ${w.cleo.user}, 'tiktok', '7000000000000000001', 'https://www.tiktok.com/@cleo/video/7000000000000000001',
+                ${AT.added}, ${AT.close})
+      `;
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) => sp`
+          INSERT INTO app.drops (id, occurrence_id, club_id, author_interval_id, media_class, source_id, dedupe_key, submitted_at,
+                                 updated_at)
+          VALUES (${newId("drp")}, ${w.day}, ${w.club}, ${w.ben.interval}, 'external_video', ${source}, ${randomBytes(32)},
+                  ${AT.added}, ${AT.added})
+        `,
+        /a drop's link is one its author resolved \(T40\)/,
+      );
+    });
+  });
+
+  it("makes an avatar only of a ready upload made as one (T12, FQ74)", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await newWorld(tx);
+      const refused = /an avatar is a ready upload made as one \(T12, FQ74\)/;
+      const photo = await upload(tx, w.ben.user, { reservation: await reserve(tx, w, w.ben) });
+      const pending = await upload(tx, w.ben.user, "avatar", "pending");
+      for (const id of [photo, pending]) {
+        await expectRefused(
+          tx,
+          REFUSED.integrity,
+          (sp) => sp`UPDATE app.users SET avatar_upload_id = ${id} WHERE id = ${w.ben.user}`,
+          refused,
+        );
+      }
+      const avatar = await upload(tx, w.ben.user, "avatar");
+      await tx`UPDATE app.users SET avatar_upload_id = ${avatar} WHERE id = ${w.ben.user}`;
     });
   });
 

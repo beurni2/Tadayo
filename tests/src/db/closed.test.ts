@@ -33,7 +33,16 @@ describe("T53: anon, authenticated and service_role read nothing", () => {
 
   for (const role of API_ROLES) {
     it(`gives ${role} no privilege on the schema or anything in it`, async () => {
-      const [found] = await admin<{ schema: boolean; tables: string[]; routines: string[]; sequences: string[] }[]>`
+      const [found] = await admin<
+        {
+          schema: boolean;
+          tables: string[];
+          columns: string[];
+          routines: string[];
+          sequences: string[];
+          types: string[];
+        }[]
+      >`
         SELECT pg_catalog.has_schema_privilege(${role}, 'app', 'USAGE, CREATE') AS schema,
                ARRAY(SELECT c.relname::text FROM pg_catalog.pg_class c
                       WHERE c.relnamespace = 'app'::regnamespace
@@ -41,6 +50,11 @@ describe("T53: anon, authenticated and service_role read nothing", () => {
                                  THEN pg_catalog.has_table_privilege(${role}, c.oid,
                                         'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')
                                  ELSE false END) AS tables,
+               ARRAY(SELECT c.relname::text FROM pg_catalog.pg_class c
+                      WHERE c.relnamespace = 'app'::regnamespace
+                        AND CASE WHEN c.relkind IN ('r', 'p', 'v', 'm', 'f')
+                                 THEN pg_catalog.has_any_column_privilege(${role}, c.oid, 'SELECT, INSERT, UPDATE, REFERENCES')
+                                 ELSE false END) AS columns,
                ARRAY(SELECT p.proname::text FROM pg_catalog.pg_proc p
                       WHERE p.pronamespace = 'app'::regnamespace
                         AND pg_catalog.has_function_privilege(${role}, p.oid, 'EXECUTE')) AS routines,
@@ -48,9 +62,18 @@ describe("T53: anon, authenticated and service_role read nothing", () => {
                       WHERE c.relnamespace = 'app'::regnamespace
                         AND CASE WHEN c.relkind = 'S'
                                  THEN pg_catalog.has_sequence_privilege(${role}, c.oid, 'USAGE, SELECT, UPDATE')
-                                 ELSE false END) AS sequences
+                                 ELSE false END) AS sequences,
+               -- Domains, enums, ranges and composite types made on their own. A table's row type
+               -- and every array type keep Postgres's default, PUBLIC's USAGE, and are reached only
+               -- through the schema, which is closed.
+               ARRAY(SELECT t.typname::text FROM pg_catalog.pg_type t
+                      WHERE t.typnamespace = 'app'::regnamespace
+                        AND (t.typtype IN ('d', 'e', 'r', 'm')
+                             OR (t.typtype = 'c' AND EXISTS (SELECT FROM pg_catalog.pg_class c
+                                                              WHERE c.oid = t.typrelid AND c.relkind = 'c')))
+                        AND pg_catalog.has_type_privilege(${role}, t.oid, 'USAGE')) AS types
       `;
-      expect(found).toEqual({ schema: false, tables: [], routines: [], sequences: [] });
+      expect(found).toEqual({ schema: false, tables: [], columns: [], routines: [], sequences: [], types: [] });
     });
 
     it(`refuses ${role} every table of the schema`, async () => {
@@ -140,14 +163,53 @@ describe("T53: the runner's check finds whatever would open the schema", () => {
         await tx`GRANT USAGE ON SEQUENCE app.probe_granted_id_seq TO PUBLIC`;
         await tx`CREATE FUNCTION app.probe_fn() RETURNS int LANGUAGE sql AS 'SELECT 1'`;
         await tx`GRANT EXECUTE ON FUNCTION app.probe_fn() TO service_role`;
+        await tx`CREATE FUNCTION app.probe_public() RETURNS int LANGUAGE sql AS 'SELECT 1'`;
+        await tx`GRANT EXECUTE ON FUNCTION app.probe_public() TO PUBLIC`;
         await tx`GRANT USAGE ON SCHEMA app TO authenticated`;
       }),
     ).toEqual([
       "app.probe_fn grants EXECUTE to service_role",
       "app.probe_granted grants SELECT to anon",
       "app.probe_granted_id_seq grants USAGE to PUBLIC",
+      "app.probe_public grants EXECUTE to PUBLIC",
       "the schema app grants USAGE to authenticated",
     ]);
+  });
+
+  it("a grant on a column, which a grant on the table doesn't show (review finding privacy 3 of PR #17)", async () => {
+    expect(
+      await found(async (tx) => {
+        await tx`CREATE TABLE app.probe_columns (id int, note text)`;
+        await tx`ALTER TABLE app.probe_columns ENABLE ROW LEVEL SECURITY`;
+        await tx`GRANT SELECT (note) ON app.probe_columns TO service_role`;
+        await tx`GRANT UPDATE (id) ON app.probe_columns TO PUBLIC`;
+      }),
+    ).toEqual(["app.probe_columns.id grants UPDATE to PUBLIC", "app.probe_columns.note grants SELECT to service_role"]);
+  });
+
+  it("a grant on a type or domain", async () => {
+    expect(
+      await found(async (tx) => {
+        await tx`CREATE DOMAIN app.probe_domain AS int`;
+        await tx`GRANT USAGE ON DOMAIN app.probe_domain TO anon, PUBLIC`;
+      }),
+    ).toEqual(["the type app.probe_domain grants USAGE to PUBLIC", "the type app.probe_domain grants USAGE to anon"]);
+  });
+
+  it("a default privilege that would grant what the owner makes later", async () => {
+    expect(
+      await found(async (tx) => {
+        await tx`ALTER DEFAULT PRIVILEGES GRANT SELECT ON TABLES TO anon`;
+        await tx`ALTER DEFAULT PRIVILEGES IN SCHEMA app GRANT EXECUTE ON FUNCTIONS TO authenticated`;
+      }),
+    ).toEqual([
+      "the default privileges of tadayo_app grant EXECUTE on functions to authenticated",
+      "the default privileges of tadayo_app grant SELECT on tables to anon",
+    ]);
+  });
+
+  it("a type made after migration 0001 isn't PUBLIC's to use", async () => {
+    expect(await found((tx) => tx`CREATE DOMAIN app.probe_default_domain AS int`)).toEqual([]);
   });
 
   it("a function made after migration 0001 isn't PUBLIC's to execute", async () => {
@@ -160,8 +222,14 @@ describe("T53: the runner's check finds whatever would open the schema", () => {
     const problems = await rolledBack(admin, async (tx) => {
       await tx`CREATE TABLE app.probe_foreign (id int)`;
       await tx`ALTER TABLE app.probe_foreign ENABLE ROW LEVEL SECURITY`;
+      await tx`CREATE DOMAIN app.probe_foreign_domain AS int`;
       return closedProblems(tx);
     });
-    expect(problems).toEqual(["app.probe_foreign belongs to supabase_admin"]);
+    // supabase_admin has no default privileges here, so its domain is also PUBLIC's to use.
+    expect(problems).toEqual([
+      "app.probe_foreign belongs to supabase_admin",
+      "the type app.probe_foreign_domain belongs to supabase_admin",
+      "the type app.probe_foreign_domain grants USAGE to PUBLIC",
+    ]);
   });
 });

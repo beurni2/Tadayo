@@ -1,26 +1,34 @@
 -- 0009: idempotency receipts and the outbox (spec 31: Outbox; spec 30, 32, 34; T19, T27, T52, T54;
 -- TECH-DESIGN sections 5 and 6).
 
--- Whether a JSON value names, at any depth, a key that would carry someone's text, a link or a
--- token. Receipts and events hold ids, versions, targets and states only (TECH-DESIGN section 6;
--- T12, T52), so this is their last guard.
+-- Whether a JSON value holds, at any depth, someone's text, a link or a token: a string, object or
+-- array under a key that names one (caption, text, body, note, url, href, link, token, preview,
+-- message, secret or signed, in any case and inside a longer key: `captions`, `player_url`,
+-- `signedUpload`), or a string with a URL scheme's `://` anywhere but in a name, which is
+-- anyone's own choice of text. A flag such as `text_previews: true` is no content. Receipts and
+-- events hold ids, versions, targets and states only (TECH-DESIGN section 6; T12, T52), so this
+-- is their last guard behind the code that writes them; text hidden inside a string that isn't a
+-- link (a JSON document as a string) is that code's to keep out.
 CREATE FUNCTION app.holds_content(value jsonb) RETURNS boolean
   LANGUAGE sql IMMUTABLE SET search_path = ''
-  RETURN pg_catalog.jsonb_path_exists(value, 'lax $.**.caption')
-    OR pg_catalog.jsonb_path_exists(value, 'lax $.**.text')
-    OR pg_catalog.jsonb_path_exists(value, 'lax $.**.body')
-    OR pg_catalog.jsonb_path_exists(value, 'lax $.**.note')
-    OR pg_catalog.jsonb_path_exists(value, 'lax $.**.url')
-    OR pg_catalog.jsonb_path_exists(value, 'lax $.**.original_url')
-    OR pg_catalog.jsonb_path_exists(value, 'lax $.**.player_url')
-    OR pg_catalog.jsonb_path_exists(value, 'lax $.**.signed_upload')
-    OR pg_catalog.jsonb_path_exists(value, 'lax $.**.token');
+  RETURN pg_catalog.jsonb_path_exists(value,
+      'strict $.** ? (@.type() == "object").keyvalue()
+         ? (@.key like_regex "caption|text|body|note|url|href|link|token|preview|message|secret|signed" flag "i"
+            && (@.value.type() == "string" || @.value.type() == "object" || @.value.type() == "array"))')
+    OR pg_catalog.jsonb_path_exists(value,
+      'strict $.** ? (@.type() == "object").keyvalue()
+         ? (@.value.type() == "string" && @.value like_regex "://"
+            && !(@.key like_regex "^(display_name|name|club_name|inviter_name|label)$"))')
+    OR pg_catalog.jsonb_path_exists(value, 'strict $.** ? (@.type() == "array")[*] ? (@.type() == "string" && @ like_regex "://")')
+    OR pg_catalog.jsonb_path_exists(value, 'strict $ ? (@.type() == "string" && @ like_regex "://")');
 
 -- One commit per caller, operation and key (T19). The receipt is reserved first in the command's
 -- own transaction and completed last, so it exists only with the effect it records; a request
 -- that fails rolls it back with everything else (TECH-DESIGN section 5). A retry with the same
 -- request hash replays the stored response; any other is IDEMPOTENCY_CONFLICT. An account's
--- receipts go with the account (T27).
+-- receipts go with the account (T27): an account that anything names stays as a shell (0003),
+-- so the deletion that makes the shell deletes its receipts first, or doesn't commit
+-- (users_deleted_without_receipts), and nothing writes one for it afterwards.
 CREATE TABLE app.idempotency_receipts (
   actor_user_id app.id NOT NULL REFERENCES app.users ON DELETE CASCADE,
   -- The contract's idempotent operations (packages/contracts; a test keeps the two lists equal).
@@ -55,6 +63,36 @@ BEGIN
   RETURN NEW;
 END
 $$;
+CREATE FUNCTION app.idempotency_receipts_actor_guard() RETURNS trigger
+  LANGUAGE plpgsql SET search_path = '' AS $$
+BEGIN
+  -- Waits for a deletion making the account a shell, then sees it.
+  PERFORM FROM app.users WHERE id = NEW.actor_user_id AND state <> 'deleted' FOR KEY SHARE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'app.idempotency_receipts: % is deleted, so keeps no receipts (T27)', NEW.actor_user_id
+      USING ERRCODE = 'integrity_constraint_violation';
+  END IF;
+  RETURN NEW;
+END
+$$;
+CREATE TRIGGER idempotency_receipts_actor_guard BEFORE INSERT ON app.idempotency_receipts
+  FOR EACH ROW EXECUTE FUNCTION app.idempotency_receipts_actor_guard();
+
+CREATE FUNCTION app.users_deleted_without_receipts() RETURNS trigger
+  LANGUAGE plpgsql SET search_path = '' AS $$
+BEGIN
+  IF EXISTS (SELECT FROM app.idempotency_receipts WHERE actor_user_id = NEW.id) THEN
+    RAISE EXCEPTION 'app.users: % was deleted with its receipts still kept (T27)', NEW.id
+      USING ERRCODE = 'integrity_constraint_violation';
+  END IF;
+  RETURN NULL;
+END
+$$;
+CREATE CONSTRAINT TRIGGER users_deleted_without_receipts AFTER UPDATE ON app.users
+  DEFERRABLE INITIALLY DEFERRED
+  FOR EACH ROW WHEN (NEW.state = 'deleted' AND OLD.state <> 'deleted')
+  EXECUTE FUNCTION app.users_deleted_without_receipts();
+
 CREATE TRIGGER idempotency_receipts_keep BEFORE UPDATE ON app.idempotency_receipts
   FOR EACH ROW EXECUTE FUNCTION app.keep_columns('actor_user_id', 'operation', 'idempotency_key', 'request_hash', 'created_at');
 CREATE TRIGGER idempotency_receipts_guard BEFORE UPDATE ON app.idempotency_receipts
