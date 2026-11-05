@@ -71,7 +71,7 @@ import Observation
     }
 
     /// The code as typed or pasted: ASCII digits only, at most six. Editing it clears a failed
-    /// verification, so the code can be tried again.
+    /// verification's line; Verify code needs no edit to try the same six digits again.
     public var code: String {
         get { digits }
         set {
