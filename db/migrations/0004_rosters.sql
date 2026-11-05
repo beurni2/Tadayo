@@ -266,8 +266,10 @@ BEGIN
     RAISE EXCEPTION 'app.roster_revisions: revision % was made without being sealed (T7)', NEW.id
       USING ERRCODE = 'integrity_constraint_violation';
   END IF;
-  -- A revision the server made for a name keeps the candidate's proposer, who may since have
-  -- left; every member approves it explicitly (FQ84).
+  -- Only a member's proposal needs its proposer on its roster (FQ60). A revision the server made
+  -- for a name names the candidate's proposer, who may since have left, and every member approves
+  -- it explicitly (FQ84); which member it names is B1's command's to get right, since nothing here
+  -- turns on it (roster_approvals_guard refuses every implicit approval of such a revision).
   IF revision.origin = 'proposal'
      AND NOT EXISTS (SELECT FROM app.roster_revision_members
                       WHERE revision_id = NEW.id AND interval_id = revision.proposed_by_interval_id) THEN

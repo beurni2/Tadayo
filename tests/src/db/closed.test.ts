@@ -205,7 +205,7 @@ describe("T53: the runner's check finds whatever would open the schema", () => {
     ]);
   });
 
-  it("a trigger or a rule on the ledger, which would run after the check", async () => {
+  it("a trigger or a rule on the ledger, which would run a file's code when the runner records the next one", async () => {
     expect(
       await found(async (tx) => {
         await tx`CREATE FUNCTION app.probe_ledger() RETURNS trigger LANGUAGE plpgsql AS 'BEGIN RETURN NEW; END'`;
@@ -219,6 +219,25 @@ describe("T53: the runner's check finds whatever would open the schema", () => {
       "the ledger app.schema_migrations has the rule probe_rule",
       "the ledger app.schema_migrations has the trigger probe_ledger",
     ]);
+  });
+
+  it("never runs a type in the session's temporary schema, which comes first for type names even with the search path empty (review finding runner 2 of PR #17's second check)", async () => {
+    expect(
+      await found(async (tx) => {
+        await tx`SELECT pg_catalog.set_config('search_path', '', true)`;
+        await tx`CREATE TABLE app.probe_temp_types (id int)`;
+        await tx`ALTER TABLE app.probe_temp_types ENABLE ROW LEVEL SECURITY`;
+        await tx`GRANT SELECT ON app.probe_temp_types TO anon`;
+        await tx`
+          CREATE FUNCTION app.probe_ran() RETURNS boolean LANGUAGE plpgsql
+            AS 'BEGIN RAISE EXCEPTION ''a temporary type ran inside the check''; END'
+        `;
+        // "char" is cast for every relation; regrole and text for every problem found.
+        await tx`CREATE DOMAIN pg_temp."char" AS pg_catalog."char" CHECK (VALUE IS NULL OR app.probe_ran())`;
+        await tx`CREATE DOMAIN pg_temp.regrole AS pg_catalog.regrole CHECK (VALUE IS NULL OR app.probe_ran())`;
+        await tx`CREATE DOMAIN pg_temp.text AS pg_catalog.text CHECK (VALUE IS NULL OR app.probe_ran())`;
+      }),
+    ).toEqual(["app.probe_temp_types grants SELECT to anon"]);
   });
 
   it("a grant on a type or domain", async () => {

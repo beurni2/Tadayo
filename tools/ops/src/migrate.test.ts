@@ -40,6 +40,17 @@ describe("readMigrations", () => {
     }
   });
 
+  it("refuses a file that isn't UTF-8, or holds a NUL, rather than run other text than it hashed (T57)", async () => {
+    const latin = await folder({});
+    await writeFile(join(latin, "0001_latin.sql"), Buffer.from("SELECT 'caf\u00e9';", "latin1"));
+    await expect(readMigrations(latin)).rejects.toThrow(/0001_latin\.sql isn't UTF-8 text/);
+    await expect(readMigrations(await folder({ "0001_a.sql": "SELECT 1;\0" }))).rejects.toThrow(
+      /0001_a\.sql holds a NUL character/,
+    );
+    const [file] = await readMigrations(await folder({ "0001_a.sql": "SELECT 'caf\u00e9';" }));
+    expect(file?.text).toBe("SELECT 'caf\u00e9';");
+  });
+
   it("reads the repository's own migrations", async () => {
     const dir = join(import.meta.dirname, "..", "..", "..", "db", "migrations");
     const files = await readMigrations(dir);

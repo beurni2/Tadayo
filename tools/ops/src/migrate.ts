@@ -12,11 +12,15 @@
 //
 // Each transaction first takes a transaction-scoped advisory lock and reads what is applied, so
 // two runners never apply the same file, and the lock never outlives its transaction, which
-// keeps it safe behind a pooler. A file never ends that transaction itself: it runs as the body
-// of one PL/pgSQL EXECUTE, where Postgres refuses BEGIN, COMMIT, ROLLBACK, SAVEPOINT and a
-// procedure that commits, so such a file fails and nothing of it is kept. Its deferred checks then
-// fire, the ledger records it, and the schema is checked last, so nothing the file installed
-// runs after the check (`applyMigration`).
+// keeps it safe behind a pooler. The ledger records the file before it runs, so no code the file
+// installs runs on the runner's own insert. A file never ends that transaction itself: it runs
+// as the body of one PL/pgSQL EXECUTE, where Postgres refuses BEGIN, COMMIT, ROLLBACK, SAVEPOINT
+// and a procedure that commits, so such a file fails and nothing of it is kept. Then its
+// deferred checks fire, a cursor it holds is closed and its temporary objects dropped, and the
+// schema is checked (`applyMigration`). Code a file installs can still run at the commit (a
+// deferred trigger that defers itself again), so after each commit the runner checks the schema
+// again and, if it is open, stops and says so: a commit can't be undone (`migrate`). The check
+// guards against mistakes in files the project writes and reviews; it isn't a sandbox.
 
 import { createHash } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
@@ -40,6 +44,7 @@ const FILE_NAME = /^(\d{4})_([a-z0-9]+(?:_[a-z0-9]+)*)\.sql$/;
 // pg_advisory_xact_lock's key: the bytes of "tadayo:m" read as a bigint, fixed so every runner
 // takes the same lock.
 const LOCK_KEY = 0x746164_61796f3a6dn;
+const UTF8 = new TextDecoder("utf-8", { fatal: true });
 
 /** The migrations in `dir`, in order. Any other file there, a gap or a repeated number fails. */
 export async function readMigrations(dir: string): Promise<MigrationFile[]> {
@@ -50,11 +55,19 @@ export async function readMigrations(dir: string): Promise<MigrationFile[]> {
       throw new Error(`migrate: ${entry} isn't a migration; name it NNNN_words.sql (lower case)`);
     }
     const bytes = await readFile(join(dir, entry));
+    // Applied exactly as hashed: bytes that aren't UTF-8 would otherwise run as U+FFFD (T57).
+    let text: string;
+    try {
+      text = UTF8.decode(bytes);
+    } catch {
+      throw new Error(`migrate: ${entry} isn't UTF-8 text; save it as UTF-8`);
+    }
+    if (text.includes("\0")) throw new Error(`migrate: ${entry} holds a NUL character, which Postgres can't take`);
     files.push({
       version: Number(match[1]),
       name: match[2],
       sha256: createHash("sha256").update(bytes).digest("hex"),
-      text: bytes.toString("utf8"),
+      text,
     });
   }
   files.forEach((file, index) => {
@@ -102,7 +115,9 @@ export function pendingMigrations(
  * procedure, or a type or domain that another role, PUBLIC included, has any privilege on;
  * anything in it owned by another role; a privilege on the schema itself; a default privilege
  * that would give another role what the owner makes later; or a trigger or rule on the ledger,
- * which would run after this check when the runner records a migration. Empty when it's closed.
+ * which would run a file's code when the runner records the next one. Empty when it's closed.
+ * Every type it names carries its schema, since the session's temporary schema comes first for
+ * type names even with the search path empty.
  */
 export async function closedProblems(sql: postgres.Sql | postgres.TransactionSql): Promise<string[]> {
   const rows = await sql<{ problem: string }[]>`
@@ -111,7 +126,7 @@ export async function closedProblems(sql: postgres.Sql | postgres.TransactionSql
     ), relations AS (
       SELECT c.oid, c.relname, c.relkind, c.relowner, c.relrowsecurity, c.relforcerowsecurity,
              COALESCE(c.relacl, pg_catalog.acldefault(
-               CASE WHEN c.relkind = 'S' THEN 's'::"char" ELSE 'r'::"char" END, c.relowner)) AS acl
+               CASE WHEN c.relkind = 'S' THEN 's'::pg_catalog."char" ELSE 'r'::pg_catalog."char" END, c.relowner)) AS acl
         FROM pg_catalog.pg_class c, app
        WHERE c.relnamespace = app.oid AND c.relkind IN ('r', 'p', 'v', 'm', 'S', 'f')
     ), routines AS (
@@ -138,46 +153,46 @@ export async function closedProblems(sql: postgres.Sql | postgres.TransactionSql
     SELECT 'the table app.' || c.relname || ' has the policy ' || pol.polname
       FROM pg_catalog.pg_policy pol JOIN relations c ON c.oid = pol.polrelid
     UNION ALL
-    SELECT 'app.' || relname || ' belongs to ' || relowner::regrole::text
+    SELECT 'app.' || relname || ' belongs to ' || relowner::pg_catalog.regrole::pg_catalog.text
       FROM relations, app WHERE relowner <> app.nspowner
     UNION ALL
-    SELECT 'app.' || proname || ' belongs to ' || proowner::regrole::text
+    SELECT 'app.' || proname || ' belongs to ' || proowner::pg_catalog.regrole::pg_catalog.text
       FROM routines, app WHERE proowner <> app.nspowner
     UNION ALL
     SELECT 'app.' || relname || ' grants ' || a.privilege_type || ' to '
-           || CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE a.grantee::regrole::text END
+           || CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE a.grantee::pg_catalog.regrole::pg_catalog.text END
       FROM relations, app, pg_catalog.aclexplode(relations.acl) a
      WHERE a.grantee NOT IN (relations.relowner, app.nspowner)
     UNION ALL
     SELECT 'app.' || proname || ' grants ' || a.privilege_type || ' to '
-           || CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE a.grantee::regrole::text END
+           || CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE a.grantee::pg_catalog.regrole::pg_catalog.text END
       FROM routines, app, pg_catalog.aclexplode(routines.acl) a
      WHERE a.grantee NOT IN (routines.proowner, app.nspowner)
     UNION ALL
     SELECT 'app.' || relations.relname || '.' || att.attname || ' grants ' || a.privilege_type || ' to '
-           || CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE a.grantee::regrole::text END
+           || CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE a.grantee::pg_catalog.regrole::pg_catalog.text END
       FROM relations, app, pg_catalog.pg_attribute att, pg_catalog.aclexplode(att.attacl) a
      WHERE att.attrelid = relations.oid AND att.attnum <> 0 AND NOT att.attisdropped
        AND a.grantee NOT IN (relations.relowner, app.nspowner)
     UNION ALL
-    SELECT 'the type app.' || typname || ' belongs to ' || typowner::regrole::text
+    SELECT 'the type app.' || typname || ' belongs to ' || typowner::pg_catalog.regrole::pg_catalog.text
       FROM types, app WHERE typowner <> app.nspowner
     UNION ALL
     SELECT 'the type app.' || typname || ' grants ' || a.privilege_type || ' to '
-           || CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE a.grantee::regrole::text END
+           || CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE a.grantee::pg_catalog.regrole::pg_catalog.text END
       FROM types, app, pg_catalog.aclexplode(types.acl) a
      WHERE a.grantee NOT IN (types.typowner, app.nspowner)
     UNION ALL
-    SELECT 'the default privileges of ' || d.defaclrole::regrole::text || ' grant ' || a.privilege_type || ' on '
+    SELECT 'the default privileges of ' || d.defaclrole::pg_catalog.regrole::pg_catalog.text || ' grant ' || a.privilege_type || ' on '
            || CASE d.defaclobjtype WHEN 'r' THEN 'tables' WHEN 'S' THEN 'sequences' WHEN 'f' THEN 'functions'
                                    WHEN 'T' THEN 'types' WHEN 'n' THEN 'schemas' ELSE 'objects' END
-           || ' to ' || CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE a.grantee::regrole::text END
+           || ' to ' || CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE a.grantee::pg_catalog.regrole::pg_catalog.text END
       FROM pg_catalog.pg_default_acl d, app, pg_catalog.aclexplode(d.defaclacl) a
      WHERE (d.defaclnamespace = app.oid OR (d.defaclrole = app.nspowner AND d.defaclnamespace = 0))
        AND a.grantee <> d.defaclrole
     UNION ALL
     SELECT 'the schema app grants ' || a.privilege_type || ' to '
-           || CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE a.grantee::regrole::text END
+           || CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE a.grantee::pg_catalog.regrole::pg_catalog.text END
       FROM pg_catalog.pg_namespace n, app, pg_catalog.aclexplode(
              COALESCE(n.nspacl, pg_catalog.acldefault('n', n.nspowner))) a
      WHERE n.oid = app.oid AND a.grantee <> app.nspowner
@@ -212,18 +227,28 @@ function fileName(file: MigrationFile): string {
 
 /**
  * Runs one migration in `tx`, the transaction `migrate` opened for it under the lock, and records
- * it, or throws and leaves the transaction to roll back. The file runs as the body of one
- * PL/pgSQL EXECUTE, so Postgres refuses any statement in it that would begin, end or split the
- * transaction ("EXECUTE of transaction commands is not implemented", or "invalid transaction
- * termination" for a procedure or DO block that commits). Then its deferred checks fire, the
- * ledger records it, and only then is the schema checked, so a deferred trigger or a trigger on
- * the ledger can't open the schema after the check (T53).
+ * it, or throws and leaves the transaction to roll back. The ledger records it first, so no code
+ * the file installs runs on that insert. The file runs as the body of one PL/pgSQL EXECUTE, so
+ * Postgres refuses any statement in it that would begin, end or split the transaction ("EXECUTE
+ * of transaction commands is not implemented", or "invalid transaction termination" for a
+ * procedure or DO block that commits). Then its deferred checks fire, any cursor it holds is
+ * closed, so its query never runs at the commit, its temporary objects are dropped, the search
+ * path is emptied again, and the schema is checked (T53). Any failure names the file.
  */
 export async function applyMigration(tx: postgres.TransactionSql, file: MigrationFile): Promise<void> {
   await tx`SELECT pg_catalog.set_config('search_path', '', true)`;
-  await tx`SELECT pg_catalog.set_config('tadayo.migration', ${file.text}, true)`;
   try {
+    await tx`
+      INSERT INTO app.schema_migrations (version, name, sha256)
+      VALUES (${file.version}, ${file.name}, ${file.sha256})
+    `;
+    await tx`SELECT pg_catalog.set_config('tadayo.migration', ${file.text}, true)`;
     await tx.unsafe("DO $run$ BEGIN EXECUTE pg_catalog.current_setting('tadayo.migration'); END $run$").simple();
+    await tx`SELECT pg_catalog.set_config('tadayo.migration', '', true)`;
+    await tx.unsafe("SET CONSTRAINTS ALL IMMEDIATE; CLOSE ALL; DISCARD TEMP").simple();
+    // Last, since the file or a deferred trigger may have set it: an operator the path finds
+    // ahead of pg_catalog's would run inside the check.
+    await tx`SELECT pg_catalog.set_config('search_path', '', true)`;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (/EXECUTE of transaction commands is not implemented|invalid transaction termination/.test(message)) {
@@ -235,13 +260,6 @@ export async function applyMigration(tx: postgres.TransactionSql, file: Migratio
     }
     throw new Error(`migrate: ${fileName(file)} failed: ${message}`, { cause: error });
   }
-  await tx`SELECT pg_catalog.set_config('tadayo.migration', '', true)`;
-  await tx`SELECT pg_catalog.set_config('search_path', '', true)`;
-  await tx`SET CONSTRAINTS ALL IMMEDIATE`;
-  await tx`
-    INSERT INTO app.schema_migrations (version, name, sha256)
-    VALUES (${file.version}, ${file.name}, ${file.sha256})
-  `;
   const problems = await closedProblems(tx);
   if (problems.length > 0) {
     throw new Error(`migrate: ${fileName(file)} would leave the schema app open (T53): ` + problems.join("; "));
@@ -260,7 +278,7 @@ export async function migrate(
   const files = await readMigrations(dir);
   const [who] = await sql<{ me: string; owner: string | null; superuser: boolean }[]>`
     SELECT current_user AS me,
-           (SELECT nspowner::regrole::text FROM pg_catalog.pg_namespace WHERE nspname = 'app') AS owner,
+           (SELECT nspowner::pg_catalog.regrole::pg_catalog.text FROM pg_catalog.pg_namespace WHERE nspname = 'app') AS owner,
            (SELECT rolsuper FROM pg_catalog.pg_roles WHERE rolname = current_user) AS superuser
   `;
   if (!who?.owner) throw new Error("migrate: there is no schema app; run db/bootstrap.sql first");
@@ -270,7 +288,7 @@ export async function migrate(
   const done: MigrationFile[] = [];
   for (;;) {
     const next = await sql.begin(async (tx) => {
-      await tx`SELECT pg_catalog.pg_advisory_xact_lock(${LOCK_KEY.toString()}::bigint)`;
+      await tx`SELECT pg_catalog.pg_advisory_xact_lock(${LOCK_KEY.toString()}::pg_catalog.int8)`;
       await tx.unsafe(LEDGER).simple();
       const applied = await tx<AppliedMigration[]>`
         SELECT version, name, sha256 FROM app.schema_migrations ORDER BY version
@@ -281,7 +299,19 @@ export async function migrate(
       return file;
     });
     if (!next) return done;
-    log(`migrate: applied ${String(next.version).padStart(4, "0")}_${next.name}.sql`);
+    log(`migrate: applied ${fileName(next)}`);
     done.push(next);
+    // Whatever ran at the commit, after the check (a deferred trigger that deferred itself
+    // again), shows now. The commit can't be undone, so the runner stops (T53).
+    const after = await sql.begin(async (tx) => {
+      await tx`SELECT pg_catalog.set_config('search_path', '', true)`;
+      return closedProblems(tx);
+    });
+    if (after.length > 0) {
+      throw new Error(
+        `migrate: ${fileName(next)} committed, and the schema app was open after its commit (T53): ` +
+          `${after.join("; ")}; nothing more is applied: inspect the database, and close it with a migration of its own`,
+      );
+    }
   }
 }
