@@ -7,3 +7,8 @@ packages:
   - services/worker
   - tests
   - tools/ops
+# Dependencies' build scripts that never run (pnpm 12 refuses to install while one is unruled).
+# Only denials belong here: approving a build script is a CI-configuration PR (T58).
+allowBuilds:
+  # Prism's install analytics (docs/LIMITATIONS.md).
+  "@scarf/scarf": false
