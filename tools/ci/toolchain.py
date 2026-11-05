@@ -33,7 +33,16 @@ Evidence, read on 2026-11-03 for slice 9:
   runtime is the default (docs/TECH-DESIGN.md section 8). On an older runtime that doesn't
   support it, ios_steps.py takes the newest plain "iPhone <n>" that runtime supports.
 
-Changing a version is a CI-configuration change (docs/INVARIANTS.md T58): it goes in its own PR.
+PACKAGE_PLUGINS (ADR-028): the `ios` build passes `-skipPackagePluginValidation`, so Xcode no
+longer asks a person to trust each package build plugin in the app's graph. The build step reads
+the build log for every plugin Xcode compiled or applied instead, and fails on one this doesn't
+list, from another package, or on another target. A dependency that floats (`Package.resolved` is
+ignored) can't bring one in unseen. Today the graph's only plugin is the Swift OpenAPI Generator's
+(its build log in `ios` run 41961456622: `Compile plug-in “OpenAPIGenerator” in package
+“swift-openapi-generator”`, `Apply build tool plug-in “OpenAPIGenerator” to target “TadayoAPI”`).
+
+Changing a version or a plugin is a CI-configuration change (docs/INVARIANTS.md T58): it goes in
+its own PR.
 """
 
 XCODE_VERSION = "26.6"
@@ -43,3 +52,6 @@ POSTGRES_MAJOR = 17
 XCODEGEN_VERSION = "2.46.0"
 XCODEGEN_SHA256 = "4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806"
 SIMULATOR_DEVICE = "iPhone 17"
+# Each package build plugin Xcode may run: the package that declares it, and the targets it may
+# be applied to.
+PACKAGE_PLUGINS = {"OpenAPIGenerator": ("swift-openapi-generator", ("TadayoAPI",))}
