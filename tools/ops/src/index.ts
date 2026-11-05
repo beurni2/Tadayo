@@ -1,2 +1,9 @@
-// Empty until its slice (docs/plans/B0.md section 2).
-export {};
+export {
+  applyMigration,
+  closedProblems,
+  migrate,
+  pendingMigrations,
+  readMigrations,
+  type AppliedMigration,
+  type MigrationFile,
+} from "./migrate.ts";
