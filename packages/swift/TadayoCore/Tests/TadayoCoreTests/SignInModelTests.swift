@@ -141,20 +141,33 @@ final class ManualContinuousClock: @unchecked Sendable {
         #expect(verified.sessions == [session])
     }
 
-    @Test func aRefusedCodeKeepsItsDigitsAndWaitsForAnEdit() async {
-        let auth = FakeAuth(verify: [.failure(.codeNotVerified), .success(session)])
-        let model = await onCode(auth)
+    /// Handoff 2's A02-code-error: "Verify code remains enabled for six digits because expiry
+    /// is unknown."
+    @Test func aRefusedCodeKeepsItsDigitsAndVerifyCode() async {
+        let auth = FakeAuth(verify: [
+            .failure(.codeNotVerified), .failure(.codeNotVerified), .success(session),
+        ])
+        let verified = Verified()
+        let model = await onCode(auth, ManualContinuousClock(), verified)
         model.code = "529614"
         await model.verify()
         #expect(model.failure == .codeNotVerified)
         #expect(model.code == "529614")
-        #expect(!model.canVerify)
+        #expect(model.canVerify)
         await model.verify()
-        #expect(auth.calls.count == 2)
+        #expect(
+            auth.calls.suffix(2) == [
+                "verify ben@example.com 529614", "verify ben@example.com 529614",
+            ])
+        #expect(model.failure == .codeNotVerified)
         model.code = "52961"
         #expect(model.failure == nil)
+        #expect(!model.canVerify)
         model.code = "529613"
         #expect(model.canVerify)
+        await model.verify()
+        #expect(auth.calls.last == "verify ben@example.com 529613")
+        #expect(verified.sessions == [session])
     }
 
     @Test func noAnswerIsNeverAWrongCode() async {

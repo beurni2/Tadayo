@@ -48,7 +48,6 @@ import Observation
     public private(set) var resendDue: ContinuousClock.Instant?
 
     private var digits = ""
-    private var refusedCode: String?
 
     let auth: any AuthService
     let verified: @MainActor (AuthSession) async -> Void
@@ -89,9 +88,11 @@ import Observation
     /// Send a code: a plausible address, and no request already on its way.
     public var canSend: Bool { Self.isPlausible(email) && !isSending }
 
-    /// Verify code: six digits, not the ones the server just refused, and nothing on its way.
+    /// Verify code: six digits and nothing on its way. After a refused code it stays available,
+    /// with the digits kept, as handoff 2's A02-code-error has it: "Verify code remains enabled
+    /// for six digits because expiry is unknown."
     public var canVerify: Bool {
-        digits.count == Self.codeLength && digits != refusedCode && !isVerifying && !isResending
+        digits.count == Self.codeLength && !isVerifying && !isResending
     }
 
     /// Asks for a code; A02-code comes only once the server accepts.
@@ -127,7 +128,6 @@ import Observation
             failure = .verifyUnavailable
         } catch {
             failure = .codeNotVerified
-            refusedCode = code
         }
         isVerifying = false
     }
@@ -172,7 +172,6 @@ import Observation
     private func codeWasSent(to address: String) {
         self.address = address
         digits = ""
-        refusedCode = nil
         canResend = false
         resendDue = now().advanced(by: Self.resendWait)
     }
