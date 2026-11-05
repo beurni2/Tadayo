@@ -1,0 +1,478 @@
+[
+ {
+  "name": "T8 late audience row",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T8: the audience is sealed at the commit > refuses a late audience row even in the transaction that sealed it",
+   "T8: the audience is sealed at the commit > refuses a late audience row once the drop is sealed, for a member who joined after the commit"
+  ]
+ },
+ {
+  "name": "T8 audience leaves out a member",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T8: a commit that leaves the audience incomplete or unsealed doesn't commit > refuses an audience that leaves out an active member"
+  ]
+ },
+ {
+  "name": "T8 audience of ended member",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T8: the audience is sealed at the commit > refuses a member whose interval has ended"
+  ]
+ },
+ {
+  "name": "T3 commit after reveal",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T3: the reveal is the cutoff > refuses a commit at the reveal"
+  ]
+ },
+ {
+  "name": "T3 frozen content",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T3: the reveal is the cutoff > lets a caption change before the reveal, and freezes it from the reveal on"
+  ]
+ },
+ {
+  "name": "T29 held never late",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T29: a drop on hold at the reveal never appears afterwards > releases a hold before the reveal, and refuses it from the reveal on"
+  ]
+ },
+ {
+  "name": "T24 ended drop only loses content",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T23 to T25: a removal is one audited record, and the drop's state agrees with it > lets a withdrawn drop lose its content and nothing else"
+  ]
+ },
+ {
+  "name": "T22 highlight active, before reveal",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T22: a highlight points to the contributor's own active drop, before the reveal > refuses another member's drop, a held drop, and any pointer from the reveal on"
+  ]
+ },
+ {
+  "name": "T22 removal clears highlight",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T22: a highlight points to the contributor's own active drop, before the reveal > refuses a withdrawal that leaves the highlight on the drop"
+  ]
+ },
+ {
+  "name": "T22 highlight version",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T22: a highlight points to the contributor's own active drop, before the reveal > sets, moves and clears it, moving its version by one each time"
+  ]
+ },
+ {
+  "name": "T17 six",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T17: six and two, as a last guard behind the counter's lock > refuses a seventh drop or a third link in the counter"
+  ]
+ },
+ {
+  "name": "T18 reservation past reveal",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T3: the reveal is the cutoff > refuses a reservation made at the reveal or lasting past it (T18)"
+  ]
+ },
+ {
+  "name": "T21 duplicate",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T21: the same photo or link once per author and day > refuses a second live drop with the same scoped hash, and allows another author's"
+  ]
+ },
+ {
+  "name": "spec 33 upload born pending",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T12 and T40: uploads and links keep nothing they shouldn't > starts an upload pending and never takes it back"
+  ]
+ },
+ {
+  "name": "T6 right star",
+  "file": "db/migrations/0005_schedules_and_days.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T6 and FQ61: a day for the right star, from the week in force > refuses a day for a star whose weekday it isn't"
+  ]
+ },
+ {
+  "name": "FQ61 version in force",
+  "file": "db/migrations/0005_schedules_and_days.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T6 and FQ61: a day for the right star, from the week in force > refuses a day from a week that isn't in force on its date"
+  ]
+ },
+ {
+  "name": "FQ61 new version moves a day",
+  "file": "db/migrations/0005_schedules_and_days.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T6 and FQ61: a day for the right star, from the week in force > refuses a new week that would move a day already announced"
+  ]
+ },
+ {
+  "name": "FQ63 no day for a leaver",
+  "file": "db/migrations/0005_schedules_and_days.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T6 and FQ61: a day for the right star, from the week in force > refuses a day for a star who has left (FQ63)"
+  ]
+ },
+ {
+  "name": "T9 status only denies",
+  "file": "db/migrations/0005_schedules_and_days.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T9: a day's status only denies it > suspends and cancels a day, and never brings a cancelled one back"
+  ]
+ },
+ {
+  "name": "T7 join needs applied revision",
+  "file": "db/migrations/0004_rosters.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T7: joining only by the exact roster accepted and approved > refuses Dan while a member hasn't approved, before it is applied, or as someone else"
+  ]
+ },
+ {
+  "name": "T7 one creator",
+  "file": "db/migrations/0003_people_and_clubs.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T7: joining only by the exact roster accepted and approved > makes the creator's membership with the club, and no other without a roster"
+  ]
+ },
+ {
+  "name": "T33 version with state",
+  "file": "db/migrations/0004_rosters.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T33: a revision's version moves with its state, and only then > refuses a version moved by an approval, or a state change that doesn't move it"
+  ]
+ },
+ {
+  "name": "T7 sealed roster",
+  "file": "db/migrations/0004_rosters.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T7: an exact roster, sealed when it is made > refuses a member or a candidate added to a sealed revision"
+  ]
+ },
+ {
+  "name": "A01 six members",
+  "file": "db/migrations/0003_people_and_clubs.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "A01 and TECH-DESIGN section 6: the roster's limits > holds at most six active members"
+  ]
+ },
+ {
+  "name": "T25 removal state matches",
+  "file": "db/migrations/0008_safety.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T23 to T25: a removal is one audited record, and the drop's state agrees with it > refuses a drop withdrawn without a removal, or in a state its reason doesn't give"
+  ]
+ },
+ {
+  "name": "T25 pictured after reveal",
+  "file": "db/migrations/0008_safety.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T23 to T25: a removal is one audited record, and the drop's state agrees with it > refuses a pictured removal by the author, before the reveal, or of a link"
+  ]
+ },
+ {
+  "name": "spec 22 own report",
+  "file": "db/migrations/0008_safety.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "spec 22 and FQ27: reports, cases and the operator's audit trail > refuses a report on one's own drop, and keeps one open case per target"
+  ]
+ },
+ {
+  "name": "D07 after reveal",
+  "file": "db/migrations/0007_after_the_reveal.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "D07, T8 and spec 16: reactions, comments and favourites, from the reveal, by the audience > refuses each before the reveal"
+  ]
+ },
+ {
+  "name": "spec 16 own reaction",
+  "file": "db/migrations/0007_after_the_reveal.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "D07, T8 and spec 16: reactions, comments and favourites, from the reveal, by the audience > refuses a reaction to one's own drop, and anyone outside the audience"
+  ]
+ },
+ {
+  "name": "T19 receipt commits completed",
+  "file": "db/migrations/0009_platform.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T19: the same key is the same request, or IDEMPOTENCY_CONFLICT > refuses a receipt left pending at the commit"
+  ]
+ },
+ {
+  "name": "T19 completed immutable",
+  "file": "db/migrations/0009_platform.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T19: the same key is the same request, or IDEMPOTENCY_CONFLICT > never changes a completed receipt, nor the hash of a pending one"
+  ]
+ },
+ {
+  "name": "T19 one receipt per key",
+  "file": "db/migrations/0009_platform.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T19: the same key is the same request, or IDEMPOTENCY_CONFLICT > replays the same removal, and refuses the key on another drop or with another reason"
+  ]
+ },
+ {
+  "name": "T52 no caption in receipts/outbox",
+  "file": "db/migrations/0009_platform.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T19: the same key is the same request, or IDEMPOTENCY_CONFLICT > stores no caption, comment, note, link or token in a response, under any key",
+   "T52 and T54: the outbox carries ids, never content, and a retry happens once > refuses a payload with a caption or a link, an error that isn't a code, and a second event per key"
+  ]
+ },
+ {
+  "name": "FQ27 audit append-only",
+  "file": "db/migrations/0008_safety.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "rows kept for good can't be truncated > gives every table that refuses a DELETE a trigger that refuses TRUNCATE",
+   "spec 22 and FQ27: reports, cases and the operator's audit trail > keeps the operator's actions append-only, with a label and never an address"
+  ]
+ },
+ {
+  "name": "T7 join needs every approval",
+  "file": "db/migrations/0004_rosters.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T7: joining only by the exact roster accepted and approved > refuses a join through a roster someone on it left before approving, though everyone still here approved (T7)"
+  ],
+  "note": "caught after the test was added; MISSED in the full run before it"
+ },
+ {
+  "name": "T25 removal written once (update)",
+  "file": "db/migrations/0008_safety.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T23 to T25: a removal is one audited record, and the drop's state agrees with it > lets only the author withdraw, and never changes a removal"
+  ]
+ },
+ {
+  "name": "T25 removal written once (delete)",
+  "file": "db/migrations/0008_safety.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T23 to T25: a removal is one audited record, and the drop's state agrees with it > lets only the author withdraw, and never changes a removal",
+   "rows kept for good can't be truncated > gives every table that refuses a DELETE a trigger that refuses TRUNCATE"
+  ]
+ },
+ {
+  "name": "T28 tombstone never deleted",
+  "file": "db/migrations/0008_safety.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T28: the deletion record > records a deletion once, sets only its mirror time once, and is never deleted"
+  ]
+ },
+ {
+  "name": "T52 a flag is no content (redone)",
+  "file": "db/migrations/0009_platform.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T19: the same key is the same request, or IDEMPOTENCY_CONFLICT > stores ids, states, flags and people's names, whatever a name holds"
+  ]
+ },
+ {
+  "name": "T52 a name may hold anything (redone)",
+  "file": "db/migrations/0009_platform.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T19: the same key is the same request, or IDEMPOTENCY_CONFLICT > stores ids, states, flags and people's names, whatever a name holds"
+  ]
+ },
+ {
+  "name": "clubs truncate refused only when (false)",
+  "file": "db/migrations/0003_people_and_clubs.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "rows kept for good can't be truncated > refuses a cascading TRUNCATE on every such table, by the table's own trigger"
+  ]
+ },
+ {
+  "name": "memberships truncate refused only when (false)",
+  "file": "db/migrations/0003_people_and_clubs.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "rows kept for good can't be truncated > refuses a cascading TRUNCATE on every such table, by the table's own trigger"
+  ]
+ },
+ {
+  "name": "candidates truncate refused only when (false)",
+  "file": "db/migrations/0004_rosters.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "rows kept for good can't be truncated > refuses a cascading TRUNCATE on every such table, by the table's own trigger"
+  ]
+ },
+ {
+  "name": "roster_revisions truncate refused only when (false)",
+  "file": "db/migrations/0004_rosters.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "rows kept for good can't be truncated > refuses a cascading TRUNCATE on every such table, by the table's own trigger"
+  ]
+ },
+ {
+  "name": "invitations truncate refused only when (false)",
+  "file": "db/migrations/0004_rosters.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "rows kept for good can't be truncated > refuses a cascading TRUNCATE on every such table, by the table's own trigger"
+  ]
+ },
+ {
+  "name": "roster_approvals truncate refused only when (false)",
+  "file": "db/migrations/0004_rosters.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "rows kept for good can't be truncated > refuses TRUNCATE on each such table that no foreign key references, by its own trigger",
+   "rows kept for good can't be truncated > refuses a cascading TRUNCATE on every such table, by the table's own trigger"
+  ]
+ },
+ {
+  "name": "roster_revision_members truncate refused only when (false)",
+  "file": "db/migrations/0004_rosters.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "rows kept for good can't be truncated > refuses a cascading TRUNCATE on every such table, by the table's own trigger"
+  ]
+ },
+ {
+  "name": "roster_revision_candidates truncate refused only when (false)",
+  "file": "db/migrations/0004_rosters.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "rows kept for good can't be truncated > refuses a cascading TRUNCATE on every such table, by the table's own trigger"
+  ]
+ },
+ {
+  "name": "schedule_versions truncate refused only when (false)",
+  "file": "db/migrations/0005_schedules_and_days.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "rows kept for good can't be truncated > refuses a cascading TRUNCATE on every such table, by the table's own trigger"
+  ]
+ },
+ {
+  "name": "schedule_assignments truncate refused only when (false)",
+  "file": "db/migrations/0005_schedules_and_days.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "rows kept for good can't be truncated > refuses TRUNCATE on each such table that no foreign key references, by its own trigger",
+   "rows kept for good can't be truncated > refuses a cascading TRUNCATE on every such table, by the table's own trigger"
+  ]
+ },
+ {
+  "name": "occurrences truncate refused only when (false)",
+  "file": "db/migrations/0005_schedules_and_days.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "rows kept for good can't be truncated > refuses a cascading TRUNCATE on every such table, by the table's own trigger"
+  ]
+ },
+ {
+  "name": "drops truncate refused only when (false)",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "rows kept for good can't be truncated > refuses a cascading TRUNCATE on every such table, by the table's own trigger"
+  ]
+ },
+ {
+  "name": "drop_audience truncate refused only when (false)",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T8: the audience is sealed at the commit > never changes, deletes or truncates an audience row",
+   "rows kept for good can't be truncated > refuses a cascading TRUNCATE on every such table, by the table's own trigger"
+  ]
+ },
+ {
+  "name": "highlights truncate refused only when (false)",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "rows kept for good can't be truncated > refuses TRUNCATE on each such table that no foreign key references, by its own trigger",
+   "rows kept for good can't be truncated > refuses a cascading TRUNCATE on every such table, by the table's own trigger"
+  ]
+ },
+ {
+  "name": "moderation_cases truncate refused only when (false)",
+  "file": "db/migrations/0008_safety.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "rows kept for good can't be truncated > refuses a cascading TRUNCATE on every such table, by the table's own trigger"
+  ]
+ },
+ {
+  "name": "operator_actions truncate refused only when (false)",
+  "file": "db/migrations/0008_safety.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "rows kept for good can't be truncated > refuses a cascading TRUNCATE on every such table, by the table's own trigger",
+   "spec 22 and FQ27: reports, cases and the operator's audit trail > keeps the operator's actions append-only, with a label and never an address"
+  ]
+ },
+ {
+  "name": "drop_removals truncate refused only when (false)",
+  "file": "db/migrations/0008_safety.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "rows kept for good can't be truncated > refuses TRUNCATE on each such table that no foreign key references, by its own trigger",
+   "rows kept for good can't be truncated > refuses a cascading TRUNCATE on every such table, by the table's own trigger"
+  ]
+ },
+ {
+  "name": "deletion_tombstones truncate refused only when (false)",
+  "file": "db/migrations/0008_safety.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "rows kept for good can't be truncated > refuses TRUNCATE on each such table that no foreign key references, by its own trigger",
+   "rows kept for good can't be truncated > refuses a cascading TRUNCATE on every such table, by the table's own trigger"
+  ]
+ }
+]

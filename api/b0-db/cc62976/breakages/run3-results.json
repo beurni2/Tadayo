@@ -1,0 +1,693 @@
+[
+ {
+  "name": "T8 interval keeps its account",
+  "file": "db/migrations/0003_people_and_clubs.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T8: an interval is one account's, in one club, for good > never moves an interval to another account or club, and never deletes it"
+  ]
+ },
+ {
+  "name": "T8 interval keeps its club",
+  "file": "db/migrations/0003_people_and_clubs.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T8: an interval is one account's, in one club, for good > never moves an interval to another account or club, and never deletes it"
+  ]
+ },
+ {
+  "name": "T8 interval never deleted",
+  "file": "db/migrations/0003_people_and_clubs.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T8: an interval is one account's, in one club, for good > never moves an interval to another account or club, and never deletes it"
+  ]
+ },
+ {
+  "name": "T27 deletion never goes back",
+  "file": "db/migrations/0003_people_and_clubs.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T27 and FQ13: an account's deletion goes one way > never brings a deleted account back, changes its sign-in identity, or takes back the age confirmation"
+  ]
+ },
+ {
+  "name": "FQ13 age confirmation kept",
+  "file": "db/migrations/0003_people_and_clubs.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T27 and FQ13: an account's deletion goes one way > never brings a deleted account back, changes its sign-in identity, or takes back the age confirmation"
+  ]
+ },
+ {
+  "name": "sign-in identity kept",
+  "file": "db/migrations/0003_people_and_clubs.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T27 and FQ13: an account's deletion goes one way > never brings a deleted account back, changes its sign-in identity, or takes back the age confirmation"
+  ]
+ },
+ {
+  "name": "clubs truncate trigger gone",
+  "file": "db/migrations/0003_people_and_clubs.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "A01 and TECH-DESIGN section 6: the roster's limits > holds at most six active members",
+   "A01 and TECH-DESIGN section 6: the roster's limits > holds one active interval per account and club, and a rejoin is a new interval",
+   "A01 and TECH-DESIGN section 6: the roster's limits > keeps an invitation's token only as a unique hash, with one latest link per candidate",
+   "D07, T8 and spec 16: reactions, comments and favourites, from the reveal, by the audience > adds nothing to a drop that isn't active, or from someone who has left, who can still take their own away (T9, T24)",
+   "D07, T8 and spec 16: reactions, comments and favourites, from the reveal, by the audience > lets a deleted comment only lose its text",
+   "D07, T8 and spec 16: reactions, comments and favourites, from the reveal, by the audience > reacts, comments and saves once the day has opened",
+   "D07, T8 and spec 16: reactions, comments and favourites, from the reveal, by the audience > refuses a reaction to one's own drop, and anyone outside the audience",
+   "D07, T8 and spec 16: reactions, comments and favourites, from the reveal, by the audience > refuses each before the reveal",
+   "FQ27: a moderation removal cites the operator's removal of that drop > refuses an action about anything else, and takes the one about that drop",
+   "T12 and T40: uploads and links keep nothing they shouldn't > commits only a link its author resolved (T40)",
+   "T12 and T40: uploads and links keep nothing they shouldn't > commits only the author's own ready upload, made for that day's slot or that drop (T12)",
+   "T12 and T40: uploads and links keep nothing they shouldn't > makes an avatar only of a ready upload made as one (T12, FQ74)",
+   "T12 and T40: uploads and links keep nothing they shouldn't > puts an upload only into its owner's own slot or drop (T12)",
+   "T12 and T40: uploads and links keep nothing they shouldn't > refuses a link with a query string or fragment, or a provider id that isn't one",
+   "T12 and T40: uploads and links keep nothing they shouldn't > starts an upload pending and never takes it back",
+   "T17: six and two, as a last guard behind the counter's lock > refuses a seventh drop or a third link in the counter",
+   "T17: six and two, as a last guard behind the counter's lock > ties a counter to one club's day and member",
+   "T18: a reservation ends once > never changes a used reservation",
+   "T19: the same key is the same request, or IDEMPOTENCY_CONFLICT > never changes a completed receipt, nor the hash of a pending one",
+   "T19: the same key is the same request, or IDEMPOTENCY_CONFLICT > refuses a receipt left pending at the commit",
+   "T19: the same key is the same request, or IDEMPOTENCY_CONFLICT > refuses an operation the contract doesn't make idempotent",
+   "T19: the same key is the same request, or IDEMPOTENCY_CONFLICT > replays the same removal, and refuses the key on another drop or with another reason",
+   "T19: the same key is the same request, or IDEMPOTENCY_CONFLICT > stores ids, states, flags and people's names, whatever a name holds",
+   "T19: the same key is the same request, or IDEMPOTENCY_CONFLICT > stores no caption, comment, note, link or token in a response, under any key",
+   "T21: the same photo or link once per author and day > refuses a second live drop with the same scoped hash, and allows another author's",
+   "T22: a highlight points to the contributor's own active drop, before the reveal > clears it from the reveal on only when its drop ends (T3, T22, T24)",
+   "T22: a highlight points to the contributor's own active drop, before the reveal > refuses a withdrawal that leaves the highlight on the drop",
+   "T22: a highlight points to the contributor's own active drop, before the reveal > refuses another member's drop, a held drop, and any pointer from the reveal on",
+   "T22: a highlight points to the contributor's own active drop, before the reveal > sets, moves and clears it, moving its version by one each time",
+   "T23 to T25: a removal is one audited record, and the drop's state agrees with it > lets a withdrawn drop lose its content and nothing else",
+   "T23 to T25: a removal is one audited record, and the drop's state agrees with it > lets only the author withdraw, and never changes a removal",
+   "T23 to T25: a removal is one audited record, and the drop's state agrees with it > refuses a drop withdrawn without a removal, or in a state its reason doesn't give",
+   "T23 to T25: a removal is one audited record, and the drop's state agrees with it > refuses a pictured removal by someone who has left (T9)",
+   "T23 to T25: a removal is one audited record, and the drop's state agrees with it > refuses a pictured removal by the author, before the reveal, or of a link",
+   "T23 to T25: a removal is one audited record, and the drop's state agrees with it > withdraws by the author, and removes as pictured by a member in the revealed photo",
+   "T29: a drop on hold at the reveal never appears afterwards > releases a hold before the reveal, and refuses it from the reveal on",
+   "T33: a revision's version moves with its state, and only then > never changes an ended revision",
+   "T33: a revision's version moves with its state, and only then > refuses a version moved by an approval, or a state change that doesn't move it",
+   "T3: the reveal is the cutoff > commits a drop only active and at version 1",
+   "T3: the reveal is the cutoff > judges every change at its own instant, and an edit is a new version (T1, T3, T19)",
+   "T3: the reveal is the cutoff > lets a caption change before the reveal, and freezes it from the reveal on",
+   "T3: the reveal is the cutoff > refuses a commit at the reveal",
+   "T3: the reveal is the cutoff > refuses a reservation made at the reveal or lasting past it (T18)",
+   "T4 and T6: an announced day never moves > never changes a day's date, star, week or instants, and never deletes it",
+   "T4 and T6: an announced day never moves > never changes an announced week or a confirmed weekday",
+   "T4: the server never moves a drop > never changes a drop's day, author or kind, and never deletes it",
+   "T6 and FQ61: a day for the right star, from the week in force > makes Ana's next Saturday from the week in force on it",
+   "T6 and FQ61: a day for the right star, from the week in force > refuses a Sunday, and an assignment whose first date isn't its weekday",
+   "T6 and FQ61: a day for the right star, from the week in force > refuses a day before the weekday's first date",
+   "T6 and FQ61: a day for the right star, from the week in force > refuses a day for a star who has left (FQ63)",
+   "T6 and FQ61: a day for the right star, from the week in force > refuses a day for a star whose weekday it isn't",
+   "T6 and FQ61: a day for the right star, from the week in force > refuses a day from a week that isn't in force on its date",
+   "T6 and FQ61: a day for the right star, from the week in force > refuses a new week that would move a day already announced",
+   "T6 and FQ61: a day for the right star, from the week in force > refuses instants out of order",
+   "T7: an exact roster, sealed when it is made > binds a link once, to one account, before it expires (T7, FQ71)",
+   "T7: an exact roster, sealed when it is made > commits a revision with its roster sealed",
+   "T7: an exact roster, sealed when it is made > counts proposing as approving only for the proposer of a member's proposal (FQ60, FQ84)",
+   "T7: an exact roster, sealed when it is made > lets only a member of the exact roster decide, while still a member",
+   "T7: an exact roster, sealed when it is made > refuses a member or a candidate added to a sealed revision",
+   "T7: an exact roster, sealed when it is made > refuses a revision made without its seal, its proposer or a candidate",
+   "T7: an exact roster, sealed when it is made > refuses an approval before the seal, a second decision, and a decision once it has ended",
+   "T7: an exact roster, sealed when it is made > seals a roster only when it is exactly the club's members (T7, FQ84)",
+   "T7: joining only by the exact roster accepted and approved > adds Dan once every member approved, Dan accepted with Dan's own link, and it was applied",
+   "T7: joining only by the exact roster accepted and approved > makes the creator's membership with the club, and no other without a roster",
+   "T7: joining only by the exact roster accepted and approved > refuses Dan while a member hasn't approved, before it is applied, or as someone else",
+   "T7: joining only by the exact roster accepted and approved > refuses a late join through an older roster that someone who has joined since never approved (T7)",
+   "T8: a commit that leaves the audience incomplete or unsealed doesn't commit > refuses a drop committed without its seal",
+   "T8: a commit that leaves the audience incomplete or unsealed doesn't commit > refuses a drop for a star who is no longer a member",
+   "T8: a commit that leaves the audience incomplete or unsealed doesn't commit > refuses an audience that leaves out an active member",
+   "T8: an interval is one account's, in one club, for good > never moves an interval to another account or club, and never deletes it",
+   "T8: the audience is sealed at the commit > commits a drop whose audience is every active member, sealed",
+   "T8: the audience is sealed at the commit > never changes, deletes or truncates an audience row",
+   "T8: the audience is sealed at the commit > never unseals a drop",
+   "T8: the audience is sealed at the commit > refuses a late audience row even in the transaction that sealed it",
+   "T8: the audience is sealed at the commit > refuses a late audience row once the drop is sealed, for a member who joined after the commit",
+   "T8: the audience is sealed at the commit > refuses a member whose interval has ended",
+   "T8: the audience is sealed at the commit > refuses another club's member",
+   "T9: a day's status only denies it > stores no phase: collecting, open and past aren't statuses (T1, T5)",
+   "T9: a day's status only denies it > suspends and cancels a day, and never brings a cancelled one back",
+   "rows kept for good can't be truncated > gives every table that refuses a DELETE a trigger that refuses TRUNCATE",
+   "spec 22 and FQ27: reports, cases and the operator's audit trail > keeps the operator's actions append-only, with a label and never an address",
+   "spec 22 and FQ27: reports, cases and the operator's audit trail > refuses a report on one's own drop, and keeps one open case per target",
+   "the other keys a double tap meets > keeps one day per club and date (T6)",
+   "the other keys a double tap meets > keeps one live reservation per contributor and key (T19)",
+   "the other keys a double tap meets > keeps one reaction per member and drop (spec 16)",
+   "the uniqueness of receipts, highlights and favourites > keeps one favourite per member and drop (spec 18, 31)",
+   "the uniqueness of receipts, highlights and favourites > keeps one highlight per contributor and day (T22)",
+   "the uniqueness of receipts, highlights and favourites > keeps one receipt per caller, operation and key (T19)"
+  ]
+ },
+ {
+  "name": "T7 seal: an active member left out",
+  "file": "db/migrations/0004_rosters.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T7: an exact roster, sealed when it is made > seals a roster only when it is exactly the club's members (T7, FQ84)"
+  ]
+ },
+ {
+  "name": "T7 seal: a member who left listed",
+  "file": "db/migrations/0004_rosters.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T7: an exact roster, sealed when it is made > seals a roster only when it is exactly the club's members (T7, FQ84)"
+  ]
+ },
+ {
+  "name": "T7 only an active member decides",
+  "file": "db/migrations/0004_rosters.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T7: an exact roster, sealed when it is made > lets only a member of the exact roster decide, while still a member"
+  ]
+ },
+ {
+  "name": "FQ84 no implicit approval in a rename",
+  "file": "db/migrations/0004_rosters.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T7: an exact roster, sealed when it is made > counts proposing as approving only for the proposer of a member's proposal (FQ60, FQ84)"
+  ]
+ },
+ {
+  "name": "FQ60 implicit only for the proposer",
+  "file": "db/migrations/0004_rosters.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T7: an exact roster, sealed when it is made > counts proposing as approving only for the proposer of a member's proposal (FQ60, FQ84)"
+  ]
+ },
+ {
+  "name": "T7 join: every current member approved",
+  "file": "db/migrations/0004_rosters.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T7: joining only by the exact roster accepted and approved > refuses a late join through an older roster that someone who has joined since never approved (T7)"
+  ]
+ },
+ {
+  "name": "FQ71 a link binds before it expires",
+  "file": "db/migrations/0004_rosters.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T7: an exact roster, sealed when it is made > binds a link once, to one account, before it expires (T7, FQ71)"
+  ]
+ },
+ {
+  "name": "T7 a link binds one account",
+  "file": "db/migrations/0004_rosters.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T7: an exact roster, sealed when it is made > binds a link once, to one account, before it expires (T7, FQ71)"
+  ]
+ },
+ {
+  "name": "T7 an acceptance names its link once",
+  "file": "db/migrations/0004_rosters.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T7: an exact roster, sealed when it is made > binds a link once, to one account, before it expires (T7, FQ71)"
+  ]
+ },
+ {
+  "name": "T7 no approval before the seal",
+  "file": "db/migrations/0004_rosters.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T7: an exact roster, sealed when it is made > refuses an approval before the seal, a second decision, and a decision once it has ended"
+  ]
+ },
+ {
+  "name": "T7 a revision adds somebody",
+  "file": "db/migrations/0004_rosters.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T7: an exact roster, sealed when it is made > refuses a revision made without its seal, its proposer or a candidate"
+  ]
+ },
+ {
+  "name": "T7 no member added once sealed",
+  "file": "db/migrations/0004_rosters.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T7: an exact roster, sealed when it is made > refuses a member or a candidate added to a sealed revision"
+  ]
+ },
+ {
+  "name": "approvals truncate refused",
+  "file": "db/migrations/0004_rosters.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "rows kept for good can't be truncated > refuses TRUNCATE on each such table that no foreign key references, by its own trigger"
+  ]
+ },
+ {
+  "name": "candidates truncate trigger gone",
+  "file": "db/migrations/0004_rosters.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "A01 and TECH-DESIGN section 6: the roster's limits > holds at most six active members",
+   "A01 and TECH-DESIGN section 6: the roster's limits > holds one active interval per account and club, and a rejoin is a new interval",
+   "A01 and TECH-DESIGN section 6: the roster's limits > keeps an invitation's token only as a unique hash, with one latest link per candidate",
+   "D07, T8 and spec 16: reactions, comments and favourites, from the reveal, by the audience > adds nothing to a drop that isn't active, or from someone who has left, who can still take their own away (T9, T24)",
+   "D07, T8 and spec 16: reactions, comments and favourites, from the reveal, by the audience > lets a deleted comment only lose its text",
+   "D07, T8 and spec 16: reactions, comments and favourites, from the reveal, by the audience > reacts, comments and saves once the day has opened",
+   "D07, T8 and spec 16: reactions, comments and favourites, from the reveal, by the audience > refuses a reaction to one's own drop, and anyone outside the audience",
+   "D07, T8 and spec 16: reactions, comments and favourites, from the reveal, by the audience > refuses each before the reveal",
+   "FQ27: a moderation removal cites the operator's removal of that drop > refuses an action about anything else, and takes the one about that drop",
+   "T12 and T40: uploads and links keep nothing they shouldn't > commits only a link its author resolved (T40)",
+   "T12 and T40: uploads and links keep nothing they shouldn't > commits only the author's own ready upload, made for that day's slot or that drop (T12)",
+   "T12 and T40: uploads and links keep nothing they shouldn't > makes an avatar only of a ready upload made as one (T12, FQ74)",
+   "T12 and T40: uploads and links keep nothing they shouldn't > puts an upload only into its owner's own slot or drop (T12)",
+   "T12 and T40: uploads and links keep nothing they shouldn't > refuses a link with a query string or fragment, or a provider id that isn't one",
+   "T12 and T40: uploads and links keep nothing they shouldn't > starts an upload pending and never takes it back",
+   "T17: six and two, as a last guard behind the counter's lock > refuses a seventh drop or a third link in the counter",
+   "T17: six and two, as a last guard behind the counter's lock > ties a counter to one club's day and member",
+   "T18: a reservation ends once > never changes a used reservation",
+   "T19: the same key is the same request, or IDEMPOTENCY_CONFLICT > never changes a completed receipt, nor the hash of a pending one",
+   "T19: the same key is the same request, or IDEMPOTENCY_CONFLICT > refuses a receipt left pending at the commit",
+   "T19: the same key is the same request, or IDEMPOTENCY_CONFLICT > refuses an operation the contract doesn't make idempotent",
+   "T19: the same key is the same request, or IDEMPOTENCY_CONFLICT > replays the same removal, and refuses the key on another drop or with another reason",
+   "T19: the same key is the same request, or IDEMPOTENCY_CONFLICT > stores ids, states, flags and people's names, whatever a name holds",
+   "T19: the same key is the same request, or IDEMPOTENCY_CONFLICT > stores no caption, comment, note, link or token in a response, under any key",
+   "T21: the same photo or link once per author and day > refuses a second live drop with the same scoped hash, and allows another author's",
+   "T22: a highlight points to the contributor's own active drop, before the reveal > clears it from the reveal on only when its drop ends (T3, T22, T24)",
+   "T22: a highlight points to the contributor's own active drop, before the reveal > refuses a withdrawal that leaves the highlight on the drop",
+   "T22: a highlight points to the contributor's own active drop, before the reveal > refuses another member's drop, a held drop, and any pointer from the reveal on",
+   "T22: a highlight points to the contributor's own active drop, before the reveal > sets, moves and clears it, moving its version by one each time",
+   "T23 to T25: a removal is one audited record, and the drop's state agrees with it > lets a withdrawn drop lose its content and nothing else",
+   "T23 to T25: a removal is one audited record, and the drop's state agrees with it > lets only the author withdraw, and never changes a removal",
+   "T23 to T25: a removal is one audited record, and the drop's state agrees with it > refuses a drop withdrawn without a removal, or in a state its reason doesn't give",
+   "T23 to T25: a removal is one audited record, and the drop's state agrees with it > refuses a pictured removal by someone who has left (T9)",
+   "T23 to T25: a removal is one audited record, and the drop's state agrees with it > refuses a pictured removal by the author, before the reveal, or of a link",
+   "T23 to T25: a removal is one audited record, and the drop's state agrees with it > withdraws by the author, and removes as pictured by a member in the revealed photo",
+   "T29: a drop on hold at the reveal never appears afterwards > releases a hold before the reveal, and refuses it from the reveal on",
+   "T33: a revision's version moves with its state, and only then > never changes an ended revision",
+   "T33: a revision's version moves with its state, and only then > refuses a version moved by an approval, or a state change that doesn't move it",
+   "T3: the reveal is the cutoff > commits a drop only active and at version 1",
+   "T3: the reveal is the cutoff > judges every change at its own instant, and an edit is a new version (T1, T3, T19)",
+   "T3: the reveal is the cutoff > lets a caption change before the reveal, and freezes it from the reveal on",
+   "T3: the reveal is the cutoff > refuses a commit at the reveal",
+   "T3: the reveal is the cutoff > refuses a reservation made at the reveal or lasting past it (T18)",
+   "T4 and T6: an announced day never moves > never changes a day's date, star, week or instants, and never deletes it",
+   "T4 and T6: an announced day never moves > never changes an announced week or a confirmed weekday",
+   "T4: the server never moves a drop > never changes a drop's day, author or kind, and never deletes it",
+   "T6 and FQ61: a day for the right star, from the week in force > makes Ana's next Saturday from the week in force on it",
+   "T6 and FQ61: a day for the right star, from the week in force > refuses a Sunday, and an assignment whose first date isn't its weekday",
+   "T6 and FQ61: a day for the right star, from the week in force > refuses a day before the weekday's first date",
+   "T6 and FQ61: a day for the right star, from the week in force > refuses a day for a star who has left (FQ63)",
+   "T6 and FQ61: a day for the right star, from the week in force > refuses a day for a star whose weekday it isn't",
+   "T6 and FQ61: a day for the right star, from the week in force > refuses a day from a week that isn't in force on its date",
+   "T6 and FQ61: a day for the right star, from the week in force > refuses a new week that would move a day already announced",
+   "T6 and FQ61: a day for the right star, from the week in force > refuses instants out of order",
+   "T7: an exact roster, sealed when it is made > binds a link once, to one account, before it expires (T7, FQ71)",
+   "T7: an exact roster, sealed when it is made > commits a revision with its roster sealed",
+   "T7: an exact roster, sealed when it is made > counts proposing as approving only for the proposer of a member's proposal (FQ60, FQ84)",
+   "T7: an exact roster, sealed when it is made > lets only a member of the exact roster decide, while still a member",
+   "T7: an exact roster, sealed when it is made > refuses a member or a candidate added to a sealed revision",
+   "T7: an exact roster, sealed when it is made > refuses a revision made without its seal, its proposer or a candidate",
+   "T7: an exact roster, sealed when it is made > refuses an approval before the seal, a second decision, and a decision once it has ended",
+   "T7: an exact roster, sealed when it is made > seals a roster only when it is exactly the club's members (T7, FQ84)",
+   "T7: joining only by the exact roster accepted and approved > adds Dan once every member approved, Dan accepted with Dan's own link, and it was applied",
+   "T7: joining only by the exact roster accepted and approved > makes the creator's membership with the club, and no other without a roster",
+   "T7: joining only by the exact roster accepted and approved > refuses Dan while a member hasn't approved, before it is applied, or as someone else",
+   "T7: joining only by the exact roster accepted and approved > refuses a late join through an older roster that someone who has joined since never approved (T7)",
+   "T8: a commit that leaves the audience incomplete or unsealed doesn't commit > refuses a drop committed without its seal",
+   "T8: a commit that leaves the audience incomplete or unsealed doesn't commit > refuses a drop for a star who is no longer a member",
+   "T8: a commit that leaves the audience incomplete or unsealed doesn't commit > refuses an audience that leaves out an active member",
+   "T8: an interval is one account's, in one club, for good > never moves an interval to another account or club, and never deletes it",
+   "T8: the audience is sealed at the commit > commits a drop whose audience is every active member, sealed",
+   "T8: the audience is sealed at the commit > never changes, deletes or truncates an audience row",
+   "T8: the audience is sealed at the commit > never unseals a drop",
+   "T8: the audience is sealed at the commit > refuses a late audience row even in the transaction that sealed it",
+   "T8: the audience is sealed at the commit > refuses a late audience row once the drop is sealed, for a member who joined after the commit",
+   "T8: the audience is sealed at the commit > refuses a member whose interval has ended",
+   "T8: the audience is sealed at the commit > refuses another club's member",
+   "T9: a day's status only denies it > stores no phase: collecting, open and past aren't statuses (T1, T5)",
+   "T9: a day's status only denies it > suspends and cancels a day, and never brings a cancelled one back",
+   "rows kept for good can't be truncated > gives every table that refuses a DELETE a trigger that refuses TRUNCATE",
+   "spec 22 and FQ27: reports, cases and the operator's audit trail > keeps the operator's actions append-only, with a label and never an address",
+   "spec 22 and FQ27: reports, cases and the operator's audit trail > refuses a report on one's own drop, and keeps one open case per target",
+   "the other keys a double tap meets > keeps one day per club and date (T6)",
+   "the other keys a double tap meets > keeps one live reservation per contributor and key (T19)",
+   "the other keys a double tap meets > keeps one reaction per member and drop (spec 16)",
+   "the uniqueness of receipts, highlights and favourites > keeps one favourite per member and drop (spec 18, 31)",
+   "the uniqueness of receipts, highlights and favourites > keeps one highlight per contributor and day (T22)",
+   "the uniqueness of receipts, highlights and favourites > keeps one receipt per caller, operation and key (T19)"
+  ]
+ },
+ {
+  "name": "assignments truncate refused",
+  "file": "db/migrations/0005_schedules_and_days.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "rows kept for good can't be truncated > refuses TRUNCATE on each such table that no foreign key references, by its own trigger"
+  ]
+ },
+ {
+  "name": "versions truncate trigger gone",
+  "file": "db/migrations/0005_schedules_and_days.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "rows kept for good can't be truncated > gives every table that refuses a DELETE a trigger that refuses TRUNCATE"
+  ]
+ },
+ {
+  "name": "a day keeps its week",
+  "file": "db/migrations/0005_schedules_and_days.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T4 and T6: an announced day never moves > never changes a day's date, star, week or instants, and never deletes it"
+  ]
+ },
+ {
+  "name": "a day keeps collecting_from",
+  "file": "db/migrations/0005_schedules_and_days.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T4 and T6: an announced day never moves > never changes a day's date, star, week or instants, and never deletes it"
+  ]
+ },
+ {
+  "name": "T12 upload into own slot",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T12 and T40: uploads and links keep nothing they shouldn't > puts an upload only into its owner's own slot or drop (T12)"
+  ]
+ },
+ {
+  "name": "T12 replacement by the author",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T12 and T40: uploads and links keep nothing they shouldn't > puts an upload only into its owner's own slot or drop (T12)"
+  ]
+ },
+ {
+  "name": "FQ74 avatar made as one",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T12 and T40: uploads and links keep nothing they shouldn't > makes an avatar only of a ready upload made as one (T12, FQ74)"
+  ]
+ },
+ {
+  "name": "FQ74 avatar ready",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T12 and T40: uploads and links keep nothing they shouldn't > makes an avatar only of a ready upload made as one (T12, FQ74)"
+  ]
+ },
+ {
+  "name": "T12 drop photo is the author's (owner clause)",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "MISSED",
+  "failed": []
+ },
+ {
+  "name": "T12 drop photo is ready",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T12 and T40: uploads and links keep nothing they shouldn't > commits only the author's own ready upload, made for that day's slot or that drop (T12)"
+  ]
+ },
+ {
+  "name": "T12 drop photo for this slot or drop",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T12 and T40: uploads and links keep nothing they shouldn't > commits only the author's own ready upload, made for that day's slot or that drop (T12)"
+  ]
+ },
+ {
+  "name": "T40 link resolved by the author",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T12 and T40: uploads and links keep nothing they shouldn't > commits only a link its author resolved (T40)"
+  ]
+ },
+ {
+  "name": "T12 pending replacement is the author's",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "MISSED",
+  "failed": []
+ },
+ {
+  "name": "T3 every change carries its instant",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T3: the reveal is the cutoff > judges every change at its own instant, and an edit is a new version (T1, T3, T19)"
+  ]
+ },
+ {
+  "name": "T19 an edit is a new version",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T3: the reveal is the cutoff > judges every change at its own instant, and an edit is a new version (T1, T3, T19)"
+  ]
+ },
+ {
+  "name": "T19 version and time never go back",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T3: the reveal is the cutoff > judges every change at its own instant, and an edit is a new version (T1, T3, T19)"
+  ]
+ },
+ {
+  "name": "T3 committed active",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T3: the reveal is the cutoff > commits a drop only active and at version 1"
+  ]
+ },
+ {
+  "name": "T3 committed at version 1",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T3: the reveal is the cutoff > commits a drop only active and at version 1"
+  ]
+ },
+ {
+  "name": "T3 highlight cleared only with its drop's end",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T22: a highlight points to the contributor's own active drop, before the reveal > clears it from the reveal on only when its drop ends (T3, T22, T24)"
+  ]
+ },
+ {
+  "name": "highlights truncate refused",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "rows kept for good can't be truncated > refuses TRUNCATE on each such table that no foreign key references, by its own trigger"
+  ]
+ },
+ {
+  "name": "audience truncate refused (own trigger)",
+  "file": "db/migrations/0006_contributions.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T8: the audience is sealed at the commit > never changes, deletes or truncates an audience row"
+  ]
+ },
+ {
+  "name": "T24 nothing added to an inactive drop",
+  "file": "db/migrations/0007_after_the_reveal.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "D07, T8 and spec 16: reactions, comments and favourites, from the reveal, by the audience > adds nothing to a drop that isn't active, or from someone who has left, who can still take their own away (T9, T24)"
+  ]
+ },
+ {
+  "name": "T9 nothing added by someone who left",
+  "file": "db/migrations/0007_after_the_reveal.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "D07, T8 and spec 16: reactions, comments and favourites, from the reveal, by the audience > adds nothing to a drop that isn't active, or from someone who has left, who can still take their own away (T9, T24)"
+  ]
+ },
+ {
+  "name": "T9 a comment edit adds",
+  "file": "db/migrations/0007_after_the_reveal.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "D07, T8 and spec 16: reactions, comments and favourites, from the reveal, by the audience > adds nothing to a drop that isn't active, or from someone who has left, who can still take their own away (T9, T24)"
+  ]
+ },
+ {
+  "name": "T9 clearing one's own reaction adds nothing",
+  "file": "db/migrations/0007_after_the_reveal.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "D07, T8 and spec 16: reactions, comments and favourites, from the reveal, by the audience > adds nothing to a drop that isn't active, or from someone who has left, who can still take their own away (T9, T24)"
+  ]
+ },
+ {
+  "name": "T9 pictured remover still a member",
+  "file": "db/migrations/0008_safety.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T23 to T25: a removal is one audited record, and the drop's state agrees with it > refuses a pictured removal by someone who has left (T9)"
+  ]
+ },
+ {
+  "name": "FQ27 moderation cites a remove_drop",
+  "file": "db/migrations/0008_safety.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "FQ27: a moderation removal cites the operator's removal of that drop > refuses an action about anything else, and takes the one about that drop"
+  ]
+ },
+ {
+  "name": "FQ27 moderation cites this drop",
+  "file": "db/migrations/0008_safety.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "FQ27: a moderation removal cites the operator's removal of that drop > refuses an action about anything else, and takes the one about that drop"
+  ]
+ },
+ {
+  "name": "moderation_cases truncate trigger gone",
+  "file": "db/migrations/0008_safety.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "rows kept for good can't be truncated > gives every table that refuses a DELETE a trigger that refuses TRUNCATE"
+  ]
+ },
+ {
+  "name": "T52 keys in any case",
+  "file": "db/migrations/0009_platform.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T19: the same key is the same request, or IDEMPOTENCY_CONFLICT > stores no caption, comment, note, link or token in a response, under any key"
+  ]
+ },
+ {
+  "name": "T52 a link under any key",
+  "file": "db/migrations/0009_platform.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T19: the same key is the same request, or IDEMPOTENCY_CONFLICT > stores no caption, comment, note, link or token in a response, under any key"
+  ]
+ },
+ {
+  "name": "T52 a link in a list",
+  "file": "db/migrations/0009_platform.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T19: the same key is the same request, or IDEMPOTENCY_CONFLICT > stores no caption, comment, note, link or token in a response, under any key"
+  ]
+ },
+ {
+  "name": "T52 a flag is no content",
+  "file": "db/migrations/0009_platform.sql",
+  "verdict": "BROKEN",
+  "failed": []
+ },
+ {
+  "name": "T52 a name may hold anything",
+  "file": "db/migrations/0009_platform.sql",
+  "verdict": "BROKEN",
+  "failed": []
+ },
+ {
+  "name": "T27 no receipt for a deleted account",
+  "file": "db/migrations/0009_platform.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T19: the same key is the same request, or IDEMPOTENCY_CONFLICT > deletes an account's receipts before it becomes a shell, and keeps none for it after (T27)"
+  ]
+ },
+ {
+  "name": "T27 receipts deleted with the account",
+  "file": "db/migrations/0009_platform.sql",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T19: the same key is the same request, or IDEMPOTENCY_CONFLICT > deletes an account's receipts before it becomes a shell, and keeps none for it after (T27)"
+  ]
+ },
+ {
+  "name": "T53 runner refuses COMMIT",
+  "file": "tools/ops/src/migrate.ts",
+  "verdict": "CAUGHT",
+  "failed": [
+   "transactionControl (T53: a migration never ends the runner's transaction) > finds every statement that would begin, end or split the transaction, in any case"
+  ]
+ },
+ {
+  "name": "T53 runner skips dollar-quoted bodies",
+  "file": "tools/ops/src/migrate.ts",
+  "verdict": "CAUGHT",
+  "failed": [
+   "readMigrations > reads the repository's own migrations",
+   "transactionControl (T53: a migration never ends the runner's transaction) > ignores those words in comments, strings, quoted names and function bodies"
+  ]
+ },
+ {
+  "name": "T53 runner refuses BEGIN in a file",
+  "file": "tools/ops/src/migrate.ts",
+  "verdict": "CAUGHT",
+  "failed": [
+   "readMigrations > refuses a file that begins, ends or splits its own transaction",
+   "the runner (T57) > refuses a migration with its own BEGIN and COMMIT before running any of it (T53)"
+  ]
+ },
+ {
+  "name": "T53 runner's transaction backstop",
+  "file": "tools/ops/src/migrate.ts",
+  "verdict": "CAUGHT",
+  "failed": [
+   "the runner (T57) > fails loudly if a file it runs ends its transaction, which readMigrations refuses first",
+   "the runner (T57) > rolls back a migration that fails part way, with nothing of it left",
+   "the runner (T57) > rolls back a migration that names a table without its schema"
+  ]
+ },
+ {
+  "name": "T53 check reads column grants",
+  "file": "tools/ops/src/migrate.ts",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T53: the runner's check finds whatever would open the schema > a grant on a column, which a grant on the table doesn't show (review finding privacy 3 of PR #17)"
+  ]
+ },
+ {
+  "name": "T53 check reads type grants",
+  "file": "tools/ops/src/migrate.ts",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T53: the runner's check finds whatever would open the schema > a grant on a type or domain",
+   "T53: the runner's check finds whatever would open the schema > an object another role owns"
+  ]
+ },
+ {
+  "name": "T53 check reads type owners",
+  "file": "tools/ops/src/migrate.ts",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T53: the runner's check finds whatever would open the schema > an object another role owns"
+  ]
+ },
+ {
+  "name": "T53 check reads default privileges",
+  "file": "tools/ops/src/migrate.ts",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T53: the runner's check finds whatever would open the schema > a default privilege that would grant what the owner makes later"
+  ]
+ }
+]

@@ -1,0 +1,350 @@
+[
+ [
+  "T8 late audience row",
+  "db/migrations/0006_contributions.sql",
+  "  IF sealed_at IS NOT NULL THEN",
+  "  IF false THEN"
+ ],
+ [
+  "T8 audience leaves out a member",
+  "db/migrations/0006_contributions.sql",
+  "  IF EXISTS (SELECT FROM app.memberships m\n",
+  "  IF false AND EXISTS (SELECT FROM app.memberships m\n"
+ ],
+ [
+  "T8 audience of ended member",
+  "db/migrations/0006_contributions.sql",
+  "  PERFORM FROM app.memberships WHERE interval_id = NEW.interval_id AND state = 'active' FOR SHARE;",
+  "  PERFORM FROM app.memberships WHERE interval_id = NEW.interval_id FOR SHARE;"
+ ],
+ [
+  "T3 commit after reveal",
+  "db/migrations/0006_contributions.sql",
+  "OR NEW.submitted_at >= reveal THEN",
+  "THEN"
+ ],
+ [
+  "T3 frozen content",
+  "db/migrations/0006_contributions.sql",
+  "  IF NEW.state IN ('active', 'held') AND NEW.updated_at >= reveal\n",
+  "  IF false AND NEW.state IN ('active', 'held') AND NEW.updated_at >= reveal\n"
+ ],
+ [
+  "T29 held never late",
+  "db/migrations/0006_contributions.sql",
+  "  IF OLD.state = 'held' AND NEW.state = 'active' AND NEW.updated_at >= reveal THEN",
+  "  IF false THEN"
+ ],
+ [
+  "T24 ended drop only loses content",
+  "db/migrations/0006_contributions.sql",
+  "  ELSIF OLD.state IN ('withdrawn', 'removed') THEN\n    -- Withdrawn and removed are final; the purge only takes the content away (T23, T24).\n    IF (NEW.state",
+  "  ELSIF OLD.state IN ('withdrawn', 'removed') THEN\n    -- Withdrawn and removed are final; the purge only takes the content away (T23, T24).\n    IF false AND (NEW.state"
+ ],
+ [
+  "T22 highlight active, before reveal",
+  "db/migrations/0006_contributions.sql",
+  "    IF drop_state <> 'active' OR NEW.updated_at >= app.drop_reveal_at(NEW.drop_id) THEN",
+  "    IF false THEN"
+ ],
+ [
+  "T22 removal clears highlight",
+  "db/migrations/0006_contributions.sql",
+  "  IF EXISTS (SELECT FROM app.highlights WHERE drop_id = NEW.id) THEN",
+  "  IF false THEN"
+ ],
+ [
+  "T22 highlight version",
+  "db/migrations/0006_contributions.sql",
+  "    IF NEW.version <> OLD.version + 1 THEN",
+  "    IF false THEN"
+ ],
+ [
+  "T17 six",
+  "db/migrations/0006_contributions.sql",
+  "  CHECK (committed_total + reserved_total <= 6),",
+  "  CHECK (committed_total + reserved_total <= 7),"
+ ],
+ [
+  "T18 reservation past reveal",
+  "db/migrations/0006_contributions.sql",
+  " OR NEW.expires_at > reveal THEN",
+  " THEN"
+ ],
+ [
+  "T21 duplicate",
+  "db/migrations/0006_contributions.sql",
+  "CREATE UNIQUE INDEX drops_no_duplicate ON app.drops (occurrence_id, author_interval_id, dedupe_key)",
+  "CREATE UNIQUE INDEX drops_no_duplicate ON app.drops (occurrence_id, author_interval_id, dedupe_key, id)"
+ ],
+ [
+  "spec 33 upload born pending",
+  "db/migrations/0006_contributions.sql",
+  "    IF NEW.state <> 'pending' THEN",
+  "    IF false THEN"
+ ],
+ [
+  "T6 right star",
+  "db/migrations/0005_schedules_and_days.sql",
+  "                    AND star_interval_id = NEW.star_interval_id\n",
+  "\n"
+ ],
+ [
+  "FQ61 version in force",
+  "db/migrations/0005_schedules_and_days.sql",
+  "  IF version.effective_from > NEW.local_date\n     OR EXISTS",
+  "  IF version.effective_from > NEW.local_date\n     OR false AND EXISTS"
+ ],
+ [
+  "FQ61 new version moves a day",
+  "db/migrations/0005_schedules_and_days.sql",
+  "  IF EXISTS (SELECT FROM app.occurrences WHERE club_id = NEW.club_id AND local_date >= NEW.effective_from) THEN",
+  "  IF false THEN"
+ ],
+ [
+  "FQ63 no day for a leaver",
+  "db/migrations/0005_schedules_and_days.sql",
+  "  IF NOT EXISTS (SELECT FROM app.memberships WHERE interval_id = NEW.star_interval_id AND state = 'active') THEN",
+  "  IF false THEN"
+ ],
+ [
+  "T9 status only denies",
+  "db/migrations/0005_schedules_and_days.sql",
+  "          OR (OLD.status = 'suspended' AND NEW.status = 'cancelled')) THEN",
+  "          OR (OLD.status = 'suspended' AND NEW.status = 'cancelled') OR true) THEN"
+ ],
+ [
+  "T7 join needs applied revision",
+  "db/migrations/0004_rosters.sql",
+  "AND club_id = NEW.club_id AND state = 'applied')",
+  "AND club_id = NEW.club_id)"
+ ],
+ [
+  "T7 one creator",
+  "db/migrations/0003_people_and_clubs.sql",
+  "CREATE UNIQUE INDEX memberships_one_creator ON app.memberships (club_id) WHERE origin = 'creator';",
+  "CREATE INDEX memberships_one_creator ON app.memberships (club_id) WHERE origin = 'creator';"
+ ],
+ [
+  "T33 version with state",
+  "db/migrations/0004_rosters.sql",
+  "  IF NEW.version <> OLD.version + (CASE WHEN NEW.state = OLD.state THEN 0 ELSE 1 END) THEN",
+  "  IF false THEN"
+ ],
+ [
+  "T7 sealed roster",
+  "db/migrations/0004_rosters.sql",
+  "  IF TG_OP = 'INSERT' AND TG_TABLE_NAME <> 'roster_approvals' AND revision.roster_sealed_at IS NOT NULL THEN",
+  "  IF false THEN"
+ ],
+ [
+  "A01 six members",
+  "db/migrations/0003_people_and_clubs.sql",
+  "    IF active >= 6 THEN",
+  "    IF active >= 7 THEN"
+ ],
+ [
+  "T25 removal state matches",
+  "db/migrations/0008_safety.sql",
+  "  IF drop_state IS DISTINCT FROM (CASE",
+  "  IF false AND drop_state IS DISTINCT FROM (CASE"
+ ],
+ [
+  "T25 pictured after reveal",
+  "db/migrations/0008_safety.sql",
+  "\n                                  OR NEW.removed_at < app.drop_reveal_at(d.id)) THEN",
+  ") THEN"
+ ],
+ [
+  "spec 22 own report",
+  "db/migrations/0008_safety.sql",
+  "  IF target_author = NEW.reporter_interval_id THEN",
+  "  IF false THEN"
+ ],
+ [
+  "D07 after reveal",
+  "db/migrations/0007_after_the_reveal.sql",
+  "  IF written_at < app.drop_reveal_at(NEW.drop_id) THEN",
+  "  IF false THEN"
+ ],
+ [
+  "spec 16 own reaction",
+  "db/migrations/0007_after_the_reveal.sql",
+  "    IF EXISTS (SELECT FROM app.drops WHERE id = NEW.drop_id AND author_interval_id = NEW.interval_id) THEN",
+  "    IF false THEN"
+ ],
+ [
+  "T19 receipt commits completed",
+  "db/migrations/0009_platform.sql",
+  "                AND idempotency_key = NEW.idempotency_key AND state = 'pending') THEN",
+  "                AND idempotency_key = NEW.idempotency_key AND false) THEN"
+ ],
+ [
+  "T19 completed immutable",
+  "db/migrations/0009_platform.sql",
+  "  IF OLD.state = 'completed' AND NEW IS DISTINCT FROM OLD THEN",
+  "  IF false THEN"
+ ],
+ [
+  "T19 one receipt per key",
+  "db/migrations/0009_platform.sql",
+  "  PRIMARY KEY (actor_user_id, operation, idempotency_key),",
+  "  PRIMARY KEY (actor_user_id, operation, idempotency_key, request_hash),"
+ ],
+ [
+  "T52 no caption in receipts/outbox",
+  "db/migrations/0009_platform.sql",
+  "\"caption|text|body|note|url|href|link|token|preview|message|secret|signed\" flag \"i\"",
+  "\"^$\" flag \"i\""
+ ],
+ [
+  "FQ27 audit append-only",
+  "db/migrations/0008_safety.sql",
+  "CREATE TRIGGER operator_actions_append_only BEFORE UPDATE OR DELETE ON app.operator_actions",
+  "CREATE TRIGGER operator_actions_append_only BEFORE UPDATE ON app.operator_actions"
+ ],
+ [
+  "T7 join needs every approval",
+  "db/migrations/0004_rosters.sql",
+  "     OR EXISTS (SELECT FROM app.roster_revision_members m\n",
+  "     OR false AND EXISTS (SELECT FROM app.roster_revision_members m\n"
+ ],
+ [
+  "T25 removal written once (update)",
+  "db/migrations/0008_safety.sql",
+  "CREATE TRIGGER drop_removals_written_once BEFORE UPDATE OR DELETE ON app.drop_removals\n  FOR EACH ROW",
+  "CREATE TRIGGER drop_removals_written_once BEFORE DELETE ON app.drop_removals\n  FOR EACH ROW"
+ ],
+ [
+  "T25 removal written once (delete)",
+  "db/migrations/0008_safety.sql",
+  "CREATE TRIGGER drop_removals_written_once BEFORE UPDATE OR DELETE ON app.drop_removals\n  FOR EACH ROW",
+  "CREATE TRIGGER drop_removals_written_once BEFORE UPDATE ON app.drop_removals\n  FOR EACH ROW"
+ ],
+ [
+  "T28 tombstone never deleted",
+  "db/migrations/0008_safety.sql",
+  "CREATE TRIGGER deletion_tombstones_no_delete BEFORE DELETE ON app.deletion_tombstones\n  FOR EACH ROW",
+  "CREATE TRIGGER deletion_tombstones_no_delete BEFORE DELETE ON app.deletion_tombstones\n  FOR EACH ROW WHEN (false)"
+ ],
+ [
+  "T52 a flag is no content (redone)",
+  "db/migrations/0009_platform.sql",
+  "            && (@.value.type() == \"string\" || @.value.type() == \"object\" || @.value.type() == \"array\"))')",
+  "            && exists(@.value))')"
+ ],
+ [
+  "T52 a name may hold anything (redone)",
+  "db/migrations/0009_platform.sql",
+  "            && !(@.key like_regex \"^(display_name|name|club_name|inviter_name|label)$\"))')",
+  "            && exists(@.value))')"
+ ],
+ [
+  "clubs truncate refused only when (false)",
+  "db/migrations/0003_people_and_clubs.sql",
+  "CREATE TRIGGER clubs_no_truncate BEFORE TRUNCATE ON app.clubs\n  FOR EACH STATEMENT EXECUTE",
+  "CREATE TRIGGER clubs_no_truncate BEFORE TRUNCATE ON app.clubs\n  FOR EACH STATEMENT WHEN (false) EXECUTE"
+ ],
+ [
+  "memberships truncate refused only when (false)",
+  "db/migrations/0003_people_and_clubs.sql",
+  "CREATE TRIGGER memberships_no_truncate BEFORE TRUNCATE ON app.memberships\n  FOR EACH STATEMENT EXECUTE",
+  "CREATE TRIGGER memberships_no_truncate BEFORE TRUNCATE ON app.memberships\n  FOR EACH STATEMENT WHEN (false) EXECUTE"
+ ],
+ [
+  "candidates truncate refused only when (false)",
+  "db/migrations/0004_rosters.sql",
+  "CREATE TRIGGER candidates_no_truncate BEFORE TRUNCATE ON app.candidates\n  FOR EACH STATEMENT EXECUTE",
+  "CREATE TRIGGER candidates_no_truncate BEFORE TRUNCATE ON app.candidates\n  FOR EACH STATEMENT WHEN (false) EXECUTE"
+ ],
+ [
+  "roster_revisions truncate refused only when (false)",
+  "db/migrations/0004_rosters.sql",
+  "CREATE TRIGGER roster_revisions_no_truncate BEFORE TRUNCATE ON app.roster_revisions\n  FOR EACH STATEMENT EXECUTE",
+  "CREATE TRIGGER roster_revisions_no_truncate BEFORE TRUNCATE ON app.roster_revisions\n  FOR EACH STATEMENT WHEN (false) EXECUTE"
+ ],
+ [
+  "invitations truncate refused only when (false)",
+  "db/migrations/0004_rosters.sql",
+  "CREATE TRIGGER invitations_no_truncate BEFORE TRUNCATE ON app.invitations\n  FOR EACH STATEMENT EXECUTE",
+  "CREATE TRIGGER invitations_no_truncate BEFORE TRUNCATE ON app.invitations\n  FOR EACH STATEMENT WHEN (false) EXECUTE"
+ ],
+ [
+  "roster_approvals truncate refused only when (false)",
+  "db/migrations/0004_rosters.sql",
+  "CREATE TRIGGER roster_approvals_no_truncate BEFORE TRUNCATE ON app.roster_approvals\n  FOR EACH STATEMENT EXECUTE",
+  "CREATE TRIGGER roster_approvals_no_truncate BEFORE TRUNCATE ON app.roster_approvals\n  FOR EACH STATEMENT WHEN (false) EXECUTE"
+ ],
+ [
+  "roster_revision_members truncate refused only when (false)",
+  "db/migrations/0004_rosters.sql",
+  "CREATE TRIGGER roster_revision_members_no_truncate BEFORE TRUNCATE ON app.roster_revision_members\n  FOR EACH STATEMENT EXECUTE",
+  "CREATE TRIGGER roster_revision_members_no_truncate BEFORE TRUNCATE ON app.roster_revision_members\n  FOR EACH STATEMENT WHEN (false) EXECUTE"
+ ],
+ [
+  "roster_revision_candidates truncate refused only when (false)",
+  "db/migrations/0004_rosters.sql",
+  "CREATE TRIGGER roster_revision_candidates_no_truncate BEFORE TRUNCATE ON app.roster_revision_candidates\n  FOR EACH STATEMENT EXECUTE",
+  "CREATE TRIGGER roster_revision_candidates_no_truncate BEFORE TRUNCATE ON app.roster_revision_candidates\n  FOR EACH STATEMENT WHEN (false) EXECUTE"
+ ],
+ [
+  "schedule_versions truncate refused only when (false)",
+  "db/migrations/0005_schedules_and_days.sql",
+  "CREATE TRIGGER schedule_versions_no_truncate BEFORE TRUNCATE ON app.schedule_versions\n  FOR EACH STATEMENT EXECUTE",
+  "CREATE TRIGGER schedule_versions_no_truncate BEFORE TRUNCATE ON app.schedule_versions\n  FOR EACH STATEMENT WHEN (false) EXECUTE"
+ ],
+ [
+  "schedule_assignments truncate refused only when (false)",
+  "db/migrations/0005_schedules_and_days.sql",
+  "CREATE TRIGGER schedule_assignments_no_truncate BEFORE TRUNCATE ON app.schedule_assignments\n  FOR EACH STATEMENT EXECUTE",
+  "CREATE TRIGGER schedule_assignments_no_truncate BEFORE TRUNCATE ON app.schedule_assignments\n  FOR EACH STATEMENT WHEN (false) EXECUTE"
+ ],
+ [
+  "occurrences truncate refused only when (false)",
+  "db/migrations/0005_schedules_and_days.sql",
+  "CREATE TRIGGER occurrences_no_truncate BEFORE TRUNCATE ON app.occurrences\n  FOR EACH STATEMENT EXECUTE",
+  "CREATE TRIGGER occurrences_no_truncate BEFORE TRUNCATE ON app.occurrences\n  FOR EACH STATEMENT WHEN (false) EXECUTE"
+ ],
+ [
+  "drops truncate refused only when (false)",
+  "db/migrations/0006_contributions.sql",
+  "CREATE TRIGGER drops_no_truncate BEFORE TRUNCATE ON app.drops\n  FOR EACH STATEMENT EXECUTE",
+  "CREATE TRIGGER drops_no_truncate BEFORE TRUNCATE ON app.drops\n  FOR EACH STATEMENT WHEN (false) EXECUTE"
+ ],
+ [
+  "drop_audience truncate refused only when (false)",
+  "db/migrations/0006_contributions.sql",
+  "CREATE TRIGGER drop_audience_no_truncate BEFORE TRUNCATE ON app.drop_audience\n  FOR EACH STATEMENT EXECUTE",
+  "CREATE TRIGGER drop_audience_no_truncate BEFORE TRUNCATE ON app.drop_audience\n  FOR EACH STATEMENT WHEN (false) EXECUTE"
+ ],
+ [
+  "highlights truncate refused only when (false)",
+  "db/migrations/0006_contributions.sql",
+  "CREATE TRIGGER highlights_no_truncate BEFORE TRUNCATE ON app.highlights\n  FOR EACH STATEMENT EXECUTE",
+  "CREATE TRIGGER highlights_no_truncate BEFORE TRUNCATE ON app.highlights\n  FOR EACH STATEMENT WHEN (false) EXECUTE"
+ ],
+ [
+  "moderation_cases truncate refused only when (false)",
+  "db/migrations/0008_safety.sql",
+  "CREATE TRIGGER moderation_cases_no_truncate BEFORE TRUNCATE ON app.moderation_cases\n  FOR EACH STATEMENT EXECUTE",
+  "CREATE TRIGGER moderation_cases_no_truncate BEFORE TRUNCATE ON app.moderation_cases\n  FOR EACH STATEMENT WHEN (false) EXECUTE"
+ ],
+ [
+  "operator_actions truncate refused only when (false)",
+  "db/migrations/0008_safety.sql",
+  "CREATE TRIGGER operator_actions_no_truncate BEFORE TRUNCATE ON app.operator_actions\n  FOR EACH STATEMENT EXECUTE",
+  "CREATE TRIGGER operator_actions_no_truncate BEFORE TRUNCATE ON app.operator_actions\n  FOR EACH STATEMENT WHEN (false) EXECUTE"
+ ],
+ [
+  "drop_removals truncate refused only when (false)",
+  "db/migrations/0008_safety.sql",
+  "CREATE TRIGGER drop_removals_no_truncate BEFORE TRUNCATE ON app.drop_removals\n  FOR EACH STATEMENT EXECUTE",
+  "CREATE TRIGGER drop_removals_no_truncate BEFORE TRUNCATE ON app.drop_removals\n  FOR EACH STATEMENT WHEN (false) EXECUTE"
+ ],
+ [
+  "deletion_tombstones truncate refused only when (false)",
+  "db/migrations/0008_safety.sql",
+  "CREATE TRIGGER deletion_tombstones_no_truncate BEFORE TRUNCATE ON app.deletion_tombstones\n  FOR EACH STATEMENT EXECUTE",
+  "CREATE TRIGGER deletion_tombstones_no_truncate BEFORE TRUNCATE ON app.deletion_tombstones\n  FOR EACH STATEMENT WHEN (false) EXECUTE"
+ ]
+]
