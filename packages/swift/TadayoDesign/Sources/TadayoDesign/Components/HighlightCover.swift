@@ -37,11 +37,12 @@ public struct HighlightCover: View {
 
     /// Whether covers at this text size are full-width rows in a vertical list rather than tiles in
     /// a rail; the rail that holds them asks the same question. The tile and its 12/14 label are
-    /// drawn for the default size, where a label of two lines fills its 69 points and its 75-point
-    /// text width holds "Debby's pick" on one line. The label never shrinks (handoff 4's sheet: "No
-    /// smaller type"), so at any larger size the tile would grow past the sheet's 69 points, and
-    /// from `.xxxLarge` a word such as "Deborah-" no longer fits the width and breaks; the list takes
-    /// over above the default (book p26 and p34: "At large sizes the rail becomes a labelled list";
+    /// drawn for the default size, where the label takes at most two lines of its 75-point text
+    /// width and two lines fill its 69 points: "Debby's pick" takes both in SF Pro, where the
+    /// sheet's font keeps it on one. The label never shrinks (handoff 4's sheet: "No smaller
+    /// type"), so at any larger size the tile would grow past the sheet's 69 points, and from
+    /// `.xxxLarge` a word such as "Deborah-" no longer fits the width and breaks; the list takes over
+    /// above the default (book p26 and p34: "At large sizes the rail becomes a labelled list";
     /// handoff 4's sheet: "Large text uses a vertical list").
     public static func usesList(at size: DynamicTypeSize) -> Bool {
         size > .large
@@ -59,9 +60,11 @@ public struct HighlightCover: View {
         .accessibilityLabel(accessibilityName)
     }
 
-    /// Decorative: the label and the button's name say whose pick it is. Like the avatar, it keeps
-    /// its size at every text size (handoff 4's `dynamicTypePolicy.avatarMarks`), so the label
-    /// keeps the room beside it and a name such as "Debby's" isn't broken at `.accessibility5`.
+    /// Decorative: the label and the button's name say whose pick it is. It keeps its 12 points at
+    /// every text size, as the avatar beside it does, so the label keeps its room and a name such as
+    /// "Debby's" isn't broken at `.accessibility5`. No source sets the star's scaling (handoff 4's
+    /// `dynamicTypePolicy.avatarMarks` covers only the fallback initial), so this is built from
+    /// spec and goes to the next design handoff; the folded card's star scales with its tag.
     private var star: some View {
         Image(systemName: "star.fill")
             .font(.system(size: Size.highlightStar))
