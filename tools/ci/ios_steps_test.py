@@ -505,6 +505,13 @@ class BuildAndTestSteps(StepsTest):
         self.assertEqual(cmd[cmd.index("-project") + 1], "apps/ios/Tadayo.xcodeproj")
         self.assertEqual(cmd[cmd.index("-scheme") + 1], "Tadayo")
         self.assertEqual(cmd[cmd.index("-destination") + 1], f"platform=iOS Simulator,id={UDID}")
+        self.assertIn("-skipPackagePluginValidation", cmd)
+
+    def test_a_scheme_with_no_tests_still_lets_package_plugins_run(self):
+        self.write_scheme(scheme())
+        shell = FakeShell(effects=[(starts("xcodebuild", "build"), lambda cmd: self.products())])
+        self.assertEqual(self.step("build", shell)[0], 0)
+        self.assertIn("-skipPackagePluginValidation", shell.commands[0])
 
     def test_an_app_without_the_share_extension_fails(self):
         shell = FakeShell(effects=[(has("build-for-testing"), lambda cmd: self.products(False))])
@@ -570,6 +577,7 @@ class BuildAndTestSteps(StepsTest):
         self.assertIn(["git", "status", "--porcelain", "-z", "--untracked-files=all", "--", "apps/ios"],
                       shell.commands)
         self.assertNotIn("-skip-testing", cmd)
+        self.assertIn("-skipPackagePluginValidation", cmd)
         self.assertEqual(env["TEST_RUNNER_SNAPSHOT_TESTING_RECORD"], "never")
         self.assertEqual(env["TEST_RUNNER_SNAPSHOT_ARTIFACTS"], os.path.join(self.repo.out, "artifacts"))
         self.assertTrue(cmd[cmd.index("-resultBundlePath") + 1].endswith("Tests.xcresult"))

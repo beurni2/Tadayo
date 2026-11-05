@@ -310,15 +310,15 @@ And PR #11, run in the session before its merge, its tests also in `ci`'s `tools
 
 ### 1.3 ios lane
 
-**Updated:** 2026-11-05 03:00 UTC, ios/b0-plugins-check
+**Updated:** 2026-11-05 03:08 UTC, ios/b0-plugins-check
 
 - **Started:** 2026-11-03 at 11:03 UTC, by the coordinator (ADR-025). Environment: Swift 6.3.3 from swift.org's signed release tarball; the journal hook isn't confirmed to fire in this session, so it runs by hand before each commit.
-- **This branch:** `ios/b0-plugins-check`, a check branch from `main` at `1f4ba1d` that never merges, for the Swift OpenAPI Generator's build plugin under Xcode on the `ios` workflow.
+- **This branch:** `ios/b0-plugins-check`, a check branch from `main` at `1f4ba1d` that never merges, for the Swift OpenAPI Generator's build plugin under Xcode on the `ios` workflow. Run 41958887177 (at `ab8968c`, no flag) failed at `Validate plug-in "OpenAPIGenerator"`; this push adds `-skipPackagePluginValidation`.
 - **PRs:** #15 (slice 11's first part) merged as `1f4ba1d`; #16 (handoffs 5 and 6) waits for the founder's approval at `08e9bf4`.
 - **Next, in order:**
-    1. Read this push's `ios` run (`gh api "repos/beurni2/Tadayo/actions/runs?head_sha=<full sha>"`, then the `build` job's log): done when it shows whether Xcode refuses the plugin.
-    2. Add `-skipPackagePluginValidation` to `tools/ci/ios_steps.py`'s `build` call here and push: done when `ios` is green with the app linking `TadayoAPI`.
-    3. Open `ios/b0-ci-plugins` from `main` with only that change, its test and ADR-028.
+    1. Read this push's `ios` run (`gh api "repos/beurni2/Tadayo/actions/runs?head_sha=<full sha>"`): done when it is green with the app linking `TadayoAPI`.
+    2. Open `ios/b0-ci-plugins` from `main` with only the flag, its tests, ADR-028 and the logs.
+    3. Open `ios/b0-api-client` from `main`: TadayoCore's sign-in logic and the `TadayoAPI` package.
 - **Blocked or waiting:** the founder's approval of PR #16; FQ68 and FQ85 on cards in the ios thread; `tadayo-dev`'s URL and publishable key.
 - **Design:** as on `main` (block 1.3 of `1f4ba1d`); handoff 7's needs are with the coordinator (`/mnt/project-files/design/handoff-7/ios-lane-needs.md` in the project's files).
 
@@ -1453,6 +1453,14 @@ Two earlier entries claim more than their commits show, and the log is append-on
 **Next:** Push, check `ci`, then PR #11's description and the founder (block 1.2's Next steps 1 and 2).
 
 ### 3.3 ios lane
+
+#### 2026-11-05 03:08 UTC · ios · ios/b0-plugins-check · None (check branch)
+**Did:** Added `-skipPackagePluginValidation` to both `xcodebuild` calls in `tools/ci/ios_steps.py` (`build`, whether `build-for-testing` or plain `build`, and `test-without-building`), with assertions in `ios_steps_test.py` (`test_build_for_testing_on_the_simulator` and the snapshot test run's check) and a new test, `test_a_scheme_with_no_tests_still_lets_package_plugins_run`.
+**Why:** The first push's `ios` run (41958887177, at `ab8968c`) failed in `build` with `Validate plug-in "OpenAPIGenerator" in package "swift-openapi-generator"` and `** TEST BUILD FAILED **` (the evidence branch's `ios/b0-plugins-check/ab8968c/ios/logs/build.log`): Xcode won't run a package build plugin until a person trusts it, and CI has no person. The flag is the documented way to skip that for a CI build (ADR-028, to be written in `ios/b0-ci-plugins`).
+**Verified:** `python3 -I tools/ci/ios_steps_test.py`: all tests pass, the new one included. Run 41958887177's failure, read from its build log.
+**Not verified:** This push's `ios` run: done when it is green with the app linking `TadayoAPI`.
+**Decisions and questions:** The flag on `test-without-building` too, since it re-resolves the package graph and would stop at the same validation. No new FQ.
+**Next:** Read this push's `ios` run. If green, open `ios/b0-ci-plugins` from `main` with only this change, its tests, ADR-028 and the logs, citing both runs.
 
 #### 2026-11-05 03:00 UTC · ios · ios/b0-plugins-check · PR none
 **Did:** Made `ios/b0-plugins-check` from `main` at `1f4ba1d`, a check branch that never merges (like `ios/b0-ios-check`): the smallest `packages/swift/TadayoAPI` that runs the Swift OpenAPI Generator's build plugin (1.14.3, with swift-openapi-runtime 1.13.4 and swift-openapi-urlsession 1.4.0, each pinned `exact:`) on `packages/contracts/openapi.yaml` through a relative symlink, `Sources/TadayoAPI/openapi.yaml` to `../../../../contracts/openapi.yaml`, with `openapi-generator-config.yaml` (types and client, `internal`, idiomatic names), one hand-written public type, `TadayoAPIClient`, and one test; and the app linking it (`apps/ios/project.yml`, and one reference in `TadayoApp.swift`). `tools/ci/` is unchanged, so this push's `ios` run shows what Xcode does with a build plugin it hasn't been told to trust.
