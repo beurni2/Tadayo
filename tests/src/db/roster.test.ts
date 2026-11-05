@@ -161,6 +161,76 @@ describe("T7: an exact roster, sealed when it is made", () => {
     });
   });
 
+  it("never changes a revision's member rows, sealed or not (T7)", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await newWorld(tx);
+      const never = /app\.roster_revision_members: a revision's exact roster never changes \(T7\)/;
+      // Ben's row pointed at Cleo, who has since left: the roster the candidates accepted would change.
+      const { revision } = await openRevision(tx, w);
+      const unsealed = newId("rev");
+      await leave(tx, w.cleo, "Cleo", AT.added);
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) => sp`
+          UPDATE app.roster_revision_members SET interval_id = ${w.cleo.interval}
+           WHERE revision_id = ${revision} AND interval_id = ${w.ben.interval}
+        `,
+        never,
+      );
+      await tx`UPDATE app.roster_revisions SET state = 'did_not_go_ahead', version = 2, ended_at = ${AT.added} WHERE id = ${revision}`;
+      await tx`
+        INSERT INTO app.roster_revisions (id, club_id, origin, proposed_by_interval_id, created_at)
+        VALUES (${unsealed}, ${w.club}, 'proposal', ${w.ana.interval}, ${AT.added})
+      `;
+      await tx`
+        INSERT INTO app.roster_revision_members (revision_id, club_id, interval_id) VALUES (${unsealed}, ${w.club}, ${w.ana.interval})
+      `;
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) =>
+          sp`UPDATE app.roster_revision_members SET interval_id = ${w.ben.interval} WHERE revision_id = ${unsealed}`,
+        never,
+      );
+    });
+  });
+
+  it("seals a revision the server made for a name though the candidate's proposer has left, and a member's proposal only with its proposer (FQ84)", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await newWorld(tx);
+      // Cleo proposed Dan, then left; Dan accepts under another name, so the server makes a
+      // revision for it, which keeps Cleo as its proposer (FQ84).
+      const candidate = newId("cand");
+      await tx`
+        INSERT INTO app.candidates (id, club_id, proposed_by_interval_id, created_at)
+        VALUES (${candidate}, ${w.club}, ${w.cleo.interval}, ${AT.added})
+      `;
+      await leave(tx, w.cleo, "Cleo", AT.added);
+      const make = async (sp: Tx, origin: "proposal" | "rename") => {
+        const revision = newId("rev");
+        await sp`
+          INSERT INTO app.roster_revisions (id, club_id, origin, proposed_by_interval_id, created_at)
+          VALUES (${revision}, ${w.club}, ${origin}, ${w.cleo.interval}, ${AT.edited})
+        `;
+        for (const member of [w.ana, w.ben]) {
+          await sp`
+            INSERT INTO app.roster_revision_members (revision_id, club_id, interval_id)
+            VALUES (${revision}, ${w.club}, ${member.interval})
+          `;
+        }
+        await sp`
+          INSERT INTO app.roster_revision_candidates (revision_id, club_id, candidate_id, label, position)
+          VALUES (${revision}, ${w.club}, ${candidate}, 'Daniel', 1)
+        `;
+        await seal(sp, revision);
+        await checkAsAtCommit(sp);
+      };
+      await expectRefused(tx, REFUSED.integrity, (sp) => make(sp, "proposal"), /doesn't hold its proposer \(T7\)/);
+      await make(tx, "rename");
+    });
+  });
+
   it("refuses a revision made without its seal, its proposer or a candidate", async () => {
     await rolledBack(app, async (tx) => {
       const w = await newWorld(tx);

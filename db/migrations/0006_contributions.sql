@@ -320,10 +320,13 @@ BEGIN
         USING ERRCODE = 'integrity_constraint_violation';
     END IF;
     -- Every change to the content or the state carries the instant it was made, so the checks
-    -- below judge it at that instant (T1, T3, T29).
+    -- below judge it at that instant (T1, T3, T29). Letting go of a replacement nobody committed
+    -- changes neither, at any instant: the drop keeps its current photo (spec 09), and the upload
+    -- lapses (spec 33).
     IF NEW.updated_at = OLD.updated_at
-       AND (NEW.caption, NEW.upload_id, NEW.source_id, NEW.pending_upload_id, NEW.dedupe_key, NEW.state)
-           IS DISTINCT FROM (OLD.caption, OLD.upload_id, OLD.source_id, OLD.pending_upload_id, OLD.dedupe_key, OLD.state) THEN
+       AND ((NEW.caption, NEW.upload_id, NEW.source_id, NEW.dedupe_key, NEW.state)
+              IS DISTINCT FROM (OLD.caption, OLD.upload_id, OLD.source_id, OLD.dedupe_key, OLD.state)
+            OR (NEW.pending_upload_id IS NOT NULL AND NEW.pending_upload_id IS DISTINCT FROM OLD.pending_upload_id)) THEN
       RAISE EXCEPTION 'app.drops: a change to a drop''s content or state carries the instant it was made (T1, T3)'
         USING ERRCODE = 'integrity_constraint_violation';
     END IF;
@@ -333,10 +336,12 @@ BEGIN
       RAISE EXCEPTION 'app.drops: an edit of a drop''s caption or media moves its version by one (T19)'
         USING ERRCODE = 'integrity_constraint_violation';
     END IF;
-    -- Frozen at the reveal: no edit, replacement or swap from then on (T3).
+    -- Frozen at the reveal: no edit, replacement or swap from then on (T3). A replacement still
+    -- preparing at the reveal can only be let go.
     IF NEW.state IN ('active', 'held') AND NEW.updated_at >= reveal
-       AND (NEW.caption, NEW.upload_id, NEW.source_id, NEW.pending_upload_id, NEW.dedupe_key)
-           IS DISTINCT FROM (OLD.caption, OLD.upload_id, OLD.source_id, OLD.pending_upload_id, OLD.dedupe_key) THEN
+       AND ((NEW.caption, NEW.upload_id, NEW.source_id, NEW.dedupe_key)
+              IS DISTINCT FROM (OLD.caption, OLD.upload_id, OLD.source_id, OLD.dedupe_key)
+            OR (NEW.pending_upload_id IS NOT NULL AND NEW.pending_upload_id IS DISTINCT FROM OLD.pending_upload_id)) THEN
       RAISE EXCEPTION 'app.drops: the day opened at %, so the drop is frozen (T3)', reveal
         USING ERRCODE = 'integrity_constraint_violation';
     END IF;
@@ -507,6 +512,11 @@ BEGIN
   IF TG_OP = 'UPDATE' THEN
     IF NEW.version <> OLD.version + 1 THEN
       RAISE EXCEPTION 'app.highlights: every change moves the version by one (T22)'
+        USING ERRCODE = 'integrity_constraint_violation';
+    END IF;
+    -- So the checks below judge it at the instant it was made (T1, T3).
+    IF NEW.updated_at <= OLD.updated_at THEN
+      RAISE EXCEPTION 'app.highlights: every change carries the instant it was made, later than the last (T1, T3)'
         USING ERRCODE = 'integrity_constraint_violation';
     END IF;
   END IF;

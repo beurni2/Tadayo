@@ -54,8 +54,9 @@ describe("the uniqueness of receipts, highlights and favourites", () => {
       `;
       await point(tx, first);
       await expectRefused(tx, REFUSED.unique, (sp) => point(sp, second), /highlights_pkey/);
+      // A later change, as every change to a highlight is (T1, T3).
       await tx`
-        UPDATE app.highlights SET drop_id = ${second}, version = 2, updated_at = ${AT.edited}
+        UPDATE app.highlights SET drop_id = ${second}, version = 2, updated_at = ${new Date(AT.edited.getTime() + 60_000)}
          WHERE occurrence_id = ${w.day} AND interval_id = ${w.ben.interval}
       `;
       const [row] = await tx<{ drop_id: string; version: number }[]>`

@@ -200,10 +200,10 @@ CREATE TRIGGER roster_approvals_no_truncate BEFORE TRUNCATE ON app.roster_approv
   FOR EACH STATEMENT EXECUTE FUNCTION app.refuse_change('a decision is made once');
 
 -- The seal (T7). Members and candidates join a revision only in the transaction that makes it,
--- before it's sealed; an acceptance or approval counts only while it's open; and the
--- transaction that makes it seals it, with exactly the club's active members as its members
--- when it's sealed (roster_revisions_guard), its proposer among them, and at least one
--- candidate, or doesn't commit. Only a member who is
+-- before it's sealed, and a member row never changes; an acceptance or approval counts only
+-- while it's open; and the transaction that makes it seals it, with exactly the club's active
+-- members as its members when it's sealed (roster_revisions_guard), the proposer of a member's
+-- proposal among them, and at least one candidate, or doesn't commit. Only a member who is
 -- still active decides, and only the proposer of a member's proposal approves by proposing
 -- (FQ60), never in a revision the server made (FQ84).
 CREATE FUNCTION app.roster_revision_rows_guard() RETURNS trigger
@@ -211,7 +211,7 @@ CREATE FUNCTION app.roster_revision_rows_guard() RETURNS trigger
 DECLARE
   revision app.roster_revisions%ROWTYPE;
 BEGIN
-  IF TG_OP = 'DELETE' THEN
+  IF TG_OP = 'DELETE' OR (TG_OP = 'UPDATE' AND TG_TABLE_NAME = 'roster_revision_members') THEN
     RAISE EXCEPTION 'app.%: a revision''s exact roster never changes (T7)', TG_TABLE_NAME
       USING ERRCODE = 'integrity_constraint_violation';
   END IF;
@@ -266,8 +266,11 @@ BEGIN
     RAISE EXCEPTION 'app.roster_revisions: revision % was made without being sealed (T7)', NEW.id
       USING ERRCODE = 'integrity_constraint_violation';
   END IF;
-  IF NOT EXISTS (SELECT FROM app.roster_revision_members
-                  WHERE revision_id = NEW.id AND interval_id = revision.proposed_by_interval_id) THEN
+  -- A revision the server made for a name keeps the candidate's proposer, who may since have
+  -- left; every member approves it explicitly (FQ84).
+  IF revision.origin = 'proposal'
+     AND NOT EXISTS (SELECT FROM app.roster_revision_members
+                      WHERE revision_id = NEW.id AND interval_id = revision.proposed_by_interval_id) THEN
     RAISE EXCEPTION 'app.roster_revisions: revision %''s roster doesn''t hold its proposer (T7)', NEW.id
       USING ERRCODE = 'integrity_constraint_violation';
   END IF;

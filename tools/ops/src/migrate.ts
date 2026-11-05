@@ -12,9 +12,11 @@
 //
 // Each transaction first takes a transaction-scoped advisory lock and reads what is applied, so
 // two runners never apply the same file, and the lock never outlives its transaction, which
-// keeps it safe behind a pooler. A file never ends that transaction itself: the runner refuses a
-// file with a top-level BEGIN, COMMIT or the like (`transactionControl`), and checks after
-// running it that its own transaction is still the one open.
+// keeps it safe behind a pooler. A file never ends that transaction itself: it runs as the body
+// of one PL/pgSQL EXECUTE, where Postgres refuses BEGIN, COMMIT, ROLLBACK, SAVEPOINT and a
+// procedure that commits, so such a file fails and nothing of it is kept. Its deferred checks then
+// fire, the ledger records it, and the schema is checked last, so nothing the file installed
+// runs after the check (`applyMigration`).
 
 import { createHash } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
@@ -39,109 +41,6 @@ const FILE_NAME = /^(\d{4})_([a-z0-9]+(?:_[a-z0-9]+)*)\.sql$/;
 // takes the same lock.
 const LOCK_KEY = 0x746164_61796f3a6dn;
 
-/**
- * The statements of a SQL script at its top level, with comments taken out and every quoted
- * string, quoted identifier and dollar-quoted body emptied, so only the words that Postgres reads
- * as statements are left. A function body written `BEGIN ATOMIC ... END` stays one statement.
- */
-export function topLevelStatements(text: string): string[] {
-  let out = "";
-  let i = 0;
-  const word = /[A-Za-z0-9_$]/;
-  while (i < text.length) {
-    const c = text[i] ?? "";
-    const next = text[i + 1] ?? "";
-    if (c === "-" && next === "-") {
-      const end = text.indexOf("\n", i);
-      i = end === -1 ? text.length : end;
-      out += " ";
-    } else if (c === "/" && next === "*") {
-      let depth = 1;
-      i += 2;
-      while (i < text.length && depth > 0) {
-        if (text[i] === "/" && text[i + 1] === "*") {
-          depth += 1;
-          i += 2;
-        } else if (text[i] === "*" && text[i + 1] === "/") {
-          depth -= 1;
-          i += 2;
-        } else i += 1;
-      }
-      out += " ";
-    } else if (c === "'") {
-      // E'...' takes backslash escapes; '' is a quote in every string.
-      const escapes = /[eE]/.test(text[i - 1] ?? "") && !word.test(text[i - 2] ?? "");
-      i += 1;
-      while (i < text.length) {
-        if (escapes && text[i] === "\\") i += 2;
-        else if (text[i] === "'" && text[i + 1] === "'") i += 2;
-        else if (text[i] === "'") break;
-        else i += 1;
-      }
-      i += 1;
-      out += "''";
-    } else if (c === '"') {
-      i += 1;
-      while (i < text.length) {
-        if (text[i] === '"' && text[i + 1] === '"') i += 2;
-        else if (text[i] === '"') break;
-        else i += 1;
-      }
-      i += 1;
-      out += '""';
-    } else if (c === "$" && !word.test(text[i - 1] ?? "")) {
-      const tag = /^\$([A-Za-z_][A-Za-z0-9_]*)?\$/.exec(text.slice(i));
-      if (tag) {
-        const end = text.indexOf(tag[0], i + tag[0].length);
-        i = end === -1 ? text.length : end + tag[0].length;
-        out += "$$";
-      } else {
-        out += c;
-        i += 1;
-      }
-    } else {
-      out += c;
-      i += 1;
-    }
-  }
-  const statements: string[] = [];
-  let atomic: string | null = null;
-  for (const part of out.split(";")) {
-    const statement = part.trim();
-    if (atomic !== null) {
-      atomic += `; ${statement}`;
-      if (/^END\b/i.test(statement)) {
-        statements.push(atomic);
-        atomic = null;
-      }
-    } else if (/^CREATE\b/i.test(statement) && /\bBEGIN\s+ATOMIC\b/i.test(statement) && !/\bEND$/i.test(statement)) {
-      atomic = statement;
-    } else if (statement !== "") {
-      statements.push(statement);
-    }
-  }
-  if (atomic !== null) statements.push(atomic);
-  return statements;
-}
-
-/**
- * The first top-level statement in `text` that would begin, end or split the transaction the
- * runner runs a migration in (BEGIN, START TRANSACTION, COMMIT, END, ROLLBACK, ABORT, SAVEPOINT,
- * RELEASE, PREPARE TRANSACTION), or null when there is none.
- */
-export function transactionControl(text: string): string | null {
-  for (const statement of topLevelStatements(text)) {
-    const [first = "", second = ""] = statement.toUpperCase().match(/[A-Z_]+/g) ?? [];
-    if (
-      ["BEGIN", "COMMIT", "END", "ROLLBACK", "ABORT", "SAVEPOINT", "RELEASE"].includes(first) ||
-      (["START", "PREPARE"].includes(first) && second === "TRANSACTION")
-    ) {
-      return first === "START" || first === "PREPARE" ? `${first} ${second}` : first;
-    }
-  }
-  return null;
-}
-
 /** The migrations in `dir`, in order. Any other file there, a gap or a repeated number fails. */
 export async function readMigrations(dir: string): Promise<MigrationFile[]> {
   const files: MigrationFile[] = [];
@@ -151,13 +50,6 @@ export async function readMigrations(dir: string): Promise<MigrationFile[]> {
       throw new Error(`migrate: ${entry} isn't a migration; name it NNNN_words.sql (lower case)`);
     }
     const bytes = await readFile(join(dir, entry));
-    const control = transactionControl(bytes.toString("utf8"));
-    if (control) {
-      throw new Error(
-        `migrate: ${entry} has its own ${control}; the runner runs each file in one transaction of its own, ` +
-          "so a file never begins, ends or splits it (T53)",
-      );
-    }
     files.push({
       version: Number(match[1]),
       name: match[2],
@@ -208,8 +100,9 @@ export function pendingMigrations(
  * What would open the schema `app` to anyone but its owner (T53, ADR-015): a table without
  * row-level security, or with it forced, or with a policy; a relation, a column, a function or
  * procedure, or a type or domain that another role, PUBLIC included, has any privilege on;
- * anything in it owned by another role; a privilege on the schema itself; or a default privilege
- * that would give another role what the owner makes later. Empty when it's closed.
+ * anything in it owned by another role; a privilege on the schema itself; a default privilege
+ * that would give another role what the owner makes later; or a trigger or rule on the ledger,
+ * which would run after this check when the runner records a migration. Empty when it's closed.
  */
 export async function closedProblems(sql: postgres.Sql | postgres.TransactionSql): Promise<string[]> {
   const rows = await sql<{ problem: string }[]>`
@@ -264,7 +157,7 @@ export async function closedProblems(sql: postgres.Sql | postgres.TransactionSql
     SELECT 'app.' || relations.relname || '.' || att.attname || ' grants ' || a.privilege_type || ' to '
            || CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE a.grantee::regrole::text END
       FROM relations, app, pg_catalog.pg_attribute att, pg_catalog.aclexplode(att.attacl) a
-     WHERE att.attrelid = relations.oid AND att.attnum > 0 AND NOT att.attisdropped
+     WHERE att.attrelid = relations.oid AND att.attnum <> 0 AND NOT att.attisdropped
        AND a.grantee NOT IN (relations.relowner, app.nspowner)
     UNION ALL
     SELECT 'the type app.' || typname || ' belongs to ' || typowner::regrole::text
@@ -289,6 +182,14 @@ export async function closedProblems(sql: postgres.Sql | postgres.TransactionSql
              COALESCE(n.nspacl, pg_catalog.acldefault('n', n.nspowner))) a
      WHERE n.oid = app.oid AND a.grantee <> app.nspowner
     UNION ALL
+    SELECT 'the ledger app.schema_migrations has the trigger ' || t.tgname
+      FROM pg_catalog.pg_trigger t JOIN relations r ON r.oid = t.tgrelid
+     WHERE r.relname = 'schema_migrations' AND NOT t.tgisinternal
+    UNION ALL
+    SELECT 'the ledger app.schema_migrations has the rule ' || w.rulename
+      FROM pg_catalog.pg_rewrite w JOIN relations r ON r.oid = w.ev_class
+     WHERE r.relname = 'schema_migrations'
+    UNION ALL
     SELECT 'there is no schema app; run db/bootstrap.sql first' WHERE NOT EXISTS (SELECT FROM app)
     ORDER BY 1
   `;
@@ -311,32 +212,40 @@ function fileName(file: MigrationFile): string {
 
 /**
  * Runs one migration in `tx`, the transaction `migrate` opened for it under the lock, and records
- * it, or throws and leaves the transaction to roll back.
+ * it, or throws and leaves the transaction to roll back. The file runs as the body of one
+ * PL/pgSQL EXECUTE, so Postgres refuses any statement in it that would begin, end or split the
+ * transaction ("EXECUTE of transaction commands is not implemented", or "invalid transaction
+ * termination" for a procedure or DO block that commits). Then its deferred checks fire, the
+ * ledger records it, and only then is the schema checked, so a deferred trigger or a trigger on
+ * the ledger can't open the schema after the check (T53).
  */
 export async function applyMigration(tx: postgres.TransactionSql, file: MigrationFile): Promise<void> {
   await tx`SELECT pg_catalog.set_config('search_path', '', true)`;
-  const [before] = await tx<{ xid: string }[]>`SELECT pg_catalog.pg_current_xact_id()::text AS xid`;
-  await tx.unsafe(file.text).simple();
-  // A backstop behind transactionControl: if the file ended the transaction, whatever it did
-  // before that is committed, and the runner can only say so.
-  const [after] = await tx<{ xid: string | null }[]>`
-    SELECT pg_catalog.pg_current_xact_id_if_assigned()::text AS xid
-  `;
-  if (!before || after?.xid !== before.xid) {
-    throw new Error(
-      `migrate: ${fileName(file)} ended the runner's transaction, so ` +
-        "what it did before that is committed and unchecked: inspect the database before anything else (T53)",
-    );
+  await tx`SELECT pg_catalog.set_config('tadayo.migration', ${file.text}, true)`;
+  try {
+    await tx.unsafe("DO $run$ BEGIN EXECUTE pg_catalog.current_setting('tadayo.migration'); END $run$").simple();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (/EXECUTE of transaction commands is not implemented|invalid transaction termination/.test(message)) {
+      throw new Error(
+        `migrate: ${fileName(file)} begins, ends or splits its transaction (${message}); the runner runs each ` +
+          "file in one transaction of its own, and keeps nothing of this one (T53)",
+        { cause: error },
+      );
+    }
+    throw new Error(`migrate: ${fileName(file)} failed: ${message}`, { cause: error });
   }
+  await tx`SELECT pg_catalog.set_config('tadayo.migration', '', true)`;
   await tx`SELECT pg_catalog.set_config('search_path', '', true)`;
-  const problems = await closedProblems(tx);
-  if (problems.length > 0) {
-    throw new Error(`migrate: ${fileName(file)} would leave the schema app open (T53): ` + problems.join("; "));
-  }
+  await tx`SET CONSTRAINTS ALL IMMEDIATE`;
   await tx`
     INSERT INTO app.schema_migrations (version, name, sha256)
     VALUES (${file.version}, ${file.name}, ${file.sha256})
   `;
+  const problems = await closedProblems(tx);
+  if (problems.length > 0) {
+    throw new Error(`migrate: ${fileName(file)} would leave the schema app open (T53): ` + problems.join("; "));
+  }
 }
 
 /**

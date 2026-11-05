@@ -112,6 +112,34 @@ describe("T3: the reveal is the cutoff", () => {
     });
   });
 
+  it("lets a replacement nobody committed go at any instant, and takes no new one from the reveal on (spec 09, T3)", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await newWorld(tx);
+      const drop = await commitDrop(tx, w, w.ben);
+      const first = await upload(tx, w.ben.user, { replaces: drop }, "pending");
+      await tx`UPDATE app.drops SET pending_upload_id = ${first}, updated_at = ${AT.edited} WHERE id = ${drop}`;
+      // Letting it go changes nothing anyone sees, so it needs no instant of its own.
+      await tx`UPDATE app.drops SET pending_upload_id = NULL WHERE id = ${drop}`;
+      await tx`UPDATE app.drops SET pending_upload_id = ${first}, updated_at = ${after(AT.edited)} WHERE id = ${drop}`;
+      // Still preparing at the reveal: the day opens on the current photo, and the replacement goes.
+      await tx`UPDATE app.drops SET pending_upload_id = NULL, updated_at = ${AT.opened} WHERE id = ${drop}`;
+      const second = await upload(tx, w.ben.user, { replaces: drop }, "pending");
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) =>
+          sp`UPDATE app.drops SET pending_upload_id = ${second}, updated_at = ${after(AT.opened)} WHERE id = ${drop}`,
+        /so the drop is frozen \(T3\)/,
+      );
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) => sp`UPDATE app.drops SET pending_upload_id = ${second} WHERE id = ${drop}`,
+        /a change to a drop's content or state carries the instant it was made \(T1, T3\)/,
+      );
+    });
+  });
+
   it("judges every change at its own instant, and an edit is a new version (T1, T3, T19)", async () => {
     await rolledBack(app, async (tx) => {
       const w = await newWorld(tx);
@@ -340,6 +368,26 @@ describe("T22: a highlight points to the contributor's own active drop, before t
       `;
       await setHighlight(tx, w, null, 2, after(AT.opened));
       await checkAsAtCommit(tx);
+    });
+  });
+
+  it("judges every change at its own instant, later than the last (T1, T3)", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await newWorld(tx);
+      const [first, second] = [await commitDrop(tx, w, w.ben), await commitDrop(tx, w, w.ben)];
+      await setHighlight(tx, w, first, 1, AT.added);
+      const later = /every change carries the instant it was made, later than the last \(T1, T3\)/;
+      // After the reveal, a clear or a move that kept the old instant would be judged before it.
+      for (const drop of [null, second]) {
+        await expectRefused(
+          tx,
+          REFUSED.integrity,
+          (sp) => sp`UPDATE app.highlights SET drop_id = ${drop}, version = 2 WHERE occurrence_id = ${w.day}`,
+          later,
+        );
+      }
+      await expectRefused(tx, REFUSED.integrity, (sp) => setHighlight(sp, w, second, 2, after(AT.added, -1)), later);
+      await setHighlight(tx, w, second, 2, after(AT.added));
     });
   });
 

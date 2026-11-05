@@ -50,11 +50,14 @@ describe("T53: anon, authenticated and service_role read nothing", () => {
                                  THEN pg_catalog.has_table_privilege(${role}, c.oid,
                                         'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')
                                  ELSE false END) AS tables,
-               ARRAY(SELECT c.relname::text FROM pg_catalog.pg_class c
-                      WHERE c.relnamespace = 'app'::regnamespace
-                        AND CASE WHEN c.relkind IN ('r', 'p', 'v', 'm', 'f')
-                                 THEN pg_catalog.has_any_column_privilege(${role}, c.oid, 'SELECT, INSERT, UPDATE, REFERENCES')
-                                 ELSE false END) AS columns,
+               -- Every column, the system columns (ctid, xmin, tableoid, ...) too, which
+               -- has_any_column_privilege leaves out.
+               ARRAY(SELECT c.relname::text || '.' || a.attname::text
+                       FROM pg_catalog.pg_class c JOIN pg_catalog.pg_attribute a ON a.attrelid = c.oid
+                      WHERE c.relnamespace = 'app'::regnamespace AND c.relkind IN ('r', 'p', 'v', 'm', 'f')
+                        AND a.attnum <> 0 AND NOT a.attisdropped
+                        AND pg_catalog.has_column_privilege(${role}, c.oid, a.attnum,
+                              'SELECT, INSERT, UPDATE, REFERENCES')) AS columns,
                ARRAY(SELECT p.proname::text FROM pg_catalog.pg_proc p
                       WHERE p.pronamespace = 'app'::regnamespace
                         AND pg_catalog.has_function_privilege(${role}, p.oid, 'EXECUTE')) AS routines,
@@ -185,6 +188,37 @@ describe("T53: the runner's check finds whatever would open the schema", () => {
         await tx`GRANT UPDATE (id) ON app.probe_columns TO PUBLIC`;
       }),
     ).toEqual(["app.probe_columns.id grants UPDATE to PUBLIC", "app.probe_columns.note grants SELECT to service_role"]);
+  });
+
+  it("a grant on a system column, such as ctid, xmin or tableoid (review finding privacy 5 of PR #17's check)", async () => {
+    expect(
+      await found(async (tx) => {
+        await tx`CREATE TABLE app.probe_system (id int)`;
+        await tx`ALTER TABLE app.probe_system ENABLE ROW LEVEL SECURITY`;
+        await tx`GRANT SELECT (ctid, xmin) ON app.probe_system TO anon`;
+        await tx`GRANT SELECT (tableoid) ON app.probe_system TO service_role`;
+      }),
+    ).toEqual([
+      "app.probe_system.ctid grants SELECT to anon",
+      "app.probe_system.tableoid grants SELECT to service_role",
+      "app.probe_system.xmin grants SELECT to anon",
+    ]);
+  });
+
+  it("a trigger or a rule on the ledger, which would run after the check", async () => {
+    expect(
+      await found(async (tx) => {
+        await tx`CREATE FUNCTION app.probe_ledger() RETURNS trigger LANGUAGE plpgsql AS 'BEGIN RETURN NEW; END'`;
+        await tx`
+          CREATE TRIGGER probe_ledger BEFORE INSERT ON app.schema_migrations
+            FOR EACH ROW EXECUTE FUNCTION app.probe_ledger()
+        `;
+        await tx`CREATE RULE probe_rule AS ON UPDATE TO app.schema_migrations DO INSTEAD NOTHING`;
+      }),
+    ).toEqual([
+      "the ledger app.schema_migrations has the rule probe_rule",
+      "the ledger app.schema_migrations has the trigger probe_ledger",
+    ]);
   });
 
   it("a grant on a type or domain", async () => {

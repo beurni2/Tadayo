@@ -90,32 +90,106 @@ describe("the runner (T57)", () => {
     expect(await left("probe_granted")).toBe(0);
   });
 
-  it("refuses a migration with its own BEGIN and COMMIT before running any of it (T53)", async () => {
+  // A file runs as the body of one PL/pgSQL EXECUTE, where Postgres itself refuses whatever
+  // would begin, end or split the transaction, however the file hides it (review findings
+  // privacy 4 and records 1 of PR #17, and privacy 2, 3 and 6 of its check).
+  it("rolls back a migration that begins, ends or splits its transaction, keeping nothing of it (T53)", async () => {
     const before = await ledger();
-    const text = `
-      BEGIN;
-      CREATE TABLE app.probe_committed (id int);
-      COMMIT;
-    `;
-    await expect(migrate(app, await withExtra(text))).rejects.toThrow(/_probe\.sql has its own BEGIN/);
-    expect(await ledger()).toEqual(before);
-    expect(await left("probe_committed")).toBe(0);
+    const made =
+      "CREATE TABLE app.probe_committed (id int);\nALTER TABLE app.probe_committed ENABLE ROW LEVEL SECURITY;\n";
+    for (const text of [
+      "BEGIN;\nCREATE TABLE app.probe_committed (id int);\nCOMMIT;\n",
+      `${made}COMMIT;\nSELECT 1 / 0;\n`,
+      `${made}COMMIT AND CHAIN;\n`,
+      `${made}SAVEPOINT here;\n`,
+      `${made}ROLLBACK;\n`,
+      `${made}-- a comment that ends at a carriage return\rCOMMIT;\n`,
+      `${made}SELECT 1 AS é$$; COMMIT; SELECT 1 AS x$$;\n`,
+      `${made}DO $$ BEGIN COMMIT; END $$;\n`,
+      `${made}CREATE PROCEDURE app.probe_commits() LANGUAGE plpgsql AS $$ BEGIN COMMIT; END $$;\nCALL app.probe_commits();\n`,
+    ]) {
+      await expect(migrate(app, await withExtra(text)), text).rejects.toThrow(
+        /_probe\.sql begins, ends or splits its transaction \((EXECUTE of transaction commands is not implemented|invalid transaction termination)\)/,
+      );
+      expect(await ledger()).toEqual(before);
+      expect(await left("probe_committed")).toBe(0);
+      expect(await left("probe_commits")).toBe(0);
+    }
   });
 
-  it("fails loudly if a file it runs ends its transaction, which readMigrations refuses first", async () => {
+  it("runs a function whose body is BEGIN ATOMIC ... END, whatever its statements end with", async () => {
+    const file = {
+      version: 99,
+      name: "probe",
+      sha256: "0".repeat(64),
+      text: [
+        "CREATE FUNCTION app.probe_atomic(x int) RETURNS text LANGUAGE sql IMMUTABLE",
+        "BEGIN ATOMIC",
+        "  SELECT CASE WHEN x > 0 THEN 'some' ELSE 'none' END;",
+        "END;",
+      ].join("\n"),
+    };
+    const rollback = new Error("rolled back");
+    await expect(
+      app.begin(async (tx) => {
+        await applyMigration(tx, file);
+        const [row] = await tx<{ answer: string }[]>`SELECT app.probe_atomic(1) AS answer`;
+        expect(row?.answer).toBe("some");
+        throw rollback;
+      }),
+    ).rejects.toBe(rollback);
+  });
+
+  it("checks the schema after the file's deferred triggers have run and the ledger has recorded it (T53)", async () => {
     const before = await ledger();
-    // Only a COMMIT, so the transaction it ends had nothing of the file's to keep.
-    const file = { version: 99, name: "probe", sha256: "0".repeat(64), text: "COMMIT;" };
-    await expect(app.begin((tx) => applyMigration(tx, file))).rejects.toThrow(
-      /0099_probe\.sql ended the runner's transaction/,
+    const deferred = `
+      CREATE TABLE app.probe_deferred (id int);
+      ALTER TABLE app.probe_deferred ENABLE ROW LEVEL SECURITY;
+      CREATE FUNCTION app.probe_open() RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN
+        GRANT SELECT ON app.probe_deferred TO anon;
+        RETURN NULL;
+      END
+      $$;
+      CREATE CONSTRAINT TRIGGER probe_open AFTER INSERT ON app.probe_deferred
+        DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION app.probe_open();
+      INSERT INTO app.probe_deferred VALUES (1);
+    `;
+    await expect(migrate(app, await withExtra(deferred))).rejects.toThrow(
+      /_probe\.sql would leave the schema app open \(T53\): app\.probe_deferred grants SELECT to anon/,
+    );
+    const onTheLedger = `
+      CREATE FUNCTION app.probe_ledger() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NEW; END $$;
+      CREATE TRIGGER probe_ledger AFTER INSERT ON app.schema_migrations
+        FOR EACH ROW EXECUTE FUNCTION app.probe_ledger();
+    `;
+    await expect(migrate(app, await withExtra(onTheLedger))).rejects.toThrow(
+      /the ledger app\.schema_migrations has the trigger probe_ledger/,
+    );
+    // A check on the ledger, not valid for the rows already there, runs only when the runner records the file.
+    const throughTheLedger = `
+      CREATE TABLE app.probe_recorded (id int);
+      ALTER TABLE app.probe_recorded ENABLE ROW LEVEL SECURITY;
+      CREATE FUNCTION app.probe_record(version integer) RETURNS boolean LANGUAGE plpgsql AS $$
+      BEGIN
+        GRANT SELECT ON app.probe_recorded TO anon;
+        RETURN version > 0;
+      END
+      $$;
+      ALTER TABLE app.schema_migrations ADD CONSTRAINT probe_record CHECK (app.probe_record(version)) NOT VALID;
+    `;
+    await expect(migrate(app, await withExtra(throughTheLedger))).rejects.toThrow(
+      /_probe\.sql would leave the schema app open \(T53\): app\.probe_recorded grants SELECT to anon/,
     );
     expect(await ledger()).toEqual(before);
+    expect(await left("probe_deferred")).toBe(0);
+    expect(await left("probe_recorded")).toBe(0);
   });
 
   it("rolls back a migration that names a table without its schema", async () => {
     const before = await ledger();
     await expect(migrate(app, await withExtra("CREATE TABLE probe_unqualified (id int);"))).rejects.toThrow(
-      /no schema has been selected to create in/,
+      /_probe\.sql failed: no schema has been selected to create in/,
     );
     expect(await ledger()).toEqual(before);
   });
@@ -126,7 +200,7 @@ describe("the runner (T57)", () => {
       ALTER TABLE app.probe_partial ENABLE ROW LEVEL SECURITY;
       SELECT 1 / 0;
     `;
-    await expect(migrate(app, await withExtra(text))).rejects.toThrow(/division by zero/);
+    await expect(migrate(app, await withExtra(text))).rejects.toThrow(/_probe\.sql failed: division by zero/);
     expect(await left("probe_partial")).toBe(0);
   });
 
