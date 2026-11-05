@@ -491,10 +491,13 @@ class BuildAndTestSteps(StepsTest):
         self.write_scheme(scheme(("TadayoTests", False)))
         self.record(udid=UDID, ios="26.5", device="iPhone 17")
 
-    def products(self, extension=True):
+    def products(self, extension=True, log=("** TEST BUILD SUCCEEDED **\n",)):
         app = os.path.join(self.repo.root, "_runner_temp", "DerivedData", "Build", "Products",
                            "Debug-iphonesimulator", "Tadayo.app")
         os.makedirs(os.path.join(app, "PlugIns", "TadayoShare.appex") if extension else app)
+        os.makedirs(os.path.join(self.repo.out, "logs"), exist_ok=True)
+        with open(os.path.join(self.repo.out, "logs", "build.log"), "w", encoding="utf-8") as f:
+            f.writelines(log)
 
     def test_build_for_testing_on_the_simulator(self):
         shell = FakeShell(effects=[(has("build-for-testing"), lambda cmd: self.products())])
@@ -505,6 +508,35 @@ class BuildAndTestSteps(StepsTest):
         self.assertEqual(cmd[cmd.index("-project") + 1], "apps/ios/Tadayo.xcodeproj")
         self.assertEqual(cmd[cmd.index("-scheme") + 1], "Tadayo")
         self.assertEqual(cmd[cmd.index("-destination") + 1], f"platform=iOS Simulator,id={UDID}")
+        self.assertIn("-skipPackagePluginValidation", cmd)
+
+    def test_a_scheme_with_no_tests_still_lets_package_plugins_run(self):
+        self.write_scheme(scheme())
+        shell = FakeShell(effects=[(starts("xcodebuild", "build"), lambda cmd: self.products())])
+        self.assertEqual(self.step("build", shell)[0], 0)
+        self.assertIn("-skipPackagePluginValidation", shell.commands[0])
+
+    def test_the_generator_on_tadayoapi_builds(self):
+        shell = FakeShell(effects=[(has("build-for-testing"),
+                                    lambda cmd: self.products(log=PackagePluginsTest.GENERATOR))])
+        code, out = self.step("build", shell)
+        self.assertEqual(code, 0, out)
+
+    def test_a_plugin_outside_the_list_fails_the_build(self):
+        other = "Apply build tool plug-in \u201cLinter\u201d to target \u201cTadayoCore\u201d in package \u201ctadayocore\u201d\n"
+        shell = FakeShell(effects=[(has("build-for-testing"),
+                                    lambda cmd: self.products(log=PackagePluginsTest.GENERATOR + [other]))])
+        code, out = self.step("build", shell)
+        self.assertEqual(code, 1)
+        self.assertIn("toolchain.PACKAGE_PLUGINS", out)
+        self.assertIn("Linter, which isn't listed", out)
+
+    def test_a_build_log_that_cant_be_read_fails(self):
+        shell = FakeShell(effects=[(has("build-for-testing"), lambda cmd: (
+            self.products(), os.remove(os.path.join(self.repo.out, "logs", "build.log"))))])
+        code, out = self.step("build", shell)
+        self.assertEqual(code, 1)
+        self.assertIn("logs/build.log can't be read", out)
 
     def test_an_app_without_the_share_extension_fails(self):
         shell = FakeShell(effects=[(has("build-for-testing"), lambda cmd: self.products(False))])
@@ -570,6 +602,7 @@ class BuildAndTestSteps(StepsTest):
         self.assertIn(["git", "status", "--porcelain", "-z", "--untracked-files=all", "--", "apps/ios"],
                       shell.commands)
         self.assertNotIn("-skip-testing", cmd)
+        self.assertIn("-skipPackagePluginValidation", cmd)
         self.assertEqual(env["TEST_RUNNER_SNAPSHOT_TESTING_RECORD"], "never")
         self.assertEqual(env["TEST_RUNNER_SNAPSHOT_ARTIFACTS"], os.path.join(self.repo.out, "artifacts"))
         self.assertTrue(cmd[cmd.index("-resultBundlePath") + 1].endswith("Tests.xcresult"))
@@ -647,6 +680,156 @@ class BuildAndTestSteps(StepsTest):
         scheme_path = os.path.join(self.repo.root, "apps/ios/Tadayo.xcodeproj/xcshareddata/xcschemes/Tadayo.xcscheme")
         self.assertEqual(ios_steps.scheme_test_targets(scheme_path, os.path.join(self.repo.root, "apps/ios")),
                          ["TadayoSnapshotTests"])
+
+
+class LogFilterTest(unittest.TestCase):
+    # The end of `ios` run 41958887177's build log, lines 116 to 127 as the run wrote them
+    # (ios/b0-plugins-check at ab8968c), where Xcode refused the OpenAPI generator's plugin and
+    # no line said `error:`.
+    UNTRUSTED_PLUGIN = [
+        "Prepare packages\n",
+        "\n",
+        "Validate plug-in \u201cOpenAPIGenerator\u201d in package \u201cswift-openapi-generator\u201d\n",
+        "\n",
+        "** TEST BUILD FAILED **\n",
+        "\n",
+        "\n",
+        "The following build commands failed:\n",
+        "\tValidate plug-in \u201cOpenAPIGenerator\u201d in package \u201cswift-openapi-generator\u201d\n",
+        "\teyJibHVlcHJpbnRQcm92aWRlcl9wcm92aWRlckZpbGVQYXRoU3RyaW5nIjoiXC9Vc2Vyc1wvcnVubmVyXC93b3JrXC9U"
+        "YWRheW9cL1RhZGF5b1wvYXBwc1wvaW9zXC9UYWRheW8ueGNvZGVwcm9qIiwidHlwZSI6eyJibHVlcHJpbnRQcm92aWRl"
+        "ciI6e319fQ==\n",
+        "\tBuilding project Tadayo for testing with scheme Tadayo\n",
+        "(3 failures)\n",
+    ]
+    SHOWN = [
+        "** TEST BUILD FAILED **\n",
+        "The following build commands failed:\n",
+        "\tValidate plug-in \u201cOpenAPIGenerator\u201d in package \u201cswift-openapi-generator\u201d\n",
+        UNTRUSTED_PLUGIN[9],
+        "\tBuilding project Tadayo for testing with scheme Tadayo\n",
+        "(3 failures)\n",
+    ]
+    # Indented lines outside the list, as a build log has them, and a compiler error.
+    ELSEWHERE = ["\tcd /Users/runner/work\n", "    export PATH=/usr/bin\n",
+                 "/a.swift:3:1: error: x\n", "\tnote\n"]
+
+    def shown(self, lines):
+        log_filter = ios_steps.LogFilter()
+        return [line for line in lines if log_filter.show(line)]
+
+    def test_the_commands_that_failed_are_printed_with_the_list(self):
+        self.assertEqual(self.shown(self.UNTRUSTED_PLUGIN), self.SHOWN)
+
+    def test_indented_lines_elsewhere_stay_in_the_log_only(self):
+        self.assertEqual(self.shown(self.ELSEWHERE), ["/a.swift:3:1: error: x\n"])
+
+    def test_shell_run_prints_what_the_filter_shows_and_logs_every_line(self):
+        # Shell.run itself, on a real process: what it prints is LogFilter's choice, and the log
+        # holds every line.
+        root = tempfile.mkdtemp(prefix="ios-shell-")
+        self.addCleanup(shutil.rmtree, root, True)
+        log = os.path.join(root, "logs", "build.log")
+        lines = self.ELSEWHERE + self.UNTRUSTED_PLUGIN
+        script = os.path.join(root, "xcodebuild.py")
+        with open(script, "w", encoding="utf-8") as f:
+            f.write("import sys\nsys.stdout.buffer.write(" + repr("".join(lines).encode("utf-8"))
+                    + ")\nsys.exit(65)\n")
+        cmd = [sys.executable, "-I", script]
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = ios_steps.Shell(root).run(cmd, env={"LC_ALL": "C.UTF-8"}, log=log)
+        self.assertEqual(code, 65)
+        printed = out.getvalue().splitlines(keepends=True)
+        self.assertEqual(printed[0], "+ " + " ".join(cmd) + "\n")
+        self.assertEqual(printed[1:], ["/a.swift:3:1: error: x\n"] + self.SHOWN)
+        with open(log, encoding="utf-8") as f:
+            self.assertEqual(f.read(), "+ " + " ".join(cmd) + "\n" + "".join(lines))
+
+
+class PackagePluginsTest(unittest.TestCase):
+    # Lines 116 to 125, 9509 and 9515 of `ios` run 41961456622's build log (ios/b0-plugins-check
+    # at a45fa23), where Xcode compiled the generator's plugin, applied it to TadayoAPI, and
+    # compiled the client it wrote.
+    GENERATOR = [
+        "Prepare packages\n",
+        "\n",
+        "Compile plug-in \u201cOpenAPIGenerator\u201d in package \u201cswift-openapi-generator\u201d\n",
+        "[debug]: Compiling plugin to executable at /Users/runner/work/_temp/DerivedData/Build/"
+        "Products/PluginExecutables/OpenAPIGenerator\n",
+        "[debug]: Using compiler /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/"
+        "XcodeDefault.xctoolchain/usr/bin/swiftc\n",
+        "[debug]: Plugin compilation output directory '/Users/runner/work/_temp/DerivedData/Build/"
+        "Products/PluginExecutables'\n",
+        "[debug]: Computed hash of plugin compilation inputs: "
+        "832f7c5c083aa44273f22e3f930a7b0fdba1c41bef4e72ed5b2195387dd3aa5b\n",
+        "\n",
+        "\n",
+        "Apply build tool plug-in \u201cOpenAPIGenerator\u201d to target \u201cTadayoAPI\u201d in package "
+        "\u201ctadayoapi\u201d\n",
+        "SwiftDriver TadayoAPI normal arm64 com.apple.xcode.tools.swift.compiler (in target "
+        "'TadayoAPI' from project 'TadayoAPI')\n",
+        "SwiftCompile normal arm64 /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/"
+        "BuildToolPluginIntermediates/tadayoapi.output/TadayoAPI/OpenAPIGenerator/GeneratedSources/"
+        "Client.swift (in target 'TadayoAPI' from project 'TadayoAPI')\n",
+    ]
+
+    def problems(self, lines, allowed=None):
+        return ios_steps.package_plugin_problems(lines, allowed or toolchain.PACKAGE_PLUGINS)
+
+    def test_the_list_is_the_generator_on_tadayoapi(self):
+        self.assertEqual(toolchain.PACKAGE_PLUGINS,
+                         {"OpenAPIGenerator": ("swift-openapi-generator", ("TadayoAPI",))})
+
+    def test_the_generator_on_tadayoapi_is_allowed(self):
+        self.assertEqual(self.problems(self.GENERATOR), [])
+
+    def test_a_build_with_no_plugin_is_allowed(self):
+        self.assertEqual(self.problems(["Prepare packages\n", "** BUILD SUCCEEDED **\n"]), [])
+
+    def test_the_refused_generator_is_still_the_listed_one(self):
+        self.assertEqual(self.problems(LogFilterTest.UNTRUSTED_PLUGIN), [])
+
+    def test_a_plugin_the_list_doesnt_name_fails(self):
+        self.assertEqual(self.problems([
+            "Compile plug-in \u201cLinter\u201d in package \u201cswift-lint-plugin\u201d\n",
+            "Apply build tool plug-in \u201cLinter\u201d to target \u201cTadayoCore\u201d in package "
+            "\u201ctadayocore\u201d\n"]), ["Linter, which isn't listed"])
+
+    def test_the_generator_on_another_target_fails(self):
+        self.assertEqual(self.problems(self.GENERATOR + [
+            "Apply build tool plug-in \u201cOpenAPIGenerator\u201d to target \u201cTadayoCore\u201d in package "
+            "\u201ctadayocore\u201d\n"]), ["OpenAPIGenerator on TadayoCore"])
+
+    def test_a_plugin_of_the_same_name_from_another_package_fails(self):
+        self.assertEqual(self.problems([
+            "Compile plug-in \u201cOpenAPIGenerator\u201d in package \u201cswift-openapi-generator-fork\u201d\n"]),
+            ["OpenAPIGenerator from swift-openapi-generator-fork, not swift-openapi-generator"])
+
+    def test_a_plugins_folders_are_read_without_its_lines(self):
+        # Xcode may word its lines differently: the folders a plugin's executable and its output
+        # go to still name it.
+        self.assertEqual(self.problems([
+            "[debug]: Compiling plugin to executable at /Users/runner/work/_temp/DerivedData/Build/"
+            "Products/PluginExecutables/Linter\n",
+            "SwiftCompile normal arm64 /Users/runner/work/_temp/DerivedData/Build/Intermediates.noindex/"
+            "BuildToolPluginIntermediates/tadayocore.output/TadayoCore/OpenAPIGenerator/x.swift "
+            "(in target 'TadayoCore' from project 'TadayoCore')\n"]),
+            ["Linter, which isn't listed", "OpenAPIGenerator on TadayoCore"])
+
+    def test_a_line_about_a_plug_in_this_cant_read_fails(self):
+        line = "Run prebuild plug-in \u201cOpenAPIGenerator\u201d for \u201cTadayoAPI\u201d\n"
+        self.assertEqual(self.problems([line]),
+                         ["a line about a plug-in this check can't read: " + line.strip()])
+
+    def test_tadayoapi_built_with_no_line_about_its_plugin_fails(self):
+        # Then Xcode no longer writes the lines this check reads, and it would pass on nothing.
+        self.assertEqual(self.problems(self.GENERATOR[11:12]),
+                         ["TadayoAPI was built, but no line says OpenAPIGenerator was applied to it"])
+
+    def test_each_problem_is_said_once(self):
+        line = "Apply build tool plug-in \u201cLinter\u201d to target \u201cTadayoCore\u201d in package \u201ct\u201d\n"
+        self.assertEqual(self.problems([line, line]), ["Linter, which isn't listed"])
 
 
 class StateTest(unittest.TestCase):

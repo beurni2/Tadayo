@@ -36,8 +36,11 @@ The steps:
                toolchain.SIMULATOR_DEVICE when that runtime supports it, else the newest plain
                "iPhone <n>" it supports. It boots the device and writes it to run.json.
   build        `xcodebuild build-for-testing` of SCHEME, or `xcodebuild build` while the
-               scheme has no test target (xcodebuild refuses build-for-testing then), then fails
-               unless the app holds the share extension, so both targets were built.
+               scheme has no test target (xcodebuild refuses build-for-testing then), with
+               `-skipPackagePluginValidation` (ADR-028). It fails when the build log shows a
+               package plugin toolchain.PACKAGE_PLUGINS doesn't allow, from another package or on
+               another target, then unless the app holds the share extension, so both targets
+               were built.
   test         `xcodebuild test-without-building` of the scheme's tests, when it has any, with
                swift-snapshot-testing's record mode `never` (a snapshot with no committed
                reference fails; TECH-DESIGN section 2) and its artifacts directory in OUT. It
@@ -176,6 +179,80 @@ RECORDING = re.compile(r"\brecord\s*:\s*(true\b|false\b|\.(all|missing|failed)\b
                        r"SNAPSHOT_TESTING_RECORD")
 SHOWN = re.compile(r"error:|warning:|\*\* [A-Z ]+ \*\*|Test Case .*(failed|passed)|"
                    r"Executed [0-9]+ test|Test Suite .*(failed|passed)|✘|Testing failed")
+FAILED_COMMANDS = "The following build commands failed:"
+
+
+class LogFilter:
+    """Which lines of a build log to print: those SHOWN matches, and the list of commands
+    xcodebuild says failed, its indented lines and its count. That list names the cause when no
+    `error:` line does: a package build plugin Xcode won't run untrusted fails with only
+    `Validate plug-in "OpenAPIGenerator" in package "swift-openapi-generator"` in it (ADR-028)."""
+
+    def __init__(self):
+        self.listing = False
+
+    def show(self, line):
+        if self.listing and (line.startswith("\t") or re.match(r"\([0-9]+ failures?\)", line)):
+            return True
+        self.listing = FAILED_COMMANDS in line
+        return self.listing or bool(SHOWN.search(line))
+
+
+# What Xcode writes about package plugins in a build log (`ios` runs 41958887177 and 41961456622):
+# its activity lines (`Compile plug-in “P” in package “K”`, `Validate plug-in …` when it refuses
+# one, `Apply build tool plug-in “P” to target “T” in package “k”`), the folders a plugin's
+# executable and its output go to, and the target each build command belongs to.
+PLUGIN_ACTIVITY = re.compile(r"[A-Z][A-Za-z ]* plug-in \u201c")
+PLUGIN_BUILT = re.compile(r"(?:Compile|Validate) plug-in \u201c([^\u201d]+)\u201d in package "
+                          r"\u201c([^\u201d]+)\u201d")
+PLUGIN_APPLIED = re.compile(r"Apply [a-z ]*plug-in \u201c([^\u201d]+)\u201d to target "
+                            r"\u201c([^\u201d]+)\u201d")
+PLUGIN_OUTPUT = re.compile(r"BuildToolPluginIntermediates/[^/\s]+\.output/([^/\s]+)/([\w-]+)")
+PLUGIN_EXECUTABLE = re.compile(r"PluginExecutables/([\w-]+)")
+TARGET_BUILT = re.compile(r"\(in target '([^']+)' from project ")
+
+
+def package_plugin_problems(lines, allowed):
+    """What a build log shows of package plugins outside `allowed` ({plugin: (package, targets)},
+    toolchain.PACKAGE_PLUGINS), each said once: a plugin it doesn't list, a listed one from another
+    package or on another target, a line about a plug-in this can't read, and a listed target
+    built with no line saying its plugin was applied to it. The last means Xcode words its lines
+    differently now, and the rest of this check would find nothing (ADR-028)."""
+    problems, applied, built = [], set(), set()
+
+    def problem(text):
+        if text not in problems:
+            problems.append(text)
+
+    def check(plugin, package=None, target=None):
+        if plugin not in allowed:
+            problem(f"{plugin}, which isn't listed")
+        elif package is not None and package != allowed[plugin][0]:
+            problem(f"{plugin} from {package}, not {allowed[plugin][0]}")
+        elif target is not None and target not in allowed[plugin][1]:
+            problem(f"{plugin} on {target}")
+
+    for line in lines:
+        text = line.strip()
+        if PLUGIN_ACTIVITY.match(text):
+            compiled, applied_to = PLUGIN_BUILT.match(text), PLUGIN_APPLIED.match(text)
+            if compiled:
+                check(compiled[1], package=compiled[2])
+            elif applied_to:
+                check(applied_to[1], target=applied_to[2])
+                applied.add((applied_to[1], applied_to[2]))
+            else:
+                problem(f"a line about a plug-in this check can't read: {text[:160]}")
+        for found in PLUGIN_OUTPUT.finditer(line):
+            check(found[2], target=found[1])
+        for found in PLUGIN_EXECUTABLE.finditer(line):
+            check(found[1])
+        built.update(found[1] for found in TARGET_BUILT.finditer(line))
+    for plugin, (_, targets) in allowed.items():
+        for target in targets:
+            if target in built and (plugin, target) not in applied:
+                problem(f"{target} was built, but no line says {plugin} was applied to it")
+    return problems
 
 
 class Shell:
@@ -198,10 +275,11 @@ class Shell:
                 process = subprocess.Popen(cmd, cwd=cwd or self.root, env=self._env(env),
                                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                            text=True, errors="replace")
+                shown = LogFilter()
                 for line in process.stdout:
                     f.write(line)
                     f.flush()  # a step killed by its timeout still leaves its log
-                    if SHOWN.search(line):
+                    if shown.show(line):
                         print(line.rstrip("\n"), flush=True)
                 return process.wait()
         except FileNotFoundError:
@@ -734,10 +812,21 @@ class Steps:
         # xcodebuild refuses build-for-testing for a scheme with no test target ("not currently
         # configured for the build-for-testing action"), as the app's first commits have.
         action = "build-for-testing" if targets else "build"
+        # -skipPackagePluginValidation lets Xcode run the package build plugins in the graph
+        # without asking a person to trust each one first, which CI can't do: TadayoAPI's client
+        # is generated by the Swift OpenAPI Generator's plugin on every build (ADR-028).
         code = self.shell.run(["xcodebuild", action, "-project", project,
                                "-scheme", SCHEME, "-destination", destination,
-                               "-derivedDataPath", self.derived_data()],
+                               "-derivedDataPath", self.derived_data(),
+                               "-skipPackagePluginValidation"],
                               env=self.xcode_env(), log=self.log("build.log"))
+        # The flag trusts every plugin in the graph, so the log is checked for the plugins Xcode
+        # ran: only toolchain.PACKAGE_PLUGINS', from their package, on their targets.
+        plugins = self.plugin_problems()
+        if plugins:
+            print("ios: build: the package plugins in logs/build.log aren't the ones "
+                  "toolchain.PACKAGE_PLUGINS allows (ADR-028): " + "; ".join(plugins[:10]))
+            return code or 1
         if code != 0:
             print(f"ios: build: xcodebuild {action} failed (logs/build.log)")
             return code
@@ -755,6 +844,13 @@ class Steps:
             return 1
         print(f"ios: build: {APP_PRODUCT} with {SHARE_EXTENSION}")
         return 0
+
+    def plugin_problems(self):
+        try:
+            with open(self.log("build.log"), encoding="utf-8", errors="replace") as f:
+                return package_plugin_problems(f, toolchain.PACKAGE_PLUGINS)
+        except OSError as error:
+            return [f"logs/build.log can't be read ({error.strerror})"]
 
     def test(self):
         try:
@@ -788,7 +884,7 @@ class Steps:
         os.makedirs(artifacts, exist_ok=True)
         cmd = ["xcodebuild", "test-without-building", "-project", project, "-scheme", SCHEME,
                "-destination", destination, "-derivedDataPath", self.derived_data(),
-               "-resultBundlePath", bundle]
+               "-resultBundlePath", bundle, "-skipPackagePluginValidation"]
         for target in skipped:
             cmd += ["-skip-testing", target]
         code = self.shell.run(cmd, env=self.xcode_env({
