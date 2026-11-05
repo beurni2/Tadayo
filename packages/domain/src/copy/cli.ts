@@ -1,11 +1,14 @@
 // `pnpm copy-lint`: runs the copy lint over every string file in the repository
 // (docs/INVARIANTS.md T41 to T43). Exit 0 when clean, 1 with each finding printed.
 // `design/reference/` holds renders and deliveries that are never shipped, so it's skipped.
+// Each of the founder's exceptions (`exceptions.ts`) is printed on every run, with how many
+// times it was found, and excuses only the finding it names.
 
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { extractStrings, isStringFile } from "./extract.ts";
+import { EXCEPTIONS, exceptionFor, type CopyException } from "./exceptions.ts";
+import { extractEntries, isStringFile } from "./extract.ts";
 import { lintString } from "./rules.ts";
 
 // Renders and deliveries at the top of the repository are never shipped; dependencies anywhere.
@@ -46,13 +49,25 @@ function main(): number {
   const root = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
   const files = stringFiles(root);
   let problems = 0;
+  const found = new Map<CopyException, number>(EXCEPTIONS.map((e) => [e, 0]));
   for (const path of files) {
-    for (const text of extractStrings(path, decode(readFileSync(join(root, path))))) {
-      for (const finding of lintString(text)) {
+    for (const entry of extractEntries(path, decode(readFileSync(join(root, path))))) {
+      for (const finding of lintString(entry.text)) {
+        const exception = exceptionFor(path, entry, finding);
+        if (exception) {
+          found.set(exception, (found.get(exception) ?? 0) + 1);
+          continue;
+        }
         problems += 1;
-        console.log(`${path}: [${finding.rule}] ${finding.message}\n    in: ${JSON.stringify(text)}`);
+        console.log(`${path}: [${finding.rule}] ${finding.message}\n    in: ${JSON.stringify(entry.text)}`);
       }
     }
+  }
+  for (const [e, times] of found) {
+    console.log(
+      `copy lint: exception: "${e.match}" allowed in ${JSON.stringify(e.text)}, the value of ${e.key} in ${e.path} ` +
+        `[${e.rule}], by ${e.reason}; found ${String(times)} time(s)`,
+    );
   }
   console.log(`copy lint: ${String(files.length)} string file(s), ${String(problems)} finding(s)`);
   return problems === 0 ? 0 : 1;
