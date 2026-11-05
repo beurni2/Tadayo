@@ -14,7 +14,8 @@ import Observation
     }
 
     public enum Route: Sendable, Equatable {
-        /// The session and the account are being read: the launch screen.
+        /// The session and the account are being read, or Leave sign-in is ending the session:
+        /// the launch screen.
         case starting
         /// A02-email and A02-code, in `signIn`.
         case signIn

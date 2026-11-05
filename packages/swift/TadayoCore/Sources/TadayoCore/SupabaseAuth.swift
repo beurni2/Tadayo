@@ -151,13 +151,18 @@ public struct SupabaseAuth: Sendable {
         throw .sessionEnded
     }
 
+    /// How long a sign-out waits for Supabase. The device forgets the session whatever the
+    /// answer, and the app shows the launch screen meanwhile, so a stalled network doesn't hold
+    /// Leave sign-in for URLSession's minute.
+    static let signOutTimeout: TimeInterval = 15
+
     /// Ends this session on the server: `scope=local`, since Supabase's default signs out every
     /// device. A session or user the server no longer knows is already signed out; any other
     /// 401 or 403 refused the token, not the session.
     public func signOut(_ session: AuthSession) async throws(AuthFailure) {
         let (status, data, response) = try await call(
             "logout", query: [URLQueryItem(name: "scope", value: "local")], body: Empty(),
-            bearer: session.accessToken)
+            bearer: session.accessToken, timeout: Self.signOutTimeout)
         if (200..<300).contains(status) { return }
         guard status == 401 || status == 403 else { throw .unavailable }
         let code = errorCode(data, response)
@@ -218,11 +223,13 @@ public struct SupabaseAuth: Sendable {
     }
 
     private func call(
-        _ path: String, query: [URLQueryItem] = [], body: some Encodable, bearer: String? = nil
+        _ path: String, query: [URLQueryItem] = [], body: some Encodable, bearer: String? = nil,
+        timeout: TimeInterval? = nil
     ) async throws(AuthFailure) -> (Int, Data, HTTPURLResponse) {
         var url = configuration.projectURL.appending(path: "auth/v1/\(path)")
         if !query.isEmpty { url.append(queryItems: query) }
         var request = URLRequest(url: url)
+        if let timeout { request.timeoutInterval = timeout }
         request.httpMethod = "POST"
         request.setValue(configuration.publishableKey, forHTTPHeaderField: "apikey")
         request.setValue("2024-01-01", forHTTPHeaderField: "X-Supabase-Api-Version")

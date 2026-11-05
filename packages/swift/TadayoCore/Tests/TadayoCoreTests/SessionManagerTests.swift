@@ -143,6 +143,9 @@ final class StubbornStore: SessionStore, @unchecked Sendable {
 
     func save(_ session: AuthSession) throws { try inner.save(session) }
 
+    /// Makes the next load throw, as a keychain read can once.
+    func refuseNextLoad() { lock.withLock { loadFailures += 1 } }
+
     func delete() throws {
         let empty = (try? inner.load()) == nil
         let refuse = lock.withLock {
@@ -467,6 +470,61 @@ final class ManualClock: @unchecked Sendable {
         #expect(await signOut.value)
         #expect(auth.calls == ["refresh refresh-1"])
         #expect(try store.load() == session(9))
+    }
+
+    @Test func aRefreshWhoseStoreCantBeReadKeepsTheServersAnswer() async throws {
+        // A keychain read that fails once after Supabase answers isn't a sign-out: a busy
+        // server stays busy, and a fresh session is kept.
+        for (answer, expected) in [
+            (Result<AuthSession, AuthFailure>.failure(.unavailable), SessionError.unavailable),
+            (.failure(.network), .network),
+        ] {
+            let gate = Gate()
+            let auth = FakeAuth(refresh: [answer])
+            auth.duringRefresh = { await gate.wait() }
+            let store = StubbornStore(session(1, expiresIn: 20))
+            let manager = manager(auth, store, ManualClock(start))
+            let token = Task { try await manager.accessToken() }
+            await gate.reached()
+            store.refuseNextLoad()
+            gate.open()
+            await #expect(throws: expected) { try await token.value }
+            #expect(try store.load() == session(1, expiresIn: 20))
+        }
+        let gate = Gate()
+        let auth = FakeAuth(refresh: [.success(session(2, expiresIn: 7200))])
+        auth.duringRefresh = { await gate.wait() }
+        let store = StubbornStore(session(1, expiresIn: 20))
+        let manager = manager(auth, store, ManualClock(start))
+        let token = Task { try await manager.accessToken() }
+        await gate.reached()
+        store.refuseNextLoad()
+        gate.open()
+        #expect(try await token.value == "access-2")
+        #expect(try store.load() == session(2, expiresIn: 7200))
+    }
+
+    @Test func aSignOutAskedForAfterANewerSignInEndsThatOneToo() async throws {
+        // A sign-out that began before a sign-in can't stand in for one asked for after it.
+        let gate = Gate()
+        let auth = FakeAuth(refresh: [.success(session(2, expiresIn: 7200))])
+        auth.duringRefresh = { await gate.wait() }
+        let store = InMemorySessionStore(session(1, expiresIn: 20))
+        let manager = manager(auth, store, ManualClock(start))
+        let token = Task { try await manager.accessToken() }
+        await gate.reached()
+        let first = Task { await manager.signOut() }
+        await eventually { await !manager.isSignedIn }
+        try await manager.begin(session(9))
+        let second = Task { await manager.signOut() }
+        for _ in 0..<50 { await Task.yield() }
+        gate.open()
+        _ = try? await token.value
+        #expect(await first.value)
+        #expect(await second.value)
+        #expect(auth.calls == ["refresh refresh-1", "signOut access-9"])
+        #expect(try store.load() == nil)
+        #expect(await manager.isSignedIn == false)
     }
 
     @Test func aStoreThatCantBeReadIsStillForgotten() async throws {

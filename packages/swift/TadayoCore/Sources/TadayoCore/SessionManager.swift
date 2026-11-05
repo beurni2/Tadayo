@@ -63,6 +63,10 @@ public actor SessionManager {
     private var generation = 0
     /// The sign-out under way: while it is set, no token is handed out.
     private var ending: Task<Bool, Never>?
+    /// Sign-ins so far, and how many there had been when `ending` began: a sign-out asked for
+    /// after a newer sign-in runs on its own once `ending` is done, rather than join it.
+    private var signIns = 0
+    private var endingSignIns = 0
 
     public init(
         auth: any AuthService, store: any SessionStore,
@@ -77,6 +81,7 @@ public actor SessionManager {
 
     /// Keeps the session a verified code gave.
     public func begin(_ session: AuthSession) throws {
+        signIns += 1
         generation += 1
         try store.save(session)
     }
@@ -107,11 +112,17 @@ public actor SessionManager {
     /// twice): the caller says so rather than show sign-in over a session still kept. The caller
     /// purges every cache next (T11).
     @discardableResult public func signOut() async -> Bool {
-        if let ending { return await ending.value }
+        if let current = ending {
+            if signIns == endingSignIns { return await current.value }
+            _ = await current.value
+            if ending == current { ending = nil }
+            return await signOut()
+        }
+        endingSignIns = signIns
         let task = Task { await self.endSession() }
         ending = task
         let forgotten = await task.value
-        ending = nil
+        if ending == task { ending = nil }
         return forgotten
     }
 
@@ -189,9 +200,16 @@ public actor SessionManager {
         } catch {
             answer = .failure(error)
         }
-        guard generation == began, let stored = try? store.load() else {
-            return .failure(.signedOut)
+        guard generation == began else { return .failure(.signedOut) }
+        // A store that can't be read is taken to hold the session still, as sign-out takes it:
+        // only an empty one means it was signed out of.
+        let kept: AuthSession?
+        do {
+            kept = try store.load()
+        } catch {
+            kept = session
         }
+        guard let stored = kept else { return .failure(.signedOut) }
         guard stored.refreshToken == session.refreshToken else { return .success(stored) }
         switch answer {
         case .success(let fresh):
