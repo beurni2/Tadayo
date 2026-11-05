@@ -1,0 +1,90 @@
+[
+ {
+  "name": "T53 a cursor the file holds left open",
+  "file": "tools/ops/src/migrate.ts",
+  "verdict": "CAUGHT",
+  "failed": [
+   "the runner (T57) > closes a cursor the file holds and drops its temporary objects, so neither runs later (T53)"
+  ]
+ },
+ {
+  "name": "T53 the file's temporary objects kept",
+  "file": "tools/ops/src/migrate.ts",
+  "verdict": "CAUGHT",
+  "failed": [
+   "the runner (T57) > closes a cursor the file holds and drops its temporary objects, so neither runs later (T53)"
+  ]
+ },
+ {
+  "name": "T53 the check's \"char\" written without its schema",
+  "file": "tools/ops/src/migrate.ts",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T53: the runner's check finds whatever would open the schema > never runs a type in the session's temporary schema, which comes first for type names even with the search path empty (review finding runner 2 of PR #17's second check)"
+  ]
+ },
+ {
+  "name": "T53 regrole and text written without their schema in a relation's grants",
+  "file": "tools/ops/src/migrate.ts",
+  "verdict": "CAUGHT",
+  "failed": [
+   "T53: the runner's check finds whatever would open the schema > never runs a type in the session's temporary schema, which comes first for type names even with the search path empty (review finding runner 2 of PR #17's second check)"
+  ]
+ },
+ {
+  "name": "T53 no check after each commit",
+  "file": "tools/ops/src/migrate.ts",
+  "verdict": "CAUGHT",
+  "failed": [
+   "the runner (T57) > checks the schema again after each commit, and stops loudly if something that ran at the commit opened it (T53)"
+  ]
+ },
+ {
+  "name": "T53 the ledger records the file after it runs, before the check",
+  "file": "tools/ops/src/migrate.ts",
+  "verdict": "CAUGHT",
+  "failed": [
+   "the runner (T57) > records the file before running it, so code the file puts on the ledger runs only when the next file is recorded, before that file's check (T53)"
+  ]
+ },
+ {
+  "name": "T53 the ledger records the file after the check",
+  "file": "tools/ops/src/migrate.ts",
+  "verdict": "CAUGHT",
+  "failed": [
+   "the runner (T57) > records the file before running it, so code the file puts on the ledger runs only when the next file is recorded, before that file's check (T53)"
+  ]
+ },
+ {
+  "name": "T53 the search path not emptied again before the check",
+  "file": "tools/ops/src/migrate.ts",
+  "verdict": "CAUGHT",
+  "failed": [
+   "the runner (T57) > checks the schema with the search path empty, whatever the file set it to (T53)"
+  ]
+ },
+ {
+  "name": "T57 the deferred checks fired outside the try, so a failure there doesn't name the file",
+  "file": "tools/ops/src/migrate.ts",
+  "verdict": "CAUGHT",
+  "failed": [
+   "the runner (T57) > names the file when its deferred checks fail, and keeps nothing of it (T57)"
+  ]
+ },
+ {
+  "name": "T57 bytes that aren't UTF-8 decoded loosely",
+  "file": "tools/ops/src/migrate.ts",
+  "verdict": "CAUGHT",
+  "failed": [
+   "readMigrations > refuses a file that isn't UTF-8, or holds a NUL, rather than run other text than it hashed (T57)"
+  ]
+ },
+ {
+  "name": "T57 a NUL character not refused",
+  "file": "tools/ops/src/migrate.ts",
+  "verdict": "CAUGHT",
+  "failed": [
+   "readMigrations > refuses a file that isn't UTF-8, or holds a NUL, rather than run other text than it hashed (T57)"
+  ]
+ }
+]

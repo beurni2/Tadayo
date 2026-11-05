@@ -1,0 +1,120 @@
+[
+ [
+  "T53 a cursor the file holds left open",
+  "tools/ops/src/migrate.ts",
+  [
+   [
+    "CLOSE ALL; DISCARD TEMP",
+    "DISCARD TEMP"
+   ]
+  ]
+ ],
+ [
+  "T53 the file's temporary objects kept",
+  "tools/ops/src/migrate.ts",
+  [
+   [
+    "CLOSE ALL; DISCARD TEMP",
+    "CLOSE ALL"
+   ]
+  ]
+ ],
+ [
+  "T53 the check's \"char\" written without its schema",
+  "tools/ops/src/migrate.ts",
+  [
+   [
+    "'s'::pg_catalog.\"char\" ELSE 'r'::pg_catalog.\"char\"",
+    "'s'::\"char\" ELSE 'r'::\"char\""
+   ]
+  ]
+ ],
+ [
+  "T53 regrole and text written without their schema in a relation's grants",
+  "tools/ops/src/migrate.ts",
+  [
+   [
+    "    SELECT 'app.' || relname || ' grants ' || a.privilege_type || ' to '\n           || CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE a.grantee::pg_catalog.regrole::pg_catalog.text END\n      FROM relations, app, pg_catalog.aclexplode(relations.acl) a",
+    "    SELECT 'app.' || relname || ' grants ' || a.privilege_type || ' to '\n           || CASE WHEN a.grantee = 0 THEN 'PUBLIC' ELSE a.grantee::regrole::text END\n      FROM relations, app, pg_catalog.aclexplode(relations.acl) a"
+   ]
+  ]
+ ],
+ [
+  "T53 no check after each commit",
+  "tools/ops/src/migrate.ts",
+  [
+   [
+    "if (after.length > 0) {",
+    "if (after.length < 0) {"
+   ]
+  ]
+ ],
+ [
+  "T53 the ledger records the file after it runs, before the check",
+  "tools/ops/src/migrate.ts",
+  [
+   [
+    "    await tx`\n      INSERT INTO app.schema_migrations (version, name, sha256)\n      VALUES (${file.version}, ${file.name}, ${file.sha256})\n    `;\n    await tx`SELECT pg_catalog.set_config('tadayo.migration', ${file.text}, true)`;\n    await tx.unsafe(\"DO $run$ BEGIN EXECUTE pg_catalog.current_setting('tadayo.migration'); END $run$\").simple();\n",
+    "    await tx`SELECT pg_catalog.set_config('tadayo.migration', ${file.text}, true)`;\n    await tx.unsafe(\"DO $run$ BEGIN EXECUTE pg_catalog.current_setting('tadayo.migration'); END $run$\").simple();\n    await tx`\n      INSERT INTO app.schema_migrations (version, name, sha256)\n      VALUES (${file.version}, ${file.name}, ${file.sha256})\n    `;\n"
+   ]
+  ]
+ ],
+ [
+  "T53 the ledger records the file after the check",
+  "tools/ops/src/migrate.ts",
+  [
+   [
+    "    await tx`\n      INSERT INTO app.schema_migrations (version, name, sha256)\n      VALUES (${file.version}, ${file.name}, ${file.sha256})\n    `;\n",
+    ""
+   ],
+   [
+    "  const problems = await closedProblems(tx);\n  if (problems.length > 0) {\n    throw new Error(`migrate: ${fileName(file)} would leave the schema app open (T53): ` + problems.join(\"; \"));\n  }\n",
+    "  const problems = await closedProblems(tx);\n  if (problems.length > 0) {\n    throw new Error(`migrate: ${fileName(file)} would leave the schema app open (T53): ` + problems.join(\"; \"));\n  }\n  await tx`\n      INSERT INTO app.schema_migrations (version, name, sha256)\n      VALUES (${file.version}, ${file.name}, ${file.sha256})\n    `;\n"
+   ]
+  ]
+ ],
+ [
+  "T53 the search path not emptied again before the check",
+  "tools/ops/src/migrate.ts",
+  [
+   [
+    "    // Last, since the file or a deferred trigger may have set it: an operator the path finds\n    // ahead of pg_catalog's would run inside the check.\n    await tx`SELECT pg_catalog.set_config('search_path', '', true)`;\n",
+    ""
+   ]
+  ]
+ ],
+ [
+  "T57 the deferred checks fired outside the try, so a failure there doesn't name the file",
+  "tools/ops/src/migrate.ts",
+  [
+   [
+    "    await tx.unsafe(\"SET CONSTRAINTS ALL IMMEDIATE; CLOSE ALL; DISCARD TEMP\").simple();\n",
+    ""
+   ],
+   [
+    "  const problems = await closedProblems(tx);\n  if (problems.length > 0) {\n    throw new Error(`migrate: ${fileName(file)} would leave the schema app open (T53): ` + problems.join(\"; \"));\n  }\n",
+    "  await tx.unsafe(\"SET CONSTRAINTS ALL IMMEDIATE; CLOSE ALL; DISCARD TEMP\").simple();\n  const problems = await closedProblems(tx);\n  if (problems.length > 0) {\n    throw new Error(`migrate: ${fileName(file)} would leave the schema app open (T53): ` + problems.join(\"; \"));\n  }\n"
+   ]
+  ]
+ ],
+ [
+  "T57 bytes that aren't UTF-8 decoded loosely",
+  "tools/ops/src/migrate.ts",
+  [
+   [
+    "new TextDecoder(\"utf-8\", { fatal: true })",
+    "new TextDecoder(\"utf-8\")"
+   ]
+  ]
+ ],
+ [
+  "T57 a NUL character not refused",
+  "tools/ops/src/migrate.ts",
+  [
+   [
+    "if (text.includes(\"\\0\"))",
+    "if (text.includes(\"\\0\") && false)"
+   ]
+  ]
+ ]
+]
