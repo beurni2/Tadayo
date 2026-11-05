@@ -334,4 +334,4 @@ Brought in with the handoffs (ADR-027). Their sources are in the project's files
 - **FQ85. What a control for a later stage does in B0.** B0's screens draw controls whose features come later: Create a club and I have an invite on `G06-no-club` (B1), + Add in the no-club header (B1), Private drafts (B4), the account button (B6), and Add photo on A03-profile (B3's uploads). The renders draw them all; the sources don't say what each does before its stage. Asked on a card in the ios thread on 5 November 2026.
     - Answered by the founder on 5 November 2026 at 05:58 UTC, on that card ("In the B0 build, what should buttons for later features do?": "Show them, doing nothing yet"): the default (ADR-029).
     - Default: each is drawn as designed and does nothing yet, with its accessibility label unchanged; the TestFlight notes list them. The screens then match the renders later stages build on, and nothing claims to work. Greying them out or hiding them changes the look only, so either is a small later change.
-    - Needed by: B0 (slice 11's sign-in PR).
+    - Needed by: B0 (slice 11's sign-in and tabs PRs).
