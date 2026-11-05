@@ -1,0 +1,127 @@
++ xcodebuild build-for-testing -project apps/ios/Tadayo.xcodeproj -scheme Tadayo -destination platform=iOS Simulator,id=23C8F95C-765D-46A9-AE82-0BEE2921C8D7 -derivedDataPath /Users/runner/work/_temp/DerivedData
+Command line invocation:
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/xcodebuild build-for-testing -project apps/ios/Tadayo.xcodeproj -scheme Tadayo -destination "platform=iOS Simulator,id=23C8F95C-765D-46A9-AE82-0BEE2921C8D7" -derivedDataPath /Users/runner/work/_temp/DerivedData
+
+Resolve Package Graph
+
+Fetching from https://github.com/apple/swift-openapi-urlsession
+
+Fetching from https://github.com/pointfreeco/swift-snapshot-testing
+
+Fetching from https://github.com/apple/swift-openapi-runtime
+
+Fetching from https://github.com/apple/swift-openapi-generator
+
+Fetching from https://github.com/pointfreeco/swift-custom-dump
+
+Fetching from https://github.com/swiftlang/swift-syntax
+
+Fetching from https://github.com/apple/swift-http-types
+
+Fetching from https://github.com/apple/swift-collections
+
+Fetching from https://github.com/jpsim/Yams
+
+Fetching from https://github.com/apple/swift-argument-parser
+
+Fetching from https://github.com/apple/swift-algorithms
+
+Fetching from https://github.com/mattpolzin/OpenAPIKit
+
+Fetching from https://github.com/apple/swift-numerics.git
+
+Fetching from https://github.com/pointfreeco/xctest-dynamic-overlay
+
+Creating working copy of package ‘Yams’
+
+Checking out 6.2.2 of package ‘Yams’
+
+Creating working copy of package ‘swift-numerics’
+
+Checking out 1.1.1 of package ‘swift-numerics’
+
+Creating working copy of package ‘swift-syntax’
+
+Checking out 604.0.0 of package ‘swift-syntax’
+
+Creating working copy of package ‘swift-http-types’
+
+Checking out 1.8.0 of package ‘swift-http-types’
+
+Creating working copy of package ‘OpenAPIKit’
+
+Checking out 6.4.0 of package ‘OpenAPIKit’
+
+Creating working copy of package ‘swift-argument-parser’
+
+Checking out 1.8.2 of package ‘swift-argument-parser’
+
+Creating working copy of package ‘swift-snapshot-testing’
+
+Checking out 1.19.7 of package ‘swift-snapshot-testing’
+
+Creating working copy of package ‘swift-openapi-runtime’
+
+Checking out 1.13.4 of package ‘swift-openapi-runtime’
+
+Creating working copy of package ‘swift-custom-dump’
+
+Checking out 1.7.3 of package ‘swift-custom-dump’
+
+Creating working copy of package ‘xctest-dynamic-overlay’
+
+Checking out 1.13.1 of package ‘xctest-dynamic-overlay’
+
+Creating working copy of package ‘swift-algorithms’
+
+Checking out 1.2.1 of package ‘swift-algorithms’
+
+Creating working copy of package ‘swift-collections’
+
+Checking out 1.7.5 of package ‘swift-collections’
+
+Creating working copy of package ‘swift-openapi-generator’
+
+Checking out 1.14.3 of package ‘swift-openapi-generator’
+
+Creating working copy of package ‘swift-openapi-urlsession’
+
+Checking out 1.4.0 of package ‘swift-openapi-urlsession’
+
+
+Resolved source packages:
+  swift-http-types: https://github.com/apple/swift-http-types @ 1.8.0
+  swift-algorithms: https://github.com/apple/swift-algorithms @ 1.2.1
+  swift-numerics: https://github.com/apple/swift-numerics.git @ 1.1.1
+  swift-syntax: https://github.com/swiftlang/swift-syntax @ 604.0.0
+  xctest-dynamic-overlay: https://github.com/pointfreeco/xctest-dynamic-overlay @ 1.13.1
+  TadayoCore: /Users/runner/work/Tadayo/Tadayo/packages/swift/TadayoCore
+  Yams: https://github.com/jpsim/Yams @ 6.2.2
+  swift-openapi-urlsession: https://github.com/apple/swift-openapi-urlsession @ 1.4.0
+  swift-openapi-runtime: https://github.com/apple/swift-openapi-runtime @ 1.13.4
+  swift-snapshot-testing: https://github.com/pointfreeco/swift-snapshot-testing @ 1.19.7
+  swift-collections: https://github.com/apple/swift-collections @ 1.7.5
+  swift-argument-parser: https://github.com/apple/swift-argument-parser @ 1.8.2
+  TadayoAPI: /Users/runner/work/Tadayo/Tadayo/packages/swift/TadayoAPI
+  OpenAPIKit: https://github.com/mattpolzin/OpenAPIKit @ 6.4.0
+  TadayoDesign: /Users/runner/work/Tadayo/Tadayo/packages/swift/TadayoDesign
+  swift-custom-dump: https://github.com/pointfreeco/swift-custom-dump @ 1.7.3
+  swift-openapi-generator: https://github.com/apple/swift-openapi-generator @ 1.14.3
+
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:iOS Simulator, arch:arm64, id:23C8F95C-765D-46A9-AE82-0BEE2921C8D7, OS:26.5, name:iPhone 17 }
+{ platform:iOS Simulator, arch:x86_64, id:23C8F95C-765D-46A9-AE82-0BEE2921C8D7, OS:26.5, name:iPhone 17 }
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+Validate plug-in “OpenAPIGenerator” in package “swift-openapi-generator”
+
+** TEST BUILD FAILED **
+
+
+The following build commands failed:
+	Validate plug-in “OpenAPIGenerator” in package “swift-openapi-generator”
+	eyJibHVlcHJpbnRQcm92aWRlcl9wcm92aWRlckZpbGVQYXRoU3RyaW5nIjoiXC9Vc2Vyc1wvcnVubmVyXC93b3JrXC9UYWRheW9cL1RhZGF5b1wvYXBwc1wvaW9zXC9UYWRheW8ueGNvZGVwcm9qIiwidHlwZSI6eyJibHVlcHJpbnRQcm92aWRlciI6e319fQ==
+	Building project Tadayo for testing with scheme Tadayo
+(3 failures)
