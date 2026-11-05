@@ -2,7 +2,21 @@
   "name": "@tadayo/contracts",
   "private": true,
   "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "openapi:write": "node scripts/openapi.ts write",
+    "openapi:check": "node scripts/openapi.ts check",
+    "mock": "prism mock --host 127.0.0.1 --port 4010 openapi.yaml"
+  },
+  "dependencies": {
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@stoplight/prism-cli": "5.16.0",
+    "yaml": "2.9.1"
   }
 }
