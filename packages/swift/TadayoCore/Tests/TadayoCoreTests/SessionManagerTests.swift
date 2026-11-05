@@ -110,24 +110,44 @@ final class Gate: @unchecked Sendable {
     }
 }
 
-/// A store whose delete fails its first `failures` times, as a keychain can.
+/// A store whose delete fails its first `failures` times, and whose load its first
+/// `loadFailures` times, as a keychain can; with `refusesEmptyDelete`, deleting nothing fails too.
 final class StubbornStore: SessionStore, @unchecked Sendable {
     struct Refused: Error {}
     private let lock = NSLock()
     private let inner: InMemorySessionStore
     private var failures: Int
+    private var loadFailures: Int
+    private let refusesEmptyDelete: Bool
     private(set) var deletes = 0
 
-    init(_ session: AuthSession?, failures: Int) {
+    init(
+        _ session: AuthSession?, failures: Int = 0, loadFailures: Int = 0,
+        refusesEmptyDelete: Bool = false
+    ) {
         inner = InMemorySessionStore(session)
         self.failures = failures
+        self.loadFailures = loadFailures
+        self.refusesEmptyDelete = refusesEmptyDelete
     }
 
-    func load() throws -> AuthSession? { try inner.load() }
+    func load() throws -> AuthSession? {
+        let refuse = lock.withLock {
+            guard loadFailures > 0 else { return false }
+            loadFailures -= 1
+            return true
+        }
+        if refuse { throw Refused() }
+        return try inner.load()
+    }
+
     func save(_ session: AuthSession) throws { try inner.save(session) }
+
     func delete() throws {
+        let empty = (try? inner.load()) == nil
         let refuse = lock.withLock {
             deletes += 1
+            if empty && refusesEmptyDelete { return true }
             guard failures > 0 else { return false }
             failures -= 1
             return true
@@ -135,6 +155,16 @@ final class StubbornStore: SessionStore, @unchecked Sendable {
         if refuse { throw Refused() }
         try inner.delete()
     }
+}
+
+/// Yields until `condition` holds, and records a failure after 10,000 tries rather than spin
+/// forever when a change breaks it.
+func eventually(_ condition: () async -> Bool) async {
+    for _ in 0..<10_000 {
+        if await condition() { return }
+        await Task.yield()
+    }
+    Issue.record("the condition never held")
 }
 
 /// A clock the test moves by hand.
@@ -301,7 +331,7 @@ final class ManualClock: @unchecked Sendable {
         let token = Task { try await manager.accessToken() }
         await gate.reached()
         let signOut = Task { await manager.signOut() }
-        while await manager.isSignedIn { await Task.yield() }
+        await eventually { await !manager.isSignedIn }
         gate.open()
         #expect(await signOut.value)
         #expect(try await token.value == "access-2")
@@ -369,6 +399,91 @@ final class ManualClock: @unchecked Sendable {
         gate.open()
         #expect(await signOut.value)
         #expect(try store.load() == session(9))
+    }
+
+    @Test func twoSignOutsAtOnceEndTheSessionOnce() async throws {
+        let gate = Gate()
+        let auth = FakeAuth()
+        auth.duringSignOut = { await gate.wait() }
+        let store = InMemorySessionStore(session(1))
+        let manager = manager(auth, store, ManualClock(start))
+        let first = Task { await manager.signOut() }
+        await gate.reached()
+        let second = Task { await manager.signOut() }
+        await Task.yield()
+        await #expect(throws: SessionError.signedOut) { try await manager.accessToken() }
+        gate.open()
+        #expect(await first.value)
+        #expect(await second.value)
+        #expect(auth.calls == ["signOut access-1"])
+        #expect(try store.load() == nil)
+    }
+
+    @Test func anotherProcessesRefreshThatLandsAfterSignOutIsNotStored() async throws {
+        // The share extension's own manager, on the same keychain session: its late answer
+        // finds the store empty and stores nothing (spec 23).
+        let gate = Gate()
+        let store = InMemorySessionStore(session(1, expiresIn: 20))
+        let extensionAuth = FakeAuth(refresh: [.success(session(2, expiresIn: 7200))])
+        extensionAuth.duringRefresh = { await gate.wait() }
+        let app = manager(FakeAuth(), store, ManualClock(start))
+        let shareExtension = manager(extensionAuth, store, ManualClock(start))
+        let token = Task { try await shareExtension.accessToken() }
+        await gate.reached()
+        #expect(await app.signOut())
+        gate.open()
+        await #expect(throws: SessionError.signedOut) { try await token.value }
+        #expect(try store.load() == nil)
+        #expect(await app.isSignedIn == false)
+    }
+
+    @Test func aRefreshThatFindsAnotherProcessesNewerSessionKeepsIt() async throws {
+        let gate = Gate()
+        let store = InMemorySessionStore(session(1, expiresIn: 20))
+        let auth = FakeAuth(refresh: [.success(session(2, expiresIn: 7200))])
+        auth.duringRefresh = { await gate.wait() }
+        let manager = manager(auth, store, ManualClock(start))
+        let token = Task { try await manager.accessToken() }
+        await gate.reached()
+        try store.save(session(3, expiresIn: 7200))
+        gate.open()
+        #expect(try await token.value == "access-3")
+        #expect(try store.load() == session(3, expiresIn: 7200))
+    }
+
+    @Test func aSignInWhileSignOutWaitsForARefreshIsKept() async throws {
+        let gate = Gate()
+        let auth = FakeAuth(refresh: [.success(session(2, expiresIn: 7200))])
+        auth.duringRefresh = { await gate.wait() }
+        let store = InMemorySessionStore(session(1, expiresIn: 20))
+        let manager = manager(auth, store, ManualClock(start))
+        let token = Task { try await manager.accessToken() }
+        await gate.reached()
+        let signOut = Task { await manager.signOut() }
+        await eventually { await !manager.isSignedIn }
+        try await manager.begin(session(9))
+        gate.open()
+        _ = try? await token.value
+        #expect(await signOut.value)
+        #expect(auth.calls == ["refresh refresh-1"])
+        #expect(try store.load() == session(9))
+    }
+
+    @Test func aStoreThatCantBeReadIsStillForgotten() async throws {
+        // A load that throws isn't "nothing stored": the session is deleted all the same.
+        let store = StubbornStore(session(1), loadFailures: 1)
+        #expect(await manager(FakeAuth(), store, ManualClock(start)).signOut())
+        #expect(store.deletes == 1)
+        #expect(try store.load() == nil)
+    }
+
+    @Test func aStoreThatRefusesToDeleteNothingHasForgotten() async throws {
+        // An ended session is deleted by the refresh, then again by the sign-out; a store that
+        // refuses to delete what isn't there has still forgotten it.
+        let store = StubbornStore(session(1), refusesEmptyDelete: true)
+        let auth = FakeAuth(refresh: [.failure(.sessionEnded)])
+        #expect(await manager(auth, store, ManualClock(start + 3600)).signOut())
+        #expect(try store.load() == nil)
     }
 
     @Test func aStoreThatRefusesOnceIsAskedAgain() async throws {

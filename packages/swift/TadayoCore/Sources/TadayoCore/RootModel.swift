@@ -47,9 +47,11 @@ import Observation
 
     /// Moves each time the app leaves an account. An answer to a call made before is dropped, so
     /// nothing that lands after Leave sign-in can route back into the account left (spec 23).
-    private var epoch = 0
+    private(set) var epoch = 0
     /// The last Leave sign-in couldn't forget the session on the device: Retry tries it again.
     private var leaveFailed = false
+    /// The Leave sign-in under way: a second one waits for it, and nothing starts meanwhile.
+    private var leaving: Task<Void, Never>?
 
     let session: SessionManager
     let auth: any AuthService
@@ -76,6 +78,7 @@ import Observation
 
     /// At launch.
     public func start() async {
+        guard leaving == nil else { return }
         route = .starting
         guard await session.isSignedIn else { return showSignIn() }
         await readAccount()
@@ -89,17 +92,25 @@ import Observation
         await start()
     }
 
-    /// Leave sign-in, and A02-age's back: ends the session on the server and here, then
-    /// A02-email (Welcome, A01, comes in B1). If the device couldn't forget the session, the
-    /// failure line says so, with Retry, rather than show sign-in over a session still kept. The
-    /// caller purges every cache next (T11).
+    /// Leave sign-in, and A02-age's back: the launch screen while it ends the session on the
+    /// server and here, then A02-email (Welcome, A01, comes in B1). If the device couldn't forget
+    /// the session, the failure line says so, with Retry, rather than show sign-in over a session
+    /// still kept. One Leave runs at a time. The caller purges every cache next (T11).
     public func leave() async {
+        if let leaving { return await leaving.value }
+        let task = Task { await self.endSession() }
+        leaving = task
+        await task.value
+        leaving = nil
+    }
+
+    private func endSession() async {
         epoch += 1
-        let leaving = epoch
         signIn = nil
         profile = nil
+        clubs = .loading
+        route = .starting
         let forgotten = await session.signOut()
-        guard epoch == leaving else { return }
         leaveFailed = !forgotten
         guard forgotten else {
             route = .failed(.other)

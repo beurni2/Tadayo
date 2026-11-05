@@ -180,6 +180,9 @@ final class ManualContinuousClock: @unchecked Sendable {
         #expect(model.failure == .verifyUnavailable)
         #expect(model.code == "529614")
         #expect(model.canVerify)
+        model.code = "52961"
+        #expect(model.failure == nil)
+        model.code = "529614"
         await model.verify()
         #expect(model.failure == nil)
         #expect(verified.sessions == [session])
@@ -202,6 +205,27 @@ final class ManualContinuousClock: @unchecked Sendable {
         #expect(model.canChangeEmail)
         #expect(model.step == .code)
         #expect(model.failure == .codeNotVerified)
+    }
+
+    @Test func theAddressCantChangeWhileANewCodeIsOnItsWay() async {
+        let gate = Gate()
+        let clock = ManualContinuousClock()
+        let auth = FakeAuth(send: [nil, .network])
+        let model = await onCode(auth, clock)
+        clock.advance(.seconds(60))
+        await model.waitForResend()
+        #expect(model.canResend)
+        auth.duringSignIn = { await gate.wait() }
+        let resending = Task { await model.resend() }
+        await gate.reached()
+        #expect(!model.canChangeEmail)
+        model.changeEmail()
+        #expect(model.step == .code)
+        gate.open()
+        await resending.value
+        #expect(model.failure == .resendNetwork)
+        #expect(model.step == .code)
+        #expect(model.canChangeEmail)
     }
 
     @Test func changingTheAddressKeepsIt() async {

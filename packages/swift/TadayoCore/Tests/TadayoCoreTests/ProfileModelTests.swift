@@ -11,7 +11,8 @@ final class FakeAccounts: AccountService, @unchecked Sendable {
     private var clubsAnswers: [Result<ClubList, APIFailure>]
     private(set) var calls: [String] = []
     private(set) var updates: [(change: AccountChange, key: IdempotencyKey)] = []
-    /// Run inside each update and each list of clubs, before it answers: a slow network, say.
+    /// Run inside each read, update and list of clubs, before it answers: a slow network, say.
+    var duringMe: @Sendable () async -> Void = {}
     var duringUpdate: @Sendable () async -> Void = {}
     var duringClubs: @Sendable () async -> Void = {}
 
@@ -29,7 +30,8 @@ final class FakeAccounts: AccountService, @unchecked Sendable {
     }
 
     func me() async throws(APIFailure) -> Account {
-        try lock.withLock {
+        await duringMe()
+        return try lock.withLock {
             calls.append("me")
             return next(&meAnswers)
         }.get()

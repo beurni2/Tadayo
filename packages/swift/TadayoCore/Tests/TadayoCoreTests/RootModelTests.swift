@@ -213,6 +213,106 @@ import Testing
         #expect(try store.load() == nil)
     }
 
+    @Test func aReadThatLandsAfterLeavingIsDropped() async throws {
+        let gate = Gate()
+        let store = InMemorySessionStore(stored)
+        let accounts = FakeAccounts(me: [.success(account())])
+        accounts.duringMe = { await gate.wait() }
+        let root = root(accounts, store: store)
+        let starting = Task { await root.start() }
+        await gate.reached()
+        await root.leave()
+        gate.open()
+        await starting.value
+        #expect(root.route == .signIn)
+        #expect(root.profile == nil)
+    }
+
+    @Test func aRereadThatLandsAfterLeavingIsDropped() async throws {
+        let gate = Gate()
+        let store = InMemorySessionStore(stored)
+        let accounts = FakeAccounts(
+            me: [.success(named), .success(account())],
+            clubs: [.success(clubs(empty: true)), .failure(.profileIncomplete)])
+        let root = root(accounts, store: store)
+        await root.start()
+        #expect(root.route == .tabs)
+        accounts.duringMe = { await gate.wait() }
+        let loading = Task { await root.loadClubs() }
+        await gate.reached()
+        await root.leave()
+        gate.open()
+        await loading.value
+        #expect(root.route == .signIn)
+        #expect(root.profile == nil)
+    }
+
+    @Test func aSignedOutAnswerAfterLeavingSignsOutOnce() async throws {
+        let gate = Gate()
+        let auth = FakeAuth()
+        let accounts = FakeAccounts(me: [.success(account())], update: [.failure(.signedOut)])
+        let root = root(accounts, auth: auth, store: InMemorySessionStore(stored))
+        await root.start()
+        let profile = try #require(root.profile)
+        accounts.duringUpdate = { await gate.wait() }
+        let saving = Task { await profile.confirmAge() }
+        await gate.reached()
+        await root.leave()
+        let signIn = root.signIn
+        gate.open()
+        await saving.value
+        #expect(auth.calls == ["signOut access-1"])
+        #expect(root.route == .signIn)
+        #expect(root.signIn === signIn)
+    }
+
+    @Test func aCodeVerifiedAfterLeavingIsDropped() async throws {
+        let gate = Gate()
+        let store = InMemorySessionStore()
+        let auth = FakeAuth(verify: [.success(stored)])
+        let root = root(FakeAccounts(me: [.success(account())]), auth: auth, store: store)
+        await root.start()
+        let signIn = try #require(root.signIn)
+        signIn.email = "ben@example.com"
+        await signIn.sendCode()
+        signIn.code = "529614"
+        auth.duringSignIn = { await gate.wait() }
+        let verifying = Task { await signIn.verify() }
+        await gate.reached()
+        await root.leave()
+        gate.open()
+        await verifying.value
+        #expect(try store.load() == nil)
+        #expect(root.route == .signIn)
+        #expect(root.signIn !== signIn)
+    }
+
+    @Test func twoLeavesAtOnceEndTheSessionOnce() async throws {
+        let gate = Gate()
+        let auth = FakeAuth()
+        auth.duringSignOut = { await gate.wait() }
+        let root = root(
+            FakeAccounts(me: [.success(account())]), auth: auth,
+            store: InMemorySessionStore(stored))
+        await root.start()
+        let first = Task { await root.leave() }
+        await gate.reached()
+        #expect(root.route == .starting)
+        #expect(root.profile == nil)
+        let second = Task { await root.leave() }
+        await Task.yield()
+        await root.retry()
+        await root.start()
+        #expect(root.route == .starting)
+        #expect(root.signIn == nil)
+        gate.open()
+        await first.value
+        await second.value
+        #expect(auth.calls == ["signOut access-1"])
+        #expect(root.route == .signIn)
+        #expect(root.epoch == 1)
+    }
+
     @Test func aLeaveThatCantForgetTheSessionSaysSoAndRetries() async throws {
         // SEC-5: sign-in isn't shown over a session the device still keeps.
         let store = StubbornStore(stored, failures: 2)
