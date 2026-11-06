@@ -54,9 +54,10 @@ enum ScreenSnapshot {
     }
 
     /// Snapshots `view` as `state`, `state-dark` and `state-xl`, named so the contact sheets
-    /// pair each with its render (`tools/ci/ios_steps.py`).
+    /// pair each with its render (`tools/ci/ios_steps.py`). A `busy` state must show a spinner
+    /// (`Spinners.check`).
     static func assert(
-        _ view: some View, named state: String, xlHeight: CGFloat = 2200,
+        _ view: some View, named state: String, busy: Bool = false, xlHeight: CGFloat = 2200,
         file: StaticString = #filePath, testName: String = #function, line: UInt = #line
     ) {
         for variant in Variant.allCases {
@@ -74,9 +75,8 @@ enum ScreenSnapshot {
                     perceptualPrecision: 0.98,
                     traits: variant.traits),
                 named: state + variant.suffix, file: file, testName: testName, line: line)
-            XCTAssertEqual(
-                Spinners.moving(in: host.view), [], "\(state)\(variant.suffix): a spinner moved",
-                file: file, line: line)
+            Spinners.check(
+                host.view, busy: busy, "\(state)\(variant.suffix)", file: file, line: line)
         }
     }
 
@@ -96,7 +96,7 @@ enum ScreenSnapshot {
 }
 
 /// A hosting controller in which the system's activity indicator, the busy button's spinner,
-/// never turns, so every snapshot draws it at its first frame (`Spinners`).
+/// never turns, so every snapshot draws it the same (`Spinners`).
 class StillHost<Content: View>: UIHostingController<Content> {
     override init(rootView: Content) {
         Spinners.neverTurn()
@@ -128,13 +128,29 @@ final class FramedHost<Content: View>: StillHost<Content> {
 /// The system's activity indicators in the snapshot tests. On iOS 26 one turns by an image view
 /// stepping through 16 frames in 0.8 seconds, and stopping it keeps the frame it had reached, so
 /// a stopped one comes out differently from one run to the next (`docs/LIMITATIONS.md`). So in
-/// this test process `startAnimating` only keeps the indicator shown, never starting its frames,
-/// and UIKit draws it at its first, the same every time, in a layer render and a window's draw
-/// alike. Sentry's SnapshotPreviews does the same (its v0.19.0).
+/// this test process `startAnimating` only keeps the indicator shown, never starting its frames.
+/// One that never turned drew the same image after every wait, light and dark, in a layer render
+/// and in a window's draw alike (`docs/LIMITATIONS.md`). Sentry's SnapshotPreviews swaps
+/// `startAnimating` too (its v0.19.0), there to hide the indicator; here it stays shown, as the
+/// busy button shows it.
 @MainActor
 enum Spinners {
     /// Swaps `UIActivityIndicatorView.startAnimating` for `tadayoKeepStill`, once.
     static func neverTurn() { _ = swapped }
+
+    /// Fails if the swap didn't happen, if an indicator in `view` turned, or, in a busy state,
+    /// if `view` holds no indicator at all, so the check can't pass by finding none (if SwiftUI
+    /// stopped drawing `ProgressView` with a `UIActivityIndicatorView`, say).
+    static func check(
+        _ view: UIView, busy: Bool, _ name: String, file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        XCTAssertTrue(swapped, "\(name): startAnimating wasn't swapped", file: file, line: line)
+        XCTAssertEqual(moving(in: view), [], "\(name): a spinner moved", file: file, line: line)
+        if busy {
+            XCTAssertFalse(all(in: view).isEmpty, "\(name): no spinner", file: file, line: line)
+        }
+    }
 
     private static let swapped: Bool = {
         let indicator: AnyClass = UIActivityIndicatorView.self

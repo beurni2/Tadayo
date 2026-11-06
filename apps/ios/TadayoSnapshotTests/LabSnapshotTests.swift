@@ -88,7 +88,7 @@ final class LabSnapshotTests: XCTestCase {
                         on: ViewImageConfig(safeArea: .zero, size: fitted, traits: traits),
                         perceptualPrecision: 0.98, traits: traits),
                     named: name)
-                XCTAssertEqual(Spinners.moving(in: host.view), [], "\(name): a spinner moved")
+                Spinners.check(host.view, busy: section == .actions, name)
             }
         }
     }

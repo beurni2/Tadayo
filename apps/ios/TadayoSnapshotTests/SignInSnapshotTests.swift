@@ -288,7 +288,8 @@ final class SignInSnapshotTests: XCTestCase {
         line: UInt = #line
     ) {
         ScreenSnapshot.assert(
-            SignInFlow(model: model, focus: true), named: state, testName: testName, line: line)
+            SignInFlow(model: model, focus: true), named: state,
+            busy: model.isSending || model.isVerifying, testName: testName, line: line)
     }
 
     private func snapAge(
@@ -296,7 +297,8 @@ final class SignInSnapshotTests: XCTestCase {
         line: UInt = #line
     ) {
         ScreenSnapshot.assert(
-            AgeScreen(model: model, leave: {}), named: state, testName: testName, line: line)
+            AgeScreen(model: model, leave: {}), named: state, busy: model.isSaving,
+            testName: testName, line: line)
     }
 
     private func snapProfile(
@@ -304,7 +306,7 @@ final class SignInSnapshotTests: XCTestCase {
         line: UInt = #line
     ) {
         ScreenSnapshot.assert(
-            ProfileScreen(model: model, focus: false), named: state, testName: testName,
-            line: line)
+            ProfileScreen(model: model, focus: false), named: state, busy: model.isSaving,
+            testName: testName, line: line)
     }
 }
