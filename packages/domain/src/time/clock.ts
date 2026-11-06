@@ -31,9 +31,18 @@ export type ClockSql = (
   ...values: readonly never[]
 ) => PromiseLike<readonly Record<string, unknown>[]>;
 
+declare const SERVER_NOW: unique symbol;
+
+/**
+ * An instant a clock sampled: the server's time (T1). Only the clocks make one, the server's
+ * here and the tests' in ./testing.ts, so an instant from a request, a cursor or a row isn't one
+ * without a cast, and code that decides by the time, such as the read predicate, takes only this.
+ */
+export type ServerNow = Temporal.Instant & { readonly [SERVER_NOW]: true };
+
 export interface Clock {
   /** The server's time now, read in `tx` after its locks, under READ COMMITTED (T1, T3). */
-  sample(tx: ClockSql): Promise<Temporal.Instant>;
+  sample(tx: ClockSql): Promise<ServerNow>;
 }
 
 /** Throws unless `isolation`, as Postgres's `transaction_isolation` names it, is READ COMMITTED. */
@@ -45,13 +54,13 @@ export function requireReadCommitted(isolation: unknown): void {
   }
 }
 
-function sampled(rows: readonly Record<string, unknown>[]): Temporal.Instant {
+function sampled(rows: readonly Record<string, unknown>[]): ServerNow {
   requireReadCommitted(rows[0]?.["isolation"]);
   const answer = rows[0]?.["now_us"];
   if (typeof answer !== "string" || !/^-?[0-9]{1,19}$/.test(answer)) {
     throw new Error(`time: the clock answered ${String(answer)}, not a whole number of microseconds`);
   }
-  return Temporal.Instant.fromEpochNanoseconds(BigInt(answer) * 1000n);
+  return Temporal.Instant.fromEpochNanoseconds(BigInt(answer) * 1000n) as ServerNow;
 }
 
 const PROD_CLOCK: Clock = {
