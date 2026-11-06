@@ -1,0 +1,596 @@
++ xcodebuild test-without-building -project apps/ios/Tadayo.xcodeproj -scheme Tadayo -destination platform=iOS Simulator,id=23C8F95C-765D-46A9-AE82-0BEE2921C8D7 -derivedDataPath /Users/runner/work/_temp/DerivedData -resultBundlePath /Users/runner/work/_temp/ios-out/Tests.xcresult -skipPackagePluginValidation
+Command line invocation:
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/xcodebuild test-without-building -project apps/ios/Tadayo.xcodeproj -scheme Tadayo -destination "platform=iOS Simulator,id=23C8F95C-765D-46A9-AE82-0BEE2921C8D7" -derivedDataPath /Users/runner/work/_temp/DerivedData -resultBundlePath /Users/runner/work/_temp/ios-out/Tests.xcresult -skipPackagePluginValidation
+
+Resolve Package Graph
+
+
+Resolved source packages:
+  TadayoAPI: /Users/runner/work/Tadayo/Tadayo/packages/swift/TadayoAPI
+  swift-numerics: https://github.com/apple/swift-numerics.git @ 1.1.1
+  swift-syntax: https://github.com/swiftlang/swift-syntax @ 604.0.0
+  swift-algorithms: https://github.com/apple/swift-algorithms @ 1.2.1
+  swift-collections: https://github.com/apple/swift-collections @ 1.7.5
+  swift-argument-parser: https://github.com/apple/swift-argument-parser @ 1.8.2
+  xctest-dynamic-overlay: https://github.com/pointfreeco/xctest-dynamic-overlay @ 1.13.1
+  Yams: https://github.com/jpsim/Yams @ 6.2.2
+  TadayoCore: /Users/runner/work/Tadayo/Tadayo/packages/swift/TadayoCore
+  swift-snapshot-testing: https://github.com/pointfreeco/swift-snapshot-testing @ 1.19.7
+  swift-openapi-urlsession: https://github.com/apple/swift-openapi-urlsession @ 1.4.0
+  swift-http-types: https://github.com/apple/swift-http-types @ 1.8.0
+  swift-custom-dump: https://github.com/pointfreeco/swift-custom-dump @ 1.7.3
+  OpenAPIKit: https://github.com/mattpolzin/OpenAPIKit @ 6.4.0
+  swift-openapi-runtime: https://github.com/apple/swift-openapi-runtime @ 1.13.4
+  TadayoDesign: /Users/runner/work/Tadayo/Tadayo/packages/swift/TadayoDesign
+  swift-openapi-generator: https://github.com/apple/swift-openapi-generator @ 1.14.3
+
+Writing result bundle at path:
+	/Users/runner/work/_temp/ios-out/Tests.xcresult
+
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:iOS Simulator, arch:arm64, id:23C8F95C-765D-46A9-AE82-0BEE2921C8D7, OS:26.5, name:iPhone 17 }
+{ platform:iOS Simulator, arch:x86_64, id:23C8F95C-765D-46A9-AE82-0BEE2921C8D7, OS:26.5, name:iPhone 17 }
+Test Suite 'All tests' started at 2026-11-06 19:17:19.236.
+Test Suite 'TadayoSnapshotTests.xctest' started at 2026-11-06 19:17:19.236.
+Test Suite 'LabSnapshotTests' started at 2026-11-06 19:17:19.236.
+Test Case '-[TadayoSnapshotTests.LabSnapshotTests testLabSections]' started.
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:77: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - Snapshot "Lab-actions" does not match reference.
+
+@−
+"file:///Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/__Snapshots__/LabSnapshotTests/testLabSections.Lab-actions.png"
+@+
+"file:///Users/runner/work/_temp/ios-out/artifacts/LabSnapshotTests/testLabSections.Lab-actions.png"
+
+To configure output for a custom diff tool, use 'withSnapshotTesting'. For example:
+
+    withSnapshotTesting(diffTool: .ksdiff) {
+      // ...
+    }
+
+Newly-taken snapshot@(393.0, 677.6666666666666) does not match reference@(393.0, 432.6666666666667).
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:77: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - Snapshot "Lab-actions-dark" does not match reference.
+
+@−
+"file:///Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/__Snapshots__/LabSnapshotTests/testLabSections.Lab-actions-dark.png"
+@+
+"file:///Users/runner/work/_temp/ios-out/artifacts/LabSnapshotTests/testLabSections.Lab-actions-dark.png"
+
+To configure output for a custom diff tool, use 'withSnapshotTesting'. For example:
+
+    withSnapshotTesting(diffTool: .ksdiff) {
+      // ...
+    }
+
+Newly-taken snapshot@(393.0, 677.6666666666666) does not match reference@(393.0, 432.6666666666667).
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:77: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - Snapshot "Lab-actions-large" does not match reference.
+
+@−
+"file:///Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/__Snapshots__/LabSnapshotTests/testLabSections.Lab-actions-large.png"
+@+
+"file:///Users/runner/work/_temp/ios-out/artifacts/LabSnapshotTests/testLabSections.Lab-actions-large.png"
+
+To configure output for a custom diff tool, use 'withSnapshotTesting'. For example:
+
+    withSnapshotTesting(diffTool: .ksdiff) {
+      // ...
+    }
+
+Newly-taken snapshot@(393.0, 727.0) does not match reference@(393.0, 466.0).
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:77: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - Snapshot "Lab-actions-xl" does not match reference.
+
+@−
+"file:///Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/__Snapshots__/LabSnapshotTests/testLabSections.Lab-actions-xl.png"
+@+
+"file:///Users/runner/work/_temp/ios-out/artifacts/LabSnapshotTests/testLabSections.Lab-actions-xl.png"
+
+To configure output for a custom diff tool, use 'withSnapshotTesting'. For example:
+
+    withSnapshotTesting(diffTool: .ksdiff) {
+      // ...
+    }
+
+Newly-taken snapshot@(393.0, 1272.6666666666667) does not match reference@(393.0, 777.6666666666666).
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:77: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:77: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:77: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/LabSnapshotTests.swift:77: error: -[TadayoSnapshotTests.LabSnapshotTests testLabSections] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+Test Case '-[TadayoSnapshotTests.LabSnapshotTests testLabSections]' failed (2.567 seconds).
+Test Suite 'LabSnapshotTests' failed at 2026-11-06 19:17:21.805.
+	 Executed 1 test, with 8 failures (0 unexpected) in 2.567 (2.568) seconds
+Test Suite 'SignInSnapshotTests' started at 2026-11-06 19:17:21.805.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02Age]' started.
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:112: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02Age] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:112: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02Age] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:112: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02Age] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02Age]' failed (0.517 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02AgeFailedNetwork]' started.
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:124: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02AgeFailedNetwork] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:124: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02AgeFailedNetwork] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:124: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02AgeFailedNetwork] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02AgeFailedNetwork]' failed (0.442 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02AgeRefused]' started.
+2026-11-06 19:17:22.768226+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af4c00>.
+2026-11-06 19:17:22.768680+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af5400>.
+2026-11-06 19:17:22.768957+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af5c00>.
+2026-11-06 19:17:22.769185+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af6400>.
+2026-11-06 19:17:22.769522+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af6c00>.
+2026-11-06 19:17:22.769915+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af7400>.
+2026-11-06 19:17:22.770189+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af7c00>.
+2026-11-06 19:17:22.770406+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x10e960400>.
+2026-11-06 19:17:22.770614+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x10e960c00>.
+2026-11-06 19:17:22.774891+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x10e961400>.
+2026-11-06 19:17:22.775335+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x10e961c00>.
+2026-11-06 19:17:22.775780+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x10e962400>.
+2026-11-06 19:17:22.776072+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x10e962c00>.
+2026-11-06 19:17:22.776454+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x10e963400>.
+2026-11-06 19:17:22.776753+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x10e963c00>.
+2026-11-06 19:17:22.777126+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1253cc400>.
+2026-11-06 19:17:22.777438+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1253ccc00>.
+2026-11-06 19:17:22.777797+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1253cd400>.
+2026-11-06 19:17:22.778122+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1253cdc00>.
+2026-11-06 19:17:22.778426+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1253ce400>.
+2026-11-06 19:17:22.778760+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1253cec00>.
+2026-11-06 19:17:22.779097+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1253cf400>.
+2026-11-06 19:17:22.779368+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1253cfc00>.
+2026-11-06 19:17:22.779621+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x128a70400>.
+2026-11-06 19:17:22.779907+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x128a70c00>.
+2026-11-06 19:17:22.780177+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x128a71400>.
+2026-11-06 19:17:22.780428+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x128a71c00>.
+2026-11-06 19:17:22.780693+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x128a72400>.
+2026-11-06 19:17:22.780940+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x128a73c00>.
+2026-11-06 19:17:22.781189+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x14166d400>.
+2026-11-06 19:17:22.781426+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x14166ec00>.
+2026-11-06 19:17:22.781745+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x143198400>.
+2026-11-06 19:17:22.782003+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x143198c00>.
+2026-11-06 19:17:22.782483+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x143199400>.
+2026-11-06 19:17:22.782677+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x14319a400>.
+2026-11-06 19:17:22.782981+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x14319ac00>.
+2026-11-06 19:17:22.786143+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x143199800>.
+2026-11-06 19:17:22.786412+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x14319b000>.
+2026-11-06 19:17:22.786637+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x14319b800>.
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:130: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02AgeRefused] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:130: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02AgeRefused] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:130: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02AgeRefused] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02AgeRefused]' failed (0.414 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02AgeSaving]' started.
+2026-11-06 19:17:23.185806+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af7c00>.
+2026-11-06 19:17:23.186087+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af6c00>.
+2026-11-06 19:17:23.186347+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af6400>.
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:118: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02AgeSaving] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:118: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02AgeSaving] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:118: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02AgeSaving] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02AgeSaving]' failed (0.458 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02Code]' started.
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:51: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02Code] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:51: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02Code] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:51: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02Code] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02Code]' failed (0.465 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeError]' started.
+2026-11-06 19:17:24.105833+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af6c00>.
+2026-11-06 19:17:24.106079+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af4000>.
+2026-11-06 19:17:24.106519+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af6800>.
+2026-11-06 19:17:24.108143+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af7c00>.
+2026-11-06 19:17:24.108392+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af5800>.
+2026-11-06 19:17:24.108612+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af4800>.
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:74: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02CodeError] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:74: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02CodeError] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:74: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02CodeError] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeError]' failed (0.493 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeErrorWaiting]' started.
+2026-11-06 19:17:24.602459+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af5800>.
+2026-11-06 19:17:24.602817+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af7000>.
+2026-11-06 19:17:24.603101+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af5c00>.
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:79: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02CodeErrorWaiting] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:79: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02CodeErrorWaiting] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:79: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02CodeErrorWaiting] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeErrorWaiting]' failed (0.537 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeResend]' started.
+2026-11-06 19:17:25.152650+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af7000>.
+2026-11-06 19:17:25.153202+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af7c00>.
+2026-11-06 19:17:25.153593+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af6400>.
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:85: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02CodeResend] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:85: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02CodeResend] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:85: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02CodeResend] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeResend]' failed (0.522 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeResendFailedNetwork]' started.
+2026-11-06 19:17:25.669191+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af7c00>.
+2026-11-06 19:17:25.669562+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af5800>.
+2026-11-06 19:17:25.669793+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af7400>.
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:99: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02CodeResendFailedNetwork] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:99: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02CodeResendFailedNetwork] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:99: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02CodeResendFailedNetwork] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeResendFailedNetwork]' failed (0.524 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeResending]' started.
+2026-11-06 19:17:26.186512+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af5800>.
+2026-11-06 19:17:26.186808+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af7000>.
+2026-11-06 19:17:26.187220+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af6c00>.
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:92: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02CodeResending] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:92: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02CodeResending] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:92: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02CodeResending] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeResending]' failed (0.490 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeResendRefused]' started.
+2026-11-06 19:17:26.685862+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af7000>.
+2026-11-06 19:17:26.686631+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af7c00>.
+2026-11-06 19:17:26.687244+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af6000>.
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:106: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02CodeResendRefused] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:106: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02CodeResendRefused] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:106: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02CodeResendRefused] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeResendRefused]' failed (0.482 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeVerifyFailedNetwork]' started.
+2026-11-06 19:17:27.169581+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af7c00>.
+2026-11-06 19:17:27.169927+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af5800>.
+2026-11-06 19:17:27.170138+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af4000>.
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:63: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02CodeVerifyFailedNetwork] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:63: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02CodeVerifyFailedNetwork] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:63: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02CodeVerifyFailedNetwork] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeVerifyFailedNetwork]' failed (0.486 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeVerifying]' started.
+2026-11-06 19:17:27.653276+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af5800>.
+2026-11-06 19:17:27.654193+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af7000>.
+2026-11-06 19:17:27.654647+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af4800>.
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:58: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02CodeVerifying] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:58: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02CodeVerifying] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:58: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02CodeVerifying] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeVerifying]' failed (0.475 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeVerifyUnavailable]' started.
+2026-11-06 19:17:28.122613+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af7000>.
+2026-11-06 19:17:28.123048+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af7c00>.
+2026-11-06 19:17:28.123277+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af5c00>.
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:68: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02CodeVerifyUnavailable] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:68: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02CodeVerifyUnavailable] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:68: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02CodeVerifyUnavailable] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeVerifyUnavailable]' failed (0.578 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02Email]' started.
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:20: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02Email] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:20: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02Email] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:20: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02Email] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02Email]' failed (0.508 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02EmailEmpty]' started.
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:24: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02EmailEmpty] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:24: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02EmailEmpty] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:24: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02EmailEmpty] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02EmailEmpty]' failed (0.446 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02EmailFailedNetwork]' started.
+2026-11-06 19:17:29.661299+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af7c00>.
+2026-11-06 19:17:29.661665+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af5800>.
+2026-11-06 19:17:29.661902+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af6400>.
+2026-11-06 19:17:29.662136+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af4000>.
+2026-11-06 19:17:29.662392+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af7800>.
+2026-11-06 19:17:29.662597+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af5400>.
+2026-11-06 19:17:29.662778+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af7000>.
+2026-11-06 19:17:29.662952+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af7400>.
+2026-11-06 19:17:29.663269+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x14166c000>.
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:38: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02EmailFailedNetwork] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:38: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02EmailFailedNetwork] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:38: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02EmailFailedNetwork] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02EmailFailedNetwork]' failed (0.515 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02EmailRefused]' started.
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:45: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02EmailRefused] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:45: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02EmailRefused] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:45: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02EmailRefused] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02EmailRefused]' failed (0.495 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02EmailSending]' started.
+2026-11-06 19:17:30.664828+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af7000>.
+2026-11-06 19:17:30.665286+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af5800>.
+2026-11-06 19:17:30.665639+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af6800>.
+2026-11-06 19:17:30.669122+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af7800>.
+2026-11-06 19:17:30.669364+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af4800>.
+2026-11-06 19:17:30.669571+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af6c00>.
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:31: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02EmailSending] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:31: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02EmailSending] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:31: error: -[TadayoSnapshotTests.SignInSnapshotTests testA02EmailSending] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02EmailSending]' failed (0.428 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA03Profile]' started.
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:138: error: -[TadayoSnapshotTests.SignInSnapshotTests testA03Profile] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:138: error: -[TadayoSnapshotTests.SignInSnapshotTests testA03Profile] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:138: error: -[TadayoSnapshotTests.SignInSnapshotTests testA03Profile] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA03Profile]' failed (0.479 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileEmpty]' started.
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:142: error: -[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileEmpty] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:142: error: -[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileEmpty] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:142: error: -[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileEmpty] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileEmpty]' failed (0.470 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileFailedNetwork]' started.
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:156: error: -[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileFailedNetwork] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:156: error: -[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileFailedNetwork] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:156: error: -[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileFailedNetwork] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileFailedNetwork]' failed (0.480 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileNameTooLong]' started.
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:171: error: -[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileNameTooLong] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:171: error: -[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileNameTooLong] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:171: error: -[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileNameTooLong] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileNameTooLong]' failed (0.488 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileRefused]' started.
+2026-11-06 19:17:33.011705+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af4800>.
+2026-11-06 19:17:33.012125+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af7000>.
+2026-11-06 19:17:33.012361+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af7c00>.
+2026-11-06 19:17:33.012714+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af7800>.
+2026-11-06 19:17:33.012961+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af7400>.
+2026-11-06 19:17:33.013415+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af4c00>.
+2026-11-06 19:17:33.013793+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af5800>.
+2026-11-06 19:17:33.014074+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af6000>.
+2026-11-06 19:17:33.014400+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x14166c800>.
+2026-11-06 19:17:33.019316+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x14166c400>.
+2026-11-06 19:17:33.019677+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x14166dc00>.
+2026-11-06 19:17:33.019908+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x14166e800>.
+2026-11-06 19:17:33.020170+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x14166cc00>.
+2026-11-06 19:17:33.020373+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x14166e400>.
+2026-11-06 19:17:33.020764+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x14166f400>.
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:163: error: -[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileRefused] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:163: error: -[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileRefused] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:163: error: -[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileRefused] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileRefused]' failed (0.510 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileSaving]' started.
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:149: error: -[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileSaving] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:149: error: -[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileSaving] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/SignInSnapshotTests.swift:149: error: -[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileSaving] : failed - No reference was found on disk. New snapshot was not recorded because recording is disabled
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileSaving]' failed (0.494 seconds).
+Test Suite 'SignInSnapshotTests' failed at 2026-11-06 19:17:34.013.
+	 Executed 25 tests, with 75 failures (0 unexpected) in 12.197 (12.208) seconds
+Test Suite 'TadayoSnapshotTests.xctest' failed at 2026-11-06 19:17:34.013.
+	 Executed 26 tests, with 83 failures (0 unexpected) in 14.765 (14.777) seconds
+Test Suite 'All tests' failed at 2026-11-06 19:17:34.014.
+	 Executed 26 tests, with 83 failures (0 unexpected) in 14.765 (14.779) seconds
+2026-11-06 19:17:34.020700+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af5800>.
+2026-11-06 19:17:34.021115+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af7000>.
+2026-11-06 19:17:34.021368+0000 Tadayo[16877:53970] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x102af6400>.
+Test Suite 'All tests' started at 2026-11-06 19:17:35.835.
+Test Suite 'TadayoTests.xctest' started at 2026-11-06 19:17:35.836.
+Test Suite 'AppLaunchTests' started at 2026-11-06 19:17:35.836.
+Test Case '-[TadayoTests.AppLaunchTests testDebugBuildsCanNeverSendACode]' started.
+Test Case '-[TadayoTests.AppLaunchTests testDebugBuildsCanNeverSendACode]' passed (0.002 seconds).
+Test Case '-[TadayoTests.AppLaunchTests testEveryRequestGoesThroughASessionThatKeepsNothing]' started.
+Test Case '-[TadayoTests.AppLaunchTests testEveryRequestGoesThroughASessionThatKeepsNothing]' passed (0.013 seconds).
+Test Case '-[TadayoTests.AppLaunchTests testHostingTheseTestsTheAppBuildsNothing]' started.
+Test Case '-[TadayoTests.AppLaunchTests testHostingTheseTestsTheAppBuildsNothing]' passed (0.001 seconds).
+Test Case '-[TadayoTests.AppLaunchTests testLeavingRemakesTheConnections]' started.
+Test Case '-[TadayoTests.AppLaunchTests testLeavingRemakesTheConnections]' passed (0.007 seconds).
+Test Case '-[TadayoTests.AppLaunchTests testMissingOrWrongSettingsBuildNothing]' started.
+Test Case '-[TadayoTests.AppLaunchTests testMissingOrWrongSettingsBuildNothing]' passed (0.010 seconds).
+Test Suite 'AppLaunchTests' passed at 2026-11-06 19:17:35.873.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.033 (0.037) seconds
+Test Suite 'KeychainSessionStoreTests' started at 2026-11-06 19:17:35.873.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testAFailureCarriesItsStatusOnly]' started.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testAFailureCarriesItsStatusOnly]' passed (0.017 seconds).
+Test Case '-[TadayoTests.KeychainSessionStoreTests testASavedSessionComesBack]' started.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testASavedSessionComesBack]' passed (0.029 seconds).
+Test Case '-[TadayoTests.KeychainSessionStoreTests testDeletingNothingSucceeds]' started.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testDeletingNothingSucceeds]' passed (0.017 seconds).
+Test Case '-[TadayoTests.KeychainSessionStoreTests testEachEnvironmentKeepsItsOwn]' started.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testEachEnvironmentKeepsItsOwn]' passed (0.017 seconds).
+Test Case '-[TadayoTests.KeychainSessionStoreTests testSavingAgainWritesOverIt]' started.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testSavingAgainWritesOverIt]' passed (0.011 seconds).
+Test Case '-[TadayoTests.KeychainSessionStoreTests testTheItemHoldsTheTokensAndTheirExpiryOnly]' started.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testTheItemHoldsTheTokensAndTheirExpiryOnly]' passed (0.006 seconds).
+Test Case '-[TadayoTests.KeychainSessionStoreTests testTheItemIsTheSharedGroupsOnThisDeviceOnly]' started.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testTheItemIsTheSharedGroupsOnThisDeviceOnly]' passed (0.004 seconds).
+Test Suite 'KeychainSessionStoreTests' passed at 2026-11-06 19:17:36.015.
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.100 (0.142) seconds
+Test Suite 'TadayoTests.xctest' passed at 2026-11-06 19:17:36.015.
+	 Executed 12 tests, with 0 failures (0 unexpected) in 0.133 (0.179) seconds
+Test Suite 'All tests' passed at 2026-11-06 19:17:36.015.
+	 Executed 12 tests, with 0 failures (0 unexpected) in 0.133 (0.181) seconds
+2026-11-06 19:17:37.664323+0000 TadayoUITests-Runner[18386:58353] [Default] Running tests...
+objc[18386]: Class UIAccessibilityLoaderWebShared is implemented in both /Library/Developer/CoreSimulator/Volumes/iOS_23F77/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x109eb4310) and /Library/Developer/CoreSimulator/Volumes/iOS_23F77/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x109f5c398). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'All tests' started at 2026-11-06 19:17:42.724.
+Test Suite 'TadayoUITests.xctest' started at 2026-11-06 19:17:42.725.
+Test Suite 'SignInUITests' started at 2026-11-06 19:17:42.725.
+Test Case '-[TadayoUITests.SignInUITests testSignInGoesToTheEndOnStandInServices]' started.
+    t =     0.00s Start Test at 2026-11-06 19:17:42.726
+    t =     0.37s Set Up
+    t =     0.37s Open app.tadayo
+    t =     0.37s     Launch app.tadayo
+2026-11-06 19:17:43.977 xcodebuild[14962:48795] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-11-06 19:17:43.977 xcodebuild[14962:48795] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =     1.74s         Setting up automation session
+    t =     3.15s         Wait for app.tadayo to idle
+    t =     5.74s Waiting 10.0s for "Email address" TextField to exist
+    t =     6.78s     Checking `Expect predicate `existsNoRetry == 1` for object "Email address" TextField`
+    t =     6.78s         Checking existence of `"Email address" TextField`
+    t =     6.89s Tap "Email address" TextField
+    t =     6.89s     Wait for app.tadayo to idle
+    t =     6.89s     Find the "Email address" TextField
+    t =     6.93s     Check for interrupting elements affecting "Email address" TextField
+    t =     6.99s     Synthesize event
+    t =     7.40s     Wait for app.tadayo to idle
+    t =     7.40s Type 'ben@example.com' into "Email address" TextField
+    t =     7.40s     Wait for app.tadayo to idle
+    t =     7.40s     Find the "Email address" TextField
+    t =     7.57s     Check for interrupting elements affecting "Email address" TextField
+    t =     7.66s     Synthesize event
+    t =     8.13s     Wait for app.tadayo to idle
+    t =     8.20s Tap "Send a code" Button
+    t =     8.20s     Wait for app.tadayo to idle
+    t =     8.20s     Find the "Send a code" Button
+    t =     8.30s     Check for interrupting elements affecting "Send a code" Button
+    t =     8.38s     Synthesize event
+    t =     8.69s     Wait for app.tadayo to idle
+    t =     9.69s Waiting 5.0s for "Enter your code" StaticText to exist
+    t =    10.70s     Checking `Expect predicate `existsNoRetry == 1` for object "Enter your code" StaticText`
+    t =    10.70s         Checking existence of `"Enter your code" StaticText`
+    t =    10.97s Checking existence of `"Sent to ben@example.com" StaticText`
+    t =    11.07s Checking existence of `"You can send a new code after one minute." StaticText`
+    t =    11.12s Find the "Change email address" Button
+    t =    11.16s Checking existence of `"Six-digit code" TextField`
+    t =    11.21s Find the "Verify code" Button
+    t =    11.25s Tap "Six-digit code" TextField
+    t =    11.25s     Wait for app.tadayo to idle
+    t =    11.26s     Find the "Six-digit code" TextField
+    t =    11.29s     Check for interrupting elements affecting "Enter code" TextField
+    t =    11.34s     Synthesize event
+    t =    11.65s     Wait for app.tadayo to idle
+    t =    12.06s Type '529614' into "Enter code" TextField
+    t =    12.06s     Wait for app.tadayo to idle
+    t =    12.07s     Find the "Enter code" TextField
+    t =    12.27s     Check for interrupting elements affecting "Enter code" TextField
+    t =    12.56s     Synthesize event
+    t =    12.91s     Wait for app.tadayo to idle
+    t =    13.11s Find the "Verify code" Button
+    t =    13.17s Tap "Verify code" Button
+    t =    13.17s     Wait for app.tadayo to idle
+    t =    13.18s     Find the "Verify code" Button
+    t =    13.27s     Check for interrupting elements affecting "Verify code" Button
+    t =    13.32s     Synthesize event
+    t =    13.64s     Wait for app.tadayo to idle
+    t =    13.64s Waiting 5.0s for "This code couldn’t be verified. Try again or send a new one." StaticText to exist
+    t =    14.69s     Checking `Expect predicate `existsNoRetry == 1` for object "This code couldn’t be verified. Try again or send a new one." StaticText`
+    t =    14.69s         Checking existence of `"This code couldn’t be verified. Try again or send a new one." StaticText`
+    t =    14.74s Find the "Enter code" TextField
+    t =    14.82s Find the "Verify code" Button
+    t =    14.85s Tap "Enter code" TextField
+    t =    14.85s     Wait for app.tadayo to idle
+    t =    14.86s     Find the "Enter code" TextField
+    t =    14.94s     Check for interrupting elements affecting "Enter code" TextField
+    t =    15.00s     Synthesize event
+    t =    15.31s     Wait for app.tadayo to idle
+    t =    15.32s Type '' into "Enter code" TextField
+    t =    15.32s     Wait for app.tadayo to idle
+    t =    15.33s     Find the "Enter code" TextField
+    t =    15.47s     Check for interrupting elements affecting "Enter code" TextField
+    t =    15.60s     Synthesize event
+    t =    15.90s     Wait for app.tadayo to idle
+    t =    15.90s Checking existence of `"This code couldn’t be verified. Try again or send a new one." StaticText`
+    t =    15.95s Type '123456' into "Enter code" TextField
+    t =    15.95s     Wait for app.tadayo to idle
+    t =    15.96s     Find the "Enter code" TextField
+    t =    16.03s     Check for interrupting elements affecting "Enter code" TextField
+    t =    16.09s     Synthesize event
+    t =    16.42s     Wait for app.tadayo to idle
+    t =    16.43s Tap "Verify code" Button
+    t =    16.43s     Wait for app.tadayo to idle
+    t =    16.43s     Find the "Verify code" Button
+    t =    16.48s     Check for interrupting elements affecting "Verify code" Button
+    t =    16.56s     Synthesize event
+    t =    16.88s     Wait for app.tadayo to idle
+    t =    16.88s Waiting 5.0s for "I’m 18 or older" Button to exist
+    t =    17.91s     Checking `Expect predicate `existsNoRetry == 1` for object "I’m 18 or older" Button`
+    t =    17.91s         Checking existence of `"I’m 18 or older" Button`
+    t =    17.97s Checking existence of `"Before you continue" StaticText`
+    t =    18.02s Checking existence of `"Tadayo is for people aged 18 and older." StaticText`
+    t =    18.06s Tap "I’m 18 or older" Button
+    t =    18.06s     Wait for app.tadayo to idle
+    t =    18.07s     Find the "I’m 18 or older" Button
+    t =    18.16s     Check for interrupting elements affecting "I’m 18 or older" Button
+    t =    18.21s     Synthesize event
+    t =    18.50s     Wait for app.tadayo to idle
+    t =    18.51s Waiting 5.0s for "Your name" TextField to exist
+    t =    19.58s     Checking `Expect predicate `existsNoRetry == 1` for object "Your name" TextField`
+    t =    19.58s         Checking existence of `"Your name" TextField`
+    t =    19.64s Checking existence of `"What should we call you?" StaticText`
+    t =    19.66s Checking existence of `"Add photo" Button`
+    t =    19.68s Find the "Continue" Button
+    t =    19.72s Tap "Your name" TextField
+    t =    19.72s     Wait for app.tadayo to idle
+    t =    19.72s     Find the "Your name" TextField
+    t =    19.75s     Check for interrupting elements affecting "Your name" TextField
+    t =    19.81s     Synthesize event
+    t =    20.10s     Wait for app.tadayo to idle
+    t =    20.44s Type 'Ben' into "Your name" TextField
+    t =    20.44s     Wait for app.tadayo to idle
+    t =    20.46s     Find the "Your name" TextField
+    t =    20.58s     Check for interrupting elements affecting "Your name" TextField
+    t =    20.78s     Synthesize event
+    t =    21.15s     Wait for app.tadayo to idle
+    t =    21.16s Find the "Continue" Button
+    t =    21.33s Tap "Continue" Button
+    t =    21.34s     Wait for app.tadayo to idle
+    t =    21.36s     Find the "Continue" Button
+    t =    21.43s     Check for interrupting elements affecting "Continue" Button
+    t =    21.49s     Synthesize event
+    t =    21.83s     Wait for app.tadayo to idle
+    t =    21.92s Waiting 5.0s for "Lab" NavigationBar to exist
+    t =    22.99s     Checking `Expect predicate `existsNoRetry == 1` for object "Lab" NavigationBar`
+    t =    22.99s         Checking existence of `"Lab" NavigationBar`
+    t =    23.15s Tear Down
+Test Case '-[TadayoUITests.SignInUITests testSignInGoesToTheEndOnStandInServices]' passed (23.562 seconds).
+Test Case '-[TadayoUITests.SignInUITests testWithNoSessionItOpensOnTheEmailScreen]' started.
+    t =     0.00s Start Test at 2026-11-06 19:18:06.289
+    t =     0.02s Set Up
+    t =     0.03s Open app.tadayo
+    t =     0.03s     Launch app.tadayo
+    t =     0.03s         Terminate app.tadayo:18428
+2026-11-06 19:18:07.359 xcodebuild[14962:48795] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-11-06 19:18:07.359 xcodebuild[14962:48795] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =     1.61s         Setting up automation session
+    t =     2.73s         Wait for app.tadayo to idle
+    t =     4.82s Waiting 10.0s for "Sign in" NavigationBar to exist
+    t =     5.87s     Checking `Expect predicate `existsNoRetry == 1` for object "Sign in" NavigationBar`
+    t =     5.87s         Checking existence of `"Sign in" NavigationBar`
+    t =     6.06s Checking existence of `"What’s your email?" StaticText`
+    t =     6.17s Checking existence of `"We’ll send a six-digit code to sign in." StaticText`
+    t =     6.24s Checking existence of `"Use the same email whenever you sign in." StaticText`
+    t =     6.30s Checking existence of `"Email address" TextField`
+    t =     6.50s Checking existence of `"Send a code" Button`
+    t =     6.65s Find the "Send a code" Button
+    t =     6.81s Tap "Email address" TextField
+    t =     6.82s     Wait for app.tadayo to idle
+    t =     6.82s     Find the "Email address" TextField
+    t =     7.16s     Check for interrupting elements affecting "Email address" TextField
+    t =     7.22s     Synthesize event
+    t =     7.70s     Wait for app.tadayo to idle
+    t =     7.71s Type 'ben@example' into "Email address" TextField
+    t =     7.71s     Wait for app.tadayo to idle
+    t =     7.74s     Find the "Email address" TextField
+    t =     8.57s     Check for interrupting elements affecting "Email address" TextField
+    t =     9.02s     Synthesize event
+    t =     9.43s     Wait for app.tadayo to idle
+    t =     9.56s Find the "Send a code" Button
+    t =     9.67s Type '.com' into "Email address" TextField
+    t =     9.67s     Wait for app.tadayo to idle
+    t =     9.68s     Find the "Email address" TextField
+    t =     9.81s     Check for interrupting elements affecting "Email address" TextField
+    t =     9.94s     Synthesize event
+    t =    10.28s     Wait for app.tadayo to idle
+    t =    10.33s Find the "Send a code" Button
+    t =    10.45s Checking existence of `Button (First Match)`
+    t =    11.69s Tear Down
+Test Case '-[TadayoUITests.SignInUITests testWithNoSessionItOpensOnTheEmailScreen]' passed (12.070 seconds).
+Test Suite 'SignInUITests' passed at 2026-11-06 19:18:18.359.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 35.632 (35.633) seconds
+Test Suite 'TadayoUITests.xctest' passed at 2026-11-06 19:18:18.359.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 35.632 (35.634) seconds
+Test Suite 'All tests' passed at 2026-11-06 19:18:18.359.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 35.632 (35.635) seconds
+2026-11-06 19:18:57.873 xcodebuild[14962:48795] [MT] IDETestOperationsObserverDebug: 111.534 elapsed -- Testing started completed.
+2026-11-06 19:18:57.873 xcodebuild[14962:48795] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-06 19:18:57.873 xcodebuild[14962:48795] [MT] IDETestOperationsObserverDebug: 111.534 sec, +111.534 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/_temp/ios-out/Tests.xcresult
+
+Failing tests:
+	LabSnapshotTests.testLabSections()
+	LabSnapshotTests.testLabSections()
+	LabSnapshotTests.testLabSections()
+	LabSnapshotTests.testLabSections()
+	LabSnapshotTests.testLabSections()
+	SignInSnapshotTests.testA02Age()
+	SignInSnapshotTests.testA02AgeFailedNetwork()
+	SignInSnapshotTests.testA02AgeRefused()
+	SignInSnapshotTests.testA02AgeSaving()
+	SignInSnapshotTests.testA02Code()
+	SignInSnapshotTests.testA02CodeError()
+	SignInSnapshotTests.testA02CodeErrorWaiting()
+	SignInSnapshotTests.testA02CodeResend()
+	SignInSnapshotTests.testA02CodeResendFailedNetwork()
+	SignInSnapshotTests.testA02CodeResending()
+	SignInSnapshotTests.testA02CodeResendRefused()
+	SignInSnapshotTests.testA02CodeVerifyFailedNetwork()
+	SignInSnapshotTests.testA02CodeVerifying()
+	SignInSnapshotTests.testA02CodeVerifyUnavailable()
+	SignInSnapshotTests.testA02Email()
+	SignInSnapshotTests.testA02EmailEmpty()
+	SignInSnapshotTests.testA02EmailFailedNetwork()
+	SignInSnapshotTests.testA02EmailRefused()
+	SignInSnapshotTests.testA02EmailSending()
+	SignInSnapshotTests.testA03Profile()
+	SignInSnapshotTests.testA03ProfileEmpty()
+	SignInSnapshotTests.testA03ProfileFailedNetwork()
+	SignInSnapshotTests.testA03ProfileNameTooLong()
+	SignInSnapshotTests.testA03ProfileRefused()
+	SignInSnapshotTests.testA03ProfileSaving()
+
+** TEST EXECUTE FAILED **
+
+Testing started
