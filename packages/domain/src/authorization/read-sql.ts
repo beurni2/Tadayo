@@ -11,15 +11,17 @@
 //   loaded for it. A command asks it after taking its locks (TECH-DESIGN section 5, step 4).
 // Both answer only yes or no, the same no for a drop that doesn't exist (T14).
 //
-// `readableDrops` and `dropReadFacts` state the same nine conditions as `mayRead`, in the same
-// order, each as the one value that grants, and tests/src/db/authorization.test.ts runs every role
-// of the privacy matrix through both paths on the same rows. Each takes the caller's postgres.js tagged template, typed by its shape, so this
-// package doesn't depend on postgres.js. The connection must have the time module's INSTANT_TYPE
-// (`postgres(url, { types: { instant: INSTANT_TYPE } })`): `now` is bound as a timestamptz and
-// the facts' instants come back as Temporal.Instant, and without it both fail loudly.
+// `readableDrops` and `dropReadFacts` state the same conditions as `mayRead`, in the same order,
+// each as the one value that grants, and tests/src/db/authorization.test.ts runs every role of the
+// privacy matrix through both paths on the same rows. Each takes the caller's postgres.js tagged
+// template, typed by its shape, so this package doesn't depend on postgres.js. The connection must
+// have the time module's INSTANT_TYPE (`postgres(url, { types: { instant: INSTANT_TYPE } })`):
+// both bind `now` as a timestamptz, and the facts' instants come back as Temporal.Instant, so
+// without it both fail loudly, for a drop that exists and one that doesn't.
 //
-// Ids are bound as text, so an id that isn't one of ours (a guess, a typo) finds nothing, as a
-// missing drop does, instead of failing the domain's check (T14).
+// A drop id that isn't one of ours (a guess, a typo, a NUL) finds nothing without a query, as a
+// missing drop does (T14). The viewer is the session's account id, so one that isn't an id at all
+// is the caller's mistake, and throws.
 
 import type { ServerNow } from "../time/clock.ts";
 import {
@@ -52,8 +54,11 @@ function bound<R>(sql: (template: TemplateStringsArray, ...values: readonly neve
   return sql as Bound<R>;
 }
 
+/** `app.id`'s pattern (db/migrations/0002_shared_rules.sql). */
+const ID = /^[A-Za-z0-9_-]{1,64}$/;
+
 function checkViewer(viewer: unknown): void {
-  if (typeof viewer !== "string" || viewer === "") throw new TypeError("authorization: the viewer is an account id");
+  if (typeof viewer !== "string" || !ID.test(viewer)) throw new TypeError("authorization: the viewer is an account id");
 }
 
 /**
@@ -74,6 +79,7 @@ export function readableDrops<F>(sql: FragmentSql<F>, viewer: string, now: Serve
       JOIN app.occurrences o ON o.id = d.occurrence_id
       JOIN app.clubs c ON c.id = d.club_id
       JOIN app.memberships s ON s.interval_id = o.star_interval_id
+      JOIN app.users su ON su.id = s.user_id
       JOIN app.memberships am ON am.interval_id = d.author_interval_id
       JOIN app.users au ON au.id = am.user_id
      WHERE m.user_id = ${viewer}::pg_catalog.text
@@ -83,6 +89,7 @@ export function readableDrops<F>(sql: FragmentSql<F>, viewer: string, now: Serve
        AND o.status = 'scheduled'
        AND c.suspended_at IS NULL
        AND (s.left_at IS NULL OR s.left_at >= o.reveal_at)
+       AND (su.deletion_requested_at IS NULL OR su.deletion_requested_at >= o.reveal_at)
        AND au.state = 'active'
        AND NOT EXISTS (SELECT FROM app.blocks b
                         WHERE (b.blocker_user_id = m.user_id AND b.blocked_user_id = am.user_id)
@@ -122,42 +129,60 @@ export async function mayReadDrop(
 ): Promise<boolean> {
   checkViewer(viewer);
   checkRead(what, now);
-  return mayRead(await dropReadFacts(sql, viewer, drop), what, now);
+  return mayRead(await dropReadFacts(sql, viewer, drop, now), what, now);
 }
 
 /**
  * The facts `mayRead` needs about `viewer` and one drop, or null when no drop has that id, in one
  * statement, so they all come from one snapshot. Every row that must exist is joined, so a
  * missing one gives null too; only the viewer's account, their interval in the audience and a
- * block may be absent. It takes no lock, so a command keeps its own fixed order (TECH-DESIGN
- * section 5). Any value outside the schema's throws, so a surprise refuses rather than grants.
+ * block may be absent. The statement always returns one row, which carries `now` back, so a
+ * connection without INSTANT_TYPE fails here for any drop id, not only for one that exists. It
+ * takes no lock, so a command keeps its own fixed order (TECH-DESIGN section 5). Any value outside
+ * the schema's throws, so a surprise refuses rather than grants.
  */
-export async function dropReadFacts(sql: QuerySql, viewer: string, drop: string): Promise<DropReadFacts | null> {
+async function dropReadFacts(
+  sql: QuerySql,
+  viewer: string,
+  drop: string,
+  now: ServerNow,
+): Promise<DropReadFacts | null> {
   checkViewer(viewer);
   if (typeof drop !== "string") throw new TypeError("authorization: the drop is an id");
+  if (!ID.test(drop)) return null;
   const rows = await bound(sql)`
-    SELECT (SELECT u.state FROM app.users u WHERE u.id = ${viewer}::pg_catalog.text) AS viewer_account,
-           (SELECT m.state
-              FROM app.drop_audience a JOIN app.memberships m ON m.interval_id = a.interval_id
-             WHERE a.drop_id = d.id AND m.user_id = ${viewer}::pg_catalog.text) AS viewer_interval,
-           d.state AS drop_state,
-           o.status AS day_status,
-           c.suspended_at AS club_suspended_at,
-           o.reveal_at,
-           s.left_at AS star_left_at,
-           au.state AS author_account,
-           EXISTS (SELECT FROM app.blocks b
-                    WHERE (b.blocker_user_id = ${viewer}::pg_catalog.text AND b.blocked_user_id = am.user_id)
-                       OR (b.blocker_user_id = am.user_id AND b.blocked_user_id = ${viewer}::pg_catalog.text)) AS blocked
-      FROM app.drops d
-      JOIN app.occurrences o ON o.id = d.occurrence_id
-      JOIN app.clubs c ON c.id = d.club_id
-      JOIN app.memberships s ON s.interval_id = o.star_interval_id
-      JOIN app.memberships am ON am.interval_id = d.author_interval_id
-      JOIN app.users au ON au.id = am.user_id
-     WHERE d.id = ${drop}::pg_catalog.text`;
+    SELECT ${now}::pg_catalog.timestamptz AS now, f.*
+      FROM (VALUES (true)) AS one (x)
+      LEFT JOIN LATERAL (
+        SELECT (SELECT u.state FROM app.users u WHERE u.id = ${viewer}::pg_catalog.text) AS viewer_account,
+               (SELECT m.state
+                  FROM app.drop_audience a JOIN app.memberships m ON m.interval_id = a.interval_id
+                 WHERE a.drop_id = d.id AND m.user_id = ${viewer}::pg_catalog.text
+                 ORDER BY m.state = 'active' DESC, m.interval_id
+                 LIMIT 1) AS viewer_interval,
+               d.state AS drop_state,
+               o.status AS day_status,
+               c.suspended_at AS club_suspended_at,
+               o.reveal_at,
+               s.left_at AS star_left_at,
+               su.deletion_requested_at AS star_deletion_requested_at,
+               au.state AS author_account,
+               EXISTS (SELECT FROM app.blocks b
+                        WHERE (b.blocker_user_id = ${viewer}::pg_catalog.text AND b.blocked_user_id = am.user_id)
+                           OR (b.blocker_user_id = am.user_id AND b.blocked_user_id = ${viewer}::pg_catalog.text)) AS blocked
+          FROM app.drops d
+          JOIN app.occurrences o ON o.id = d.occurrence_id
+          JOIN app.clubs c ON c.id = d.club_id
+          JOIN app.memberships s ON s.interval_id = o.star_interval_id
+          JOIN app.users su ON su.id = s.user_id
+          JOIN app.memberships am ON am.interval_id = d.author_interval_id
+          JOIN app.users au ON au.id = am.user_id
+         WHERE d.id = ${drop}::pg_catalog.text
+      ) AS f ON true`;
   const row = rows[0];
-  if (row === undefined) return null;
+  if (row === undefined || !instant(row["now"], "now").equals(now))
+    throw new Error("authorization: the facts came back without the server's time");
+  if (row["drop_state"] === null) return null;
   if (typeof row["blocked"] !== "boolean")
     throw new Error("authorization: the block check came back without an answer");
   return {
@@ -168,6 +193,9 @@ export async function dropReadFacts(sql: QuerySql, viewer: string, drop: string)
     clubSuspendedAt: orNull(row["club_suspended_at"], (v) => instant(v, "the club's suspension")),
     revealAt: instant(row["reveal_at"], "the day's reveal_at"),
     starLeftAt: orNull(row["star_left_at"], (v) => instant(v, "the star's left_at")),
+    starDeletionRequestedAt: orNull(row["star_deletion_requested_at"], (v) =>
+      instant(v, "the star's deletion request"),
+    ),
     authorAccount: oneOf(row["author_account"], ACCOUNT, "the author's account"),
     blocked: row["blocked"],
   };

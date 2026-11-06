@@ -31,6 +31,7 @@ const READER: DropReadFacts = {
   clubSuspendedAt: null,
   revealAt: REVEAL,
   starLeftAt: null,
+  starDeletionRequestedAt: null,
   authorAccount: "active",
   blocked: false,
 };
@@ -75,6 +76,10 @@ describe("T23: each denial beats every grant", () => {
     ["the club suspended", { clubSuspendedAt: Temporal.Instant.from("2026-11-06T21:00:00Z") }],
     ["the club suspended, at an instant after now", { clubSuspendedAt: CLOSE.add({ hours: 24 * 800 }) }],
     ["the star left before the day opened (FQ63)", { starLeftAt: REVEAL.subtract({ microseconds: 1 }) }],
+    [
+      "the star asked to delete their account before the day opened (FQ63, T27)",
+      { starDeletionRequestedAt: REVEAL.subtract({ microseconds: 1 }) },
+    ],
     ["the author's account deleting (T27, spec 23)", { authorAccount: "deleting" }],
     ["the author's account deleted", { authorAccount: "deleted" }],
     ["a block between the viewer and the author (FQ88)", { blocked: true }],
@@ -96,9 +101,12 @@ describe("T1, T9: the reveal is reached at reveal_at, by the server's time", () 
     expect(reads(READER, REVEAL)).toEqual({ caption: true, media: true, reactions: true });
   });
 
-  it("keeps a day open after its star leaves once it has opened (FQ63)", () => {
-    for (const starLeftAt of [REVEAL, REVEAL.add({ hours: 2 }), CLOSE.add({ hours: 1 })]) {
-      expect(reads({ ...READER, starLeftAt }, INSTANTS.later)).toEqual({ caption: true, media: true, reactions: true });
+  it("keeps a day open after its star leaves, or asks to delete their account, once it has opened (FQ63)", () => {
+    for (const at of [REVEAL, REVEAL.add({ hours: 2 }), CLOSE.add({ hours: 1 })]) {
+      const all = { caption: true, media: true, reactions: true };
+      expect(reads({ ...READER, starLeftAt: at }, INSTANTS.later)).toEqual(all);
+      expect(reads({ ...READER, starDeletionRequestedAt: at }, INSTANTS.later)).toEqual(all);
+      expect(reads({ ...READER, starLeftAt: at, starDeletionRequestedAt: at }, INSTANTS.later)).toEqual(all);
     }
   });
 });
@@ -131,7 +139,8 @@ describe("fails closed: a fact that is missing, of the wrong type or unknown nev
     if (key === "revealAt") continue;
     it(`denies or throws, never grants, whatever ${key} holds that isn't a granting value`, () => {
       for (const value of strange) {
-        if ((key === "clubSuspendedAt" || key === "starLeftAt") && value === null) continue;
+        if ((key === "clubSuspendedAt" || key === "starLeftAt" || key === "starDeletionRequestedAt") && value === null)
+          continue;
         if (key === "blocked" && value === false) continue;
         const facts: DropReadFacts = { ...READER, [key]: value };
         for (const now of Object.values(INSTANTS)) {
@@ -152,15 +161,17 @@ describe("fails closed: a fact that is missing, of the wrong type or unknown nev
   it("never reveals media or reactions, or opens a held day, by an instant that isn't a Temporal.Instant", () => {
     for (const value of [undefined, null, "2026-11-07T07:00:00Z", 0, new Date("2026-11-07T07:00:00Z")]) {
       const revealAt = { ...READER, revealAt: value } as unknown as DropReadFacts;
-      const starLeftAt = {
-        ...READER,
-        starLeftAt: value === null ? "2026-11-07T08:00:00Z" : value,
-      } as unknown as DropReadFacts;
+      const starLeft = value === null ? "2026-11-07T08:00:00Z" : value;
+      const starLeftAt = { ...READER, starLeftAt: starLeft } as unknown as DropReadFacts;
+      const starDeletion = { ...READER, starDeletionRequestedAt: starLeft } as unknown as DropReadFacts;
       for (const what of ["media", "reactions"] as const) {
         expect(mayRead(revealAt, what, serverNow(INSTANTS.later)), `reveal_at ${String(value)}`).toBe(false);
       }
       for (const what of READS) {
         expect(mayRead(starLeftAt, what, serverNow(INSTANTS.later)), `the star's left_at ${String(value)}`).toBe(false);
+        expect(mayRead(starDeletion, what, serverNow(INSTANTS.later)), `the star's deletion ${String(value)}`).toBe(
+          false,
+        );
       }
     }
   });

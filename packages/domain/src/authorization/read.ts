@@ -40,9 +40,10 @@ export interface DropReadFacts {
   /** The viewer's account, or null when no account has the viewer's id. */
   readonly viewerAccount: AccountState | null;
   /**
-   * The viewer's membership interval in the drop's audience, or null when none of theirs is in it.
-   * An audience is the club's active intervals at the commit, one per account (T8), so a member
-   * who joined after it, or rejoined, has no active interval there.
+   * The state of the viewer's membership interval in the drop's audience: `active` when one of
+   * theirs there is, as the SQL asks; null when none of theirs is in it. An audience is the club's
+   * active intervals at the commit (T8), so a member who joined after it, or rejoined, has no
+   * active interval there.
    */
   readonly viewerInterval: MembershipState | null;
   readonly drop: DropState;
@@ -51,6 +52,12 @@ export interface DropReadFacts {
   readonly revealAt: Temporal.Instant;
   /** When the interval of the day's star ended, or null while it hasn't. */
   readonly starLeftAt: Temporal.Instant | null;
+  /**
+   * When the day's star asked to delete their account, or null while they haven't. A deletion
+   * revokes the memberships first (T27, spec 23), so it is leaving at that instant, whenever the
+   * interval itself is ended.
+   */
+  readonly starDeletionRequestedAt: Temporal.Instant | null;
   /** The account of the drop's author. */
   readonly authorAccount: AccountState;
   /** Whether either of the viewer and the author has blocked the other. */
@@ -59,7 +66,7 @@ export interface DropReadFacts {
 
 /**
  * Whether the viewer may see `what` of the drop at `now`. Each condition is a denial that beats
- * every grant (T23); the caption needs the first eight, and anything beyond it the reveal too.
+ * every grant (T23); the caption needs all but the last, and anything beyond it the reveal too.
  */
 export function mayRead(facts: DropReadFacts | null, what: ReadWhat, now: ServerNow): boolean {
   checkRead(what, now);
@@ -76,11 +83,11 @@ export function mayRead(facts: DropReadFacts | null, what: ReadWhat, now: Server
     facts.day === "scheduled" &&
     facts.clubSuspendedAt === null &&
     // A day whose star left before it opened is held and never opens (FQ63): nothing of it is
-    // served, the caption included, until leaving gives a held day its shape (B6).
-    (facts.starLeftAt === null ||
-      (facts.starLeftAt instanceof Temporal.Instant &&
-        facts.revealAt instanceof Temporal.Instant &&
-        Temporal.Instant.compare(facts.starLeftAt, facts.revealAt) >= 0)) &&
+    // served, the caption included, until leaving gives a held day its shape (B6). Asking to
+    // delete the account is leaving at that instant, so the answer never waits for the worker
+    // that ends the interval (T1, T27).
+    notBeforeReveal(facts.starLeftAt, facts.revealAt) &&
+    notBeforeReveal(facts.starDeletionRequestedAt, facts.revealAt) &&
     // The author's account deletion denies at once, before its purge (T23, T27; spec 23), since
     // no permission waits for the worker (TECH-DESIGN section 5).
     facts.authorAccount === "active" &&
@@ -90,6 +97,19 @@ export function mayRead(facts: DropReadFacts | null, what: ReadWhat, now: Server
     // Anything beyond the caption once server time has reached the reveal (T9, T10, D07).
     (what === "caption" ||
       (facts.revealAt instanceof Temporal.Instant && Temporal.Instant.compare(now, facts.revealAt) >= 0))
+  );
+}
+
+/**
+ * Whether the star's leaving, `at`, keeps the day: it hasn't happened (null), or it came at
+ * `revealAt` or later, once the day had opened. Anything that isn't an instant denies.
+ */
+function notBeforeReveal(at: unknown, revealAt: unknown): boolean {
+  return (
+    at === null ||
+    (at instanceof Temporal.Instant &&
+      revealAt instanceof Temporal.Instant &&
+      Temporal.Instant.compare(at, revealAt) >= 0)
   );
 }
 

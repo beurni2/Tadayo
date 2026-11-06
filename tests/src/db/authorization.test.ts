@@ -16,7 +16,7 @@ import { randomBytes } from "node:crypto";
 import { mayReadDrop, READS, readableDrops, type ReadWhat, type ServerNow } from "@tadayo/domain";
 import { fakeClock } from "@tadayo/domain/testing";
 import { afterAll, describe, expect, it } from "vitest";
-import { appSql, commandSql, rolledBack, worldSql, type Tx, type WorldTx } from "./harness.ts";
+import { appSql, commandSql, halfInstantSql, rolledBack, worldSql, type Tx, type WorldTx } from "./harness.ts";
 import {
   AT,
   checkAsAtCommit,
@@ -495,6 +495,56 @@ describe("FQ63: a day whose star left before it opened is held and never opens",
     }
   });
 
+  it("holds a day whose star asked to delete their account before it opened, whenever the membership is ended", async () => {
+    // A deletion revokes the memberships first (T27), so the request is the star's leaving, and the
+    // answer never waits for the job that ends the interval (T1): not yet, before reveal_at, or after.
+    const ended = [null, Temporal.Instant.from("2026-11-07T06:30:00Z"), Temporal.Instant.from("2026-11-07T08:00:00Z")];
+    for (const leftAt of ended) {
+      await rolledBack(db, async (tx) => {
+        const w = await newWorld(plain(tx));
+        const drop = await bensDrop(tx, w);
+        await tx`UPDATE app.users SET state = 'deleting', deletion_requested_at = ${AFTER} WHERE id = ${w.ana.user}`;
+        if (leftAt) {
+          await tx`UPDATE app.memberships SET state = 'account_deleted', left_at = ${leftAt} WHERE interval_id = ${w.ana.interval}`;
+        }
+        await checkAsAtCommit(plain(tx));
+        const clock = fakeClock(REVEAL);
+        for (const [phase, instant] of Object.entries(PHASES)) {
+          clock.set(instant);
+          const now = await clock.sample(tx);
+          for (const [name, viewer] of [
+            ["Ben", w.ben.user],
+            ["Cleo", w.cleo.user],
+          ] as const) {
+            for (const what of READS) {
+              expect(
+                await bothPaths(tx, viewer, drop, what, now),
+                `ended ${String(leftAt)}, ${phase}, ${name}, ${what}`,
+              ).toEqual({ policy: false, sql: false });
+            }
+          }
+        }
+      });
+    }
+  });
+
+  it("keeps a day whose star asked to delete their account once it had opened", async () => {
+    for (const requestedAt of [REVEAL, Temporal.Instant.from(AT.opened.toISOString())]) {
+      await rolledBack(db, async (tx) => {
+        const w = await newWorld(plain(tx));
+        const drop = await bensDrop(tx, w);
+        await tx`UPDATE app.users SET state = 'deleting', deletion_requested_at = ${requestedAt} WHERE id = ${w.ana.user}`;
+        const now = await fakeClock(PHASES.past).sample(tx);
+        for (const viewer of [w.ben.user, w.cleo.user]) {
+          for (const what of READS)
+            expect(await bothPaths(tx, viewer, drop, what, now)).toEqual({ policy: true, sql: true });
+        }
+        for (const what of READS)
+          expect(await bothPaths(tx, w.ana.user, drop, what, now)).toEqual({ policy: false, sql: false });
+      });
+    }
+  });
+
   it("holds a day whose star left a microsecond before reveal_at", async () => {
     await rolledBack(db, async (tx) => {
       const w = await newWorld(plain(tx));
@@ -558,19 +608,62 @@ describe("spec 22 and D11: an author who leaves keeps the drop for the club, or 
   });
 });
 
+describe("T8: an audience that holds two of one viewer's intervals", () => {
+  it("answers through the one still active, by both paths alike, and nothing once neither is", async () => {
+    await rolledBack(db, async (tx) => {
+      // The seal checks only that each interval was active when its row was written and that every
+      // active member is in, so Cleo can leave and rejoin inside the commit's transaction, before
+      // the seal, and both of her intervals are in the audience.
+      const w = await newWorld(plain(tx));
+      const drop = await commitDrop(plain(tx), w, w.ben, { caption: "From Ben", at: AT.added, unsealed: true });
+      await tx`
+        INSERT INTO app.drop_audience (drop_id, club_id, interval_id)
+        SELECT ${drop}, club_id, interval_id FROM app.memberships WHERE club_id = ${w.club} AND state = 'active'
+      `;
+      await leave(plain(tx), w.cleo, "Cleo", new Date("2026-11-06T20:05:00Z"));
+      const [cleoAgain] = await joinByRoster(plain(tx), w.club, w.ana, [{ user: w.cleo.user, label: "Cleo" }], LATER);
+      if (!cleoAgain) throw new Error("Cleo didn't rejoin");
+      await tx`INSERT INTO app.drop_audience (drop_id, club_id, interval_id) VALUES (${drop}, ${w.club}, ${cleoAgain})`;
+      await tx`UPDATE app.drops SET audience_sealed_at = ${AT.added} WHERE id = ${drop}`;
+      await checkAsAtCommit(plain(tx));
+      const now = await fakeClock(PHASES.open).sample(tx);
+      for (const what of READS)
+        expect(await bothPaths(tx, w.cleo.user, drop, what, now)).toEqual({ policy: true, sql: true });
+      await leave(plain(tx), { user: w.cleo.user, interval: cleoAgain }, "Cleo", STATE_AT);
+      for (const what of READS)
+        expect(await bothPaths(tx, w.cleo.user, drop, what, now)).toEqual({ policy: false, sql: false });
+    });
+  });
+});
+
 describe("T14: a missing drop and a drop the viewer may not read get the same answer", () => {
-  it("answers no for an id nobody has, one that isn't an id at all, or a viewer who isn't anyone, without an error", async () => {
+  it("answers no for a drop id nobody has or one that isn't an id at all, and for an account nobody has, without an error", async () => {
     await rolledBack(db, async (tx) => {
       const w = await newWorld(plain(tx));
       const drop = await bensDrop(tx, w);
       const now = await fakeClock(PHASES.past).sample(tx);
-      for (const missing of [newId("drp"), "not an id", "../drp_x", "x".repeat(65), ""]) {
-        for (const what of READS)
-          expect(await bothPaths(tx, w.cleo.user, missing, what, now)).toEqual({ policy: false, sql: false });
+      for (const what of READS) {
+        expect(await bothPaths(tx, w.cleo.user, newId("drp"), what, now)).toEqual({ policy: false, sql: false });
+        expect(await bothPaths(tx, newId("acct"), drop, what, now)).toEqual({ policy: false, sql: false });
       }
-      for (const stranger of [newId("acct"), "not an id", "x".repeat(65)]) {
-        for (const what of READS)
-          expect(await bothPaths(tx, stranger, drop, what, now)).toEqual({ policy: false, sql: false });
+      // A drop id comes from the request, so one that isn't an id finds nothing, Postgres never
+      // seeing it (a NUL would fail the query); a list takes no drop id.
+      for (const notAnId of ["not an id", "../drp_x", "x".repeat(65), "", `${drop}\u0000`, "\u0000"]) {
+        for (const what of READS) expect(await mayReadDrop(tx, w.cleo.user, notAnId, what, now)).toBe(false);
+      }
+    });
+  });
+
+  it("refuses a viewer that isn't an account id, whichever drop is asked about", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await newWorld(plain(tx));
+      const drop = await bensDrop(tx, w);
+      const now = await fakeClock(PHASES.past).sample(tx);
+      for (const viewer of ["not an id", "x".repeat(65), `${w.cleo.user}\u0000`, ""]) {
+        for (const asked of [drop, newId("drp")]) {
+          await expect(mayReadDrop(tx, viewer, asked, "caption", now)).rejects.toThrow(TypeError);
+        }
+        expect(() => readableDrops(tx, viewer, now, "caption")).toThrow(TypeError);
       }
     });
   });
@@ -603,12 +696,25 @@ describe("the connection: the time module's INSTANT_TYPE, or a loud failure", ()
             (sp) => sp`SELECT id FROM app.drops WHERE id IN (${readableDrops(sp, w.cleo.user, now, "media")})`,
           ),
         ).rejects.toThrow();
-        await expect(tx.savepoint((sp) => mayReadDrop(sp, w.cleo.user, drop, "caption", now))).rejects.toThrow(
-          /use INSTANT_TYPE/,
-        );
+        // For a drop that exists and one that doesn't alike, so a stranger can't tell them apart.
+        for (const asked of [drop, newId("drp")]) {
+          await expect(tx.savepoint((sp) => mayReadDrop(sp, w.cleo.user, asked, "caption", now))).rejects.toThrow();
+        }
       });
     } finally {
       await app.end();
+    }
+  });
+
+  it("refuses a connection that sends instants whole but reads them back as Dates, for a drop that doesn't exist too", async () => {
+    const half = halfInstantSql();
+    try {
+      await rolledBack(half, async (tx) => {
+        const now = await fakeClock(PHASES.open).sample(tx);
+        await expect(mayReadDrop(tx, newId("acct"), newId("drp"), "caption", now)).rejects.toThrow(/use INSTANT_TYPE/);
+      });
+    } finally {
+      await half.end();
     }
   });
 

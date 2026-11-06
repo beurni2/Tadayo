@@ -57,6 +57,18 @@ export function worldSql(): postgres.Sql<WorldTypes> {
   return postgres(url("DATABASE_URL"), { max: 2, onnotice: () => undefined, types: { instant } });
 }
 
+/**
+ * A connection set up halfway, for the tests that it fails loudly: instants sent through
+ * INSTANT_TYPE, but each timestamptz read back with postgres.js's own type, as a Date.
+ */
+export function halfInstantSql() {
+  return postgres(url("DATABASE_URL"), {
+    max: 2,
+    onnotice: () => undefined,
+    types: { instant: { ...INSTANT_TYPE, from: [] } },
+  });
+}
+
 class RolledBack extends Error {}
 
 /** Runs `body` in a transaction that is always rolled back, and returns what it returned. */
