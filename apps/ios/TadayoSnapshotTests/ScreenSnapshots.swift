@@ -4,16 +4,17 @@ import TadayoCore
 import TadayoDesign
 import XCTest
 
-/// A screen as the simulator's phone shows it, at 2x like the renders, in sRGB, in light, in dark,
-/// and at the largest accessibility text size (docs/TECH-DESIGN.md section 2). The keyboard and
-/// the status bar aren't drawn (T45): a field shows its focus itself.
+/// A screen as the renders draw it: 393 by 852 points, at 2x like the renders, in sRGB, in light,
+/// in dark, and at the largest accessibility text size (docs/TECH-DESIGN.md section 2). The
+/// keyboard and the status bar aren't drawn (T45): a field shows its focus itself.
 ///
 /// It's drawn in the host app's key window, as the screen shows it (`drawHierarchy`), since
 /// iOS 26's bars draw their title and buttons through effects a layer render leaves out: their
 /// title came out white on the light canvas, and a toolbar button not at all. A window there
-/// takes its safe areas from the screen, so the snapshot is the screen's size (402 by 874 on the
-/// `ios` workflow's iPhone 17, with 62 and 34), not the renders' 393 by 852: a window of that size
-/// got a 12-point bottom inset. The window's layer time stands still while it's drawn, so an
+/// takes its safe areas from the screen: the top is the simulator iPhone 17's 62 (the frames'
+/// phone has 59), and the bottom, which a window shorter than the 874-point screen loses, is
+/// made the frames' 34 (`FramedHost`). A window the screen's own size drew the bar 52 points
+/// above where it laid it out. The window's layer time stands still while it's drawn, so an
 /// animation is drawn at its start.
 ///
 /// The `-xl` snapshot is a phone tall enough to hold the whole screen at that size, since at
@@ -42,12 +43,11 @@ enum ScreenSnapshot {
             })
         }
 
-        /// The screen's size, or as tall as `xlHeight` at the largest text. The safe areas are
-        /// the window's own (above), so none is given here.
-        func config(screen: CGSize, xlHeight: CGFloat) -> ViewImageConfig {
+        /// The safe areas are the window's own and `FramedHost`'s (above), so none is given here.
+        func config(xlHeight: CGFloat) -> ViewImageConfig {
             ViewImageConfig(
                 safeArea: .zero,
-                size: CGSize(width: screen.width, height: self == .xl ? xlHeight : screen.height),
+                size: CGSize(width: 393, height: self == .xl ? xlHeight : 852),
                 traits: traits)
         }
     }
@@ -64,8 +64,7 @@ enum ScreenSnapshot {
                 .environment(\.colorScheme, variant == .dark ? .dark : .light)
                 .environment(\.dynamicTypeSize, variant == .xl ? .accessibility5 : .large)
                 .environment(\.locale, Locale(identifier: "en_US"))
-            guard let window = keyWindow, let screen = window.windowScene?.screen.bounds.size
-            else {
+            guard let window = keyWindow else {
                 XCTFail("no key window to draw in", file: file, line: line)
                 return
             }
@@ -73,11 +72,11 @@ enum ScreenSnapshot {
             (window.layer.speed, window.layer.timeOffset) = (0, 0)
             defer { (window.layer.speed, window.layer.timeOffset) = (speed, offset) }
             assertSnapshot(
-                of: shown,
+                of: FramedHost(rootView: shown) as UIViewController,
                 as: .image(
+                    on: variant.config(xlHeight: xlHeight),
                     drawHierarchyInKeyWindow: true,
                     perceptualPrecision: 0.98,
-                    layout: .device(config: variant.config(screen: screen, xlHeight: xlHeight)),
                     traits: variant.traits),
                 named: state + variant.suffix, file: file, testName: testName, line: line)
         }
@@ -103,6 +102,22 @@ enum ScreenSnapshot {
             RunLoop.main.run(until: Date().addingTimeInterval(0.01))
         }
         XCTAssertTrue(condition(), "the state wasn't reached", file: file, line: line)
+    }
+}
+
+/// A hosting controller whose bottom safe area is the frames' 34 points, whatever its window
+/// gives it: a 393 by 852 window on the iPhone 17 simulator's 874-point screen gets 12, and the
+/// tall `-xl` window none.
+final class FramedHost<Content: View>: UIHostingController<Content> {
+    private let bottom: CGFloat = 34
+
+    override func viewSafeAreaInsetsDidChange() {
+        super.viewSafeAreaInsetsDidChange()
+        let given = view.safeAreaInsets.bottom - additionalSafeAreaInsets.bottom
+        let added = max(0, bottom - given)
+        if additionalSafeAreaInsets.bottom != added {
+            additionalSafeAreaInsets.bottom = added
+        }
     }
 }
 
