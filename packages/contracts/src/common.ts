@@ -87,10 +87,10 @@ function resolvable(zone: string): boolean {
 
 export const Timezone = named(
   "Timezone",
-  "The club's IANA timezone, such as America/New_York (spec 05, T2): an IANA time zone the server can " +
-    "resolve, given by its name in any case and starting with a letter, so never a bare offset such as " +
-    "+05, an ISO time such as T07+05, or an old abbreviation such as BST or PST; refused otherwise, since " +
-    "a club's zone is fixed once it's made (FQ19).",
+  "An IANA timezone, such as America/New_York: a club's (spec 05, T2), fixed once the club is made " +
+    "(FQ19), or a device's, for its quiet hours (T37). Only an IANA time zone the server can resolve, " +
+    "named, starting with a letter, and taken in any case, so never a bare offset such as +05, an ISO " +
+    "time such as T07+05, or an old abbreviation such as BST or PST; refused otherwise.",
   z
     .string()
     .min(1)

@@ -328,7 +328,8 @@ describe("the club's zone (T2, FQ19)", () => {
   });
 
   it("is one Temporal resolves, so a club never has a zone its days can't be found in", () => {
-    // Intl.DateTimeFormat takes these old abbreviations; Temporal doesn't, nor does the contract's Timezone.
+    // Intl.DateTimeFormat takes the first four, old abbreviations and aliases; Temporal refuses all six,
+    // and so does the contract's Timezone.
     for (const zone of ["BST", "PST", "IST", "SystemV/AST4", "UTC+5", "Mars/Olympus_Mons"]) {
       expect(() => clubTimeZone(zone), zone).toThrow(RangeError);
     }

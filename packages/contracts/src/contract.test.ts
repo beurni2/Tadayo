@@ -551,9 +551,19 @@ describe("other request rules", () => {
   });
 
   it("takes only a name Temporal resolves back to itself, as the server's clubTimeZone does (T2)", () => {
-    // Intl.DateTimeFormat takes these old abbreviations and aliases, and reads BST as Asia/Dhaka and
-    // NST as Pacific/Auckland; Temporal refuses them, so the server couldn't find a club's days in one.
-    for (const zone of ["BST", "PST", "IST", "NST", "CST", "JST", "AST", "SST", "SystemV/AST4", "SystemV/EST5EDT"]) {
+    // Every name that fits the pattern and that Intl.DateTimeFormat takes but Temporal refuses, on Node
+    // 26.13.0 (tzdata 2026e): ICU's three-letter ids, the SystemV zones and two retired links. Intl reads
+    // some as zones nobody would mean (BST as Asia/Dhaka, NST as Pacific/Auckland, ART as Africa/Cairo),
+    // and the server couldn't find a club's days in any of them.
+    const intlOnly = [
+      ...["ACT", "AET", "AGT", "ART", "AST", "BET", "BST", "CAT", "CNT", "CST", "CTT", "EAT", "ECT"],
+      ...["IET", "IST", "JST", "MIT", "NET", "NST", "PLT", "PNT", "PRT", "PST", "SST", "VST"],
+      ...["AST4", "AST4ADT", "CST6", "CST6CDT", "EST5", "EST5EDT", "HST10"].map((zone) => `SystemV/${zone}`),
+      ...["MST7", "MST7MDT", "PST8", "PST8PDT", "YST9", "YST9YDT"].map((zone) => `SystemV/${zone}`),
+      "US/Pacific-New",
+      "Canada/East-Saskatchewan",
+    ];
+    for (const zone of intlOnly) {
       expect(Timezone.safeParse(zone).success, zone).toBe(false);
     }
     // Temporal reads a string that starts with T as an ISO time and takes its offset, or UTC for Z: these
@@ -567,6 +577,10 @@ describe("other request rules", () => {
     }
     // Any case, as clubTimeZone, which keeps Temporal's spelling; and the old names Temporal keeps.
     for (const zone of ["europe/london", "AMERICA/NEW_YORK", "Asia/Calcutta", "US/Eastern", "GMT", "EST5EDT"]) {
+      expect(Timezone.safeParse(zone).success, zone).toBe(true);
+    }
+    // And every zone the runtime knows, so the check never refuses a real one.
+    for (const zone of Intl.supportedValuesOf("timeZone")) {
       expect(Timezone.safeParse(zone).success, zone).toBe(true);
     }
   });
