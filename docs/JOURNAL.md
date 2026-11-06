@@ -321,15 +321,15 @@ And slice 4 (PR #17, `2518b35`; `docs/plans/B0.md`, slice 4; spec 31; TECH-DESIG
 
 ### 1.3 ios lane
 
-**Updated:** 2026-11-06 05:30 UTC, ios/b0-keychain-check
+**Updated:** 2026-11-06 05:37 UTC, ios/b0-keychain-check
 
 - **Started:** 2026-11-03 at 11:03 UTC, by the coordinator (ADR-025). Environment: Swift 6.3.3 from swift.org's signed release tarball; the journal hook isn't confirmed to fire in this session, so it runs by hand before each commit.
 - **This branch:** `ios/b0-keychain-check`, a check branch from `main` at `3148278` that never merges (like `ios/b0-plugins-check`), for the app group `group.app.tadayo`, which is also the keychain access group, on the `ios` workflow's unsigned simulator build (the slice plan's section 8, in `/mnt/project-files/plans/ios-slice-11-second-part.md`). `apps/ios/project.yml` gives the app and `TadayoShare` the app-group entitlement; `apps/ios/TadayoSnapshotTests/KeychainGroupCheckTests.swift` proves it at run time in the host app.
 - **PRs:** #15, #18 and #19 merged (`1f4ba1d`, `c98bb0f`, `cf44554`). #16 (`ios/b2-handoffs-5-6`) waits for the founder's approval at `2636c84`; its block 1.3 is the lane's state for everything but this check.
+- **Result:** `ios` run 42168818665 at `83ebf52` green (Xcode 26.6, iOS 26.5 on an iPhone 17 simulator; every target signed "Sign to Run Locally", with no team; Xcode wrote each target's `Entitlements-Simulated.plist` and `-Simulated.xcent`). The three checks passed, and `logs/test.log` on the `evidence` branch (`ios/b0-keychain-check/83ebf52/ios/`) prints: `SecItemAdd in group.app.tadayo = 0`; `SecItemCopyMatching = 0, access group group.app.tadayo`; `SecItemDelete = 0`; `containerURL(group.app.tadayo)` a path under `Containers/Shared/AppGroup/`; `TadayoShare carries the key: true, the group: true`. So the unsigned simulator build carries the app group, and the keychain takes it as the access group: the slice plan's fallback isn't needed.
 - **Next, in order:**
-    1. Read this push's `ios` run (`gh api "repos/beurni2/Tadayo/actions/runs?head_sha=<full sha>"`, then the test job's log for the `keychain-check:` lines). Done when it shows whether the three tests pass: the app group's container URL, an item written with `kSecAttrAccessGroup` set to the group that reads back in that group and deletes, and the group in `TadayoShare`'s binary.
-    2. If they pass, the run is the check `ios/b0-sign-in` waits for: its first commit, which brings these entitlements from `main`, notes the run in block 1.3 and in its PR. If the keychain refuses the group (`errSecMissingEntitlement`, -34018) or the container is nil, the plan's fallback: the session's item stays in the app's own group until slice 12 signs builds, `ios/b0-sign-in`'s PR says so, and the limit goes in `docs/LIMITATIONS.md`.
-    3. Back to `ios/b2-handoffs-5-6`'s block 1.3: the founder's approval of PR #16.
+    1. `ios/b0-sign-in`'s first commit, from `main` once #16 has merged and `tadayo-dev`'s URL and publishable key have arrived, brings these two `entitlements` blocks for `apps/ios/project.yml` and notes this run in block 1.3 and in its PR as the slice plan's section 8 check; its keychain store names `group.app.tadayo` in every query (`kSecAttrAccessGroup`), since an app group is never the default access group.
+    2. Back to `ios/b2-handoffs-5-6`'s block 1.3: the founder's approval of PR #16.
 - **Blocked or waiting:** the founder's approval of PR #16 at `2636c84`; `tadayo-dev`'s URL and publishable key, which gate `ios/b0-sign-in`.
 - **Design:** as on `ios/b2-handoffs-5-6` (block 1.3 of `2636c84`).
 
@@ -1538,6 +1538,14 @@ Two earlier entries claim more than their commits show, and the log is append-on
 **Next:** Push, check `ci`, then PR #11's description and the founder (block 1.2's Next steps 1 and 2).
 
 ### 3.3 ios lane
+
+#### 2026-11-06 05:37 UTC · ios · ios/b0-keychain-check · PR none
+**Did:** Read `ios` run 42168818665 at `83ebf52`, this branch's first push: green, and `KeychainGroupCheckTests`' three tests passed on the unsigned simulator build. The item added with `kSecAttrAccessGroup` `group.app.tadayo` came back in that group and deleted; the app group's container exists; `TadayoShare`'s binary carries the entitlement and the group. Block 1.3 records the result and the next step.
+**Why:** The slice plan's section 8 check, which `ios/b0-sign-in` waits for (PR #16's block 1.3, step 3); the journal records each run a later step relies on.
+**Verified:** The run's jobs (`gate`, `build`, `evidence`) green through `gh api repos/beurni2/Tadayo/actions/runs/42168818665/jobs`; the `build` job's log: "Executed 4 tests, with 0 failures", the three `KeychainGroupCheckTests` passed; `logs/test.log`, `logs/build.log` and `run.json` read from the `evidence` branch at `ios/b0-keychain-check/83ebf52/ios/`. `python3 tools/ci/journal_check.py --branch` and the hook, by hand.
+**Not verified:** iOS 17 and 18: the compatibility runs skip the `*SnapshotTests` targets, where this check lives; `ios/b0-sign-in`'s `TadayoTests` runs its keychain store's hosted test there. A signed build on a device (slice 12, TestFlight), where the team prefix and the provisioning profile take part. The shared keychain read from the share extension itself, which XCTest can't run.
+**Decisions and questions:** None. The fallback the slice plan kept for a refusal isn't needed.
+**Next:** `ios/b0-sign-in` once #16 has merged and the key has arrived (block 1.3).
 
 #### 2026-11-06 05:30 UTC · ios · ios/b0-keychain-check · PR none
 **Did:** Made `ios/b0-keychain-check` from `main` at `3148278`, a check branch that never merges. `apps/ios/project.yml` gives `Tadayo` and `TadayoShare` the entitlement `com.apple.security.application-groups` with `group.app.tadayo` (XcodeGen writes `Tadayo/Tadayo.entitlements` and `TadayoShare/TadayoShare.entitlements` and sets `CODE_SIGN_ENTITLEMENTS`). `KeychainGroupCheckTests` in the hosted `TadayoSnapshotTests` checks, inside the app: `FileManager.containerURL(forSecurityApplicationGroupIdentifier:)` for the group; a generic-password item (`AfterFirstUnlockThisDeviceOnly`, not synchronized) added with `kSecAttrAccessGroup` set to the group, read back with its access group equal to the group, deleted, then not found; and the group's bytes in `TadayoShare.appex`'s executable, where the simulator build embeds its entitlements. Each prints a `keychain-check:` line with its status for the log.
