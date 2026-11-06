@@ -419,7 +419,7 @@ export const CLUB_EXAMPLES: { home: Examples; operations: Record<string, Example
       },
       no_reveal: {
         summary:
-          "Two of Maya, Nina and Leila chose Friday, and Maya hasn't confirmed Saturday: Ben sees only that Friday has no reveal scheduled, and can't tell which two (G04-conflict-others, FQ46, FQ78)",
+          "Two of Maya, Nina and Leila chose Friday, and Maya hasn't confirmed Saturday: Ben sees only that Friday has no reveal scheduled, and can't tell which two (G04-contested-other, FQ46, FQ78)",
         value: ktSchedule(ktProposal(1, { monday: "yours", friday: "no_reveal", saturday: "available" })),
       },
     },
