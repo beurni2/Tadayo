@@ -57,6 +57,14 @@ targets:
       - target: TadayoShare
       - package: TadayoCore
       - package: TadayoDesign
+    # The app group, which is also the keychain access group the app and the extension share
+    # (docs/TECH-DESIGN.md section 4; ADR-019). Check branch only: does an unsigned simulator
+    # build carry it?
+    entitlements:
+      path: Tadayo/Tadayo.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.app.tadayo
     info:
       path: Tadayo/Info.plist
       properties:
@@ -88,6 +96,11 @@ targets:
       - path: TadayoShare
     dependencies:
       - package: TadayoCore
+    entitlements:
+      path: TadayoShare/TadayoShare.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.app.tadayo
     info:
       path: TadayoShare/Info.plist
       properties:
