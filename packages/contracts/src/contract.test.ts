@@ -550,6 +550,27 @@ describe("other request rules", () => {
     }
   });
 
+  it("takes only a name Temporal resolves back to itself, as the server's clubTimeZone does (T2)", () => {
+    // Intl.DateTimeFormat takes these old abbreviations and aliases, and reads BST as Asia/Dhaka and
+    // NST as Pacific/Auckland; Temporal refuses them, so the server couldn't find a club's days in one.
+    for (const zone of ["BST", "PST", "IST", "NST", "CST", "JST", "AST", "SST", "SystemV/AST4", "SystemV/EST5EDT"]) {
+      expect(Timezone.safeParse(zone).success, zone).toBe(false);
+    }
+    // Temporal reads a string that starts with T as an ISO time and takes its offset, or UTC for Z: these
+    // fit the pattern, and aren't zones.
+    for (const zone of ["T07+05", "t0000-0330", "T07-00", "T0700+0530", "T07Z", "t0700z"]) {
+      expect(Timezone.safeParse(zone).success, zone).toBe(false);
+    }
+    // An offset in Temporal's own spelling resolves to itself, and isn't a zone either.
+    for (const zone of ["+05:00", "-03:30", "+00:00"]) {
+      expect(Timezone.safeParse(zone).success, zone).toBe(false);
+    }
+    // Any case, as clubTimeZone, which keeps Temporal's spelling; and the old names Temporal keeps.
+    for (const zone of ["europe/london", "AMERICA/NEW_YORK", "Asia/Calcutta", "US/Eastern", "GMT", "EST5EDT"]) {
+      expect(Timezone.safeParse(zone).success, zone).toBe(true);
+    }
+  });
+
   it("takes each weekday only once in a choice (T6)", () => {
     expect(ChosenWeekdays.safeParse(["monday", "thursday"]).success).toBe(true);
     expect(ChosenWeekdays.safeParse(["monday", "monday"]).success).toBe(false);

@@ -1,3 +1,4 @@
+/// <reference lib="esnext.temporal" />
 // The building blocks every module shares: ids, instants, dates, text, people, clubs, occurrences.
 import * as z from "zod";
 
@@ -69,10 +70,16 @@ export const LocalDate = named(
   z.iso.date(),
 );
 
+// The check the server's clubTimeZone makes (packages/domain/src/time/civil.ts): a name Temporal resolves
+// back to itself, apart from case, and not to an offset. Temporal reads a string that starts with T as an
+// ISO time and takes its offset, or UTC for Z ("T07+05" gives +05:00), so the name must come back as
+// given. The pattern below refuses a leading sign too; the offset test keeps this clubTimeZone's whole
+// rule. Intl takes old abbreviations Temporal refuses (BST, PST, SystemV/AST4), so it isn't the check
+// (docs/LIMITATIONS.md).
 function resolvable(zone: string): boolean {
   try {
-    new Intl.DateTimeFormat("en-US", { timeZone: zone });
-    return true;
+    const id = Temporal.PlainDate.from("2026-01-01").toZonedDateTime(zone).timeZoneId;
+    return id.toLowerCase() === zone.toLowerCase() && !/^[+-]/.test(id);
   } catch {
     return false;
   }
@@ -81,8 +88,9 @@ function resolvable(zone: string): boolean {
 export const Timezone = named(
   "Timezone",
   "The club's IANA timezone, such as America/New_York (spec 05, T2): an IANA time zone the server can " +
-    "resolve, starting with a letter, so never a bare offset such as +05; refused otherwise, since a club's " +
-    "zone is fixed once it's made (FQ19).",
+    "resolve, given by its name in any case and starting with a letter, so never a bare offset such as " +
+    "+05, an ISO time such as T07+05, or an old abbreviation such as BST or PST; refused otherwise, since " +
+    "a club's zone is fixed once it's made (FQ19).",
   z
     .string()
     .min(1)
