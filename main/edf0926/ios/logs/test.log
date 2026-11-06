@@ -1,0 +1,42 @@
++ xcodebuild test-without-building -project apps/ios/Tadayo.xcodeproj -scheme Tadayo -destination platform=iOS Simulator,id=23C8F95C-765D-46A9-AE82-0BEE2921C8D7 -derivedDataPath /Users/runner/work/_temp/DerivedData -resultBundlePath /Users/runner/work/_temp/ios-out/Tests.xcresult -skipPackagePluginValidation
+Command line invocation:
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/xcodebuild test-without-building -project apps/ios/Tadayo.xcodeproj -scheme Tadayo -destination "platform=iOS Simulator,id=23C8F95C-765D-46A9-AE82-0BEE2921C8D7" -derivedDataPath /Users/runner/work/_temp/DerivedData -resultBundlePath /Users/runner/work/_temp/ios-out/Tests.xcresult -skipPackagePluginValidation
+
+Resolve Package Graph
+
+
+Resolved source packages:
+  xctest-dynamic-overlay: https://github.com/pointfreeco/xctest-dynamic-overlay @ 1.13.1
+  swift-snapshot-testing: https://github.com/pointfreeco/swift-snapshot-testing @ 1.19.7
+  TadayoCore: /Users/runner/work/Tadayo/Tadayo/packages/swift/TadayoCore
+  TadayoDesign: /Users/runner/work/Tadayo/Tadayo/packages/swift/TadayoDesign
+  swift-syntax: https://github.com/swiftlang/swift-syntax @ 604.0.0
+  swift-custom-dump: https://github.com/pointfreeco/swift-custom-dump @ 1.7.3
+
+Writing result bundle at path:
+	/Users/runner/work/_temp/ios-out/Tests.xcresult
+
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:iOS Simulator, arch:arm64, id:23C8F95C-765D-46A9-AE82-0BEE2921C8D7, OS:26.5, name:iPhone 17 }
+{ platform:iOS Simulator, arch:x86_64, id:23C8F95C-765D-46A9-AE82-0BEE2921C8D7, OS:26.5, name:iPhone 17 }
+Test Suite 'All tests' started at 2026-11-06 21:36:48.649.
+Test Suite 'TadayoSnapshotTests.xctest' started at 2026-11-06 21:36:48.650.
+Test Suite 'LabSnapshotTests' started at 2026-11-06 21:36:48.650.
+Test Case '-[TadayoSnapshotTests.LabSnapshotTests testLabSections]' started.
+Test Case '-[TadayoSnapshotTests.LabSnapshotTests testLabSections]' passed (1.630 seconds).
+Test Suite 'LabSnapshotTests' passed at 2026-11-06 21:36:50.281.
+	 Executed 1 test, with 0 failures (0 unexpected) in 1.630 (1.631) seconds
+Test Suite 'TadayoSnapshotTests.xctest' passed at 2026-11-06 21:36:50.281.
+	 Executed 1 test, with 0 failures (0 unexpected) in 1.630 (1.632) seconds
+Test Suite 'All tests' passed at 2026-11-06 21:36:50.282.
+	 Executed 1 test, with 0 failures (0 unexpected) in 1.630 (1.633) seconds
+2026-11-06 21:36:50.656 xcodebuild[6994:26057] [MT] IDETestOperationsObserverDebug: 13.859 elapsed -- Testing started completed.
+2026-11-06 21:36:50.656 xcodebuild[6994:26057] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-06 21:36:50.656 xcodebuild[6994:26057] [MT] IDETestOperationsObserverDebug: 13.859 sec, +13.859 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/_temp/ios-out/Tests.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started
