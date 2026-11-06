@@ -1,3 +1,4 @@
+import ObjectiveC
 import SnapshotTesting
 import SwiftUI
 import TadayoCore
@@ -13,7 +14,7 @@ import XCTest
 /// title came out white on the light canvas, and a toolbar button not at all. A window there
 /// takes its safe areas from the screen: the top is the simulator iPhone 17's 62 (the frames'
 /// phone has 59), and the bottom, which a window shorter than the 874-point screen loses, is
-/// made the frames' 34 (`FramedHost`). The busy button's spinner is drawn at rest (`StillHost`).
+/// made the frames' 34 (`FramedHost`). The busy button's spinner never turns (`StillHost`).
 ///
 /// The `-xl` snapshot is a phone tall enough to hold the whole screen at that size, since at
 /// AX5 the content scrolls: what would scroll is laid out down the image, with the pinned
@@ -94,12 +95,17 @@ enum ScreenSnapshot {
     }
 }
 
-/// A hosting controller that draws the system's activity indicator, the busy button's spinner,
-/// at rest, whatever moment the snapshot catches it at (`Spinners.holdStill`).
+/// A hosting controller in which the system's activity indicator, the busy button's spinner,
+/// never turns, so every snapshot draws it at its first frame (`Spinners`).
 class StillHost<Content: View>: UIHostingController<Content> {
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        Spinners.holdStill(in: view)
+    override init(rootView: Content) {
+        Spinners.neverTurn()
+        super.init(rootView: rootView)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("not used")
     }
 }
 
@@ -119,33 +125,31 @@ final class FramedHost<Content: View>: StillHost<Content> {
     }
 }
 
-/// The system's activity indicators in a view, held still for a snapshot. Turning, one came out
-/// differently in two draws of a screen; stopped, it still came out a little differently from
-/// one run to the next in the first draw of a test, so the stopped look depends on the moment
-/// it's stopped at (`docs/LIMITATIONS.md`). Each is stopped, started and stopped again at once,
-/// so it rests where a fresh one does, with Core Animation's implicit fades off and any
-/// animation left in its layers taken off.
+/// The system's activity indicators in the snapshot tests. On iOS 26 one turns by an image view
+/// stepping through 16 frames in 0.8 seconds, and stopping it keeps the frame it had reached, so
+/// a stopped one comes out differently from one run to the next (`docs/LIMITATIONS.md`). So in
+/// this test process `startAnimating` only keeps the indicator shown, never starting its frames,
+/// and UIKit draws it at its first, the same every time, in a layer render and a window's draw
+/// alike. Sentry's SnapshotPreviews does the same (its v0.19.0).
 @MainActor
 enum Spinners {
-    static func holdStill(in view: UIView) {
-        let spinners = all(in: view)
-        guard !spinners.isEmpty else { return }
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        for spinner in spinners {
-            spinner.hidesWhenStopped = false
-            if spinner.isAnimating {
-                spinner.stopAnimating()
-                spinner.startAnimating()
-                spinner.stopAnimating()
-            }
-            settle(spinner.layer)
-        }
-        CATransaction.commit()
-    }
+    /// Swaps `UIActivityIndicatorView.startAnimating` for `tadayoKeepStill`, once.
+    static func neverTurn() { _ = swapped }
+
+    private static let swapped: Bool = {
+        let indicator: AnyClass = UIActivityIndicatorView.self
+        guard
+            let start = class_getInstanceMethod(
+                indicator, #selector(UIActivityIndicatorView.startAnimating)),
+            let still = class_getInstanceMethod(
+                indicator, #selector(UIActivityIndicatorView.tadayoKeepStill))
+        else { return false }
+        method_exchangeImplementations(start, still)
+        return true
+    }()
 
     /// The indicators turning or with an animation in their layers, by description: none once
-    /// `holdStill` has run.
+    /// `neverTurn` has run.
     static func moving(in view: UIView) -> [String] {
         all(in: view).filter { $0.isAnimating || isAnimated($0.layer) }.map(\.description)
     }
@@ -156,14 +160,16 @@ enum Spinners {
         }
     }
 
-    private static func settle(_ layer: CALayer) {
-        layer.removeAllAnimations()
-        layer.sublayers?.forEach(settle)
-    }
-
     private static func isAnimated(_ layer: CALayer) -> Bool {
         !(layer.animationKeys() ?? []).isEmpty
             || (layer.sublayers ?? []).contains(where: isAnimated)
+    }
+}
+
+extension UIActivityIndicatorView {
+    /// `startAnimating` in this test process, once `Spinners.neverTurn` has run: shown, not turning.
+    @objc fileprivate func tadayoKeepStill() {
+        hidesWhenStopped = false
     }
 }
 

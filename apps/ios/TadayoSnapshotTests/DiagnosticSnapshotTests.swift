@@ -9,7 +9,7 @@ import XCTest
 @MainActor
 final class DiagnosticSnapshotTests: XCTestCase {
     private enum Hold: String, CaseIterable {
-        case none, stop, restart, settle, freeze, holdStill
+        case none, stop, freeze
     }
 
     private struct Drawn {
@@ -28,50 +28,125 @@ final class DiagnosticSnapshotTests: XCTestCase {
             window.rootViewController = nil
         }
         var lines: [String] = []
-        let first = show(in: window)
+        let first = show(in: window, dark: false)
         lines.append("DIAG tree:\n" + Self.describe(first.view, depth: 0))
         for spinner in Spinners.all(in: first.view) {
             lines.append("DIAG layers:\n" + Self.layers(spinner.layer, depth: 0))
+            for imageView in Self.imageViews(in: spinner) {
+                lines.append("DIAG image view: " + Self.report(imageView))
+            }
         }
-        for hold in Hold.allCases {
-            var early: [Data] = []
+        for dark in [false, true] {
+            var atOnce: [Hold: Data] = [:]
+            for hold in Hold.allCases {
+                var early: [Data] = []
+                var rendered: [Data] = []
+                var still: [Bool] = []
+                for delay in [0.0, 0.05, 0.3] {
+                    let host = show(in: window, dark: dark)
+                    turn(for: delay)
+                    apply(hold, to: host.view)
+                    let now = draw(host.view)
+                    turn(for: 0.3)
+                    let later = draw(host.view)
+                    early.append(now.drawn)
+                    rendered.append(now.rendered)
+                    still.append(now.drawn == later.drawn && now.rendered == later.rendered)
+                    if delay == 0 { atOnce[hold] = now.drawn }
+                }
+                lines.append(
+                    "DIAG \(dark ? "dark" : "light") \(hold.rawValue): still \(still), the same "
+                        + "whatever the delay: drawn \(Set(early).count == 1), "
+                        + "rendered \(Set(rendered).count == 1)")
+            }
+            let held = Hold.allCases.filter { $0 != .none }
+            let pairs = held.flatMap { a in
+                held.filter { $0.rawValue > a.rawValue }.map { b in
+                    "\(a.rawValue)=\(b.rawValue) \(atOnce[a] == atOnce[b])"
+                }
+            }
+            lines.append("DIAG \(dark ? "dark" : "light") drawn alike at once: \(pairs)")
+        }
+        for hold in [Hold.none, .stop] {
             var rendered: [Data] = []
             for delay in [0.0, 0.05, 0.3] {
-                let host = show(in: window)
+                rendered.append(renderedAsTheLabIs(after: delay, holding: hold, scene: scene))
+            }
+            lines.append(
+                "DIAG the Lab's way, \(hold.rawValue): rendered the same whatever the delay "
+                    + "\(Set(rendered).count == 1)")
+        }
+        // From here on, as in every snapshot after: `startAnimating` never starts the frames.
+        Spinners.neverTurn()
+        var drawnBy: [Bool: [Data]] = [:]
+        for dark in [false, true] {
+            var early: [Data] = []
+            var rendered: [Data] = []
+            var facts: [String] = []
+            for delay in [0.0, 0.05, 0.3] {
+                let host = show(in: window, dark: dark)
                 turn(for: delay)
-                apply(hold, to: host.view)
                 let now = draw(host.view)
                 turn(for: 0.3)
                 let later = draw(host.view)
                 early.append(now.drawn)
                 rendered.append(now.rendered)
-                let state = Spinners.all(in: host.view).map {
-                    "animating \($0.isAnimating) keys \(Self.keys($0.layer))"
-                }
-                lines.append(
-                    "DIAG \(hold.rawValue) delay \(delay): drawn still \(now.drawn == later.drawn), "
-                        + "rendered still \(now.rendered == later.rendered), spinners \(state)")
+                facts.append(
+                    "still \(now.drawn == later.drawn && now.rendered == later.rendered), "
+                        + "drawn as rendered \(now.drawn == now.rendered), "
+                        + "moving \(Spinners.moving(in: host.view)), shown "
+                        + "\(Spinners.all(in: host.view).map { !$0.isHidden && $0.alpha > 0 })")
             }
+            drawnBy[dark] = early
             lines.append(
-                "DIAG \(hold.rawValue): the same whatever the delay: drawn \(Set(early).count == 1), "
-                    + "rendered \(Set(rendered).count == 1)")
+                "DIAG \(dark ? "dark" : "light") never turning: \(facts); the same whatever the "
+                    + "delay: drawn \(Set(early).count == 1), rendered \(Set(rendered).count == 1)")
         }
+        let theLabs = [0.0, 0.05, 0.3].map {
+            renderedAsTheLabIs(after: $0, holding: .none, scene: scene)
+        }
+        lines.append(
+            "DIAG the Lab's way, never turning: rendered the same whatever the delay "
+                + "\(Set(theLabs).count == 1)")
+        lines.append("DIAG light and dark drawn apart: \(drawnBy[false] != drawnBy[true])")
         let report = lines.joined(separator: "\n")
         print(report)
         XCTFail("diagnostic:\n" + report)
     }
 
-    private func show(in window: UIWindow) -> UIViewController {
-        let host = UIHostingController(
-            rootView: Button("Send a code") {}
-                .buttonStyle(.tadayoPrimary(isBusy: true))
-                .padding(20)
-                .background(Palette.canvas)
-                .environment(\.colorScheme, .light))
+    private func button(dark: Bool) -> some View {
+        Button("Send a code") {}
+            .buttonStyle(.tadayoPrimary(isBusy: true))
+            .padding(20)
+            .background(Palette.canvas)
+            .environment(\.colorScheme, dark ? .dark : .light)
+    }
+
+    private func show(in window: UIWindow, dark: Bool) -> UIViewController {
+        let host = UIHostingController(rootView: button(dark: dark))
         window.rootViewController = host
         host.view.frame = window.bounds
         window.layoutIfNeeded()
         return host
+    }
+
+    /// As SnapshotTesting draws a SwiftUI view: sized to fit, no safe area, in a window of its
+    /// own that isn't shown, drawn by a layer render.
+    private func renderedAsTheLabIs(
+        after delay: TimeInterval, holding hold: Hold, scene: UIWindowScene?
+    ) -> Data {
+        let host = UIHostingController(rootView: button(dark: false))
+        host.safeAreaRegions = []
+        let size = host.sizeThatFits(in: .zero)
+        let window = scene.map { UIWindow(windowScene: $0) } ?? UIWindow()
+        window.frame = CGRect(origin: .zero, size: size)
+        window.rootViewController = host
+        host.view.frame = window.bounds
+        host.view.layoutIfNeeded()
+        defer { window.rootViewController = nil }
+        turn(for: delay)
+        apply(hold, to: host.view)
+        return draw(host.view).rendered
     }
 
     private func turn(for seconds: TimeInterval) {
@@ -80,26 +155,13 @@ final class DiagnosticSnapshotTests: XCTestCase {
     }
 
     private func apply(_ hold: Hold, to view: UIView) {
-        if hold == .holdStill { return Spinners.holdStill(in: view) }
         for spinner in Spinners.all(in: view) {
             switch hold {
-            case .none, .holdStill:
+            case .none:
                 break
             case .stop:
                 spinner.hidesWhenStopped = false
                 spinner.stopAnimating()
-            case .restart:
-                spinner.hidesWhenStopped = false
-                spinner.stopAnimating()
-                spinner.startAnimating()
-                spinner.stopAnimating()
-            case .settle:
-                CATransaction.begin()
-                CATransaction.setDisableActions(true)
-                spinner.hidesWhenStopped = false
-                spinner.stopAnimating()
-                Self.settle(spinner.layer)
-                CATransaction.commit()
             case .freeze:
                 spinner.layer.speed = 0
                 spinner.layer.timeOffset = 0
@@ -118,9 +180,32 @@ final class DiagnosticSnapshotTests: XCTestCase {
         return Drawn(drawn: drawn, rendered: rendered)
     }
 
-    private static func settle(_ layer: CALayer) {
-        layer.removeAllAnimations()
-        layer.sublayers?.forEach(settle)
+    private static func report(_ imageView: UIImageView) -> String {
+        var parts = [
+            "frames \(imageView.animationImages?.count ?? -1)",
+            "duration \(imageView.animationDuration)",
+            "animating \(imageView.isAnimating)",
+            "image \(imageView.image.map { "\($0.size) \($0.renderingMode.rawValue)" } ?? "none")",
+        ]
+        for key in imageView.layer.animationKeys() ?? [] {
+            guard let animation = imageView.layer.animation(forKey: key) else { continue }
+            var part =
+                "\(key): \(type(of: animation)) begin \(animation.beginTime) duration "
+                + "\(animation.duration) repeat \(animation.repeatCount) "
+                + "fill \(animation.fillMode.rawValue)"
+            if let frames = animation as? CAKeyframeAnimation {
+                part += " values \(frames.values?.count ?? -1)"
+                part += " mode \(frames.calculationMode.rawValue)"
+            }
+            parts.append(part)
+        }
+        return parts.joined(separator: "; ")
+    }
+
+    private static func imageViews(in view: UIView) -> [UIImageView] {
+        view.subviews.flatMap { subview in
+            ((subview as? UIImageView).map { [$0] } ?? []) + imageViews(in: subview)
+        }
     }
 
     private static func keys(_ layer: CALayer) -> [String] {
