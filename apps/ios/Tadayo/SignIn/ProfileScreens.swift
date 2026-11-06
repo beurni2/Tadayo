@@ -42,12 +42,25 @@ struct AgeScreen: View {
                     } label: {
                         Image(systemName: "chevron.backward")
                     }
+                    .modifier(SystemBackColour())
                     .accessibilityLabel(Text("auth.age.leave"))
                 }
             }
             .announcing(model.failure?.words)
         }
         .tint(Palette.action)
+    }
+}
+
+/// The colour of the system's own back button, for the chevron that stands in for it: the tint
+/// before iOS 26, the label's colour on iOS 26's glass (T45), as A02-code's back button is.
+private struct SystemBackColour: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content.tint(.primary)
+        } else {
+            content
+        }
     }
 }
 

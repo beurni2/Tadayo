@@ -94,8 +94,8 @@ struct CodeScreen: View {
         SetupScroll {
             SetupHeading(
                 title: "auth.code.title",
-                subtitle: Text(
-                    verbatim: String(format: String(localized: "auth.code.sentTo"), model.address)))
+                subtitle: Text(verbatim: sentTo(breakable(model.address)))
+                    .accessibilityLabel(Text(verbatim: sentTo(model.address))))
             LabelledField(
                 Text("auth.code.label"), isFocused: focus ?? focused,
                 isInvalid: model.failure == .codeNotVerified
@@ -138,6 +138,19 @@ struct CodeScreen: View {
         .announcing(model.failure?.words)
         .announcing(
             model.canResend ? String(localized: "auth.code.resend") : nil, politely: true)
+    }
+
+    /// FQ68's line, "Sent to ben@example.com".
+    private func sentTo(_ address: String) -> String {
+        String(format: String(localized: "auth.code.sentTo"), address)
+    }
+
+    /// The address with a break allowed after its "@" and each dot (a zero-width space), so at
+    /// the largest text it wraps there, not inside a word: "ben@example." over "com", not
+    /// "ben@example.co" over "m". VoiceOver reads the address as it is.
+    private func breakable(_ address: String) -> String {
+        address.replacingOccurrences(of: "@", with: "@\u{200B}")
+            .replacingOccurrences(of: ".", with: ".\u{200B}")
     }
 
     /// Two `metadata` lines reserved under the field, so a failure never moves what's below it

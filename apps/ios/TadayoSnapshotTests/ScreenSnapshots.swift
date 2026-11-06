@@ -4,15 +4,17 @@ import TadayoCore
 import TadayoDesign
 import XCTest
 
-/// A screen as the renders draw it: 393 by 852 points, at 2x like the renders, in sRGB, in light,
-/// in dark, and at the largest accessibility text size (docs/TECH-DESIGN.md section 2). The
-/// keyboard and the status bar aren't drawn (T45): a field shows its focus itself.
+/// A screen as the simulator's phone shows it, at 2x like the renders, in sRGB, in light, in dark,
+/// and at the largest accessibility text size (docs/TECH-DESIGN.md section 2). The keyboard and
+/// the status bar aren't drawn (T45): a field shows its focus itself.
 ///
 /// It's drawn in the host app's key window, as the screen shows it (`drawHierarchy`), since
 /// iOS 26's bars draw their title and buttons through effects a layer render leaves out: their
-/// title came out white on the light canvas, and a toolbar button not at all. So the safe areas
-/// are the simulator phone's own. The window's animations stand still while it's drawn, so the
-/// busy button's spinner is the same in every run.
+/// title came out white on the light canvas, and a toolbar button not at all. A window there
+/// takes its safe areas from the screen, so the snapshot is the screen's size (402 by 874 on the
+/// `ios` workflow's iPhone 17, with 62 and 34), not the renders' 393 by 852: a window of that size
+/// got a 12-point bottom inset. The window's layer time stands still while it's drawn, so an
+/// animation is drawn at its start.
 ///
 /// The `-xl` snapshot is a phone tall enough to hold the whole screen at that size, since at
 /// AX5 the content scrolls: what would scroll is laid out down the image, with the pinned
@@ -40,10 +42,12 @@ enum ScreenSnapshot {
             })
         }
 
-        func config(xlHeight: CGFloat) -> ViewImageConfig {
+        /// The screen's size, or as tall as `xlHeight` at the largest text. The safe areas are
+        /// the window's own (above), so none is given here.
+        func config(screen: CGSize, xlHeight: CGFloat) -> ViewImageConfig {
             ViewImageConfig(
-                safeArea: UIEdgeInsets(top: 59, left: 0, bottom: 34, right: 0),
-                size: CGSize(width: 393, height: self == .xl ? xlHeight : 852),
+                safeArea: .zero,
+                size: CGSize(width: screen.width, height: self == .xl ? xlHeight : screen.height),
                 traits: traits)
         }
     }
@@ -60,16 +64,20 @@ enum ScreenSnapshot {
                 .environment(\.colorScheme, variant == .dark ? .dark : .light)
                 .environment(\.dynamicTypeSize, variant == .xl ? .accessibility5 : .large)
                 .environment(\.locale, Locale(identifier: "en_US"))
-            let window = keyWindow
-            let speed = window?.layer.speed ?? 1
-            window?.layer.speed = 0
-            defer { window?.layer.speed = speed }
+            guard let window = keyWindow, let screen = window.windowScene?.screen.bounds.size
+            else {
+                XCTFail("no key window to draw in", file: file, line: line)
+                return
+            }
+            let (speed, offset) = (window.layer.speed, window.layer.timeOffset)
+            (window.layer.speed, window.layer.timeOffset) = (0, 0)
+            defer { (window.layer.speed, window.layer.timeOffset) = (speed, offset) }
             assertSnapshot(
                 of: shown,
                 as: .image(
                     drawHierarchyInKeyWindow: true,
                     perceptualPrecision: 0.98,
-                    layout: .device(config: variant.config(xlHeight: xlHeight)),
+                    layout: .device(config: variant.config(screen: screen, xlHeight: xlHeight)),
                     traits: variant.traits),
                 named: state + variant.suffix, file: file, testName: testName, line: line)
         }
