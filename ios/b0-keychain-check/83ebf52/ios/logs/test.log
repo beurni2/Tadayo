@@ -1,0 +1,56 @@
++ xcodebuild test-without-building -project apps/ios/Tadayo.xcodeproj -scheme Tadayo -destination platform=iOS Simulator,id=062CFAA4-9ACF-40ED-A1E2-3625F5ED4DA9 -derivedDataPath /Users/runner/work/_temp/DerivedData -resultBundlePath /Users/runner/work/_temp/ios-out/Tests.xcresult -skipPackagePluginValidation
+Command line invocation:
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/xcodebuild test-without-building -project apps/ios/Tadayo.xcodeproj -scheme Tadayo -destination "platform=iOS Simulator,id=062CFAA4-9ACF-40ED-A1E2-3625F5ED4DA9" -derivedDataPath /Users/runner/work/_temp/DerivedData -resultBundlePath /Users/runner/work/_temp/ios-out/Tests.xcresult -skipPackagePluginValidation
+
+Resolve Package Graph
+
+
+Resolved source packages:
+  TadayoCore: /Users/runner/work/Tadayo/Tadayo/packages/swift/TadayoCore
+  swift-custom-dump: https://github.com/pointfreeco/swift-custom-dump @ 1.7.3
+  swift-snapshot-testing: https://github.com/pointfreeco/swift-snapshot-testing @ 1.19.7
+  TadayoDesign: /Users/runner/work/Tadayo/Tadayo/packages/swift/TadayoDesign
+  xctest-dynamic-overlay: https://github.com/pointfreeco/xctest-dynamic-overlay @ 1.13.1
+  swift-syntax: https://github.com/swiftlang/swift-syntax @ 604.0.0
+
+Writing result bundle at path:
+	/Users/runner/work/_temp/ios-out/Tests.xcresult
+
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:iOS Simulator, arch:arm64, id:062CFAA4-9ACF-40ED-A1E2-3625F5ED4DA9, OS:26.5, name:iPhone 17 }
+{ platform:iOS Simulator, arch:x86_64, id:062CFAA4-9ACF-40ED-A1E2-3625F5ED4DA9, OS:26.5, name:iPhone 17 }
+Test Suite 'All tests' started at 2026-11-06 05:33:48.359.
+Test Suite 'TadayoSnapshotTests.xctest' started at 2026-11-06 05:33:48.359.
+Test Suite 'KeychainGroupCheckTests' started at 2026-11-06 05:33:48.359.
+Test Case '-[TadayoSnapshotTests.KeychainGroupCheckTests testAnItemInTheGroupRoundTrips]' started.
+keychain-check: SecItemAdd in group.app.tadayo = 0 (No error.)
+keychain-check: SecItemCopyMatching = 0, access group group.app.tadayo
+keychain-check: SecItemDelete = 0
+Test Case '-[TadayoSnapshotTests.KeychainGroupCheckTests testAnItemInTheGroupRoundTrips]' passed (0.011 seconds).
+Test Case '-[TadayoSnapshotTests.KeychainGroupCheckTests testTheAppGroupsContainerExists]' started.
+keychain-check: containerURL(group.app.tadayo) = /Users/runner/Library/Developer/CoreSimulator/Devices/062CFAA4-9ACF-40ED-A1E2-3625F5ED4DA9/data/Containers/Shared/AppGroup/7A32864E-5076-40A0-A667-AB3B8BC71D1E
+Test Case '-[TadayoSnapshotTests.KeychainGroupCheckTests testTheAppGroupsContainerExists]' passed (0.003 seconds).
+Test Case '-[TadayoSnapshotTests.KeychainGroupCheckTests testTheShareExtensionCarriesTheGroup]' started.
+keychain-check: TadayoShare carries the key: true, the group: true
+Test Case '-[TadayoSnapshotTests.KeychainGroupCheckTests testTheShareExtensionCarriesTheGroup]' passed (0.036 seconds).
+Test Suite 'KeychainGroupCheckTests' passed at 2026-11-06 05:33:48.411.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.050 (0.052) seconds
+Test Suite 'LabSnapshotTests' started at 2026-11-06 05:33:48.412.
+Test Case '-[TadayoSnapshotTests.LabSnapshotTests testLabSections]' started.
+Test Case '-[TadayoSnapshotTests.LabSnapshotTests testLabSections]' passed (1.688 seconds).
+Test Suite 'LabSnapshotTests' passed at 2026-11-06 05:33:50.100.
+	 Executed 1 test, with 0 failures (0 unexpected) in 1.688 (1.689) seconds
+Test Suite 'TadayoSnapshotTests.xctest' passed at 2026-11-06 05:33:50.101.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 1.738 (1.741) seconds
+Test Suite 'All tests' passed at 2026-11-06 05:33:50.101.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 1.738 (1.742) seconds
+2026-11-06 05:33:50.527 xcodebuild[7452:27872] [MT] IDETestOperationsObserverDebug: 14.749 elapsed -- Testing started completed.
+2026-11-06 05:33:50.527 xcodebuild[7452:27872] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-06 05:33:50.527 xcodebuild[7452:27872] [MT] IDETestOperationsObserverDebug: 14.749 sec, +14.749 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/_temp/ios-out/Tests.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started
