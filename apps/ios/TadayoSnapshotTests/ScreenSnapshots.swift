@@ -13,9 +13,8 @@ import XCTest
 /// title came out white on the light canvas, and a toolbar button not at all. A window there
 /// takes its safe areas from the screen: the top is the simulator iPhone 17's 62 (the frames'
 /// phone has 59), and the bottom, which a window shorter than the 874-point screen loses, is
-/// made the frames' 34 (`FramedHost`). A window the screen's own size drew the bar 52 points
-/// above where it laid it out. The window's layer time stands still while it's drawn, so an
-/// animation is drawn at its start.
+/// made the frames' 34 (`FramedHost`). The window is held still while it's drawn
+/// (`StillWindow`).
 ///
 /// The `-xl` snapshot is a phone tall enough to hold the whole screen at that size, since at
 /// AX5 the content scrolls: what would scroll is laid out down the image, with the pinned
@@ -68,9 +67,8 @@ enum ScreenSnapshot {
                 XCTFail("no key window to draw in", file: file, line: line)
                 return
             }
-            let (speed, offset) = (window.layer.speed, window.layer.timeOffset)
-            (window.layer.speed, window.layer.timeOffset) = (0, 0)
-            defer { (window.layer.speed, window.layer.timeOffset) = (speed, offset) }
+            let still = StillWindow(window)
+            defer { still.restore() }
             assertSnapshot(
                 of: FramedHost(rootView: shown) as UIViewController,
                 as: .image(
@@ -83,7 +81,7 @@ enum ScreenSnapshot {
     }
 
     /// The host app's key window, which the snapshot draws in.
-    private static var keyWindow: UIWindow? {
+    static var keyWindow: UIWindow? {
         UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
             .flatMap { $0.windows }
@@ -102,6 +100,30 @@ enum ScreenSnapshot {
             RunLoop.main.run(until: Date().addingTimeInterval(0.01))
         }
         XCTAssertTrue(condition(), "the state wasn't reached", file: file, line: line)
+    }
+}
+
+/// The key window held still while a snapshot is drawn: UIKit's own animations off, so a bar
+/// lays out where it ends rather than gliding there, and the layer's time stopped at 0, so an
+/// animation that runs on its own, such as the busy spinner, is drawn at its start.
+struct StillWindow {
+    private let window: UIWindow
+    private let speed: Float
+    private let offset: CFTimeInterval
+    private let animated: Bool
+
+    init(_ window: UIWindow, freeze: Bool = true, animations: Bool = false) {
+        self.window = window
+        (speed, offset, animated) = (
+            window.layer.speed, window.layer.timeOffset, UIView.areAnimationsEnabled
+        )
+        UIView.setAnimationsEnabled(animations)
+        if freeze { (window.layer.speed, window.layer.timeOffset) = (0, 0) }
+    }
+
+    func restore() {
+        (window.layer.speed, window.layer.timeOffset) = (speed, offset)
+        UIView.setAnimationsEnabled(animated)
     }
 }
 
