@@ -30,10 +30,15 @@ const compareWall = (a: Temporal.PlainDateTime, b: Temporal.PlainDateTime) => Te
  * refuses: FQ19) that Temporal can resolve. The contract's own check uses Intl, which also takes
  * old abbreviations such as BST, PST and IST that Temporal refuses, so the command that makes a
  * club stores what this returns, in one spelling ("europe/london" becomes "Europe/London").
+ * Temporal also reads a string that starts with T as an ISO time and takes its offset or its
+ * bracketed zone ("T07+05" gives +05:00, "T07:00[Europe/London]" Europe/London), so the name it
+ * resolves must be the one given, apart from case, and not an offset.
  */
 export function clubTimeZone(zone: string): string {
-  if (!/^[A-Za-z]/.test(zone)) throw new RangeError(`time: ${zone} isn't an IANA time zone (T2, FQ19)`);
-  return Temporal.PlainDate.from("2026-01-01").toZonedDateTime(zone).timeZoneId;
+  const refused = () => new RangeError(`time: ${zone} isn't an IANA time zone (T2, FQ19)`);
+  const id = Temporal.PlainDate.from("2026-01-01").toZonedDateTime(zone).timeZoneId;
+  if (id.toLowerCase() !== zone.toLowerCase() || /^[+-]/.test(id)) throw refused();
+  return id;
 }
 
 /** The instant a wall time names in an IANA zone, by spec 05's two rules. */

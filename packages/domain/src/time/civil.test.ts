@@ -237,10 +237,13 @@ function sweep(zone: string, from: string, until: string): Sweep {
     ] as const) {
       const local = instant.toZonedDateTimeISO(zone);
       if (Temporal.PlainDateTime.compare(local.toPlainDateTime(), wall) === 0) {
-        // On its wall time. If that wall time also comes round again later, this is the first.
+        // On its wall time, and the first time the wall shows it: a nanosecond earlier the wall
+        // is before it. If the wall time comes round again later, that is a doubled time.
         const again = wall.toZonedDateTime(zone, { disambiguation: "later" }).toInstant();
         if (!again.equals(instant)) found.doubled += 1;
         expect(Temporal.Instant.compare(instant, again), wall.toString()).toBeLessThanOrEqual(0);
+        const justBefore = instant.subtract({ nanoseconds: 1 }).toZonedDateTimeISO(zone);
+        expect(Temporal.PlainDateTime.compare(justBefore.toPlainDateTime(), wall), wall.toString()).toBe(-1);
       } else {
         // Missing: the instant the clocks jumped over it, the first after it on the wall.
         found.missing += 1;
@@ -307,7 +310,18 @@ describe("every date of a year, each instant checked by the two rules", () => {
 
 describe("the club's zone (T2, FQ19)", () => {
   it("is an IANA name: never a bare offset, which has no clock changes and which the contract refuses", () => {
-    for (const zone of ["+05:00", "-03:30", "+0530"]) {
+    // Temporal reads a string that starts with T as an ISO time: an offset or a bracketed zone in it
+    // isn't a zone's name.
+    for (const zone of [
+      "+05:00",
+      "-03:30",
+      "+0530",
+      "T07+05",
+      "T07:00+05:00",
+      "t0000-0330",
+      "T07-00",
+      "T07:00[Europe/London]",
+    ]) {
       expect(() => clubTimeZone(zone), zone).toThrow(/IANA/);
       expect(() => dayInstants(date("2026-11-13"), zone), zone).toThrow(/IANA/);
     }

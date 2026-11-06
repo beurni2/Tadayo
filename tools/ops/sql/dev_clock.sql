@@ -13,36 +13,43 @@
 -- nothing granted. Whoever runs this file owns what it makes, so it refuses any role but
 -- `tadayo_app`: made by another, the table would be one the API can't read and its function one
 -- that PUBLIC could run.
-DO $$
+--
+-- The triggers refuse any change to the row that moves the clock back. They don't stop the
+-- table's owner, `tadayo_app`, from dropping the table or a trigger by hand; `dev-clock` never
+-- does, and `dev`'s API checks at startup that the table is as this file makes it.
+--
+-- The file is one statement, so it all happens or none of it does, however it's run. Written as
+-- several, psql for one would run each on its own and go on past a failed role check.
+DO $file$
 BEGIN
   IF current_user <> 'tadayo_app' THEN
     RAISE EXCEPTION 'app.dev_clock is made as tadayo_app, which then owns it (T53), not as %', current_user
       USING ERRCODE = 'insufficient_privilege';
   END IF;
-END
-$$;
 
-CREATE TABLE app.dev_clock (
-  only_row boolean PRIMARY KEY DEFAULT true CHECK (only_row),
-  offset_microseconds bigint NOT NULL CHECK (offset_microseconds >= 0)
-);
-ALTER TABLE app.dev_clock ENABLE ROW LEVEL SECURITY;
+  CREATE TABLE app.dev_clock (
+    only_row boolean PRIMARY KEY DEFAULT true CHECK (only_row),
+    offset_microseconds bigint NOT NULL CHECK (offset_microseconds >= 0)
+  );
+  ALTER TABLE app.dev_clock ENABLE ROW LEVEL SECURITY;
 
-CREATE FUNCTION app.dev_clock_forward() RETURNS trigger
-  LANGUAGE plpgsql SET search_path = '' AS $$
-BEGIN
-  IF NEW.offset_microseconds < OLD.offset_microseconds THEN
-    RAISE EXCEPTION 'app.dev_clock: % microseconds ahead would move the clock back from % (T3)',
-      NEW.offset_microseconds, OLD.offset_microseconds
-      USING ERRCODE = 'integrity_constraint_violation';
-  END IF;
-  RETURN NEW;
+  CREATE FUNCTION app.dev_clock_forward() RETURNS trigger
+    LANGUAGE plpgsql SET search_path = '' AS $fn$
+  BEGIN
+    IF NEW.offset_microseconds < OLD.offset_microseconds THEN
+      RAISE EXCEPTION 'app.dev_clock: % microseconds ahead would move the clock back from % (T3)',
+        NEW.offset_microseconds, OLD.offset_microseconds
+        USING ERRCODE = 'integrity_constraint_violation';
+    END IF;
+    RETURN NEW;
+  END
+  $fn$;
+  REVOKE EXECUTE ON FUNCTION app.dev_clock_forward() FROM PUBLIC;
+  CREATE TRIGGER dev_clock_forward BEFORE UPDATE ON app.dev_clock
+    FOR EACH ROW EXECUTE FUNCTION app.dev_clock_forward();
+  CREATE TRIGGER dev_clock_kept BEFORE DELETE ON app.dev_clock
+    FOR EACH ROW EXECUTE FUNCTION app.refuse_change('the dev clock never moves back (T3)');
+  CREATE TRIGGER dev_clock_no_truncate BEFORE TRUNCATE ON app.dev_clock
+    FOR EACH STATEMENT EXECUTE FUNCTION app.refuse_change('the dev clock never moves back (T3)');
 END
-$$;
-REVOKE EXECUTE ON FUNCTION app.dev_clock_forward() FROM PUBLIC;
-CREATE TRIGGER dev_clock_forward BEFORE UPDATE ON app.dev_clock
-  FOR EACH ROW EXECUTE FUNCTION app.dev_clock_forward();
-CREATE TRIGGER dev_clock_kept BEFORE DELETE ON app.dev_clock
-  FOR EACH ROW EXECUTE FUNCTION app.refuse_change('the dev clock never moves back (T3)');
-CREATE TRIGGER dev_clock_no_truncate BEFORE TRUNCATE ON app.dev_clock
-  FOR EACH STATEMENT EXECUTE FUNCTION app.refuse_change('the dev clock never moves back (T3)');
+$file$;

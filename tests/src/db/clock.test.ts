@@ -6,6 +6,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { dayInstants, prepareClock } from "@tadayo/domain";
+import { fakeClock } from "@tadayo/domain/testing";
 import { closedProblems } from "@tadayo/ops";
 import { afterAll, describe, expect, it } from "vitest";
 import { adminSql, appSql, commandSql, expectRefused, REFUSED, rolledBack, type Tx } from "./harness.ts";
@@ -25,10 +26,14 @@ const micro = (instant: Temporal.Instant) => instant.epochNanoseconds / 1000n;
 /** An instant as the tests' world takes one, a Date, to the millisecond, rounded down. */
 const date = (instant: Temporal.Instant) => new Date(instant.epochMilliseconds);
 
-/** Postgres's own clock_timestamp(), in epoch microseconds, read here as the tests' reference. */
+/**
+ * Postgres's own clock_timestamp(), in epoch microseconds, read here as the tests' reference. Its
+ * operator is pg_catalog's by name, as the clocks' are, so an operator a test plants can't move it.
+ */
 async function postgresNow(tx: Tx): Promise<bigint> {
   const [row] = await tx<{ us: string }[]>`
-    SELECT (extract(epoch FROM pg_catalog.clock_timestamp()) * 1000000)::bigint::text AS us`;
+    SELECT (extract(epoch FROM pg_catalog.clock_timestamp()) OPERATOR(pg_catalog.*) 1000000)
+             ::pg_catalog.int8::pg_catalog.text AS us`;
   if (!row) throw new Error("no clock_timestamp()");
   return BigInt(row.us);
 }
@@ -115,8 +120,8 @@ describe("the server's clock (ADR-013)", () => {
           expect(row?.at.equals(sample)).toBe(true);
           expect(BigInt(row?.us ?? "0")).toBe(micro(sample));
         }
-        // Only an instant from the time module: never a Date or a string (T1).
-        const refused = /takes a Temporal\.Instant from the time module/;
+        // Only a Temporal.Instant, never a Date or a string, which would lose its microseconds.
+        const refused = /takes a Temporal\.Instant, not/;
         await expect(tx.savepoint((sp) => sp`SELECT ${new Date(0)}::timestamptz`)).rejects.toThrow(refused);
         await expect(tx.savepoint((sp) => sp`SELECT ${"1970-01-01T00:00:00Z"}::timestamptz`)).rejects.toThrow(refused);
       });
@@ -130,6 +135,54 @@ describe("the server's clock (ADR-013)", () => {
       SELECT (extract(epoch FROM ${"2026-11-13T06:59:59.999999Z"}::timestamptz) * 1000000)::bigint::text AS us`;
     expect(row?.us).toBe("1794553199999000");
   });
+
+  it("can't be moved by an operator planted on the role's search path, on prod or on dev", async () => {
+    const admin = adminSql();
+    try {
+      await rolledBack(admin, async (tx) => {
+        // pg_catalog has no *(numeric, integer), so this one would be an exact match for an
+        // unqualified `extract(epoch FROM ...) * 1000000`, wherever public sits in the path.
+        await tx`
+          CREATE FUNCTION public.a_day_ahead(numeric, integer) RETURNS numeric
+            LANGUAGE sql IMMUTABLE AS 'SELECT $1 * $2::numeric + 86400000000'`;
+        await tx`
+          CREATE OPERATOR public.* (LEFTARG = numeric, RIGHTARG = integer, FUNCTION = public.a_day_ahead)`;
+        await tx`SET LOCAL ROLE tadayo_app`;
+        const [planted] = await tx<{ ahead: boolean }[]>`
+          SELECT (extract(epoch FROM pg_catalog.clock_timestamp()) * 1000000)
+                   OPERATOR(pg_catalog.-) (extract(epoch FROM pg_catalog.clock_timestamp()) OPERATOR(pg_catalog.*) 1000000)
+                   OPERATOR(pg_catalog.>) 86000000000 AS ahead`;
+        expect(planted?.ahead, "the planted operator moves an unqualified sample").toBe(true);
+
+        const prod = await prepareClock("prod", tx);
+        const onProd = await bracketed(tx, () => prod.sample(tx));
+        expect(onProd.at).toBeGreaterThanOrEqual(onProd.before);
+        expect(onProd.at).toBeLessThanOrEqual(onProd.after);
+        await tx.unsafe(DEV_CLOCK);
+        const dev = await prepareClock("dev", tx);
+        const onDev = await bracketed(tx, () => dev.sample(tx));
+        expect(onDev.at).toBeGreaterThanOrEqual(onDev.before);
+        expect(onDev.at).toBeLessThanOrEqual(onDev.after);
+      });
+    } finally {
+      await admin.end();
+    }
+  });
+});
+
+describe("the tests' fake clock, from @tadayo/domain/testing (TECH-DESIGN section 8)", () => {
+  it("gives its own time under READ COMMITTED, and refuses the other levels, as the real clocks do", async () => {
+    const clock = fakeClock("2026-11-13T06:59:59.999999Z");
+    await rolledBack(app, async (tx) => {
+      expect((await clock.sample(tx)).toString()).toBe("2026-11-13T06:59:59.999999Z");
+    });
+    for (const isolation of ["REPEATABLE READ", "SERIALIZABLE"]) {
+      await rolledBack(app, async (tx) => {
+        await tx.unsafe(`SET TRANSACTION ISOLATION LEVEL ${isolation}`);
+        await expect(clock.sample(tx), isolation).rejects.toThrow(/READ COMMITTED/);
+      });
+    }
+  });
 });
 
 describe("the dev clock, only on dev (ADR-013)", () => {
@@ -142,6 +195,14 @@ describe("the dev clock, only on dev (ADR-013)", () => {
 
   it("refuses to start dev on a database that hasn't", async () => {
     await expect(prepareClock("dev", app)).rejects.toThrow(/app\.dev_clock/);
+  });
+
+  it("is made by one statement, so a refusal leaves nothing behind however the file is run", () => {
+    const code = DEV_CLOCK.split("\n")
+      .filter((line) => !line.startsWith("--"))
+      .join("\n");
+    expect(code).toMatch(/^DO \$file\$\n[\s\S]*\n\$file\$;\n$/);
+    expect(code.split("$file$")).toHaveLength(3);
   });
 
   it("is made only as tadayo_app, which then owns it, with nothing PUBLIC can run (T53)", async () => {
@@ -171,7 +232,47 @@ describe("the dev clock, only on dev (ADR-013)", () => {
     });
   });
 
-  it("adds its offset on dev, to the microsecond, and nothing with no row", async () => {
+  it("refuses to start dev on a table another role owns, whose row-level security would hide the offset", async () => {
+    const admin = adminSql();
+    try {
+      await rolledBack(admin, async (tx) => {
+        // The file's table, whole, then given to another role that lets tadayo_app read it.
+        await tx`SET LOCAL ROLE tadayo_app`;
+        await tx.unsafe(DEV_CLOCK);
+        await tx`RESET ROLE`;
+        await tx`ALTER TABLE app.dev_clock OWNER TO supabase_admin`;
+        await tx`INSERT INTO app.dev_clock (offset_microseconds) VALUES (86400000000)`;
+        await tx`GRANT SELECT ON app.dev_clock TO tadayo_app`;
+        await tx`SET LOCAL ROLE tadayo_app`;
+        const [seen] = await tx<
+          { rows: string }[]
+        >`SELECT pg_catalog.count(*)::pg_catalog.text AS rows FROM app.dev_clock`;
+        expect(seen?.rows, "the row is there, and hidden from tadayo_app").toBe("0");
+        await expect(prepareClock("dev", tx)).rejects.toThrow(/as tools\/ops\/sql\/dev_clock\.sql makes it/);
+      });
+    } finally {
+      await admin.end();
+    }
+  });
+
+  it("refuses to start dev on a table with a trigger off or gone, row-level security off or forced, or a view in its place", async () => {
+    for (const change of [
+      "ALTER TABLE app.dev_clock DISABLE TRIGGER dev_clock_forward",
+      "ALTER TABLE app.dev_clock ENABLE REPLICA TRIGGER dev_clock_kept",
+      "DROP TRIGGER dev_clock_no_truncate ON app.dev_clock",
+      "ALTER TABLE app.dev_clock DISABLE ROW LEVEL SECURITY",
+      "ALTER TABLE app.dev_clock FORCE ROW LEVEL SECURITY",
+      "DROP TABLE app.dev_clock CASCADE; CREATE VIEW app.dev_clock AS SELECT 0::bigint AS offset_microseconds",
+    ]) {
+      await rolledBack(app, async (tx) => {
+        await tx.unsafe(DEV_CLOCK);
+        await tx.unsafe(change);
+        await expect(prepareClock("dev", tx), change).rejects.toThrow(/as tools\/ops\/sql\/dev_clock\.sql makes it/);
+      });
+    }
+  });
+
+  it("adds its offset on dev, its part of a second kept, and nothing with no row", async () => {
     await rolledBack(app, async (tx) => {
       await tx.unsafe(DEV_CLOCK);
       const clock = await prepareClock("dev", tx);
@@ -246,41 +347,77 @@ describe("the dev clock, only on dev (ADR-013)", () => {
 
 describe("the cutoff is the time after the occurrence's lock (T3, ADR-013), the database's half", () => {
   // The commit command (B2, docs/MILESTONES.md) takes the day's lock, then samples the clock. Here
-  // the dev clock stands 0.3 seconds before a day's 7 AM, the day's row is locked, and a wait
-  // stands for the lock wait: the sample after it is past the reveal, and the database refuses a
-  // drop committed then; the sample before it, the moment a clock read at the transaction's start
-  // would give, would have been let in.
-  it("refuses a drop whose commit waited past 07:00, which a sample from before the wait would have let in", async () => {
-    await rolledBack(app, async (tx) => {
-      await tx.unsafe(DEV_CLOCK);
-      const w = await newWorld(tx);
-      // Ben's Friday, far enough ahead that the dev clock only has to move forward to reach it.
-      const { revealAt, closeAt } = dayInstants(Temporal.PlainDate.from("2099-01-02"), "Europe/London");
-      const day = newId("occ");
-      await tx`
+  // the dev clock stands 0.3 seconds before a day's 7 AM, and the commit waits for a lock that
+  // another transaction holds past it. The day's row is made in this transaction, which rolls
+  // back, so no other can see it to lock it: an advisory lock stands for the day's. The sample
+  // after the wait is past the reveal, and the database refuses a drop committed then; the sample
+  // before it, the moment a clock read at the transaction's start would give, would have been let in.
+  it("refuses a drop whose commit waited for the lock past 07:00, which a sample from before the wait would have let in", async () => {
+    const other = appSql();
+    let holding: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      holding = resolve;
+    });
+    let queuing: (pid: number) => void = () => undefined;
+    const waiter = new Promise<number>((resolve) => {
+      queuing = resolve;
+    });
+    // The other transaction holds the lock until this one is queued for it, and half a second more.
+    const holder = rolledBack(other, async (hx) => {
+      await hx`SELECT pg_catalog.pg_advisory_xact_lock(5006)`;
+      holding();
+      const pid = await waiter;
+      for (let tries = 0; ; tries += 1) {
+        const [row] = await hx<{ queued: boolean }[]>`
+          SELECT EXISTS (SELECT FROM pg_catalog.pg_locks WHERE pid = ${pid} AND NOT granted) AS queued`;
+        if (row?.queued) break;
+        if (tries === 1000) throw new Error("the commit never queued for the lock");
+        await hx`SELECT pg_catalog.pg_sleep(0.01)`;
+      }
+      await hx`SELECT pg_catalog.pg_sleep(0.5)`;
+      return postgresNow(hx);
+    });
+    try {
+      await held;
+      await rolledBack(app, async (tx) => {
+        await tx.unsafe(DEV_CLOCK);
+        const w = await newWorld(tx);
+        // Ben's Friday, far enough ahead that the dev clock only has to move forward to reach it.
+        const { revealAt, closeAt } = dayInstants(Temporal.PlainDate.from("2099-01-02"), "Europe/London");
+        const day = newId("occ");
+        await tx`
         INSERT INTO app.occurrences (id, club_id, star_interval_id, schedule_version_id, local_date, reveal_at, close_at,
                                      collecting_from)
         VALUES (${day}, ${w.club}, ${w.ben.interval}, ${w.version}, '2099-01-02', ${date(revealAt)}, ${date(closeAt)},
                 ${AT.generated})`;
-      const offset = micro(revealAt) - (await postgresNow(tx)) - 300_000n;
-      await tx`INSERT INTO app.dev_clock (offset_microseconds) VALUES (${offset.toString()})`;
-      const clock = await prepareClock("dev", tx);
+        const clock = await prepareClock("dev", tx);
+        const offset = micro(revealAt) - (await postgresNow(tx)) - 300_000n;
+        await tx`INSERT INTO app.dev_clock (offset_microseconds) VALUES (${offset.toString()})`;
 
-      await tx`SELECT FROM app.occurrences WHERE id = ${day} FOR UPDATE`;
-      const before = await clock.sample(tx);
-      await tx`SELECT pg_catalog.pg_sleep(0.5)`;
-      const after = await clock.sample(tx);
-      expect(Temporal.Instant.compare(before, revealAt)).toBe(-1);
-      expect(Temporal.Instant.compare(after, revealAt)).toBe(1);
+        const before = await clock.sample(tx);
+        const [me] = await tx<{ pid: number }[]>`SELECT pg_catalog.pg_backend_pid() AS pid`;
+        if (!me) throw new Error("no backend");
+        queuing(me.pid);
+        await tx`SELECT pg_catalog.pg_advisory_xact_lock(5006)`;
+        const after = await clock.sample(tx);
+        const letGo = await holder;
+        expect(Temporal.Instant.compare(before, revealAt)).toBe(-1);
+        expect(micro(after) - offset, "sampled after the lock was let go").toBeGreaterThan(letGo);
+        expect(Temporal.Instant.compare(after, revealAt)).toBe(1);
 
-      const atDay = { ...w, day };
-      await expectRefused(
-        tx,
-        REFUSED.integrity,
-        (sp) => commitDrop(sp, atDay, w.cleo, { media: "external_video", at: date(after) }),
-        /before the reveal \(T3\)/,
-      );
-      await tx.savepoint((sp) => commitDrop(sp, atDay, w.cleo, { media: "external_video", at: date(before) }));
-    });
+        const atDay = { ...w, day };
+        await expectRefused(
+          tx,
+          REFUSED.integrity,
+          (sp) => commitDrop(sp, atDay, w.cleo, { media: "external_video", at: date(after) }),
+          /before the reveal \(T3\)/,
+        );
+        await tx.savepoint((sp) => commitDrop(sp, atDay, w.cleo, { media: "external_video", at: date(before) }));
+      });
+    } finally {
+      queuing(-1);
+      await holder.catch(() => undefined);
+      await other.end();
+    }
   });
 });

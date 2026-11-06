@@ -24,11 +24,16 @@ export function databaseInstant(instant: Temporal.Instant): string {
 
 /**
  * postgres.js's custom type for `timestamptz` (oid 1184): a Temporal.Instant both ways, to the
- * microsecond. It takes only an Instant, so every time written comes from the time module (T1).
- * Install it as `postgres(url, { types: { instant: INSTANT_TYPE } })`, on every connection the API
- * and the worker make. postgres.js picks it for a parameter Postgres knows to be a timestamptz, so
- * bind an instant where it is one: into a timestamptz column, against one, or as `${i}::timestamptz`.
- * Anywhere else an Instant fails loudly, since Temporal refuses to turn one into a string unasked.
+ * microsecond. It takes only a Temporal.Instant, never a Date or a string, which postgres.js's own
+ * type would cut to milliseconds; where an Instant came from is the caller's to keep right (T1:
+ * the clock's sample or a day's instants, never a client's time). Install it as
+ * `postgres(url, { types: { instant: INSTANT_TYPE } })`, on every connection the API and the
+ * worker make. postgres.js picks it for a parameter Postgres knows to be a timestamptz, so bind an
+ * instant where it is one: into a timestamptz column, against one, or as `${i}::timestamptz`. As a
+ * text parameter an Instant fails loudly, since Temporal refuses to turn one into a string unasked;
+ * inside a json or jsonb parameter postgres.js's JSON.stringify gives its ISO string, so a payload
+ * holds an instant as `databaseInstant` writes it. It reads Postgres's ISO output (the default
+ * DateStyle, and Supabase's) in any session TimeZone, and refuses anything else loudly.
  */
 export const INSTANT_TYPE: {
   readonly to: number;
@@ -42,12 +47,24 @@ export const INSTANT_TYPE: {
   from: [1184],
   serialize: (value: unknown) => {
     if (!(value instanceof Temporal.Instant)) {
-      throw new TypeError(`time: a timestamptz takes a Temporal.Instant from the time module, not ${typeof value}`);
+      throw new TypeError(
+        `time: a timestamptz takes a Temporal.Instant, not ${typeof value}, which postgres.js would cut to milliseconds`,
+      );
     }
     return databaseInstant(value);
   },
   // Postgres's ISO output, such as 2026-11-13 07:00:00.123456+00, which Temporal reads as it is.
-  parse: (text) => Temporal.Instant.from(text),
+  parse: (text) => {
+    try {
+      return Temporal.Instant.from(text);
+    } catch (error) {
+      throw new RangeError(
+        `time: Postgres sent ${JSON.stringify(text)} for a timestamptz, not an ISO instant: the connection needs ` +
+          "DateStyle ISO, and the time module takes no infinite instant",
+        { cause: error },
+      );
+    }
+  },
 };
 
 /**

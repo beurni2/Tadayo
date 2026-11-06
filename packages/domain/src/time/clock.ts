@@ -8,7 +8,8 @@
 //
 // `dev` adds the offset in `app.dev_clock`, so a gate can show the 7 AM reveal, the 1 AM close
 // and a cutoff race on demand. That table exists only on `dev` (tools/ops/sql/dev_clock.sql,
-// outside the numbered migrations, which run everywhere), and its offset only grows. `prod`'s clock
+// outside the numbered migrations, which run everywhere), and its offset only grows: its triggers
+// refuse any change to its row that would move it back. `prod`'s clock
 // has no offset in its query at all, and refuses to start on a database that has the table, so a
 // dev clock can't reveal anything in `prod`.
 //
@@ -17,8 +18,12 @@
 // it sees the offset as it is after the locks. Under REPEATABLE READ or SERIALIZABLE it would see
 // the offset as it was at the transaction's first statement, before a lock wait, and could put a
 // commit on the wrong side of 07:00 while a gate moves the clock. Both clocks refuse to sample
-// there, so a caller that breaks the rule fails in ci, against prod's clock, and not only on dev.
-// The tests' fake clock is in ./testing.ts, outside the package's main entry.
+// there, and so does the tests' fake clock (./testing.ts, outside the package's main entry), so a
+// command whose tests run against Postgres with any of the three fails in ci, not only on dev.
+//
+// The samples' SQL names every operator and type in pg_catalog: `extract` gives a numeric, and
+// pg_catalog has no `*` for a numeric and an integer, so an exact one in a schema on the search
+// path would otherwise win and move the clock.
 
 /** One query in the caller's transaction, as postgres.js runs a tagged template. */
 export type ClockSql = (
@@ -31,13 +36,17 @@ export interface Clock {
   sample(tx: ClockSql): Promise<Temporal.Instant>;
 }
 
-function sampled(rows: readonly Record<string, unknown>[]): Temporal.Instant {
-  const isolation = rows[0]?.["isolation"];
+/** Throws unless `isolation`, as Postgres's `transaction_isolation` names it, is READ COMMITTED. */
+export function requireReadCommitted(isolation: unknown): void {
   if (isolation !== "read committed") {
     throw new Error(
       `time: the clock is sampled under READ COMMITTED, so dev's offset is read after the locks, not ${String(isolation)}`,
     );
   }
+}
+
+function sampled(rows: readonly Record<string, unknown>[]): Temporal.Instant {
+  requireReadCommitted(rows[0]?.["isolation"]);
   const answer = rows[0]?.["now_us"];
   if (typeof answer !== "string" || !/^-?[0-9]{1,19}$/.test(answer)) {
     throw new Error(`time: the clock answered ${String(answer)}, not a whole number of microseconds`);
@@ -49,7 +58,8 @@ const PROD_CLOCK: Clock = {
   async sample(tx) {
     return sampled(
       await tx`
-        SELECT (extract(epoch FROM pg_catalog.clock_timestamp()) * 1000000)::bigint::text AS now_us,
+        SELECT (extract(epoch FROM pg_catalog.clock_timestamp()) OPERATOR(pg_catalog.*) 1000000)
+                 ::pg_catalog.int8::pg_catalog.text AS now_us,
                pg_catalog.current_setting('transaction_isolation') AS isolation`,
     );
   },
@@ -59,8 +69,9 @@ const DEV_CLOCK: Clock = {
   async sample(tx) {
     return sampled(
       await tx`
-        SELECT ((extract(epoch FROM pg_catalog.clock_timestamp()) * 1000000)::bigint
-                + coalesce((SELECT offset_microseconds FROM app.dev_clock), 0))::text AS now_us,
+        SELECT ((extract(epoch FROM pg_catalog.clock_timestamp()) OPERATOR(pg_catalog.*) 1000000)::pg_catalog.int8
+                OPERATOR(pg_catalog.+) coalesce((SELECT offset_microseconds FROM app.dev_clock), 0))
+                 ::pg_catalog.text AS now_us,
                pg_catalog.current_setting('transaction_isolation') AS isolation`,
     );
   },
@@ -69,8 +80,12 @@ const DEV_CLOCK: Clock = {
 /**
  * The clock of the environment the API or the worker runs in, `dev` or `prod`, once, at startup.
  * `prod` refuses a database that has a dev clock; `dev` refuses one that hasn't, or whose table
- * its role can't read. Any other value is refused, so a typo in the configuration, or a missing
- * one, can't pick `dev`: the caller passes the configuration's value as it is.
+ * isn't as tools/ops/sql/dev_clock.sql makes it, or that its role can't read. Any other value is
+ * refused, so a typo in the configuration, or a missing one, can't pick `dev`: the caller passes
+ * the configuration's value as it is. The checks guard against mistakes made on `dev`, such as a
+ * trigger disabled or the table made by another role. They don't read the trigger function's
+ * body, and the table's owner can still change the table by hand after startup, which
+ * `tools/ops`' `dev-clock` never does.
  */
 export async function prepareClock(environment: string, sql: ClockSql): Promise<Clock> {
   if (environment !== "dev" && environment !== "prod") {
@@ -88,8 +103,25 @@ export async function prepareClock(environment: string, sql: ClockSql): Promise<
   }
   if (!present)
     throw new Error("time: dev's clock reads app.dev_clock, which tools/ops/sql/dev_clock.sql makes (ADR-013)");
-  // The catalog shows the table whoever owns it; reading it once shows this role can, so a table
-  // made by the wrong role stops dev at startup rather than at its first request.
+  // As the file makes it: a table, not a view, owned by this role, so row-level security doesn't
+  // hide its row; row-level security on (T53), and not forced on the owner, which would hide it
+  // too; and the three triggers that keep it moving forward enabled. Then read once, so a privilege
+  // taken away stops dev now rather than at a request.
+  const shape = await sql`
+    SELECT c.relkind = 'r' AND c.relrowsecurity AND NOT c.relforcerowsecurity
+           AND c.relowner = (SELECT r.oid FROM pg_catalog.pg_roles r WHERE r.rolname = current_user)
+           AND (SELECT pg_catalog.count(*) FROM pg_catalog.pg_trigger t
+                 WHERE t.tgrelid = c.oid AND t.tgenabled IN ('O', 'A')
+                   AND t.tgname IN ('dev_clock_forward', 'dev_clock_kept', 'dev_clock_no_truncate'))
+               = 3::pg_catalog.int8 AS sound
+      FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+     WHERE n.nspname = 'app' AND c.relname = 'dev_clock'`;
+  if (shape[0]?.["sound"] !== true) {
+    throw new Error(
+      "time: dev's clock needs app.dev_clock as tools/ops/sql/dev_clock.sql makes it: a table this role owns, " +
+        "row-level security on and not forced, its three triggers enabled (ADR-013, T53)",
+    );
+  }
   try {
     await sql`SELECT offset_microseconds FROM app.dev_clock`;
   } catch (error) {

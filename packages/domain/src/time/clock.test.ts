@@ -9,21 +9,22 @@ import { contractInstant, databaseInstant, INSTANT_TYPE } from "./instant.ts";
 import { fakeClock } from "./testing.ts";
 
 /**
- * A transaction that answers the dev clock's check with `devClock`, the dev table's read with
- * `tableRead` (a refusal when it's an error), and every sample with `nowMicroseconds` under
- * `isolation`; it records every query.
+ * A transaction that answers the dev clock's check with `devClock` (no row when it's undefined),
+ * the dev table's shape with `sound`, its read with `tableRead` (a refusal when it's an error), and
+ * every sample with `nowMicroseconds` under `isolation`; it records every query.
  */
 function stub(
-  devClock: boolean,
+  devClock: boolean | undefined,
   nowMicroseconds = "1793948400123456",
   isolation = "read committed",
-  tableRead?: Error,
+  { tableRead, sound = true }: { tableRead?: Error; sound?: boolean } = {},
 ) {
   const queries: string[] = [];
   const sql: ClockSql = (template) => {
     const text = template.join("?");
     queries.push(text);
-    if (text.includes("pg_class")) return Promise.resolve([{ present: devClock }]);
+    if (text.includes("pg_trigger")) return Promise.resolve([{ sound }]);
+    if (text.includes("pg_class")) return Promise.resolve(devClock === undefined ? [] : [{ present: devClock }]);
     if (!text.includes("clock_timestamp")) {
       return tableRead ? Promise.reject(tableRead) : Promise.resolve([{ offset_microseconds: "0" }]);
     }
@@ -43,6 +44,19 @@ describe("prepareClock (ADR-013)", () => {
 
   it("refuses to start prod on a database that has a dev clock", async () => {
     await expect(prepareClock("prod", stub(true).sql)).rejects.toThrow(/prod refuses a dev clock/);
+  });
+
+  it("names every operator and type of the sample in pg_catalog, so the search path can't move the clock", async () => {
+    for (const environment of ["dev", "prod"] as const) {
+      const { sql, queries } = stub(environment === "dev");
+      const clock = await prepareClock(environment, sql);
+      queries.length = 0;
+      await clock.sample(sql);
+      const query = queries[0] ?? "";
+      expect(query, environment).toContain("OPERATOR(pg_catalog.*) 1000000");
+      expect(query.replace(/OPERATOR\(pg_catalog\.[*+]\)/g, ""), environment).not.toMatch(/[*+]/);
+      expect(query.replace(/::pg_catalog\.\w+/g, ""), environment).not.toMatch(/::/);
+    }
   });
 
   it("gives prod a clock whose query has no offset in it and never names the dev clock", async () => {
@@ -69,13 +83,35 @@ describe("prepareClock (ADR-013)", () => {
     const { sql, queries } = stub(true);
     await prepareClock("dev", sql);
     expect(queries.some((query) => /SELECT offset_microseconds FROM app\.dev_clock/.test(query))).toBe(true);
-    const refused = stub(
-      true,
-      "1793948400123456",
-      "read committed",
-      new Error("permission denied for table dev_clock"),
-    );
+    const refused = stub(true, "1793948400123456", "read committed", {
+      tableRead: new Error("permission denied for table dev_clock"),
+    });
     await expect(prepareClock("dev", refused.sql)).rejects.toThrow(/can't read app\.dev_clock, which tadayo_app owns/);
+  });
+
+  it("refuses to start dev on a dev clock that isn't as its file makes it: a view, another owner, a trigger off", async () => {
+    const { sql, queries } = stub(true, "1793948400123456", "read committed", { sound: false });
+    await expect(prepareClock("dev", sql)).rejects.toThrow(/as tools\/ops\/sql\/dev_clock\.sql makes it/);
+    const shape = queries.find((query) => query.includes("pg_trigger")) ?? "";
+    for (const part of [
+      "relkind = 'r'",
+      "relrowsecurity",
+      "NOT c.relforcerowsecurity",
+      "relowner",
+      "current_user",
+      "tgenabled",
+    ]) {
+      expect(shape, part).toContain(part);
+    }
+    for (const trigger of ["dev_clock_forward", "dev_clock_kept", "dev_clock_no_truncate"]) {
+      expect(shape, trigger).toContain(`'${trigger}'`);
+    }
+  });
+
+  it("refuses to start when the dev clock's check gets no answer", async () => {
+    for (const environment of ["dev", "prod"]) {
+      await expect(prepareClock(environment, stub(undefined).sql), environment).rejects.toThrow(/got no answer/);
+    }
   });
 
   it("samples only under READ COMMITTED, where dev's offset is the one after the locks, on prod as on dev", async () => {
@@ -108,7 +144,14 @@ describe("prepareClock (ADR-013)", () => {
 });
 
 describe("fakeClock, the tests' clock (TECH-DESIGN section 8)", () => {
-  const noQuery: ClockSql = () => Promise.reject(new Error("the fake clock never queries"));
+  // A transaction that answers only the isolation level's question, with `isolation`.
+  const asking =
+    (isolation: string): ClockSql =>
+    (template) =>
+      template.join("?").includes("transaction_isolation")
+        ? Promise.resolve([{ isolation }])
+        : Promise.reject(new Error("the fake clock asks only for the isolation"));
+  const readCommitted = asking("read committed");
 
   it("isn't in the package's main entry, only in @tadayo/domain/testing", () => {
     expect(Object.keys(domain)).toContain("prepareClock");
@@ -117,12 +160,19 @@ describe("fakeClock, the tests' clock (TECH-DESIGN section 8)", () => {
 
   it("stands still until it's told to move", async () => {
     const clock = fakeClock("2026-11-13T06:59:59.999999Z");
-    expect((await clock.sample(noQuery)).toString()).toBe("2026-11-13T06:59:59.999999Z");
-    expect((await clock.sample(noQuery)).toString()).toBe("2026-11-13T06:59:59.999999Z");
+    expect((await clock.sample(readCommitted)).toString()).toBe("2026-11-13T06:59:59.999999Z");
+    expect((await clock.sample(readCommitted)).toString()).toBe("2026-11-13T06:59:59.999999Z");
     clock.advance({ microseconds: 1 });
-    expect((await clock.sample(noQuery)).toString()).toBe("2026-11-13T07:00:00Z");
+    expect((await clock.sample(readCommitted)).toString()).toBe("2026-11-13T07:00:00Z");
     clock.set(at("2026-11-14T01:00:00Z"));
-    expect((await clock.sample(noQuery)).toString()).toBe("2026-11-14T01:00:00Z");
+    expect((await clock.sample(readCommitted)).toString()).toBe("2026-11-14T01:00:00Z");
+  });
+
+  it("refuses to sample outside READ COMMITTED, as the real clocks do, so a command tested with it meets the rule", async () => {
+    const clock = fakeClock("2026-11-13T06:59:59.999999Z");
+    for (const isolation of ["repeatable read", "serializable", ""]) {
+      await expect(clock.sample(asking(isolation)), isolation).rejects.toThrow(/READ COMMITTED/);
+    }
   });
 
   it("keeps Postgres's precision, microseconds, so what a test compares is what the database stores", () => {
@@ -149,13 +199,22 @@ describe("an instant leaving the time module", () => {
     for (const value of [new Date("2026-11-13T07:00:00Z"), "2026-11-13T07:00:00Z", 1793948400000]) {
       // postgres.js hands the type every timestamptz parameter, whatever its type says.
       expect(() => INSTANT_TYPE.serialize(value as unknown as Temporal.Instant), String(value)).toThrow(
-        /takes a Temporal\.Instant from the time module/,
+        /takes a Temporal\.Instant, not/,
       );
     }
     // Postgres's ISO output, in whatever zone the session is in.
     expect(INSTANT_TYPE.parse("2026-11-13 06:59:59.999999+00").toString()).toBe("2026-11-13T06:59:59.999999Z");
     expect(INSTANT_TYPE.parse("2026-11-13 12:29:59.999999+05:30").toString()).toBe("2026-11-13T06:59:59.999999Z");
     expect(INSTANT_TYPE.parse("2026-11-13 07:00:00+00").toString()).toBe("2026-11-13T07:00:00Z");
+    // Anything else, loudly: another DateStyle's output, and the infinities.
+    for (const text of [
+      "11/13/2026 06:59:59.999999 UTC",
+      "Fri Nov 13 06:59:59.999999 2026 UTC",
+      "infinity",
+      "-infinity",
+    ]) {
+      expect(() => INSTANT_TYPE.parse(text), text).toThrow(/not an ISO instant: the connection needs DateStyle ISO/);
+    }
   });
 
   it("goes into the contract in whole seconds, rounded down, so server_now is never ahead of the server", () => {
