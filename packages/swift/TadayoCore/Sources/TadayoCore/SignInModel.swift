@@ -1,0 +1,189 @@
+import Foundation
+import Observation
+
+/// A02-email and A02-code (handoff 1, as handoff 2 corrected it; handoff 4's `failureStates`):
+/// an address, a six-digit code sent to it, and a new code no sooner than a minute after the last
+/// one the server accepted. Each request goes once at a time; a failure keeps what was typed.
+@MainActor @Observable public final class SignInModel {
+    public enum Step: Sendable, Equatable {
+        case email
+        case code
+    }
+
+    /// What went wrong, one line at a time; the app gives each its delivered words.
+    public enum Failure: Sendable, Equatable {
+        /// "Couldn’t send a code. Check your connection and try again."
+        case sendNetwork
+        /// "Couldn’t send a code. Try again." (`auth.firstSend.refused`)
+        case sendRefused
+        /// "Couldn’t verify the code. Check your connection and try again."
+        case verifyNetwork
+        /// `codeVerificationFailure`: Supabase answers a wrong code and an expired one alike.
+        case codeNotVerified
+        /// Supabase was busy or failing (429 or 5xx), so it said nothing about the code: the
+        /// same digits can be tried again. Its words are handoff 7's to give.
+        case verifyUnavailable
+        /// "Couldn’t send a new code. Check your connection and try again."
+        case resendNetwork
+        /// "Couldn’t send a new code. Try again." (`auth.resend.refused`)
+        case resendRefused
+    }
+
+    public static let codeLength = 6
+    /// Handoff 1: "no earlier than 60 seconds after a successful send". A wait for the screen
+    /// only: Supabase keeps its own (T1).
+    public static let resendWait: Duration = .seconds(60)
+
+    public private(set) var step = Step.email
+    public var email = ""
+    /// The address the last code went to, as A02-code shows it.
+    public private(set) var address = ""
+    public private(set) var failure: Failure?
+    public private(set) var isSending = false
+    public private(set) var isVerifying = false
+    public private(set) var isResending = false
+    /// The minute since the last successful send has passed: the resend row offers a new code.
+    public private(set) var canResend = false
+    /// When the resend row next changes, while A02-code waits; the view waits on it.
+    public private(set) var resendDue: ContinuousClock.Instant?
+
+    private var digits = ""
+
+    let auth: any AuthService
+    let verified: @MainActor (AuthSession) async -> Void
+    let now: @Sendable () -> ContinuousClock.Instant
+    let sleep: @Sendable (ContinuousClock.Instant) async throws -> Void
+
+    /// `verified` takes the session a code gave; `now` and `sleep` time the resend wait on the
+    /// continuous clock, which keeps counting while the phone sleeps.
+    public init(
+        auth: any AuthService,
+        verified: @escaping @MainActor (AuthSession) async -> Void,
+        now: @escaping @Sendable () -> ContinuousClock.Instant = { .now },
+        sleep: @escaping @Sendable (ContinuousClock.Instant) async throws -> Void = {
+            try await Task.sleep(until: $0, clock: .continuous)
+        }
+    ) {
+        self.auth = auth
+        self.verified = verified
+        self.now = now
+        self.sleep = sleep
+    }
+
+    /// The code as typed or pasted: ASCII digits only, at most six. Editing it clears a failed
+    /// verification's line; Verify code needs no edit to try the same six digits again.
+    public var code: String {
+        get { digits }
+        set {
+            let typed = String(
+                newValue.filter { $0.isASCII && $0.isWholeNumber }.prefix(Self.codeLength))
+            guard typed != digits else { return }
+            digits = typed
+            if [.codeNotVerified, .verifyNetwork, .verifyUnavailable].contains(failure) {
+                failure = nil
+            }
+        }
+    }
+
+    /// Send a code: a plausible address, and no request already on its way.
+    public var canSend: Bool { Self.isPlausible(email) && !isSending }
+
+    /// Verify code: six digits and nothing on its way. After a refused code it stays available,
+    /// with the digits kept, as handoff 2's A02-code-error has it: "Verify code remains enabled
+    /// for six digits because expiry is unknown."
+    public var canVerify: Bool {
+        digits.count == Self.codeLength && !isVerifying && !isResending
+    }
+
+    /// Asks for a code; A02-code comes only once the server accepts.
+    public func sendCode() async {
+        guard canSend else { return }
+        isSending = true
+        failure = nil
+        let address = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        do {
+            try await auth.sendCode(to: address)
+            codeWasSent(to: address)
+            step = .code
+        } catch .network {
+            failure = .sendNetwork
+        } catch {
+            failure = .sendRefused
+        }
+        isSending = false
+    }
+
+    /// Verifies the six digits, on an explicit tap only.
+    public func verify() async {
+        guard canVerify else { return }
+        isVerifying = true
+        failure = nil
+        let code = digits
+        do {
+            let session = try await auth.verify(email: address, code: code)
+            await verified(session)
+        } catch .network {
+            failure = .verifyNetwork
+        } catch .unavailable {
+            failure = .verifyUnavailable
+        } catch {
+            failure = .codeNotVerified
+        }
+        isVerifying = false
+    }
+
+    /// Sends a new code to the same address. A refusal keeps the digits and the row as they are.
+    public func resend() async {
+        guard canResend, !isResending, !isVerifying else { return }
+        isResending = true
+        failure = nil
+        do {
+            try await auth.sendCode(to: address)
+            codeWasSent(to: address)
+        } catch .network {
+            failure = .resendNetwork
+        } catch {
+            failure = .resendRefused
+        }
+        isResending = false
+    }
+
+    /// Change email address is offered while no code is being verified or sent: an answer that
+    /// came back on A02-email would belong to a screen no longer showing.
+    public var canChangeEmail: Bool { !isVerifying && !isResending }
+
+    /// Change email address: back to A02-email with the address as it was.
+    public func changeEmail() {
+        guard canChangeEmail else { return }
+        step = .email
+        failure = nil
+    }
+
+    /// Waits out the minute after the last successful send, then offers a new code. The view
+    /// runs it for each `resendDue`; cancelling it changes nothing.
+    public func waitForResend() async {
+        guard let due = resendDue else { return }
+        if now() < due { try? await sleep(due) }
+        guard resendDue == due, now() >= due else { return }
+        resendDue = nil
+        canResend = true
+    }
+
+    private func codeWasSent(to address: String) {
+        self.address = address
+        digits = ""
+        canResend = false
+        resendDue = now().advanced(by: Self.resendWait)
+    }
+
+    /// One `@`, something before it, and a dotted domain after it, with no space anywhere: enough
+    /// to catch a slip, leaving the rest to the server.
+    static func isPlausible(_ email: String) -> Bool {
+        let address = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard address.count <= 254, !address.contains(where: \.isWhitespace) else { return false }
+        let parts = address.split(separator: "@", omittingEmptySubsequences: false)
+        guard parts.count == 2, !parts[0].isEmpty else { return false }
+        let labels = parts[1].split(separator: ".", omittingEmptySubsequences: false)
+        return labels.count >= 2 && labels.allSatisfy { !$0.isEmpty }
+    }
+}

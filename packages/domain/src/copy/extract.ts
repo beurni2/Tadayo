@@ -10,19 +10,34 @@ export function isStringFile(path: string): boolean {
   return STRING_FILE_EXTENSIONS.some((ext) => path.endsWith(ext));
 }
 
+/** One piece of copy, with the catalog key it's a value of, in a string catalog; otherwise null. */
+export interface StringEntry {
+  readonly key: string | null;
+  readonly text: string;
+}
+
 export function extractStrings(path: string, content: string): string[] {
+  return extractEntries(path, content).map((entry) => entry.text);
+}
+
+export function extractEntries(path: string, content: string): StringEntry[] {
   if (path.endsWith(".xcstrings")) return fromXcstrings(content);
-  if (path.endsWith(".strings")) return fromStrings(content);
-  if (path.endsWith(".html")) return fromHtml(content);
+  const bare = (text: string): StringEntry => ({ key: null, text });
+  if (path.endsWith(".strings")) return fromStrings(content).map(bare);
+  if (path.endsWith(".html")) return fromHtml(content).map(bare);
   throw new Error(`The copy lint can't read ${path}: not a string file it knows`);
 }
 
-function fromXcstrings(content: string): string[] {
+// A catalog's key is copy too (Xcode often uses the English text as the key), so it is read
+// as an entry of its own, with no key; each of its values carries it.
+function fromXcstrings(content: string): StringEntry[] {
   const catalog = JSON.parse(content) as { strings?: Record<string, unknown> };
-  const out: string[] = [];
+  const out: StringEntry[] = [];
   for (const [key, entry] of Object.entries(catalog.strings ?? {})) {
-    out.push(key);
-    collectStringUnits(entry, out);
+    out.push({ key: null, text: key });
+    const values: string[] = [];
+    collectStringUnits(entry, values);
+    for (const text of values) out.push({ key, text });
   }
   return out;
 }
