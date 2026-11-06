@@ -358,6 +358,9 @@ Brought in with the handoffs (ADR-027). Their sources are in the project's files
     - Answered by the founder on 5 November 2026 at 05:58 UTC, on that card ("In the B0 build, what should buttons for later features do?": "Show them, doing nothing yet"): the default (ADR-029).
     - Default: each is drawn as designed and does nothing yet, with its accessibility label unchanged; the TestFlight notes list them. The screens then match the renders later stages build on, and nothing claims to work. Greying them out or hiding them changes the look only, so either is a small later change.
     - Needed by: B0 (slice 11's sign-in and tabs PRs).
+- **FQ86. What A02-code says when Supabase couldn't answer a code.** When Supabase limits the request ("too many requests", 429) or fails (5xx), its answer says nothing about the code, so neither the wrong-code line ("This code couldn’t be verified. Try again or send a new one.") nor "Check your connection" fits, since an answer came (`SignInModel.Failure.verifyUnavailable`). No delivery has words for it; design handoff 7's brief asks for them (item 13a). Raised by the ios lane in `ios/b0-sign-in` on 6 November 2026.
+    - Default: "Couldn’t verify the code. Try again.", built on handoff 4's two forms of every other sign-in failure (the network line ends "Check your connection and try again.", the refused one "Try again."), with the digits kept and Verify code available (`A02-code-verify-unavailable`, built from spec). Handoff 7's line replaces it when it arrives; a string in `apps/ios/Tadayo/Localizable.xcstrings` (`auth.error.verifyUnavailable`) is all that changes.
+    - Needed by: B0 (`ios/b0-sign-in`).
 
 ## Raised by design handoffs 5 and 6
 

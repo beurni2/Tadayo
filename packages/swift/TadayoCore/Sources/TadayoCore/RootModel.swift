@@ -60,14 +60,19 @@ import Observation
     let makeKey: @Sendable () -> IdempotencyKey
     let now: @Sendable () -> ContinuousClock.Instant
     let sleep: @Sendable (ContinuousClock.Instant) async throws -> Void
+    let left: @MainActor () -> Void
 
+    /// `left` runs each time Leave sign-in has ended the session, on the server and here, whether
+    /// or not the device could forget it, and before sign-in shows: the app purges there what the
+    /// account left behind, its connections first (T11).
     public init(
         session: SessionManager, auth: any AuthService, accounts: any AccountService,
         makeKey: @escaping @Sendable () -> IdempotencyKey = { IdempotencyKey.make() },
         now: @escaping @Sendable () -> ContinuousClock.Instant = { .now },
         sleep: @escaping @Sendable (ContinuousClock.Instant) async throws -> Void = {
             try await Task.sleep(until: $0, clock: .continuous)
-        }
+        },
+        left: @escaping @MainActor () -> Void = {}
     ) {
         self.session = session
         self.auth = auth
@@ -75,6 +80,7 @@ import Observation
         self.makeKey = makeKey
         self.now = now
         self.sleep = sleep
+        self.left = left
     }
 
     /// At launch.
@@ -96,7 +102,7 @@ import Observation
     /// Leave sign-in, and A02-age's back: the launch screen while it ends the session on the
     /// server and here, then A02-email (Welcome, A01, comes in B1). If the device couldn't forget
     /// the session, the failure line says so, with Retry, rather than show sign-in over a session
-    /// still kept. One Leave runs at a time. The caller purges every cache next (T11).
+    /// still kept. One Leave runs at a time. `left` purges what the account left behind (T11).
     public func leave() async {
         if let leaving { return await leaving.value }
         let task = Task { await self.endSession() }
@@ -112,6 +118,7 @@ import Observation
         clubs = .loading
         route = .starting
         let forgotten = await session.signOut()
+        left()
         leaveFailed = !forgotten
         guard forgotten else {
             route = .failed(.other)
