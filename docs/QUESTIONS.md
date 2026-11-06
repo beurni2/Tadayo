@@ -11,6 +11,9 @@ Each question has a default. Claude Code builds on the default until the founder
     - Decided by the founder on 1 November 2026: the 53 screens of 2.1 stay the reference.
     - Claude Design makes the brand first: wordmark, app icon, final colours and the cover palette. Then it makes every state 2.1 doesn't show.
     - The founder can replace any 2.1 screen with a Claude Design render later (ADR-006).
+    - Answered by the founder on 4 November 2026 at 00:22 UTC, on a card in the design thread ("Use handoff 5's screens"): handoff 5's `G04-one-day` and `G04-two-days` replace the book's two (2.1 #03 and #32) as the reference (handoff 5's check, section 3; its X-02). Those redraws leave out the date plaque, because a day nobody has confirmed has no date yet (the plaque stays on Home and the cards), and the book's lines "A day for your friends to collect things for you." and "One shared opening time."; their titles read "Choose your day" and "Choose your days".
+    - Handoff 6 then redrew both, and its redraws are now the reference, with one exception: every day proposed for another member keeps its empty selection circle, because it can still be chosen (FQ48). Handoff 6's frames drop that circle; its own written rule and handoff 5's frames keep it (handoff 6's check, section 3; its F-01, X-01 and X-13). The redraws also change the look: the viewer's own choice is a pale blue row (cover2) where it was pale grey, "Proposed" is the small tag also used for proposed members instead of a diamond, and the one-day screen's instruction reads "Choose a day that works for you, then confirm." The founder can still choose handoff 5's look instead (handoff 6's check, section 3).
+    - This answer replaces only those two screens. 2.1's `H01-after-close` stays the reference, so the past-day card is the book's on every Home, as handoff 6 answered (handoff 6's check, section 2).
 
 ## Setup and accounts
 
@@ -88,7 +91,9 @@ Each question has a default. Claude Code builds on the default until the founder
     - Default: drafts live on the device only, per account, encrypted, and are never synced. An upload in preparation is the only server-side trace, and it's private to the author.
     - Needed by: B4.
 - **FQ16. A club with fewer than two members.** Unspecified.
-    - Default: the club pauses. No new occurrences are generated, Home says the club needs another member, and Memories stays readable for whoever remains. An invitation restarts it.
+    - Default: the club pauses. No new occurrences are generated, Home says the club needs another member, and Memories stays readable for whoever remains. An invitation restarts it once it is accepted and approved, through the schedule process; creating a link restarts nothing (handoff 6's brief, section 2; handoff 5's `component-contracts.json`, `pausedOwnAnnounced.restart`).
+    - The way in is Club details' "Invite someone" row, between Members and Schedule, shown only when the server allows a proposal and the club has room (`G05-club-details-paused`). It opens B1's flow for adding a member: a per-person invitation for this club, then the exact roster review and every current member's approval (spec 04, T7). Being the remaining member gives no creator-only rights over invitations.
+    - A paused club's own announced day: FQ50. The last active member leaving: FQ82.
     - Needed by: B2.
 - **FQ17. Club cover.** Spec 04 lets the creator choose an optional cover; 2.1's create screen (`G01-create`) doesn't show one.
     - Default: no club cover in the trial.
@@ -218,6 +223,7 @@ Each is a place where two sources disagree and the fix would loosen one of them,
     - Needed by: B4.
 - **FQ44. Dates and times on iPhones set to other regions.** The renders write dates one way: "Friday 13 November", "Fri 13 Nov", "FRIDAY, 6 NOVEMBER", with "7 AM". iOS formats dates by the phone's region and its 12- or 24-hour setting: a US iPhone writes "Friday, November 13", and a UK one "07:00". No source says which applies.
     - Default: the phone's own region and clock settings, through iOS's date templates, with the weekday and the month always as words, never numbers, so a date stays exact (T41). Snapshot tests fix one region. Changing it later touches one formatter.
+    - When a date carries its year (handoff 6's rule, as its frames draw it; its X-20 and W-07): a proposed start date, a boundary and a kept date always do, shown and spoken; so does every spoken full date, and every date on both local-times sheets (`G05-local-times`, `G05-local-times-same-zone`). A visible date on Home or Friends in the current year doesn't; it carries the year only when it falls outside the current year, when the dates shown cross a year, or when nothing around it sets the year. Both zones' times follow the same rule. Handoff 6's written rule covers the two-zone sheet through "comparison explicitly includes it", and the same-zone sheet only through "no clear year context"; a later brief says what that means (handoff 6's W-07; its check, section 7).
     - Needed by: B0 (slice 11's date labels).
 - **FQ45. Where a later handoff's change to the brand goes.** Handoff 1 asks Claude Design about the avatar fallback's fills, the button's states, a label on a photograph, cover1 and the accent, and the dark icon's background (`docs/plans/B0.md` section 5.2), so its answer may change or add to the brand. ADR-006 makes `design/reference/brand/` the brand every later handoff names. `CLAUDE.md` and `design/reference/README.md` ("Don't") forbid editing a file there, and the naming rule (`docs/DESIGN-HANDOFF.md`) gives each brand asset one name.
     - Default: `design/reference/brand/` keeps handoff 0's files, and the app and the next handoff's brief keep to it until the founder answers, as ADR-006 says ("The brand lives in the repository, in `design/reference/brand/`, and every later handoff names those files as its source"). Anything handoff 1 changes or adds stays as it arrived in `design/reference/claude-design/handoff-1/`, and the inventory names it beside the brand file it would change; what the inventory builds until handoff 1 answers stays built that way until the founder answers this question. Claude Code proposes that the app build from what handoff 1 changes or adds, and that the next brief cite both. That departs from ADR-006 and from `docs/DESIGN-HANDOFF.md`, "Who does what" (once converted, the brand lives in `design/reference/brand/`), so nothing is built from it before the founder answers; if the founder takes it, a new ADR records it and `docs/DESIGN-HANDOFF.md` changes in a rulebook PR of its own. Any other answer changes `CLAUDE.md` and the design reference rules in a rulebook PR of its own.
@@ -228,41 +234,57 @@ Each is a place where two sources disagree and the fix would loosen one of them,
 
 Brought in with the handoffs (ADR-027). Their sources are in the project's files, not in the repository: the briefs (`design/handoff-3/handoff-3-and-4-briefs.md`), and the checks of handoff 1 (`design/handoff-1/check/handoff-1-check.md`, section 5) and of handoffs 3 and 4 (`design/handoff-3/check/handoff-3-4-check.md`, section 4). The numbers were reserved through the coordinator. FQ64 was reserved for handoff 1's first question, "when a club starts", which is FQ54, so FQ64 stays unused.
 
-- **FQ46. Who sees a clash over a day, and whether with names.** `G04-conflict` shows "Day choice conflict: Ben and Debby" to the club, which tells the club who hasn't confirmed.
-    - Default: only the two members involved see the clash with names; the others see only that the day has no reveal scheduled (`G04-conflict-others`).
+- **FQ46. Who sees a clash over a day, and whether with names.** Handoff 3's `G04-conflict` showed "Day choice conflict: Ben and Debby" to the club, which tells the club who hasn't confirmed. Spec 05 asks that a clash be visible ("unresolved conflicts are visible rather than silently swapping dates"); since handoff 5 the state is called "Contested".
+    - Default: only the members who chose a contested day see names on it, however many they are (`G04-conflict`, `G04-conflict-three`). Everyone else sees "Contested" and "No reveal scheduled", with no names or count (`G04-confirmed-others`, `G04-contested-other`). This goes a step further than the summary in the check of handoffs 3 and 4, which said the others would see only that the day has no reveal scheduled; it follows that check's X-18 (handoff 5's brief, section 2, restated by handoff 6's).
+    - A member outside the clash who hasn't confirmed can still choose the day (FQ48), and then holds it too and sees the names. A VoiceOver hint on the contested day, not shown on screen, says so: "Choose {weekday}. You'll then see the people in this contested choice." (handoff 6's X-13).
+    - The names can be worked out. Every other day still names the member who holds it, and the days the choosers left read "Available", so the members missing from the week are the ones on the contested day (handoff 6's check, section 5; its WM-03). Once everyone outside the clash has confirmed, nothing hides who is in it (handoff 5's check, section 5). Joining isn't private either: the joiner's own day then reads "Available" for everyone, and the others in the clash see the joiner's name (handoff 6's check, section 5; its R-03 and WM-03). The app builds it as drawn.
+    - The founder may instead choose to show a contested day's choosers to everyone, since the names can be worked out anyway: the simpler option handoff 6's check offers. Or the founder may choose that everyone else sees only "No reveal scheduled", as handoff 5's brief offered, which hides no more (handoff 5's R-11). Neither is the default. FQ78 (the contract's, PR #14) asks the same choice from the schedule's side: it was written against this question's earlier default, and is one choice with it.
     - Needed by: B2.
 - **FQ47. Photos in an invitation's member list.** Handoff 4 shows the members as initials only to someone who hasn't joined; the book's `G02-invitation` shows their photos.
     - Default: initials, the stricter reading.
     - Needed by: B1.
-- **FQ48. A day proposed for someone else.** `G04-conflict` shows Ben's proposed Monday as "Available", so Debby could take it.
-    - Default: only confirmed days are taken.
+- **FQ48. A day proposed for someone else.** Handoff 3's `G04-conflict` showed Ben's proposed Monday as "Available", so Debby could take it. Book p11 says only that "Occupied days identify their owner".
+    - Default: only a confirmed day is taken, and it can't be chosen. Until its member confirms it, a day proposed for that member isn't taken: anyone who hasn't confirmed may choose it, which makes it contested (FQ46, FQ55). A proposal holds its day even before its member opens the day-picking screen, so it counts as that member's choice. Once that member has chosen another day instead, the day is free and names nobody, except in that member's own view, where it reads "Proposed for you" (`G04-one-day`, `G04-conflict`, `G04-two-days-one-chosen`; handoff 5's brief, section 2, restated by handoff 6's).
+    - On the day-picking screens, a confirmed day looks different from one still only proposed, since under this reading only a confirmed day is occupied. So those screens show who hasn't confirmed yet. There, on purpose, this replaces the handoff 3 brief's rule against naming who hasn't confirmed (handoff 5's brief, section 5). Nothing else names them on purpose, but in a club's first days Friends and the club's week show it all the same (the bullets below; handoff 6's check, section 5, which corrects handoff 5's check on this). Chasing stays ruled out: no "Waiting for…", no count and no reminder (T33).
+    - Outside the day-picking screens, in a club's first days (handoff 5's check, section 4, item 10; handoff 6's brief, section 2): in the club's week, a day nobody has confirmed reads "No reveal scheduled" and names nobody; in Friends, that member's row shows the name only, with no date and nothing to tap (`G05-schedule-choose-own`, `F01-friends-first-days`; handoff 5's X-27).
+    - So in a club's first days, Friends and the club's week show every member who hasn't confirmed: theirs are the only Friends rows without a date, and their days read "No reveal scheduled" while every other held day names its member. Any truthful screen shows it, because the app never shows a date that doesn't exist (T49); nothing says "waiting for", counts or reminds (handoff 6's check, section 5; its R-04). The app builds it as drawn.
     - Needed by: B2.
 - **FQ49. A schedule change that isn't confirmed by its start date.**
     - Default: as delivered: Claude Design proposes a new start date, and everyone confirms again.
     - Needed by: B2.
-- **FQ50. A paused club that still has an announced day.** The day is kept, and nothing says what Home shows or whether you can still add for it.
-    - Default: Home shows that day as usual until it passes, then shows the pause.
+- **FQ50. A paused club that still has your own announced day.** The day is kept, and nothing says what Home shows or whether you can still add for it.
+    - Default: Home shows that day as usual until it closes, then the member's next own announced day, and the pause once none remains (`H01-paused-own-day`; handoff 5's brief, section 2; handoff 5's `component-contracts.json`, `pausedOwnAnnounced`).
+    - Until the day opens at 7 AM, + Add offers it, as spec 08 requires: Home's person, date and Add destination always agree, and a member adds to their own day like everyone else. Once it's open, its submissions have closed (spec 08), so + Add offers the member's next announced day, or, if there's none, only private drafts (Private draft, then Open my drafts).
+    - The announced days of a member who has left follow FQ63.
+    - Handoff 5's words: the paused Home says "{clubName} needs another member for new days.", and Club details gains an "Invite someone" row (FQ16).
     - Needed by: B2.
 - **FQ51. Invitations still out once a club has started.** `G01-invite-people-revoked` has Debby accepted, so under FQ54 the club has started, but the screen still says "Create a club". Nothing says whether the others now need approval, or where Ben manages their links.
     - Default: the invitation list is reached only during setup.
+    - A paused club's Club details offers "Invite someone": a per-person invitation for that club, not the invitation list (FQ16; handoff 5's X-26).
     - Needed by: B1.
 - **FQ52. A pending schedule change is easy to miss.** There's no push, by the rules, and Home doesn't mention it; it shows only under Schedule and in Club details.
     - Default: as delivered.
     - Needed by: B2.
 - **FQ53. Plain screens.** The waiting and paused Homes show none of the book's objects: no plaque, card or photographs (book p5). The same call is open for the empty Home (handoff 1's check, section 6, optional ask; kept in the project's files, not in the repository).
     - Default: as delivered.
+    - `H01-confirm-days`, Home in a club's first days before any day is confirmed, is one of these plain screens too, as handoff 6 redrew it: a title, one line, the Private drafts row and Choose your day (handoff 5's X-08; handoff 6's V-12).
+    - The screens for a suspended club or one you can no longer open are plain too, but not by choice: T9 and T24 allow nothing of the club there, so they aren't part of this question.
     - Needed by: B2.
 - **FQ54. When a club starts** (handoff 1's check, question 1).
     - Default: the creator's proposal counts as the creator's approval. So under T7 a club starts as soon as one person accepts, and the waiting-to-start screens show only while nobody has accepted.
     - Needed by: B1.
-- **FQ55. Two members want the same day.**
-    - Default: while two members have chosen the same day, neither can confirm it. The conflict ends only when one of them chooses another day. Until then that day has no reveal, and every confirmed day goes ahead. Nobody is moved, and nobody is asked to give way (T6).
+- **FQ55. Two or more members want the same day.** Spec 05 and T6 say a clash is shown, never swapped silently; nothing says how it ends.
+    - Default: while two or more members hold the same day, none of them can confirm it. The clash ends only when all but one have chosen another day; the one left can then confirm it. Until then that day has no reveal, and every confirmed day goes ahead. Nobody is moved, no winner is picked, and nobody is asked to give way (T6, T33; handoff 5's brief, section 2, restated by handoff 6's). Claude Design noted that a clash can last indefinitely (handoff 5's check, section 2).
+    - Three or more can share a day (`G04-conflict-three`). A day proposed for a member counts as that member's hold (FQ48), so the clash line reads "The proposed days overlap on {weekday}.", which stays true for a member who never opened the screen. A member outside the clash who hasn't confirmed can join it by choosing the day, and then sees the names (FQ46; handoff 6's X-13).
+    - The first days (Claude Code's reading; handoff 5's brief, section 2, frame 7): members who join before any day of the club is confirmed are part of its first days, not a membership change. The proposed week includes them, however many joined after the club started, and each day goes ahead as soon as its member confirms it. Once any day is confirmed, Home shows the next confirmed day (`H01-confirm-days` until then), and a later join is a membership change, which waits for everyone (FQ56). Claude Design noted that this reading needs screens that clearly show whose days are confirmed (handoff 5's check, section 2). A member whose day isn't confirmed confirms it from the club's week, through Friends' See schedule or Club details' Schedule, where only that member sees a "Choose your day" row (`G05-schedule-choose-own`), with no push, badge or reminder (T36). When a newly confirmed day first opens: FQ79.
     - Needed by: B2.
 - **FQ56. Who confirms a membership change.**
     - Default: every active member confirms, including the new one. The current days continue until everyone has.
+    - In a club's first days, a join before any day is confirmed isn't a membership change: the proposed week includes the new member, and each day goes ahead as soon as its member confirms it. Once any day is confirmed, every join is a membership change (FQ55's first-days reading; handoff 5's brief, section 2).
+    - When the new days a change adds first open: FQ79. When the week's "Your confirmation is saved." goes away: FQ81.
     - Needed by: B2.
 - **FQ57. The club's week in the trial.**
-    - Default: read-only. Days change only through a membership change.
+    - Default: read-only: a confirmed day changes only through a membership change (`G04-change`; handoff 6's brief, section 2). After confirming, Back and Done return to where the member started, never to the editable list (`G04-confirmed-many`), and a day-picking screen opened again shows the member's confirmed day read-only.
     - Needed by: B2.
 - **FQ58. Home while loading.**
     - Default: only the club's name and your own photo, and nothing else until the server answers (`H01-loading`).
@@ -281,6 +303,7 @@ Brought in with the handoffs (ADR-027). Their sources are in the project's files
     - Needed by: B2.
 - **FQ63. What happens to the announced days of a member who leaves.**
     - Default (Claude Code's; the briefs gave none): their days that haven't opened are held, neither opened nor deleted, and every drop added for them stays hidden and stays with its author (T4, T8), until the founder answers; no reveal happens for someone no longer in the club, and nothing is removed that can't be brought back. Nothing that depends on it is built before B6.
+    - In a paused club, handoff 5 rules only on the remaining member's own announced days (FQ50); the days of the members who left follow this default (handoff 5's X-08).
     - Needed by: B2, and B6 for leaving.
 - **FQ65. The order of accepting and approving.** In `G03-waiting`, Leila accepts first; in 2.1's `G03-approve`, she accepts after the members approve.
     - Default: either order works, on one roster revision; no rule fixes the order.
@@ -335,3 +358,27 @@ Brought in with the handoffs (ADR-027). Their sources are in the project's files
     - Answered by the founder on 5 November 2026 at 05:58 UTC, on that card ("In the B0 build, what should buttons for later features do?": "Show them, doing nothing yet"): the default (ADR-029).
     - Default: each is drawn as designed and does nothing yet, with its accessibility label unchanged; the TestFlight notes list them. The screens then match the renders later stages build on, and nothing claims to work. Greying them out or hiding them changes the look only, so either is a small later change.
     - Needed by: B0 (slice 11's sign-in and tabs PRs).
+
+## Raised by design handoffs 5 and 6
+
+Brought in with the handoffs, in the design PR after #13 (each check's section 1). Their sources are in the project's files, not in the repository: the briefs (`design/handoff-5/handoff-5-brief.md` and `design/handoff-6/handoff-6-brief.md`, section 2 of each), and the checks of handoff 5 (`design/handoff-5/check/handoff-5-check.md`, section 5) and of handoff 6 (`design/handoff-6/check/handoff-6-check.md`, section 5). A finding id, such as handoff 6's X-12, is in the findings file beside its check; the two files reuse ids. The numbers were reserved through the coordinator; FQ70 to FQ78 and FQ84 are the api lane's contract questions (PR #14), listed above. The readings the two handoffs set for earlier questions, and the founder's answer under FQ2, are recorded under those questions: FQ2, FQ16, FQ44, FQ46, FQ48, FQ50, FQ51, FQ53, FQ55 to FQ57 and FQ63.
+
+- **FQ79. How soon a newly confirmed day can open.** No rule sets a lead time. Each day goes ahead as soon as its member confirms it (FQ55), so a day confirmed at 6:59 AM could open a minute later, with nothing in it, and the cutoff (T3) would freeze it at that instant. Spec 04 forbids silently providing "an instant first reveal", which points the same way.
+    - Default: a newly confirmed day first opens on the first of its dates whose 7 AM, in the club's zone, is at least 24 hours after the confirmation. So a Monday confirmed on Saturday afternoon first opens two days later, and one confirmed on Sunday afternoon eight days later (handoff 5's check, section 5).
+    - Made exact by handoff 6 (its check, section 5; its X-12): the server compares instants, never calendar dates. The first date is the first whose 7 AM, resolved through the club's IANA zone, is at least 24 elapsed hours after `confirmed_at`; exactly 24 hours qualifies. A day confirmed less than 24 hours before its 7 AM waits a week. The 24 hours are real time, even across a clock change. Claude Design notes that the rule can defer a first date by a week, and that the real first date then shows wherever dates are shown, with no made-up reveal in between (handoff 6's X-12).
+    - It applies the same way to the new days a confirmed membership change adds: a new day's first occurrence is its first date, on or after the change's start, whose 7 AM is at least 24 elapsed hours after the last confirmation (handoff 6's X-14).
+    - In handoff 6's first-days fixture, Maya, Alex, Sam and Nina confirmed on Wednesday 4 November 2026 at 9 AM in New York. The 7 AM of Thursday 5 November 2026 was 22 hours later, so Sam's first Thursday is 12 November (`F01-friends-first-days`).
+    - Server tests, with fake clocks: exactly 24 hours (opens on that date); one second short (waits a week); the spring and the autumn clock changes (confirmed at 7 AM the day before, a 23-hour day waits a week and a 25-hour day opens); and a membership change confirmed less than 24 hours before a new day's first 7 AM. New York's, London's and Auckland's clock changes fall early on a Sunday, which has no reveal (T6), so the clock-change tests use a club zone whose change falls in the 24 hours before a reveal day's 7 AM.
+    - Needed by: B2.
+- **FQ80. Whether a suspended club's members can still open its Club details, or leave it.** The club list still offers Club details while the suspended club is selected (`G06-switcher-unavailable`), and nothing says what it opens (handoff 6's check, section 5, question A).
+    - Default: Club details shows the same "Club unavailable" screen as Home, with nothing of the club (T9). So until the founder answers, its members can't leave it from Club details.
+    - Needed by: B2.
+- **FQ81. When "Your confirmation is saved." goes away.** After a member confirms a membership change, the club's week says so (`G05-schedule-review-confirmed`). If the line went away the moment everyone had confirmed, then in a two-person club it would tell the member that the other person had confirmed (T15, T33; handoff 6's check, section 5, question B).
+    - Default: it stays until the change's start date, or until the proposal is replaced. Even so, the change starts only if everyone confirmed (FQ56), so in a two-person club the member still learns on that date whether the other person did.
+    - Needed by: B2.
+- **FQ82. The last active member leaving.** A paused club's only active member is offered Leave club (`G05-club-details-paused`: Kitchen table, with Ben alone), and no rule says what then happens to the club, its Memories or an invitation still out. FQ16 covers the pause, and FQ63 a leaver's announced days (handoff 6's check, section 5, question C).
+    - Default: leaving is allowed, the club stays paused with nobody active, and nothing is deleted.
+    - Needed by: B6.
+- **FQ83. Whether the local-times sheet also lists the next day of the member whose day is open.** During an open day, the sheet lists the open day first, then the next day of each other member, so the next day of the member whose day is open isn't in it, though Friends shows it (`G05-local-times`, during Debby's open Friday; handoff 6's check, section 5, question D).
+    - Default: as drawn, without it.
+    - Needed by: B2.

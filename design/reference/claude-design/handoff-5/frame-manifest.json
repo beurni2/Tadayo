@@ -1,0 +1,356 @@
+{
+  "handoff": 5,
+  "screenOrder": [
+    "G04-conflict",
+    "G04-confirmed-others",
+    "G04-change",
+    "G05-schedule-review",
+    "G05-local-times",
+    "G05-members-proposed",
+    "H01-confirm-days",
+    "H01-travelling",
+    "H01-unavailable",
+    "H01-access-lost",
+    "G06-switcher-status",
+    "G04-one-day",
+    "G04-two-days"
+  ],
+  "frames": [
+    {
+      "order": 1,
+      "name": "G04-conflict",
+      "width": 393,
+      "height": 852,
+      "category": "screen",
+      "svg": "frames/G04-conflict.svg",
+      "png": "frames/G04-conflict.png",
+      "pngScale": 2,
+      "fixture": "conflict",
+      "dayChoiceDesign": "Unified native vertical list",
+      "datePlaque": false,
+      "sha256": {
+        "svg": "947fec11e7b764c402d207b8eb2064179627f032f4cdb2ec7b303489edee0331",
+        "png": "59209e62dfad54afe28a0ee5122e9c53cab96c55c4a4ea0be198d5d5dbaabf99"
+      }
+    },
+    {
+      "order": 2,
+      "name": "G04-confirmed-others",
+      "width": 393,
+      "height": 852,
+      "category": "screen",
+      "svg": "frames/G04-confirmed-others.svg",
+      "png": "frames/G04-confirmed-others.png",
+      "pngScale": 2,
+      "viewer": "Maya",
+      "surface": "G04 post-confirmation summary",
+      "contestedNamesVisible": false,
+      "sha256": {
+        "svg": "8a97a82ce89f4b0066625521ff9a10362873795e6648421bcef895395d354e88",
+        "png": "33c125bf4d0354d76e4f2fcf3667797185c505a3f864dda2333e3d177f2ee4fd"
+      }
+    },
+    {
+      "order": 3,
+      "name": "G04-change",
+      "width": 393,
+      "height": 852,
+      "category": "screen",
+      "svg": "frames/G04-change.svg",
+      "png": "frames/G04-change.png",
+      "pngScale": 2,
+      "grouping": "2 preserved person groups + 3 proposed person groups + shared Sunday row",
+      "effectiveDate": "2026-11-16",
+      "sha256": {
+        "svg": "e5357f261466d85e5e5c8b296c74f3d14d991ffe2b8aa5311727e142e670e532",
+        "png": "dfb3dfbafb02165df2a7de488c3b688f391c5859aeea7c957854d2bbfe349160"
+      }
+    },
+    {
+      "order": 4,
+      "name": "G05-schedule-review",
+      "width": 393,
+      "height": 852,
+      "category": "screen",
+      "svg": "frames/G05-schedule-review.svg",
+      "png": "frames/G05-schedule-review.png",
+      "pngScale": 2,
+      "viewer": "Ben",
+      "clubNameInvented": false,
+      "mode": "read-only current week; review opens proposed future week",
+      "sha256": {
+        "svg": "df0ac621db5092ab8d63678309865c46e89427f68aa867bb1a76d788b6d9588e",
+        "png": "d4b1e0d3feb424762d11f45179eb9e856b153a8c54c1b9960551a35c01b45f9d"
+      }
+    },
+    {
+      "order": 5,
+      "name": "G05-local-times",
+      "width": 393,
+      "height": 852,
+      "category": "screen",
+      "svg": "frames/G05-local-times.svg",
+      "png": "frames/G05-local-times.png",
+      "pngScale": 2,
+      "viewer": "Ben",
+      "deviceZone": "Europe/London",
+      "region": "en-US",
+      "scrollingList": true,
+      "allOccurrences": [
+        {
+          "person": "Nina",
+          "occasion": "Nina’s Saturday",
+          "reveal_at": "2026-11-07T07:00:00-05:00",
+          "close_at": "2026-11-08T01:00:00-05:00",
+          "clubOpen": "Saturday, November 7, 2026 at 7 AM",
+          "clubClose": "Sunday, November 8, 2026 at 1 AM",
+          "localOpen": "Saturday, November 7, 2026 at 12 PM",
+          "localClose": "Sunday, November 8, 2026 at 6 AM",
+          "label": "Nina’s Saturday. New York: opens Saturday, November 7, 2026 at 7 AM; closes Sunday, November 8, 2026 at 1 AM. London: opens Saturday, November 7, 2026 at 12 PM; closes Sunday, November 8, 2026 at 6 AM."
+        },
+        {
+          "person": "Ben",
+          "occasion": "Your Monday",
+          "reveal_at": "2026-11-09T07:00:00-05:00",
+          "close_at": "2026-11-10T01:00:00-05:00",
+          "clubOpen": "Monday, November 9, 2026 at 7 AM",
+          "clubClose": "Tuesday, November 10, 2026 at 1 AM",
+          "localOpen": "Monday, November 9, 2026 at 12 PM",
+          "localClose": "Tuesday, November 10, 2026 at 6 AM",
+          "label": "Your Monday. New York: opens Monday, November 9, 2026 at 7 AM; closes Tuesday, November 10, 2026 at 1 AM. London: opens Monday, November 9, 2026 at 12 PM; closes Tuesday, November 10, 2026 at 6 AM."
+        },
+        {
+          "person": "Maya",
+          "occasion": "Maya’s Tuesday",
+          "reveal_at": "2026-11-10T07:00:00-05:00",
+          "close_at": "2026-11-11T01:00:00-05:00",
+          "clubOpen": "Tuesday, November 10, 2026 at 7 AM",
+          "clubClose": "Wednesday, November 11, 2026 at 1 AM",
+          "localOpen": "Tuesday, November 10, 2026 at 12 PM",
+          "localClose": "Wednesday, November 11, 2026 at 6 AM",
+          "label": "Maya’s Tuesday. New York: opens Tuesday, November 10, 2026 at 7 AM; closes Wednesday, November 11, 2026 at 1 AM. London: opens Tuesday, November 10, 2026 at 12 PM; closes Wednesday, November 11, 2026 at 6 AM."
+        },
+        {
+          "person": "Alex",
+          "occasion": "Alex’s Wednesday",
+          "reveal_at": "2026-11-11T07:00:00-05:00",
+          "close_at": "2026-11-12T01:00:00-05:00",
+          "clubOpen": "Wednesday, November 11, 2026 at 7 AM",
+          "clubClose": "Thursday, November 12, 2026 at 1 AM",
+          "localOpen": "Wednesday, November 11, 2026 at 12 PM",
+          "localClose": "Thursday, November 12, 2026 at 6 AM",
+          "label": "Alex’s Wednesday. New York: opens Wednesday, November 11, 2026 at 7 AM; closes Thursday, November 12, 2026 at 1 AM. London: opens Wednesday, November 11, 2026 at 12 PM; closes Thursday, November 12, 2026 at 6 AM."
+        },
+        {
+          "person": "Sam",
+          "occasion": "Sam’s Thursday",
+          "reveal_at": "2026-11-12T07:00:00-05:00",
+          "close_at": "2026-11-13T01:00:00-05:00",
+          "clubOpen": "Thursday, November 12, 2026 at 7 AM",
+          "clubClose": "Friday, November 13, 2026 at 1 AM",
+          "localOpen": "Thursday, November 12, 2026 at 12 PM",
+          "localClose": "Friday, November 13, 2026 at 6 AM",
+          "label": "Sam’s Thursday. New York: opens Thursday, November 12, 2026 at 7 AM; closes Friday, November 13, 2026 at 1 AM. London: opens Thursday, November 12, 2026 at 12 PM; closes Friday, November 13, 2026 at 6 AM."
+        },
+        {
+          "person": "Debby",
+          "occasion": "Debby’s Friday",
+          "reveal_at": "2026-11-13T07:00:00-05:00",
+          "close_at": "2026-11-14T01:00:00-05:00",
+          "clubOpen": "Friday, November 13, 2026 at 7 AM",
+          "clubClose": "Saturday, November 14, 2026 at 1 AM",
+          "localOpen": "Friday, November 13, 2026 at 12 PM",
+          "localClose": "Saturday, November 14, 2026 at 6 AM",
+          "label": "Debby’s Friday. New York: opens Friday, November 13, 2026 at 7 AM; closes Saturday, November 14, 2026 at 1 AM. London: opens Friday, November 13, 2026 at 12 PM; closes Saturday, November 14, 2026 at 6 AM."
+        }
+      ],
+      "sha256": {
+        "svg": "f4daad54e3e077ce921f613d9ba1cdfe99e060c502b7893c19f2236b52aaf239",
+        "png": "024f1dabda93efb3d726ca9d7f22fe9744bccc9d9e0816634f5fc2c0f09e02f7"
+      }
+    },
+    {
+      "order": 6,
+      "name": "G05-members-proposed",
+      "width": 393,
+      "height": 852,
+      "category": "screen",
+      "svg": "frames/G05-members-proposed.svg",
+      "png": "frames/G05-members-proposed.png",
+      "pngScale": 2,
+      "viewer": "Ben",
+      "creatorOnly": true,
+      "noStatuses": true,
+      "noCounts": true,
+      "sha256": {
+        "svg": "6921fbeb32c750a4ceaaafed76022393cb46b71b4779ee14b1576e80ce53dba3",
+        "png": "145b3980f207770872d9f55dc89cc9d6e610cea5d51ead4845daa87c1a5c99d9"
+      }
+    },
+    {
+      "order": 7,
+      "name": "H01-confirm-days",
+      "width": 393,
+      "height": 852,
+      "category": "screen",
+      "svg": "frames/H01-confirm-days.svg",
+      "png": "frames/H01-confirm-days.png",
+      "pngScale": 2,
+      "viewer": "Ben",
+      "activeRoster": 6,
+      "confirmedDays": 0,
+      "primaryRoute": "G04-one-day",
+      "dateShown": false,
+      "sha256": {
+        "svg": "a7fa5d666ab30dc67c879f4d1d01b53dfc3c872a19ecf6cbb09310abdbc6d5cb",
+        "png": "ee01fc1c2f6f4875e836b4163fc01c8a7b1925ec06bd78805dd3dd6230cfede9"
+      }
+    },
+    {
+      "order": 8,
+      "name": "H01-travelling",
+      "width": 393,
+      "height": 852,
+      "category": "screen",
+      "svg": "frames/H01-travelling.svg",
+      "png": "frames/H01-travelling.png",
+      "pngScale": 2,
+      "viewer": "Ben",
+      "server_now": "2026-11-07T06:01:00Z",
+      "next_reveal_at": "2026-11-07T12:00:00Z",
+      "countdownSeconds": 21540,
+      "deviceZone": "Europe/London",
+      "clubZone": "America/New_York",
+      "sha256": {
+        "svg": "ba030e341e347aa5d81eddb6f08a2e9ba5230028321b251fcae5cf098dd27340",
+        "png": "b913db542c69c6794640b95b017365c49f0134ac6e1c784c75db24f7dcd8b8d2"
+      }
+    },
+    {
+      "order": 9,
+      "name": "H01-unavailable",
+      "width": 393,
+      "height": 852,
+      "category": "screen",
+      "svg": "frames/H01-unavailable.svg",
+      "png": "frames/H01-unavailable.png",
+      "pngScale": 2,
+      "viewer": "Ben",
+      "deniedClub": "Sunday people",
+      "clubNameShown": false,
+      "clubContentShown": false,
+      "sha256": {
+        "svg": "eb42ac4a1b273751951d1fd26da3afba413bf804d59c663c157e28a0b5c80112",
+        "png": "0e4a2afe94388cb5b2f51c825e8802b3faebf33e2261de4c5b85e677137a0d6b"
+      }
+    },
+    {
+      "order": 10,
+      "name": "H01-access-lost",
+      "width": 393,
+      "height": 852,
+      "category": "screen",
+      "svg": "frames/H01-access-lost.svg",
+      "png": "frames/H01-access-lost.png",
+      "pngScale": 2,
+      "viewer": "Ben",
+      "deniedClub": "Kitchen table",
+      "clubNameShown": false,
+      "clubContentShown": false,
+      "sha256": {
+        "svg": "ee8c5d958fb54e956a5262c8292c3a27374914b7a5c46197fa15f23531a1d549",
+        "png": "08b25b8a30a7870abb4052fb4dca2c31c25f15235991372ddce65248dc7b7f08"
+      }
+    },
+    {
+      "order": 11,
+      "name": "G06-switcher-status",
+      "width": 393,
+      "height": 852,
+      "category": "sheet",
+      "svg": "frames/G06-switcher-status.svg",
+      "png": "frames/G06-switcher-status.png",
+      "pngScale": 2,
+      "selectedClub": "Sunday people",
+      "visiblePeopleCounts": false,
+      "modalBackground": "H01-awaiting-activation with H5 spacing",
+      "sha256": {
+        "svg": "22b31ca0ed6f0a087bb44cc64cc11da7dd412db40337219f4dcf8a3d04e26e53",
+        "png": "0ae458552ac6f77fc6d372cb869919cb7eb8d9073862de8b35ea7dead2a8344b"
+      }
+    },
+    {
+      "order": 12,
+      "name": "G04-one-day",
+      "width": 393,
+      "height": 852,
+      "category": "screen",
+      "svg": "frames/G04-one-day.svg",
+      "png": "frames/G04-one-day.png",
+      "pngScale": 2,
+      "fixture": "one",
+      "dayChoiceDesign": "Unified native vertical list",
+      "datePlaque": false,
+      "sha256": {
+        "svg": "a331798aade2e5409740bdd824973665cc2e64a168b582a0749c8909f1a9828e",
+        "png": "750b5470b3f5506b583dec476e224b7f7b554143d09255dfe5bc344acbda07a2"
+      }
+    },
+    {
+      "order": 13,
+      "name": "G04-two-days",
+      "width": 393,
+      "height": 852,
+      "category": "screen",
+      "svg": "frames/G04-two-days.svg",
+      "png": "frames/G04-two-days.png",
+      "pngScale": 2,
+      "fixture": "pair",
+      "dayChoiceDesign": "Unified native vertical list",
+      "datePlaque": false,
+      "sha256": {
+        "svg": "1078b6863647c3734fe0566b7ecfa479e7d0843571cb41c2ee143ea51ef3bffa",
+        "png": "3644fecb972a07688a7b16cde04fd0ed8817c357b8a93aeb3071673ea004e418"
+      }
+    },
+    {
+      "order": 14,
+      "name": "brand-components",
+      "width": 1200,
+      "height": 6880,
+      "category": "brand",
+      "svg": "frames/brand-components.svg",
+      "png": "frames/brand-components.png",
+      "pngScale": 2,
+      "changes": [
+        "Unified collecting status/lock in both original specimens",
+        "H5 day-choice and Sunday specimens",
+        "Spacing and label contracts"
+      ],
+      "sha256": {
+        "svg": "2e1f94527ace049a8bd7596144d4eb64c083c0660e1b9980de0f76af304b299e",
+        "png": "c7b29f5881b30befa9d6df28294f19a7c2e26fb33020f44a14666a930a117e0d"
+      }
+    }
+  ],
+  "coordinateSystem": "points",
+  "brandRevision": "1.1",
+  "darkPhoneFrames": [],
+  "largeTextPhoneFrames": [],
+  "font": "Arimo outlined in SVG; font supplied; native iOS system font in app",
+  "repositoryCommit": "bd3bd8063fe7726babe45d242265c4d6b2df94bd",
+  "packContents": [
+    "frames/",
+    "assets/",
+    "brand-tokens.json",
+    "component-contracts.json",
+    "copy-contracts.json",
+    "screen-copy.json",
+    "frame-manifest.json",
+    "validation-report.json",
+    "IMPLEMENTATION.md",
+    "README.md",
+    "Tadayo_Handoff_5_Days_and_Home.pdf",
+    "SHA256SUMS.txt"
+  ]
+}

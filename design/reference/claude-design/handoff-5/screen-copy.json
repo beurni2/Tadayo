@@ -1,0 +1,1528 @@
+{
+  "G04-conflict": {
+    "drawnText": [
+      "9:41",
+      "Your day",
+      "Not now",
+      "Choose your day",
+      "Sunday people · New York",
+      "7 AM to 1 AM the next morning",
+      "You and Debby chose Friday.",
+      "You can choose another day, or keep your choice.",
+      "Monday",
+      "Available",
+      "Proposed for you",
+      "Tuesday",
+      "Maya",
+      "Confirmed",
+      "Wednesday",
+      "Alex",
+      "Confirmed",
+      "Thursday",
+      "Sam",
+      "Confirmed",
+      "Friday",
+      "Contested",
+      "Ben · You and Debby",
+      "Your choice",
+      "Saturday",
+      "Nina",
+      "Confirmed",
+      "Sunday",
+      "Revisit",
+      "No reveal scheduled",
+      "Confirm Friday"
+    ],
+    "semanticGroups": [
+      {
+        "kind": "free",
+        "weekday": "Monday",
+        "label": "Monday. Available. Previously proposed for you. Not selected."
+      },
+      {
+        "kind": "confirmed",
+        "weekday": "Tuesday",
+        "label": "Tuesday. Maya. Confirmed. Unavailable."
+      },
+      {
+        "kind": "confirmed",
+        "weekday": "Wednesday",
+        "label": "Wednesday. Alex. Confirmed. Unavailable."
+      },
+      {
+        "kind": "confirmed",
+        "weekday": "Thursday",
+        "label": "Thursday. Sam. Confirmed. Unavailable."
+      },
+      {
+        "kind": "contested",
+        "weekday": "Friday",
+        "label": "Friday. Contested. Ben, you. Debby. Your choice."
+      },
+      {
+        "kind": "confirmed",
+        "weekday": "Saturday",
+        "label": "Saturday. Nina. Confirmed. Unavailable."
+      },
+      {
+        "kind": "SundayRow",
+        "label": "Sunday. Revisit. No reveal scheduled."
+      }
+    ],
+    "controls": [
+      {
+        "visible": "Back",
+        "label": "Back",
+        "hint": null,
+        "rect": [
+          8,
+          54,
+          44,
+          44
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Not now",
+        "label": "Not now",
+        "hint": "Keep your current choices and return.",
+        "rect": [
+          295,
+          54,
+          86,
+          44
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Monday",
+        "label": "Monday. Available. Previously proposed for you. Not selected.",
+        "hint": "Choose Monday.",
+        "rect": [
+          20,
+          280,
+          353,
+          64
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Friday",
+        "label": "Friday. Contested. Ben, you. Debby. Your choice.",
+        "hint": "Choose Friday.",
+        "rect": [
+          20,
+          536,
+          353,
+          88
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Confirm Friday",
+        "label": "Confirm Friday",
+        "hint": "Contested. Confirmation is unavailable.",
+        "rect": [
+          20,
+          760,
+          353,
+          50
+        ],
+        "enabled": false
+      }
+    ]
+  },
+  "G04-confirmed-others": {
+    "drawnText": [
+      "9:41",
+      "Your day",
+      "Your day is confirmed.",
+      "Confirmed days will go ahead.",
+      "Sunday people · New York",
+      "7 AM to 1 AM the next morning",
+      "Monday",
+      "No reveal scheduled",
+      "Tuesday",
+      "Maya · You",
+      "Wednesday",
+      "Alex",
+      "Thursday",
+      "Sam",
+      "Friday",
+      "Contested",
+      "No reveal scheduled",
+      "Saturday",
+      "Nina",
+      "Sunday",
+      "Revisit",
+      "No reveal scheduled",
+      "Done"
+    ],
+    "semanticGroups": [
+      {
+        "kind": "weekRow",
+        "weekday": "Monday",
+        "label": "Monday. No reveal scheduled."
+      },
+      {
+        "kind": "weekRow",
+        "weekday": "Tuesday",
+        "label": "Tuesday. Maya, you."
+      },
+      {
+        "kind": "weekRow",
+        "weekday": "Wednesday",
+        "label": "Wednesday. Alex."
+      },
+      {
+        "kind": "weekRow",
+        "weekday": "Thursday",
+        "label": "Thursday. Sam."
+      },
+      {
+        "kind": "weekRow",
+        "weekday": "Friday",
+        "label": "Friday. Contested. No reveal scheduled."
+      },
+      {
+        "kind": "weekRow",
+        "weekday": "Saturday",
+        "label": "Saturday. Nina."
+      },
+      {
+        "kind": "SundayRow",
+        "label": "Sunday. Revisit. No reveal scheduled."
+      }
+    ],
+    "controls": [
+      {
+        "visible": "Back",
+        "label": "Back",
+        "hint": null,
+        "rect": [
+          8,
+          54,
+          44,
+          44
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Done",
+        "label": "Done",
+        "hint": null,
+        "rect": [
+          20,
+          760,
+          353,
+          50
+        ],
+        "enabled": true
+      }
+    ]
+  },
+  "G04-change": {
+    "drawnText": [
+      "9:41",
+      "Club days",
+      "Confirm the days",
+      "Your weekdays stay the same.",
+      "Proposed start",
+      "Monday, November 16, 2026",
+      "A future start keeps announced days unchanged.",
+      "New York · 7 AM to 1 AM the next morning",
+      "Current days through Sunday, November 15",
+      "Ben · You",
+      "Monday, November 9 · Thursday, November 12",
+      "Debby",
+      "Tuesday, November 10 · Friday, November 13",
+      "From Monday, November 16",
+      "Ben · You",
+      "Monday and Thursday · Unchanged",
+      "Debby",
+      "Tuesday and Friday · Unchanged",
+      "Maya",
+      "Wednesday and Saturday",
+      "Sunday",
+      "Revisit",
+      "No reveal scheduled",
+      "Current days continue until the change is confirmed.",
+      "Confirm these days",
+      "Not now"
+    ],
+    "semanticGroups": [
+      {
+        "kind": "keptPerson",
+        "name": "Ben",
+        "label": "Ben, you. Monday, November 9, 2026 and Thursday, November 12, 2026. Announced dates unchanged."
+      },
+      {
+        "kind": "keptPerson",
+        "name": "Debby",
+        "label": "Debby. Tuesday, November 10, 2026 and Friday, November 13, 2026. Announced dates unchanged."
+      },
+      {
+        "kind": "proposedPerson",
+        "name": "Ben",
+        "label": "Ben, you. Monday and Thursday. Unchanged."
+      },
+      {
+        "kind": "proposedPerson",
+        "name": "Debby",
+        "label": "Debby. Tuesday and Friday. Unchanged."
+      },
+      {
+        "kind": "proposedPerson",
+        "name": "Maya",
+        "label": "Maya. Wednesday and Saturday. Proposed from Monday, November 16, 2026."
+      },
+      {
+        "kind": "SundayRow",
+        "label": "Sunday. Revisit. No reveal scheduled."
+      }
+    ],
+    "controls": [
+      {
+        "visible": "Back",
+        "label": "Back",
+        "hint": null,
+        "rect": [
+          8,
+          54,
+          44,
+          44
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Confirm these days",
+        "label": "Confirm these days",
+        "hint": "Confirm this proposed week from Monday, November 16, 2026.",
+        "rect": [
+          20,
+          724,
+          353,
+          50
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Not now",
+        "label": "Not now",
+        "hint": "Keep your current choices and return.",
+        "rect": [
+          20,
+          782,
+          353,
+          44
+        ],
+        "enabled": true
+      }
+    ]
+  },
+  "G05-schedule-review": {
+    "drawnText": [
+      "9:41",
+      "Schedule",
+      "The club’s week",
+      "7 AM to 1 AM the next morning",
+      "New York",
+      "Review the club’s days",
+      "Proposed from Monday, November 16, 2026",
+      "Monday",
+      "Ben · You",
+      "Tuesday",
+      "Debby",
+      "Wednesday",
+      "No reveal scheduled",
+      "Thursday",
+      "Ben · You",
+      "Friday",
+      "Debby",
+      "Saturday",
+      "No reveal scheduled",
+      "Sunday",
+      "Revisit",
+      "No reveal scheduled",
+      "View local times"
+    ],
+    "semanticGroups": [
+      {
+        "kind": "weekRow",
+        "weekday": "Monday",
+        "label": "Monday. Ben, you. Opens at 7 AM. Home closes at 1 AM on Tuesday, New York."
+      },
+      {
+        "kind": "weekRow",
+        "weekday": "Tuesday",
+        "label": "Tuesday. Debby. Opens at 7 AM. Home closes at 1 AM on Wednesday, New York."
+      },
+      {
+        "kind": "weekRow",
+        "weekday": "Wednesday",
+        "label": "Wednesday. No reveal scheduled."
+      },
+      {
+        "kind": "weekRow",
+        "weekday": "Thursday",
+        "label": "Thursday. Ben, you. Opens at 7 AM. Home closes at 1 AM on Friday, New York."
+      },
+      {
+        "kind": "weekRow",
+        "weekday": "Friday",
+        "label": "Friday. Debby. Opens at 7 AM. Home closes at 1 AM on Saturday, New York."
+      },
+      {
+        "kind": "weekRow",
+        "weekday": "Saturday",
+        "label": "Saturday. No reveal scheduled."
+      },
+      {
+        "kind": "SundayRow",
+        "label": "Sunday. Revisit. No reveal scheduled."
+      }
+    ],
+    "controls": [
+      {
+        "visible": "Back",
+        "label": "Back",
+        "hint": null,
+        "rect": [
+          8,
+          54,
+          44,
+          44
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Review the club’s days",
+        "label": "Review the club’s days",
+        "hint": "Review the proposed week from Monday, November 16, 2026.",
+        "rect": [
+          20,
+          232,
+          353,
+          76
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "View local times",
+        "label": "View local times",
+        "hint": "Show dated opening and closing times in New York and New York.",
+        "rect": [
+          20,
+          692,
+          353,
+          44
+        ],
+        "enabled": true
+      }
+    ]
+  },
+  "G05-local-times": {
+    "drawnText": [
+      "9:41",
+      "Times in your time zone",
+      "Done",
+      "Sunday people",
+      "Nina’s Saturday",
+      "Club time · New York",
+      "Opens Saturday, November 7, 2026 · 7 AM",
+      "Closes Sunday, November 8, 2026 · 1 AM",
+      "Your time · London",
+      "Opens Saturday, November 7, 2026 · 12 PM",
+      "Closes Sunday, November 8, 2026 · 6 AM",
+      "Your Monday",
+      "Club time · New York",
+      "Opens Monday, November 9, 2026 · 7 AM",
+      "Closes Tuesday, November 10, 2026 · 1 AM",
+      "Your time · London",
+      "Opens Monday, November 9, 2026 · 12 PM",
+      "Closes Tuesday, November 10, 2026 · 6 AM",
+      "Maya’s Tuesday",
+      "Club time · New York",
+      "Opens Tuesday, November 10, 2026 · 7 AM",
+      "Closes Wednesday, November 11, 2026 · 1 AM",
+      "Your time · London",
+      "Opens Tuesday, November 10, 2026 · 12 PM",
+      "Closes Wednesday, November 11, 2026 · 6 AM",
+      "Alex’s Wednesday",
+      "Club time · New York",
+      "Opens Wednesday, November 11, 2026 · 7 AM",
+      "Closes Thursday, November 12, 2026 · 1 AM",
+      "Your time · London",
+      "Opens Wednesday, November 11, 2026 · 12 PM",
+      "Closes Thursday, November 12, 2026 · 6 AM",
+      "Sam’s Thursday",
+      "Club time · New York",
+      "Opens Thursday, November 12, 2026 · 7 AM",
+      "Closes Friday, November 13, 2026 · 1 AM",
+      "Your time · London",
+      "Opens Thursday, November 12, 2026 · 12 PM",
+      "Closes Friday, November 13, 2026 · 6 AM",
+      "Debby’s Friday",
+      "Club time · New York",
+      "Opens Friday, November 13, 2026 · 7 AM",
+      "Closes Saturday, November 14, 2026 · 1 AM",
+      "Your time · London",
+      "Opens Friday, November 13, 2026 · 12 PM",
+      "Closes Saturday, November 14, 2026 · 6 AM"
+    ],
+    "semanticGroups": [
+      {
+        "kind": "datedOccurrence",
+        "label": "Nina’s Saturday. New York: opens Saturday, November 7, 2026 at 7 AM; closes Sunday, November 8, 2026 at 1 AM. London: opens Saturday, November 7, 2026 at 12 PM; closes Sunday, November 8, 2026 at 6 AM."
+      },
+      {
+        "kind": "datedOccurrence",
+        "label": "Your Monday. New York: opens Monday, November 9, 2026 at 7 AM; closes Tuesday, November 10, 2026 at 1 AM. London: opens Monday, November 9, 2026 at 12 PM; closes Tuesday, November 10, 2026 at 6 AM."
+      },
+      {
+        "kind": "datedOccurrence",
+        "label": "Maya’s Tuesday. New York: opens Tuesday, November 10, 2026 at 7 AM; closes Wednesday, November 11, 2026 at 1 AM. London: opens Tuesday, November 10, 2026 at 12 PM; closes Wednesday, November 11, 2026 at 6 AM."
+      },
+      {
+        "kind": "datedOccurrence",
+        "label": "Alex’s Wednesday. New York: opens Wednesday, November 11, 2026 at 7 AM; closes Thursday, November 12, 2026 at 1 AM. London: opens Wednesday, November 11, 2026 at 12 PM; closes Thursday, November 12, 2026 at 6 AM."
+      },
+      {
+        "kind": "datedOccurrence",
+        "label": "Sam’s Thursday. New York: opens Thursday, November 12, 2026 at 7 AM; closes Friday, November 13, 2026 at 1 AM. London: opens Thursday, November 12, 2026 at 12 PM; closes Friday, November 13, 2026 at 6 AM."
+      },
+      {
+        "kind": "datedOccurrence",
+        "label": "Debby’s Friday. New York: opens Friday, November 13, 2026 at 7 AM; closes Saturday, November 14, 2026 at 1 AM. London: opens Friday, November 13, 2026 at 12 PM; closes Saturday, November 14, 2026 at 6 AM."
+      }
+    ],
+    "controls": [
+      {
+        "visible": "Done",
+        "label": "Done",
+        "hint": null,
+        "rect": [
+          317,
+          77,
+          64,
+          44
+        ],
+        "enabled": true
+      }
+    ],
+    "allDatedOccurrences": [
+      {
+        "person": "Nina",
+        "occasion": "Nina’s Saturday",
+        "reveal_at": "2026-11-07T07:00:00-05:00",
+        "close_at": "2026-11-08T01:00:00-05:00",
+        "clubOpen": "Saturday, November 7, 2026 at 7 AM",
+        "clubClose": "Sunday, November 8, 2026 at 1 AM",
+        "localOpen": "Saturday, November 7, 2026 at 12 PM",
+        "localClose": "Sunday, November 8, 2026 at 6 AM",
+        "label": "Nina’s Saturday. New York: opens Saturday, November 7, 2026 at 7 AM; closes Sunday, November 8, 2026 at 1 AM. London: opens Saturday, November 7, 2026 at 12 PM; closes Sunday, November 8, 2026 at 6 AM."
+      },
+      {
+        "person": "Ben",
+        "occasion": "Your Monday",
+        "reveal_at": "2026-11-09T07:00:00-05:00",
+        "close_at": "2026-11-10T01:00:00-05:00",
+        "clubOpen": "Monday, November 9, 2026 at 7 AM",
+        "clubClose": "Tuesday, November 10, 2026 at 1 AM",
+        "localOpen": "Monday, November 9, 2026 at 12 PM",
+        "localClose": "Tuesday, November 10, 2026 at 6 AM",
+        "label": "Your Monday. New York: opens Monday, November 9, 2026 at 7 AM; closes Tuesday, November 10, 2026 at 1 AM. London: opens Monday, November 9, 2026 at 12 PM; closes Tuesday, November 10, 2026 at 6 AM."
+      },
+      {
+        "person": "Maya",
+        "occasion": "Maya’s Tuesday",
+        "reveal_at": "2026-11-10T07:00:00-05:00",
+        "close_at": "2026-11-11T01:00:00-05:00",
+        "clubOpen": "Tuesday, November 10, 2026 at 7 AM",
+        "clubClose": "Wednesday, November 11, 2026 at 1 AM",
+        "localOpen": "Tuesday, November 10, 2026 at 12 PM",
+        "localClose": "Wednesday, November 11, 2026 at 6 AM",
+        "label": "Maya’s Tuesday. New York: opens Tuesday, November 10, 2026 at 7 AM; closes Wednesday, November 11, 2026 at 1 AM. London: opens Tuesday, November 10, 2026 at 12 PM; closes Wednesday, November 11, 2026 at 6 AM."
+      },
+      {
+        "person": "Alex",
+        "occasion": "Alex’s Wednesday",
+        "reveal_at": "2026-11-11T07:00:00-05:00",
+        "close_at": "2026-11-12T01:00:00-05:00",
+        "clubOpen": "Wednesday, November 11, 2026 at 7 AM",
+        "clubClose": "Thursday, November 12, 2026 at 1 AM",
+        "localOpen": "Wednesday, November 11, 2026 at 12 PM",
+        "localClose": "Thursday, November 12, 2026 at 6 AM",
+        "label": "Alex’s Wednesday. New York: opens Wednesday, November 11, 2026 at 7 AM; closes Thursday, November 12, 2026 at 1 AM. London: opens Wednesday, November 11, 2026 at 12 PM; closes Thursday, November 12, 2026 at 6 AM."
+      },
+      {
+        "person": "Sam",
+        "occasion": "Sam’s Thursday",
+        "reveal_at": "2026-11-12T07:00:00-05:00",
+        "close_at": "2026-11-13T01:00:00-05:00",
+        "clubOpen": "Thursday, November 12, 2026 at 7 AM",
+        "clubClose": "Friday, November 13, 2026 at 1 AM",
+        "localOpen": "Thursday, November 12, 2026 at 12 PM",
+        "localClose": "Friday, November 13, 2026 at 6 AM",
+        "label": "Sam’s Thursday. New York: opens Thursday, November 12, 2026 at 7 AM; closes Friday, November 13, 2026 at 1 AM. London: opens Thursday, November 12, 2026 at 12 PM; closes Friday, November 13, 2026 at 6 AM."
+      },
+      {
+        "person": "Debby",
+        "occasion": "Debby’s Friday",
+        "reveal_at": "2026-11-13T07:00:00-05:00",
+        "close_at": "2026-11-14T01:00:00-05:00",
+        "clubOpen": "Friday, November 13, 2026 at 7 AM",
+        "clubClose": "Saturday, November 14, 2026 at 1 AM",
+        "localOpen": "Friday, November 13, 2026 at 12 PM",
+        "localClose": "Saturday, November 14, 2026 at 6 AM",
+        "label": "Debby’s Friday. New York: opens Friday, November 13, 2026 at 7 AM; closes Saturday, November 14, 2026 at 1 AM. London: opens Friday, November 13, 2026 at 12 PM; closes Saturday, November 14, 2026 at 6 AM."
+      }
+    ]
+  },
+  "G05-members-proposed": {
+    "drawnText": [
+      "9:41",
+      "Members",
+      "Proposed roster",
+      "Sunday people",
+      "These names are a proposal, not an active",
+      "member list.",
+      "Ben · You",
+      "M",
+      "Maya",
+      "A",
+      "Alex",
+      "S",
+      "Sam",
+      "D",
+      "Debby",
+      "N",
+      "Nina",
+      "Manage invitations"
+    ],
+    "semanticGroups": [
+      {
+        "kind": "proposedPerson",
+        "label": "Ben, you"
+      },
+      {
+        "kind": "proposedPerson",
+        "label": "Maya"
+      },
+      {
+        "kind": "proposedPerson",
+        "label": "Alex"
+      },
+      {
+        "kind": "proposedPerson",
+        "label": "Sam"
+      },
+      {
+        "kind": "proposedPerson",
+        "label": "Debby"
+      },
+      {
+        "kind": "proposedPerson",
+        "label": "Nina"
+      }
+    ],
+    "controls": [
+      {
+        "visible": "Back",
+        "label": "Back",
+        "hint": null,
+        "rect": [
+          8,
+          54,
+          44,
+          44
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Manage invitations",
+        "label": "Manage invitations",
+        "hint": "Open your invitation list for Sunday people.",
+        "rect": [
+          20,
+          724,
+          353,
+          50
+        ],
+        "enabled": true
+      }
+    ]
+  },
+  "H01-confirm-days": {
+    "drawnText": [
+      "9:41",
+      "Sunday people",
+      "+ Add",
+      "The club’s days",
+      "The club’s week will appear here after a day is",
+      "confirmed.",
+      "Choose your day",
+      "Home",
+      "Friends",
+      "Memories"
+    ],
+    "semanticGroups": [],
+    "controls": [
+      {
+        "visible": "Sunday people",
+        "label": "Sunday people",
+        "hint": "Choose a club.",
+        "rect": [
+          20,
+          56,
+          230,
+          44
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "+ Add",
+        "label": "+ Add",
+        "hint": "Save a private draft or open private drafts.",
+        "rect": [
+          274,
+          56,
+          59,
+          44
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Account",
+        "label": "Account",
+        "hint": null,
+        "rect": [
+          337,
+          56,
+          44,
+          44
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Choose your day",
+        "label": "Choose your day",
+        "hint": "Review your choices in the proposed week.",
+        "rect": [
+          20,
+          696,
+          353,
+          50
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Home",
+        "label": "Home",
+        "hint": null,
+        "rect": [
+          0.0,
+          774,
+          131,
+          59
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Friends",
+        "label": "Friends",
+        "hint": null,
+        "rect": [
+          131.0,
+          774,
+          131,
+          59
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Memories",
+        "label": "Memories",
+        "hint": null,
+        "rect": [
+          262.0,
+          774,
+          131,
+          59
+        ],
+        "enabled": true
+      }
+    ]
+  },
+  "H01-travelling": {
+    "drawnText": [
+      "6:01",
+      "Sunday people",
+      "+ Add",
+      "Up next",
+      "Nina’s Saturday",
+      "SAT",
+      "07",
+      "N",
+      "Saturday, November 7",
+      "Opens 12 PM · London",
+      "7 AM · New York",
+      "5h 59m",
+      "until opening",
+      "Add for Nina",
+      "See captions",
+      "Debby’s Friday is in Memories",
+      "Friday, November 6",
+      "Revisit Debby’s Friday",
+      "Home",
+      "Friends",
+      "Memories"
+    ],
+    "semanticGroups": [],
+    "controls": [
+      {
+        "visible": "Sunday people",
+        "label": "Sunday people",
+        "hint": "Choose a club.",
+        "rect": [
+          20,
+          56,
+          230,
+          44
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "+ Add",
+        "label": "+ Add",
+        "hint": "Choose a person and day, or save a private draft.",
+        "rect": [
+          274,
+          56,
+          59,
+          44
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Account",
+        "label": "Account",
+        "hint": null,
+        "rect": [
+          337,
+          56,
+          44,
+          44
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Add for Nina",
+        "label": "Add for Nina",
+        "hint": "Add to Nina’s Saturday, opening Saturday, November 7, 2026 at 7 AM in New York.",
+        "rect": [
+          20,
+          472,
+          353,
+          50
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "See captions",
+        "label": "See captions",
+        "hint": "Open captions for Nina’s Saturday.",
+        "rect": [
+          20,
+          530,
+          353,
+          44
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Revisit Debby’s Friday",
+        "label": "Revisit Debby’s Friday",
+        "hint": null,
+        "rect": [
+          60,
+          660,
+          305,
+          44
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Home",
+        "label": "Home",
+        "hint": null,
+        "rect": [
+          0.0,
+          774,
+          131,
+          59
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Friends",
+        "label": "Friends",
+        "hint": null,
+        "rect": [
+          131.0,
+          774,
+          131,
+          59
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Memories",
+        "label": "Memories",
+        "hint": null,
+        "rect": [
+          262.0,
+          774,
+          131,
+          59
+        ],
+        "enabled": true
+      }
+    ]
+  },
+  "H01-unavailable": {
+    "drawnText": [
+      "9:41",
+      "Choose a club",
+      "+ Add",
+      "Club unavailable",
+      "This club isn’t available right now.",
+      "Choose a club",
+      "Get help",
+      "Home",
+      "Friends",
+      "Memories"
+    ],
+    "semanticGroups": [],
+    "controls": [
+      {
+        "visible": "Choose a club",
+        "label": "Choose a club",
+        "hint": null,
+        "rect": [
+          20,
+          56,
+          230,
+          44
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "+ Add",
+        "label": "+ Add",
+        "hint": "Save a private draft or open private drafts.",
+        "rect": [
+          274,
+          56,
+          59,
+          44
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Account",
+        "label": "Account",
+        "hint": null,
+        "rect": [
+          337,
+          56,
+          44,
+          44
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Choose a club",
+        "label": "Choose a club",
+        "hint": null,
+        "rect": [
+          20,
+          644,
+          353,
+          50
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Get help",
+        "label": "Get help",
+        "hint": "Contact Tadayo support.",
+        "rect": [
+          20,
+          710,
+          353,
+          44
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Home",
+        "label": "Home",
+        "hint": null,
+        "rect": [
+          0.0,
+          774,
+          131,
+          59
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Friends",
+        "label": "Friends",
+        "hint": null,
+        "rect": [
+          131.0,
+          774,
+          131,
+          59
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Memories",
+        "label": "Memories",
+        "hint": null,
+        "rect": [
+          262.0,
+          774,
+          131,
+          59
+        ],
+        "enabled": true
+      }
+    ]
+  },
+  "H01-access-lost": {
+    "drawnText": [
+      "9:41",
+      "Choose a club",
+      "+ Add",
+      "This club is no longer",
+      "available.",
+      "Choose a club to continue.",
+      "Choose a club",
+      "Home",
+      "Friends",
+      "Memories"
+    ],
+    "semanticGroups": [],
+    "controls": [
+      {
+        "visible": "Choose a club",
+        "label": "Choose a club",
+        "hint": null,
+        "rect": [
+          20,
+          56,
+          230,
+          44
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "+ Add",
+        "label": "+ Add",
+        "hint": "Save a private draft or open private drafts.",
+        "rect": [
+          274,
+          56,
+          59,
+          44
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Account",
+        "label": "Account",
+        "hint": null,
+        "rect": [
+          337,
+          56,
+          44,
+          44
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Choose a club",
+        "label": "Choose a club",
+        "hint": null,
+        "rect": [
+          20,
+          696,
+          353,
+          50
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Home",
+        "label": "Home",
+        "hint": null,
+        "rect": [
+          0.0,
+          774,
+          131,
+          59
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Friends",
+        "label": "Friends",
+        "hint": null,
+        "rect": [
+          131.0,
+          774,
+          131,
+          59
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Memories",
+        "label": "Memories",
+        "hint": null,
+        "rect": [
+          262.0,
+          774,
+          131,
+          59
+        ],
+        "enabled": true
+      }
+    ]
+  },
+  "G06-switcher-status": {
+    "drawnText": [
+      "9:41",
+      "Sunday people",
+      "+ Add",
+      "Waiting for club",
+      "confirmation",
+      "The club starts when another person accepts",
+      "the same roster.",
+      "Private drafts",
+      "Only you can see these.",
+      "Home",
+      "Friends",
+      "Memories",
+      "Your clubs",
+      "Sunday people",
+      "Not started",
+      "Kitchen table",
+      "Paused",
+      "Club details",
+      "Create a club",
+      "Cancel"
+    ],
+    "semanticGroups": [],
+    "controls": [
+      {
+        "visible": "Sunday people",
+        "label": "Sunday people. Not started. Selected.",
+        "hint": null,
+        "rect": [
+          20,
+          508,
+          353,
+          64
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Kitchen table",
+        "label": "Kitchen table. Paused.",
+        "hint": null,
+        "rect": [
+          20,
+          572,
+          353,
+          64
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Club details",
+        "label": "Club details",
+        "hint": null,
+        "rect": [
+          20,
+          652,
+          353,
+          44
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Create a club",
+        "label": "Create a club",
+        "hint": null,
+        "rect": [
+          20,
+          704,
+          353,
+          44
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Cancel",
+        "label": "Cancel",
+        "hint": null,
+        "rect": [
+          20,
+          780,
+          353,
+          44
+        ],
+        "enabled": true
+      }
+    ]
+  },
+  "G04-one-day": {
+    "drawnText": [
+      "9:41",
+      "Your day",
+      "Not now",
+      "Choose your day",
+      "Sunday people · New York",
+      "7 AM to 1 AM the next morning",
+      "Choose an available day, then confirm.",
+      "You can change your choice before confirming.",
+      "Monday",
+      "Ben · You",
+      "Your choice",
+      "Tuesday",
+      "Maya",
+      "Proposed",
+      "Wednesday",
+      "Alex",
+      "Proposed",
+      "Thursday",
+      "Sam",
+      "Proposed",
+      "Friday",
+      "Debby",
+      "Proposed",
+      "Saturday",
+      "Nina",
+      "Proposed",
+      "Sunday",
+      "Revisit",
+      "No reveal scheduled",
+      "Confirm Monday"
+    ],
+    "semanticGroups": [
+      {
+        "kind": "own",
+        "weekday": "Monday",
+        "label": "Monday. Ben, you. Your choice."
+      },
+      {
+        "kind": "proposed",
+        "weekday": "Tuesday",
+        "label": "Tuesday. Maya. Proposed. Can be chosen."
+      },
+      {
+        "kind": "proposed",
+        "weekday": "Wednesday",
+        "label": "Wednesday. Alex. Proposed. Can be chosen."
+      },
+      {
+        "kind": "proposed",
+        "weekday": "Thursday",
+        "label": "Thursday. Sam. Proposed. Can be chosen."
+      },
+      {
+        "kind": "proposed",
+        "weekday": "Friday",
+        "label": "Friday. Debby. Proposed. Can be chosen."
+      },
+      {
+        "kind": "proposed",
+        "weekday": "Saturday",
+        "label": "Saturday. Nina. Proposed. Can be chosen."
+      },
+      {
+        "kind": "SundayRow",
+        "label": "Sunday. Revisit. No reveal scheduled."
+      }
+    ],
+    "controls": [
+      {
+        "visible": "Back",
+        "label": "Back",
+        "hint": null,
+        "rect": [
+          8,
+          54,
+          44,
+          44
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Not now",
+        "label": "Not now",
+        "hint": "Keep your current choices and return.",
+        "rect": [
+          295,
+          54,
+          86,
+          44
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Monday",
+        "label": "Monday. Ben, you. Your choice.",
+        "hint": "Choose Monday.",
+        "rect": [
+          20,
+          280,
+          353,
+          64
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Tuesday",
+        "label": "Tuesday. Maya. Proposed. Can be chosen.",
+        "hint": "Choose Tuesday.",
+        "rect": [
+          20,
+          344,
+          353,
+          64
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Wednesday",
+        "label": "Wednesday. Alex. Proposed. Can be chosen.",
+        "hint": "Choose Wednesday.",
+        "rect": [
+          20,
+          408,
+          353,
+          64
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Thursday",
+        "label": "Thursday. Sam. Proposed. Can be chosen.",
+        "hint": "Choose Thursday.",
+        "rect": [
+          20,
+          472,
+          353,
+          64
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Friday",
+        "label": "Friday. Debby. Proposed. Can be chosen.",
+        "hint": "Choose Friday.",
+        "rect": [
+          20,
+          536,
+          353,
+          64
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Saturday",
+        "label": "Saturday. Nina. Proposed. Can be chosen.",
+        "hint": "Choose Saturday.",
+        "rect": [
+          20,
+          600,
+          353,
+          64
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Confirm Monday",
+        "label": "Confirm Monday",
+        "hint": "Confirm your recurring day choices.",
+        "rect": [
+          20,
+          760,
+          353,
+          50
+        ],
+        "enabled": true
+      }
+    ]
+  },
+  "G04-two-days": {
+    "drawnText": [
+      "9:41",
+      "Your days",
+      "Not now",
+      "Choose your days",
+      "Ben and Debby · New York",
+      "7 AM to 1 AM the next morning",
+      "Choose two days that work for you.",
+      "You can change your choice before confirming.",
+      "Monday",
+      "Ben · You",
+      "Your choice",
+      "Tuesday",
+      "Debby",
+      "Confirmed",
+      "Wednesday",
+      "Available",
+      "Thursday",
+      "Ben · You",
+      "Your choice",
+      "Friday",
+      "Debby",
+      "Confirmed",
+      "Saturday",
+      "Available",
+      "Sunday",
+      "Revisit",
+      "No reveal scheduled",
+      "Confirm Monday and Thursday"
+    ],
+    "semanticGroups": [
+      {
+        "kind": "own",
+        "weekday": "Monday",
+        "label": "Monday. Ben, you. Your choice."
+      },
+      {
+        "kind": "confirmed",
+        "weekday": "Tuesday",
+        "label": "Tuesday. Debby. Confirmed. Unavailable."
+      },
+      {
+        "kind": "free",
+        "weekday": "Wednesday",
+        "label": "Wednesday. Available. Not selected."
+      },
+      {
+        "kind": "own",
+        "weekday": "Thursday",
+        "label": "Thursday. Ben, you. Your choice."
+      },
+      {
+        "kind": "confirmed",
+        "weekday": "Friday",
+        "label": "Friday. Debby. Confirmed. Unavailable."
+      },
+      {
+        "kind": "free",
+        "weekday": "Saturday",
+        "label": "Saturday. Available. Not selected."
+      },
+      {
+        "kind": "SundayRow",
+        "label": "Sunday. Revisit. No reveal scheduled."
+      }
+    ],
+    "controls": [
+      {
+        "visible": "Back",
+        "label": "Back",
+        "hint": null,
+        "rect": [
+          8,
+          54,
+          44,
+          44
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Not now",
+        "label": "Not now",
+        "hint": "Keep your current choices and return.",
+        "rect": [
+          295,
+          54,
+          86,
+          44
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Monday",
+        "label": "Monday. Ben, you. Your choice.",
+        "hint": "Choose Monday.",
+        "rect": [
+          20,
+          280,
+          353,
+          64
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Wednesday",
+        "label": "Wednesday. Available. Not selected.",
+        "hint": "Choose Wednesday.",
+        "rect": [
+          20,
+          408,
+          353,
+          64
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Thursday",
+        "label": "Thursday. Ben, you. Your choice.",
+        "hint": "Choose Thursday.",
+        "rect": [
+          20,
+          472,
+          353,
+          64
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Saturday",
+        "label": "Saturday. Available. Not selected.",
+        "hint": "Choose Saturday.",
+        "rect": [
+          20,
+          600,
+          353,
+          64
+        ],
+        "enabled": true
+      },
+      {
+        "visible": "Confirm Monday and Thursday",
+        "label": "Confirm Monday and Thursday",
+        "hint": "Confirm your recurring day choices.",
+        "rect": [
+          20,
+          760,
+          353,
+          50
+        ],
+        "enabled": true
+      }
+    ]
+  }
+}
