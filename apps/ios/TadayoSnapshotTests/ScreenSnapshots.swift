@@ -13,8 +13,7 @@ import XCTest
 /// title came out white on the light canvas, and a toolbar button not at all. A window there
 /// takes its safe areas from the screen: the top is the simulator iPhone 17's 62 (the frames'
 /// phone has 59), and the bottom, which a window shorter than the 874-point screen loses, is
-/// made the frames' 34 (`FramedHost`). The window is held still while it's drawn
-/// (`StillWindow`).
+/// made the frames' 34 (`FramedHost`), which also draws the busy spinner at rest.
 ///
 /// The `-xl` snapshot is a phone tall enough to hold the whole screen at that size, since at
 /// AX5 the content scrolls: what would scroll is laid out down the image, with the pinned
@@ -42,10 +41,12 @@ enum ScreenSnapshot {
             })
         }
 
-        /// The safe areas are the window's own and `FramedHost`'s (above), so none is given here.
+        /// The safe areas are the window's own and `FramedHost`'s (above). The frames' are given
+        /// all the same: with none, SnapshotTesting moves the view off the screen, and the key
+        /// window then drew the bar 52 points above where it laid it out.
         func config(xlHeight: CGFloat) -> ViewImageConfig {
             ViewImageConfig(
-                safeArea: .zero,
+                safeArea: UIEdgeInsets(top: 59, left: 0, bottom: 34, right: 0),
                 size: CGSize(width: 393, height: self == .xl ? xlHeight : 852),
                 traits: traits)
         }
@@ -63,12 +64,6 @@ enum ScreenSnapshot {
                 .environment(\.colorScheme, variant == .dark ? .dark : .light)
                 .environment(\.dynamicTypeSize, variant == .xl ? .accessibility5 : .large)
                 .environment(\.locale, Locale(identifier: "en_US"))
-            guard let window = keyWindow else {
-                XCTFail("no key window to draw in", file: file, line: line)
-                return
-            }
-            let still = StillWindow(window)
-            defer { still.restore() }
             assertSnapshot(
                 of: FramedHost(rootView: shown) as UIViewController,
                 as: .image(
@@ -78,14 +73,6 @@ enum ScreenSnapshot {
                     traits: variant.traits),
                 named: state + variant.suffix, file: file, testName: testName, line: line)
         }
-    }
-
-    /// The host app's key window, which the snapshot draws in.
-    static var keyWindow: UIWindow? {
-        UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .flatMap { $0.windows }
-            .first { $0.isKeyWindow }
     }
 
     /// Runs `action` and turns the main run loop until `condition` holds, so a screen can be
@@ -103,35 +90,26 @@ enum ScreenSnapshot {
     }
 }
 
-/// The key window held still while a snapshot is drawn: UIKit's own animations off, so a bar
-/// lays out where it ends rather than gliding there, and the layer's time stopped at 0, so an
-/// animation that runs on its own, such as the busy spinner, is drawn at its start.
-struct StillWindow {
-    private let window: UIWindow
-    private let speed: Float
-    private let offset: CFTimeInterval
-    private let animated: Bool
-
-    init(_ window: UIWindow, freeze: Bool = true, animations: Bool = false) {
-        self.window = window
-        (speed, offset, animated) = (
-            window.layer.speed, window.layer.timeOffset, UIView.areAnimationsEnabled
-        )
-        UIView.setAnimationsEnabled(animations)
-        if freeze { (window.layer.speed, window.layer.timeOffset) = (0, 0) }
-    }
-
-    func restore() {
-        (window.layer.speed, window.layer.timeOffset) = (speed, offset)
-        UIView.setAnimationsEnabled(animated)
-    }
-}
-
 /// A hosting controller whose bottom safe area is the frames' 34 points, whatever its window
 /// gives it: a 393 by 852 window on the iPhone 17 simulator's 874-point screen gets 12, and the
-/// tall `-xl` window none.
+/// tall `-xl` window none. The system's activity indicator, the busy button's spinner, is drawn
+/// at rest: turning, it came out differently in two draws of one screen (in 430 to 510 pixels).
 final class FramedHost<Content: View>: UIHostingController<Content> {
     private let bottom: CGFloat = 34
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        for spinner in Self.spinners(in: view) {
+            spinner.hidesWhenStopped = false
+            spinner.stopAnimating()
+        }
+    }
+
+    private static func spinners(in view: UIView) -> [UIActivityIndicatorView] {
+        view.subviews.flatMap { subview in
+            (subview as? UIActivityIndicatorView).map { [$0] } ?? spinners(in: subview)
+        }
+    }
 
     override func viewSafeAreaInsetsDidChange() {
         super.viewSafeAreaInsetsDidChange()
