@@ -55,7 +55,7 @@ struct EmailScreen: View {
                     .onSubmit { Task { await model.sendCode() } }
                     .focused($focused)
             }
-            .padding(.top, Spacing.xxxl)
+            .padding(.top, SetupGap.field)
             if let failure = model.failure {
                 InlineError(Text(verbatim: failure.words))
                     .padding(.top, Spacing.m)
@@ -110,7 +110,7 @@ struct CodeScreen: View {
                 .textContentType(.oneTimeCode)
                 .focused($focused)
             }
-            .padding(.top, Spacing.xxxl)
+            .padding(.top, SetupGap.field)
             errorRegion
             Button {
                 Task { await model.verify() }
@@ -154,7 +154,7 @@ struct CodeScreen: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, Spacing.m)
-        .padding(.bottom, Spacing.s)
+        .padding(.bottom, Spacing.m)
     }
 
     /// One 44-point row: the minute's static sentence, then Send a new code in the same place,

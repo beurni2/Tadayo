@@ -4,10 +4,15 @@ import TadayoCore
 import TadayoDesign
 import XCTest
 
-/// A screen as the renders draw it: 393 by 852 points with the safe areas of the phone they're
-/// drawn for (59 at the top, 34 at the bottom), at 2x like the renders, in sRGB, in light, in
-/// dark, and at the largest accessibility text size (docs/TECH-DESIGN.md section 2). The
+/// A screen as the renders draw it: 393 by 852 points, at 2x like the renders, in sRGB, in light,
+/// in dark, and at the largest accessibility text size (docs/TECH-DESIGN.md section 2). The
 /// keyboard and the status bar aren't drawn (T45): a field shows its focus itself.
+///
+/// It's drawn in the host app's key window, as the screen shows it (`drawHierarchy`), since
+/// iOS 26's bars draw their title and buttons through effects a layer render leaves out: their
+/// title came out white on the light canvas, and a toolbar button not at all. So the safe areas
+/// are the simulator phone's own. The window's animations stand still while it's drawn, so the
+/// busy button's spinner is the same in every run.
 ///
 /// The `-xl` snapshot is a phone tall enough to hold the whole screen at that size, since at
 /// AX5 the content scrolls: what would scroll is laid out down the image, with the pinned
@@ -55,14 +60,27 @@ enum ScreenSnapshot {
                 .environment(\.colorScheme, variant == .dark ? .dark : .light)
                 .environment(\.dynamicTypeSize, variant == .xl ? .accessibility5 : .large)
                 .environment(\.locale, Locale(identifier: "en_US"))
+            let window = keyWindow
+            let speed = window?.layer.speed ?? 1
+            window?.layer.speed = 0
+            defer { window?.layer.speed = speed }
             assertSnapshot(
                 of: shown,
                 as: .image(
+                    drawHierarchyInKeyWindow: true,
                     perceptualPrecision: 0.98,
                     layout: .device(config: variant.config(xlHeight: xlHeight)),
                     traits: variant.traits),
                 named: state + variant.suffix, file: file, testName: testName, line: line)
         }
+    }
+
+    /// The host app's key window, which the snapshot draws in.
+    private static var keyWindow: UIWindow? {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+            .first { $0.isKeyWindow }
     }
 
     /// Runs `action` and turns the main run loop until `condition` holds, so a screen can be

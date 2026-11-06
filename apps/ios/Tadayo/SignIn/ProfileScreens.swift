@@ -13,7 +13,9 @@ struct AgeScreen: View {
     var body: some View {
         NavigationStack {
             SetupScroll {
-                SetupHeading(title: "auth.age.title", subtitle: Text("auth.age.body"))
+                SetupHeading(
+                    title: "auth.age.title", subtitle: Text("auth.age.body"),
+                    subtitleGap: Spacing.xxxl)
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 SetupFooter(bottom: Spacing.s) {
@@ -86,7 +88,7 @@ struct ProfileScreen: View {
                 .padding(.top, Spacing.xxl)
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                SetupFooter(bottom: Spacing.xxxl) {
+                SetupFooter(bottom: SetupGap.profileFooter) {
                     if let failure = model.failure {
                         InlineError(Text(verbatim: failure.words))
                     }

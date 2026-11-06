@@ -4,7 +4,8 @@ import UIKit
 
 /// The sign-in and profile screens' column: content from the top, 20 points in from each edge,
 /// scrolling when the text is large, on `canvas`. Gaps are book p35's steps nearest to the
-/// frames' (each listed in the PR, and in INVENTORY.md's known differences).
+/// frames' (each listed in the PR, and in INVENTORY.md's known differences), or, past its
+/// largest step, a sum of its steps (`SetupGap`).
 struct SetupScroll<Content: View>: View {
     @ViewBuilder let content: Content
 
@@ -23,11 +24,24 @@ struct SetupScroll<Content: View>: View {
     }
 }
 
+/// The setup screens' gaps wider than book p35's largest step (32), each a sum of its steps,
+/// set so the glyphs sit where handoffs 1 and 2's frames put them: a text's box in SwiftUI has no
+/// leading above its first line, where a frame's line box does.
+enum SetupGap {
+    /// From a subtitle to the field below it (A02-email, A02-code): the frames' glyphs are 47
+    /// apart, and 32 + 12 puts them 47 apart here.
+    static let field = Spacing.xxxl + Spacing.m
+    /// From A03-profile's Continue to the bottom of the safe area: 44 in the frame.
+    static let profileFooter = Spacing.xxxl + Spacing.m
+}
+
 /// A setup screen's title, `utilityTitle` 32/35 as a heading, wrapping naturally (handoff 2's
-/// `textWrapping`), and its subtitle in `body`.
+/// `textWrapping`), and its subtitle in `body`: close under the title on A02-email, A02-code and
+/// A03-profile, and a paragraph of its own on A02-age, as the frames draw them.
 struct SetupHeading: View {
     let title: LocalizedStringKey
     let subtitle: Text
+    var subtitleGap: CGFloat = Spacing.l
 
     var body: some View {
         Text(title)
@@ -39,7 +53,7 @@ struct SetupHeading: View {
             .textRole(.body)
             .foregroundStyle(Palette.secondaryText)
             .fixedSize(horizontal: false, vertical: true)
-            .padding(.top, Spacing.l)
+            .padding(.top, subtitleGap)
     }
 }
 
