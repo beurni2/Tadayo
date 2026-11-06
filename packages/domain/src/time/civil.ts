@@ -27,9 +27,9 @@ const compareWall = (a: Temporal.PlainDateTime, b: Temporal.PlainDateTime) => Te
 /**
  * A club's zone as Temporal names it, or a RangeError: an IANA name (never a bare offset such as
  * "+05:00", which Temporal takes as a zone but which has no clock changes, and which the contract
- * refuses: FQ19) that Temporal can resolve. The contract's own check uses Intl, which also takes
- * old abbreviations such as BST, PST and IST that Temporal refuses, so the command that makes a
- * club stores what this returns, in one spelling ("europe/london" becomes "Europe/London").
+ * refuses: FQ19) that Temporal can resolve. The contract's `Timezone` makes the same check, and
+ * takes a name in any case, so the command that makes a club stores what this returns, in one
+ * spelling ("europe/london" becomes "Europe/London").
  * Temporal also reads a string that starts with T as an ISO time and takes its offset or its
  * bracketed zone ("T07+05" gives +05:00, "T07:00[Europe/London]" Europe/London), so the name it
  * resolves must be the one given, apart from case, and not an offset.

@@ -550,6 +550,41 @@ describe("other request rules", () => {
     }
   });
 
+  it("takes only a name Temporal resolves back to itself, as the server's clubTimeZone does (T2)", () => {
+    // Every name that fits the pattern and that Intl.DateTimeFormat takes but Temporal refuses, on Node
+    // 26.13.0 (tzdata 2026e): ICU's three-letter ids, the SystemV zones and two retired links. Intl reads
+    // some as zones nobody would mean (BST as Asia/Dhaka, NST as Pacific/Auckland, ART as Africa/Cairo),
+    // and the server couldn't find a club's days in any of them.
+    const intlOnly = [
+      ...["ACT", "AET", "AGT", "ART", "AST", "BET", "BST", "CAT", "CNT", "CST", "CTT", "EAT", "ECT"],
+      ...["IET", "IST", "JST", "MIT", "NET", "NST", "PLT", "PNT", "PRT", "PST", "SST", "VST"],
+      ...["AST4", "AST4ADT", "CST6", "CST6CDT", "EST5", "EST5EDT", "HST10"].map((zone) => `SystemV/${zone}`),
+      ...["MST7", "MST7MDT", "PST8", "PST8PDT", "YST9", "YST9YDT"].map((zone) => `SystemV/${zone}`),
+      "US/Pacific-New",
+      "Canada/East-Saskatchewan",
+    ];
+    for (const zone of intlOnly) {
+      expect(Timezone.safeParse(zone).success, zone).toBe(false);
+    }
+    // Temporal reads a string that starts with T as an ISO time and takes its offset, or UTC for Z: these
+    // fit the pattern, and aren't zones.
+    for (const zone of ["T07+05", "t0000-0330", "T07-00", "T0700+0530", "T07Z", "t0700z"]) {
+      expect(Timezone.safeParse(zone).success, zone).toBe(false);
+    }
+    // An offset in Temporal's own spelling resolves to itself, and isn't a zone either.
+    for (const zone of ["+05:00", "-03:30", "+00:00"]) {
+      expect(Timezone.safeParse(zone).success, zone).toBe(false);
+    }
+    // Any case, as clubTimeZone, which keeps Temporal's spelling; and the old names Temporal keeps.
+    for (const zone of ["europe/london", "AMERICA/NEW_YORK", "Asia/Calcutta", "US/Eastern", "GMT", "EST5EDT"]) {
+      expect(Timezone.safeParse(zone).success, zone).toBe(true);
+    }
+    // And every zone the runtime knows, so the check never refuses a real one.
+    for (const zone of Intl.supportedValuesOf("timeZone")) {
+      expect(Timezone.safeParse(zone).success, zone).toBe(true);
+    }
+  });
+
   it("takes each weekday only once in a choice (T6)", () => {
     expect(ChosenWeekdays.safeParse(["monday", "thursday"]).success).toBe(true);
     expect(ChosenWeekdays.safeParse(["monday", "monday"]).success).toBe(false);
