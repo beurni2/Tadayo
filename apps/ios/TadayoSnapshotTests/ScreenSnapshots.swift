@@ -54,8 +54,8 @@ enum ScreenSnapshot {
     }
 
     /// Snapshots `view` as `state`, `state-dark` and `state-xl`, named so the contact sheets
-    /// pair each with its render (`tools/ci/ios_steps.py`). A `busy` state must show a spinner
-    /// (`Spinners.check`).
+    /// pair each with its render (`tools/ci/ios_steps.py`). A `busy` state must hold an indicator
+    /// (`Spinners.check`); the comparison with its reference shows it drawn.
     static func assert(
         _ view: some View, named state: String, busy: Bool = false, xlHeight: CGFloat = 2200,
         file: StaticString = #filePath, testName: String = #function, line: UInt = #line
