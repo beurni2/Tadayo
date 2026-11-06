@@ -26,7 +26,7 @@
 
     /// The Lab's sections, each drawn alone by the snapshot tests.
     enum LabSection: String, CaseIterable, Identifiable {
-        case colours, type, plaque, avatars, cards, highlights, actions, photos
+        case colours, type, plaque, avatars, cards, highlights, actions, fields, photos
 
         var id: String { rawValue }
 
@@ -39,6 +39,7 @@
             case .cards: LabCards()
             case .highlights: LabHighlights()
             case .actions: LabActions()
+            case .fields: LabFields()
             case .photos: LabPhotos()
             }
         }
@@ -239,7 +240,24 @@
                 state("Keyboard focus") {
                     PrimaryButtonFace(isFocused: true) { Text("Add for Debby") }
                 }
+                state("Busy") {
+                    Button {
+                    } label: {
+                        Text("auth.email.send")
+                    }
+                    .buttonStyle(.tadayoPrimary(isBusy: true))
+                    .disabled(true)
+                }
                 AllowanceLine("2 of 6 drops · 0 of 2 video links")
+                state("Text action") {
+                    Button("auth.code.resend") {}
+                        .buttonStyle(.tadayoText)
+                }
+                state("Text action, unavailable") {
+                    Button("auth.changeEmail") {}
+                        .buttonStyle(.tadayoText)
+                        .disabled(true)
+                }
             }
         }
 
@@ -247,6 +265,49 @@
             _ name: String, @ViewBuilder content: () -> Content
         ) -> some View {
             // The focus ring reaches 4 points beyond the button, so the label sits 8 above it.
+            VStack(alignment: .leading, spacing: Spacing.s) {
+                Text(name).textRole(.metadata).foregroundStyle(Palette.secondaryText)
+                content()
+            }
+        }
+    }
+
+    /// The labelled field in each of its states, and a failure's line (handoff 2 and 4's
+    /// `fieldFocus`; the sheet's "Focused error field"). Focus is drawn, not taken.
+    struct LabFields: View {
+        var body: some View {
+            LabGroup(title: "Fields") {
+                state("Default") {
+                    field("auth.email.label", "ben@example.com", isFocused: false)
+                }
+                state("Focused, empty") {
+                    field("auth.code.label", "", isFocused: true)
+                }
+                state("Focused, not verified") {
+                    field("auth.code.label", "529614", isFocused: true, isInvalid: true)
+                    InlineError(Text("auth.code.notVerified"))
+                }
+                state("Not verified, not focused") {
+                    field("auth.code.label", "529614", isFocused: false, isInvalid: true)
+                }
+                state("Failure line") {
+                    InlineError(Text("auth.error.sendNetwork"))
+                }
+            }
+        }
+
+        private func field(
+            _ label: LocalizedStringKey, _ value: String, isFocused: Bool, isInvalid: Bool = false
+        ) -> some View {
+            LabelledField(Text(label), isFocused: isFocused, isInvalid: isInvalid) {
+                TextField(String(), text: .constant(value))
+            }
+        }
+
+        private func state<Content: View>(
+            _ name: String, @ViewBuilder content: () -> Content
+        ) -> some View {
+            // The focus ring reaches 4 points beyond the field, so the name sits 8 above it.
             VStack(alignment: .leading, spacing: Spacing.s) {
                 Text(name).textRole(.metadata).foregroundStyle(Palette.secondaryText)
                 content()

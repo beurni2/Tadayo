@@ -7,6 +7,11 @@
 #            TRIAL_OVERLAY on.
 #   Release  a release build that points at prod; no LAB, no TRIAL_OVERLAY, and no fixture
 #            photographs (EXCLUDED_SOURCE_FILE_NAMES), which slice 12's ios-release checks.
+#
+# Supabase's project URL and publishable key are public by design (T53; docs/plans/B0.md 1.2):
+# never a secret (T56). Dev carries tadayo-dev's. Debug builds run only in the simulator and on
+# CI, which never send a sign-in code, so Debug's URL is under .invalid (RFC 6761), which never
+# resolves. Release has none yet and fails closed: the app builds no network at all.
 name: Tadayo
 options:
   bundleIdPrefix: app.tadayo
@@ -29,10 +34,14 @@ settings:
       SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG LAB TRIAL_OVERLAY
       TADAYO_ENVIRONMENT: dev
       TADAYO_API_BASE_URL: https://api-dev.tadayo.app
+      TADAYO_SUPABASE_URL: https://supabase.invalid
+      TADAYO_SUPABASE_PUBLISHABLE_KEY: sb_publishable_none
     Dev:
       SWIFT_ACTIVE_COMPILATION_CONDITIONS: LAB TRIAL_OVERLAY
       TADAYO_ENVIRONMENT: dev
       TADAYO_API_BASE_URL: https://api-dev.tadayo.app
+      TADAYO_SUPABASE_URL: https://rhsycmycocbzakrydahi.supabase.co
+      TADAYO_SUPABASE_PUBLISHABLE_KEY: sb_publishable_5kJcQ8JCyWiHHMGjucf00w_8ehpABvL
     Release:
       TADAYO_ENVIRONMENT: prod
       TADAYO_API_BASE_URL: https://api.tadayo.app
@@ -42,6 +51,8 @@ packages:
     path: ../../packages/swift/TadayoCore
   TadayoDesign:
     path: ../../packages/swift/TadayoDesign
+  TadayoAPI:
+    path: ../../packages/swift/TadayoAPI
   SnapshotTesting:
     url: https://github.com/pointfreeco/swift-snapshot-testing
     exactVersion: 1.19.7
@@ -51,12 +62,21 @@ targets:
     platform: iOS
     sources:
       - path: Tadayo
+      - path: Shared
       - path: Fixtures/Fixtures.xcassets
         buildPhase: resources
     dependencies:
       - target: TadayoShare
       - package: TadayoCore
       - package: TadayoDesign
+      - package: TadayoAPI
+    # The app group the app and the share extension share, which is also their keychain access
+    # group (ADR-019; TECH-DESIGN section 4). XcodeGen writes the file.
+    entitlements:
+      path: Tadayo/Tadayo.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.app.tadayo
     info:
       path: Tadayo/Info.plist
       properties:
@@ -72,6 +92,8 @@ targets:
           - UIInterfaceOrientationPortrait
         TadayoEnvironment: $(TADAYO_ENVIRONMENT)
         TadayoAPIBaseURL: $(TADAYO_API_BASE_URL)
+        TadayoSupabaseURL: $(TADAYO_SUPABASE_URL)
+        TadayoSupabasePublishableKey: $(TADAYO_SUPABASE_PUBLISHABLE_KEY)
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.tadayo
@@ -86,8 +108,14 @@ targets:
     platform: iOS
     sources:
       - path: TadayoShare
+      - path: Shared
     dependencies:
       - package: TadayoCore
+    entitlements:
+      path: TadayoShare/TadayoShare.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.app.tadayo
     info:
       path: TadayoShare/Info.plist
       properties:
@@ -128,6 +156,34 @@ targets:
         GENERATE_INFOPLIST_FILE: true
         PRODUCT_BUNDLE_IDENTIFIER: app.tadayo.snapshot-tests
         TARGETED_DEVICE_FAMILY: "1"
+  # Hosted unit tests (the keychain store, the launch, the connections), which also run on the
+  # iOS 17 and 18 compatibility runs: only targets ending in SnapshotTests are skipped there.
+  TadayoTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: TadayoTests
+    dependencies:
+      - target: Tadayo
+      - package: TadayoCore
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: true
+        PRODUCT_BUNDLE_IDENTIFIER: app.tadayo.tests
+        TARGETED_DEVICE_FAMILY: "1"
+  # The app launched as a person would, with no session and no network.
+  TadayoUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: TadayoUITests
+    dependencies:
+      - target: Tadayo
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: true
+        PRODUCT_BUNDLE_IDENTIFIER: app.tadayo.ui-tests
+        TARGETED_DEVICE_FAMILY: "1"
 schemes:
   Tadayo:
     build:
@@ -140,5 +196,7 @@ schemes:
       config: Debug
       targets:
         - TadayoSnapshotTests
+        - TadayoTests
+        - TadayoUITests
     archive:
       config: Dev

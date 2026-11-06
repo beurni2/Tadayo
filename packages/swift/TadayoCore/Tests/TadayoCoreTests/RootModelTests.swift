@@ -20,22 +20,26 @@ import Testing
 
     func root(
         _ accounts: FakeAccounts, auth: FakeAuth = FakeAuth(),
-        store: any SessionStore = InMemorySessionStore()
+        store: any SessionStore = InMemorySessionStore(),
+        left: @escaping @MainActor () -> Void = {}
     ) -> RootModel {
         let clock = ManualContinuousClock()
         return RootModel(
             session: SessionManager(auth: auth, store: store, now: { [start] in start }),
-            auth: auth, accounts: accounts, now: { clock.now }, sleep: { clock.sleep(until: $0) })
+            auth: auth, accounts: accounts, now: { clock.now }, sleep: { clock.sleep(until: $0) },
+            left: left)
     }
 
     @Test func withNoSessionItOpensOnSignIn() async {
         let accounts = FakeAccounts()
-        let root = root(accounts)
+        var purges = 0
+        let root = root(accounts, left: { purges += 1 })
         #expect(root.route == .starting)
         await root.start()
         #expect(root.route == .signIn)
         #expect(root.signIn != nil)
         #expect(accounts.calls.isEmpty)
+        #expect(purges == 0)
     }
 
     @Test func aNewAccountConfirmsItsAgeFirst() async {
@@ -174,6 +178,35 @@ import Testing
         #expect(root.route == .signIn)
         #expect(root.profile == nil)
         #expect(root.signIn?.email == "")
+    }
+
+    @Test func leavingPurgesOnceTheServerHasHeardAndBeforeSignInShows() async throws {
+        // T11: the app remakes its connections in `left`, after the sign-out went out on them
+        // and before a new sign-in could use them.
+        let store = InMemorySessionStore(stored)
+        let auth = FakeAuth()
+        var seen: [(calls: [String], route: RootModel.Route, kept: AuthSession?)] = []
+        var root: RootModel?
+        root = self.root(
+            FakeAccounts(me: [.success(account())]), auth: auth, store: store,
+            left: { seen.append((auth.calls, root!.route, try? store.load())) })
+        await root!.start()
+        await root!.leave()
+        #expect(seen.count == 1)
+        #expect(seen.first?.calls == ["signOut access-1"])
+        #expect(seen.first?.route == .starting)
+        #expect(seen.first?.kept == nil)
+        #expect(root!.route == .signIn)
+    }
+
+    @Test func aSessionTheServerEndedIsPurgedToo() async throws {
+        let store = InMemorySessionStore(stored)
+        var purges = 0
+        let root = root(
+            FakeAccounts(me: [.failure(.signedOut)]), store: store, left: { purges += 1 })
+        await root.start()
+        #expect(root.route == .signIn)
+        #expect(purges == 1)
     }
 
     @Test func aSaveThatLandsAfterLeavingIsDropped() async throws {
@@ -316,14 +349,19 @@ import Testing
     @Test func aLeaveThatCantForgetTheSessionSaysSoAndRetries() async throws {
         // SEC-5: sign-in isn't shown over a session the device still keeps.
         let store = StubbornStore(stored, failures: 2)
-        let root = root(FakeAccounts(me: [.success(account())]), store: store)
+        var purges = 0
+        let root = root(
+            FakeAccounts(me: [.success(account())]), store: store, left: { purges += 1 })
         await root.start()
         await root.leave()
         #expect(root.route == .failed(.other))
         #expect(root.profile == nil)
         #expect(try store.load() == stored)
+        // What the account left behind is purged even while the device still keeps its session.
+        #expect(purges == 1)
         await root.retry()
         #expect(root.route == .signIn)
         #expect(try store.load() == nil)
+        #expect(purges == 2)
     }
 }
