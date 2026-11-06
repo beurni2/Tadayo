@@ -13,7 +13,7 @@ import XCTest
 /// title came out white on the light canvas, and a toolbar button not at all. A window there
 /// takes its safe areas from the screen: the top is the simulator iPhone 17's 62 (the frames'
 /// phone has 59), and the bottom, which a window shorter than the 874-point screen loses, is
-/// made the frames' 34 (`FramedHost`), which also draws the busy spinner at rest.
+/// made the frames' 34 (`FramedHost`). The busy button's spinner is drawn at rest (`StillHost`).
 ///
 /// The `-xl` snapshot is a phone tall enough to hold the whole screen at that size, since at
 /// AX5 the content scrolls: what would scroll is laid out down the image, with the pinned
@@ -64,14 +64,18 @@ enum ScreenSnapshot {
                 .environment(\.colorScheme, variant == .dark ? .dark : .light)
                 .environment(\.dynamicTypeSize, variant == .xl ? .accessibility5 : .large)
                 .environment(\.locale, Locale(identifier: "en_US"))
+            let host = FramedHost(rootView: shown)
             assertSnapshot(
-                of: FramedHost(rootView: shown) as UIViewController,
+                of: host as UIViewController,
                 as: .image(
                     on: variant.config(xlHeight: xlHeight),
                     drawHierarchyInKeyWindow: true,
                     perceptualPrecision: 0.98,
                     traits: variant.traits),
                 named: state + variant.suffix, file: file, testName: testName, line: line)
+            XCTAssertEqual(
+                Spinners.moving(in: host.view), [], "\(state)\(variant.suffix): a spinner moved",
+                file: file, line: line)
         }
     }
 
@@ -90,26 +94,20 @@ enum ScreenSnapshot {
     }
 }
 
-/// A hosting controller whose bottom safe area is the frames' 34 points, whatever its window
-/// gives it: a 393 by 852 window on the iPhone 17 simulator's 874-point screen gets 12, and the
-/// tall `-xl` window none. The system's activity indicator, the busy button's spinner, is drawn
-/// at rest: turning, it came out differently in two draws of one screen (in 430 to 510 pixels).
-final class FramedHost<Content: View>: UIHostingController<Content> {
-    private let bottom: CGFloat = 34
-
+/// A hosting controller that draws the system's activity indicator, the busy button's spinner,
+/// at rest, whatever moment the snapshot catches it at (`Spinners.holdStill`).
+class StillHost<Content: View>: UIHostingController<Content> {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        for spinner in Self.spinners(in: view) {
-            spinner.hidesWhenStopped = false
-            spinner.stopAnimating()
-        }
+        Spinners.holdStill(in: view)
     }
+}
 
-    private static func spinners(in view: UIView) -> [UIActivityIndicatorView] {
-        view.subviews.flatMap { subview in
-            (subview as? UIActivityIndicatorView).map { [$0] } ?? spinners(in: subview)
-        }
-    }
+/// A still hosting controller whose bottom safe area is the frames' 34 points, whatever its
+/// window gives it: a 393 by 852 window on the iPhone 17 simulator's 874-point screen gets 12,
+/// and the tall `-xl` window none.
+final class FramedHost<Content: View>: StillHost<Content> {
+    private let bottom: CGFloat = 34
 
     override func viewSafeAreaInsetsDidChange() {
         super.viewSafeAreaInsetsDidChange()
@@ -118,6 +116,54 @@ final class FramedHost<Content: View>: UIHostingController<Content> {
         if additionalSafeAreaInsets.bottom != added {
             additionalSafeAreaInsets.bottom = added
         }
+    }
+}
+
+/// The system's activity indicators in a view, held still for a snapshot. Turning, one came out
+/// differently in two draws of a screen; stopped, it still came out a little differently from
+/// one run to the next in the first draw of a test, so the stopped look depends on the moment
+/// it's stopped at (`docs/LIMITATIONS.md`). Each is stopped, started and stopped again at once,
+/// so it rests where a fresh one does, with Core Animation's implicit fades off and any
+/// animation left in its layers taken off.
+@MainActor
+enum Spinners {
+    static func holdStill(in view: UIView) {
+        let spinners = all(in: view)
+        guard !spinners.isEmpty else { return }
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        for spinner in spinners {
+            spinner.hidesWhenStopped = false
+            if spinner.isAnimating {
+                spinner.stopAnimating()
+                spinner.startAnimating()
+                spinner.stopAnimating()
+            }
+            settle(spinner.layer)
+        }
+        CATransaction.commit()
+    }
+
+    /// The indicators turning or with an animation in their layers, by description: none once
+    /// `holdStill` has run.
+    static func moving(in view: UIView) -> [String] {
+        all(in: view).filter { $0.isAnimating || isAnimated($0.layer) }.map(\.description)
+    }
+
+    static func all(in view: UIView) -> [UIActivityIndicatorView] {
+        view.subviews.flatMap { subview in
+            (subview as? UIActivityIndicatorView).map { [$0] } ?? all(in: subview)
+        }
+    }
+
+    private static func settle(_ layer: CALayer) {
+        layer.removeAllAnimations()
+        layer.sublayers?.forEach(settle)
+    }
+
+    private static func isAnimated(_ layer: CALayer) -> Bool {
+        !(layer.animationKeys() ?? []).isEmpty
+            || (layer.sublayers ?? []).contains(where: isAnimated)
     }
 }
 

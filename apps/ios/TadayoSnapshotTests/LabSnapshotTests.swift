@@ -17,6 +17,8 @@ import XCTest
 /// the simulator's P3 gamut the photographs came out at 16 bits, 27 MB a variant. The photographs
 /// look the same in every variant (only their heading changes, and the other sections show that
 /// role in all four), so they're snapshotted once, light at the default size, and at 1x.
+///
+/// Each section is drawn through `StillHost`, so the busy button's spinner is at rest.
 @MainActor
 final class LabSnapshotTests: XCTestCase {
     enum Variant: CaseIterable {
@@ -74,11 +76,19 @@ final class LabSnapshotTests: XCTestCase {
                     .background(Palette.canvas)
                     .environment(\.colorScheme, variant.scheme)
                     .environment(\.dynamicTypeSize, variant.size)
+                // As SnapshotTesting lays out a SwiftUI view to fit (no safe area, the size it
+                // fits in a zero proposal), through a host that draws the busy spinner at rest.
+                let host = StillHost(rootView: view)
+                host.safeAreaRegions = []
+                let fitted = host.sizeThatFits(in: .zero)
+                let name = "Lab-\(section.rawValue)\(variant.suffix)"
                 assertSnapshot(
-                    of: view,
+                    of: host as UIViewController,
                     as: .image(
-                        perceptualPrecision: 0.98, layout: .sizeThatFits, traits: traits),
-                    named: "Lab-\(section.rawValue)\(variant.suffix)")
+                        on: ViewImageConfig(safeArea: .zero, size: fitted, traits: traits),
+                        perceptualPrecision: 0.98, traits: traits),
+                    named: name)
+                XCTAssertEqual(Spinners.moving(in: host.view), [], "\(name): a spinner moved")
             }
         }
     }
