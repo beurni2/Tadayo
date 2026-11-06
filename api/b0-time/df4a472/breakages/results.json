@@ -1,0 +1,630 @@
+[
+  {
+    "name": "gap: Temporal's compatible",
+    "file": "packages/domain/src/time/civil.ts",
+    "from": "  const jump = first.getTimeZoneTransition(\"next\");",
+    "to": "  return wall.toZonedDateTime(zone).toInstant();\n  const jump = first.getTimeZoneTransition(\"next\");",
+    "suites": "unit",
+    "exit_codes": {
+      "unit": 1
+    },
+    "failed": [
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > closes St John's Saturday 12 March 2011 at 1:01 AM, when the clocks jumped there",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in America/Goose_Bay, 2011-03-13 01:00 is 2011-03-13T04:01:00Z, not 2011-03-13T05:00:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in America/St_Johns, 2011-03-13 01:00 is 2011-03-13T03:31:00Z, not 2011-03-13T04:30:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in Antarctica/Casey, 2022-10-02 01:00 is 2022-10-01T16:01:00Z, not 2022-10-01T17:00:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in Antarctica/Troll, 2026-03-29 02:00 is 2026-03-29T01:00:00Z, not 2026-03-29T02:00:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in Australia/Lord_Howe, 2026-10-04 02:15 is 2026-10-03T15:30:00Z, not 2026-10-03T15:45:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in Europe/London, 2026-03-29 01:30 is 2026-03-29T01:00:00Z, not 2026-03-29T01:30:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in Pacific/Apia, 2011-12-30 01:00 is 2011-12-30T10:00:00Z, not 2011-12-30T11:00:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in Pacific/Apia, 2011-12-30 07:00 is 2011-12-30T10:00:00Z, not 2011-12-30T17:00:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > keeps the days around a date its zone skipped in order: each opens once the one before has closed",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in America/Goose_Bay in 2011: 1 missing (1 inside a gap) and 1 doubled, days of 1021 to 1080 minutes",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in America/St_Johns in 2011: 1 missing (1 inside a gap) and 1 doubled, days of 1021 to 1080 minutes",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in Antarctica/Casey in 2022: 1 missing (1 inside a gap) and 0 doubled, days of 1021 to 1260 minutes",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in Pacific/Apia in 2011: 2 missing (2 inside a gap) and 0 doubled, days of 60 to 1080 minutes"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "gap: later",
+    "file": "packages/domain/src/time/civil.ts",
+    "from": "  const jump = first.getTimeZoneTransition(\"next\");",
+    "to": "  return wall.toZonedDateTime(zone, { disambiguation: \"later\" }).toInstant();\n  const jump = first.getTimeZoneTransition(\"next\");",
+    "suites": "unit",
+    "exit_codes": {
+      "unit": 1
+    },
+    "failed": [
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > closes St John's Saturday 12 March 2011 at 1:01 AM, when the clocks jumped there",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in America/Goose_Bay, 2011-03-13 01:00 is 2011-03-13T04:01:00Z, not 2011-03-13T05:00:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in America/St_Johns, 2011-03-13 01:00 is 2011-03-13T03:31:00Z, not 2011-03-13T04:30:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in Antarctica/Casey, 2022-10-02 01:00 is 2022-10-01T16:01:00Z, not 2022-10-01T17:00:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in Antarctica/Troll, 2026-03-29 02:00 is 2026-03-29T01:00:00Z, not 2026-03-29T02:00:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in Australia/Lord_Howe, 2026-10-04 02:15 is 2026-10-03T15:30:00Z, not 2026-10-03T15:45:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in Europe/London, 2026-03-29 01:30 is 2026-03-29T01:00:00Z, not 2026-03-29T01:30:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in Pacific/Apia, 2011-12-30 01:00 is 2011-12-30T10:00:00Z, not 2011-12-30T11:00:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in Pacific/Apia, 2011-12-30 07:00 is 2011-12-30T10:00:00Z, not 2011-12-30T17:00:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > keeps the days around a date its zone skipped in order: each opens once the one before has closed",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in America/Goose_Bay in 2011: 1 missing (1 inside a gap) and 1 doubled, days of 1021 to 1080 minutes",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in America/St_Johns in 2011: 1 missing (1 inside a gap) and 1 doubled, days of 1021 to 1080 minutes",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in Antarctica/Casey in 2022: 1 missing (1 inside a gap) and 0 doubled, days of 1021 to 1260 minutes",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in Pacific/Apia in 2011: 2 missing (2 inside a gap) and 0 doubled, days of 60 to 1080 minutes"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "doubled: later",
+    "file": "packages/domain/src/time/civil.ts",
+    "from": "{ disambiguation: \"earlier\" }",
+    "to": "{ disambiguation: \"later\" }",
+    "suites": "unit",
+    "exit_codes": {
+      "unit": 1
+    },
+    "failed": [
+      "src/time/civil.test.ts > London's missing and doubled 1 AM (TECH-DESIGN section 8) > closes Saturday 24 October 2026 at the first of its two 1 AMs, not the later one AT TIME ZONE would give",
+      "src/time/civil.test.ts > London's missing and doubled 1 AM (TECH-DESIGN section 8) > closes Saturday 28 March 2026 at 2 AM summer time, since 1 AM doesn't exist, not a whole gap early",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in America/New_York, 2026-10-31 opens at 2026-10-31T11:00:00Z and closes at 2026-11-01T05:00:00Z, 18 hours later",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in Antarctica/Troll, 2026-03-28 opens at 2026-03-28T07:00:00Z and closes at 2026-03-29T01:00:00Z, 18 hours later",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in Antarctica/Troll, 2026-10-24 opens at 2026-10-24T05:00:00Z and closes at 2026-10-24T23:00:00Z, 18 hours later",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in Europe/London, 2026-03-28 opens at 2026-03-28T07:00:00Z and closes at 2026-03-29T01:00:00Z, 18 hours later",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in Europe/London, 2026-10-24 opens at 2026-10-24T06:00:00Z and closes at 2026-10-25T00:00:00Z, 18 hours later",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > closes St John's Saturday 12 March 2011 at 1:01 AM, when the clocks jumped there",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in America/Goose_Bay, 2011-03-13 01:00 is 2011-03-13T04:01:00Z, not 2011-03-13T05:00:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in America/St_Johns, 2011-03-13 01:00 is 2011-03-13T03:31:00Z, not 2011-03-13T04:30:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in Antarctica/Casey, 2022-10-02 01:00 is 2022-10-01T16:01:00Z, not 2022-10-01T17:00:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in Antarctica/Troll, 2026-03-29 02:00 is 2026-03-29T01:00:00Z, not 2026-03-29T02:00:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in Australia/Lord_Howe, 2026-10-04 02:15 is 2026-10-03T15:30:00Z, not 2026-10-03T15:45:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in Europe/London, 2026-03-29 01:30 is 2026-03-29T01:00:00Z, not 2026-03-29T01:30:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in Pacific/Apia, 2011-12-30 01:00 is 2011-12-30T10:00:00Z, not 2011-12-30T11:00:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in Pacific/Apia, 2011-12-30 07:00 is 2011-12-30T10:00:00Z, not 2011-12-30T17:00:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > keeps the days around a date its zone skipped in order: each opens once the one before has closed",
+      "src/time/civil.test.ts > a wall time that happens twice takes the first (spec 05) > in America/New_York, 2026-11-01 01:00 is 2026-11-01T05:00:00Z, not 2026-11-01T06:00:00Z",
+      "src/time/civil.test.ts > a wall time that happens twice takes the first (spec 05) > in Antarctica/Troll, 2026-10-25 02:00 is 2026-10-25T00:00:00Z, not 2026-10-25T02:00:00Z",
+      "src/time/civil.test.ts > a wall time that happens twice takes the first (spec 05) > in Australia/Lord_Howe, 2026-04-05 01:45 is 2026-04-04T14:45:00Z, not 2026-04-04T15:15:00Z",
+      "src/time/civil.test.ts > a wall time that happens twice takes the first (spec 05) > in Europe/London, 2026-10-25 01:30 is 2026-10-25T00:30:00Z, not 2026-10-25T01:30:00Z",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in America/Goose_Bay in 2011: 1 missing (1 inside a gap) and 1 doubled, days of 1021 to 1080 minutes",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in America/New_York in 2026: 0 missing (0 inside a gap) and 1 doubled, days of 1080 to 1080 minutes",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in America/St_Johns in 2011: 1 missing (1 inside a gap) and 1 doubled, days of 1021 to 1080 minutes",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in Antarctica/Casey in 2022: 1 missing (1 inside a gap) and 0 doubled, days of 1021 to 1260 minutes",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in Antarctica/Troll in 2026: 1 missing (0 inside a gap) and 1 doubled, days of 1080 to 1080 minutes",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in Antarctica/Troll in 2027, whatever the tzdata says then",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in Europe/London in 2026: 1 missing (0 inside a gap) and 1 doubled, days of 1080 to 1080 minutes",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in Europe/London in 2027, whatever the tzdata says then",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in Pacific/Apia in 2011: 2 missing (2 inside a gap) and 0 doubled, days of 60 to 1080 minutes"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "doubled: compatible everywhere",
+    "file": "packages/domain/src/time/civil.ts",
+    "from": "const first = wall.toZonedDateTime(clubTimeZone(zone), { disambiguation: \"earlier\" });",
+    "to": "const first = wall.toZonedDateTime(clubTimeZone(zone), { disambiguation: \"compatible\" });",
+    "suites": "unit",
+    "exit_codes": {
+      "unit": 1
+    },
+    "failed": [
+      "src/time/civil.test.ts > London's missing and doubled 1 AM (TECH-DESIGN section 8) > closes Saturday 28 March 2026 at 2 AM summer time, since 1 AM doesn't exist, not a whole gap early",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in Antarctica/Troll, 2026-03-28 opens at 2026-03-28T07:00:00Z and closes at 2026-03-29T01:00:00Z, 18 hours later",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in Europe/London, 2026-03-28 opens at 2026-03-28T07:00:00Z and closes at 2026-03-29T01:00:00Z, 18 hours later",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > closes St John's Saturday 12 March 2011 at 1:01 AM, when the clocks jumped there",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in America/Goose_Bay, 2011-03-13 01:00 is 2011-03-13T04:01:00Z, not 2011-03-13T05:00:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in America/St_Johns, 2011-03-13 01:00 is 2011-03-13T03:31:00Z, not 2011-03-13T04:30:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in Antarctica/Casey, 2022-10-02 01:00 is 2022-10-01T16:01:00Z, not 2022-10-01T17:00:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in Antarctica/Troll, 2026-03-29 02:00 is 2026-03-29T01:00:00Z, not 2026-03-29T02:00:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in Australia/Lord_Howe, 2026-10-04 02:15 is 2026-10-03T15:30:00Z, not 2026-10-03T15:45:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in Europe/London, 2026-03-29 01:30 is 2026-03-29T01:00:00Z, not 2026-03-29T01:30:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in Pacific/Apia, 2011-12-30 01:00 is 2011-12-30T10:00:00Z, not 2011-12-30T11:00:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > in Pacific/Apia, 2011-12-30 07:00 is 2011-12-30T10:00:00Z, not 2011-12-30T17:00:00Z",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > keeps the days around a date its zone skipped in order: each opens once the one before has closed",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in America/Goose_Bay in 2011: 1 missing (1 inside a gap) and 1 doubled, days of 1021 to 1080 minutes",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in America/St_Johns in 2011: 1 missing (1 inside a gap) and 1 doubled, days of 1021 to 1080 minutes",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in Antarctica/Casey in 2022: 1 missing (1 inside a gap) and 0 doubled, days of 1021 to 1260 minutes",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in Antarctica/Troll in 2026: 1 missing (0 inside a gap) and 1 doubled, days of 1080 to 1080 minutes",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in Antarctica/Troll in 2027, whatever the tzdata says then",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in Europe/London in 2026: 1 missing (0 inside a gap) and 1 doubled, days of 1080 to 1080 minutes",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in Europe/London in 2027, whatever the tzdata says then",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in Pacific/Apia in 2011: 2 missing (2 inside a gap) and 0 doubled, days of 60 to 1080 minutes"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "close = reveal + 18h",
+    "file": "packages/domain/src/time/civil.ts",
+    "from": "const closeAt = resolveCivilTime(localDate.add({ days: 1 }), CLOSE_TIME, zone);",
+    "to": "const closeAt = revealAt.add({ hours: 18 });",
+    "suites": "unit",
+    "exit_codes": {
+      "unit": 1
+    },
+    "failed": [
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in America/Santiago, 2026-04-04 opens at 2026-04-04T10:00:00Z and closes at 2026-04-05T05:00:00Z, 19 hours later",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in America/Santiago, 2026-09-05 opens at 2026-09-05T11:00:00Z and closes at 2026-09-06T04:00:00Z, 17 hours later",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > resolves 1 AM on its own, never as 7 AM plus a duration (Santiago, 4 April and 5 September 2026)",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > closes St John's Saturday 12 March 2011 at 1:01 AM, when the clocks jumped there",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > keeps the days around a date its zone skipped in order: each opens once the one before has closed",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in America/Goose_Bay in 2011: 1 missing (1 inside a gap) and 1 doubled, days of 1021 to 1080 minutes",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in America/Santiago in 2026: 0 missing (0 inside a gap) and 0 doubled, days of 1020 to 1140 minutes",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in America/Santiago in 2027, whatever the tzdata says then",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in America/St_Johns in 2011: 1 missing (1 inside a gap) and 1 doubled, days of 1021 to 1080 minutes",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in Antarctica/Casey in 2022: 1 missing (1 inside a gap) and 0 doubled, days of 1021 to 1260 minutes",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in Pacific/Apia in 2011: 2 missing (2 inside a gap) and 0 doubled, days of 60 to 1080 minutes"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "close on the same date",
+    "file": "packages/domain/src/time/civil.ts",
+    "from": "resolveCivilTime(localDate.add({ days: 1 }), CLOSE_TIME, zone)",
+    "to": "resolveCivilTime(localDate, CLOSE_TIME, zone)",
+    "suites": "unit",
+    "exit_codes": {
+      "unit": 1
+    },
+    "failed": [
+      "src/time/civil.test.ts > London's missing and doubled 1 AM (TECH-DESIGN section 8) > closes Saturday 24 October 2026 at the first of its two 1 AMs, not the later one AT TIME ZONE would give",
+      "src/time/civil.test.ts > London's missing and doubled 1 AM (TECH-DESIGN section 8) > closes Saturday 28 March 2026 at 2 AM summer time, since 1 AM doesn't exist, not a whole gap early",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > gives every member the same two instants, whatever zone the server or the member is in (Q03)",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in Africa/Ouagadougou, 2026-03-28 opens at 2026-03-28T07:00:00Z and closes at 2026-03-29T01:00:00Z, 18 hours later",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in Africa/Ouagadougou, 2026-10-24 opens at 2026-10-24T07:00:00Z and closes at 2026-10-25T01:00:00Z, 18 hours later",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in America/New_York, 2026-03-07 opens at 2026-03-07T12:00:00Z and closes at 2026-03-08T06:00:00Z, 18 hours later",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in America/New_York, 2026-03-09 opens at 2026-03-09T11:00:00Z and closes at 2026-03-10T05:00:00Z, 18 hours later",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in America/New_York, 2026-10-31 opens at 2026-10-31T11:00:00Z and closes at 2026-11-01T05:00:00Z, 18 hours later",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in America/New_York, 2026-11-02 opens at 2026-11-02T12:00:00Z and closes at 2026-11-03T06:00:00Z, 18 hours later",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in America/Santiago, 2026-04-04 opens at 2026-04-04T10:00:00Z and closes at 2026-04-05T05:00:00Z, 19 hours later",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in America/Santiago, 2026-04-06 opens at 2026-04-06T11:00:00Z and closes at 2026-04-07T05:00:00Z, 18 hours later",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in America/Santiago, 2026-09-05 opens at 2026-09-05T11:00:00Z and closes at 2026-09-06T04:00:00Z, 17 hours later",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in America/Santiago, 2026-09-07 opens at 2026-09-07T10:00:00Z and closes at 2026-09-08T04:00:00Z, 18 hours later",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in Antarctica/Troll, 2026-03-28 opens at 2026-03-28T07:00:00Z and closes at 2026-03-29T01:00:00Z, 18 hours later",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in Antarctica/Troll, 2026-03-30 opens at 2026-03-30T05:00:00Z and closes at 2026-03-30T23:00:00Z, 18 hours later",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in Antarctica/Troll, 2026-10-24 opens at 2026-10-24T05:00:00Z and closes at 2026-10-24T23:00:00Z, 18 hours later",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in Antarctica/Troll, 2026-10-26 opens at 2026-10-26T07:00:00Z and closes at 2026-10-27T01:00:00Z, 18 hours later",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in Australia/Lord_Howe, 2026-04-04 opens at 2026-04-03T20:00:00Z and closes at 2026-04-04T14:00:00Z, 18 hours later",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in Australia/Lord_Howe, 2026-04-06 opens at 2026-04-05T20:30:00Z and closes at 2026-04-06T14:30:00Z, 18 hours later",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in Australia/Lord_Howe, 2026-10-03 opens at 2026-10-02T20:30:00Z and closes at 2026-10-03T14:30:00Z, 18 hours later",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in Australia/Lord_Howe, 2026-10-05 opens at 2026-10-04T20:00:00Z and closes at 2026-10-05T14:00:00Z, 18 hours later",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in Europe/London, 2026-03-27 opens at 2026-03-27T07:00:00Z and closes at 2026-03-28T01:00:00Z, 18 hours later",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in Europe/London, 2026-03-28 opens at 2026-03-28T07:00:00Z and closes at 2026-03-29T01:00:00Z, 18 hours later",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in Europe/London, 2026-03-30 opens at 2026-03-30T06:00:00Z and closes at 2026-03-31T00:00:00Z, 18 hours later",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in Europe/London, 2026-10-24 opens at 2026-10-24T06:00:00Z and closes at 2026-10-25T00:00:00Z, 18 hours later",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > in Europe/London, 2026-10-26 opens at 2026-10-26T07:00:00Z and closes at 2026-10-27T01:00:00Z, 18 hours later",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > opens at 7 AM on the date and closes at 1 AM on the next, in the club's zone",
+      "src/time/civil.test.ts > a day's two instants (T2, ADR-008) > resolves 1 AM on its own, never as 7 AM plus a duration (Santiago, 4 April and 5 September 2026)",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > closes St John's Saturday 12 March 2011 at 1:01 AM, when the clocks jumped there",
+      "src/time/civil.test.ts > a wall time that doesn't exist takes the next valid instant (spec 05) > keeps the days around a date its zone skipped in order: each opens once the one before has closed",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in Africa/Ouagadougou in 2026: 0 missing (0 inside a gap) and 0 doubled, days of 1080 to 1080 minutes",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in Africa/Ouagadougou in 2027, whatever the tzdata says then",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in America/Goose_Bay in 2011: 1 missing (1 inside a gap) and 1 doubled, days of 1021 to 1080 minutes",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in America/New_York in 2026: 0 missing (0 inside a gap) and 1 doubled, days of 1080 to 1080 minutes",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in America/New_York in 2027, whatever the tzdata says then",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in America/Santiago in 2026: 0 missing (0 inside a gap) and 0 doubled, days of 1020 to 1140 minutes",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in America/Santiago in 2027, whatever the tzdata says then",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in America/St_Johns in 2011: 1 missing (1 inside a gap) and 1 doubled, days of 1021 to 1080 minutes",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in Antarctica/Casey in 2022: 1 missing (1 inside a gap) and 0 doubled, days of 1021 to 1260 minutes",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in Antarctica/Troll in 2026: 1 missing (0 inside a gap) and 1 doubled, days of 1080 to 1080 minutes",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in Antarctica/Troll in 2027, whatever the tzdata says then",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in Australia/Lord_Howe in 2026: 0 missing (0 inside a gap) and 0 doubled, days of 1080 to 1080 minutes",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in Australia/Lord_Howe in 2027, whatever the tzdata says then",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in Europe/London in 2026: 1 missing (0 inside a gap) and 1 doubled, days of 1080 to 1080 minutes",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in Europe/London in 2027, whatever the tzdata says then",
+      "src/time/civil.test.ts > every date of a year, each instant checked by the two rules > in Pacific/Apia in 2011: 2 missing (2 inside a gap) and 0 doubled, days of 60 to 1080 minutes"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "no IANA check",
+    "file": "packages/domain/src/time/civil.ts",
+    "from": "if (!/^[A-Za-z]/.test(zone))",
+    "to": "if (false)",
+    "suites": "unit",
+    "exit_codes": {
+      "unit": 1
+    },
+    "failed": [
+      "src/time/civil.test.ts > the club's zone (T2, FQ19) > is an IANA name: never a bare offset, which has no clock changes and which the contract refuses"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "zone by Intl",
+    "file": "packages/domain/src/time/civil.ts",
+    "from": "return Temporal.PlainDate.from(\"2026-01-01\").toZonedDateTime(zone).timeZoneId;",
+    "to": "return new Intl.DateTimeFormat(\"en-US\", { timeZone: zone }).resolvedOptions().timeZone;",
+    "suites": "unit",
+    "exit_codes": {
+      "unit": 1
+    },
+    "failed": [
+      "src/time/civil.test.ts > the club's zone (T2, FQ19) > is one Temporal resolves, so a club never has a zone its days can't be found in"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "zone kept as given",
+    "file": "packages/domain/src/time/civil.ts",
+    "from": "return Temporal.PlainDate.from(\"2026-01-01\").toZonedDateTime(zone).timeZoneId;",
+    "to": "Temporal.PlainDate.from(\"2026-01-01\").toZonedDateTime(zone);\n  return zone;",
+    "suites": "unit",
+    "exit_codes": {
+      "unit": 1
+    },
+    "failed": [
+      "src/time/civil.test.ts > the club's zone (T2, FQ19) > comes back in Temporal's one spelling, which the club keeps"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "any isolation",
+    "file": "packages/domain/src/time/clock.ts",
+    "from": "if (isolation !== \"read committed\") {",
+    "to": "if (false) {",
+    "suites": "both",
+    "exit_codes": {
+      "unit": 1,
+      "db": 1
+    },
+    "failed": [
+      "src/time/clock.test.ts > prepareClock (ADR-013) > samples only under READ COMMITTED, where dev's offset is the one after the locks, on prod as on dev",
+      "src/db/clock.test.ts > the dev clock, only on dev (ADR-013) > refuses to sample outside READ COMMITTED, where dev would read the offset from before the locks, on prod too"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "prod: any isolation",
+    "file": "packages/domain/src/time/clock.ts",
+    "from": "SELECT (extract(epoch FROM pg_catalog.clock_timestamp()) * 1000000)::bigint::text AS now_us,\n               pg_catalog.current_setting('transaction_isolation') AS isolation",
+    "to": "SELECT (extract(epoch FROM pg_catalog.clock_timestamp()) * 1000000)::bigint::text AS now_us,\n               'read committed' AS isolation",
+    "suites": "both",
+    "exit_codes": {
+      "unit": 0,
+      "db": 1
+    },
+    "failed": [
+      "src/db/clock.test.ts > the dev clock, only on dev (ADR-013) > refuses to sample outside READ COMMITTED, where dev would read the offset from before the locks, on prod too"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "dev: no table read at start",
+    "file": "packages/domain/src/time/clock.ts",
+    "from": "    await sql`SELECT offset_microseconds FROM app.dev_clock`;",
+    "to": "",
+    "suites": "both",
+    "exit_codes": {
+      "unit": 1,
+      "db": 1
+    },
+    "failed": [
+      "src/time/clock.test.ts > prepareClock (ADR-013) > reads dev's table once at startup, so a table its role can't read stops dev there (T53)",
+      "src/db/clock.test.ts > the dev clock, only on dev (ADR-013) > refuses to start dev when its role can't read the table, rather than at the first request"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "dev table: any role",
+    "file": "tools/ops/sql/dev_clock.sql",
+    "from": "IF current_user <> 'tadayo_app' THEN",
+    "to": "IF false THEN",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/clock.test.ts > the dev clock, only on dev (ADR-013) > is made only as tadayo_app, which then owns it, with nothing PUBLIC can run (T53)"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "dev table: PUBLIC runs its function",
+    "file": "tools/ops/sql/dev_clock.sql",
+    "from": "REVOKE EXECUTE ON FUNCTION app.dev_clock_forward() FROM PUBLIC;",
+    "to": "GRANT EXECUTE ON FUNCTION app.dev_clock_forward() TO PUBLIC;",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/clock.test.ts > the dev clock, only on dev (ADR-013) > holds one offset at most, and keeps the schema closed (T53)",
+      "src/db/clock.test.ts > the dev clock, only on dev (ADR-013) > is made only as tadayo_app, which then owns it, with nothing PUBLIC can run (T53)"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "fake clock in the main entry",
+    "file": "packages/domain/src/index.ts",
+    "from": "export { contractInstant, INSTANT_TYPE } from \"./time/instant.ts\";",
+    "to": "export { contractInstant, INSTANT_TYPE } from \"./time/instant.ts\";\nexport { fakeClock } from \"./time/testing.ts\";",
+    "suites": "unit",
+    "exit_codes": {
+      "unit": 1
+    },
+    "failed": [
+      "src/time/clock.test.ts > fakeClock, the tests' clock (TECH-DESIGN section 8) > isn't in the package's main entry, only in @tadayo/domain/testing",
+      "src/time/one-clock.test.ts > only the time module reads a clock (T1) > finds no other code that reads the time"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "dev table: back in time",
+    "file": "tools/ops/sql/dev_clock.sql",
+    "from": "  IF NEW.offset_microseconds < OLD.offset_microseconds THEN",
+    "to": "  IF false THEN",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/clock.test.ts > the dev clock, only on dev (ADR-013) > only moves forward, so a day that has opened never takes a drop again (T3)"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "dev table: negative",
+    "file": "tools/ops/sql/dev_clock.sql",
+    "from": " CHECK (offset_microseconds >= 0)",
+    "to": "",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/clock.test.ts > the dev clock, only on dev (ADR-013) > only moves forward, so a day that has opened never takes a drop again (T3)"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "dev table: delete",
+    "file": "tools/ops/sql/dev_clock.sql",
+    "from": "CREATE TRIGGER dev_clock_kept BEFORE DELETE",
+    "to": "CREATE TRIGGER dev_clock_kept BEFORE INSERT",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/clock.test.ts > the cutoff is the time after the occurrence's lock (T3, ADR-013), the database's half > refuses a drop whose commit waited past 07:00, which a sample from before the wait would have let in",
+      "src/db/clock.test.ts > the dev clock, only on dev (ADR-013) > adds its offset on dev, to the microsecond, and nothing with no row",
+      "src/db/clock.test.ts > the dev clock, only on dev (ADR-013) > holds one offset at most, and keeps the schema closed (T53)",
+      "src/db/clock.test.ts > the dev clock, only on dev (ADR-013) > never reaches prod's clock, even when the table is made after prod's clock started",
+      "src/db/clock.test.ts > the dev clock, only on dev (ADR-013) > only moves forward, so a day that has opened never takes a drop again (T3)"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "contract: half-expand",
+    "file": "packages/domain/src/time/instant.ts",
+    "from": "roundingMode: \"floor\"",
+    "to": "roundingMode: \"halfExpand\"",
+    "suites": "unit",
+    "exit_codes": {
+      "unit": 1
+    },
+    "failed": [
+      "src/time/clock.test.ts > an instant leaving the time module > goes into the contract in whole seconds, rounded down, so server_now is never ahead of the server"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "contract: trunc",
+    "file": "packages/domain/src/time/instant.ts",
+    "from": "roundingMode: \"floor\"",
+    "to": "roundingMode: \"trunc\"",
+    "suites": "unit",
+    "exit_codes": {
+      "unit": 0
+    },
+    "failed": [],
+    "verdict": "missed"
+  },
+  {
+    "name": "database: milliseconds",
+    "file": "packages/domain/src/time/instant.ts",
+    "from": "fractionalSecondDigits: 6",
+    "to": "fractionalSecondDigits: 3",
+    "suites": "unit",
+    "exit_codes": {
+      "unit": 1
+    },
+    "failed": [
+      "src/time/clock.test.ts > an instant leaving the time module > crosses postgres.js as a Temporal.Instant both ways, and as nothing else (T1)",
+      "src/time/clock.test.ts > an instant leaving the time module > goes to the database whole, to the microsecond, as a command stores the clock's sample (T3, T22)"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "instant type takes a Date",
+    "file": "packages/domain/src/time/instant.ts",
+    "from": "if (!(value instanceof Temporal.Instant)) {",
+    "to": "if (!(value instanceof Temporal.Instant) && !(value instanceof Date)) {",
+    "suites": "unit",
+    "exit_codes": {
+      "unit": 1
+    },
+    "failed": [
+      "src/time/clock.test.ts > an instant leaving the time module > crosses postgres.js as a Temporal.Instant both ways, and as nothing else (T1)"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "fake: nanoseconds",
+    "file": "packages/domain/src/time/instant.ts",
+    "from": "if (instant.epochNanoseconds % 1000n !== 0n) {",
+    "to": "if (false) {",
+    "suites": "unit",
+    "exit_codes": {
+      "unit": 1
+    },
+    "failed": [
+      "src/time/clock.test.ts > an instant leaving the time module > goes to the database whole, to the microsecond, as a command stores the clock's sample (T3, T22)",
+      "src/time/clock.test.ts > fakeClock, the tests' clock (TECH-DESIGN section 8) > keeps Postgres's precision, microseconds, so what a test compares is what the database stores"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "prod gets the dev clock",
+    "file": "packages/domain/src/time/clock.ts",
+    "from": "    return PROD_CLOCK;\n",
+    "to": "    return DEV_CLOCK;\n",
+    "suites": "unit",
+    "exit_codes": {
+      "unit": 1
+    },
+    "failed": [
+      "src/time/clock.test.ts > prepareClock (ADR-013) > gives prod a clock whose query has no offset in it and never names the dev clock"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "prod skips its check",
+    "file": "packages/domain/src/time/clock.ts",
+    "from": "    if (present) throw new Error(\"time: prod refuses",
+    "to": "    if (false) throw new Error(\"time: prod refuses",
+    "suites": "unit",
+    "exit_codes": {
+      "unit": 1
+    },
+    "failed": [
+      "src/time/clock.test.ts > prepareClock (ADR-013) > refuses to start prod on a database that has a dev clock"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "dev skips its check",
+    "file": "packages/domain/src/time/clock.ts",
+    "from": "  if (!present)",
+    "to": "  if (false)",
+    "suites": "unit",
+    "exit_codes": {
+      "unit": 1
+    },
+    "failed": [
+      "src/time/clock.test.ts > prepareClock (ADR-013) > gives dev the clock that adds app.dev_clock's offset, and refuses to start dev without one"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "any environment is dev",
+    "file": "packages/domain/src/time/clock.ts",
+    "from": "  if (environment !== \"dev\" && environment !== \"prod\") {",
+    "to": "  if (false) {",
+    "suites": "unit",
+    "exit_codes": {
+      "unit": 1
+    },
+    "failed": [
+      "src/time/clock.test.ts > prepareClock (ADR-013) > refuses any environment but exactly dev or prod, so a typo can't pick the dev clock"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "prod reads now()",
+    "file": "packages/domain/src/time/clock.ts",
+    "from": "SELECT (extract(epoch FROM pg_catalog.clock_timestamp()) * 1000000)::bigint::text AS now_us,",
+    "to": "SELECT (extract(epoch FROM pg_catalog.now()) * 1000000)::bigint::text AS now_us,",
+    "suites": "both",
+    "exit_codes": {
+      "unit": 1,
+      "db": 1
+    },
+    "failed": [
+      "src/time/clock.test.ts > prepareClock (ADR-013) > gives prod a clock whose query has no offset in it and never names the dev clock",
+      "src/time/clock.test.ts > prepareClock (ADR-013) > reads clock_timestamp(), the moment it's asked, never now(), the transaction's start",
+      "src/time/clock.test.ts > prepareClock (ADR-013) > refuses an answer that isn't a whole number of microseconds",
+      "src/db/clock.test.ts > the dev clock, only on dev (ADR-013) > never reaches prod's clock, even when the table is made after prod's clock started",
+      "src/db/clock.test.ts > the server's clock (ADR-013) > reads the moment it's asked, clock_timestamp(), never the transaction's start",
+      "src/db/clock.test.ts > the server's clock (ADR-013) > reads the time after a lock wait: clock_timestamp() moves on while a transaction waits for a lock (T3)"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "dev reads now()",
+    "file": "packages/domain/src/time/clock.ts",
+    "from": "SELECT ((extract(epoch FROM pg_catalog.clock_timestamp()) * 1000000)::bigint",
+    "to": "SELECT ((extract(epoch FROM pg_catalog.now()) * 1000000)::bigint",
+    "suites": "both",
+    "exit_codes": {
+      "unit": 1,
+      "db": 1
+    },
+    "failed": [
+      "src/time/clock.test.ts > prepareClock (ADR-013) > gives dev the clock that adds app.dev_clock's offset, and refuses to start dev without one",
+      "src/time/clock.test.ts > prepareClock (ADR-013) > reads clock_timestamp(), the moment it's asked, never now(), the transaction's start",
+      "src/db/clock.test.ts > the cutoff is the time after the occurrence's lock (T3, ADR-013), the database's half > refuses a drop whose commit waited past 07:00, which a sample from before the wait would have let in",
+      "src/db/clock.test.ts > the dev clock, only on dev (ADR-013) > adds its offset on dev, to the microsecond, and nothing with no row"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "dev ignores its offset",
+    "file": "packages/domain/src/time/clock.ts",
+    "from": "+ coalesce((SELECT offset_microseconds FROM app.dev_clock), 0))",
+    "to": "+ 0 * coalesce((SELECT offset_microseconds FROM app.dev_clock), 0))",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/clock.test.ts > the cutoff is the time after the occurrence's lock (T3, ADR-013), the database's half > refuses a drop whose commit waited past 07:00, which a sample from before the wait would have let in",
+      "src/db/clock.test.ts > the dev clock, only on dev (ADR-013) > adds its offset on dev, to the microsecond, and nothing with no row"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "dev offset in seconds",
+    "file": "packages/domain/src/time/clock.ts",
+    "from": "+ coalesce((SELECT offset_microseconds FROM app.dev_clock), 0))",
+    "to": "+ coalesce((SELECT offset_microseconds / 1000000 * 1000000 FROM app.dev_clock), 0))",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/clock.test.ts > the dev clock, only on dev (ADR-013) > adds its offset on dev, to the microsecond, and nothing with no row"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "sample in milliseconds",
+    "file": "packages/domain/src/time/clock.ts",
+    "from": "SELECT (extract(epoch FROM pg_catalog.clock_timestamp()) * 1000000)::bigint::text AS now_us,",
+    "to": "SELECT ((extract(epoch FROM pg_catalog.clock_timestamp()) * 1000)::bigint * 1000)::text AS now_us,",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/clock.test.ts > the server's clock (ADR-013) > keeps Postgres's microseconds, and a command's connection stores and reads back each sample exactly (T3, T22)"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "dev table: no RLS",
+    "file": "tools/ops/sql/dev_clock.sql",
+    "from": "ALTER TABLE app.dev_clock ENABLE ROW LEVEL SECURITY;",
+    "to": "",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/clock.test.ts > the dev clock, only on dev (ADR-013) > holds one offset at most, and keeps the schema closed (T53)"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "dev table: many rows",
+    "file": "tools/ops/sql/dev_clock.sql",
+    "from": "only_row boolean PRIMARY KEY DEFAULT true CHECK (only_row),",
+    "to": "only_row boolean DEFAULT true,",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/clock.test.ts > the dev clock, only on dev (ADR-013) > holds one offset at most, and keeps the schema closed (T53)"
+    ],
+    "verdict": "caught"
+  }
+]
