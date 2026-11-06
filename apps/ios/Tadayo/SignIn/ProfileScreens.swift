@@ -15,7 +15,7 @@ struct AgeScreen: View {
             SetupScroll {
                 SetupHeading(
                     title: "auth.age.title", subtitle: Text("auth.age.body"),
-                    subtitleGap: Spacing.xxxl)
+                    subtitleGap: Spacing.xxl)
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 SetupFooter(bottom: Spacing.s) {
@@ -52,12 +52,13 @@ struct AgeScreen: View {
     }
 }
 
-/// The colour of the system's own back button, for the chevron that stands in for it: the tint
-/// before iOS 26, the label's colour on iOS 26's glass (T45), as A02-code's back button is.
+/// The colour of the system's own back button, for the chevron that stands in for it (T45): the
+/// tint before iOS 26; on iOS 26's glass, where A02-code's back button takes the label's colour,
+/// `primaryText`, the token nearest it (T44).
 private struct SystemBackColour: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 26, *) {
-            content.tint(.primary)
+            content.tint(Palette.primaryText)
         } else {
             content
         }

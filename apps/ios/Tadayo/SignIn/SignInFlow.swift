@@ -56,7 +56,7 @@ struct EmailScreen: View {
                     .focused($focused)
             }
             .padding(.top, SetupGap.field)
-            if let failure = model.failure {
+            if let failure {
                 InlineError(Text(verbatim: failure.words))
                     .padding(.top, Spacing.m)
             }
@@ -76,7 +76,18 @@ struct EmailScreen: View {
         .navigationTitle(Text("auth.signIn.navTitle"))
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { if focus == nil { focused = true } }
-        .announcing(model.failure?.words)
+        .announcing(failure?.words)
+    }
+
+    /// This screen's own failures, sending the first code (handoff 4's `failureStates`). It stays
+    /// under A02-code, which shows and says its own, so they aren't shown here or said twice.
+    private var failure: SignInModel.Failure? {
+        switch model.failure {
+        case .sendNetwork, .sendRefused: model.failure
+        case .verifyNetwork, .codeNotVerified, .verifyUnavailable, .resendNetwork, .resendRefused,
+            nil:
+            nil
+        }
     }
 }
 
@@ -98,7 +109,8 @@ struct CodeScreen: View {
                     .accessibilityLabel(Text(verbatim: sentTo(model.address))))
             LabelledField(
                 Text("auth.code.label"), isFocused: focus ?? focused,
-                isInvalid: model.failure == .codeNotVerified
+                isInvalid: model.failure == .codeNotVerified,
+                error: model.failure.map { Text(verbatim: $0.words) }
             ) {
                 TextField(
                     text: $model.code,
@@ -146,8 +158,8 @@ struct CodeScreen: View {
     }
 
     /// The address with a break allowed after its "@" and each dot (a zero-width space), so at
-    /// the largest text it wraps there, not inside a word: "ben@example." over "com", not
-    /// "ben@example.co" over "m". VoiceOver reads the address as it is.
+    /// the largest text it wraps there, not inside a word: "Sent to ben@" over "example.com",
+    /// not "ben@example.co" over "m". VoiceOver reads the address as it is.
     private func breakable(_ address: String) -> String {
         address.replacingOccurrences(of: "@", with: "@\u{200B}")
             .replacingOccurrences(of: ".", with: ".\u{200B}")

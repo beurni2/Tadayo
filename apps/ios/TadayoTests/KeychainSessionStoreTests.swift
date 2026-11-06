@@ -82,6 +82,60 @@ final class KeychainSessionStoreTests: XCTestCase {
         XCTAssertEqual("\(failure)", "Keychain status \(errSecInteractionNotAllowed)")
     }
 
+    func testAFirstLaunchAfterAnInstallForgetsEverySession() throws {
+        // FQ87: iOS keeps the item when the app is deleted; the app group's container goes.
+        let prod = KeychainSessionStore(environment: "prod", service: "app.tadayo.session.tests")
+        defer { try? prod.delete() }
+        try store.save(session)
+        try prod.save(session)
+        let container = try emptyContainer()
+        defer { try? FileManager.default.removeItem(at: container) }
+        forgetEarlierInstall(markedIn: container)
+        XCTAssertNil(try store.load())
+        XCTAssertNil(try prod.load())
+        let mark = container.appending(path: KeychainSessionStore.installMark)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: mark.path(percentEncoded: false)))
+        // Every launch after it keeps the session.
+        try store.save(session)
+        forgetEarlierInstall(markedIn: container)
+        XCTAssertEqual(try store.load(), session)
+    }
+
+    func testWithNoContainerNoSessionIsKept() throws {
+        try store.save(session)
+        forgetEarlierInstall(markedIn: nil)
+        XCTAssertNil(try store.load())
+    }
+
+    func testTheAppGroupsContainerIsThere() {
+        // The mark lives there, so the app (and from B4 the share extension) never fails closed
+        // for want of it.
+        XCTAssertNotNil(
+            FileManager.default.containerURL(
+                forSecurityApplicationGroupIdentifier: KeychainSessionStore.accessGroup))
+    }
+
+    func testTheStoreIsTheBuildsEnvironments() {
+        XCTAssertEqual(KeychainSessionStore(info: ["TadayoEnvironment": "dev"])?.environment, "dev")
+        XCTAssertEqual(
+            KeychainSessionStore(info: ["TadayoEnvironment": "dev"])?.service,
+            KeychainSessionStore.appService)
+        XCTAssertNil(KeychainSessionStore(info: ["TadayoEnvironment": ""]))
+        XCTAssertNil(KeychainSessionStore(info: [:]))
+    }
+
+    private func forgetEarlierInstall(markedIn container: URL?) {
+        KeychainSessionStore.forgetEarlierInstall(
+            markedIn: container, service: "app.tadayo.session.tests")
+    }
+
+    private func emptyContainer() throws -> URL {
+        let url = FileManager.default.temporaryDirectory.appending(
+            path: UUID().uuidString, directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        return url
+    }
+
     private var query: [String: Any] {
         [
             kSecClass as String: kSecClassGenericPassword,

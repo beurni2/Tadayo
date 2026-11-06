@@ -11,29 +11,35 @@ import SwiftUI
 /// with the system's indeterminate indicator at its trailing edge, and the screen disables it so
 /// a second tap does nothing (handoff 1: "keep the button height and label stable, disable
 /// repeated submission and expose the busy state accessibly"; handoff 3's indicator). No delivery
-/// draws it yet, so it's built from spec (handoff 7 asks).
+/// draws it yet, so it's built from spec (handoff 7 asks). A button that can be busy keeps the
+/// indicator's room clear on both sides of its centred label, busy or not, at the indicator's own
+/// size, which grows with the text (20 points at the default size, about 56 at the largest): the
+/// label wraps before it reaches the indicator, and doesn't wrap differently when it comes.
 public struct PrimaryButtonStyle: ButtonStyle {
     let isBusy: Bool
+    let canBeBusy: Bool
 
-    public init(isBusy: Bool = false) {
+    public init(isBusy: Bool = false, canBeBusy: Bool = false) {
         self.isBusy = isBusy
+        self.canBeBusy = canBeBusy
     }
 
     public func makeBody(configuration: Configuration) -> some View {
-        PrimaryButton(configuration: configuration, isBusy: isBusy)
+        PrimaryButton(configuration: configuration, isBusy: isBusy, canBeBusy: canBeBusy)
     }
 }
 
 private struct PrimaryButton: View {
     let configuration: ButtonStyleConfiguration
     let isBusy: Bool
+    let canBeBusy: Bool
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.isFocused) private var isFocused
 
     var body: some View {
         PrimaryButtonFace(
             isPressed: configuration.isPressed, isFocused: isFocused,
-            isEnabled: isEnabled || isBusy, isBusy: isBusy
+            isEnabled: isEnabled || isBusy, isBusy: isBusy, canBeBusy: canBeBusy
         ) {
             configuration.label
         }
@@ -49,46 +55,56 @@ public struct PrimaryButtonFace<Label: View>: View {
     let isFocused: Bool
     let isEnabled: Bool
     let isBusy: Bool
+    let canBeBusy: Bool
     let label: Label
 
     public init(
         isPressed: Bool = false, isFocused: Bool = false, isEnabled: Bool = true,
-        isBusy: Bool = false, @ViewBuilder label: () -> Label
+        isBusy: Bool = false, canBeBusy: Bool = false, @ViewBuilder label: () -> Label
     ) {
         self.isPressed = isPressed
         self.isFocused = isFocused
         self.isEnabled = isEnabled
         self.isBusy = isBusy
+        self.canBeBusy = canBeBusy || isBusy
         self.label = label()
     }
 
     public var body: some View {
         let shape = RoundedRectangle(cornerRadius: Radius.button)
         let ring = Size.focusRingGap + Size.focusRingWidth / 2
-        label
-            .textRole(.button)
-            .multilineTextAlignment(.center)
-            .foregroundStyle(ink)
-            .padding(.horizontal, Spacing.l)
-            .padding(.vertical, Spacing.m)
-            .frame(maxWidth: .infinity, minHeight: Size.primaryButtonHeight)
-            .overlay(alignment: .trailing) {
-                if isBusy {
-                    ProgressView()
-                        .tint(ink)
-                        .padding(.trailing, Spacing.l)
-                }
+        HStack(spacing: Spacing.s) {
+            if canBeBusy {
+                // The indicator's room on the leading side too, so the label stays centred.
+                indicator.hidden().accessibilityHidden(true)
             }
-            .background(fill, in: shape)
-            .contentShape(shape)
-            .overlay {
-                if isFocused {
-                    RoundedRectangle(cornerRadius: Radius.button + ring)
-                        .stroke(Palette.focusRing, lineWidth: Size.focusRingWidth)
-                        .padding(-ring)
-                        .accessibilityHidden(true)
-                }
+            label
+                .textRole(.button)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+            if canBeBusy {
+                indicator.opacity(isBusy ? 1 : 0).accessibilityHidden(!isBusy)
             }
+        }
+        .foregroundStyle(ink)
+        .padding(.horizontal, Spacing.l)
+        .padding(.vertical, Spacing.m)
+        .frame(maxWidth: .infinity, minHeight: Size.primaryButtonHeight)
+        .background(fill, in: shape)
+        .contentShape(shape)
+        .overlay {
+            if isFocused {
+                RoundedRectangle(cornerRadius: Radius.button + ring)
+                    .stroke(Palette.focusRing, lineWidth: Size.focusRingWidth)
+                    .padding(-ring)
+                    .accessibilityHidden(true)
+            }
+        }
+    }
+
+    /// The system's indeterminate activity indicator, 8 points from the label.
+    private var indicator: some View {
+        ProgressView().tint(ink)
     }
 
     private var fill: Color {
@@ -107,6 +123,6 @@ extension ButtonStyle where Self == PrimaryButtonStyle {
 
     /// The primary button, busy while its request is on its way.
     public static func tadayoPrimary(isBusy: Bool) -> PrimaryButtonStyle {
-        PrimaryButtonStyle(isBusy: isBusy)
+        PrimaryButtonStyle(isBusy: isBusy, canBeBusy: true)
     }
 }

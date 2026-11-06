@@ -26,9 +26,22 @@ enum AppLaunch {
             }
         #endif
         if isHostingTests(process) { return .inert }
-        let environment = info["TadayoEnvironment"] as? String ?? ""
-        guard !environment.isEmpty else { return .unconfigured }
-        let store = KeychainSessionStore(environment: environment)
+        return configured(
+            info: info,
+            container: FileManager.default.containerURL(
+                forSecurityApplicationGroupIdentifier: KeychainSessionStore.accessGroup))
+    }
+
+    /// The app as the build's settings make it, with its session in the keychain: a session an
+    /// earlier install left is forgotten first (FQ87), before anything reads the store. The
+    /// tests pass a folder of their own and a service of their own.
+    @MainActor static func configured(
+        info: [String: Any], container: URL?, service: String = KeychainSessionStore.appService
+    ) -> AppLaunch {
+        guard let store = KeychainSessionStore(info: info, service: service) else {
+            return .unconfigured
+        }
+        KeychainSessionStore.forgetEarlierInstall(markedIn: container, service: service)
         return AppGraph.make(info: info, store: store).map(AppLaunch.live) ?? .unconfigured
     }
 
@@ -61,6 +74,16 @@ enum AppLaunch {
             session: session, auth: auth, accounts: accounts,
             left: { connections.reset() })
         return AppGraph(root: root, connections: connections)
+    }
+}
+
+extension KeychainSessionStore {
+    /// The store for the build's environment (`TadayoEnvironment`, filled by `project.yml`); nil
+    /// with none, and the app then builds nothing.
+    init?(info: [String: Any], service: String = KeychainSessionStore.appService) {
+        guard let environment = info["TadayoEnvironment"] as? String, !environment.isEmpty
+        else { return nil }
+        self.init(environment: environment, service: service)
     }
 }
 

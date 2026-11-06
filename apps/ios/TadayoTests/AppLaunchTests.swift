@@ -13,6 +13,18 @@ final class AppLaunchTests: XCTestCase {
         "TadayoSupabasePublishableKey": "sb_publishable_none",
     ]
 
+    private let testService = "app.tadayo.session.tests.launch"
+    private let earlierSession = AuthSession(
+        accessToken: "access-earlier", refreshToken: "refresh-earlier",
+        expiresAt: Date(timeIntervalSince1970: 1_793_847_600))
+
+    private func emptyContainer() throws -> URL {
+        let url = FileManager.default.temporaryDirectory.appending(
+            path: UUID().uuidString, directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        return url
+    }
+
     func testHostingTheseTestsTheAppBuildsNothing() {
         // The snapshot and unit tests run inside the app: it reads no keychain and makes no call.
         XCTAssertTrue(AppLaunch.isHostingTests(.processInfo))
@@ -46,6 +58,45 @@ final class AppLaunchTests: XCTestCase {
             XCTAssertNil(AppGraph.make(info: info, store: InMemorySessionStore()))
         }
         XCTAssertNotNil(AppGraph.make(info: settings, store: InMemorySessionStore()))
+    }
+
+    func testTheFirstLaunchAfterAnInstallForgetsTheSessionBeforeReadingIt() async throws {
+        // FQ87: an earlier install's session, and no mark in the app group's container.
+        let store = KeychainSessionStore(environment: "dev", service: testService)
+        try store.save(earlierSession)
+        defer { try? store.delete() }
+        let container = try emptyContainer()
+        defer { try? FileManager.default.removeItem(at: container) }
+        guard
+            case .live(let graph) = AppLaunch.configured(
+                info: settings, container: container, service: testService)
+        else { return XCTFail("the app built nothing from good settings") }
+        XCTAssertNil(try store.load())
+        await graph.root.start()
+        XCTAssertEqual(graph.root.route, .signIn)
+    }
+
+    func testALaterLaunchKeepsTheSession() throws {
+        let store = KeychainSessionStore(environment: "dev", service: testService)
+        defer { try? store.delete() }
+        let container = try emptyContainer()
+        defer { try? FileManager.default.removeItem(at: container) }
+        _ = AppLaunch.configured(info: settings, container: container, service: testService)
+        try store.save(earlierSession)
+        guard
+            case .live = AppLaunch.configured(
+                info: settings, container: container, service: testService)
+        else { return XCTFail("the app built nothing from good settings") }
+        XCTAssertEqual(try store.load(), earlierSession)
+    }
+
+    func testABuildWithNoEnvironmentBuildsNothing() {
+        var noEnvironment = settings
+        noEnvironment["TadayoEnvironment"] = ""
+        guard
+            case .unconfigured = AppLaunch.configured(
+                info: noEnvironment, container: nil, service: testService)
+        else { return XCTFail("the app built its services with no environment") }
     }
 
     func testEveryRequestGoesThroughASessionThatKeepsNothing() {

@@ -8,8 +8,8 @@ final class SignInUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    /// With no session, the app opens on A02-email (handoff 1), and Send a code waits for a
-    /// plausible address.
+    /// With no session, the app opens on A02-email (handoff 1) with its field focused, and Send a
+    /// code waits for a plausible address.
     @MainActor func testWithNoSessionItOpensOnTheEmailScreen() {
         let app = launch("-TadayoUITestNoSession")
         XCTAssertTrue(app.navigationBars["Sign in"].waitForExistence(timeout: 10))
@@ -21,35 +21,49 @@ final class SignInUITests: XCTestCase {
         let send = app.buttons["Send a code"]
         XCTAssertTrue(send.exists)
         XCTAssertFalse(send.isEnabled)
-        field.tap()
-        field.typeText("ben@example")
+        // Typed with no tap: the field took the focus as the screen appeared.
+        app.typeText("ben@example")
+        XCTAssertEqual(field.value as? String, "ben@example")
         XCTAssertFalse(send.isEnabled)
-        field.typeText(".com")
+        app.typeText(".com")
         XCTAssertTrue(send.isEnabled)
         // No back on the first screen in B0: Welcome (A01) comes in B1.
         XCTAssertFalse(app.navigationBars["Sign in"].buttons.firstMatch.exists)
     }
 
-    /// Sign-in to its end on stand-in services: a code the server doesn't verify keeps its digits
-    /// and Verify code, the right one goes on, the age then the name, then the tabs.
+    /// Sign-in to its end on stand-in services. Back and Change email address return to A02-email
+    /// with the address kept; a code the server doesn't verify keeps its digits and Verify code;
+    /// the right one goes on, the age then the name, then the tabs.
     @MainActor func testSignInGoesToTheEndOnStandInServices() {
         let app = launch("-TadayoUITestFakes")
         let email = app.textFields["Email address"]
         XCTAssertTrue(email.waitForExistence(timeout: 10))
-        email.tap()
-        email.typeText("ben@example.com")
+        app.typeText("ben@example.com")
+        app.buttons["Send a code"].tap()
+
+        let code = app.textFields["Six-digit code"]
+        XCTAssertTrue(code.waitForExistence(timeout: 5))
+        // The system's back button is Change email address.
+        app.navigationBars["Sign in"].buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(app.staticTexts["What’s your email?"].waitForExistence(timeout: 5))
+        XCTAssertEqual(email.value as? String, "ben@example.com")
+        app.buttons["Send a code"].tap()
+        XCTAssertTrue(code.waitForExistence(timeout: 5))
+        app.buttons["Change email address"].tap()
+        XCTAssertTrue(app.staticTexts["What’s your email?"].waitForExistence(timeout: 5))
+        XCTAssertEqual(email.value as? String, "ben@example.com")
         app.buttons["Send a code"].tap()
 
         XCTAssertTrue(app.staticTexts["Enter your code"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Sent to ben@example.com"].exists)
         XCTAssertTrue(app.staticTexts["You can send a new code after one minute."].exists)
         XCTAssertTrue(app.buttons["Change email address"].isEnabled)
-        let code = app.textFields["Six-digit code"]
         let verify = app.buttons["Verify code"]
         XCTAssertTrue(code.exists)
         XCTAssertFalse(verify.isEnabled)
-        code.tap()
-        code.typeText("529614")
+        // Typed with no tap: the code field took the focus as the screen appeared.
+        app.typeText("529614")
+        XCTAssertEqual(code.value as? String, "529614")
         XCTAssertTrue(verify.isEnabled)
         verify.tap()
 
@@ -68,6 +82,8 @@ final class SignInUITests: XCTestCase {
         XCTAssertTrue(confirm.waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Before you continue"].exists)
         XCTAssertTrue(app.staticTexts["Tadayo is for people aged 18 and older."].exists)
+        // The chevron that stands in for back is Leave sign-in too, by its label.
+        XCTAssertEqual(leaveButtons(in: app).count, 2)
         confirm.tap()
 
         let name = app.textFields["Your name"]
@@ -83,6 +99,41 @@ final class SignInUITests: XCTestCase {
 
         // The tabs are the next PR's; until then a Debug build opens the Lab there.
         XCTAssertTrue(app.navigationBars["Lab"].waitForExistence(timeout: 5))
+    }
+
+    /// Leave sign-in on A02-age, by the chevron and then by the button under I’m 18 or older:
+    /// each ends the session and opens A02-email again, empty, and going back can't skip the age
+    /// (handoff 1).
+    @MainActor func testLeavingSignInFromTheAgeScreenStartsAgain() {
+        let app = launch("-TadayoUITestFakes")
+        signInToTheAge(app)
+        app.navigationBars["Sign in"].buttons["Leave sign-in"].tap()
+        let email = app.textFields["Email address"]
+        XCTAssertTrue(email.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["What’s your email?"].exists)
+        XCTAssertNotEqual(email.value as? String, "ben@example.com")
+
+        signInToTheAge(app)
+        let lowest = leaveButtons(in: app).max { $0.frame.minY < $1.frame.minY }
+        XCTAssertNotNil(lowest)
+        lowest?.tap()
+        XCTAssertTrue(email.waitForExistence(timeout: 5))
+        XCTAssertNotEqual(email.value as? String, "ben@example.com")
+    }
+
+    @MainActor private func signInToTheAge(_ app: XCUIApplication) {
+        XCTAssertTrue(app.textFields["Email address"].waitForExistence(timeout: 10))
+        app.typeText("ben@example.com")
+        app.buttons["Send a code"].tap()
+        XCTAssertTrue(app.textFields["Six-digit code"].waitForExistence(timeout: 5))
+        app.typeText("123456")
+        app.buttons["Verify code"].tap()
+        XCTAssertTrue(app.buttons["I’m 18 or older"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor private func leaveButtons(in app: XCUIApplication) -> [XCUIElement] {
+        app.buttons.matching(NSPredicate(format: "label == %@", "Leave sign-in"))
+            .allElementsBoundByIndex
     }
 
     @MainActor private func launch(_ mode: String) -> XCUIApplication {

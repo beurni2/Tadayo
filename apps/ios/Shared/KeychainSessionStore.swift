@@ -15,13 +15,15 @@ import TadayoCore
 /// Both targets compile this file; the share extension reads the session from B4.
 struct KeychainSessionStore: SessionStore {
     static let accessGroup = "group.app.tadayo"
+    /// The app's item's service; tests use their own.
+    static let appService = "app.tadayo.session"
 
     /// The item's service; the environment (`dev`, `prod`) is its account, so a dev session is
     /// never read by a prod build on the same phone.
     let service: String
     let environment: String
 
-    init(environment: String, service: String = "app.tadayo.session") {
+    init(environment: String, service: String = appService) {
         self.environment = environment
         self.service = service
     }
@@ -79,14 +81,44 @@ struct KeychainSessionStore: SessionStore {
 
     /// What finds the item: its class, service, account and access group, never synchronised.
     private var item: [CFString: Any] {
+        var item = Self.items(of: service)
+        item[kSecAttrAccount] = environment
+        return item
+    }
+
+    /// Every environment's item of `service`.
+    private static func items(of service: String) -> [CFString: Any] {
         [
             kSecClass: kSecClassGenericPassword,
             kSecAttrService: service,
-            kSecAttrAccount: environment,
-            kSecAttrAccessGroup: Self.accessGroup,
+            kSecAttrAccessGroup: accessGroup,
             kSecAttrSynchronizable: false,
         ]
     }
+
+    /// Forgets the session an earlier install left (FQ87). iOS keeps keychain items when an app
+    /// is deleted, but deletes the app group's container once the last app of the group goes,
+    /// so a mark in that container tells a first launch after an install from any other. With
+    /// no mark, every environment's item of `service` is deleted, and the mark is then written:
+    /// the next person to install Tadayo on a phone isn't signed in as the last. Whatever
+    /// reads the session calls this first: the app at launch, and the share extension from B4.
+    ///
+    /// With no container (an app group missing from the build), the items are deleted and no
+    /// mark is written, so a session is never kept: it fails closed. A delete that fails writes
+    /// no mark either, so the next launch tries again.
+    static func forgetEarlierInstall(markedIn container: URL?, service: String = appService) {
+        let mark = container?.appending(path: installMark, directoryHint: .notDirectory)
+        if let mark, FileManager.default.fileExists(atPath: mark.path(percentEncoded: false)) {
+            return
+        }
+        let status = SecItemDelete(items(of: service) as CFDictionary)
+        guard status == errSecSuccess || status == errSecItemNotFound, let mark else { return }
+        try? Data().write(
+            to: mark, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+    }
+
+    /// The mark's file name in the app group's container.
+    static let installMark = "installed"
 }
 
 /// A keychain call that failed: its status and nothing else, so no token reaches a log (T52).

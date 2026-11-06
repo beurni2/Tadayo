@@ -171,7 +171,75 @@ final class SignInSnapshotTests: XCTestCase {
         snapProfile(model, named: "A03-profile-name-too-long")
     }
 
+    // MARK: What VoiceOver finds
+
+    func testEachTitleIsAHeading() {
+        heading("What’s your email?", in: SignInFlow(model: signIn(ScriptedAuth()), focus: true))
+        heading("Enter your code", in: SignInFlow(model: onCode(), focus: true))
+        heading(
+            "Before you continue", in: AgeScreen(model: profile(ageConfirmed: false), leave: {}))
+        heading(
+            "What should we call you?",
+            in: ProfileScreen(model: profile(ageConfirmed: true), focus: false))
+    }
+
+    func testTheAddressIsReadAsItIs() {
+        // The zero-width spaces that let it wrap aren't read.
+        let elements = AccessibilityElements.of(SignInFlow(model: onCode(), focus: true))
+        XCTAssertTrue(elements.contains { $0.label == "Sent to ben@example.com" }, "\(elements)")
+    }
+
+    func testACodeNotVerifiedIsTheFieldsHint() {
+        // Coming back to the field, VoiceOver says why it's marked (handoff 1).
+        let refusedCode = refused(.codeNotVerified, until: .codeNotVerified)
+        let elements = AccessibilityElements.of(SignInFlow(model: refusedCode, focus: true))
+        let field = elements.first { $0.label == "Six-digit code" }
+        XCTAssertEqual(field?.hint, SignInModel.Failure.codeNotVerified.words, "\(elements)")
+        // A failure that doesn't mark the field isn't its hint.
+        let network = refused(.network, until: .verifyNetwork)
+        let others = AccessibilityElements.of(SignInFlow(model: network, focus: true))
+        XCTAssertEqual(others.first { $0.label == "Six-digit code" }?.hint, "", "\(others)")
+    }
+
+    func testA02EmailShowsOnlyItsOwnFailures() {
+        // A02-code's failure stays on A02-code, which is pushed over A02-email.
+        let network = refused(.network, until: .verifyNetwork)
+        let under = AccessibilityElements.of(EmailScreen(model: network, focus: true))
+        XCTAssertFalse(
+            under.contains { $0.label == SignInModel.Failure.verifyNetwork.words }, "\(under)")
+        let sent = signIn(ScriptedAuth(sends: [.fail(.network)]))
+        sent.email = "ben@example.com"
+        ScreenSnapshot.drive({ await sent.sendCode() }, until: { sent.failure == .sendNetwork })
+        let own = AccessibilityElements.of(EmailScreen(model: sent, focus: true))
+        XCTAssertTrue(
+            own.contains { $0.label == SignInModel.Failure.sendNetwork.words }, "\(own)")
+    }
+
+    func testTheAgeScreensBackIsLeaveSignIn() {
+        let elements = AccessibilityElements.of(
+            AgeScreen(model: profile(ageConfirmed: false), leave: {}))
+        XCTAssertEqual(elements.filter { $0.label == "Leave sign-in" }.count, 2, "\(elements)")
+    }
+
+    func testTheAvatarIsntRead() {
+        // Its initial repeats the name in the field below it.
+        let model = profile(ageConfirmed: true)
+        model.name = "Ben"
+        let elements = AccessibilityElements.of(ProfileScreen(model: model, focus: false))
+        XCTAssertTrue(elements.contains { $0.label == "Your name" }, "\(elements)")
+        XCTAssertFalse(elements.contains { $0.label == "B" }, "\(elements)")
+    }
+
     // MARK: Helpers
+
+    private func heading(
+        _ title: String, in view: some View, file: StaticString = #filePath, line: UInt = #line
+    ) {
+        let elements = AccessibilityElements.of(view)
+        XCTAssertTrue(
+            elements.contains { $0.label == title && $0.isHeader }, "\(elements)", file: file,
+            line: line)
+    }
 
     private func signIn(_ auth: ScriptedAuth) -> SignInModel {
         let clock = clock

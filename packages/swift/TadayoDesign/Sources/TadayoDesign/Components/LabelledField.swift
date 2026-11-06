@@ -10,19 +10,25 @@ import SwiftUI
 /// by touch or by keyboard, and an invalid field a 1-point `destructive` border: both at once
 /// when a focused field is invalid, and an error never takes the focus away (handoff 2 and 4's
 /// `fieldFocus`). `isFocused` is passed in, so a snapshot can show focus with no keyboard. The
-/// label is the field's accessibility label, and isn't read twice.
+/// label is the field's accessibility label, and isn't read twice. An invalid field's `error`, the
+/// line the screen shows for it, is its accessibility hint, so VoiceOver says why on coming back
+/// to the field, not only once when it's announced (handoff 1: "Keep error text associated with
+/// its field"). Its value stays what was typed.
 public struct LabelledField<Field: View>: View {
     let label: Text
     let isFocused: Bool
     let isInvalid: Bool
+    let error: Text?
     let field: Field
 
     public init(
-        _ label: Text, isFocused: Bool, isInvalid: Bool = false, @ViewBuilder field: () -> Field
+        _ label: Text, isFocused: Bool, isInvalid: Bool = false, error: Text? = nil,
+        @ViewBuilder field: () -> Field
     ) {
         self.label = label
         self.isFocused = isFocused
         self.isInvalid = isInvalid
+        self.error = error
         self.field = field()
     }
 
@@ -55,6 +61,9 @@ public struct LabelledField<Field: View>: View {
                     }
                 }
                 .accessibilityLabel(label)
+                // Always the same modifier, an empty hint when valid, so the field keeps its
+                // identity, and its focus, as the error comes and goes.
+                .accessibilityHint(isInvalid ? error ?? Text(verbatim: "") : Text(verbatim: ""))
         }
     }
 }
