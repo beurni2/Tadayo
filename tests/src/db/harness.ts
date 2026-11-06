@@ -6,6 +6,7 @@
 // as Supabase's `anon`, `authenticated` and `service_role` (ADR-015, ADR-026).
 
 import { join } from "node:path";
+import { INSTANT_TYPE } from "@tadayo/domain";
 import postgres from "postgres";
 import { expect } from "vitest";
 
@@ -28,10 +29,21 @@ export function adminSql(): Sql {
   return postgres(url("DATABASE_ADMIN_URL"), { max: 2, onnotice: () => undefined });
 }
 
+/**
+ * A connection as the commands will have it (slice 7 makes the API's): `tadayo_app`, with the
+ * time module's INSTANT_TYPE for `timestamptz`, so an instant crosses whole, to the microsecond.
+ */
+export function commandSql() {
+  return postgres(url("DATABASE_URL"), { max: 2, onnotice: () => undefined, types: { instant: INSTANT_TYPE } });
+}
+
 class RolledBack extends Error {}
 
 /** Runs `body` in a transaction that is always rolled back, and returns what it returned. */
-export async function rolledBack<T>(sql: Sql, body: (tx: Tx) => Promise<T>): Promise<T> {
+export async function rolledBack<T, Types extends Record<string, unknown>>(
+  sql: postgres.Sql<Types>,
+  body: (tx: postgres.TransactionSql<Types>) => Promise<T>,
+): Promise<T> {
   let result: { value: T } | undefined;
   try {
     await sql.begin(async (tx) => {
