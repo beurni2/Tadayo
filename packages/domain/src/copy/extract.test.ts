@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { decode } from "./cli.ts";
-import { extractStrings, isStringFile } from "./extract.ts";
+import { extractEntries, extractStrings, isStringFile } from "./extract.ts";
 
 describe("isStringFile", () => {
   it("knows the string files", () => {
@@ -48,6 +48,25 @@ describe(".xcstrings", () => {
       "Une photo",
       "Her photos",
     ]);
+  });
+});
+
+describe("extractEntries", () => {
+  it("gives each catalog value its key, and a key, a .strings or an .html string none", () => {
+    const catalog = JSON.stringify({
+      strings: {
+        "auth.code.sentTo": { localizations: { en: { stringUnit: { state: "translated", value: "Sent to %@" } } } },
+      },
+    });
+    expect(extractEntries("L.xcstrings", catalog)).toEqual([
+      { key: null, text: "auth.code.sentTo" },
+      { key: "auth.code.sentTo", text: "Sent to %@" },
+    ]);
+    expect(extractEntries("a.strings", '"a" = "b";')).toEqual([
+      { key: null, text: "a" },
+      { key: null, text: "b" },
+    ]);
+    expect(extractEntries("i.html", "<p>Hi</p>")).toEqual([{ key: null, text: "Hi" }]);
   });
 });
 
