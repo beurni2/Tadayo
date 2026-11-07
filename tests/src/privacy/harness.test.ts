@@ -426,12 +426,15 @@ describe("each step of the matrix reports a planted wrong answer", () => {
     });
     const [plain, withStar] = specsFor(operation("listMemories"), here, "acct_viewer");
     if (!plain || !withStar) throw new Error("listMemories");
-    expect(
-      (await guessStep(app, plain, elsewhere)).problems.filter((problem) => problem.includes("cursor")),
-    ).not.toEqual([]);
-    expect(
-      (await guessStep(app, withStar, elsewhere)).problems.filter((problem) => problem.includes("star guessed")),
-    ).not.toEqual([]);
+    const cursor = (await guessStep(app, plain, elsewhere)).problems;
+    expect(cursor).toContainEqual(
+      expect.stringMatching(
+        /^listMemories, cursor "fresh": status 403: neither the neutral not-found nor INVALID_REQUEST$/,
+      ),
+    );
+    expect(cursor.filter((problem) => !problem.startsWith("listMemories, cursor "))).toEqual([]);
+    const star = (await guessStep(app, withStar, elsewhere)).problems;
+    expect(star).toContainEqual(expect.stringMatching(/^listMemories, star guessed: status 403$/));
     await app.close();
   });
 

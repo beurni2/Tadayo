@@ -21,10 +21,14 @@
 // - for the first route that pages (getOccurrence, B2; listComments, listFavourites, listMemories and
 //   listMyDrops, B6), a cursor issued to another role and one issued before a removal, each answered
 //   as the row says (T14), beside the forged and malformed cursors the harness sends now, and a
-//   check that each cursor the route issues is a random handle or a sealed value only the server
-//   can read (the contract's Cursor; T15), which the leak scanner can't tell from a key packed in
-//   binary, a printable one of 12 to 23 bytes with no name before = or : that isn't JSON, or a
-//   readable key shorter than 24 bytes beside other bytes;
+//   check that each cursor the route issues is a random handle of 24 to 32 bytes or a sealed value
+//   only the server can read (the contract's Cursor; T15), which the leak scanner can't tell from a
+//   key packed in binary, text of 12 to 23 bytes with no name with a letter or _ in it before = or
+//   : that isn't JSON (values told by their place alone, such as 40|20|desc), or runs of text
+//   shorter than 24 bytes among other bytes (a longer key split by a NUL, another control byte or a
+//   non-ASCII byte among them). Random handles fail the scanner by chance about once in 10 billion
+//   at 24 bytes and once in 1.7 billion at 32, and those of 12 about once in 750,000 (scanner.ts,
+//   KEY_SHAPE and READABLE_TEXT), which the matrix's runs would meet;
 // - for the invitation's routes (B1), a person who holds a link and hasn't accepted it: the matrix's
 //   role "invited, not yet a member" has accepted and waits for the roster (Q05), since a link
 //   nobody has accepted ties no account to the club;

@@ -953,12 +953,16 @@ describe("the leak scanner catches each planted leak with its own check", () => 
         .map((finding) => finding.what.replace(/^a cursor that (.*): a readable key.*$/, "$1"));
     const noise = Buffer.from("8f1ce2a7b3d9046e5f7a1c3e9b2d4f60", "hex");
     const version = Buffer.from([0x01]);
+    // Its time's T07 is a name before ":" too.
     expect(key(Buffer.from("occ_sat|2026-11-07T07:00:00Z"))).toEqual([
+      "is text from end to end in a key's shape",
       "holds readable text",
       "holds a date",
       "holds an id",
     ]);
+    // JSON, its newline among its text.
     expect(key(Buffer.from('{"after":"drp_ben","at":"2026-11-06T20:00:00Z"}\n'))).toEqual([
+      "is text from end to end in a key's shape",
       "holds readable text",
       "holds a date",
       "holds an id",
@@ -971,19 +975,34 @@ describe("the leak scanner catches each planted leak with its own check", () => 
       "holds a long number, such as a time or a count",
     ]);
     expect(key(Buffer.concat([noise, Buffer.from("Cleo"), version]))).toEqual(["holds text people wrote"]);
-    // A run of 24 printable bytes is readable text; a shorter one beside other bytes, with no other
-    // mark, is the pager's row to judge, since random bytes make such runs: 23 random printable bytes
+    // A run of 24 bytes of text is readable; a shorter one beside other bytes, with no other mark,
+    // is the pager's row to judge, since random bytes make such runs: 23 random printable bytes
     // after a version byte pass, as a key of 23 bytes there would.
     expect(key(Buffer.concat([version, Buffer.from("after=7;order=desc;n=24!")]))).toEqual(["holds readable text"]);
     expect(key(Buffer.concat([version, Buffer.from("k@7v#Q2p!x9Lm*4Tz8&Wc5R")]))).toEqual([]);
-    // A cursor printable from end to end in a key's shape, or JSON, is a key however short; one with
-    // no name before = or : that isn't JSON passes, since random bytes are printable now and then.
-    const shaped = ["is printable from end to end in a key's shape"];
+    // A cursor that is text from end to end in a key's shape, or JSON, is a key however short: a name
+    // with a letter or _ in it before = or :, however short the name, with a quote or spaces between.
+    // One with no such name that isn't JSON passes, since random bytes are text now and then: values
+    // told by their place alone are the pager's row to judge.
+    const shaped = ["is text from end to end in a key's shape"];
     expect(key(Buffer.from('{"offset":20}'))).toEqual(shaped);
     expect(key(Buffer.from("left=3;order=asc;p=2"))).toEqual(shaped);
     expect(key(Buffer.from("after=7;order=desc;n=24"))).toEqual(shaped);
     expect(key(Buffer.from('["drp", 20, "asc"]'))).toEqual(shaped);
+    expect(key(Buffer.from("o=40;n=20;desc"))).toEqual(shaped);
+    expect(key(Buffer.from("p=3&n=20&o=d"))).toEqual(shaped);
+    expect(key(Buffer.from("k1=40;k2=20;d1"))).toEqual(shaped);
+    expect(key(Buffer.from("{'offset': 20}"))).toEqual(shaped);
+    expect(key(Buffer.from("offset = 20; dir = a"))).toEqual(shaped);
     expect(key(Buffer.from("k@7v#Q2p!x9Lm*"))).toEqual([]);
+    // Tab, newline and CR are text too, as JSON and lines of key=value put them between parts.
+    expect(key(Buffer.from('{"o":20,\n"d":1}'))).toEqual(shaped);
+    const pretty = Buffer.from(JSON.stringify({ offset: 20, order: "desc", count: 24 }, null, 2));
+    expect(key(pretty)).toEqual([...shaped, "holds readable text"]);
+    expect(key(Buffer.from("offset=20\r\norder=desc\r\ncount=24\r\n"))).toEqual([...shaped, "holds readable text"]);
+    expect(key(Buffer.concat([version, Buffer.from("offset=20\torder=desc\tcount=24"), version]))).toEqual([
+      "holds readable text",
+    ]);
     expect(key(Buffer.from("4f9a2c", "hex"))).toEqual(["decodes to fewer than 12 bytes"]);
     expect(key(noise)).toEqual([]);
     // The contract's own example, a random handle of 12 bytes.

@@ -125,9 +125,10 @@ const lastDates = new WeakMap<FastifyInstance, number>();
  * The answer `app` gives `request`, in the scanner's shape, with its clock: the Dates it may carry,
  * from the later of an earlier answer's Date and the second it was asked in less DATE_LAG_MS, to the
  * moment it came. A route that writes some ids a Date of its own steps outside that clock when the
- * Date is behind an answer that came before it, or ahead of the moment its own answer came; one
- * between those, in Node's place among the headers, would pass. First it lets the event loop turn,
- * so Node renews its cached Date (DATE_LAG_MS).
+ * Date is behind an earlier answer's Date or more than DATE_LAG_MS behind the second it was asked
+ * in, or ahead of the moment its own answer came; one inside those, in Node's place among the
+ * headers, would pass. First it lets the event loop turn, so Node renews its cached Date
+ * (DATE_LAG_MS).
  */
 export async function answerOf(app: FastifyInstance, request: Request): Promise<Answer> {
   await new Promise((resolve) => setImmediate(resolve));
