@@ -13,14 +13,16 @@
 // it plants against is the one that catches it:
 // - shape: the status, its standard reason phrase, the headers and the body are what the operation
 //   declares: Cache-Control on every answer with a body, Retry-After on a 429, the transport's
-//   headers in their own forms (Connection, Transfer-Encoding, a Date that is the answer's time,
-//   Fastify's own Keep-Alive, a Content-Length that is the body's, only JSON's Content-Type), an
-//   error with only its code's fields, every 404 the neutral one (T14), no key the contract doesn't
-//   name at any depth (a planted field), and every cursor in base64url, decoding to 16 bytes or more
-//   with no readable key among them: no run of readable text, date, long number, id of the world or
-//   text people wrote (the contract's Cursor: "never a readable key"), so a random handle goes out
-//   as its own bytes, not as their text. A key packed in binary with none of these is beyond what
-//   the scanner can see;
+//   headers in their own forms (Connection, Transfer-Encoding, Fastify's own Keep-Alive, a Date that
+//   is a real instant written as Node writes it and is the answer's time: inside the clock the
+//   harness gives each answer, from the moment it asked to the moment the answer came, and never
+//   before an earlier answer's Date; a Content-Length that is the body's, only JSON's Content-Type),
+//   an error with only its code's fields, every 404 the neutral one (T14), no key the contract
+//   doesn't name at any depth (a planted field), and every cursor in base64url, decoding to 12
+//   bytes or more with no readable key among them: no run of 24 printable bytes, date, long number,
+//   id of the world or text people wrote (the contract's Cursor: "never a readable key"), so a
+//   random handle goes out as its own bytes, not as their text. A key packed in binary with none of
+//   these, or a shorter readable key beside random bytes, is beyond what the scanner can see;
 // - whitelist: a caption card is exactly T10's list, as FQ74's answer reads it (this file's own
 //   copy, so a contract change alone can't widen it);
 // - world: each of these an answer names is the world's and the viewer's to see:
@@ -37,9 +39,9 @@
 //   - a person only from such a club, under the name members see, with no avatar version once the
 //     person's interval or the viewer's in the club has ended, and never one who joined after the
 //     viewer's last interval there ended (FQ75);
-//   - an allowance that counts no more than the viewer's own drops in its day that aren't withdrawn
-//     and the viewer's reservations in it still live at the answer's instant, and a day's ViewerDay
-//     from the viewer's own membership and the day's star (T15);
+//   - an allowance that counts no more than the viewer's own drops in its day, but those withdrawn
+//     before its reveal, and the viewer's reservations in it still live at the answer's instant, and
+//     a day's ViewerDay from the viewer's own membership and the day's star (T15);
 //   - a day link only to a closed day the viewer can read a drop in, its cover a photo;
 //   - nothing opened before its day opens, and who reacted only for the drop's author while their
 //     interval is active (FQ73);
@@ -47,15 +49,18 @@
 //   of T10's never-list, but inside what has opened, the viewer's own card and the viewer's own
 //   highlight pointer;
 // - values: text people wrote must be text the viewer may read (a person's name only if the viewer
-//   may know the person), as the world stored it, and is then served as written (T13 lets a caption
-//   hold a link, even another drop's), but a caption holding its own drop's kept-back values before
-//   that drop opens to the viewer; in every other value, header and decoded cursor, no URL, storage
-//   path or provider host, no value the world keeps back (a storage key, a content version, a
-//   source's link or post id) but a drop's own once its day has opened to a viewer in its audience,
-//   and no id of a drop, day, club, person or reservation the viewer may not see, outside the
-//   positions the world check judges; and in every other string of the body, no text people wrote
-//   that the viewer may not read, of 6 characters or more (an error's field, say). A header holds
-//   no such text in a form the shape check allows.
+//   may know the person, a roster label of a club they are in, or, of one they left, only from a
+//   revision made before they left), as the world stored it, and is then served as written (T13
+//   lets a caption hold a link, even another drop's), but a caption holding its own drop's
+//   kept-back values (its post id, say: T13 refuses only its source URL at write) before that drop
+//   opens to the viewer, its author included, as every kept-back value fails to its author until B3
+//   serves an author their own (the author preview, T40's source details: below); in every other
+//   value, header and decoded cursor, no URL, storage path or provider host, no value the world
+//   keeps back (a storage key, a content version, a source's link or post id) but a drop's own once
+//   its day has opened to a viewer in its audience, and no id of a drop, day, club, person or
+//   reservation the viewer may not see, outside the positions the world check judges; and in every
+//   other string of the body, no text people wrote that the viewer may not read, of 6 characters or
+//   more (an error's field, say). A header holds no such text in a form the shape check allows.
 //
 // The facts are read from the world each answer was given in. A route that changes the world (a
 // commit, a reservation, a leave or a block) is scanned against the world after its answer, by the
@@ -91,9 +96,16 @@ export interface Answer {
   status: number;
   /** The reason phrase, as Node gives it. */
   reason: string;
-  /** Lower-case names, as Node gives them. */
+  /** Lower-case names, as Node gives them, in the order they came. */
   headers: Readonly<Record<string, string>>;
   body: string;
+  /**
+   * The Dates it may carry, in wall-clock milliseconds, from the harness that asked for it
+   * (answerOf): no later than the moment it came, and no earlier than the app's last answer's Date,
+   * nor than the moment it was asked less how far Node's cached Date may lag. A planted answer
+   * without them may carry a Date within DATE_SLACK_MS of the wall clock.
+   */
+  clock?: { earliest: number; latest: number };
 }
 
 export type Check = "shape" | "whitelist" | "world" | "keys" | "values";
@@ -111,8 +123,10 @@ export interface WorldDrop {
   author: string;
   day: string;
   media: MediaClass;
-  /** Its state: a withdrawal releases its slot (spec 11, T18). */
+  /** Its state: a withdrawal before its day's reveal releases its slot (spec 11, T18). */
   state: "active" | "held" | "withdrawn" | "removed";
+  /** When it was withdrawn or removed, or null while it is neither. */
+  endedAt: Temporal.Instant | null;
   /** Its caption now. */
   caption: string | null;
   /** The intervals in its audience that are still active. */
@@ -152,8 +166,11 @@ export interface WorldReservation {
 
 export interface WorldClub {
   name: string;
-  /** The labels of its roster revisions' candidates. */
-  labels: ReadonlySet<string>;
+  /**
+   * The labels of its roster revisions' candidates, each with when the first revision holding it was
+   * made: a member saw it from then, so someone who left before then never did (FQ75).
+   */
+  labels: ReadonlyMap<string, Temporal.Instant>;
 }
 
 export interface WorldFacts {
@@ -211,7 +228,7 @@ export const TRANSPORT: Readonly<Record<string, RegExp>> = {
   "transfer-encoding": /^chunked$/,
 };
 
-/** How far a Date may be from the wall clock when the answer is scanned, right after it came. */
+/** How far a planted answer's Date may be from the wall clock, with no clock of its own (Answer). */
 const DATE_SLACK_MS = 30_000;
 
 /** Whether `value` is the form the transport's header `name` must have (TRANSPORT). */
@@ -221,13 +238,20 @@ export function transportForm(name: string, value: string): boolean {
 
 /**
  * How the transport's header `name` breaks its rule, or undefined when it keeps it: its form, and for
- * a Date, the time of the answer. Node writes the wall clock, which the fake clock never moves, so a
- * Date in its form but not now carries something (a hidden instant, an existence bit).
+ * a Date, a real instant written exactly as Node writes it (its weekday that day's, no day 36 or hour
+ * 29), inside the answer's clock (Answer). Node writes the wall clock, which the fake clock never
+ * moves, and never sets it back, so any other Date carries something (a hidden instant, an existence
+ * bit).
  */
-export function transportProblem(name: string, value: string): string | undefined {
+export function transportProblem(name: string, value: string, clock?: Answer["clock"]): string | undefined {
   if (!transportForm(name, value)) return "a transport header whose value isn't its form";
-  if (name === "date" && Math.abs(Date.parse(value) - Date.now()) > DATE_SLACK_MS)
-    return "a Date that isn't the time of the answer: Node writes the clock's own";
+  if (name !== "date") return undefined;
+  const at = Date.parse(value);
+  if (!Number.isFinite(at) || new Date(at).toUTCString() !== value)
+    return "a Date that isn't a real instant written as Node writes it";
+  const now = Date.now();
+  const { earliest, latest } = clock ?? { earliest: now - DATE_SLACK_MS, latest: now + DATE_SLACK_MS };
+  if (at < earliest || at > latest) return "a Date that isn't the time of the answer: Node writes the clock's own";
   return undefined;
 }
 
@@ -257,10 +281,21 @@ export const NEVER_VALUE = [
 const PEOPLE_TEXT = new Set(["Caption", "CommentText", "DisplayName", "ClubName", "CandidateLabel"]);
 
 /**
- * The fewest bytes a cursor decodes to: 128 bits, the least a random handle that can't be guessed
- * carries (T14), and less than any sealed value's nonce and tag (the contract's Cursor).
+ * The fewest bytes a cursor decodes to: 12, the length of the contract's own example cursor
+ * (listMemories' `q8ZrT2vLm5XcW0nB`), the shortest random handle the contract shows, and less than
+ * any sealed value's nonce and tag. Fewer bytes are a key too short to be either (the contract's
+ * Cursor).
  */
-const CURSOR_BYTES = 16;
+const CURSOR_BYTES = 12;
+
+/**
+ * A run of printable bytes in a cursor that is readable text: 24 or more, so random bytes never make
+ * one at the matrix's scale. A place in random bytes starts a run of 24 with a chance of about 5e-11,
+ * and one of 16 with about 1.3e-7, which the sealed cursors of every paged answer in a run would
+ * meet. A shorter readable key beside random bytes, with no date, long number, id or text people
+ * wrote in it, passes, like a key packed in binary: the pager's row judges both.
+ */
+const READABLE_TEXT = /[\x20-\x7e]{24,}/;
 
 /** Text people wrote this short isn't looked for inside other values, where it could occur by chance. */
 const SHORTEST_TEXT = 6;
@@ -345,7 +380,12 @@ interface Reader {
    * of, or of one they have left and who joined before the viewer's last interval there ended (FQ75).
    */
   knows(member: string): boolean;
-  /** The text people wrote that the viewer may read. */
+  /**
+   * The text people wrote that the viewer may read: their own; captions of their drops and of drops
+   * in their audience, and comments once those have opened; the names of the people they may know;
+   * their clubs' names; and the roster labels of a club they are in, or of one they left from the
+   * revisions made before they left.
+   */
   texts: ReadonlySet<string>;
   /** The text people wrote, in the world or as the viewer's own, that the viewer may not read. */
   hidden: ReadonlySet<string>;
@@ -383,14 +423,17 @@ function readerOf(context: ScanContext): Reader {
       const found = drop(id);
       return found !== undefined && inAudience(found) && opened(found.day);
     });
+  // Whether the viewer was in `club` at `at` or later: an active member, or one whose interval there
+  // ended no earlier than `at` (FQ75: a former member knows what was there while they were).
+  const inClubSince = (club: string, at: Temporal.Instant) =>
+    activeClubs.has(club) ||
+    intervalsIn(club).some((interval) => {
+      const end = world.members.get(interval)?.leftAt ?? null;
+      return end !== null && !before(end, at);
+    });
   const knows = (id: string) => {
     const member = world.members.get(id);
-    if (member === undefined || !clubs.has(member.club)) return false;
-    if (activeClubs.has(member.club)) return true;
-    return intervalsIn(member.club).some((interval) => {
-      const end = world.members.get(interval)?.leftAt ?? null;
-      return end !== null && !before(end, member.joinedAt);
-    });
+    return member !== undefined && clubs.has(member.club) && inClubSince(member.club, member.joinedAt);
   };
   const texts = new Set(viewer.texts);
   const written = new Set(viewer.texts);
@@ -407,10 +450,10 @@ function readerOf(context: ScanContext): Reader {
   }
   for (const [id, club] of world.clubs) {
     written.add(club.name);
-    for (const label of club.labels) written.add(label);
+    for (const label of club.labels.keys()) written.add(label);
     if (!clubs.has(id)) continue;
     texts.add(club.name);
-    for (const label of club.labels) texts.add(label);
+    for (const [label, since] of club.labels) if (inClubSince(id, since)) texts.add(label);
   }
   const hidden = new Set([...written].filter((text) => !texts.has(text)));
   const unseen = new Set<string>();
@@ -551,15 +594,16 @@ function decodeCursor(cursor: string): { bytes: Buffer; canonical: boolean } {
 /**
  * What in the bytes a cursor decodes to makes it a readable key, not a random handle or a sealed
  * value (the contract's Cursor: "never a readable key, so it carries no time, order key or count"):
- * too few bytes to be either, a run of readable text, a date, a long number (a time or a count), an
- * id of the world, or text people wrote. A key packed in binary with none of these looks like random
- * bytes to the scanner: how the pager makes its cursors is the row of the slice that builds it.
+ * too few bytes to be either, a run of readable text (READABLE_TEXT), a date, a long number (a time or
+ * a count), an id of the world, or text people wrote. A key packed in binary with none of these, or
+ * a shorter readable key beside random bytes, looks like random bytes to the scanner: how the pager
+ * makes its cursors is the row of the slice that builds it.
  */
 function readableKey(bytes: Buffer, reader: Reader): string[] {
   const text = bytes.toString("latin1");
   const reasons: string[] = [];
   if (bytes.length < CURSOR_BYTES) reasons.push(`decodes to fewer than ${String(CURSOR_BYTES)} bytes`);
-  if (/[\x20-\x7e]{16,}/.test(text)) reasons.push("holds readable text");
+  if (READABLE_TEXT.test(text)) reasons.push("holds readable text");
   if (/[0-9]{4}-[0-9]{2}-[0-9]{2}/.test(text)) reasons.push("holds a date");
   if (/[0-9]{10,}/.test(text)) reasons.push("holds a long number, such as a time or a count");
   if ([...reader.ids].some((id) => text.includes(id))) reasons.push("holds an id");
@@ -610,7 +654,7 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
   for (const [header, value] of Object.entries(answer.headers)) {
     const where = `header ${header}`;
     if (Object.hasOwn(TRANSPORT, header)) {
-      const problem = transportProblem(header, value);
+      const problem = transportProblem(header, value, answer.clock);
       if (problem !== undefined) find("shape", where, problem);
     } else if (header === "content-length") {
       if (value !== String(Buffer.byteLength(answer.body))) find("shape", where, "not the body's length in bytes");
@@ -869,9 +913,16 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
       if (of === undefined || !world.days.has(of))
         find("world", where, "an allowance this scanner can't tie to a day of the world");
       else {
-        // A withdrawn drop's slot is released (spec 11); a removed one may still count until B5 says.
+        // A withdrawal before the reveal releases the drop's slot, one after it doesn't (spec 11,
+        // T18); a removed drop may still count until removal's propagation says (B6).
+        const revealAt = world.days.get(of)?.revealAt;
+        const released = (drop: WorldDrop) =>
+          drop.state === "withdrawn" &&
+          drop.endedAt !== null &&
+          revealAt !== undefined &&
+          before(drop.endedAt, revealAt);
         const drops = [...world.drops.values()].filter(
-          (drop) => drop.day === of && mine(drop.author) && drop.state !== "withdrawn",
+          (drop) => drop.day === of && mine(drop.author) && !released(drop),
         );
         const held = [...world.reservations.values()].filter(
           (slot) =>
@@ -942,8 +993,9 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
     const name = walked.names.get(at);
     if (name !== undefined && PEOPLE_TEXT.has(name)) {
       if (reader.texts.has(value)) {
-        // T13 refuses a caption holding its own drop's source: a caption served as stored still
-        // fails holding its own drop's kept-back values until that drop has opened to the viewer.
+        // T13 refuses only a caption holding its own drop's source URL, at write: a caption served as
+        // stored still fails holding its own drop's kept-back values (its post id, say) until that
+        // drop has opened to the viewer, its author included, as every kept-back value does.
         if (name === "Caption")
           for (const [canary, drops] of world.canaries) {
             if (!value.includes(canary)) continue;

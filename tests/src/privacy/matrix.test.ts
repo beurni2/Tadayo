@@ -117,12 +117,14 @@ async function factsOf(clubs: string[], viewer: string | null): Promise<{ world:
       day: string;
       media: MediaClass;
       state: WorldDrop["state"];
+      ended_at: Temporal.Instant | null;
       caption: string | null;
       audience: string[];
       comments: string[];
     }[]
   >`
-    SELECT d.id, d.author_interval_id AS author, d.occurrence_id AS day, d.media_class AS media, d.state, d.caption,
+    SELECT d.id, d.author_interval_id AS author, d.occurrence_id AS day, d.media_class AS media, d.state, d.ended_at,
+           d.caption,
            coalesce((SELECT array_agg(a.interval_id) FROM app.drop_audience a
                        JOIN app.memberships m ON m.interval_id = a.interval_id
                       WHERE a.drop_id = d.id AND m.state = 'active'), '{}') AS audience,
@@ -167,10 +169,14 @@ async function factsOf(clubs: string[], viewer: string | null): Promise<{ world:
     SELECT r.id, r.interval_id AS interval, r.occurrence_id AS day, r.media_class AS media, r.state, r.expires_at
       FROM app.reservations r JOIN app.occurrences o ON o.id = r.occurrence_id
      WHERE o.club_id IN ${db(clubs)}`;
-  const clubRows = await db<{ id: string; name: string; labels: string[] }[]>`
-    SELECT c.id, c.name,
-           coalesce((SELECT array_agg(r.label) FROM app.roster_revision_candidates r WHERE r.club_id = c.id), '{}') AS labels
-      FROM app.clubs c WHERE c.id IN ${db(clubs)}`;
+  const clubRows = await db<{ id: string; name: string }[]>`
+    SELECT id, name FROM app.clubs WHERE id IN ${db(clubs)}`;
+  // Each roster label, with when the first revision holding it was made (FQ75).
+  const labelRows = await db<{ club: string; label: string; since: Temporal.Instant }[]>`
+    SELECT c.club_id AS club, c.label, min(v.created_at) AS since
+      FROM app.roster_revision_candidates c JOIN app.roster_revisions v ON v.id = c.revision_id
+     WHERE c.club_id IN ${db(clubs)}
+     GROUP BY c.club_id, c.label`;
   // A photo's content version and a video's link and post id are their drop's; storage keys, and the
   // versions and links no drop holds (a replacement still being checked, an upload or a source left
   // unused), are no drop's. Avatars' versions are left out: a person's avatar version is shown before
@@ -207,6 +213,7 @@ async function factsOf(clubs: string[], viewer: string | null): Promise<{ world:
             day: drop.day,
             media: drop.media,
             state: drop.state,
+            endedAt: drop.ended_at,
             caption: drop.caption,
             audience: new Set(drop.audience),
             comments: drop.comments,
@@ -231,7 +238,17 @@ async function factsOf(clubs: string[], viewer: string | null): Promise<{ world:
           { club: row.club, name: row.name, joinedAt: row.joined_at, leftAt: row.left_at },
         ]),
       ),
-      clubs: new Map(clubRows.map((row) => [row.id, { name: row.name, labels: new Set(row.labels) }])),
+      clubs: new Map(
+        clubRows.map((row) => [
+          row.id,
+          {
+            name: row.name,
+            labels: new Map(
+              labelRows.filter((label) => label.club === row.id).map((label) => [label.label, label.since]),
+            ),
+          },
+        ]),
+      ),
       reservations: new Map(
         reservations.map((row): [string, WorldReservation] => [
           row.id,

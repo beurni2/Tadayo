@@ -19,9 +19,10 @@ import { transportProblem, type Answer } from "./scanner.ts";
 export const NEUTRAL: Answer = {
   status: 404,
   reason: "Not Found",
+  // In the order the app sends them, which is compared too (NEUTRAL_ORDER).
   headers: {
-    "content-type": "application/json; charset=utf-8",
     "cache-control": "private, no-store",
+    "content-type": "application/json; charset=utf-8",
     "content-length": "20",
     // The one Connection an answer the app sends whole has (inject's, and Node's for a client that
     // keeps its connection); compared as it is, so a close for some ids and not others is seen.
@@ -30,22 +31,25 @@ export const NEUTRAL: Answer = {
   body: '{"code":"NOT_FOUND"}',
 };
 
+/** The neutral not-found's headers in the order they are sent, with Node's Date before Connection. */
+const NEUTRAL_ORDER = ["cache-control", "content-type", "content-length", "date", "connection"];
+
 /**
  * Date, the one header whose value differs from answer to answer: compared as the answer's time when
- * it is that (the scanner's transportProblem), else as it is. Every other header is compared as sent.
+ * it is that (the scanner's transportProblem, inside the answer's clock), else as it is. Every other
+ * header is compared as sent.
  */
-function compared(name: string, value: string): string {
-  return name === "date" && transportProblem(name, value) === undefined ? "(the answer's time)" : value;
+function compared(name: string, value: string, clock: Answer["clock"]): string {
+  return name === "date" && transportProblem(name, value, clock) === undefined ? "(the answer's time)" : value;
 }
 
 /**
  * `answer` as one string, for comparing answers byte for byte: the status, the reason phrase, every
- * header, and the body, with a Date that is the answer's time standing for its value.
+ * header in the order it came, and the body, with a Date that is the answer's time standing for its
+ * value.
  */
 export function said(answer: Answer): string {
-  const headers = Object.entries(answer.headers)
-    .map(([name, value]) => [name, compared(name, value)])
-    .sort(([one = ""], [other = ""]) => (one < other ? -1 : 1));
+  const headers = Object.entries(answer.headers).map(([name, value]) => [name, compared(name, value, answer.clock)]);
   return `${String(answer.status)} ${answer.reason} ${JSON.stringify(headers)} ${answer.body}`;
 }
 
@@ -62,10 +66,13 @@ export function neutralProblems(answer: Answer): string[] {
     if (Object.hasOwn(NEUTRAL.headers, header)) continue;
     if (header !== "date") problems.push(`an extra header, ${header}`);
     else {
-      const problem = transportProblem(header, value);
+      const problem = transportProblem(header, value, answer.clock);
       if (problem !== undefined) problems.push(`${header}: ${JSON.stringify(value.slice(0, 80))}, ${problem}`);
     }
   }
+  const order = Object.keys(answer.headers);
+  if (problems.length === 0 && order.join(", ") !== NEUTRAL_ORDER.join(", "))
+    problems.push(`the headers in another order: ${order.join(", ")}`);
   return problems;
 }
 
@@ -98,14 +105,40 @@ export function malformedProblems(answer: Answer, parameter: string, value: stri
   return problems;
 }
 
-/** The answer `app` gives `request`, in the scanner's shape. */
+/**
+ * How far Node's Date may lag the moment an answer is asked for: Node caches the Date it writes and
+ * renews it on a timer each second, so while the event loop is busy the cached Date is a second or
+ * more old (a second at most in the session's matrix runs). Generous, since the order of answers
+ * holds the Date tighter (lastDates).
+ */
+const DATE_LAG_MS = 5_000;
+
+/**
+ * The latest Date each app's answers have carried, in ms: Node's own never goes back, so no later
+ * answer's may. One app's answers are one run of the matrix, or one test.
+ */
+const lastDates = new WeakMap<FastifyInstance, number>();
+
+/**
+ * The answer `app` gives `request`, in the scanner's shape, with its clock: the Dates it may carry,
+ * from the later of an earlier answer's Date and the second it was asked in less DATE_LAG_MS, to the
+ * moment it came. A route that writes some ids a Date of its own, behind Node's or ahead of it,
+ * steps outside that clock as soon as an answer for another id has come before it.
+ */
 export async function answerOf(app: FastifyInstance, request: Request): Promise<Answer> {
+  const from = Date.now();
   const response = await app.inject({ method: request.method as "GET", url: request.url, headers: request.headers });
+  const clock = {
+    earliest: Math.max(lastDates.get(app) ?? 0, Math.floor(from / 1000) * 1000 - DATE_LAG_MS),
+    latest: Date.now(),
+  };
   const headers: Record<string, string> = {};
   for (const [name, value] of Object.entries(response.headers)) {
     if (value !== undefined) headers[name.toLowerCase()] = Array.isArray(value) ? value.join(", ") : String(value);
   }
-  return { status: response.statusCode, reason: response.statusMessage, headers, body: response.body };
+  const date = headers.date;
+  if (date !== undefined && transportProblem("date", date, clock) === undefined) lastDates.set(app, Date.parse(date));
+  return { status: response.statusCode, reason: response.statusMessage, headers, body: response.body, clock };
 }
 
 /** A request, ready for `inject`. */

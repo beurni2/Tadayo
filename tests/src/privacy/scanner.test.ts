@@ -36,7 +36,7 @@ const OPEN = REVEAL.add({ hours: 2 });
 
 // Ana's club: Ana, Ben and Cleo; Fay, who left it after the drops were committed; Eve, who joined
 // after them; and Gus, who joined after Fay left. Stan is in another club, with a day and a drop of
-// his own.
+// Stan's own.
 const ana = "itv_ana";
 const ben = "itv_ben";
 const cleo = "itv_cleo";
@@ -55,7 +55,7 @@ function drop(
   audience: string[],
   comments: string[] = [],
 ): WorldDrop {
-  return { author, day, media, state: "active", caption, audience: new Set(audience), comments };
+  return { author, day, media, state: "active", endedAt: null, caption, audience: new Set(audience), comments };
 }
 
 function member(club: string, name: string, joined: string, left: string | null = null) {
@@ -84,11 +84,27 @@ const world: WorldFacts = {
       drop(ben, "occ_sat", "photo", "Like https://www.tiktok.com/@cleo/video/7312345678901234567", [ana, ben, cleo]),
     ],
     ["drp_old", drop(ben, "occ_old", "photo", null, [ana, ben, cleo], ["Lovely light"])],
-    // Fay's own, on the day before she left; her interval has ended, so it is in no audience of hers.
+    // Fay's own, on the day before Fay left; Fay's interval has ended, so it is in no audience of Fay's.
     ["drp_fay", drop(fay, "occ_old", "photo", "From Fay", [ana, ben, cleo], ["Nice one"])],
     ["drp_stan", drop(stan, "occ_far", "photo", "Far away", [stan])],
     // Cleo's photo, withdrawn while collecting: its slot is released (spec 11).
-    ["drp_cleo_gone", { ...drop(cleo, "occ_sat", "photo", null, [ana, ben, cleo]), state: "withdrawn" }],
+    [
+      "drp_cleo_gone",
+      {
+        ...drop(cleo, "occ_sat", "photo", null, [ana, ben, cleo]),
+        state: "withdrawn",
+        endedAt: instant("2026-11-05T12:00:00Z"),
+      },
+    ],
+    // Cleo's photo on last week's day, withdrawn after it opened: its slot stays taken (spec 11).
+    [
+      "drp_cleo_late",
+      {
+        ...drop(cleo, "occ_old", "photo", null, [ana, ben, cleo]),
+        state: "withdrawn",
+        endedAt: instant("2026-10-31T09:00:00Z"),
+      },
+    ],
   ]),
   days: new Map([
     ["occ_sat", day("clb_sat", ana, "2026-11-07T07:00:00Z", "2026-11-08T01:00:00Z", "2026-11-02T08:00:00Z")],
@@ -106,10 +122,21 @@ const world: WorldFacts = {
     [stan, member("clb_far", "Stan", "2026-10-01T10:00:00Z")],
   ]),
   clubs: new Map([
-    ["clb_sat", { name: "Saturday People", labels: new Set(["Mo"]) }],
-    ["clb_far", { name: "Far Club", labels: new Set<string>() }],
+    // Mo, a label from a revision long ago; and Gus's own name, the label of the revision that
+    // brought Gus in, made after Fay left (FQ66: a joiner's label is their profile name).
+    [
+      "clb_sat",
+      {
+        name: "Saturday People",
+        labels: new Map([
+          ["Mo", instant("2026-10-01T09:00:00Z")],
+          ["Gus", instant("2026-11-06T21:30:00Z")],
+        ]),
+      },
+    ],
+    ["clb_far", { name: "Far Club", labels: new Map<string, Temporal.Instant>() }],
   ]),
-  // Cleo's live slot, one her photo used, and one past its expiry not yet marked; Ana's live slot.
+  // Cleo's live slot, one Cleo's photo used, and one past its expiry not yet marked; Ana's live slot.
   reservations: new Map([
     ["rsv_cleo", reservation(cleo, "live", REVEAL)],
     ["rsv_cleo_used", reservation(cleo, "consumed", REVEAL)],
@@ -545,7 +572,7 @@ describe("the leak scanner catches each planted leak with its own check", () => 
       next: nextSaturday,
       recent_days: [{ occurrence: lastSaturday, cover_drop_id: "drp_old" }],
     };
-    // Eve can read nothing in that day either, so the link itself is no link of hers (T15).
+    // Eve can read nothing in that day either, so the link itself is no link of Eve's (T15).
     expect(at(scan(answer(waiting), context("getHome", eve, { now: OPEN })), "world")).toEqual([
       "$.recent_days[0].cover_drop_id",
       "$.recent_days[0]",
@@ -829,8 +856,10 @@ describe("the leak scanner catches each planted leak with its own check", () => 
     expect(
       at(scan(answer(comments(faysAvatar, "Lovely light")), context("listComments", cleo, { now: OPEN })), "world"),
     ).toEqual(["$.items[0].author.avatar_version"]);
-    // Gus, who joined after Fay left, is no one Fay may know anywhere: his id outside a person, and
-    // his name outside one.
+    // Gus, who joined after Fay left, is no one Fay may know: Gus's id outside a person, and Gus's
+    // name in text people wrote outside one, though it is also the roster label of the revision that
+    // brought Gus in, made after Fay left. Mo's label, from a revision made while Fay was there, Fay
+    // may read. In any other string, a name shorter than SHORTEST_TEXT passes (Reader.hidden).
     const page = scan(answer({ items: [], next_cursor: gus }), context("listMyDrops", fay));
     expect(at(page, "values")).toEqual(["$.next_cursor"]);
     const invitation = {
@@ -847,6 +876,8 @@ describe("the leak scanner catches each planted leak with its own check", () => 
         what: "text people wrote that isn't the viewer's to read",
       },
     ]);
+    const fromMo = { ...invited, invitations: [{ ...invitation, inviter_name: "Mo" }] };
+    expect(scan(answer(fromMo), context("listClubs", fay))).toEqual([]);
   });
 
   it("catches counts the viewer may not see: an allowance past their own drops and reservations, and a wrong place in the day (T15)", () => {
@@ -856,14 +887,24 @@ describe("the leak scanner catches each planted leak with its own check", () => 
       "$.allowance.reserved",
       "$.allowance.external_reserved",
     ]);
-    // Cleo's withdrawn photo has released its slot, and her used and lapsed slots hold none, so each
-    // count over her one live drop and one live slot is someone else's or a hidden one.
+    // Cleo's withdrawn photo has released its slot, and Cleo's used and lapsed slots hold none, so
+    // each count over Cleo's one live drop and one live slot is someone else's or a hidden one.
     expect(at(scan(answer(ownDay(allowance(2, 1, 2, 0))), context("getOwnDay", cleo)), "world")).toEqual([
       "$.allowance.added",
       "$.allowance.reserved",
     ]);
     const removed = { drop_id: "drp_cleo", state: "withdrawn", allowance: allowance(2, 1, 0, 0) };
     expect(at(scan(answer(removed), context("removeDrop", cleo)), "world")).toEqual(["$.allowance.added"]);
+    // A photo withdrawn after its day opened still holds its slot (spec 11): it counts, one more doesn't.
+    const late = (added: number) => ({
+      drop_id: "drp_cleo_late",
+      state: "withdrawn",
+      allowance: allowance(added, 0, 0, 0),
+    });
+    expect(at(scan(answer(late(1)), context("removeDrop", cleo, { now: AFTER_CLOSE })), "world")).toEqual([]);
+    expect(at(scan(answer(late(2)), context("removeDrop", cleo, { now: AFTER_CLOSE })), "world")).toEqual([
+      "$.allowance.added",
+    ]);
     const lateFalse = { ...upcomingDay([], eve), viewer: { is_star: false, joined_later: false } };
     expect(at(scan(answer(lateFalse), context("getOccurrence", eve)), "world")).toEqual(["$.viewer.joined_later"]);
     const notStar = { ...upcomingDay([], ana), viewer: { is_star: false, joined_later: false } };
@@ -930,8 +971,14 @@ describe("the leak scanner catches each planted leak with its own check", () => 
       "holds a long number, such as a time or a count",
     ]);
     expect(key(Buffer.concat([noise, Buffer.from("Cleo"), version]))).toEqual(["holds text people wrote"]);
-    expect(key(Buffer.from("4f9a2c", "hex"))).toEqual(["decodes to fewer than 16 bytes"]);
+    // A run of 24 printable bytes is readable text; a shorter one beside other bytes, with no other
+    // mark, is the pager's row to judge, since random bytes make such runs.
+    expect(key(Buffer.concat([version, Buffer.from("after=7;order=desc;n=24!")]))).toEqual(["holds readable text"]);
+    expect(key(Buffer.concat([version, Buffer.from("after=7;order=desc;n=24")]))).toEqual([]);
+    expect(key(Buffer.from("4f9a2c", "hex"))).toEqual(["decodes to fewer than 12 bytes"]);
     expect(key(noise)).toEqual([]);
+    // The contract's own example, a random handle of 12 bytes.
+    expect(key(Buffer.from("q8ZrT2vLm5XcW0nB", "base64url"))).toEqual([]);
     expect(at(page("abcdf"), "shape")).toEqual(["$.next_cursor", "$.next_cursor"]);
   });
 
@@ -954,6 +1001,24 @@ describe("the leak scanner catches each planted leak with its own check", () => 
       },
     ]);
     expect(shape(answer(body, 200, { "keep-alive": "timeout=5" }))).toEqual(["shape header keep-alive"]);
+    // A Date in its form that no clock writes: a day 36 holding an instant, and today's second under
+    // another weekday's name, which Date.parse alone would read as now.
+    const now = new Date();
+    const otherDay = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][(now.getUTCDay() + 1) % 7] ?? "";
+    const unreal = "a Date that isn't a real instant written as Node writes it";
+    for (const date of ["Fri, 36 Nov 2026 20:00:00 GMT", `${otherDay}${now.toUTCString().slice(3)}`])
+      expect(scan(answer(body, 200, { date }), context("getOccurrence", cleo))).toEqual([
+        { check: "shape", at: "header date", what: unreal },
+      ]);
+    // An answer with the harness's clock: a Date before its earliest or after its latest isn't its time.
+    const second = Math.floor(Date.now() / 1000) * 1000;
+    const clocked = (date: number, earliest: number, latest: number): Answer => ({
+      ...answer(body, 200, { date: new Date(date).toUTCString() }),
+      clock: { earliest, latest },
+    });
+    expect(scan(clocked(second, second - 1000, second + 500), context("getOccurrence", cleo))).toEqual([]);
+    expect(shape(clocked(second - 2000, second - 1000, second + 500))).toEqual(["shape header date"]);
+    expect(shape(clocked(second + 1000, second - 1000, second + 500))).toEqual(["shape header date"]);
     expect(shape(bare(204, { "content-type": "text/plain" }), "removeFavourite")).toEqual([
       "shape header content-type",
     ]);

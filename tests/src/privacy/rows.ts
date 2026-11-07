@@ -20,7 +20,10 @@
 // - an object in the world for each binding still marked `missing`;
 // - for the first route that pages (getOccurrence, B2; listComments, listFavourites, listMemories and
 //   listMyDrops, B6), a cursor issued to another role and one issued before a removal, each answered
-//   as the row says (T14), beside the forged and malformed cursors the harness sends now;
+//   as the row says (T14), beside the forged and malformed cursors the harness sends now, and a
+//   check that each cursor the route issues is a random handle or a sealed value only the server
+//   can read (the contract's Cursor; T15), which the leak scanner can't tell from a key packed in
+//   binary or a short readable key beside random bytes;
 // - for the invitation's routes (B1), a person who holds a link and hasn't accepted it: the matrix's
 //   role "invited, not yet a member" has accepted and waits for the roster (Q05), since a link
 //   nobody has accepted ties no account to the club;

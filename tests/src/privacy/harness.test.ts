@@ -12,7 +12,9 @@ import {
   guessStep,
   manipulationStep,
   manipulations,
+  NEUTRAL,
   routeProblems,
+  said,
   signedOutCount,
   signedOutStep,
   specsFor,
@@ -53,6 +55,12 @@ function neutral(reply: FastifyReply) {
     .header("cache-control", "private, no-store")
     .type("application/json; charset=utf-8")
     .send('{"code":"NOT_FOUND"}');
+}
+
+/** Today's Date as Node writes it, under the next weekday's name, which Date.parse alone ignores. */
+function otherWeekday(): string {
+  const now = new Date();
+  return `${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][(now.getUTCDay() + 1) % 7] ?? ""}${now.toUTCString().slice(3)}`;
 }
 
 /**
@@ -202,47 +210,92 @@ describe("each step of the matrix reports a planted wrong answer", () => {
     expect(manipulations(spec("getDrop"), "itv_author", LATER)).toHaveLength(13);
   });
 
-  const wrong: [string, (reply: FastifyReply) => FastifyReply][] = [
+  // Each wrong answer with the problem cellStep must name for it, so a problem found for another
+  // reason (a header set ahead of the others, out of the neutral order, say) doesn't stand in for it.
+  const wrong: [string, (reply: FastifyReply) => FastifyReply, string][] = [
     [
       "403 PROFILE_INCOMPLETE to everyone",
       (reply) => reply.code(403).header("cache-control", "private, no-store").send({ code: "PROFILE_INCOMPLETE" }),
+      "getDrop: status 403",
     ],
     [
       "a not-found with a field",
       (reply) => reply.code(404).header("cache-control", "private, no-store").send({ code: "NOT_FOUND", field: "x" }),
+      'getDrop: body "{\\"code\\":\\"NOT_FOUND\\",\\"field\\":\\"x\\"}"',
     ],
     [
       "a schema-valid 200 to everyone",
       (reply) => reply.code(200).header("cache-control", "private, no-store").send({ code: "NOT_FOUND" }),
+      "getDrop: status 200",
     ],
-    ["the neutral not-found with an extra header", (reply) => neutral(reply.header("x-drop-state", "held"))],
+    [
+      "the neutral not-found with an extra header",
+      (reply) => neutral(reply.header("x-drop-state", "held")),
+      "getDrop: an extra header, x-drop-state",
+    ],
     [
       "the neutral not-found with a transport header out of its form",
       (reply) => neutral(reply.header("keep-alive", "drop=held")),
+      "getDrop: an extra header, keep-alive",
     ],
-    ["the neutral not-found with a Date that isn't one", (reply) => neutral(reply.header("date", "held"))],
+    [
+      "the neutral not-found with a Date that isn't one",
+      (reply) => neutral(reply.header("date", "held")),
+      'getDrop: date: "held", a transport header whose value isn\'t its form',
+    ],
     [
       "the neutral not-found with a Date in its form that isn't the answer's time",
       (reply) => neutral(reply.header("date", new Date(Date.now() - 86_400_000).toUTCString())),
+      "a Date that isn't the time of the answer: Node writes the clock's own",
     ],
-    ["the neutral not-found with Connection: close", (reply) => neutral(reply.header("connection", "close"))],
-    ["the neutral not-found with a Keep-Alive", (reply) => neutral(reply.header("keep-alive", "timeout=72"))],
+    [
+      "the neutral not-found with a Date on another weekday",
+      (reply) => neutral(reply.header("date", otherWeekday())),
+      "a Date that isn't a real instant written as Node writes it",
+    ],
+    [
+      "the neutral not-found with a Date holding an instant on day 36",
+      (reply) => neutral(reply.header("date", "Fri, 36 Nov 2026 20:00:00 GMT")),
+      'getDrop: date: "Fri, 36 Nov 2026 20:00:00 GMT", a Date that isn\'t a real instant written as Node writes it',
+    ],
+    [
+      "the neutral not-found with Connection: close",
+      (reply) => neutral(reply.header("connection", "close")),
+      "getDrop: connection: close",
+    ],
+    [
+      "the neutral not-found with its headers in another order",
+      (reply) =>
+        reply
+          .code(404)
+          .type("application/json; charset=utf-8")
+          .header("cache-control", "private, no-store")
+          .send('{"code":"NOT_FOUND"}'),
+      "getDrop: the headers in another order: content-type, cache-control, content-length, date, connection",
+    ],
+    [
+      "the neutral not-found with a Keep-Alive",
+      (reply) => neutral(reply.header("keep-alive", "timeout=72")),
+      "getDrop: an extra header, keep-alive",
+    ],
     [
       "the neutral not-found with another reason phrase",
       (reply) => {
         reply.raw.statusMessage = "Held";
         return neutral(reply);
       },
+      'getDrop: reason "Held"',
     ],
     [
       "the neutral not-found without no-store",
       (reply) => reply.code(404).type("application/json; charset=utf-8").send('{"code":"NOT_FOUND"}'),
+      "getDrop: cache-control: undefined",
     ],
   ];
-  for (const [name, answer] of wrong) {
+  for (const [name, answer, problem] of wrong) {
     it(`reports a route that answers ${name}`, async () => {
       const app = await plantedApp("getDrop", (_request, reply) => answer(reply));
-      expect((await cellStep(app, spec("getDrop"))).problems).not.toEqual([]);
+      expect((await cellStep(app, spec("getDrop"))).problems).toContainEqual(expect.stringContaining(problem));
       await app.close();
     });
   }
@@ -416,6 +469,30 @@ describe("each step of the matrix reports a planted wrong answer", () => {
     const step = await signedOutStep(app, spec("getDrop"), elsewhere);
     expect(step.problems).toContain("getDrop, no session: another answer for fresh ids (T14)");
     await app.close();
+  });
+
+  it("tells apart two answers whose headers come in another order, as a client can", () => {
+    const reordered = { ...NEUTRAL, headers: Object.fromEntries(Object.entries(NEUTRAL.headers).reverse()) };
+    expect(said(reordered)).not.toBe(said(NEUTRAL));
+    expect(said({ ...NEUTRAL, headers: { ...NEUTRAL.headers } })).toBe(said(NEUTRAL));
+  });
+
+  it("reports a route that tells which drops exist by a Date of its own: a few seconds behind Node's, or another weekday's name (T14)", async () => {
+    for (const date of [() => new Date(Date.now() - 3_000).toUTCString(), otherWeekday]) {
+      const app = await plantedApp("getDrop", (request, reply) =>
+        (request.params as { drop_id: string }).drop_id === here.drop
+          ? neutral(reply.header("date", date()))
+          : neutral(reply),
+      );
+      // Node's Date never goes back, so once an answer for another id has come, a Date behind it isn't
+      // its answer's time: from the second signed-out caller on, the cell's ids come after the last
+      // caller's fresh ones, and the cell's own request after them all.
+      const step = await signedOutStep(app, spec("getDrop"), elsewhere);
+      expect(step.problems.some((problem) => problem.endsWith("another answer for fresh ids (T14)"))).toBe(true);
+      const cell = await cellStep(app, spec("getDrop"));
+      expect(cell.problems.some((problem) => problem.startsWith("getDrop: date: "))).toBe(true);
+      await app.close();
+    }
   });
 
   it("reports a route that answers a signed-out caller differently when the request carries a cursor (T14)", async () => {
