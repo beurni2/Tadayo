@@ -39,7 +39,14 @@ import {
 } from "./harness.ts";
 import { contractOperations, readDocument } from "./operations.ts";
 import { NONE, ROWS, rowProblems } from "./rows.ts";
-import { scan, type MediaClass, type Viewer, type WorldDrop, type WorldFacts } from "./scanner.ts";
+import {
+  scan,
+  type MediaClass,
+  type Viewer,
+  type WorldDrop,
+  type WorldFacts,
+  type WorldReservation,
+} from "./scanner.ts";
 
 const document = readDocument();
 const operations = contractOperations(document);
@@ -109,12 +116,13 @@ async function factsOf(clubs: string[], viewer: string | null): Promise<{ world:
       author: string;
       day: string;
       media: MediaClass;
+      state: WorldDrop["state"];
       caption: string | null;
       audience: string[];
       comments: string[];
     }[]
   >`
-    SELECT d.id, d.author_interval_id AS author, d.occurrence_id AS day, d.media_class AS media, d.caption,
+    SELECT d.id, d.author_interval_id AS author, d.occurrence_id AS day, d.media_class AS media, d.state, d.caption,
            coalesce((SELECT array_agg(a.interval_id) FROM app.drop_audience a
                        JOIN app.memberships m ON m.interval_id = a.interval_id
                       WHERE a.drop_id = d.id AND m.state = 'active'), '{}') AS audience,
@@ -146,8 +154,17 @@ async function factsOf(clubs: string[], viewer: string | null): Promise<{ world:
     SELECT m.interval_id, m.club_id AS club, coalesce(m.ended_display_name, u.display_name) AS name, m.joined_at, m.left_at
       FROM app.memberships m JOIN app.users u ON u.id = m.user_id
      WHERE m.club_id IN ${db(clubs)}`;
-  const reservations = await db<{ id: string; interval: string; day: string; media: MediaClass }[]>`
-    SELECT r.id, r.interval_id AS interval, r.occurrence_id AS day, r.media_class AS media
+  const reservations = await db<
+    {
+      id: string;
+      interval: string;
+      day: string;
+      media: MediaClass;
+      state: WorldReservation["state"];
+      expires_at: Temporal.Instant;
+    }[]
+  >`
+    SELECT r.id, r.interval_id AS interval, r.occurrence_id AS day, r.media_class AS media, r.state, r.expires_at
       FROM app.reservations r JOIN app.occurrences o ON o.id = r.occurrence_id
      WHERE o.club_id IN ${db(clubs)}`;
   const clubRows = await db<{ id: string; name: string; labels: string[] }[]>`
@@ -189,6 +206,7 @@ async function factsOf(clubs: string[], viewer: string | null): Promise<{ world:
             author: drop.author,
             day: drop.day,
             media: drop.media,
+            state: drop.state,
             caption: drop.caption,
             audience: new Set(drop.audience),
             comments: drop.comments,
@@ -215,7 +233,10 @@ async function factsOf(clubs: string[], viewer: string | null): Promise<{ world:
       ),
       clubs: new Map(clubRows.map((row) => [row.id, { name: row.name, labels: new Set(row.labels) }])),
       reservations: new Map(
-        reservations.map((row) => [row.id, { interval: row.interval, day: row.day, media: row.media }]),
+        reservations.map((row): [string, WorldReservation] => [
+          row.id,
+          { interval: row.interval, day: row.day, media: row.media, state: row.state, expiresAt: row.expires_at },
+        ]),
       ),
       canaries,
     },

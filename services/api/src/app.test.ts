@@ -6,6 +6,7 @@
 // own, since `inject` never reaches the parser. The privacy matrix (tests/src/privacy) runs every
 // route as every role on top.
 
+import { request as httpRequest, type IncomingHttpHeaders } from "node:http";
 import { connect, type AddressInfo } from "node:net";
 import { OPERATIONS } from "@tadayo/contracts";
 import type { Clock } from "@tadayo/domain";
@@ -194,6 +195,25 @@ describe("what Node's parser answers, over a socket of its own (T14)", () => {
     for (const path of ["/v1/drops/drp_x/../../me", "/v1/drops/drp_x/%2e%2e/%2e%2e/me", "/v1/./me"]) {
       expect(await raw(`GET ${path} HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n`), path).toEqual(NEUTRAL);
     }
+  });
+
+  it("keeps a connection open with Fastify's own timeout, the one Keep-Alive the leak scanner allows", async () => {
+    const headers = await new Promise<IncomingHttpHeaders>((done, fail) => {
+      const request = httpRequest(
+        { host: "127.0.0.1", port, path: "/v1/me", agent: false, headers: { connection: "keep-alive" } },
+        (response) => {
+          done(response.headers);
+          response.destroy();
+        },
+      );
+      request.on("error", fail);
+      request.end();
+    });
+    // tests/src/privacy/scanner.ts TRANSPORT pins this value.
+    expect({ connection: headers.connection, keepAlive: headers["keep-alive"] }).toEqual({
+      connection: "keep-alive",
+      keepAlive: "timeout=72",
+    });
   });
 
   it("writes nothing into an answer already under way when a request pipelined behind it can't be read", async () => {

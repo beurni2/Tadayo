@@ -18,6 +18,7 @@ import {
   type ScanContext,
   type WorldDrop,
   type WorldFacts,
+  type WorldReservation,
 } from "./scanner.ts";
 
 const document = readDocument();
@@ -53,12 +54,20 @@ function drop(
   caption: string | null,
   audience: string[],
   comments: string[] = [],
-) {
-  return { author, day, media, caption, audience: new Set(audience), comments } satisfies WorldDrop;
+): WorldDrop {
+  return { author, day, media, state: "active", caption, audience: new Set(audience), comments };
 }
 
 function member(club: string, name: string, joined: string, left: string | null = null) {
   return { club, name, joinedAt: instant(joined), leftAt: left === null ? null : instant(left) };
+}
+
+function reservation(
+  interval: string,
+  state: WorldReservation["state"],
+  expiresAt: Temporal.Instant,
+): WorldReservation {
+  return { interval, day: "occ_sat", media: "photo", state, expiresAt };
 }
 
 function day(club: string, star: string, reveal: string, close: string, collecting: string) {
@@ -78,6 +87,8 @@ const world: WorldFacts = {
     // Fay's own, on the day before she left; her interval has ended, so it is in no audience of hers.
     ["drp_fay", drop(fay, "occ_old", "photo", "From Fay", [ana, ben, cleo], ["Nice one"])],
     ["drp_stan", drop(stan, "occ_far", "photo", "Far away", [stan])],
+    // Cleo's photo, withdrawn while collecting: its slot is released (spec 11).
+    ["drp_cleo_gone", { ...drop(cleo, "occ_sat", "photo", null, [ana, ben, cleo]), state: "withdrawn" }],
   ]),
   days: new Map([
     ["occ_sat", day("clb_sat", ana, "2026-11-07T07:00:00Z", "2026-11-08T01:00:00Z", "2026-11-02T08:00:00Z")],
@@ -98,9 +109,12 @@ const world: WorldFacts = {
     ["clb_sat", { name: "Saturday People", labels: new Set(["Mo"]) }],
     ["clb_far", { name: "Far Club", labels: new Set<string>() }],
   ]),
+  // Cleo's live slot, one her photo used, and one past its expiry not yet marked; Ana's live slot.
   reservations: new Map([
-    ["rsv_cleo", { interval: cleo, day: "occ_sat", media: "photo" as const }],
-    ["rsv_ana", { interval: ana, day: "occ_sat", media: "photo" as const }],
+    ["rsv_cleo", reservation(cleo, "live", REVEAL)],
+    ["rsv_cleo_used", reservation(cleo, "consumed", REVEAL)],
+    ["rsv_cleo_lapsed", reservation(cleo, "live", instant("2026-11-07T06:00:00Z"))],
+    ["rsv_ana", reservation(ana, "live", REVEAL)],
   ]),
   canaries: new Map([
     ["https://www.tiktok.com/@cleo/video/7312345678901234567", ["drp_cleo"]],
@@ -369,7 +383,7 @@ describe("the leak scanner passes what may be shown", () => {
     const body = upcomingDay([bensCard()]);
     const headers = {
       "content-length": String(Buffer.byteLength(JSON.stringify(body))),
-      date: "Sat, 07 Nov 2026 06:59:59 GMT",
+      date: new Date().toUTCString(),
       connection: "keep-alive",
       "keep-alive": "timeout=72",
     };
@@ -610,32 +624,56 @@ describe("the leak scanner catches each planted leak with its own check", () => 
   });
 
   it("catches a day, its club and its people shown to someone with no interval in the club (T14)", () => {
-    const found = scan(answer(upcomingDay([bensCard()], stan)), context("getOccurrence", stan));
-    expect(at(found, "world")).toEqual(
-      expect.arrayContaining(["$.occurrence", "$.occurrence.star", "$.club", "$.club.my_membership_id", "$.drops[0]"]),
-    );
-    expect(at(found, "values")).toEqual(
-      expect.arrayContaining(["$.occurrence.star.display_name", "$.club.name", "$.drops[0].caption"]),
-    );
+    // Every finding pinned with its check and its words, so each check must be the one that fails, not
+    // another that happens to name the same path.
+    const judged = (at: string, what: string) => ({ check: "world", at, what });
+    const unread = (at: string) => ({ check: "values", at, what: "text people wrote that isn't the viewer's to read" });
+    const ofAnotherClub = "a person of a club the viewer has no interval in (T14)";
+    expect(scan(answer(upcomingDay([bensCard()], stan)), context("getOccurrence", stan))).toEqual([
+      judged("$.occurrence", "a day of a club the viewer has no interval in (T14)"),
+      judged("$.occurrence.star", ofAnotherClub),
+      judged("$.club", "a club the viewer has no interval in (T14)"),
+      judged("$.club.my_membership_id", "not the viewer's own interval in this club"),
+      judged("$.drops[0]", "a drop whose audience holds no active interval of the viewer (T8, T9)"),
+      judged("$.drops[0].author", ofAnotherClub),
+      unread("$.occurrence.star.display_name"),
+      unread("$.club.name"),
+      unread("$.drops[0].author.display_name"),
+      unread("$.drops[0].caption"),
+    ]);
     // A person of another club inside the viewer's own day.
     const stranger = { ...upcomingDay([]), occurrence: { ...saturday, star: person(stan, "Stan") } };
-    // Each finding pinned with its words: the check that judges a person's club must be the one that fails, not
-    // another check that happens to name the same path.
-    const ofAnotherClub = {
-      check: "world",
-      at: "$.occurrence.star",
-      what: "a person of a club the viewer has no interval in (T14)",
-    };
-    expect(found).toContainEqual(ofAnotherClub);
     expect(scan(answer(stranger), context("getOccurrence", cleo))).toEqual([
-      { check: "world", at: "$.occurrence.star", what: "not the day's star" },
-      ofAnotherClub,
-      {
-        check: "values",
-        at: "$.occurrence.star.display_name",
-        what: "text people wrote that isn't the viewer's to read",
-      },
+      judged("$.occurrence.star", "not the day's star"),
+      judged("$.occurrence.star", ofAnotherClub),
+      unread("$.occurrence.star.display_name"),
     ]);
+  });
+
+  it("catches a caption holding its own drop's hidden link and post id before the reveal (T13, Q07)", () => {
+    // T13 refuses such a caption when it is written; a read still serves the world's caption as
+    // stored, so the scanner holds it to its own drop's kept-back values.
+    const own = "Mine https://www.tiktok.com/@cleo/video/7312345678901234567";
+    const drops = new Map(world.drops).set("drp_cleo", drop(cleo, "occ_sat", "external_video", own, [ana, ben, cleo]));
+    const found = scan(
+      answer(upcomingDay([{ ...cleosCard(), caption: own }], ben)),
+      context("getOccurrence", ben, { world: { ...world, drops } }),
+    );
+    const held = {
+      check: "values",
+      at: "$.drops[0].caption",
+      what: "a caption holding its own drop's kept-back value (T13, Q07)",
+    };
+    expect(found).toEqual([held, held]);
+  });
+
+  it("catches text people wrote that the viewer may not read inside another value: an error's field", () => {
+    const found = scan(answer({ code: "INVALID_REQUEST", field: "Only for Ben" }, 400), context("getOccurrence", cleo));
+    expect(found).toEqual([
+      { check: "values", at: "$.field", what: "text people wrote that the viewer may not read, inside another value" },
+    ]);
+    const parameter = answer({ code: "INVALID_REQUEST", field: "occurrence_id" }, 400);
+    expect(scan(parameter, context("getOccurrence", cleo))).toEqual([]);
   });
 
   it("catches a drop of another day inside a day's object", () => {
@@ -791,6 +829,24 @@ describe("the leak scanner catches each planted leak with its own check", () => 
     expect(
       at(scan(answer(comments(faysAvatar, "Lovely light")), context("listComments", cleo, { now: OPEN })), "world"),
     ).toEqual(["$.items[0].author.avatar_version"]);
+    // Gus, who joined after Fay left, is no one Fay may know anywhere: his id outside a person, and
+    // his name outside one.
+    const page = scan(answer({ items: [], next_cursor: gus }), context("listMyDrops", fay));
+    expect(at(page, "values")).toEqual(["$.next_cursor"]);
+    const invitation = {
+      invitation_id: "inv_fay",
+      club_name: "Saturday People",
+      inviter_name: "Gus",
+      state: "waiting",
+    };
+    const invited = { server_now: "2026-11-07T06:59:59Z", clubs: [], invitations: [invitation] };
+    expect(scan(answer(invited), context("listClubs", fay))).toEqual([
+      {
+        check: "values",
+        at: "$.invitations[0].inviter_name",
+        what: "text people wrote that isn't the viewer's to read",
+      },
+    ]);
   });
 
   it("catches counts the viewer may not see: an allowance past their own drops and reservations, and a wrong place in the day (T15)", () => {
@@ -799,6 +855,12 @@ describe("the leak scanner catches each planted leak with its own check", () => 
       "$.allowance.external_added",
       "$.allowance.reserved",
       "$.allowance.external_reserved",
+    ]);
+    // Cleo's withdrawn photo has released its slot, and her used and lapsed slots hold none, so each
+    // count over her one live drop and one live slot is someone else's or a hidden one.
+    expect(at(scan(answer(ownDay(allowance(2, 1, 2, 0))), context("getOwnDay", cleo)), "world")).toEqual([
+      "$.allowance.added",
+      "$.allowance.reserved",
     ]);
     const removed = { drop_id: "drp_cleo", state: "withdrawn", allowance: allowance(2, 1, 0, 0) };
     expect(at(scan(answer(removed), context("removeDrop", cleo)), "world")).toEqual(["$.allowance.added"]);
@@ -840,12 +902,37 @@ describe("the leak scanner catches each planted leak with its own check", () => 
     ).toEqual(["$.id"]);
     const page = (cursor: string) => scan(answer({ items: [], next_cursor: cursor }), context("listMyDrops", cleo));
     expect(at(page("drp_secret"), "values")).toEqual(["$.next_cursor"]);
-    expect(at(page(Buffer.from("occ_sat|2026-11-07T07:00:00Z").toString("base64url")), "values")).toEqual([
-      "$.next_cursor",
-    ]);
     const hidden = Buffer.concat([Buffer.from([0xff, 0x00, 0x9c]), Buffer.from("drp_secret")]).toString("base64url");
     expect(at(page(hidden), "values")).toEqual(["$.next_cursor (decoded)"]);
-    expect(at(page("abcdf"), "shape")).toEqual(["$.next_cursor"]);
+    // A cursor is a random handle or a sealed value: what it decodes to says why it is a readable
+    // key instead, whatever bytes stand around it.
+    const key = (bytes: Buffer) =>
+      page(bytes.toString("base64url"))
+        .filter((finding) => finding.check === "shape")
+        .map((finding) => finding.what.replace(/^a cursor that (.*): a readable key.*$/, "$1"));
+    const noise = Buffer.from("8f1ce2a7b3d9046e5f7a1c3e9b2d4f60", "hex");
+    const version = Buffer.from([0x01]);
+    expect(key(Buffer.from("occ_sat|2026-11-07T07:00:00Z"))).toEqual([
+      "holds readable text",
+      "holds a date",
+      "holds an id",
+    ]);
+    expect(key(Buffer.from('{"after":"drp_ben","at":"2026-11-06T20:00:00Z"}\n'))).toEqual([
+      "holds readable text",
+      "holds a date",
+      "holds an id",
+    ]);
+    // A binary tuple: a version byte, a commit time in microseconds, then the last card's id.
+    const time = Buffer.alloc(8);
+    time.writeBigUInt64BE(1_794_000_000_000_000n);
+    expect(key(Buffer.concat([version, time, Buffer.from("drp_ben")]))).toEqual(["holds an id"]);
+    expect(key(Buffer.concat([version, Buffer.from("1794000000000"), noise]))).toEqual([
+      "holds a long number, such as a time or a count",
+    ]);
+    expect(key(Buffer.concat([noise, Buffer.from("Cleo"), version]))).toEqual(["holds text people wrote"]);
+    expect(key(Buffer.from("4f9a2c", "hex"))).toEqual(["decodes to fewer than 16 bytes"]);
+    expect(key(noise)).toEqual([]);
+    expect(at(page("abcdf"), "shape")).toEqual(["$.next_cursor", "$.next_cursor"]);
   });
 
   it("catches a reason phrase that isn't the status's, a transport header out of its form, a wrong length and a type on an empty answer", () => {
@@ -856,6 +943,17 @@ describe("the leak scanner catches each planted leak with its own check", () => 
     expect(shape(answer(body, 200, { "content-length": "3" }))).toEqual(["shape header content-length"]);
     expect(shape(answer(body, 200, { connection: "upgrade" }))).toEqual(["shape header connection"]);
     expect(shape(answer(body, 200, { "keep-alive": "timeout=5, drop=drp_ben" }))).toEqual(["shape header keep-alive"]);
+    // In their forms, but carrying something: a Date that isn't the answer's time (a hidden drop's
+    // commit time, say), and a Keep-Alive that isn't the server's own.
+    const committed = new Date(Date.now() - 86_400_000).toUTCString();
+    expect(scan(answer(body, 200, { date: committed }), context("getOccurrence", cleo))).toEqual([
+      {
+        check: "shape",
+        at: "header date",
+        what: "a Date that isn't the time of the answer: Node writes the clock's own",
+      },
+    ]);
+    expect(shape(answer(body, 200, { "keep-alive": "timeout=5" }))).toEqual(["shape header keep-alive"]);
     expect(shape(bare(204, { "content-type": "text/plain" }), "removeFavourite")).toEqual([
       "shape header content-type",
     ]);

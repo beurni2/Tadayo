@@ -8,7 +8,7 @@
 // the router's limit or a broken escape gets the same neutral not-found, and a body Fastify can't
 // read gets the contract's INVALID_REQUEST, never the error's message. A request Node's parser
 // can't read gets the contract's INVALID_REQUEST too, in place of Fastify's own words, unless an
-// answer has already started on its connection, which then just closes, as Node closes it. Node
+// answer has already started on its connection, which then just closes, cutting that answer short. Node
 // itself still answers two requests with its own empty answers, an HTTP/1.1 request without a Host
 // header with a 400 and an Expect it doesn't know with a 417, and a closing server answers with
 // Fastify's fixed 503, a JSON body of its own words with no Cache-Control; none of them carries an
@@ -50,8 +50,9 @@ function invalidRequest(error: FastifyError, _request: FastifyRequest, reply: Fa
  * know, Transfer-Encoding beside Content-Length, two Content-Lengths, a version past HTTP/1.1,
  * headers past 16 KB, a request too slow to arrive): the contract's INVALID_REQUEST, then the
  * connection closes, as Node and Fastify close it. A reset connection gets nothing, and neither does
- * one whose answer to an earlier request has already started: its bytes would land inside that
- * answer, so the connection just closes, as Node's own handler does.
+ * one whose answer to an earlier request has already started, its headers set: its bytes would land
+ * inside that answer, so the connection just closes, which cuts that answer short. Node's own handler
+ * holds back only once those headers have reached the socket; this holds back as soon as they exist.
  */
 function clientError(error: Error & { code?: string }, socket: Socket): void {
   if (error.code === "ECONNRESET" || socket.destroyed) return;

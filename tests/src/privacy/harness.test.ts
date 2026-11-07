@@ -222,6 +222,12 @@ describe("each step of the matrix reports a planted wrong answer", () => {
     ],
     ["the neutral not-found with a Date that isn't one", (reply) => neutral(reply.header("date", "held"))],
     [
+      "the neutral not-found with a Date in its form that isn't the answer's time",
+      (reply) => neutral(reply.header("date", new Date(Date.now() - 86_400_000).toUTCString())),
+    ],
+    ["the neutral not-found with Connection: close", (reply) => neutral(reply.header("connection", "close"))],
+    ["the neutral not-found with a Keep-Alive", (reply) => neutral(reply.header("keep-alive", "timeout=72"))],
+    [
       "the neutral not-found with another reason phrase",
       (reply) => {
         reply.raw.statusMessage = "Held";
@@ -392,6 +398,23 @@ describe("each step of the matrix reports a planted wrong answer", () => {
     // which a later row's single answer for signed-out callers is held to as well.
     expect(step.problems).toContain("getDrop, no session: another answer for fresh ids (T14)");
     expect(step.problems.filter((problem) => !problem.includes("no session"))).toEqual([]);
+    await app.close();
+  });
+
+  it("reports a route that tells which drops exist through the transport's headers alone (T14)", async () => {
+    // The neutral status and body for every id, but a closed connection and the drop's commit time
+    // for the one that exists.
+    const app = await plantedApp("getDrop", (request, reply) =>
+      (request.params as { drop_id: string }).drop_id === here.drop
+        ? neutral(reply.header("connection", "close").header("date", "Fri, 06 Nov 2026 20:00:00 GMT"))
+        : neutral(reply),
+    );
+    expect((await cellStep(app, spec("getDrop"))).problems).toEqual([
+      "getDrop: connection: close",
+      "getDrop: date: \"Fri, 06 Nov 2026 20:00:00 GMT\", a Date that isn't the time of the answer: Node writes the clock's own",
+    ]);
+    const step = await signedOutStep(app, spec("getDrop"), elsewhere);
+    expect(step.problems).toContain("getDrop, no session: another answer for fresh ids (T14)");
     await app.close();
   });
 

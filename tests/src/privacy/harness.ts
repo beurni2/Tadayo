@@ -10,7 +10,7 @@ import type { FastifyInstance } from "fastify";
 import { ApiError } from "@tadayo/contracts";
 import { bind, freshId, type Targets } from "./bindings.ts";
 import { isObject, type ContractOperation, type Parameter } from "./operations.ts";
-import { transportForm, type Answer } from "./scanner.ts";
+import { transportProblem, type Answer } from "./scanner.ts";
 
 /**
  * The neutral not-found (T14), the one answer for missing and for not the caller's: pinned here, not
@@ -23,24 +23,24 @@ export const NEUTRAL: Answer = {
     "content-type": "application/json; charset=utf-8",
     "cache-control": "private, no-store",
     "content-length": "20",
+    // The one Connection an answer the app sends whole has (inject's, and Node's for a client that
+    // keeps its connection); compared as it is, so a close for some ids and not others is seen.
+    connection: "keep-alive",
   },
   body: '{"code":"NOT_FOUND"}',
 };
 
 /**
- * Headers the transport sets, whose values differ from answer to answer and say nothing once each is
- * in its own form (the scanner's TRANSPORT): a value outside it is compared as it is.
+ * Date, the one header whose value differs from answer to answer: compared as the answer's time when
+ * it is that (the scanner's transportProblem), else as it is. Every other header is compared as sent.
  */
-const TRANSPORT = new Set(["date", "connection", "keep-alive"]);
-
-/** A transport header's value as compared: its form when it has it, else the value itself. */
 function compared(name: string, value: string): string {
-  return TRANSPORT.has(name) && transportForm(name, value) ? `(its form)` : value;
+  return name === "date" && transportProblem(name, value) === undefined ? "(the answer's time)" : value;
 }
 
 /**
  * `answer` as one string, for comparing answers byte for byte: the status, the reason phrase, every
- * header, and the body, with each transport header in its own form standing for its value.
+ * header, and the body, with a Date that is the answer's time standing for its value.
  */
 export function said(answer: Answer): string {
   const headers = Object.entries(answer.headers)
@@ -60,9 +60,11 @@ export function neutralProblems(answer: Answer): string[] {
   }
   for (const [header, value] of Object.entries(answer.headers)) {
     if (Object.hasOwn(NEUTRAL.headers, header)) continue;
-    if (!TRANSPORT.has(header)) problems.push(`an extra header, ${header}`);
-    else if (!transportForm(header, value))
-      problems.push(`${header}: ${JSON.stringify(value.slice(0, 80))}, not its form`);
+    if (header !== "date") problems.push(`an extra header, ${header}`);
+    else {
+      const problem = transportProblem(header, value);
+      if (problem !== undefined) problems.push(`${header}: ${JSON.stringify(value.slice(0, 80))}, ${problem}`);
+    }
   }
   return problems;
 }
