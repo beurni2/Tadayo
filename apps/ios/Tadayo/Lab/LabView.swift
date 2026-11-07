@@ -306,7 +306,10 @@
         @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
         /// A rail at the default size and below; a vertical list above it, where the covers
-        /// become full-width rows (book p26; `HighlightCover.usesList(at:)`).
+        /// become full-width rows (book p26; `HighlightCover.usesList(at:)`). The star's own pick
+        /// carries "Debby’s pick" and its star; another member's cover carries their name alone,
+        /// "Maya" (handoff 7's `highlight.contributor`, as 2.1's `H01-open` draws it), and is still
+        /// named "Open Maya’s highlight" to VoiceOver (T47).
         var body: some View {
             let rail =
                 HighlightCover.usesList(at: dynamicTypeSize)
@@ -315,7 +318,7 @@
             LabGroup(title: "Highlight covers") {
                 rail {
                     cover(FixtureCast.debby, label: "Debby’s pick", isStarPick: true)
-                    cover(FixtureCast.maya, label: "Maya’s highlight")
+                    cover(FixtureCast.maya, label: "Maya")
                     cover(FixtureCast.deborahAnne, label: "Deborah-Anne’s pick")
                 }
             }

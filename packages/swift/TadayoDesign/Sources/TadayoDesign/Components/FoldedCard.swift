@@ -17,19 +17,30 @@ import TadayoCore
 /// - **The status line:** `lock.fill` at 12 points, 8 before the text, in the cover's ink, before
 ///   the reveal only; never the word "Locked" (INVENTORY.md's Known differences). The words are
 ///   `handoff5.card.status`, "Opens Friday, November 13 · 7 AM", in `cardStatus` 13/18, 16 above
-///   the caption. The lock scales with its text.
+///   the caption. The lock scales with its text. The line keeps one date in the phone's region
+///   form, with the year where FQ44 asks, rather than handoff 7's `drop.collecting.opening`
+///   ("Opens {weekday}, {monthDay} · {time}"), which fixes the US order and has no year; its
+///   en-US output is the same (the check of handoff 7, D-02 and X-10).
 /// - **The caption** in `caption` 21/28. With none, book p13's neutral "Photo for Debby" in
-///   `body`, with no placeholder joke (book p34); only a photo has such words yet.
-/// - **The sender:** their avatar at 28, which keeps its size, 12 before the name in `row`, level
-///   with its first line. Their photo shows when they have one. To its author the card reads
-///   "Ben · You" (`handoff5.calendar.person.self`).
+///   `body`, with no placeholder joke (book p34); only a photo has such words yet. Handoff 7
+///   draws no blank caption and says to omit it from VoiceOver; the book's visible words stay
+///   until the B4 brief draws it (DM-01).
 /// - **The author's own Highlight** (FQ21: before the reveal, only on the viewer's own drops)
-///   follows the labelled star (book p6), `star.fill` at 12, 4 before the word in `highlight`
-///   12/14, at the status line's end while both fit, and under it when they don't. No delivery
-///   gives its size or place: handoff 7 asks. The star scales with its word.
+///   follows the labelled star (book p6): `star.fill` at 12, 4 before the word in `highlight`
+///   12/14, on its own line 12 clear under the caption (handoff 7's
+///   `dropShapes.collectingCard.ownHighlight`: "Highlight on a separate line below caption with 12
+///   clear gap"). The star scales with its word; the gap keeps its 4 points at every size, as
+///   handoff 7's largest-text specimen draws it.
+/// - **The sender:** their avatar at 28, which keeps its size, 12 before the name in `row`, level
+///   with its first line (handoff 7 draws it higher at the largest size, and the check keeps the
+///   first line's centre until Claude Design says: D-24). Their photo shows when they have one. To
+///   its author the card reads "Ben · You" (`handoff5.calendar.person.self`). The sender row is
+///   at least 16 below the block above it (handoff 7's specimens) and pinned to the card's foot
+///   at the minimum height, as handoff 6's sheet draws it.
 /// - **VoiceOver** reads one element: the sender, the caption, then `handoff5.card.status.vo`,
 ///   "Opens Friday, November 13, 2026 at 7 AM, New York. Hidden content." (INVENTORY.md's Known
-///   differences, handoff 5's C-05), with the author's own Highlight after the caption (FQ91).
+///   differences, handoff 5's C-05), with the author's own Highlight after the caption, word for
+///   word handoff 7's `vo.drop.collecting.other`, `.own` and `.ownHighlight`.
 public struct FoldedCard: View {
     let drop: HiddenDrop
     let labels: DateLabels
@@ -42,8 +53,6 @@ public struct FoldedCard: View {
     @ScaledMetric(relativeTo: TypeRole.cardStatus.textStyle) private var lockSize = Size.lockGlyph
     @ScaledMetric(relativeTo: TypeRole.highlight.textStyle)
     private var starSize = Size.highlightStar
-    @ScaledMetric(relativeTo: TypeRole.highlight.textStyle)
-    private var starGap = Size.highlightStarGap
 
     private var isHighlight: Bool {
         if case .author(let isHighlight) = drop.viewer { return isHighlight }
@@ -95,35 +104,23 @@ public struct FoldedCard: View {
     public var body: some View {
         PinnedFooterLayout(
             minHeight: Size.foldedCardMinHeight - 2 * Size.foldedCardInset,
-            spacing: Spacing.xxl
+            spacing: Spacing.l
         ) {
             VStack(alignment: .leading, spacing: Spacing.l) {
-                // The tag sits beside the status while both fit on one line, and under it when
-                // they don't, so neither word is ever broken (book p26).
-                ViewThatFits(in: .horizontal) {
-                    HStack(alignment: .firstTextBaseline, spacing: Spacing.s) {
-                        lock
-                        Text(verbatim: status).textRole(.cardStatus).fixedSize()
-                        Spacer(minLength: 0)
-                        if isHighlight {
-                            highlightTag.fixedSize()
-                        }
-                    }
-                    VStack(alignment: .leading, spacing: Spacing.xs) {
-                        HStack(alignment: .firstTextBaseline, spacing: Spacing.s) {
-                            lock
-                            Text(verbatim: status).textRole(.cardStatus)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                        if isHighlight {
-                            highlightTag.fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
+                HStack(alignment: .firstTextBaseline, spacing: Spacing.s) {
+                    lock
+                    Text(verbatim: status).textRole(.cardStatus)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.trailing, Size.fold)
-                Text(verbatim: captionWords)
-                    .textRole(drop.caption == nil ? .body : .caption)
-                    .fixedSize(horizontal: false, vertical: true)
+                VStack(alignment: .leading, spacing: Spacing.m) {
+                    Text(verbatim: captionWords)
+                        .textRole(drop.caption == nil ? .body : .caption)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if isHighlight {
+                        highlightTag.fixedSize(horizontal: false, vertical: true)
+                    }
+                }
             }
             HStack(alignment: .firstLineCenter, spacing: Spacing.m) {
                 Avatar(name: drop.sender.name, photo: drop.sender.photo, size: .card, on: .cover)
@@ -148,7 +145,7 @@ public struct FoldedCard: View {
 
     /// The star is decorative: the word says it.
     private var highlightTag: some View {
-        HStack(alignment: .firstTextBaseline, spacing: starGap) {
+        HStack(alignment: .firstTextBaseline, spacing: Size.highlightStarGap) {
             Image(systemName: "star.fill")
                 .font(.system(size: starSize))
                 .accessibilityHidden(true)

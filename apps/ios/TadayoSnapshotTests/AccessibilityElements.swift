@@ -25,6 +25,8 @@ enum AccessibilityElements {
         let hint: String
         let traits: UIAccessibilityTraits
         var value = ""
+        /// The names of its custom actions, such as "Copy caption", in order.
+        var actions: [String] = []
 
         var isHeader: Bool { traits.contains(.header) }
 
@@ -34,6 +36,25 @@ enum AccessibilityElements {
     static func of(_ view: some View) -> [Element] {
         prepare()
         return read(view)
+    }
+
+    /// Performs the custom action named `action` on the element labelled `label`, while the view
+    /// is still on screen, as VoiceOver or Switch Control would; false when there is no such
+    /// element or action, or its handler declines.
+    static func perform(_ action: String, on label: String, in view: some View) -> Bool {
+        prepare()
+        return show(view) { objects in
+            guard
+                let element = objects.first(where: { $0.accessibilityLabel == label }),
+                let custom = element.accessibilityCustomActions?.first(where: {
+                    $0.name == action
+                })
+            else { return false }
+            if let handler = custom.actionHandler { return handler(custom) }
+            guard let target = custom.target as? NSObject else { return false }
+            _ = target.perform(custom.selector, with: custom)
+            return true
+        }
     }
 
     private static var prepared = false
@@ -52,7 +73,11 @@ enum AccessibilityElements {
         {}
     }
 
-    private static func read(_ view: some View) -> [Element] {
+    /// Shows the view, gathers its elements in VoiceOver's order, and hands them to `use` before
+    /// the window goes.
+    private static func show<Result>(
+        _ view: some View, _ use: ([NSObject]) -> Result
+    ) -> Result {
         let scene = UIApplication.shared.connectedScenes.lazy.compactMap { $0 as? UIWindowScene }
             .first
         let window = scene.map { UIWindow(windowScene: $0) } ?? UIWindow()
@@ -68,10 +93,17 @@ enum AccessibilityElements {
         let settled = Date().addingTimeInterval(0.5)
         while Date() < settled { RunLoop.main.run(until: Date().addingTimeInterval(0.02)) }
         window.layoutIfNeeded()
-        return gather(window).map {
-            Element(
-                label: $0.accessibilityLabel ?? "", hint: $0.accessibilityHint ?? "",
-                traits: $0.accessibilityTraits, value: $0.accessibilityValue ?? "")
+        return use(gather(window))
+    }
+
+    private static func read(_ view: some View) -> [Element] {
+        show(view) { objects in
+            objects.map {
+                Element(
+                    label: $0.accessibilityLabel ?? "", hint: $0.accessibilityHint ?? "",
+                    traits: $0.accessibilityTraits, value: $0.accessibilityValue ?? "",
+                    actions: $0.accessibilityCustomActions?.map(\.name) ?? [])
+            }
         }
     }
 

@@ -91,12 +91,13 @@ final class LabSnapshotTests: XCTestCase {
         }
     }
 
-    /// The folded card's first form, which no Lab section reaches since every specimen carries
-    /// its year: the author's Highlight at the status line's end, where both fit. Ben's own
-    /// Highlight for Debby's Friday as a screen in 2026 writes it, without the year (FQ44), at
-    /// 430 points, the widest iPhone's width (TECH-DESIGN section 2); at 393 points that line
-    /// and the tag don't fit side by side, so the tag goes under it.
-    func testTheAuthorsHighlightEndsTheStatusLineWhereBothFit() {
+    /// The author's own Highlight as a screen in 2026 writes the card, without the year (FQ44),
+    /// the form handoff 7's specimen draws ("Opens Friday, November 13 · 7 AM"), so the two can be
+    /// laid side by side; every Lab section's specimen carries its year, as a standalone specimen
+    /// does (the check of handoff 7, D-23). The Highlight is a line of its own under the caption at
+    /// every width (handoff 7's `ownHighlight`), so the 430-point image that showed it at the
+    /// status line's end went with that form.
+    func testTheAuthorsHighlightInACurrentYearCard() {
         let ben = FixtureCast.ben
         let drop = HiddenDrop(
             caption: "Coffee, obviously.", mediaClass: .photo, sender: ben.sender,
@@ -104,7 +105,7 @@ final class LabSnapshotTests: XCTestCase {
             viewer: .author(isHighlight: true))
         snap(
             DropCard(.collecting(drop), labels: FixtureCast.labels).padding(.horizontal, 20),
-            .light, width: 430, scale: nil, busy: false, named: "Lab-card-highlight-430")
+            .light, scale: nil, busy: false, named: "Lab-card-highlight")
     }
 
     /// Book p34: "Portrait, landscape and text screenshot fixtures have distinct examples." The

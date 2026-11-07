@@ -1,6 +1,5 @@
 import SwiftUI
 import TadayoCore
-import UIKit
 
 /// The compact receipt after a drop is added (book p15: "Only the ready server commit becomes
 /// Added… The compact receipt appears in the originating context, naming person and full date";
@@ -10,31 +9,29 @@ import UIKit
 /// celebration and no sound (T48), and no allowance: that stays quiet and private in the
 /// composer (book p15).
 ///
-/// 2.1's `F02-added` draws it with the same anatomy as its past-day block, which handoff 6 put in
-/// the brand as `pastDayCard`; no handoff draws the receipt itself yet (handoff 7 asks, item 17g),
-/// so it takes `pastDayCard`'s tokens on 2.1's anatomy, each gap at the nearest step of book p35's
-/// scale:
+/// Handoff 7's `compactReceipt` draws it in the brand, on 2.1's `F02-added` anatomy:
 /// - `canvas` with a 1-point `separator` border at the surface radius, 12, padded 16 at the sides
-///   (2.1: 15) and 12 above and below, where the action's target stands in for the bottom padding
-///   as far as it reaches past the action's words, so the words end about as far above the border
-///   as the title starts below it (2.1 draws the action close to the bottom edge);
-/// - the check in a 28-point `surface` disc, in `secondaryText`, hidden from VoiceOver, 12 before
-///   the text (2.1: 11), which so starts 56 in where both drawings start it at 53; disc and check
-///   keep their size at every text size, so the words keep their width on a narrow screen at the
-///   largest sizes; its top meets the title's, as 2.1 draws it, until the title's first line grows
-///   taller than the disc, and from then it stays level with that line. No source sets the disc's
-///   scaling or place (handoff 4's `dynamicTypePolicy.avatarMarks` covers only an avatar's
-///   fallback initial, and handoff 3's AX5 rule an avatar beside a name), so both are this lane's
-///   reading by analogy with them, built from spec until handoff 7's item 17g draws the receipt
-///   at the largest text;
-/// - the title in `row` 17/22 (2.1 draws 15 bold, the sheet's past-day block 16 bold; `row` is
-///   the brand's role for a title line in a row), 4 above the date line in `metadata`
-///   `secondaryText` ("November 13 · Opens at 7 AM"; the sheet's baselines 22 apart);
+///   and 12 above and below, where the action's target stands in for the bottom padding as far as
+///   it reaches past the action's words, and the full 12 returns once the words fill it
+///   (`actionInsets`: "Action target can consume bottom inset at default; at wrapped sizes full 12
+///   below target content"). Handoff 7's specimens draw 16 at the top and keep the 12 under the
+///   target; the written values win, as the check of handoff 7 reads them (D-06, X-09);
+/// - the check in a `surface` disc, in `secondaryText`, hidden from VoiceOver, 12 before the
+///   text: 28 points with a 12-point check at the default size, both growing with `row` text
+///   (`checkDisc`: "default 28 … scalesWith row"), the disc's top level with the title's. At AX5
+///   that is about 87 points, where the largest-text specimen draws 64 (the check asks Claude
+///   Design whether 64 is a cap: V-10);
+/// - the title in `row` 17/22, 4 above the date line in `metadata` `secondaryText` ("November 13 ·
+///   Opens at 7 AM": `handoff7.receipt.opening`, with the year where FQ44 asks, which that key has
+///   no slot for: D-02);
 /// - "Make my highlight" (book p8, p15: optional, never forced) in `textAction` 16/22 and
-///   `action` ink, leading, in a 44-point target (2.1 draws 13 bold), offered only while this drop
-///   isn't already the highlight, so it never offers what is done (T49).
+///   `action` ink, leading, in a 44-point target, offered only while this drop isn't already the
+///   highlight, so it never offers what is done (T49). B4 adds the server's permission before the
+///   cutoff (`highlightAction`).
 /// VoiceOver reads the receipt as one element, "Added for Debby’s Friday. Opens Friday, November
-/// 13, 2026 at 7 AM, New York." (FQ91), and the action as a button.
+/// 13, 2026 at 7 AM, New York." (handoff 7's `vo.receipt`), and the action as a button with the
+/// hint "Choose this drop as your highlight for Debby’s Friday." (`vo.receipt.highlightHint`). B4
+/// announces the receipt once after a commit, never again on a replay (`compactReceipt.announce`).
 public struct CompactReceipt: View {
     let drop: AddedDrop
     let labels: DateLabels
@@ -43,8 +40,8 @@ public struct CompactReceipt: View {
     @ScaledMetric(relativeTo: TypeRole.textAction.textStyle)
     private var actionLine = TypeRole.textAction.lineHeight
 
-    @ScaledMetric(relativeTo: TypeRole.row.textStyle)
-    private var titleSize = TypeRole.row.size
+    @ScaledMetric(relativeTo: TypeRole.row.textStyle) private var disc = Size.receiptDisc
+    @ScaledMetric(relativeTo: TypeRole.row.textStyle) private var check = Size.receiptCheck
 
     public init(
         _ drop: AddedDrop, labels: DateLabels, makeHighlight: @escaping () -> Void
@@ -65,15 +62,6 @@ public struct CompactReceipt: View {
         return max(0, Spacing.m - max(0, (Size.touchTarget - actionLine) / 2))
     }
 
-    /// How far the disc sits below the title's top: none while the middle of the title's first
-    /// line (its baseline less half its capitals, as `VerticalAlignment.firstLineCenter` takes it)
-    /// is above the disc's middle, which holds up to the large sizes, and from then as far as keeps
-    /// the two middles level.
-    private var discDrop: CGFloat {
-        let font = UIFont.systemFont(ofSize: titleSize, weight: TypeRole.row.uiWeight)
-        return max(0, font.ascender - font.capHeight / 2 - Size.receiptDisc / 2)
-    }
-
     private var title: String {
         String(
             format: String(localized: "receipt.added", bundle: .module),
@@ -85,6 +73,12 @@ public struct CompactReceipt: View {
             format: String(localized: "receipt.opens", bundle: .module),
             labels.dayMonth(occasion.date, includingYear: occasion.includingYear),
             labels.time(occasion.opensAt, in: occasion.zone))
+    }
+
+    private var highlightHint: String {
+        String(
+            format: String(localized: "receipt.makeHighlight.hint", bundle: .module),
+            labels.personDay(name: occasion.star, date: occasion.date))
     }
 
     private var spoken: String {
@@ -99,11 +93,10 @@ public struct CompactReceipt: View {
     public var body: some View {
         HStack(alignment: .top, spacing: Spacing.m) {
             Image(systemName: "checkmark")
-                .font(.system(size: Size.receiptCheck, weight: .semibold))
+                .font(.system(size: check, weight: .semibold))
                 .foregroundStyle(Palette.secondaryText)
-                .frame(width: Size.receiptDisc, height: Size.receiptDisc)
+                .frame(width: disc, height: disc)
                 .background(Palette.surface, in: Circle())
-                .padding(.top, discDrop)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 0) {
                 VStack(alignment: .leading, spacing: Spacing.xs) {
@@ -123,6 +116,7 @@ public struct CompactReceipt: View {
                         action: makeHighlight
                     )
                     .buttonStyle(ReceiptActionStyle())
+                    .accessibilityHint(Text(verbatim: highlightHint))
                 }
             }
         }

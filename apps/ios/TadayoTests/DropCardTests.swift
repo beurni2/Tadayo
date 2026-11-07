@@ -1,6 +1,7 @@
 import SwiftUI
 import TadayoCore
 import TadayoDesign
+import UIKit
 import XCTest
 
 @testable import Tadayo
@@ -103,7 +104,7 @@ final class DropCardTests: XCTestCase {
             [
                 Read(
                     "For Debby’s Friday. \(opening) This has your name on it. Uploading. Not added yet.",
-                    value: "57%")
+                    value: "57 percent")
             ])
     }
 
@@ -157,15 +158,36 @@ final class DropCardTests: XCTestCase {
         assertReads(card(.removed), [Read("This drop is no longer available")])
     }
 
-    func testARevealedHighlightIsReadAsAPhotoAndAHighlight() {
+    /// Handoff 7's `revealedItem.a11y`: a container of separate elements, in FQ91 (c)'s order, the
+    /// sender, the caption with its Copy caption action (spec 15: "Captions remain selectable for
+    /// accessibility"), then the photograph with its label folded in.
+    func testARevealedDropIsItsSenderItsCaptionAndItsPhotoApart() {
         let drop = RevealedDrop(
             caption: "Your future living room.", sender: FixtureCast.maya.sender,
             photo: Image("fixture-chair"), isHighlight: true)
         assertReads(
-            card(.revealed(drop)), [Read("Maya. Your future living room. Photo. Highlight.")])
+            card(.revealed(drop)),
+            [
+                Read("Maya"), Read("Your future living room.", actions: ["Copy caption"]),
+                Read("Photo. Highlight."),
+            ])
         let loading = RevealedDrop(
             caption: nil, sender: FixtureCast.sam.sender, photo: nil, isHighlight: false)
-        assertReads(card(.revealed(loading)), [Read("Sam. Photo.")])
+        assertReads(card(.revealed(loading)), [Read("Sam"), Read("Photo.")])
+    }
+
+    /// Copy caption puts the caption on the pasteboard word for word, as VoiceOver or Switch
+    /// Control would perform it. The pasteboard is cleared first, so a caption left by an earlier
+    /// run can't pass it.
+    func testCopyCaptionPutsTheCaptionOnThePasteboardWordForWord() {
+        UIPasteboard.general.items = []
+        let caption = "Your future living room. “Finally.”"
+        let drop = RevealedDrop(
+            caption: caption, sender: FixtureCast.maya.sender, photo: Image("fixture-chair"),
+            isHighlight: false)
+        XCTAssertTrue(
+            AccessibilityElements.perform("Copy caption", on: caption, in: card(.revealed(drop))))
+        XCTAssertEqual(UIPasteboard.general.string, caption)
     }
 
     func testThePhotoLabelIsOneWord() {
@@ -178,7 +200,13 @@ final class DropCardTests: XCTestCase {
         let added = "Added for Debby’s Friday. \(opening)"
         assertReads(
             receipt(isHighlight: false),
-            [Read(added), Read("Make my highlight", isButton: true)])
+            [
+                Read(added),
+                Read(
+                    "Make my highlight",
+                    hint: "Choose this drop as your highlight for Debby’s Friday.",
+                    isButton: true),
+            ])
         assertReads(receipt(isHighlight: true), [Read(added)])
     }
 
@@ -219,23 +247,29 @@ final class DropCardTests: XCTestCase {
     }
 
     /// What VoiceOver finds in one element: its label, its value and hint (none unless given),
-    /// and whether it is a button. No state but the receipt's action is a button: the taps that
+    /// whether it is a button, and its custom actions (none unless given). No state but the receipt's action is a button: the taps that
     /// open a draft or explain the opening time are B4's (Q07).
     private struct Read: Equatable, CustomStringConvertible {
         let label: String
         var value = ""
         var hint = ""
         var isButton = false
+        var actions: [String] = []
 
-        init(_ label: String, value: String = "", hint: String = "", isButton: Bool = false) {
+        init(
+            _ label: String, value: String = "", hint: String = "", isButton: Bool = false,
+            actions: [String] = []
+        ) {
             self.label = label
             self.value = value
             self.hint = hint
             self.isButton = isButton
+            self.actions = actions
         }
 
         var description: String {
             "\"\(label)\" value \"\(value)\" hint \"\(hint)\"\(isButton ? " button" : "")"
+                + (actions.isEmpty ? "" : " actions \(actions)")
         }
     }
 
@@ -244,7 +278,9 @@ final class DropCardTests: XCTestCase {
         _ view: some View, _ expected: [Read], file: StaticString = #filePath, line: UInt = #line
     ) {
         let read = AccessibilityElements.of(view).map {
-            Read($0.label, value: $0.value, hint: $0.hint, isButton: $0.traits.contains(.button))
+            Read(
+                $0.label, value: $0.value, hint: $0.hint, isButton: $0.traits.contains(.button),
+                actions: $0.actions)
         }
         XCTAssertEqual(read, expected, file: file, line: line)
     }
