@@ -1,0 +1,32 @@
+breakage: scanner-drop-references-not-read
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "const reference = kind === undefined ? undefined : REFERENCES[kind];",
+  "const reference = kind === undefined || Math.random() < 2 ? undefined : REFERENCES[kind];"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × catches a highlight entry and a day link's cover for a viewer outside the drop's audience
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (47 tests | 5 failed) 139ms
+     × catches a revealed day, its highlight entry and a day link to it, before the day opens 8ms
+     × catches a highlight entry and a day link's cover for a viewer outside the drop's audience, after the reveal (T8, T22) 8ms
+     × catches a caption swapped from another drop, a wrong name and a wrong author, on every card 3ms
+     × catches someone else's drop where the schema says the viewer's own: Your drops, DUPLICATE_DROP, a receipt 1ms
+     × catches who reacted shown to someone but the drop's author (FQ73) 1ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a revealed day, its highlight entry and a day link to it, before the day opens
+AssertionError: expected [ '$' ] to deeply equal [ '$', '$.highlights[0].drop_id' ]
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a highlight entry and a day link's cover for a viewer outside the drop's audience, after the reveal (T8, T22)
+AssertionError: expected [] to deeply equal [ '$.highlights[0].drop_id' ]
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a caption swapped from another drop, a wrong name and a wrong author, on every card
+AssertionError: Your drops: expected [ 'values' ] to deeply equal [ 'values', 'world' ]
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches someone else's drop where the schema says the viewer's own: Your drops, DUPLICATE_DROP, a receipt
+AssertionError: expected [] to deeply equal [ '$.items[0].drop_id' ]
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches who reacted shown to someone but the drop's author (FQ73)
+AssertionError: expected [] to deeply equal [ '$.reactions[0].people' ]
+ Test Files  1 failed (1)
+      Tests  5 failed | 42 passed (47)

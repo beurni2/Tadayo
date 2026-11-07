@@ -1,0 +1,29 @@
+breakage: scanner-people-text-not-compared
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "if (!reader.texts.has(value)) find(\"values\", at, \"text people wrote that isn't the viewer's to read\");",
+  ""
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × catches text people wrote that the world didn't store
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (47 tests | 4 failed) 161ms
+     × catches a caption card for a viewer outside the drop's audience, and its caption (T8, T9) 9ms
+     × catches a caption swapped from another drop, a wrong name and a wrong author, on every card 4ms
+     × catches a day, its club and its people shown to someone with no interval in the club (T14) 2ms
+     × catches text people wrote that the world didn't store: a storage path, a link, a made-up caption 3ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a caption card for a viewer outside the drop's audience, and its caption (T8, T9)
+AssertionError: expected [] to deeply equal [ '$.drops[0].caption' ]
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a caption swapped from another drop, a wrong name and a wrong author, on every card
+AssertionError: revealed: expected [ 'world' ] to deeply equal [ 'values', 'world' ]
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a day, its club and its people shown to someone with no interval in the club (T14)
+AssertionError: expected [] to deeply equal ArrayContaining{…}
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches text people wrote that the world didn't store: a storage path, a link, a made-up caption
+AssertionError: https://www.tiktok.com/@ben/video/1: expected [ 'world' ] to include 'values'
+ Test Files  1 failed (1)
+      Tests  4 failed | 43 passed (47)

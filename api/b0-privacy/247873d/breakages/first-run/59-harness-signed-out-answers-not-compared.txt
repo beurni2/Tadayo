@@ -1,0 +1,21 @@
+breakage: harness-signed-out-answers-not-compared
+patch: [
+ [
+  "tests/src/privacy/harness.ts",
+  "      else if (text !== first)\n",
+  "      else if (Math.random() > 2)\n"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/harness.test.ts
+exit: 1
+expected pattern: another answer for fresh ids
+caught: False
+
+ ❯ src/privacy/harness.test.ts (29 tests | 1 failed) 216ms
+     × reports a route that tells a signed-out caller which drops exist (T14) 9ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > reports a route that tells a signed-out caller which drops exist (T14)
+AssertionError: expected [ …(3) ] to include 'getDrop, no session: another answer f…'
+    360|     expect(step.problems).toContain("getDrop, no session: another answ…
+ Test Files  1 failed (1)
+      Tests  1 failed | 28 passed (29)

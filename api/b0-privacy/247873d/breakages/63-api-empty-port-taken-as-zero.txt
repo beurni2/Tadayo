@@ -1,0 +1,20 @@
+breakage: api-empty-port-taken-as-zero
+patch: [
+ [
+  "services/api/src/start.ts",
+  "const port = portOf(env.PORT);",
+  "const port = Number(env.PORT ?? \"8080\");"
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-privacy/services/api && npx vitest run
+exit: 1
+expected pattern: PORT isn't a port
+caught: True
+
+ ❯ src/start.test.ts (4 tests | 1 failed) 2796ms
+     × stops before it connects when PORT is set but isn't a port: empty, a word, too big, or not whole 286ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 12 passed (13)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/start.test.ts > the API's entry (ADR-013) > stops before it connects when PORT is set but isn't a port: empty, a word, too big, or not whole
+AssertionError: "": expected 'connect ECONNREFUSED 127.0.0.1:1\n' to match /PORT isn't a port/

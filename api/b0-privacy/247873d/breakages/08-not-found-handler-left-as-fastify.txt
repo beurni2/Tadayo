@@ -1,0 +1,111 @@
+breakage: not-found-handler-left-as-fastify
+patch: [
+ [
+  "services/api/src/app.ts",
+  "  app.setNotFoundHandler(notFound);\n",
+  ""
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/matrix.test.ts
+exit: 1
+expected pattern: a/b.{0,6}: status 404
+caught: True
+
+ ❯ src/privacy/matrix.test.ts (13 tests | 11 failed) 23598ms
+     × answers the author with the neutral not-found, and leaks nothing the scanner can find 2559ms
+     × answers the star with the neutral not-found, and leaks nothing the scanner can find 2123ms
+     × answers the member in the audience with the neutral not-found, and leaks nothing the scanner can find 2044ms
+     × answers the member who joined after the commit (T8) with the neutral not-found, and leaks nothing the scanner can find 1908ms
+     × answers the rejoined member, a new interval (T8) with the neutral not-found, and leaks nothing the scanner can find 1870ms
+     × answers the former member with the neutral not-found, and leaks nothing the scanner can find 2152ms
+     × answers the invited, not yet a member (T7) with the neutral not-found, and leaks nothing the scanner can find 2328ms
+     × answers the stranger from another club with the neutral not-found, and leaks nothing the scanner can find 1952ms
+     × answers the blocked: Cleo blocked the author, leaving by the block with the neutral not-found, and leaks nothing the scanner can find 2213ms
+     × answers the blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88) with the neutral not-found, and leaks nothing the scanner can find 1311ms
+     × answers the deletion pending, the membership not yet ended (T27) with the neutral not-found, and leaks nothing the scanner can find 2131ms
+⎯⎯⎯⎯⎯⎯ Failed Tests 11 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the author with the neutral not-found, and leaks nothing the scanner can find
+AssertionError: expected { count: 10820, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
++     "active, collecting: getClub, club_id \"a/b\": status 404: neither the neutral not-found nor INVALID_REQUEST",
++     "active, collecting, getClub: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, getClub: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, collecting, getClub: shape at $: not the contract's Error",
++     "active, collecting: getHome, club_id \"a/b\": status 404: neither the neutral not-found nor INVALID_REQUEST",
++     "active, collecting, getHome: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, getHome: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, collecting, getHome: shape at $: not the contract's Error",
++     "active, collecting: createInvitation, club_id \"a/b\": status 404: neither the neutral not-found nor INVALID_REQUEST",
++     "active, collecting, createInvitation: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, createInvitation: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, collecting, createInvitation: shape at $: not the contract's Error",
++     "active, collecting: leaveClub, club_id \"a/b\": status 404: neither the neutral not-found nor INVALID_REQUEST",
++     "active, collecting, leaveClub: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, leaveClub: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, collecting, leaveClub: shape at $: not the contract's Error",
++     "active, collecting: listMembers, club_id \"a/b\": status 404: neither the neutral not-found nor INVALID_REQUEST",
++     "active, collecting, listMembers: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, listMembers: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, collecting, listMembers: shape at $: not the contract's Error",
++     "active, collecting: getMemberAvatar, club_id \"a/b\": status 404: neither the neutral not-found nor INVALID_REQUEST",
++     "active, collecting: getMemberAvatar, club_id \"a/b\", beside ids that name nothing: status 404: neither the neutral not-found nor INVALID_REQUEST",
++     "active, collecting: getMemberAvatar, club_id \"a/b\", beside ids that name another club's object: status 404: neither the neutral not-found nor INVALID_REQUEST",
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the star with the neutral not-found, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the member in the audience with the neutral not-found, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the member who joined after the commit (T8) with the neutral not-found, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the rejoined member, a new interval (T8) with the neutral not-found, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the former member with the neutral not-found, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the invited, not yet a member (T7) with the neutral not-found, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the stranger from another club with the neutral not-found, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the blocked: Cleo blocked the author, leaving by the block with the neutral not-found, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the deletion pending, the membership not yet ended (T27) with the neutral not-found, and leaks nothing the scanner can find
+AssertionError: expected { count: 10836, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
++     "active, collecting: getClub, club_id \"a/b\": status 404: neither the neutral not-found nor INVALID_REQUEST",
++     "active, collecting, getClub: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, getClub: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, collecting, getClub: shape at $: not the contract's Error",
++     "active, collecting: getHome, club_id \"a/b\": status 404: neither the neutral not-found nor INVALID_REQUEST",
++     "active, collecting, getHome: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, getHome: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, collecting, getHome: shape at $: not the contract's Error",
++     "active, collecting: createInvitation, club_id \"a/b\": status 404: neither the neutral not-found nor INVALID_REQUEST",
++     "active, collecting, createInvitation: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, createInvitation: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, collecting, createInvitation: shape at $: not the contract's Error",
++     "active, collecting: leaveClub, club_id \"a/b\": status 404: neither the neutral not-found nor INVALID_REQUEST",
++     "active, collecting, leaveClub: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, leaveClub: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, collecting, leaveClub: shape at $: not the contract's Error",
++     "active, collecting: listMembers, club_id \"a/b\": status 404: neither the neutral not-found nor INVALID_REQUEST",
++     "active, collecting, listMembers: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, listMembers: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, collecting, listMembers: shape at $: not the contract's Error",
++     "active, collecting: getMemberAvatar, club_id \"a/b\": status 404: neither the neutral not-found nor INVALID_REQUEST",
++     "active, collecting: getMemberAvatar, club_id \"a/b\", beside ids that name nothing: status 404: neither the neutral not-found nor INVALID_REQUEST",
++     "active, collecting: getMemberAvatar, club_id \"a/b\", beside ids that name another club's object: status 404: neither the neutral not-found nor INVALID_REQUEST",
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88) with the neutral not-found, and leaks nothing the scanner can find
+AssertionError: expected { count: 8127, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
++     "active, open: getClub, club_id \"a/b\": status 404: neither the neutral not-found nor INVALID_REQUEST",
++     "active, open, getClub: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, open, getClub: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, open, getClub: shape at $: not the contract's Error",
++     "active, open: getHome, club_id \"a/b\": status 404: neither the neutral not-found nor INVALID_REQUEST",
++     "active, open, getHome: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, open, getHome: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, open, getHome: shape at $: not the contract's Error",
++     "active, open: createInvitation, club_id \"a/b\": status 404: neither the neutral not-found nor INVALID_REQUEST",
++     "active, open, createInvitation: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, open, createInvitation: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, open, createInvitation: shape at $: not the contract's Error",
++     "active, open: leaveClub, club_id \"a/b\": status 404: neither the neutral not-found nor INVALID_REQUEST",
++     "active, open, leaveClub: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, open, leaveClub: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, open, leaveClub: shape at $: not the contract's Error",
++     "active, open: listMembers, club_id \"a/b\": status 404: neither the neutral not-found nor INVALID_REQUEST",
++     "active, open, listMembers: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, open, listMembers: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, open, listMembers: shape at $: not the contract's Error",
++     "active, open: getMemberAvatar, club_id \"a/b\": status 404: neither the neutral not-found nor INVALID_REQUEST",
++     "active, open: getMemberAvatar, club_id \"a/b\", beside ids that name nothing: status 404: neither the neutral not-found nor INVALID_REQUEST",
++     "active, open: getMemberAvatar, club_id \"a/b\", beside ids that name another club's object: status 404: neither the neutral not-found nor INVALID_REQUEST",
+ Test Files  1 failed (1)
+      Tests  11 failed | 2 passed (13)

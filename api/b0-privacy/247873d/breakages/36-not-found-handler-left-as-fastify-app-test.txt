@@ -1,0 +1,25 @@
+breakage: not-found-handler-left-as-fastify-app-test
+patch: [
+ [
+  "services/api/src/app.ts",
+  "  app.setNotFoundHandler(notFound);\n",
+  ""
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-privacy/services/api && npx vitest run
+exit: 1
+expected pattern: Route (GET|DELETE|PATCH|HEAD|OPTIONS):|Not Found
+caught: True
+
+ ❯ src/app.test.ts (9 tests | 2 failed) 149ms
+     × answers an unknown path, another method, HEAD and OPTIONS with the neutral not-found 9ms
+     × answers a path with dot segments, sent as it is, with the neutral not-found 4ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  2 failed | 11 passed (13)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/app.test.ts > what Fastify answers itself, made to say nothing (T14) > answers an unknown path, another method, HEAD and OPTIONS with the neutral not-found
+AssertionError: GET /: expected { status: 404, …(2) } to deeply equal { status: 404, …(2) }
+    "headers": {
+ FAIL  src/app.test.ts > what Node's parser answers, over a socket of its own (T14) > answers a path with dot segments, sent as it is, with the neutral not-found
+AssertionError: /v1/drops/drp_x/../../me: expected { status: 404, …(2) } to deeply equal { status: 404, …(2) }
+    "headers": {

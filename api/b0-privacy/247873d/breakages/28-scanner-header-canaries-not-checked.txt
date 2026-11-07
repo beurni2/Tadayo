@@ -1,0 +1,22 @@
+breakage: scanner-header-canaries-not-checked
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "if (value.includes(canary) && !reader.shown(drops))\n        find(\"values\", `header ${header}`",
+  "if (Math.random() > 2)\n        find(\"values\", `header ${header}`"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: values header date
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (47 tests | 1 failed) 144ms
+     × catches a value the world keeps back, wherever it is, until its drop opens to the viewer (Q07) 9ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a value the world keeps back, wherever it is, until its drop opens to the viewer (Q07)
+AssertionError: expected [] to deeply equal [ 'values header date' ]
+-   "values header date",
+    498|     // In a header too: one every answer may carry, so only the values…
+ Test Files  1 failed (1)
+      Tests  1 failed | 46 passed (47)

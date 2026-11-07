@@ -1,0 +1,20 @@
+breakage: scanner-names-from-every-club
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "if (member.name !== null && clubs.has(member.club)) texts.add(member.name);",
+  "if (member.name !== null) texts.add(member.name);"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × catches a day, its club and its people shown to someone with no interval in the club
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (47 tests | 1 failed) 130ms
+     × catches a day, its club and its people shown to someone with no interval in the club (T14) 8ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a day, its club and its people shown to someone with no interval in the club (T14)
+AssertionError: expected [ '$.club.name', '$.drops[0].caption' ] to deeply equal ArrayContaining{…}
+ Test Files  1 failed (1)
+      Tests  1 failed | 46 passed (47)

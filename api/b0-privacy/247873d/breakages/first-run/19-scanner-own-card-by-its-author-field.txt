@@ -1,0 +1,15 @@
+breakage: scanner-own-card-by-its-author-field
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "if (reader.own(drop)) ownCards.add(node);",
+  "if (isObject(node.author) && context.viewer.intervals.has(String(node.author.membership_id))) ownCards.add(node);"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 0
+expected pattern: FAIL
+caught: False
+
+ Test Files  1 passed (1)
+      Tests  47 passed (47)

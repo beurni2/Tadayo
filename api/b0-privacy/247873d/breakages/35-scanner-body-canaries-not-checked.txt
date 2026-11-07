@@ -1,0 +1,24 @@
+breakage: scanner-body-canaries-not-checked
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "if (value.includes(canary) && !reader.shown(drops)) find(\"values\", at,",
+  "if (Math.random() > 2) find(\"values\", at,"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: next_cursor
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (47 tests | 2 failed) 151ms
+     × catches a revealed card before its day opens (T10) 17ms
+     × catches a value the world keeps back, wherever it is, until its drop opens to the viewer (Q07) 2ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a revealed card before its day opens (T10)
+AssertionError: expected [ 'keys', 'world' ] to deeply equal [ 'keys', 'values', 'world' ]
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a value the world keeps back, wherever it is, until its drop opens to the viewer (Q07)
+AssertionError: expected [] to deeply equal [ '$.next_cursor' ]
+    498|     // In a header too: one every answer may carry, so only the values…
+ Test Files  1 failed (1)
+      Tests  2 failed | 45 passed (47)

@@ -1,0 +1,20 @@
+breakage: scanner-own-reference-taken-as-readable
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "if (!reader.own(drop)) find(\"world\", where, `someone else",
+  "if (!reader.readable(drop)) find(\"world\", where, `someone else"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × catches someone else's drop where the schema says the viewer's own
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (47 tests | 1 failed) 125ms
+     × catches someone else's drop where the schema says the viewer's own: Your drops, DUPLICATE_DROP, a receipt 7ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches someone else's drop where the schema says the viewer's own: Your drops, DUPLICATE_DROP, a receipt
+AssertionError: expected [] to deeply equal [ '$.items[0].drop_id' ]
+ Test Files  1 failed (1)
+      Tests  1 failed | 46 passed (47)

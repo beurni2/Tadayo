@@ -1,0 +1,22 @@
+breakage: scanner-content-type-check-removed
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "    if (answer.headers[\"content-type\"] !== \"application/json; charset=utf-8\") {",
+  "    if (answer.headers[\"content-type\"] === \"never\") {"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × catches an image body
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (47 tests | 1 failed) 198ms
+     × catches an image body, a body without private, no-store, a cacheable 204 and a 429 that doesn't say when 14ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches an image body, a body without private, no-store, a cacheable 204 and a 429 that doesn't say when
+AssertionError: expected [ 'body' ] to deeply equal ArrayContaining{…}
+-   "header content-type",
+    543|     const found = scan(image, context("getDropMedia", cleo));
+ Test Files  1 failed (1)
+      Tests  1 failed | 46 passed (47)
