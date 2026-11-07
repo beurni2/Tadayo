@@ -1,0 +1,22 @@
+breakage: worker-environment-defaults-to-prod
+patch: [
+ [
+  "services/worker/src/start.ts",
+  "env.TADAYO_ENVIRONMENT ?? \"\"",
+  "env.TADAYO_ENVIRONMENT ?? \"prod\""
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-privacy/services/worker && npx vitest run
+exit: 1
+expected pattern: not dev or prod
+caught: True
+
+ ❯ src/start.test.ts (3 tests | 1 failed) 701ms
+     × stops when TADAYO_ENVIRONMENT is missing, empty or neither dev nor prod 129ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/start.test.ts > the worker's entry (ADR-013) > stops when TADAYO_ENVIRONMENT is missing, empty or neither dev nor prod
+AssertionError: undefined: expected 'connect ECONNREFUSED 127.0.0.1:1\n' to match /not dev or prod/
+/not dev or prod/
+     40|       expect(result.stderr, String(environment)).toMatch(/not dev or p…

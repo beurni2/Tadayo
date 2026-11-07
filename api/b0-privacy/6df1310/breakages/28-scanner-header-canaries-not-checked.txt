@@ -1,0 +1,22 @@
+breakage: scanner-header-canaries-not-checked
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "      if (value.includes(canary)) find(\"values\", `header ${header}`, \"a value the world keeps back\");",
+  ""
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: values header date
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (38 tests | 1 failed) 111ms
+     × catches a value the world keeps back, wherever it is (Q07) 7ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a value the world keeps back, wherever it is (Q07)
+AssertionError: expected [] to deeply equal [ 'values header date' ]
+-   "values header date",
+    348|     // In a header too: one every answer may carry, so only the values…
+ Test Files  1 failed (1)
+      Tests  1 failed | 37 passed (38)

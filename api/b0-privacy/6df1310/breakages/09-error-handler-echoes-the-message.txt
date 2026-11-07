@@ -1,0 +1,21 @@
+breakage: error-handler-echoes-the-message
+patch: [
+ [
+  "services/api/src/app.ts",
+  "send('{\"code\":\"INVALID_REQUEST\"}')",
+  "send(JSON.stringify({ code: \"INVALID_REQUEST\", message: error.message }))"
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-privacy/services/api && npx vitest run
+exit: 1
+expected pattern: INVALID_REQUEST.*message|message
+caught: True
+
+ ❯ src/app.test.ts (6 tests | 1 failed) 104ms
+     × answers a body it can't read with INVALID_REQUEST alone, never the error's message 13ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 8 passed (9)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/app.test.ts > what Fastify answers itself, made to say nothing (T14) > answers a body it can't read with INVALID_REQUEST alone, never the error's message
+AssertionError: application/json {bad: expected { status: 400, …(2) } to deeply equal { status: 400, …(2) }
+    "headers": {

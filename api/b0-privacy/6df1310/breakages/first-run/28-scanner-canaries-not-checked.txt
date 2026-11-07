@@ -1,0 +1,15 @@
+breakage: scanner-canaries-not-checked
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "      if (value.includes(canary)) find(\"values\", `header ${header}`, \"a value the world keeps back\");",
+  ""
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 0
+expected pattern: FAIL
+caught: False
+
+ Test Files  1 passed (1)
+      Tests  38 passed (38)

@@ -1,0 +1,21 @@
+breakage: worker-connection-without-instant-type
+patch: [
+ [
+  "services/worker/src/connection.ts",
+  "postgres(url, { types: { instant: INSTANT_TYPE } })",
+  "postgres(url) as unknown as WorkerSql"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/dbtest.sh src/db/connection.test.ts
+exit: 1
+expected pattern: the worker's
+caught: True
+
+ ❯ src/db/connection.test.ts (2 tests | 1 failed) 56ms
+     × stores a microsecond instant and reads it back whole, through the worker's, and refuses a Date 19ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/connection.test.ts > the services' connections: INSTANT_TYPE for every timestamptz (T1, T3) > stores a microsecond instant and reads it back whole, through the worker's, and refuses a Date
+TypeError: Do not use Temporal.Instant.prototype.valueOf; use Temporal.Instant.prototype.compare for comparison.
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)

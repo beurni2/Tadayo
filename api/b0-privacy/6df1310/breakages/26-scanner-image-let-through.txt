@@ -1,0 +1,21 @@
+breakage: scanner-image-let-through
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "  } else {\n    if (answer.headers[\"content-type\"] !== \"application/json; charset=utf-8\") {",
+  "  } else if (!(answer.headers[\"content-type\"] ?? \"\").startsWith(\"image/\")) {\n    if (answer.headers[\"content-type\"] !== \"application/json; charset=utf-8\") {"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: FAIL
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (38 tests | 1 failed) 120ms
+     × catches an image body, and an answer without private, no-store 7ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches an image body, and an answer without private, no-store
+AssertionError: expected [] to deeply equal [ 'shape' ]
+    381|     const found = scan(image, context("getDropMedia", cleo));
+ Test Files  1 failed (1)
+      Tests  1 failed | 37 passed (38)
