@@ -25,10 +25,10 @@
 //   only the server can read (the contract's Cursor; T15), which the leak scanner can't tell from a
 //   key packed in binary, or from runs of text shorter than 24 bytes among other bytes (a longer key
 //   split by a NUL, another control byte or a non-ASCII byte among them). Random handles fail the
-//   scanner by chance about once in 1.6 billion at 24 bytes and once in 700 million at 32, longer
-//   values more often (about once in 330 million at 48 bytes, and once in 27 million at the
+//   scanner by chance about once in 1.5 billion at 24 bytes and once in 670 million at 32, longer
+//   values more often (about once in 320 million at 48 bytes, and once in 26 million at the
 //   contract's longest, 384), and handles of 12 about once in 100,000, which the matrix's runs
-//   would meet (scanner.ts: readableKey, READABLE_TEXT, URL_RUN);
+//   would meet (scanner.ts: readableKey, READABLE_TEXT, URL_RUN, LINK_MARKS);
 // - for the invitation's routes (B1), a person who holds a link and hasn't accepted it: the matrix's
 //   role "invited, not yet a member" has accepted and waits for the roster (Q05), since a link
 //   nobody has accepted ties no account to the club;

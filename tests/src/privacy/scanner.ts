@@ -60,10 +60,11 @@
 //   opens to the viewer, its author included, as every kept-back value fails to its author until B3
 //   serves an author their own (the author preview, T40's source details: below); in every other
 //   value and header, no URL, storage path or provider host, and in the bytes a cursor decodes to no
-//   storage path or provider host anywhere, and no URL in a run of text of 12 bytes or more (a URL's
-//   marks, which random bytes make now and then: URL_RUN; a URL in a shorter run among other bytes,
-//   such as `s3://b/k`, passes, beyond what the scanner can see, like the short runs of text of the
-//   shape check); in every other value, header and decoded cursor, no value the world
+//   storage path or provider host anywhere, and no URL in a run of text of 12 bytes or more, whatever
+//   byte comes before each mark (LINK_MARKS, PATH_MARKS; a URL's marks, which random bytes make now
+//   and then, only in such runs: URL_RUN; a URL in a shorter run among other bytes, such as
+//   `s3://b/k`, passes, beyond what the scanner can see, like the short runs of text of the shape
+//   check); in every other value, header and decoded cursor, no value the world
 //   keeps back (a storage key, a content version, a source's link or post id) but a drop's own once
 //   its day has opened to a viewer in its audience, and no id of a drop, day, club, person or
 //   reservation the viewer may not see, outside the positions the world check judges; and in every
@@ -276,17 +277,30 @@ export const NEVER_KEY = new RegExp(
   "i",
 );
 
-/** A URL's marks: a scheme, `www.` and `data:`. Random bytes make the first two now and then (URL_RUN). */
-const LINK_MARKS = [/[a-z][a-z0-9+.-]*:\/\//i, /(^|[^a-z0-9])www\./i, /(^|[^a-z0-9])data:/i];
+/** A value that is a URL, a storage path or a provider's host. */
+export const NEVER_VALUE = [
+  /[a-z][a-z0-9+.-]*:\/\//i,
+  /(^|[^a-z0-9])www\./i,
+  /(^|[^a-z0-9])data:/i,
+  /(^|[^a-z0-9])(uploads|renditions)\//i,
+  /(tiktok|instagram)\.com/i,
+];
 
 /**
- * A storage path's and a provider host's marks. Random bytes don't make them at the matrix's scale:
- * `uploads/` turns up in 384 random bytes about once in 500 trillion handles, the others less often.
+ * NEVER_VALUE's marks as the scanner looks for them in the bytes a cursor decodes to, where the byte
+ * before a mark may be the last of another field, a letter or a digit as often as not: so no byte is
+ * asked for before `www.`, `data:` or a storage path. A URL's marks (a scheme, `www.`, `data:`),
+ * which random bytes make now and then, are looked for in a cursor's runs of text of 12 bytes or
+ * more (URL_RUN).
  */
-const PATH_MARKS = [/(^|[^a-z0-9])(uploads|renditions)\//i, /(tiktok|instagram)\.com/i];
+const LINK_MARKS = [/[a-z][a-z0-9+.-]*:\/\//i, /www\./i, /data:/i];
 
-/** A value that is a URL, a storage path or a provider's host. */
-export const NEVER_VALUE = [...LINK_MARKS, ...PATH_MARKS];
+/**
+ * A storage path's and a provider host's marks in a cursor's bytes, looked for in all of them, since
+ * random bytes don't make them at the matrix's scale: `uploads/` turns up in 384 random bytes about
+ * once in 380 trillion handles, the others less often.
+ */
+const PATH_MARKS = [/(uploads|renditions)\//i, /(tiktok|instagram)\.com/i];
 
 /** The schemas whose values are text people wrote. */
 const PEOPLE_TEXT = new Set(["Caption", "CommentText", "DisplayName", "ClubName", "CandidateLabel"]);
@@ -306,8 +320,8 @@ const CURSOR_BYTES = 12;
  * chance of about 1e-10, and one of 16 with about 2e-7, so 32 random bytes hold a run of 24 about
  * once in 1.7 billion, and one of 16 about once in 430,000, which the sealed cursors of every paged
  * answer in a run would meet. Runs of text shorter than 24 bytes among other bytes, with no date,
- * long number, id, text people wrote, storage path or provider host in them, and no URL in those of
- * 12 bytes or more (URL_RUN), pass, like a key packed in binary, and so does a longer key split by a
+ * long number, id, text people wrote, value the world keeps back, storage path or provider host in
+ * them, and no URL in those of 12 bytes or more (URL_RUN), pass, like a key packed in binary, and so does a longer key split by a
  * NUL, another control byte or a non-ASCII byte among them: the pager's row judges all of these.
  */
 const READABLE_TEXT = /[\t\n\r\x20-\x7e]{24,}/;
@@ -320,8 +334,8 @@ const ALL_TEXT = /^[\t\n\r\x20-\x7e]+$/;
  * scanner looks for a URL's marks (LINK_MARKS). Random bytes hold a letter and `://` about once in
  * 3.7 million handles of 24 bytes and once in 2.7 million of 32, which the matrix's runs would meet;
  * inside a run of text of 12 bytes or more, about once in 2 billion and once in 1.2 billion, and
- * `www.` after a byte that is no letter or digit about once in 33 billion and once in 21 billion. A
- * URL in a shorter run among other bytes, such as `s3://b/k`, passes, as the scanner's header says.
+ * `www.` about once in 15 billion and once in 9 billion. A URL in a shorter run among other bytes,
+ * such as `s3://b/k`, passes, as the scanner's header says.
  * A storage path's or a provider host's marks (PATH_MARKS), which random bytes don't make, are
  * looked for in all of a cursor's bytes.
  */

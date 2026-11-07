@@ -744,6 +744,16 @@ describe("the leak scanner catches each planted leak with its own check", () => 
   it("catches a URL in an id", () => {
     const found = scan(answer(upcomingDay([{ ...bensCard(), id: "https://x" }])), context("getOccurrence", cleo));
     expect(checks(found)).toContain("values");
+    // A storage path, a provider host, `www.` or `data:`, with no scheme and none of them the world's.
+    for (const id of ["uploads/k9", "renditions/k9", "tiktok.com/p", "instagram.com/p", "www.x.co", "data:x"]) {
+      const values = scan(answer(upcomingDay([{ ...bensCard(), id }])), context("getOccurrence", cleo)).filter(
+        (finding) => finding.check === "values",
+      );
+      expect(
+        values.map((finding) => finding.what.split(":")[0]),
+        id,
+      ).toEqual(["a URL, storage path or provider host"]);
+    }
   });
 
   it("catches a header no answer may carry yet, and a URL in a header's value", () => {
@@ -1007,22 +1017,43 @@ describe("the leak scanner catches each planted leak with its own check", () => 
     expect(key(Buffer.concat([version, Buffer.from("offset=20\torder=desc\tcount=24"), version]))).toEqual([
       "holds readable text",
     ]);
-    // A URL among a cursor's bytes, in any run of text of 12 bytes or more, its tab, newline and CR
-    // counted; random bytes make a letter and :// now and then, and those pass, as does a URL in a run
-    // of 11. A storage path or a provider host, which random bytes don't make, fails in any run.
-    const decoded = (...parts: (Buffer | string)[]) =>
-      at(page(Buffer.concat(parts.map((part) => Buffer.from(part))).toString("base64url")), "values");
+    // A URL among a cursor's bytes, in any run of text of 12 bytes or more, wherever in the run, in
+    // either case, its space, tab, newline and CR counted, whatever byte comes before `www.` or
+    // `data:`; random bytes make a letter and :// now and then, and those pass, as do a URL in a run
+    // of 11 and `www.` or `data:` in a short run. A storage path or a provider host, which random
+    // bytes don't make, fails anywhere in a cursor, whatever byte comes before it.
+    const encode = (...parts: (Buffer | string)[]) =>
+      Buffer.concat(parts.map((part) => Buffer.from(part))).toString("base64url");
+    const decoded = (...parts: (Buffer | string)[]) => at(page(encode(...parts)), "values");
     const found = ["$.next_cursor (decoded)"];
-    expect(decoded(version, "s3://b/k.jpg", noise)).toEqual(found);
+    for (const run of [
+      "s3://b/k.jpg",
+      "a://b/k.jpeg",
+      "k7Qz2pLm9xWva://b",
+      " https://x/a",
+      "\thttps://x/a",
+      "\nhttps://x/a",
+      "\rhttps://x/a",
+      "www.h.io/p.jpg",
+      "kwww.h.io/p.jpg",
+      "data:image/png",
+      "xdata:image/png",
+      "HTTPS://H/P.JPG",
+      "WWW.H.IO/P.JPG",
+      "DATA:IMAGE/PNG",
+    ])
+      expect(decoded(version, run, noise), JSON.stringify(run)).toEqual(found);
     expect(decoded(version, "k7Qz2pLm9xWv", version, "https://h/p.jpg", noise)).toEqual(found);
     expect(decoded(version, "https://h/p.jpg", version, "k7Qz2pLm9xWv", noise)).toEqual(found);
-    for (const space of ["\t", "\n", "\r"]) expect(decoded(version, `${space}https://x/a`, noise)).toEqual(found);
-    expect(decoded(version, "www.h.io/p.jpg", noise)).toEqual(found);
-    expect(decoded(version, "data:image/png", noise)).toEqual(found);
-    expect(decoded(version, "uploads/", noise)).toEqual(found);
-    expect(decoded(version, "tiktok.com", noise)).toEqual(found);
-    expect(page(Buffer.concat([version, Buffer.from("https://x/a"), noise]).toString("base64url"))).toEqual([]);
-    expect(page(Buffer.concat([noise, Buffer.from("a://"), noise]).toString("base64url"))).toEqual([]);
+    for (const path of ["uploads/", "renditions/", "tiktok.com", "instagram.com", "UPLOADS/", "TIKTOK.COM"]) {
+      expect(decoded(version, path, noise), path).toEqual(found);
+      expect(decoded(version, "Q7", path, noise), path).toEqual(found);
+    }
+    expect(decoded("uploads/", noise)).toEqual(found);
+    const space = Buffer.from([0xff]);
+    for (const run of ["https://x/a", "www.k", "data:k", "tiktokxcom"])
+      expect(page(encode(version, space, run, noise)), run).toEqual([]);
+    expect(page(encode(noise, "a://", noise))).toEqual([]);
     expect(key(Buffer.from("4f9a2c", "hex"))).toEqual(["decodes to fewer than 12 bytes"]);
     expect(key(noise)).toEqual([]);
     // The contract's own example, a random handle of 12 bytes.
