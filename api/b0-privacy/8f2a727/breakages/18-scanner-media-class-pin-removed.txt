@@ -1,0 +1,20 @@
+breakage: scanner-media-class-pin-removed
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "if (typeof node.media_class !== \"string\" || !MEDIA_CLASSES.has(node.media_class)) {",
+  "if (typeof node.media_class !== \"string\") {"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × catches a third media class with the whitelist's own pin
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (60 tests | 1 failed) 250ms
+     × catches a third media class with the whitelist's own pin 16ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a third media class with the whitelist's own pin
+AssertionError: expected [] to deeply equal [ '$.drops[0].media_class' ]
+ Test Files  1 failed (1)
+      Tests  1 failed | 59 passed (60)

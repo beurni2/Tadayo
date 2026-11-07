@@ -1,0 +1,23 @@
+breakage: harness-cursor-not-sent-beside-ids
+patch: [
+ [
+  "tests/src/privacy/harness.ts",
+  "      if (ids.length === 0) continue;\n",
+  "      continue;\n"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/harness.test.ts
+exit: 1
+expected pattern: × reports a route that answers a cursor differently when the parent exists
+caught: True
+
+ ❯ src/privacy/harness.test.ts (46 tests | 2 failed) 1552ms
+     × passes the skeleton's neutral answer in every step, and gets the answers each step counts 156ms
+     × reports a route that answers a cursor differently when the parent exists: an existence oracle (T14) 9ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > passes the skeleton's neutral answer in every step, and gets the answers each step counts
+AssertionError: listComments: expected [ { spec: { …(4) }, …(1) }, …(22) ] to have a length of 45 but got 23
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > reports a route that answers a cursor differently when the parent exists: an existence oracle (T14)
+AssertionError: expected [] to have a length of 11 but got +0
+ Test Files  1 failed (1)
+      Tests  2 failed | 44 passed (46)

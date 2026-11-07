@@ -1,0 +1,23 @@
+breakage: harness-said-sorts-headers
+patch: [
+ [
+  "tests/src/privacy/harness.ts",
+  "compared(name, value, answer.clock)]);",
+  "compared(name, value, answer.clock)]).sort();"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/harness.test.ts
+exit: 1
+expected pattern: × tells apart two answers whose headers come in another order
+caught: True
+
+ ❯ src/privacy/harness.test.ts (46 tests | 1 failed) 1654ms
+     × tells apart two answers whose headers come in another order, as a client can 6ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > tells apart two answers whose headers come in another order, as a client can
+AssertionError: expected '404 Not Found [["cache-control","priv…' not to be '404 Not Found [["cache-control","priv…' // Object.is equality
+    506|   it("tells apart two answers whose headers come in another order, as …
+    507|     const reordered = { ...NEUTRAL, headers: Object.fromEntries(Object…
+    509|     expect(said({ ...NEUTRAL, headers: { ...NEUTRAL.headers } })).toBe…
+ Test Files  1 failed (1)
+      Tests  1 failed | 45 passed (46)

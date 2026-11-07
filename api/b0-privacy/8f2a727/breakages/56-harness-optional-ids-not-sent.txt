@@ -1,0 +1,24 @@
+breakage: harness-optional-ids-not-sent
+patch: [
+ [
+  "tests/src/privacy/harness.ts",
+  "return [...queries, ...filled].map(",
+  "return [...queries].map("
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/harness.test.ts
+exit: 1
+expected pattern: × sends each optional Id parameter too
+caught: True
+
+ ❯ src/privacy/harness.test.ts (46 tests | 2 failed) 1479ms
+     × sends each optional Id parameter too, filled from the world, in a request of its own 13ms
+     × reports a route that answers a cursor or an optional id differently (T14) 2ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/harness.test.ts > the requests a cell makes, from the contract's parameters > sends each optional Id parameter too, filled from the world, in a request of its own
+AssertionError: expected [ { club_id: 'clb_here' } ] to deeply equal [ { club_id: 'clb_here' }, …(1) ]
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > reports a route that answers a cursor or an optional id differently (T14)
+Error: listMemories
+    428|     if (!plain || !withStar) throw new Error("listMemories");
+ Test Files  1 failed (1)
+      Tests  2 failed | 44 passed (46)

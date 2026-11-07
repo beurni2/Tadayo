@@ -1,0 +1,39 @@
+breakage: route-added-to-the-app
+patch: [
+ [
+  "services/api/src/app.ts",
+  "  app.setNotFoundHandler(notFound);\n",
+  "  app.get(\"/v1/debug\", notFound);\n  app.setNotFoundHandler(notFound);\n"
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-privacy/services/api && npx vitest run; bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/matrix.test.ts
+exit: 1
+expected pattern: GET /v1/debug
+caught: True
+
+ ❯ src/app.test.ts (11 tests | 1 failed) 337ms
+     × has one route for each operation of the contract, and no other 14ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 14 passed (15)
+ ❯ src/privacy/matrix.test.ts (13 tests | 1 failed) 38582ms
+     × gives every operation of the contract a row, the skeleton's, and the app a route for each and no other 12ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/matrix.test.ts > a route with no row fails, and no route is outside the contract (TECH-DESIGN section 8) > gives every operation of the contract a row, the skeleton's, and the app a route for each and no other
+AssertionError: expected [ Array(1) ] to deeply equal []
++   "the app has GET /v1/debug, which the contract doesn't",
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/app.test.ts > the skeleton's routes (T14) > has one route for each operation of the contract, and no other
+AssertionError: expected [ …(67) ] to deeply equal [ …(66) ]
+    "GET /v1/clubs/:club_id/members/:membership_id/avatar",
+    "GET /v1/clubs/:club_id/members/:membership_id/block-preview",
+    "GET /v1/clubs/:club_id/notification-preferences",
+    "GET /v1/clubs/:club_id/schedule",
+    "GET /v1/config",
++   "GET /v1/debug",
+    "GET /v1/drops/:drop_id",
+    "GET /v1/drops/:drop_id/author-preview",
+    "GET /v1/drops/:drop_id/comments",
+    "GET /v1/drops/:drop_id/embed",
+    "GET /v1/drops/:drop_id/media",

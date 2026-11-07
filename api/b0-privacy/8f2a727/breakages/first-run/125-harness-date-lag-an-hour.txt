@@ -1,0 +1,23 @@
+breakage: harness-date-lag-an-hour
+patch: [
+ [
+  "tests/src/privacy/harness.ts",
+  "const DATE_LAG_MS = 5_000;",
+  "const DATE_LAG_MS = 3_600_000;"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/harness.test.ts
+exit: 1
+expected pattern: × reports a route that answers the neutral not-found with a Date ten seconds behind the moment it was asked
+caught: True
+
+ ❯ src/privacy/harness.test.ts (46 tests | 1 failed) 1509ms
+     × reports a route that answers the neutral not-found with a Date ten seconds behind the moment it was asked 8ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > reports a route that answers the neutral not-found with a Date ten seconds behind the moment it was asked
+AssertionError: expected [ Array(1) ] to deep equally contain StringContaining{…}
+  "getDrop: the headers in another order: date, cache-control, content-type, content-length, connection",
+    311|       const app = await plantedApp("getDrop", (_request, reply) => ans…
+    312|       expect((await cellStep(app, spec("getDrop"))).problems).toContai…
+ Test Files  1 failed (1)
+      Tests  1 failed | 45 passed (46)

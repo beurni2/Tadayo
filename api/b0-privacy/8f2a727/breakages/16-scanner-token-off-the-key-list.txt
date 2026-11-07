@@ -1,0 +1,20 @@
+breakage: scanner-token-off-the-key-list
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "|link|token|",
+  "|link|"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × catches media_token on a caption card
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (60 tests | 1 failed) 182ms
+     × catches media_token on a caption card (T10) 8ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches media_token on a caption card (T10)
+AssertionError: expected [ 'shape', 'whitelist' ] to include 'keys'
+ Test Files  1 failed (1)
+      Tests  1 failed | 59 passed (60)

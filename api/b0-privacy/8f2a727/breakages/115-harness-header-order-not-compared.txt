@@ -1,0 +1,23 @@
+breakage: harness-header-order-not-compared
+patch: [
+ [
+  "tests/src/privacy/harness.ts",
+  "  if (problems.length === 0 && order.join(\", \") !== NEUTRAL_ORDER.join(\", \"))",
+  "  if (Math.random() > 2)"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/harness.test.ts
+exit: 1
+expected pattern: × reports a route that answers the neutral not-found with its headers in another order
+caught: True
+
+ ❯ src/privacy/harness.test.ts (46 tests | 1 failed) 1545ms
+     × reports a route that answers the neutral not-found with its headers in another order 8ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > reports a route that answers the neutral not-found with its headers in another order
+AssertionError: expected [] to deep equally contain StringContaining{…}
+StringContaining "getDrop: the headers in another order: content-type, cache-control, content-length, date, connection"
+    311|       const app = await plantedApp("getDrop", (_request, reply) => ans…
+    312|       expect((await cellStep(app, spec("getDrop"))).problems).toContai…
+ Test Files  1 failed (1)
+      Tests  1 failed | 45 passed (46)
