@@ -6,10 +6,13 @@
 // Nothing here reads the session, the database or the clock yet. Whatever Fastify itself answers
 // a request it routes is made to say nothing either: an unknown path, another method, an id past
 // the router's limit or a broken escape gets the same neutral not-found, and a body Fastify can't
-// read gets the contract's INVALID_REQUEST, never the error's message. Node's parser still answers
-// a request it can't read with its own fixed 400, 408 or 431, and a closing server with Fastify's
+// read gets the contract's INVALID_REQUEST, never the error's message. A request Node's parser
+// can't read gets the contract's INVALID_REQUEST too, in place of Fastify's own words. Node itself
+// still answers two requests with its own empty answers, an HTTP/1.1 request without a Host header
+// with a 400 and an Expect it doesn't know with a 417, and a closing server answers with Fastify's
 // fixed 503; none of them carries an id, a path or anyone's data.
 
+import type { Socket } from "node:net";
 import Fastify, { type FastifyError, type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
 import { OPERATIONS } from "@tadayo/contracts";
 import type { Clock } from "@tadayo/domain";
@@ -24,6 +27,7 @@ export interface Deps {
 /** Every answer with a body is for the caller alone (the contract; T11, T12). */
 const NO_STORE = "private, no-store";
 const JSON_TYPE = "application/json; charset=utf-8";
+const INVALID_BODY = '{"code":"INVALID_REQUEST"}';
 
 /** The neutral not-found (T14): one answer for missing and for not the caller's to see. */
 export function notFound(_request: FastifyRequest, reply: FastifyReply): FastifyReply {
@@ -34,9 +38,26 @@ function invalidRequest(error: FastifyError, _request: FastifyRequest, reply: Fa
   // A body Fastify couldn't read: malformed or empty JSON, `__proto__` or `constructor.prototype`, a
   // type it has no parser for, or over the limit. Never the message, which can echo the request.
   if (typeof error.statusCode === "number" && error.statusCode >= 400 && error.statusCode < 500) {
-    return reply.code(400).header("cache-control", NO_STORE).type(JSON_TYPE).send('{"code":"INVALID_REQUEST"}');
+    return reply.code(400).header("cache-control", NO_STORE).type(JSON_TYPE).send(INVALID_BODY);
   }
   return reply.code(500).header("cache-control", NO_STORE).send();
+}
+
+/**
+ * A request Node's parser couldn't read (a raw byte or a space in the path, a method it doesn't
+ * know, Transfer-Encoding beside Content-Length, two Content-Lengths, a version past HTTP/1.1,
+ * headers past 16 KB, a request too slow to arrive): the contract's INVALID_REQUEST, then the
+ * connection closes, as Node and Fastify close it. A reset connection gets nothing.
+ */
+function clientError(error: Error & { code?: string }, socket: Socket): void {
+  if (error.code === "ECONNRESET" || socket.destroyed) return;
+  if (socket.writable) {
+    socket.write(
+      `HTTP/1.1 400 Bad Request\r\nCache-Control: ${NO_STORE}\r\nContent-Type: ${JSON_TYPE}\r\n` +
+        `Content-Length: ${String(INVALID_BODY.length)}\r\nConnection: close\r\n\r\n${INVALID_BODY}`,
+    );
+  }
+  socket.destroy();
 }
 
 const recorded = new WeakMap<FastifyInstance, string[]>();
@@ -57,6 +78,7 @@ export function buildApp(deps: Deps): FastifyInstance {
     frameworkErrors: (_error, request, reply) => {
       void notFound(request, reply);
     },
+    clientErrorHandler: clientError,
   });
   const routes: string[] = [];
   recorded.set(app, routes);

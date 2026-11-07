@@ -1,9 +1,12 @@
 // The API's skeleton on its own, with no database (T14; docs/plans/B0.md, slice 7): every operation
 // of the contract has its route and answers the neutral not-found, and so does whatever Fastify
 // itself answers a request it routes: an unknown path, another method, an id past the router's
-// limit or a broken escape. A body Fastify can't read gets the contract's INVALID_REQUEST, never the
-// error's message. The privacy matrix (tests/src/privacy) runs every route as every role on top.
+// limit or a broken escape. A body Fastify can't read, and a request Node's parser can't, get the
+// contract's INVALID_REQUEST, never the error's message; the second is sent over a socket of its
+// own, since `inject` never reaches the parser. The privacy matrix (tests/src/privacy) runs every
+// route as every role on top.
 
+import { connect, type AddressInfo } from "node:net";
 import { OPERATIONS } from "@tadayo/contracts";
 import type { Clock } from "@tadayo/domain";
 import type { FastifyInstance, InjectOptions } from "fastify";
@@ -82,7 +85,6 @@ describe("what Fastify answers itself, made to say nothing (T14)", () => {
       ["GET", "/v2/me"],
       ["GET", "/v1/me/"],
       ["GET", "//v1/me"],
-      ["GET", "/v1/drops/drp_x/../../me"],
       ["DELETE", "/v1/me"],
       ["PATCH", "/v1/me"],
       ["TRACE", "/v1/me"],
@@ -120,5 +122,88 @@ describe("what Fastify answers itself, made to say nothing (T14)", () => {
     const before = ended.count;
     await other.close();
     expect(ended.count).toBe(before + 1);
+  });
+});
+
+describe("what Node's parser answers, over a socket of its own (T14)", () => {
+  let listening: FastifyInstance;
+  let port: number;
+
+  beforeAll(async () => {
+    listening = buildApp({ sql, clock: {} as Clock });
+    await listening.listen({ port: 0, host: "127.0.0.1" });
+    port = (listening.server.address() as AddressInfo).port;
+  });
+
+  afterAll(async () => {
+    await listening.close();
+  });
+
+  /** What the app answers `bytes`, written as they are, with the transport's own headers left out. */
+  function raw(bytes: string): Promise<{ status: number; body: string; headers: Record<string, string> }> {
+    return new Promise((done) => {
+      const socket = connect(port, "127.0.0.1");
+      const chunks: Buffer[] = [];
+      socket.on("data", (chunk: Buffer) => chunks.push(chunk));
+      socket.on("error", () => undefined);
+      const timer = setTimeout(() => socket.destroy(), 5_000);
+      socket.on("close", () => {
+        clearTimeout(timer);
+        const text = Buffer.concat(chunks).toString("latin1");
+        const split = text.indexOf("\r\n\r\n");
+        const [line = "", ...fields] = (split < 0 ? text : text.slice(0, split)).split("\r\n");
+        const headers: Record<string, string> = {};
+        for (const field of fields) {
+          const colon = field.indexOf(":");
+          const name = field.slice(0, colon).toLowerCase();
+          if (!TRANSPORT.has(name)) headers[name] = field.slice(colon + 1).trim();
+        }
+        let body = split < 0 ? "" : text.slice(split + 4);
+        if (headers["transfer-encoding"] === "chunked") {
+          let decoded = "";
+          for (let size = parseInt(body, 16); size > 0; size = parseInt(body, 16)) {
+            const start = body.indexOf("\r\n") + 2;
+            decoded += body.slice(start, start + size);
+            body = body.slice(start + size + 2);
+          }
+          body = decoded;
+        }
+        done({ status: Number(line.split(" ")[1]), body, headers });
+      });
+      socket.write(bytes, "latin1");
+    });
+  }
+
+  it("answers a request the parser can't read with INVALID_REQUEST alone, in place of Fastify's own words", async () => {
+    const host = "Host: 127.0.0.1\r\n";
+    for (const request of [
+      `GET /v1/drops/caf\u00c3\u00a9 HTTP/1.1\r\n${host}\r\n`,
+      `GET /v1/drops/a b HTTP/1.1\r\n${host}\r\n`,
+      `FOO /v1/me HTTP/1.1\r\n${host}\r\n`,
+      `POST /v1/clubs HTTP/1.1\r\n${host}Transfer-Encoding: chunked\r\nContent-Length: 3\r\n\r\n0\r\n\r\n`,
+      `POST /v1/clubs HTTP/1.1\r\n${host}Content-Length: 1\r\nContent-Length: 2\r\n\r\nab`,
+      `GET /v1/me HTTP/1.2\r\n${host}\r\n`,
+      `GET /v1/me HTTP/1.1\r\n${host}X-Big: ${"a".repeat(17_000)}\r\n\r\n`,
+      "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n",
+    ]) {
+      expect(await raw(request), request.slice(0, 40)).toEqual({ ...INVALID, headers: { ...INVALID.headers } });
+    }
+  });
+
+  it("answers a path with dot segments, sent as it is, with the neutral not-found", async () => {
+    for (const path of ["/v1/drops/drp_x/../../me", "/v1/drops/drp_x/%2e%2e/%2e%2e/me", "/v1/./me"]) {
+      expect(await raw(`GET ${path} HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n`), path).toEqual(NEUTRAL);
+    }
+  });
+
+  it("leaves Node's own two answers empty: no Host header, and an Expect it doesn't know", async () => {
+    for (const [request, status] of [
+      ["GET /v1/me HTTP/1.1\r\nConnection: close\r\n\r\n", 400],
+      ["GET /v1/me HTTP/1.1\r\nHost: 127.0.0.1\r\nExpect: bogus\r\nConnection: close\r\n\r\n", 417],
+    ] as const) {
+      const got = await raw(request);
+      expect(got.status, request.slice(0, 40)).toBe(status);
+      expect(got.body, request.slice(0, 40)).toBe("");
+    }
   });
 });

@@ -42,6 +42,15 @@ describe("the API's entry (ADR-013)", () => {
     }
   });
 
+  it("stops before it connects when PORT is set but isn't a port: empty, a word, too big, or not whole", async () => {
+    for (const port of ["", "abc", "65536", "80.5", " 8080", "-1"]) {
+      const result = await run({ DATABASE_URL: NOWHERE, TADAYO_ENVIRONMENT: "prod", PORT: port });
+      expect(result.code, JSON.stringify(port)).toBe(1);
+      expect(result.stderr, JSON.stringify(port)).toMatch(/PORT isn't a port/);
+      expect(result.stdout, JSON.stringify(port)).not.toMatch(/listening/);
+    }
+  });
+
   it("stops before it listens when DATABASE_URL is missing", async () => {
     const result = await run({ TADAYO_ENVIRONMENT: "prod" });
     expect(result.code).toBe(1);

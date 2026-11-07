@@ -6,7 +6,18 @@
 import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
 import { describe, expect, it } from "vitest";
 import { BINDINGS, freshId, type Targets } from "./bindings.ts";
-import { cellStep, guessStep, manipulationStep, routeProblems, specsFor, type Spec } from "./harness.ts";
+import {
+  cellStep,
+  guessCount,
+  guessStep,
+  manipulationStep,
+  manipulations,
+  routeProblems,
+  signedOutCount,
+  signedOutStep,
+  specsFor,
+  type Spec,
+} from "./harness.ts";
 import { contractOperations, readDocument, type ContractOperation } from "./operations.ts";
 import { NONE, ROWS, rowProblems } from "./rows.ts";
 
@@ -19,8 +30,20 @@ function operation(id: string): ContractOperation {
   return found;
 }
 
-const here: Targets = { club: "clb_here", drop: "drp_here", day: "occ_here", author: "itv_here" };
-const elsewhere: Targets = { club: "clb_there", drop: "drp_there", day: "occ_there", author: "itv_there" };
+const here: Targets = {
+  club: "clb_here",
+  drop: "drp_here",
+  day: "occ_here",
+  author: "itv_here",
+  star: "itv_star_here",
+};
+const elsewhere: Targets = {
+  club: "clb_there",
+  drop: "drp_there",
+  day: "occ_there",
+  author: "itv_there",
+  star: "itv_star_there",
+};
 const LATER = Temporal.Instant.from("2026-11-08T07:00:00Z");
 
 /** The neutral not-found, as the skeleton sends it. */
@@ -105,6 +128,19 @@ describe("the requests a cell makes, from the contract's parameters", () => {
     expect(spec("listMemories").query).toEqual({ club_id: "clb_here" });
   });
 
+  it("sends each optional Id parameter too, filled from the world, in a request of its own", () => {
+    expect(specsFor(operation("listMemories"), here, "acct_viewer").map((made) => made.query)).toEqual([
+      { club_id: "clb_here" },
+      { club_id: "clb_here", star: "itv_star_here" },
+    ]);
+    const optional = operations.flatMap((found) =>
+      found.parameters
+        .filter((parameter) => !parameter.required && parameter.schema.$ref === "#/components/schemas/Id")
+        .map((parameter) => `${found.id} ${parameter.name}`),
+    );
+    expect(optional).toEqual(["listMemories star"]);
+  });
+
   it("makes one request for each value of a required enum, and gives each idempotent one a key", () => {
     expect(specsFor(operation("getDropMedia"), here, "acct_viewer").map((made) => made.query)).toEqual([
       { rendition: "display" },
@@ -135,18 +171,35 @@ describe("the requests a cell makes, from the contract's parameters", () => {
       "proposal_id",
       "reservation_id",
       "revision_id",
+      "star",
       "upload_id",
     ]);
   });
 });
 
 describe("each step of the matrix reports a planted wrong answer", () => {
-  it("passes the skeleton's neutral answer in every step", async () => {
-    const app = await plantedApp("getDrop", (_request, reply) => neutral(reply));
-    expect((await cellStep(app, spec("getDrop"))).problems).toEqual([]);
-    expect((await manipulationStep(app, spec("getDrop"), "acct_author", LATER)).problems).toEqual([]);
-    expect((await guessStep(app, spec("getDrop"), elsewhere)).problems).toEqual([]);
-    await app.close();
+  it("passes the skeleton's neutral answer in every step, and gets the answers each step counts", async () => {
+    for (const [id, guesses] of [
+      ["getDrop", 12],
+      ["getMemberAvatar", 64],
+      ["listComments", 23],
+    ] as const) {
+      const app = await plantedApp(id, (_request, reply) => neutral(reply));
+      expect((await cellStep(app, spec(id))).problems, id).toEqual([]);
+      const manipulated = await manipulationStep(app, spec(id), "itv_author", LATER);
+      expect(manipulated.problems, id).toEqual([]);
+      expect(manipulated.answers, id).toHaveLength(manipulations(spec(id), "itv_author", LATER).length);
+      const guessed = await guessStep(app, spec(id), elsewhere);
+      expect(guessed.problems, id).toEqual([]);
+      expect(guessed.answers, id).toHaveLength(guesses);
+      expect(guessCount(spec(id)), id).toBe(guesses);
+      const signedOut = await signedOutStep(app, spec(id), elsewhere);
+      expect(signedOut.problems, id).toEqual([]);
+      expect(signedOut.answers, id).toHaveLength(9);
+      expect(signedOutCount(spec(id)), id).toBe(9);
+      await app.close();
+    }
+    expect(manipulations(spec("getDrop"), "itv_author", LATER)).toHaveLength(13);
   });
 
   const wrong: [string, (reply: FastifyReply) => FastifyReply][] = [
@@ -181,13 +234,19 @@ describe("each step of the matrix reports a planted wrong answer", () => {
     ["`rendition=full` in the query", (request) => (request.query as Record<string, string>).rendition === "full"],
     ["a client time header", (request) => request.headers["x-client-time"] !== undefined],
     ["a Date header", (request) => request.headers.date !== undefined],
+    ["If-None-Match", (request) => request.headers["if-none-match"] !== undefined],
+    ["Range", (request) => request.headers.range !== undefined],
+    [
+      "the author's membership id as the viewer",
+      (request) => (request.query as Record<string, string>).viewer === "itv_author",
+    ],
   ];
   for (const [name, tell] of tells) {
     it(`reports a route that answers differently for ${name} (T16, Q09)`, async () => {
       const app = await plantedApp("getDrop", (request, reply) =>
         tell(request) ? reply.code(200).header("cache-control", "private, no-store").send({}) : neutral(reply),
       );
-      const step = await manipulationStep(app, spec("getDrop"), "acct_author", LATER);
+      const step = await manipulationStep(app, spec("getDrop"), "itv_author", LATER);
       // One manipulated request, however many ways its answer differs.
       expect(new Set(step.problems.map((problem) => problem.slice(0, problem.indexOf(": "))))).toHaveLength(1);
       await app.close();
@@ -243,12 +302,63 @@ describe("each step of the matrix reports a planted wrong answer", () => {
     }
   });
 
-  it("returns each malformed id's answer, for the matrix to check it's the same in every cell", async () => {
-    const app = await plantedApp("getDrop", (_request, reply) => neutral(reply));
-    const step = await guessStep(app, spec("getDrop"), elsewhere);
-    expect(step.malformed.size).toBe(10);
-    expect(new Set(step.malformed.values())).toEqual(new Set(['404 {"code":"NOT_FOUND"}']));
+  it("returns each malformed id's and cursor's answer, for the matrix to check it's the same in every cell", async () => {
+    const app = await plantedApp("listComments", (_request, reply) => neutral(reply));
+    const step = await guessStep(app, spec("listComments"), elsewhere);
+    expect(step.malformed.size).toBe(21);
+    expect(new Set([...step.malformed.values()].map((text) => text.slice(0, 3) + text.slice(-20)))).toEqual(
+      new Set(['404{"code":"NOT_FOUND"}']),
+    );
     expect(freshId()).toMatch(/^[A-Za-z0-9_-]{1,64}$/);
+    await app.close();
+  });
+
+  it("reports a route that looks the parent up before it checks a malformed child: an existence oracle (T14)", async () => {
+    const real = new Set([here.club, elsewhere.club]);
+    const app = await plantedApp("getMemberAvatar", (request, reply) => {
+      const { club_id: club, membership_id: member } = request.params as { club_id: string; membership_id: string };
+      if (!real.has(club)) return neutral(reply);
+      return /^[A-Za-z0-9_-]{1,64}$/.test(member)
+        ? neutral(reply)
+        : reply
+            .code(400)
+            .header("cache-control", "private, no-store")
+            .send({ code: "INVALID_REQUEST", field: "membership_id" });
+    });
+    const step = await guessStep(app, spec("getMemberAvatar"), elsewhere);
+    expect(step.problems.filter((problem) => problem.includes("when the other ids name nothing"))).not.toEqual([]);
+    await app.close();
+  });
+
+  it("reports a route that answers a cursor or an optional id differently (T14)", async () => {
+    const app = await plantedApp("listMemories", (request, reply) => {
+      const query = request.query as Record<string, string>;
+      return query.cursor !== undefined || query.star === elsewhere.star
+        ? reply.code(403).header("cache-control", "private, no-store").send({ code: "NOT_ALLOWED" })
+        : neutral(reply);
+    });
+    const [plain, withStar] = specsFor(operation("listMemories"), here, "acct_viewer");
+    if (!plain || !withStar) throw new Error("listMemories");
+    expect(
+      (await guessStep(app, plain, elsewhere)).problems.filter((problem) => problem.includes("cursor")),
+    ).not.toEqual([]);
+    expect(
+      (await guessStep(app, withStar, elsewhere)).problems.filter((problem) => problem.includes("star guessed")),
+    ).not.toEqual([]);
+    await app.close();
+  });
+
+  it("reports a route that tells a signed-out caller which drops exist (T14)", async () => {
+    const app = await plantedApp("getDrop", (request, reply) =>
+      request.headers.authorization === undefined && (request.params as { drop_id: string }).drop_id === here.drop
+        ? reply.code(401).header("cache-control", "private, no-store").send({ code: "UNAUTHENTICATED" })
+        : neutral(reply),
+    );
+    const step = await signedOutStep(app, spec("getDrop"), elsewhere);
+    // Its 401 isn't the skeleton's row, and it differs from the answer to ids that name nothing,
+    // which a later row's single answer for signed-out callers is held to as well.
+    expect(step.problems).toContain("getDrop, no session: another answer for fresh ids (T14)");
+    expect(step.problems.filter((problem) => !problem.includes("no session"))).toEqual([]);
     await app.close();
   });
 });

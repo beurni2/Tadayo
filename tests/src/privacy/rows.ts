@@ -3,15 +3,27 @@
 // phase of the day) gets from its route.
 //
 // The only row in B0's slice 7 is NONE, the skeleton's: every role, in every state and phase, gets
-// the neutral not-found (T14; docs/plans/B0.md, slice 7). The harness refuses any other row, so the
-// slice that first builds a route defines the row's shape and tests each of its branches. What that
-// shape must carry, from the plan's critique (docs/JOURNAL.md, block 1.2, "Next"):
-// - for an account route (slice 8: getMe, updateMe, listClubs), the answer each role gets;
+// the neutral not-found (T14; docs/plans/B0.md, slice 7), and so does every caller without a
+// session. The harness refuses any other row, so the slice that first builds a route defines the
+// row's shape and tests each of its branches. What that shape must carry (docs/JOURNAL.md, block
+// 1.2, "Next"):
+// - for an account route (slice 8: getMe, updateMe, listClubs), the answer each role gets, and the
+//   one answer every caller without a session gets, an expired token and a deleted account's among
+//   them once real tokens exist (T53);
 // - for the first route that answers drop references (B1, B2), each cell's status and, for each of
 //   the world's drops, the form it may take, absent, caption, own or revealed, from the role, the
-//   state, the phase and who wrote it, checked by finding drop ids in every answer in every phase;
+//   state, the phase and who wrote it, checked by finding drop ids in every answer in every phase.
+//   T9's denials (a withdrawn, held or removed drop, a suspended or cancelled day, a suspended club,
+//   a deleting account, a block) are the row's to judge: the leak scanner knows only the audience,
+//   the author and the reveal;
 // - a body, with its Id fields bound through bindings.ts and replaced in the guessed-id step;
 // - an object in the world for each binding still marked `missing`;
+// - for the first route that pages (getOccurrence, B2; listComments, listFavourites, listMemories and
+//   listMyDrops, B6), a cursor issued to another role and one issued before a removal, each answered
+//   as the row says (T14), beside the forged and malformed cursors the harness sends now;
+// - for the invitation's routes (B1), a person who holds a link and hasn't accepted it: the matrix's
+//   role "invited, not yet a member" has accepted and waits for the roster (Q05), since a link
+//   nobody has accepted ties no account to the club;
 // - for createUpload, the replays of its intent (TECH-DESIGN section 8), before it grants anything:
 //   spike S1's server part needs them before Gate A.
 

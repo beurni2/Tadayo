@@ -1,5 +1,6 @@
 // How the privacy matrix fills a request from a cell's world: each Id parameter by its name, in the
-// path and the query alike, so `club_id` is the cell's club wherever it appears.
+// path and the query alike, required or optional, so `club_id` is the cell's club wherever it
+// appears.
 
 import { randomBytes } from "node:crypto";
 
@@ -12,6 +13,8 @@ export interface Targets {
   day: string;
   /** Its author's membership interval. */
   author: string;
+  /** The day's star's membership interval, Ana's. */
+  star: string;
 }
 
 /** A fresh id that names nothing, in the contract's `Id` shape (T14: a guessed id). */
@@ -29,6 +32,7 @@ export const BINDINGS: Readonly<Record<string, ((targets: Targets) => string) | 
   drop_id: (targets) => targets.drop,
   membership_id: (targets) => targets.author,
   occurrence_id: (targets) => targets.day,
+  star: (targets) => targets.star,
   comment_id: "missing",
   invitation_id: "missing",
   proposal_id: "missing",
