@@ -63,7 +63,11 @@ struct TabsView: View {
             #if LAB
                 if showsLab {
                     LabView(logOut: logOut)
-                        .tabItem { Label("Lab", systemImage: "wrench.and.screwdriver") }
+                        .tabItem {
+                            Label("Lab", systemImage: "wrench.and.screwdriver")
+                                .environment(
+                                    \.symbolVariants, selection == .lab ? .fill : .none)
+                        }
                         .tag(Selection.lab)
                 }
             #endif

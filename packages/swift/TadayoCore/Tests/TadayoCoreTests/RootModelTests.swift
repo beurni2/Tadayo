@@ -103,7 +103,7 @@ import Testing
 
     @Test func aSessionTheDeviceCantKeepSaysSoAndSignsInAgain() async throws {
         // T43: the failure names what failed. Retry starts again, and with nothing kept that's
-        // sign-in.
+        // sign-in, at the address step with what was typed still there.
         let auth = FakeAuth(verify: [.success(stored)])
         let accounts = FakeAccounts(me: [.success(account())])
         let root = root(accounts, auth: auth, store: UnwritableStore())
@@ -117,7 +117,8 @@ import Testing
         #expect(accounts.calls.isEmpty)
         await root.retry()
         #expect(root.route == .signIn)
-        #expect(root.signIn?.email == "")
+        #expect(root.signIn?.step == .email)
+        #expect(root.signIn?.email == "ben@example.com")
     }
 
     @Test func clubsB0CantDrawAreNeitherEmptyNorAFailure() async {
@@ -289,6 +290,10 @@ import Testing
         let root = root(accounts, store: store)
         let starting = Task { await root.start() }
         await gate.reached()
+        // The tabs show the account while its list is out.
+        #expect(root.route == .tabs)
+        #expect(root.clubs == .loading)
+        #expect(root.account == named)
         await root.leave()
         gate.open()
         await starting.value
@@ -414,6 +419,21 @@ import Testing
         #expect(root.route == .signIn)
         #expect(try store.load() == nil)
         #expect(purges == 2)
+    }
+
+    @Test func aLeaveFromTheTabsThatCantForgetTheSessionForgetsTheAccount() async throws {
+        // T11: nothing of the account outlives Leave sign-in, even while the device still keeps
+        // its session.
+        let root = root(
+            FakeAccounts(me: [.success(named)], clubs: [.success(clubs(empty: true))]),
+            store: StubbornStore(stored, failures: 2))
+        await root.start()
+        #expect(root.route == .tabs)
+        #expect(root.account == named)
+        await root.leave()
+        #expect(root.route == .leaveFailed)
+        #expect(root.account == nil)
+        #expect(root.clubs == .loading)
     }
 }
 

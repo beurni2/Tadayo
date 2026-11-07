@@ -32,6 +32,11 @@ struct RootFailure: View {
             case .leave, .keep: RootModel.Failure.other.line
             }
         }
+
+        /// What VoiceOver says as the failure shows: the title, then the line.
+        var spoken: String {
+            "\(String(localized: title)) \(String(localized: line))"
+        }
     }
 
     let kind: Kind
@@ -51,7 +56,6 @@ struct RootFailure: View {
                 .buttonStyle(.tadayoPrimary)
             }
         }
-        .announcing(
-            "\(String(localized: kind.title)) \(String(localized: kind.line))", initial: true)
+        .announcing(kind.spoken, initial: true)
     }
 }

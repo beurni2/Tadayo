@@ -66,6 +66,21 @@ final class RootSnapshotTests: XCTestCase {
         }
     }
 
+    func testEachFailureIsSaidAsItShowsTitleThenLine() {
+        let said: [(RootFailure.Kind, String)] = [
+            (
+                .account(.network),
+                "Couldn’t load your account. Check your connection and try again."
+            ),
+            (.account(.other), "Couldn’t load your account. Try again."),
+            (.leave, "Couldn’t remove your sign-in from this iPhone. Try again."),
+            (.keep, "Couldn’t keep you signed in. Try again."),
+        ]
+        for (kind, words) in said {
+            XCTAssertEqual(kind.spoken, words, "\(kind)")
+        }
+    }
+
     private func snap(
         _ kind: RootFailure.Kind, named state: String, testName: String = #function,
         line: UInt = #line

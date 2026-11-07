@@ -28,10 +28,11 @@ import Observation
         /// The account couldn't be read: a launch failure with Retry, and no tabs.
         case failed(Failure)
         /// Leave sign-in ended the session but the device couldn't forget it: Retry leaves again,
-        /// rather than show sign-in over a session still kept.
+        /// rather than show sign-in over a session still kept, in this launch. After a relaunch,
+        /// `start()` decides from the keychain afresh.
         case leaveFailed
         /// A verified code's session couldn't be kept on the device: Retry starts again, which,
-        /// with nothing kept, is sign-in.
+        /// with nothing kept, is sign-in, with the address that was typed still in its field.
         case signInNotKept
     }
 
@@ -98,11 +99,18 @@ import Observation
         await readAccount()
     }
 
-    /// Retry, on the failure line: the account, the clubs, or a Leave sign-in that couldn't
-    /// finish.
+    /// Retry, on the failure line: the account, the clubs, a Leave sign-in that couldn't finish,
+    /// or a session the device couldn't keep, where sign-in starts again with the address typed,
+    /// so only the code is asked for again.
     public func retry() async {
         if route == .leaveFailed { return await leave() }
         if route == .tabs { return await loadClubs() }
+        if route == .signInNotKept {
+            let typed = signIn?.email ?? ""
+            await start()
+            if route == .signIn { signIn?.email = typed }
+            return
+        }
         await start()
     }
 
