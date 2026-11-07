@@ -29,9 +29,10 @@ struct RootView: View {
     }
 }
 
-/// The screen for each route. The launch screen, the failure states and the tabs are
-/// `ios/b0-tabs`' (the next PR); until then the launch shows the canvas, as the system's launch
-/// screen does, a failure offers Retry, and the tabs open the Lab in builds that have it.
+/// The screen for each route. While the session and the account are read, and while Leave
+/// sign-in runs, the canvas alone, as Tadayo's launch screen shows it (`global-launch`; the launch
+/// screen's colour is `LaunchBackground`, canvas's two values, in `project.yml`). A failure says
+/// what failed, with Retry (`RootFailure`). The tabs show the club list for the account.
 struct RoutedView: View {
     let root: RootModel
 
@@ -45,17 +46,16 @@ struct RoutedView: View {
             }
         case .profile:
             if let profile = root.profile { ProfileScreen(model: profile) }
-        case .failed:
-            Button("common.retry") { Task { await root.retry() } }
-                .buttonStyle(.tadayoText)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background { Palette.canvas.ignoresSafeArea() }
+        case .failed(let failure):
+            RootFailure(kind: .account(failure), retry: { await root.retry() })
+        case .leaveFailed:
+            RootFailure(kind: .leave, retry: { await root.retry() })
+        case .signInNotKept:
+            RootFailure(kind: .keep, retry: { await root.retry() })
         case .tabs:
-            #if LAB
-                LabView()
-            #else
-                Palette.canvas.ignoresSafeArea()
-            #endif
+            TabsView(
+                clubs: root.clubs, name: root.account?.displayName ?? "",
+                retry: { await root.retry() }, logOut: { await root.leave() })
         case .starting:
             Palette.canvas.ignoresSafeArea()
         }

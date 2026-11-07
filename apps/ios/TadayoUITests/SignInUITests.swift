@@ -33,7 +33,7 @@ final class SignInUITests: XCTestCase {
 
     /// Sign-in to its end on stand-in services. Back and Change email address return to A02-email
     /// with the address kept; a code the server doesn't verify keeps its digits and Verify code;
-    /// the right one goes on, the age then the name, then the tabs.
+    /// the right one goes on, the age then the name, then the tabs, on Home with no club.
     @MainActor func testSignInGoesToTheEndOnStandInServices() {
         let app = launch("-TadayoUITestFakes")
         let email = app.textFields["Email address"]
@@ -97,8 +97,45 @@ final class SignInUITests: XCTestCase {
         XCTAssertTrue(next.isEnabled)
         next.tap()
 
-        // The tabs are the next PR's; until then a Debug build opens the Lab there.
-        XCTAssertTrue(app.navigationBars["Lab"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Start your club."].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.tabBars.buttons["Home"].isSelected)
+    }
+
+    /// The tabs with no club (G06, F01, M01): each tab's own screen, and Go to Home, on Memories,
+    /// selects Home (handoff 1).
+    @MainActor func testTheTabsWithNoClub() {
+        let app = launch("-TadayoUITestFakes")
+        signInToTheTabs(app)
+        XCTAssertTrue(app.buttons["Create a club."].exists)
+        XCTAssertTrue(app.buttons["I have an invite"].exists)
+        XCTAssertTrue(app.buttons["Private drafts"].exists)
+
+        app.tabBars.buttons["Friends"].tap()
+        XCTAssertTrue(
+            app.staticTexts["Your friends will appear here."].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.tabBars.buttons["Friends"].isSelected)
+
+        app.tabBars.buttons["Memories"].tap()
+        XCTAssertTrue(
+            app.staticTexts["Your shared days, kept together."].waitForExistence(timeout: 5))
+        app.buttons["Go to Home"].tap()
+        XCTAssertTrue(app.staticTexts["Start your club."].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.tabBars.buttons["Home"].isSelected)
+    }
+
+    /// In builds with the Lab (Debug here), its tab's Log out ends the session and opens
+    /// A02-email again, empty (spec 23).
+    @MainActor func testTheLabsLogOutReturnsToSignIn() {
+        let app = launch("-TadayoUITestFakes")
+        signInToTheTabs(app)
+        app.tabBars.buttons["Lab"].tap()
+        let logOut = app.navigationBars["Lab"].buttons["Log out"]
+        XCTAssertTrue(logOut.waitForExistence(timeout: 5))
+        logOut.tap()
+        let email = app.textFields["Email address"]
+        XCTAssertTrue(email.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["What’s your email?"].exists)
+        XCTAssertNotEqual(email.value as? String, "ben@example.com")
     }
 
     /// Leave sign-in on A02-age, by the chevron and then by the button under I’m 18 or older:
@@ -129,6 +166,18 @@ final class SignInUITests: XCTestCase {
         app.typeText("123456")
         app.buttons["Verify code"].tap()
         XCTAssertTrue(app.buttons["I’m 18 or older"].waitForExistence(timeout: 5))
+    }
+
+    /// Through the age and the name, to Home with no club.
+    @MainActor private func signInToTheTabs(_ app: XCUIApplication) {
+        signInToTheAge(app)
+        app.buttons["I’m 18 or older"].tap()
+        let name = app.textFields["Your name"]
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        name.tap()
+        name.typeText("Ben")
+        app.buttons["Continue"].tap()
+        XCTAssertTrue(app.staticTexts["Start your club."].waitForExistence(timeout: 5))
     }
 
     @MainActor private func leaveButtons(in app: XCUIApplication) -> [XCUIElement] {

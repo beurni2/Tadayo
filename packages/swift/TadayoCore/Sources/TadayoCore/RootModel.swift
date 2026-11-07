@@ -23,10 +23,16 @@ import Observation
         case confirmAge
         /// A03-profile, in `profile`.
         case profile
-        /// Home, Friends and Memories, showing `clubs`.
+        /// Home, Friends and Memories, showing `clubs` for `account`.
         case tabs
         /// The account couldn't be read: a launch failure with Retry, and no tabs.
         case failed(Failure)
+        /// Leave sign-in ended the session but the device couldn't forget it: Retry leaves again,
+        /// rather than show sign-in over a session still kept.
+        case leaveFailed
+        /// A verified code's session couldn't be kept on the device: Retry starts again, which,
+        /// with nothing kept, is sign-in.
+        case signInNotKept
     }
 
     public enum Clubs: Sendable, Equatable {
@@ -43,14 +49,15 @@ import Observation
 
     public private(set) var route = Route.starting
     public private(set) var clubs = Clubs.loading
+    /// The complete account the tabs show (the header's initial), only while they show it:
+    /// nothing of it outlives Leave sign-in (T11).
+    public private(set) var account: Account?
     public private(set) var signIn: SignInModel?
     public private(set) var profile: ProfileModel?
 
     /// Moves each time the app leaves an account. An answer to a call made before is dropped, so
     /// nothing that lands after Leave sign-in can route back into the account left (spec 23).
     private(set) var epoch = 0
-    /// The last Leave sign-in couldn't forget the session on the device: Retry tries it again.
-    private var leaveFailed = false
     /// The Leave sign-in under way: a second one waits for it, and nothing starts meanwhile.
     private var leaving: Task<Void, Never>?
 
@@ -94,7 +101,7 @@ import Observation
     /// Retry, on the failure line: the account, the clubs, or a Leave sign-in that couldn't
     /// finish.
     public func retry() async {
-        if leaveFailed { return await leave() }
+        if route == .leaveFailed { return await leave() }
         if route == .tabs { return await loadClubs() }
         await start()
     }
@@ -115,13 +122,13 @@ import Observation
         epoch += 1
         signIn = nil
         profile = nil
+        account = nil
         clubs = .loading
         route = .starting
         let forgotten = await session.signOut()
         left()
-        leaveFailed = !forgotten
         guard forgotten else {
-            route = .failed(.other)
+            route = .leaveFailed
             return
         }
         showSignIn()
@@ -160,6 +167,7 @@ import Observation
 
     private func showSignIn() {
         profile = nil
+        account = nil
         clubs = .loading
         let asked = epoch
         signIn = SignInModel(
@@ -175,7 +183,7 @@ import Observation
         do {
             try await session.begin(verified)
         } catch {
-            route = .failed(.other)
+            route = .signInNotKept
             return
         }
         await readAccount()
@@ -206,6 +214,7 @@ import Observation
 
     private func show(_ account: Account) async {
         guard Self.isComplete(account) else {
+            self.account = nil
             if let profile {
                 profile.refresh(account)
             } else {
@@ -226,6 +235,7 @@ import Observation
         }
         signIn = nil
         profile = nil
+        self.account = account
         route = .tabs
         await loadClubs()
     }
