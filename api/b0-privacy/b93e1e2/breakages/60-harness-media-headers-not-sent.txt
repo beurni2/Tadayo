@@ -1,0 +1,27 @@
+breakage: harness-media-headers-not-sent
+patch: [
+ [
+  "tests/src/privacy/harness.ts",
+  "    { ...spec, headers: { ...spec.headers, \"if-none-match\": \"*\" } },\n    { ...spec, headers: { ...spec.headers, range: \"bytes=0-0\" } },\n",
+  ""
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/harness.test.ts
+exit: 1
+expected pattern: × reports a route that answers differently for If-None-Match
+caught: True
+
+ ❯ src/privacy/harness.test.ts (46 tests | 3 failed) 1542ms
+     × passes the skeleton's neutral answer in every step, and gets the answers each step counts 167ms
+     × reports a route that answers differently for If-None-Match (T16, Q09) 3ms
+     × reports a route that answers differently for Range (T16, Q09) 3ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > passes the skeleton's neutral answer in every step, and gets the answers each step counts
+AssertionError: expected [ Array(11) ] to have a length of 13 but got 11
+    213|     expect(manipulations(spec("getDrop"), "itv_author", LATER)).toHave…
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > reports a route that answers differently for If-None-Match (T16, Q09)
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > reports a route that answers differently for Range (T16, Q09)
+AssertionError: expected Set{} to have a size of 1 but got +0
+    334|       const step = await manipulationStep(app, spec("getDrop"), "itv_a…
+ Test Files  1 failed (1)
+      Tests  3 failed | 43 passed (46)

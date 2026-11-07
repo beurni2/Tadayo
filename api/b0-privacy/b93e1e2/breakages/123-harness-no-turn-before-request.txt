@@ -1,0 +1,21 @@
+breakage: harness-no-turn-before-request
+patch: [
+ [
+  "tests/src/privacy/harness.ts",
+  "  await new Promise((resolve) => setImmediate(resolve));\n",
+  ""
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/harness.test.ts
+exit: 1
+expected pattern: × lets the event loop turn before each request, so Node renews its Date
+caught: True
+
+ ❯ src/privacy/harness.test.ts (46 tests | 1 failed) 1556ms
+     × lets the event loop turn before each request, so Node renews its Date: a second of answers carries more than one 1209ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > lets the event loop turn before each request, so Node renews its Date: a second of answers carries more than one
+AssertionError: expected 1 to be greater than 1
+    503|       expect(transportProblem("date", answer.headers.date ?? "", answe…
+ Test Files  1 failed (1)
+      Tests  1 failed | 45 passed (46)
