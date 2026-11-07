@@ -980,10 +980,11 @@ describe("the leak scanner catches each planted leak with its own check", () => 
     expect(key(Buffer.concat([version, Buffer.from("after=7;order=desc;n=24!")]))).toEqual(["holds readable text"]);
     expect(key(Buffer.concat([version, Buffer.from("k@7v#Q2p!x9Lm*4Tz8&Wc5R")]))).toEqual([]);
     // A cursor that is text from end to end is a key however short, whatever joins its parts, or none:
-    // random bytes of 12 to 23 make one now and then, which is why the pager's handles are 24 to 32
-    // bytes (rows.ts).
+    // random bytes of 12 to 23 make one now and then, which is why the first pager's row is to hold its
+    // handles to 24 to 32 bytes (rows.ts). Text that ends before the cursor does is not that.
     const whole = ["is text from end to end"];
     for (const text of [
+      "o=40;n=20;de",
       '{"offset":20}',
       "left=3;order=asc;p=2",
       "after=7;order=desc;n=24",
@@ -996,6 +997,7 @@ describe("the leak scanner catches each planted leak with its own check", () => 
       "k@7v#Q2p!x9Lm*",
     ])
       expect(key(Buffer.from(text))).toEqual(whole);
+    expect(key(Buffer.concat([Buffer.from("k@7v#Q2p!x9L"), noise]))).toEqual([]);
     // Tab, newline and CR are text too, as JSON and lines of key=value put them between parts.
     expect(key(Buffer.from("o=40\tn=20\tasc"))).toEqual(whole);
     expect(key(Buffer.from('{"o":20,\n"d":1}'))).toEqual(whole);
@@ -1005,12 +1007,22 @@ describe("the leak scanner catches each planted leak with its own check", () => 
     expect(key(Buffer.concat([version, Buffer.from("offset=20\torder=desc\tcount=24"), version]))).toEqual([
       "holds readable text",
     ]);
-    // A URL among a cursor's bytes, in a run of text of 12 bytes or more; random bytes make a letter
-    // and :// now and then, and those pass.
-    const url = Buffer.concat([version, Buffer.from("s3://b/k.jpg"), noise]).toString("base64url");
-    expect(at(page(url), "values")).toEqual(["$.next_cursor (decoded)"]);
-    const chance = Buffer.concat([noise, Buffer.from("a://"), noise]).toString("base64url");
-    expect(page(chance)).toEqual([]);
+    // A URL among a cursor's bytes, in any run of text of 12 bytes or more, its tab, newline and CR
+    // counted; random bytes make a letter and :// now and then, and those pass, as does a URL in a run
+    // of 11. A storage path or a provider host, which random bytes don't make, fails in any run.
+    const decoded = (...parts: (Buffer | string)[]) =>
+      at(page(Buffer.concat(parts.map((part) => Buffer.from(part))).toString("base64url")), "values");
+    const found = ["$.next_cursor (decoded)"];
+    expect(decoded(version, "s3://b/k.jpg", noise)).toEqual(found);
+    expect(decoded(version, "k7Qz2pLm9xWv", version, "https://h/p.jpg", noise)).toEqual(found);
+    expect(decoded(version, "https://h/p.jpg", version, "k7Qz2pLm9xWv", noise)).toEqual(found);
+    for (const space of ["\t", "\n", "\r"]) expect(decoded(version, `${space}https://x/a`, noise)).toEqual(found);
+    expect(decoded(version, "www.h.io/p.jpg", noise)).toEqual(found);
+    expect(decoded(version, "data:image/png", noise)).toEqual(found);
+    expect(decoded(version, "uploads/", noise)).toEqual(found);
+    expect(decoded(version, "tiktok.com", noise)).toEqual(found);
+    expect(page(Buffer.concat([version, Buffer.from("https://x/a"), noise]).toString("base64url"))).toEqual([]);
+    expect(page(Buffer.concat([noise, Buffer.from("a://"), noise]).toString("base64url"))).toEqual([]);
     expect(key(Buffer.from("4f9a2c", "hex"))).toEqual(["decodes to fewer than 12 bytes"]);
     expect(key(noise)).toEqual([]);
     // The contract's own example, a random handle of 12 bytes.

@@ -22,10 +22,9 @@
 //   planted field), and every cursor in base64url, decoding to 12 bytes or more with no readable
 //   key among them: not text from end to end (printable bytes, and the tab, newline and CR that JSON
 //   and lines put between parts), and no run of 24 bytes of text, date, long number, id of the world
-//   or text people wrote, nor a URL, storage path or provider host in a run of text of 12 bytes or
-//   more (the contract's Cursor: "never a readable key"), so a random handle goes out as its own
-//   bytes, not as their text. A key packed in binary with none of these, or runs of text shorter
-//   than 24 bytes among other bytes (a longer key split by a NUL, another control byte or a
+//   or text people wrote (the contract's Cursor: "never a readable key"), so a random handle goes out
+//   as its own bytes, not as their text. A key packed in binary with none of these, or runs of text
+//   shorter than 24 bytes among other bytes (a longer key split by a NUL, another control byte or a
 //   non-ASCII byte among them), is beyond what the scanner can see: the pager's row is to check its
 //   cursors, and to hold its random handles to 24 to 32 bytes (rows.ts);
 // - whitelist: a caption card is exactly T10's list, as FQ74's answer reads it (this file's own
@@ -60,7 +59,11 @@
 //   kept-back values (its post id, say: T13 refuses only its source URL at write) before that drop
 //   opens to the viewer, its author included, as every kept-back value fails to its author until B3
 //   serves an author their own (the author preview, T40's source details: below); in every other
-//   value, header and decoded cursor, no URL, storage path or provider host, no value the world
+//   value and header, no URL, storage path or provider host, and in the bytes a cursor decodes to no
+//   storage path or provider host anywhere, and no URL in a run of text of 12 bytes or more (a URL's
+//   marks, which random bytes make now and then: URL_RUN; a URL in a shorter run among other bytes,
+//   such as `s3://b/k`, passes, beyond what the scanner can see, like the short runs of text of the
+//   shape check); in every other value, header and decoded cursor, no value the world
 //   keeps back (a storage key, a content version, a source's link or post id) but a drop's own once
 //   its day has opened to a viewer in its audience, and no id of a drop, day, club, person or
 //   reservation the viewer may not see, outside the positions the world check judges; and in every
@@ -273,14 +276,17 @@ export const NEVER_KEY = new RegExp(
   "i",
 );
 
+/** A URL's marks: a scheme, `www.` and `data:`. Random bytes make the first two now and then (URL_RUN). */
+const LINK_MARKS = [/[a-z][a-z0-9+.-]*:\/\//i, /(^|[^a-z0-9])www\./i, /(^|[^a-z0-9])data:/i];
+
+/**
+ * A storage path's and a provider host's marks. Random bytes don't make them at the matrix's scale:
+ * `uploads/` turns up in 384 random bytes about once in 500 trillion handles, the others less often.
+ */
+const PATH_MARKS = [/(^|[^a-z0-9])(uploads|renditions)\//i, /(tiktok|instagram)\.com/i];
+
 /** A value that is a URL, a storage path or a provider's host. */
-export const NEVER_VALUE = [
-  /[a-z][a-z0-9+.-]*:\/\//i,
-  /(^|[^a-z0-9])www\./i,
-  /(^|[^a-z0-9])data:/i,
-  /(^|[^a-z0-9])(uploads|renditions)\//i,
-  /(tiktok|instagram)\.com/i,
-];
+export const NEVER_VALUE = [...LINK_MARKS, ...PATH_MARKS];
 
 /** The schemas whose values are text people wrote. */
 const PEOPLE_TEXT = new Set(["Caption", "CommentText", "DisplayName", "ClubName", "CandidateLabel"]);
@@ -300,9 +306,9 @@ const CURSOR_BYTES = 12;
  * chance of about 1e-10, and one of 16 with about 2e-7, so 32 random bytes hold a run of 24 about
  * once in 1.7 billion, and one of 16 about once in 430,000, which the sealed cursors of every paged
  * answer in a run would meet. Runs of text shorter than 24 bytes among other bytes, with no date,
- * long number, id or text people wrote in them, and no URL in those of 12 bytes or more (URL_RUN),
- * pass, like a key packed in binary, and so does a longer key split by a NUL, another control byte
- * or a non-ASCII byte among them: the pager's row judges all of these.
+ * long number, id, text people wrote, storage path or provider host in them, and no URL in those of
+ * 12 bytes or more (URL_RUN), pass, like a key packed in binary, and so does a longer key split by a
+ * NUL, another control byte or a non-ASCII byte among them: the pager's row judges all of these.
  */
 const READABLE_TEXT = /[\t\n\r\x20-\x7e]{24,}/;
 
@@ -310,12 +316,14 @@ const READABLE_TEXT = /[\t\n\r\x20-\x7e]{24,}/;
 const ALL_TEXT = /^[\t\n\r\x20-\x7e]+$/;
 
 /**
- * A run of text in a cursor's bytes long enough to read a URL, a storage path or a provider's host
- * in: 12 bytes or more. Random bytes hold a letter and `://` about once in 3.7 million handles of 24
- * bytes and once in 2.7 million of 32, which the matrix's runs would meet; inside a run of text of
- * 12 bytes or more, about once in 2 billion and once in 1.2 billion, and `www.` after a byte that is
- * no letter or digit about once in 33 billion and once in 21 billion. A URL in a shorter run among
- * other bytes, such as `s3://b/k`, passes, as the scanner's header says of short runs of text.
+ * A run of text in a cursor's bytes long enough to read a URL in: 12 bytes or more, where the
+ * scanner looks for a URL's marks (LINK_MARKS). Random bytes hold a letter and `://` about once in
+ * 3.7 million handles of 24 bytes and once in 2.7 million of 32, which the matrix's runs would meet;
+ * inside a run of text of 12 bytes or more, about once in 2 billion and once in 1.2 billion, and
+ * `www.` after a byte that is no letter or digit about once in 33 billion and once in 21 billion. A
+ * URL in a shorter run among other bytes, such as `s3://b/k`, passes, as the scanner's header says.
+ * A storage path's or a provider host's marks (PATH_MARKS), which random bytes don't make, are
+ * looked for in all of a cursor's bytes.
  */
 const URL_RUN = /[\t\n\r\x20-\x7e]{12,}/g;
 
@@ -661,8 +669,8 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
         find("values", at, "an id of a drop, day, club, person or reservation the viewer may not see (T14)");
     }
   };
-  const noLinks = (value: string, at: string) => {
-    for (const pattern of NEVER_VALUE) {
+  const noLinks = (value: string, at: string, patterns = NEVER_VALUE) => {
+    for (const pattern of patterns) {
       if (pattern.test(value)) find("values", at, `a URL, storage path or provider host: ${pattern.source}`);
     }
   };
@@ -1052,7 +1060,8 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
       for (const reason of readableKey(bytes, reader))
         find("shape", at, `a cursor that ${reason}: a readable key (the contract's Cursor; T10, T15)`);
       const decoded = bytes.toString("latin1");
-      for (const run of decoded.match(URL_RUN) ?? []) noLinks(run, `${at} (decoded)`);
+      for (const run of decoded.match(URL_RUN) ?? []) noLinks(run, `${at} (decoded)`, LINK_MARKS);
+      noLinks(decoded, `${at} (decoded)`, PATH_MARKS);
       keptBack(decoded, `${at} (decoded)`);
     }
   }
