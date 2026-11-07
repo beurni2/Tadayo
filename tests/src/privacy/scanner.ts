@@ -21,14 +21,13 @@
 //   fields, every 404 the neutral one (T14), no key the contract doesn't name at any depth (a
 //   planted field), and every cursor in base64url, decoding to 12 bytes or more with no readable
 //   key among them: not text from end to end (printable bytes, and the tab, newline and CR that JSON
-//   and lines put between parts) in a key's shape (a name with a letter or _ in it before = or :,
-//   or JSON), and no run of 24 bytes of text, date, long number, id of the world or text people
-//   wrote (the contract's Cursor: "never a readable key"), so a random handle goes out as its own
-//   bytes, not as their text. A key packed in binary with none of these, text of 12 to 23 bytes
-//   with no such name that isn't JSON (values told by their place alone, such as 40|20|desc), or
-//   runs of text shorter than 24 bytes among other bytes (a longer key split by a NUL, another
-//   control byte or a non-ASCII byte among them) is beyond what the scanner can see: the pager's
-//   row checks its cursors, and holds its random handles to 24 to 32 bytes (rows.ts);
+//   and lines put between parts), and no run of 24 bytes of text, date, long number, id of the world
+//   or text people wrote, nor a URL, storage path or provider host in a run of text of 12 bytes or
+//   more (the contract's Cursor: "never a readable key"), so a random handle goes out as its own
+//   bytes, not as their text. A key packed in binary with none of these, or runs of text shorter
+//   than 24 bytes among other bytes (a longer key split by a NUL, another control byte or a
+//   non-ASCII byte among them), is beyond what the scanner can see: the pager's row is to check its
+//   cursors, and to hold its random handles to 24 to 32 bytes (rows.ts);
 // - whitelist: a caption card is exactly T10's list, as FQ74's answer reads it (this file's own
 //   copy, so a contract change alone can't widen it);
 // - world: each of these an answer names is the world's and the viewer's to see:
@@ -301,33 +300,24 @@ const CURSOR_BYTES = 12;
  * chance of about 1e-10, and one of 16 with about 2e-7, so 32 random bytes hold a run of 24 about
  * once in 1.7 billion, and one of 16 about once in 430,000, which the sealed cursors of every paged
  * answer in a run would meet. Runs of text shorter than 24 bytes among other bytes, with no date,
- * long number, id or text people wrote in them, pass, like a key packed in binary, and so does a
- * longer key split by a NUL, another control byte or a non-ASCII byte among them: the pager's row
- * judges all of these.
+ * long number, id or text people wrote in them, and no URL in those of 12 bytes or more (URL_RUN),
+ * pass, like a key packed in binary, and so does a longer key split by a NUL, another control byte
+ * or a non-ASCII byte among them: the pager's row judges all of these.
  */
 const READABLE_TEXT = /[\t\n\r\x20-\x7e]{24,}/;
 
-/**
- * A key's shape in a cursor that is text from end to end (READABLE_TEXT's bytes): a name with a
- * letter or `_` in it before `=` or `:`, a quote and spaces allowed between, as in `o=40`,
- * `k1 = 2`, `{'o': 40}` or `{"offset":20}` (JSON is caught whole). Random bytes are text from end
- * to end and in this shape about once in 750,000 handles of 12 bytes, once in 26 million of 16 and
- * once in 39 billion of 24. So the pager's row holds its random handles to 24 to 32 bytes (rows.ts):
- * all text, and so readable text, about once in 10 billion handles of 24, and holding a run of 24
- * about once in 1.7 billion of 32. A run of text beside other bytes isn't held to this shape, since
- * random bytes make short runs in it far more often.
- */
-const KEY_SHAPE = /[A-Za-z_][A-Za-z0-9_]*["']?\s*[=:]/;
+/** A cursor whose bytes are all text, READABLE_TEXT's bytes: a readable key, whatever it holds. */
+const ALL_TEXT = /^[\t\n\r\x20-\x7e]+$/;
 
-/** Whether `text` is JSON: a readable key, whatever it holds. */
-function isJson(text: string): boolean {
-  try {
-    JSON.parse(text);
-    return true;
-  } catch {
-    return false;
-  }
-}
+/**
+ * A run of text in a cursor's bytes long enough to read a URL, a storage path or a provider's host
+ * in: 12 bytes or more. Random bytes hold a letter and `://` about once in 3.7 million handles of 24
+ * bytes and once in 2.7 million of 32, which the matrix's runs would meet; inside a run of text of
+ * 12 bytes or more, about once in 2 billion and once in 1.2 billion, and `www.` after a byte that is
+ * no letter or digit about once in 33 billion and once in 21 billion. A URL in a shorter run among
+ * other bytes, such as `s3://b/k`, passes, as the scanner's header says of short runs of text.
+ */
+const URL_RUN = /[\t\n\r\x20-\x7e]{12,}/g;
 
 /** Text people wrote this short isn't looked for inside other values, where it could occur by chance. */
 const SHORTEST_TEXT = 6;
@@ -626,20 +616,20 @@ function decodeCursor(cursor: string): { bytes: Buffer; canonical: boolean } {
 /**
  * What in the bytes a cursor decodes to makes it a readable key, not a random handle or a sealed
  * value (the contract's Cursor: "never a readable key, so it carries no time, order key or count"):
- * too few bytes to be either, text from end to end in a key's shape (KEY_SHAPE) or JSON, a run of
- * readable text (READABLE_TEXT), a date, a long number (a time or a count), an id of the world, or
- * text people wrote. A key packed in binary with none of these, text of 12 to 23 bytes with no name
- * in KEY_SHAPE that isn't JSON (values told by their place alone, such as 40|20|desc), or runs of
- * text shorter than 24 bytes among other bytes (a longer key split by a NUL, another control byte or
- * a non-ASCII byte among them) looks like random bytes to the scanner: how the pager makes its
- * cursors is the row of the slice that builds it.
+ * too few bytes to be either, text from end to end (ALL_TEXT), a run of readable text
+ * (READABLE_TEXT), a date, a long number (a time or a count), an id of the world, or text people
+ * wrote. Random handles are text from end to end about once in 100,000 of 12 bytes and once in 4.7
+ * million of 16, and from 24 bytes READABLE_TEXT catches them anyway, about once in 10 billion of 24:
+ * the pager's row is to hold its random handles to 24 to 32 bytes (rows.ts). A key packed in binary
+ * with none of these, or runs of text shorter than 24 bytes among other bytes (a longer key split by
+ * a NUL, another control byte or a non-ASCII byte among them), looks like random bytes to the
+ * scanner: how the pager makes its cursors is the row of the slice that builds it.
  */
 function readableKey(bytes: Buffer, reader: Reader): string[] {
   const text = bytes.toString("latin1");
   const reasons: string[] = [];
   if (bytes.length < CURSOR_BYTES) reasons.push(`decodes to fewer than ${String(CURSOR_BYTES)} bytes`);
-  if (/^[\t\n\r\x20-\x7e]+$/.test(text) && (KEY_SHAPE.test(text) || isJson(text)))
-    reasons.push("is text from end to end in a key's shape");
+  if (ALL_TEXT.test(text)) reasons.push("is text from end to end");
   if (READABLE_TEXT.test(text)) reasons.push("holds readable text");
   if (/[0-9]{4}-[0-9]{2}-[0-9]{2}/.test(text)) reasons.push("holds a date");
   if (/[0-9]{10,}/.test(text)) reasons.push("holds a long number, such as a time or a count");
@@ -1062,7 +1052,7 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
       for (const reason of readableKey(bytes, reader))
         find("shape", at, `a cursor that ${reason}: a readable key (the contract's Cursor; T10, T15)`);
       const decoded = bytes.toString("latin1");
-      noLinks(decoded, `${at} (decoded)`);
+      for (const run of decoded.match(URL_RUN) ?? []) noLinks(run, `${at} (decoded)`);
       keptBack(decoded, `${at} (decoded)`);
     }
   }

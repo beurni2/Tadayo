@@ -953,16 +953,15 @@ describe("the leak scanner catches each planted leak with its own check", () => 
         .map((finding) => finding.what.replace(/^a cursor that (.*): a readable key.*$/, "$1"));
     const noise = Buffer.from("8f1ce2a7b3d9046e5f7a1c3e9b2d4f60", "hex");
     const version = Buffer.from([0x01]);
-    // Its time's T07 is a name before ":" too.
     expect(key(Buffer.from("occ_sat|2026-11-07T07:00:00Z"))).toEqual([
-      "is text from end to end in a key's shape",
+      "is text from end to end",
       "holds readable text",
       "holds a date",
       "holds an id",
     ]);
-    // JSON, its newline among its text.
+    // Its newline is text too.
     expect(key(Buffer.from('{"after":"drp_ben","at":"2026-11-06T20:00:00Z"}\n'))).toEqual([
-      "is text from end to end in a key's shape",
+      "is text from end to end",
       "holds readable text",
       "holds a date",
       "holds an id",
@@ -980,29 +979,38 @@ describe("the leak scanner catches each planted leak with its own check", () => 
     // after a version byte pass, as a key of 23 bytes there would.
     expect(key(Buffer.concat([version, Buffer.from("after=7;order=desc;n=24!")]))).toEqual(["holds readable text"]);
     expect(key(Buffer.concat([version, Buffer.from("k@7v#Q2p!x9Lm*4Tz8&Wc5R")]))).toEqual([]);
-    // A cursor that is text from end to end in a key's shape, or JSON, is a key however short: a name
-    // with a letter or _ in it before = or :, however short the name, with a quote or spaces between.
-    // One with no such name that isn't JSON passes, since random bytes are text now and then: values
-    // told by their place alone are the pager's row to judge.
-    const shaped = ["is text from end to end in a key's shape"];
-    expect(key(Buffer.from('{"offset":20}'))).toEqual(shaped);
-    expect(key(Buffer.from("left=3;order=asc;p=2"))).toEqual(shaped);
-    expect(key(Buffer.from("after=7;order=desc;n=24"))).toEqual(shaped);
-    expect(key(Buffer.from('["drp", 20, "asc"]'))).toEqual(shaped);
-    expect(key(Buffer.from("o=40;n=20;desc"))).toEqual(shaped);
-    expect(key(Buffer.from("p=3&n=20&o=d"))).toEqual(shaped);
-    expect(key(Buffer.from("k1=40;k2=20;d1"))).toEqual(shaped);
-    expect(key(Buffer.from("{'offset': 20}"))).toEqual(shaped);
-    expect(key(Buffer.from("offset = 20; dir = a"))).toEqual(shaped);
-    expect(key(Buffer.from("k@7v#Q2p!x9Lm*"))).toEqual([]);
+    // A cursor that is text from end to end is a key however short, whatever joins its parts, or none:
+    // random bytes of 12 to 23 make one now and then, which is why the pager's handles are 24 to 32
+    // bytes (rows.ts).
+    const whole = ["is text from end to end"];
+    for (const text of [
+      '{"offset":20}',
+      "left=3;order=asc;p=2",
+      "after=7;order=desc;n=24",
+      '["drp", 20, "asc"]',
+      "o=40;n=20;desc",
+      "page[offset]=20",
+      "40|20|desc|0005",
+      "o~40;n~20;d~asc",
+      "offset 20 dir asc",
+      "k@7v#Q2p!x9Lm*",
+    ])
+      expect(key(Buffer.from(text))).toEqual(whole);
     // Tab, newline and CR are text too, as JSON and lines of key=value put them between parts.
-    expect(key(Buffer.from('{"o":20,\n"d":1}'))).toEqual(shaped);
+    expect(key(Buffer.from("o=40\tn=20\tasc"))).toEqual(whole);
+    expect(key(Buffer.from('{"o":20,\n"d":1}'))).toEqual(whole);
     const pretty = Buffer.from(JSON.stringify({ offset: 20, order: "desc", count: 24 }, null, 2));
-    expect(key(pretty)).toEqual([...shaped, "holds readable text"]);
-    expect(key(Buffer.from("offset=20\r\norder=desc\r\ncount=24\r\n"))).toEqual([...shaped, "holds readable text"]);
+    expect(key(pretty)).toEqual([...whole, "holds readable text"]);
+    expect(key(Buffer.from("offset=20\r\norder=desc\r\ncount=24\r\n"))).toEqual([...whole, "holds readable text"]);
     expect(key(Buffer.concat([version, Buffer.from("offset=20\torder=desc\tcount=24"), version]))).toEqual([
       "holds readable text",
     ]);
+    // A URL among a cursor's bytes, in a run of text of 12 bytes or more; random bytes make a letter
+    // and :// now and then, and those pass.
+    const url = Buffer.concat([version, Buffer.from("s3://b/k.jpg"), noise]).toString("base64url");
+    expect(at(page(url), "values")).toEqual(["$.next_cursor (decoded)"]);
+    const chance = Buffer.concat([noise, Buffer.from("a://"), noise]).toString("base64url");
+    expect(page(chance)).toEqual([]);
     expect(key(Buffer.from("4f9a2c", "hex"))).toEqual(["decodes to fewer than 12 bytes"]);
     expect(key(noise)).toEqual([]);
     // The contract's own example, a random handle of 12 bytes.
