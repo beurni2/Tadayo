@@ -31,10 +31,14 @@ final class DesignCatalogTests: XCTestCase {
         }
     }
 
-    /// Every lookup in the package's sources names its own bundle, and every key of its catalog
-    /// is looked up that way. A bare `String(localized:)`, `NSLocalizedString` or
-    /// `LocalizedStringKey`, or a literal given to `Text`, `Button`, `Label`, `Toggle`, `Link`,
-    /// `Menu`, `Picker` or an accessibility label, hint or value, would read the main bundle; and a
+    /// Every `String(localized:)` in the package's sources names its own bundle, none of the forms
+    /// below that read the main bundle appears, and every key of its catalog is looked up that
+    /// way. A bare `String(localized:)`, `NSLocalizedString`,
+    /// `LocalizedStringKey` or `LocalizedStringResource`, or a literal given to `Text`, `Button`,
+    /// `Label`, `Toggle`, `Link`, `Menu`, `Picker`, `TextField`, `SecureField`, `Section`,
+    /// `ProgressView`, an accessibility label, hint, value, action name, input label or custom
+    /// content, a navigation title, an alert, a confirmation dialog or a help tag, would read the
+    /// main bundle, which the share extension doesn't carry the catalog in; and a
     /// key no lookup names would leave a component showing words the catalog no longer holds, so
     /// an answer that changes the catalog's words wouldn't reach it.
     func testEveryLookupInTheComponentsNamesTheDesignBundle() throws {
@@ -42,8 +46,12 @@ final class DesignCatalogTests: XCTestCase {
         let named = try NSRegularExpression(
             pattern: #"String\(\s*localized:\s*"([^"]*)",\s*bundle:\s*\.module\s*\)"#)
         let mainBundle = try NSRegularExpression(
-            pattern: #"\b(Text|Button|Label|Toggle|Link|Menu|Picker|LocalizedStringKey|"#
-                + #"NSLocalizedString)\(\s*"|\.accessibility(Label|Hint|Value)\(\s*""#)
+            pattern: #"\b(Text|Button|Label|Toggle|Link|Menu|Picker|TextField|SecureField|"#
+                + #"Section|ProgressView|LocalizedStringKey|LocalizedStringResource|"#
+                + #"NSLocalizedString)\(\s*"|\.(accessibilityLabel|accessibilityHint|"#
+                + #"accessibilityValue|accessibilityCustomContent|navigationTitle|alert|"#
+                + #"confirmationDialog|help)\(\s*"|\.accessibilityAction\(\s*named:\s*"|"#
+                + #"\.accessibilityInputLabels\(\s*\[\s*""#)
         let files = try XCTUnwrap(FileManager.default.enumerator(atPath: sources.path))
             .compactMap { $0 as? String }.filter { $0.hasSuffix(".swift") }
         XCTAssertFalse(files.isEmpty)

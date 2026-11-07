@@ -81,9 +81,10 @@ final class LabSnapshotTests: XCTestCase {
     }
 
     /// The drop card's sections at 320 points and the largest accessibility size, which no
-    /// 393-point image reaches: every card, row, photograph and receipt keeps inside the screen,
-    /// and where a word can't fit its line it breaks inside the label it belongs to (book p26;
-    /// INVENTORY.md's Known differences, with the ios lane's needs list).
+    /// 393-point image reaches: every card, row, photograph and receipt keeps inside the screen.
+    /// A word wider than its line breaks inside itself, as the system wraps it ("Choo" over "se",
+    /// "Highli" over "ght"), which book p26 doesn't ask for and no delivery draws otherwise
+    /// (INVENTORY.md's Known differences; the ios lane's needs list, items 45 and 46).
     func testTheDropCardKeepsInsideA320PointScreenAtTheLargestSize() {
         for section in [LabSection.cards, .drops, .revealed, .receipt] {
             snap(section, .xl, width: 320, named: "Lab-\(section.rawValue)-320-xl")

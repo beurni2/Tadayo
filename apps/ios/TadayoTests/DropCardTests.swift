@@ -80,11 +80,13 @@ final class DropCardTests: XCTestCase {
             ])
         XCTAssertEqual(fields(drop.sender), ["name: String", "photo: Optional<Image>"])
         XCTAssertEqual(fields(drop.cover), ["fill: Color", "ink: Color"])
-        // No default and no payload bound: a new media class (B7's video link), or a payload on
-        // this one (a provider, a size), doesn't compile until it is argued against T10 here.
+        // A new media class (B7's video link) doesn't compile here until it is argued against
+        // T10: the switch has no default. A payload on this one (a provider, a size) still
+        // compiles in the switch, so the case's own fields are pinned as none.
         switch drop.mediaClass {
         case .photo: break
         }
+        XCTAssertEqual(fields(drop.mediaClass), [])
         XCTAssertEqual(
             fields(drop.occasion),
             [

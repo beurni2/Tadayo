@@ -20,11 +20,13 @@ import UIKit
 ///   as the title starts below it (2.1 draws the action close to the bottom edge);
 /// - the check in a 28-point `surface` disc, in `secondaryText`, hidden from VoiceOver, 12 before
 ///   the text (2.1: 11), which so starts 56 in where both drawings start it at 53; disc and check
-///   keep their size at every text size, as handoff 4's `dynamicTypePolicy.avatarMarks` keeps a
-///   decorative image beside the words it goes with, so the words keep their width; its top meets
-///   the title's, as 2.1 draws it, until the title's first line grows taller than the disc, and
-///   from then it stays level with that line, as handoff 3 keeps an avatar level with the first
-///   line of the name beside it at AX5;
+///   keep their size at every text size, so the words keep their width on a narrow screen at the
+///   largest sizes; its top meets the title's, as 2.1 draws it, until the title's first line grows
+///   taller than the disc, and from then it stays level with that line. No source sets the disc's
+///   scaling or place (handoff 4's `dynamicTypePolicy.avatarMarks` covers only an avatar's
+///   fallback initial, and handoff 3's AX5 rule an avatar beside a name), so both are this lane's
+///   reading by analogy with them, built from spec until handoff 7's item 17g draws the receipt
+///   at the largest text;
 /// - the title in `row` 17/22 (2.1 draws 15 bold, the sheet's past-day block 16 bold; `row` is
 ///   the brand's role for a title line in a row), 4 above the date line in `metadata`
 ///   `secondaryText` ("November 13 · Opens at 7 AM"; the sheet's baselines 22 apart);

@@ -79,9 +79,11 @@ struct RevealedDropView: View {
 /// below (handoff 4's optical inset `photoHighlightBlock`) and 8 at the sides, 26 high at the
 /// default size, radius 6, `photoLabel` with `onPhotoLabel` ink in both themes, no outline. "The
 /// labels scale and grow with text" (handoff 2), star and padding included, but never past the
-/// width it's given: on a photograph, the photograph's less its inset, so at the largest sizes on
-/// a narrow screen the word wraps inside the label rather than the label running off the photo
-/// (INVENTORY.md's Known differences; the ios lane's needs list). After the reveal every
+/// width it's given: on a photograph, the photograph's less its inset. At AX5 on a 320-point
+/// screen the grown star and padding leave the word too little of that width, so it breaks
+/// inside itself ("Highli" over "ght") rather than the label running off the photo; no delivery
+/// draws the label at those sizes (INVENTORY.md's Known differences; the ios lane's needs list,
+/// item 46). After the reveal every
 /// highlight carries it in the feed (spec 15; INVENTORY.md's Known differences); before the
 /// reveal nobody else sees a photograph to carry it (T10). The star is decorative: VoiceOver
 /// reads "Highlight".
