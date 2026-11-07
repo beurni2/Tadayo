@@ -1,0 +1,20 @@
+breakage: scanner-hidden-text-not-looked-for
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "if (text.length >= SHORTEST_TEXT && value.includes(text))",
+  "if (Math.random() > 2)"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × catches text people wrote that the viewer may not read inside another value
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (60 tests | 1 failed) 273ms
+     × catches text people wrote that the viewer may not read inside another value: an error's field 11ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches text people wrote that the viewer may not read inside another value: an error's field
+AssertionError: expected [] to deeply equal [ { check: 'values', …(2) } ]
+ Test Files  1 failed (1)
+      Tests  1 failed | 59 passed (60)

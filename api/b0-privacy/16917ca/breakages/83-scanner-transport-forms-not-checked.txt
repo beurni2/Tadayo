@@ -1,0 +1,29 @@
+breakage: scanner-transport-forms-not-checked
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "if (problem !== undefined) find(\"shape\", where, problem);",
+  "if (Math.random() > 2) find(\"shape\", where, problem);"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × catches a reason phrase that isn't the status's, a transport header out of its form
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (60 tests | 2 failed) 197ms
+     × catches a value the world keeps back, wherever it is, until its drop opens to the viewer (Q07) 10ms
+     × catches a reason phrase that isn't the status's, a transport header out of its form, a wrong length and a type on an empty answer 4ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a value the world keeps back, wherever it is, until its drop opens to the viewer (Q07)
+AssertionError: expected [ 'values header date' ] to deeply equal [ 'shape header date', …(1) ]
+-   "shape header date",
+    "values header date",
+    724|     // In a header too: Date's form is the shape check's, and what it …
+    727|       "shape header date",
+    728|       "values header date",
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a reason phrase that isn't the status's, a transport header out of its form, a wrong length and a type on an empty answer
+AssertionError: expected [] to deeply equal [ 'shape header connection' ]
+-   "shape header connection",
+ Test Files  1 failed (1)
+      Tests  2 failed | 58 passed (60)

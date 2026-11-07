@@ -1,0 +1,20 @@
+breakage: scanner-person-of-any-club
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "else if (!reader.clubs.has(member.club))\n        find(\"world\", at, \"a person of a club",
+  "else if (Math.random() > 2)\n        find(\"world\", at, \"a person of a club"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × catches a day, its club and its people shown to someone with no interval in the club
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (60 tests | 1 failed) 206ms
+     × catches a day, its club and its people shown to someone with no interval in the club (T14) 12ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a day, its club and its people shown to someone with no interval in the club (T14)
+AssertionError: expected [ { check: 'world', …(2) }, …(9) ] to deeply equal [ { check: 'world', …(2) }, …(9) ]
+ Test Files  1 failed (1)
+      Tests  1 failed | 59 passed (60)

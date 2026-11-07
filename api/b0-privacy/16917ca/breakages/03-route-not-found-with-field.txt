@@ -1,0 +1,213 @@
+breakage: route-not-found-with-field
+patch: [
+ [
+  "services/api/src/app.ts",
+  "handler: notFound,\n    });\n  }",
+  "handler: operation.id === \"getDrop\" ? (_request: FastifyRequest, reply: FastifyReply) => reply.code(404).header(\"cache-control\", NO_STORE).type(JSON_TYPE).send('{\"code\":\"NOT_FOUND\",\"field\":\"drop_id\"}') : notFound,\n    });\n  }"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/matrix.test.ts
+exit: 1
+expected pattern: getDrop: body
+caught: True
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the author with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the star with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the member in the audience with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the member who joined after the commit (T8) with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the rejoined member, a new interval (T8) with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the former member with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the invited, not yet a member (T7) with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the stranger from another club with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the blocked: Cleo blocked the author, leaving by the block with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88) with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the deletion pending, the membership not yet ended (T27) with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > callers without a session, in each state of the drop and phase of the day (T14) > answers each the same whatever the ids name, the neutral not-found, and leaks nothing the scanner can find
+ ❯ src/privacy/matrix.test.ts (13 tests | 12 failed) 41165ms
+     × answers the author with the neutral not-found, and leaks nothing the scanner can find 4261ms
+     × answers the star with the neutral not-found, and leaks nothing the scanner can find 3482ms
+     × answers the member in the audience with the neutral not-found, and leaks nothing the scanner can find 3479ms
+     × answers the member who joined after the commit (T8) with the neutral not-found, and leaks nothing the scanner can find 3467ms
+     × answers the rejoined member, a new interval (T8) with the neutral not-found, and leaks nothing the scanner can find 4138ms
+     × answers the former member with the neutral not-found, and leaks nothing the scanner can find 3591ms
+     × answers the invited, not yet a member (T7) with the neutral not-found, and leaks nothing the scanner can find 3337ms
+     × answers the stranger from another club with the neutral not-found, and leaks nothing the scanner can find 3244ms
+     × answers the blocked: Cleo blocked the author, leaving by the block with the neutral not-found, and leaks nothing the scanner can find 3899ms
+     × answers the blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88) with the neutral not-found, and leaks nothing the scanner can find 2492ms
+     × answers the deletion pending, the membership not yet ended (T27) with the neutral not-found, and leaks nothing the scanner can find 3897ms
+     × answers each the same whatever the ids name, the neutral not-found, and leaks nothing the scanner can find 1679ms
+⎯⎯⎯⎯⎯⎯ Failed Tests 12 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the author with the neutral not-found, and leaks nothing the scanner can find
+AssertionError: expected { count: 1036, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
++     "active, collecting: getDrop: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop: content-length: 38",
++     "active, collecting, getDrop: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, getDrop: shape at $.field: a field NOT_FOUND doesn't carry (errors.ts)",
++     "active, collecting: getDrop, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"viewer\":\"mem_lrd_U4tTyAbEKr5squa8Og\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"viewer\":\"mem_lrd_U4tTyAbEKr5squa8Og\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"date\":\"Sun, 08 Nov 2026 06:59:59 GMT\"}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"date\":\"Sun, 08 Nov 2026 06:59:59 GMT\"}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"x-client-time\":\"2026-11-08T06:59:59Z\"}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"x-client-time\":\"2026-11-08T06:59:59Z\"}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"if-none-match\":\"*\"}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"if-none-match\":\"*\"}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"range\":\"bytes=0-0\"}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"range\":\"bytes=0-0\"}}: content-length: 38",
++     "active, collecting, getDrop: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, getDrop: shape at $.field: a field NOT_FOUND doesn't carry (errors.ts)",
++     "active, collecting, getDrop: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, getDrop: shape at $.field: a field NOT_FOUND doesn't carry (errors.ts)",
++     "active, collecting, getDrop: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, getDrop: shape at $.field: a field NOT_FOUND doesn't carry (errors.ts)",
++     "active, collecting, getDrop: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, getDrop: shape at $.field: a field NOT_FOUND doesn't carry (errors.ts)",
++     "active, collecting, getDrop: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, getDrop: shape at $.field: a field NOT_FOUND doesn't carry (errors.ts)",
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the star with the neutral not-found, and leaks nothing the scanner can find
+AssertionError: expected { count: 1036, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
++     "active, collecting: getDrop: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop: content-length: 38",
++     "active, collecting, getDrop: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, getDrop: shape at $.field: a field NOT_FOUND doesn't carry (errors.ts)",
++     "active, collecting: getDrop, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"viewer\":\"mem_SnUySlmSNZmD5aTw0bKoNQ\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"viewer\":\"mem_SnUySlmSNZmD5aTw0bKoNQ\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"date\":\"Sun, 08 Nov 2026 06:59:59 GMT\"}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"date\":\"Sun, 08 Nov 2026 06:59:59 GMT\"}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"x-client-time\":\"2026-11-08T06:59:59Z\"}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"x-client-time\":\"2026-11-08T06:59:59Z\"}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"if-none-match\":\"*\"}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"if-none-match\":\"*\"}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"range\":\"bytes=0-0\"}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"range\":\"bytes=0-0\"}}: content-length: 38",
++     "active, collecting, getDrop: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, getDrop: shape at $.field: a field NOT_FOUND doesn't carry (errors.ts)",
++     "active, collecting, getDrop: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, getDrop: shape at $.field: a field NOT_FOUND doesn't carry (errors.ts)",
++     "active, collecting, getDrop: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, getDrop: shape at $.field: a field NOT_FOUND doesn't carry (errors.ts)",
++     "active, collecting, getDrop: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, getDrop: shape at $.field: a field NOT_FOUND doesn't carry (errors.ts)",
++     "active, collecting, getDrop: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, getDrop: shape at $.field: a field NOT_FOUND doesn't carry (errors.ts)",
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the member in the audience with the neutral not-found, and leaks nothing the scanner can find
+AssertionError: expected { count: 1036, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
++     "active, collecting: getDrop: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop: content-length: 38",
++     "active, collecting, getDrop: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, getDrop: shape at $.field: a field NOT_FOUND doesn't carry (errors.ts)",
++     "active, collecting: getDrop, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"viewer\":\"mem__Go90M1XH8A6_0a_5xVkEQ\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"viewer\":\"mem__Go90M1XH8A6_0a_5xVkEQ\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"date\":\"Sun, 08 Nov 2026 06:59:59 GMT\"}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"date\":\"Sun, 08 Nov 2026 06:59:59 GMT\"}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"x-client-time\":\"2026-11-08T06:59:59Z\"}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"x-client-time\":\"2026-11-08T06:59:59Z\"}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"if-none-match\":\"*\"}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"if-none-match\":\"*\"}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"range\":\"bytes=0-0\"}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"range\":\"bytes=0-0\"}}: content-length: 38",
++     "active, collecting, getDrop: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, getDrop: shape at $.field: a field NOT_FOUND doesn't carry (errors.ts)",
++     "active, collecting, getDrop: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, getDrop: shape at $.field: a field NOT_FOUND doesn't carry (errors.ts)",
++     "active, collecting, getDrop: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, getDrop: shape at $.field: a field NOT_FOUND doesn't carry (errors.ts)",
++     "active, collecting, getDrop: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, getDrop: shape at $.field: a field NOT_FOUND doesn't carry (errors.ts)",
++     "active, collecting, getDrop: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, getDrop: shape at $.field: a field NOT_FOUND doesn't carry (errors.ts)",
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the member who joined after the commit (T8) with the neutral not-found, and leaks nothing the scanner can find
+AssertionError: expected { count: 1036, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
++     "active, collecting: getDrop: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop: content-length: 38",
++     "active, collecting, getDrop: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, getDrop: shape at $.field: a field NOT_FOUND doesn't carry (errors.ts)",
++     "active, collecting: getDrop, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{\"viewer\":\"mem_cj4no-W4Sg973hOfqFtl_w\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"viewer\":\"mem_cj4no-W4Sg973hOfqFtl_w\"},\"headers\":{}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"date\":\"Sun, 08 Nov 2026 06:59:59 GMT\"}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"date\":\"Sun, 08 Nov 2026 06:59:59 GMT\"}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"x-client-time\":\"2026-11-08T06:59:59Z\"}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"x-client-time\":\"2026-11-08T06:59:59Z\"}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"if-none-match\":\"*\"}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"if-none-match\":\"*\"}}: content-length: 38",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"range\":\"bytes=0-0\"}}: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{},\"headers\":{\"range\":\"bytes=0-0\"}}: content-length: 38",
++     "active, collecting, getDrop: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, getDrop: shape at $.field: a field NOT_FOUND doesn't carry (errors.ts)",
++     "active, collecting, getDrop: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, getDrop: shape at $.field: a field NOT_FOUND doesn't carry (errors.ts)",
++     "active, collecting, getDrop: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, getDrop: shape at $.field: a field NOT_FOUND doesn't carry (errors.ts)",
++     "active, collecting, getDrop: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, getDrop: shape at $.field: a field NOT_FOUND doesn't carry (errors.ts)",
++     "active, collecting, getDrop: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, getDrop: shape at $.field: a field NOT_FOUND doesn't carry (errors.ts)",
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the rejoined member, a new interval (T8) with the neutral not-found, and leaks nothing the scanner can find
+AssertionError: expected { count: 1036, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
++     "active, collecting: getDrop: body \"{\\\"code\\\":\\\"NOT_FOUND\\\",\\\"field\\\":\\\"drop_id\\\"}\"",
++     "active, collecting: getDrop: content-length: 38",
++     "active, collecting, getDrop: shape at body: a not-found that isn't the neutral one (T14)",
++     "active, collecting, getDrop: shape at $.field: a field NOT_FOUND doesn't carry (errors.ts)",

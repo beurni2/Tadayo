@@ -1,0 +1,27 @@
+breakage: scanner-kept-back-values-always-shown
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "      return found !== undefined && inAudience(found) && opened(found.day);",
+  "      return found !== undefined;"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × catches a value the world keeps back, wherever it is, until its drop opens to the viewer
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (60 tests | 3 failed) 288ms
+     × catches a revealed card before its day opens (T10) 14ms
+     × catches a caption holding its own drop's hidden link and post id before the reveal (T13, Q07) 4ms
+     × catches a value the world keeps back, wherever it is, until its drop opens to the viewer (Q07) 2ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a revealed card before its day opens (T10)
+AssertionError: expected [ 'keys', 'world' ] to deeply equal [ 'keys', 'values', 'world' ]
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a caption holding its own drop's hidden link and post id before the reveal (T13, Q07)
+AssertionError: expected [] to deeply equal [ { check: 'values', …(2) }, …(1) ]
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a value the world keeps back, wherever it is, until its drop opens to the viewer (Q07)
+AssertionError: expected [] to deeply equal [ '$.next_cursor' ]
+    724|     // In a header too: Date's form is the shape check's, and what it …
+ Test Files  1 failed (1)
+      Tests  3 failed | 57 passed (60)

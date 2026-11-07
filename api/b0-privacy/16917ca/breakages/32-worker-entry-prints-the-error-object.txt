@@ -1,0 +1,24 @@
+breakage: worker-entry-prints-the-error-object
+patch: [
+ [
+  "services/worker/src/main.ts",
+  "process.stderr.write(`${error instanceof Error ? error.message : \"worker: failed to start\"}\\n`);",
+  "console.error(error);"
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-privacy/services/worker && npx vitest run
+exit: 1
+expected pattern: marker
+caught: True
+
+ ❯ src/start.test.ts (3 tests | 1 failed) 1031ms
+     × writes the failure's message alone, never the database URL's password (T52, T56) 158ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/start.test.ts > the worker's entry (ADR-013) > writes the failure's message alone, never the database URL's password (T52, T56)
+AssertionError: postgres://tadayo_app:markerac8e20c28f3343cd@127.0.0.1:notaport/tadayo: expected 'TypeError: Invalid URL\n    at new UR…' not to contain 'markerac8e20c28f3343cd'
+- markerac8e20c28f3343cd
++ TypeError: Invalid URL
++   input: 'postgres://tadayo_app:markerac8e20c28f3343cd@127.0.0.1:notaport/tadayo'
+     62|       expect(result.stdout + result.stderr, url).not.toContain(marker);
