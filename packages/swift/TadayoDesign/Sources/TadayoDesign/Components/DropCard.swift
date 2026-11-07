@@ -45,6 +45,8 @@ public struct DropCard: View {
         /// Private preparation on the owner's device, not a drop (book p41, p46; T30).
         case privateDraft(PrivateDraft)
         /// The author's own transfer, with its real progress from 0 to 1, never simulated (T49).
+        /// The row holds a value outside that range at its end, and reads one that isn't a number
+        /// as 0.
         case uploading(OwnUpload, progress: Double)
         /// A new drop's photo has reached the server and is being checked, before the commit (the
         /// upload's `preparing`, and `ready` until the commit answers; FQ91). Never a committed

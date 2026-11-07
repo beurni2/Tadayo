@@ -25,9 +25,10 @@ import UIKit
 /// VoiceOver and Switch Control; and the photograph with its label, "Photo." or "Photo.
 /// Highlight." (`vo.drop.photo`, `vo.drop.photoHighlight`), with no description until the
 /// contract carries spec 14's user-supplied one, which belongs to the revealed drop alone (T10).
-/// The drop's ··· control and its actions (react, comment, save) come with B6's reactions,
-/// comments, favourites and safety menu, and are left out until then (handoff 7: "Before B6 omit
-/// future controls rather than disabled placeholders").
+/// The drop's ··· control and its actions (react, comment, save) work from B6, with its
+/// reactions, comments, favourites and safety menu. This view leaves them out: whether B5's day
+/// shows them doing nothing (FQ95's default, FQ85's reading) or leaves them out (handoff 7:
+/// "Before B6 omit future controls rather than disabled placeholders") is FQ95's.
 struct RevealedDropView: View {
     let drop: RevealedDrop
 
@@ -91,12 +92,11 @@ struct RevealedDropView: View {
 /// `photoLabel` with `onPhotoLabel` ink in both themes, no outline. The star and the word grow
 /// with the text; the padding and the gap keep their size ("Star scales with photoLabel, block
 /// height intrinsic, no 26-point height cap"), and the label never runs past the width it's given:
-/// on a photograph, the photograph's less its inset. At AX5 on a 320-point screen that width can
-/// still be too little for the word, which then breaks inside itself rather than the label running
-/// off the photo; no delivery draws the label there (INVENTORY.md's Known differences; the ios
-/// lane's needs list, item 46). After the reveal every highlight carries it in the feed (spec 15;
-/// INVENTORY.md's Known differences); before the reveal nobody else sees a photograph to carry it
-/// (T10). The star is decorative: VoiceOver reads "Highlight".
+/// on a photograph, the photograph's less its inset. At AX5 on a 320-point screen it reads
+/// "Highlight" whole on one line (`Lab-revealed-320-xl`); the width only keeps a longer word, in
+/// another language, from running off the photo. After the reveal every highlight carries it in
+/// the feed (spec 15; INVENTORY.md's Known differences); before the reveal nobody else sees a
+/// photograph to carry it (T10). The star is decorative: VoiceOver reads "Highlight".
 public struct PhotoHighlightLabel: View {
     @ScaledMetric(relativeTo: TypeRole.photoLabel.textStyle)
     private var starSize = Size.highlightStar

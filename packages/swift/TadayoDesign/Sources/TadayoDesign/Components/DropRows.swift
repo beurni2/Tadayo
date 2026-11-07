@@ -151,7 +151,7 @@ struct UploadRow: View {
             }
             if case .uploading(let progress) = phase {
                 // With the column's 4 points: 8 above the bar and 12 below it.
-                ProgressView(value: progress)
+                ProgressView(value: Transfer.fraction(progress))
                     .tint(Palette.action)
                     .padding(.top, Spacing.xs)
                     .padding(.bottom, Spacing.s)
@@ -177,10 +177,26 @@ private struct ProgressValue: ViewModifier {
                 Text(
                     verbatim: String(
                         format: String(localized: "drop.progress.vo", bundle: .module),
-                        Int((progress * 100).rounded()).formatted())))
+                        Transfer.percent(progress).formatted())))
         } else {
             content
         }
+    }
+}
+
+/// The transfer's progress as the bar and VoiceOver take it, so neither claims more than the
+/// transfer has done (T49) and no value can stop the row: a value outside 0 to 1 is held at its
+/// end, and one that isn't a number (a transfer of no known size) is 0.
+private enum Transfer {
+    static func fraction(_ progress: Double) -> Double {
+        progress.isFinite ? min(max(progress, 0), 1) : 0
+    }
+
+    /// The whole percentage, to the nearest, and 100 only once the transfer is complete: 0.995 is
+    /// still "99 percent" while the row says Uploading.
+    static func percent(_ progress: Double) -> Int {
+        let fraction = fraction(progress)
+        return fraction < 1 ? min(99, Int((fraction * 100).rounded())) : 100
     }
 }
 

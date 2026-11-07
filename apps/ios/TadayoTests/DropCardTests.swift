@@ -108,6 +108,25 @@ final class DropCardTests: XCTestCase {
             ])
     }
 
+    /// The value holds the bar's ends, says 100 only once the transfer is complete (T49), and a
+    /// progress that isn't a number (a transfer of no known size) reads 0 instead of stopping the
+    /// row.
+    func testAnUploadsProgressStaysWithinWhatTheTransferHasDone() {
+        let cases: [(Double, String)] = [
+            (0.999, "99 percent"), (1, "100 percent"), (1.2, "100 percent"),
+            (-0.1, "0 percent"), (.nan, "0 percent"), (.infinity, "0 percent"),
+        ]
+        for (progress, value) in cases {
+            assertReads(
+                card(.uploading(upload, progress: progress)),
+                [
+                    Read(
+                        "For Debby’s Friday. \(opening) This has your name on it. Uploading. Not added yet.",
+                        value: value)
+                ])
+        }
+    }
+
     /// Processing has no progress to show, so no value (FQ91 (a) and (c)).
     func testProcessingSaysItIsNotAddedYet() {
         assertReads(

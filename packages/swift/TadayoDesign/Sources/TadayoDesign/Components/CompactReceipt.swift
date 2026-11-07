@@ -20,8 +20,8 @@ import TadayoCore
 /// - the check in a `surface` disc, in `secondaryText`, hidden from VoiceOver, 12 before the
 ///   text: 28 points with a 12-point check at the default size, both growing with `row` text
 ///   (`checkDisc`: "default 28 … scalesWith row"), the disc's top level with the title's. At AX5
-///   that is about 87 points, where the largest-text specimen draws 64 (the check asks Claude
-///   Design whether 64 is a cap: V-10);
+///   that is 79 points, as the snapshots measure it, where the largest-text specimen draws 64 (the
+///   check asks Claude Design whether 64 is a cap: V-10);
 /// - the title in `row` 17/22, 4 above the date line in `metadata` `secondaryText` ("November 13 ·
 ///   Opens at 7 AM": `handoff7.receipt.opening`, with the year where FQ44 asks, which that key has
 ///   no slot for: D-02);
@@ -83,7 +83,7 @@ public struct CompactReceipt: View {
     public var body: some View {
         HStack(alignment: .top, spacing: Spacing.m) {
             Image(systemName: "checkmark")
-                .font(.system(size: check, weight: .semibold))
+                .font(.system(size: check))
                 .foregroundStyle(Palette.secondaryText)
                 .frame(width: disc, height: disc)
                 .background(Palette.surface, in: Circle())

@@ -88,7 +88,9 @@ public enum Size {
     public static let feedPhotoAspect: CGFloat = 353.0 / 304.0
     /// The compact receipt's disc and its SF Symbol `checkmark` at the default text size: 28 and 12
     /// points (handoff 7's `compactReceipt.checkDisc`, "default 28"; the check at the size whose
-    /// glyph matches the drawn one, about 11 by 8). Both grow with `row` text ("scalesWith row";
+    /// glyph is as wide as the drawn one, about 10.5 points, at the regular weight that every
+    /// symbol here has, nearest the drawing's thin stroke; its height is SF's own, nearly square,
+    /// where the drawing's is about 7.6). Both grow with `row` text ("scalesWith row";
     /// `CompactReceipt`).
     public static let receiptDisc: CGFloat = 28
     public static let receiptCheck: CGFloat = 12
