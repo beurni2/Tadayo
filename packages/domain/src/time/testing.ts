@@ -3,7 +3,7 @@
 // entry: a fake clock set ahead would reveal every drop early wherever it ran, and one standing
 // still would reveal none. The one-clock scan (./one-clock.test.ts) fails if product code names it.
 
-import { requireReadCommitted, type Clock, type ClockSql } from "./clock.ts";
+import { requireReadCommitted, type Clock, type ClockSql, type ServerNow } from "./clock.ts";
 import { wholeMicroseconds } from "./instant.ts";
 
 export interface FakeClock extends Clock {
@@ -23,7 +23,7 @@ export function fakeClock(start: Temporal.Instant | string): FakeClock {
     async sample(tx: ClockSql) {
       const rows = await tx`SELECT pg_catalog.current_setting('transaction_isolation') AS isolation`;
       requireReadCommitted(rows[0]?.["isolation"]);
-      return now;
+      return now as ServerNow;
     },
     set(instant) {
       now = wholeMicroseconds(instant, "the fake clock's time");

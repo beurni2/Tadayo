@@ -1,3 +1,4 @@
+/// <reference lib="esnext.temporal" />
 // What the database tests share: their two connections, the migrations' folder, and a way to
 // run a test's writes in a transaction that never commits.
 //
@@ -35,6 +36,37 @@ export function adminSql(): Sql {
  */
 export function commandSql() {
   return postgres(url("DATABASE_URL"), { max: 2, onnotice: () => undefined, types: { instant: INSTANT_TYPE } });
+}
+
+/**
+ * commandSql's connection, which also takes world.ts's Dates for the rows a test builds, each a
+ * whole second: for a test that builds a world and then runs the code under test on it, in one
+ * transaction. An instant the code under test binds still goes through INSTANT_TYPE, and every
+ * timestamptz still comes back as a Temporal.Instant.
+ */
+// world.ts's helpers take the plain transaction's type, so a test hands them this one cast.
+export type WorldTypes = { instant: Temporal.Instant };
+export type WorldTx = postgres.TransactionSql<WorldTypes>;
+
+export function worldSql(): postgres.Sql<WorldTypes> {
+  const instant = {
+    ...INSTANT_TYPE,
+    serialize: (value: Temporal.Instant | Date) =>
+      value instanceof Date ? value.toISOString() : INSTANT_TYPE.serialize(value),
+  };
+  return postgres(url("DATABASE_URL"), { max: 2, onnotice: () => undefined, types: { instant } });
+}
+
+/**
+ * A connection set up halfway, for the tests that it fails loudly: instants sent through
+ * INSTANT_TYPE, but each timestamptz read back with postgres.js's own type, as a Date.
+ */
+export function halfInstantSql() {
+  return postgres(url("DATABASE_URL"), {
+    max: 2,
+    onnotice: () => undefined,
+    types: { instant: { ...INSTANT_TYPE, from: [] } },
+  });
 }
 
 class RolledBack extends Error {}
