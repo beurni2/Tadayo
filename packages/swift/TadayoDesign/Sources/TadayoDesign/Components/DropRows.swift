@@ -167,8 +167,9 @@ private struct ProgressValue: ViewModifier {
     }
 }
 
-extension Text {
-    /// A row's later line: `metadata` 13/18 in `secondaryText`, wrapping.
+extension View {
+    /// A row's later line: `metadata` 13/18 in `secondaryText`, wrapping. On `View`, so it shares
+    /// the protocol's main-actor isolation with `textRole` (an extension on `Text` alone doesn't).
     fileprivate func secondaryLine() -> some View {
         textRole(.metadata)
             .foregroundStyle(Palette.secondaryText)
