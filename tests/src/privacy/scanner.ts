@@ -23,10 +23,13 @@
 //   key among them: not text from end to end (printable bytes, and the tab, newline and CR that JSON
 //   and lines put between parts), and no run of 24 bytes of text, date, long number, id of the world
 //   or text people wrote (the contract's Cursor: "never a readable key"), so a random handle goes out
-//   as its own bytes, not as their text. A key packed in binary with none of these, or runs of text
-//   shorter than 24 bytes among other bytes (a longer key split by a NUL, another control byte or a
-//   non-ASCII byte among them), is beyond what the scanner can see: the pager's row is to check its
-//   cursors, and to hold its random handles to 24 to 32 bytes (rows.ts);
+//   as its own bytes, not as their text; nor, in the cursor's own text before it is decoded, a date,
+//   a run of 16 digits or an id of the world (ownTextKey). A key packed in binary with none of these,
+//   runs of text shorter than 24 bytes among other bytes (a longer key split by a NUL, another
+//   control byte or a non-ASCII byte among them), or a key written in base64url's own letters with
+//   none of them (`hidden_1_of_2_xx`, a count, or a time in milliseconds), is beyond what the scanner
+//   can see: the pager's row is to check its cursors, and to hold its random handles to 24 to 32
+//   bytes (rows.ts);
 // - whitelist: a caption card is exactly T10's list, as FQ74's answer reads it (this file's own
 //   copy, so a contract change alone can't widen it);
 // - world: each of these an answer names is the world's and the viewer's to see:
@@ -64,12 +67,14 @@
 //   byte comes before each mark (LINK_MARKS, PATH_MARKS; a URL's marks, which random bytes make now
 //   and then, only in such runs: URL_RUN; a URL in a shorter run among other bytes, such as
 //   `s3://b/k`, passes, beyond what the scanner can see, like the short runs of text of the shape
-//   check); in every other value, header and decoded cursor, no value the world
-//   keeps back (a storage key, a content version, a source's link or post id) but a drop's own once
-//   its day has opened to a viewer in its audience, and no id of a drop, day, club, person or
-//   reservation the viewer may not see, outside the positions the world check judges; and in every
-//   other string of the body, no text people wrote that the viewer may not read, of 6 characters or
-//   more (an error's field, say). A header holds no such text in a form the shape check allows.
+//   check; the marks are literal, so an escaped or percent-encoded mark, a URL with no scheme and
+//   the providers' other hosts aren't looked for, in a value, a header or a cursor); in every other
+//   value, header and decoded cursor, no value the world keeps back (a storage key, a content
+//   version, a source's link or post id) but a drop's own once its day has opened to a viewer in its
+//   audience, and no id of a drop, day, club, person or reservation the viewer may not see, outside
+//   the positions the world check judges; and in every other string of the body, no text people
+//   wrote that the viewer may not read, of 6 characters or more (an error's field, say). A header
+//   holds no such text in a form the shape check allows.
 //
 // The facts are read from the world each answer was given in. A route that changes the world (a
 // commit, a reservation, a leave or a block) is scanned against the world after its answer, by the
@@ -288,10 +293,10 @@ export const NEVER_VALUE = [
 
 /**
  * NEVER_VALUE's marks as the scanner looks for them in the bytes a cursor decodes to, where the byte
- * before a mark may be the last of another field, a letter or a digit as often as not: so no byte is
- * asked for before `www.`, `data:` or a storage path. A URL's marks (a scheme, `www.`, `data:`),
- * which random bytes make now and then, are looked for in a cursor's runs of text of 12 bytes or
- * more (URL_RUN).
+ * before a mark may be the last of another field, a letter or a digit about one time in four (62 of
+ * 256 byte values): so no byte is asked for before `www.`, `data:` or a storage path. A URL's marks
+ * (a scheme, `www.`, `data:`), which random bytes make now and then, are looked for in a cursor's
+ * runs of text of 12 bytes or more (URL_RUN).
  */
 const LINK_MARKS = [/[a-z][a-z0-9+.-]*:\/\//i, /www\./i, /data:/i];
 
@@ -328,6 +333,21 @@ const READABLE_TEXT = /[\t\n\r\x20-\x7e]{24,}/;
 
 /** A cursor whose bytes are all text, READABLE_TEXT's bytes: a readable key, whatever it holds. */
 const ALL_TEXT = /^[\t\n\r\x20-\x7e]+$/;
+
+/**
+ * A date in a cursor's own text, before it is decoded, in this century: `2026-11-06`, or
+ * `20261106T2000` without its dashes. Random base64url text makes one about once in 400 billion
+ * handles of 32 bytes.
+ */
+const OWN_DATE = /20[0-9]{2}(-[01][0-9]-[0-3][0-9]|[01][0-9][0-3][0-9]T[0-9]{4})/;
+
+/**
+ * A run of 16 digits or more in a cursor's own text: a time to the microsecond, such as a commit time
+ * (`1793995200000000`). Random base64url text makes one about once in 330 billion handles of 32
+ * bytes; a shorter run, such as a time in milliseconds, it makes too often to fail (a run of 13 about
+ * once in a billion).
+ */
+const OWN_NUMBER = /[0-9]{16,}/;
 
 /**
  * A run of text in a cursor's bytes long enough to read a URL in: 12 bytes or more, where the
@@ -645,7 +665,8 @@ function decodeCursor(cursor: string): { bytes: Buffer; canonical: boolean } {
  * the pager's row is to hold its random handles to 24 to 32 bytes (rows.ts). A key packed in binary
  * with none of these, or runs of text shorter than 24 bytes among other bytes (a longer key split by
  * a NUL, another control byte or a non-ASCII byte among them), looks like random bytes to the
- * scanner: how the pager makes its cursors is the row of the slice that builds it.
+ * scanner: how the pager makes its cursors is the row of the slice that builds it. A key written in
+ * base64url's own letters is read in the cursor's own text (ownTextKey).
  */
 function readableKey(bytes: Buffer, reader: Reader): string[] {
   const text = bytes.toString("latin1");
@@ -658,6 +679,24 @@ function readableKey(bytes: Buffer, reader: Reader): string[] {
   if ([...reader.ids].some((id) => text.includes(id))) reasons.push("holds an id");
   if ([...reader.written].some((written) => written.length >= 4 && bytes.includes(Buffer.from(written))))
     reasons.push("holds text people wrote");
+  return reasons;
+}
+
+/**
+ * What in a cursor's own text, before it is decoded, makes it a readable key: a key written in
+ * base64url's own letters decodes to bytes that look random (`1793995200000000` decodes to 12 bytes
+ * with no text in them), so the checks of readableKey can't see it. A date (OWN_DATE), a run of 16
+ * digits (OWN_NUMBER), or an id of the world (an order key: the matrix's ids are 26 characters or
+ * more, which random text never makes). Together the date and the number fail random handles about
+ * once in 290 billion of 24 bytes and once in 180 billion of 32. A key in base64url's letters with
+ * none of these (`hidden_1_of_2_xx`, a count) looks like a random handle to the scanner: the pager's
+ * row is to check its cursors (rows.ts).
+ */
+function ownTextKey(cursor: string, reader: Reader): string[] {
+  const reasons: string[] = [];
+  if (OWN_DATE.test(cursor)) reasons.push("holds a date in its own text");
+  if (OWN_NUMBER.test(cursor)) reasons.push("holds a long number, such as a time, in its own text");
+  if ([...reader.ids].some((id) => cursor.includes(id))) reasons.push("holds an id in its own text");
   return reasons;
 }
 
@@ -1071,7 +1110,7 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
     if (name === "Cursor") {
       const { bytes, canonical } = decodeCursor(value);
       if (!canonical) find("shape", at, "a cursor that isn't base64url (the contract's Cursor)");
-      for (const reason of readableKey(bytes, reader))
+      for (const reason of [...readableKey(bytes, reader), ...ownTextKey(value, reader)])
         find("shape", at, `a cursor that ${reason}: a readable key (the contract's Cursor; T10, T15)`);
       const decoded = bytes.toString("latin1");
       for (const run of decoded.match(URL_RUN) ?? []) noLinks(run, `${at} (decoded)`, LINK_MARKS);

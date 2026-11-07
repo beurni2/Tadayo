@@ -23,12 +23,14 @@
 //   as the row says (T14), beside the forged and malformed cursors the harness sends now, and a
 //   check that each cursor the route issues is a random handle of 24 to 32 bytes or a sealed value
 //   only the server can read (the contract's Cursor; T15), which the leak scanner can't tell from a
-//   key packed in binary, or from runs of text shorter than 24 bytes among other bytes (a longer key
-//   split by a NUL, another control byte or a non-ASCII byte among them). Random handles fail the
-//   scanner by chance about once in 1.5 billion at 24 bytes and once in 670 million at 32, longer
-//   values more often (about once in 320 million at 48 bytes, and once in 26 million at the
-//   contract's longest, 384), and handles of 12 about once in 100,000, which the matrix's runs
-//   would meet (scanner.ts: readableKey, READABLE_TEXT, URL_RUN, LINK_MARKS);
+//   key packed in binary, from runs of text shorter than 24 bytes among other bytes (a longer key
+//   split by a NUL, another control byte or a non-ASCII byte among them), or from a key written in
+//   base64url's own letters with no date, run of 16 digits or id in it (`hidden_1_of_2_xx`, a count,
+//   or a time in milliseconds). Random handles fail the scanner by chance about once in 1.5 billion
+//   at 24 bytes and once in 660 million at 32, longer values more often (about once in 320 million
+//   at 48 bytes, and once in 26 million at the contract's longest, 384), and handles of 12 about
+//   once in 100,000, which the matrix's runs would meet (scanner.ts: readableKey, READABLE_TEXT,
+//   URL_RUN, LINK_MARKS, ownTextKey);
 // - for the invitation's routes (B1), a person who holds a link and hasn't accepted it: the matrix's
 //   role "invited, not yet a member" has accepted and waits for the roster (Q05), since a link
 //   nobody has accepted ties no account to the club;

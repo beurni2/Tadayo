@@ -744,16 +744,39 @@ describe("the leak scanner catches each planted leak with its own check", () => 
   it("catches a URL in an id", () => {
     const found = scan(answer(upcomingDay([{ ...bensCard(), id: "https://x" }])), context("getOccurrence", cleo));
     expect(checks(found)).toContain("values");
-    // A storage path, a provider host, `www.` or `data:`, with no scheme and none of them the world's.
-    for (const id of ["uploads/k9", "renditions/k9", "tiktok.com/p", "instagram.com/p", "www.x.co", "data:x"]) {
-      const values = scan(answer(upcomingDay([{ ...bensCard(), id }])), context("getOccurrence", cleo)).filter(
-        (finding) => finding.check === "values",
-      );
-      expect(
-        values.map((finding) => finding.what.split(":")[0]),
-        id,
-      ).toEqual(["a URL, storage path or provider host"]);
-    }
+    const marks = (id: string) =>
+      scan(answer(upcomingDay([{ ...bensCard(), id }])), context("getOccurrence", cleo))
+        .filter((finding) => finding.check === "values")
+        .map((finding) => finding.what.split(":")[0]);
+    // A storage path, a provider host, `www.` or `data:`, with no scheme and none of them the world's;
+    // each mark in capitals; a scheme of one letter, or with a digit; and `www.`, `data:` or a storage
+    // path after a byte that isn't a letter or digit, not at the start (NEVER_VALUE, which values and
+    // headers use). Right after a letter or digit, those three pass, as do a host's dot as another
+    // byte and a scheme that starts with a digit.
+    for (const id of [
+      "uploads/k9",
+      "renditions/k9",
+      "tiktok.com/p",
+      "instagram.com/p",
+      "www.x.co",
+      "data:x",
+      "HTTPS://X/K",
+      "UPLOADS/K9",
+      "RENDITIONS/K9",
+      "TIKTOK.COM/P",
+      "INSTAGRAM.COM/P",
+      "WWW.X.CO",
+      "DATA:X",
+      "a://x/k",
+      "s3://b/k",
+      "x/uploads/k9",
+      "x/renditions/k9",
+      "x/www.x.co",
+      "x/data:x",
+    ])
+      expect(marks(id), id).toEqual(["a URL, storage path or provider host"]);
+    for (const id of ["kuploads/k9", "7renditions/k9", "kwww.x.co", "kdata:x", "tiktokxcom", "3://x"])
+      expect(marks(id), id).toEqual([]);
   });
 
   it("catches a header no answer may carry yet, and a URL in a header's value", () => {
@@ -957,10 +980,11 @@ describe("the leak scanner catches each planted leak with its own check", () => 
     expect(at(page(hidden), "values")).toEqual(["$.next_cursor (decoded)"]);
     // A cursor is a random handle or a sealed value: what it decodes to says why it is a readable
     // key instead, whatever bytes stand around it.
-    const key = (bytes: Buffer) =>
-      page(bytes.toString("base64url"))
+    const reasons = (cursor: string) =>
+      page(cursor)
         .filter((finding) => finding.check === "shape")
         .map((finding) => finding.what.replace(/^a cursor that (.*): a readable key.*$/, "$1"));
+    const key = (bytes: Buffer) => reasons(bytes.toString("base64url"));
     const noise = Buffer.from("8f1ce2a7b3d9046e5f7a1c3e9b2d4f60", "hex");
     const version = Buffer.from([0x01]);
     expect(key(Buffer.from("occ_sat|2026-11-07T07:00:00Z"))).toEqual([
@@ -984,6 +1008,31 @@ describe("the leak scanner catches each planted leak with its own check", () => 
       "holds a long number, such as a time or a count",
     ]);
     expect(key(Buffer.concat([noise, Buffer.from("Cleo"), version]))).toEqual(["holds text people wrote"]);
+    // A key written in base64url's own letters decodes to bytes that look random, so its own text is
+    // read: a date, a run of 16 digits, an id. A count passes, as do a run of 15 digits, and dates out
+    // of this century, with a month or day out of range, or without their dashes and with no T and
+    // four digits after.
+    for (const [cursor, reason] of [
+      ["1793995200000000", "holds a long number, such as a time, in its own text"],
+      ["2026-11-06T20-00-00Z", "holds a date in its own text"],
+      ["at_2026-09-30_xx", "holds a date in its own text"],
+      ["20261106T2000000", "holds a date in its own text"],
+      ["20260930T2000xxx", "holds a date in its own text"],
+      ["after_drp_ben_xx", "holds an id in its own text"],
+    ] as const)
+      expect(reasons(cursor), cursor).toEqual([reason]);
+    for (const cursor of [
+      "hidden_1_of_2_xx",
+      "179399520000000x",
+      "2126-11-06T20-00",
+      "2026-21-06T20-00",
+      "2026-11-46T20-00",
+      "20261106x2000000",
+      "20261106T200xxxx",
+      "20262106T2000xxx",
+      "20261146T2000xxx",
+    ])
+      expect(reasons(cursor), cursor).toEqual([]);
     // A run of 24 bytes of text is readable; a shorter one beside other bytes, with no other mark,
     // is the pager's row to judge, since random bytes make such runs: 23 random printable bytes
     // after a version byte pass, as a key of 23 bytes there would.
@@ -1017,11 +1066,12 @@ describe("the leak scanner catches each planted leak with its own check", () => 
     expect(key(Buffer.concat([version, Buffer.from("offset=20\torder=desc\tcount=24"), version]))).toEqual([
       "holds readable text",
     ]);
-    // A URL among a cursor's bytes, in any run of text of 12 bytes or more, wherever in the run, in
-    // either case, its space, tab, newline and CR counted, whatever byte comes before `www.` or
-    // `data:`; random bytes make a letter and :// now and then, and those pass, as do a URL in a run
-    // of 11 and `www.` or `data:` in a short run. A storage path or a provider host, which random
-    // bytes don't make, fails anywhere in a cursor, whatever byte comes before it.
+    // A URL among a cursor's bytes, in any run of text of 12 bytes or more, wherever in the run (to
+    // its 23rd byte: a run of 24 is readable text anyway), in either case, its space, tab, newline and
+    // CR counted, whatever byte comes before `www.` or `data:`; random bytes make a letter and :// now
+    // and then, and those pass, as do a URL in a run of 11 and `www.` or `data:` in a short run. A
+    // storage path or a provider host, which random bytes don't make, fails anywhere in a cursor,
+    // whatever byte comes before it.
     const encode = (...parts: (Buffer | string)[]) =>
       Buffer.concat(parts.map((part) => Buffer.from(part))).toString("base64url");
     const decoded = (...parts: (Buffer | string)[]) => at(page(encode(...parts)), "values");
@@ -1030,6 +1080,8 @@ describe("the leak scanner catches each planted leak with its own check", () => 
       "s3://b/k.jpg",
       "a://b/k.jpeg",
       "k7Qz2pLm9xWva://b",
+      "k7Qz2pLm9xWvQ7Q7Q7Qa://",
+      "k7Qz2pLm9xWvQ7Q7Q7Qwww.",
       " https://x/a",
       "\thttps://x/a",
       "\nhttps://x/a",
