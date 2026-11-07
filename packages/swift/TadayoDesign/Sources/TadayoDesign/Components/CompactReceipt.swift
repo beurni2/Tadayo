@@ -1,5 +1,6 @@
 import SwiftUI
 import TadayoCore
+import UIKit
 
 /// The compact receipt after a drop is added (book p15: "Only the ready server commit becomes
 /// Added… The compact receipt appears in the originating context, naming person and full date";
@@ -20,7 +21,10 @@ import TadayoCore
 /// - the check in a 28-point `surface` disc, in `secondaryText`, hidden from VoiceOver, 12 before
 ///   the text (2.1: 11), which so starts 56 in where both drawings start it at 53; disc and check
 ///   keep their size at every text size, as handoff 4's `dynamicTypePolicy.avatarMarks` keeps a
-///   decorative image beside the words it goes with, so the words keep their width;
+///   decorative image beside the words it goes with, so the words keep their width; its top meets
+///   the title's, as 2.1 draws it, until the title's first line grows taller than the disc, and
+///   from then it stays level with that line, as handoff 3 keeps an avatar level with the first
+///   line of the name beside it at AX5;
 /// - the title in `row` 17/22 (2.1 draws 15 bold, the sheet's past-day block 16 bold; `row` is
 ///   the brand's role for a title line in a row), 4 above the date line in `metadata`
 ///   `secondaryText` ("November 13 · Opens at 7 AM"; the sheet's baselines 22 apart);
@@ -36,6 +40,9 @@ public struct CompactReceipt: View {
 
     @ScaledMetric(relativeTo: TypeRole.textAction.textStyle)
     private var actionLine = TypeRole.textAction.lineHeight
+
+    @ScaledMetric(relativeTo: TypeRole.row.textStyle)
+    private var titleSize = TypeRole.row.size
 
     public init(
         _ drop: AddedDrop, labels: DateLabels, makeHighlight: @escaping () -> Void
@@ -54,6 +61,15 @@ public struct CompactReceipt: View {
     private var bottomPadding: CGFloat {
         guard offersHighlight else { return Spacing.m }
         return max(0, Spacing.m - max(0, (Size.touchTarget - actionLine) / 2))
+    }
+
+    /// How far the disc sits below the title's top: none while the middle of the title's first
+    /// line (its baseline less half its capitals, as `VerticalAlignment.firstLineCenter` takes it)
+    /// is above the disc's middle, which holds up to the large sizes, and from then as far as keeps
+    /// the two middles level.
+    private var discDrop: CGFloat {
+        let font = UIFont.systemFont(ofSize: titleSize, weight: TypeRole.row.uiWeight)
+        return max(0, font.ascender - font.capHeight / 2 - Size.receiptDisc / 2)
     }
 
     private var title: String {
@@ -85,6 +101,7 @@ public struct CompactReceipt: View {
                 .foregroundStyle(Palette.secondaryText)
                 .frame(width: Size.receiptDisc, height: Size.receiptDisc)
                 .background(Palette.surface, in: Circle())
+                .padding(.top, discDrop)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 0) {
                 VStack(alignment: .leading, spacing: Spacing.xs) {
