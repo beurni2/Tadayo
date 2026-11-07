@@ -1,0 +1,15 @@
+breakage: scanner-person-of-any-club
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "else if (!reader.clubs.has(member.club))\n        find(\"world\", at, \"a person of a club",
+  "else if (Math.random() > 2)\n        find(\"world\", at, \"a person of a club"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 0
+expected pattern: × catches a day, its club and its people shown to someone with no interval in the club
+caught: False
+
+ Test Files  1 passed (1)
+      Tests  58 passed (58)

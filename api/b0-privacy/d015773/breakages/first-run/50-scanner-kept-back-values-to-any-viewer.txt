@@ -1,0 +1,20 @@
+breakage: scanner-kept-back-values-to-any-viewer
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "      return found !== undefined && inAudience(found) && opened(found.day);",
+  "      return found !== undefined && opened(found.day);"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × catches a value the world keeps back, wherever it is, until its drop opens to the viewer
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (58 tests | 1 failed) 201ms
+     × catches a value the world keeps back, wherever it is, until its drop opens to the viewer (Q07) 10ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a value the world keeps back, wherever it is, until its drop opens to the viewer (Q07)
+AssertionError: expected [] to deeply equal [ '$.next_cursor' ]
+ Test Files  1 failed (1)
+      Tests  1 failed | 57 passed (58)

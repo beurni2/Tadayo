@@ -1,0 +1,20 @@
+breakage: scanner-revealed-card-let-through
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "if (node.view === \"revealed\" && !reader.opened(drop.day)) {",
+  "if (node.view === \"revealed\" && !reader.opened(drop.day) && Math.random() > 2) {"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × catches a revealed card before its day opens
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (58 tests | 1 failed) 161ms
+     × catches a revealed card before its day opens (T10) 9ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a revealed card before its day opens (T10)
+AssertionError: expected [ 'keys', 'values' ] to deeply equal [ 'keys', 'values', 'world' ]
+ Test Files  1 failed (1)
+      Tests  1 failed | 57 passed (58)

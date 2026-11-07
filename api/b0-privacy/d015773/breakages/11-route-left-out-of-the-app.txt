@@ -1,0 +1,39 @@
+breakage: route-left-out-of-the-app
+patch: [
+ [
+  "services/api/src/app.ts",
+  "  for (const operation of OPERATIONS) {\n",
+  "  for (const operation of OPERATIONS.filter((candidate) => candidate.id !== \"getDrop\")) {\n"
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-privacy/services/api && npx vitest run; bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/matrix.test.ts
+exit: 1
+expected pattern: no route for GET /v1/drops/:drop_id
+caught: True
+
+ ❯ src/app.test.ts (10 tests | 1 failed) 277ms
+     × has one route for each operation of the contract, and no other 11ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 13 passed (14)
+ ❯ src/privacy/matrix.test.ts (13 tests | 1 failed) 27755ms
+     × gives every operation of the contract a row, the skeleton's, and the app a route for each and no other 10ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/matrix.test.ts > a route with no row fails, and no route is outside the contract (TECH-DESIGN section 8) > gives every operation of the contract a row, the skeleton's, and the app a route for each and no other
+AssertionError: expected [ Array(1) ] to deeply equal []
++   "the app has no route for GET /v1/drops/:drop_id",
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/app.test.ts > the skeleton's routes (T14) > has one route for each operation of the contract, and no other
+AssertionError: expected [ …(65) ] to deeply equal [ …(66) ]
+    "GET /v1/clubs/:club_id/members/:membership_id/avatar",
+    "GET /v1/clubs/:club_id/members/:membership_id/block-preview",
+    "GET /v1/clubs/:club_id/notification-preferences",
+    "GET /v1/clubs/:club_id/schedule",
+    "GET /v1/config",
+-   "GET /v1/drops/:drop_id",
+    "GET /v1/drops/:drop_id/author-preview",
+    "GET /v1/drops/:drop_id/comments",
+    "GET /v1/drops/:drop_id/embed",
+    "GET /v1/drops/:drop_id/media",
+    "GET /v1/favourites",

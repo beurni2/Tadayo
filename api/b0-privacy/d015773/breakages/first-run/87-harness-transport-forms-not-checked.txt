@@ -1,0 +1,24 @@
+breakage: harness-transport-forms-not-checked
+patch: [
+ [
+  "tests/src/privacy/harness.ts",
+  "    else if (!transportForm(header, value))\n",
+  "    else if (Math.random() > 2)\n"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/harness.test.ts
+exit: 1
+expected pattern: × reports a route that answers the neutral not-found with a transport header out of its form
+caught: True
+
+ ❯ src/privacy/harness.test.ts (34 tests | 2 failed) 241ms
+     × reports a route that answers the neutral not-found with a transport header out of its form 7ms
+     × reports a route that answers the neutral not-found with a Date that isn't one 2ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > reports a route that answers the neutral not-found with a transport header out of its form
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > reports a route that answers the neutral not-found with a Date that isn't one
+AssertionError: expected [] to not deeply equal []
+    238|       const app = await plantedApp("getDrop", (_request, reply) => ans…
+    239|       expect((await cellStep(app, spec("getDrop"))).problems).not.toEq…
+ Test Files  1 failed (1)
+      Tests  2 failed | 32 passed (34)

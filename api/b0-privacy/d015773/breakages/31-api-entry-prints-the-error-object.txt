@@ -1,0 +1,24 @@
+breakage: api-entry-prints-the-error-object
+patch: [
+ [
+  "services/api/src/main.ts",
+  "process.stderr.write(`${error instanceof Error ? error.message : \"api: failed to start\"}\\n`);",
+  "console.error(error);"
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-privacy/services/api && npx vitest run
+exit: 1
+expected pattern: marker
+caught: True
+
+ ❯ src/start.test.ts (4 tests | 1 failed) 3566ms
+     × writes the failure's message alone, never the database URL's password (T52, T56) 288ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 13 passed (14)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/start.test.ts > the API's entry (ADR-013) > writes the failure's message alone, never the database URL's password (T52, T56)
+AssertionError: postgres://tadayo_app:marker6c4eb5ca9830a0cd@127.0.0.1:notaport/tadayo: expected 'TypeError: Invalid URL\n    at new UR…' not to contain 'marker6c4eb5ca9830a0cd'
+- marker6c4eb5ca9830a0cd
++ TypeError: Invalid URL
++   input: 'postgres://tadayo_app:marker6c4eb5ca9830a0cd@127.0.0.1:notaport/tadayo'
+     72|       expect(result.stdout + result.stderr, url).not.toContain(marker);

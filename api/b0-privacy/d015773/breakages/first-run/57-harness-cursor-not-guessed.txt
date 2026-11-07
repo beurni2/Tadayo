@@ -1,0 +1,29 @@
+breakage: harness-cursor-not-guessed
+patch: [
+ [
+  "tests/src/privacy/harness.ts",
+  "  if (pages(spec.operation)) {\n    for (const value of",
+  "  if (pages(spec.operation) && Math.random() > 2) {\n    for (const value of"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/harness.test.ts
+exit: 1
+expected pattern: × reports a route that answers a cursor or an optional id differently
+caught: True
+
+ ❯ src/privacy/harness.test.ts (34 tests | 4 failed) 284ms
+     × passes the skeleton's neutral answer in every step, and gets the answers each step counts 153ms
+     × returns each malformed id's and cursor's answer, for the matrix to check it's the same in every cell 5ms
+     × reports a route that answers a cursor or an optional id differently (T14) 7ms
+     × reports a route that answers a cursor differently when the parent exists: an existence oracle (T14) 4ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > passes the skeleton's neutral answer in every step, and gets the answers each step counts
+AssertionError: listComments: expected [ { spec: { …(4) }, …(1) }, …(11) ] to have a length of 45 but got 12
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > returns each malformed id's and cursor's answer, for the matrix to check it's the same in every cell
+AssertionError: expected 10 to be 21 // Object.is equality
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > reports a route that answers a cursor or an optional id differently (T14)
+AssertionError: expected [] to not deeply equal []
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > reports a route that answers a cursor differently when the parent exists: an existence oracle (T14)
+AssertionError: expected [] to have a length of 11 but got +0
+ Test Files  1 failed (1)
+      Tests  4 failed | 30 passed (34)

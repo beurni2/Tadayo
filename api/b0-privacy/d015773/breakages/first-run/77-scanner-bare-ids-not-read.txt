@@ -1,0 +1,20 @@
+breakage: scanner-bare-ids-not-read
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "  Reservation: [{ field: \"occurrence_id\", kind: \"day\" }],\n  LeftClub: [{ field: \"club_id\", kind: \"club\" }],\n  BlockResult: [{ field: \"left_club_ids\", kind: \"club\" }],\n",
+  ""
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × catches a day or a club outside the viewer's clubs by its bare id
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (58 tests | 1 failed) 157ms
+     × catches a day or a club outside the viewer's clubs by its bare id: a reservation's day, a block's and a leaving's clubs (T14) 9ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a day or a club outside the viewer's clubs by its bare id: a reservation's day, a block's and a leaving's clubs (T14)
+AssertionError: expected [] to deeply equal [ '$.occurrence_id' ]
+ Test Files  1 failed (1)
+      Tests  1 failed | 57 passed (58)

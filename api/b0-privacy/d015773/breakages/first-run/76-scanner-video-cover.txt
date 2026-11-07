@@ -1,0 +1,20 @@
+breakage: scanner-video-cover
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "if (cover !== undefined && cover.media !== \"photo\")",
+  "if (Math.random() > 2)"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × catches a day link to a day that hasn't closed, and a cover that isn't a photo
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (58 tests | 1 failed) 173ms
+     × catches a day link to a day that hasn't closed, and a cover that isn't a photo 10ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a day link to a day that hasn't closed, and a cover that isn't a photo
+AssertionError: expected [] to deeply equal [ '$.recent_days[0].cover_drop_id' ]
+ Test Files  1 failed (1)
+      Tests  1 failed | 57 passed (58)

@@ -1,0 +1,26 @@
+breakage: scanner-captions-whatever-the-audience
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "    if (readable(found) && found.caption !== null) texts.add(found.caption);",
+  "    if (found.caption !== null) texts.add(found.caption);"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × catches a caption card for a viewer outside the drop's audience
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (58 tests | 3 failed) 157ms
+     × catches a caption card for a viewer outside the drop's audience, and its caption (T8, T9) 9ms
+     × catches a caption swapped from another drop, a wrong name and a wrong author, on every card 3ms
+     × catches a day, its club and its people shown to someone with no interval in the club (T14) 2ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a caption card for a viewer outside the drop's audience, and its caption (T8, T9)
+AssertionError: expected [] to deeply equal [ '$.drops[0].caption' ]
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a caption swapped from another drop, a wrong name and a wrong author, on every card
+AssertionError: revealed: expected [ 'world' ] to deeply equal [ 'values', 'world' ]
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a day, its club and its people shown to someone with no interval in the club (T14)
+AssertionError: expected [ …(3) ] to deeply equal ArrayContaining{…}
+ Test Files  1 failed (1)
+      Tests  3 failed | 55 passed (58)
