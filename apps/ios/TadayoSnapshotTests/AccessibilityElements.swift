@@ -24,6 +24,7 @@ enum AccessibilityElements {
         let label: String
         let hint: String
         let traits: UIAccessibilityTraits
+        var value = ""
 
         var isHeader: Bool { traits.contains(.header) }
 
@@ -70,7 +71,7 @@ enum AccessibilityElements {
         return gather(window).map {
             Element(
                 label: $0.accessibilityLabel ?? "", hint: $0.accessibilityHint ?? "",
-                traits: $0.accessibilityTraits)
+                traits: $0.accessibilityTraits, value: $0.accessibilityValue ?? "")
         }
     }
 

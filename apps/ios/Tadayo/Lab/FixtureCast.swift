@@ -1,6 +1,7 @@
 #if LAB
     import SwiftUI
     import TadayoCore
+    import TadayoDesign
 
     /// The book's fixture cast (book p6, p27, p50; the handoff briefs' "Content"): Sunday people,
     /// with Ben on Monday and Debby on Friday, the long-name fixtures, and the dates the book uses.
@@ -13,6 +14,7 @@
             let slot: Int
             var id: String { name }
             var image: Image? { photo.map { Image($0) } }
+            var sender: Sender { Sender(name: name, photo: image) }
         }
 
         static let club = "Sunday people"
@@ -32,6 +34,15 @@
         static let open = LocalDate(iso: "2026-11-06")!
         static let collecting = LocalDate(iso: "2026-11-13")!
         static let zone = TimeZone(identifier: "America/New_York")!
+        /// The snapshot region, handoff 3's: en-US, 12-hour (FQ44's default writes the phone's).
+        static let labels = DateLabels(locale: Locale(identifier: "en_US"))
+        /// Debby's Friday, November 13, 2026, opening at 7 AM in New York (12:00 UTC), as the
+        /// collecting cards, the upload and the receipt are for it. Each Lab specimen stands alone,
+        /// so its visible date carries the year, as the sheet's specimens do (handoff 6's
+        /// `travellingRows.targetYear`: "standalone specimen"); a screen decides for itself (FQ44).
+        static let collectingDay = Occasion(
+            star: debby.name, date: collecting, opensAt: Date(timeIntervalSince1970: 1_794_571_200),
+            zone: zone, includingYear: true)
 
         /// The photographs book p50 lists, by asset name.
         static let photos = [

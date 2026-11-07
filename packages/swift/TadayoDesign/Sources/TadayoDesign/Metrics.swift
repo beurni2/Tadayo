@@ -22,6 +22,8 @@ public enum Radius {
     /// The folded card: 1.1's `cardRadius`, as spec 24 says.
     public static let card: CGFloat = 16
     public static let input: CGFloat = 10
+    /// The Highlight label on a photograph (handoff 2's `photoHighlightLabel.radius`).
+    public static let photoLabel: CGFloat = 6
 }
 
 public enum Size {
@@ -74,6 +76,20 @@ public enum Size {
     /// the size whose glyph matches the drawn one, 6 by 12.
     public static let draftsChevronBox: CGFloat = 20
     public static let draftsChevron: CGFloat = 13
+    /// The photo label's padding above and below its word: handoff 4's optical inset
+    /// `photoHighlightBlock` ("14 + 2×6 = 26"), not a general spacing step.
+    public static let photoLabelBlock: CGFloat = 6
+    /// The owner's photo in a draft or upload row, as 2.1's `C05-drafts` draws it (76 by 92;
+    /// `C07-uploading` draws about 75 by 89). No handoff draws these rows yet (handoff 7 asks).
+    public static let dropThumbnail = CGSize(width: 76, height: 92)
+    /// A revealed photograph's frame in the feed, width over height: 2.1's `H01-open`, 353 by 304
+    /// (FQ40's default; handoff 0's frame draws 353 by 300). Every photograph fills it.
+    public static let feedPhotoAspect: CGFloat = 353.0 / 304.0
+    /// The compact receipt's disc: 28 points, as handoff 6's sheet draws `pastDayCard`'s
+    /// "checkmark in surface circle", and SF Symbol `checkmark` at the size whose glyph matches
+    /// the drawn one, about 11 by 8.
+    public static let receiptDisc: CGFloat = 28
+    public static let receiptCheck: CGFloat = 12
     /// The wordmark's width in the no-club header (handoff 2's `noClubRootHeader`: "outlined
     /// wordmark, width 96"; revision 1.1's `minimumWidth`).
     public static let headerWordmark: CGFloat = 96

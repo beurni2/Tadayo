@@ -17,7 +17,9 @@ import XCTest
 /// Every snapshot renders in sRGB, as the renders are, so each reference is an 8-bit PNG: under
 /// the simulator's P3 gamut the photographs came out at 16 bits, 27 MB a variant. The photographs
 /// look the same in every variant (only their heading changes, and the other sections show that
-/// role in all four), so they're snapshotted once, light at the default size, and at 1x.
+/// role in all four), so they're snapshotted once, light at the default size, and at 1x. The
+/// revealed drop card carries a photograph the width of the screen in all four variants, so it
+/// is drawn at 2x, as the screens are, not the simulator's 3x: about 1 MB a variant, not 2.
 ///
 /// Each section is drawn through `StillHost`, so the busy button's spinner is at rest.
 @MainActor
@@ -77,17 +79,47 @@ final class LabSnapshotTests: XCTestCase {
         snap(.header, .xl, width: 320, named: "Lab-header-320-xl")
     }
 
+    /// Book p34: "Portrait, landscape and text screenshot fixtures have distinct examples." The
+    /// revealed section shows the chair, a portrait; this is the sea, a landscape, in the same
+    /// 353 by 304 frame, filled the same way, from Nina with no caption, so no words are made
+    /// up for it. No text screenshot is among the book's fixtures, and none may be made (T46,
+    /// FQ24).
+    func testTheFeedFramesALandscapePhotoTheSameWay() {
+        let drop = RevealedDrop(
+            caption: nil, sender: FixtureCast.nina.sender, photo: Image("fixture-sea"),
+            isHighlight: false)
+        snap(
+            DropCard(.revealed(drop), labels: FixtureCast.labels).padding(.horizontal, 20),
+            .light, scale: 2, busy: false, named: "Lab-revealed-landscape")
+    }
+
     private func snap(
         _ section: LabSection, _ variant: Variant, width: CGFloat = 393, named name: String,
         file: StaticString = #filePath, testName: String = #function, line: UInt = #line
     ) {
+        let scale: CGFloat? =
+            switch section {
+            case .photos: 1
+            case .revealed: 2
+            default: nil
+            }
+        snap(
+            section.view, variant, width: width, scale: scale, busy: section == .actions,
+            named: name, file: file, testName: testName, line: line)
+    }
+
+    private func snap(
+        _ content: some View, _ variant: Variant, width: CGFloat = 393, scale: CGFloat?,
+        busy: Bool, named name: String, file: StaticString = #filePath,
+        testName: String = #function, line: UInt = #line
+    ) {
         let traits =
-            section == .photos
-            ? variant.traits.modifyingTraits { $0.displayScale = 1 }
-            : variant.traits
+            scale.map { scale in variant.traits.modifyingTraits { $0.displayScale = scale } }
+            ?? variant.traits
         // The ideal height, as the Lab's scroll view gives it: under `.sizeThatFits` alone the
         // height proposed is zero, so text stays on one line and photographs vanish.
-        let view = section.view
+        let view =
+            content
             .padding(.vertical, 24)
             .frame(width: width)
             .fixedSize(horizontal: false, vertical: true)
@@ -105,6 +137,6 @@ final class LabSnapshotTests: XCTestCase {
                 on: ViewImageConfig(safeArea: .zero, size: fitted, traits: traits),
                 perceptualPrecision: 0.98, traits: traits),
             named: name, file: file, testName: testName, line: line)
-        Spinners.check(host.view, busy: section == .actions, name, file: file, line: line)
+        Spinners.check(host.view, busy: busy, name, file: file, line: line)
     }
 }

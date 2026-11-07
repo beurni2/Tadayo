@@ -35,7 +35,8 @@
 
     /// The Lab's sections, each drawn alone by the snapshot tests.
     enum LabSection: String, CaseIterable, Identifiable {
-        case colours, type, plaque, avatars, cards, highlights, actions, fields, header, photos
+        case colours, type, plaque, avatars, cards, drops, revealed, receipt, highlights, actions
+        case fields, header, photos
 
         var id: String { rawValue }
 
@@ -46,6 +47,9 @@
             case .plaque: LabPlaques()
             case .avatars: LabAvatars()
             case .cards: LabCards()
+            case .drops: LabDrops()
+            case .revealed: LabRevealed()
+            case .receipt: LabReceipt()
             case .highlights: LabHighlights()
             case .actions: LabActions()
             case .fields: LabFields()
@@ -175,30 +179,125 @@
         }
     }
 
+    /// The folded card, as others see it and as its author sees it (`DropCard`'s `collecting`
+    /// state): Maya with her photograph, Ben's own with its Highlight, Sam's with no caption,
+    /// and book p27's long name, for Debby's Friday, November 13 (handoff 7's fixtures).
     struct LabCards: View {
-        private let labels = DateLabels(locale: Locale(identifier: "en_US"))
+        var body: some View {
+            LabGroup(title: "Folded cards") {
+                card(FixtureCast.maya, "Your future living room.")
+                card(FixtureCast.ben, "Coffee, obviously.", viewer: .author(isHighlight: true))
+                card(FixtureCast.sam, nil)
+                card(FixtureCast.alexandriaRose, "We said we’d go back here.")
+            }
+        }
 
-        private var status: String {
-            "Opens \(labels.shortDate(FixtureCast.collecting))"
+        private func card(
+            _ person: FixtureCast.Person, _ caption: String?,
+            viewer: HiddenDrop.Viewer = .member
+        ) -> some View {
+            DropCard(
+                .collecting(
+                    HiddenDrop(
+                        caption: caption, mediaClass: .photo, sender: person.sender,
+                        cover: Palette.cover(slot: person.slot),
+                        occasion: FixtureCast.collectingDay, viewer: viewer)),
+                labels: FixtureCast.labels)
+        }
+    }
+
+    /// The owner's drop before it's added, and the removed placeholder (`DropCard`), with
+    /// handoff 7's fixtures: the dog draft, and the coffee upload Ben is adding for Debby's
+    /// Friday, November 13, 2026 at 7 AM, uploading and then processing.
+    struct LabDrops: View {
+        private var upload: OwnUpload {
+            OwnUpload(
+                photo: Image("fixture-coffee"), caption: "This has your name on it.",
+                occasion: FixtureCast.collectingDay)
         }
 
         var body: some View {
-            LabGroup(title: "Folded cards") {
-                FoldedCard(
-                    status: status, caption: .text("Your future living room."),
-                    sender: FixtureCast.maya.name, cover: Palette.cover(slot: FixtureCast.maya.slot)
-                )
-                FoldedCard(
-                    status: status, tag: "Highlight", caption: .text("Coffee, obviously."),
-                    sender: "\(FixtureCast.ben.name) · You",
-                    cover: Palette.cover(slot: FixtureCast.ben.slot))
-                FoldedCard(
-                    status: status, caption: .blank("Photo for Debby"),
-                    sender: FixtureCast.sam.name, cover: Palette.cover(slot: FixtureCast.sam.slot))
-                FoldedCard(
-                    status: status, caption: .text("We said we’d go back here."),
-                    sender: FixtureCast.alexandriaRose.name,
-                    cover: Palette.cover(slot: FixtureCast.alexandriaRose.slot))
+            LabGroup(title: "Drop card, not added") {
+                LabState("Private draft") {
+                    DropCard(
+                        .privateDraft(
+                            PrivateDraft(
+                                photo: Image("fixture-dog"),
+                                note: "He sat still for exactly one photo.")),
+                        labels: FixtureCast.labels)
+                }
+                LabState("Uploading") {
+                    DropCard(.uploading(upload, progress: 0.57), labels: FixtureCast.labels)
+                }
+                LabState("Processing") {
+                    DropCard(.processing(upload), labels: FixtureCast.labels)
+                }
+                LabState("Removed") {
+                    DropCard(.removed, labels: FixtureCast.labels)
+                }
+            }
+        }
+    }
+
+    /// A drop once its day is open (`DropCard`'s `revealed` state): Maya's chair, her Highlight,
+    /// on Debby's Friday, November 6; and Sam's drop with no caption while its photograph loads.
+    struct LabRevealed: View {
+        var body: some View {
+            LabGroup(title: "Drop card, revealed") {
+                LabState("Revealed, a highlight") {
+                    DropCard(
+                        .revealed(
+                            RevealedDrop(
+                                caption: "Your future living room.",
+                                sender: FixtureCast.maya.sender, photo: Image("fixture-chair"),
+                                isHighlight: true)),
+                        labels: FixtureCast.labels)
+                }
+                LabState("No caption, photo loading") {
+                    DropCard(
+                        .revealed(
+                            RevealedDrop(
+                                caption: nil, sender: FixtureCast.sam.sender, photo: nil,
+                                isHighlight: false)),
+                        labels: FixtureCast.labels)
+                }
+            }
+        }
+    }
+
+    /// The compact receipt for Debby's Friday, with Make my highlight, and without it once the
+    /// drop is already the highlight.
+    struct LabReceipt: View {
+        var body: some View {
+            LabGroup(title: "Compact receipt") {
+                LabState("Added") {
+                    CompactReceipt(
+                        AddedDrop(occasion: FixtureCast.collectingDay, isHighlight: false),
+                        labels: FixtureCast.labels, makeHighlight: {})
+                }
+                LabState("Added, already the highlight") {
+                    CompactReceipt(
+                        AddedDrop(occasion: FixtureCast.collectingDay, isHighlight: true),
+                        labels: FixtureCast.labels, makeHighlight: {})
+                }
+            }
+        }
+    }
+
+    /// A state's name over the component, as a workbench labels it.
+    struct LabState<Content: View>: View {
+        let name: String
+        @ViewBuilder let content: Content
+
+        init(_ name: String, @ViewBuilder content: () -> Content) {
+            self.name = name
+            self.content = content()
+        }
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: Spacing.s) {
+                Text(name).textRole(.metadata).foregroundStyle(Palette.secondaryText)
+                content
             }
         }
     }
