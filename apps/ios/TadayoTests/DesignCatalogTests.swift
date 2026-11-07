@@ -71,9 +71,34 @@ final class DesignCatalogTests: XCTestCase {
         XCTAssertEqual(looked, keys)
     }
 
-    /// The catalog's keys and their English words.
-    private func catalogWords() throws -> [String: String] {
-        let data = try Data(contentsOf: sources.appendingPathComponent("Localizable.xcstrings"))
+    /// No line starts with a middle dot (the check of handoff 7, V-19, where its largest-text
+    /// specimens draw "· Opens at 7" at a line's start): in every string of the package's catalog
+    /// and the app's, a middle dot is bound to the word before it by a no-break space (U+00A0),
+    /// never an ordinary space, so it ends that word's line. A string with none passes; the
+    /// package's catalog has some, so the check can't pass by finding nothing.
+    func testEveryMiddleDotIsBoundToTheWordBeforeIt() throws {
+        let app =
+            sources
+            .deletingLastPathComponent()  // Sources
+            .deletingLastPathComponent()  // TadayoDesign
+            .deletingLastPathComponent()  // swift
+            .deletingLastPathComponent()  // packages
+            .deletingLastPathComponent()  // the repository
+            .appendingPathComponent("apps/ios/Tadayo/Localizable.xcstrings")
+        let design = try catalogWords()
+        XCTAssertFalse(design.values.filter { $0.contains("·") }.isEmpty)
+        for (key, words) in try design.merging(catalogWords(at: app)) { first, _ in first } {
+            for index in words.indices where words[index] == "·" {
+                let before = index == words.startIndex ? nil : words[words.index(before: index)]
+                XCTAssertEqual(before, "\u{00A0}", "\(key): \"\(words)\"")
+            }
+        }
+    }
+
+    /// The keys and English words of the package's catalog, or of the one at `catalog`.
+    private func catalogWords(at catalog: URL? = nil) throws -> [String: String] {
+        let data = try Data(
+            contentsOf: catalog ?? sources.appendingPathComponent("Localizable.xcstrings"))
         let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
         let strings = try XCTUnwrap(json["strings"] as? [String: [String: Any]])
         return try strings.mapValues { entry in

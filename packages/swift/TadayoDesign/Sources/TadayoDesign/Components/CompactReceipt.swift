@@ -12,10 +12,11 @@ import TadayoCore
 /// Handoff 7's `compactReceipt` draws it in the brand, on 2.1's `F02-added` anatomy:
 /// - `canvas` with a 1-point `separator` border at the surface radius, 12, padded 16 at the sides
 ///   and 12 above and below, where the action's target stands in for the bottom padding as far as
-///   it reaches past the action's words, and the full 12 returns once the words fill it
-///   (`actionInsets`: "Action target can consume bottom inset at default; at wrapped sizes full 12
-///   below target content"). Handoff 7's specimens draw 16 at the top and keep the 12 under the
-///   target; the written values win, as the check of handoff 7 reads them (D-06, X-09);
+///   it reaches past the action's words, and the full 12 returns once the words fill it, on one
+///   line or several (`actionInsets`: "Action target can consume bottom inset at default; at
+///   wrapped sizes full 12 below target content"; `ActionAndInset`). Handoff 7's specimens draw 16
+///   at the top and keep the 12 under the target; the written values win, as the check of handoff
+///   7 reads them (D-06, X-09);
 /// - the check in a `surface` disc, in `secondaryText`, hidden from VoiceOver, 12 before the
 ///   text: 28 points with a 12-point check at the default size, both growing with `row` text
 ///   (`checkDisc`: "default 28 … scalesWith row"), the disc's top level with the title's. At AX5
@@ -37,9 +38,6 @@ public struct CompactReceipt: View {
     let labels: DateLabels
     let makeHighlight: () -> Void
 
-    @ScaledMetric(relativeTo: TypeRole.textAction.textStyle)
-    private var actionLine = TypeRole.textAction.lineHeight
-
     @ScaledMetric(relativeTo: TypeRole.row.textStyle) private var disc = Size.receiptDisc
     @ScaledMetric(relativeTo: TypeRole.row.textStyle) private var check = Size.receiptCheck
 
@@ -53,14 +51,6 @@ public struct CompactReceipt: View {
 
     private var occasion: Occasion { drop.occasion }
     private var offersHighlight: Bool { !drop.isHighlight }
-
-    /// The padding under the last line: 12, less the part of the action's 44-point target that
-    /// reaches below its words (half of what the target has beyond the action's line), which is
-    /// all of it at the default size and none once the words fill the target.
-    private var bottomPadding: CGFloat {
-        guard offersHighlight else { return Spacing.m }
-        return max(0, Spacing.m - max(0, (Size.touchTarget - actionLine) / 2))
-    }
 
     private var title: String {
         String(
@@ -122,7 +112,8 @@ public struct CompactReceipt: View {
         }
         .padding(.horizontal, Spacing.l)
         .padding(.top, Spacing.m)
-        .padding(.bottom, bottomPadding)
+        // With the action, its target and the inset under it are one (`ActionAndInset`).
+        .padding(.bottom, offersHighlight ? 0 : Spacing.m)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Palette.canvas, in: RoundedRectangle(cornerRadius: Radius.surface))
         .overlay {
@@ -132,14 +123,48 @@ public struct CompactReceipt: View {
     }
 }
 
-/// The receipt's action: the text action's role and inks, leading, in a 44-point target.
+/// The receipt's action: the text action's role and inks, leading, in a 44-point target that
+/// takes in the receipt's bottom inset (`ActionAndInset`).
 private struct ReceiptActionStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .textRole(.textAction)
-            .foregroundStyle(configuration.isPressed ? Palette.actionPressed : Palette.action)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, minHeight: Size.touchTarget, alignment: .leading)
-            .contentShape(Rectangle())
+        ActionAndInset {
+            configuration.label
+                .textRole(.textAction)
+                .foregroundStyle(configuration.isPressed ? Palette.actionPressed : Palette.action)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+    }
+}
+
+/// The action's words centred in a target at least 44 high, and the receipt's border 12 below the
+/// words, or at the target's foot where that is lower: the target stands in for the bottom inset
+/// as far as it reaches below the words, and once the words fill it, on one line or several, the
+/// full 12 is under them (`compactReceipt.actionInsets`: "at wrapped sizes full 12 below target
+/// content"). A single line's height can't tell: "Make my highlight" wraps at sizes where one
+/// line is under 44, so the words' own height decides.
+private struct ActionAndInset: Layout {
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        guard let words = subviews.first?.sizeThatFits(.init(width: proposal.width, height: nil))
+        else { return .zero }
+        return CGSize(width: proposal.width ?? words.width, height: Self.height(words.height))
+    }
+
+    func placeSubviews(
+        in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()
+    ) {
+        guard let subview = subviews.first else { return }
+        let words = subview.sizeThatFits(.init(width: bounds.width, height: nil))
+        subview.place(
+            at: CGPoint(
+                x: bounds.minX, y: bounds.minY + max(0, Size.touchTarget - words.height) / 2),
+            proposal: .init(width: bounds.width, height: words.height))
+    }
+
+    /// The target, at least 44 and never shorter than the words, or 12 below the words centred in
+    /// it, whichever is lower.
+    static func height(_ words: CGFloat) -> CGFloat {
+        let target = max(Size.touchTarget, words)
+        return max(target, (target + words) / 2 + Spacing.m)
     }
 }

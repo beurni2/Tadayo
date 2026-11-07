@@ -309,7 +309,9 @@
         /// become full-width rows (book p26; `HighlightCover.usesList(at:)`). The star's own pick
         /// carries "Debby’s pick" and its star; another member's cover carries their name alone,
         /// "Maya" (handoff 7's `highlight.contributor`, as 2.1's `H01-open` draws it), and is still
-        /// named "Open Maya’s highlight" to VoiceOver (T47).
+        /// named "Open Maya’s highlight" to VoiceOver (T47). The long name is a star's own pick
+        /// too, "Deborah-Anne’s pick" with its star, as handoff 7's row specimen draws it, so the
+        /// row's star is seen beside a label that wraps (`star.rowOrigin`).
         var body: some View {
             let rail =
                 HighlightCover.usesList(at: dynamicTypeSize)
@@ -319,7 +321,7 @@
                 rail {
                     cover(FixtureCast.debby, label: "Debby’s pick", isStarPick: true)
                     cover(FixtureCast.maya, label: "Maya")
-                    cover(FixtureCast.deborahAnne, label: "Deborah-Anne’s pick")
+                    cover(FixtureCast.deborahAnne, label: "Deborah-Anne’s pick", isStarPick: true)
                 }
             }
         }

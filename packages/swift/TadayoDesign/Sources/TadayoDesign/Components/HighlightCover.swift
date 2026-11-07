@@ -66,10 +66,12 @@ public struct HighlightCover: View {
 
     /// Decorative: the label and the button's name say whose pick it is. It keeps its 12 points at
     /// every text size (handoff 7's `highlightCover.star`, "scaleWithText false"), so the label
-    /// keeps its room.
+    /// keeps its room, in a 12-point box, so the tile's origin and the row's "12+12" are the
+    /// contract's whatever the symbol's own image width (the check of handoff 7, D-09).
     private var star: some View {
         Image(systemName: "star.fill")
             .font(.system(size: Size.highlightStar))
+            .frame(width: Size.highlightStar)
             .accessibilityHidden(true)
     }
 
@@ -89,7 +91,7 @@ public struct HighlightCover: View {
         // A label that wraps past two lines makes the tile taller, never spills out of it.
         .fixedSize(horizontal: false, vertical: true)
         // The star sits level with the avatar, left of the fold, 55 from the leading edge and 11
-        // from the top (handoff 7's `star.tileOrigin`): 24 from the trailing edge.
+        // from the top (handoff 7's `star.tileOrigin`): its 12-point box 24 from the trailing edge.
         .overlay(alignment: .topTrailing) {
             if isStarPick {
                 star

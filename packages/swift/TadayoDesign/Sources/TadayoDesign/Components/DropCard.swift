@@ -223,10 +223,10 @@ public struct AddedDrop: Sendable {
 
 /// The removed or withdrawn drop's neutral placeholder, kept only where it holds a place in an
 /// open conversation (spec 15). It says spec 21's "This drop is no longer available" and nothing
-/// of the drop: no sender, caption, time or reason (FQ91; T25; spec 22). No delivery draws it, so
-/// it takes the brand's delivered surface box of secondary text, handoff 4's `approvalNote`
-/// without its shield: `metadata` 13/18 in `secondaryText`, inset 16, `surface` at the surface
-/// radius, at its own height, so nothing hints at what was there (handoff 7 asks).
+/// of the drop: no sender, caption, time or reason (FQ91 (b); T25; spec 22). Handoff 7 draws it as
+/// FQ91's default built it (`dropShapes.removedPlaceholder`): `metadata` 13/18 in
+/// `secondaryText`, inset 16, `surface` at the surface radius, 12, at its own height ("Intrinsic,
+/// not former photo height"), so nothing hints at what was there.
 struct RemovedDropView: View {
     var body: some View {
         Text(String(localized: "drop.removed", bundle: .module))
@@ -240,8 +240,9 @@ struct RemovedDropView: View {
     }
 }
 
-/// Spoken labels where no template is delivered (FQ91): the visible parts in order, each read as
-/// a sentence, and every opening read as the delivered templates read it.
+/// Spoken labels as FQ91 (c) reads them and handoff 7's `vo.drop.*` and `vo.receipt` templates
+/// word them: the visible parts in order, each read as a sentence, and every opening read in full
+/// with its year, time and the club's city.
 enum Spoken {
     static func sentences(_ parts: [String]) -> String {
         parts.map { part in
