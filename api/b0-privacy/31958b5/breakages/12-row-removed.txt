@@ -1,0 +1,40 @@
+breakage: row-removed
+patch: [
+ [
+  "tests/src/privacy/rows.ts",
+  "  getDrop: NONE,\n",
+  ""
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/harness.test.ts src/privacy/matrix.test.ts
+exit: 1
+expected pattern: getDrop has no row in the privacy matrix
+caught: True
+
+ ❯ src/privacy/matrix.test.ts (13 tests | 1 failed) 34147ms
+     × gives every operation of the contract a row, the skeleton's, and the app a route for each and no other 12ms
+ ❯ src/privacy/harness.test.ts (38 tests | 3 failed) 345ms
+     × gives every operation of the contract its row, and every row an operation, each the skeleton's 14ms
+     × reports a route added to the contract without a row 2ms
+     × reports a row whose operation is gone, and a row that isn't NONE 1ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/harness.test.ts > a route with no row fails (TECH-DESIGN section 8) > gives every operation of the contract its row, and every row an operation, each the skeleton's
+AssertionError: expected [ Array(1) ] to deeply equal []
++   "getDrop has no row in the privacy matrix",
+ FAIL  src/privacy/harness.test.ts > a route with no row fails (TECH-DESIGN section 8) > reports a route added to the contract without a row
+AssertionError: expected [ …(2) ] to deeply equal [ Array(1) ]
++   "getDrop has no row in the privacy matrix",
+    "getDropTwice has no row in the privacy matrix",
+     98|     const added = [...operations, { ...operation("getDrop"), id: "getD…
+     99|     expect(rowProblems(added, ROWS)).toEqual(["getDropTwice has no row…
+ FAIL  src/privacy/harness.test.ts > a route with no row fails (TECH-DESIGN section 8) > reports a row whose operation is gone, and a row that isn't NONE
+AssertionError: expected [ …(2) ] to deeply equal [ Array(1) ]
++   "getDrop has no row in the privacy matrix",
+    "getDropTwice has a row but no operation in the contract",
+    103|     expect(rowProblems(operations, { ...ROWS, getDropTwice: NONE })).t…
+    104|       "getDropTwice has a row but no operation in the contract",
+ FAIL  src/privacy/matrix.test.ts > a route with no row fails, and no route is outside the contract (TECH-DESIGN section 8) > gives every operation of the contract a row, the skeleton's, and the app a route for each and no other
+AssertionError: expected [ Array(1) ] to deeply equal []
++   "getDrop has no row in the privacy matrix",
+ Test Files  2 failed (2)
+      Tests  4 failed | 47 passed (51)

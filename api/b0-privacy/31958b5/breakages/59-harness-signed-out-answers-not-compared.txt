@@ -1,0 +1,29 @@
+breakage: harness-signed-out-answers-not-compared
+patch: [
+ [
+  "tests/src/privacy/harness.ts",
+  "      else if (text !== first)\n",
+  "      else if (Math.random() > 2)\n"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/harness.test.ts
+exit: 1
+expected pattern: × reports a route that tells a signed-out caller which drops exist
+caught: True
+
+ ❯ src/privacy/harness.test.ts (38 tests | 3 failed) 273ms
+     × reports a route that tells a signed-out caller which drops exist (T14) 8ms
+     × reports a route that tells which drops exist through the transport's headers alone (T14) 2ms
+     × reports a route that answers a signed-out caller differently when the request carries a cursor (T14) 3ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > reports a route that tells a signed-out caller which drops exist (T14)
+AssertionError: expected [ …(4) ] to include 'getDrop, no session: another answer f…'
+    399|     expect(step.problems).toContain("getDrop, no session: another answ…
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > reports a route that tells which drops exist through the transport's headers alone (T14)
+AssertionError: expected [ …(6) ] to include 'getDrop, no session: another answer f…'
+    416|     const step = await signedOutStep(app, spec("getDrop"), elsewhere);
+    417|     expect(step.problems).toContain("getDrop, no session: another answ…
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > reports a route that answers a signed-out caller differently when the request carries a cursor (T14)
+AssertionError: expected [ …(12) ] to include 'listComments, no session: another ans…'
+ Test Files  1 failed (1)
+      Tests  3 failed | 35 passed (38)

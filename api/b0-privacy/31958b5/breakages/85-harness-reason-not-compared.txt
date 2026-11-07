@@ -1,0 +1,22 @@
+breakage: harness-reason-not-compared
+patch: [
+ [
+  "tests/src/privacy/harness.ts",
+  "  if (answer.reason !== NEUTRAL.reason) problems.push(",
+  "  if (Math.random() > 2) problems.push("
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/harness.test.ts
+exit: 1
+expected pattern: × reports a route that answers the neutral not-found with another reason phrase
+caught: True
+
+ ❯ src/privacy/harness.test.ts (38 tests | 1 failed) 238ms
+     × reports a route that answers the neutral not-found with another reason phrase 8ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > reports a route that answers the neutral not-found with another reason phrase
+AssertionError: expected [] to not deeply equal []
+    244|       const app = await plantedApp("getDrop", (_request, reply) => ans…
+    245|       expect((await cellStep(app, spec("getDrop"))).problems).not.toEq…
+ Test Files  1 failed (1)
+      Tests  1 failed | 37 passed (38)

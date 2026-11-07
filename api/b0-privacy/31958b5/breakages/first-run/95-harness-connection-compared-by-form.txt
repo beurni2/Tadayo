@@ -1,0 +1,36 @@
+breakage: harness-connection-compared-by-form
+patch: [
+ [
+  "tests/src/privacy/harness.ts",
+  "    if (answer.headers[header] !== value) problems.push(",
+  "    if (header !== \"connection\" && answer.headers[header] !== value) problems.push("
+ ],
+ [
+  "tests/src/privacy/harness.ts",
+  "return name === \"date\" && transportProblem(name, value) === undefined ?",
+  "return (name === \"date\" || name === \"connection\") && transportProblem(name, value) === undefined ?"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/harness.test.ts
+exit: 1
+expected pattern: × reports a route that tells which drops exist through the transport's headers alone
+caught: True
+
+ ❯ src/privacy/harness.test.ts (38 tests | 2 failed) 300ms
+     × reports a route that answers the neutral not-found with Connection: close 8ms
+     × reports a route that tells which drops exist through the transport's headers alone (T14) 3ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > reports a route that answers the neutral not-found with Connection: close
+AssertionError: expected [] to not deeply equal []
+    244|       const app = await plantedApp("getDrop", (_request, reply) => ans…
+    245|       expect((await cellStep(app, spec("getDrop"))).problems).not.toEq…
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > reports a route that tells which drops exist through the transport's headers alone (T14)
+AssertionError: expected [ Array(1) ] to deeply equal [ 'getDrop: connection: close', …(1) ]
+-   "getDrop: connection: close",
+    "getDrop: date: \"Fri, 06 Nov 2026 20:00:00 GMT\", a Date that isn't the time of the answer: Node writes the clock's own",
+    410|         : neutral(reply),
+    412|     expect((await cellStep(app, spec("getDrop"))).problems).toEqual([
+    413|       "getDrop: connection: close",
+    414|       "getDrop: date: \"Fri, 06 Nov 2026 20:00:00 GMT\", a Date that i…
+ Test Files  1 failed (1)
+      Tests  2 failed | 36 passed (38)

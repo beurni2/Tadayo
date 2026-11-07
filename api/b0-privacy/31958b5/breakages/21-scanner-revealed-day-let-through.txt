@@ -1,0 +1,20 @@
+breakage: scanner-revealed-day-let-through
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "if (node.stage === \"revealed\" && !reader.opened(day))",
+  "if (node.stage === \"revealed\" && !reader.opened(day) && Math.random() > 2)"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × catches a revealed day, its highlight entry and a day link to it, before the day opens
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (60 tests | 1 failed) 241ms
+     × catches a revealed day, its highlight entry and a day link to it, before the day opens 12ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a revealed day, its highlight entry and a day link to it, before the day opens
+AssertionError: expected [ '$.highlights[0].drop_id' ] to deeply equal [ '$', '$.highlights[0].drop_id' ]
+ Test Files  1 failed (1)
+      Tests  1 failed | 59 passed (60)

@@ -1,0 +1,23 @@
+breakage: scanner-names-from-every-club
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "    if (knows(id)) texts.add(member.name);",
+  "    texts.add(member.name);"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × catches a day, its club and its people shown to someone with no interval in the club
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (60 tests | 2 failed) 174ms
+     × catches a day, its club and its people shown to someone with no interval in the club (T14) 11ms
+     × catches a former member's club as one of theirs, a person who joined after they left, and avatars once an interval has ended (FQ75) 3ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a day, its club and its people shown to someone with no interval in the club (T14)
+AssertionError: expected [ { check: 'world', …(2) }, …(7) ] to deeply equal [ { check: 'world', …(2) }, …(9) ]
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a former member's club as one of theirs, a person who joined after they left, and avatars once an interval has ended (FQ75)
+AssertionError: expected [] to deeply equal [ { check: 'values', …(2) } ]
+ Test Files  1 failed (1)
+      Tests  2 failed | 58 passed (60)
