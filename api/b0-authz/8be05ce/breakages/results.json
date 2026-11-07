@@ -1,0 +1,975 @@
+[
+  {
+    "name": "ts: no account check",
+    "file": "packages/domain/src/authorization/read.ts",
+    "from": "    facts.viewerAccount === \"active\" &&\n",
+    "to": "",
+    "suites": "both",
+    "exit_codes": {
+      "unit": 1,
+      "db": 1
+    },
+    "failed": [
+      "src/authorization/read.test.ts > T23: each denial beats every grant > denies everything with no account with the viewer's id",
+      "src/authorization/read.test.ts > T23: each denial beats every grant > denies everything with the viewer's account deleted",
+      "src/authorization/read.test.ts > T23: each denial beats every grant > denies everything with the viewer's account deleting (T27)",
+      "src/authorization/read.test.ts > fails closed: a fact that is missing, of the wrong type or unknown never grants > denies or throws, never grants, whatever viewerAccount holds that isn't a granting value",
+      "src/db/authorization.test.ts > FQ63: a day whose star left before it opened is held and never opens > keeps a day whose star asked to delete their account once it had opened",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies cleo everything after Cleo's account deletion (T27), and nobody else",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the deletion pending, the membership not yet ended (T27) by both paths alike"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "ts: no interval check",
+    "file": "packages/domain/src/authorization/read.ts",
+    "from": "    facts.viewerInterval === \"active\" &&\n",
+    "to": "",
+    "suites": "both",
+    "exit_codes": {
+      "unit": 1,
+      "db": 1
+    },
+    "failed": [
+      "src/authorization/read.test.ts > T14: missing and unauthorized get the same answer > answers false for a drop that doesn't exist, as for one the viewer may not read",
+      "src/authorization/read.test.ts > T23: each denial beats every grant > denies everything with no interval of the viewer's in the audience (T8)",
+      "src/authorization/read.test.ts > T23: each denial beats every grant > denies everything with the viewer's interval ended by a block",
+      "src/authorization/read.test.ts > T23: each denial beats every grant > denies everything with the viewer's interval ended by a deletion",
+      "src/authorization/read.test.ts > T23: each denial beats every grant > denies everything with the viewer's interval left",
+      "src/authorization/read.test.ts > fails closed: a fact that is missing, of the wrong type or unknown never grants > denies or throws, never grants, whatever viewerInterval holds that isn't a granting value",
+      "src/db/authorization.test.ts > FQ63: a day whose star left before it opened is held and never opens > keeps a day that had opened when its star left, at reveal_at itself or later",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies ben, cleo everything after the author's block of Cleo, the drop kept (FQ88), and nobody else",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies cleo everything after the end of Cleo's membership, and nobody else",
+      "src/db/authorization.test.ts > T8: an audience that holds two of one viewer's intervals > answers through the one still active, by both paths alike, and nothing once neither is",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the former member by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the invited, not yet a member (T7) by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the member who joined after the commit (T8) by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the rejoined member, a new interval (T8) by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the stranger from another club by both paths alike",
+      "src/db/authorization.test.ts > spec 22 and D11: an author who leaves keeps the drop for the club, or takes it away > lets the club read the drop of an author who left and kept it, before or after the reveal"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "ts: any interval in the audience",
+    "file": "packages/domain/src/authorization/read.ts",
+    "from": "facts.viewerInterval === \"active\" &&",
+    "to": "facts.viewerInterval !== null &&",
+    "suites": "both",
+    "exit_codes": {
+      "unit": 1,
+      "db": 1
+    },
+    "failed": [
+      "src/authorization/read.test.ts > T23: each denial beats every grant > denies everything with the viewer's interval ended by a block",
+      "src/authorization/read.test.ts > T23: each denial beats every grant > denies everything with the viewer's interval ended by a deletion",
+      "src/authorization/read.test.ts > T23: each denial beats every grant > denies everything with the viewer's interval left",
+      "src/authorization/read.test.ts > fails closed: a fact that is missing, of the wrong type or unknown never grants > denies or throws, never grants, whatever viewerInterval holds that isn't a granting value",
+      "src/db/authorization.test.ts > FQ63: a day whose star left before it opened is held and never opens > keeps a day that had opened when its star left, at reveal_at itself or later",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies ben, cleo everything after the author's block of Cleo, the drop kept (FQ88), and nobody else",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies cleo everything after the end of Cleo's membership, and nobody else",
+      "src/db/authorization.test.ts > T8: an audience that holds two of one viewer's intervals > answers through the one still active, by both paths alike, and nothing once neither is",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the former member by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the rejoined member, a new interval (T8) by both paths alike",
+      "src/db/authorization.test.ts > spec 22 and D11: an author who leaves keeps the drop for the club, or takes it away > lets the club read the drop of an author who left and kept it, before or after the reveal"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "ts: held and removed let in",
+    "file": "packages/domain/src/authorization/read.ts",
+    "from": "facts.drop === \"active\" &&",
+    "to": "facts.drop !== \"withdrawn\" &&",
+    "suites": "both",
+    "exit_codes": {
+      "unit": 1,
+      "db": 1
+    },
+    "failed": [
+      "src/authorization/read.test.ts > T23: each denial beats every grant > denies everything with the drop held (T29)",
+      "src/authorization/read.test.ts > T23: each denial beats every grant > denies everything with the drop removed, as pictured or by moderation",
+      "src/authorization/read.test.ts > fails closed: a fact that is missing, of the wrong type or unknown never grants > denies or throws, never grants, whatever drop holds that isn't a granting value",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies ana, ben, cleo everything after a moderation removal (FQ27), and nobody else",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies ana, ben, cleo everything after a pictured member's removal (T25), and nobody else",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the author by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the member in the audience by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the star by both paths alike"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "ts: no day status",
+    "file": "packages/domain/src/authorization/read.ts",
+    "from": "    facts.day === \"scheduled\" &&\n",
+    "to": "",
+    "suites": "both",
+    "exit_codes": {
+      "unit": 1,
+      "db": 1
+    },
+    "failed": [
+      "src/authorization/read.test.ts > T23: each denial beats every grant > denies everything with the day cancelled",
+      "src/authorization/read.test.ts > T23: each denial beats every grant > denies everything with the day suspended",
+      "src/authorization/read.test.ts > fails closed: a fact that is missing, of the wrong type or unknown never grants > denies or throws, never grants, whatever day holds that isn't a granting value",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the author by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the member in the audience by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the star by both paths alike"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "ts: cancelled let in",
+    "file": "packages/domain/src/authorization/read.ts",
+    "from": "facts.day === \"scheduled\" &&",
+    "to": "facts.day !== \"suspended\" &&",
+    "suites": "both",
+    "exit_codes": {
+      "unit": 1,
+      "db": 1
+    },
+    "failed": [
+      "src/authorization/read.test.ts > T23: each denial beats every grant > denies everything with the day cancelled",
+      "src/authorization/read.test.ts > fails closed: a fact that is missing, of the wrong type or unknown never grants > denies or throws, never grants, whatever day holds that isn't a granting value",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the author by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the member in the audience by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the star by both paths alike"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "ts: no club suspension",
+    "file": "packages/domain/src/authorization/read.ts",
+    "from": "    facts.clubSuspendedAt === null &&\n",
+    "to": "",
+    "suites": "both",
+    "exit_codes": {
+      "unit": 1,
+      "db": 1
+    },
+    "failed": [
+      "src/authorization/read.test.ts > T23: each denial beats every grant > denies everything with the club suspended",
+      "src/authorization/read.test.ts > T23: each denial beats every grant > denies everything with the club suspended, at an instant after now",
+      "src/authorization/read.test.ts > fails closed: a fact that is missing, of the wrong type or unknown never grants > denies or throws, never grants, whatever clubSuspendedAt holds that isn't a granting value",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the author by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the member in the audience by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the star by both paths alike"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "ts: club suspension as truthy",
+    "file": "packages/domain/src/authorization/read.ts",
+    "from": "facts.clubSuspendedAt === null &&",
+    "to": "!facts.clubSuspendedAt &&",
+    "suites": "unit",
+    "exit_codes": {
+      "unit": 1
+    },
+    "failed": [
+      "src/authorization/read.test.ts > fails closed: a fact that is missing, of the wrong type or unknown never grants > denies or throws, never grants, whatever clubSuspendedAt holds that isn't a granting value"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "ts: no held day",
+    "file": "packages/domain/src/authorization/read.ts",
+    "from": "    notBeforeReveal(facts.starLeftAt, facts.revealAt) &&\n",
+    "to": "",
+    "suites": "both",
+    "exit_codes": {
+      "unit": 1,
+      "db": 1
+    },
+    "failed": [
+      "src/authorization/read.test.ts > T23: each denial beats every grant > denies everything with the star left before the day opened (FQ63)",
+      "src/authorization/read.test.ts > fails closed: a fact that is missing, of the wrong type or unknown never grants > denies or throws, never grants, whatever starLeftAt holds that isn't a granting value",
+      "src/authorization/read.test.ts > fails closed: a fact that is missing, of the wrong type or unknown never grants > never reveals media or reactions, or opens a held day, by an instant that isn't a Temporal.Instant",
+      "src/db/authorization.test.ts > FQ63: a day whose star left before it opened is held and never opens > holds a day whose star left a microsecond before reveal_at",
+      "src/db/authorization.test.ts > FQ63: a day whose star left before it opened is held and never opens > serves nothing of it to anyone, the caption included, before or after reveal_at"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "ts: no star deletion",
+    "file": "packages/domain/src/authorization/read.ts",
+    "from": "    notBeforeReveal(facts.starDeletionRequestedAt, facts.revealAt) &&\n",
+    "to": "",
+    "suites": "both",
+    "exit_codes": {
+      "unit": 1,
+      "db": 1
+    },
+    "failed": [
+      "src/authorization/read.test.ts > T23: each denial beats every grant > denies everything with the star asked to delete their account before the day opened (FQ63, T27)",
+      "src/authorization/read.test.ts > fails closed: a fact that is missing, of the wrong type or unknown never grants > denies or throws, never grants, whatever starDeletionRequestedAt holds that isn't a granting value",
+      "src/authorization/read.test.ts > fails closed: a fact that is missing, of the wrong type or unknown never grants > never reveals media or reactions, or opens a held day, by an instant that isn't a Temporal.Instant",
+      "src/db/authorization.test.ts > FQ63: a day whose star left before it opened is held and never opens > holds a day whose star asked to delete their account before it opened, whenever the membership is ended"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "ts: held day at reveal_at",
+    "file": "packages/domain/src/authorization/read.ts",
+    "from": "Temporal.Instant.compare(at, revealAt) >= 0",
+    "to": "Temporal.Instant.compare(at, revealAt) > 0",
+    "suites": "both",
+    "exit_codes": {
+      "unit": 1,
+      "db": 1
+    },
+    "failed": [
+      "src/authorization/read.test.ts > T1, T9: the reveal is reached at reveal_at, by the server's time > keeps a day open after its star leaves, or asks to delete their account, once it has opened (FQ63)",
+      "src/db/authorization.test.ts > FQ63: a day whose star left before it opened is held and never opens > keeps a day that had opened when its star left, at reveal_at itself or later",
+      "src/db/authorization.test.ts > FQ63: a day whose star left before it opened is held and never opens > keeps a day whose star asked to delete their account once it had opened"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "ts: held day's instants unguarded",
+    "file": "packages/domain/src/authorization/read.ts",
+    "from": "    (at instanceof Temporal.Instant &&\n      revealAt instanceof Temporal.Instant &&\n      Temporal.Instant.compare(at, revealAt) >= 0)",
+    "to": "    Temporal.Instant.compare(at, revealAt) >= 0",
+    "suites": "unit",
+    "exit_codes": {
+      "unit": 1
+    },
+    "failed": [
+      "src/authorization/read.test.ts > fails closed: a fact that is missing, of the wrong type or unknown never grants > never reveals media or reactions, or opens a held day, by an instant that isn't a Temporal.Instant"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "ts: no author account",
+    "file": "packages/domain/src/authorization/read.ts",
+    "from": "    facts.authorAccount === \"active\" &&\n",
+    "to": "",
+    "suites": "both",
+    "exit_codes": {
+      "unit": 1,
+      "db": 1
+    },
+    "failed": [
+      "src/authorization/read.test.ts > T23: each denial beats every grant > denies everything with the author's account deleted",
+      "src/authorization/read.test.ts > T23: each denial beats every grant > denies everything with the author's account deleting (T27, spec 23)",
+      "src/authorization/read.test.ts > fails closed: a fact that is missing, of the wrong type or unknown never grants > denies or throws, never grants, whatever authorAccount holds that isn't a granting value",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies ana, ben, cleo everything after the author's account deletion, before its purge (T27, spec 23), and nobody else"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "ts: no block",
+    "file": "packages/domain/src/authorization/read.ts",
+    "from": "    Object.is(facts.blocked, false) &&\n",
+    "to": "",
+    "suites": "both",
+    "exit_codes": {
+      "unit": 1,
+      "db": 1
+    },
+    "failed": [
+      "src/authorization/read.test.ts > T23: each denial beats every grant > denies everything with a block between the viewer and the author (FQ88)",
+      "src/authorization/read.test.ts > fails closed: a fact that is missing, of the wrong type or unknown never grants > denies or throws, never grants, whatever blocked holds that isn't a granting value",
+      "src/db/authorization.test.ts > T23 and FQ88: a block denies in every interval after it, whoever made it > hides Ben's later drop from Cleo, who blocked Ben, and Cleo's from Ben, in a club they share again",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies ben, cleo everything after the author's block of Cleo, the drop kept (FQ88), and nobody else",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88) by both paths alike"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "ts: block as truthy",
+    "file": "packages/domain/src/authorization/read.ts",
+    "from": "Object.is(facts.blocked, false) &&",
+    "to": "!facts.blocked &&",
+    "suites": "unit",
+    "exit_codes": {
+      "unit": 1
+    },
+    "failed": [
+      "src/authorization/read.test.ts > fails closed: a fact that is missing, of the wrong type or unknown never grants > denies or throws, never grants, whatever blocked holds that isn't a granting value"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "ts: reveal after reveal_at",
+    "file": "packages/domain/src/authorization/read.ts",
+    "from": "Temporal.Instant.compare(now, facts.revealAt) >= 0",
+    "to": "Temporal.Instant.compare(now, facts.revealAt) > 0",
+    "suites": "both",
+    "exit_codes": {
+      "unit": 1,
+      "db": 1
+    },
+    "failed": [
+      "src/authorization/read.test.ts > T1, T9: the reveal is reached at reveal_at, by the server's time > holds media and reactions back until the very microsecond of reveal_at",
+      "src/authorization/read.test.ts > T9: a member in the audience, with nothing denying > reads the caption while collecting, and everything once the day opens, for good",
+      "src/db/authorization.test.ts > T23 and FQ88: a block denies in every interval after it, whoever made it > hides Ben's later drop from Cleo, who blocked Ben, and Cleo's from Ben, in a club they share again",
+      "src/db/authorization.test.ts > T8: an audience that holds two of one viewer's intervals > answers through the one still active, by both paths alike, and nothing once neither is",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the author by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the member in the audience by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the star by both paths alike",
+      "src/db/authorization.test.ts > spec 22 and D11: an author who leaves keeps the drop for the club, or takes it away > lets the club read the drop of an author who left and kept it, before or after the reveal"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "ts: reveal_at unguarded",
+    "file": "packages/domain/src/authorization/read.ts",
+    "from": "(facts.revealAt instanceof Temporal.Instant && Temporal.Instant.compare(now, facts.revealAt) >= 0)",
+    "to": "Temporal.Instant.compare(now, facts.revealAt) >= 0",
+    "suites": "unit",
+    "exit_codes": {
+      "unit": 1
+    },
+    "failed": [
+      "src/authorization/read.test.ts > fails closed: a fact that is missing, of the wrong type or unknown never grants > never reveals media or reactions, or opens a held day, by an instant that isn't a Temporal.Instant"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "ts: media before the reveal",
+    "file": "packages/domain/src/authorization/read.ts",
+    "from": "(what === \"caption\" ||",
+    "to": "(what !== \"reactions\" ||",
+    "suites": "both",
+    "exit_codes": {
+      "unit": 1,
+      "db": 1
+    },
+    "failed": [
+      "src/authorization/read.test.ts > T1, T9: the reveal is reached at reveal_at, by the server's time > holds media and reactions back until the very microsecond of reveal_at",
+      "src/authorization/read.test.ts > T9: a member in the audience, with nothing denying > reads the caption while collecting, and everything once the day opens, for good",
+      "src/authorization/read.test.ts > fails closed: a fact that is missing, of the wrong type or unknown never grants > never reveals media or reactions, or opens a held day, by an instant that isn't a Temporal.Instant",
+      "src/db/authorization.test.ts > T23 and FQ88: a block denies in every interval after it, whoever made it > hides Ben's later drop from Cleo, who blocked Ben, and Cleo's from Ben, in a club they share again",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the author by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the member in the audience by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the star by both paths alike",
+      "src/db/authorization.test.ts > spec 22 and D11: an author who leaves keeps the drop for the club, or takes it away > lets the club read the drop of an author who left and kept it, before or after the reveal"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "ts: reactions before the reveal",
+    "file": "packages/domain/src/authorization/read.ts",
+    "from": "(what === \"caption\" ||",
+    "to": "(what !== \"media\" ||",
+    "suites": "both",
+    "exit_codes": {
+      "unit": 1,
+      "db": 1
+    },
+    "failed": [
+      "src/authorization/read.test.ts > T1, T9: the reveal is reached at reveal_at, by the server's time > holds media and reactions back until the very microsecond of reveal_at",
+      "src/authorization/read.test.ts > T9: a member in the audience, with nothing denying > reads the caption while collecting, and everything once the day opens, for good",
+      "src/authorization/read.test.ts > fails closed: a fact that is missing, of the wrong type or unknown never grants > never reveals media or reactions, or opens a held day, by an instant that isn't a Temporal.Instant",
+      "src/db/authorization.test.ts > T23 and FQ88: a block denies in every interval after it, whoever made it > hides Ben's later drop from Cleo, who blocked Ben, and Cleo's from Ben, in a club they share again",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the author by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the member in the audience by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the star by both paths alike",
+      "src/db/authorization.test.ts > spec 22 and D11: an author who leaves keeps the drop for the club, or takes it away > lets the club read the drop of an author who left and kept it, before or after the reveal"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "ts: missing drop granted",
+    "file": "packages/domain/src/authorization/read.ts",
+    "from": "  if (facts === null) return false;",
+    "to": "  if (facts === null) return true;",
+    "suites": "both",
+    "exit_codes": {
+      "unit": 1,
+      "db": 1
+    },
+    "failed": [
+      "src/authorization/read.test.ts > T14: missing and unauthorized get the same answer > answers false for a drop that doesn't exist, as for one the viewer may not read",
+      "src/db/authorization.test.ts > T14: a missing drop and a drop the viewer may not read get the same answer > answers no for a drop id nobody has or one that isn't an id at all, and for an account nobody has, without an error",
+      "src/db/authorization.test.ts > the connection: the time module's INSTANT_TYPE, or a loud failure > binds now and reads instants through INSTANT_TYPE on a command's connection"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "ts: unknown read taken",
+    "file": "packages/domain/src/authorization/read.ts",
+    "from": "  if (!READS.includes(what as ReadWhat)) {",
+    "to": "  if (false) {",
+    "suites": "both",
+    "exit_codes": {
+      "unit": 1,
+      "db": 1
+    },
+    "failed": [
+      "src/authorization/read.test.ts > T14: missing and unauthorized get the same answer > takes only the three reads and the server's time to the microsecond, and refuses anything else",
+      "src/db/authorization.test.ts > the connection: the time module's INSTANT_TYPE, or a loud failure > refuses a viewer that isn't an id, a time that isn't the server's to the microsecond, and a read it doesn't know"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "ts: any now taken",
+    "file": "packages/domain/src/authorization/read.ts",
+    "from": "  if (!(now instanceof Temporal.Instant)) throw",
+    "to": "  if (false) throw",
+    "suites": "both",
+    "exit_codes": {
+      "unit": 1,
+      "db": 0
+    },
+    "failed": [
+      "src/authorization/read.test.ts > T14: missing and unauthorized get the same answer > takes only the three reads and the server's time to the microsecond, and refuses anything else"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "ts: nanoseconds taken",
+    "file": "packages/domain/src/authorization/read.ts",
+    "from": "  wholeMicroseconds(now, \"now\");\n",
+    "to": "",
+    "suites": "both",
+    "exit_codes": {
+      "unit": 1,
+      "db": 1
+    },
+    "failed": [
+      "src/authorization/read.test.ts > T14: missing and unauthorized get the same answer > takes only the three reads and the server's time to the microsecond, and refuses anything else",
+      "src/db/authorization.test.ts > the connection: the time module's INSTANT_TYPE, or a loud failure > refuses a viewer that isn't an id, a time that isn't the server's to the microsecond, and a read it doesn't know"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "sql: no account check",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "       AND u.state = 'active'\n",
+    "to": "",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > FQ63: a day whose star left before it opened is held and never opens > keeps a day whose star asked to delete their account once it had opened",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies cleo everything after Cleo's account deletion (T27), and nobody else",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the deletion pending, the membership not yet ended (T27) by both paths alike"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "sql: no interval check",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "       AND m.state = 'active'\n",
+    "to": "",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > FQ63: a day whose star left before it opened is held and never opens > keeps a day that had opened when its star left, at reveal_at itself or later",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies ben, cleo everything after the author's block of Cleo, the drop kept (FQ88), and nobody else",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies cleo everything after the end of Cleo's membership, and nobody else",
+      "src/db/authorization.test.ts > T8: an audience that holds two of one viewer's intervals > answers through the one still active, by both paths alike, and nothing once neither is",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the former member by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the rejoined member, a new interval (T8) by both paths alike",
+      "src/db/authorization.test.ts > spec 22 and D11: an author who leaves keeps the drop for the club, or takes it away > lets the club read the drop of an author who left and kept it, before or after the reveal"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "sql: any interval of the club's",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "      JOIN app.drop_audience a ON a.drop_id = d.id\n      JOIN app.memberships m ON m.interval_id = a.interval_id\n",
+    "to": "      JOIN app.memberships m ON m.club_id = d.club_id\n",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the member who joined after the commit (T8) by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the rejoined member, a new interval (T8) by both paths alike"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "sql: held and removed let in",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "       AND d.state = 'active'\n",
+    "to": "       AND d.state <> 'withdrawn'\n",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies ana, ben, cleo everything after a moderation removal (FQ27), and nobody else",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies ana, ben, cleo everything after a pictured member's removal (T25), and nobody else",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the author by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the member in the audience by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the star by both paths alike"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "sql: no day status",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "       AND o.status = 'scheduled'\n",
+    "to": "",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the author by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the member in the audience by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the star by both paths alike"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "sql: cancelled let in",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "o.status = 'scheduled'",
+    "to": "o.status <> 'suspended'",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the author by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the member in the audience by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the star by both paths alike"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "sql: no club suspension",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "       AND c.suspended_at IS NULL\n",
+    "to": "",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the author by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the member in the audience by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the star by both paths alike"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "sql: no held day",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "       AND (s.left_at IS NULL OR s.left_at >= o.reveal_at)\n",
+    "to": "",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > FQ63: a day whose star left before it opened is held and never opens > holds a day whose star left a microsecond before reveal_at",
+      "src/db/authorization.test.ts > FQ63: a day whose star left before it opened is held and never opens > serves nothing of it to anyone, the caption included, before or after reveal_at"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "sql: held day at reveal_at",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "s.left_at >= o.reveal_at",
+    "to": "s.left_at > o.reveal_at",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > FQ63: a day whose star left before it opened is held and never opens > keeps a day that had opened when its star left, at reveal_at itself or later"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "sql: no star deletion",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "       AND (su.deletion_requested_at IS NULL OR su.deletion_requested_at >= o.reveal_at)\n",
+    "to": "",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > FQ63: a day whose star left before it opened is held and never opens > holds a day whose star asked to delete their account before it opened, whenever the membership is ended"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "sql: star deletion at reveal_at",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "su.deletion_requested_at >= o.reveal_at",
+    "to": "su.deletion_requested_at > o.reveal_at",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > FQ63: a day whose star left before it opened is held and never opens > keeps a day whose star asked to delete their account once it had opened"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "sql: no author account",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "       AND au.state = 'active'\n",
+    "to": "",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies ana, ben, cleo everything after the author's account deletion, before its purge (T27, spec 23), and nobody else"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "sql: the author's interval must be active",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "       AND au.state = 'active'\n",
+    "to": "       AND au.state = 'active' AND am.state = 'active'\n",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies ben, cleo everything after the author's block of Cleo, the drop kept (FQ88), and nobody else",
+      "src/db/authorization.test.ts > spec 22 and D11: an author who leaves keeps the drop for the club, or takes it away > lets the club read the drop of an author who left and kept it, before or after the reveal"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "sql: no block",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "       AND NOT EXISTS (SELECT FROM app.blocks b\n                        WHERE (b.blocker_user_id = m.user_id AND b.blocked_user_id = am.user_id)\n                           OR (b.blocker_user_id = am.user_id AND b.blocked_user_id = m.user_id))\n",
+    "to": "",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > T23 and FQ88: a block denies in every interval after it, whoever made it > hides Ben's later drop from Cleo, who blocked Ben, and Cleo's from Ben, in a club they share again",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies ben, cleo everything after the author's block of Cleo, the drop kept (FQ88), and nobody else",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88) by both paths alike"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "sql: only the viewer's blocks",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "\n                           OR (b.blocker_user_id = am.user_id AND b.blocked_user_id = m.user_id))",
+    "to": ")",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > T23 and FQ88: a block denies in every interval after it, whoever made it > hides Ben's later drop from Cleo, who blocked Ben, and Cleo's from Ben, in a club they share again",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies ben, cleo everything after the author's block of Cleo, the drop kept (FQ88), and nobody else",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88) by both paths alike"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "sql: only the author's blocks",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "(b.blocker_user_id = m.user_id AND b.blocked_user_id = am.user_id)\n                           OR ",
+    "to": "",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > T23 and FQ88: a block denies in every interval after it, whoever made it > hides Ben's later drop from Cleo, who blocked Ben, and Cleo's from Ben, in a club they share again"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "sql: reveal after reveal_at",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "o.reveal_at <= ${now}::pg_catalog.timestamptz",
+    "to": "o.reveal_at < ${now}::pg_catalog.timestamptz",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > T23 and FQ88: a block denies in every interval after it, whoever made it > hides Ben's later drop from Cleo, who blocked Ben, and Cleo's from Ben, in a club they share again",
+      "src/db/authorization.test.ts > T8: an audience that holds two of one viewer's intervals > answers through the one still active, by both paths alike, and nothing once neither is",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the author by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the member in the audience by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the star by both paths alike",
+      "src/db/authorization.test.ts > spec 22 and D11: an author who leaves keeps the drop for the club, or takes it away > lets the club read the drop of an author who left and kept it, before or after the reveal"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "sql: everything before the reveal",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "AND (NOT ${beyondCaption}::pg_catalog.bool OR o.reveal_at",
+    "to": "AND (true OR o.reveal_at",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > T23 and FQ88: a block denies in every interval after it, whoever made it > hides Ben's later drop from Cleo, who blocked Ben, and Cleo's from Ben, in a club they share again",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the author by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the member in the audience by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the star by both paths alike",
+      "src/db/authorization.test.ts > spec 22 and D11: an author who leaves keeps the drop for the club, or takes it away > lets the club read the drop of an author who left and kept it, before or after the reveal"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "sql: the transaction's clock",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "o.reveal_at <= ${now}::pg_catalog.timestamptz",
+    "to": "o.reveal_at <= pg_catalog.now() AND ${now}::pg_catalog.timestamptz IS NOT NULL",
+    "suites": "both",
+    "exit_codes": {
+      "unit": 1,
+      "db": 1
+    },
+    "failed": [
+      "src/time/one-clock.test.ts > only the time module reads a clock (T1) > finds no other code that reads the time",
+      "src/db/authorization.test.ts > FQ63: a day whose star left before it opened is held and never opens > keeps a day that had opened when its star left, at reveal_at itself or later",
+      "src/db/authorization.test.ts > FQ63: a day whose star left before it opened is held and never opens > keeps a day whose star asked to delete their account once it had opened",
+      "src/db/authorization.test.ts > T23 and FQ88: a block denies in every interval after it, whoever made it > hides Ben's later drop from Cleo, who blocked Ben, and Cleo's from Ben, in a club they share again",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies ana, ben, cleo everything after a moderation removal (FQ27), and nobody else",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies ana, ben, cleo everything after a pictured member's removal (T25), and nobody else",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies ana, ben, cleo everything after the author's account deletion, before its purge (T27, spec 23), and nobody else",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies ana, ben, cleo everything after the author's withdrawal, and nobody else",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies ben, cleo everything after the author's block of Cleo, the drop kept (FQ88), and nobody else",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies cleo everything after Cleo's account deletion (T27), and nobody else",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies cleo everything after Cleo's block of the author, and nobody else",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies cleo everything after the end of Cleo's membership, and nobody else",
+      "src/db/authorization.test.ts > T8: an audience that holds two of one viewer's intervals > answers through the one still active, by both paths alike, and nothing once neither is",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the author by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the member in the audience by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the star by both paths alike",
+      "src/db/authorization.test.ts > spec 22 and D11: an author who leaves keeps the drop for the club, or takes it away > lets the club read the drop of an author who left and kept it, before or after the reveal"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "sql: any viewer string taken",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "  if (typeof viewer !== \"string\" || !ID.test(viewer)) throw",
+    "to": "  if (typeof viewer !== \"string\" || viewer === \"\") throw",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > T14: a missing drop and a drop the viewer may not read get the same answer > refuses a viewer that isn't an account id, whichever drop is asked about"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "sql: now rounded up to the millisecond",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "o.reveal_at <= ${now}::pg_catalog.timestamptz",
+    "to": "o.reveal_at <= ${now.round({ smallestUnit: \"millisecond\", roundingMode: \"ceil\" })}::pg_catalog.timestamptz",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > T23 and FQ88: a block denies in every interval after it, whoever made it > hides Ben's later drop from Cleo, who blocked Ben, and Cleo's from Ben, in a club they share again",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the author by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the member in the audience by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the star by both paths alike",
+      "src/db/authorization.test.ts > spec 22 and D11: an author who leaves keeps the drop for the club, or takes it away > lets the club read the drop of an author who left and kept it, before or after the reveal"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "facts: no viewer account",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "(SELECT u.state FROM app.users u WHERE u.id = ${viewer}::pg_catalog.text) AS viewer_account",
+    "to": "'active'::pg_catalog.text AS viewer_account",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > FQ63: a day whose star left before it opened is held and never opens > keeps a day whose star asked to delete their account once it had opened",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies cleo everything after Cleo's account deletion (T27), and nobody else",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the deletion pending, the membership not yet ended (T27) by both paths alike"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "facts: any interval of the club's",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "                  FROM app.drop_audience a JOIN app.memberships m ON m.interval_id = a.interval_id\n                 WHERE a.drop_id = d.id AND m.user_id",
+    "to": "                  FROM app.memberships m\n                 WHERE m.club_id = d.club_id AND m.state = 'active' AND m.user_id",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the member who joined after the commit (T8) by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the rejoined member, a new interval (T8) by both paths alike"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "facts: no author account",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "           au.state AS author_account,",
+    "to": "           'active'::pg_catalog.text AS author_account,",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies ana, ben, cleo everything after the author's account deletion, before its purge (T27, spec 23), and nobody else"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "facts: only the viewer's blocks",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "\n                           OR (b.blocker_user_id = am.user_id AND b.blocked_user_id = ${viewer}::pg_catalog.text)) AS blocked",
+    "to": ") AS blocked",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > T23 and FQ88: a block denies in every interval after it, whoever made it > hides Ben's later drop from Cleo, who blocked Ben, and Cleo's from Ben, in a club they share again",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies ben, cleo everything after the author's block of Cleo, the drop kept (FQ88), and nobody else",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88) by both paths alike"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "facts: only the author's blocks",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "(b.blocker_user_id = ${viewer}::pg_catalog.text AND b.blocked_user_id = am.user_id)\n                           OR ",
+    "to": "",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > T23 and FQ88: a block denies in every interval after it, whoever made it > hides Ben's later drop from Cleo, who blocked Ben, and Cleo's from Ben, in a club they share again"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "facts: the star's join, not leave",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "           s.left_at AS star_left_at,",
+    "to": "           s.joined_at AS star_left_at,",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > FQ63: a day whose star left before it opened is held and never opens > keeps a day that had opened when its star left, at reveal_at itself or later",
+      "src/db/authorization.test.ts > FQ63: a day whose star left before it opened is held and never opens > keeps a day whose star asked to delete their account once it had opened",
+      "src/db/authorization.test.ts > T23 and FQ88: a block denies in every interval after it, whoever made it > hides Ben's later drop from Cleo, who blocked Ben, and Cleo's from Ben, in a club they share again",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies ana, ben, cleo everything after a moderation removal (FQ27), and nobody else",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies ana, ben, cleo everything after a pictured member's removal (T25), and nobody else",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies ana, ben, cleo everything after the author's account deletion, before its purge (T27, spec 23), and nobody else",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies ana, ben, cleo everything after the author's withdrawal, and nobody else",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies ben, cleo everything after the author's block of Cleo, the drop kept (FQ88), and nobody else",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies cleo everything after Cleo's account deletion (T27), and nobody else",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies cleo everything after Cleo's block of the author, and nobody else",
+      "src/db/authorization.test.ts > T23: a denial beats every grant, once the drop has been read and saved > denies cleo everything after the end of Cleo's membership, and nobody else",
+      "src/db/authorization.test.ts > T8: an audience that holds two of one viewer's intervals > answers through the one still active, by both paths alike, and nothing once neither is",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the author by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the member in the audience by both paths alike",
+      "src/db/authorization.test.ts > T9: every role of the privacy matrix, before, during and after the day, in each of the six states and a cancelled day > answers the star by both paths alike",
+      "src/db/authorization.test.ts > spec 22 and D11: an author who leaves keeps the drop for the club, or takes it away > lets the club read the drop of an author who left and kept it, before or after the reveal"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "facts: the star's deletion not loaded",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "su.deletion_requested_at AS star_deletion_requested_at,",
+    "to": "NULL::pg_catalog.timestamptz AS star_deletion_requested_at,",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > FQ63: a day whose star left before it opened is held and never opens > holds a day whose star asked to delete their account before it opened, whenever the membership is ended"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "facts: an ended interval before an active one",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "ORDER BY m.state = 'active' DESC, m.interval_id",
+    "to": "ORDER BY m.state = 'active' ASC, m.interval_id",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > T8: an audience that holds two of one viewer's intervals > answers through the one still active, by both paths alike, and nothing once neither is"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "facts: any drop id queried",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "  const id = ID.test(drop) ? drop : null;",
+    "to": "  const id = drop;",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > T14: a missing drop and a drop the viewer may not read get the same answer > answers no for a drop id nobody has or one that isn't an id at all, and for an account nobody has, without an error",
+      "src/db/authorization.test.ts > the connection: the time module's INSTANT_TYPE, or a loud failure > refuses a connection that sends instants whole but reads them back as Dates, for a drop that doesn't exist too"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "facts: a malformed id answered before the statement",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "  const id = ID.test(drop) ? drop : null;",
+    "to": "  if (!ID.test(drop)) return null;\n  const id = drop;",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > the connection: the time module's INSTANT_TYPE, or a loud failure > refuses a connection that sends instants whole but reads them back as Dates, for a drop that doesn't exist too",
+      "src/db/authorization.test.ts > the connection: the time module's INSTANT_TYPE, or a loud failure > refuses a connection without it, rather than compare by milliseconds or read a Date"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "facts: the server's time not read back",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "  if (row === undefined || !instant(row[\"now\"], \"now\").equals(now))",
+    "to": "  if (row === undefined)",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > the connection: the time module's INSTANT_TYPE, or a loud failure > refuses a connection that sends instants whole but reads them back as Dates, for a drop that doesn't exist too"
+    ],
+    "verdict": "caught"
+  },
+  {
+    "name": "facts: a Date taken",
+    "file": "packages/domain/src/authorization/read-sql.ts",
+    "from": "  if (value instanceof Temporal.Instant) return value;",
+    "to": "  if (value instanceof Temporal.Instant || value instanceof Date) return value as Temporal.Instant;",
+    "suites": "db",
+    "exit_codes": {
+      "db": 1
+    },
+    "failed": [
+      "src/db/authorization.test.ts > the connection: the time module's INSTANT_TYPE, or a loud failure > refuses a connection that sends instants whole but reads them back as Dates, for a drop that doesn't exist too"
+    ],
+    "verdict": "caught"
+  }
+]
