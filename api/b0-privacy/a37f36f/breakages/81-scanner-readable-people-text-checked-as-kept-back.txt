@@ -1,0 +1,23 @@
+breakage: scanner-readable-people-text-checked-as-kept-back
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "        continue;\n      }\n      find(\"values\", at, \"text people wrote that isn't the viewer's to read\");\n",
+  "      } else find(\"values\", at, \"text people wrote that isn't the viewer's to read\");\n"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × passes a caption that holds another drop's link
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (60 tests | 2 failed) 210ms
+     × passes a caption that holds another drop's link, as its author wrote it, to its readers (T13) 15ms
+     × catches a caption holding its own drop's hidden link and post id before the reveal (T13, Q07) 2ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner passes what may be shown > passes a caption that holds another drop's link, as its author wrote it, to its readers (T13)
+AssertionError: expected [ { check: 'values', …(2) }, …(1) ] to deeply equal []
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a caption holding its own drop's hidden link and post id before the reveal (T13, Q07)
+AssertionError: expected [ { check: 'values', …(2) }, …(3) ] to deeply equal [ { check: 'values', …(2) }, …(1) ]
+ Test Files  1 failed (1)
+      Tests  2 failed | 58 passed (60)

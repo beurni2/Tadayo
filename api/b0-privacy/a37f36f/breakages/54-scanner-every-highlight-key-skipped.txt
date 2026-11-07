@@ -1,0 +1,23 @@
+breakage: scanner-every-highlight-key-skipped
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "if (NEVER_KEY.test(key) && walked.names.get(path) !== \"HighlightPointer\")",
+  "if (NEVER_KEY.test(key) && key !== \"highlight\")"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × catches highlight on a caption card
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (60 tests | 2 failed) 177ms
+     × catches highlight on a caption card (T10) 13ms
+     × judges an own card by the world's author, never by the card's own author field (TECH-DESIGN section 8) 4ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches highlight on a caption card (T10)
+AssertionError: expected [ 'shape', 'whitelist' ] to include 'keys'
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > judges an own card by the world's author, never by the card's own author field (TECH-DESIGN section 8)
+AssertionError: expected [ 'world' ] to deeply equal [ 'keys', 'world' ]
+ Test Files  1 failed (1)
+      Tests  2 failed | 58 passed (60)

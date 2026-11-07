@@ -1,0 +1,26 @@
+breakage: api-client-error-handler-left-as-fastify
+patch: [
+ [
+  "services/api/src/app.ts",
+  "    clientErrorHandler: clientError,\n",
+  ""
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-privacy/services/api && npx vitest run
+exit: 1
+expected pattern: Client Error|Bad Request
+caught: True
+
+ ❯ src/app.test.ts (11 tests | 2 failed) 279ms
+     × answers a request the parser can't read with INVALID_REQUEST alone, in place of Fastify's own words 27ms
+     × writes nothing into an answer already under way when a request pipelined behind it can't be read 113ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  2 failed | 13 passed (15)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/app.test.ts > what Node's parser answers, over a socket of its own (T14) > answers a request the parser can't read with INVALID_REQUEST alone, in place of Fastify's own words
+AssertionError: GET /v1/drops/cafÃ© HTTP/1.1
+Host: 127.: expected { status: 400, …(2) } to deeply equal { status: 400, …(2) }
++   "body": "{\"error\":\"Bad Request\",\"message\":\"Client Error\",\"statusCode\":400}",
+    "headers": {
+ FAIL  src/app.test.ts > what Node's parser answers, over a socket of its own (T14) > writes nothing into an answer already under way when a request pipelined behind it can't be read
+AssertionError: expected [ 'HTTP/1.1 ', 'HTTP/1.1 ' ] to have a length of 1 but got 2

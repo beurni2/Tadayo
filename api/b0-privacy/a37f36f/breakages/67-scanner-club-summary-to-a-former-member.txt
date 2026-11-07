@@ -1,0 +1,20 @@
+breakage: scanner-club-summary-to-a-former-member
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "        else if (summary && !reader.activeClubs.has(id))",
+  "        else if (summary && Math.random() > 2)"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × catches a former member's club as one of theirs
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (60 tests | 1 failed) 184ms
+     × catches a former member's club as one of theirs, a person who joined after they left, and avatars once an interval has ended (FQ75) 10ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a former member's club as one of theirs, a person who joined after they left, and avatars once an interval has ended (FQ75)
+AssertionError: expected [ '$.clubs[0].my_membership_id' ] to deeply equal [ '$.clubs[0]', …(1) ]
+ Test Files  1 failed (1)
+      Tests  1 failed | 59 passed (60)

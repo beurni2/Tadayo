@@ -1,0 +1,213 @@
+breakage: route-403-everyone
+patch: [
+ [
+  "services/api/src/app.ts",
+  "handler: notFound,\n    });\n  }",
+  "handler: operation.id === \"getDrop\" ? (_request: FastifyRequest, reply: FastifyReply) => reply.code(403).header(\"cache-control\", NO_STORE).type(JSON_TYPE).send('{\"code\":\"PROFILE_INCOMPLETE\"}') : notFound,\n    });\n  }"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/matrix.test.ts
+exit: 1
+expected pattern: getDrop: status 403
+caught: True
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the author with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the star with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the member in the audience with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the member who joined after the commit (T8) with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the rejoined member, a new interval (T8) with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the former member with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the invited, not yet a member (T7) with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the stranger from another club with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the blocked: Cleo blocked the author, leaving by the block with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88) with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the deletion pending, the membership not yet ended (T27) with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > callers without a session, in each state of the drop and phase of the day (T14) > answers each the same whatever the ids name, the neutral not-found, and leaks nothing the scanner can find
+ ❯ src/privacy/matrix.test.ts (13 tests | 12 failed) 37430ms
+     × answers the author with the neutral not-found, and leaks nothing the scanner can find 3878ms
+     × answers the star with the neutral not-found, and leaks nothing the scanner can find 3063ms
+     × answers the member in the audience with the neutral not-found, and leaks nothing the scanner can find 3318ms
+     × answers the member who joined after the commit (T8) with the neutral not-found, and leaks nothing the scanner can find 3227ms
+     × answers the rejoined member, a new interval (T8) with the neutral not-found, and leaks nothing the scanner can find 2909ms
+     × answers the former member with the neutral not-found, and leaks nothing the scanner can find 3780ms
+     × answers the invited, not yet a member (T7) with the neutral not-found, and leaks nothing the scanner can find 2954ms
+     × answers the stranger from another club with the neutral not-found, and leaks nothing the scanner can find 3431ms
+     × answers the blocked: Cleo blocked the author, leaving by the block with the neutral not-found, and leaks nothing the scanner can find 3366ms
+     × answers the blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88) with the neutral not-found, and leaks nothing the scanner can find 2349ms
+     × answers the deletion pending, the membership not yet ended (T27) with the neutral not-found, and leaks nothing the scanner can find 3454ms
+     × answers each the same whatever the ids name, the neutral not-found, and leaks nothing the scanner can find 1518ms
+⎯⎯⎯⎯⎯⎯ Failed Tests 12 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the author with the neutral not-found, and leaks nothing the scanner can find
+AssertionError: expected { count: 812, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
++     "active, collecting: getDrop: status 403",
++     "active, collecting: getDrop: reason \"Forbidden\"",
++     "active, collecting: getDrop: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"viewer\":\"mem_hlaL8-Dh-m6J03vB1eeAag\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"viewer\":\"mem_hlaL8-Dh-m6J03vB1eeAag\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"viewer\":\"mem_hlaL8-Dh-m6J03vB1eeAag\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"viewer\":\"mem_hlaL8-Dh-m6J03vB1eeAag\"},\"headers\":{}}: content-length: 29",
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the star with the neutral not-found, and leaks nothing the scanner can find
+AssertionError: expected { count: 812, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
++     "active, collecting: getDrop: status 403",
++     "active, collecting: getDrop: reason \"Forbidden\"",
++     "active, collecting: getDrop: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"viewer\":\"mem_q-6Po0Y1uHdKazvMB_DSGQ\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"viewer\":\"mem_q-6Po0Y1uHdKazvMB_DSGQ\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"viewer\":\"mem_q-6Po0Y1uHdKazvMB_DSGQ\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"viewer\":\"mem_q-6Po0Y1uHdKazvMB_DSGQ\"},\"headers\":{}}: content-length: 29",
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the member in the audience with the neutral not-found, and leaks nothing the scanner can find
+AssertionError: expected { count: 812, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
++     "active, collecting: getDrop: status 403",
++     "active, collecting: getDrop: reason \"Forbidden\"",
++     "active, collecting: getDrop: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"viewer\":\"mem_vQXQxtaV41Zr4XOAUxN-oA\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"viewer\":\"mem_vQXQxtaV41Zr4XOAUxN-oA\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"viewer\":\"mem_vQXQxtaV41Zr4XOAUxN-oA\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"viewer\":\"mem_vQXQxtaV41Zr4XOAUxN-oA\"},\"headers\":{}}: content-length: 29",
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the member who joined after the commit (T8) with the neutral not-found, and leaks nothing the scanner can find
+AssertionError: expected { count: 812, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
++     "active, collecting: getDrop: status 403",
++     "active, collecting: getDrop: reason \"Forbidden\"",
++     "active, collecting: getDrop: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: content-length: 29",
++     "active, collecting: getDrop, manipulated {\"query\":{\"viewer\":\"mem_ZnOue1MTWGIs9gxoANFytg\"},\"headers\":{}}: status 403",
++     "active, collecting: getDrop, manipulated {\"query\":{\"viewer\":\"mem_ZnOue1MTWGIs9gxoANFytg\"},\"headers\":{}}: reason \"Forbidden\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"viewer\":\"mem_ZnOue1MTWGIs9gxoANFytg\"},\"headers\":{}}: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop, manipulated {\"query\":{\"viewer\":\"mem_ZnOue1MTWGIs9gxoANFytg\"},\"headers\":{}}: content-length: 29",
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the rejoined member, a new interval (T8) with the neutral not-found, and leaks nothing the scanner can find
+AssertionError: expected { count: 812, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
++     "active, collecting: getDrop: status 403",
++     "active, collecting: getDrop: reason \"Forbidden\"",
++     "active, collecting: getDrop: body \"{\\\"code\\\":\\\"PROFILE_INCOMPLETE\\\"}\"",
++     "active, collecting: getDrop: content-length: 29",

@@ -1,0 +1,27 @@
+breakage: scanner-whitelist-widened
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "optional: [\"caption\"] }",
+  "optional: [\"caption\", \"thumbnail_url\", \"width\", \"height\", \"dominant_colour\", \"blur_hash\"] }"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × catches thumbnail_url on a caption card
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (60 tests | 4 failed) 259ms
+     × catches thumbnail_url on a caption card (T10) 12ms
+     × catches width on a caption card (T10) 2ms
+     × catches height on a caption card (T10) 2ms
+     × catches dominant_colour on a caption card (T10) 1ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches thumbnail_url on a caption card (T10)
+AssertionError: expected [ 'keys', 'shape', 'values' ] to include 'whitelist'
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches width on a caption card (T10)
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches height on a caption card (T10)
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches dominant_colour on a caption card (T10)
+AssertionError: expected [ 'keys', 'shape' ] to include 'whitelist'
+ Test Files  1 failed (1)
+      Tests  4 failed | 56 passed (60)
