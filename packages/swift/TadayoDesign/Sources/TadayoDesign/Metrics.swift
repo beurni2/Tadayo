@@ -61,6 +61,22 @@ public enum Size {
     /// p35's scale, and no contract names it, so it takes 16, the inset handoff 5 and 6 name for
     /// content inside a surface (`dayChoiceRow.contentInset`).
     public static let fieldInset: CGFloat = 16
+    /// The secondary button's border (handoff 2's `invitationEntryAction.borderWidth`).
+    public static let secondaryBorder: CGFloat = 1
+    /// The Private drafts row's least height, which grows with the text (handoff 2's
+    /// `privateDraftsEntry.minimumHeight`).
+    public static let draftsRowMinHeight: CGFloat = 76
+    /// The drafts row's folder: the 24-point box handoff 4's `G06-no-club` draws, holding SF Symbol
+    /// `folder` at the size whose glyph matches the drawn one, 20 by 15.
+    public static let draftsFolderBox: CGFloat = 24
+    public static let draftsFolder: CGFloat = 17
+    /// The drafts row's chevron: the frame's 20-point box, holding SF Symbol `chevron.right` at
+    /// the size whose glyph matches the drawn one, 6 by 12.
+    public static let draftsChevronBox: CGFloat = 20
+    public static let draftsChevron: CGFloat = 13
+    /// The wordmark's width in the no-club header (handoff 2's `noClubRootHeader`: "outlined
+    /// wordmark, width 96"; revision 1.1's `minimumWidth`).
+    public static let headerWordmark: CGFloat = 96
 }
 
 /// The avatar's sizes (1.1: 68 on the profile, 36 in rows, 28 on cards, 18 on the rail).

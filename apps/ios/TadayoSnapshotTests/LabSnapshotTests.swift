@@ -6,7 +6,8 @@ import XCTest
 @testable import Tadayo
 
 /// The Lab's sections at the 393-point width, in light, in dark, at the largest standard text
-/// size and at the largest accessibility size (docs/TECH-DESIGN.md sections 2 and 4). The Lab
+/// size and at the largest accessibility size (docs/TECH-DESIGN.md sections 2 and 4), and the
+/// no-club header at 320 points, where it stacks. The Lab
 /// isn't an inventory state, so the contact sheets show these alone; book p34 and p35 and handoff
 /// 0's brand-components are what they are judged against.
 ///
@@ -63,33 +64,47 @@ final class LabSnapshotTests: XCTestCase {
         for section in LabSection.allCases {
             let variants: [Variant] = section == .photos ? [.light] : Variant.allCases
             for variant in variants {
-                let traits =
-                    section == .photos
-                    ? variant.traits.modifyingTraits { $0.displayScale = 1 }
-                    : variant.traits
-                // The ideal height, as the Lab's scroll view gives it: under `.sizeThatFits` alone
-                // the height proposed is zero, so text stays on one line and photographs vanish.
-                let view = section.view
-                    .padding(.vertical, 24)
-                    .frame(width: 393)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .background(Palette.canvas)
-                    .environment(\.colorScheme, variant.scheme)
-                    .environment(\.dynamicTypeSize, variant.size)
-                // As SnapshotTesting lays out a SwiftUI view to fit (no safe area, the size it
-                // fits in a zero proposal), through a host that draws the busy spinner at rest.
-                let host = StillHost(rootView: view)
-                host.safeAreaRegions = []
-                let fitted = host.sizeThatFits(in: .zero)
-                let name = "Lab-\(section.rawValue)\(variant.suffix)"
-                assertSnapshot(
-                    of: host as UIViewController,
-                    as: .image(
-                        on: ViewImageConfig(safeArea: .zero, size: fitted, traits: traits),
-                        perceptualPrecision: 0.98, traits: traits),
-                    named: name)
-                Spinners.check(host.view, busy: section == .actions, name)
+                snap(section, variant, named: "Lab-\(section.rawValue)\(variant.suffix)")
             }
         }
+    }
+
+    /// The no-club header's second form, which no screen snapshot reaches, each being 393 points
+    /// wide: at 320 points, the width of a 375-point iPhone with Display Zoom on, and the largest
+    /// accessibility size, + Add and Account don't fit beside the wordmark, so they go on a row
+    /// under it, still trailing (handoff 4: "can stack").
+    func testTheHeaderStacksWhenItsActionsDontFit() {
+        snap(.header, .xl, width: 320, named: "Lab-header-320-xl")
+    }
+
+    private func snap(
+        _ section: LabSection, _ variant: Variant, width: CGFloat = 393, named name: String,
+        file: StaticString = #filePath, testName: String = #function, line: UInt = #line
+    ) {
+        let traits =
+            section == .photos
+            ? variant.traits.modifyingTraits { $0.displayScale = 1 }
+            : variant.traits
+        // The ideal height, as the Lab's scroll view gives it: under `.sizeThatFits` alone the
+        // height proposed is zero, so text stays on one line and photographs vanish.
+        let view = section.view
+            .padding(.vertical, 24)
+            .frame(width: width)
+            .fixedSize(horizontal: false, vertical: true)
+            .background(Palette.canvas)
+            .environment(\.colorScheme, variant.scheme)
+            .environment(\.dynamicTypeSize, variant.size)
+        // As SnapshotTesting lays out a SwiftUI view to fit (no safe area, the size it fits in a
+        // zero proposal), through a host that draws the busy spinner at rest.
+        let host = StillHost(rootView: view)
+        host.safeAreaRegions = []
+        let fitted = host.sizeThatFits(in: .zero)
+        assertSnapshot(
+            of: host as UIViewController,
+            as: .image(
+                on: ViewImageConfig(safeArea: .zero, size: fitted, traits: traits),
+                perceptualPrecision: 0.98, traits: traits),
+            named: name, file: file, testName: testName, line: line)
+        Spinners.check(host.view, busy: section == .actions, name, file: file, line: line)
     }
 }

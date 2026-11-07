@@ -16,9 +16,10 @@ import XCTest
 /// phone has 59), and the bottom, which a window shorter than the 874-point screen loses, is
 /// made the frames' 34 (`FramedHost`). The busy button's spinner never turns (`StillHost`).
 ///
-/// The `-xl` snapshot is a phone tall enough to hold the whole screen at that size, since at
-/// AX5 the content scrolls: what would scroll is laid out down the image, with the pinned
-/// action at its foot (a known difference in INVENTORY.md).
+/// The `-xl` snapshot is a phone 2,200 points tall, enough to hold the whole screen at that size,
+/// since at AX5 the content scrolls: what would scroll is laid out down the image, with the
+/// pinned action at its foot (a known difference in INVENTORY.md). No taller: a window 2,800
+/// points tall came out empty, the render server returning an error (`docs/LIMITATIONS.md`).
 @MainActor
 enum ScreenSnapshot {
     enum Variant: CaseIterable {
@@ -45,10 +46,10 @@ enum ScreenSnapshot {
         /// The safe areas are the window's own and `FramedHost`'s (above). The frames' are given
         /// all the same: with none, SnapshotTesting moves the view off the screen, and the key
         /// window then drew the bar 52 points above where it laid it out.
-        func config(xlHeight: CGFloat) -> ViewImageConfig {
+        var config: ViewImageConfig {
             ViewImageConfig(
                 safeArea: UIEdgeInsets(top: 59, left: 0, bottom: 34, right: 0),
-                size: CGSize(width: 393, height: self == .xl ? xlHeight : 852),
+                size: CGSize(width: 393, height: self == .xl ? 2200 : 852),
                 traits: traits)
         }
     }
@@ -57,7 +58,7 @@ enum ScreenSnapshot {
     /// pair each with its render (`tools/ci/ios_steps.py`). A `busy` state must hold an indicator
     /// (`Spinners.check`); the comparison with its reference shows it drawn.
     static func assert(
-        _ view: some View, named state: String, busy: Bool = false, xlHeight: CGFloat = 2200,
+        _ view: some View, named state: String, busy: Bool = false,
         file: StaticString = #filePath, testName: String = #function, line: UInt = #line
     ) {
         for variant in Variant.allCases {
@@ -70,7 +71,7 @@ enum ScreenSnapshot {
             assertSnapshot(
                 of: host as UIViewController,
                 as: .image(
-                    on: variant.config(xlHeight: xlHeight),
+                    on: variant.config,
                     drawHierarchyInKeyWindow: true,
                     perceptualPrecision: 0.98,
                     traits: variant.traits),

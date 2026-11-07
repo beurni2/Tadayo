@@ -77,14 +77,25 @@ struct SetupFooter<Content: View>: View {
 extension View {
     /// Says `words` each time they change to something, without moving VoiceOver's focus
     /// (handoff 1: "Announce errors and resend availability without stealing focus"); politely
-    /// lets what VoiceOver is saying finish first.
-    func announcing(_ words: String?, politely: Bool = false) -> some View {
-        onChange(of: words) { _, said in
+    /// lets what VoiceOver is saying finish first. With `initial`, also the words the view
+    /// first shows with.
+    func announcing(
+        _ words: String?, politely: Bool = false, initial: Bool = false
+    ) -> some View {
+        onChange(of: words, initial: initial) { _, said in
             guard let said else { return }
-            let priority: UIAccessibilityPriority = politely ? .low : .default
-            let announcement = NSAttributedString(
-                string: said, attributes: [.accessibilitySpeechAnnouncementPriority: priority])
-            UIAccessibility.post(notification: .announcement, argument: announcement)
+            Announcement.post(said, politely: politely)
         }
+    }
+}
+
+/// Something VoiceOver says without moving its focus.
+enum Announcement {
+    /// Says `words`; politely lets what VoiceOver is saying finish first.
+    static func post(_ words: String, politely: Bool = false) {
+        let priority: UIAccessibilityPriority = politely ? .low : .default
+        let announcement = NSAttributedString(
+            string: words, attributes: [.accessibilitySpeechAnnouncementPriority: priority])
+        UIAccessibility.post(notification: .announcement, argument: announcement)
     }
 }
