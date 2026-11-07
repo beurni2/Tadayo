@@ -64,9 +64,61 @@ import Testing
         await root.start()
         #expect(root.route == .tabs)
         #expect(root.clubs == .noClub)
+        #expect(root.account == named)
         #expect(root.signIn == nil)
         #expect(root.profile == nil)
         #expect(accounts.calls == ["me", "clubs"])
+    }
+
+    @Test func theTabsAccountIsForgottenOnLeaving() async {
+        // T11: nothing of the account left outlives Leave, the header's initial included.
+        let root = root(
+            FakeAccounts(me: [.success(named)], clubs: [.success(clubs(empty: true))]),
+            store: InMemorySessionStore(stored))
+        await root.start()
+        #expect(root.account == named)
+        await root.leave()
+        #expect(root.route == .signIn)
+        #expect(root.account == nil)
+    }
+
+    @Test func noAccountIsShownWhileTheProfileIsUnfinished() async {
+        let root = root(
+            FakeAccounts(me: [.success(account(age: true, version: 1))]),
+            store: InMemorySessionStore(stored))
+        await root.start()
+        #expect(root.route == .profile)
+        #expect(root.account == nil)
+    }
+
+    @Test func anUnfinishedProfileFromTheClubsForgetsTheTabsAccount() async {
+        let accounts = FakeAccounts(
+            me: [.success(named), .success(account(age: true, version: 4))],
+            clubs: [.failure(.profileIncomplete)])
+        let root = root(accounts, store: InMemorySessionStore(stored))
+        await root.start()
+        #expect(root.route == .profile)
+        #expect(root.account == nil)
+    }
+
+    @Test func aSessionTheDeviceCantKeepSaysSoAndSignsInAgain() async throws {
+        // T43: the failure names what failed. Retry starts again, and with nothing kept that's
+        // sign-in, at the address step with what was typed still there.
+        let auth = FakeAuth(verify: [.success(stored)])
+        let accounts = FakeAccounts(me: [.success(account())])
+        let root = root(accounts, auth: auth, store: UnwritableStore())
+        await root.start()
+        let signIn = try #require(root.signIn)
+        signIn.email = "ben@example.com"
+        await signIn.sendCode()
+        signIn.code = "529614"
+        await signIn.verify()
+        #expect(root.route == .signInNotKept)
+        #expect(accounts.calls.isEmpty)
+        await root.retry()
+        #expect(root.route == .signIn)
+        #expect(root.signIn?.step == .email)
+        #expect(root.signIn?.email == "ben@example.com")
     }
 
     @Test func clubsB0CantDrawAreNeitherEmptyNorAFailure() async {
@@ -238,6 +290,10 @@ import Testing
         let root = root(accounts, store: store)
         let starting = Task { await root.start() }
         await gate.reached()
+        // The tabs show the account while its list is out.
+        #expect(root.route == .tabs)
+        #expect(root.clubs == .loading)
+        #expect(root.account == named)
         await root.leave()
         gate.open()
         await starting.value
@@ -354,7 +410,7 @@ import Testing
             FakeAccounts(me: [.success(account())]), store: store, left: { purges += 1 })
         await root.start()
         await root.leave()
-        #expect(root.route == .failed(.other))
+        #expect(root.route == .leaveFailed)
         #expect(root.profile == nil)
         #expect(try store.load() == stored)
         // What the account left behind is purged even while the device still keeps its session.
@@ -364,4 +420,27 @@ import Testing
         #expect(try store.load() == nil)
         #expect(purges == 2)
     }
+
+    @Test func aLeaveFromTheTabsThatCantForgetTheSessionForgetsTheAccount() async throws {
+        // T11: nothing of the account outlives Leave sign-in, even while the device still keeps
+        // its session.
+        let root = root(
+            FakeAccounts(me: [.success(named)], clubs: [.success(clubs(empty: true))]),
+            store: StubbornStore(stored, failures: 2))
+        await root.start()
+        #expect(root.route == .tabs)
+        #expect(root.account == named)
+        await root.leave()
+        #expect(root.route == .leaveFailed)
+        #expect(root.account == nil)
+        #expect(root.clubs == .loading)
+    }
+}
+
+/// A keychain that won't take a session: `save` throws, as a full or locked keychain can.
+final class UnwritableStore: SessionStore, @unchecked Sendable {
+    struct Refused: Error {}
+    func load() throws -> AuthSession? { nil }
+    func save(_ session: AuthSession) throws { throw Refused() }
+    func delete() throws {}
 }

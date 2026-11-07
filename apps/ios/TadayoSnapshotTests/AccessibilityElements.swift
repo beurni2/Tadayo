@@ -11,8 +11,13 @@ import UIKit
 /// accessibility automation on for this process, as KIF's `KIFEnableAccessibility` and
 /// AccessibilitySnapshot's `ASAccessibilityEnabler` do: `_AXSSetAutomationEnabled` from the
 /// simulator's `libAccessibility.dylib`. It's left on: the UI tests turn it on anyway, and the
-/// `ios` workflow's simulator goes with its runner. Each test pairs what mustn't be found with
-/// something that must, so a tree that can't be read fails rather than passes.
+/// `ios` workflow's simulator goes with its runner. iOS then loads its accessibility bundles in
+/// the background, and until they're in, a scroll view's content has no elements though a button
+/// beside it has: in `ios` run 42331130562 the first read of `RootFailure` found Retry alone,
+/// the log saying the bundles had loaded only during the next test. So the first read waits, up
+/// to 10 seconds, until a probe, a line of text in a scroll view, can be read. Each test pairs
+/// what mustn't be found with something that must, so a tree that can't be read fails rather
+/// than passes.
 @MainActor
 enum AccessibilityElements {
     struct Element: CustomStringConvertible {
@@ -26,7 +31,27 @@ enum AccessibilityElements {
     }
 
     static func of(_ view: some View) -> [Element] {
-        _ = automationIsOn
+        prepare()
+        return read(view)
+    }
+
+    private static var prepared = false
+
+    /// Turns automation on, once, and waits until a probe in a scroll view can be read, for up to
+    /// 10 seconds; with no automation, or past that, the reads go ahead and the tests' own
+    /// expectations fail.
+    private static func prepare() {
+        guard !prepared else { return }
+        prepared = true
+        guard automationIsOn else { return }
+        let probe = "Accessibility probe"
+        let deadline = Date().addingTimeInterval(10)
+        while Date() < deadline,
+            !read(ScrollView { Text(verbatim: probe) }).contains(where: { $0.label == probe })
+        {}
+    }
+
+    private static func read(_ view: some View) -> [Element] {
         let scene = UIApplication.shared.connectedScenes.lazy.compactMap { $0 as? UIWindowScene }
             .first
         let window = scene.map { UIWindow(windowScene: $0) } ?? UIWindow()

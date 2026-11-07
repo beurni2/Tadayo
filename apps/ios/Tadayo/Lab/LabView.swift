@@ -4,10 +4,14 @@
     import TadayoDesign
 
     /// The Lab: every token and component with the fixture cast (docs/TECH-DESIGN.md section 4).
-    /// Compiled only into builds that point at `dev` (LAB); the snapshot tests draw each section
-    /// in light, dark and at three text sizes. It is a workbench, not a screen of the product, so
-    /// its headings are plain labels.
+    /// Compiled only into builds that point at `dev` (LAB), where it is the tabs' fourth tab; the
+    /// snapshot tests draw each section in light, dark and at three text sizes. It is a
+    /// workbench, not a screen of the product, so its headings are plain labels. Its Log out
+    /// (spec 23's word) ends the session as Leave sign-in does, so a dev build can sign in again
+    /// before the product's account screen exists.
     struct LabView: View {
+        let logOut: @MainActor () async -> Void
+
         var body: some View {
             NavigationStack {
                 ScrollView {
@@ -20,13 +24,18 @@
                 }
                 .background(Palette.canvas)
                 .navigationTitle("Lab")
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Log out") { Task { await logOut() } }
+                    }
+                }
             }
         }
     }
 
     /// The Lab's sections, each drawn alone by the snapshot tests.
     enum LabSection: String, CaseIterable, Identifiable {
-        case colours, type, plaque, avatars, cards, highlights, actions, fields, photos
+        case colours, type, plaque, avatars, cards, highlights, actions, fields, header, photos
 
         var id: String { rawValue }
 
@@ -40,14 +49,17 @@
             case .highlights: LabHighlights()
             case .actions: LabActions()
             case .fields: LabFields()
+            case .header: LabHeader()
             case .photos: LabPhotos()
             }
         }
     }
 
-    /// A section's heading and its content, inset from the screen's edges.
+    /// A section's heading and its content, inset from the screen's edges, or, for a component
+    /// that keeps its own insets (`insetsContent` false), across the whole width.
     struct LabGroup<Content: View>: View {
         let title: String
+        var insetsContent = true
         @ViewBuilder let content: Content
 
         var body: some View {
@@ -56,9 +68,10 @@
                     .textRole(.metadata)
                     .foregroundStyle(Palette.secondaryText)
                     .accessibilityAddTraits(.isHeader)
+                    .padding(.horizontal, insetsContent ? 0 : Spacing.inset)
                 content
             }
-            .padding(.horizontal, Spacing.inset)
+            .padding(.horizontal, insetsContent ? Spacing.inset : 0)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
@@ -220,9 +233,9 @@
     }
 
     struct LabActions: View {
-        /// The primary button's four states, as the sheet's "Primary button states" shows them.
-        /// A snapshot can't press a button or give it keyboard focus, so those two are drawn
-        /// with the button's face.
+        /// The primary button's four states, as the sheet's "Primary button states" shows them,
+        /// then the secondary button (handoff 2's `invitationEntryAction`). A snapshot can't
+        /// press a button or give it keyboard focus, so those are drawn with the buttons' faces.
         var body: some View {
             LabGroup(title: "Actions") {
                 state("Default") {
@@ -247,6 +260,16 @@
                     }
                     .buttonStyle(.tadayoPrimary(isBusy: true))
                     .disabled(true)
+                }
+                state("Secondary") {
+                    Button {
+                    } label: {
+                        Text("noClub.invite")
+                    }
+                    .buttonStyle(.tadayoSecondary)
+                }
+                state("Secondary, keyboard focus") {
+                    SecondaryButtonFace(isFocused: true) { Text("noClub.invite") }
                 }
                 AllowanceLine("2 of 6 drops · 0 of 2 video links")
                 state("Text action") {
@@ -311,6 +334,27 @@
             VStack(alignment: .leading, spacing: Spacing.s) {
                 Text(name).textRole(.metadata).foregroundStyle(Palette.secondaryText)
                 content()
+            }
+        }
+    }
+
+    /// The no-club header with Ben's initial (handoff 2's `noClubRootHeader`), across the width
+    /// as the tabs draw it, and the Private drafts row (`privateDraftsEntry`).
+    struct LabHeader: View {
+        var body: some View {
+            VStack(alignment: .leading, spacing: Spacing.xxxl) {
+                LabGroup(title: "No-club header", insetsContent: false) {
+                    NoClubHeader(
+                        wordmark: Image("Wordmark"), wordmarkLabel: Text("brand.wordmark"),
+                        add: Text("header.add"), addHint: Text("header.add.hint"),
+                        account: Text("header.account"), name: FixtureCast.ben.name,
+                        onAdd: {}, onAccount: {})
+                }
+                LabGroup(title: "Private drafts") {
+                    PrivateDraftsEntry(
+                        title: Text("drafts.title"), subtitle: Text("drafts.subtitle"),
+                        action: {})
+                }
             }
         }
     }
