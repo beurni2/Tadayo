@@ -14,11 +14,11 @@ final class TabsSnapshotTests: XCTestCase {
     // MARK: No club
 
     func testG06NoClub() {
-        snap(.noClub, on: .home, named: "G06-no-club", xlHeight: 2800)
+        snap(.noClub, on: .home, named: "G06-no-club")
     }
 
     func testF01NoClub() {
-        snap(.noClub, on: .friends, named: "F01-no-club", xlHeight: 2800)
+        snap(.noClub, on: .friends, named: "F01-no-club")
     }
 
     func testM01NoClub() {
@@ -171,13 +171,13 @@ final class TabsSnapshotTests: XCTestCase {
 
     private func snap(
         _ clubs: RootModel.Clubs, on tab: TabsView.Selection, named state: String,
-        xlHeight: CGFloat = 2200, testName: String = #function, line: UInt = #line
+        testName: String = #function, line: UInt = #line
     ) {
         ScreenSnapshot.assert(
             TabsView(
                 clubs: clubs, name: "Ben", selection: tab, showsLab: false, retry: {},
                 logOut: {}),
-            named: state, busy: clubs == .loading, xlHeight: xlHeight, testName: testName,
+            named: state, busy: clubs == .loading, testName: testName,
             line: line)
     }
 }
