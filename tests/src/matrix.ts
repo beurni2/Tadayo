@@ -6,7 +6,7 @@
 
 import { randomBytes } from "node:crypto";
 import type { Tx, WorldTx } from "./db/harness.ts";
-import { AT, joinByRoster, leave, newId, newUser, newWorld, type Member, type World } from "./db/world.ts";
+import { AT, joinByRoster, leave, named, newId, newUser, newWorld, type Member, type World } from "./db/world.ts";
 
 /** world.ts's helpers take the plain transaction; this one only adds INSTANT_TYPE. */
 const plain = (tx: WorldTx) => tx as unknown as Tx;
@@ -93,7 +93,7 @@ export async function withdrawUnrevealed(tx: WorldTx, member: Member, reason: "b
  * no account to the club at all, so this is the nearest an invited person comes.
  */
 export async function invite(tx: WorldTx, w: World, at: Date): Promise<string> {
-  const mo = await newUser(plain(tx), "Mo");
+  const mo = await newUser(plain(tx), named(w, "Mo"));
   const [revision, candidate, invitation] = [newId("rev"), newId("cand"), newId("inv")];
   await tx`
     INSERT INTO app.roster_revisions (id, club_id, origin, proposed_by_interval_id, created_at)
@@ -111,7 +111,7 @@ export async function invite(tx: WorldTx, w: World, at: Date): Promise<string> {
   `;
   await tx`
     INSERT INTO app.roster_revision_candidates (revision_id, club_id, candidate_id, label, position)
-    VALUES (${revision}, ${w.club}, ${candidate}, 'Mo', 1)
+    VALUES (${revision}, ${w.club}, ${candidate}, ${named(w, "Mo")}, 1)
   `;
   await tx`UPDATE app.roster_revisions SET roster_sealed_at = ${at} WHERE id = ${revision}`;
   await tx`
@@ -143,8 +143,8 @@ export const ROLES: Role[] = [
     name: "member who joined after the commit (T8)",
     reads: false,
     make: async (tx, w) => {
-      const eve = await newUser(plain(tx), "Eve");
-      await joinByRoster(plain(tx), w.club, w.ana, [{ user: eve, label: "Eve" }], AFTER);
+      const eve = await newUser(plain(tx), named(w, "Eve"));
+      await joinByRoster(plain(tx), w.club, w.ana, [{ user: eve, label: named(w, "Eve") }], AFTER);
       return eve;
     },
   },
@@ -152,8 +152,8 @@ export const ROLES: Role[] = [
     name: "rejoined member, a new interval (T8)",
     reads: false,
     make: async (tx, w) => {
-      await leave(plain(tx), w.cleo, "Cleo", AFTER);
-      await joinByRoster(plain(tx), w.club, w.ana, [{ user: w.cleo.user, label: "Cleo" }], LATER);
+      await leave(plain(tx), w.cleo, named(w, "Cleo"), AFTER);
+      await joinByRoster(plain(tx), w.club, w.ana, [{ user: w.cleo.user, label: named(w, "Cleo") }], LATER);
       return w.cleo.user;
     },
   },
@@ -161,7 +161,7 @@ export const ROLES: Role[] = [
     name: "former member",
     reads: false,
     make: async (tx, w) => {
-      await leave(plain(tx), w.cleo, "Cleo", AFTER);
+      await leave(plain(tx), w.cleo, named(w, "Cleo"), AFTER);
       return w.cleo.user;
     },
   },
@@ -169,13 +169,14 @@ export const ROLES: Role[] = [
   {
     name: "stranger from another club",
     reads: false,
-    make: async (tx) => (await newWorld(plain(tx))).cleo.user,
+    make: async (tx, w) =>
+      (await newWorld(plain(tx), w.suffix === "" ? "" : ` ${randomBytes(6).toString("hex")}`)).cleo.user,
   },
   {
     name: "blocked: Cleo blocked the author, leaving by the block",
     reads: false,
     make: async (tx, w) => {
-      await block(tx, w.cleo, "Cleo", w.ben, "Ben", AFTER);
+      await block(tx, w.cleo, named(w, "Cleo"), w.ben, named(w, "Ben"), AFTER);
       await withdrawUnrevealed(tx, w.cleo, "block", AFTER);
       return w.cleo.user;
     },
@@ -187,7 +188,7 @@ export const ROLES: Role[] = [
     name: "blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88)",
     reads: false,
     make: async (tx, w) => {
-      await block(tx, w.ben, "Ben", w.cleo, "Cleo", AT.reveal);
+      await block(tx, w.ben, named(w, "Ben"), w.cleo, named(w, "Cleo"), AT.reveal);
       return w.cleo.user;
     },
     phases: ["open", "past", "past, a year on"],

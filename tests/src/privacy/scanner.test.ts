@@ -4,11 +4,21 @@
 // loosened fails here. No database: the world is written out below, as the matrix reads it from its
 // rows.
 
+import { Buffer } from "node:buffer";
+import { STATUS_CODES } from "node:http";
 import Fastify from "fastify";
 import { describe, expect, it } from "vitest";
 import { answerOf } from "./harness.ts";
 import { contractOperations, readDocument } from "./operations.ts";
-import { scan, type Answer, type Check, type ScanContext, type WorldDrop, type WorldFacts } from "./scanner.ts";
+import {
+  scan,
+  type Answer,
+  type Check,
+  type MediaClass,
+  type ScanContext,
+  type WorldDrop,
+  type WorldFacts,
+} from "./scanner.ts";
 
 const document = readDocument();
 const operations = new Map(contractOperations(document).map((operation) => [operation.id, operation]));
@@ -23,42 +33,74 @@ const REVEAL = Temporal.Instant.from("2026-11-07T07:00:00Z");
 const COLLECTING = REVEAL.subtract({ microseconds: 1 });
 const OPEN = REVEAL.add({ hours: 2 });
 
-// Ana's club: Ana, Ben and Cleo, and Eve, who joined after the drops were committed. Stan is in
-// another club, with a day and a drop of his own.
+// Ana's club: Ana, Ben and Cleo; Fay, who left it after the drops were committed; Eve, who joined
+// after them; and Gus, who joined after Fay left. Stan is in another club, with a day and a drop of
+// his own.
 const ana = "itv_ana";
 const ben = "itv_ben";
 const cleo = "itv_cleo";
 const eve = "itv_eve";
+const fay = "itv_fay";
+const gus = "itv_gus";
 const stan = "itv_stan";
 
-function drop(author: string, day: string, caption: string | null, audience: string[], comments: string[] = []) {
-  return { author, day, caption, audience: new Set(audience), comments } satisfies WorldDrop;
+const instant = (text: string) => Temporal.Instant.from(text);
+
+function drop(
+  author: string,
+  day: string,
+  media: MediaClass,
+  caption: string | null,
+  audience: string[],
+  comments: string[] = [],
+) {
+  return { author, day, media, caption, audience: new Set(audience), comments } satisfies WorldDrop;
+}
+
+function member(club: string, name: string, joined: string, left: string | null = null) {
+  return { club, name, joinedAt: instant(joined), leftAt: left === null ? null : instant(left) };
+}
+
+function day(club: string, star: string, reveal: string, close: string, collecting: string) {
+  return { club, star, revealAt: instant(reveal), closeAt: instant(close), collectingFrom: instant(collecting) };
 }
 
 const world: WorldFacts = {
   drops: new Map([
-    ["drp_ben", drop(ben, "occ_sat", "From Ben", [ana, ben, cleo])],
-    ["drp_cleo", drop(cleo, "occ_sat", "See https://example.org/x", [ana, ben, cleo])],
-    ["drp_secret", drop(ana, "occ_sat", "Only for Ben", [ana, ben])],
-    ["drp_old", drop(ben, "occ_old", null, [ana, ben, cleo], ["Lovely light"])],
-    ["drp_stan", drop(stan, "occ_far", "Far away", [stan])],
+    ["drp_ben", drop(ben, "occ_sat", "photo", "From Ben", [ana, ben, cleo])],
+    ["drp_cleo", drop(cleo, "occ_sat", "external_video", "See https://example.org/x", [ana, ben, cleo])],
+    ["drp_secret", drop(ana, "occ_sat", "photo", "Only for Ben", [ana, ben])],
+    [
+      "drp_quote",
+      drop(ben, "occ_sat", "photo", "Like https://www.tiktok.com/@cleo/video/7312345678901234567", [ana, ben, cleo]),
+    ],
+    ["drp_old", drop(ben, "occ_old", "photo", null, [ana, ben, cleo], ["Lovely light"])],
+    // Fay's own, on the day before she left; her interval has ended, so it is in no audience of hers.
+    ["drp_fay", drop(fay, "occ_old", "photo", "From Fay", [ana, ben, cleo], ["Nice one"])],
+    ["drp_stan", drop(stan, "occ_far", "photo", "Far away", [stan])],
   ]),
   days: new Map([
-    ["occ_sat", { club: "clb_sat", revealAt: REVEAL }],
-    ["occ_old", { club: "clb_sat", revealAt: Temporal.Instant.from("2026-10-31T07:00:00Z") }],
-    ["occ_next", { club: "clb_sat", revealAt: Temporal.Instant.from("2026-11-14T07:00:00Z") }],
-    ["occ_far", { club: "clb_far", revealAt: REVEAL }],
+    ["occ_sat", day("clb_sat", ana, "2026-11-07T07:00:00Z", "2026-11-08T01:00:00Z", "2026-11-02T08:00:00Z")],
+    ["occ_old", day("clb_sat", ana, "2026-10-31T07:00:00Z", "2026-11-01T01:00:00Z", "2026-10-26T08:00:00Z")],
+    ["occ_next", day("clb_sat", ana, "2026-11-14T07:00:00Z", "2026-11-15T01:00:00Z", "2026-11-09T08:00:00Z")],
+    ["occ_far", day("clb_far", stan, "2026-11-07T07:00:00Z", "2026-11-08T01:00:00Z", "2026-11-02T08:00:00Z")],
   ]),
   members: new Map([
-    [ana, { club: "clb_sat", name: "Ana" }],
-    [ben, { club: "clb_sat", name: "Ben" }],
-    [cleo, { club: "clb_sat", name: "Cleo" }],
-    [eve, { club: "clb_sat", name: "Eve" }],
-    [stan, { club: "clb_far", name: "Stan" }],
+    [ana, member("clb_sat", "Ana", "2026-10-01T10:00:00Z")],
+    [ben, member("clb_sat", "Ben", "2026-10-01T12:00:00Z")],
+    [cleo, member("clb_sat", "Cleo", "2026-10-01T12:00:00Z")],
+    [eve, member("clb_sat", "Eve", "2026-11-06T20:10:00Z")],
+    [fay, member("clb_sat", "Fay", "2026-10-01T12:00:00Z", "2026-11-06T21:00:00Z")],
+    [gus, member("clb_sat", "Gus", "2026-11-06T22:00:00Z")],
+    [stan, member("clb_far", "Stan", "2026-10-01T10:00:00Z")],
   ]),
   clubs: new Map([
     ["clb_sat", { name: "Saturday People", labels: new Set(["Mo"]) }],
     ["clb_far", { name: "Far Club", labels: new Set<string>() }],
+  ]),
+  reservations: new Map([
+    ["rsv_cleo", { interval: cleo, day: "occ_sat", media: "photo" as const }],
+    ["rsv_ana", { interval: ana, day: "occ_sat", media: "photo" as const }],
   ]),
   canaries: new Map([
     ["https://www.tiktok.com/@cleo/video/7312345678901234567", ["drp_cleo"]],
@@ -138,13 +180,16 @@ const bensRevealedCard = (reactions: unknown[] = []) => ({
   viewer_favourite: false,
 });
 
+/** The viewer's own place in Saturday: Ana's day, which Eve and Gus joined after it started collecting. */
+const placeIn = (viewer: string) => ({ is_star: viewer === ana, joined_later: viewer === eve || viewer === gus });
+
 function upcomingDay(drops: unknown[], viewer = cleo) {
   return {
     stage: "upcoming",
     server_now: "2026-11-07T06:59:59Z",
     occurrence: saturday,
     club: club(viewer),
-    viewer: { is_star: false, joined_later: false },
+    viewer: placeIn(viewer),
     drops,
   };
 }
@@ -155,7 +200,7 @@ function revealedDay(drops: unknown[], highlights: unknown[], viewer = cleo) {
     server_now: "2026-11-07T09:00:00Z",
     occurrence: { ...saturday, phase: "open" },
     club: club(viewer),
-    viewer: { is_star: false, joined_later: false },
+    viewer: placeIn(viewer),
     drops,
     highlights,
   };
@@ -173,10 +218,62 @@ function ownContribution(id: string, caption: string, viewer = cleo) {
   };
 }
 
+const AFTER_CLOSE = Temporal.Instant.from("2026-11-08T02:00:00Z");
+const pastSaturday = { ...saturday, phase: "past" };
+const allowance = (added: number, external: number, reserved: number, externalReserved: number) => ({
+  added,
+  reserved,
+  limit: 6,
+  external_added: external,
+  external_reserved: externalReserved,
+  external_limit: 2,
+});
+const cleosOwnCard = () => ({
+  view: "own",
+  id: "drp_cleo",
+  author: person(cleo, "Cleo"),
+  media_class: "external_video",
+  caption: "See https://example.org/x",
+  highlight: false,
+  state: "added",
+  version: 1,
+});
+const ownDay = (counts: ReturnType<typeof allowance>) => ({
+  server_now: "2026-11-07T06:59:59Z",
+  occurrence: saturday,
+  club: club(),
+  allowance: counts,
+  highlight: { version: 1 },
+  drops: [cleosOwnCard()],
+});
+const waitingHome = (now: string, recent: unknown[], viewer = cleo) => ({
+  mode: "waiting",
+  server_now: now,
+  club: club(viewer),
+  club_today: now.slice(0, 10),
+  next: nextSaturday,
+  recent_days: recent,
+});
+const comments = (author: unknown, text: string) => ({
+  items: [{ id: "cmt_1", author, text, edited: false }],
+  thread_muted: false,
+});
+const clubSummary = (viewer: string) => ({ ...club(viewer), state: "active", member_count: 5 });
+
 const HEADERS = { "content-type": "application/json; charset=utf-8", "cache-control": "private, no-store" };
 
 function answer(body: unknown, status = 200, headers: Record<string, string> = {}): Answer {
-  return { status, headers: { ...HEADERS, ...headers }, body: JSON.stringify(body) };
+  return {
+    status,
+    reason: STATUS_CODES[status] ?? "",
+    headers: { ...HEADERS, ...headers },
+    body: JSON.stringify(body),
+  };
+}
+
+/** An answer with no body. */
+function bare(status: number, headers: Record<string, string> = {}): Answer {
+  return { status, reason: STATUS_CODES[status] ?? "", headers, body: "" };
 }
 
 function checks(found: { check: Check }[]): Check[] {
@@ -263,9 +360,58 @@ describe("the leak scanner passes what may be shown", () => {
     const neutral = answer({ code: "NOT_FOUND" }, 404);
     expect(scan(neutral, context("getOccurrence", cleo))).toEqual([]);
     expect(scan(neutral, context("getMe", cleo, { skeleton: true }))).toEqual([]);
-    expect(scan({ status: 204, headers: {}, body: "" }, context("removeFavourite", cleo))).toEqual([]);
+    expect(scan(bare(204), context("removeFavourite", cleo))).toEqual([]);
     const limited = answer({ code: "RATE_LIMITED", retry_after_seconds: 30 }, 429, { "retry-after": "30" });
     expect(scan(limited, context("getOccurrence", cleo))).toEqual([]);
+  });
+
+  it("passes the transport's headers in their own forms, and a Content-Length that is the body's", () => {
+    const body = upcomingDay([bensCard()]);
+    const headers = {
+      "content-length": String(Buffer.byteLength(JSON.stringify(body))),
+      date: "Sat, 07 Nov 2026 06:59:59 GMT",
+      connection: "keep-alive",
+      "keep-alive": "timeout=72",
+    };
+    expect(scan(answer(body, 200, headers), context("getOccurrence", cleo))).toEqual([]);
+  });
+
+  it("passes a caption that holds another drop's link, as its author wrote it, to its readers (T13)", () => {
+    const quote = {
+      view: "caption",
+      id: "drp_quote",
+      author: person(ben, "Ben"),
+      media_class: "photo",
+      caption: "Like https://www.tiktok.com/@cleo/video/7312345678901234567",
+    };
+    expect(scan(answer(upcomingDay([quote])), context("getOccurrence", cleo))).toEqual([]);
+  });
+
+  it("passes a former author's own drop in Your drops and its withdrawal, and the people they knew, without avatars", () => {
+    const theirs = {
+      items: [{ ...ownContribution("drp_fay", "From Fay", fay), occurrence: lastSaturday }],
+    };
+    expect(scan(answer(theirs), context("listMyDrops", fay))).toEqual([]);
+    expect(scan(answer({ drop_id: "drp_fay", state: "withdrawn" }), context("removeDrop", fay))).toEqual([]);
+    const known = {
+      server_now: "2026-11-07T06:59:59Z",
+      club: club(fay),
+      members: [
+        { person: person(ana, "Ana"), position: 1, next_up: false },
+        { person: person(ben, "Ben"), position: 2, next_up: false },
+      ],
+    };
+    expect(scan(answer(known), context("listMembers", fay))).toEqual([]);
+  });
+
+  it("passes the viewer's own allowance and clubs, a closed day's link with a photo cover, and a random cursor", () => {
+    expect(scan(answer(ownDay(allowance(1, 1, 1, 0))), context("getOwnDay", cleo))).toEqual([]);
+    const clubs = { server_now: "2026-11-07T06:59:59Z", clubs: [clubSummary(cleo)], invitations: [] };
+    expect(scan(answer(clubs), context("listClubs", cleo))).toEqual([]);
+    const home = waitingHome("2026-11-08T02:00:00Z", [{ occurrence: pastSaturday, cover_drop_id: "drp_ben" }]);
+    expect(scan(answer(home), context("getHome", cleo, { now: AFTER_CLOSE }))).toEqual([]);
+    const page = { items: [], next_cursor: "4RtIK5F6Cyxq3sqS_6pIVvN1uCTTw7SG" };
+    expect(scan(answer(page), context("listMyDrops", cleo))).toEqual([]);
   });
 });
 
@@ -385,8 +531,10 @@ describe("the leak scanner catches each planted leak with its own check", () => 
       next: nextSaturday,
       recent_days: [{ occurrence: lastSaturday, cover_drop_id: "drp_old" }],
     };
+    // Eve can read nothing in that day either, so the link itself is no link of hers (T15).
     expect(at(scan(answer(waiting), context("getHome", eve, { now: OPEN })), "world")).toEqual([
       "$.recent_days[0].cover_drop_id",
+      "$.recent_days[0]",
     ]);
   });
 
@@ -471,9 +619,22 @@ describe("the leak scanner catches each planted leak with its own check", () => 
     );
     // A person of another club inside the viewer's own day.
     const stranger = { ...upcomingDay([]), occurrence: { ...saturday, star: person(stan, "Stan") } };
-    expect(at(scan(answer(stranger), context("getOccurrence", cleo)), "world")).toEqual([
-      "$.occurrence.star",
-      "$.occurrence.star",
+    // Each finding pinned with its words: the check that judges a person's club must be the one that fails, not
+    // another check that happens to name the same path.
+    const ofAnotherClub = {
+      check: "world",
+      at: "$.occurrence.star",
+      what: "a person of a club the viewer has no interval in (T14)",
+    };
+    expect(found).toContainEqual(ofAnotherClub);
+    expect(scan(answer(stranger), context("getOccurrence", cleo))).toEqual([
+      { check: "world", at: "$.occurrence.star", what: "not the day's star" },
+      ofAnotherClub,
+      {
+        check: "values",
+        at: "$.occurrence.star.display_name",
+        what: "text people wrote that isn't the viewer's to read",
+      },
     ]);
   });
 
@@ -495,9 +656,12 @@ describe("the leak scanner catches each planted leak with its own check", () => 
   it("catches a value the world keeps back, wherever it is, until its drop opens to the viewer (Q07)", () => {
     const planted = { ...upcomingDay([bensCard()]), next_cursor: "7312345678901234567" };
     expect(at(scan(answer(planted), context("getOccurrence", cleo)), "values")).toEqual(["$.next_cursor"]);
-    // In a header too: one every answer may carry, so only the values check can see it.
+    // In a header too: Date's form is the shape check's, and what it holds is the values check's.
     const inHeader = scan(answer(upcomingDay([bensCard()]), 200, { date: "v_q1w2e3" }), context("getOccurrence", cleo));
-    expect(inHeader.map((finding) => `${finding.check} ${finding.at}`)).toEqual(["values header date"]);
+    expect(inHeader.map((finding) => `${finding.check} ${finding.at}`)).toEqual([
+      "shape header date",
+      "values header date",
+    ]);
     // A photo's content version where an avatar version goes, before the reveal.
     const avatar = { ...bensCard(), author: { ...person(ben, "Ben"), avatar_version: "v_q1w2e3" } };
     expect(at(scan(answer(upcomingDay([avatar])), context("getOccurrence", cleo)), "values")).toEqual([
@@ -537,6 +701,7 @@ describe("the leak scanner catches each planted leak with its own check", () => 
   it("catches an image body, a body without private, no-store, a cacheable 204 and a 429 that doesn't say when", () => {
     const image: Answer = {
       status: 200,
+      reason: "OK",
       headers: { "content-type": "image/jpeg", "cache-control": "private, no-store" },
       body: "ÿØÿ",
     };
@@ -547,6 +712,7 @@ describe("the leak scanner catches each planted leak with its own check", () => 
       answer(upcomingDay([bensCard()]), 200, { "cache-control": "public, max-age=60" }),
       {
         status: 200,
+        reason: "OK",
         headers: { "content-type": "application/json; charset=utf-8" },
         body: JSON.stringify(upcomingDay([])),
       },
@@ -554,11 +720,8 @@ describe("the leak scanner catches each planted leak with its own check", () => 
       const cachedFound = scan(cached, context("getOccurrence", cleo));
       expect(cachedFound.map((finding) => `${finding.check} ${finding.at}`)).toEqual(["shape header cache-control"]);
     }
-    const bare = scan(
-      { status: 204, headers: { "cache-control": "max-age=60" }, body: "" },
-      context("removeFavourite", cleo),
-    );
-    expect(bare.map((finding) => `${finding.check} ${finding.at}`)).toEqual(["shape header cache-control"]);
+    const cacheable = scan(bare(204, { "cache-control": "max-age=60" }), context("removeFavourite", cleo));
+    expect(cacheable.map((finding) => `${finding.check} ${finding.at}`)).toEqual(["shape header cache-control"]);
     for (const after of [undefined, "0", "soon", "86401"]) {
       const limited = answer(
         { code: "RATE_LIMITED", retry_after_seconds: 30 },
@@ -581,6 +744,121 @@ describe("the leak scanner catches each planted leak with its own check", () => 
     expect(at(scan(named, context("getOccurrence", eve)), "shape")).toEqual(["body", "$.target", "$.existing_drop_id"]);
     const conflict = answer({ code: "VERSION_CONFLICT", current_version: 2, existing_drop_id: "drp_ben" }, 409);
     expect(at(scan(conflict, context("updateDrop", ben)), "shape")).toEqual(["$.existing_drop_id"]);
+  });
+
+  it("catches a former author's view of their drop's reactions, comments and highlight, once their interval has ended (FQ73)", () => {
+    const reactions = { drop_id: "drp_fay", reactions: [{ reaction: "heart", people: [person(ana, "Ana")] }] };
+    expect(at(scan(answer(reactions), context("setReaction", fay, { now: OPEN })), "world")).toEqual([
+      "$.drop_id",
+      "$.reactions[0].people",
+    ]);
+    expect(
+      at(scan(answer(comments(person(ben, "Ben"), "Nice one")), context("listComments", fay, { now: OPEN })), "values"),
+    ).toEqual(["$.items[0].text"]);
+    const rail = {
+      stage: "revealed",
+      server_now: "2026-11-07T09:00:00Z",
+      occurrence: lastSaturday,
+      club: club(fay),
+      viewer: { is_star: false, joined_later: false },
+      drops: [],
+      highlights: [{ drop_id: "drp_fay", author: person(fay, "Fay"), star_pick: false }],
+    };
+    expect(at(scan(answer(rail), context("getOccurrence", fay, { now: OPEN })), "world")).toEqual([
+      "$.highlights[0].drop_id",
+    ]);
+  });
+
+  it("catches a former member's club as one of theirs, a person who joined after they left, and avatars once an interval has ended (FQ75)", () => {
+    const clubs = { server_now: "2026-11-07T06:59:59Z", clubs: [clubSummary(fay)], invitations: [] };
+    expect(at(scan(answer(clubs), context("listClubs", fay)), "world")).toEqual([
+      "$.clubs[0]",
+      "$.clubs[0].my_membership_id",
+    ]);
+    const members = (people: unknown[]) => ({
+      server_now: "2026-11-07T06:59:59Z",
+      club: club(fay),
+      members: people.map((who, index) => ({ person: who, position: index + 1, next_up: false })),
+    });
+    expect(
+      at(scan(answer(members([person(ana, "Ana"), person(gus, "Gus")])), context("listMembers", fay)), "world"),
+    ).toEqual(["$.members[1].person"]);
+    const withAvatar = { ...person(ben, "Ben"), avatar_version: "v_avatar_ben" };
+    expect(at(scan(answer(members([withAvatar])), context("listMembers", fay)), "world")).toEqual([
+      "$.members[0].person.avatar_version",
+    ]);
+    const faysAvatar = { ...person(fay, "Fay"), avatar_version: "v_avatar_fay" };
+    expect(
+      at(scan(answer(comments(faysAvatar, "Lovely light")), context("listComments", cleo, { now: OPEN })), "world"),
+    ).toEqual(["$.items[0].author.avatar_version"]);
+  });
+
+  it("catches counts the viewer may not see: an allowance past their own drops and reservations, and a wrong place in the day (T15)", () => {
+    expect(at(scan(answer(ownDay(allowance(3, 2, 2, 1))), context("getOwnDay", cleo)), "world")).toEqual([
+      "$.allowance.added",
+      "$.allowance.external_added",
+      "$.allowance.reserved",
+      "$.allowance.external_reserved",
+    ]);
+    const removed = { drop_id: "drp_cleo", state: "withdrawn", allowance: allowance(2, 1, 0, 0) };
+    expect(at(scan(answer(removed), context("removeDrop", cleo)), "world")).toEqual(["$.allowance.added"]);
+    const lateFalse = { ...upcomingDay([], eve), viewer: { is_star: false, joined_later: false } };
+    expect(at(scan(answer(lateFalse), context("getOccurrence", eve)), "world")).toEqual(["$.viewer.joined_later"]);
+    const notStar = { ...upcomingDay([], ana), viewer: { is_star: false, joined_later: false } };
+    expect(at(scan(answer(notStar), context("getOccurrence", ana)), "world")).toEqual(["$.viewer.is_star"]);
+  });
+
+  it("catches a day link to a day that hasn't closed, and a cover that isn't a photo", () => {
+    const open = waitingHome("2026-11-07T09:00:00Z", [{ occurrence: { ...saturday, phase: "open" } }]);
+    expect(at(scan(answer(open), context("getHome", cleo, { now: OPEN })), "world")).toEqual(["$.recent_days[0]"]);
+    const video = waitingHome("2026-11-08T02:00:00Z", [{ occurrence: pastSaturday, cover_drop_id: "drp_cleo" }]);
+    expect(at(scan(answer(video), context("getHome", cleo, { now: AFTER_CLOSE })), "world")).toEqual([
+      "$.recent_days[0].cover_drop_id",
+    ]);
+  });
+
+  it("catches a day or a club outside the viewer's clubs by its bare id: a reservation's day, a block's and a leaving's clubs (T14)", () => {
+    const reservation = {
+      id: "rsv_new",
+      occurrence_id: "occ_far",
+      media_class: "photo",
+      expires_at: "2026-11-07T06:59:59Z",
+      allowance: allowance(0, 0, 0, 0),
+    };
+    expect(at(scan(answer(reservation, 201), context("createReservation", cleo)), "world")).toEqual([
+      "$.occurrence_id",
+    ]);
+    const blocked = { block_id: "blk_1", left_club_ids: ["clb_sat", "clb_far"], past_contributions: "keep" };
+    expect(at(scan(answer(blocked, 201), context("blockMember", cleo)), "world")).toEqual(["$.left_club_ids[1]"]);
+    const left = { club_id: "clb_nowhere", left_at: "2026-11-07T06:59:59Z", contributions: "keep" };
+    expect(at(scan(answer(left), context("leaveClub", cleo)), "world")).toEqual(["$.club_id"]);
+  });
+
+  it("catches an id the viewer may not see anywhere else, and a cursor that is a readable key or hides one (T14; the contract's Cursor)", () => {
+    expect(
+      at(scan(answer({ id: "rsv_ana", state: "released" }), context("releaseReservation", cleo)), "values"),
+    ).toEqual(["$.id"]);
+    const page = (cursor: string) => scan(answer({ items: [], next_cursor: cursor }), context("listMyDrops", cleo));
+    expect(at(page("drp_secret"), "values")).toEqual(["$.next_cursor"]);
+    expect(at(page(Buffer.from("occ_sat|2026-11-07T07:00:00Z").toString("base64url")), "values")).toEqual([
+      "$.next_cursor",
+    ]);
+    const hidden = Buffer.concat([Buffer.from([0xff, 0x00, 0x9c]), Buffer.from("drp_secret")]).toString("base64url");
+    expect(at(page(hidden), "values")).toEqual(["$.next_cursor (decoded)"]);
+    expect(at(page("abcdf"), "shape")).toEqual(["$.next_cursor"]);
+  });
+
+  it("catches a reason phrase that isn't the status's, a transport header out of its form, a wrong length and a type on an empty answer", () => {
+    const body = upcomingDay([bensCard()]);
+    const shape = (sent: Answer, id = "getOccurrence") =>
+      scan(sent, context(id, cleo)).map((finding) => `${finding.check} ${finding.at}`);
+    expect(shape({ ...answer(body), reason: "Found It" })).toEqual(["shape reason"]);
+    expect(shape(answer(body, 200, { "content-length": "3" }))).toEqual(["shape header content-length"]);
+    expect(shape(answer(body, 200, { connection: "upgrade" }))).toEqual(["shape header connection"]);
+    expect(shape(answer(body, 200, { "keep-alive": "timeout=5, drop=drp_ben" }))).toEqual(["shape header keep-alive"]);
+    expect(shape(bare(204, { "content-type": "text/plain" }), "removeFavourite")).toEqual([
+      "shape header content-type",
+    ]);
   });
 
   it("catches a planted extra field in an answer the app sends (the HTTP path)", async () => {

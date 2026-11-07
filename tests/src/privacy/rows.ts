@@ -25,7 +25,12 @@
 //   role "invited, not yet a member" has accepted and waits for the roster (Q05), since a link
 //   nobody has accepted ties no account to the club;
 // - for createUpload, the replays of its intent (TECH-DESIGN section 8), before it grants anything:
-//   spike S1's server part needs them before Gate A.
+//   spike S1's server part needs them before Gate A;
+// - for listClubs (slice 8), the invitations the role "invited, not yet a member" has accepted: the
+//   club's name and the inviter's name, read by factsOf from the world's invitations bound to that
+//   account into the viewer's own text, and nothing else of that club (scanner.ts, its header);
+// - for a route that changes the world (a commit, a reservation, a leave, a block), the facts each
+//   answer is scanned against, read from the world after it (scanner.ts, its header).
 
 /** The skeleton's row: the neutral not-found to everyone (T14). */
 export const NONE = Object.freeze({ answer: "the neutral NOT_FOUND to every role, in every state and phase" });

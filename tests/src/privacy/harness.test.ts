@@ -179,10 +179,10 @@ describe("the requests a cell makes, from the contract's parameters", () => {
 
 describe("each step of the matrix reports a planted wrong answer", () => {
   it("passes the skeleton's neutral answer in every step, and gets the answers each step counts", async () => {
-    for (const [id, guesses] of [
-      ["getDrop", 12],
-      ["getMemberAvatar", 64],
-      ["listComments", 23],
+    for (const [id, guesses, signedOutAnswers] of [
+      ["getDrop", 12, 9],
+      ["getMemberAvatar", 64, 9],
+      ["listComments", 45, 18],
     ] as const) {
       const app = await plantedApp(id, (_request, reply) => neutral(reply));
       expect((await cellStep(app, spec(id))).problems, id).toEqual([]);
@@ -195,8 +195,8 @@ describe("each step of the matrix reports a planted wrong answer", () => {
       expect(guessCount(spec(id)), id).toBe(guesses);
       const signedOut = await signedOutStep(app, spec(id), elsewhere);
       expect(signedOut.problems, id).toEqual([]);
-      expect(signedOut.answers, id).toHaveLength(9);
-      expect(signedOutCount(spec(id)), id).toBe(9);
+      expect(signedOut.answers, id).toHaveLength(signedOutAnswers);
+      expect(signedOutCount(spec(id)), id).toBe(signedOutAnswers);
       await app.close();
     }
     expect(manipulations(spec("getDrop"), "itv_author", LATER)).toHaveLength(13);
@@ -216,6 +216,18 @@ describe("each step of the matrix reports a planted wrong answer", () => {
       (reply) => reply.code(200).header("cache-control", "private, no-store").send({ code: "NOT_FOUND" }),
     ],
     ["the neutral not-found with an extra header", (reply) => neutral(reply.header("x-drop-state", "held"))],
+    [
+      "the neutral not-found with a transport header out of its form",
+      (reply) => neutral(reply.header("keep-alive", "drop=held")),
+    ],
+    ["the neutral not-found with a Date that isn't one", (reply) => neutral(reply.header("date", "held"))],
+    [
+      "the neutral not-found with another reason phrase",
+      (reply) => {
+        reply.raw.statusMessage = "Held";
+        return neutral(reply);
+      },
+    ],
     [
       "the neutral not-found without no-store",
       (reply) => reply.code(404).type("application/json; charset=utf-8").send('{"code":"NOT_FOUND"}'),
@@ -348,6 +360,27 @@ describe("each step of the matrix reports a planted wrong answer", () => {
     await app.close();
   });
 
+  it("reports a route that answers a cursor differently when the parent exists: an existence oracle (T14)", async () => {
+    const real = new Set([here.drop, elsewhere.drop]);
+    const app = await plantedApp("listComments", (request, reply) => {
+      const { drop_id: drop } = request.params as { drop_id: string };
+      return (request.query as Record<string, string>).cursor !== undefined && real.has(drop)
+        ? reply
+            .code(400)
+            .header("cache-control", "private, no-store")
+            .send({ code: "INVALID_REQUEST", field: "cursor" })
+        : neutral(reply);
+    });
+    const step = await guessStep(app, spec("listComments"), elsewhere);
+    // A plain 400 is an answer a cursor may get, so only the comparison with ids that name nothing
+    // finds it, for the forged cursor and every malformed one.
+    expect(
+      step.problems.filter((problem) => problem.includes("another answer when the ids name nothing")),
+    ).toHaveLength(11);
+    expect(step.problems.filter((problem) => !problem.includes("another answer when the ids name"))).toEqual([]);
+    await app.close();
+  });
+
   it("reports a route that tells a signed-out caller which drops exist (T14)", async () => {
     const app = await plantedApp("getDrop", (request, reply) =>
       request.headers.authorization === undefined && (request.params as { drop_id: string }).drop_id === here.drop
@@ -358,6 +391,20 @@ describe("each step of the matrix reports a planted wrong answer", () => {
     // Its 401 isn't the skeleton's row, and it differs from the answer to ids that name nothing,
     // which a later row's single answer for signed-out callers is held to as well.
     expect(step.problems).toContain("getDrop, no session: another answer for fresh ids (T14)");
+    expect(step.problems.filter((problem) => !problem.includes("no session"))).toEqual([]);
+    await app.close();
+  });
+
+  it("reports a route that answers a signed-out caller differently when the request carries a cursor (T14)", async () => {
+    const app = await plantedApp("listComments", (request, reply) =>
+      request.headers.authorization === undefined && (request.query as Record<string, string>).cursor !== undefined
+        ? reply.code(401).header("cache-control", "private, no-store").send({ code: "UNAUTHENTICATED" })
+        : neutral(reply),
+    );
+    const step = await signedOutStep(app, spec("listComments"), elsewhere);
+    expect(step.problems).toContain(
+      "listComments, no session: another answer for the cell's, with a forged cursor, ids (T14)",
+    );
     expect(step.problems.filter((problem) => !problem.includes("no session"))).toEqual([]);
     await app.close();
   });

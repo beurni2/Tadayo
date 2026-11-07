@@ -11,25 +11,47 @@
 //
 // Five checks, each named in its findings, all run on every answer, so a test can show that a check
 // it plants against is the one that catches it:
-// - shape: the status, the headers and the body are what the operation declares: Cache-Control on
-//   every answer with a body, Retry-After on a 429, an error with only its code's fields, every 404
-//   the neutral one (T14), and no key the contract doesn't name at any depth (a planted field);
+// - shape: the status, its standard reason phrase, the headers and the body are what the operation
+//   declares: Cache-Control on every answer with a body, Retry-After on a 429, the transport's
+//   headers in their own forms (Date, Connection, Keep-Alive, Transfer-Encoding, a Content-Length
+//   that is the body's, only JSON's Content-Type), an error with only its code's fields, every 404
+//   the neutral one (T14), no key the contract doesn't name at any depth (a planted field), and every
+//   cursor in base64url;
 // - whitelist: a caption card is exactly T10's list, as FQ74's answer reads it (this file's own
 //   copy, so a contract change alone can't widen it);
-// - world: every drop, person, day and club an answer names is the world's and the viewer's to see:
-//   a card's drop in an audience holding an active interval of the viewer, or the viewer's own for
-//   an own card, with the drop's own author and caption; every other drop reference in the form its
-//   schema gives it (the viewer's own, the viewer's to read, or that and opened), and of its day; a
-//   person, a day or a club only from a club the viewer has an interval in, active or not, a person
-//   under the name members see; nothing opened before its day opens; who reacted only for the
-//   drop's author (FQ73);
+// - world: each of these an answer names is the world's and the viewer's to see:
+//   - a card's drop, in an audience holding an active interval of the viewer, or the viewer's own
+//     for an own card, with the drop's own author and caption;
+//   - each other drop reference (REFERENCES), in the form its schema gives it: the viewer's own,
+//     from any interval of theirs (Your drops covers a club they've left); the viewer's own or in an
+//     audience holding an active interval of theirs (a removal's receipt); in such an audience (a
+//     hidden drop); or that and opened (reactions, favourites, comments, highlights, a day's cover),
+//     and of its object's day;
+//   - a day or a club (an Occurrence, a ClubRef, and the bare ids of BARE) only from a club the
+//     viewer has an interval in, active or not; a ClubSummary only from one they are an active
+//     member of, with their active interval;
+//   - a person only from such a club, under the name members see, with no avatar version once the
+//     person's interval or the viewer's in the club has ended, and never one who joined after the
+//     viewer's last interval there ended (FQ75);
+//   - an allowance that counts no more than the viewer's own drops and reservations in its day, and a
+//     day's ViewerDay from the viewer's own membership and the day's star (T15);
+//   - a day link only to a closed day the viewer can read a drop in, its cover a photo;
+//   - nothing opened before its day opens, and who reacted only for the drop's author while their
+//     interval is active (FQ73);
 // - keys: no key that names a URL, a token, a provider, dimensions, colours, a highlight or another
 //   of T10's never-list, but inside what has opened, the viewer's own card and the viewer's own
 //   highlight pointer;
-// - values: no URL, storage path or provider host in any value or header but in text people wrote,
-//   which must be text the viewer may read, as the world stored it (T13 lets a caption hold a link
-//   of its own); and no value the world keeps back (a storage key, a content version, a source's link
-//   or post id), but a drop's own once its day has opened, to a viewer who may read it.
+// - values: text people wrote must be text the viewer may read, as the world stored it, and is then
+//   served as written (T13 lets a caption hold a link, even another drop's); in every other value,
+//   header and decoded cursor, no URL, storage path or provider host, no value the world keeps back
+//   (a storage key, a content version, a source's link or post id) but a drop's own once its day has
+//   opened to a viewer in its audience, and no id of a drop, day, club, person or reservation the
+//   viewer may not see, outside the positions the world check judges; and no cursor that decodes to
+//   readable text (the contract's Cursor: "never a readable key").
+//
+// The facts are read from the world each answer was given in. A route that changes the world (a
+// commit, a reservation, a leave or a block) is scanned against the world after its answer, by the
+// slice that builds it: its row says how.
 //
 // Which drops a route may serve each role, in each state of the drop and phase of the day, is not
 // the scanner's to judge: it knows the audience and the reveal, not T9's denials (a withdrawn, held
@@ -43,17 +65,24 @@
 //   replays of that intent (spike S1's server part, then B3);
 // - the invitation's preview to the person holding it, before they are in the club, and the
 //   proposer's invitation link (B1);
+// - listClubs' invitations to the person who accepted one, before they are in the club: the club's
+//   name and the inviter's name of an invitation bound to their account, read from the world's
+//   invitations into their own text, and nothing else of that club (slice 8);
 // - the avatars' images (B1);
 // - the author preview to its author, the media route's image and ETag after the reveal to the
 //   drop's readers, and T40's source details to their resolver (B3);
 // - the embed's provider and links after the reveal to the drop's readers, and the config's
 //   provider switches (B7).
 
+import { Buffer } from "node:buffer";
+import { STATUS_CODES } from "node:http";
 import { ApiError, OPERATIONS, standardErrors, statusOf, type Operation } from "@tadayo/contracts";
 import { isObject, resolve, type ContractOperation, type Json, type JsonObject } from "./operations.ts";
 
 export interface Answer {
   status: number;
+  /** The reason phrase, as Node gives it. */
+  reason: string;
   /** Lower-case names, as Node gives them. */
   headers: Readonly<Record<string, string>>;
   body: string;
@@ -67,10 +96,13 @@ export interface Finding {
   what: string;
 }
 
+export type MediaClass = "photo" | "external_video";
+
 export interface WorldDrop {
   /** The author's membership interval. */
   author: string;
   day: string;
+  media: MediaClass;
   /** Its caption now. */
   caption: string | null;
   /** The intervals in its audience that are still active. */
@@ -81,13 +113,28 @@ export interface WorldDrop {
 
 export interface WorldDay {
   club: string;
+  /** The star's membership interval. */
+  star: string;
   revealAt: Temporal.Instant;
+  closeAt: Temporal.Instant;
+  /** When it started collecting: a member who joined after it joined later (T15). */
+  collectingFrom: Temporal.Instant;
 }
 
 export interface WorldMember {
   club: string;
   /** The name members see (FQ75: the name it ended with, once ended), or null while it has none. */
   name: string | null;
+  joinedAt: Temporal.Instant;
+  /** When it ended, or null while it is active. */
+  leftAt: Temporal.Instant | null;
+}
+
+export interface WorldReservation {
+  /** Whose slot it holds. */
+  interval: string;
+  day: string;
+  media: MediaClass;
 }
 
 export interface WorldClub {
@@ -102,6 +149,8 @@ export interface WorldFacts {
   /** Each membership interval, active or not. */
   members: ReadonlyMap<string, WorldMember>;
   clubs: ReadonlyMap<string, WorldClub>;
+  /** Each reservation, in any state. */
+  reservations: ReadonlyMap<string, WorldReservation>;
   /**
    * What the world keeps back, each with the drops whose media it is: a photo's content version and
    * a video's link and post id are their drop's; storage keys, and the versions and links of uploads
@@ -132,8 +181,23 @@ export interface ScanContext {
 const NEUTRAL_BODY = '{"code":"NOT_FOUND"}';
 const NO_STORE = "private, no-store";
 
-/** Headers any answer may carry: the transport's. Cache-Control and a 429's Retry-After are checked apart. */
-const HEADERS = new Set(["content-type", "content-length", "transfer-encoding", "date", "connection", "keep-alive"]);
+const JSON_TYPE = "application/json; charset=utf-8";
+
+/**
+ * The transport's headers, which any answer may carry, each with the form its value must have.
+ * Content-Type, Content-Length, Cache-Control and a 429's Retry-After are checked apart.
+ */
+export const TRANSPORT: Readonly<Record<string, RegExp>> = {
+  date: /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), [0-3][0-9] (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) [0-9]{4} [0-2][0-9]:[0-5][0-9]:[0-5][0-9] GMT$/,
+  connection: /^(keep-alive|close)$/,
+  "keep-alive": /^timeout=[0-9]{1,6}(, max=[0-9]{1,6})?$/,
+  "transfer-encoding": /^chunked$/,
+};
+
+/** Whether `value` is the form the transport's header `name` must have (TRANSPORT). */
+export function transportForm(name: string, value: string): boolean {
+  return TRANSPORT[name]?.test(value) ?? false;
+}
 
 /** T10's list for a caption card, with the two ids FQ74's answer keeps; `caption` is optional. */
 const CAPTION_CARD = { required: ["view", "id", "author", "media_class"], optional: ["caption"] };
@@ -160,6 +224,17 @@ export const NEVER_VALUE = [
 /** The schemas whose values are text people wrote. */
 const PEOPLE_TEXT = new Set(["Caption", "CommentText", "DisplayName", "ClubName", "CandidateLabel"]);
 
+/**
+ * The ids of days and clubs outside Occurrence, ClubRef and ClubSummary objects, by the schema that
+ * holds them and its field (a string, or a list of them): each must be the world's, and of a club
+ * the viewer has an interval in.
+ */
+const BARE: Readonly<Record<string, readonly { field: string; kind: "day" | "club" }[]>> = {
+  Reservation: [{ field: "occurrence_id", kind: "day" }],
+  LeftClub: [{ field: "club_id", kind: "club" }],
+  BlockResult: [{ field: "left_club_ids", kind: "club" }],
+};
+
 /** The fields each error code carries beside `code` (errors.ts), this file's own copy: no others. */
 const ERROR_FIELDS: Readonly<Record<string, readonly string[]>> = {
   INVALID_REQUEST: ["field"],
@@ -175,10 +250,11 @@ const ERROR_FIELDS: Readonly<Record<string, readonly string[]>> = {
 
 /**
  * The drop references outside cards, by the schema that holds them and its field, each with whose
- * the drop must be, from the schema's own description: the viewer's own; the viewer's to read (their
- * own, or in an audience holding an active interval of theirs); or that, and opened.
+ * the drop must be, from the schema's own description: the viewer's own, from any interval of
+ * theirs; the viewer's own or in an audience holding an active interval of theirs (a removal's
+ * receipt: an author may withdraw after leaving); in such an audience; or that, and opened.
  */
-const REFERENCES: Readonly<Record<string, { field: string; form: "own" | "readable" | "opened" }>> = {
+const REFERENCES: Readonly<Record<string, { field: string; form: "own" | "readable" | "audience" | "opened" }>> = {
   OwnContribution: { field: "drop_id", form: "own" },
   DropReceipt: { field: "drop_id", form: "own" },
   DropVersion: { field: "drop_id", form: "own" },
@@ -186,7 +262,7 @@ const REFERENCES: Readonly<Record<string, { field: string; form: "own" | "readab
   HighlightPointer: { field: "drop_id", form: "own" },
   Error: { field: "existing_drop_id", form: "own" },
   RemovedDrop: { field: "drop_id", form: "readable" },
-  HiddenDrop: { field: "drop_id", form: "readable" },
+  HiddenDrop: { field: "drop_id", form: "audience" },
   ReactionState: { field: "drop_id", form: "opened" },
   FavouriteState: { field: "drop_id", form: "opened" },
   CommentReceipt: { field: "drop_id", form: "opened" },
@@ -205,26 +281,43 @@ function contractOperation(id: string): Operation {
 interface Reader {
   /** The clubs the viewer has an interval in, active or not. */
   clubs: ReadonlySet<string>;
+  /** The clubs the viewer has an active interval in. */
+  activeClubs: ReadonlySet<string>;
+  /** The viewer's intervals in `club`, active or not. */
+  intervalsIn(club: string): string[];
   drop(id: unknown): WorldDrop | undefined;
+  /** The drop's author is the viewer, from any interval of theirs. */
   own(drop: WorldDrop): boolean;
+  /** The drop's author is the viewer, from an interval still active. */
+  ownActive(drop: WorldDrop): boolean;
+  /** The drop's audience holds an active interval of the viewer. */
   inAudience(drop: WorldDrop): boolean;
+  /** The viewer may know the drop and its caption: their own, or in its audience. */
   readable(drop: WorldDrop): boolean;
   opened(day: unknown): boolean;
-  /** Whether a value kept back for `drops` may be shown: one of them readable, and opened. */
+  /** Whether a value kept back for `drops` may be shown: one of them in the viewer's audience, and opened. */
   shown(drops: readonly string[]): boolean;
   /** The text people wrote that the viewer may read. */
   texts: ReadonlySet<string>;
+  /** The ids of the world's drops, days, clubs, people and reservations the viewer may not see. */
+  unseen: ReadonlySet<string>;
 }
 
 function readerOf(context: ScanContext): Reader {
   const { world, viewer, now } = context;
   const clubs = new Set<string>();
+  const activeClubs = new Set<string>();
   for (const interval of viewer.intervals) {
     const member = world.members.get(interval);
-    if (member) clubs.add(member.club);
+    if (!member) continue;
+    clubs.add(member.club);
+    if (member.leftAt === null) activeClubs.add(member.club);
   }
+  const intervalsIn = (club: string) =>
+    [...viewer.intervals].filter((interval) => world.members.get(interval)?.club === club);
   const drop = (id: unknown) => (typeof id === "string" ? world.drops.get(id) : undefined);
   const own = (found: WorldDrop) => viewer.intervals.has(found.author);
+  const ownActive = (found: WorldDrop) => own(found) && world.members.get(found.author)?.leftAt === null;
   const inAudience = (found: WorldDrop) => [...found.audience].some((interval) => viewer.intervals.has(interval));
   const readable = (found: WorldDrop) => own(found) || inAudience(found);
   const opened = (day: unknown) => {
@@ -234,13 +327,12 @@ function readerOf(context: ScanContext): Reader {
   const shown = (drops: readonly string[]) =>
     drops.some((id) => {
       const found = drop(id);
-      return found !== undefined && readable(found) && opened(found.day);
+      return found !== undefined && inAudience(found) && opened(found.day);
     });
   const texts = new Set(viewer.texts);
   for (const found of world.drops.values()) {
-    if (!readable(found)) continue;
-    if (found.caption !== null) texts.add(found.caption);
-    if (opened(found.day)) for (const comment of found.comments) texts.add(comment);
+    if (readable(found) && found.caption !== null) texts.add(found.caption);
+    if (inAudience(found) && opened(found.day)) for (const comment of found.comments) texts.add(comment);
   }
   for (const member of world.members.values()) {
     if (member.name !== null && clubs.has(member.club)) texts.add(member.name);
@@ -250,7 +342,13 @@ function readerOf(context: ScanContext): Reader {
     texts.add(club.name);
     for (const label of club.labels) texts.add(label);
   }
-  return { clubs, drop, own, inAudience, readable, opened, shown, texts };
+  const unseen = new Set<string>();
+  for (const [id, found] of world.drops) if (!readable(found)) unseen.add(id);
+  for (const [id, day] of world.days) if (!clubs.has(day.club)) unseen.add(id);
+  for (const [id, member] of world.members) if (!clubs.has(member.club)) unseen.add(id);
+  for (const id of world.clubs.keys()) if (!clubs.has(id)) unseen.add(id);
+  for (const [id, reservation] of world.reservations) if (!viewer.intervals.has(reservation.interval)) unseen.add(id);
+  return { clubs, activeClubs, intervalsIn, drop, own, ownActive, inAudience, readable, opened, shown, texts, unseen };
 }
 
 /** Every object in `value`, with its path. */
@@ -349,6 +447,19 @@ function dayReferences(node: JsonObject, at: string): [unknown, string][] {
   return found;
 }
 
+/** The bytes `cursor` decodes to as base64url, and whether it is base64url as the server writes it. */
+function decodeCursor(cursor: string): { bytes: Buffer; canonical: boolean } {
+  const bytes = Buffer.from(cursor, "base64url");
+  return { bytes, canonical: bytes.toString("base64url") === cursor };
+}
+
+/** Whether every byte is printable ASCII: a readable key, not a random handle or a sealed value. */
+function printable(bytes: Buffer): boolean {
+  return bytes.length > 0 && bytes.every((byte) => byte >= 0x20 && byte <= 0x7e);
+}
+
+const before = (one: Temporal.Instant, other: Temporal.Instant) => Temporal.Instant.compare(one, other) < 0;
+
 /** What the leak scanner finds in `answer`. An empty list is a clean answer. */
 export function scan(answer: Answer, context: ScanContext): Finding[] {
   const findings: Finding[] = [];
@@ -356,27 +467,52 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
   const operation = contractOperation(context.operation.id);
   const declared = context.operation.responses.get(answer.status);
   const reader = readerOf(context);
+  const world = context.world;
   // B0's skeleton answers the neutral NOT_FOUND on every path (docs/plans/B0.md, slice 7), 13 of
   // which declare no 404: allowed while the operation's row is NONE, and only that answer.
   const skeleton404 = context.skeleton && answer.status === 404 && declared === undefined;
 
-  // shape: the status, the headers, the body.
+  /** Nothing kept back, and no id the viewer may not see, in `value` (a header's, a string's or a cursor's bytes). */
+  const keptBack = (value: string, at: string) => {
+    for (const [canary, drops] of world.canaries) {
+      if (value.includes(canary) && !reader.shown(drops)) find("values", at, "a value the world keeps back (Q07)");
+    }
+    for (const id of reader.unseen) {
+      if (value.includes(id))
+        find("values", at, "an id of a drop, day, club, person or reservation the viewer may not see (T14)");
+    }
+  };
+  const noLinks = (value: string, at: string) => {
+    for (const pattern of NEVER_VALUE) {
+      if (pattern.test(value)) find("values", at, `a URL, storage path or provider host: ${pattern.source}`);
+    }
+  };
+
+  // shape: the status, the reason, the headers, the body.
   if (!declared && !skeleton404)
     find("shape", "status", `${String(answer.status)} isn't an answer ${operation.id} declares`);
+  if (answer.reason !== STATUS_CODES[answer.status])
+    find(
+      "shape",
+      "reason",
+      `${JSON.stringify(answer.reason)} isn't the standard reason phrase for ${String(answer.status)}`,
+    );
   if (answer.status === 404 && answer.body !== NEUTRAL_BODY)
     find("shape", "body", "a not-found that isn't the neutral one (T14)");
   for (const [header, value] of Object.entries(answer.headers)) {
-    const allowed =
-      HEADERS.has(header) || header === "cache-control" || (header === "retry-after" && answer.status === 429);
-    if (!allowed) find("shape", `header ${header}`, "a header no answer may carry before its slice allows it");
-    for (const pattern of NEVER_VALUE) {
-      if (pattern.test(value))
-        find("values", `header ${header}`, `a URL, storage path or provider host: ${pattern.source}`);
+    const where = `header ${header}`;
+    if (Object.hasOwn(TRANSPORT, header)) {
+      if (!transportForm(header, value)) find("shape", where, "a transport header whose value isn't its form");
+    } else if (header === "content-length") {
+      if (value !== String(Buffer.byteLength(answer.body))) find("shape", where, "not the body's length in bytes");
+    } else if (header === "content-type") {
+      if (value !== JSON_TYPE)
+        find("shape", where, "a type that isn't JSON: no answer may carry an image or other bytes yet");
+    } else if (header !== "cache-control" && !(header === "retry-after" && answer.status === 429)) {
+      find("shape", where, "a header no answer may carry before its slice allows it");
     }
-    for (const [canary, drops] of context.world.canaries) {
-      if (value.includes(canary) && !reader.shown(drops))
-        find("values", `header ${header}`, "a value the world keeps back (Q07)");
-    }
+    noLinks(value, where);
+    keptBack(value, where);
   }
   // The contract's CacheControl: on every answer with a body; an empty one may leave it out.
   const cacheControl = answer.headers["cache-control"];
@@ -396,7 +532,7 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
   if (answer.body === "") {
     if (declared && declared.media.length > 0) find("shape", "body", "empty, where the operation declares a body");
   } else {
-    if (answer.headers["content-type"] !== "application/json; charset=utf-8") {
+    if (answer.headers["content-type"] === undefined) {
       find("shape", "header content-type", "a body that isn't JSON: no answer may carry an image or other bytes yet");
     }
     try {
@@ -446,23 +582,26 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
         find("whitelist", `${at}.author`, `${problem} (T10, FQ74)`);
   }
 
-  // world: every card, drop reference, person, day and club against the world's rows.
-  const world = context.world;
+  // world: every card, drop reference, person, day, club, allowance and day link against the
+  // world's rows. Each id it judges is recorded, so the values check looks for unseen ids elsewhere.
+  const judged = new Set<string>();
   const ownCards = new Set<JsonObject>();
   const whoReacted = (node: JsonObject, at: string, drop: WorldDrop) => {
-    if (!Array.isArray(node.reactions) || reader.own(drop)) return;
+    if (!Array.isArray(node.reactions) || reader.ownActive(drop)) return;
     for (const [index, reaction] of node.reactions.entries()) {
       if (isObject(reaction) && reaction.people !== undefined)
         find(
           "world",
           `${at}.reactions[${String(index)}].people`,
-          "who reacted, to someone but the drop's author (FQ73)",
+          "who reacted, to someone but the drop's author while their interval is active (FQ73)",
         );
     }
   };
+  const mine = (interval: string) => context.viewer.intervals.has(interval);
   for (const [node, at] of objects(body)) {
     const kind = walked.names.get(at);
     if (Object.hasOwn(node, "view")) {
+      judged.add(`${at}.id`);
       const drop = reader.drop(node.id);
       if (node.view !== "caption" && node.view !== "own" && node.view !== "revealed") {
         find("world", at, `a card whose view is ${JSON.stringify(node.view)}`);
@@ -487,14 +626,22 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
     const reference = kind === undefined ? undefined : REFERENCES[kind];
     if (reference !== undefined && node[reference.field] !== undefined) {
       const where = `${at}.${reference.field}`;
+      judged.add(where);
       const drop = reader.drop(node[reference.field]);
       if (!drop) find("world", where, "a drop this world doesn't have");
       else if (reference.form === "own") {
         if (!reader.own(drop)) find("world", where, `someone else's drop in the viewer's own ${String(kind)}`);
         if (kind === "OwnContribution" && (node.caption ?? null) !== drop.caption)
           find("world", `${at}.caption`, "not the drop's own caption");
-      } else {
+      } else if (reference.form === "readable") {
         if (!reader.readable(drop))
+          find(
+            "world",
+            where,
+            "neither the viewer's own drop nor one whose audience holds their active interval (T8, T9)",
+          );
+      } else {
+        if (!reader.inAudience(drop))
           find("world", where, "a drop whose audience holds no active interval of the viewer (T8, T9)");
         if (reference.form === "opened" && !reader.opened(drop.day))
           find("world", where, `a drop in a ${String(kind)} before its day opens (T10, FQ21)`);
@@ -503,41 +650,95 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
         if (kind === "ReactionState") whoReacted(node, at, drop);
       }
     }
+    for (const { field, kind: bare } of kind === undefined ? [] : (BARE[kind] ?? [])) {
+      const value = node[field];
+      const items: [unknown, string][] = Array.isArray(value)
+        ? value.map((item, index) => [item, `${at}.${field}[${String(index)}]`])
+        : value === undefined
+          ? []
+          : [[value, `${at}.${field}`]];
+      for (const [id, where] of items) {
+        judged.add(where);
+        const club =
+          typeof id !== "string"
+            ? undefined
+            : bare === "day"
+              ? world.days.get(id)?.club
+              : world.clubs.has(id)
+                ? id
+                : undefined;
+        if (club === undefined) find("world", where, `a ${bare} this world doesn't have`);
+        else if (!reader.clubs.has(club))
+          find("world", where, `a ${bare} of a club the viewer has no interval in (T14)`);
+      }
+    }
     if (kind === "Person") {
+      judged.add(`${at}.membership_id`);
       const member = typeof node.membership_id === "string" ? world.members.get(node.membership_id) : undefined;
       if (!member) find("world", at, "a person this world doesn't have");
+      else if (!reader.clubs.has(member.club))
+        find("world", at, "a person of a club the viewer has no interval in (T14)");
       else {
-        if (!reader.clubs.has(member.club)) find("world", at, "a person of a club the viewer has no interval in (T14)");
         if (node.display_name !== member.name) find("world", `${at}.display_name`, "not the name members see (FQ75)");
+        const active = reader.activeClubs.has(member.club);
+        if ((member.leftAt !== null || !active) && node.avatar_version !== undefined)
+          find(
+            "world",
+            `${at}.avatar_version`,
+            "an avatar version once the person's or the viewer's interval has ended (FQ75)",
+          );
+        const ends = reader.intervalsIn(member.club).map((interval) => world.members.get(interval)?.leftAt ?? null);
+        if (!active && ends.every((end) => end !== null && before(end, member.joinedAt)))
+          find("world", at, "a person who joined after the viewer's last interval in the club ended (T14)");
       }
     }
     if (kind === "Occurrence") {
+      judged.add(`${at}.id`).add(`${at}.club_id`);
       const day = typeof node.id === "string" ? world.days.get(node.id) : undefined;
       if (!day) find("world", at, "a day this world doesn't have");
       else {
         if (!reader.clubs.has(day.club)) find("world", at, "a day of a club the viewer has no interval in (T14)");
         if (node.club_id !== day.club) find("world", `${at}.club_id`, "not the day's club");
         const star = isObject(node.star) && typeof node.star.membership_id === "string" ? node.star.membership_id : "";
-        if (world.members.get(star)?.club !== day.club) find("world", `${at}.star`, "not a member of the day's club");
+        if (star !== day.star) find("world", `${at}.star`, "not the day's star");
       }
     }
     if (kind === "ClubRef" || kind === "ClubSummary") {
+      judged.add(`${at}.id`).add(`${at}.my_membership_id`);
       const id = typeof node.id === "string" ? node.id : "";
       const club = world.clubs.get(id);
+      const summary = kind === "ClubSummary";
       if (!club) find("world", at, "a club this world doesn't have");
       else {
         if (!reader.clubs.has(id)) find("world", at, "a club the viewer has no interval in (T14)");
+        else if (summary && !reader.activeClubs.has(id))
+          find("world", at, "a club the viewer is no longer an active member of, as one of their clubs (ClubSummary)");
         if (node.name !== club.name) find("world", `${at}.name`, "not the club's name");
-        const mine = typeof node.my_membership_id === "string" ? node.my_membership_id : "";
-        if (!context.viewer.intervals.has(mine) || world.members.get(mine)?.club !== id)
-          find("world", `${at}.my_membership_id`, "not the viewer's own interval in this club");
+        const membership = typeof node.my_membership_id === "string" ? node.my_membership_id : "";
+        const theirs = world.members.get(membership);
+        if (!mine(membership) || theirs?.club !== id || (summary && theirs.leftAt !== null))
+          find(
+            "world",
+            `${at}.my_membership_id`,
+            summary ? "not the viewer's active interval in this club" : "not the viewer's own interval in this club",
+          );
       }
     }
     if (kind === "DayLink") {
-      const occurrence = isObject(node.occurrence) ? node.occurrence.id : undefined;
-      if (!reader.opened(occurrence)) find("world", at, "a day link before the day opens");
+      const id = isObject(node.occurrence) ? node.occurrence.id : undefined;
+      const day = typeof id === "string" ? world.days.get(id) : undefined;
+      if (!reader.opened(id)) find("world", at, "a day link before the day opens");
+      if (day !== undefined && before(context.now, day.closeAt))
+        find("world", at, "a day link to a day that hasn't closed");
+      if (![...world.drops.values()].some((drop) => drop.day === id && reader.inAudience(drop)))
+        find("world", at, "a day link to a day the viewer can read nothing in (T15)");
+      const cover = reader.drop(node.cover_drop_id);
+      if (cover !== undefined && cover.media !== "photo")
+        find("world", `${at}.cover_drop_id`, "a cover that isn't a photo");
     }
-    // An object that holds one day holds that day's drops, and its club.
+    // An object that holds one day holds that day's drops, its club, the viewer's own allowance in
+    // it and the viewer's own place in it.
+    const target = isObject(node.target) ? node.target.id : undefined;
     const day = isObject(node.occurrence) && typeof node.occurrence.id === "string" ? node.occurrence.id : undefined;
     if (day !== undefined) {
       for (const [id, where] of dayReferences(node, at)) {
@@ -547,6 +748,53 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
       const club = world.days.get(day)?.club;
       if (isObject(node.club) && club !== undefined && node.club.id !== club)
         find("world", `${at}.club`, "not the day's club");
+    }
+    if (isObject(node.allowance) && walked.names.get(`${at}.allowance`) === "Allowance") {
+      const where = `${at}.allowance`;
+      const of =
+        day ??
+        (typeof target === "string" ? target : undefined) ??
+        (typeof node.occurrence_id === "string" ? node.occurrence_id : undefined) ??
+        reader.drop(node.drop_id)?.day ??
+        (typeof node.id === "string" ? world.reservations.get(node.id)?.day : undefined);
+      if (of === undefined || !world.days.has(of))
+        find("world", where, "an allowance this scanner can't tie to a day of the world");
+      else {
+        const drops = [...world.drops.values()].filter((drop) => drop.day === of && mine(drop.author));
+        const held = [...world.reservations.values()].filter((slot) => slot.day === of && mine(slot.interval));
+        const allowance = node.allowance;
+        for (const [field, most] of [
+          ["added", drops.length],
+          ["external_added", drops.filter((drop) => drop.media === "external_video").length],
+          ["reserved", held.length],
+          ["external_reserved", held.filter((slot) => slot.media === "external_video").length],
+        ] as const) {
+          const count = allowance[field];
+          if (typeof count === "number" && count > most)
+            find(
+              "world",
+              `${where}.${field}`,
+              `more than the viewer's own ${field.replace("_", " ")} in the day (T15)`,
+            );
+        }
+      }
+    }
+    if (isObject(node.viewer) && walked.names.get(`${at}.viewer`) === "ViewerDay" && day !== undefined) {
+      const theDay = world.days.get(day);
+      if (theDay !== undefined) {
+        if (node.viewer.is_star !== mine(theDay.star))
+          find("world", `${at}.viewer.is_star`, "not whether the day is the viewer's own");
+        const current = reader
+          .intervalsIn(theDay.club)
+          .map((interval) => world.members.get(interval))
+          .find((member) => member?.leftAt === null);
+        if (current !== undefined && node.viewer.joined_later !== before(theDay.collectingFrom, current.joinedAt))
+          find(
+            "world",
+            `${at}.viewer.joined_later`,
+            "not whether the viewer's membership began after the day started collecting (T15)",
+          );
+      }
     }
     if (node.stage === "revealed" && !reader.opened(day)) find("world", at, "a revealed day before it opens (T10)");
   }
@@ -570,19 +818,29 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
   };
   keys(body, "$");
 
-  // values: no URL or storage path but in text people wrote, which must be the viewer's to read;
-  // nothing the world keeps back, but a drop's own once it has opened to this viewer.
+  // values: text people wrote is the viewer's to read, as the world stored it, and is served as
+  // written; anything else holds no URL or storage path, nothing the world keeps back but a drop's
+  // own once it has opened to this viewer, and no id the viewer may not see outside what the world
+  // check judged; a cursor is base64url and decodes to no readable key.
   for (const [value, at] of strings(body)) {
     const name = walked.names.get(at);
     if (name !== undefined && PEOPLE_TEXT.has(name)) {
-      if (!reader.texts.has(value)) find("values", at, "text people wrote that isn't the viewer's to read");
-    } else {
-      for (const pattern of NEVER_VALUE) {
-        if (pattern.test(value)) find("values", at, `a URL, storage path or provider host: ${pattern.source}`);
+      if (reader.texts.has(value)) continue;
+      find("values", at, "text people wrote that isn't the viewer's to read");
+    } else noLinks(value, at);
+    if (judged.has(at)) {
+      for (const [canary, drops] of world.canaries) {
+        if (value.includes(canary) && !reader.shown(drops)) find("values", at, "a value the world keeps back (Q07)");
       }
-    }
-    for (const [canary, drops] of world.canaries) {
-      if (value.includes(canary) && !reader.shown(drops)) find("values", at, "a value the world keeps back (Q07)");
+    } else keptBack(value, at);
+    if (name === "Cursor") {
+      const { bytes, canonical } = decodeCursor(value);
+      if (!canonical) find("shape", at, "a cursor that isn't base64url (the contract's Cursor)");
+      if (printable(bytes))
+        find("values", at, "a cursor that decodes to readable text (the contract's Cursor; T10, T15)");
+      const decoded = bytes.toString("latin1");
+      noLinks(decoded, `${at} (decoded)`);
+      keptBack(decoded, `${at} (decoded)`);
     }
   }
   return findings;

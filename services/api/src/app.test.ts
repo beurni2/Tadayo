@@ -196,6 +196,36 @@ describe("what Node's parser answers, over a socket of its own (T14)", () => {
     }
   });
 
+  it("writes nothing into an answer already under way when a request pipelined behind it can't be read", async () => {
+    // A route that starts its answer and finishes it later, as a media route streams its bytes.
+    const streaming = buildApp({ sql, clock: {} as Clock });
+    streaming.get("/stream", (_request, reply) => {
+      reply.raw.writeHead(200, { "content-type": "application/octet-stream", "cache-control": "private, no-store" });
+      reply.raw.write("first|");
+      setTimeout(() => reply.raw.end("last"), 300);
+      return reply.hijack();
+    });
+    await streaming.listen({ port: 0, host: "127.0.0.1" });
+    const at = (streaming.server.address() as AddressInfo).port;
+    const text = await new Promise<string>((done) => {
+      const socket = connect(at, "127.0.0.1");
+      const chunks: Buffer[] = [];
+      socket.on("data", (chunk: Buffer) => chunks.push(chunk));
+      socket.on("error", () => undefined);
+      socket.on("close", () => {
+        done(Buffer.concat(chunks).toString("latin1"));
+      });
+      socket.write("GET /stream HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n");
+      setTimeout(() => socket.write("FOO / HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n"), 100);
+      setTimeout(() => socket.destroy(), 2_000);
+    });
+    await streaming.close();
+    expect(text.startsWith("HTTP/1.1 200 OK\r\n")).toBe(true);
+    expect(text).toContain("first|");
+    expect(text).not.toContain("INVALID_REQUEST");
+    expect(text.match(/HTTP\/1\.1 /g)).toHaveLength(1);
+  });
+
   it("leaves Node's own two answers empty: no Host header, and an Expect it doesn't know", async () => {
     for (const [request, status] of [
       ["GET /v1/me HTTP/1.1\r\nConnection: close\r\n\r\n", 400],

@@ -8,9 +8,13 @@
 // session, with the cell's ids, ids that name nothing and another club's.
 //
 // Each role's world is committed, with random ids, so the app's own connection reads it as a request
-// would. Ana's Saturday holds Ben's photo, the drop the states act on, and Cleo's video link, so the
-// day has two contributors, each caption the world's own. The scanner's facts come from the world's
-// rows, never from the authorization module it tests.
+// would, and every name in it ends in the world's own random suffix: its people's, its club's, its
+// roster's labels and its captions, so no other world has them. Ana's Saturday holds Ben's photo, the
+// drop the states act on, and Cleo's video link, so the day has two contributors. The scanner's facts
+// come from the world's rows, never from the authorization module it tests.
+//
+// Each role's test prints the cells it ran and the answers it scanned, and asserts both: the cells
+// against the contract's 69 requests a world, the answers against what each step says it sends.
 
 import { randomBytes } from "node:crypto";
 import { buildApp, connect, routesOf, type ApiSql } from "@tadayo/api";
@@ -18,7 +22,7 @@ import { fakeClock, type FakeClock } from "@tadayo/domain/testing";
 import type { FastifyInstance } from "fastify";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { worldSql, type Tx, type WorldTx } from "../db/harness.ts";
-import { AT, checkAsAtCommit, commitDrop, newWorld, type World } from "../db/world.ts";
+import { AT, checkAsAtCommit, commitDrop, named, newWorld, type World } from "../db/world.ts";
 import { PHASES, REVEAL, ROLES, STATES, type Phase } from "../matrix.ts";
 import type { Targets } from "./bindings.ts";
 import {
@@ -35,7 +39,7 @@ import {
 } from "./harness.ts";
 import { contractOperations, readDocument } from "./operations.ts";
 import { NONE, ROWS, rowProblems } from "./rows.ts";
-import { scan, type Viewer, type WorldDrop, type WorldFacts } from "./scanner.ts";
+import { scan, type MediaClass, type Viewer, type WorldDrop, type WorldFacts } from "./scanner.ts";
 
 const document = readDocument();
 const operations = contractOperations(document);
@@ -46,6 +50,12 @@ const plain = (tx: WorldTx) => tx as unknown as Tx;
 /** The time a manipulated request claims: a day after the collecting phase's instant. */
 const CLAIMED = PHASES.collecting.add({ hours: 24 });
 
+/** The requests each world gets from the contract's operations (specsFor), pinned. */
+const REQUESTS_PER_WORLD = 69;
+
+/** A world's own suffix, so its names are no other world's. */
+const suffix = () => ` ${randomBytes(6).toString("hex")}`;
+
 const db = worldSql();
 let api: ApiSql;
 let clock: FakeClock;
@@ -54,13 +64,12 @@ let elsewhere: Targets;
 
 /**
  * Ben's photo "From Ben" and Cleo's video link "Cleo's pick" to Ana's Saturday, each caption ending
- * in a random word, so no other world has it; committed at 20:00 on Friday 6 November, each with its
- * audience of Ana, Ben and Cleo, sealed. Returns Ben's drop.
+ * in the world's suffix, so no other world has it; committed at 20:00 on Friday 6 November, each with
+ * its audience of Ana, Ben and Cleo, sealed. Returns Ben's drop.
  */
 async function twoContributors(tx: WorldTx, w: World): Promise<string> {
-  const word = randomBytes(6).toString("hex");
-  const drop = await commitDrop(plain(tx), w, w.ben, { caption: `From Ben ${word}`, at: AT.added });
-  await commitDrop(plain(tx), w, w.cleo, { media: "external_video", caption: `Cleo's pick ${word}`, at: AT.added });
+  const drop = await commitDrop(plain(tx), w, w.ben, { caption: named(w, "From Ben"), at: AT.added });
+  await commitDrop(plain(tx), w, w.cleo, { media: "external_video", caption: named(w, "Cleo's pick"), at: AT.added });
   await checkAsAtCommit(plain(tx));
   const [row] = await tx<{ authors: number }[]>`
     SELECT count(DISTINCT author_interval_id)::int AS authors FROM app.drops WHERE occurrence_id = ${w.day} AND state = 'active'`;
@@ -77,7 +86,7 @@ beforeAll(async () => {
   app = buildApp({ sql: api, clock });
   await app.ready();
   elsewhere = await db.begin(async (tx) => {
-    const w = await newWorld(plain(tx));
+    const w = await newWorld(plain(tx), suffix());
     const drop = await twoContributors(tx, w);
     return { club: w.club, drop, day: w.day, author: w.ben.interval, star: w.ana.interval };
   });
@@ -95,9 +104,17 @@ afterAll(async () => {
  */
 async function factsOf(clubs: string[], viewer: string | null): Promise<{ world: WorldFacts; viewer: Viewer }> {
   const drops = await db<
-    { id: string; author: string; day: string; caption: string | null; audience: string[]; comments: string[] }[]
+    {
+      id: string;
+      author: string;
+      day: string;
+      media: MediaClass;
+      caption: string | null;
+      audience: string[];
+      comments: string[];
+    }[]
   >`
-    SELECT d.id, d.author_interval_id AS author, d.occurrence_id AS day, d.caption,
+    SELECT d.id, d.author_interval_id AS author, d.occurrence_id AS day, d.media_class AS media, d.caption,
            coalesce((SELECT array_agg(a.interval_id) FROM app.drop_audience a
                        JOIN app.memberships m ON m.interval_id = a.interval_id
                       WHERE a.drop_id = d.id AND m.state = 'active'), '{}') AS audience,
@@ -105,12 +122,34 @@ async function factsOf(clubs: string[], viewer: string | null): Promise<{ world:
                       WHERE c.drop_id = d.id AND c.state = 'active'), '{}') AS comments
       FROM app.drops d
      WHERE d.club_id IN ${db(clubs)}`;
-  const days = await db<{ id: string; club: string; reveal_at: Temporal.Instant }[]>`
-    SELECT id, club_id AS club, reveal_at FROM app.occurrences WHERE club_id IN ${db(clubs)}`;
-  const members = await db<{ interval_id: string; club: string; name: string | null }[]>`
-    SELECT m.interval_id, m.club_id AS club, coalesce(m.ended_display_name, u.display_name) AS name
+  const days = await db<
+    {
+      id: string;
+      club: string;
+      star: string;
+      reveal_at: Temporal.Instant;
+      close_at: Temporal.Instant;
+      collecting_from: Temporal.Instant;
+    }[]
+  >`
+    SELECT id, club_id AS club, star_interval_id AS star, reveal_at, close_at, collecting_from
+      FROM app.occurrences WHERE club_id IN ${db(clubs)}`;
+  const members = await db<
+    {
+      interval_id: string;
+      club: string;
+      name: string | null;
+      joined_at: Temporal.Instant;
+      left_at: Temporal.Instant | null;
+    }[]
+  >`
+    SELECT m.interval_id, m.club_id AS club, coalesce(m.ended_display_name, u.display_name) AS name, m.joined_at, m.left_at
       FROM app.memberships m JOIN app.users u ON u.id = m.user_id
      WHERE m.club_id IN ${db(clubs)}`;
+  const reservations = await db<{ id: string; interval: string; day: string; media: MediaClass }[]>`
+    SELECT r.id, r.interval_id AS interval, r.occurrence_id AS day, r.media_class AS media
+      FROM app.reservations r JOIN app.occurrences o ON o.id = r.occurrence_id
+     WHERE o.club_id IN ${db(clubs)}`;
   const clubRows = await db<{ id: string; name: string; labels: string[] }[]>`
     SELECT c.id, c.name,
            coalesce((SELECT array_agg(r.label) FROM app.roster_revision_candidates r WHERE r.club_id = c.id), '{}') AS labels
@@ -149,15 +188,35 @@ async function factsOf(clubs: string[], viewer: string | null): Promise<{ world:
           {
             author: drop.author,
             day: drop.day,
+            media: drop.media,
             caption: drop.caption,
             audience: new Set(drop.audience),
             comments: drop.comments,
           },
         ]),
       ),
-      days: new Map(days.map((day) => [day.id, { club: day.club, revealAt: day.reveal_at }])),
-      members: new Map(members.map((row) => [row.interval_id, { club: row.club, name: row.name }])),
+      days: new Map(
+        days.map((day) => [
+          day.id,
+          {
+            club: day.club,
+            star: day.star,
+            revealAt: day.reveal_at,
+            closeAt: day.close_at,
+            collectingFrom: day.collecting_from,
+          },
+        ]),
+      ),
+      members: new Map(
+        members.map((row) => [
+          row.interval_id,
+          { club: row.club, name: row.name, joinedAt: row.joined_at, leftAt: row.left_at },
+        ]),
+      ),
       clubs: new Map(clubRows.map((row) => [row.id, { name: row.name, labels: new Set(row.labels) }])),
+      reservations: new Map(
+        reservations.map((row) => [row.id, { interval: row.interval, day: row.day, media: row.media }]),
+      ),
       canaries,
     },
     viewer: { intervals: new Set(intervals.map((row) => row.interval_id)), texts: new Set(own.map((row) => row.text)) },
@@ -206,11 +265,11 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
   for (const role of ROLES) {
     it(`answers the ${role.name} with the neutral not-found, and leaks nothing the scanner can find`, async () => {
       const wrong: string[] = [];
-      const counted = { cells: 0, answers: 0, expectedCells: 0, expectedAnswers: 0 };
+      const counted = { cells: 0, answers: 0, expectedAnswers: 0 };
       const phases = (Object.keys(PHASES) as Phase[]).filter((phase) => !role.phases || role.phases.includes(phase));
       for (const state of STATES) {
         const cell = await db.begin(async (tx) => {
-          const w = await newWorld(plain(tx));
+          const w = await newWorld(plain(tx), suffix());
           const drop = await twoContributors(tx, w);
           const viewer = await role.make(tx, w);
           await state.make(tx, w, drop);
@@ -229,7 +288,6 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
           const record = scanner(wrong, `${state.name}, ${phase}`, facts, now, counted);
           for (const spec of specs) {
             counted.cells += 1;
-            counted.expectedCells += 1;
             counted.expectedAnswers += 1 + guessCount(spec);
             record(await cellStep(app, spec));
             if (phase === "collecting") {
@@ -248,16 +306,18 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
           }
         }
       }
+      console.log(`${role.name}: ${String(counted.cells)} cells run, ${String(counted.answers)} answers scanned`);
       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqual({ count: 0, first: [] });
-      // Every cell ran and every answer was scanned: the operations with each value of a required
-      // enum, in each state and phase the role has, with the manipulated and guessed requests.
-      expect(counted.cells).toBe(counted.expectedCells);
-      expect(counted.answers).toBe(counted.expectedAnswers);
+      // Every cell ran: the contract's 69 requests a world (each operation with each value of a
+      // required enum, and again with its optional ids), in each of the 7 states and each phase the
+      // role has. And every answer was scanned, with the manipulated and guessed requests.
       const specsPerWorld = operations.reduce(
         (sum, operation) => sum + specsFor(operation, elsewhere, "acct_x").length,
         0,
       );
-      expect(counted.cells).toBe(STATES.length * phases.length * specsPerWorld);
+      expect(specsPerWorld).toBe(REQUESTS_PER_WORLD);
+      expect(counted.cells).toBe(7 * phases.length * REQUESTS_PER_WORLD);
+      expect(counted.answers).toBe(counted.expectedAnswers);
       expect(malformed.size).toBeGreaterThan(0);
     });
   }
@@ -269,7 +329,7 @@ describe("callers without a session, in each state of the drop and phase of the 
     const counted = { answers: 0, expected: 0 };
     for (const state of STATES) {
       const cell = await db.begin(async (tx) => {
-        const w = await newWorld(plain(tx));
+        const w = await newWorld(plain(tx), suffix());
         const drop = await twoContributors(tx, w);
         await state.make(tx, w, drop);
         await checkAsAtCommit(plain(tx));
@@ -287,6 +347,7 @@ describe("callers without a session, in each state of the drop and phase of the 
         }
       }
     }
+    console.log(`callers without a session: ${String(counted.answers)} answers scanned`);
     expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqual({ count: 0, first: [] });
     expect(counted.answers).toBe(counted.expected);
     expect(counted.answers).toBeGreaterThan(STATES.length * Object.keys(PHASES).length * operations.length * 3);

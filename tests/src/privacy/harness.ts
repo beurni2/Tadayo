@@ -10,7 +10,7 @@ import type { FastifyInstance } from "fastify";
 import { ApiError } from "@tadayo/contracts";
 import { bind, freshId, type Targets } from "./bindings.ts";
 import { isObject, type ContractOperation, type Parameter } from "./operations.ts";
-import type { Answer } from "./scanner.ts";
+import { transportForm, type Answer } from "./scanner.ts";
 
 /**
  * The neutral not-found (T14), the one answer for missing and for not the caller's: pinned here, not
@@ -18,6 +18,7 @@ import type { Answer } from "./scanner.ts";
  */
 export const NEUTRAL: Answer = {
   status: 404,
+  reason: "Not Found",
   headers: {
     "content-type": "application/json; charset=utf-8",
     "cache-control": "private, no-store",
@@ -26,27 +27,42 @@ export const NEUTRAL: Answer = {
   body: '{"code":"NOT_FOUND"}',
 };
 
-/** Headers the transport sets, which differ from answer to answer and say nothing. */
+/**
+ * Headers the transport sets, whose values differ from answer to answer and say nothing once each is
+ * in its own form (the scanner's TRANSPORT): a value outside it is compared as it is.
+ */
 const TRANSPORT = new Set(["date", "connection", "keep-alive"]);
 
-/** `answer` as one string, its transport's headers left out, for comparing answers byte for byte. */
+/** A transport header's value as compared: its form when it has it, else the value itself. */
+function compared(name: string, value: string): string {
+  return TRANSPORT.has(name) && transportForm(name, value) ? `(its form)` : value;
+}
+
+/**
+ * `answer` as one string, for comparing answers byte for byte: the status, the reason phrase, every
+ * header, and the body, with each transport header in its own form standing for its value.
+ */
 export function said(answer: Answer): string {
   const headers = Object.entries(answer.headers)
-    .filter(([name]) => !TRANSPORT.has(name))
-    .sort(([one], [other]) => (one < other ? -1 : 1));
-  return `${String(answer.status)} ${JSON.stringify(headers)} ${answer.body}`;
+    .map(([name, value]) => [name, compared(name, value)])
+    .sort(([one = ""], [other = ""]) => (one < other ? -1 : 1));
+  return `${String(answer.status)} ${answer.reason} ${JSON.stringify(headers)} ${answer.body}`;
 }
 
 /** How `answer` differs from the neutral not-found; empty when it's the same, byte for byte. */
 export function neutralProblems(answer: Answer): string[] {
   const problems: string[] = [];
   if (answer.status !== NEUTRAL.status) problems.push(`status ${String(answer.status)}`);
+  if (answer.reason !== NEUTRAL.reason) problems.push(`reason ${JSON.stringify(answer.reason)}`);
   if (answer.body !== NEUTRAL.body) problems.push(`body ${JSON.stringify(answer.body.slice(0, 200))}`);
   for (const [header, value] of Object.entries(NEUTRAL.headers)) {
     if (answer.headers[header] !== value) problems.push(`${header}: ${String(answer.headers[header])}`);
   }
-  for (const header of Object.keys(answer.headers)) {
-    if (!Object.hasOwn(NEUTRAL.headers, header) && !TRANSPORT.has(header)) problems.push(`an extra header, ${header}`);
+  for (const [header, value] of Object.entries(answer.headers)) {
+    if (Object.hasOwn(NEUTRAL.headers, header)) continue;
+    if (!TRANSPORT.has(header)) problems.push(`an extra header, ${header}`);
+    else if (!transportForm(header, value))
+      problems.push(`${header}: ${JSON.stringify(value.slice(0, 80))}, not its form`);
   }
   return problems;
 }
@@ -87,7 +103,7 @@ export async function answerOf(app: FastifyInstance, request: Request): Promise<
   for (const [name, value] of Object.entries(response.headers)) {
     if (value !== undefined) headers[name.toLowerCase()] = Array.isArray(value) ? value.join(", ") : String(value);
   }
-  return { status: response.statusCode, headers, body: response.body };
+  return { status: response.statusCode, reason: response.statusMessage, headers, body: response.body };
 }
 
 /** A request, ready for `inject`. */
@@ -321,8 +337,9 @@ export async function manipulationStep(
  * same whether the other Id parameters name the cell's objects, nothing, or another club's, so a
  * route that looks a parent up before it checks the child tells no one which parents exist. Then,
  * where the operation pages, a cursor no server issued and each malformed one, each answered as a
- * malformed id may be. Each malformed answer is returned by its request, so the matrix can check
- * it's the same in every cell, for every role.
+ * malformed id may be, and the same whether the Id parameters name the cell's objects, nothing, or
+ * another club's, so a cursor tells no one which parents exist either. Each malformed answer is
+ * returned by its request, so the matrix can check it's the same in every cell, for every role.
  */
 export async function guessStep(
   app: FastifyInstance,
@@ -370,13 +387,26 @@ export async function guessStep(
   }
   if (pages(spec.operation)) {
     for (const value of [{ raw: "fresh", decoded: freshCursor() }, ...MALFORMED]) {
+      const label = `${spec.operation.id}, cursor ${JSON.stringify(value.raw.slice(0, 12))}`;
       const paged = { ...spec, query: { ...spec.query, cursor: value.decoded } };
       const answer = await answerOf(app, render(paged));
       step.answers.push({ spec: paged, answer });
-      for (const problem of malformedProblems(answer, "cursor", value.decoded)) {
-        step.problems.push(`${spec.operation.id}, cursor ${JSON.stringify(value.raw.slice(0, 12))}: ${problem}`);
-      }
+      for (const problem of malformedProblems(answer, "cursor", value.decoded))
+        step.problems.push(`${label}: ${problem}`);
       step.malformed.set(`${spec.operation.id} cursor ${value.raw}`, said(answer));
+      if (ids.length === 0) continue;
+      for (const [names, id] of [
+        ["nothing", () => freshId()],
+        ["another club's object", (other: { name: string }) => bind(other.name, elsewhere)],
+      ] as const) {
+        const beside = withIds(paged, (other) => id(other));
+        const besideAnswer = await answerOf(app, render(beside));
+        step.answers.push({ spec: beside, answer: besideAnswer });
+        for (const problem of malformedProblems(besideAnswer, "cursor", value.decoded))
+          step.problems.push(`${label}, beside ids that name ${names}: ${problem}`);
+        if (said(besideAnswer) !== said(answer))
+          step.problems.push(`${label}: another answer when the ids name ${names} (T14)`);
+      }
     }
   }
   return step;
@@ -386,7 +416,8 @@ export async function guessStep(
 export function guessCount(spec: Spec): number {
   const ids = idParameters(spec).length;
   const beside = ids > 1 ? 2 : 0;
-  return ids * (2 + MALFORMED.length * (1 + beside)) + (pages(spec.operation) ? 1 + MALFORMED.length : 0);
+  const cursors = pages(spec.operation) ? (1 + MALFORMED.length) * (ids > 0 ? 3 : 1) : 0;
+  return ids * (2 + MALFORMED.length * (1 + beside)) + cursors;
 }
 
 /**
@@ -402,7 +433,8 @@ export const SIGNED_OUT: readonly { name: string; authorization: string | null }
 
 /**
  * The cell's request from each caller without a session, with the cell's ids, then ids that name
- * nothing, then another club's: the same answer, byte for byte, whatever the ids name, so a route
+ * nothing, then another club's, and, where the operation pages, each of those again with a cursor no
+ * server issued: the same answer, byte for byte, whatever the ids and the cursor name, so a route
  * that looks an object up before it checks the session tells no one which objects exist (T14). The
  * skeleton's row asks the neutral not-found of each.
  */
@@ -414,6 +446,13 @@ export async function signedOutStep(app: FastifyInstance, spec: Spec, elsewhere:
       ["fresh", withIds(spec, () => freshId())],
       ["another club's", withIds(spec, (parameter) => bind(parameter.name, elsewhere))],
     );
+  }
+  if (pages(spec.operation)) {
+    for (const [ids, variant] of [...variants])
+      variants.push([
+        `${ids}, with a forged cursor,`,
+        { ...variant, query: { ...variant.query, cursor: freshCursor() } },
+      ]);
   }
   for (const caller of SIGNED_OUT) {
     let first: string | undefined;
@@ -436,5 +475,5 @@ export async function signedOutStep(app: FastifyInstance, spec: Spec, elsewhere:
 
 /** How many answers signedOutStep gets for `spec`. */
 export function signedOutCount(spec: Spec): number {
-  return SIGNED_OUT.length * (idParameters(spec).length > 0 ? 3 : 1);
+  return SIGNED_OUT.length * (idParameters(spec).length > 0 ? 3 : 1) * (pages(spec.operation) ? 2 : 1);
 }

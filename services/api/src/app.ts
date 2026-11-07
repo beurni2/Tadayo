@@ -7,10 +7,12 @@
 // a request it routes is made to say nothing either: an unknown path, another method, an id past
 // the router's limit or a broken escape gets the same neutral not-found, and a body Fastify can't
 // read gets the contract's INVALID_REQUEST, never the error's message. A request Node's parser
-// can't read gets the contract's INVALID_REQUEST too, in place of Fastify's own words. Node itself
-// still answers two requests with its own empty answers, an HTTP/1.1 request without a Host header
-// with a 400 and an Expect it doesn't know with a 417, and a closing server answers with Fastify's
-// fixed 503; none of them carries an id, a path or anyone's data.
+// can't read gets the contract's INVALID_REQUEST too, in place of Fastify's own words, unless an
+// answer has already started on its connection, which then just closes, as Node closes it. Node
+// itself still answers two requests with its own empty answers, an HTTP/1.1 request without a Host
+// header with a 400 and an Expect it doesn't know with a 417, and a closing server answers with
+// Fastify's fixed 503, a JSON body of its own words with no Cache-Control; none of them carries an
+// id, a path or anyone's data.
 
 import type { Socket } from "node:net";
 import Fastify, { type FastifyError, type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
@@ -47,11 +49,14 @@ function invalidRequest(error: FastifyError, _request: FastifyRequest, reply: Fa
  * A request Node's parser couldn't read (a raw byte or a space in the path, a method it doesn't
  * know, Transfer-Encoding beside Content-Length, two Content-Lengths, a version past HTTP/1.1,
  * headers past 16 KB, a request too slow to arrive): the contract's INVALID_REQUEST, then the
- * connection closes, as Node and Fastify close it. A reset connection gets nothing.
+ * connection closes, as Node and Fastify close it. A reset connection gets nothing, and neither does
+ * one whose answer to an earlier request has already started: its bytes would land inside that
+ * answer, so the connection just closes, as Node's own handler does.
  */
 function clientError(error: Error & { code?: string }, socket: Socket): void {
   if (error.code === "ECONNRESET" || socket.destroyed) return;
-  if (socket.writable) {
+  const answering = (socket as Socket & { _httpMessage?: { headersSent?: boolean } | null })._httpMessage;
+  if (socket.writable && !answering?.headersSent) {
     socket.write(
       `HTTP/1.1 400 Bad Request\r\nCache-Control: ${NO_STORE}\r\nContent-Type: ${JSON_TYPE}\r\n` +
         `Content-Length: ${String(INVALID_BODY.length)}\r\nConnection: close\r\n\r\n${INVALID_BODY}`,
