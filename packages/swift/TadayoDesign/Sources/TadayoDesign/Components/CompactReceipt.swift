@@ -10,8 +10,8 @@ import TadayoCore
 /// composer (book p15).
 ///
 /// 2.1's `F02-added` draws it with the same anatomy as its past-day block, which handoff 6 put in
-/// the brand as `pastDayCard`; no handoff draws the receipt itself (handoff 7 doesn't ask), so it
-/// takes `pastDayCard`'s tokens on 2.1's anatomy, each gap at the nearest step of book p35's
+/// the brand as `pastDayCard`; no handoff draws the receipt itself yet (handoff 7 asks, item 17g),
+/// so it takes `pastDayCard`'s tokens on 2.1's anatomy, each gap at the nearest step of book p35's
 /// scale:
 /// - `canvas` with a 1-point `separator` border at the surface radius, 12, padded 16 at the sides
 ///   (2.1: 15) and 12 above and below, where the action's target stands in for the bottom padding
