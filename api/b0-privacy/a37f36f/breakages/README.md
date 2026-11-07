@@ -11,7 +11,7 @@ Each breakage is one exact change of text in one file of `api/b0-privacy`: the A
 
 ## The 10 new or near ones, run first
 
-The new one, the 5 re-pointed or replaced, and 4 whose code or tests the seventh review's fixes touched (`57`, `80`, `120` and `128`) were first run on their own, on the final tree: all 10 caught. That run is in `first-run/`. The full run below is on the same tree.
+The new one, the 5 re-pointed or replaced, and 4 near the changed code (`57`, a cursor check in the harness, which the fixes didn't touch; `80`, `120` and `128`, whose scanner test the fixes changed) were first run on their own, on the final tree: all 10 caught. (Corrected after PR #27's eighth review, finding records 5: this said the seventh review's fixes touched the code or tests of all four.) That run is in `first-run/`. The full run below is on the same tree.
 
 ## How to run them again
 

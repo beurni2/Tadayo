@@ -1,0 +1,20 @@
+breakage: api-client-error-writes-into-an-answer-under-way
+patch: [
+ [
+  "services/api/src/app.ts",
+  "if (socket.writable && !answering?.headersSent) {",
+  "if (socket.writable) {"
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-privacy/services/api && npx vitest run
+exit: 1
+expected pattern: × writes nothing into an answer already under way
+caught: True
+
+ ❯ src/app.test.ts (11 tests | 1 failed) 305ms
+     × writes nothing into an answer already under way when a request pipelined behind it can't be read 118ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 14 passed (15)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/app.test.ts > what Node's parser answers, over a socket of its own (T14) > writes nothing into an answer already under way when a request pipelined behind it can't be read
+AssertionError: expected 'HTTP/1.1 200 OK\r\ncontent-type: appl…' not to contain 'INVALID_REQUEST'

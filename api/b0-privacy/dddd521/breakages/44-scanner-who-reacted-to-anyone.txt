@@ -1,0 +1,23 @@
+breakage: scanner-who-reacted-to-anyone
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "if (!Array.isArray(node.reactions) || reader.ownActive(drop)) return;",
+  "return;"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × catches who reacted shown to someone but the drop's author
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (60 tests | 2 failed) 191ms
+     × catches who reacted shown to someone but the drop's author (FQ73) 10ms
+     × catches a former author's view of their drop's reactions, comments and highlight, once their interval has ended (FQ73) 1ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches who reacted shown to someone but the drop's author (FQ73)
+AssertionError: expected [] to deeply equal [ '$.reactions[0].people' ]
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a former author's view of their drop's reactions, comments and highlight, once their interval has ended (FQ73)
+AssertionError: expected [ '$.drop_id' ] to deeply equal [ Array(2) ]
+ Test Files  1 failed (1)
+      Tests  2 failed | 58 passed (60)
