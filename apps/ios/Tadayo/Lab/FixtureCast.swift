@@ -43,6 +43,12 @@
         static let collectingDay = Occasion(
             star: debby.name, date: collecting, opensAt: Date(timeIntervalSince1970: 1_794_571_200),
             zone: zone, includingYear: true)
+        /// The same Friday as a screen in 2026 writes it, without the year (FQ44: a visible date
+        /// in the current year doesn't carry it), for the specimen that shows that form and the
+        /// tests that check every spoken opening still does.
+        static let collectingDayThisYear = Occasion(
+            star: debby.name, date: collecting, opensAt: collectingDay.opensAt, zone: zone,
+            includingYear: false)
 
         /// The photographs book p50 lists, by asset name.
         static let photos = [

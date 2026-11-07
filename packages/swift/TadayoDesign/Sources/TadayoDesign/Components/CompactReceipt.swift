@@ -18,9 +18,9 @@ import TadayoCore
 ///   as far as it reaches past the action's words, so the words end about as far above the border
 ///   as the title starts below it (2.1 draws the action close to the bottom edge);
 /// - the check in a 28-point `surface` disc, in `secondaryText`, hidden from VoiceOver, 12 before
-///   the text (2.1: 11), which so starts 56 in where both drawings start it at 53; the disc grows
-///   with the text as the check does, as the drafts row's folder box does, so the check stays in
-///   it;
+///   the text (2.1: 11), which so starts 56 in where both drawings start it at 53; disc and check
+///   keep their size at every text size, as handoff 4's `dynamicTypePolicy.avatarMarks` keeps a
+///   decorative image beside the words it goes with, so the words keep their width;
 /// - the title in `row` 17/22 (2.1 draws 15 bold, the sheet's past-day block 16 bold; `row` is
 ///   the brand's role for a title line in a row), 4 above the date line in `metadata`
 ///   `secondaryText` ("November 13 · Opens at 7 AM"; the sheet's baselines 22 apart);
@@ -34,8 +34,6 @@ public struct CompactReceipt: View {
     let labels: DateLabels
     let makeHighlight: () -> Void
 
-    @ScaledMetric(relativeTo: TypeRole.row.textStyle) private var disc = Size.receiptDisc
-    @ScaledMetric(relativeTo: TypeRole.row.textStyle) private var check = Size.receiptCheck
     @ScaledMetric(relativeTo: TypeRole.textAction.textStyle)
     private var actionLine = TypeRole.textAction.lineHeight
 
@@ -83,9 +81,9 @@ public struct CompactReceipt: View {
     public var body: some View {
         HStack(alignment: .top, spacing: Spacing.m) {
             Image(systemName: "checkmark")
-                .font(.system(size: check, weight: .semibold))
+                .font(.system(size: Size.receiptCheck, weight: .semibold))
                 .foregroundStyle(Palette.secondaryText)
-                .frame(width: disc, height: disc)
+                .frame(width: Size.receiptDisc, height: Size.receiptDisc)
                 .background(Palette.surface, in: Circle())
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 0) {

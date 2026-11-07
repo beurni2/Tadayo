@@ -89,11 +89,12 @@ import Testing
 /// A local_date is the club's date, written as that date wherever the phone is (T41). These run
 /// one at a time, each with the process's default zone set to one far ahead of UTC and restored
 /// after: in ci's UTC container a formatter that followed the device's zone would still pass.
-/// Zones behind UTC add nothing, since the date is formatted at noon UTC.
+/// Zones behind UTC add nothing, since the date is formatted at noon UTC. Kolkata is half an hour
+/// off New York's minutes, so a time whose minutes were read in the phone's zone fails there.
 @Suite(.serialized) struct DateLabelsDeviceZoneTests {
     let us = DateLabels(locale: Locale(identifier: "en_US"))
 
-    @Test(arguments: ["Pacific/Kiritimati", "Pacific/Auckland"])
+    @Test(arguments: ["Pacific/Kiritimati", "Pacific/Auckland", "Asia/Kolkata"])
     func datesNeverMoveWithTheDevicesZone(zone: String) throws {
         let saved = NSTimeZone.default
         NSTimeZone.default = try #require(TimeZone(identifier: zone))
@@ -110,5 +111,10 @@ import Testing
         let seven = Date(timeIntervalSince1970: 1_794_571_200)
         let newYork = try #require(TimeZone(identifier: "America/New_York"))
         #expect(us.fullDateTime(seven, in: newYork) == "Friday, November 13, 2026 at 7\u{202F}AM")
+        #expect(us.time(seven, in: newYork) == "7\u{202F}AM")
+        let half = seven.addingTimeInterval(-5.5 * 3600)  // 1:30 AM in New York
+        #expect(us.time(half, in: newYork) == "1:30\u{202F}AM")
+        #expect(
+            us.fullDateTime(half, in: newYork) == "Friday, November 13, 2026 at 1:30\u{202F}AM")
     }
 }

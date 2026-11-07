@@ -87,7 +87,8 @@ public enum Size {
     public static let feedPhotoAspect: CGFloat = 353.0 / 304.0
     /// The compact receipt's disc: 28 points, as handoff 6's sheet draws `pastDayCard`'s
     /// "checkmark in surface circle", and SF Symbol `checkmark` at the size whose glyph matches
-    /// the drawn one, about 11 by 8. Both grow with the text, the disc with the check.
+    /// the drawn one, about 11 by 8. Both keep their size at every text size (handoff 4's
+    /// `dynamicTypePolicy.avatarMarks`, for a decorative image beside words).
     public static let receiptDisc: CGFloat = 28
     public static let receiptCheck: CGFloat = 12
     /// The wordmark's width in the no-club header (handoff 2's `noClubRootHeader`: "outlined

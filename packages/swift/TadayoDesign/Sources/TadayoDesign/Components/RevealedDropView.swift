@@ -78,9 +78,12 @@ struct RevealedDropView: View {
 /// 6): `star.fill` at 12, 4 before "Highlight" in `photoLabel` 11/14 bold, padded 6 above and
 /// below (handoff 4's optical inset `photoHighlightBlock`) and 8 at the sides, 26 high at the
 /// default size, radius 6, `photoLabel` with `onPhotoLabel` ink in both themes, no outline. "The
-/// labels scale and grow with text" (handoff 2), star and padding included. After the reveal
-/// every highlight carries it in the feed (spec 15; INVENTORY.md's Known differences); before
-/// the reveal nobody else sees a photograph to carry it (T10). The star is decorative: VoiceOver
+/// labels scale and grow with text" (handoff 2), star and padding included, but never past the
+/// width it's given: on a photograph, the photograph's less its inset, so at the largest sizes on
+/// a narrow screen the word wraps inside the label rather than the label running off the photo
+/// (INVENTORY.md's Known differences; the ios lane's needs list). After the reveal every
+/// highlight carries it in the feed (spec 15; INVENTORY.md's Known differences); before the
+/// reveal nobody else sees a photograph to carry it (T10). The star is decorative: VoiceOver
 /// reads "Highlight".
 public struct PhotoHighlightLabel: View {
     @ScaledMetric(relativeTo: TypeRole.photoLabel.textStyle)
@@ -106,7 +109,7 @@ public struct PhotoHighlightLabel: View {
         .padding(.vertical, vertical)
         .padding(.horizontal, horizontal)
         .background(Palette.photoLabel, in: RoundedRectangle(cornerRadius: Radius.photoLabel))
-        .fixedSize()
+        .fixedSize(horizontal: false, vertical: true)
         .accessibilityElement(children: .combine)
     }
 }

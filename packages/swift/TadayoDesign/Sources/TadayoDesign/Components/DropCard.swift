@@ -17,9 +17,12 @@ import TadayoCore
 ///   only `DropOwn` carries the highlight), never from a clock (T1). The spoken label is made
 ///   here from those fields, so no caller can pass words that describe the media (T16).
 /// - **T20.** No state takes its status words from the caller: the draft says "Not shared with
-///   anyone", uploading and processing say "Not added yet", from the app's string catalog. None
-///   can read Added or Sent. Only `CompactReceipt` says "Added for", and it takes an
-///   `AddedDrop`, which only the server's commit response may make (B4).
+///   anyone", uploading and processing say "Not added yet", from `TadayoDesign`'s own string
+///   catalog. None can read Added or Sent. Only `CompactReceipt` says "Added for", and it takes
+///   an `AddedDrop`, which only the server's commit response may make (B4). That last part is a
+///   rule for the caller, not something the type proves: `AddedDrop` holds an `Occasion`, as an
+///   upload does, so B4's one mapping from the contract's `DropReceipt`, with its test, is what
+///   keeps an upload from being shown as added.
 /// - **T11.** The author's own card before the reveal shows the caption, never the photograph:
 ///   the preview lives in the author's tools.
 /// - **T12.** Photographs arrive as `Image`, never as a URL or a token.
@@ -203,7 +206,9 @@ public struct RevealedDrop: Sendable {
 
 /// A drop the server has committed: what `CompactReceipt` shows. Make one only from the commit
 /// response, the contract's `DropReceipt`, whose one state is `added` (T20); B4 adds that single
-/// mapping, with its tests. Never from an upload's or a draft's occasion.
+/// mapping, with its tests. Never from an upload's or a draft's occasion: the type can't tell,
+/// since it holds nothing of the commit, so until that mapping and its test exist this is a
+/// convention.
 public struct AddedDrop: Sendable {
     public let occasion: Occasion
     /// Whether this drop is now its author's highlight for the occasion (the receipt's

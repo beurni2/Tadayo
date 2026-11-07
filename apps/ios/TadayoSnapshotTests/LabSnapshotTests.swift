@@ -6,8 +6,9 @@ import XCTest
 @testable import Tadayo
 
 /// The Lab's sections at the 393-point width, in light, in dark, at the largest standard text
-/// size and at the largest accessibility size (docs/TECH-DESIGN.md sections 2 and 4), and the
-/// no-club header at 320 points, where it stacks. The Lab
+/// size and at the largest accessibility size (docs/TECH-DESIGN.md sections 2 and 4), the
+/// no-club header and the drop card's sections at 320 points, and the folded card's first form
+/// at 430. The Lab
 /// isn't an inventory state, so the contact sheets show these alone; book p34 and p35 and handoff
 /// 0's brand-components are what they are judged against.
 ///
@@ -77,6 +78,32 @@ final class LabSnapshotTests: XCTestCase {
     /// under it, still trailing (handoff 4: "can stack").
     func testTheHeaderStacksWhenItsActionsDontFit() {
         snap(.header, .xl, width: 320, named: "Lab-header-320-xl")
+    }
+
+    /// The drop card's sections at 320 points and the largest accessibility size, which no
+    /// 393-point image reaches: every card, row, photograph and receipt keeps inside the screen,
+    /// and where a word can't fit its line it breaks inside the label it belongs to (book p26;
+    /// INVENTORY.md's Known differences, with the ios lane's needs list).
+    func testTheDropCardKeepsInsideA320PointScreenAtTheLargestSize() {
+        for section in [LabSection.cards, .drops, .revealed, .receipt] {
+            snap(section, .xl, width: 320, named: "Lab-\(section.rawValue)-320-xl")
+        }
+    }
+
+    /// The folded card's first form, which no Lab section reaches since every specimen carries
+    /// its year: the author's Highlight at the status line's end, where both fit. Ben's own
+    /// Highlight for Debby's Friday as a screen in 2026 writes it, without the year (FQ44), at
+    /// 430 points, the widest iPhone's width (TECH-DESIGN section 2); at 393 points that line
+    /// and the tag don't fit side by side, so the tag goes under it.
+    func testTheAuthorsHighlightEndsTheStatusLineWhereBothFit() {
+        let ben = FixtureCast.ben
+        let drop = HiddenDrop(
+            caption: "Coffee, obviously.", mediaClass: .photo, sender: ben.sender,
+            cover: Palette.cover(slot: ben.slot), occasion: FixtureCast.collectingDayThisYear,
+            viewer: .author(isHighlight: true))
+        snap(
+            DropCard(.collecting(drop), labels: FixtureCast.labels).padding(.horizontal, 20),
+            .light, width: 430, scale: nil, busy: false, named: "Lab-card-highlight-430")
     }
 
     /// Book p34: "Portrait, landscape and text screenshot fixtures have distinct examples." The

@@ -31,26 +31,36 @@ final class DesignCatalogTests: XCTestCase {
         }
     }
 
-    /// Every lookup in the package's sources names its own bundle; a bare `String(localized:)`
-    /// or a `Text` with a literal would read the main bundle.
+    /// Every lookup in the package's sources names its own bundle, and every key of its catalog
+    /// is looked up that way. A bare `String(localized:)`, `NSLocalizedString` or
+    /// `LocalizedStringKey`, or a literal given to `Text`, `Button`, `Label`, `Toggle`, `Link`,
+    /// `Menu`, `Picker` or an accessibility label, hint or value, would read the main bundle; and a
+    /// key no lookup names would leave a component showing words the catalog no longer holds, so
+    /// an answer that changes the catalog's words wouldn't reach it.
     func testEveryLookupInTheComponentsNamesTheDesignBundle() throws {
         let lookup = try NSRegularExpression(pattern: #"String\(\s*localized:"#)
         let named = try NSRegularExpression(
-            pattern: #"String\(\s*localized:\s*"[^"]*",\s*bundle:\s*\.module\s*\)"#)
-        let literalText = try NSRegularExpression(pattern: #"\bText\(\s*""#)
+            pattern: #"String\(\s*localized:\s*"([^"]*)",\s*bundle:\s*\.module\s*\)"#)
+        let mainBundle = try NSRegularExpression(
+            pattern: #"\b(Text|Button|Label|Toggle|Link|Menu|Picker|LocalizedStringKey|"#
+                + #"NSLocalizedString)\(\s*"|\.accessibility(Label|Hint|Value)\(\s*""#)
         let files = try XCTUnwrap(FileManager.default.enumerator(atPath: sources.path))
             .compactMap { $0 as? String }.filter { $0.hasSuffix(".swift") }
         XCTAssertFalse(files.isEmpty)
-        var lookups = 0
+        var looked = Set<String>()
         for file in files {
             let text = try String(contentsOf: sources.appendingPathComponent(file), encoding: .utf8)
             let range = NSRange(text.startIndex..., in: text)
-            let all = lookup.numberOfMatches(in: text, range: range)
-            lookups += all
-            XCTAssertEqual(named.numberOfMatches(in: text, range: range), all, file)
-            XCTAssertEqual(literalText.numberOfMatches(in: text, range: range), 0, file)
+            let matches = named.matches(in: text, range: range)
+            XCTAssertEqual(matches.count, lookup.numberOfMatches(in: text, range: range), file)
+            XCTAssertEqual(mainBundle.numberOfMatches(in: text, range: range), 0, file)
+            for match in matches {
+                let key = try XCTUnwrap(Range(match.range(at: 1), in: text))
+                looked.insert(String(text[key]))
+            }
         }
-        XCTAssertGreaterThan(lookups, 0)
+        let keys = try Set(catalogWords().keys)
+        XCTAssertEqual(looked, keys)
     }
 
     /// The catalog's keys and their English words.
