@@ -1,0 +1,22 @@
+breakage: matrix-signed-out-step-not-run
+patch: [
+ [
+  "tests/src/privacy/matrix.test.ts",
+  "          record(await signedOutStep(app, spec, elsewhere));\n",
+  ""
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/matrix.test.ts
+exit: 1
+expected pattern: expected \+?\d+ to be 14868
+caught: True
+
+stdout | src/privacy/matrix.test.ts > callers without a session, in each state of the drop and phase of the day (T14) > answers each the same whatever the ids name, the neutral not-found, and leaks nothing the scanner can find
+ ❯ src/privacy/matrix.test.ts (13 tests | 1 failed) 34052ms
+     × answers each the same whatever the ids name, the neutral not-found, and leaks nothing the scanner can find 344ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/matrix.test.ts > callers without a session, in each state of the drop and phase of the day (T14) > answers each the same whatever the ids name, the neutral not-found, and leaks nothing the scanner can find
+AssertionError: expected +0 to be 14868 // Object.is equality
+    389|     expect(counted.answers).toBe(counted.expected);
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)

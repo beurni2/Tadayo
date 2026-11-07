@@ -1,0 +1,21 @@
+breakage: scanner-date-time-not-checked
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "if (at < earliest || at > latest)",
+  "if (Math.random() > 2)"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × catches a reason phrase that isn't the status's, a transport header out of its form
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (60 tests | 1 failed) 256ms
+     × catches a reason phrase that isn't the status's, a transport header out of its form, a wrong length and a type on an empty answer 18ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a reason phrase that isn't the status's, a transport header out of its form, a wrong length and a type on an empty answer
+AssertionError: expected [] to deeply equal [ { check: 'shape', …(2) } ]
+-     "at": "header date",
+ Test Files  1 failed (1)
+      Tests  1 failed | 59 passed (60)

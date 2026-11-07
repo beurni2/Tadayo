@@ -5,13 +5,17 @@ Each breakage is one exact change of text in one file of `api/b0-privacy`: the A
 - **Commit:** `31958b5` on `api/b0-privacy` (PR #27), the commit that records the PR's third fresh review, of `d015773`'s fixes, and the fixes of that review. The run was made on the working tree just before that commit, whose code and tests are the commit's; only `docs/` changed after it.
 - **Server:** the session's PostgreSQL 16, made like `ci`'s service (ADR-026), with `tools/ci/ci_steps.py db-bootstrap`. `ci`'s Postgres 17 is the authority for the suites themselves.
 - **Result:** 110 breakages: 110 caught, 0 missed.
-- **What's new since `d015773`'s run** (`api/b0-privacy/d015773/breakages/`): its 92 breakages, 5 of them moved to the new code where their anchor changed (`51`, `68`, `81`, `83`, and `87`, whose pattern now names the harness test of a Date that isn't the answer's time); and 18 new for the third review's fixes (93 to 110): 15 on the scanner (a Date's time, Keep-Alive's value, six on a cursor's readable key: its length, readable text, a date, a long number, an id, text people wrote; three on the people a former member may know: a `Person`, an id anywhere else, a name anywhere else; two on the allowance's states, withdrawn drops and ended reservations; a caption holding its own drop's kept-back values; and hidden text inside another value), 2 on the harness (`Connection` compared as sent, and `Date`'s time), and 1 on the API's `Keep-Alive`.
+- **What's new since `d015773`'s run** (`api/b0-privacy/d015773/breakages/`): its 92 breakages, 5 of them moved to the new code where their anchor changed (`51`, `68`, `81`, `83`, and `87`, whose pattern now names the harness test of a Date that isn't one); and 18 new for the third review's fixes (93 to 110): 15 on the scanner (a Date's time, Keep-Alive's value, six on a cursor's readable key: its length, readable text, a date, a long number, an id, text people wrote; three on the people a former member may know: a `Person`, an id anywhere else, a name anywhere else; two on the allowance's states, withdrawn drops and ended reservations; a caption holding its own drop's kept-back values; and hidden text inside another value), 2 on the harness (`Connection` compared as sent, and `Date`'s time), and 1 on the API's `Keep-Alive`.
 - **Expected words:** 87 of the 110 patterns name the test meant to catch the breakage, or the count that must come out; the other 23 match a finding's or an error's own words, which the scanner and harness only write for the check in question.
 - **Not here:** the matrix worlds' name suffixes, and the drops' and reservations' states the matrix now reads from the database, have no breakage, since under the skeleton every answer is the neutral one, so nothing they guard can show yet.
 
 ## The 23 changed or new ones, run first
 
 The 5 re-pointed and the 18 new were first run on their own, on the tree before the scanner's header comment was rewritten to match its new checks, its code the same: all 23 caught. That run is in `first-run/`. A first try of the full run was then stopped after 5 breakages, all caught, to make that rewrite; the run below is on the final tree.
+
+## Corrected after PR #27's fourth review
+
+This README first said `87`'s pattern names the harness test of a Date that isn't the answer's time. That is `96`'s; `87`'s, as `run_breakages.py` and `87-harness-transport-forms-not-checked.txt` have it, names the test of a Date that isn't one (the fourth review's finding records 4). The run and its verdicts are unchanged.
 
 ## How to run them again
 

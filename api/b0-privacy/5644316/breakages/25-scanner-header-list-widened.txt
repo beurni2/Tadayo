@@ -1,0 +1,21 @@
+breakage: scanner-header-list-widened
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "} else if (header !== \"cache-control\" && !(header === \"retry-after\"",
+  "} else if (header !== \"cache-control\" && header !== \"etag\" && header !== \"x-media-version\" && !(header === \"retry-after\""
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × catches a header no answer may carry yet
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (60 tests | 1 failed) 192ms
+     × catches a header no answer may carry yet, and a URL in a header's value 8ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a header no answer may carry yet, and a URL in a header's value
+AssertionError: {"etag":"\"v1\""}: expected [] to include 'shape'
+    757|       expect(checks(scan(answer(body, 200, header), context("getOccurr…
+ Test Files  1 failed (1)
+      Tests  1 failed | 59 passed (60)

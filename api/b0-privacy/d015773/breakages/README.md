@@ -13,6 +13,10 @@ Each breakage is one exact change of text in one file of `api/b0-privacy`: the A
 
 This README first said 13 of `247873d`'s breakages were moved where their anchor changed. The script's own diff against `247873d`'s shows 12 moved and `61`'s count brought up to the new cells; and `14`'s and `15`'s patterns, which at `247873d` accepted any count, were given the exact one (the third review's finding records 5). The run and its verdicts are unchanged.
 
+## Corrected after PR #27's fourth review
+
+The section below says of `37` that "the test now pins each finding with its words". At `d015773` the test pinned with its words the person's finding of its first scan and the three findings of its second; it pins every finding of both scans, with its check and words, only from `31958b5` (the third review's finding records 7, which the fourth review's findings fixes 3 and records 5 found still here). The run and its verdicts are unchanged.
+
 ## The first run of these 92
 
 A first run, on the tree before its last change, is in `first-run/`. It missed one, closed before this run:
