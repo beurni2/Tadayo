@@ -1,0 +1,306 @@
+/// <reference lib="esnext.temporal" />
+// The privacy matrix's harness (TECH-DESIGN section 8): the neutral not-found every unauthorized
+// cell must get, and the requests a cell makes, generated from the contract's operations: as the
+// role, with each id from the cell's world, then with the client's clock and parameters moved past
+// the reveal (T16, Q09), then with guessed and malformed ids (T14).
+
+import { randomUUID } from "node:crypto";
+import type { FastifyInstance } from "fastify";
+import { ApiError } from "@tadayo/contracts";
+import { bind, freshId, type Targets } from "./bindings.ts";
+import { isObject, type ContractOperation, type Parameter } from "./operations.ts";
+import type { Answer } from "./scanner.ts";
+
+/**
+ * The neutral not-found (T14), the one answer for missing and for not the caller's: pinned here, not
+ * taken from the app under test, so a route that answers everyone the same wrong thing fails.
+ */
+export const NEUTRAL: Answer = {
+  status: 404,
+  headers: {
+    "content-type": "application/json; charset=utf-8",
+    "cache-control": "private, no-store",
+    "content-length": "20",
+  },
+  body: '{"code":"NOT_FOUND"}',
+};
+
+/** Headers the transport sets, which differ from answer to answer and say nothing. */
+const TRANSPORT = new Set(["date", "connection", "keep-alive"]);
+
+/** How `answer` differs from the neutral not-found; empty when it's the same, byte for byte. */
+export function neutralProblems(answer: Answer): string[] {
+  const problems: string[] = [];
+  if (answer.status !== NEUTRAL.status) problems.push(`status ${String(answer.status)}`);
+  if (answer.body !== NEUTRAL.body) problems.push(`body ${JSON.stringify(answer.body.slice(0, 200))}`);
+  for (const [header, value] of Object.entries(NEUTRAL.headers)) {
+    if (answer.headers[header] !== value) problems.push(`${header}: ${String(answer.headers[header])}`);
+  }
+  for (const header of Object.keys(answer.headers)) {
+    if (!Object.hasOwn(NEUTRAL.headers, header) && !TRANSPORT.has(header)) problems.push(`an extra header, ${header}`);
+  }
+  return problems;
+}
+
+/**
+ * Whether `answer` is one a malformed id may get: the neutral not-found, or the contract's 400 for a
+ * request that doesn't match `Id` (errors.ts), naming at most the parameter and never its value. A
+ * malformed id names no object, so T14 isn't at stake; its answer is checked for what it echoes.
+ */
+export function malformedProblems(answer: Answer, parameter: string, value: string): string[] {
+  if (neutralProblems(answer).length === 0) return [];
+  if (answer.status !== 400)
+    return [`status ${String(answer.status)}: neither the neutral not-found nor INVALID_REQUEST`];
+  let body: unknown;
+  try {
+    body = JSON.parse(answer.body);
+  } catch {
+    return ["a 400 that isn't JSON"];
+  }
+  const parsed = ApiError.safeParse(body);
+  const problems: string[] = [];
+  if (!parsed.success || parsed.data.code !== "INVALID_REQUEST") problems.push("a 400 that isn't INVALID_REQUEST");
+  if (isObject(body)) {
+    const extra = Object.keys(body).filter((key) => key !== "code" && key !== "field");
+    if (extra.length > 0) problems.push(`a 400 with ${extra.join(", ")}`);
+    if (body.field !== undefined && body.field !== parameter) problems.push(`a 400 whose field isn't ${parameter}`);
+  }
+  const echoed =
+    value.length >= 3 && [answer.body, ...Object.values(answer.headers)].some((text) => text.includes(value));
+  if (echoed) problems.push("a 400 that echoes the value");
+  return problems;
+}
+
+/** The answer `app` gives `request`, in the scanner's shape. */
+export async function answerOf(app: FastifyInstance, request: Request): Promise<Answer> {
+  const response = await app.inject({ method: request.method as "GET", url: request.url, headers: request.headers });
+  const headers: Record<string, string> = {};
+  for (const [name, value] of Object.entries(response.headers)) {
+    if (value !== undefined) headers[name.toLowerCase()] = Array.isArray(value) ? value.join(", ") : String(value);
+  }
+  return { status: response.statusCode, headers, body: response.body };
+}
+
+/** A request, ready for `inject`. */
+export interface Request {
+  method: string;
+  url: string;
+  headers: Record<string, string>;
+}
+
+/** A request before it's written out: its operation and each parameter's value, as sent. */
+export interface Spec {
+  operation: ContractOperation;
+  /** Written into the path as they are, so a test can send a raw escape. */
+  path: Readonly<Record<string, string>>;
+  query: Readonly<Record<string, string>>;
+  headers: Readonly<Record<string, string>>;
+}
+
+/**
+ * The role's credentials. In this slice a stand-in naming the account, which the skeleton ignores;
+ * slice 8 replaces it with a Supabase access token signed for the account (T53), here and nowhere else.
+ */
+export function credentials(account: string): Record<string, string> {
+  return { authorization: `Bearer matrix-${account}` };
+}
+
+function isId(parameter: Parameter): boolean {
+  return parameter.schema.$ref === "#/components/schemas/Id";
+}
+
+/**
+ * The requests a cell makes to `operation`, as `account`, naming the cell's world: one for each value
+ * of a required enum query parameter. A required parameter it can't fill stops the harness.
+ */
+export function specsFor(operation: ContractOperation, targets: Targets, account: string): Spec[] {
+  const path: Record<string, string> = {};
+  const headers: Record<string, string> = credentials(account);
+  let queries: Record<string, string>[] = [{}];
+  for (const parameter of operation.parameters) {
+    if (parameter.in === "path") {
+      if (!isId(parameter)) throw new Error(`${operation.id}: path parameter ${parameter.name} isn't an Id`);
+      path[parameter.name] = bind(parameter.name, targets);
+    } else if (!parameter.required) {
+      continue;
+    } else if (parameter.in === "header") {
+      if (parameter.name !== "Idempotency-Key") throw new Error(`${operation.id}: can't fill header ${parameter.name}`);
+      headers["idempotency-key"] = randomUUID();
+    } else if (isId(parameter)) {
+      const value = bind(parameter.name, targets);
+      queries = queries.map((query) => ({ ...query, [parameter.name]: value }));
+    } else if (parameter.values !== null) {
+      const values = parameter.values;
+      queries = queries.flatMap((query) => values.map((value) => ({ ...query, [parameter.name]: value })));
+    } else {
+      throw new Error(`${operation.id}: can't fill the required query parameter ${parameter.name}`);
+    }
+  }
+  return queries.map((query) => ({ operation, path, query, headers }));
+}
+
+/** `spec` written out: the path's values as they are, the query encoded. */
+export function render(spec: Spec): Request {
+  let url = spec.operation.path;
+  for (const [name, value] of Object.entries(spec.path)) url = url.replace(`{${name}}`, value);
+  const query = new URLSearchParams(spec.query).toString();
+  // Each idempotent request is its own action, so it never meets another's key (T19).
+  const headers = { ...spec.headers };
+  if (headers["idempotency-key"] !== undefined) headers["idempotency-key"] = randomUUID();
+  return { method: spec.operation.method, url: query === "" ? url : `${url}?${query}`, headers };
+}
+
+/**
+ * `spec` with the client's clock and parameters moved past the reveal (T16, Q09): each query
+ * parameter a client might hope the server reads, set over any already there, then the two headers
+ * that carry a device's time.
+ */
+export function manipulations(spec: Spec, author: string, later: Temporal.Instant): Spec[] {
+  const at = later.toString({ smallestUnit: "second" });
+  const date = new Date(later.epochMilliseconds).toUTCString();
+  const query: Record<string, string> = {
+    now: at,
+    at,
+    as_of: at,
+    server_now: at,
+    reveal: "true",
+    preview: "true",
+    rendition: "full",
+    include: "media",
+    viewer: author,
+  };
+  return [
+    ...Object.entries(query).map(([name, value]) => ({ ...spec, query: { ...spec.query, [name]: value } })),
+    { ...spec, headers: { ...spec.headers, date } },
+    { ...spec, headers: { ...spec.headers, "x-client-time": at } },
+  ];
+}
+
+/** The Id parameters `spec` names, path and query, in order. */
+export function idParameters(spec: Spec): { name: string; in: "path" | "query" }[] {
+  return [
+    ...Object.keys(spec.path).map((name) => ({ name, in: "path" as const })),
+    ...spec.operation.parameters
+      .filter((parameter) => parameter.in === "query" && isId(parameter) && Object.hasOwn(spec.query, parameter.name))
+      .map((parameter) => ({ name: parameter.name, in: "query" as const })),
+  ];
+}
+
+/** `spec` with one Id parameter set to `value`, written as it is in a path, decoded in a query. */
+export function withId(
+  spec: Spec,
+  parameter: { name: string; in: "path" | "query" },
+  value: { raw: string; decoded: string },
+): Spec {
+  return parameter.in === "path"
+    ? { ...spec, path: { ...spec.path, [parameter.name]: value.raw } }
+    : { ...spec, query: { ...spec.query, [parameter.name]: value.decoded } };
+}
+
+/**
+ * Ids that can't be one (T14: a guessed id): too long for `Id` (65), past Fastify's parameter limit
+ * (101) and far past it (4 KB), a NUL, a step up the path, a broken escape, a lone `%`, a cut-off
+ * multi-byte escape, an empty segment, and a raw `/`, which leaves the operation's path for one the
+ * contract doesn't have, so the app's not-found handler answers it.
+ */
+export const MALFORMED: readonly { raw: string; decoded: string }[] = [
+  { raw: "a".repeat(65), decoded: "a".repeat(65) },
+  { raw: "a".repeat(101), decoded: "a".repeat(101) },
+  { raw: "a".repeat(4096), decoded: "a".repeat(4096) },
+  { raw: "%00", decoded: "\u0000" },
+  { raw: "..%2F", decoded: "../" },
+  { raw: "%zz", decoded: "%zz" },
+  { raw: "%", decoded: "%" },
+  { raw: "%E0%A4%A", decoded: "%E0%A4%A" },
+  { raw: "", decoded: "" },
+  { raw: "a/b", decoded: "a/b" },
+];
+
+/** The app's routes as `METHOD /path`, against the contract's, each way. */
+export function routeProblems(routes: readonly string[], operations: readonly ContractOperation[]): string[] {
+  const contract = new Set(
+    operations.map((operation) => `${operation.method} ${operation.path.replace(/\{([a-z_]+)\}/g, ":$1")}`),
+  );
+  const app = new Set(routes);
+  return [
+    ...[...app]
+      .filter((route) => !contract.has(route))
+      .map((route) => `the app has ${route}, which the contract doesn't`),
+    ...[...contract].filter((route) => !app.has(route)).map((route) => `the app has no route for ${route}`),
+  ];
+}
+
+/** What one step of the matrix found, and every answer it got, for the leak scanner. */
+export interface Step {
+  problems: string[];
+  answers: { spec: Spec; answer: Answer }[];
+}
+
+/** A cell, as its row NONE has it: the request answered with the neutral not-found (T14). */
+export async function cellStep(app: FastifyInstance, spec: Spec): Promise<Step> {
+  const answer = await answerOf(app, render(spec));
+  return {
+    problems: neutralProblems(answer).map((problem) => `${spec.operation.id}: ${problem}`),
+    answers: [{ spec, answer }],
+  };
+}
+
+/** The cell's request with the client's clock and parameters past the reveal: each still neutral (T16, Q09). */
+export async function manipulationStep(
+  app: FastifyInstance,
+  spec: Spec,
+  author: string,
+  later: Temporal.Instant,
+): Promise<Step> {
+  const step: Step = { problems: [], answers: [] };
+  for (const changed of manipulations(spec, author, later)) {
+    const answer = await answerOf(app, render(changed));
+    const what = JSON.stringify({
+      query: changed.query,
+      date: changed.headers.date,
+      client: changed.headers["x-client-time"],
+    });
+    for (const problem of neutralProblems(answer))
+      step.problems.push(`${spec.operation.id}, manipulated ${what}: ${problem}`);
+    step.answers.push({ spec: changed, answer });
+  }
+  return step;
+}
+
+/**
+ * The cell's request with each Id parameter in turn guessed (T14): a fresh id and another club's
+ * object, each neutral; then each malformed id, whose answer is one a malformed id may get and is
+ * returned by its parameter and value, so the matrix can check it's the same in every cell.
+ */
+export async function guessStep(
+  app: FastifyInstance,
+  spec: Spec,
+  elsewhere: Targets,
+): Promise<Step & { malformed: Map<string, string> }> {
+  const step = { problems: [] as string[], answers: [] as Step["answers"], malformed: new Map<string, string>() };
+  for (const parameter of idParameters(spec)) {
+    const guesses = [freshId(), bind(parameter.name, elsewhere)];
+    for (const guess of guesses) {
+      const guessed = withId(spec, parameter, { raw: guess, decoded: guess });
+      const answer = await answerOf(app, render(guessed));
+      for (const problem of neutralProblems(answer))
+        step.problems.push(`${spec.operation.id}, ${parameter.name} guessed: ${problem}`);
+      step.answers.push({ spec: guessed, answer });
+    }
+    for (const value of MALFORMED) {
+      const malformed = withId(spec, parameter, value);
+      const answer = await answerOf(app, render(malformed));
+      step.answers.push({ spec: malformed, answer });
+      for (const problem of malformedProblems(answer, parameter.name, value.decoded)) {
+        step.problems.push(
+          `${spec.operation.id}, ${parameter.name} ${JSON.stringify(value.raw.slice(0, 12))}: ${problem}`,
+        );
+      }
+      step.malformed.set(
+        `${spec.operation.id} ${parameter.name} ${value.raw}`,
+        `${String(answer.status)} ${answer.body}`,
+      );
+    }
+  }
+  return step;
+}
