@@ -54,6 +54,13 @@ public enum Size {
     /// The keyboard focus ring: 2 points wide, outside a 2-point gap (1.1's `focusRingWidth`, `focusRingGap`).
     public static let focusRingWidth: CGFloat = 2
     public static let focusRingGap: CGFloat = 2
+    /// The labelled field's least height, which grows with the text: 54 is not a cap (handoff 4's
+    /// `componentGeometry.field`).
+    public static let fieldMinHeight: CGFloat = 54
+    /// The field's value from its edge. Handoff 1's frames draw 14, between two steps of book
+    /// p35's scale, and no contract names it, so it takes 16, the inset handoff 5 and 6 name for
+    /// content inside a surface (`dayChoiceRow.contentInset`).
+    public static let fieldInset: CGFloat = 16
 }
 
 /// The avatar's sizes (1.1: 68 on the profile, 36 in rows, 28 on cards, 18 on the rail).
