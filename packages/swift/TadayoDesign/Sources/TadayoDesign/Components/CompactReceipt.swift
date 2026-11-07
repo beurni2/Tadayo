@@ -14,9 +14,13 @@ import TadayoCore
 /// takes `pastDayCard`'s tokens on 2.1's anatomy, each gap at the nearest step of book p35's
 /// scale:
 /// - `canvas` with a 1-point `separator` border at the surface radius, 12, padded 16 at the sides
-///   (2.1: 15) and 12 above and below;
+///   (2.1: 15) and 12 above and below, where the action's target stands in for the bottom padding
+///   as far as it reaches past the action's words, so the words end about as far above the border
+///   as the title starts below it (2.1 draws the action close to the bottom edge);
 /// - the check in a 28-point `surface` disc, in `secondaryText`, hidden from VoiceOver, 12 before
-///   the text (2.1: 11), which so starts 56 in where both drawings start it at 53;
+///   the text (2.1: 11), which so starts 56 in where both drawings start it at 53; the disc grows
+///   with the text as the check does, as the drafts row's folder box does, so the check stays in
+///   it;
 /// - the title in `row` 17/22 (2.1 draws 15 bold, the sheet's past-day block 16 bold; `row` is
 ///   the brand's role for a title line in a row), 4 above the date line in `metadata`
 ///   `secondaryText` ("November 13 · Opens at 7 AM"; the sheet's baselines 22 apart);
@@ -30,7 +34,10 @@ public struct CompactReceipt: View {
     let labels: DateLabels
     let makeHighlight: () -> Void
 
+    @ScaledMetric(relativeTo: TypeRole.row.textStyle) private var disc = Size.receiptDisc
     @ScaledMetric(relativeTo: TypeRole.row.textStyle) private var check = Size.receiptCheck
+    @ScaledMetric(relativeTo: TypeRole.textAction.textStyle)
+    private var actionLine = TypeRole.textAction.lineHeight
 
     public init(
         _ drop: AddedDrop, labels: DateLabels, makeHighlight: @escaping () -> Void
@@ -42,6 +49,14 @@ public struct CompactReceipt: View {
 
     private var occasion: Occasion { drop.occasion }
     private var offersHighlight: Bool { !drop.isHighlight }
+
+    /// The padding under the last line: 12, less the part of the action's 44-point target that
+    /// reaches below its words (half of what the target has beyond the action's line), which is
+    /// all of it at the default size and none once the words fill the target.
+    private var bottomPadding: CGFloat {
+        guard offersHighlight else { return Spacing.m }
+        return max(0, Spacing.m - max(0, (Size.touchTarget - actionLine) / 2))
+    }
 
     private var title: String {
         String(
@@ -70,7 +85,7 @@ public struct CompactReceipt: View {
             Image(systemName: "checkmark")
                 .font(.system(size: check, weight: .semibold))
                 .foregroundStyle(Palette.secondaryText)
-                .frame(width: Size.receiptDisc, height: Size.receiptDisc)
+                .frame(width: disc, height: disc)
                 .background(Palette.surface, in: Circle())
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 0) {
@@ -95,7 +110,8 @@ public struct CompactReceipt: View {
             }
         }
         .padding(.horizontal, Spacing.l)
-        .padding(.vertical, Spacing.m)
+        .padding(.top, Spacing.m)
+        .padding(.bottom, bottomPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Palette.canvas, in: RoundedRectangle(cornerRadius: Radius.surface))
         .overlay {
