@@ -1,0 +1,20 @@
+breakage: scanner-day-references-not-read
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "  const found: [unknown, string][] = [];\n  if (isObject(node.drop))",
+  "  const found: [unknown, string][] = [];\n  if (Math.random() < 2) return found;\n  if (isObject(node.drop))"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × catches a drop of another day inside a day's object
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (60 tests | 1 failed) 177ms
+     × catches a drop of another day inside a day's object 7ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a drop of another day inside a day's object
+AssertionError: expected [] to include '$.drops[0]'
+ Test Files  1 failed (1)
+      Tests  1 failed | 59 passed (60)

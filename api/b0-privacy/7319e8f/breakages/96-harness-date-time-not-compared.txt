@@ -1,0 +1,65 @@
+breakage: harness-date-time-not-compared
+patch: [
+ [
+  "tests/src/privacy/harness.ts",
+  "      const problem = transportProblem(header, value, answer.clock);\n",
+  "      const problem = /GMT$/.test(value) ? undefined : \"not its form\";\n"
+ ],
+ [
+  "tests/src/privacy/harness.ts",
+  "return name === \"date\" && transportProblem(name, value, clock) === undefined ?",
+  "return name === \"date\" && /GMT$/.test(value) ?"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/harness.test.ts
+exit: 1
+expected pattern: × reports a route that answers the neutral not-found with a Date in its form that isn't the answer's time
+caught: True
+
+ ❯ src/privacy/harness.test.ts (46 tests | 8 failed) 1458ms
+     × reports a route that answers the neutral not-found with a Date that isn't one 8ms
+     × reports a route that answers the neutral not-found with a Date in its form that isn't the answer's time 2ms
+     × reports a route that answers the neutral not-found with a Date ten seconds behind the moment it was asked 2ms
+     × reports a route that answers the neutral not-found with a Date three seconds ahead of the moment it came 2ms
+     × reports a route that answers the neutral not-found with a Date on another weekday 2ms
+     × reports a route that answers the neutral not-found with a Date holding an instant on day 36 2ms
+     × reports a route that tells which drops exist through the transport's headers alone (T14) 3ms
+     × reports a route that tells which drops exist by a Date of its own: a few seconds behind Node's, or another weekday's name (T14) 3ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > reports a route that answers the neutral not-found with a Date that isn't one
+AssertionError: expected [ Array(1) ] to deep equally contain StringContaining{…}
+StringContaining "getDrop: date: \"held\", a transport header whose value isn't its form"
+  "getDrop: date: \"held\", not its form",
+    311|       const app = await plantedApp("getDrop", (_request, reply) => ans…
+    312|       expect((await cellStep(app, spec("getDrop"))).problems).toContai…
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > reports a route that answers the neutral not-found with a Date in its form that isn't the answer's time
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > reports a route that answers the neutral not-found with a Date ten seconds behind the moment it was asked
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > reports a route that answers the neutral not-found with a Date three seconds ahead of the moment it came
+AssertionError: expected [ Array(1) ] to deep equally contain StringContaining{…}
+  "getDrop: the headers in another order: date, cache-control, content-type, content-length, connection",
+    311|       const app = await plantedApp("getDrop", (_request, reply) => ans…
+    312|       expect((await cellStep(app, spec("getDrop"))).problems).toContai…
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > reports a route that answers the neutral not-found with a Date on another weekday
+AssertionError: expected [ Array(1) ] to deep equally contain StringContaining{…}
+  "getDrop: the headers in another order: date, cache-control, content-type, content-length, connection",
+    311|       const app = await plantedApp("getDrop", (_request, reply) => ans…
+    312|       expect((await cellStep(app, spec("getDrop"))).problems).toContai…
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > reports a route that answers the neutral not-found with a Date holding an instant on day 36
+AssertionError: expected [ Array(1) ] to deep equally contain StringContaining{…}
+StringContaining "getDrop: date: \"Fri, 36 Nov 2026 20:00:00 GMT\", a Date that isn't a real instant written as Node writes it"
+  "getDrop: the headers in another order: date, cache-control, content-type, content-length, connection",
+    311|       const app = await plantedApp("getDrop", (_request, reply) => ans…
+    312|       expect((await cellStep(app, spec("getDrop"))).problems).toContai…
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > reports a route that tells which drops exist through the transport's headers alone (T14)
+AssertionError: expected [ 'getDrop: connection: close' ] to deeply equal [ 'getDrop: connection: close', …(1) ]
+    "getDrop: connection: close",
+-   "getDrop: date: \"Fri, 06 Nov 2026 20:00:00 GMT\", a Date that isn't the time of the answer: Node writes the clock's own",
+    482|         : neutral(reply),
+    484|     expect((await cellStep(app, spec("getDrop"))).problems).toEqual([
+    485|       "getDrop: connection: close",
+    486|       "getDrop: date: \"Fri, 06 Nov 2026 20:00:00 GMT\", a Date that i…
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > reports a route that tells which drops exist by a Date of its own: a few seconds behind Node's, or another weekday's name (T14)
+AssertionError: expected false to be true // Object.is equality
+    527|       const cell = await cellStep(app, spec("getDrop"));
+ Test Files  1 failed (1)
+      Tests  8 failed | 38 passed (46)

@@ -1,0 +1,40 @@
+breakage: row-not-none
+patch: [
+ [
+  "tests/src/privacy/rows.ts",
+  "  getDrop: NONE,\n",
+  "  getDrop: { answer: \"the neutral NOT_FOUND to every role, in every state and phase\" },\n"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/harness.test.ts src/privacy/matrix.test.ts
+exit: 1
+expected pattern: getDrop's row isn't NONE
+caught: True
+
+ ❯ src/privacy/matrix.test.ts (13 tests | 1 failed) 40927ms
+     × gives every operation of the contract a row, the skeleton's, and the app a route for each and no other 12ms
+ ❯ src/privacy/harness.test.ts (46 tests | 3 failed) 1592ms
+     × gives every operation of the contract its row, and every row an operation, each the skeleton's 16ms
+     × reports a route added to the contract without a row 2ms
+     × reports a row whose operation is gone, and a row that isn't NONE 2ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/harness.test.ts > a route with no row fails (TECH-DESIGN section 8) > gives every operation of the contract its row, and every row an operation, each the skeleton's
+AssertionError: expected [ Array(1) ] to deeply equal []
++   "getDrop's row isn't NONE: the slice that builds a route defines its row and its checks",
+ FAIL  src/privacy/harness.test.ts > a route with no row fails (TECH-DESIGN section 8) > reports a route added to the contract without a row
+AssertionError: expected [ …(2) ] to deeply equal [ Array(1) ]
+    "getDropTwice has no row in the privacy matrix",
++   "getDrop's row isn't NONE: the slice that builds a route defines its row and its checks",
+    109|     const added = [...operations, { ...operation("getDrop"), id: "getD…
+    110|     expect(rowProblems(added, ROWS)).toEqual(["getDropTwice has no row…
+ FAIL  src/privacy/harness.test.ts > a route with no row fails (TECH-DESIGN section 8) > reports a row whose operation is gone, and a row that isn't NONE
+AssertionError: expected [ …(2) ] to deeply equal [ Array(1) ]
+    "getDropTwice has a row but no operation in the contract",
++   "getDrop's row isn't NONE: the slice that builds a route defines its row and its checks",
+    114|     expect(rowProblems(operations, { ...ROWS, getDropTwice: NONE })).t…
+    115|       "getDropTwice has a row but no operation in the contract",
+ FAIL  src/privacy/matrix.test.ts > a route with no row fails, and no route is outside the contract (TECH-DESIGN section 8) > gives every operation of the contract a row, the skeleton's, and the app a route for each and no other
+AssertionError: expected [ Array(1) ] to deeply equal []
++   "getDrop's row isn't NONE: the slice that builds a route defines its row and its checks",
+ Test Files  2 failed (2)
+      Tests  4 failed | 55 passed (59)

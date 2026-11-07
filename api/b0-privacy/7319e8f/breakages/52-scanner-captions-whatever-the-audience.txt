@@ -1,0 +1,29 @@
+breakage: scanner-captions-whatever-the-audience
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "    if (readable(found) && found.caption !== null) texts.add(found.caption);",
+  "    if (found.caption !== null) texts.add(found.caption);"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × catches a caption card for a viewer outside the drop's audience
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (60 tests | 4 failed) 200ms
+     × catches a caption card for a viewer outside the drop's audience, and its caption (T8, T9) 9ms
+     × catches a caption swapped from another drop, a wrong name and a wrong author, on every card 4ms
+     × catches a day, its club and its people shown to someone with no interval in the club (T14) 3ms
+     × catches text people wrote that the viewer may not read inside another value: an error's field 1ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a caption card for a viewer outside the drop's audience, and its caption (T8, T9)
+AssertionError: expected [] to deeply equal [ '$.drops[0].caption' ]
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a caption swapped from another drop, a wrong name and a wrong author, on every card
+AssertionError: revealed: expected [ 'world' ] to deeply equal [ 'values', 'world' ]
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a day, its club and its people shown to someone with no interval in the club (T14)
+AssertionError: expected [ { check: 'world', …(2) }, …(8) ] to deeply equal [ { check: 'world', …(2) }, …(9) ]
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches text people wrote that the viewer may not read inside another value: an error's field
+AssertionError: expected [] to deeply equal [ { check: 'values', …(2) } ]
+ Test Files  1 failed (1)
+      Tests  4 failed | 56 passed (60)

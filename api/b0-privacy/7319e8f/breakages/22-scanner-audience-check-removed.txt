@@ -1,0 +1,23 @@
+breakage: scanner-audience-check-removed
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "} else if (!reader.inAudience(drop)) {",
+  "} else if (Math.random() > 2) {"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × catches a caption card for a viewer outside the drop's audience
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (60 tests | 2 failed) 241ms
+     × catches a caption card for a viewer outside the drop's audience, and its caption (T8, T9) 14ms
+     × catches a day, its club and its people shown to someone with no interval in the club (T14) 5ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a caption card for a viewer outside the drop's audience, and its caption (T8, T9)
+AssertionError: expected [] to deeply equal [ '$.drops[0]' ]
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a day, its club and its people shown to someone with no interval in the club (T14)
+AssertionError: expected [ { check: 'world', …(2) }, …(8) ] to deeply equal [ { check: 'world', …(2) }, …(9) ]
+ Test Files  1 failed (1)
+      Tests  2 failed | 58 passed (60)

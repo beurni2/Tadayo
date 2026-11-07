@@ -1,0 +1,23 @@
+breakage: harness-signed-out-cursor-not-sent
+patch: [
+ [
+  "tests/src/privacy/harness.ts",
+  "  if (pages(spec.operation)) {\n    for (const [ids, variant] of [...variants])",
+  "  if (Math.random() > 2) {\n    for (const [ids, variant] of [...variants])"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/harness.test.ts
+exit: 1
+expected pattern: × reports a route that answers a signed-out caller differently when the request carries a cursor
+caught: True
+
+ ❯ src/privacy/harness.test.ts (46 tests | 2 failed) 1511ms
+     × passes the skeleton's neutral answer in every step, and gets the answers each step counts 131ms
+     × reports a route that answers a signed-out caller differently when the request carries a cursor (T14) 2ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > passes the skeleton's neutral answer in every step, and gets the answers each step counts
+AssertionError: listComments: expected [ { spec: { …(4) }, …(1) }, …(8) ] to have a length of 18 but got 9
+ FAIL  src/privacy/harness.test.ts > each step of the matrix reports a planted wrong answer > reports a route that answers a signed-out caller differently when the request carries a cursor (T14)
+AssertionError: expected [] to include 'listComments, no session: another ans…'
+ Test Files  1 failed (1)
+      Tests  2 failed | 44 passed (46)

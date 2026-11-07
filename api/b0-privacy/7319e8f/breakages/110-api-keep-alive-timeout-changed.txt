@@ -1,0 +1,21 @@
+breakage: api-keep-alive-timeout-changed
+patch: [
+ [
+  "services/api/src/app.ts",
+  "    clientErrorHandler: clientError,\n",
+  "    clientErrorHandler: clientError,\n    keepAliveTimeout: 5_000,\n"
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-privacy/services/api && npx vitest run
+exit: 1
+expected pattern: × keeps a connection open with Fastify's own timeout
+caught: True
+
+ ❯ src/app.test.ts (11 tests | 1 failed) 308ms
+     × keeps a connection open with Fastify's own timeout, the one Keep-Alive the leak scanner allows 12ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 14 passed (15)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/app.test.ts > what Node's parser answers, over a socket of its own (T14) > keeps a connection open with Fastify's own timeout, the one Keep-Alive the leak scanner allows
+AssertionError: expected { connection: 'keep-alive', …(1) } to deeply equal { connection: 'keep-alive', …(1) }
+    213|     expect({ connection: headers.connection, keepAlive: headers["keep-…
