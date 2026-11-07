@@ -972,9 +972,18 @@ describe("the leak scanner catches each planted leak with its own check", () => 
     ]);
     expect(key(Buffer.concat([noise, Buffer.from("Cleo"), version]))).toEqual(["holds text people wrote"]);
     // A run of 24 printable bytes is readable text; a shorter one beside other bytes, with no other
-    // mark, is the pager's row to judge, since random bytes make such runs.
+    // mark, is the pager's row to judge, since random bytes make such runs: 23 random printable bytes
+    // after a version byte pass, as a key of 23 bytes there would.
     expect(key(Buffer.concat([version, Buffer.from("after=7;order=desc;n=24!")]))).toEqual(["holds readable text"]);
-    expect(key(Buffer.concat([version, Buffer.from("after=7;order=desc;n=24")]))).toEqual([]);
+    expect(key(Buffer.concat([version, Buffer.from("k@7v#Q2p!x9Lm*4Tz8&Wc5R")]))).toEqual([]);
+    // A cursor printable from end to end in a key's shape, or JSON, is a key however short; one with
+    // no name before = or : that isn't JSON passes, since random bytes are printable now and then.
+    const shaped = ["is printable from end to end in a key's shape"];
+    expect(key(Buffer.from('{"offset":20}'))).toEqual(shaped);
+    expect(key(Buffer.from("left=3;order=asc;p=2"))).toEqual(shaped);
+    expect(key(Buffer.from("after=7;order=desc;n=24"))).toEqual(shaped);
+    expect(key(Buffer.from('["drp", 20, "asc"]'))).toEqual(shaped);
+    expect(key(Buffer.from("k@7v#Q2p!x9Lm*"))).toEqual([]);
     expect(key(Buffer.from("4f9a2c", "hex"))).toEqual(["decodes to fewer than 12 bytes"]);
     expect(key(noise)).toEqual([]);
     // The contract's own example, a random handle of 12 bytes.

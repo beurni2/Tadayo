@@ -7,12 +7,14 @@ import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
 import { describe, expect, it } from "vitest";
 import { BINDINGS, freshId, type Targets } from "./bindings.ts";
 import {
+  answerOf,
   cellStep,
   guessCount,
   guessStep,
   manipulationStep,
   manipulations,
   NEUTRAL,
+  render,
   routeProblems,
   said,
   signedOutCount,
@@ -22,6 +24,7 @@ import {
 } from "./harness.ts";
 import { contractOperations, readDocument, type ContractOperation } from "./operations.ts";
 import { NONE, ROWS, rowProblems } from "./rows.ts";
+import { transportProblem } from "./scanner.ts";
 
 const operations = contractOperations(readDocument());
 const byId = new Map(operations.map((operation) => [operation.id, operation]));
@@ -249,6 +252,17 @@ describe("each step of the matrix reports a planted wrong answer", () => {
       "a Date that isn't the time of the answer: Node writes the clock's own",
     ],
     [
+      // The app's first answer, so only the lag Node's cached Date may have bounds it.
+      "the neutral not-found with a Date ten seconds behind the moment it was asked",
+      (reply) => neutral(reply.header("date", new Date(Date.now() - 10_000).toUTCString())),
+      "a Date that isn't the time of the answer: Node writes the clock's own",
+    ],
+    [
+      "the neutral not-found with a Date three seconds ahead of the moment it came",
+      (reply) => neutral(reply.header("date", new Date(Date.now() + 3_000).toUTCString())),
+      "a Date that isn't the time of the answer: Node writes the clock's own",
+    ],
+    [
       "the neutral not-found with a Date on another weekday",
       (reply) => neutral(reply.header("date", otherWeekday())),
       "a Date that isn't a real instant written as Node writes it",
@@ -318,8 +332,9 @@ describe("each step of the matrix reports a planted wrong answer", () => {
         tell(request) ? reply.code(200).header("cache-control", "private, no-store").send({}) : neutral(reply),
       );
       const step = await manipulationStep(app, spec("getDrop"), "itv_author", LATER);
-      // One manipulated request, however many ways its answer differs.
+      // One manipulated request, however many ways its answer differs, and its status among them.
       expect(new Set(step.problems.map((problem) => problem.slice(0, problem.indexOf(": "))))).toHaveLength(1);
+      expect(step.problems).toContainEqual(expect.stringMatching(/^getDrop, manipulated .*: status 200$/));
       await app.close();
     });
   }
@@ -331,7 +346,7 @@ describe("each step of the matrix reports a planted wrong answer", () => {
         : neutral(reply),
     );
     const step = await guessStep(app, spec("getDrop"), elsewhere);
-    expect(step.problems).not.toEqual([]);
+    expect(step.problems).toContainEqual(expect.stringMatching(/^getDrop, drop_id guessed: status 403$/));
     expect(step.problems.filter((problem) => !problem.includes("drop_id guessed"))).toEqual([]);
     await app.close();
   });
@@ -355,20 +370,21 @@ describe("each step of the matrix reports a planted wrong answer", () => {
   });
 
   it("reports a malformed id answered with anything but the neutral not-found or a plain 400", async () => {
-    for (const [name, answer] of [
+    for (const [name, answer, problem] of [
       [
         "echoes the id",
         (reply: FastifyReply, id: string) =>
           reply.code(400).header("cache-control", "private, no-store").send({ code: "INVALID_REQUEST", field: id }),
+        "a 400 that echoes the value",
       ],
-      ["answers 500", (reply: FastifyReply) => reply.code(500).send()],
+      ["answers 500", (reply: FastifyReply) => reply.code(500).send(), "status 500"],
     ] as const) {
       const app = await plantedApp("getDrop", (request, reply) => {
         const id = (request.params as { drop_id: string }).drop_id;
         return /^[A-Za-z0-9_-]{1,64}$/.test(id) ? neutral(reply) : answer(reply, id);
       });
       const step = await guessStep(app, spec("getDrop"), elsewhere);
-      expect(step.problems.length, name).toBeGreaterThan(0);
+      expect(step.problems, name).toContainEqual(expect.stringContaining(problem));
       await app.close();
     }
   });
@@ -468,6 +484,22 @@ describe("each step of the matrix reports a planted wrong answer", () => {
     ]);
     const step = await signedOutStep(app, spec("getDrop"), elsewhere);
     expect(step.problems).toContain("getDrop, no session: another answer for fresh ids (T14)");
+    await app.close();
+  });
+
+  it("lets the event loop turn before each request, so Node renews its Date: a second of answers carries more than one", async () => {
+    // A chain of injects never reaches the timers phase on its own, where Node clears its cached Date,
+    // so without the turn every answer of a stretch with no I/O would carry the first one's Date.
+    const app = await plantedApp("getDrop", (_request, reply) => neutral(reply));
+    const request = render(spec("getDrop"));
+    const dates = new Set<string>();
+    const start = Date.now();
+    while (Date.now() - start < 1_200) {
+      const answer = await answerOf(app, request);
+      dates.add(answer.headers.date ?? "");
+      expect(transportProblem("date", answer.headers.date ?? "", answer.clock)).toBeUndefined();
+    }
+    expect(dates.size).toBeGreaterThan(1);
     await app.close();
   });
 

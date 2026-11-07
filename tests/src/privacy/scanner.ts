@@ -15,14 +15,17 @@
 //   declares: Cache-Control on every answer with a body, Retry-After on a 429, the transport's
 //   headers in their own forms (Connection, Transfer-Encoding, Fastify's own Keep-Alive, a Date that
 //   is a real instant written as Node writes it and is the answer's time: inside the clock the
-//   harness gives each answer, from the moment it asked to the moment the answer came, and never
-//   before an earlier answer's Date; a Content-Length that is the body's, only JSON's Content-Type),
-//   an error with only its code's fields, every 404 the neutral one (T14), no key the contract
-//   doesn't name at any depth (a planted field), and every cursor in base64url, decoding to 12
-//   bytes or more with no readable key among them: no run of 24 printable bytes, date, long number,
-//   id of the world or text people wrote (the contract's Cursor: "never a readable key"), so a
-//   random handle goes out as its own bytes, not as their text. A key packed in binary with none of
-//   these, or a shorter readable key beside random bytes, is beyond what the scanner can see;
+//   harness gives each answer, from the second it was asked less how far Node's cached Date may
+//   lag, or from an earlier answer's Date if that is later, to the moment the answer came; a
+//   Content-Length that is the body's, only JSON's Content-Type), an error with only its code's
+//   fields, every 404 the neutral one (T14), no key the contract doesn't name at any depth (a
+//   planted field), and every cursor in base64url, decoding to 12 bytes or more with no readable
+//   key among them: not printable from end to end in a key's shape (a name before = or :, or JSON),
+//   and no run of 24 printable bytes, date, long number, id of the world or text people wrote (the
+//   contract's Cursor: "never a readable key"), so a random handle goes out as its own bytes, not as
+//   their text. A key packed in binary with none of these, a printable one of 12 to 23 bytes with no
+//   name before = or : that isn't JSON, or a readable key shorter than 24 bytes beside other bytes,
+//   is beyond what the scanner can see: the pager's row checks its cursors (rows.ts);
 // - whitelist: a caption card is exactly T10's list, as FQ74's answer reads it (this file's own
 //   copy, so a contract change alone can't widen it);
 // - world: each of these an answer names is the world's and the viewer's to see:
@@ -102,8 +105,8 @@ export interface Answer {
   /**
    * The Dates it may carry, in wall-clock milliseconds, from the harness that asked for it
    * (answerOf): no later than the moment it came, and no earlier than the app's last answer's Date,
-   * nor than the moment it was asked less how far Node's cached Date may lag. A planted answer
-   * without them may carry a Date within DATE_SLACK_MS of the wall clock.
+   * nor than the start of the second it was asked in less how far Node's cached Date may lag. A
+   * planted answer without them may carry a Date within DATE_SLACK_MS of the wall clock.
    */
   clock?: { earliest: number; latest: number };
 }
@@ -291,11 +294,31 @@ const CURSOR_BYTES = 12;
 /**
  * A run of printable bytes in a cursor that is readable text: 24 or more, so random bytes never make
  * one at the matrix's scale. A place in random bytes starts a run of 24 with a chance of about 5e-11,
- * and one of 16 with about 1.3e-7, which the sealed cursors of every paged answer in a run would
- * meet. A shorter readable key beside random bytes, with no date, long number, id or text people
+ * and one of 16 with about 1.3e-7: 32 random bytes hold a run of 24 about once in 3.6 billion, and
+ * one of 16 about once in 700,000, which the sealed cursors of every paged answer in a run would
+ * meet. A shorter readable key beside other bytes, with no date, long number, id or text people
  * wrote in it, passes, like a key packed in binary: the pager's row judges both.
  */
 const READABLE_TEXT = /[\x20-\x7e]{24,}/;
+
+/**
+ * A key's shape in a cursor whose bytes are all printable: a name of two letters or more before `=`
+ * or `:`, as in `left=3` or `{"offset":20}` (JSON is caught whole). Random bytes are printable from
+ * end to end and in this shape about once in 2.2 million handles of 12 bytes, and once in 85 million
+ * of 16; a run of printable bytes beside other bytes isn't held to it, since random bytes make short
+ * runs in this shape far more often.
+ */
+const KEY_SHAPE = /[A-Za-z_]{2,}["']?\s*[=:]/;
+
+/** Whether `text` is JSON: a readable key, whatever it holds. */
+function isJson(text: string): boolean {
+  try {
+    JSON.parse(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 /** Text people wrote this short isn't looked for inside other values, where it could occur by chance. */
 const SHORTEST_TEXT = 6;
@@ -594,15 +617,19 @@ function decodeCursor(cursor: string): { bytes: Buffer; canonical: boolean } {
 /**
  * What in the bytes a cursor decodes to makes it a readable key, not a random handle or a sealed
  * value (the contract's Cursor: "never a readable key, so it carries no time, order key or count"):
- * too few bytes to be either, a run of readable text (READABLE_TEXT), a date, a long number (a time or
- * a count), an id of the world, or text people wrote. A key packed in binary with none of these, or
- * a shorter readable key beside random bytes, looks like random bytes to the scanner: how the pager
- * makes its cursors is the row of the slice that builds it.
+ * too few bytes to be either, printable bytes from end to end in a key's shape (KEY_SHAPE) or JSON,
+ * a run of readable text (READABLE_TEXT), a date, a long number (a time or a count), an id of the
+ * world, or text people wrote. A key packed in binary with none of these, a printable one of 12 to 23
+ * bytes with no name before = or : that isn't JSON, or a readable key shorter than 24 bytes beside
+ * other bytes, looks like random bytes to the scanner: how the pager makes its cursors is the row of
+ * the slice that builds it.
  */
 function readableKey(bytes: Buffer, reader: Reader): string[] {
   const text = bytes.toString("latin1");
   const reasons: string[] = [];
   if (bytes.length < CURSOR_BYTES) reasons.push(`decodes to fewer than ${String(CURSOR_BYTES)} bytes`);
+  if (/^[\x20-\x7e]+$/.test(text) && (KEY_SHAPE.test(text) || isJson(text)))
+    reasons.push("is printable from end to end in a key's shape");
   if (READABLE_TEXT.test(text)) reasons.push("holds readable text");
   if (/[0-9]{4}-[0-9]{2}-[0-9]{2}/.test(text)) reasons.push("holds a date");
   if (/[0-9]{10,}/.test(text)) reasons.push("holds a long number, such as a time or a count");

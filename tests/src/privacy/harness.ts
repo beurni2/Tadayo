@@ -106,10 +106,12 @@ export function malformedProblems(answer: Answer, parameter: string, value: stri
 }
 
 /**
- * How far Node's Date may lag the moment an answer is asked for: Node caches the Date it writes and
- * renews it on a timer each second, so while the event loop is busy the cached Date is a second or
- * more old (a second at most in the session's matrix runs). Generous, since the order of answers
- * holds the Date tighter (lastDates).
+ * How far Node's Date may lag the second an answer is asked in. Node caches the Date it writes and
+ * clears it from a timer at the next second, which runs only when the event loop reaches its timers
+ * phase; a chain of injects never does (light-my-request settles each through process.nextTick), so
+ * answerOf lets the loop turn before each request, and Node's Date is then at most a second behind
+ * (a second exactly in the session's matrix runs). Generous, since the order of answers holds the
+ * Date tighter (lastDates).
  */
 const DATE_LAG_MS = 5_000;
 
@@ -122,10 +124,13 @@ const lastDates = new WeakMap<FastifyInstance, number>();
 /**
  * The answer `app` gives `request`, in the scanner's shape, with its clock: the Dates it may carry,
  * from the later of an earlier answer's Date and the second it was asked in less DATE_LAG_MS, to the
- * moment it came. A route that writes some ids a Date of its own, behind Node's or ahead of it,
- * steps outside that clock as soon as an answer for another id has come before it.
+ * moment it came. A route that writes some ids a Date of its own steps outside that clock when the
+ * Date is behind an answer that came before it, or ahead of the moment its own answer came; one
+ * between those, in Node's place among the headers, would pass. First it lets the event loop turn,
+ * so Node renews its cached Date (DATE_LAG_MS).
  */
 export async function answerOf(app: FastifyInstance, request: Request): Promise<Answer> {
+  await new Promise((resolve) => setImmediate(resolve));
   const from = Date.now();
   const response = await app.inject({ method: request.method as "GET", url: request.url, headers: request.headers });
   const clock = {
