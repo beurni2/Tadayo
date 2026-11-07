@@ -646,8 +646,8 @@ describe("T14: a missing drop and a drop the viewer may not read get the same an
         expect(await bothPaths(tx, w.cleo.user, newId("drp"), what, now)).toEqual({ policy: false, sql: false });
         expect(await bothPaths(tx, newId("acct"), drop, what, now)).toEqual({ policy: false, sql: false });
       }
-      // A drop id comes from the request, so one that isn't an id finds nothing, Postgres never
-      // seeing it (a NUL would fail the query); a list takes no drop id.
+      // A drop id comes from the request, so one that isn't an id finds nothing, Postgres seeing a
+      // null in its place (a NUL would fail the query); a list takes no drop id.
       for (const notAnId of ["not an id", "../drp_x", "x".repeat(65), "", `${drop}\u0000`, "\u0000"]) {
         for (const what of READS) expect(await mayReadDrop(tx, w.cleo.user, notAnId, what, now)).toBe(false);
       }
@@ -691,14 +691,19 @@ describe("the connection: the time module's INSTANT_TYPE, or a loud failure", ()
         const w = await newWorld(tx);
         const drop = await commitDrop(tx, w, w.ben, { caption: "From Ben", at: AT.added });
         const now = await fakeClock(PHASES.open).sample(tx);
+        // postgres.js's own timestamptz type can't send a Temporal.Instant, so binding `now` fails
+        // with Temporal's TypeError before any query runs.
         await expect(
           tx.savepoint(
             (sp) => sp`SELECT id FROM app.drops WHERE id IN (${readableDrops(sp, w.cleo.user, now, "media")})`,
           ),
-        ).rejects.toThrow();
-        // For a drop that exists and one that doesn't alike, so a stranger can't tell them apart.
-        for (const asked of [drop, newId("drp")]) {
-          await expect(tx.savepoint((sp) => mayReadDrop(sp, w.cleo.user, asked, "caption", now))).rejects.toThrow();
+        ).rejects.toThrow(TypeError);
+        // For a drop that exists, one that doesn't and an id that isn't one alike, so a
+        // misconfigured connection fails on every call and a stranger can't tell drops apart.
+        for (const asked of [drop, newId("drp"), "not an id", "\u0000"]) {
+          await expect(tx.savepoint((sp) => mayReadDrop(sp, w.cleo.user, asked, "caption", now))).rejects.toThrow(
+            TypeError,
+          );
         }
       });
     } finally {
@@ -711,7 +716,9 @@ describe("the connection: the time module's INSTANT_TYPE, or a loud failure", ()
     try {
       await rolledBack(half, async (tx) => {
         const now = await fakeClock(PHASES.open).sample(tx);
-        await expect(mayReadDrop(tx, newId("acct"), newId("drp"), "caption", now)).rejects.toThrow(/use INSTANT_TYPE/);
+        for (const asked of [newId("drp"), "not an id", "\u0000"]) {
+          await expect(mayReadDrop(tx, newId("acct"), asked, "caption", now)).rejects.toThrow(/use INSTANT_TYPE/);
+        }
       });
     } finally {
       await half.end();

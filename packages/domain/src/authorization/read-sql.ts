@@ -17,11 +17,11 @@
 // template, typed by its shape, so this package doesn't depend on postgres.js. The connection must
 // have the time module's INSTANT_TYPE (`postgres(url, { types: { instant: INSTANT_TYPE } })`):
 // both bind `now` as a timestamptz, and the facts' instants come back as Temporal.Instant, so
-// without it both fail loudly, for a drop that exists and one that doesn't.
+// without it both fail loudly, whatever drop is asked about.
 //
-// A drop id that isn't one of ours (a guess, a typo, a NUL) finds nothing without a query, as a
-// missing drop does (T14). The viewer is the session's account id, so one that isn't an id at all
-// is the caller's mistake, and throws.
+// A drop id that isn't one of ours (a guess, a typo, a NUL) finds nothing, as a missing drop does
+// (T14): the statement binds a null in its place, so Postgres never sees it. The viewer is the
+// session's account id, so one that isn't an id at all is the caller's mistake, and throws.
 
 import type { ServerNow } from "../time/clock.ts";
 import {
@@ -36,7 +36,7 @@ import {
 } from "./read.ts";
 
 // The values are typed `never` so that postgres.js's own tagged template, whose values are its
-// parameter types, fits; each function below binds only strings, booleans and Temporal.Instants,
+// parameter types, fits; each function below binds only strings, nulls, booleans and Temporal.Instants,
 // which INSTANT_TYPE's connection takes, through `bound`.
 
 /** postgres.js's tagged template: awaited it runs, and inside another query it is a fragment. */
@@ -48,7 +48,10 @@ export type QuerySql = (
   ...values: readonly never[]
 ) => PromiseLike<readonly Record<string, unknown>[]>;
 
-type Bound<R> = (template: TemplateStringsArray, ...values: readonly (string | boolean | Temporal.Instant)[]) => R;
+type Bound<R> = (
+  template: TemplateStringsArray,
+  ...values: readonly (string | null | boolean | Temporal.Instant)[]
+) => R;
 
 function bound<R>(sql: (template: TemplateStringsArray, ...values: readonly never[]) => R): Bound<R> {
   return sql as Bound<R>;
@@ -137,7 +140,8 @@ export async function mayReadDrop(
  * statement, so they all come from one snapshot. Every row that must exist is joined, so a
  * missing one gives null too; only the viewer's account, their interval in the audience and a
  * block may be absent. The statement always returns one row, which carries `now` back, so a
- * connection without INSTANT_TYPE fails here for any drop id, not only for one that exists. It
+ * connection without INSTANT_TYPE fails here whatever the drop id: one that exists, one that
+ * doesn't, or one that isn't an id at all, which is bound as a null and so finds nothing. It
  * takes no lock, so a command keeps its own fixed order (TECH-DESIGN section 5). Any value outside
  * the schema's throws, so a surprise refuses rather than grants.
  */
@@ -149,7 +153,7 @@ async function dropReadFacts(
 ): Promise<DropReadFacts | null> {
   checkViewer(viewer);
   if (typeof drop !== "string") throw new TypeError("authorization: the drop is an id");
-  if (!ID.test(drop)) return null;
+  const id = ID.test(drop) ? drop : null;
   const rows = await bound(sql)`
     SELECT ${now}::pg_catalog.timestamptz AS now, f.*
       FROM (VALUES (true)) AS one (x)
@@ -177,7 +181,7 @@ async function dropReadFacts(
           JOIN app.users su ON su.id = s.user_id
           JOIN app.memberships am ON am.interval_id = d.author_interval_id
           JOIN app.users au ON au.id = am.user_id
-         WHERE d.id = ${drop}::pg_catalog.text
+         WHERE d.id = ${id}::pg_catalog.text
       ) AS f ON true`;
   const row = rows[0];
   if (row === undefined || !instant(row["now"], "now").equals(now))
