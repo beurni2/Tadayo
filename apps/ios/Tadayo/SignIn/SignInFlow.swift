@@ -47,33 +47,32 @@ struct EmailScreen: View {
             SetupHeading(title: "auth.email.title", subtitle: Text("auth.email.subtitle"))
             LabelledField(Text("auth.email.label"), isFocused: focus ?? focused) {
                 // The placeholder repeats the label's words (handoff 7's frame 1, `auth.email.
-                // placeholder`), in `secondaryText`, drawn over a field with no prompt of its own
-                // and hidden from VoiceOver: the field carries the label and says it once
-                // (W-08), its value being the address and nothing. A prompt would be read as an
-                // empty field's value, and no accessibility value takes its place: an empty one
-                // is ignored (`ios` run 43091597765). The address is read-only while a code is on
-                // its way, so what is typed is offered to the model, which declines it, and the
-                // field shows what the model kept.
+                // placeholder`), in `secondaryText`, drawn over a field that has none of its own
+                // (an empty title) and hidden from VoiceOver: the field carries the label and says
+                // it once (W-08), its value being the address and nothing. A prompt would be read
+                // as an empty field's value, and so would a title or a label view, which a
+                // `TextField` also draws as its placeholder; no accessibility value takes its
+                // place, an empty one being ignored (`ios` runs 43091597765 and 43094144185). The
+                // address is read-only while a code is on its way, so what is typed is offered to
+                // the model, which declines it, and the field shows what the model kept.
                 ModelText(held: { model.email }, offer: { model.email = $0 }) { text in
-                    TextField(text: text) {
-                        Text("auth.email.label")
-                    }
-                    .keyboardType(.emailAddress)
-                    .textContentType(.emailAddress)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .submitLabel(.next)
-                    .onSubmit { Task { await model.sendCode() } }
-                    .focused($focused)
-                    .overlay(alignment: .leading) {
-                        if model.email.isEmpty {
-                            Text("auth.email.label")
-                                .foregroundStyle(Palette.secondaryText)
-                                .lineLimit(1)
-                                .allowsHitTesting(false)
-                                .accessibilityHidden(true)
+                    TextField(String(), text: text)
+                        .keyboardType(.emailAddress)
+                        .textContentType(.emailAddress)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .submitLabel(.next)
+                        .onSubmit { Task { await model.sendCode() } }
+                        .focused($focused)
+                        .overlay(alignment: .leading) {
+                            if model.email.isEmpty {
+                                Text("auth.email.label")
+                                    .foregroundStyle(Palette.secondaryText)
+                                    .lineLimit(1)
+                                    .allowsHitTesting(false)
+                                    .accessibilityHidden(true)
+                            }
                         }
-                    }
                 }
             }
             .padding(.top, SetupGap.field)
