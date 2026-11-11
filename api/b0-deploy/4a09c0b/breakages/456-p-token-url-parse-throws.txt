@@ -1,0 +1,20 @@
+breakage: p-token-url-parse-throws
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "  try {\n    return new URL(url, \"https://probe.invalid\").searchParams.get(\"token\") ?? undefined;\n  } catch {\n    // A URL that isn't one has no token, and the control that wanted one fails, as it should.\n    return undefined;\n  }\n",
+  "  return new URL(url, \"https://probe.invalid\").searchParams.get(\"token\") ?? undefined;\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: names the control of the upload URL when the project's answer has no token and no URL that is one
+caught: True
+
+     × names the control of the upload URL when the project's answer has no token and no URL that is one 6ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 61 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks's controls: each must hold, in its own words, before a refusal means anything > names the control of the upload URL when the project's answer has no token and no URL that is one
+TypeError: Invalid URL

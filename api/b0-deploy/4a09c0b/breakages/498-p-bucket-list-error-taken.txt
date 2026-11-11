@@ -1,0 +1,20 @@
+breakage: p-bucket-list-error-taken
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "  if (items === undefined) return answered(reply);\n  // A bucket that doesn't say",
+  "  if (items === undefined) return undefined;\n  // A bucket that doesn't say",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: fails, with the status alone, when the answer is an error or is not a list, and the run goes on to the refusals
+caught: True
+
+     × fails, with the status alone, when the answer is an error or is not a list, and the run goes on to the refusals 17ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 61 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks asks which buckets the project has, and none may be public or another's (T53) > fails, with the status alone, when the answer is an error or is not a list, and the run goes on to the refusals
+AssertionError: answered HTTP 500: expected [] to deeply equal [ Array(1) ]

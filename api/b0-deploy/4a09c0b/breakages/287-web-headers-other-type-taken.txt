@@ -1,0 +1,23 @@
+breakage: web-headers-other-type-taken
+patch: [
+ [
+  "apps/web/src/build.ts",
+  "  if (types.length !== 1 || types[0] !== \"application/json\") {",
+  "  if (false) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/apps/web && npx vitest run src/build.test.ts
+exit: 1
+expected words: says what is missing or wrong
+caught: True
+
+     × says what is missing or wrong 9ms
+     × reads the file as Pages does: a line is trimmed, so a header needs no indentation, and a path starts with a slash 1ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 15 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/build.test.ts > checkHeaders > says what is missing or wrong
+AssertionError: expected [] to deeply equal [ Array(1) ]
+ FAIL  src/build.test.ts > checkHeaders > reads the file as Pages does: a line is trimmed, so a header needs no indentation, and a path starts with a slash
+AssertionError: expected [] to deeply equal [ Array(1) ]

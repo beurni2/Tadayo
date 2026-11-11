@@ -1,0 +1,25 @@
+breakage: ws-wait-of-no-time
+patch: [
+ [
+  "tools/ops/src/worker-scale.ts",
+  "const POLL_MS = 3000;",
+  "const POLL_MS = 0;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/worker-scale.test.ts
+exit: 1
+expected words: waits while it stops, a few seconds at a time
+caught: True
+
+     × waits while it stops, a few seconds at a time 7ms
+     × says what it found when the Machine isn't stopped in time, and not that it is 2ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 10 passed (12)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/worker-scale.test.ts > workerScale to stopped > waits while it stops, a few seconds at a time
+AssertionError: expected [ +0, +0 ] to deeply equal [ 3000, 3000 ]
+ FAIL  src/worker-scale.test.ts > workerScale to stopped > says what it found when the Machine isn't stopped in time, and not that it is
+AssertionError: expected 'worker-scale: the worker Machine is s…' to be 'worker-scale: the worker Machine is s…' // Object.is equality
+     67|     expect(result.outcome).toBeInstanceOf(OpsError);
+     68|     expect((result.outcome as OpsError).message).toBe(

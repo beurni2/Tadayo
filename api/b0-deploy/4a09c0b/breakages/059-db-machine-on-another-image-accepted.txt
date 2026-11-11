@@ -1,0 +1,25 @@
+breakage: db-machine-on-another-image-accepted
+patch: [
+ [
+  "tools/ops/src/deploy-branch.ts",
+  "  if (behind.length > 0) {",
+  "  if (false) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-branch.test.ts
+exit: 1
+expected words: doesn't take flyctl's word that it deployed: the Machines have to run the commit's image
+caught: True
+
+     × doesn't take flyctl's word that it deployed: the Machines have to run the commit's image 8ms
+     × reads the image from a Machine's config, or from its image reference's tag, whichever has it 2ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 25 passed (27)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-branch.test.ts > deployBranch when GitHub or Fly doesn't answer as it should > doesn't take flyctl's word that it deployed: the Machines have to run the commit's image
+AssertionError: expected 'not an OpsError: undefined' to be 'deploy-branch: flyctl deployed, but a…' // Object.is equality
+Received: "not an OpsError: undefined"
+ FAIL  src/deploy-branch.test.ts > deployBranch when GitHub or Fly doesn't answer as it should > reads the image from a Machine's config, or from its image reference's tag, whichever has it
+AssertionError: expected 'not an OpsError: undefined' to contain ': a1 (api)'
+Received: "not an OpsError: undefined"

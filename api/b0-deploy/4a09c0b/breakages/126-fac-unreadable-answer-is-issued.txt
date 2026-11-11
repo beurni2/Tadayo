@@ -1,0 +1,20 @@
+breakage: fac-unreadable-answer-is-issued
+patch: [
+ [
+  "tools/ops/src/fly-app-create.ts",
+  "  if (detail[\"configured\"] === false) return \"waiting for DNS\";\n  return \"unknown\";",
+  "  if (detail[\"configured\"] === false) return \"waiting for DNS\";\n  return \"issued\";",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/fly-app-create.test.ts
+exit: 1
+expected words: says it couldn't read an answer it doesn't understand, and still says what DNS needs
+caught: True
+
+     × says it couldn't read an answer it doesn't understand, and still says what DNS needs 6ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 passed (15)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly-app-create.test.ts > flyAppCreate when it has been run before > says it couldn't read an answer it doesn't understand, and still says what DNS needs
+AssertionError: {}: expected [ …(3) ] to include 'fly-app-create: couldn\'t read flyctl…'

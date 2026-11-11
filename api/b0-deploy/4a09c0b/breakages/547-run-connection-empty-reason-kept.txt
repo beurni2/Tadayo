@@ -1,0 +1,23 @@
+breakage: run-connection-empty-reason-kept
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  "error instanceof Error && error.message !== \"\" ? error.message",
+  "error instanceof Error ? error.message",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/run.test.ts src/run-remote.test.ts
+exit: 1
+expected words: says that no reason was given when the driver's error has no words, or isn't an Error
+caught: True
+
+     × says that no reason was given when the driver's error has no words, or isn't an Error 9ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 43 passed (44)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/run.test.ts > a connection that the database refuses > says that no reason was given when the driver's error has no words, or isn't an Error
+AssertionError: Error: expected a thrown error to be OpsError: migrate: couldn't connect with …
+  OpsError {
+    "name": "OpsError",
+    185|         new OpsError(

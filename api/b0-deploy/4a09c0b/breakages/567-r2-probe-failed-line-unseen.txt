@@ -1,0 +1,21 @@
+breakage: r2-probe-failed-line-unseen
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  "const PROBE_FAILED = /^supabase-probe: \\d+ of \\d+ checks failed$/;",
+  "const PROBE_FAILED = /^$/;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/run-remote.test.ts
+exit: 1
+expected words: fails with the Machine's failure, after both have said what they found
+caught: True
+
+     × fails with the Machine's failure, after both have said what they found 8ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 28 passed (29)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > fails with the Machine's failure, after both have said what they found
+AssertionError: expected [ …(5) ] to deeply equal [ …(4) ]
+    "supabase-probe: FAIL  anon: list the buckets: answered HTTP 200",

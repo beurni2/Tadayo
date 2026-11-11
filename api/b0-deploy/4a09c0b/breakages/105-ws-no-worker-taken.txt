@@ -1,0 +1,21 @@
+breakage: ws-no-worker-taken
+patch: [
+ [
+  "tools/ops/src/worker-scale.ts",
+  "  if (worker === undefined) throw new OpsError(\"worker-scale: the app has no worker Machine; deploy first\");\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/worker-scale.test.ts
+exit: 1
+expected words: an app with no worker Machine, or two
+caught: True
+
+     × an app with no worker Machine, or two (a standby would start with it), changing nothing 7ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/worker-scale.test.ts > workerScale refuses > an app with no worker Machine, or two (a standby would start with it), changing nothing
+AssertionError: expected 'Cannot read properties of undefined (…' to be 'worker-scale: the app has no worker M…' // Object.is equality
+    112|     expect((none.outcome as OpsError).message).toBe("worker-scale: the…

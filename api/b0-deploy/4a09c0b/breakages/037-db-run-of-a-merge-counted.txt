@@ -1,0 +1,21 @@
+breakage: db-run-of-a-merge-counted
+patch: [
+ [
+  "tools/ops/src/deploy-branch.ts",
+  " || run[\"event\"] !== \"push\") continue;",
+  ") continue;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-branch.test.ts
+exit: 1
+expected words: takes a run only from a push
+caught: True
+
+     × takes a run only from a push: a run of some merge of the commit isn't the commit's 10ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-branch.test.ts > deployBranch when the commit's ci run passed > takes a run only from a push: a run of some merge of the commit isn't the commit's
+AssertionError: expected 'not an OpsError: undefined' to be 'deploy-branch: refused: no ci run for…' // Object.is equality
+Received: "not an OpsError: undefined"

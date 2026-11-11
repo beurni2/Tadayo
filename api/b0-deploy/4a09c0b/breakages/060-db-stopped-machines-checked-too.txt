@@ -1,0 +1,26 @@
+breakage: db-stopped-machines-checked-too
+patch: [
+ [
+  "tools/ops/src/deploy-branch.ts",
+  "  const started = now.filter((machine) => machine.state === \"started\");",
+  "  const started = now;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-branch.test.ts
+exit: 1
+expected words: lets a stopped worker be
+caught: True
+
+     × doesn't take flyctl's word that it deployed: the Machines have to run the commit's image 9ms
+     × lets a stopped worker be, since a stopped Machine stays as it was and is the worker-scale's 2ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 25 passed (27)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-branch.test.ts > deployBranch when GitHub or Fly doesn't answer as it should > doesn't take flyctl's word that it deployed: the Machines have to run the commit's image
+AssertionError: expected 'not an OpsError: undefined' to be 'deploy-branch: flyctl deployed, but n…' // Object.is equality
+Received: "not an OpsError: undefined"
+ FAIL  src/deploy-branch.test.ts > deployBranch when GitHub or Fly doesn't answer as it should > lets a stopped worker be, since a stopped Machine stays as it was and is the worker-scale's
+AssertionError: expected OpsError: deploy-branch: flyctl deployed,… to be undefined
+OpsError {
+  "name": "OpsError",

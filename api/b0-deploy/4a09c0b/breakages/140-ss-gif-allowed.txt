@@ -1,0 +1,29 @@
+breakage: ss-gif-allowed
+patch: [
+ [
+  "tools/ops/src/storage-setup.ts",
+  "export const ALLOWED_TYPES = [\"image/jpeg\", \"image/png\", \"image/webp\"] as const;",
+  "export const ALLOWED_TYPES = [\"image/jpeg\", \"image/png\", \"image/webp\", \"image/gif\"] as const;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/storage-setup.test.ts
+exit: 1
+expected words: declares D09's limit and the three image types, in numbers a reader can check
+caught: True
+
+     × declares D09's limit and the three image types, in numbers a reader can check 9ms
+     × makes both buckets when they're missing: private, with the limit and the types 43ms
+     × makes a bucket private again, and sets its limit and types, when it was made another way, and says what it changed 3ms
+     × takes the types in any order as the same 5ms
+ Test Files  1 failed (1)
+      Tests  4 failed | 9 passed (13)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/storage-setup.test.ts > storageSetup > declares D09's limit and the three image types, in numbers a reader can check
+AssertionError: expected [ 'image/jpeg', 'image/png', …(2) ] to deeply equal [ 'image/jpeg', 'image/png', …(1) ]
+ FAIL  src/storage-setup.test.ts > storageSetup > makes both buckets when they're missing: private, with the limit and the types
+AssertionError: expected [ 'image/jpeg', 'image/png', …(2) ] to deeply equal [ 'image/jpeg', 'image/png', …(1) ]
+ FAIL  src/storage-setup.test.ts > storageSetup > makes a bucket private again, and sets its limit and types, when it was made another way, and says what it changed
+AssertionError: expected [ 'image/gif', 'image/jpeg', …(2) ] to deeply equal [ 'image/jpeg', 'image/png', …(1) ]
+ FAIL  src/storage-setup.test.ts > storageSetup > takes the types in any order as the same
+AssertionError: expected [ …(2) ] to deeply equal [ …(2) ]

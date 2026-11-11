@@ -1,0 +1,20 @@
+breakage: out-notice-unsaid-severity
+patch: [
+ [
+  "tools/ops/src/output.ts",
+  "return `ops: ${severity}: ${String(notice[\"message\"])}`;",
+  "return `ops: ${String(notice[\"message\"])}`;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/output.test.ts
+exit: 1
+expected words: says a warning, and anything worse, with its severity and its words
+caught: True
+
+     × says a warning, and anything worse, with its severity and its words 5ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/output.test.ts > noticeLine > says a warning, and anything worse, with its severity and its words
+AssertionError: WARNING: expected 'ops: something to look at' to be 'ops: WARNING: something to look at' // Object.is equality

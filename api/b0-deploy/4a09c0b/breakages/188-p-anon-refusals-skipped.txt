@@ -1,0 +1,71 @@
+breakage: p-anon-refusals-skipped
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "      await refusals(\"anon\", anon);\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: asks every door for each caller: REST for every table, GraphQL, and Storage's buckets and objects
+caught: True
+
+     × passes every check, controls and refusals, and leaves no object, no bucket and no user behind 62ms
+     × proves it could have seen what it was refused: the service key signs, uploads, reads, lists and signs first 12ms
+     × asks every door for each caller: REST for every table, GraphQL, and Storage's buckets and objects 12ms
+     × names the surface when download is open, and leaves nothing behind 10ms
+     × names the surface when rest is open, and leaves nothing behind 6ms
+     × names the surface when graphql is open, and leaves nothing behind 4ms
+     × fails each of two leaks together, and each by name 4ms
+     × says what each open surface gave, in a count or a phrase, and never a word the project said 4ms
+     × sees the root refused to the public key and to a user's token in every state, as the gateway refuses it, so those two lines show a refusal and not the API off 6ms
+     × still fails the public callers' root when a gateway answers it, which says a schema is served 5ms
+     × fails a gateway's 401, which says the key or the token wasn't taken and not that a policy refused 7ms
+     × fails a request Storage couldn't read (status 400), so a mistake of the probe's own can't pass as closed 3ms
+     × fails a 404 that isn't Storage's, as a route that isn't there says it, and a server error 3ms
+     × asks REST for the schema app by name, since it would otherwise be asked for the public one 3ms
+     × fails a check, not the run, when a call gets no answer, and still cleans up 2ms
+     × stops asking when the budget runs out part-way, says so for every check it didn't ask, and still cleans up 4ms
+     × ends a call that is in flight when the budget runs out, and removes what that call may have written 6ms
+     × leaves no bucket to remove for a refusal it never asked 2ms
+ Test Files  1 failed (1)
+      Tests  18 failed | 44 passed (62)
+⎯⎯⎯⎯⎯⎯ Failed Tests 18 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks on a closed project > passes every check, controls and refusals, and leaves no object, no bucket and no user behind
+AssertionError: expected +0 to be 23 // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks on a closed project > proves it could have seen what it was refused: the service key signs, uploads, reads, lists and signs first
+AssertionError: expected 11 to be less than -1
+ FAIL  src/supabase-probe.test.ts > apiChecks on a closed project > asks every door for each caller: REST for every table, GraphQL, and Storage's buckets and objects
+AssertionError: anon: expected +0 to be 1 // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when download is open, and leaves nothing behind
+AssertionError: anon: download from uploads: expected [ 'user: download from uploads', …(1) ] to include 'anon: download from uploads'
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when rest is open, and leaves nothing behind
+AssertionError: anon: REST users: expected [ 'user: REST users', …(2) ] to include 'anon: REST users'
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when graphql is open, and leaves nothing behind
+AssertionError: anon: GraphQL: expected [ 'user: GraphQL' ] to include 'anon: GraphQL'
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > fails each of two leaks together, and each by name
+AssertionError: expected [ 'user: REST users', …(3) ] to include 'anon: REST users'
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > says what each open surface gave, in a count or a phrase, and never a word the project said
+AssertionError: expected undefined to be 'it gave the object' // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks and the Data API's root > sees the root refused to the public key and to a user's token in every state, as the gateway refuses it, so those two lines show a refusal and not the API off
+AssertionError: anon []: expected [] to deeply equal [ 403 ]
+ FAIL  src/supabase-probe.test.ts > apiChecks and the Data API's root > still fails the public callers' root when a gateway answers it, which says a schema is served
+AssertionError: expected [ 'user: REST root' ] to deeply equal [ Array(2) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks counts only Storage's own refusal as one > fails a gateway's 401, which says the key or the token wasn't taken and not that a policy refused
+AssertionError: expected [ 'user: list the buckets' ] to deeply equal [ 'anon: list the buckets', …(1) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks counts only Storage's own refusal as one > fails a request Storage couldn't read (status 400), so a mistake of the probe's own can't pass as closed
+AssertionError: expected [ 'user: download from uploads' ] to deeply equal [ 'anon: download from uploads', …(1) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks counts only Storage's own refusal as one > fails a 404 that isn't Storage's, as a route that isn't there says it, and a server error
+AssertionError: expected [ …(2) ] to deeply equal [ …(4) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks's controls: each must hold, in its own words, before a refusal means anything > asks REST for the schema app by name, since it would otherwise be asked for the public one
+AssertionError: expected [ [ '/rest/v1/users', 'app' ], …(2) ] to deeply equal [ [ '/rest/v1/users', 'app' ], …(5) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks when the project can't be trusted to answer > fails a check, not the run, when a call gets no answer, and still cleans up
+AssertionError: expected [ 'user: GraphQL' ] to deeply equal [ 'anon: GraphQL', 'user: GraphQL' ]
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > stops asking when the budget runs out part-way, says so for every check it didn't ask, and still cleans up
+AssertionError: expected [ { …(2) }, { …(2) }, { …(2) }, …(34) ] to have a length of 19 but got 37
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > ends a call that is in flight when the budget runs out, and removes what that call may have written
+AssertionError: expected undefined to deeply equal { name: 'anon: create a bucket', …(2) }
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > leaves no bucket to remove for a refusal it never asked
+AssertionError: expected false to be true // Object.is equality

@@ -1,0 +1,20 @@
+breakage: p-served-schema-client-error-fails
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "  if (reply.status >= 400) return undefined;\n  const paths =",
+  "  if (reply.status >= 500) return undefined;\n  const paths =",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: passes the service key's root when the Data API answers an error, whichever one, and fails when it describes a schema
+caught: True
+
+     × passes the service key's root when the Data API answers an error, whichever one, and fails when it describes a schema 18ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 61 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks and the Data API's root > passes the service key's root when the Data API answers an error, whichever one, and fails when it describes a schema
+AssertionError: 404: expected [ Array(1) ] to deeply equal []

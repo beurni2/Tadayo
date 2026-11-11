@@ -1,0 +1,39 @@
+breakage: out-values-not-replaced
+patch: [
+ [
+  "tools/ops/src/output.ts",
+  "    for (const value of exact) out = out.split(value).join(REDACTED);\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/output.test.ts
+exit: 1
+expected words: holds back the value of each of the seven secret variables on its own, whatever it looks like
+caught: True
+
+     × holds back the value of every secret variable, wherever a line has it 7ms
+     × holds back the value of each of the seven secret variables on its own, whatever it looks like 3ms
+     × holds back a value of eight characters and leaves a value of seven alone 1ms
+     × holds back a longer value whole when a shorter one is inside it 1ms
+     × holds back a connection string's password, as it is written in the string and decoded 1ms
+     × holds back a connection string's password that isn't percent-encoded properly, as it is written 1ms
+     × does not blank ordinary text because a connection string has no password, or one too short to be one 2ms
+ Test Files  1 failed (1)
+      Tests  7 failed | 11 passed (18)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/output.test.ts > redactor > holds back the value of every secret variable, wherever a line has it
+AssertionError: DATABASE_APP_PASSWORD: app-password-of-more-than-thirty-two-chars: expected 'app-password-of-more-than-thirty-two-…' not to contain 'app-password-of-more-than-thirty-two-…'
+ FAIL  src/output.test.ts > redactor > holds back the value of each of the seven secret variables on its own, whatever it looks like
+AssertionError: DATABASE_URL: expected 'before unshaped-database_url-value-01…' to be 'before [redacted] after' // Object.is equality
+ FAIL  src/output.test.ts > redactor > holds back a value of eight characters and leaves a value of seven alone
+AssertionError: expected 'the abcdefgh is out' to be 'the [redacted] is out' // Object.is equality
+ FAIL  src/output.test.ts > redactor > holds back a longer value whole when a shorter one is inside it
+AssertionError: expected 'the token aaaaaaaabbbbbbbb and the pa…' to be 'the token [redacted] and the password…' // Object.is equality
+ FAIL  src/output.test.ts > redactor > holds back a connection string's password, as it is written in the string and decoded
+AssertionError: password authentication failed for user tadayo_app, with p%40ss%2Fw0rd-of-many-characters: expected 'password authentication failed for us…' to be 'password authentication failed for us…' // Object.is equality
+     87|       expect(redact(line), line).toBe(expected);
+ FAIL  src/output.test.ts > redactor > holds back a connection string's password that isn't percent-encoded properly, as it is written
+AssertionError: expected 'psql: FATAL: password 100%25%zz-passw…' to be 'psql: FATAL: password [redacted] fail…' // Object.is equality
+ FAIL  src/output.test.ts > redactor > does not blank ordinary text because a connection string has no password, or one too short to be one
+AssertionError: expected 'could not connect to postgresql://[re…' to be 'could not connect to [redacted]' // Object.is equality

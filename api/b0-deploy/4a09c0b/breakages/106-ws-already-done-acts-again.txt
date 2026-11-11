@@ -1,0 +1,28 @@
+breakage: ws-already-done-acts-again
+patch: [
+ [
+  "tools/ops/src/worker-scale.ts",
+  "  if (done(worker.state)) {",
+  "  if (false) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/worker-scale.test.ts
+exit: 1
+expected words: does nothing to a Machine that is stopped already
+caught: True
+
+     × does nothing to a Machine that is stopped already, or only waits for one that is on its way 6ms
+     × takes a suspended Machine as stopped 1ms
+     × does nothing to one that is started already 1ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 9 passed (12)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/worker-scale.test.ts > workerScale to stopped > does nothing to a Machine that is stopped already, or only waits for one that is on its way
+AssertionError: expected [] to deeply equal [ Array(1) ]
+ FAIL  src/worker-scale.test.ts > workerScale to stopped > takes a suspended Machine as stopped
+AssertionError: expected OpsError: worker-scale: the worker Machin… to be undefined
+OpsError {
+  "name": "OpsError",
+ FAIL  src/worker-scale.test.ts > workerScale to started > does nothing to one that is started already
+AssertionError: expected [] to deeply equal [ Array(1) ]

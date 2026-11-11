@@ -1,0 +1,23 @@
+breakage: p-clean-up-flag-never-set
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "    cleaning = true;\n    await cleanup();",
+  "    await cleanup();",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: stops asking when the budget runs out part-way, says so for every check it didn't ask, and still cleans up
+caught: True
+
+     × stops asking when the budget runs out part-way, says so for every check it didn't ask, and still cleans up 11ms
+     × ends a call that is in flight when the budget runs out, and removes what that call may have written 12ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 60 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > stops asking when the budget runs out part-way, says so for every check it didn't ask, and still cleans up
+AssertionError: expected [] to deeply equal [ 'DELETE', 'DELETE', 'DELETE' ]
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > ends a call that is in flight when the budget runs out, and removes what that call may have written
+AssertionError: expected false to be true // Object.is equality

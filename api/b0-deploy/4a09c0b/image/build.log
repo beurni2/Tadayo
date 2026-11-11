@@ -1,0 +1,116 @@
+$ git rev-parse HEAD
+4a09c0bcae40d4efd7786709e608533e0239b2c8
+$ docker build --build-arg NODE_IMAGE=tadayo-node-ca:local -t tadayo-api-dev:evidence .
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 DONE 0.0s
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 2.43kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/tadayo-node-ca:local
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 847B done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 transferring context: 128.44kB done
+#4 DONE 0.0s
+
+#5 [deps  1/12] FROM docker.io/library/tadayo-node-ca:local@sha256:3e29139292d198420cba773703f430775722399f4271a2e369fe1a33444b9b14
+#5 resolve docker.io/library/tadayo-node-ca:local@sha256:3e29139292d198420cba773703f430775722399f4271a2e369fe1a33444b9b14 0.0s done
+#5 DONE 0.0s
+
+#6 [deps  2/12] WORKDIR /app
+#6 DONE 0.0s
+
+#7 [deps  3/12] RUN npm install --global pnpm@12.16.1
+#7 2.201 
+#7 2.201 added 2 packages in 2s
+#7 2.202 npm warn install-scripts 1 package has install scripts not yet covered by allowScripts:
+#7 2.202 npm warn install-scripts   pnpm@12.16.1 (preinstall: node install.js; postinstall: node install.js)
+#7 2.202 npm warn install-scripts
+#7 2.202 npm warn install-scripts Run `npm install -g --allow-scripts=pnpm` to allow these scripts once, or `npm config set allow-scripts=pnpm --location=user` to allow them for all global installs.
+#7 2.203 npm notice
+#7 2.203 npm notice New major version of npm available! 11.20.0 -> 12.2.2
+#7 2.203 npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+#7 2.203 npm notice To update run: npm install -g npm@12.2.2
+#7 2.203 npm notice
+#7 DONE 2.4s
+
+#8 [deps  4/12] COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+#8 DONE 0.0s
+
+#9 [deps  5/12] COPY apps/web/package.json apps/web/
+#9 DONE 0.0s
+
+#10 [deps  6/12] COPY packages/contracts/package.json packages/contracts/
+#10 DONE 0.0s
+
+#11 [deps  7/12] COPY packages/domain/package.json packages/domain/
+#11 DONE 0.0s
+
+#12 [deps  8/12] COPY services/api/package.json services/api/
+#12 DONE 0.0s
+
+#13 [deps  9/12] COPY services/worker/package.json services/worker/
+#13 DONE 0.0s
+
+#14 [deps 10/12] COPY tests/package.json tests/
+#14 DONE 0.0s
+
+#15 [deps 11/12] COPY tools/ops/package.json tools/ops/
+#15 DONE 0.0s
+
+#16 [deps 12/12] RUN pnpm install --frozen-lockfile --prod     --filter "@tadayo/api..." --filter "@tadayo/worker..." --filter "@tadayo/ops..."
+#16 0.205 Scope: 5 of 8 workspace projects
+#16 0.220 ? Verifying lockfile against supply-chain policies (399 entries)...
+#16 0.338 Update available! 12.16.1 → 12.18.0.
+#16 0.338 Changelog: https://pnpm.io/v/12.18.0
+#16 0.338 To update, run: curl -fsSL https://get.pnpm.io/install.sh | sh -
+#16 1.372 ✓ Lockfile passes supply-chain policies (399 entries in 1.2s)
+#16 1.372 Lockfile is up to date, resolution step is skipped
+#16 6.360 Progress: resolved 51, reused 0, downloaded 1, added 0
+#16 6.361 Packages are hard linked from the content-addressable store to the virtual store.
+#16 6.361   Content-addressable store is at: /root/.local/share/pnpm/store/v11
+#16 6.361   Virtual store is at:             node_modules/.pnpm
+#16 6.499 Packages: +51
+#16 6.499 +++++++++++++++++++++++++++++++++++++++++++++++++++
+#16 6.505 Progress: resolved 51, reused 0, downloaded 51, added 51, done
+#16 6.526 Done in 6.3s using pnpm v12.16.1
+#16 DONE 8.6s
+
+#17 [stage-1 3/8] COPY --from=deps /app/ ./
+#17 DONE 0.2s
+
+#18 [stage-1 4/8] COPY packages/contracts/src packages/contracts/src
+#18 DONE 0.0s
+
+#19 [stage-1 5/8] COPY packages/domain/src packages/domain/src
+#19 DONE 0.0s
+
+#20 [stage-1 6/8] COPY services/api/src services/api/src
+#20 DONE 0.0s
+
+#21 [stage-1 7/8] COPY services/worker/src services/worker/src
+#21 DONE 0.0s
+
+#22 [stage-1 8/8] COPY tools/ops/src tools/ops/src
+#22 DONE 0.0s
+
+#23 exporting to image
+#23 exporting layers
+#23 exporting layers 0.6s done
+#23 exporting manifest sha256:ed365099e83ab00ffe898a8c3ee478bd0b28bcad61d5db7ee356b24b126b1d1f done
+#23 exporting config sha256:f9ef3a177d8aa459dae054ce676972f46716cd3fcb9b35fd3e51cf9a57ccb024 done
+#23 exporting attestation manifest sha256:23e8f08b3b657ed18ed93fefdcbc7119297291a0a22adc5a416042c3025510f5 done
+#23 exporting manifest list sha256:5299cc40fbc7bcc4641dbe72e0575d9519cbc8f90517d9b70e46715327aaa1d9 done
+#23 naming to docker.io/library/tadayo-api-dev:evidence done
+#23 unpacking to docker.io/library/tadayo-api-dev:evidence
+#23 unpacking to docker.io/library/tadayo-api-dev:evidence 0.4s done
+#23 DONE 1.1s
+exit 0

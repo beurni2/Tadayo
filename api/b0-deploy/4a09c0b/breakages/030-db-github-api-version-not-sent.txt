@@ -1,0 +1,20 @@
+breakage: db-github-api-version-not-sent
+patch: [
+ [
+  "tools/ops/src/deploy-branch.ts",
+  "          \"x-github-api-version\": \"2022-11-28\",\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-branch.test.ts
+exit: 1
+expected words: asks GitHub for the branch's head and the ci runs of that commit, with the token, and nothing else
+caught: True
+
+     × asks GitHub for the branch's head and the ci runs of that commit, with the token, and nothing else 12ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-branch.test.ts > deployBranch when the commit's ci run passed > asks GitHub for the branch's head and the ci runs of that commit, with the token, and nothing else
+AssertionError: expected [ { …(5) }, { …(5) } ] to deeply equal [ { …(5) }, { …(5) } ]

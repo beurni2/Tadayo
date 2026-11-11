@@ -1,0 +1,22 @@
+breakage: fac-no-organization-taken
+patch: [
+ [
+  "tools/ops/src/fly-app-create.ts",
+  "  if (only === undefined) throw new OpsError(\"fly-app-create: the token sees no organization\");\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/fly-app-create.test.ts
+exit: 1
+expected words: a token that sees no organization, saying so
+caught: True
+
+     × a token that sees no organization, saying so, and makes nothing 7ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 passed (15)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly-app-create.test.ts > flyAppCreate refuses > a token that sees no organization, saying so, and makes nothing
+AssertionError: expected 'flyctl: a call that doesn\'t name tad…' to be 'fly-app-create: the token sees no org…' // Object.is equality
+    301|     expect(result.outcome).toBeInstanceOf(OpsError);
+    302|     expect((result.outcome as OpsError).message).toBe("fly-app-create:…

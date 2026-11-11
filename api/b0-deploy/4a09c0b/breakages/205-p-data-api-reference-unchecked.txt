@@ -1,0 +1,21 @@
+breakage: p-data-api-reference-unchecked
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "  if (!/^[a-z]{20}$/.test(ref)) throw new OpsError(\"the project's reference is twenty letters\");\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: refuses a reference that isn't a project's, and asks nothing, since it goes into the path of the request
+caught: True
+
+     × refuses a reference that isn't a project's, and asks nothing, since it goes into the path of the request 10ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 61 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > dataApiChecks, the project's own configuration through the Management API > refuses a reference that isn't a project's, and asks nothing, since it goes into the path of the request
+AssertionError: promise resolved "[ { …(2) } ]" instead of rejecting
+Error {

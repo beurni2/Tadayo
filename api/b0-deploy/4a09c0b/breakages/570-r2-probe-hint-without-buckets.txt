@@ -1,0 +1,20 @@
+breakage: r2-probe-hint-without-buckets
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  ", and buckets whose names start with probe-. Delete them",
+  ". Delete them",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/run-remote.test.ts
+exit: 1
+expected words: says what the project may hold when nothing came back from the Machine
+caught: True
+
+     × says what the project may hold when nothing came back from the Machine, and still fails with the call's own failure 10ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 28 passed (29)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > says what the project may hold when nothing came back from the Machine, and still fails with the call's own failure
+AssertionError: expected 'supabase-probe: nothing came back fro…' to contain 'buckets whose names start with probe-'

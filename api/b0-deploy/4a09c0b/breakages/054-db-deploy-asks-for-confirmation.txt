@@ -1,0 +1,20 @@
+breakage: db-deploy-asks-for-confirmation
+patch: [
+ [
+  "tools/ops/src/deploy-branch.ts",
+  "      \"--yes\",\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-branch.test.ts
+exit: 1
+expected words: builds and deploys that exact commit, from the checkout, and finds it running
+caught: True
+
+     × builds and deploys that exact commit, from the checkout, and finds it running 42ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-branch.test.ts > deployBranch when the commit's ci run passed > builds and deploys that exact commit, from the checkout, and finds it running
+AssertionError: expected [ 'deploy', '--remote-only', …(9) ] to deeply equal [ 'deploy', '--remote-only', …(10) ]

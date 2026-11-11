@@ -1,0 +1,20 @@
+breakage: spawn-timer-kept-after-exit
+patch: [
+ [
+  "tools/ops/src/spawn.ts",
+  "    child.on(\"close\", (code) => {\n      if (timer) clearTimeout(timer);\n",
+  "    child.on(\"close\", (code) => {\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/spawn.test.ts
+exit: 1
+expected words: doesn't hold the process that ran it open once the child is done, whatever time it was given
+caught: True
+
+     × doesn't hold the process that ran it open once the child is done, whatever time it was given 5004ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 passed (14)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/spawn.test.ts > spawnProcess > doesn't hold the process that ran it open once the child is done, whatever time it was given
+Error: Test timed out in 5000ms.

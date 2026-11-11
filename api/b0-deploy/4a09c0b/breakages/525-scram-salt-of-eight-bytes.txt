@@ -1,0 +1,20 @@
+breakage: scram-salt-of-eight-bytes
+patch: [
+ [
+  "tools/ops/src/scram.ts",
+  "salt: Buffer = randomBytes(16)",
+  "salt: Buffer = randomBytes(8)",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/scram.test.ts
+exit: 1
+expected words: makes a salt of 16 random bytes, as Postgres does when it makes a verifier itself
+caught: True
+
+     × makes a salt of 16 random bytes, as Postgres does when it makes a verifier itself 24ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 passed (6)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/scram.test.ts > scramVerifier > makes a salt of 16 random bytes, as Postgres does when it makes a verifier itself
+AssertionError: expected Buffer[ 246, 153, 96, 170, 20, …(-75) ] to have a length of 16 but got 8

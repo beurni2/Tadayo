@@ -1,0 +1,26 @@
+breakage: run-probe-machine-failure-swallowed
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  "  if (onMachineFailure !== undefined) throw onMachineFailure;\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/run.test.ts src/run-remote.test.ts
+exit: 1
+expected words: fails with the Machine's failure, after both have said what they found
+caught: True
+
+     × fails with the Machine's failure, after both have said what they found 9ms
+     × says nothing of what the project may hold when the Machine's half failed before it made anything 2ms
+     × fails, and says what the project may hold, when the Machine's report has the run's id and doesn't say how its checks went, even with an exit status of 0 2ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  3 failed | 41 passed (44)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > fails with the Machine's failure, after both have said what they found
+AssertionError: expected 'supabase-probe: the Machine\'s report…' to be 'supabase-probe: it failed on the Mach…' // Object.is equality
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > says nothing of what the project may hold when the Machine's half failed before it made anything
+AssertionError: expected 'supabase-probe: the Machine\'s report…' to be 'supabase-probe: it failed on the Mach…' // Object.is equality
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > fails, and says what the project may hold, when the Machine's report has the run's id and doesn't say how its checks went, even with an exit status of 0
+AssertionError: supabase-probe: it was ended on the Machine by signal 9: expected 'supabase-probe: the Machine\'s report…' to be 'supabase-probe: it was ended on the M…' // Object.is equality

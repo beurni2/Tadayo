@@ -1,0 +1,22 @@
+breakage: om-signal-ignored
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "  if (answer.exitSignal !== 0) {",
+  "  if (false) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/on-machine.test.ts
+exit: 1
+expected words: fails when the command was ended by a signal, even with no exit code in the answer
+caught: True
+
+     × fails when the command was ended by a signal, even with no exit code in the answer 6ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 7 passed (8)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine > fails when the command was ended by a signal, even with no exit code in the answer
+AssertionError: expected undefined to be an instance of OpsError
+    149|     expect(result.outcome).toBeInstanceOf(OpsError);
+    150|     expect((result.outcome as OpsError).message).toBe("storage-setup: …

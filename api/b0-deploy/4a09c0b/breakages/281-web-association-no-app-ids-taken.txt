@@ -1,0 +1,20 @@
+breakage: web-association-no-app-ids-taken
+patch: [
+ [
+  "apps/web/src/build.ts",
+  "    if (!Array.isArray(ids) || ids.length === 0) problems.push(`${where} has no appIDs`);",
+  "    if (!Array.isArray(ids)) problems.push(`${where} has no appIDs`);",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/apps/web && npx vitest run src/build.test.ts
+exit: 1
+expected words: says what is wrong with a file that isn't that, one problem each
+caught: True
+
+     × says what is wrong with a file that isn't that, one problem each 8ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/build.test.ts > checkAssociation > says what is wrong with a file that isn't that, one problem each
+AssertionError: an empty list of app IDs: expected [] to deeply equal [ 'detail 1 has no appIDs' ]

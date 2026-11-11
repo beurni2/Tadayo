@@ -1,0 +1,20 @@
+breakage: sb-plain-http-project
+patch: [
+ [
+  "tools/ops/src/supabase.ts",
+  "const match = /^https:\\/\\/([a-z]{20})\\.supabase\\.co\\/?$/.exec(value);",
+  "const match = /^https?:\\/\\/([a-z]{20})\\.supabase\\.co\\/?$/.exec(value);",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase.test.ts
+exit: 1
+expected words: refuses plain http, another host or length, capitals, a path, a query and anything around it
+caught: True
+
+     × refuses plain http, another host or length, capitals, a path, a query and anything around it 7ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase.test.ts > projectUrl: only https://<twenty letters>.supabase.co > refuses plain http, another host or length, capitals, a path, a query and anything around it
+AssertionError: "http://abcdefghijklmnopqrst.supabase.co": expected [Function] to throw an error

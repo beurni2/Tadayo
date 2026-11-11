@@ -1,0 +1,26 @@
+breakage: p-bucket-stranger-taken
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "  const strangers = items.filter((item) => !BUCKETS.some((name) => name === text(item, \"name\"))).length;",
+  "  const strangers = 0;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: fails a third bucket, which is none of storage-setup's, and counts it without naming it
+caught: True
+
+     × fails a third bucket, which is none of storage-setup's, and counts it without naming it 13ms
+     × fails a public bucket, one of the two or a third, since a public bucket serves its objects with no key 10ms
+     × counts several in plural words 6ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 59 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks asks which buckets the project has, and none may be public or another's (T53) > fails a third bucket, which is none of storage-setup's, and counts it without naming it
+AssertionError: expected [] to deeply equal [ Array(1) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks asks which buckets the project has, and none may be public or another's (T53) > fails a public bucket, one of the two or a third, since a public bucket serves its objects with no key
+AssertionError: expected '1 bucket isn\'t shown to be private' to be '1 bucket isn\'t shown to be private; …' // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks asks which buckets the project has, and none may be public or another's (T53) > counts several in plural words
+AssertionError: expected '2 buckets aren\'t shown to be private' to be '2 buckets aren\'t shown to be private…' // Object.is equality

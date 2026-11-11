@@ -1,0 +1,21 @@
+breakage: seed-nul-taken
+patch: [
+ [
+  "tools/ops/src/seed.ts",
+  "    if (text.includes(\"\\0\")) throw new OpsError(",
+  "    if (false) throw new OpsError(",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/seed.test.ts
+exit: 1
+expected words: refuses text that isn't UTF-8 or holds a NUL
+caught: True
+
+     × refuses text that isn't UTF-8 or holds a NUL, as the migrations do, so what runs is what was read 8ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/seed.test.ts > readSeeds > refuses text that isn't UTF-8 or holds a NUL, as the migrations do, so what runs is what was read
+AssertionError: promise resolved "[ { name: 'a.sql', …(1) } ]" instead of rejecting
+Error {

@@ -1,0 +1,28 @@
+breakage: fly-guard-no-app-taken
+patch: [
+ [
+  "tools/ops/src/fly.ts",
+  "  return named;\n}",
+  "  return true;\n}",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/fly.test.ts
+exit: 1
+expected words: refuses a call with no app, another app, an app flag with nothing after it, or another app besides the dev one
+caught: True
+
+     × refuses a call with no app, another app, an app flag with nothing after it, or another app besides the dev one 6ms
+     × takes the two calls that name none only in the one form each, not with other words after them 1ms
+     × makes no call that doesn't name it: Fly.run refuses before anything is spawned, and says so without the arguments 1ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 14 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly.test.ts > forDevApp: a call is about tadayo-api-dev and no other app > refuses a call with no app, another app, an app flag with nothing after it, or another app besides the dev one
+AssertionError: status: expected true to be false // Object.is equality
+ FAIL  src/fly.test.ts > forDevApp: a call is about tadayo-api-dev and no other app > takes the two calls that name none only in the one form each, not with other words after them
+AssertionError: orgs list: expected true to be false // Object.is equality
+ FAIL  src/fly.test.ts > forDevApp: a call is about tadayo-api-dev and no other app > makes no call that doesn't name it: Fly.run refuses before anything is spawned, and says so without the arguments
+AssertionError: expected undefined to be an instance of OpsError
+    142|       expect(error).toBeInstanceOf(OpsError);
+    143|       expect((error as OpsError).message).toBe(

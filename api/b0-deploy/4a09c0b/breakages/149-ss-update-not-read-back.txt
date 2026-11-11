@@ -1,0 +1,21 @@
+breakage: ss-update-not-read-back
+patch: [
+ [
+  "tools/ops/src/storage-setup.ts",
+  "      if (after.length > 0) {",
+  "      if (false) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/storage-setup.test.ts
+exit: 1
+expected words: fails when a bucket still isn't as declared after the update, rather than say it is
+caught: True
+
+     × fails when a bucket still isn't as declared after the update, rather than say it is 6ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/storage-setup.test.ts > storageSetup > fails when a bucket still isn't as declared after the update, rather than say it is
+AssertionError: promise resolved "undefined" instead of rejecting
+Error {

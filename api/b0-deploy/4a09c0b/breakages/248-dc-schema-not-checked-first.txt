@@ -1,0 +1,20 @@
+breakage: dc-schema-not-checked-first
+patch: [
+ [
+  "tools/ops/src/dev-clock.ts",
+  "  const open = await closedProblems(tx);\n  if (open.length > 0) {",
+  "  const open: string[] = [];\n  if (open.length > 0) {",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-deploy-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/c10a/dbtest-wt.sh src/db/ops-dev-clock.test.ts
+exit: 1
+expected words: changes nothing when the schema isn't closed (T53), and says what's open
+caught: True
+
+     × changes nothing when the schema isn't closed (T53), and says what's open 24ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/ops-dev-clock.test.ts > dev-clock, through the schema's own owner > changes nothing when the schema isn't closed (T53), and says what's open
+AssertionError: expected [Function] to throw error matching /isn't closed.*ops_dev_clock_open/ but got 'dev-clock: would leave the schema app…'
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)

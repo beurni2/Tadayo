@@ -1,0 +1,27 @@
+breakage: db-deploy-failure-not-refused
+patch: [
+ [
+  "tools/ops/src/deploy-branch.ts",
+  "  if (deployed.code !== 0) throw new OpsError(",
+  "  if (false) throw new OpsError(",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-branch.test.ts
+exit: 1
+expected words: doesn't call a deploy that flyctl failed one, with flyctl's own words
+caught: True
+
+     × doesn't call a deploy that flyctl failed one, with flyctl's own words 8ms
+     × says what flyctl printed, line by line, whether or not it worked 4ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 25 passed (27)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-branch.test.ts > deployBranch when GitHub or Fly doesn't answer as it should > doesn't call a deploy that flyctl failed one, with flyctl's own words
+AssertionError: expected 'not an OpsError: undefined' to be 'deploy-branch: flyctl couldn\'t deplo…' // Object.is equality
+Expected: "deploy-branch: flyctl couldn't deploy the commit: exit code 1: Error: failed to fetch an image or build from source"
+Received: "not an OpsError: undefined"
+    413|       deploy: ["flyctl deploy", { code: 1, stderr: "Error: failed to f…
+ FAIL  src/deploy-branch.test.ts > deployBranch when GitHub or Fly doesn't answer as it should > says what flyctl printed, line by line, whether or not it worked
+AssertionError: expected [ …(2) ] to deeply equal [ '==> Building image', 'Error: boom' ]
+-   "Error: boom",

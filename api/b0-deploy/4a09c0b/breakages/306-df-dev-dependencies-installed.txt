@@ -1,0 +1,20 @@
+breakage: df-dev-dependencies-installed
+patch: [
+ [
+  "Dockerfile",
+  "pnpm install --frozen-lockfile --prod",
+  "pnpm install --frozen-lockfile",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-files.test.ts
+exit: 1
+expected words: installs the production dependencies of the packages the process groups run, and of the ops scripts, from the lockfile
+caught: True
+
+     × installs the production dependencies of the packages the process groups run, and of the ops scripts, from the lockfile 60ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-files.test.ts > Dockerfile > installs the production dependencies of the packages the process groups run, and of the ops scripts, from the lockfile
+AssertionError: expected 'pnpm install --frozen-lockfile --filt…' to contain '--prod'

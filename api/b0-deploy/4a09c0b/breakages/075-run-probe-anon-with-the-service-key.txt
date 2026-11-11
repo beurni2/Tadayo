@@ -1,0 +1,35 @@
+breakage: run-probe-anon-with-the-service-key
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  "    publishableKey: variables.SUPABASE_PUBLISHABLE_KEY,\n",
+  "    publishableKey: variables.SUPABASE_SERVICE_KEY,\n",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-deploy-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/c10a/dbtest-wt.sh src/db/ops-scripts.test.ts
+exit: 1
+expected words: makes the two buckets, and then finds the project closed
+caught: True
+
+     × makes the two buckets, and then finds the project closed: the run's id first, every check ok, the count last 60ms
+     × fails, saying how many checks failed and which, when a door leaks, and still cleans up 19ms
+     × fails, naming the table, when Storage's tables have a policy: the database layer is part of the run 24ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/ops-scripts.test.ts > storage-setup and supabase-probe on the Machine (--here), against the local Postgres and a made-up project > makes the two buckets, and then finds the project closed: the run's id first, every check ok, the count last
+AssertionError: supabase-probe: run e2d4102d-951c-4d16-b01d-4f2ef377ce51
+supabase-probe: FAIL  control: the user signs in without an email: the token wasn't taken: HTTP 401
+supabase-probe: ok    cleanup: delete the probe user: expected OpsError: supabase-probe: 1 of 7 checks f… to be undefined
+OpsError {
+  "name": "OpsError",
+ FAIL  src/db/ops-scripts.test.ts > storage-setup and supabase-probe on the Machine (--here), against the local Postgres and a made-up project > fails, saying how many checks failed and which, when a door leaks, and still cleans up
+AssertionError: expected 'supabase-probe: 1 of 7 checks failed' to match /^supabase-probe: 2 of \d+ checks fail…/
+    273|     expect(outcome).toBeInstanceOf(Error);
+    274|     expect((outcome as Error).message).toMatch(/^supabase-probe: 2 of …
+ FAIL  src/db/ops-scripts.test.ts > storage-setup and supabase-probe on the Machine (--here), against the local Postgres and a made-up project > fails, naming the table, when Storage's tables have a policy: the database layer is part of the run
+AssertionError: expected 'supabase-probe: 2 of 7 checks failed' to match /^supabase-probe: 1 of \d+ checks fail…/
+    288|     expect((outcome as Error).message).toMatch(/^supabase-probe: 1 of …
+    289|     expect(lines.filter((line) => line.includes("FAIL"))).toEqual([
+    290|       "supabase-probe: FAIL  database: Storage's buckets and objects h…
+ Test Files  1 failed (1)
+      Tests  3 failed | 6 passed (9)

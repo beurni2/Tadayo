@@ -1,0 +1,24 @@
+breakage: fly-why-says-every-line
+patch: [
+ [
+  "tools/ops/src/fly.ts",
+  "    .slice(0, 3)\n",
+  "    .slice(0, 300)\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/fly.test.ts src/worker-scale.test.ts src/fly-app-create.test.ts src/on-machine.test.ts src/run-remote.test.ts
+exit: 1
+expected words: says the exit code and the first lines of what it printed, standard error before standard output
+caught: True
+
+     × says the exit code and the first lines of what it printed, standard error before standard output 13ms
+ Test Files  1 failed | 4 passed (5)
+      Tests  1 failed | 80 passed (81)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly.test.ts > why: what a failed call says, for a message > says the exit code and the first lines of what it printed, standard error before standard output
+AssertionError: expected 'exit code 1: Error: no / second / thi…' to be 'exit code 1: Error: no / second / thi…' // Object.is equality
+Expected: "exit code 1: Error: no / second / third"
+Received: "exit code 1: Error: no / second / third / fourth / fifth"
+    153|     expect(why(spawned({ code: 1, stderr: "Error: no\n  \nsecond\nthir…
+    154|       "exit code 1: Error: no / second / third",

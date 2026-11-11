@@ -1,0 +1,27 @@
+breakage: out-pattern-fly-token-taken-out
+patch: [
+ [
+  "tools/ops/src/output.ts",
+  "  [/FlyV1 [\\w+/=,-]+/g, REDACTED], // a Fly token\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/output.test.ts
+exit: 1
+expected words: holds back a Fly token's whole string, however the pieces after the word are joined
+caught: True
+
+     × holds back what looks like a token whether or not the environment gave it: a JWT, a Supabase secret key, a SCRAM verifier, a Fly token 8ms
+     × holds back a token of each shape the patterns know, with an empty environment 4ms
+     × holds back a Fly token's whole string, however the pieces after the word are joined 1ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 15 passed (18)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/output.test.ts > redactor > holds back what looks like a token whether or not the environment gave it: a JWT, a Supabase secret key, a SCRAM verifier, a Fly token
+AssertionError: token FlyV1 fm2_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,fm2_bbbbbbbb failed: expected 'token FlyV1 [redacted],fm2_bbbbbbbb f…' to be 'token [redacted] failed' // Object.is equality
+    108|       expect(redact(line), line).toBe(expected);
+ FAIL  src/output.test.ts > redactor > holds back a token of each shape the patterns know, with an empty environment
+AssertionError: FlyV1 opaquetokenwithnofmtwopiecesinit+/=,-: expected 'error: FlyV1 opaquetokenwithnofmtwopi…' to be 'error: [redacted]: refused, and [reda…' // Object.is equality
+ FAIL  src/output.test.ts > redactor > holds back a Fly token's whole string, however the pieces after the word are joined
+AssertionError: expected 'Authorization: FlyV1 [redacted],fm2_b…' to be 'Authorization: [redacted] was refused' // Object.is equality

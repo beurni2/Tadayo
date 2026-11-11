@@ -1,0 +1,20 @@
+breakage: fly-machine-list-group-unsaid
+patch: [
+ [
+  "tools/ops/src/fly.ts",
+  "${machine.group ?? \"no group\"}",
+  "${machine.group}",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/fly.test.ts
+exit: 1
+expected words: says the Machines in words for a message: id, group and state each, `no group` for a Machine made another way, and `none`
+caught: True
+
+     × says the Machines in words for a message: id, group and state each, `no group` for a Machine made another way, and `none` 6ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly.test.ts > jsonOf and machines: what flyctl's list of Machines says > says the Machines in words for a message: id, group and state each, `no group` for a Machine made another way, and `none`
+AssertionError: expected 'a1 (api, stopped), w1 (worker, starte…' to be 'a1 (api, stopped), w1 (worker, starte…' // Object.is equality

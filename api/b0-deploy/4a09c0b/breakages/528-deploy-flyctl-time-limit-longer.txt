@@ -1,0 +1,23 @@
+breakage: deploy-flyctl-time-limit-longer
+patch: [
+ [
+  "tools/ops/src/deploy-branch.ts",
+  "const DEPLOY_MS = 20 * 60 * 1000;",
+  "const DEPLOY_MS = 200 * 60 * 1000;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-branch.test.ts
+exit: 1
+expected words: cuts every git call off after 30 seconds and every GitHub request after 30 seconds, and the deploy after 20 minutes
+caught: True
+
+     × builds and deploys that exact commit, from the checkout, and finds it running 35ms
+     × cuts every git call off after 30 seconds and every GitHub request after 30 seconds, and the deploy after 20 minutes 3ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 25 passed (27)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-branch.test.ts > deployBranch when the commit's ci run passed > builds and deploys that exact commit, from the checkout, and finds it running
+AssertionError: expected 12000000 to be 1200000 // Object.is equality
+ FAIL  src/deploy-branch.test.ts > deployBranch when the commit's ci run passed > cuts every git call off after 30 seconds and every GitHub request after 30 seconds, and the deploy after 20 minutes
+AssertionError: expected 12000000 to be 1200000 // Object.is equality

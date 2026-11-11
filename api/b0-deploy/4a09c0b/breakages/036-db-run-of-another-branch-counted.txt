@@ -1,0 +1,26 @@
+breakage: db-run-of-another-branch-counted
+patch: [
+ [
+  "tools/ops/src/deploy-branch.ts",
+  "|| run[\"head_branch\"] !== branch || run[\"event\"] !== \"push\") continue;",
+  "|| run[\"event\"] !== \"push\") continue;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-branch.test.ts
+exit: 1
+expected words: ignores a cancelled run of the same commit, and the runs of other commits and other branches
+caught: True
+
+     × ignores a cancelled run of the same commit, and the runs of other commits and other branches 7ms
+     × when there is none, or none of this commit on this branch 4ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 25 passed (27)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-branch.test.ts > deployBranch when the commit's ci run passed > ignores a cancelled run of the same commit, and the runs of other commits and other branches
+AssertionError: expected OpsError: deploy-branch: refused: the ci … to be undefined
+OpsError {
+  "name": "OpsError",
+ FAIL  src/deploy-branch.test.ts > deployBranch refuses a commit whose ci run isn't green, and deploys nothing > when there is none, or none of this commit on this branch
+AssertionError: expected 'not an OpsError: undefined' to be 'deploy-branch: refused: no ci run for…' // Object.is equality
+Received: "not an OpsError: undefined"

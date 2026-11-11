@@ -1,0 +1,20 @@
+breakage: dc-microseconds-rounded-up
+patch: [
+ [
+  "tools/ops/src/dev-clock.ts",
+  "const offset = target.epochNanoseconds / 1000n - postgresNowMicroseconds;",
+  "const offset = (target.epochNanoseconds + 999n) / 1000n - postgresNowMicroseconds;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/dev-clock.test.ts
+exit: 1
+expected words: drops what is finer than a microsecond, Postgres's own precision
+caught: True
+
+     × drops what is finer than a microsecond, Postgres's own precision 6ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/dev-clock.test.ts > moveOffset > drops what is finer than a microsecond, Postgres's own precision
+AssertionError: expected 6n to be 5n // Object.is equality

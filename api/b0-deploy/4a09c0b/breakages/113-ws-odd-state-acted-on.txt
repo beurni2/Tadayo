@@ -1,0 +1,21 @@
+breakage: ws-odd-state-acted-on
+patch: [
+ [
+  "tools/ops/src/worker-scale.ts",
+  "  } else if (!waiting.includes(worker.state)) {",
+  "  } else if (false) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/worker-scale.test.ts
+exit: 1
+expected words: a Machine in a state it has no move for, changing nothing
+caught: True
+
+     × a Machine in a state it has no move for, changing nothing 9ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/worker-scale.test.ts > workerScale refuses > a Machine in a state it has no move for, changing nothing
+AssertionError: expected 'worker-scale: the worker Machine is d…' to be 'worker-scale: the worker Machine is d…' // Object.is equality
+    124|     expect((result.outcome as OpsError).message).toBe(

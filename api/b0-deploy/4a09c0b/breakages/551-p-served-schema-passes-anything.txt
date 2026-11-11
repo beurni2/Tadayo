@@ -1,0 +1,26 @@
+breakage: p-served-schema-passes-anything
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "  if (reply.status >= 400) return undefined;\n  const paths =",
+  "  return undefined;\n  const paths =",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: passes the service key's root when the Data API answers an error, whichever one, and fails when it describes a schema
+caught: True
+
+     × names the surface when rest-root is open, and leaves nothing behind 10ms
+     × says what each open surface gave, in a count or a phrase, and never a word the project said 60ms
+     × passes the service key's root when the Data API answers an error, whichever one, and fails when it describes a schema 21ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 59 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when rest-root is open, and leaves nothing behind
+AssertionError: service: the Data API serves no schema at its root: expected [] to include 'service: the Data API serves no schem…'
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > says what each open surface gave, in a count or a phrase, and never a word the project said
+AssertionError: expected undefined to be 'answered HTTP 200, with 3 paths' // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks and the Data API's root > passes the service key's root when the Data API answers an error, whichever one, and fails when it describes a schema
+AssertionError: {"swagger":"2.0","paths":{"/clubs":{}}}: expected [] to deeply equal [ Array(1) ]

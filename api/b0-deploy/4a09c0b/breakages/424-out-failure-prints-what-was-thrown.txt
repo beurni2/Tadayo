@@ -1,0 +1,20 @@
+breakage: out-failure-prints-what-was-thrown
+patch: [
+ [
+  "tools/ops/src/output.ts",
+  "return error instanceof Error ? error.message : \"ops: the script failed\";",
+  "return error instanceof Error ? error.message : String(error);",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/output.test.ts
+exit: 1
+expected words: is plain words for anything that isn't an error, and none of what was thrown
+caught: True
+
+     × is plain words for anything that isn't an error, and none of what was thrown 5ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/output.test.ts > failureText > is plain words for anything that isn't an error, and none of what was thrown
+AssertionError: expected 'a string with a secret in it' to be 'ops: the script failed' // Object.is equality

@@ -1,0 +1,22 @@
+breakage: spawn-stdin-error-thrown
+patch: [
+ [
+  "tools/ops/src/spawn.ts",
+  "    child.stdin.on(\"error\", () => undefined);\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/spawn.test.ts
+exit: 1
+expected words: re:isn't thrown by a child that exits without reading its input|EPIPE
+caught: True
+
+ Test Files  1 passed (1)
+      Tests  14 passed (14)
+     Errors  2 errors
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+Error: write EPIPE
+Serialized Error: { errno: -32, code: 'EPIPE', syscall: 'write' }
+Error: write EPIPE
+Serialized Error: { errno: -32, code: 'EPIPE', syscall: 'write' }

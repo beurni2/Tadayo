@@ -1,0 +1,27 @@
+breakage: fly-timeouts-unsaid
+patch: [
+ [
+  "tools/ops/src/fly.ts",
+  "  if (result.timedOut) return \"it ran out of time\";\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/fly.test.ts src/worker-scale.test.ts src/fly-app-create.test.ts src/on-machine.test.ts src/run-remote.test.ts
+exit: 1
+expected words: says that a call ran out of time, whatever it printed
+caught: True
+
+     × says that a call ran out of time, whatever it printed 17ms
+     × refuses a list it can't read, saying why with flyctl's own words and never the token 2ms
+ Test Files  1 failed | 4 passed (5)
+      Tests  2 failed | 79 passed (81)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly.test.ts > why: what a failed call says, for a message > says that a call ran out of time, whatever it printed
+AssertionError: expected 'no exit code: Error: slow' to be 'it ran out of time' // Object.is equality
+Received: "no exit code: Error: slow"
+    173|     expect(why(spawned({ code: null, timedOut: true, stderr: "Error: s…
+ FAIL  src/fly.test.ts > jsonOf and machines: what flyctl's list of Machines says > refuses a list it can't read, saying why with flyctl's own words and never the token
+AssertionError: expected 'couldn\'t list tadayo-api-dev\'s Mach…' to match /^couldn't list tadayo-api-dev's Machi…/
+    240|       const message = error instanceof OpsError ? error.message : "not…
+    241|       expect(message).toMatch(expected);

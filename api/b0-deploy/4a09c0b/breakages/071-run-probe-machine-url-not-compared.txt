@@ -1,0 +1,23 @@
+breakage: run-probe-machine-url-not-compared
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  "  const url = machineProject(variables.SUPABASE_URL, ref, \"supabase-probe\");",
+  "  const url = projectUrl(variables.SUPABASE_URL);",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/run.test.ts src/run-remote.test.ts
+exit: 1
+expected words: refuses a project that isn't the one --ref names, a database that isn't dev's, and a missing key, before anything is opened
+caught: True
+
+     × refuses a project that isn't the one --ref names, a database that isn't dev's, and a missing key, before anything is opened 9ms
+     × is told the project by --ref, so a runner with another one in its environment can't point it elsewhere 2ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  2 failed | 42 passed (44)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/run-remote.test.ts > supabase-probe on the Machine (--here) > refuses a project that isn't the one --ref names, a database that isn't dev's, and a missing key, before anything is opened
+AssertionError: expected 'no database here' to be 'supabase-probe: SUPABASE_URL isn\'t t…' // Object.is equality
+ FAIL  src/run-remote.test.ts > supabase-probe on the Machine (--here) > is told the project by --ref, so a runner with another one in its environment can't point it elsewhere
+AssertionError: expected 'DATABASE_URL isn\'t a connection to t…' to match /SUPABASE_URL isn't the project --ref …/

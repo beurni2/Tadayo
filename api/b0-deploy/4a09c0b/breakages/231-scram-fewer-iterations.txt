@@ -1,0 +1,23 @@
+breakage: scram-fewer-iterations
+patch: [
+ [
+  "tools/ops/src/scram.ts",
+  "const ITERATIONS = 4096;",
+  "const ITERATIONS = 4095;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/scram.test.ts
+exit: 1
+expected words: makes a new salt each time, and keeps the password out of the string
+caught: True
+
+     × makes a new salt each time, and keeps the password out of the string 9ms
+     × makes a salt of 16 random bytes, as Postgres does when it makes a verifier itself 4ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 4 passed (6)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/scram.test.ts > scramVerifier > makes a new salt each time, and keeps the password out of the string
+AssertionError: expected 'SCRAM-SHA-256$4095:hRD/YEPnjI7/u29FO8…' to match /^SCRAM-SHA-256\$4096:/
+ FAIL  src/scram.test.ts > scramVerifier > makes a salt of 16 random bytes, as Postgres does when it makes a verifier itself
+AssertionError: expected Buffer[] to have a length of 16 but got +0

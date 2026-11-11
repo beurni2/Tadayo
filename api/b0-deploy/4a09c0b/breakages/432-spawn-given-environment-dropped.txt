@@ -1,0 +1,20 @@
+breakage: spawn-given-environment-dropped
+patch: [
+ [
+  "tools/ops/src/spawn.ts",
+  "env: { PATH: process.env[\"PATH\"] ?? \"\", ...options.env },",
+  "env: { PATH: process.env[\"PATH\"] ?? \"\" },",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/spawn.test.ts
+exit: 1
+expected words: gives the child the environment it is given and PATH, and nothing else of this process's
+caught: True
+
+     × gives the child the environment it is given and PATH, and nothing else of this process's 44ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 passed (14)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/spawn.test.ts > spawnProcess > gives the child the environment it is given and PATH, and nothing else of this process's
+AssertionError: expected { Object (PATH) } to deeply equal { …(2) }

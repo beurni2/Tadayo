@@ -1,0 +1,205 @@
+
+== the database
+made like ci's service and bootstrapped (pgci.sh, then tools/ci/ci_steps.py db-bootstrap); db/migrations applied with tools/ops's local entry (pnpm --filter @tadayo/ops migrate, as tadayo_app):
+migrate exit code: 0
+
+== image
+built from the repository's Dockerfile with --build-arg NODE_IMAGE=tadayo-node-ca:local (the pinned base plus the session proxy's CA, local only)
+size_bytes=381835429
+user=node
+workdir=/app
+cmd=["node","services/api/src/main.ts"]
+entrypoint=["docker-entrypoint.sh"]
+exposed_ports=null
+env names in the image:
+
+NODE_ENV
+NODE_EXTRA_CA_CERTS
+NODE_VERSION
+PATH
+
+== files in the image (no node_modules)
+./apps/web/package.json
+./package.json
+./packages/contracts/package.json
+./packages/contracts/src/common.ts
+./packages/contracts/src/document.ts
+./packages/contracts/src/errors.ts
+./packages/contracts/src/fixtures/examples-after.ts
+./packages/contracts/src/fixtures/examples-clubs.ts
+./packages/contracts/src/fixtures/examples.ts
+./packages/contracts/src/fixtures/world.ts
+./packages/contracts/src/index.ts
+./packages/contracts/src/operation.ts
+./packages/contracts/src/operations-clubs.ts
+./packages/contracts/src/operations.ts
+./packages/contracts/src/registry.ts
+./packages/contracts/src/render.ts
+./packages/contracts/src/schemas/account.ts
+./packages/contracts/src/schemas/after.ts
+./packages/contracts/src/schemas/clubs.ts
+./packages/contracts/src/schemas/contributing.ts
+./packages/contracts/src/schemas/days.ts
+./packages/contracts/src/strict.ts
+./packages/domain/package.json
+./packages/domain/src/authorization/read-sql.ts
+./packages/domain/src/authorization/read.ts
+./packages/domain/src/clubs/club-list.ts
+./packages/domain/src/clubs/club-state.ts
+./packages/domain/src/clubs/invitation-state.ts
+./packages/domain/src/copy/cli.ts
+./packages/domain/src/copy/exceptions.ts
+./packages/domain/src/copy/extract.ts
+./packages/domain/src/copy/rules.ts
+./packages/domain/src/db/ssl.ts
+./packages/domain/src/idempotency/request.ts
+./packages/domain/src/identity/account.ts
+./packages/domain/src/identity/update-me.ts
+./packages/domain/src/ids.ts
+./packages/domain/src/index.ts
+./packages/domain/src/refused.ts
+./packages/domain/src/time/civil.ts
+./packages/domain/src/time/clock.ts
+./packages/domain/src/time/instant.ts
+./packages/domain/src/time/testing.ts
+./pnpm-lock.yaml
+./pnpm-workspace.yaml
+./services/api/package.json
+./services/api/src/answers.ts
+./services/api/src/app.ts
+./services/api/src/clubs/list.ts
+./services/api/src/connection.ts
+./services/api/src/context.ts
+./services/api/src/deps.ts
+./services/api/src/identity/me.ts
+./services/api/src/identity/token.ts
+./services/api/src/index.ts
+./services/api/src/logging.ts
+./services/api/src/main.ts
+./services/api/src/session.ts
+./services/api/src/shutdown.ts
+./services/api/src/start.ts
+./services/api/src/testing.ts
+./services/worker/package.json
+./services/worker/src/connection.ts
+./services/worker/src/index.ts
+./services/worker/src/main.ts
+./services/worker/src/start.ts
+./tests/package.json
+./tools/ops/package.json
+./tools/ops/src/bootstrap.ts
+./tools/ops/src/database.ts
+./tools/ops/src/deploy-branch.ts
+./tools/ops/src/dev-clock.ts
+./tools/ops/src/environment.ts
+./tools/ops/src/fly-app-create.ts
+./tools/ops/src/fly.ts
+./tools/ops/src/index.ts
+./tools/ops/src/main.ts
+./tools/ops/src/migrate-cli.ts
+./tools/ops/src/migrate.ts
+./tools/ops/src/on-machine.ts
+./tools/ops/src/ops-error.ts
+./tools/ops/src/output.ts
+./tools/ops/src/run.ts
+./tools/ops/src/scram.ts
+./tools/ops/src/seed.ts
+./tools/ops/src/spawn.ts
+./tools/ops/src/storage-setup.ts
+./tools/ops/src/supabase-probe.ts
+./tools/ops/src/supabase.ts
+./tools/ops/src/worker-scale.ts
+count of *.test.ts outside node_modules: 0
+count of .env* files: 0
+dev dependencies present (vitest, eslint, typescript, prism, prettier, wrangler): 0
+packages in the virtual store: 51
+
+== api and worker in dev's configuration while the database has no app.dev_clock: both refuse, the message alone
+time: dev's clock reads app.dev_clock, which tools/ops/sql/dev_clock.sql makes (ADR-013)
+api exit code: 1
+time: dev's clock reads app.dev_clock, which tools/ops/sql/dev_clock.sql makes (ADR-013)
+worker exit code: 1
+the clock's table is made with tools/ops/sql/dev_clock.sql, as tadayo_app, for the rest of the run (the dev-clock script does the same on dev):
+psql exit code: 0
+
+== api: started as fly.toml's process group does (the image's CMD), dev configuration, local database
+GET /v1/me without a token:
+HTTP/1.1 401 Unauthorized
+cache-control: private, no-store
+content-type: application/json; charset=utf-8
+content-length: 26
+Date: Wed, 11 Nov 2026 23:10:36 GMT
+Connection: keep-alive
+Keep-Alive: timeout=72
+
+{"code":"UNAUTHENTICATED"}
+GET /v1/me with a malformed token:
+http_status=401
+a TCP connect to the API's port (what fly.toml's tcp_checks does):
+port 18080 accepts a connection
+docker stop took 0.09 seconds (kill_timeout in fly.toml is 30)
+exit code: 0
+log:
+{"level":30,"time":T,"msg":"Server listening at http://127.0.0.1:18080"}
+api: listening at http://127.0.0.1:18080
+{"level":30,"time":T,"msg":"Server listening at http://192.0.2.2:18080"}
+{"level":30,"time":T,"reqId":"fzhKZ-jo2-61_NOL","op":"getMe","status":401,"ms":4,"msg":"request"}
+{"level":30,"time":T,"reqId":"XXN1fH51vKO1vjMe","op":"getMe","status":401,"ms":0,"msg":"request"}
+{"level":30,"time":T,"reqId":"3TslVjX-SsiIY0HT","op":"getMe","status":401,"ms":1,"msg":"request"}
+api: stopping on SIGTERM
+api: stopped
+occurrences of the database password in the log: 0
+
+== worker: started with fly.toml's command for its group
+state while running: running
+docker stop took 0.08 seconds
+exit code: 0
+log:
+worker: started, with no jobs yet
+worker: stopped on SIGTERM
+occurrences of the database password in the log: 0
+
+== api and worker refuse a start with no database (the message alone)
+api: api: DATABASE_URL isn't set
+exit code: 1
+worker: worker: DATABASE_URL isn't set
+exit code: 1
+
+== the ops entry in the image (what the ops workflow's --here runs on the Machine)
+no script:
+ops: name a script; they are:
+  bootstrap: give tadayo_app its password, and make the schema app and its extensions (db/bootstrap.sql)
+  deploy-branch: deploy a branch's head commit to tadayo-api-dev, when that commit's ci run is green: --branch <name>
+  dev-clock: make app.dev_clock if it's missing, and with --to <instant> move it forward to then
+  fly-app-create: make the Fly app tadayo-api-dev if it isn't there, and request the certificate of api-dev.tadayo.app (--org <slug> when the token sees several organizations)
+  migrate: apply db/migrations to tadayo-dev as tadayo_app
+  seed: apply the files in db/seed, each in its own transaction, as tadayo_app
+  storage-setup: make the private buckets uploads and renditions, on the API's Machine, where the service key is
+  supabase-probe: check that the dev project is closed: its Data API, its database as the API's role reads it, and its three public doors
+  worker-scale: stop or start the worker Machine of tadayo-api-dev: --to stopped or --to started
+exit code: 1
+an unknown script:
+ops: no script is called "nonesuch"; they are:
+  bootstrap: give tadayo_app its password, and make the schema app and its extensions (db/bootstrap.sql)
+  deploy-branch: deploy a branch's head commit to tadayo-api-dev, when that commit's ci run is green: --branch <name>
+  dev-clock: make app.dev_clock if it's missing, and with --to <instant> move it forward to then
+  fly-app-create: make the Fly app tadayo-api-dev if it isn't there, and request the certificate of api-dev.tadayo.app (--org <slug> when the token sees several organizations)
+  migrate: apply db/migrations to tadayo-dev as tadayo_app
+  seed: apply the files in db/seed, each in its own transaction, as tadayo_app
+  storage-setup: make the private buckets uploads and renditions, on the API's Machine, where the service key is
+  supabase-probe: check that the dev project is closed: its Data API, its database as the API's role reads it, and its three public doors
+  worker-scale: stop or start the worker Machine of tadayo-api-dev: --to stopped or --to started
+exit code: 1
+storage-setup --here with nothing set:
+set SUPABASE_URL, SUPABASE_SERVICE_KEY
+exit code: 1
+storage-setup --here, SUPABASE_URL of another project (refused before any request):
+storage-setup: SUPABASE_URL isn't the project --ref names, which is tadayo-dev's
+exit code: 1
+supabase-probe --here against the local database (refused before any request):
+DATABASE_URL isn't a connection to tadayo-dev's database through Supabase's session pooler: its host isn't a Supabase session pooler's
+exit code: 1
+supabase-probe --here, SUPABASE_URL of another project:
+supabase-probe: SUPABASE_URL isn't the project --ref names, which is tadayo-dev's
+exit code: 1
+occurrences of the database password anywhere above: 0

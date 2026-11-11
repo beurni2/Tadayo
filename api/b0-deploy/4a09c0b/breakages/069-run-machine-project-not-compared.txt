@@ -1,0 +1,26 @@
+breakage: run-machine-project-not-compared
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  "  if (project !== `https://${ref}.supabase.co`) {",
+  "  if (false) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/run.test.ts src/run-remote.test.ts
+exit: 1
+expected words: refuses a Machine whose SUPABASE_URL isn't the project --ref names, before it sends the key anywhere
+caught: True
+
+     × refuses a Machine whose SUPABASE_URL isn't the project --ref names, before it sends the key anywhere 8ms
+     × refuses a project that isn't the one --ref names, a database that isn't dev's, and a missing key, before anything is opened 2ms
+     × is told the project by --ref, so a runner with another one in its environment can't point it elsewhere 1ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  3 failed | 41 passed (44)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/run-remote.test.ts > storage-setup on the Machine (--here) > refuses a Machine whose SUPABASE_URL isn't the project --ref names, before it sends the key anywhere
+AssertionError: expected 'GET /storage/v1/bucket/uploads: no an…' to be 'storage-setup: SUPABASE_URL isn\'t th…' // Object.is equality
+ FAIL  src/run-remote.test.ts > supabase-probe on the Machine (--here) > refuses a project that isn't the one --ref names, a database that isn't dev's, and a missing key, before anything is opened
+AssertionError: expected 'no database here' to be 'supabase-probe: SUPABASE_URL isn\'t t…' // Object.is equality
+ FAIL  src/run-remote.test.ts > supabase-probe on the Machine (--here) > is told the project by --ref, so a runner with another one in its environment can't point it elsewhere
+AssertionError: expected 'DATABASE_URL isn\'t a connection to t…' to match /SUPABASE_URL isn't the project --ref …/

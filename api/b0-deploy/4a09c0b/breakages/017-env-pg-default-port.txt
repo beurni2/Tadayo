@@ -1,0 +1,20 @@
+breakage: env-pg-default-port
+patch: [
+ [
+  "tools/ops/src/environment.ts",
+  "    port: parsed.port === \"\" ? 5432 : Number(parsed.port),",
+  "    port: Number(parsed.port),",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/environment.test.ts
+exit: 1
+expected words: gives port 5432 when the string has none
+caught: True
+
+     × gives port 5432 when the string has none 6ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 21 passed (22)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/environment.test.ts > pgEnvOf: the connection as the environment variables psql reads, so no password is on a command line > gives port 5432 when the string has none
+AssertionError: expected '0' to be '5432' // Object.is equality

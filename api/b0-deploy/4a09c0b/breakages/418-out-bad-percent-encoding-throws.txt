@@ -1,0 +1,20 @@
+breakage: out-bad-percent-encoding-throws
+patch: [
+ [
+  "tools/ops/src/output.ts",
+  "  try {\n    forms.push(decodeURIComponent(password));\n  } catch {\n    // not percent-encoded\n  }\n",
+  "  forms.push(decodeURIComponent(password));\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/output.test.ts
+exit: 1
+expected words: holds back a connection string's password that isn't percent-encoded properly, as it is written
+caught: True
+
+     × holds back a connection string's password that isn't percent-encoded properly, as it is written 6ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/output.test.ts > redactor > holds back a connection string's password that isn't percent-encoded properly, as it is written
+URIError: URI malformed

@@ -1,0 +1,26 @@
+breakage: db-port-left-to-the-environment
+patch: [
+ [
+  "tools/ops/src/database.ts",
+  "    port,\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/database.test.ts
+exit: 1
+expected words: makes a port-less string the session pooler's port, 5432, and the driver reads no variable for it
+caught: True
+
+     × names every part of the connection, decoded, with TLS required, one connection and a time limit 8ms
+     × gives the driver the same host, port, user, password and database as psql is given 2ms
+     × makes a port-less string the session pooler's port, 5432, and the driver reads no variable for it 3ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 2 passed (5)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/database.test.ts > connectionOptions > names every part of the connection, decoded, with TLS required, one connection and a time limit
+AssertionError: expected { …(8) } to match object { …(8) }
+ FAIL  src/database.test.ts > connectionOptions > gives the driver the same host, port, user, password and database as psql is given
+AssertionError: expected '5432' to be 'undefined' // Object.is equality
+ FAIL  src/database.test.ts > connectionOptions > makes a port-less string the session pooler's port, 5432, and the driver reads no variable for it
+AssertionError: expected { …(5) } to deeply equal { …(5) }

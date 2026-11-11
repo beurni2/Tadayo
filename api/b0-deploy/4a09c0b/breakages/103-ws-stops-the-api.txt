@@ -1,0 +1,50 @@
+breakage: ws-stops-the-api
+patch: [
+ [
+  "tools/ops/src/worker-scale.ts",
+  ".filter((machine) => machine.group === \"worker\");",
+  ".filter((machine) => machine.group === \"api\");",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/worker-scale.test.ts
+exit: 1
+expected words: stops the worker Machine and not the API's, then reads its state
+caught: True
+
+     × stops the worker Machine and not the API's, then reads its state 7ms
+     × waits while it stops, a few seconds at a time 1ms
+     × says what it found when the Machine isn't stopped in time, and not that it is 3ms
+     × does nothing to a Machine that is stopped already, or only waits for one that is on its way 2ms
+     × takes a suspended Machine as stopped 1ms
+     × starts a stopped worker Machine and reads its state 1ms
+     × an app with no worker Machine, or two (a standby would start with it), changing nothing 3ms
+     × a Machine in a state it has no move for, changing nothing 1ms
+ Test Files  1 failed (1)
+      Tests  8 failed | 4 passed (12)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/worker-scale.test.ts > workerScale to stopped > stops the worker Machine and not the API's, then reads its state
+AssertionError: expected OpsError: worker-scale: the worker Machin… to be undefined
+OpsError {
+  "name": "OpsError",
+ FAIL  src/worker-scale.test.ts > workerScale to stopped > waits while it stops, a few seconds at a time
+AssertionError: expected OpsError: worker-scale: the worker Machin… to be undefined
+OpsError {
+  "name": "OpsError",
+ FAIL  src/worker-scale.test.ts > workerScale to stopped > says what it found when the Machine isn't stopped in time, and not that it is
+AssertionError: expected 'worker-scale: the worker Machine is s…' to be 'worker-scale: the worker Machine is s…' // Object.is equality
+     67|     expect(result.outcome).toBeInstanceOf(OpsError);
+     68|     expect((result.outcome as OpsError).message).toBe(
+ FAIL  src/worker-scale.test.ts > workerScale to stopped > does nothing to a Machine that is stopped already, or only waits for one that is on its way
+AssertionError: expected [ …(2) ] to deeply equal [ Array(1) ]
+ FAIL  src/worker-scale.test.ts > workerScale to stopped > takes a suspended Machine as stopped
+AssertionError: expected Error: the fake has no route for: flyctl … to be undefined
+Error {
+ FAIL  src/worker-scale.test.ts > workerScale to started > starts a stopped worker Machine and reads its state
+AssertionError: expected [ Array(1) ] to deeply equal [ …(3) ]
+ FAIL  src/worker-scale.test.ts > workerScale refuses > an app with no worker Machine, or two (a standby would start with it), changing nothing
+AssertionError: expected 'the fake has no route for: flyctl mac…' to be 'worker-scale: the app has no worker M…' // Object.is equality
+    112|     expect((none.outcome as OpsError).message).toBe("worker-scale: the…
+ FAIL  src/worker-scale.test.ts > workerScale refuses > a Machine in a state it has no move for, changing nothing
+TypeError: Cannot read properties of undefined (reading 'message')
+    124|     expect((result.outcome as OpsError).message).toBe(

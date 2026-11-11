@@ -1,0 +1,23 @@
+breakage: web-dot-folders-skipped
+patch: [
+ [
+  "apps/web/src/build.ts",
+  "  cpSync(source, out, { recursive: true });",
+  "  cpSync(source, out, { recursive: true, filter: (path) => !/[\\\\/]\\.[^\\\\/]+([\\\\/]|$)/.test(path.slice(source.length)) });",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/apps/web && npx vitest run src/build.test.ts
+exit: 1
+expected words: copies the site whole, dot-folders included, into an empty folder, and says what it made
+caught: True
+
+     × copies the site whole, dot-folders included, into an empty folder, and says what it made 19ms
+     × builds, and has what Cloudflare Pages and Apple need 6ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 15 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/build.test.ts > buildSite > copies the site whole, dot-folders included, into an empty folder, and says what it made
+AssertionError: expected [ Array(3) ] to deeply equal [ '.well-known', …(4) ]
+ FAIL  src/build.test.ts > the site in public/ > builds, and has what Cloudflare Pages and Apple need
+AssertionError: expected [ Array(3) ] to deeply equal ArrayContaining{…}

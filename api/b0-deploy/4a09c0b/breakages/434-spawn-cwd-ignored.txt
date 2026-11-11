@@ -1,0 +1,20 @@
+breakage: spawn-cwd-ignored
+patch: [
+ [
+  "tools/ops/src/spawn.ts",
+  "      cwd: options.cwd,\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/spawn.test.ts
+exit: 1
+expected words: runs the child where it is told to
+caught: True
+
+     × runs the child where it is told to 50ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 passed (14)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/spawn.test.ts > spawnProcess > runs the child where it is told to
+AssertionError: expected '/home/user/tadayo-deploy-breakages/to…' to be '/tmp/tadayo-spawn-HelMwj\n' // Object.is equality

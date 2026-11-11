@@ -1,0 +1,20 @@
+breakage: ft-another-project
+patch: [
+ [
+  "fly.toml",
+  "https://rhsycmycocbzakrydahi.supabase.co",
+  "https://abcdefghijklmnopqrst.supabase.co",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-files.test.ts
+exit: 1
+expected words: has only public values in [env]: the project's URL and publishable key, as the iOS app's Dev build has them
+caught: True
+
+     × has only public values in [env]: the project's URL and publishable key, as the iOS app's Dev build has them 43ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-files.test.ts > fly.toml > has only public values in [env]: the project's URL and publishable key, as the iOS app's Dev build has them
+AssertionError: expected '    Dev:\n      SWIFT_ACTIVE_COMPILAT…' to contain 'TADAYO_SUPABASE_URL: https://abcdefgh…'

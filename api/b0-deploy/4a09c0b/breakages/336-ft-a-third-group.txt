@@ -1,0 +1,23 @@
+breakage: ft-a-third-group
+patch: [
+ [
+  "fly.toml",
+  "  worker = \"node services/worker/src/main.ts\"\n",
+  "  worker = \"node services/worker/src/main.ts\"\n  extra = \"node services/api/src/main.ts\"\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-files.test.ts
+exit: 1
+expected words: has the two process groups, each running a file that is there, and no other
+caught: True
+
+     × installs the production dependencies of the packages the process groups run, and of the ops scripts, from the lockfile 47ms
+     × has the two process groups, each running a file that is there, and no other 35ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 15 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-files.test.ts > Dockerfile > installs the production dependencies of the packages the process groups run, and of the ops scripts, from the lockfile
+AssertionError: expected [ '@tadayo/api...', …(2) ] to deeply equal [ '@tadayo/api...', …(3) ]
+ FAIL  src/deploy-files.test.ts > fly.toml > has the two process groups, each running a file that is there, and no other
+AssertionError: expected { …(3) } to deeply equal { …(2) }

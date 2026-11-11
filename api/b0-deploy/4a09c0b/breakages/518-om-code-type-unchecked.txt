@@ -1,0 +1,21 @@
+breakage: om-code-type-unchecked
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "  if (typeof exitCode !== \"number\" || !Number.isInteger(exitCode)) return undefined;\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/on-machine.test.ts
+exit: 1
+expected words: fails when flyctl can't run it, saying why, or answers with something it can't read
+caught: True
+
+     × fails when flyctl can't run it, saying why, or answers with something it can't read 8ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 7 passed (8)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine > fails when flyctl can't run it, saying why, or answers with something it can't read
+AssertionError: {"exit_code":"0"}: expected 'storage-setup: it failed on the Machi…' to be 'storage-setup: flyctl\'s answer about…' // Object.is equality
+    113|       expect((result.outcome as OpsError).message, stdout).toBe(

@@ -1,0 +1,24 @@
+breakage: sb-path-with-its-query-in-the-message
+patch: [
+ [
+  "tools/ops/src/supabase.ts",
+  "${path.split(\"?\")[0] ?? path}: no answer from the project",
+  "${path}: no answer from the project",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase.test.ts
+exit: 1
+expected words: says where it got no answer, by the path without its query, and never a header, a key or a body
+caught: True
+
+     × says where it got no answer, by the path without its query, and never a header, a key or a body 9ms
+     × says it got no answer when the body stops before it is whole, as it does when the call gets none 2ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 16 passed (18)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase.test.ts > send: what a reply is > says where it got no answer, by the path without its query, and never a header, a key or a body
+AssertionError: expected 'GET /storage/v1/bucket?token=a-secret…' to be 'GET /storage/v1/bucket: no answer fro…' // Object.is equality
+    204|       expect(message).toBe(expected);
+ FAIL  src/supabase.test.ts > send: what a reply is > says it got no answer when the body stops before it is whole, as it does when the call gets none
+AssertionError: expected 'GET /a?x=1: no answer from the project' to be 'GET /a: no answer from the project' // Object.is equality

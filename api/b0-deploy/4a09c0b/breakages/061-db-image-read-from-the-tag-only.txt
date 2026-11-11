@@ -1,0 +1,22 @@
+breakage: db-image-read-from-the-tag-only
+patch: [
+ [
+  "tools/ops/src/deploy-branch.ts",
+  "    machine.tag === label || (machine.image ?? \"\").endsWith(`:${label}`);",
+  "    machine.tag === label;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-branch.test.ts
+exit: 1
+expected words: reads the image from a Machine's config, or from its image reference's tag, whichever has it
+caught: True
+
+     × reads the image from a Machine's config, or from its image reference's tag, whichever has it 7ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-branch.test.ts > deployBranch when GitHub or Fly doesn't answer as it should > reads the image from a Machine's config, or from its image reference's tag, whichever has it
+AssertionError: expected OpsError: deploy-branch: flyctl deployed,… to be undefined
+OpsError {
+  "name": "OpsError",

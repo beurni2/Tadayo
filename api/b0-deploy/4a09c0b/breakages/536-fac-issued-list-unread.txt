@@ -1,0 +1,20 @@
+breakage: fac-issued-list-unread
+patch: [
+ [
+  "tools/ops/src/fly-app-create.ts",
+  "  if (issued || detail[\"status\"] === \"Ready\") return \"issued\";",
+  "  if (detail[\"status\"] === \"Ready\") return \"issued\";",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/fly-app-create.test.ts
+exit: 1
+expected words: says the certificate is issued when the detail is Ready, or when an entry lists an issued certificate, either alone
+caught: True
+
+     × says the certificate is issued when the detail is Ready, or when an entry lists an issued certificate, either alone 6ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 passed (15)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly-app-create.test.ts > flyAppCreate when it has been run before > says the certificate is issued when the detail is Ready, or when an entry lists an issued certificate, either alone
+AssertionError: listed, not Ready: expected [ …(4) ] to include 'fly-app-create: the certificate for a…'

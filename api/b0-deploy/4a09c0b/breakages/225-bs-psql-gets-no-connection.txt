@@ -1,0 +1,20 @@
+breakage: bs-psql-gets-no-connection
+patch: [
+ [
+  "tools/ops/src/bootstrap.ts",
+  "    env: input.pgEnv,\n",
+  "    env: {},\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/bootstrap.test.ts
+exit: 1
+expected words: runs psql with the admin's connection in its environment and the file as a script on standard input
+caught: True
+
+     × runs psql with the admin's connection in its environment and the file as a script on standard input 11ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 7 passed (8)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/bootstrap.test.ts > runBootstrap > runs psql with the admin's connection in its environment and the file as a script on standard input
+AssertionError: expected {} to deeply equal { PGHOST: 'db.example', …(3) }

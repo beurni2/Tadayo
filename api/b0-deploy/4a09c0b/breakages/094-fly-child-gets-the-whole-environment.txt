@@ -1,0 +1,26 @@
+breakage: fly-child-gets-the-whole-environment
+patch: [
+ [
+  "tools/ops/src/fly.ts",
+  "  const childEnv: Record<string, string> =\n    home === undefined || home === \"\" ? { FLY_API_TOKEN: token } : { FLY_API_TOKEN: token, HOME: home };",
+  "  const childEnv: Record<string, string> = { ...(env as Record<string, string>), FLY_API_TOKEN: token };",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/fly.test.ts src/worker-scale.test.ts src/fly-app-create.test.ts src/on-machine.test.ts src/run-remote.test.ts
+exit: 1
+expected words: gives flyctl the token and HOME, and nothing else of the environment
+caught: True
+
+     × gives flyctl the token and HOME, the call's own directory, and two minutes 16ms
+     × gives flyctl no HOME when there is none, or it is empty, rather than an empty one 2ms
+     × gives flyctl the token and HOME, and nothing else of the environment 9ms
+ Test Files  2 failed | 3 passed (5)
+      Tests  3 failed | 78 passed (81)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly.test.ts > flyOf: flyctl with the Fly token and HOME and nothing else > gives flyctl the token and HOME, the call's own directory, and two minutes
+AssertionError: expected [ { command: 'flyctl', …(2) } ] to deeply equal [ { command: 'flyctl', …(2) } ]
+ FAIL  src/fly.test.ts > flyOf: flyctl with the Fly token and HOME and nothing else > gives flyctl no HOME when there is none, or it is empty, rather than an empty one
+AssertionError: expected { …(2) } to deeply equal { Object (FLY_API_TOKEN) }
+ FAIL  src/run-remote.test.ts > every script that calls Fly > gives flyctl the token and HOME, and nothing else of the environment
+AssertionError: expected { …(5) } to deeply equal { …(2) }

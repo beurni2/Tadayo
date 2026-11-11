@@ -1,0 +1,20 @@
+breakage: web-index-sends-a-request
+patch: [
+ [
+  "apps/web/public/index.html",
+  "    <title>Tadayo</title>\n",
+  "    <title>Tadayo</title>\n    <script>fetch('/x')</script>\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/apps/web && npx vitest run src/build.test.ts
+exit: 1
+expected words: makes no request, and carries no script, so a page of it can't send anything anywhere
+caught: True
+
+     × makes no request, and carries no script, so a page of it can't send anything anywhere 7ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/build.test.ts > the site in public/ > makes no request, and carries no script, so a page of it can't send anything anywhere
+AssertionError: index.html: expected '<!doctype html>\n<html lang="en">\n  …' not to match /<script|<link|<img|<iframe|https?:\/…/\

@@ -1,0 +1,24 @@
+breakage: sd-closing-not-awaited-after-force
+patch: [
+ [
+  "services/api/src/shutdown.ts",
+  "          app.server.closeAllConnections();\n          await closing;\n",
+  "          app.server.closeAllConnections();\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/services/api && npx vitest run src/shutdown.test.ts
+exit: 1
+expected words: ends the connections still in use only when the grace is over, says so, and goes on to end the database's connection
+caught: True
+
+     × ends the connections still in use only when the grace is over, says so, and goes on to end the database's connection 8ms
+     × says the server didn't close cleanly when it fails after the grace too 2ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 15 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/shutdown.test.ts > stopOnSignal > ends the connections still in use only when the grace is over, says so, and goes on to end the database's connection
+AssertionError: expected [ 'api: stopping on SIGTERM', …(5) ] to deeply equal [ 'api: stopping on SIGTERM', …(3) ]
+ FAIL  src/shutdown.test.ts > stopOnSignal > says the server didn't close cleanly when it fails after the grace too
+AssertionError: expected [ 'api: stopping on SIGTERM', …(5) ] to deeply equal [ 'api: stopping on SIGTERM', …(4) ]
+    164|     closing.reject(new Error("password=hunter2 near the socket"));

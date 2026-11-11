@@ -1,0 +1,20 @@
+breakage: seed-all-files-in-one-transaction
+patch: [
+ [
+  "tools/ops/src/seed.ts",
+  "  for (const file of files) {\n    await sql.begin((tx) => applySeed(tx, file));\n    say(`seed: applied ${file.name}`);\n    applied.push(file.name);\n  }",
+  "  await sql.begin(async (tx) => {\n    for (const file of files) await applySeed(tx, file);\n  });\n  for (const file of files) {\n    say(`seed: applied ${file.name}`);\n    applied.push(file.name);\n  }",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-deploy-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/c10a/dbtest-wt.sh src/db/ops-seed.test.ts
+exit: 1
+expected words: applies the files in name order, one transaction each: a failing file keeps nothing, the earlier ones stay
+caught: True
+
+     × applies the files in name order, one transaction each: a failing file keeps nothing, the earlier ones stay 22ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/ops-seed.test.ts > seed, the folder > applies the files in name order, one transaction each: a failing file keeps nothing, the earlier ones stay
+AssertionError: expected [] to deeply equal [ 'seed: applied a_probe.sql' ]
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)

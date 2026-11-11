@@ -1,0 +1,20 @@
+breakage: env-unparsable-hint-dropped
+patch: [
+ [
+  "tools/ops/src/environment.ts",
+  "throw refused(\"it isn't a connection string (a # / or ? in the password has to be written as %23, %2F or %3F)\");",
+  "throw refused(\"it isn't a connection string\");",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/environment.test.ts
+exit: 1
+expected words: tells a password with a # / or ? in it to write them encoded, since those end the user-info part
+caught: True
+
+     × tells a password with a # / or ? in it to write them encoded, since those end the user-info part 8ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 21 passed (22)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/environment.test.ts > devDatabaseUrl: only tadayo-dev's database, by the reference in the connection > tells a password with a # / or ? in it to write them encoded, since those end the user-info part
+AssertionError: abcd#efgh-0123456789: expected [Function] to throw error matching /…/ or \? in the password has to be written as %23, %2F or %3F\)$ but got 'DATABASE_URL isn\'t a connection to t…'

@@ -1,0 +1,23 @@
+breakage: ws-no-wait-between-looks
+patch: [
+ [
+  "tools/ops/src/worker-scale.ts",
+  "    await input.sleep(POLL_MS);\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/worker-scale.test.ts
+exit: 1
+expected words: waits while it stops, a few seconds at a time
+caught: True
+
+     × waits while it stops, a few seconds at a time 7ms
+     × says what it found when the Machine isn't stopped in time, and not that it is 3ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 10 passed (12)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/worker-scale.test.ts > workerScale to stopped > waits while it stops, a few seconds at a time
+AssertionError: expected [] to deeply equal [ 3000, 3000 ]
+ FAIL  src/worker-scale.test.ts > workerScale to stopped > says what it found when the Machine isn't stopped in time, and not that it is
+AssertionError: expected [] to have a length of 10 but got +0

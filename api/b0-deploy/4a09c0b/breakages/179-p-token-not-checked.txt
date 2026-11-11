@@ -1,0 +1,20 @@
+breakage: p-token-not-checked
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "        else if (me.status !== 200 || text(me.json, \"id\") !== userId)",
+  "        else if (false)",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: stops after the controls when Auth won't take the user's token, since every refusal of that token would mean nothing
+caught: True
+
+     × stops after the controls when Auth won't take the user's token, since every refusal of that token would mean nothing 13ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 61 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks counts only Storage's own refusal as one > stops after the controls when Auth won't take the user's token, since every refusal of that token would mean nothing
+AssertionError: expected [] to deeply equal [ Array(1) ]

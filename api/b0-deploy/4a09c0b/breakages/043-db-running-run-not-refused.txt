@@ -1,0 +1,28 @@
+breakage: db-running-run-not-refused
+patch: [
+ [
+  "tools/ops/src/deploy-branch.ts",
+  "  if (running !== undefined) throw refusal(",
+  "  if (false) throw refusal(",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-branch.test.ts
+exit: 1
+expected words: when it is still running or waiting
+caught: True
+
+     × doesn't take a run it can't read for one that passed 9ms
+     × when it is still running or waiting 2ms
+     × when any run of it failed or is running, though another passed 2ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 24 passed (27)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-branch.test.ts > deployBranch when the commit's ci run passed > doesn't take a run it can't read for one that passed
+AssertionError: expected 'not an OpsError: undefined' to be 'deploy-branch: refused: the ci run fo…' // Object.is equality
+Received: "not an OpsError: undefined"
+ FAIL  src/deploy-branch.test.ts > deployBranch refuses a commit whose ci run isn't green, and deploys nothing > when it is still running or waiting
+AssertionError: in_progress: expected 'deploy-branch: refused: every ci run …' to be 'deploy-branch: refused: the ci run fo…' // Object.is equality
+ FAIL  src/deploy-branch.test.ts > deployBranch refuses a commit whose ci run isn't green, and deploys nothing > when any run of it failed or is running, though another passed
+AssertionError: expected 'not an OpsError: undefined' to match /still running \(in_progress\)$/
+"not an OpsError: undefined"

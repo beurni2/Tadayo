@@ -1,0 +1,23 @@
+breakage: main-failure-not-redacted
+patch: [
+ [
+  "tools/ops/src/main.ts",
+  "console.error(redact(failureText(error)));",
+  "console.error(failureText(error));",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/main.test.ts
+exit: 1
+expected words: holds back the environment's token from a failure's message, and prints no stack
+caught: True
+
+     × holds back the environment's token from a failure's message, and prints no stack 147ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 passed (6)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/main.test.ts > the ops entry > holds back the environment's token from a failure's message, and prints no stack
+AssertionError: expected 'couldn\'t list tadayo-api-dev\'s Mach…' to be 'couldn\'t list tadayo-api-dev\'s Mach…' // Object.is equality
+- couldn't list tadayo-api-dev's Machines: exit code 1: Error: the token [redacted] was refused
++ couldn't list tadayo-api-dev's Machines: exit code 1: Error: the token unshaped-fly-token-value-0123456789 was refused
+     59|       "couldn't list tadayo-api-dev's Machines: exit code 1: Error: th…

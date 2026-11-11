@@ -1,0 +1,23 @@
+breakage: df-ops-dependencies-not-installed
+patch: [
+ [
+  "Dockerfile",
+  " --filter \"@tadayo/ops...\"",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-files.test.ts
+exit: 1
+expected words: installs the production dependencies of the packages the process groups run, and of the ops scripts, from the lockfile
+caught: True
+
+     × installs the production dependencies of the packages the process groups run, and of the ops scripts, from the lockfile 65ms
+     × copies every workspace package's manifest before it installs, and the source of what runs and what it needs, and nothing else 5ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 15 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-files.test.ts > Dockerfile > installs the production dependencies of the packages the process groups run, and of the ops scripts, from the lockfile
+AssertionError: expected [ '@tadayo/api...', …(1) ] to deeply equal [ '@tadayo/api...', …(2) ]
+ FAIL  src/deploy-files.test.ts > Dockerfile > copies every workspace package's manifest before it installs, and the source of what runs and what it needs, and nothing else
+AssertionError: expected [ 'packages/contracts/src', …(4) ] to deeply equal [ 'packages/contracts/src', …(3) ]

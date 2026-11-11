@@ -1,0 +1,35 @@
+breakage: p-service-root-not-asked
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "      await refuse(\n        \"service: the Data API serves no schema at its root\",\n        \"/rest/v1/\",\n        { caller: service },\n        servedSchema,\n      );\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: asks the Data API's root once as the service key, the one caller the gateway lets read it
+caught: True
+
+     × passes every check, controls and refusals, and leaves no object, no bucket and no user behind 64ms
+     × asks the Data API's root once as the service key, the one caller the gateway lets read it 12ms
+     × names the surface when rest-root is open, and leaves nothing behind 6ms
+     × says what each open surface gave, in a count or a phrase, and never a word the project said 57ms
+     × passes the service key's root when the Data API answers an error, whichever one, and fails when it describes a schema 16ms
+     × fails the service key's root when the project doesn't answer, saying so 5ms
+ Test Files  1 failed (1)
+      Tests  6 failed | 56 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks on a closed project > passes every check, controls and refusals, and leaves no object, no bucket and no user behind
+AssertionError: expected +0 to be 1 // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks on a closed project > asks the Data API's root once as the service key, the one caller the gateway lets read it
+AssertionError: expected [] to have a length of 1 but got +0
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when rest-root is open, and leaves nothing behind
+AssertionError: service: the Data API serves no schema at its root: expected [] to include 'service: the Data API serves no schem…'
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > says what each open surface gave, in a count or a phrase, and never a word the project said
+AssertionError: expected undefined to be 'answered HTTP 200, with 3 paths' // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks and the Data API's root > passes the service key's root when the Data API answers an error, whichever one, and fails when it describes a schema
+AssertionError: {"swagger":"2.0","paths":{"/clubs":{}}}: expected [] to deeply equal [ Array(1) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks and the Data API's root > fails the service key's root when the project doesn't answer, saying so
+AssertionError: expected [] to deeply equal [ Array(1) ]

@@ -1,0 +1,20 @@
+breakage: seed-transaction-commands-taken
+patch: [
+ [
+  "tools/ops/src/seed.ts",
+  "    if (/EXECUTE of transaction commands is not implemented|invalid transaction termination/.test(message)) {",
+  "    if (false) {",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-deploy-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/c10a/dbtest-wt.sh src/db/ops-seed.test.ts
+exit: 1
+expected words: refuses a file that begins, ends or splits the transaction, which would keep what it wrote before the check
+caught: True
+
+     × refuses a file that begins, ends or splits the transaction, which would keep what it wrote before the check 8ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/ops-seed.test.ts > applySeed > refuses a file that begins, ends or splits the transaction, which would keep what it wrote before the check
+AssertionError: COMMIT;: expected [Function] to throw error matching /begins, ends or splits its transaction/ but got 'seed: ends.sql failed: EXECUTE of tra…'
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)

@@ -1,0 +1,20 @@
+breakage: p-data-api-odd-schema-printed
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "  const plain = (name: string) => (/^[A-Za-z_][A-Za-z0-9_$]{0,62}$/.test(name) ? name : \"a schema with an odd name\");",
+  "  const plain = (name: string) => name;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: says a schema's name only when it is a plain one, and otherwise that it has an odd name
+caught: True
+
+     × says a schema's name only when it is a plain one, and otherwise that it has an odd name 10ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 61 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > dataApiChecks, the project's own configuration through the Management API > says a schema's name only when it is a plain one, and otherwise that it has an odd name
+AssertionError: expected 'it exposes public, has space, semi;co…' to be 'it exposes public, a schema with an o…' // Object.is equality

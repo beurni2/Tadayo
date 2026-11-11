@@ -1,0 +1,20 @@
+breakage: sb-any-code-printed
+patch: [
+ [
+  "tools/ops/src/supabase.ts",
+  "  if (reply.code !== undefined && /^[A-Za-z0-9_]{1,40}$/.test(reply.code)) parts.push(reply.code);",
+  "  if (reply.code !== undefined) parts.push(reply.code);",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase.test.ts
+exit: 1
+expected words: says a code only when it is a plain word of at most 40 letters, digits and underscores
+caught: True
+
+     × says a code only when it is a plain word of at most 40 letters, digits and underscores 4ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase.test.ts > describe: what a reply was, for a message, and never its body > says a code only when it is a plain word of at most 40 letters, digits and underscores
+AssertionError: "": expected 'HTTP 200, ' to be 'HTTP 200' // Object.is equality

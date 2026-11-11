@@ -1,0 +1,27 @@
+breakage: fly-guard-long-app-flag-unread
+patch: [
+ [
+  "tools/ops/src/fly.ts",
+  "    if (arg === \"-a\" || arg === \"--app\") {",
+  "    if (arg === \"-a\") {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/fly.test.ts
+exit: 1
+expected words: takes every call the scripts make: -a or --app with the dev app
+caught: True
+
+     × lets a call set its own time limit, and no other option changes the environment 4ms
+     × takes every call the scripts make: -a or --app with the dev app, and the two calls that name none 3ms
+     × refuses a call with no app, another app, an app flag with nothing after it, or another app besides the dev one 1ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 14 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly.test.ts > flyOf: flyctl with the Fly token and HOME and nothing else > lets a call set its own time limit, and no other option changes the environment
+OpsError: flyctl: a call that doesn't name tadayo-api-dev, and no other app, isn't made
+     70|           new OpsError(`flyctl: a call that doesn't name ${DEV_APP}, a…
+ FAIL  src/fly.test.ts > forDevApp: a call is about tadayo-api-dev and no other app > takes every call the scripts make: -a or --app with the dev app, and the two calls that name none
+AssertionError: machine start w1 --app tadayo-api-dev: expected false to be true // Object.is equality
+ FAIL  src/fly.test.ts > forDevApp: a call is about tadayo-api-dev and no other app > refuses a call with no app, another app, an app flag with nothing after it, or another app besides the dev one
+AssertionError: machine stop w1 --app another -a tadayo-api-dev: expected true to be false // Object.is equality

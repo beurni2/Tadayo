@@ -1,0 +1,20 @@
+breakage: p-data-api-no-token
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "      headers: { authorization: `Bearer ${accessToken}` },",
+  "      headers: {},",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: asks the project's own configuration with the access token as a bearer, and reads nothing else of it
+caught: True
+
+     × asks the project's own configuration with the access token as a bearer, and reads nothing else of it 14ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 61 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > dataApiChecks, the project's own configuration through the Management API > asks the project's own configuration with the access token as a bearer, and reads nothing else of it
+AssertionError: expected [ { …(3) } ] to deeply equal [ { …(3) } ]

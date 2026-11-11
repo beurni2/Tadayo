@@ -1,0 +1,21 @@
+breakage: run-probe-machine-skipped-after-a-data-api-failure
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  "  try {\n    await onTheMachine(\n      {\n        ...ctx,",
+  "  try {\n    if (settings.some((check) => !check.ok)) throw new OpsError(\"supabase-probe: the Data API check failed\");\n    await onTheMachine(\n      {\n        ...ctx,",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/run.test.ts src/run-remote.test.ts
+exit: 1
+expected words: still runs the Machine's checks when the Data API check fails
+caught: True
+
+     × still runs the Machine's checks when the Data API check fails, and then fails, naming the schema and not the secret 7ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 43 passed (44)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > still runs the Machine's checks when the Data API check fails, and then fails, naming the schema and not the secret
+AssertionError: expected [] to deeply equal [ …(2) ]
+    426|       "supabase-probe: FAIL  the Data API's settings expose no schema:…

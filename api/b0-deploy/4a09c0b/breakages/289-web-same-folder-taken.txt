@@ -1,0 +1,20 @@
+breakage: web-same-folder-taken
+patch: [
+ [
+  "apps/web/src/build.ts",
+  "  if (source === out) throw new Error(\"web: the source and the output are the same folder\");",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/apps/web && npx vitest run src/build.test.ts
+exit: 1
+expected words: refuses a source or an output that is the other's folder, so a build can't erase the site
+caught: True
+
+     × refuses a source or an output that is the other's folder, so a build can't erase the site 11ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/build.test.ts > buildSite > refuses a source or an output that is the other's folder, so a build can't erase the site
+AssertionError: expected [Function] to throw error matching /same folder/ but got 'ENOENT: no such file or directory, ls…'

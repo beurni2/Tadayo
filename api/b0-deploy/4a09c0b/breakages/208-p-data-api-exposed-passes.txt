@@ -1,0 +1,23 @@
+breakage: p-data-api-exposed-passes
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "  if (exposed.length === 0) return [{ name: DATA_API, ok: true }];",
+  "  if (true) return [{ name: DATA_API, ok: true }];",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: fails when any schema is exposed, naming it as the project's own list says and nothing else
+caught: True
+
+     × fails when any schema is exposed, naming it as the project's own list says and nothing else 6ms
+     × says a schema's name only when it is a plain one, and otherwise that it has an odd name 2ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 60 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > dataApiChecks, the project's own configuration through the Management API > fails when any schema is exposed, naming it as the project's own list says and nothing else
+AssertionError: expected true to be false // Object.is equality
+ FAIL  src/supabase-probe.test.ts > dataApiChecks, the project's own configuration through the Management API > says a schema's name only when it is a plain one, and otherwise that it has an odd name
+AssertionError: expected undefined to be 'it exposes public, a schema with an o…' // Object.is equality

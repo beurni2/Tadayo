@@ -1,0 +1,54 @@
+breakage: run-machine-command-without-here
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  "command: [\"node\", MACHINE_MAIN, script, \"--here\", \"--ref\", ref],",
+  "command: [\"node\", MACHINE_MAIN, script, \"--ref\", ref],",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/run.test.ts src/run-remote.test.ts
+exit: 1
+expected words: runs itself on the API's Machine, with --here and the dev project's reference, and says what it printed
+caught: True
+
+     × runs itself on the API's Machine, with --here and the dev project's reference, and says what it printed 6ms
+     × fails when it fails on the Machine, after saying what it printed 7ms
+     × fails when the Machine's report ends before it says what became of each bucket, even with an exit status of 0 2ms
+     × asks the Management API from here, with the access token, and the rest on the Machine, and passes when both do 1ms
+     × still runs the Machine's checks when the Data API check fails, and then fails, naming the schema and not the secret 2ms
+     × fails with the Machine's failure, after both have said what they found 2ms
+     × says nothing of what the project may hold when the Machine's half failed before it made anything 2ms
+     × fails, and says what the project may hold, when the Machine's report has the run's id and doesn't say how its checks went, even with an exit status of 0 2ms
+     × doesn't take a report without the run's id, or one that only says its checks passed, as a pass 2ms
+     × says what the project may hold when nothing came back from the Machine, and still fails with the call's own failure 2ms
+     × needs the access token, and says the Management API didn't answer as a failed check 1ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  11 failed | 33 passed (44)
+⎯⎯⎯⎯⎯⎯ Failed Tests 11 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/run-remote.test.ts > storage-setup on the runner > runs itself on the API's Machine, with --here and the dev project's reference, and says what it printed
+Error: the fake has no route for: flyctl machine exec a1 node /app/tools/ops/src/main.ts storage-setup --ref abcdefghijklmnopqrst -a tadayo-api-dev --json --timeout 300
+     42|     if (route === undefined) return Promise.reject(new Error(`the fake…
+ FAIL  src/run-remote.test.ts > storage-setup on the runner > fails when it fails on the Machine, after saying what it printed
+AssertionError: expected 'the fake has no route for: flyctl mac…' to be 'storage-setup: it failed on the Machi…' // Object.is equality
+ FAIL  src/run-remote.test.ts > storage-setup on the runner > fails when the Machine's report ends before it says what became of each bucket, even with an exit status of 0
+AssertionError: expected 'the fake has no route for: flyctl mac…' to be 'storage-setup: the Machine\'s report …' // Object.is equality
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > asks the Management API from here, with the access token, and the rest on the Machine, and passes when both do
+Error: the fake has no route for: flyctl machine exec a1 node /app/tools/ops/src/main.ts supabase-probe --ref abcdefghijklmnopqrst -a tadayo-api-dev --json --timeout 300
+     42|     if (route === undefined) return Promise.reject(new Error(`the fake…
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > still runs the Machine's checks when the Data API check fails, and then fails, naming the schema and not the secret
+AssertionError: expected 'the fake has no route for: flyctl mac…' to be 'supabase-probe: the Data API check fa…' // Object.is equality
+    426|       "supabase-probe: FAIL  the Data API's settings expose no schema:…
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > fails with the Machine's failure, after both have said what they found
+AssertionError: expected 'the fake has no route for: flyctl mac…' to be 'supabase-probe: it failed on the Mach…' // Object.is equality
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > says nothing of what the project may hold when the Machine's half failed before it made anything
+AssertionError: expected 'the fake has no route for: flyctl mac…' to be 'supabase-probe: it failed on the Mach…' // Object.is equality
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > fails, and says what the project may hold, when the Machine's report has the run's id and doesn't say how its checks went, even with an exit status of 0
+AssertionError: supabase-probe: the Machine's report doesn't say its checks passed, so it proves nothing: expected 'the fake has no route for: flyctl mac…' to be 'supabase-probe: the Machine\'s report…' // Object.is equality
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > doesn't take a report without the run's id, or one that only says its checks passed, as a pass
+AssertionError: expected 'the fake has no route for: flyctl mac…' to be 'supabase-probe: the Machine\'s report…' // Object.is equality
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > says what the project may hold when nothing came back from the Machine, and still fails with the call's own failure
+AssertionError: expected 'the fake has no route for: flyctl mac…' to match /^supabase-probe: /
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > needs the access token, and says the Management API didn't answer as a failed check
+AssertionError: expected 'the fake has no route for: flyctl mac…' to be 'supabase-probe: the Data API check fa…' // Object.is equality
+    550|       "supabase-probe: FAIL  the Data API's settings expose no schema:…

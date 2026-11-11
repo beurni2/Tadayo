@@ -1,0 +1,21 @@
+breakage: db-run-without-an-id-counted
+patch: [
+ [
+  "tools/ops/src/deploy-branch.ts",
+  "    if (typeof id !== \"number\" || !Number.isInteger(id)) continue;\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-branch.test.ts
+exit: 1
+expected words: doesn't take a run it can't read for one that passed
+caught: True
+
+     × doesn't take a run it can't read for one that passed 10ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-branch.test.ts > deployBranch when the commit's ci run passed > doesn't take a run it can't read for one that passed
+AssertionError: {"id":"101"}: expected 'not an OpsError: undefined' to be 'deploy-branch: refused: no ci run for…' // Object.is equality
+Received: "not an OpsError: undefined"

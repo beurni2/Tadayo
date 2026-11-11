@@ -1,0 +1,23 @@
+breakage: spawn-missing-program-another-code
+patch: [
+ [
+  "tools/ops/src/spawn.ts",
+  "        code: 127,\n",
+  "        code: 1,\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/spawn.test.ts
+exit: 1
+expected words: says a program that isn't there as exit code 127 and its name, and throws nothing
+caught: True
+
+     × says a program that isn't there as exit code 127 and its name, and throws nothing 15ms
+     × says a program that can't start for another reason as exit code 127 and the reason, and throws nothing 6ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 12 passed (14)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/spawn.test.ts > spawnProcess > says a program that isn't there as exit code 127 and its name, and throws nothing
+AssertionError: expected { code: 1, timedOut: false, …(2) } to deeply equal { code: 127, timedOut: false, …(2) }
+ FAIL  src/spawn.test.ts > spawnProcess > says a program that can't start for another reason as exit code 127 and the reason, and throws nothing
+AssertionError: expected { code: 1, timedOut: false, …(2) } to deeply equal { code: 127, timedOut: false, …(2) }

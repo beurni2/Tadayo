@@ -1,0 +1,45 @@
+breakage: p-bucket-check-skipped
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "    const everyBucket = await ask(\"/storage/v1/bucket\", { caller: service });\n    record(\n      \"storage: every bucket is private, and only storage-setup's two exist\",\n      everyBucket === undefined ? silence() : toBuckets(everyBucket),\n    );\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: passes the two private buckets storage-setup makes, asking once, with the service key alone
+caught: True
+
+     × passes every check, controls and refusals, and leaves no object, no bucket and no user behind 56ms
+     × passes the two private buckets storage-setup makes, asking once, with the service key alone 6ms
+     × fails a third bucket, which is none of storage-setup's, and counts it without naming it 6ms
+     × fails a public bucket, one of the two or a third, since a public bucket serves its objects with no key 4ms
+     × counts several in plural words 5ms
+     × takes a bucket that doesn't say it is private as not shown to be 6ms
+     × fails, with the status alone, when the answer is an error or is not a list, and the run goes on to the refusals 12ms
+     × fails a check, and not the run, when the project gives no answer to it 4ms
+     × stops asking when the budget runs out part-way, says so for every check it didn't ask, and still cleans up 5ms
+ Test Files  1 failed (1)
+      Tests  9 failed | 53 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 9 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks on a closed project > passes every check, controls and refusals, and leaves no object, no bucket and no user behind
+AssertionError: expected +0 to be 1 // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks asks which buckets the project has, and none may be public or another's (T53) > passes the two private buckets storage-setup makes, asking once, with the service key alone
+AssertionError: expected undefined to deeply equal { …(2) }
+ FAIL  src/supabase-probe.test.ts > apiChecks asks which buckets the project has, and none may be public or another's (T53) > fails a third bucket, which is none of storage-setup's, and counts it without naming it
+AssertionError: expected [] to deeply equal [ Array(1) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks asks which buckets the project has, and none may be public or another's (T53) > fails a public bucket, one of the two or a third, since a public bucket serves its objects with no key
+AssertionError: expected undefined to be '1 bucket isn\'t shown to be private' // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks asks which buckets the project has, and none may be public or another's (T53) > counts several in plural words
+AssertionError: expected undefined to be '2 buckets aren\'t shown to be private…' // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks asks which buckets the project has, and none may be public or another's (T53) > takes a bucket that doesn't say it is private as not shown to be
+AssertionError: expected undefined to be '1 bucket isn\'t shown to be private' // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks asks which buckets the project has, and none may be public or another's (T53) > fails, with the status alone, when the answer is an error or is not a list, and the run goes on to the refusals
+AssertionError: answered HTTP 500: expected [] to deeply equal [ Array(1) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks asks which buckets the project has, and none may be public or another's (T53) > fails a check, and not the run, when the project gives no answer to it
+AssertionError: expected [] to deeply equal [ Array(1) ]
+    782|       listingBuckets(fake, () => Promise.reject(new TypeError("fetch f…
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > stops asking when the budget runs out part-way, says so for every check it didn't ask, and still cleans up
+AssertionError: expected false to be true // Object.is equality

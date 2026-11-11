@@ -1,0 +1,23 @@
+breakage: p-served-schema-paths-uncounted
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "  return `${answered(reply)}, with ${String(count)} ${count === 1 ? \"path\" : \"paths\"}`;",
+  "  return answered(reply);",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: passes the service key's root when the Data API answers an error, whichever one, and fails when it describes a schema
+caught: True
+
+     × says what each open surface gave, in a count or a phrase, and never a word the project said 62ms
+     × passes the service key's root when the Data API answers an error, whichever one, and fails when it describes a schema 18ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 60 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > says what each open surface gave, in a count or a phrase, and never a word the project said
+AssertionError: expected 'answered HTTP 200' to be 'answered HTTP 200, with 3 paths' // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks and the Data API's root > passes the service key's root when the Data API answers an error, whichever one, and fails when it describes a schema
+AssertionError: {"swagger":"2.0","paths":{"/clubs":{}}}: expected 'answered HTTP 200' to be 'answered HTTP 200, with 1 path' // Object.is equality

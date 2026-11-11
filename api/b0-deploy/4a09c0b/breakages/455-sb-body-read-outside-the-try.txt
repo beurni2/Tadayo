@@ -1,0 +1,21 @@
+breakage: sb-body-read-outside-the-try
+patch: [
+ [
+  "tools/ops/src/supabase.ts",
+  "    // The signal still runs while the body comes, so a body that stops half-way ends here too.\n    bytes = new Uint8Array(await response.arrayBuffer());\n  } catch {\n    throw new OpsError(`${options.method ?? \"GET\"} ${path.split(\"?\")[0] ?? path}: no answer from the project`);\n  }\n",
+  "  } catch {\n    throw new OpsError(`${options.method ?? \"GET\"} ${path.split(\"?\")[0] ?? path}: no answer from the project`);\n  }\n  bytes = new Uint8Array(await response.arrayBuffer());\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase.test.ts
+exit: 1
+expected words: says it got no answer when the body stops before it is whole, as it does when the call gets none
+caught: True
+
+     × says it got no answer when the body stops before it is whole, as it does when the call gets none 9ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase.test.ts > send: what a reply is > says it got no answer when the body stops before it is whole, as it does when the call gets none
+AssertionError: expected 'not an OpsError: TypeError: terminated' to be 'GET /a: no answer from the project' // Object.is equality
+Received: "not an OpsError: TypeError: terminated"

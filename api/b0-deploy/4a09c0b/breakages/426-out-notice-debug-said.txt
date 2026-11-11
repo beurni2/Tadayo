@@ -1,0 +1,20 @@
+breakage: out-notice-debug-said
+patch: [
+ [
+  "tools/ops/src/output.ts",
+  "severity === \"DEBUG\"",
+  "false",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/output.test.ts
+exit: 1
+expected words: says nothing of Postgres's routine notices: NOTICE, DEBUG and LOG
+caught: True
+
+     × says nothing of Postgres's routine notices: NOTICE, DEBUG and LOG 2ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/output.test.ts > noticeLine > says nothing of Postgres's routine notices: NOTICE, DEBUG and LOG
+AssertionError: DEBUG: expected 'ops: DEBUG: relation "x" already exis…' to be undefined

@@ -1,0 +1,20 @@
+breakage: ssl-no-authority-plain
+patch: [
+ [
+  "packages/domain/src/db/ssl.ts",
+  "  if (authority === undefined) return false;\n",
+  "  if (authority === undefined) return true;\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/packages/domain && npx vitest run src/db/ssl.test.ts
+exit: 1
+expected words: treats a string it can't read, or with no host, as remote
+caught: True
+
+     × treats a string it can't read, or with no host, as remote 8ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/ssl.test.ts > transportOptions > treats a string it can't read, or with no host, as remote
+AssertionError: expected {} to deeply equal { ssl: 'require' }

@@ -1,0 +1,23 @@
+breakage: spawn-no-path
+patch: [
+ [
+  "tools/ops/src/spawn.ts",
+  "env: { PATH: process.env[\"PATH\"] ?? \"\", ...options.env },",
+  "env: { ...options.env },",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/spawn.test.ts
+exit: 1
+expected words: gives the child the environment it is given and PATH, and nothing else of this process's
+caught: True
+
+     × gives the child the environment it is given and PATH, and nothing else of this process's 42ms
+     × gives a child that is given no environment only PATH 37ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 12 passed (14)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/spawn.test.ts > spawnProcess > gives the child the environment it is given and PATH, and nothing else of this process's
+AssertionError: expected { GIVEN: 'one' } to deeply equal { …(2) }
+ FAIL  src/spawn.test.ts > spawnProcess > gives a child that is given no environment only PATH
+AssertionError: expected '\n' to be 'PATH\n' // Object.is equality

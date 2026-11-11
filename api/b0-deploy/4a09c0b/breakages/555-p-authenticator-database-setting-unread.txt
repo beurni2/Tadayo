@@ -1,0 +1,20 @@
+breakage: p-authenticator-database-setting-unread
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "       AND r.setdatabase IN (0, (SELECT d.oid FROM pg_catalog.pg_database d WHERE d.datname = pg_catalog.current_database()))",
+  "       AND r.setdatabase = 0",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-deploy-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/c10a/dbtest-wt.sh src/db/ops-probe.test.ts
+exit: 1
+expected words: fails, with a count and no name, when the role's own setting exposes a schema, for the cluster or for this database
+caught: True
+
+     × fails, with a count and no name, when the role's own setting exposes a schema, for the cluster or for this database 19ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/ops-probe.test.ts > databaseChecks on the role the Data API connects as > fails, with a count and no name, when the role's own setting exposes a schema, for the cluster or for this database
+AssertionError: expected { …(2) } to deeply equal { …(3) }
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)

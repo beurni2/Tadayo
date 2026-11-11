@@ -1,0 +1,20 @@
+breakage: out-jwt-parts-without-dashes
+patch: [
+ [
+  "tools/ops/src/output.ts",
+  "[\\w-]{8,}\\.[\\w-]{8,}\\.[\\w-]{8,}",
+  "\\w{8,}\\.\\w{8,}\\.\\w{8,}",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/output.test.ts
+exit: 1
+expected words: holds back a JWT whose parts have the dashes and underscores of base64url
+caught: True
+
+     × holds back a JWT whose parts have the dashes and underscores of base64url 7ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/output.test.ts > redactor > holds back a JWT whose parts have the dashes and underscores of base64url
+AssertionError: expected 'Bearer eyJhbGciOiJF-_.eyJzdWIiOiJ4-_.…' to be 'Bearer [redacted] was refused' // Object.is equality

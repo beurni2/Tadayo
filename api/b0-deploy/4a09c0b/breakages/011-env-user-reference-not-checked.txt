@@ -1,0 +1,28 @@
+breakage: env-user-reference-not-checked
+patch: [
+ [
+  "tools/ops/src/environment.ts",
+  "  if (reference !== devRef) throw refused(\"its user doesn't carry dev's project reference\");\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/environment.test.ts
+exit: 1
+expected words: refuses another project's reference
+caught: True
+
+     × refuses another project's reference: prod's string, or dev's reference given as the other's 4ms
+     × refuses a connection with no reference to read: a plain role, a local server, any other host 1ms
+     × never says the string or the reference when it refuses: its messages name variables, not values (T56) 2ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 19 passed (22)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/environment.test.ts > devDatabaseUrl: only tadayo-dev's database, by the reference in the connection > refuses another project's reference: prod's string, or dev's reference given as the other's
+AssertionError: expected function to throw an error, but it didn't
+     35|     expect(() => devDatabaseUrl(url(), PROD)).toThrow(OpsError);
+ FAIL  src/environment.test.ts > devDatabaseUrl: only tadayo-dev's database, by the reference in the connection > refuses a connection with no reference to read: a plain role, a local server, any other host
+AssertionError: postgresql://tadayo_app:…@aws-0-us-east-1.pooler.supabase.com:5432/postgres
+ FAIL  src/environment.test.ts > devDatabaseUrl: only tadayo-dev's database, by the reference in the connection > never says the string or the reference when it refuses: its messages name variables, not values (T56)
+AssertionError: expected '' not to be '' // Object.is equality
+    172|         message = error instanceof Error ? error.message : "";

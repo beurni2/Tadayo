@@ -1,0 +1,23 @@
+breakage: p-graphql-data-passes
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "  return typeof data === \"object\" && data !== null ? \"it answered with data\" : undefined;",
+  "  return undefined;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: names the surface when
+caught: True
+
+     × names the surface when graphql is open, and leaves nothing behind 9ms
+     × says what each open surface gave, in a count or a phrase, and never a word the project said 59ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 60 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when graphql is open, and leaves nothing behind
+AssertionError: anon: GraphQL: expected [] to include 'anon: GraphQL'
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > says what each open surface gave, in a count or a phrase, and never a word the project said
+AssertionError: expected undefined to be 'it answered with data' // Object.is equality

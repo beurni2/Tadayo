@@ -1,0 +1,27 @@
+breakage: sd-overdue-unsaid
+patch: [
+ [
+  "services/api/src/shutdown.ts",
+  "          options.say(`api: requests still running after ${String(graceMs / 1000)} seconds are ended`);\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/services/api && npx vitest run src/shutdown.test.ts
+exit: 1
+expected words: ends the connections still in use only when the grace is over, says so, and goes on to end the database's connection
+caught: True
+
+     × ends the connections still in use only when the grace is over, says so, and goes on to end the database's connection 8ms
+     × says the server didn't close cleanly when it fails after the grace too 2ms
+     × ends a request still in flight when the grace is over, says so, and stops 106ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 14 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/shutdown.test.ts > stopOnSignal > ends the connections still in use only when the grace is over, says so, and goes on to end the database's connection
+AssertionError: expected [ 'api: stopping on SIGTERM', …(2) ] to deeply equal [ 'api: stopping on SIGTERM', …(3) ]
+ FAIL  src/shutdown.test.ts > stopOnSignal > says the server didn't close cleanly when it fails after the grace too
+AssertionError: expected [ 'api: stopping on SIGTERM', …(3) ] to deeply equal [ 'api: stopping on SIGTERM', …(4) ]
+    164|     closing.reject(new Error("password=hunter2 near the socket"));
+ FAIL  src/shutdown.test.ts > stopOnSignal, with a real server > ends a request still in flight when the grace is over, says so, and stops
+AssertionError: expected [ 'api: stopping on SIGTERM', …(2) ] to deeply equal [ 'api: stopping on SIGTERM', …(3) ]

@@ -1,0 +1,34 @@
+breakage: run-connection-failure-unexplained
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  "    try {\n      await db`SELECT 1`;\n    } catch (error) {",
+  "    try {\n      // nothing asked\n    } catch (error) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/run.test.ts src/run-remote.test.ts
+exit: 1
+expected words: says which script and which variable, the driver's words, and what to look at, then closes it
+caught: True
+
+     × says which script and which variable, the driver's words, and what to look at, then closes it 14ms
+     × says that no reason was given when the driver's error has no words, or isn't an Error 2ms
+     × is not said of a script's own failure: what its queries answer is the script's to say 2ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  3 failed | 41 passed (44)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/run.test.ts > a connection that the database refuses > says which script and which variable, the driver's words, and what to look at, then closes it
+AssertionError: bootstrap: expected a thrown error to be OpsError: bootstrap: couldn't connect wit…
+- OpsError {
+-   "name": "OpsError",
++ Error {
+    163|         new OpsError(
+ FAIL  src/run.test.ts > a connection that the database refuses > says that no reason was given when the driver's error has no words, or isn't an Error
+AssertionError: Error: expected a thrown error to be OpsError: migrate: couldn't connect with …
+- OpsError {
+-   "name": "OpsError",
++ Error {
+    185|         new OpsError(
+ FAIL  src/run.test.ts > a connection that the database refuses > is not said of a script's own failure: what its queries answer is the script's to say
+AssertionError: expected [Function] to throw error matching /^relation "x" does not exist$/ but got 'bootstrap: DATABASE_URL connects as u…'

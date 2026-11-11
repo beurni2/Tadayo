@@ -1,0 +1,21 @@
+breakage: om-text-type-unchecked
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "  if (typeof stdout !== \"string\" || typeof stderr !== \"string\") return undefined;\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/on-machine.test.ts
+exit: 1
+expected words: fails when flyctl can't run it, saying why, or answers with something it can't read
+caught: True
+
+     × fails when flyctl can't run it, saying why, or answers with something it can't read 12ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 7 passed (8)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine > fails when flyctl can't run it, saying why, or answers with something it can't read
+AssertionError: {"stdout":1}: expected 'text.replace is not a function' to be 'storage-setup: flyctl\'s answer about…' // Object.is equality
+    113|       expect((result.outcome as OpsError).message, stdout).toBe(

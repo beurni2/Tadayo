@@ -1,0 +1,22 @@
+breakage: fac-empty-organizations-read-as-unreadable
+patch: [
+ [
+  "tools/ops/src/fly-app-create.ts",
+  "  if (only === undefined) throw new OpsError(\"fly-app-create: the token sees no organization\");",
+  "  if (only === undefined) throw new OpsError(\"fly-app-create: flyctl's list of organizations isn't one it can read\");",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/fly-app-create.test.ts
+exit: 1
+expected words: a token that sees no organization, saying so
+caught: True
+
+     × a token that sees no organization, saying so, and makes nothing 7ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 passed (15)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly-app-create.test.ts > flyAppCreate refuses > a token that sees no organization, saying so, and makes nothing
+AssertionError: expected 'fly-app-create: flyctl\'s list of org…' to be 'fly-app-create: the token sees no org…' // Object.is equality
+    301|     expect(result.outcome).toBeInstanceOf(OpsError);
+    302|     expect((result.outcome as OpsError).message).toBe("fly-app-create:…

@@ -1,0 +1,23 @@
+breakage: worker-stop-unsaid
+patch: [
+ [
+  "services/worker/src/main.ts",
+  "  process.stdout.write(`worker: stopped on ${signal}\\n`);\n",
+  "",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-deploy-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/c10a/dbtest-wt.sh src/db/startup.test.ts
+exit: 1
+expected words: SIGTERM
+caught: True
+
+     × stops on SIGTERM with exit code 0, and says which 171ms
+     × stops on SIGINT with exit code 0, and says which 163ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/startup.test.ts > the worker's entry against the test database > stops on SIGTERM with exit code 0, and says which
+AssertionError: expected 'worker: started, with no jobs yet\n' to match /worker: stopped on SIGTERM\n$/
+ FAIL  src/db/startup.test.ts > the worker's entry against the test database > stops on SIGINT with exit code 0, and says which
+AssertionError: expected 'worker: started, with no jobs yet\n' to match /worker: stopped on SIGINT\n$/
+ Test Files  1 failed (1)
+      Tests  2 failed | 8 passed (10)

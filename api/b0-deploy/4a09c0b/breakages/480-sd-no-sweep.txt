@@ -1,0 +1,23 @@
+breakage: sd-no-sweep
+patch: [
+ [
+  "services/api/src/shutdown.ts",
+  "        app.server.closeIdleConnections();\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/services/api && npx vitest run src/shutdown.test.ts
+exit: 1
+expected words: ends the connections left idle, every sweep, while the server closes, and stops sweeping once it has
+caught: True
+
+     × ends the connections left idle, every sweep, while the server closes, and stops sweeping once it has 7ms
+     × lets a request in flight finish, and then ends its connection instead of waiting out the keep-alive time 5003ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 15 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/shutdown.test.ts > stopOnSignal > ends the connections left idle, every sweep, while the server closes, and stops sweeping once it has
+AssertionError: expected +0 to be 3 // Object.is equality
+ FAIL  src/shutdown.test.ts > stopOnSignal, with a real server > lets a request in flight finish, and then ends its connection instead of waiting out the keep-alive time
+Error: Test timed out in 5000ms.

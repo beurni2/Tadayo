@@ -1,0 +1,20 @@
+breakage: p-rest-root-passes
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "const restRoot: Verdict = (reply) => (reply.status >= 400 ? undefined : answered(reply));",
+  "const restRoot: Verdict = () => undefined;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: says what each open surface gave, in a count or a phrase, and never a word the project said
+caught: False
+
+     × still fails the public callers' root when a gateway answers it, which says a schema is served 15ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 61 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks and the Data API's root > still fails the public callers' root when a gateway answers it, which says a schema is served
+AssertionError: expected [] to deeply equal [ Array(2) ]

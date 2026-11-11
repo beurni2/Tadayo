@@ -1,0 +1,23 @@
+breakage: env-multi-host-allowed
+patch: [
+ [
+  "tools/ops/src/environment.ts",
+  "  if (authority.slice(authority.lastIndexOf(\"@\") + 1).includes(\",\")) throw refused(\"it names more than one host\");\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/environment.test.ts
+exit: 1
+expected words: says it names more than one host, as the string says it, before any parser reads it
+caught: True
+
+     × takes a comma in the password, which is the password's and not a second host's, and still refuses one after the @ 8ms
+     × says it names more than one host, as the string says it, before any parser reads it 1ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 20 passed (22)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/environment.test.ts > devDatabaseUrl: only tadayo-dev's database, by the reference in the connection > takes a comma in the password, which is the password's and not a second host's, and still refuses one after the @
+AssertionError: expected [Function] to throw error matching /it names more than one host$/ but got 'DATABASE_URL isn\'t a connection to t…'
+ FAIL  src/environment.test.ts > devDatabaseUrl: only tadayo-dev's database, by the reference in the connection > says it names more than one host, as the string says it, before any parser reads it
+AssertionError: postgresql://tadayo_app.rhsycmycocbzakrydahi:pw@aws-0-us-east-1.pooler.supabase.com:5432,localhost:5432/postgres: expected [Function] to throw error matching /it names more than one host$/ but got 'DATABASE_URL isn\'t a connection to t…'

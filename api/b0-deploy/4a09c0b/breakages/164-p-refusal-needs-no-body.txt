@@ -1,0 +1,20 @@
+breakage: p-refusal-needs-no-body
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "  return text(reply.json, \"statusCode\") !== undefined && (reply.logical",
+  "  return (reply.logical",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: fails a 404 that isn't Storage's, as a route that isn't there says it, and a server error
+caught: True
+
+     × fails a 404 that isn't Storage's, as a route that isn't there says it, and a server error 21ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 61 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks counts only Storage's own refusal as one > fails a 404 that isn't Storage's, as a route that isn't there says it, and a server error
+AssertionError: expected [ …(2) ] to deeply equal [ …(4) ]

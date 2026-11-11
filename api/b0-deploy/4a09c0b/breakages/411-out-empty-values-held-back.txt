@@ -1,0 +1,23 @@
+breakage: out-empty-values-held-back
+patch: [
+ [
+  "tools/ops/src/output.ts",
+  "if (value === undefined || value.length < SHORTEST) continue;",
+  "if (value === undefined) continue;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/output.test.ts
+exit: 1
+expected words: does not blank ordinary text because a short or empty value is set
+caught: True
+
+     × holds back a value of eight characters and leaves a value of seven alone 8ms
+     × does not blank ordinary text because a short or empty value is set 5ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 16 passed (18)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/output.test.ts > redactor > holds back a value of eight characters and leaves a value of seven alone
+AssertionError: expected 'the [redacted] is out' to be 'the abcdefg is out' // Object.is equality
+ FAIL  src/output.test.ts > redactor > does not blank ordinary text because a short or empty value is set
+AssertionError: expected '[[redacted]r[redacted]e[redacted]d[re…' to be 'abc is not a secret worth a hole in e…' // Object.is equality

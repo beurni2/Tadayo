@@ -1,0 +1,30 @@
+breakage: fly-list-failure-unsaid
+patch: [
+ [
+  "tools/ops/src/fly.ts",
+  "  if (result.code !== 0) throw new OpsError(`couldn't list ${DEV_APP}'s Machines: ${why(result)}`);\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/fly.test.ts src/worker-scale.test.ts src/fly-app-create.test.ts src/on-machine.test.ts src/run-remote.test.ts
+exit: 1
+expected words: an answer it can't read, with flyctl's own words and never the token
+caught: True
+
+     × refuses a list it can't read, saying why with flyctl's own words and never the token 11ms
+     × an answer it can't read, with flyctl's own words and never the token 7ms
+ Test Files  2 failed | 3 passed (5)
+      Tests  2 failed | 79 passed (81)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly.test.ts > jsonOf and machines: what flyctl's list of Machines says > refuses a list it can't read, saying why with flyctl's own words and never the token
+AssertionError: expected 'flyctl\'s list of tadayo-api-dev\'s M…' to match /^couldn't list tadayo-api-dev's Machi…/
+/^couldn't list tadayo-api-dev's Machines: exit code 1: Error: no access$/
+    240|       const message = error instanceof OpsError ? error.message : "not…
+    241|       expect(message).toMatch(expected);
+ FAIL  src/worker-scale.test.ts > workerScale refuses > an answer it can't read, with flyctl's own words and never the token
+AssertionError: expected 'flyctl\'s list of tadayo-api-dev\'s M…' to match /^couldn't list tadayo-api-dev's Machi…/
+/^couldn't list tadayo-api-dev's Machines: exit code 1: Error: no access with /
+    134|     expect(failed.outcome).toBeInstanceOf(OpsError);
+    135|     expect((failed.outcome as OpsError).message).toMatch(
+    136|       /^couldn't list tadayo-api-dev's Machines: exit code 1: Error: n…

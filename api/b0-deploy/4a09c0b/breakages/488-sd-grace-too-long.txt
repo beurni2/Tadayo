@@ -1,0 +1,27 @@
+breakage: sd-grace-too-long
+patch: [
+ [
+  "services/api/src/shutdown.ts",
+  "export const GRACE_MS = 25_000;",
+  "export const GRACE_MS = 29_000;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/services/api && npx vitest run src/shutdown.test.ts
+exit: 1
+expected words: fits the grace and the database's end inside what Fly waits for before it kills the Machine
+caught: True
+
+     × ends the connections still in use only when the grace is over, says so, and goes on to end the database's connection 6ms
+     × says the server didn't close cleanly when it fails after the grace too 2ms
+     × fits the grace and the database's end inside what Fly waits for before it kills the Machine, with time to spare 1ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 14 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/shutdown.test.ts > stopOnSignal > ends the connections still in use only when the grace is over, says so, and goes on to end the database's connection
+AssertionError: expected [ 'api: stopping on SIGTERM', …(3) ] to deeply equal [ 'api: stopping on SIGTERM', …(3) ]
+ FAIL  src/shutdown.test.ts > stopOnSignal > says the server didn't close cleanly when it fails after the grace too
+AssertionError: expected [ 'api: stopping on SIGTERM', …(4) ] to deeply equal [ 'api: stopping on SIGTERM', …(4) ]
+    164|     closing.reject(new Error("password=hunter2 near the socket"));
+ FAIL  src/shutdown.test.ts > stopOnSignal > fits the grace and the database's end inside what Fly waits for before it kills the Machine, with time to spare
+AssertionError: expected 32000 to be less than or equal to 28000

@@ -1,0 +1,24 @@
+breakage: ss-any-error-is-a-missing-bucket
+patch: [
+ [
+  "tools/ops/src/storage-setup.ts",
+  "    if (reply.logical === 404 && reply.code === \"NoSuchBucket\") return undefined;",
+  "    if (reply.status >= 400) return undefined;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/storage-setup.test.ts
+exit: 1
+expected words: doesn't take a server error for a missing bucket: it makes nothing
+caught: True
+
+     × stops, naming the bucket and what the project answered, when the service key is refused 12ms
+     × doesn't take a server error for a missing bucket: it makes nothing 5ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 11 passed (13)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/storage-setup.test.ts > storageSetup > stops, naming the bucket and what the project answered, when the service key is refused
+AssertionError: expected [ { method: 'GET', …(3) }, …(1) ] to have a length of 1 but got 2
+ FAIL  src/storage-setup.test.ts > storageSetup > doesn't take a server error for a missing bucket: it makes nothing
+AssertionError: promise resolved "[ …(2) ]" instead of rejecting
+Error {

@@ -1,0 +1,22 @@
+breakage: fac-unreadable-organizations-taken
+patch: [
+ [
+  "tools/ops/src/fly-app-create.ts",
+  "  if (orgs === undefined) throw new OpsError(\"fly-app-create: flyctl's list of organizations isn't one it can read\");\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/fly-app-create.test.ts
+exit: 1
+expected words: an organization list it can't read
+caught: True
+
+     × an organization list it can't read 5ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 passed (15)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly-app-create.test.ts > flyAppCreate refuses > an organization list it can't read
+AssertionError: not json: expected TypeError: Cannot convert undefined or nu… to be an instance of OpsError
+    285|       expect(result.outcome, stdout).toBeInstanceOf(OpsError);
+    286|       expect((result.outcome as OpsError).message, stdout).toBe(

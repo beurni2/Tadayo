@@ -1,0 +1,20 @@
+breakage: web-old-output-kept
+patch: [
+ [
+  "apps/web/src/build.ts",
+  "  rmSync(out, { recursive: true, force: true });\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/apps/web && npx vitest run src/build.test.ts
+exit: 1
+expected words: replaces what a build before it left, so a file that was taken out isn't kept
+caught: True
+
+     × replaces what a build before it left, so a file that was taken out isn't kept 12ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/build.test.ts > buildSite > replaces what a build before it left, so a file that was taken out isn't kept
+AssertionError: expected [ '.well-known', …(6) ] to not include 'old.html'

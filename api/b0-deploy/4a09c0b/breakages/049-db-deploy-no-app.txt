@@ -1,0 +1,71 @@
+breakage: db-deploy-no-app
+patch: [
+ [
+  "tools/ops/src/deploy-branch.ts",
+  "      \"--app\",\n      DEV_APP,\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-branch.test.ts
+exit: 1
+expected words: builds and deploys that exact commit, from the checkout, and finds it running
+caught: True
+
+     × builds and deploys that exact commit, from the checkout, and finds it running 35ms
+     × cuts every git call off after 30 seconds and every GitHub request after 30 seconds, and the deploy after 20 minutes 3ms
+     × looks at the checkout before it asks anyone, and at the ci run before it deploys 3ms
+     × ignores a cancelled run of the same commit, and the runs of other commits and other branches 2ms
+     × takes a run only from a push: a run of some merge of the commit isn't the commit's 2ms
+     × and takes the names the repository uses 1ms
+     × doesn't call a deploy that flyctl failed one, with flyctl's own words 3ms
+     × doesn't take flyctl's word that it deployed: the Machines have to run the commit's image 2ms
+     × lets a stopped worker be, since a stopped Machine stays as it was and is the worker-scale's 1ms
+     × says when the app has no worker Machine at all 1ms
+     × reads the image from a Machine's config, or from its image reference's tag, whichever has it 1ms
+     × says what flyctl printed, line by line, whether or not it worked 2ms
+ Test Files  1 failed (1)
+      Tests  12 failed | 15 passed (27)
+⎯⎯⎯⎯⎯⎯ Failed Tests 12 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-branch.test.ts > deployBranch when the commit's ci run passed > builds and deploys that exact commit, from the checkout, and finds it running
+AssertionError: expected OpsError: flyctl: a call that doesn't nam… to be undefined
+OpsError {
+  "name": "OpsError",
+ FAIL  src/deploy-branch.test.ts > deployBranch when the commit's ci run passed > cuts every git call off after 30 seconds and every GitHub request after 30 seconds, and the deploy after 20 minutes
+AssertionError: expected OpsError: flyctl: a call that doesn't nam… to be undefined
+OpsError {
+  "name": "OpsError",
+ FAIL  src/deploy-branch.test.ts > deployBranch when the commit's ci run passed > looks at the checkout before it asks anyone, and at the ci run before it deploys
+AssertionError: expected -1 to be 2 // Object.is equality
+ FAIL  src/deploy-branch.test.ts > deployBranch when the commit's ci run passed > ignores a cancelled run of the same commit, and the runs of other commits and other branches
+AssertionError: expected OpsError: flyctl: a call that doesn't nam… to be undefined
+OpsError {
+  "name": "OpsError",
+ FAIL  src/deploy-branch.test.ts > deployBranch when the commit's ci run passed > takes a run only from a push: a run of some merge of the commit isn't the commit's
+AssertionError: expected OpsError: flyctl: a call that doesn't nam… to be undefined
+OpsError {
+  "name": "OpsError",
+ FAIL  src/deploy-branch.test.ts > deployBranch refuses a branch name that isn't one > and takes the names the repository uses
+AssertionError: main: expected OpsError: flyctl: a call that doesn't nam… to be undefined
+OpsError {
+  "name": "OpsError",
+ FAIL  src/deploy-branch.test.ts > deployBranch when GitHub or Fly doesn't answer as it should > doesn't call a deploy that flyctl failed one, with flyctl's own words
+AssertionError: expected 'flyctl: a call that doesn\'t name tad…' to be 'deploy-branch: flyctl couldn\'t deplo…' // Object.is equality
+Expected: "deploy-branch: flyctl couldn't deploy the commit: exit code 1: Error: failed to fetch an image or build from source"
+    413|       deploy: ["flyctl deploy", { code: 1, stderr: "Error: failed to f…
+ FAIL  src/deploy-branch.test.ts > deployBranch when GitHub or Fly doesn't answer as it should > doesn't take flyctl's word that it deployed: the Machines have to run the commit's image
+AssertionError: expected 'flyctl: a call that doesn\'t name tad…' to be 'deploy-branch: flyctl deployed, but a…' // Object.is equality
+ FAIL  src/deploy-branch.test.ts > deployBranch when GitHub or Fly doesn't answer as it should > lets a stopped worker be, since a stopped Machine stays as it was and is the worker-scale's
+AssertionError: expected OpsError: flyctl: a call that doesn't nam… to be undefined
+OpsError {
+  "name": "OpsError",
+ FAIL  src/deploy-branch.test.ts > deployBranch when GitHub or Fly doesn't answer as it should > says when the app has no worker Machine at all
+AssertionError: expected OpsError: flyctl: a call that doesn't nam… to be undefined
+OpsError {
+  "name": "OpsError",
+ FAIL  src/deploy-branch.test.ts > deployBranch when GitHub or Fly doesn't answer as it should > reads the image from a Machine's config, or from its image reference's tag, whichever has it
+AssertionError: expected OpsError: flyctl: a call that doesn't nam… to be undefined
+OpsError {
+  "name": "OpsError",
+ FAIL  src/deploy-branch.test.ts > deployBranch when GitHub or Fly doesn't answer as it should > says what flyctl printed, line by line, whether or not it worked
+AssertionError: expected [] to deeply equal [ '==> Building image', …(1) ]

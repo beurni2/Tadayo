@@ -1,0 +1,23 @@
+breakage: di-git-allowed
+patch: [
+ [
+  ".dockerignore",
+  "!tools/ops/src\n",
+  "!tools/ops/src\n!.git\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-files.test.ts
+exit: 1
+expected words: lets nothing of the repository's records, renders, history or secrets in, and keeps tests and node_modules out
+caught: True
+
+     × is an allowlist: everything out, then exactly what the Dockerfile copies 10ms
+     × lets nothing of the repository's records, renders, history or secrets in, and keeps tests and node_modules out 2ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 15 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-files.test.ts > .dockerignore > is an allowlist: everything out, then exactly what the Dockerfile copies
+AssertionError: expected [ '.git', …(15) ] to deeply equal [ 'apps/web/package.json', …(14) ]
+ FAIL  src/deploy-files.test.ts > .dockerignore > lets nothing of the repository's records, renders, history or secrets in, and keeps tests and node_modules out
+AssertionError: .git: expected true to be false // Object.is equality

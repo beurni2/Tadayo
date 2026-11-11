@@ -1,0 +1,29 @@
+breakage: api-connect-asks-no-tls
+patch: [
+ [
+  "services/api/src/connection.ts",
+  "  return postgres(url, { types: { instant: INSTANT_TYPE }, ...transportOptions(url) });",
+  "  return postgres(url, { types: { instant: INSTANT_TYPE } });",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/services/api && npx vitest run src/connection.test.ts
+exit: 1
+expected words: requires TLS for Supabase's pooler, though the string says nothing of it
+caught: True
+
+     × requires TLS for Supabase's pooler, though the string says nothing of it 37ms
+     × requires TLS for any other host that isn't loopback, and the string can't switch it off 4ms
+     × requires TLS whatever the environment says, which postgres.js reads for the options it isn't given 3ms
+     × requires TLS of a string whose host postgres.js and `new URL` read differently, which dials the first host 1ms
+ Test Files  1 failed (1)
+      Tests  4 failed | 2 passed (6)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/connection.test.ts > connect > requires TLS for Supabase's pooler, though the string says nothing of it
+AssertionError: expected { ssl: false, …(2) } to deeply equal { ssl: 'require', …(2) }
+ FAIL  src/connection.test.ts > connect > requires TLS for any other host that isn't loopback, and the string can't switch it off
+AssertionError: postgres://someone:a-password@db.example.test:5432/postgres: expected false to be 'require' // Object.is equality
+ FAIL  src/connection.test.ts > connect > requires TLS whatever the environment says, which postgres.js reads for the options it isn't given
+AssertionError: expected 'false' to be 'require' // Object.is equality
+ FAIL  src/connection.test.ts > connect > requires TLS of a string whose host postgres.js and `new URL` read differently, which dials the first host
+AssertionError: expected false to be 'require' // Object.is equality

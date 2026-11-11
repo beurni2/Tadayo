@@ -1,0 +1,20 @@
+breakage: fac-active-entry-read-as-issued
+patch: [
+ [
+  "tools/ops/src/fly-app-create.ts",
+  "  if (issued || detail[\"status\"] === \"Ready\") return \"issued\";",
+  "  if (issued || detail[\"status\"] === \"Ready\" || certificates.some((entry) => record(entry)?.[\"status\"] === \"active\")) return \"issued\";",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/fly-app-create.test.ts
+exit: 1
+expected words: says the certificate is on its way, not issued, while Fly has verified the host and no certificate is in its list
+caught: True
+
+     × says the certificate is on its way, not issued, while Fly has verified the host and no certificate is in its list 7ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 passed (15)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly-app-create.test.ts > flyAppCreate when it has been run before > says the certificate is on its way, not issued, while Fly has verified the host and no certificate is in its list
+AssertionError: [{"source":"fly","status":"active","issued":[]}]: expected [ …(3) ] to include 'fly-app-create: DNS is in place for a…'

@@ -1,0 +1,20 @@
+breakage: ss-missing-after-making-accepted
+patch: [
+ [
+  "tools/ops/src/storage-setup.ts",
+  "      if (found === undefined) throw new OpsError(`storage-setup: ${bucket}: it isn't there after it was made`);\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/storage-setup.test.ts
+exit: 1
+expected words: fails when a bucket isn't there after the project said it made it, rather than say it is made
+caught: True
+
+     × fails when a bucket isn't there after the project said it made it, rather than say it is made 6ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/storage-setup.test.ts > storageSetup > fails when a bucket isn't there after the project said it made it, rather than say it is made
+AssertionError: expected [Function] to throw error matching /^storage-setup: uploads: it isn't the…/ but got 'storage-setup: uploads: couldn\'t set…'

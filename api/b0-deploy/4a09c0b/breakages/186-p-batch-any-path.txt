@@ -1,0 +1,20 @@
+breakage: p-batch-any-path
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "        itemsOf(reply.json)?.some((item) => text(item, \"path\") === path && signedUrl(item) !== undefined) === true;",
+  "        itemsOf(reply.json)?.some((item) => signedUrl(item) !== undefined) === true;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: names the control of the batch when it signs some other path, or none
+caught: True
+
+     × names the control of the batch when it signs some other path, or none 15ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 61 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks's controls: each must hold, in its own words, before a refusal means anything > names the control of the batch when it signs some other path, or none
+AssertionError: [{"path":"probe/elsewhere/seen.png","signedURL":"/object/sign/uploads/x?token=t"}]: expected [] to deeply equal [ Array(1) ]

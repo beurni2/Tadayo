@@ -1,0 +1,48 @@
+breakage: web-headers-lines-untrimmed
+patch: [
+ [
+  "apps/web/src/build.ts",
+  "    const line = raw.trim();",
+  "    const line = raw;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/apps/web && npx vitest run src/build.test.ts
+exit: 1
+expected words: reads the file as Pages does: a line is trimmed, so a header needs no indentation, and a path starts with a slash
+caught: True
+
+     × wants the association file served as JSON 8ms
+     × says what is missing or wrong 1ms
+     × reads the file as Pages does: a line is trimmed, so a header needs no indentation, and a path starts with a slash 1ms
+     × refuses a Content-Type set or removed under any other path, since Pages applies every rule that matches 1ms
+     × refuses the association's own rule when it removes the Content-Type, beside setting it or not 1ms
+     × copies the site whole, dot-folders included, into an empty folder, and says what it made 5ms
+     × replaces what a build before it left, so a file that was taken out isn't kept 2ms
+     × says the association file's rules are Tadayo's own, when one of them refused it, and not for any other problem 2ms
+     × builds, and has what Cloudflare Pages and Apple need 1ms
+ Test Files  1 failed (1)
+      Tests  9 failed | 8 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 9 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/build.test.ts > checkHeaders > wants the association file served as JSON
+AssertionError: expected [ Array(1) ] to deeply equal []
+ FAIL  src/build.test.ts > checkHeaders > says what is missing or wrong
+AssertionError: expected [ Array(1) ] to deeply equal [ Array(1) ]
+ FAIL  src/build.test.ts > checkHeaders > reads the file as Pages does: a line is trimmed, so a header needs no indentation, and a path starts with a slash
+AssertionError: expected [ Array(1) ] to deeply equal []
+ FAIL  src/build.test.ts > checkHeaders > refuses a Content-Type set or removed under any other path, since Pages applies every rule that matches
+AssertionError: expected [ Array(1) ] to deeply equal [ Array(1) ]
+ FAIL  src/build.test.ts > checkHeaders > refuses the association's own rule when it removes the Content-Type, beside setting it or not
+AssertionError: expected [ Array(1) ] to deeply equal [ Array(1) ]
+ FAIL  src/build.test.ts > buildSite > copies the site whole, dot-folders included, into an empty folder, and says what it made
+Error: web: _headers has no Content-Type for /.well-known/apple-app-site-association
+    165|   if (problems.length > 0) throw new Error(problems.map((problem) => `…
+ FAIL  src/build.test.ts > buildSite > replaces what a build before it left, so a file that was taken out isn't kept
+Error: web: _headers has no Content-Type for /.well-known/apple-app-site-association
+    165|   if (problems.length > 0) throw new Error(problems.map((problem) => `…
+ FAIL  src/build.test.ts > buildSite > says the association file's rules are Tadayo's own, when one of them refused it, and not for any other problem
+AssertionError: expected [ …(3) ] to deeply equal [ …(2) ]
+    239|       said = error instanceof Error ? error.message : "";
+ FAIL  src/build.test.ts > the site in public/ > builds, and has what Cloudflare Pages and Apple need
+Error: web: _headers has no Content-Type for /.well-known/apple-app-site-association
+    165|   if (problems.length > 0) throw new Error(problems.map((problem) => `…

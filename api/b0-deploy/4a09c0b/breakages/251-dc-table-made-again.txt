@@ -1,0 +1,41 @@
+breakage: dc-table-made-again
+patch: [
+ [
+  "tools/ops/src/dev-clock.ts",
+  "  const made = !exists.present;",
+  "  const made = true;",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-deploy-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/c10a/dbtest-wt.sh src/db/ops-dev-clock.test.ts
+exit: 1
+expected words: leaves a table that's there as it is: the same table, triggers and function, and says it made nothing
+caught: True
+
+     × leaves a table that's there as it is: the same table, triggers and function, and says it made nothing 22ms
+     × starts with no row, which is no offset, then keeps the one row it makes 17ms
+     × without a target, reports the clock as it is and moves nothing 14ms
+     × moves forward only: a target before what the clock reads is refused, and the offset stays (T3) 21ms
+     × refuses a target before Postgres's own clock even with no row, and makes no row 17ms
+     × refuses a target further ahead than the longest offset, so a typo in the year can't be kept, and goes up to it 17ms
+     × goes on moving a table that's there once the database has occurrences 41ms
+     × won't move a clock whose guard is off: a disabled trigger is refused, as at the API's start-up 17ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/ops-dev-clock.test.ts > dev-clock, through the schema's own owner > leaves a table that's there as it is: the same table, triggers and function, and says it made nothing
+ FAIL  src/db/ops-dev-clock.test.ts > dev-clock, through the schema's own owner > starts with no row, which is no offset, then keeps the one row it makes
+ FAIL  src/db/ops-dev-clock.test.ts > dev-clock, through the schema's own owner > without a target, reports the clock as it is and moves nothing
+PostgresError: relation "dev_clock" already exists
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ FAIL  src/db/ops-dev-clock.test.ts > dev-clock, through the schema's own owner > moves forward only: a target before what the clock reads is refused, and the offset stays (T3)
+AssertionError: expected [Function] to throw error matching /only moves forward/ but got 'relation "dev_clock" already exists'
+ FAIL  src/db/ops-dev-clock.test.ts > dev-clock, through the schema's own owner > refuses a target before Postgres's own clock even with no row, and makes no row
+AssertionError: expected [Function] to throw error matching /only moves forward/ but got 'relation "dev_clock" already exists'
+ FAIL  src/db/ops-dev-clock.test.ts > dev-clock, through the schema's own owner > refuses a target further ahead than the longest offset, so a typo in the year can't be kept, and goes up to it
+AssertionError: expected [Function] to throw error matching /366 days/ but got 'relation "dev_clock" already exists'
+ FAIL  src/db/ops-dev-clock.test.ts > dev-clock, through the schema's own owner > goes on moving a table that's there once the database has occurrences
+OpsError: dev-clock: app.dev_clock is missing and the database has occurrences, so it isn't made again: a new one starts at no offset, which could be the clock moved back, reopening a day that has closed (T3); inspect the database
+    108|       throw new OpsError(
+ FAIL  src/db/ops-dev-clock.test.ts > dev-clock, through the schema's own owner > won't move a clock whose guard is off: a disabled trigger is refused, as at the API's start-up
+AssertionError: expected [Function] to throw error matching /as tools\/ops\/sql\/dev_clock\.sq…/ops\ but got 'relation "dev_clock" already exists'
+ Test Files  1 failed (1)
+      Tests  8 failed | 5 passed (13)

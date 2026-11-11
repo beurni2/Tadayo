@@ -1,0 +1,29 @@
+breakage: sd-server-failure-carries-the-error
+patch: [
+ [
+  "services/api/src/shutdown.ts",
+  "      } catch {\n        clean = false;\n        options.fail(\"api: the server didn't close cleanly\");",
+  "      } catch (error) {\n        clean = false;\n        options.fail(`api: the server didn't close cleanly: ${String(error)}`);",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/services/api && npx vitest run src/shutdown.test.ts
+exit: 1
+expected words: still ends the database's connection when closing the server fails, and says so without the error's own words
+caught: True
+
+     × still ends the database's connection when closing the server fails, and says so without the error's own words 7ms
+     × says the server didn't close cleanly when it fails after the grace too 3ms
+     × says both failures, in order, and still finishes, when neither the server nor the database's connection closes cleanly 2ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 14 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/shutdown.test.ts > stopOnSignal > still ends the database's connection when closing the server fails, and says so without the error's own words
+AssertionError: expected [ Array(1) ] to deeply equal [ Array(1) ]
++   "api: the server didn't close cleanly: Error: password=hunter2 near the socket",
+ FAIL  src/shutdown.test.ts > stopOnSignal > says the server didn't close cleanly when it fails after the grace too
+AssertionError: expected [ Array(1) ] to deeply equal [ Array(1) ]
++   "api: the server didn't close cleanly: Error: password=hunter2 near the socket",
+ FAIL  src/shutdown.test.ts > stopOnSignal > says both failures, in order, and still finishes, when neither the server nor the database's connection closes cleanly
+AssertionError: expected [ …(2) ] to deeply equal [ …(2) ]
++   "api: the server didn't close cleanly: Error: password=hunter2 near the socket",

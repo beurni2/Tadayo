@@ -1,0 +1,26 @@
+breakage: r2-probe-limits-after-the-database
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  "  const budget = AbortSignal.timeout(BUDGET_MS);\n  const deadline = AbortSignal.timeout(DEADLINE_MS);\n",
+  "",
+  1
+ ],
+ [
+  "tools/ops/src/run.ts",
+  "  const api = await apiChecks({\n",
+  "  const budget = AbortSignal.timeout(BUDGET_MS);\n  const deadline = AbortSignal.timeout(DEADLINE_MS);\n  const api = await apiChecks({\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/run-remote.test.ts
+exit: 1
+expected words: starts the run's time limits before it opens the database
+caught: True
+
+     × starts the run's time limits before it opens the database, so that the database's checks count against them 11ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 28 passed (29)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/run-remote.test.ts > supabase-probe on the Machine (--here) > starts the run's time limits before it opens the database, so that the database's checks count against them
+AssertionError: expected [] to deeply equal ArrayContaining [150000, 240000]

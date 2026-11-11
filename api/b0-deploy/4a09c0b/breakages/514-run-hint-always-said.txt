@@ -1,0 +1,30 @@
+breakage: run-hint-always-said
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  "  if (heard.length === 0) {",
+  "  if (true) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/run.test.ts src/run-remote.test.ts
+exit: 1
+expected words: fails with the Machine's failure, after both have said what they found
+caught: True
+
+     × asks the Management API from here, with the access token, and the rest on the Machine, and passes when both do 10ms
+     × fails with the Machine's failure, after both have said what they found 2ms
+     × says nothing of what the project may hold when the Machine's half failed before it made anything 2ms
+     × fails, and says what the project may hold, when the Machine's report has the run's id and doesn't say how its checks went, even with an exit status of 0 1ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  4 failed | 40 passed (44)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > asks the Management API from here, with the access token, and the rest on the Machine, and passes when both do
+AssertionError: expected [ …(6) ] to deeply equal [ …(5) ]
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > fails with the Machine's failure, after both have said what they found
+AssertionError: expected [ …(5) ] to deeply equal [ …(4) ]
+    "supabase-probe: FAIL  anon: list the buckets: answered HTTP 200",
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > says nothing of what the project may hold when the Machine's half failed before it made anything
+AssertionError: expected [ …(3) ] to deeply equal [ …(2) ]
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > fails, and says what the project may hold, when the Machine's report has the run's id and doesn't say how its checks went, even with an exit status of 0
+AssertionError: supabase-probe: the Machine's report doesn't say its checks passed, so it proves nothing: expected 'supabase-probe: nothing came back fro…' to match /^supabase-probe: the Machine's report…/

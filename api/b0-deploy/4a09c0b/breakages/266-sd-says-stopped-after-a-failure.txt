@@ -1,0 +1,32 @@
+breakage: sd-says-stopped-after-a-failure
+patch: [
+ [
+  "services/api/src/shutdown.ts",
+  "      if (clean) options.say(\"api: stopped\");",
+  "      options.say(\"api: stopped\");",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/services/api && npx vitest run src/shutdown.test.ts
+exit: 1
+expected words: still ends the database's connection when closing the server fails, and says so without the error's own words
+caught: True
+
+     × still ends the database's connection when closing the server fails, and says so without the error's own words 9ms
+     × says the server didn't close cleanly when it fails after the grace too 3ms
+     × says when the database's connection doesn't end cleanly, without the error's own words, and doesn't say it stopped 2ms
+     × says both failures, in order, and still finishes, when neither the server nor the database's connection closes cleanly 1ms
+ Test Files  1 failed (1)
+      Tests  4 failed | 13 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/shutdown.test.ts > stopOnSignal > still ends the database's connection when closing the server fails, and says so without the error's own words
+AssertionError: expected [ 'api: stopping on SIGTERM', …(3) ] to deeply equal [ 'api: stopping on SIGTERM', …(2) ]
+    154|     closing.reject(new Error("password=hunter2 near the socket"));
+ FAIL  src/shutdown.test.ts > stopOnSignal > says the server didn't close cleanly when it fails after the grace too
+AssertionError: expected [ 'api: stopping on SIGTERM', …(5) ] to deeply equal [ 'api: stopping on SIGTERM', …(4) ]
+    164|     closing.reject(new Error("password=hunter2 near the socket"));
+ FAIL  src/shutdown.test.ts > stopOnSignal > says when the database's connection doesn't end cleanly, without the error's own words, and doesn't say it stopped
+AssertionError: expected [ 'api: stopping on SIGTERM', …(3) ] to deeply equal [ 'api: stopping on SIGTERM', …(2) ]
+ FAIL  src/shutdown.test.ts > stopOnSignal > says both failures, in order, and still finishes, when neither the server nor the database's connection closes cleanly
+AssertionError: expected [ 'api: stopping on SIGTERM', …(3) ] to deeply equal [ 'api: stopping on SIGTERM', …(2) ]
+    188|     closing.reject(new Error("password=hunter2 near the socket"));

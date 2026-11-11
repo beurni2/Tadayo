@@ -1,0 +1,41 @@
+breakage: ss-bucket-made-public
+patch: [
+ [
+  "tools/ops/src/storage-setup.ts",
+  "    public: false,\n    file_size_limit: FILE_SIZE_LIMIT,",
+  "    public: true,\n    file_size_limit: FILE_SIZE_LIMIT,",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/storage-setup.test.ts
+exit: 1
+expected words: makes both buckets when they're missing: private, with the limit and the types
+caught: True
+
+     × makes both buckets when they're missing: private, with the limit and the types 33ms
+     × makes nothing when they're as declared, and a second run writes nothing at all 2ms
+     × makes a bucket private again, and sets its limit and types, when it was made another way, and says what it changed 1ms
+     × touches only the buckets' own routes, as the service key: never an object, never a delete 3ms
+     × treats a bucket that appears between the look and the make as there, and goes on to make it as declared 1ms
+     × sends the service key and never the public one, and prints neither 1ms
+ Test Files  1 failed (1)
+      Tests  6 failed | 7 passed (13)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/storage-setup.test.ts > storageSetup > makes both buckets when they're missing: private, with the limit and the types
+OpsError: storage-setup: uploads isn't as declared after the update: it is public
+    108|         throw new OpsError(
+ FAIL  src/storage-setup.test.ts > storageSetup > makes nothing when they're as declared, and a second run writes nothing at all
+OpsError: storage-setup: uploads isn't as declared after the update: it is public
+    108|         throw new OpsError(
+ FAIL  src/storage-setup.test.ts > storageSetup > makes a bucket private again, and sets its limit and types, when it was made another way, and says what it changed
+OpsError: storage-setup: uploads isn't as declared after the update: it is public
+    108|         throw new OpsError(
+ FAIL  src/storage-setup.test.ts > storageSetup > touches only the buckets' own routes, as the service key: never an object, never a delete
+OpsError: storage-setup: uploads isn't as declared after the update: it is public
+    108|         throw new OpsError(
+ FAIL  src/storage-setup.test.ts > storageSetup > treats a bucket that appears between the look and the make as there, and goes on to make it as declared
+OpsError: storage-setup: uploads isn't as declared after the update: it is public
+    108|         throw new OpsError(
+ FAIL  src/storage-setup.test.ts > storageSetup > sends the service key and never the public one, and prints neither
+OpsError: storage-setup: uploads isn't as declared after the update: it is public
+    108|         throw new OpsError(

@@ -1,0 +1,20 @@
+breakage: run-probe-run-id-not-said
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  "  ctx.say(`supabase-probe: run ${run}`);\n",
+  "",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-deploy-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/c10a/dbtest-wt.sh src/db/ops-scripts.test.ts
+exit: 1
+expected words: makes the two buckets, and then finds the project closed: the run's id first, every check ok, the count last
+caught: True
+
+     × makes the two buckets, and then finds the project closed: the run's id first, every check ok, the count last 81ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/ops-scripts.test.ts > storage-setup and supabase-probe on the Machine (--here), against the local Postgres and a made-up project > makes the two buckets, and then finds the project closed: the run's id first, every check ok, the count last
+AssertionError: expected 'supabase-probe: ok    database: nothi…' to match /^supabase-probe: run [0-9a-f]{8}-[0-9…/
+ Test Files  1 failed (1)
+      Tests  1 failed | 8 passed (9)

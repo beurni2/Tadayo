@@ -1,0 +1,23 @@
+breakage: web-headers-removal-unseen
+patch: [
+ [
+  "apps/web/src/build.ts",
+  "/^(!\\s*)?content-type\\s*(:|$)/i",
+  "/^content-type\\s*:/i",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/apps/web && npx vitest run src/build.test.ts
+exit: 1
+expected words: refuses a Content-Type set or removed under any other path, since Pages applies every rule that matches
+caught: True
+
+     × refuses a Content-Type set or removed under any other path, since Pages applies every rule that matches 5ms
+     × refuses the association's own rule when it removes the Content-Type, beside setting it or not 1ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 15 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/build.test.ts > checkHeaders > refuses a Content-Type set or removed under any other path, since Pages applies every rule that matches
+AssertionError: expected [] to deeply equal [ Array(1) ]
+ FAIL  src/build.test.ts > checkHeaders > refuses the association's own rule when it removes the Content-Type, beside setting it or not
+AssertionError: expected [ Array(1) ] to deeply equal [ Array(1) ]

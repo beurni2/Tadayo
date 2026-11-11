@@ -1,0 +1,20 @@
+breakage: p-profile-header-dropped
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "    const profile = { \"accept-profile\": \"app\" };",
+  "    const profile = {};",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: asks REST for the schema app by name, since it would otherwise be asked for the public one
+caught: True
+
+     × asks REST for the schema app by name, since it would otherwise be asked for the public one 12ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 61 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks's controls: each must hold, in its own words, before a refusal means anything > asks REST for the schema app by name, since it would otherwise be asked for the public one
+AssertionError: expected [ [ '/rest/v1/users', null ], …(5) ] to deeply equal [ [ '/rest/v1/users', 'app' ], …(5) ]

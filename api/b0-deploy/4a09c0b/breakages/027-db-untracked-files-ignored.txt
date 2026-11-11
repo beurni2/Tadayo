@@ -1,0 +1,20 @@
+breakage: db-untracked-files-ignored
+patch: [
+ [
+  "tools/ops/src/deploy-branch.ts",
+  "[\"status\", \"--porcelain\", \"--untracked-files=all\"]",
+  "[\"status\", \"--porcelain\"]",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-branch.test.ts
+exit: 1
+expected words: looks at the checkout before it asks anyone, and at the ci run before it deploys
+caught: True
+
+     × looks at the checkout before it asks anyone, and at the ci run before it deploys 8ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-branch.test.ts > deployBranch when the commit's ci run passed > looks at the checkout before it asks anyone, and at the ci run before it deploys
+AssertionError: expected [ 'git rev-parse HEAD', …(1) ] to deeply equal [ 'git rev-parse HEAD', …(1) ]

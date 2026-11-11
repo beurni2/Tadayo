@@ -1,0 +1,24 @@
+breakage: dc-offset-from-the-clocks-own-reading
+patch: [
+ [
+  "tools/ops/src/dev-clock.ts",
+  "const offset = target.epochNanoseconds / 1000n - postgresNowMicroseconds;",
+  "const offset = target.epochNanoseconds / 1000n - postgresNowMicroseconds - current;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/dev-clock.test.ts
+exit: 1
+expected words: measures the longest offset from Postgres's clock, not from the clock's own reading
+caught: True
+
+     × takes a target equal to what the clock reads now, and refuses one a microsecond before it (T3) 4ms
+     × measures the longest offset from Postgres's clock, not from the clock's own reading 4ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 5 passed (7)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/dev-clock.test.ts > moveOffset > takes a target equal to what the clock reads now, and refuses one a microsecond before it (T3)
+OpsError: dev-clock: dev's clock reads 2027-01-17T08:00:00Z now, which is after 2027-01-17T08:00:00Z: the clock only moves forward (T3), so nothing is changed
+     60|     throw new OpsError(
+ FAIL  src/dev-clock.test.ts > moveOffset > measures the longest offset from Postgres's clock, not from the clock's own reading
+AssertionError: expected [Function] to throw error matching /366 days/ but got 'dev-clock: dev\'s clock reads 2028-01…'

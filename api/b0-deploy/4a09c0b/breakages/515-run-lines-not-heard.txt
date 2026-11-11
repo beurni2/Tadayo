@@ -1,0 +1,40 @@
+breakage: run-lines-not-heard
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  "          heard.push(line);\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/run.test.ts src/run-remote.test.ts
+exit: 1
+expected words: fails with the Machine's failure, after both have said what they found
+caught: True
+
+     × asks the Management API from here, with the access token, and the rest on the Machine, and passes when both do 6ms
+     × still runs the Machine's checks when the Data API check fails, and then fails, naming the schema and not the secret 5ms
+     × fails with the Machine's failure, after both have said what they found 3ms
+     × says nothing of what the project may hold when the Machine's half failed before it made anything 1ms
+     × fails, and says what the project may hold, when the Machine's report has the run's id and doesn't say how its checks went, even with an exit status of 0 1ms
+     × needs the access token, and says the Management API didn't answer as a failed check 1ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  6 failed | 38 passed (44)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > asks the Management API from here, with the access token, and the rest on the Machine, and passes when both do
+OpsError: supabase-probe: the Machine's report doesn't say its checks passed, so it proves nothing
+    359|     throw new OpsError("supabase-probe: the Machine's report doesn't s…
+    361|   if (settings.some((check) => !check.ok)) throw new OpsError("supabas…
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > still runs the Machine's checks when the Data API check fails, and then fails, naming the schema and not the secret
+AssertionError: expected 'supabase-probe: the Machine\'s report…' to be 'supabase-probe: the Data API check fa…' // Object.is equality
+    426|       "supabase-probe: FAIL  the Data API's settings expose no schema:…
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > fails with the Machine's failure, after both have said what they found
+AssertionError: expected [ …(5) ] to deeply equal [ …(4) ]
+    "supabase-probe: FAIL  anon: list the buckets: answered HTTP 200",
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > says nothing of what the project may hold when the Machine's half failed before it made anything
+AssertionError: expected [ …(3) ] to deeply equal [ …(2) ]
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > fails, and says what the project may hold, when the Machine's report has the run's id and doesn't say how its checks went, even with an exit status of 0
+AssertionError: supabase-probe: the Machine's report doesn't say its checks passed, so it proves nothing: expected 'supabase-probe: nothing came back fro…' to match /^supabase-probe: the Machine's report…/
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > needs the access token, and says the Management API didn't answer as a failed check
+AssertionError: expected 'supabase-probe: the Machine\'s report…' to be 'supabase-probe: the Data API check fa…' // Object.is equality
+    550|       "supabase-probe: FAIL  the Data API's settings expose no schema:…

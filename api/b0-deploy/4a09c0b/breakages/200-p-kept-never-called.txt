@@ -1,0 +1,29 @@
+breakage: p-kept-never-called
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "    if (problem !== undefined && asked) kept?.();\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: removes what a leaked write made, by name, and says it did
+caught: True
+
+     × names the surface when new-object is open, and leaves nothing behind 11ms
+     × names the surface when bucket-create is open, and leaves nothing behind 8ms
+     × removes what a leaked write made, by name, and says it did 6ms
+     × ends a call that is in flight when the budget runs out, and removes what that call may have written 3ms
+ Test Files  1 failed (1)
+      Tests  4 failed | 58 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when new-object is open, and leaves nothing behind
+AssertionError: expected 2 to be +0 // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when bucket-create is open, and leaves nothing behind
+AssertionError: expected [ Array(3) ] to deeply equal [ 'renditions', 'uploads' ]
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > removes what a leaked write made, by name, and says it did
+AssertionError: expected [ …(3) ] to deeply equal [ …(6) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > ends a call that is in flight when the budget runs out, and removes what that call may have written
+AssertionError: expected false to be true // Object.is equality

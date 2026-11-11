@@ -1,0 +1,20 @@
+breakage: p-db-storage-without-rls-passes
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "      if (!row.rls) found.push(`storage.${wanted} has no row-level security`);\n",
+  "",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-deploy-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/c10a/dbtest-wt.sh src/db/ops-probe.test.ts
+exit: 1
+expected words: fails when row-level security is off, which would open every object to every role with a grant
+caught: True
+
+     × fails when row-level security is off, which would open every object to every role with a grant 24ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/ops-probe.test.ts > databaseChecks on Storage's tables > fails when row-level security is off, which would open every object to every role with a grant
+AssertionError: expected undefined to be 'storage.objects has no row-level secu…' // Object.is equality
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)

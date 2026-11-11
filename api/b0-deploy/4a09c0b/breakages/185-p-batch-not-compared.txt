@@ -1,0 +1,23 @@
+breakage: p-batch-not-compared
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "          settle(batch, (reply) => reply.status === 200 && signedPath(reply)),",
+  "          settle(batch, (reply) => reply.status === 200),",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: takes an empty list or a batch with no URL as closed only because the service key listed and signed the same object
+caught: True
+
+     × takes an empty list or a batch with no URL as closed only because the service key listed and signed the same object 12ms
+     × names the control of the batch when it signs some other path, or none 5ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 60 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks counts only Storage's own refusal as one > takes an empty list or a batch with no URL as closed only because the service key listed and signed the same object
+AssertionError: expected [] to deeply equal [ Array(1) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks's controls: each must hold, in its own words, before a refusal means anything > names the control of the batch when it signs some other path, or none
+AssertionError: [{"path":"probe/elsewhere/seen.png","signedURL":"/object/sign/uploads/x?token=t"}]: expected [] to deeply equal [ Array(1) ]

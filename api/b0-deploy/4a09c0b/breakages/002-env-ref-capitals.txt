@@ -1,0 +1,24 @@
+breakage: env-ref-capitals
+patch: [
+ [
+  "tools/ops/src/environment.ts",
+  "const PROJECT_REF = /^[a-z]{20}$/;",
+  "const PROJECT_REF = /^[a-zA-Z]{20}$/;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/environment.test.ts
+exit: 1
+expected words: refuses a reference that isn't a project's
+caught: True
+
+     × refuses a reference that isn't a project's: it must be twenty lowercase letters, and it says that 6ms
+     × refuses anything shorter, longer or not lowercase letters, by the variable's name and never the value 1ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 20 passed (22)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/environment.test.ts > devDatabaseUrl: only tadayo-dev's database, by the reference in the connection > refuses a reference that isn't a project's: it must be twenty lowercase letters, and it says that
+AssertionError: RHSYCMYCOCBZAKRYDAHI: expected [Function] to throw error matching /^SUPABASE_DEV_PROJECT_REF isn't a Sup…/ but got 'DATABASE_URL isn\'t a connection to t…'
+ FAIL  src/environment.test.ts > devProjectRef: a Supabase project's reference is twenty lowercase letters > refuses anything shorter, longer or not lowercase letters, by the variable's name and never the value
+AssertionError: "RHSYCMYCOCBZAKRYDAHI": expected '' to be 'SUPABASE_DEV_PROJECT_REF isn\'t a Sup…' // Object.is equality
+    207|         message = error instanceof OpsError ? error.message : "not an …

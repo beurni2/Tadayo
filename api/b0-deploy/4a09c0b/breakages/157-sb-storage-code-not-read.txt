@@ -1,0 +1,43 @@
+breakage: sb-storage-code-not-read
+patch: [
+ [
+  "tools/ops/src/supabase.ts",
+  "  return { logical, code: typeof code === \"string\" ? code : undefined };",
+  "  return { logical, code: undefined };",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/storage-setup.test.ts
+exit: 1
+expected words: makes both buckets when they're missing
+caught: True
+
+     × makes both buckets when they're missing: private, with the limit and the types 36ms
+     × makes nothing when they're as declared, and a second run writes nothing at all 2ms
+     × touches only the buckets' own routes, as the service key: never an object, never a delete 2ms
+     × treats a bucket that appears between the look and the make as there, and goes on to make it as declared 3ms
+     × says what it couldn't do, naming the bucket and the project's status, when the make or the update fails 4ms
+     × fails when a bucket isn't there after the project said it made it, rather than say it is made 1ms
+     × sends the service key and never the public one, and prints neither 1ms
+ Test Files  1 failed (1)
+      Tests  7 failed | 6 passed (13)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/storage-setup.test.ts > storageSetup > makes both buckets when they're missing: private, with the limit and the types
+OpsError: storage-setup: uploads: couldn't look at it: HTTP 400, status 404
+     72|     new OpsError(`storage-setup: ${bucket}: ${what}: ${describe(reply)…
+ FAIL  src/storage-setup.test.ts > storageSetup > makes nothing when they're as declared, and a second run writes nothing at all
+OpsError: storage-setup: uploads: couldn't look at it: HTTP 400, status 404
+     72|     new OpsError(`storage-setup: ${bucket}: ${what}: ${describe(reply)…
+ FAIL  src/storage-setup.test.ts > storageSetup > touches only the buckets' own routes, as the service key: never an object, never a delete
+OpsError: storage-setup: renditions: couldn't look at it: HTTP 400, status 404
+     72|     new OpsError(`storage-setup: ${bucket}: ${what}: ${describe(reply)…
+ FAIL  src/storage-setup.test.ts > storageSetup > treats a bucket that appears between the look and the make as there, and goes on to make it as declared
+OpsError: storage-setup: uploads: couldn't look at it: HTTP 400, status 404
+     72|     new OpsError(`storage-setup: ${bucket}: ${what}: ${describe(reply)…
+ FAIL  src/storage-setup.test.ts > storageSetup > says what it couldn't do, naming the bucket and the project's status, when the make or the update fails
+AssertionError: expected [Function] to throw error matching /^storage-setup: uploads: couldn't mak…/ but got 'storage-setup: uploads: couldn\'t loo…'
+ FAIL  src/storage-setup.test.ts > storageSetup > fails when a bucket isn't there after the project said it made it, rather than say it is made
+AssertionError: expected [Function] to throw error matching /^storage-setup: uploads: it isn't the…/ but got 'storage-setup: uploads: couldn\'t loo…'
+ FAIL  src/storage-setup.test.ts > storageSetup > sends the service key and never the public one, and prints neither
+OpsError: storage-setup: uploads: couldn't look at it: HTTP 400, status 404
+     72|     new OpsError(`storage-setup: ${bucket}: ${what}: ${describe(reply)…

@@ -1,0 +1,20 @@
+breakage: ssl-always-asked
+patch: [
+ [
+  "packages/domain/src/db/ssl.ts",
+  "  return isPlainLoopback(url) ? {} : { ssl: \"require\" };",
+  "  return { ssl: \"require\" };",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/packages/domain && npx vitest run src/db/ssl.test.ts
+exit: 1
+expected words: asks for nothing for a plainly written loopback host, which is CI's service and a developer's own
+caught: True
+
+     × asks for nothing for a plainly written loopback host, which is CI's service and a developer's own 6ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/ssl.test.ts > transportOptions > asks for nothing for a plainly written loopback host, which is CI's service and a developer's own
+AssertionError: postgresql://tadayo_app:a-password@localhost:5432/postgres: expected { ssl: 'require' } to deeply equal {}

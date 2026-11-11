@@ -1,0 +1,24 @@
+breakage: env-host-any
+patch: [
+ [
+  "tools/ops/src/environment.ts",
+  "  if (!POOLER_HOST.test(parsed.hostname.toLowerCase())) throw refused(\"its host isn't a Supabase session pooler's\");\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/environment.test.ts
+exit: 1
+expected words: refuses a connection with no reference to read: a plain role, a local server, any other host
+caught: True
+
+     × refuses a connection with no reference to read: a plain role, a local server, any other host 5ms
+     × never says the string or the reference when it refuses: its messages name variables, not values (T56) 2ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 20 passed (22)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/environment.test.ts > devDatabaseUrl: only tadayo-dev's database, by the reference in the connection > refuses a connection with no reference to read: a plain role, a local server, any other host
+AssertionError: postgresql://tadayo_app.rhsycmycocbzakrydahi:…@localhost:5432/postgres
+ FAIL  src/environment.test.ts > devDatabaseUrl: only tadayo-dev's database, by the reference in the connection > never says the string or the reference when it refuses: its messages name variables, not values (T56)
+AssertionError: expected '' not to be '' // Object.is equality
+    172|         message = error instanceof Error ? error.message : "";

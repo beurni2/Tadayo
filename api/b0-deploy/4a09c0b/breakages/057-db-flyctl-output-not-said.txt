@@ -1,0 +1,20 @@
+breakage: db-flyctl-output-not-said
+patch: [
+ [
+  "tools/ops/src/deploy-branch.ts",
+  "  for (const text of [deployed.stdout, deployed.stderr]) for (const line of linesOf(text)) say(line);\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-branch.test.ts
+exit: 1
+expected words: says what flyctl printed, line by line, whether or not it worked
+caught: True
+
+     × says what flyctl printed, line by line, whether or not it worked 8ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-branch.test.ts > deployBranch when GitHub or Fly doesn't answer as it should > says what flyctl printed, line by line, whether or not it worked
+AssertionError: expected [ …(2) ] to deeply equal [ '==> Building image', …(1) ]

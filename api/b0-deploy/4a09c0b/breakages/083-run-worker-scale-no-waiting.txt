@@ -1,0 +1,20 @@
+breakage: run-worker-scale-no-waiting
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  "to, say: ctx.say, sleep: ctx.sleep });",
+  "to, say: ctx.say, sleep: async () => undefined });",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/run.test.ts src/run-remote.test.ts
+exit: 1
+expected words: stops the worker, waiting with the context's sleep between the times it looks
+caught: True
+
+     × stops the worker, waiting with the context's sleep between the times it looks 7ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 43 passed (44)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/run-remote.test.ts > worker-scale > stops the worker, waiting with the context's sleep between the times it looks
+AssertionError: expected [] to deeply equal [ 3000 ]

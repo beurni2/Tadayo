@@ -1,0 +1,20 @@
+breakage: spawn-input-never-closed
+patch: [
+ [
+  "tools/ops/src/spawn.ts",
+  "child.stdin.end(options.input ?? \"\");",
+  "child.stdin.write(options.input ?? \"\");",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/spawn.test.ts
+exit: 1
+expected words: writes the input to the child's standard input and closes it, and closes it at once when there is none
+caught: True
+
+     × writes the input to the child's standard input and closes it, and closes it at once when there is none 5006ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 passed (14)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/spawn.test.ts > spawnProcess > writes the input to the child's standard input and closes it, and closes it at once when there is none
+Error: Test timed out in 5000ms.

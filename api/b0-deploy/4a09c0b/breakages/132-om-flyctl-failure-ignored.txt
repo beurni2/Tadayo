@@ -1,0 +1,23 @@
+breakage: om-flyctl-failure-ignored
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "  if (result.code !== 0) throw new OpsError(`${label}: flyctl couldn't run it on the Machine: ${why(result)}`);\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/on-machine.test.ts
+exit: 1
+expected words: fails when flyctl can't run it, saying why, or answers with something it can't read
+caught: True
+
+     × fails when flyctl can't run it, saying why, or answers with something it can't read 9ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 7 passed (8)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine > fails when flyctl can't run it, saying why, or answers with something it can't read
+AssertionError: expected 'storage-setup: flyctl\'s answer about…' to be 'storage-setup: flyctl couldn\'t run i…' // Object.is equality
+Expected: "storage-setup: flyctl couldn't run it on the Machine: exit code 1: Error: machine is not running"
+     88|       [EXEC, { code: 1, stderr: "Error: machine is not running" }],
+     90|     expect((refused.outcome as OpsError).message).toBe(

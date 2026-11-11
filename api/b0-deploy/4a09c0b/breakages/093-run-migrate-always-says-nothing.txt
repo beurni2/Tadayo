@@ -1,0 +1,20 @@
+breakage: run-migrate-always-says-nothing
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  "    ctx.say(applied.length === 0 ? \"migrate: nothing to apply\" : `migrate: ${String(applied.length)} applied`);",
+  "    ctx.say(\"migrate: nothing to apply\");",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-deploy-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/c10a/dbtest-wt.sh src/db/ops-scripts.test.ts
+exit: 1
+expected words: migrate: says how many it applied when a migration is new, and applies it only once
+caught: True
+
+     × migrate: says how many it applied when a migration is new, and applies it only once 60ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/ops-scripts.test.ts > the scripts against the local Postgres > migrate: says how many it applied when a migration is new, and applies it only once
+AssertionError: expected 'migrate: nothing to apply' to be 'migrate: 1 applied' // Object.is equality
+ Test Files  1 failed (1)
+      Tests  1 failed | 8 passed (9)

@@ -1,0 +1,20 @@
+breakage: out-pattern-supabase-access-token-only-the-first
+patch: [
+ [
+  "tools/ops/src/output.ts",
+  "  [/\\bsbp_[0-9a-f]{20,}/g, REDACTED], // a Supabase access token\n",
+  "  [/\\bsbp_[0-9a-f]{20,}/, REDACTED], // a Supabase access token\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/output.test.ts
+exit: 1
+expected words: holds back a token of each shape the patterns know, with an empty environment
+caught: True
+
+     × holds back a token of each shape the patterns know, with an empty environment 9ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/output.test.ts > redactor > holds back a token of each shape the patterns know, with an empty environment
+AssertionError: sbp_0123456789abcdef0123456789abcdef01234567: expected 'error: [redacted]: refused, and sbp_0…' to be 'error: [redacted]: refused, and [reda…' // Object.is equality

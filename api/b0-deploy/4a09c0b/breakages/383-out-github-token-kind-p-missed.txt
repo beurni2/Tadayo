@@ -1,0 +1,20 @@
+breakage: out-github-token-kind-p-missed
+patch: [
+ [
+  "tools/ops/src/output.ts",
+  "\\bgh[pousr]_",
+  "\\bgh[ousr]_",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/output.test.ts
+exit: 1
+expected words: holds back a token of each shape the patterns know, with an empty environment
+caught: True
+
+     × holds back a token of each shape the patterns know, with an empty environment 6ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/output.test.ts > redactor > holds back a token of each shape the patterns know, with an empty environment
+AssertionError: ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789: expected 'error: ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ…' to be 'error: [redacted]: refused, and [reda…' // Object.is equality

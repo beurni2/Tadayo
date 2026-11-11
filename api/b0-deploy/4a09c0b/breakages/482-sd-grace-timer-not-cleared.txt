@@ -1,0 +1,23 @@
+breakage: sd-grace-timer-not-cleared
+patch: [
+ [
+  "services/api/src/shutdown.ts",
+  "        clearTimeout(grace);\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/services/api && npx vitest run src/shutdown.test.ts
+exit: 1
+expected words: does not wait for the grace when the server closes before it
+caught: True
+
+     × ends the connections left idle, every sweep, while the server closes, and stops sweeping once it has 5ms
+     × does not wait for the grace when the server closes before it 1ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 15 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/shutdown.test.ts > stopOnSignal > ends the connections left idle, every sweep, while the server closes, and stops sweeping once it has
+AssertionError: expected 1 to be +0 // Object.is equality
+ FAIL  src/shutdown.test.ts > stopOnSignal > does not wait for the grace when the server closes before it
+AssertionError: expected 1 to be +0 // Object.is equality

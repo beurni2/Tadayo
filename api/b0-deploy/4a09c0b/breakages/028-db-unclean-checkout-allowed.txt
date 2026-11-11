@@ -1,0 +1,22 @@
+breakage: db-unclean-checkout-allowed
+patch: [
+ [
+  "tools/ops/src/deploy-branch.ts",
+  "--untracked-files=all\"])).trim() !== \"\") {",
+  "--untracked-files=all\"])).trim() === \"never\") {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-branch.test.ts
+exit: 1
+expected words: when the checkout has changes or files that git doesn't know
+caught: True
+
+     × when the checkout has changes or files that git doesn't know, which the build would take 10ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-branch.test.ts > deployBranch refuses a checkout that isn't the branch's head > when the checkout has changes or files that git doesn't know, which the build would take
+AssertionError:  M services/api/src/main.ts
+: expected 'not an OpsError: undefined' to be 'deploy-branch: refused: the checkout …' // Object.is equality
+Received: "not an OpsError: undefined"

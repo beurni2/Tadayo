@@ -1,0 +1,32 @@
+breakage: web-association-own-rules-always-said
+patch: [
+ [
+  "apps/web/src/build.ts",
+  "  if (problems.some((problem) => problem.startsWith(`${ASSOCIATION} `))) {",
+  "  if (true) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/apps/web && npx vitest run src/build.test.ts
+exit: 1
+expected words: says the association file's rules are Tadayo's own, when one of them refused it, and not for any other problem
+caught: True
+
+     × copies the site whole, dot-folders included, into an empty folder, and says what it made 10ms
+     × replaces what a build before it left, so a file that was taken out isn't kept 3ms
+     × says the association file's rules are Tadayo's own, when one of them refused it, and not for any other problem 8ms
+     × builds, and has what Cloudflare Pages and Apple need 1ms
+ Test Files  1 failed (1)
+      Tests  4 failed | 13 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/build.test.ts > buildSite > copies the site whole, dot-folders included, into an empty folder, and says what it made
+Error: web: the rules for .well-known/apple-app-site-association are Tadayo's own, stricter than Apple's format: checkAssociation in apps/web/src/build.ts says which
+    165|   if (problems.length > 0) throw new Error(problems.map((problem) => `…
+ FAIL  src/build.test.ts > buildSite > replaces what a build before it left, so a file that was taken out isn't kept
+Error: web: the rules for .well-known/apple-app-site-association are Tadayo's own, stricter than Apple's format: checkAssociation in apps/web/src/build.ts says which
+    165|   if (problems.length > 0) throw new Error(problems.map((problem) => `…
+ FAIL  src/build.test.ts > buildSite > says the association file's rules are Tadayo's own, when one of them refused it, and not for any other problem
+AssertionError: expected 'web: _headers has no rule for /.well-…' not to contain 'Tadayo\'s own'
+ FAIL  src/build.test.ts > the site in public/ > builds, and has what Cloudflare Pages and Apple need
+Error: web: the rules for .well-known/apple-app-site-association are Tadayo's own, stricter than Apple's format: checkAssociation in apps/web/src/build.ts says which
+    165|   if (problems.length > 0) throw new Error(problems.map((problem) => `…

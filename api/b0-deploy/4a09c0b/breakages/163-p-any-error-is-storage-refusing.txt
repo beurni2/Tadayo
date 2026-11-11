@@ -1,0 +1,20 @@
+breakage: p-any-error-is-storage-refusing
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "(reply.logical === 403 || reply.logical === 404)",
+  "reply.logical >= 400",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: fails a request Storage couldn't read (status 400), so a mistake of the probe's own can't pass as closed
+caught: True
+
+     × fails a request Storage couldn't read (status 400), so a mistake of the probe's own can't pass as closed 13ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 61 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks counts only Storage's own refusal as one > fails a request Storage couldn't read (status 400), so a mistake of the probe's own can't pass as closed
+AssertionError: expected [] to deeply equal [ 'anon: download from uploads', …(1) ]

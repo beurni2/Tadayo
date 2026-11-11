@@ -1,0 +1,21 @@
+breakage: web-association-own-rules-unsaid
+patch: [
+ [
+  "apps/web/src/build.ts",
+  "    problems.push(\n      `the rules for ${ASSOCIATION} are Tadayo's own, stricter than Apple's format: checkAssociation in apps/web/src/build.ts says which`,\n    );\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/apps/web && npx vitest run src/build.test.ts
+exit: 1
+expected words: says the association file's rules are Tadayo's own, when one of them refused it, and not for any other problem
+caught: True
+
+     × says the association file's rules are Tadayo's own, when one of them refused it, and not for any other problem 9ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/build.test.ts > buildSite > says the association file's rules are Tadayo's own, when one of them refused it, and not for any other problem
+AssertionError: expected [ Array(1) ] to deeply equal [ …(2) ]
+    239|       said = error instanceof Error ? error.message : "";

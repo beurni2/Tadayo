@@ -1,0 +1,20 @@
+breakage: ss-make-failure-ignored
+patch: [
+ [
+  "tools/ops/src/storage-setup.ts",
+  "      else if (reply.logical !== 409) throw fail(bucket, \"couldn't make it\", reply);",
+  "      else if (false) throw fail(bucket, \"couldn't make it\", reply);",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/storage-setup.test.ts
+exit: 1
+expected words: says what it couldn't do, naming the bucket and the project's status, when the make or the update fails
+caught: True
+
+     × says what it couldn't do, naming the bucket and the project's status, when the make or the update fails 6ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/storage-setup.test.ts > storageSetup > says what it couldn't do, naming the bucket and the project's status, when the make or the update fails
+AssertionError: expected [Function] to throw error matching /^storage-setup: uploads: couldn't mak…/ but got 'storage-setup: uploads: it isn\'t the…'

@@ -1,0 +1,20 @@
+breakage: ws-stop-with-sigkill
+patch: [
+ [
+  "tools/ops/src/worker-scale.ts",
+  "\"-a\", DEV_APP, \"-s\", \"SIGTERM\"]",
+  "\"-a\", DEV_APP, \"-s\", \"SIGKILL\"]",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/worker-scale.test.ts
+exit: 1
+expected words: stops the worker Machine and not the API's
+caught: True
+
+     × stops the worker Machine and not the API's, then reads its state 9ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/worker-scale.test.ts > workerScale to stopped > stops the worker Machine and not the API's, then reads its state
+AssertionError: expected [ …(3) ] to deeply equal [ …(3) ]

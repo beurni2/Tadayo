@@ -1,0 +1,20 @@
+breakage: r3-stop-end-untimed
+patch: [
+ [
+  "services/api/src/shutdown.ts",
+  "        await options.sql.end({ timeout: END_SECONDS });",
+  "        await options.sql.end({ timeout: 30 });",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/services/api && npx vitest run src/shutdown.test.ts
+exit: 1
+expected words: gives the database's connection END_SECONDS to end
+caught: True
+
+     × gives the database's connection END_SECONDS to end, after which postgres.js closes it with queries still running 7ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/shutdown.test.ts > stopOnSignal > gives the database's connection END_SECONDS to end, after which postgres.js closes it with queries still running
+AssertionError: expected [ { timeout: 30 } ] to deeply equal [ { timeout: 3 } ]

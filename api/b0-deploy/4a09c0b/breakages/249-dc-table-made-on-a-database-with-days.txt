@@ -1,0 +1,21 @@
+breakage: dc-table-made-on-a-database-with-days
+patch: [
+ [
+  "tools/ops/src/dev-clock.ts",
+  "    if (days?.any !== false) {",
+  "    if (false) {",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-deploy-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/c10a/dbtest-wt.sh src/db/ops-dev-clock.test.ts
+exit: 1
+expected words: refuses to make the table on a database that has occurrences, where a clock back at no offset would reopen days (T3)
+caught: True
+
+     × refuses to make the table on a database that has occurrences, where a clock back at no offset would reopen days (T3) 67ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/ops-dev-clock.test.ts > dev-clock, through the schema's own owner > refuses to make the table on a database that has occurrences, where a clock back at no offset would reopen days (T3)
+AssertionError: promise resolved "{ made: true, …(3) }" instead of rejecting
+- Error {
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)

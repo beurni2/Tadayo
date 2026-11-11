@@ -1,0 +1,45 @@
+breakage: p-bucket-list-with-the-public-key
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "    const everyBucket = await ask(\"/storage/v1/bucket\", { caller: service });",
+  "    const everyBucket = await ask(\"/storage/v1/bucket\", { caller: anon });",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: passes the two private buckets storage-setup makes, asking once, with the service key alone
+caught: True
+
+     × asks every door for each caller: REST for every table, GraphQL, and Storage's buckets and objects 27ms
+     × fails a gateway's 401, which says the key or the token wasn't taken and not that a policy refused 5ms
+     × passes the two private buckets storage-setup makes, asking once, with the service key alone 5ms
+     × fails a third bucket, which is none of storage-setup's, and counts it without naming it 5ms
+     × fails a public bucket, one of the two or a third, since a public bucket serves its objects with no key 4ms
+     × counts several in plural words 4ms
+     × takes a bucket that doesn't say it is private as not shown to be 5ms
+     × fails, with the status alone, when the answer is an error or is not a list, and the run goes on to the refusals 11ms
+     × fails a check, and not the run, when the project gives no answer to it 4ms
+ Test Files  1 failed (1)
+      Tests  9 failed | 53 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 9 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks on a closed project > asks every door for each caller: REST for every table, GraphQL, and Storage's buckets and objects
+AssertionError: anon: expected 2 to be 1 // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks counts only Storage's own refusal as one > fails a gateway's 401, which says the key or the token wasn't taken and not that a policy refused
+AssertionError: expected [ …(3) ] to deeply equal [ 'anon: list the buckets', …(1) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks asks which buckets the project has, and none may be public or another's (T53) > passes the two private buckets storage-setup makes, asking once, with the service key alone
+AssertionError: expected [] to have a length of 1 but got +0
+ FAIL  src/supabase-probe.test.ts > apiChecks asks which buckets the project has, and none may be public or another's (T53) > fails a third bucket, which is none of storage-setup's, and counts it without naming it
+AssertionError: expected [] to deeply equal [ Array(1) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks asks which buckets the project has, and none may be public or another's (T53) > fails a public bucket, one of the two or a third, since a public bucket serves its objects with no key
+AssertionError: expected undefined to be '1 bucket isn\'t shown to be private' // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks asks which buckets the project has, and none may be public or another's (T53) > counts several in plural words
+AssertionError: expected undefined to be '2 buckets aren\'t shown to be private…' // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks asks which buckets the project has, and none may be public or another's (T53) > takes a bucket that doesn't say it is private as not shown to be
+AssertionError: expected undefined to be '1 bucket isn\'t shown to be private' // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks asks which buckets the project has, and none may be public or another's (T53) > fails, with the status alone, when the answer is an error or is not a list, and the run goes on to the refusals
+AssertionError: answered HTTP 500: expected [] to deeply equal [ Array(1) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks asks which buckets the project has, and none may be public or another's (T53) > fails a check, and not the run, when the project gives no answer to it
+AssertionError: expected [] to deeply equal [ Array(1) ]
+    782|       listingBuckets(fake, () => Promise.reject(new TypeError("fetch f…

@@ -1,0 +1,85 @@
+breakage: p-user-not-remembered
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "    if (userId !== undefined) left.user = userId;\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: deletes the user and the objects even when a control throws half-way
+caught: True
+
+     × passes every check, controls and refusals, and leaves no object, no bucket and no user behind 64ms
+     × names the surface when list-buckets is open, and leaves nothing behind 9ms
+     × names the surface when list-objects is open, and leaves nothing behind 8ms
+     × names the surface when download is open, and leaves nothing behind 7ms
+     × names the surface when sign-read is open, and leaves nothing behind 9ms
+     × names the surface when overwrite is open, and leaves nothing behind 5ms
+     × names the surface when new-object is open, and leaves nothing behind 5ms
+     × names the surface when sign-upload is open, and leaves nothing behind 4ms
+     × names the surface when bucket-create is open, and leaves nothing behind 6ms
+     × names the surface when rest is open, and leaves nothing behind 6ms
+     × names the surface when rest-root is open, and leaves nothing behind 7ms
+     × names the surface when graphql is open, and leaves nothing behind 5ms
+     × removes what a leaked write made, by name, and says it did 6ms
+     × takes an empty list or a batch with no URL as closed only because the service key listed and signed the same object 2ms
+     × stops after the controls when Auth won't take the user's token, since every refusal of that token would mean nothing 1ms
+     × stops after the controls when the project gives the user no sign-in code 1ms
+     × names the control of the signed URL's put when it doesn't answer 200, and runs no read after it 2ms
+     × fails a check, not the run, when a call gets no answer, and still cleans up 6ms
+     × deletes the user and the objects even when a control throws half-way 2ms
+     × deletes the user and the objects even when the run itself throws, which is no excuse to leave them 4ms
+     × reports a clean-up that fails, with what is left, so that no test user stays behind unseen 4ms
+     × takes a bucket that doesn't say it is private as not shown to be 6ms
+     × fails, with the status alone, when the answer is an error or is not a list, and the run goes on to the refusals 13ms
+     × stops asking when the budget runs out part-way, says so for every check it didn't ask, and still cleans up 3ms
+     × ends a call that is in flight when the budget runs out, and removes what that call may have written 5ms
+     × stops the clean-up too at the deadline, and names every object and the user it leaves 3ms
+ Test Files  1 failed (1)
+      Tests  26 failed | 36 passed (62)
+⎯⎯⎯⎯⎯⎯ Failed Tests 26 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks on a closed project > passes every check, controls and refusals, and leaves no object, no bucket and no user behind
+AssertionError: expected 2 to be 3 // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when list-buckets is open, and leaves nothing behind
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when list-objects is open, and leaves nothing behind
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when download is open, and leaves nothing behind
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when sign-read is open, and leaves nothing behind
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when overwrite is open, and leaves nothing behind
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when new-object is open, and leaves nothing behind
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when sign-upload is open, and leaves nothing behind
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when bucket-create is open, and leaves nothing behind
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when rest is open, and leaves nothing behind
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when rest-root is open, and leaves nothing behind
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when graphql is open, and leaves nothing behind
+AssertionError: expected 1 to be +0 // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > removes what a leaked write made, by name, and says it did
+AssertionError: expected [ …(5) ] to deeply equal [ …(6) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks counts only Storage's own refusal as one > takes an empty list or a batch with no URL as closed only because the service key listed and signed the same object
+AssertionError: expected 1 to be +0 // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks counts only Storage's own refusal as one > stops after the controls when Auth won't take the user's token, since every refusal of that token would mean nothing
+AssertionError: expected 1 to be +0 // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks counts only Storage's own refusal as one > stops after the controls when the project gives the user no sign-in code
+AssertionError: expected 1 to be +0 // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks's controls: each must hold, in its own words, before a refusal means anything > names the control of the signed URL's put when it doesn't answer 200, and runs no read after it
+AssertionError: expected 1 to be +0 // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks when the project can't be trusted to answer > fails a check, not the run, when a call gets no answer, and still cleans up
+AssertionError: expected 1 to be +0 // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks when the project can't be trusted to answer > deletes the user and the objects even when a control throws half-way
+AssertionError: expected 1 to be +0 // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks when the project can't be trusted to answer > deletes the user and the objects even when the run itself throws, which is no excuse to leave them
+AssertionError: expected 1 to be +0 // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks when the project can't be trusted to answer > reports a clean-up that fails, with what is left, so that no test user stays behind unseen
+AssertionError: expected [] to deeply equal [ 'cleanup: delete the probe user' ]
+ FAIL  src/supabase-probe.test.ts > apiChecks asks which buckets the project has, and none may be public or another's (T53) > takes a bucket that doesn't say it is private as not shown to be
+AssertionError: expected undefined to be '2 buckets aren\'t shown to be private' // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks asks which buckets the project has, and none may be public or another's (T53) > fails, with the status alone, when the answer is an error or is not a list, and the run goes on to the refusals
+AssertionError: answered HTTP 200: expected [ Array(1) ] to deeply equal [ Array(1) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > stops asking when the budget runs out part-way, says so for every check it didn't ask, and still cleans up
+AssertionError: expected [ 'DELETE', 'DELETE' ] to deeply equal [ 'DELETE', 'DELETE', 'DELETE' ]
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > ends a call that is in flight when the budget runs out, and removes what that call may have written
+AssertionError: expected 1 to be +0 // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > stops the clean-up too at the deadline, and names every object and the user it leaves
+AssertionError: expected [ { …(3) }, { …(3) } ] to deeply equal [ { …(3) }, { …(3) }, { …(3) } ]

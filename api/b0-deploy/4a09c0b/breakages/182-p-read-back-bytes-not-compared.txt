@@ -1,0 +1,20 @@
+breakage: p-read-back-bytes-not-compared
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "          settle(read, (reply) => reply.status === 200 && sameBytes(reply.bytes, PNG)),",
+  "          settle(read, (reply) => reply.status === 200),",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: names the control of the read when the bytes aren't the ones the probe put there
+caught: True
+
+     × names the control of the read when the bytes aren't the ones the probe put there 16ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 61 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks's controls: each must hold, in its own words, before a refusal means anything > names the control of the read when the bytes aren't the ones the probe put there
+AssertionError: expected [] to deeply equal [ Array(1) ]

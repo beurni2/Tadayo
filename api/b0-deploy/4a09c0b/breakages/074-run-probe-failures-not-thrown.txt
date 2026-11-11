@@ -1,0 +1,28 @@
+breakage: run-probe-failures-not-thrown
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  "  if (failed > 0) throw new OpsError(",
+  "  if (false) throw new OpsError(",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-deploy-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/c10a/dbtest-wt.sh src/db/ops-scripts.test.ts
+exit: 1
+expected words: fails, saying how many checks failed and which, when a door leaks, and still cleans up
+caught: True
+
+     × fails, saying how many checks failed and which, when a door leaks, and still cleans up 33ms
+     × fails, naming the table, when Storage's tables have a policy: the database layer is part of the run 24ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/ops-scripts.test.ts > storage-setup and supabase-probe on the Machine (--here), against the local Postgres and a made-up project > fails, saying how many checks failed and which, when a door leaks, and still cleans up
+AssertionError: expected undefined to be an instance of Error
+    273|     expect(outcome).toBeInstanceOf(Error);
+    274|     expect((outcome as Error).message).toMatch(/^supabase-probe: 2 of …
+ FAIL  src/db/ops-scripts.test.ts > storage-setup and supabase-probe on the Machine (--here), against the local Postgres and a made-up project > fails, naming the table, when Storage's tables have a policy: the database layer is part of the run
+TypeError: Cannot read properties of undefined (reading 'message')
+    288|     expect((outcome as Error).message).toMatch(/^supabase-probe: 1 of …
+    289|     expect(lines.filter((line) => line.includes("FAIL"))).toEqual([
+    290|       "supabase-probe: FAIL  database: Storage's buckets and objects h…
+ Test Files  1 failed (1)
+      Tests  2 failed | 7 passed (9)

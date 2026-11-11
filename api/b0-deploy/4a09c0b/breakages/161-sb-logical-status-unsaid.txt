@@ -1,0 +1,20 @@
+breakage: sb-logical-status-unsaid
+patch: [
+ [
+  "tools/ops/src/supabase.ts",
+  "  if (reply.logical !== reply.status) parts.push(`status ${String(reply.logical)}`);\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase.test.ts
+exit: 1
+expected words: says the HTTP status, Storage's own status when it differs, and the code
+caught: True
+
+     × says the HTTP status, Storage's own status when it differs, and the code 5ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase.test.ts > describe: what a reply was, for a message, and never its body > says the HTTP status, Storage's own status when it differs, and the code
+AssertionError: expected 'HTTP 400, AccessDenied' to be 'HTTP 400, status 403, AccessDenied' // Object.is equality

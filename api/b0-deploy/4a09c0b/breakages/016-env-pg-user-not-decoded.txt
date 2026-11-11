@@ -1,0 +1,20 @@
+breakage: env-pg-user-not-decoded
+patch: [
+ [
+  "tools/ops/src/environment.ts",
+  "    user: decodeURIComponent(parsed.username),",
+  "    user: parsed.username,",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/environment.test.ts
+exit: 1
+expected words: decodes a user that is written with escapes, as the password is
+caught: True
+
+     × decodes a user that is written with escapes, as the password is 6ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 21 passed (22)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/environment.test.ts > pgEnvOf: the connection as the environment variables psql reads, so no password is on a command line > decodes a user that is written with escapes, as the password is
+AssertionError: expected 'tadayo%5Fapp.rhsycmycocbzakrydahi' to be 'tadayo_app.rhsycmycocbzakrydahi' // Object.is equality

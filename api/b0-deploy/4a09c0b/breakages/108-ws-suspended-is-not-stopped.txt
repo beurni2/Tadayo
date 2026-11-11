@@ -1,0 +1,22 @@
+breakage: ws-suspended-is-not-stopped
+patch: [
+ [
+  "tools/ops/src/worker-scale.ts",
+  "const STOPPED = [\"stopped\", \"suspended\"];",
+  "const STOPPED = [\"stopped\"];",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/worker-scale.test.ts
+exit: 1
+expected words: takes a suspended Machine as stopped
+caught: True
+
+     × takes a suspended Machine as stopped 5ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/worker-scale.test.ts > workerScale to stopped > takes a suspended Machine as stopped
+AssertionError: expected OpsError: worker-scale: the worker Machin… to be undefined
+OpsError {
+  "name": "OpsError",

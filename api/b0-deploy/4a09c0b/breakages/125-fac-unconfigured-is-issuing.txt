@@ -1,0 +1,26 @@
+breakage: fac-unconfigured-is-issuing
+patch: [
+ [
+  "tools/ops/src/fly-app-create.ts",
+  "  if (detail[\"configured\"] === false) return \"waiting for DNS\";",
+  "  if (detail[\"configured\"] === false) return \"issuing\";",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/fly-app-create.test.ts
+exit: 1
+expected words: says where the certificate is: waiting for DNS, or DNS found and the certificate on its way
+caught: True
+
+     × makes the app in the only organization, requests the certificate, and says what DNS needs 12ms
+     × says where the certificate is: waiting for DNS, or DNS found and the certificate on its way 2ms
+     × names the CNAME target Fly gives, and the app's own fly.dev name when it gives none or a strange one 1ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 12 passed (15)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly-app-create.test.ts > flyAppCreate on a fresh account > makes the app in the only organization, requests the certificate, and says what DNS needs
+AssertionError: expected [ …(4) ] to deeply equal [ …(5) ]
+ FAIL  src/fly-app-create.test.ts > flyAppCreate when it has been run before > says where the certificate is: waiting for DNS, or DNS found and the certificate on its way
+AssertionError: expected [ …(4) ] to include 'fly-app-create: Fly is waiting for DN…'
+ FAIL  src/fly-app-create.test.ts > flyAppCreate when it has been run before > names the CNAME target Fly gives, and the app's own fly.dev name when it gives none or a strange one
+AssertionError: expected false to be true // Object.is equality

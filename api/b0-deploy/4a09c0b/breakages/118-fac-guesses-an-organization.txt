@@ -1,0 +1,22 @@
+breakage: fac-guesses-an-organization
+patch: [
+ [
+  "tools/ops/src/fly-app-create.ts",
+  "  if (slugs.length > 1) {",
+  "  if (false) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/fly-app-create.test.ts
+exit: 1
+expected words: to guess between organizations, naming them, and makes nothing
+caught: True
+
+     × to guess between organizations, naming them, and makes nothing 7ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 passed (15)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly-app-create.test.ts > flyAppCreate refuses > to guess between organizations, naming them, and makes nothing
+AssertionError: expected Error: the fake has no route for: flyctl … to be an instance of OpsError
+    240|     expect(result.outcome).toBeInstanceOf(OpsError);
+    241|     expect((result.outcome as OpsError).message).toBe(

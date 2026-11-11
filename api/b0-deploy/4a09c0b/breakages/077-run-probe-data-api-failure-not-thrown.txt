@@ -1,0 +1,25 @@
+breakage: run-probe-data-api-failure-not-thrown
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  "  if (settings.some((check) => !check.ok)) throw new OpsError(\"supabase-probe: the Data API check failed\");\n  ctx.say",
+  "  ctx.say",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/run.test.ts src/run-remote.test.ts
+exit: 1
+expected words: still runs the Machine's checks when the Data API check fails, and then fails, naming the schema and not the secret
+caught: True
+
+     × still runs the Machine's checks when the Data API check fails, and then fails, naming the schema and not the secret 10ms
+     × needs the access token, and says the Management API didn't answer as a failed check 2ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  2 failed | 42 passed (44)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > still runs the Machine's checks when the Data API check fails, and then fails, naming the schema and not the secret
+AssertionError: expected 'it didn\'t fail' to be 'supabase-probe: the Data API check fa…' // Object.is equality
+    426|       "supabase-probe: FAIL  the Data API's settings expose no schema:…
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > needs the access token, and says the Management API didn't answer as a failed check
+AssertionError: expected 'it didn\'t fail' to be 'supabase-probe: the Data API check fa…' // Object.is equality
+    550|       "supabase-probe: FAIL  the Data API's settings expose no schema:…

@@ -1,0 +1,32 @@
+breakage: p-no-answer-is-a-pass
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "    const problem = reply === undefined ? silence() : verdict(reply);",
+  "    const problem = reply === undefined ? undefined : verdict(reply);",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: fails a check, not the run, when a call gets no answer, and still cleans up
+caught: True
+
+     × fails the service key's root when the project doesn't answer, saying so 15ms
+     × fails a check, not the run, when a call gets no answer, and still cleans up 5ms
+     × stops asking when the budget runs out part-way, says so for every check it didn't ask, and still cleans up 12ms
+     × ends a call that is in flight when the budget runs out, and removes what that call may have written 4ms
+     × leaves no bucket to remove for a refusal it never asked 2ms
+ Test Files  1 failed (1)
+      Tests  5 failed | 57 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks and the Data API's root > fails the service key's root when the project doesn't answer, saying so
+AssertionError: expected [] to deeply equal [ Array(1) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks when the project can't be trusted to answer > fails a check, not the run, when a call gets no answer, and still cleans up
+AssertionError: expected [] to deeply equal [ 'anon: GraphQL', 'user: GraphQL' ]
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > stops asking when the budget runs out part-way, says so for every check it didn't ask, and still cleans up
+AssertionError: expected false to be true // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > ends a call that is in flight when the budget runs out, and removes what that call may have written
+AssertionError: expected { name: 'anon: create a bucket', …(1) } to deeply equal { name: 'anon: create a bucket', …(2) }
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > leaves no bucket to remove for a refusal it never asked
+AssertionError: expected false to be true // Object.is equality

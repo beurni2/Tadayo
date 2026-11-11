@@ -1,0 +1,20 @@
+breakage: web-output-inside-source-taken
+patch: [
+ [
+  "apps/web/src/build.ts",
+  "  if (out.startsWith(`${source}${sep}`))\n    throw new Error(\"web: the output is inside the source, and would be copied into itself\");\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/apps/web && npx vitest run src/build.test.ts
+exit: 1
+expected words: refuses a source or an output that is the other's folder, so a build can't erase the site
+caught: True
+
+     × refuses a source or an output that is the other's folder, so a build can't erase the site 10ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/build.test.ts > buildSite > refuses a source or an output that is the other's folder, so a build can't erase the site
+AssertionError: expected [Function] to throw error matching /inside the source/ but got 'Cannot copy /tmp/tadayo-web-bGPVqz/ t…'

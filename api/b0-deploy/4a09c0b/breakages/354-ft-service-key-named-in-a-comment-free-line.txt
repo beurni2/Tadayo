@@ -1,0 +1,23 @@
+breakage: ft-service-key-named-in-a-comment-free-line
+patch: [
+ [
+  "fly.toml",
+  "  LOG_LEVEL = \"info\"",
+  "  LOG_LEVEL = \"info\"\n  SUPABASE_SERVICE_KEY = \"x\"",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-files.test.ts
+exit: 1
+expected words: names no secret anywhere: the database's string and the service key are Fly's, set by the founder
+caught: True
+
+     × has only public values in [env]: the project's URL and publishable key, as the iOS app's Dev build has them 42ms
+     × names no secret anywhere: the database's string and the service key are Fly's, set by the founder 2ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 15 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-files.test.ts > fly.toml > has only public values in [env]: the project's URL and publishable key, as the iOS app's Dev build has them
+AssertionError: expected [ 'LOG_LEVEL', …(4) ] to deeply equal [ 'LOG_LEVEL', …(3) ]
+ FAIL  src/deploy-files.test.ts > fly.toml > names no secret anywhere: the database's string and the service key are Fly's, set by the founder
+AssertionError: SUPABASE_SERVICE_KEY: expected true to be false // Object.is equality

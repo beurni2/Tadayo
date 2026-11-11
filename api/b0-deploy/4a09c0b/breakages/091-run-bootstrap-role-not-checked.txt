@@ -1,0 +1,25 @@
+breakage: run-bootstrap-role-not-checked
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  "    if (me !== \"tadayo_app\") throw new OpsError(",
+  "    if (false) throw new OpsError(",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/run.test.ts src/run-remote.test.ts
+exit: 1
+expected words: fails when DATABASE_URL connects as another role
+caught: True
+
+     × is not said of a script's own failure: what its queries answer is the script's to say 8ms
+     × fails when DATABASE_URL connects as another role 2ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  2 failed | 42 passed (44)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/run.test.ts > a connection that the database refuses > is not said of a script's own failure: what its queries answer is the script's to say
+AssertionError: promise resolved "undefined" instead of rejecting
+Error {
+ FAIL  src/run.test.ts > bootstrap > fails when DATABASE_URL connects as another role
+AssertionError: promise resolved "undefined" instead of rejecting
+Error {

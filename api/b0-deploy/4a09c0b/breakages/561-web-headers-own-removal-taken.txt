@@ -1,0 +1,20 @@
+breakage: web-headers-own-removal-taken
+patch: [
+ [
+  "apps/web/src/build.ts",
+  "  if (settingType(rule.headers).length > set.length) return [`removes the Content-Type of ${ASSOCIATION_PATH}`];\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/apps/web && npx vitest run src/build.test.ts
+exit: 1
+expected words: refuses the association's own rule when it removes the Content-Type, beside setting it or not
+caught: True
+
+     × refuses the association's own rule when it removes the Content-Type, beside setting it or not 8ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/build.test.ts > checkHeaders > refuses the association's own rule when it removes the Content-Type, beside setting it or not
+AssertionError: expected [ Array(1) ] to deeply equal [ Array(1) ]

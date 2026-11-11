@@ -1,0 +1,33 @@
+breakage: sd-grace-is-zero
+patch: [
+ [
+  "services/api/src/shutdown.ts",
+  "          }, graceMs);\n",
+  "          }, 0);\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/services/api && npx vitest run src/shutdown.test.ts
+exit: 1
+expected words: ends the connections still in use only when the grace is over, says so, and goes on to end the database's connection
+caught: True
+
+     × ends the connections left idle, every sweep, while the server closes, and stops sweeping once it has 9ms
+     × ends the connections still in use only when the grace is over, says so, and goes on to end the database's connection 2ms
+     × does not wait for the grace when the server closes before it 2ms
+     × lets a request in flight finish, and then ends its connection instead of waiting out the keep-alive time 119ms
+ Test Files  1 failed (1)
+      Tests  4 failed | 13 passed (17)
+     Errors  1 error
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/shutdown.test.ts > stopOnSignal > ends the connections left idle, every sweep, while the server closes, and stops sweeping once it has
+AssertionError: expected { idle: 3, all: 1 } to deeply equal { idle: 3, all: +0 }
+ FAIL  src/shutdown.test.ts > stopOnSignal > ends the connections still in use only when the grace is over, says so, and goes on to end the database's connection
+AssertionError: expected 1 to be +0 // Object.is equality
+ FAIL  src/shutdown.test.ts > stopOnSignal > does not wait for the grace when the server closes before it
+AssertionError: expected 1 to be +0 // Object.is equality
+ FAIL  src/shutdown.test.ts > stopOnSignal, with a real server > lets a request in flight finish, and then ends its connection instead of waiting out the keep-alive time
+AssertionError: expected [ 'api: stopping on SIGTERM', …(3) ] to deeply equal [ 'api: stopping on SIGTERM' ]
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+Error: socket hang up
+Serialized Error: { code: 'ECONNRESET' }

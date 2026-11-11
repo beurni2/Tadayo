@@ -1,0 +1,20 @@
+breakage: fly-guard-short-spelling-read
+patch: [
+ [
+  "tools/ops/src/fly.ts",
+  "    } else if (/^-a./.test(arg) || arg.startsWith(\"--app=\")) {\n      return false;\n",
+  "    } else if (false) {\n      return false;\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/fly.test.ts
+exit: 1
+expected words: refuses an app flag in a spelling it doesn't read
+caught: True
+
+     × refuses an app flag in a spelling it doesn't read, which flyctl would, even beside the dev app 9ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly.test.ts > forDevApp: a call is about tadayo-api-dev and no other app > refuses an app flag in a spelling it doesn't read, which flyctl would, even beside the dev app
+AssertionError: status -a tadayo-api-dev --app=another: expected true to be false // Object.is equality

@@ -1,0 +1,21 @@
+breakage: bs-odd-path-taken
+patch: [
+ [
+  "tools/ops/src/bootstrap.ts",
+  "  if (!/^\\/[\\w./-]+$/.test(input.file))",
+  "  if (false)",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/bootstrap.test.ts
+exit: 1
+expected words: refuses a file path that isn't plain, which would end its quotes
+caught: True
+
+     × refuses a file path that isn't plain, which would end its quotes 9ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 7 passed (8)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/bootstrap.test.ts > runBootstrap > refuses a file path that isn't plain, which would end its quotes
+AssertionError: promise resolved "undefined" instead of rejecting
+Error {

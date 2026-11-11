@@ -1,0 +1,23 @@
+breakage: out-fly-token-without-equals
+patch: [
+ [
+  "tools/ops/src/output.ts",
+  "FlyV1 [\\w+/=,-]+",
+  "FlyV1 [\\w+/,-]+",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/output.test.ts
+exit: 1
+expected words: holds back a Fly token's whole string, however the pieces after the word are joined
+caught: True
+
+     × holds back a token of each shape the patterns know, with an empty environment 8ms
+     × holds back a Fly token's whole string, however the pieces after the word are joined 1ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 16 passed (18)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/output.test.ts > redactor > holds back a token of each shape the patterns know, with an empty environment
+AssertionError: FlyV1 opaquetokenwithnofmtwopiecesinit+/=,-: expected 'error: [redacted]=,-: refused, and [r…' to be 'error: [redacted]: refused, and [reda…' // Object.is equality
+ FAIL  src/output.test.ts > redactor > holds back a Fly token's whole string, however the pieces after the word are joined
+AssertionError: expected 'Authorization: [redacted]=-w was refu…' to be 'Authorization: [redacted] was refused' // Object.is equality

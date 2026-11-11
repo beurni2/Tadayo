@@ -1,0 +1,22 @@
+breakage: om-command-failure-ignored
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "  if (answer.exitCode !== 0) {",
+  "  if (false) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/on-machine.test.ts
+exit: 1
+expected words: fails, with the exit code and after saying what the command printed, when the command failed
+caught: True
+
+     × fails, with the exit code and after saying what the command printed, when the command failed 6ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 7 passed (8)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine > fails, with the exit code and after saying what the command printed, when the command failed
+AssertionError: expected undefined to be an instance of OpsError
+     81|     expect(result.outcome).toBeInstanceOf(OpsError);
+     82|     expect((result.outcome as OpsError).message).toBe("storage-setup: …

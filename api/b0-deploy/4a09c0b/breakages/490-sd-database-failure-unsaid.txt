@@ -1,0 +1,23 @@
+breakage: sd-database-failure-unsaid
+patch: [
+ [
+  "services/api/src/shutdown.ts",
+  "        options.fail(\"api: the database's connection didn't end cleanly\");\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/services/api && npx vitest run src/shutdown.test.ts
+exit: 1
+expected words: says when the database's connection doesn't end cleanly, without the error's own words, and doesn't say it stopped
+caught: True
+
+     × says when the database's connection doesn't end cleanly, without the error's own words, and doesn't say it stopped 7ms
+     × says both failures, in order, and still finishes, when neither the server nor the database's connection closes cleanly 2ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 15 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/shutdown.test.ts > stopOnSignal > says when the database's connection doesn't end cleanly, without the error's own words, and doesn't say it stopped
+AssertionError: expected [] to deeply equal [ Array(1) ]
+ FAIL  src/shutdown.test.ts > stopOnSignal > says both failures, in order, and still finishes, when neither the server nor the database's connection closes cleanly
+AssertionError: expected [ Array(1) ] to deeply equal [ …(2) ]

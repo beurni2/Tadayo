@@ -1,0 +1,32 @@
+breakage: p-budget-never-applied
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "  const checking = AbortSignal.any([input.budget ?? AbortSignal.timeout(BUDGET_MS), deadline]);",
+  "  const checking = deadline;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: stops asking when the budget runs out part-way, says so for every check it didn't ask, and still cleans up
+caught: True
+
+     × asks nothing when its time is already spent, and says the first control wasn't answered for that reason 17ms
+     × stops asking when the budget runs out part-way, says so for every check it didn't ask, and still cleans up 6ms
+     × ends a call that is in flight when the budget runs out, and removes what that call may have written 5003ms
+     × leaves no bucket to remove for a refusal it never asked 8ms
+     × gives the checks BUDGET_MS and the whole run DEADLINE_MS when nobody gives it others, and DEADLINE_MS ends before the Machine's command does 14ms
+ Test Files  1 failed (1)
+      Tests  5 failed | 57 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > asks nothing when its time is already spent, and says the first control wasn't answered for that reason
+AssertionError: expected [ { method: 'POST', …(3) }, …(64) ] to deeply equal []
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > stops asking when the budget runs out part-way, says so for every check it didn't ask, and still cleans up
+AssertionError: expected false to be true // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > ends a call that is in flight when the budget runs out, and removes what that call may have written
+Error: Test timed out in 5000ms.
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > leaves no bucket to remove for a refusal it never asked
+AssertionError: expected false to be true // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > gives the checks BUDGET_MS and the whole run DEADLINE_MS when nobody gives it others, and DEADLINE_MS ends before the Machine's command does
+AssertionError: expected [ 240000, 20000, 20000, 20000, …(62) ] to include 150000

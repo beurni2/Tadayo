@@ -1,0 +1,26 @@
+breakage: ssl-never-asked
+patch: [
+ [
+  "packages/domain/src/db/ssl.ts",
+  "  return isPlainLoopback(url) ? {} : { ssl: \"require\" };",
+  "  return {};",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/packages/domain && npx vitest run src/db/ssl.test.ts
+exit: 1
+expected words: asks for TLS for Supabase's pooler, and for any other host that isn't loopback
+caught: True
+
+     × asks for TLS for Supabase's pooler, and for any other host that isn't loopback 8ms
+     × treats a string that postgres.js and `new URL` could read differently as remote 1ms
+     × treats a string it can't read, or with no host, as remote 1ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 1 passed (4)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/ssl.test.ts > transportOptions > asks for TLS for Supabase's pooler, and for any other host that isn't loopback
+AssertionError: postgresql://tadayo_app.abcdefghijklmnopqrst:a-password@aws-0-us-east-1.pooler.supabase.com:5432/postgres: expected {} to deeply equal { ssl: 'require' }
+ FAIL  src/db/ssl.test.ts > transportOptions > treats a string that postgres.js and `new URL` could read differently as remote
+AssertionError: postgres://tadayo_app:x@evil.example%2C@localhost:5432/postgres: expected {} to deeply equal { ssl: 'require' }
+ FAIL  src/db/ssl.test.ts > transportOptions > treats a string it can't read, or with no host, as remote
+AssertionError: expected {} to deeply equal { ssl: 'require' }

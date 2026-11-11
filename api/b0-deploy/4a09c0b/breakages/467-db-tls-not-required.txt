@@ -1,0 +1,23 @@
+breakage: db-tls-not-required
+patch: [
+ [
+  "tools/ops/src/database.ts",
+  "    ssl: \"require\",\n",
+  "    ssl: false,\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/database.test.ts
+exit: 1
+expected words: names every part of the connection, decoded, with TLS required, one connection and a time limit
+caught: True
+
+     × names every part of the connection, decoded, with TLS required, one connection and a time limit 10ms
+     × makes a port-less string the session pooler's port, 5432, and the driver reads no variable for it 3ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 3 passed (5)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/database.test.ts > connectionOptions > names every part of the connection, decoded, with TLS required, one connection and a time limit
+AssertionError: expected { …(9) } to match object { …(8) }
+ FAIL  src/database.test.ts > connectionOptions > makes a port-less string the session pooler's port, 5432, and the driver reads no variable for it
+AssertionError: expected { …(5) } to deeply equal { …(5) }

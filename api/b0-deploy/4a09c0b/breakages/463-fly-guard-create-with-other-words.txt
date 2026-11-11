@@ -1,0 +1,20 @@
+breakage: fly-guard-create-with-other-words
+patch: [
+ [
+  "tools/ops/src/fly.ts",
+  "    const named = rest.length === 2 && rest[0] === \"--org\" && org !== undefined && !org.startsWith(\"-\");",
+  "    const named = true;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/fly.test.ts
+exit: 1
+expected words: takes the two calls that name none only in the one form each
+caught: True
+
+     × takes the two calls that name none only in the one form each, not with other words after them 7ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly.test.ts > forDevApp: a call is about tadayo-api-dev and no other app > takes the two calls that name none only in the one form each, not with other words after them
+AssertionError: apps create tadayo-api-dev --org: expected true to be false // Object.is equality

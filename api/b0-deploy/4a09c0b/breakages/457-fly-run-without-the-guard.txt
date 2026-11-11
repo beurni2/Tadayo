@@ -1,0 +1,22 @@
+breakage: fly-run-without-the-guard
+patch: [
+ [
+  "tools/ops/src/fly.ts",
+  "      if (!forDevApp(args)) {",
+  "      if (false) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/fly.test.ts
+exit: 1
+expected words: makes no call that doesn't name it: Fly.run refuses before anything is spawned
+caught: True
+
+     × makes no call that doesn't name it: Fly.run refuses before anything is spawned, and says so without the arguments 6ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly.test.ts > forDevApp: a call is about tadayo-api-dev and no other app > makes no call that doesn't name it: Fly.run refuses before anything is spawned, and says so without the arguments
+AssertionError: expected undefined to be an instance of OpsError
+    142|       expect(error).toBeInstanceOf(OpsError);
+    143|       expect((error as OpsError).message).toBe(

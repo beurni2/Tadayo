@@ -1,0 +1,20 @@
+breakage: om-command-words-unchecked
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "  if (input.command.length === 0 || !input.command.every((word) => PLAIN_WORD.test(word))) {",
+  "  if (false) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/on-machine.test.ts
+exit: 1
+expected words: takes only plain words for the command, so nothing in it is read as anything else
+caught: True
+
+     × takes only plain words for the command, so nothing in it is read as anything else 10ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 7 passed (8)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine > takes only plain words for the command, so nothing in it is read as anything else
+AssertionError: []: expected Error: the fake has no route for: flyctl … to be an instance of OpsError

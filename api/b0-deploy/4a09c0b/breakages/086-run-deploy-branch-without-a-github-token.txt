@@ -1,0 +1,20 @@
+breakage: run-deploy-branch-without-a-github-token
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  "    const variables = readVariables(ctx.env, [\"FLY_API_TOKEN\", \"GITHUB_TOKEN\"]);",
+  "    const variables = { ...readVariables(ctx.env, [\"FLY_API_TOKEN\"]), GITHUB_TOKEN: ctx.env[\"GITHUB_TOKEN\"] ?? \"\" };",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/run.test.ts src/run-remote.test.ts
+exit: 1
+expected words: needs --branch, and the GitHub token, before it asks git or anyone
+caught: True
+
+     × needs --branch, and the GitHub token, before it asks git or anyone 12ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 43 passed (44)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/run-remote.test.ts > deploy-branch > needs --branch, and the GitHub token, before it asks git or anyone
+AssertionError: expected 'the fake has no route for: git rev-pa…' to be 'set GITHUB_TOKEN' // Object.is equality

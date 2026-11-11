@@ -1,0 +1,20 @@
+breakage: env-database-any
+patch: [
+ [
+  "tools/ops/src/environment.ts",
+  "  if (parsed.pathname !== \"/postgres\") throw refused(\"its database isn't postgres\");\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/environment.test.ts
+exit: 1
+expected words: refuses the transaction pooler's port, another database, and anything after the path
+caught: True
+
+     × refuses the transaction pooler's port, another database, and anything after the path 3ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 21 passed (22)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/environment.test.ts > devDatabaseUrl: only tadayo-dev's database, by the reference in the connection > refuses the transaction pooler's port, another database, and anything after the path
+AssertionError: postgresql://tadayo_app.rhsycmycocbzakrydahi:…@aws-0-us-east-1.pooler.supabase.com:5432/other

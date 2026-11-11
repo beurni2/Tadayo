@@ -1,0 +1,29 @@
+# Slice 10a's image at `4a09c0b`: what the built image does
+
+`image.txt` is the output of `image-evidence.sh`, run in the session on the image built from `4a09c0bcae40d4efd7786709e608533e0239b2c8` (`api/b0-deploy`'s third commit, the last that changes code), against the session's PostgreSQL 16 remade like `ci`'s service, bootstrapped and migrated (the app role `tadayo_app`'s URL; the password is never printed, and the run counts its occurrences in every log it keeps: 0).
+
+## How the image was built
+
+`docker build --build-arg NODE_IMAGE=tadayo-node-ca:local -t tadayo-api-dev:evidence .` runs the repository's `Dockerfile` unchanged, with one argument: `NODE_IMAGE`, the base of both stages. Fly's builder takes the argument's default, the pinned `node:26.13.1-trixie-slim@sha256:e6bedef217677b276c591795e169840edd9096dbf13f29df8ef8d1856b8820bc`. In the session, `tadayo-node-ca:local` is that same base plus the CA of the session's egress gateway in `NODE_EXTRA_CA_CERTS` (`cabase/Dockerfile`; its `ca-bundle.crt` is the session's own and is not kept here, and none of it is ever committed). Without it, the first step that reaches the npm registry, `npm install --global pnpm@12.16.1`, stops with `SELF_SIGNED_CERT_IN_CHAIN` (`build-without-the-ca-fails.log`, from the first commit's build; `docs/LIMITATIONS.md`, the row of 2026-11-11 on the Docker build). Nothing else differs from what Fly's builder runs, which has no such gateway, so the production build, `deploy-branch`'s or slice 10c's `deploy-dev`'s, is its own proof.
+
+`build.log` is the build whose image the run used: every step ran, none from a cache (the base had changed since the last build), from `npm install --global pnpm@12.16.1` and the production-only install of the API, the worker and `ops` to the copies of the `src` folders; its image configuration is `sha256:f9ef3a177d8aa459dae054ce676972f46716cd3fcb9b35fd3e51cf9a57ccb024`.
+
+## What `image.txt` shows
+
+- **The image:** 381,835,429 bytes; the user `node`, the working directory `/app`, the command `node services/api/src/main.ts` (the API's; the worker's is `fly.toml`'s `[processes]` entry); the environment names in it (`NODE_ENV`, `NODE_VERSION`, `PATH`, and `NODE_EXTRA_CA_CERTS` from the local base only: nothing secret, nothing of the project's).
+- **What is in it:** the `package.json` files of the workspace and the `src` folders of the contract, the domain, the API, the worker and `ops`, with no test, no `.env` file and no development dependency (none of vitest, eslint, typescript, prism, prettier or wrangler in the virtual store: 51 packages, all production ones).
+- **Both entries refuse to start in `dev`'s configuration while the database has no `app.dev_clock`** (exit 1, the one line), then, once the table is made with `tools/ops/sql/dev_clock.sql` as `tadayo_app` (what the `dev-clock` script does on `dev`):
+  - **The API,** started as the image's `CMD`: `GET /v1/me` with no token is a 401 with `{"code":"UNAUTHENTICATED"}` and `cache-control: private, no-store`, and with a malformed token the same 401; its port accepts a TCP connection (what `fly.toml`'s check does); `docker stop` ends it in 0.09 seconds with exit code 0 (`api: stopping on SIGTERM`, `api: stopped`: the third commit's stop, which gives a query still running 3 seconds and then ends the process, had none to wait for; `fly.toml`'s `kill_timeout` is 30); its log holds the request lines with no URL or token, and 0 occurrences of the database's password.
+  - **The worker,** started as its `[processes]` command: it stays up (`running`) until the signal, writes `worker: started, with no jobs yet`, and `docker stop` ends it in 0.08 seconds with exit code 0 (`worker: stopped on SIGTERM`); 0 occurrences of the password.
+- **No database:** both entries refuse with `DATABASE_URL isn't set`, exit 1.
+- **The `ops` entry as the image runs it** (what the `ops` workflow's `--here` halves run on the Machine): with no script, or one that doesn't exist, it lists its nine and exits 1; `storage-setup --here` with nothing set names `SUPABASE_URL, SUPABASE_SERVICE_KEY`; with `SUPABASE_URL` of another project it refuses before any request; `supabase-probe --here` refuses a `DATABASE_URL` that isn't `tadayo-dev`'s through Supabase's session pooler, and a `SUPABASE_URL` of another project, before any request.
+
+A first run of the script at this commit, on a database bootstrapped but not migrated, couldn't make the clock's table (`dev_clock.sql`'s trigger calls `app.refuse_change`, which a migration makes), so the API and the worker refused to start for the rest of that run; the first commit's run had used a database the suite had migrated. The script now applies the migrations itself (`the database`, at the top of `image.txt`), and this is the run that followed. That first run's output wasn't kept.
+
+## What it doesn't show
+
+Fly's builder, a Machine on Fly, `fly.toml`'s check, the Machines' secrets, or anything that calls a hosted Supabase project: the session doesn't run `flyctl` (its release downloads, and the session doesn't run a downloaded binary) and holds no credential, so those are slice 10b's first `ops` runs and slice 10c's first `deploy-dev` (`docs/LIMITATIONS.md`, the rows of 2026-11-11). Nor a stop with a query in flight past `END_SECONDS`, which no test or run here makes.
+
+## How to run it again
+
+With Docker running, Postgres made like `ci`'s on port 5432 (`../breakages/pgci.sh`, then `python3 tools/ci/ci_steps.py db-bootstrap`), the pinned base given the gateway's CA if the session has one (`cabase/Dockerfile`), and the repository's tree checked out at the commit above with `pnpm install --frozen-lockfile`: build as above, then `OUT=<folder> bash image-evidence.sh` from the repository's root (edit `SCR` and the `cd` at its top; it applies the migrations, then writes `$OUT/image.txt`).

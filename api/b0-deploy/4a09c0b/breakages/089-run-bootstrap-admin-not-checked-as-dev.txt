@@ -1,0 +1,22 @@
+breakage: run-bootstrap-admin-not-checked-as-dev
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  "    const admin = devDatabaseUrl(\n      variables.DATABASE_ADMIN_URL,\n      variables.SUPABASE_DEV_PROJECT_REF,\n      \"DATABASE_ADMIN_URL\",\n    );",
+  "    const admin = variables.DATABASE_ADMIN_URL as DevDatabaseUrl;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/run.test.ts src/run-remote.test.ts
+exit: 1
+expected words: refuses a database that isn't tadayo-dev's, before it connects or starts anything
+caught: True
+
+     × refuses a database that isn't tadayo-dev's, before it connects or starts anything 23ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 43 passed (44)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/run.test.ts > runScript > refuses a database that isn't tadayo-dev's, before it connects or starts anything
+AssertionError: bootstrap DATABASE_ADMIN_URL: expected error to be instance of OpsError
+[Function OpsError]
+Error {

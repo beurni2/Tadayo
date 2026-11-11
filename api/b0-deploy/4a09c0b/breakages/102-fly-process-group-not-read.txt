@@ -1,0 +1,146 @@
+breakage: fly-process-group-not-read
+patch: [
+ [
+  "tools/ops/src/fly.ts",
+  "      group: text(record(config?.[\"metadata\"])?.[\"fly_process_group\"]),",
+  "      group: undefined,",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/fly.test.ts src/worker-scale.test.ts src/fly-app-create.test.ts src/on-machine.test.ts src/run-remote.test.ts
+exit: 1
+expected words: stops the worker Machine and not the API's, then reads its state
+caught: True
+
+     × lists the app's Machines with their state, process group, image tag and image 10ms
+     × stops the worker Machine and not the API's, then reads its state 8ms
+     × waits while it stops, a few seconds at a time 1ms
+     × says what it found when the Machine isn't stopped in time, and not that it is 5ms
+     × does nothing to a Machine that is stopped already, or only waits for one that is on its way 2ms
+     × takes a suspended Machine as stopped 1ms
+     × starts a stopped worker Machine and reads its state 1ms
+     × does nothing to one that is started already 1ms
+     × an app with no worker Machine, or two (a standby would start with it), changing nothing 1ms
+     × a Machine in a state it has no move for, changing nothing 2ms
+     × a stop that flyctl refuses, saying so and not that the Machine is stopped 3ms
+     × gives flyctl the token and HOME, and nothing else of the environment 7ms
+     × stops the worker, waiting with the context's sleep between the times it looks 1ms
+     × deploys from the checkout it was started in, asking GitHub with the token it was given 26ms
+     × runs itself on the API's Machine, with --here and the dev project's reference, and says what it printed 3ms
+     × fails when it fails on the Machine, after saying what it printed 7ms
+     × fails when the Machine's report ends before it says what became of each bucket, even with an exit status of 0 3ms
+     × asks the Management API from here, with the access token, and the rest on the Machine, and passes when both do 1ms
+     × still runs the Machine's checks when the Data API check fails, and then fails, naming the schema and not the secret 1ms
+     × fails with the Machine's failure, after both have said what they found 3ms
+     × says nothing of what the project may hold when the Machine's half failed before it made anything 2ms
+     × fails, and says what the project may hold, when the Machine's report has the run's id and doesn't say how its checks went, even with an exit status of 0 2ms
+     × doesn't take a report without the run's id, or one that only says its checks passed, as a pass 1ms
+     × needs the access token, and says the Management API didn't answer as a failed check 1ms
+     × runs the command in the API's started Machine, as one string, and says what it printed 10ms
+     × gives the call a little longer than it gave the command, and flyctl the token and nothing else 2ms
+     × fails, with the exit code and after saying what the command printed, when the command failed 3ms
+     × fails when flyctl can't run it, saying why, or answers with something it can't read 4ms
+     × reads a command that worked from an answer with no exit code, as flyctl leaves a zero out 1ms
+     × fails when the command was ended by a signal, even with no exit code in the answer 1ms
+     × fails when the API has no started Machine, names the Machines there are, and runs nothing 1ms
+ Test Files  4 failed | 1 passed (5)
+      Tests  31 failed | 50 passed (81)
+⎯⎯⎯⎯⎯⎯ Failed Tests 31 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly.test.ts > jsonOf and machines: what flyctl's list of Machines says > lists the app's Machines with their state, process group, image tag and image
+AssertionError: expected [ { id: 'a1', …(4) }, …(1) ] to deeply equal [ { id: 'a1', …(4) }, …(1) ]
+ FAIL  src/on-machine.test.ts > onMachine > runs the command in the API's started Machine, as one string, and says what it printed
+AssertionError: expected OpsError: storage-setup: the API has no s… to be undefined
+OpsError {
+  "name": "OpsError",
+ FAIL  src/on-machine.test.ts > onMachine > gives the call a little longer than it gave the command, and flyctl the token and nothing else
+AssertionError: expected undefined to be 330000 // Object.is equality
+ FAIL  src/on-machine.test.ts > onMachine > fails, with the exit code and after saying what the command printed, when the command failed
+AssertionError: expected [] to deeply equal [ 'half of it', …(1) ]
+     81|     expect(result.outcome).toBeInstanceOf(OpsError);
+     82|     expect((result.outcome as OpsError).message).toBe("storage-setup: …
+ FAIL  src/on-machine.test.ts > onMachine > fails when flyctl can't run it, saying why, or answers with something it can't read
+AssertionError: expected 'storage-setup: the API has no started…' to be 'storage-setup: flyctl couldn\'t run i…' // Object.is equality
+Expected: "storage-setup: flyctl couldn't run it on the Machine: exit code 1: Error: machine is not running"
+     88|       [EXEC, { code: 1, stderr: "Error: machine is not running" }],
+     90|     expect((refused.outcome as OpsError).message).toBe(
+ FAIL  src/on-machine.test.ts > onMachine > reads a command that worked from an answer with no exit code, as flyctl leaves a zero out
+AssertionError: expected OpsError: storage-setup: the API has no s… to be undefined
+OpsError {
+  "name": "OpsError",
+ FAIL  src/on-machine.test.ts > onMachine > fails when the command was ended by a signal, even with no exit code in the answer
+AssertionError: expected [] to deeply equal [ 'killed' ]
+    149|     expect(result.outcome).toBeInstanceOf(OpsError);
+    150|     expect((result.outcome as OpsError).message).toBe("storage-setup: …
+ FAIL  src/on-machine.test.ts > onMachine > fails when the API has no started Machine, names the Machines there are, and runs nothing
+AssertionError: expected 'storage-setup: the API has no started…' to be 'storage-setup: the API has no started…' // Object.is equality
+    156|     expect((stopped.outcome as OpsError).message).toBe(
+ FAIL  src/run-remote.test.ts > every script that calls Fly > gives flyctl the token and HOME, and nothing else of the environment
+OpsError: worker-scale: the app has no worker Machine; deploy first
+     39|   if (worker === undefined) throw new OpsError("worker-scale: the app …
+     41|     throw new OpsError(
+ FAIL  src/run-remote.test.ts > worker-scale > stops the worker, waiting with the context's sleep between the times it looks
+OpsError: worker-scale: the app has no worker Machine; deploy first
+     39|   if (worker === undefined) throw new OpsError("worker-scale: the app …
+     41|     throw new OpsError(
+ FAIL  src/run-remote.test.ts > deploy-branch > deploys from the checkout it was started in, asking GitHub with the token it was given
+OpsError: deploy-branch: flyctl deployed, but no API Machine of tadayo-api-dev is started (the app's Machines: a1 (no group, started), w1 (no group, started)); if it stopped on its own, Fly's log of tadayo-api-dev says why
+    190|     throw new OpsError(
+ FAIL  src/run-remote.test.ts > storage-setup on the runner > runs itself on the API's Machine, with --here and the dev project's reference, and says what it printed
+OpsError: storage-setup: the API has no started Machine (the app's Machines: a1 (no group, started), w1 (no group, started)); deploy first
+     82|     throw new OpsError(`${label}: the API has no started Machine (the …
+ FAIL  src/run-remote.test.ts > storage-setup on the runner > fails when it fails on the Machine, after saying what it printed
+AssertionError: expected 'storage-setup: the API has no started…' to be 'storage-setup: it failed on the Machi…' // Object.is equality
+ FAIL  src/run-remote.test.ts > storage-setup on the runner > fails when the Machine's report ends before it says what became of each bucket, even with an exit status of 0
+AssertionError: expected 'storage-setup: the API has no started…' to be 'storage-setup: the Machine\'s report …' // Object.is equality
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > asks the Management API from here, with the access token, and the rest on the Machine, and passes when both do
+OpsError: supabase-probe: the API has no started Machine (the app's Machines: a1 (no group, started), w1 (no group, started)); deploy first
+     82|     throw new OpsError(`${label}: the API has no started Machine (the …
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > still runs the Machine's checks when the Data API check fails, and then fails, naming the schema and not the secret
+AssertionError: expected 'supabase-probe: the API has no starte…' to be 'supabase-probe: the Data API check fa…' // Object.is equality
+    426|       "supabase-probe: FAIL  the Data API's settings expose no schema:…
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > fails with the Machine's failure, after both have said what they found
+AssertionError: expected 'supabase-probe: the API has no starte…' to be 'supabase-probe: it failed on the Mach…' // Object.is equality
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > says nothing of what the project may hold when the Machine's half failed before it made anything
+AssertionError: expected 'supabase-probe: the API has no starte…' to be 'supabase-probe: it failed on the Mach…' // Object.is equality
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > fails, and says what the project may hold, when the Machine's report has the run's id and doesn't say how its checks went, even with an exit status of 0
+AssertionError: supabase-probe: the Machine's report doesn't say its checks passed, so it proves nothing: expected 'supabase-probe: the API has no starte…' to be 'supabase-probe: the Machine\'s report…' // Object.is equality
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > doesn't take a report without the run's id, or one that only says its checks passed, as a pass
+AssertionError: expected 'supabase-probe: the API has no starte…' to be 'supabase-probe: the Machine\'s report…' // Object.is equality
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > needs the access token, and says the Management API didn't answer as a failed check
+AssertionError: expected 'supabase-probe: the API has no starte…' to be 'supabase-probe: the Data API check fa…' // Object.is equality
+    550|       "supabase-probe: FAIL  the Data API's settings expose no schema:…
+ FAIL  src/worker-scale.test.ts > workerScale to stopped > stops the worker Machine and not the API's, then reads its state
+AssertionError: expected OpsError: worker-scale: the app has no wo… to be undefined
+OpsError {
+  "name": "OpsError",
+ FAIL  src/worker-scale.test.ts > workerScale to stopped > waits while it stops, a few seconds at a time
+AssertionError: expected OpsError: worker-scale: the app has no wo… to be undefined
+OpsError {
+  "name": "OpsError",
+ FAIL  src/worker-scale.test.ts > workerScale to stopped > says what it found when the Machine isn't stopped in time, and not that it is
+AssertionError: expected 'worker-scale: the app has no worker M…' to be 'worker-scale: the worker Machine is s…' // Object.is equality
+     67|     expect(result.outcome).toBeInstanceOf(OpsError);
+     68|     expect((result.outcome as OpsError).message).toBe(
+ FAIL  src/worker-scale.test.ts > workerScale to stopped > does nothing to a Machine that is stopped already, or only waits for one that is on its way
+AssertionError: expected [] to deeply equal [ Array(1) ]
+ FAIL  src/worker-scale.test.ts > workerScale to stopped > takes a suspended Machine as stopped
+AssertionError: expected OpsError: worker-scale: the app has no wo… to be undefined
+OpsError {
+  "name": "OpsError",
+ FAIL  src/worker-scale.test.ts > workerScale to started > starts a stopped worker Machine and reads its state
+AssertionError: expected OpsError: worker-scale: the app has no wo… to be undefined
+OpsError {
+  "name": "OpsError",
+ FAIL  src/worker-scale.test.ts > workerScale to started > does nothing to one that is started already
+AssertionError: expected [] to deeply equal [ Array(1) ]
+ FAIL  src/worker-scale.test.ts > workerScale refuses > an app with no worker Machine, or two (a standby would start with it), changing nothing
+AssertionError: expected 'worker-scale: the app has no worker M…' to be 'worker-scale: the app has 2 worker Ma…' // Object.is equality
+    116|     expect((two.outcome as OpsError).message).toBe(
+ FAIL  src/worker-scale.test.ts > workerScale refuses > a Machine in a state it has no move for, changing nothing
+AssertionError: expected 'worker-scale: the app has no worker M…' to be 'worker-scale: the worker Machine is d…' // Object.is equality
+    124|     expect((result.outcome as OpsError).message).toBe(
+ FAIL  src/worker-scale.test.ts > workerScale refuses > a stop that flyctl refuses, saying so and not that the Machine is stopped
+AssertionError: expected 'worker-scale: the app has no worker M…' to be 'worker-scale: flyctl couldn\'t stop t…' // Object.is equality
+Expected: "worker-scale: flyctl couldn't stop the worker Machine: exit code 1: Error: machine is locked"
+    147|       ["flyctl machine stop", { code: 1, stderr: "Error: machine is lo…
+    149|     expect((result.outcome as OpsError).message).toBe(

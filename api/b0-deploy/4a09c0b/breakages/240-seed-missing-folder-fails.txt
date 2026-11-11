@@ -1,0 +1,23 @@
+breakage: seed-missing-folder-fails
+patch: [
+ [
+  "tools/ops/src/seed.ts",
+  "    if (error instanceof Error && \"code\" in error && error.code === \"ENOENT\") return [];\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/seed.test.ts
+exit: 1
+expected words: finds none in a folder that isn't there yet
+caught: True
+
+     × finds none in a folder that isn't there yet 4ms
+     × says there are none, and touches no database, when the folder has no files 1ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 3 passed (5)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/seed.test.ts > readSeeds > finds none in a folder that isn't there yet
+Error: ENOENT: no such file or directory, scandir '/tmp/tadayo-no-such-seed-folder'
+ FAIL  src/seed.test.ts > seed > says there are none, and touches no database, when the folder has no files
+Error: ENOENT: no such file or directory, scandir '/tmp/tadayo-no-such-seed-folder'

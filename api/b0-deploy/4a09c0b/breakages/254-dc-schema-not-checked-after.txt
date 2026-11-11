@@ -1,0 +1,21 @@
+breakage: dc-schema-not-checked-after
+patch: [
+ [
+  "tools/ops/src/dev-clock.ts",
+  "  const after = await closedProblems(tx);\n  if (after.length > 0) {",
+  "  const after: string[] = [];\n  if (after.length > 0) {",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-deploy-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/c10a/dbtest-wt.sh src/db/ops-dev-clock.test.ts
+exit: 1
+expected words: checks the schema again after it, and keeps nothing when the table it made would leave it open
+caught: True
+
+     × checks the schema again after it, and keeps nothing when the table it made would leave it open 23ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/ops-dev-clock.test.ts > dev-clock, through the schema's own owner > checks the schema again after it, and keeps nothing when the table it made would leave it open
+AssertionError: promise resolved "{ made: true, …(3) }" instead of rejecting
+- Error {
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)

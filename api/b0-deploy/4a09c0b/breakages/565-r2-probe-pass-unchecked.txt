@@ -1,0 +1,23 @@
+breakage: r2-probe-pass-unchecked
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  "  if (!passed) {",
+  "  if (false) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/run-remote.test.ts
+exit: 1
+expected words: doesn't take a report without the run's id, or one that only says its checks passed, as a pass
+caught: True
+
+     × fails, and says what the project may hold, when the Machine's report has the run's id and doesn't say how its checks went, even with an exit status of 0 10ms
+     × doesn't take a report without the run's id, or one that only says its checks passed, as a pass 2ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 27 passed (29)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > fails, and says what the project may hold, when the Machine's report has the run's id and doesn't say how its checks went, even with an exit status of 0
+AssertionError: supabase-probe: the Machine's report doesn't say its checks passed, so it proves nothing: expected 'it didn\'t fail' to be 'supabase-probe: the Machine\'s report…' // Object.is equality
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > doesn't take a report without the run's id, or one that only says its checks passed, as a pass
+AssertionError: expected 'it didn\'t fail' to be 'supabase-probe: the Machine\'s report…' // Object.is equality

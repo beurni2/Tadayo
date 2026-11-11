@@ -1,0 +1,21 @@
+breakage: ss-make-race-refused
+patch: [
+ [
+  "tools/ops/src/storage-setup.ts",
+  "      else if (reply.logical !== 409) throw fail(bucket, \"couldn't make it\", reply);",
+  "      else if (true) throw fail(bucket, \"couldn't make it\", reply);",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/storage-setup.test.ts
+exit: 1
+expected words: treats a bucket that appears between the look and the make as there, and goes on to make it as declared
+caught: True
+
+     × treats a bucket that appears between the look and the make as there, and goes on to make it as declared 6ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/storage-setup.test.ts > storageSetup > treats a bucket that appears between the look and the make as there, and goes on to make it as declared
+OpsError: storage-setup: uploads: couldn't make it: HTTP 400, status 409, BucketAlreadyExists
+     72|     new OpsError(`storage-setup: ${bucket}: ${what}: ${describe(reply)…

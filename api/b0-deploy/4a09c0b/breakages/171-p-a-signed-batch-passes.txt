@@ -1,0 +1,23 @@
+breakage: p-a-signed-batch-passes
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "  return items.some((item) => signedUrl(item) !== undefined) ? \"it gave a signed URL\" : undefined;",
+  "  return undefined;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: names the surface when
+caught: True
+
+     × names the surface when sign-read is open, and leaves nothing behind 12ms
+     × says what each open surface gave, in a count or a phrase, and never a word the project said 28ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 60 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when sign-read is open, and leaves nothing behind
+AssertionError: user: sign read URLs for uploads in a batch: expected [ …(2) ] to include 'user: sign read URLs for uploads in a…'
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > says what each open surface gave, in a count or a phrase, and never a word the project said
+AssertionError: expected undefined to be 'it gave a signed URL' // Object.is equality

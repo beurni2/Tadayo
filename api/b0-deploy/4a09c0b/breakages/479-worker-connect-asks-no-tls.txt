@@ -1,0 +1,23 @@
+breakage: worker-connect-asks-no-tls
+patch: [
+ [
+  "services/worker/src/connection.ts",
+  "  return postgres(url, { types: { instant: INSTANT_TYPE }, ...transportOptions(url) });",
+  "  return postgres(url, { types: { instant: INSTANT_TYPE } });",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/services/worker && npx vitest run src/connection.test.ts
+exit: 1
+expected words: requires TLS for Supabase's pooler, though the string says nothing of it, and the string can't switch it off
+caught: True
+
+     × requires TLS for Supabase's pooler, though the string says nothing of it, and the string can't switch it off 14ms
+     × asks for no TLS of a plainly written loopback host, and requires it of one the driver reads differently 3ms
+ Test Files  1 failed (1)
+      Tests  2 failed (2)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/connection.test.ts > connect > requires TLS for Supabase's pooler, though the string says nothing of it, and the string can't switch it off
+AssertionError: expected { ssl: false, …(2) } to deeply equal { ssl: 'require', …(2) }
+ FAIL  src/connection.test.ts > connect > asks for no TLS of a plainly written loopback host, and requires it of one the driver reads differently
+AssertionError: expected false to be 'require' // Object.is equality

@@ -1,0 +1,21 @@
+breakage: env-percent-encoding-unchecked
+patch: [
+ [
+  "tools/ops/src/environment.ts",
+  "  try {\n    decodeURIComponent(parsed.password);\n  } catch {\n    throw refused(\"its password isn't valid percent-encoding: a % in it has to be written as %25\");\n  }\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/environment.test.ts
+exit: 1
+expected words: says what is wrong with a password that isn't percent-encoded properly, by the variable's name and never the password
+caught: True
+
+     × says what is wrong with a password that isn't percent-encoded properly, by the variable's name and never the password 6ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 21 passed (22)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/environment.test.ts > devDatabaseUrl: only tadayo-dev's database, by the reference in the connection > says what is wrong with a password that isn't percent-encoded properly, by the variable's name and never the password
+AssertionError: abc%zzdef-0123456789: expected '' to be 'DATABASE_URL isn\'t a connection to t…' // Object.is equality
+    115|         message = error instanceof Error ? error.message : "";

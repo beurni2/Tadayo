@@ -1,0 +1,38 @@
+breakage: p-an-open-read-passes
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "    return reply.status === 200 ? whenOpen : answered(reply);",
+  "    return undefined;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: names the surface when
+caught: True
+
+     × names the surface when download is open, and leaves nothing behind 8ms
+     × names the surface when overwrite is open, and leaves nothing behind 4ms
+     × names the surface when new-object is open, and leaves nothing behind 3ms
+     × names the surface when bucket-create is open, and leaves nothing behind 5ms
+     × says what each open surface gave, in a count or a phrase, and never a word the project said 4ms
+     × removes what a leaked write made, by name, and says it did 6ms
+     × fails a request Storage couldn't read (status 400), so a mistake of the probe's own can't pass as closed 5ms
+ Test Files  1 failed (1)
+      Tests  7 failed | 55 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when download is open, and leaves nothing behind
+AssertionError: anon: download from uploads: expected [] to include 'anon: download from uploads'
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when overwrite is open, and leaves nothing behind
+AssertionError: user: overwrite the object in uploads: expected [] to include 'user: overwrite the object in uploads'
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when new-object is open, and leaves nothing behind
+AssertionError: user: add an object to uploads: expected [] to include 'user: add an object to uploads'
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when bucket-create is open, and leaves nothing behind
+AssertionError: user: create a bucket: expected [] to include 'user: create a bucket'
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > says what each open surface gave, in a count or a phrase, and never a word the project said
+AssertionError: expected undefined to be 'it gave the object' // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > removes what a leaked write made, by name, and says it did
+AssertionError: expected [ …(3) ] to deeply equal [ …(6) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks counts only Storage's own refusal as one > fails a request Storage couldn't read (status 400), so a mistake of the probe's own can't pass as closed
+AssertionError: expected [] to deeply equal [ 'anon: download from uploads', …(1) ]

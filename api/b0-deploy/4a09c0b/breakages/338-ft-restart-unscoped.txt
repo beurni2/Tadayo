@@ -1,0 +1,23 @@
+breakage: ft-restart-unscoped
+patch: [
+ [
+  "fly.toml",
+  "  policy = \"on-failure\"\n  processes = [\"api\", \"worker\"]\n",
+  "  policy = \"on-failure\"\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-files.test.ts
+exit: 1
+expected words: scopes every section that binds to a group to its group: flyctl refuses an unscoped service, and the others go to one group only
+caught: True
+
+     × scopes every section that binds to a group to its group: flyctl refuses an unscoped service, and the others go to one group only 46ms
+     × stops each group with SIGTERM and time to finish, and restarts one only when it failed 28ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 15 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-files.test.ts > fly.toml > scopes every section that binds to a group to its group: flyctl refuses an unscoped service, and the others go to one group only
+AssertionError: [restart] has processes: expected false to be true // Object.is equality
+ FAIL  src/deploy-files.test.ts > fly.toml > stops each group with SIGTERM and time to finish, and restarts one only when it failed
+AssertionError: expected undefined to deeply equal [ 'api', 'worker' ]

@@ -1,0 +1,21 @@
+breakage: db-branch-trailing-dot-allowed
+patch: [
+ [
+  "tools/ops/src/deploy-branch.ts",
+  "    !branch.endsWith(\".\") &&\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-branch.test.ts
+exit: 1
+expected words: refuses a branch name that isn't one
+caught: True
+
+     × before it runs anything 7ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-branch.test.ts > deployBranch refuses a branch name that isn't one > before it runs anything
+AssertionError: a.: expected [ 'git rev-parse HEAD', …(1) ] to deeply equal []
+    331|       expect(result.outcome, branch).toBeInstanceOf(OpsError);

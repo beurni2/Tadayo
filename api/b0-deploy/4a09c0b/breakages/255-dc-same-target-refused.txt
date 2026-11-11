@@ -1,0 +1,25 @@
+breakage: dc-same-target-refused
+patch: [
+ [
+  "tools/ops/src/dev-clock.ts",
+  "  if (offset < current) {",
+  "  if (offset <= current) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/dev-clock.test.ts
+exit: 1
+expected words: takes a target equal to what the clock reads now, and refuses one a microsecond before it (T3)
+caught: True
+
+     × is the target less Postgres's own clock, in whole microseconds 6ms
+     × takes a target equal to what the clock reads now, and refuses one a microsecond before it (T3) 1ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 5 passed (7)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/dev-clock.test.ts > moveOffset > is the target less Postgres's own clock, in whole microseconds
+OpsError: dev-clock: dev's clock reads 2027-01-15T08:00:00Z now, which is after 2027-01-15T08:00:00Z: the clock only moves forward (T3), so nothing is changed
+     60|     throw new OpsError(
+ FAIL  src/dev-clock.test.ts > moveOffset > takes a target equal to what the clock reads now, and refuses one a microsecond before it (T3)
+OpsError: dev-clock: dev's clock reads 2027-01-17T08:00:00Z now, which is after 2027-01-17T08:00:00Z: the clock only moves forward (T3), so nothing is changed
+     60|     throw new OpsError(

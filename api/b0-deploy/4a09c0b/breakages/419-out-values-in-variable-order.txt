@@ -1,0 +1,20 @@
+breakage: out-values-in-variable-order
+patch: [
+ [
+  "tools/ops/src/output.ts",
+  "const exact = [...values].sort((a, b) => b.length - a.length);",
+  "const exact = [...values];",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/output.test.ts
+exit: 1
+expected words: holds back a longer value whole when a shorter one is inside it
+caught: True
+
+     × holds back a longer value whole when a shorter one is inside it 6ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/output.test.ts > redactor > holds back a longer value whole when a shorter one is inside it
+AssertionError: expected 'the token aaaaaaaa[redacted] and the …' to be 'the token [redacted] and the password…' // Object.is equality

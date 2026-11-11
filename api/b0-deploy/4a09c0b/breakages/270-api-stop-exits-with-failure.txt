@@ -1,0 +1,26 @@
+breakage: api-stop-exits-with-failure
+patch: [
+ [
+  "services/api/src/main.ts",
+  "  }).then(() => process.exit());",
+  "  }).then(() => process.exit(1));",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-deploy-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/c10a/dbtest-wt.sh src/db/startup.test.ts
+exit: 1
+expected words: SIGTERM
+caught: True
+
+     × stops on SIGTERM with exit code 0, writes its stop lines, and no longer listens 435ms
+     × stops on SIGINT with exit code 0, writes its stop lines, and no longer listens 488ms
+     × begins one stop when two signals come in a row, and the second, which has no handler left, ends the process or lets the first finish 525ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/startup.test.ts > the API's entry against the test database > stops on SIGTERM with exit code 0, writes its stop lines, and no longer listens
+ FAIL  src/db/startup.test.ts > the API's entry against the test database > stops on SIGINT with exit code 0, writes its stop lines, and no longer listens
+AssertionError: expected 1 to be +0 // Object.is equality
+ FAIL  src/db/startup.test.ts > the API's entry against the test database > begins one stop when two signals come in a row, and the second, which has no handler left, ends the process or lets the first finish
+AssertionError: {"level":30,"time":1794438037366,"msg":"Server listening at http://127.0.0.1:39041"}
+: expected false to be true // Object.is equality
+ Test Files  1 failed (1)
+      Tests  3 failed | 7 passed (10)

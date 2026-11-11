@@ -1,0 +1,20 @@
+breakage: bs-timeout-unsaid
+patch: [
+ [
+  "tools/ops/src/bootstrap.ts",
+  "  if (result.timedOut) throw new OpsError(\"bootstrap: psql didn't finish in two minutes\");\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/bootstrap.test.ts
+exit: 1
+expected words: says when psql isn't there, and when it doesn't finish
+caught: True
+
+     × says when psql isn't there, and when it doesn't finish 8ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 7 passed (8)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/bootstrap.test.ts > runBootstrap > says when psql isn't there, and when it doesn't finish
+AssertionError: expected [Function] to throw error matching /didn't finish/ but got 'bootstrap: psql failed (exit null), n…'

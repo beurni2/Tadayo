@@ -1,0 +1,21 @@
+breakage: dc-longest-offset-refused
+patch: [
+ [
+  "tools/ops/src/dev-clock.ts",
+  "  if (offset > BigInt(LONGEST_OFFSET_DAYS) * MICROSECONDS_PER_DAY) {",
+  "  if (offset >= BigInt(LONGEST_OFFSET_DAYS) * MICROSECONDS_PER_DAY) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/dev-clock.test.ts
+exit: 1
+expected words: goes as far as the longest offset, to the microsecond, and no further
+caught: True
+
+     × goes as far as the longest offset, to the microsecond, and no further 5ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/dev-clock.test.ts > moveOffset > goes as far as the longest offset, to the microsecond, and no further
+OpsError: dev-clock: 2028-01-16T08:00:00Z is more than 366 days ahead of Postgres's own clock, and the dev clock never moves back, so nothing is changed: is the year right?
+     66|     throw new OpsError(

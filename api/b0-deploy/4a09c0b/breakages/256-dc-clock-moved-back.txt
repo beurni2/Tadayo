@@ -1,0 +1,26 @@
+breakage: dc-clock-moved-back
+patch: [
+ [
+  "tools/ops/src/dev-clock.ts",
+  "  if (offset < current) {",
+  "  if (false) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/dev-clock.test.ts
+exit: 1
+expected words: takes a target equal to what the clock reads now, and refuses one a microsecond before it (T3)
+caught: True
+
+     × takes a target equal to what the clock reads now, and refuses one a microsecond before it (T3) 7ms
+     × says what the clock reads and what it was asked for, as instants 1ms
+     × refuses a target before Postgres's own clock, which no offset reaches 1ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 4 passed (7)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/dev-clock.test.ts > moveOffset > takes a target equal to what the clock reads now, and refuses one a microsecond before it (T3)
+AssertionError: expected [Function] to throw an error
+ FAIL  src/dev-clock.test.ts > moveOffset > says what the clock reads and what it was asked for, as instants
+Error: expected number of assertions to be 2, but got 0
+ FAIL  src/dev-clock.test.ts > moveOffset > refuses a target before Postgres's own clock, which no offset reaches
+AssertionError: expected [Function] to throw an error

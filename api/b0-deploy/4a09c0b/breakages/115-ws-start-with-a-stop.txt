@@ -1,0 +1,21 @@
+breakage: ws-start-with-a-stop
+patch: [
+ [
+  "tools/ops/src/worker-scale.ts",
+  ": [\"machine\", \"start\", worker.id, \"-a\", DEV_APP];",
+  ": [\"machine\", \"stop\", worker.id, \"-a\", DEV_APP];",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/worker-scale.test.ts
+exit: 1
+expected words: starts a stopped worker Machine and reads its state
+caught: True
+
+     × starts a stopped worker Machine and reads its state 5ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/worker-scale.test.ts > workerScale to started > starts a stopped worker Machine and reads its state
+AssertionError: expected Error: the fake has no route for: flyctl … to be undefined
+Error {

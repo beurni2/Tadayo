@@ -1,0 +1,23 @@
+breakage: p-db-storage-policy-passes
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "      if (row.policies !== \"0\")\n        found.push(",
+  "      if (false)\n        found.push(",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-deploy-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/c10a/dbtest-wt.sh src/db/ops-probe.test.ts
+exit: 1
+expected words: fails on a policy on objects, one or more, and on one on buckets
+caught: True
+
+     × fails on a policy on objects, one or more, and on one on buckets 22ms
+     × fails when row-level security is off, which would open every object to every role with a grant 24ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/ops-probe.test.ts > databaseChecks on Storage's tables > fails on a policy on objects, one or more, and on one on buckets
+AssertionError: expected undefined to be 'storage.objects has 1 policy' // Object.is equality
+ FAIL  src/db/ops-probe.test.ts > databaseChecks on Storage's tables > fails when row-level security is off, which would open every object to every role with a grant
+AssertionError: expected 'storage.objects has no row-level secu…' to be 'storage.objects has no row-level secu…' // Object.is equality
+ Test Files  1 failed (1)
+      Tests  2 failed | 11 passed (13)

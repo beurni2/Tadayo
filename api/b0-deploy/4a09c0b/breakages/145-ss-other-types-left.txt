@@ -1,0 +1,20 @@
+breakage: ss-other-types-left
+patch: [
+ [
+  "tools/ops/src/storage-setup.ts",
+  "    found.push(\"types:other\");",
+  "    undefined;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/storage-setup.test.ts
+exit: 1
+expected words: makes a bucket private again, and sets its limit and types, when it was made another way, and says what it changed
+caught: True
+
+     × makes a bucket private again, and sets its limit and types, when it was made another way, and says what it changed 8ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/storage-setup.test.ts > storageSetup > makes a bucket private again, and sets its limit and types, when it was made another way, and says what it changed
+AssertionError: expected 'storage-setup: renditions: already as…' to be 'storage-setup: renditions: changed: i…' // Object.is equality

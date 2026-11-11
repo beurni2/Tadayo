@@ -1,0 +1,20 @@
+breakage: p-clean-up-without-a-deadline
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "  const limit = () => (cleaning ? deadline : checking);",
+  "  const limit = () => (cleaning ? new AbortController().signal : checking);",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: stops the clean-up too at the deadline, and names every object and the user it leaves
+caught: True
+
+     × stops the clean-up too at the deadline, and names every object and the user it leaves 16ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 61 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > stops the clean-up too at the deadline, and names every object and the user it leaves
+AssertionError: expected [ { method: 'POST', …(3) }, …(18) ] to have a length of 16 but got 19

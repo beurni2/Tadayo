@@ -1,0 +1,35 @@
+breakage: fly-child-gets-no-home
+patch: [
+ [
+  "tools/ops/src/fly.ts",
+  "  const childEnv: Record<string, string> =\n    home === undefined || home === \"\" ? { FLY_API_TOKEN: token } : { FLY_API_TOKEN: token, HOME: home };",
+  "  const childEnv: Record<string, string> = { FLY_API_TOKEN: token };",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/fly.test.ts src/worker-scale.test.ts src/fly-app-create.test.ts src/on-machine.test.ts src/run-remote.test.ts
+exit: 1
+expected words: with the Fly token and HOME and nothing else
+caught: True
+
+     × gives flyctl the token and HOME, the call's own directory, and two minutes 8ms
+     × lets a call set its own time limit, and no other option changes the environment 1ms
+     × calls flyctl with the Fly token and HOME and nothing else, and never says the token 8ms
+     × with the Fly token and HOME and nothing else, and names the app in every call 10ms
+     × gives flyctl the token and HOME, and nothing else of the environment 13ms
+     × gives the call a little longer than it gave the command, and flyctl the token and nothing else 7ms
+ Test Files  5 failed (5)
+      Tests  6 failed | 75 passed (81)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly-app-create.test.ts > flyAppCreate on a fresh account > calls flyctl with the Fly token and HOME and nothing else, and never says the token
+AssertionError: expected { Object (FLY_API_TOKEN) } to deeply equal { …(2) }
+ FAIL  src/fly.test.ts > flyOf: flyctl with the Fly token and HOME and nothing else > gives flyctl the token and HOME, the call's own directory, and two minutes
+AssertionError: expected [ { command: 'flyctl', …(2) } ] to deeply equal [ { command: 'flyctl', …(2) } ]
+ FAIL  src/fly.test.ts > flyOf: flyctl with the Fly token and HOME and nothing else > lets a call set its own time limit, and no other option changes the environment
+AssertionError: expected { …(2) } to deeply equal { env: { …(2) }, timeoutMs: 1200000 }
+ FAIL  src/on-machine.test.ts > onMachine > gives the call a little longer than it gave the command, and flyctl the token and nothing else
+AssertionError: expected { Object (FLY_API_TOKEN) } to deeply equal { …(2) }
+ FAIL  src/run-remote.test.ts > every script that calls Fly > gives flyctl the token and HOME, and nothing else of the environment
+AssertionError: expected { Object (FLY_API_TOKEN) } to deeply equal { …(2) }
+ FAIL  src/worker-scale.test.ts > workerScale calls flyctl > with the Fly token and HOME and nothing else, and names the app in every call
+AssertionError: expected { Object (FLY_API_TOKEN) } to deeply equal { …(2) }

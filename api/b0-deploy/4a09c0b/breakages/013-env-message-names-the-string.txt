@@ -1,0 +1,36 @@
+breakage: env-message-names-the-string
+patch: [
+ [
+  "tools/ops/src/environment.ts",
+  "session pooler: ${why}`);",
+  "session pooler: ${why} ${url}`);",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/environment.test.ts
+exit: 1
+expected words: never says the string or the reference when it refuses
+caught: True
+
+     × refuses a string with no password, which psql would ask for on a terminal, and says so 9ms
+     × says what is wrong with a password that isn't percent-encoded properly, by the variable's name and never the password 3ms
+     × tells a password with a # / or ? in it to write them encoded, since those end the user-info part 1ms
+     × takes a comma in the password, which is the password's and not a second host's, and still refuses one after the @ 3ms
+     × says it names more than one host, as the string says it, before any parser reads it 1ms
+     × never says the string or the reference when it refuses: its messages name variables, not values (T56) 3ms
+ Test Files  1 failed (1)
+      Tests  6 failed | 16 passed (22)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/environment.test.ts > devDatabaseUrl: only tadayo-dev's database, by the reference in the connection > refuses a string with no password, which psql would ask for on a terminal, and says so
+AssertionError: postgresql://tadayo_app.rhsycmycocbzakrydahi@aws-0-us-east-1.pooler.supabase.com:5432/postgres: expected [Function] to throw error matching /it has no password$/ but got 'DATABASE_URL isn\'t a connection to t…'
+ FAIL  src/environment.test.ts > devDatabaseUrl: only tadayo-dev's database, by the reference in the connection > says what is wrong with a password that isn't percent-encoded properly, by the variable's name and never the password
+AssertionError: abc%zzdef-0123456789: expected 'DATABASE_URL isn\'t a connection to t…' to be 'DATABASE_URL isn\'t a connection to t…' // Object.is equality
+    115|         message = error instanceof Error ? error.message : "";
+ FAIL  src/environment.test.ts > devDatabaseUrl: only tadayo-dev's database, by the reference in the connection > tells a password with a # / or ? in it to write them encoded, since those end the user-info part
+AssertionError: abcd#efgh-0123456789: expected [Function] to throw error matching /…/ or \? in the password has to be written as %23, %2F or %3F\)$ but got 'DATABASE_URL isn\'t a connection to t…'
+ FAIL  src/environment.test.ts > devDatabaseUrl: only tadayo-dev's database, by the reference in the connection > takes a comma in the password, which is the password's and not a second host's, and still refuses one after the @
+AssertionError: expected [Function] to throw error matching /it names more than one host$/ but got 'DATABASE_URL isn\'t a connection to t…'
+ FAIL  src/environment.test.ts > devDatabaseUrl: only tadayo-dev's database, by the reference in the connection > says it names more than one host, as the string says it, before any parser reads it
+AssertionError: postgresql://tadayo_app.rhsycmycocbzakrydahi:pw@aws-0-us-east-1.pooler.supabase.com:5432,localhost:5432/postgres: expected [Function] to throw error matching /it names more than one host$/ but got 'DATABASE_URL isn\'t a connection to t…'
+ FAIL  src/environment.test.ts > devDatabaseUrl: only tadayo-dev's database, by the reference in the connection > never says the string or the reference when it refuses: its messages name variables, not values (T56)
+AssertionError: expected 'DATABASE_URL isn\'t a connection to t…' not to contain 'p%40ss%2Fword-with-32-characters-or-m…'

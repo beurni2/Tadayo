@@ -1,0 +1,20 @@
+breakage: fly-guard-any-orgs-call
+patch: [
+ [
+  "tools/ops/src/fly.ts",
+  "if (args.length === 3 && args[0] === \"orgs\" && args[1] === \"list\" && args[2] === \"--json\") return true;",
+  "if (args[0] === \"orgs\") return true;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/fly.test.ts
+exit: 1
+expected words: takes the two calls that name none only in the one form each
+caught: True
+
+     × takes the two calls that name none only in the one form each, not with other words after them 6ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly.test.ts > forDevApp: a call is about tadayo-api-dev and no other app > takes the two calls that name none only in the one form each, not with other words after them
+AssertionError: orgs list: expected true to be false // Object.is equality

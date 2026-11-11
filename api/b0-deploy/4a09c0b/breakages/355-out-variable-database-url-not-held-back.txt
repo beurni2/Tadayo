@@ -1,0 +1,27 @@
+breakage: out-variable-database-url-not-held-back
+patch: [
+ [
+  "tools/ops/src/output.ts",
+  "  \"DATABASE_URL\",\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/output.test.ts
+exit: 1
+expected words: holds back the value of each of the seven secret variables on its own, whatever it looks like
+caught: True
+
+     × holds back the value of each of the seven secret variables on its own, whatever it looks like 5ms
+     × holds back a connection string's password, as it is written in the string and decoded 1ms
+     × holds back a connection string's password that isn't percent-encoded properly, as it is written 1ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 15 passed (18)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/output.test.ts > redactor > holds back the value of each of the seven secret variables on its own, whatever it looks like
+AssertionError: DATABASE_URL: expected 'before unshaped-database_url-value-01…' to be 'before [redacted] after' // Object.is equality
+ FAIL  src/output.test.ts > redactor > holds back a connection string's password, as it is written in the string and decoded
+AssertionError: password authentication failed for user tadayo_app, with p%40ss%2Fw0rd-of-many-characters: expected 'password authentication failed for us…' to be 'password authentication failed for us…' // Object.is equality
+     87|       expect(redact(line), line).toBe(expected);
+ FAIL  src/output.test.ts > redactor > holds back a connection string's password that isn't percent-encoded properly, as it is written
+AssertionError: expected 'psql: FATAL: password 100%25%zz-passw…' to be 'psql: FATAL: password [redacted] fail…' // Object.is equality

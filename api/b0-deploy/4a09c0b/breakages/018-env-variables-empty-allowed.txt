@@ -1,0 +1,21 @@
+breakage: env-variables-empty-allowed
+patch: [
+ [
+  "tools/ops/src/environment.ts",
+  "    if (value === undefined || value.trim() === \"\") missing.push(name);",
+  "    if (value === undefined) missing.push(name);",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/environment.test.ts
+exit: 1
+expected words: names every variable that is missing or empty, and none of the values
+caught: True
+
+     × names every variable that is missing or empty, and none of the values 6ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 21 passed (22)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/environment.test.ts > readVariables: what a script reads from the environment, by name > names every variable that is missing or empty, and none of the values
+AssertionError: expected 'set C' to contain 'B'
+    257|       message = error instanceof Error ? error.message : "";

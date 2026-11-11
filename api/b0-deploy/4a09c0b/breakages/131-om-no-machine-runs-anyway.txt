@@ -1,0 +1,21 @@
+breakage: om-no-machine-runs-anyway
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "    throw new OpsError(`${label}: the API has no started Machine (the app's Machines: ${machineList(all)}); ${advice}`);\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/on-machine.test.ts
+exit: 1
+expected words: fails when the API has no started Machine, names the Machines there are, and runs nothing
+caught: True
+
+     × fails when the API has no started Machine, names the Machines there are, and runs nothing 10ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 7 passed (8)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine > fails when the API has no started Machine, names the Machines there are, and runs nothing
+AssertionError: expected 'Cannot read properties of undefined (…' to be 'storage-setup: the API has no started…' // Object.is equality
+    156|     expect((stopped.outcome as OpsError).message).toBe(

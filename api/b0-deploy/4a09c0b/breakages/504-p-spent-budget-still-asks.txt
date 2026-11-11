@@ -1,0 +1,29 @@
+breakage: p-spent-budget-still-asks
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "    if (within.aborted) return undefined;\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: asks nothing when its time is already spent, and says the first control wasn't answered for that reason
+caught: True
+
+     × asks nothing when its time is already spent, and says the first control wasn't answered for that reason 17ms
+     × stops asking when the budget runs out part-way, says so for every check it didn't ask, and still cleans up 5ms
+     × leaves no bucket to remove for a refusal it never asked 6ms
+     × stops the clean-up too at the deadline, and names every object and the user it leaves 6ms
+ Test Files  1 failed (1)
+      Tests  4 failed | 58 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > asks nothing when its time is already spent, and says the first control wasn't answered for that reason
+AssertionError: expected [ { method: 'POST', …(3) }, …(64) ] to deeply equal []
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > stops asking when the budget runs out part-way, says so for every check it didn't ask, and still cleans up
+AssertionError: expected false to be true // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > leaves no bucket to remove for a refusal it never asked
+AssertionError: expected false to be true // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > stops the clean-up too at the deadline, and names every object and the user it leaves
+AssertionError: expected [ { method: 'POST', …(3) }, …(64) ] to have a length of 16 but got 65

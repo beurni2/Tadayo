@@ -1,0 +1,22 @@
+breakage: seed-odd-file-names-taken
+patch: [
+ [
+  "tools/ops/src/seed.ts",
+  "    if (!FILE_NAME.test(entry)) throw new OpsError(",
+  "    if (false) throw new OpsError(",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/seed.test.ts
+exit: 1
+expected words: refuses a file that isn't named like a seed, so nothing runs by accident
+caught: True
+
+     × refuses a file that isn't named like a seed, so nothing runs by accident 8ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/seed.test.ts > readSeeds > refuses a file that isn't named like a seed, so nothing runs by accident
+AssertionError: promise resolved "[ { name: 'README.md', …(1) } ]" instead of rejecting
+Error {
+     44|       await expect(readSeeds(dir), name).rejects.toThrow(OpsError);

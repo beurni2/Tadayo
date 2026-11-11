@@ -1,0 +1,21 @@
+breakage: r2-storage-one-bucket-checked
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  "    for (const bucket of BUCKETS) {",
+  "    for (const bucket of BUCKETS.slice(0, 1)) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/run-remote.test.ts
+exit: 1
+expected words: fails when the Machine's report ends before it says what became of each bucket
+caught: True
+
+     × fails when the Machine's report ends before it says what became of each bucket, even with an exit status of 0 8ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 28 passed (29)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/run-remote.test.ts > storage-setup on the runner > fails when the Machine's report ends before it says what became of each bucket, even with an exit status of 0
+AssertionError: storage-setup: uploads: created
+: expected 'it didn\'t fail' to be 'storage-setup: the Machine\'s report …' // Object.is equality

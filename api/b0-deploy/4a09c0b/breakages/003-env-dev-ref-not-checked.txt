@@ -1,0 +1,20 @@
+breakage: env-dev-ref-not-checked
+patch: [
+ [
+  "tools/ops/src/environment.ts",
+  "  devProjectRef(devRef);\n  const refused",
+  "  const refused",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/environment.test.ts
+exit: 1
+expected words: refuses a reference that isn't a project's
+caught: True
+
+     × refuses a reference that isn't a project's: it must be twenty lowercase letters, and it says that 8ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 21 passed (22)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/environment.test.ts > devDatabaseUrl: only tadayo-dev's database, by the reference in the connection > refuses a reference that isn't a project's: it must be twenty lowercase letters, and it says that
+AssertionError: expected [Function] to throw error matching /^SUPABASE_DEV_PROJECT_REF isn't a Sup…/ but got 'DATABASE_URL isn\'t a connection to t…'

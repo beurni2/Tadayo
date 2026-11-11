@@ -1,0 +1,22 @@
+breakage: fac-certificate-failure-ignored
+patch: [
+ [
+  "tools/ops/src/fly-app-create.ts",
+  "    if (added.code !== 0) {",
+  "    if (false) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/fly-app-create.test.ts
+exit: 1
+expected words: to say the certificate is requested when flyctl refused it
+caught: True
+
+     × to say the certificate is requested when flyctl refused it 3ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 passed (15)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly-app-create.test.ts > flyAppCreate refuses > to say the certificate is requested when flyctl refused it
+TypeError: Cannot read properties of undefined (reading 'message')
+    271|       [CERT_ADD, { code: 1, stderr: "Error: you don't have access" }],
+    273|     expect((result.outcome as OpsError).message).toBe(

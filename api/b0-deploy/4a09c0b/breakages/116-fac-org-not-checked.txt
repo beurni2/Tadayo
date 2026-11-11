@@ -1,0 +1,21 @@
+breakage: fac-org-not-checked
+patch: [
+ [
+  "tools/ops/src/fly-app-create.ts",
+  "  if (input.org !== undefined && !SLUG.test(input.org)) {",
+  "  if (false) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/fly-app-create.test.ts
+exit: 1
+expected words: an organization name that isn't a slug, before it calls flyctl at all
+caught: True
+
+     × an organization name that isn't a slug, before it calls flyctl at all 6ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 passed (15)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly-app-create.test.ts > flyAppCreate refuses > an organization name that isn't a slug, before it calls flyctl at all
+AssertionError: expected Error: the fake has no route for: flyctl … to be an instance of OpsError
+    250|       expect(result.outcome, org).toBeInstanceOf(OpsError);

@@ -1,0 +1,63 @@
+breakage: spawn-through-a-shell
+patch: [
+ [
+  "tools/ops/src/spawn.ts",
+  "      cwd: options.cwd,\n",
+  "      cwd: options.cwd,\n      shell: true,\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/spawn.test.ts
+exit: 1
+expected words: reads no argument as anything but an argument: there is no shell
+caught: True
+
+     × gives the child the environment it is given and PATH, and nothing else of this process's 8ms
+     × gives a child that is given no environment only PATH 6ms
+     × collects standard output and standard error apart, and the exit code 6ms
+     × writes the input to the child's standard input and closes it, and closes it at once when there is none 3ms
+     × runs the child where it is told to 4ms
+     × reads no argument as anything but an argument: there is no shell 2ms
+     × kills a child that outlives its time, and says it ran out of time and has no exit code 4ms
+     × doesn't kill a child that finishes in its time 3ms
+     × says a program that isn't there as exit code 127 and its name, and throws nothing 3ms
+     × says a program that can't start for another reason as exit code 127 and the reason, and throws nothing 5ms
+     × collects all of what a child wrote on each stream, though it exits at once 3ms
+     × waits for the streams to close, and not only for the child to exit: what the child's own children write is kept 2ms
+     × doesn't hold the process that ran it open once the child is done, whatever time it was given 2ms
+     × isn't thrown by a child that exits without reading its input 7ms
+ Test Files  1 failed (1)
+      Tests  14 failed (14)
+⎯⎯⎯⎯⎯⎯ Failed Tests 14 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/spawn.test.ts > spawnProcess > gives the child the environment it is given and PATH, and nothing else of this process's
+SyntaxError: Unexpected end of JSON input
+ FAIL  src/spawn.test.ts > spawnProcess > gives a child that is given no environment only PATH
+AssertionError: expected '' to be 'PATH\n' // Object.is equality
+ FAIL  src/spawn.test.ts > spawnProcess > collects standard output and standard error apart, and the exit code
+AssertionError: expected { code: 2, timedOut: false, …(2) } to deeply equal { code: 3, timedOut: false, …(2) }
++   "stderr": "/bin/sh: 1: Syntax error: \"(\" unexpected
+ FAIL  src/spawn.test.ts > spawnProcess > writes the input to the child's standard input and closes it, and closes it at once when there is none
+AssertionError: expected '' to be 'got:hello\n' // Object.is equality
+ FAIL  src/spawn.test.ts > spawnProcess > runs the child where it is told to
+AssertionError: expected '' to be '/tmp/tadayo-spawn-Fl6CGt\n' // Object.is equality
+ FAIL  src/spawn.test.ts > spawnProcess > reads no argument as anything but an argument: there is no shell
+SyntaxError: Unexpected end of JSON input
+ FAIL  src/spawn.test.ts > spawnProcess > kills a child that outlives its time, and says it ran out of time and has no exit code
+AssertionError: expected false to be true // Object.is equality
+ FAIL  src/spawn.test.ts > spawnProcess > doesn't kill a child that finishes in its time
+AssertionError: expected { code: 2, timedOut: false, …(2) } to deeply equal { code: +0, timedOut: false, …(2) }
++   "stderr": "/bin/sh: 1: Syntax error: \"(\" unexpected
+ FAIL  src/spawn.test.ts > spawnProcess > says a program that isn't there as exit code 127 and its name, and throws nothing
+AssertionError: expected { code: 127, timedOut: false, …(2) } to deeply equal { code: 127, timedOut: false, …(2) }
+ FAIL  src/spawn.test.ts > spawnProcess > says a program that can't start for another reason as exit code 127 and the reason, and throws nothing
+AssertionError: expected { code: 126, timedOut: false, …(2) } to deeply equal { code: 127, timedOut: false, …(2) }
+ FAIL  src/spawn.test.ts > spawnProcess > collects all of what a child wrote on each stream, though it exits at once
+AssertionError: expected 2 to be +0 // Object.is equality
+ FAIL  src/spawn.test.ts > spawnProcess > waits for the streams to close, and not only for the child to exit: what the child's own children write is kept
+AssertionError: expected { code: 2, timedOut: false, …(2) } to deeply equal { code: +0, timedOut: false, …(2) }
++   "stderr": "/bin/sh: 1: Syntax error: \"(\" unexpected
+ FAIL  src/spawn.test.ts > spawnProcess > doesn't hold the process that ran it open once the child is done, whatever time it was given
+AssertionError: expected { code: 2, timedOut: false, …(2) } to deeply equal { code: +0, timedOut: false, …(2) }
++   "stderr": "/bin/sh: 1: Syntax error: \"(\" unexpected
+ FAIL  src/spawn.test.ts > spawnProcess > isn't thrown by a child that exits without reading its input
+AssertionError: expected 2 to be +0 // Object.is equality

@@ -1,0 +1,26 @@
+breakage: p-rest-rows-pass
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "  return rows.length === 0 ? undefined : \"it returned rows\";",
+  "  return undefined;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: names the surface when
+caught: True
+
+     × names the surface when rest is open, and leaves nothing behind 7ms
+     × fails each of two leaks together, and each by name 4ms
+     × says what each open surface gave, in a count or a phrase, and never a word the project said 35ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 59 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when rest is open, and leaves nothing behind
+AssertionError: anon: REST users: expected [] to include 'anon: REST users'
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > fails each of two leaks together, and each by name
+AssertionError: expected [ 'user: list the buckets' ] to include 'anon: REST users'
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > says what each open surface gave, in a count or a phrase, and never a word the project said
+AssertionError: expected undefined to be 'it returned rows' // Object.is equality

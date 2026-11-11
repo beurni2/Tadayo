@@ -1,0 +1,26 @@
+breakage: sb-caller-signal-ignored
+patch: [
+ [
+  "tools/ops/src/supabase.ts",
+  "          : AbortSignal.any([AbortSignal.timeout(TIMEOUT_MS), options.within]),",
+  "          : AbortSignal.timeout(TIMEOUT_MS),",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase.test.ts
+exit: 1
+expected words: ends a call in flight when the signal aborts, and says it got no answer, as for any other end
+caught: True
+
+     × ends a call in flight when the signal aborts, and says it got no answer, as for any other end 5008ms
+     × ends at once a call given a signal that has already aborted 5006ms
+     × gives the call a signal of its own, which the caller's ends and doesn't replace, so the call's time limit stays 5007ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 15 passed (18)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase.test.ts > send: a signal that ends a call early, the probe's budget for the whole run > ends a call in flight when the signal aborts, and says it got no answer, as for any other end
+Error: Test timed out in 5000ms.
+ FAIL  src/supabase.test.ts > send: a signal that ends a call early, the probe's budget for the whole run > ends at once a call given a signal that has already aborted
+Error: Test timed out in 5000ms.
+ FAIL  src/supabase.test.ts > send: a signal that ends a call early, the probe's budget for the whole run > gives the call a signal of its own, which the caller's ends and doesn't replace, so the call's time limit stays
+Error: Test timed out in 5000ms.

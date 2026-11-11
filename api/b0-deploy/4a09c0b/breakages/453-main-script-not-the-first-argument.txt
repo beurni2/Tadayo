@@ -1,0 +1,34 @@
+breakage: main-script-not-the-first-argument
+patch: [
+ [
+  "tools/ops/src/main.ts",
+  "await runScript(process.argv[2], {",
+  "await runScript(process.argv[3], {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/main.test.ts
+exit: 1
+expected words: names the scripts and fails when the one named isn't one
+caught: True
+
+     × names the scripts and fails when the one named isn't one 145ms
+     × holds back the environment's token from a failure's message, and prints no stack 143ms
+     × holds back the environment's token from a line a script says, and exits 0 when the script worked 125ms
+     × gives the scripts the repository's root: bootstrap names db/bootstrap.sql by its whole path 142ms
+     × prints a script's refusal as its own words, with no stack, and exits 1 174ms
+ Test Files  1 failed (1)
+      Tests  5 failed | 1 passed (6)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/main.test.ts > the ops entry > names the scripts and fails when the one named isn't one
+AssertionError: expected 'ops: name a script; they are:\n  boot…' to match /^ops: no script is called "nonesuch";…/
+ FAIL  src/main.test.ts > the ops entry > holds back the environment's token from a failure's message, and prints no stack
+AssertionError: expected 'ops: no script is called "--to"; they…' to be 'couldn\'t list tadayo-api-dev\'s Mach…' // Object.is equality
+- couldn't list tadayo-api-dev's Machines: exit code 1: Error: the token [redacted] was refused
+     59|       "couldn't list tadayo-api-dev's Machines: exit code 1: Error: th…
+ FAIL  src/main.test.ts > the ops entry > holds back the environment's token from a line a script says, and exits 0 when the script worked
+AssertionError: expected 'ops: name a script; they are:\n  boot…' to be '' // Object.is equality
+ FAIL  src/main.test.ts > the ops entry > gives the scripts the repository's root: bootstrap names db/bootstrap.sql by its whole path
+AssertionError: expected undefined to be '/home/user/tadayo-deploy-breakages/db…' // Object.is equality
+ FAIL  src/main.test.ts > the ops entry > prints a script's refusal as its own words, with no stack, and exits 1
+AssertionError: expected 'ops: no script is called "--to"; they…' to be 'worker-scale: --to takes stopped or s…' // Object.is equality

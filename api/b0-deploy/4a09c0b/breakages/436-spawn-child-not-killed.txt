@@ -1,0 +1,20 @@
+breakage: spawn-child-not-killed
+patch: [
+ [
+  "tools/ops/src/spawn.ts",
+  "            child.kill(\"SIGKILL\");\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/spawn.test.ts
+exit: 1
+expected words: kills a child that outlives its time, and says it ran out of time and has no exit code
+caught: True
+
+     × kills a child that outlives its time, and says it ran out of time and has no exit code 5005ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 passed (14)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/spawn.test.ts > spawnProcess > kills a child that outlives its time, and says it ran out of time and has no exit code
+Error: Test timed out in 5000ms.

@@ -1,0 +1,20 @@
+breakage: fly-why-lines-uncut
+patch: [
+ [
+  "tools/ops/src/fly.ts",
+  "    .map((line) => (line.length > 200 ? `${line.slice(0, 200)}\u2026` : line));",
+  "    .map((line) => line);",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/fly.test.ts src/worker-scale.test.ts src/fly-app-create.test.ts src/on-machine.test.ts src/run-remote.test.ts
+exit: 1
+expected words: cuts a long line at 200 characters and keeps the shorter ones whole
+caught: True
+
+     × cuts a long line at 200 characters and keeps the shorter ones whole 11ms
+ Test Files  1 failed | 4 passed (5)
+      Tests  1 failed | 80 passed (81)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly.test.ts > why: what a failed call says, for a message > cuts a long line at 200 characters and keeps the shorter ones whole
+AssertionError: expected 'exit code 1: xxxxxxxxxxxxxxxxxxxxxxxx…' to be 'exit code 1: xxxxxxxxxxxxxxxxxxxxxxxx…' // Object.is equality

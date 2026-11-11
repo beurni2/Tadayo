@@ -1,0 +1,21 @@
+breakage: seed-open-schema-taken
+patch: [
+ [
+  "tools/ops/src/seed.ts",
+  "  if (problems.length > 0) {\n    throw new OpsError(`seed: ${file.name} would leave the schema app open",
+  "  if (false) {\n    throw new OpsError(`seed: ${file.name} would leave the schema app open",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-deploy-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/c10a/dbtest-wt.sh src/db/ops-seed.test.ts
+exit: 1
+expected words: refuses a file that would leave the schema open, and names it (T53)
+caught: True
+
+     × refuses a file that would leave the schema open, and names it (T53) 13ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/ops-seed.test.ts > applySeed > refuses a file that would leave the schema open, and names it (T53)
+AssertionError: promise resolved "undefined" instead of rejecting
+Error {
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)

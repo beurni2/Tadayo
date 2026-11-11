@@ -1,0 +1,26 @@
+breakage: p-unasked-refusal-kept
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "    const asked = !checking.aborted;\n",
+  "    const asked = true;\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: leaves no bucket to remove for a refusal it never asked
+caught: True
+
+     × stops asking when the budget runs out part-way, says so for every check it didn't ask, and still cleans up 11ms
+     × leaves no bucket to remove for a refusal it never asked 4ms
+     × stops the clean-up too at the deadline, and names every object and the user it leaves 5ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 59 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > stops asking when the budget runs out part-way, says so for every check it didn't ask, and still cleans up
+AssertionError: expected [ 'DELETE', 'DELETE', 'DELETE', …(6) ] to deeply equal [ 'DELETE', 'DELETE', 'DELETE' ]
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > leaves no bucket to remove for a refusal it never asked
+AssertionError: expected [ { method: 'DELETE', …(3) }, …(1) ] to deeply equal []
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > stops the clean-up too at the deadline, and names every object and the user it leaves
+AssertionError: expected [ { …(3) }, { …(3) }, { …(3) }, …(6) ] to deeply equal [ { …(3) }, { …(3) }, { …(3) } ]

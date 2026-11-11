@@ -1,0 +1,24 @@
+breakage: run-fly-app-create-org-dropped
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  "...(org === undefined ? {} : { org }), say: ctx.say",
+  "say: ctx.say",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/run.test.ts src/run-remote.test.ts
+exit: 1
+expected words: passes --org on when it makes the app
+caught: True
+
+     × takes an organization's slug, and refuses anything else before it calls flyctl 6ms
+     × makes nothing when the app is there and its certificate is issued, and passes --org on when it makes the app 3ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  2 failed | 42 passed (44)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/run-remote.test.ts > fly-app-create > takes an organization's slug, and refuses anything else before it calls flyctl
+AssertionError: --org : expected 'the fake has no route for: flyctl sta…' to match /^fly-app-create: --org takes an organ…/
+ FAIL  src/run-remote.test.ts > fly-app-create > makes nothing when the app is there and its certificate is issued, and passes --org on when it makes the app
+Error: the fake has no route for: flyctl orgs list --json
+     42|     if (route === undefined) return Promise.reject(new Error(`the fake…

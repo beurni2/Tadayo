@@ -1,0 +1,26 @@
+breakage: p-cleanup-of-a-gone-thing-fails
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "  return reply.status === 200 || reply.status === 204 || reply.logical === 404 ? undefined : answered(reply);",
+  "  return reply.status === 200 || reply.status === 204 ? undefined : answered(reply);",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: deletes the user and the objects even when a control throws half-way
+caught: True
+
+     × names the control of the signed URL's put when it doesn't answer 200, and runs no read after it 8ms
+     × deletes the user and the objects even when a control throws half-way 2ms
+     × ends a call that is in flight when the budget runs out, and removes what that call may have written 5ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 59 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks's controls: each must hold, in its own words, before a refusal means anything > names the control of the signed URL's put when it doesn't answer 200, and runs no read after it
+AssertionError: 201: expected [ …(2) ] to deeply equal [ Array(1) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks when the project can't be trusted to answer > deletes the user and the objects even when a control throws half-way
+AssertionError: expected [ …(2) ] to deeply equal [ Array(1) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > ends a call that is in flight when the budget runs out, and removes what that call may have written
+AssertionError: expected { …(3) } to deeply equal { …(2) }

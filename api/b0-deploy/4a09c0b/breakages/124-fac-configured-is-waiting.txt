@@ -1,0 +1,23 @@
+breakage: fac-configured-is-waiting
+patch: [
+ [
+  "tools/ops/src/fly-app-create.ts",
+  "  if (detail[\"configured\"] === true) return \"issuing\";",
+  "  if (detail[\"configured\"] === true) return \"waiting for DNS\";",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/fly-app-create.test.ts
+exit: 1
+expected words: says where the certificate is: waiting for DNS, or DNS found and the certificate on its way
+caught: True
+
+     × says where the certificate is: waiting for DNS, or DNS found and the certificate on its way 5ms
+     × says the certificate is on its way, not issued, while Fly has verified the host and no certificate is in its list 1ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 13 passed (15)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly-app-create.test.ts > flyAppCreate when it has been run before > says where the certificate is: waiting for DNS, or DNS found and the certificate on its way
+AssertionError: expected [ …(5) ] to include 'fly-app-create: DNS is in place for a…'
+ FAIL  src/fly-app-create.test.ts > flyAppCreate when it has been run before > says the certificate is on its way, not issued, while Fly has verified the host and no certificate is in its list
+AssertionError: [{"source":"fly","status":"active","issued":[]}]: expected [ …(5) ] to include 'fly-app-create: DNS is in place for a…'

@@ -1,0 +1,25 @@
+breakage: run-loose-words-taken
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  "strict: true, allowPositionals: false",
+  "strict: true, allowPositionals: true",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/run.test.ts src/run-remote.test.ts
+exit: 1
+expected words: takes no option it doesn't know and no loose word
+caught: True
+
+     × takes no option it doesn't know and no loose word, before it connects 11ms
+     × takes no option it doesn't know and no loose word, before it calls anyone 9ms
+ Test Files  2 failed (2)
+      Tests  2 failed | 42 passed (44)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/run-remote.test.ts > every script that calls Fly > takes no option it doesn't know and no loose word, before it calls anyone
+AssertionError: worker-scale loose: expected 'the fake has no route for: flyctl mac…' to match /^[a-z-]+: /
+ FAIL  src/run.test.ts > runScript > takes no option it doesn't know and no loose word, before it connects
+AssertionError: bootstrap now: expected error to be instance of OpsError
+[Function OpsError]
+Error {

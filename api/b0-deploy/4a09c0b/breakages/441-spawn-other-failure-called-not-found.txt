@@ -1,0 +1,20 @@
+breakage: spawn-other-failure-called-not-found
+patch: [
+ [
+  "tools/ops/src/spawn.ts",
+  "error.code === \"ENOENT\" ? `${command}: not found` :",
+  "true ? `${command}: not found` :",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/spawn.test.ts
+exit: 1
+expected words: says a program that can't start for another reason as exit code 127 and the reason, and throws nothing
+caught: True
+
+     × says a program that can't start for another reason as exit code 127 and the reason, and throws nothing 9ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 passed (14)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/spawn.test.ts > spawnProcess > says a program that can't start for another reason as exit code 127 and the reason, and throws nothing
+AssertionError: expected { code: 127, timedOut: false, …(2) } to deeply equal { code: 127, timedOut: false, …(2) }

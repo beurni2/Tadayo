@@ -1,0 +1,117 @@
+breakage: sb-storage-status-not-read
+patch: [
+ [
+  "tools/ops/src/supabase.ts",
+  "  const logical = typeof statusCode === \"string\" && /^[0-9]{3}$/.test(statusCode) ? Number(statusCode) : status;",
+  "  const logical = status;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts src/storage-setup.test.ts
+exit: 1
+expected words: makes both buckets when they're missing
+caught: True
+
+     × makes both buckets when they're missing: private, with the limit and the types 35ms
+     × makes nothing when they're as declared, and a second run writes nothing at all 1ms
+     × touches only the buckets' own routes, as the service key: never an object, never a delete 1ms
+     × treats a bucket that appears between the look and the make as there, and goes on to make it as declared 1ms
+     × says what it couldn't do, naming the bucket and the project's status, when the make or the update fails 3ms
+     × fails when a bucket isn't there after the project said it made it, rather than say it is made 1ms
+     × sends the service key and never the public one, and prints neither 1ms
+     × passes every check, controls and refusals, and leaves no object, no bucket and no user behind 53ms
+     × names the surface when list-buckets is open, and leaves nothing behind 8ms
+     × names the surface when list-objects is open, and leaves nothing behind 6ms
+     × names the surface when download is open, and leaves nothing behind 4ms
+     × names the surface when sign-read is open, and leaves nothing behind 7ms
+     × names the surface when overwrite is open, and leaves nothing behind 5ms
+     × names the surface when new-object is open, and leaves nothing behind 4ms
+     × names the surface when sign-upload is open, and leaves nothing behind 5ms
+     × names the surface when bucket-create is open, and leaves nothing behind 3ms
+     × names the surface when rest is open, and leaves nothing behind 4ms
+     × names the surface when rest-root is open, and leaves nothing behind 3ms
+     × names the surface when graphql is open, and leaves nothing behind 4ms
+     × removes what a leaked write made, by name, and says it did 5ms
+     × still fails the public callers' root when a gateway answers it, which says a schema is served 8ms
+     × passes the service key's root when the Data API answers an error, whichever one, and fails when it describes a schema 7ms
+     × fails the service key's root when the project doesn't answer, saying so 6ms
+     × fails a gateway's 401, which says the key or the token wasn't taken and not that a policy refused 11ms
+     × fails a request Storage couldn't read (status 400), so a mistake of the probe's own can't pass as closed 5ms
+     × fails a 404 that isn't Storage's, as a route that isn't there says it, and a server error 5ms
+     × names the control of the signed URL's put when it doesn't answer 200, and runs no read after it 1ms
+     × fails a check, not the run, when a call gets no answer, and still cleans up 8ms
+     × deletes the user and the objects even when a control throws half-way 1ms
+     × reports a clean-up that fails, with what is left, so that no test user stays behind unseen 3ms
+     × fails a third bucket, which is none of storage-setup's, and counts it without naming it 3ms
+     × fails, with the status alone, when the answer is an error or is not a list, and the run goes on to the refusals 5ms
+     × fails a check, and not the run, when the project gives no answer to it 5ms
+     × ends a call that is in flight when the budget runs out, and removes what that call may have written 4ms
+ Test Files  2 failed (2)
+      Tests  34 failed | 41 passed (75)
+⎯⎯⎯⎯⎯⎯ Failed Tests 34 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/storage-setup.test.ts > storageSetup > makes both buckets when they're missing: private, with the limit and the types
+OpsError: storage-setup: uploads: couldn't look at it: HTTP 400, NoSuchBucket
+     72|     new OpsError(`storage-setup: ${bucket}: ${what}: ${describe(reply)…
+ FAIL  src/storage-setup.test.ts > storageSetup > makes nothing when they're as declared, and a second run writes nothing at all
+OpsError: storage-setup: uploads: couldn't look at it: HTTP 400, NoSuchBucket
+     72|     new OpsError(`storage-setup: ${bucket}: ${what}: ${describe(reply)…
+ FAIL  src/storage-setup.test.ts > storageSetup > touches only the buckets' own routes, as the service key: never an object, never a delete
+OpsError: storage-setup: renditions: couldn't look at it: HTTP 400, NoSuchBucket
+     72|     new OpsError(`storage-setup: ${bucket}: ${what}: ${describe(reply)…
+ FAIL  src/storage-setup.test.ts > storageSetup > treats a bucket that appears between the look and the make as there, and goes on to make it as declared
+OpsError: storage-setup: uploads: couldn't look at it: HTTP 400, NoSuchBucket
+     72|     new OpsError(`storage-setup: ${bucket}: ${what}: ${describe(reply)…
+ FAIL  src/storage-setup.test.ts > storageSetup > says what it couldn't do, naming the bucket and the project's status, when the make or the update fails
+AssertionError: expected [Function] to throw error matching /^storage-setup: uploads: couldn't mak…/ but got 'storage-setup: uploads: couldn\'t loo…'
+ FAIL  src/storage-setup.test.ts > storageSetup > fails when a bucket isn't there after the project said it made it, rather than say it is made
+AssertionError: expected [Function] to throw error matching /^storage-setup: uploads: it isn't the…/ but got 'storage-setup: uploads: couldn\'t loo…'
+ FAIL  src/storage-setup.test.ts > storageSetup > sends the service key and never the public one, and prints neither
+OpsError: storage-setup: uploads: couldn't look at it: HTTP 400, NoSuchBucket
+     72|     new OpsError(`storage-setup: ${bucket}: ${what}: ${describe(reply)…
+ FAIL  src/supabase-probe.test.ts > apiChecks on a closed project > passes every check, controls and refusals, and leaves no object, no bucket and no user behind
+AssertionError: expected [ 'anon: create a bucket', …(31) ] to deeply equal []
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when list-buckets is open, and leaves nothing behind
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when list-objects is open, and leaves nothing behind
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when download is open, and leaves nothing behind
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when sign-read is open, and leaves nothing behind
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when overwrite is open, and leaves nothing behind
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when sign-upload is open, and leaves nothing behind
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when rest is open, and leaves nothing behind
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when rest-root is open, and leaves nothing behind
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when graphql is open, and leaves nothing behind
+AssertionError: expected [ …(6) ] to deeply equal []
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when new-object is open, and leaves nothing behind
+AssertionError: expected [ …(4) ] to deeply equal []
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when bucket-create is open, and leaves nothing behind
+AssertionError: expected [ …(5) ] to deeply equal []
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > removes what a leaked write made, by name, and says it did
+AssertionError: expected [ …(9) ] to deeply equal [ …(6) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks and the Data API's root > still fails the public callers' root when a gateway answers it, which says a schema is served
+AssertionError: expected [ 'anon: REST root', …(33) ] to deeply equal [ Array(2) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks and the Data API's root > passes the service key's root when the Data API answers an error, whichever one, and fails when it describes a schema
+AssertionError: 404: expected [ 'anon: create a bucket', …(31) ] to deeply equal []
+ FAIL  src/supabase-probe.test.ts > apiChecks and the Data API's root > fails the service key's root when the project doesn't answer, saying so
+AssertionError: expected [ 'anon: create a bucket', …(32) ] to deeply equal [ Array(1) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks counts only Storage's own refusal as one > fails a gateway's 401, which says the key or the token wasn't taken and not that a policy refused
+AssertionError: expected [ 'anon: list the buckets', …(33) ] to deeply equal [ 'anon: list the buckets', …(1) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks counts only Storage's own refusal as one > fails a request Storage couldn't read (status 400), so a mistake of the probe's own can't pass as closed
+AssertionError: expected [ 'anon: create a bucket', …(31) ] to deeply equal [ 'anon: download from uploads', …(1) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks counts only Storage's own refusal as one > fails a 404 that isn't Storage's, as a route that isn't there says it, and a server error
+AssertionError: expected [ 'anon: create a bucket', …(35) ] to deeply equal [ …(4) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks's controls: each must hold, in its own words, before a refusal means anything > names the control of the signed URL's put when it doesn't answer 200, and runs no read after it
+AssertionError: 201: expected [ …(2) ] to deeply equal [ Array(1) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks when the project can't be trusted to answer > fails a check, not the run, when a call gets no answer, and still cleans up
+AssertionError: expected [ 'anon: GraphQL', …(33) ] to deeply equal [ 'anon: GraphQL', 'user: GraphQL' ]
+ FAIL  src/supabase-probe.test.ts > apiChecks when the project can't be trusted to answer > deletes the user and the objects even when a control throws half-way
+AssertionError: expected [ …(2) ] to deeply equal [ Array(1) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks when the project can't be trusted to answer > reports a clean-up that fails, with what is left, so that no test user stays behind unseen
+AssertionError: expected [ 'anon: create a bucket', …(32) ] to deeply equal [ 'cleanup: delete the probe user' ]
+ FAIL  src/supabase-probe.test.ts > apiChecks asks which buckets the project has, and none may be public or another's (T53) > fails a third bucket, which is none of storage-setup's, and counts it without naming it
+AssertionError: expected [ …(33) ] to deeply equal [ Array(1) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks asks which buckets the project has, and none may be public or another's (T53) > fails, with the status alone, when the answer is an error or is not a list, and the run goes on to the refusals
+AssertionError: answered HTTP 500: expected [ …(33) ] to deeply equal [ Array(1) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks asks which buckets the project has, and none may be public or another's (T53) > fails a check, and not the run, when the project gives no answer to it
+AssertionError: expected [ …(33) ] to deeply equal [ Array(1) ]
+    782|       listingBuckets(fake, () => Promise.reject(new TypeError("fetch f…
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > ends a call that is in flight when the budget runs out, and removes what that call may have written
+AssertionError: expected { …(3) } to deeply equal { …(2) }

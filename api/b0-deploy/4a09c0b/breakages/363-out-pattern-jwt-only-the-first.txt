@@ -1,0 +1,20 @@
+breakage: out-pattern-jwt-only-the-first
+patch: [
+ [
+  "tools/ops/src/output.ts",
+  "  [/\\beyJ[\\w-]{8,}\\.[\\w-]{8,}\\.[\\w-]{8,}/g, REDACTED], // a JWT: a user's token, a legacy key\n",
+  "  [/\\beyJ[\\w-]{8,}\\.[\\w-]{8,}\\.[\\w-]{8,}/, REDACTED], // a JWT: a user's token, a legacy key\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/output.test.ts
+exit: 1
+expected words: holds back a token of each shape the patterns know, with an empty environment
+caught: True
+
+     × holds back a token of each shape the patterns know, with an empty environment 9ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/output.test.ts > redactor > holds back a token of each shape the patterns know, with an empty environment
+AssertionError: eyJhbGciOiJFUzI1NiIsImtpZCI6IjEyMzQ1NiJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDAifQ.c2lnbmF0dXJlLXNpZ25hdHVyZS1zaWduYXR1cmU: expected 'error: [redacted]: refused, and eyJhb…' to be 'error: [redacted]: refused, and [reda…' // Object.is equality

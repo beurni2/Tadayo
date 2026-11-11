@@ -1,0 +1,20 @@
+breakage: out-pattern-connection-string-taken-out
+patch: [
+ [
+  "tools/ops/src/output.ts",
+  "  [/(\\b[a-z][a-z0-9+.-]*:\\/\\/)[^/\\s'\"@]*@/gi, `$1${REDACTED}@`], // a connection string's user and password\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/output.test.ts
+exit: 1
+expected words: holds back the user and password of any connection string in a line, even one the environment never held
+caught: True
+
+     × holds back the user and password of any connection string in a line, even one the environment never held 11ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/output.test.ts > redactor > holds back the user and password of any connection string in a line, even one the environment never held
+AssertionError: expected 'could not connect to postgresql://som…' to be 'could not connect to postgresql://[re…' // Object.is equality

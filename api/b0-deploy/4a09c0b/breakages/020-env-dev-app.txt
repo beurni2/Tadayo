@@ -1,0 +1,20 @@
+breakage: env-dev-app
+patch: [
+ [
+  "tools/ops/src/environment.ts",
+  "export const DEV_APP = \"tadayo-api-dev\";",
+  "export const DEV_APP = \"tadayo-api-prod\";",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/environment.test.ts
+exit: 1
+expected words: is the one app the scripts act on
+caught: True
+
+     × is the one app the scripts act on 6ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 21 passed (22)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/environment.test.ts > the dev app > is the one app the scripts act on
+AssertionError: expected 'tadayo-api-prod' to be 'tadayo-api-dev' // Object.is equality

@@ -1,0 +1,20 @@
+breakage: main-repository-one-folder-down
+patch: [
+ [
+  "tools/ops/src/main.ts",
+  "repo: join(import.meta.dirname, \"..\", \"..\", \"..\"),",
+  "repo: join(import.meta.dirname, \"..\", \"..\"),",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/main.test.ts
+exit: 1
+expected words: gives the scripts the repository's root: bootstrap names db/bootstrap.sql by its whole path
+caught: True
+
+     × gives the scripts the repository's root: bootstrap names db/bootstrap.sql by its whole path 144ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 passed (6)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/main.test.ts > the ops entry > gives the scripts the repository's root: bootstrap names db/bootstrap.sql by its whole path
+AssertionError: expected '/home/user/tadayo-deploy-breakages/to…' to be '/home/user/tadayo-deploy-breakages/db…' // Object.is equality

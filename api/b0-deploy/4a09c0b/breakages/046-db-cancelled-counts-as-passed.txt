@@ -1,0 +1,24 @@
+breakage: db-cancelled-counts-as-passed
+patch: [
+ [
+  "tools/ops/src/deploy-branch.ts",
+  "  const passed = runs.find((run) => run.conclusion === \"success\");",
+  "  const passed = runs.find((run) => run.conclusion === \"success\" || run.conclusion === \"cancelled\");",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-branch.test.ts
+exit: 1
+expected words: when every run of it was cancelled
+caught: True
+
+     × ignores a cancelled run of the same commit, and the runs of other commits and other branches 8ms
+     × when every run of it was cancelled 4ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 25 passed (27)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-branch.test.ts > deployBranch when the commit's ci run passed > ignores a cancelled run of the same commit, and the runs of other commits and other branches
+AssertionError: expected [ …(5) ] to include 'deploy-branch: its ci run, 4, passed'
+ FAIL  src/deploy-branch.test.ts > deployBranch refuses a commit whose ci run isn't green, and deploys nothing > when every run of it was cancelled
+AssertionError: expected 'not an OpsError: undefined' to be 'deploy-branch: refused: every ci run …' // Object.is equality
+Received: "not an OpsError: undefined"

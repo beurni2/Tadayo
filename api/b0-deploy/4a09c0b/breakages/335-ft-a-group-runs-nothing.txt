@@ -1,0 +1,20 @@
+breakage: ft-a-group-runs-nothing
+patch: [
+ [
+  "fly.toml",
+  "node services/worker/src/main.ts\"",
+  "node services/worker/src/mian.ts\"",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-files.test.ts
+exit: 1
+expected words: has the two process groups, each running a file that is there, and no other
+caught: True
+
+     × has the two process groups, each running a file that is there, and no other 54ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-files.test.ts > fly.toml > has the two process groups, each running a file that is there, and no other
+AssertionError: expected { …(2) } to deeply equal { …(2) }

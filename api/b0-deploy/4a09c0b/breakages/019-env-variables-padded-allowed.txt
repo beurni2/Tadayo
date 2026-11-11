@@ -1,0 +1,21 @@
+breakage: env-variables-padded-allowed
+patch: [
+ [
+  "tools/ops/src/environment.ts",
+  "    else if (value !== value.trim()) padded.push(name);\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/environment.test.ts
+exit: 1
+expected words: refuses a value with a space or a line break at either end
+caught: True
+
+     × refuses a value with a space or a line break at either end, as a pasted secret has, by name 5ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 21 passed (22)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/environment.test.ts > readVariables: what a script reads from the environment, by name > refuses a value with a space or a line break at either end, as a pasted secret has, by name
+AssertionError: " x": expected '' to match /TOKEN/
+    271|         message = error instanceof Error ? error.message : "";

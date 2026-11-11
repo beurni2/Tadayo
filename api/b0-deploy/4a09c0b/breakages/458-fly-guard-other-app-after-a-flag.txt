@@ -1,0 +1,25 @@
+breakage: fly-guard-other-app-after-a-flag
+patch: [
+ [
+  "tools/ops/src/fly.ts",
+  "      if (args[index + 1] !== DEV_APP) return false;\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/fly.test.ts
+exit: 1
+expected words: refuses a call with no app, another app, an app flag with nothing after it, or another app besides the dev one
+caught: True
+
+     × refuses a call with no app, another app, an app flag with nothing after it, or another app besides the dev one 7ms
+     × makes no call that doesn't name it: Fly.run refuses before anything is spawned, and says so without the arguments 2ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 15 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly.test.ts > forDevApp: a call is about tadayo-api-dev and no other app > refuses a call with no app, another app, an app flag with nothing after it, or another app besides the dev one
+AssertionError: machine list -a tadayo-api-prod --json: expected true to be false // Object.is equality
+ FAIL  src/fly.test.ts > forDevApp: a call is about tadayo-api-dev and no other app > makes no call that doesn't name it: Fly.run refuses before anything is spawned, and says so without the arguments
+AssertionError: expected undefined to be an instance of OpsError
+    142|       expect(error).toBeInstanceOf(OpsError);
+    143|       expect((error as OpsError).message).toBe(

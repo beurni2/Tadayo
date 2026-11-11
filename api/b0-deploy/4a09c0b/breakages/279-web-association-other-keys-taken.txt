@@ -1,0 +1,24 @@
+breakage: web-association-other-keys-taken
+patch: [
+ [
+  "apps/web/src/build.ts",
+  "  if (stray.length > 0) problems.push(",
+  "  if (false) problems.push(",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/apps/web && npx vitest run src/build.test.ts
+exit: 1
+expected words: says what is wrong with a file that isn't that, one problem each
+caught: True
+
+     × says what is wrong with a file that isn't that, one problem each 9ms
+     × says the association file's rules are Tadayo's own, when one of them refused it, and not for any other problem 4ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 15 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/build.test.ts > checkAssociation > says what is wrong with a file that isn't that, one problem each
+AssertionError: a stray key: expected [] to deeply equal [ Array(1) ]
+ FAIL  src/build.test.ts > buildSite > says the association file's rules are Tadayo's own, when one of them refused it, and not for any other problem
+AssertionError: expected [ '' ] to deeply equal [ …(2) ]
+    239|       said = error instanceof Error ? error.message : "";

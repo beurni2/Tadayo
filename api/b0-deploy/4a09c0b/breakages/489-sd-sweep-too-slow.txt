@@ -1,0 +1,20 @@
+breakage: sd-sweep-too-slow
+patch: [
+ [
+  "services/api/src/shutdown.ts",
+  "export const SWEEP_MS = 250;",
+  "export const SWEEP_MS = 5_000;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/services/api && npx vitest run src/shutdown.test.ts
+exit: 1
+expected words: sweeps often enough that a connection left idle is ended long before the grace is over
+caught: True
+
+     × sweeps often enough that a connection left idle is ended long before the grace is over 5ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/shutdown.test.ts > stopOnSignal > sweeps often enough that a connection left idle is ended long before the grace is over
+AssertionError: expected 50000 to be less than or equal to 25000

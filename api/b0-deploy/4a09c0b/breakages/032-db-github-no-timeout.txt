@@ -1,0 +1,23 @@
+breakage: db-github-no-timeout
+patch: [
+ [
+  "tools/ops/src/deploy-branch.ts",
+  "        signal: AbortSignal.timeout(GITHUB_MS),\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-branch.test.ts
+exit: 1
+expected words: asks GitHub for the branch's head and the ci runs of that commit, with the token, and nothing else
+caught: True
+
+     × cuts every git call off after 30 seconds and every GitHub request after 30 seconds, and the deploy after 20 minutes 21ms
+     × asks GitHub for the branch's head and the ci runs of that commit, with the token, and nothing else 5ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 25 passed (27)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-branch.test.ts > deployBranch when the commit's ci run passed > cuts every git call off after 30 seconds and every GitHub request after 30 seconds, and the deploy after 20 minutes
+AssertionError: expected [] to deeply equal [ 30000, 30000 ]
+ FAIL  src/deploy-branch.test.ts > deployBranch when the commit's ci run passed > asks GitHub for the branch's head and the ci runs of that commit, with the token, and nothing else
+AssertionError: expected [ { …(5) }, { …(5) } ] to deeply equal [ { …(5) }, { …(5) } ]

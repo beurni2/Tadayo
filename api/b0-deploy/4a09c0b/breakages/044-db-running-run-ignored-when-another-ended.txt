@@ -1,0 +1,21 @@
+breakage: db-running-run-ignored-when-another-ended
+patch: [
+ [
+  "tools/ops/src/deploy-branch.ts",
+  "  const running = runs.find((run) => run.status !== \"completed\");",
+  "  const running = runs.every((run) => run.status !== \"completed\") ? runs[0] : undefined;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-branch.test.ts
+exit: 1
+expected words: when any run of it failed or is running, though another passed
+caught: True
+
+     × when any run of it failed or is running, though another passed 6ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-branch.test.ts > deployBranch refuses a commit whose ci run isn't green, and deploys nothing > when any run of it failed or is running, though another passed
+AssertionError: expected 'not an OpsError: undefined' to match /still running \(in_progress\)$/
+"not an OpsError: undefined"

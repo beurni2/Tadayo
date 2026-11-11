@@ -1,0 +1,23 @@
+breakage: sb-no-time-limit
+patch: [
+ [
+  "tools/ops/src/supabase.ts",
+  "          ? AbortSignal.timeout(TIMEOUT_MS)\n",
+  "          ? undefined\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase.test.ts
+exit: 1
+expected words: asks with GET unless told otherwise, at the project's URL, and with a time limit that hasn't run out
+caught: True
+
+     × asks with GET unless told otherwise, at the project's URL, and with a time limit that hasn't run out 7ms
+     × gives each call 20 seconds, with the caller's own signal or without it 7ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 16 passed (18)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase.test.ts > send: the key each caller has, in the header it goes in > asks with GET unless told otherwise, at the project's URL, and with a time limit that hasn't run out
+AssertionError: expected undefined to be an instance of AbortSignal
+ FAIL  src/supabase.test.ts > send: how long a call may take > gives each call 20 seconds, with the caller's own signal or without it
+AssertionError: expected [ 20000 ] to deeply equal [ 20000, 20000 ]

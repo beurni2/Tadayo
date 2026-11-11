@@ -1,0 +1,20 @@
+breakage: p-data-api-stand-in-exposed
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "    .filter((name) => name !== \"\" && name !== \"pg_pgrst_no_exposed_schemas\");",
+  "    .filter((name) => name !== \"\");",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: passes when no schema is exposed, which is how Supabase says the Data API is off
+caught: True
+
+     × passes when no schema is exposed, which is how Supabase says the Data API is off 9ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 61 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > dataApiChecks, the project's own configuration through the Management API > passes when no schema is exposed, which is how Supabase says the Data API is off
+AssertionError: expected [ { …(3) } ] to deeply equal [ { …(2) } ]

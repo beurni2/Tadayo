@@ -1,0 +1,24 @@
+breakage: web-wrong-site-built-anyway
+patch: [
+ [
+  "apps/web/src/build.ts",
+  "  if (problems.length > 0) throw new Error(",
+  "  if (false) throw new Error(",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/apps/web && npx vitest run src/build.test.ts
+exit: 1
+expected words: builds nothing when the association file is missing or wrong, and leaves the old output as it was
+caught: True
+
+     × builds nothing when the association file is missing or wrong, and leaves the old output as it was 10ms
+     × says the association file's rules are Tadayo's own, when one of them refused it, and not for any other problem 6ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 15 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/build.test.ts > buildSite > builds nothing when the association file is missing or wrong, and leaves the old output as it was
+AssertionError: missing: expected [Function] to throw an error
+ FAIL  src/build.test.ts > buildSite > says the association file's rules are Tadayo's own, when one of them refused it, and not for any other problem
+AssertionError: expected [ '' ] to deeply equal [ …(2) ]
+    239|       said = error instanceof Error ? error.message : "";

@@ -1,0 +1,20 @@
+breakage: main-line-not-redacted
+patch: [
+ [
+  "tools/ops/src/main.ts",
+  "console.log(redact(line));",
+  "console.log(line);",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/main.test.ts
+exit: 1
+expected words: holds back the environment's token from a line a script says, and exits 0 when the script worked
+caught: True
+
+     × holds back the environment's token from a line a script says, and exits 0 when the script worked 162ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 passed (6)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/main.test.ts > the ops entry > holds back the environment's token from a line a script says, and exits 0 when the script worked
+AssertionError: expected 'storage-setup: uploads: created\nstor…' to be 'storage-setup: uploads: created\nstor…' // Object.is equality

@@ -1,0 +1,20 @@
+breakage: dc-move-never-written
+patch: [
+ [
+  "tools/ops/src/dev-clock.ts",
+  "      ON CONFLICT (only_row) DO UPDATE SET offset_microseconds = EXCLUDED.offset_microseconds`;",
+  "      ON CONFLICT (only_row) DO NOTHING`;",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-deploy-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/c10a/dbtest-wt.sh src/db/ops-dev-clock.test.ts
+exit: 1
+expected words: starts with no row, which is no offset, then keeps the one row it makes
+caught: True
+
+     × starts with no row, which is no offset, then keeps the one row it makes 40ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/ops-dev-clock.test.ts > dev-clock, through the schema's own owner > starts with no row, which is no offset, then keeps the one row it makes
+AssertionError: expected 86399995571 to be greater than 86399995571
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)

@@ -1,0 +1,20 @@
+breakage: sd-database-failure-still-stopped
+patch: [
+ [
+  "services/api/src/shutdown.ts",
+  "      } catch {\n        clean = false;\n        options.fail(\"api: the database's connection didn't end cleanly\");",
+  "      } catch {\n        options.fail(\"api: the database's connection didn't end cleanly\");",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/services/api && npx vitest run src/shutdown.test.ts
+exit: 1
+expected words: says when the database's connection doesn't end cleanly, without the error's own words, and doesn't say it stopped
+caught: True
+
+     × says when the database's connection doesn't end cleanly, without the error's own words, and doesn't say it stopped 11ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/shutdown.test.ts > stopOnSignal > says when the database's connection doesn't end cleanly, without the error's own words, and doesn't say it stopped
+AssertionError: expected [ 'api: stopping on SIGTERM', …(3) ] to deeply equal [ 'api: stopping on SIGTERM', …(2) ]

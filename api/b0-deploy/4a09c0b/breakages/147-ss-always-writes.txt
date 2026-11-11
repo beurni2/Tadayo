@@ -1,0 +1,23 @@
+breakage: ss-always-writes
+patch: [
+ [
+  "tools/ops/src/storage-setup.ts",
+  "    if (before.length > 0) {\n      const reply = await call(",
+  "    if (true) {\n      const reply = await call(",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/storage-setup.test.ts
+exit: 1
+expected words: makes nothing when they're as declared, and a second run writes nothing at all
+caught: True
+
+     × makes nothing when they're as declared, and a second run writes nothing at all 11ms
+     × takes the types in any order as the same 3ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 11 passed (13)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/storage-setup.test.ts > storageSetup > makes nothing when they're as declared, and a second run writes nothing at all
+AssertionError: expected [ { method: 'PUT', …(3) }, …(1) ] to deeply equal []
+ FAIL  src/storage-setup.test.ts > storageSetup > takes the types in any order as the same
+AssertionError: expected [ { method: 'PUT', …(3) }, …(1) ] to deeply equal []

@@ -1,0 +1,20 @@
+breakage: p-db-partitions-listed
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  " AND c.relkind IN ('r', 'p') AND NOT c.relispartition",
+  " AND c.relkind IN ('r', 'p')",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-deploy-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/c10a/dbtest-wt.sh src/db/ops-probe.test.ts
+exit: 1
+expected words: lists tables and partitioned tables of app, and not their partitions, views or other schemas' tables
+caught: True
+
+     × lists tables and partitioned tables of app, and not their partitions, views or other schemas' tables 15ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/ops-probe.test.ts > databaseChecks on the schema app > lists tables and partitioned tables of app, and not their partitions, views or other schemas' tables
+AssertionError: expected [ 'ops_probe_p', 'ops_probe_p1', …(1) ] to deeply equal [ 'ops_probe_p', 'ops_probe_t' ]
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)

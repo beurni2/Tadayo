@@ -1,0 +1,29 @@
+breakage: ss-a-third-bucket
+patch: [
+ [
+  "tools/ops/src/storage-setup.ts",
+  "export const BUCKETS = [\"uploads\", \"renditions\"] as const;",
+  "export const BUCKETS = [\"uploads\", \"renditions\", \"avatars\"] as const;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/storage-setup.test.ts
+exit: 1
+expected words: makes both buckets when they're missing: private, with the limit and the types
+caught: True
+
+     × declares D09's limit and the three image types, in numbers a reader can check 9ms
+     × makes both buckets when they're missing: private, with the limit and the types 38ms
+     × makes nothing when they're as declared, and a second run writes nothing at all 7ms
+     × takes the types in any order as the same 2ms
+ Test Files  1 failed (1)
+      Tests  4 failed | 9 passed (13)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/storage-setup.test.ts > storageSetup > declares D09's limit and the three image types, in numbers a reader can check
+AssertionError: expected [ 'uploads', 'renditions', 'avatars' ] to deeply equal [ 'uploads', 'renditions' ]
+ FAIL  src/storage-setup.test.ts > storageSetup > makes both buckets when they're missing: private, with the limit and the types
+AssertionError: expected [ 'avatars', 'renditions', 'uploads' ] to deeply equal [ 'renditions', 'uploads' ]
+ FAIL  src/storage-setup.test.ts > storageSetup > makes nothing when they're as declared, and a second run writes nothing at all
+AssertionError: expected [ …(3) ] to deeply equal [ …(2) ]
+ FAIL  src/storage-setup.test.ts > storageSetup > takes the types in any order as the same
+AssertionError: expected [ …(3) ] to deeply equal [ …(2) ]

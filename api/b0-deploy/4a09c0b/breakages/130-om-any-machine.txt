@@ -1,0 +1,45 @@
+breakage: om-any-machine
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "machine.group === \"api\" && machine.state === \"started\"",
+  "machine.state === \"started\"",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/on-machine.test.ts
+exit: 1
+expected words: runs the command in the API's started Machine, as one string, and says what it printed
+caught: True
+
+     × runs the command in the API's started Machine, as one string, and says what it printed 7ms
+     × fails, with the exit code and after saying what the command printed, when the command failed 2ms
+     × fails when flyctl can't run it, saying why, or answers with something it can't read 5ms
+     × reads a command that worked from an answer with no exit code, as flyctl leaves a zero out 1ms
+     × fails when the command was ended by a signal, even with no exit code in the answer 1ms
+     × fails when the API has no started Machine, names the Machines there are, and runs nothing 3ms
+ Test Files  1 failed (1)
+      Tests  6 failed | 2 passed (8)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine > runs the command in the API's started Machine, as one string, and says what it printed
+AssertionError: expected Error: the fake has no route for: flyctl … to be undefined
+Error {
+ FAIL  src/on-machine.test.ts > onMachine > fails, with the exit code and after saying what the command printed, when the command failed
+AssertionError: expected [] to deeply equal [ 'half of it', …(1) ]
+     81|     expect(result.outcome).toBeInstanceOf(OpsError);
+     82|     expect((result.outcome as OpsError).message).toBe("storage-setup: …
+ FAIL  src/on-machine.test.ts > onMachine > fails when flyctl can't run it, saying why, or answers with something it can't read
+AssertionError: expected 'the fake has no route for: flyctl mac…' to be 'storage-setup: flyctl couldn\'t run i…' // Object.is equality
+Expected: "storage-setup: flyctl couldn't run it on the Machine: exit code 1: Error: machine is not running"
+     88|       [EXEC, { code: 1, stderr: "Error: machine is not running" }],
+     90|     expect((refused.outcome as OpsError).message).toBe(
+ FAIL  src/on-machine.test.ts > onMachine > reads a command that worked from an answer with no exit code, as flyctl leaves a zero out
+AssertionError: expected Error: the fake has no route for: flyctl … to be undefined
+Error {
+ FAIL  src/on-machine.test.ts > onMachine > fails when the command was ended by a signal, even with no exit code in the answer
+AssertionError: expected [] to deeply equal [ 'killed' ]
+    149|     expect(result.outcome).toBeInstanceOf(OpsError);
+    150|     expect((result.outcome as OpsError).message).toBe("storage-setup: …
+ FAIL  src/on-machine.test.ts > onMachine > fails when the API has no started Machine, names the Machines there are, and runs nothing
+AssertionError: expected 'the fake has no route for: flyctl mac…' to be 'storage-setup: the API has no started…' // Object.is equality
+    156|     expect((stopped.outcome as OpsError).message).toBe(

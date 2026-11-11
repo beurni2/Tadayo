@@ -1,0 +1,70 @@
+breakage: fac-app-made-when-there
+patch: [
+ [
+  "tools/ops/src/fly-app-create.ts",
+  "  if (status.code === 0) {",
+  "  if (status.code !== 0) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/fly-app-create.test.ts
+exit: 1
+expected words: makes nothing again: the app is there and the certificate is issued
+caught: True
+
+     × makes the app in the only organization, requests the certificate, and says what DNS needs 8ms
+     × uses the organization it is told to, and doesn't ask which there are 3ms
+     × makes nothing again: the app is there and the certificate is issued 2ms
+     × says where the certificate is: waiting for DNS, or DNS found and the certificate on its way 3ms
+     × says the certificate is on its way, not issued, while Fly has verified the host and no certificate is in its list 1ms
+     × says the certificate is issued when the detail is Ready, or when an entry lists an issued certificate, either alone 1ms
+     × names the CNAME target Fly gives, and the app's own fly.dev name when it gives none or a strange one 2ms
+     × says it couldn't read an answer it doesn't understand, and still says what DNS needs 1ms
+     × to guess between organizations, naming them, and makes nothing 2ms
+     × to go on when the app can't be made, with flyctl's words, and requests no certificate 1ms
+     × to say the certificate is requested when flyctl refused it 1ms
+     × an organization list it can't read 1ms
+     × a token that sees no organization, saying so, and makes nothing 0ms
+ Test Files  1 failed (1)
+      Tests  13 failed | 2 passed (15)
+⎯⎯⎯⎯⎯⎯ Failed Tests 13 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly-app-create.test.ts > flyAppCreate on a fresh account > makes the app in the only organization, requests the certificate, and says what DNS needs
+AssertionError: expected [ …(3) ] to deeply equal [ …(5) ]
+ FAIL  src/fly-app-create.test.ts > flyAppCreate on a fresh account > uses the organization it is told to, and doesn't ask which there are
+AssertionError: expected 'fly-app-create: tadayo-api-dev is the…' to be 'fly-app-create: tadayo-api-dev is mad…' // Object.is equality
+ FAIL  src/fly-app-create.test.ts > flyAppCreate when it has been run before > makes nothing again: the app is there and the certificate is issued
+AssertionError: expected Error: the fake has no route for: flyctl … to be undefined
+Error {
+ FAIL  src/fly-app-create.test.ts > flyAppCreate when it has been run before > says where the certificate is: waiting for DNS, or DNS found and the certificate on its way
+AssertionError: expected [] to include 'fly-app-create: Fly is waiting for DN…'
+ FAIL  src/fly-app-create.test.ts > flyAppCreate when it has been run before > says the certificate is on its way, not issued, while Fly has verified the host and no certificate is in its list
+AssertionError: [{"source":"fly","status":"active","issued":[]}]: expected [] to include 'fly-app-create: DNS is in place for a…'
+ FAIL  src/fly-app-create.test.ts > flyAppCreate when it has been run before > says the certificate is issued when the detail is Ready, or when an entry lists an issued certificate, either alone
+AssertionError: Ready, nothing listed: expected [] to include 'fly-app-create: the certificate for a…'
+ FAIL  src/fly-app-create.test.ts > flyAppCreate when it has been run before > names the CNAME target Fly gives, and the app's own fly.dev name when it gives none or a strange one
+AssertionError: expected false to be true // Object.is equality
+ FAIL  src/fly-app-create.test.ts > flyAppCreate when it has been run before > says it couldn't read an answer it doesn't understand, and still says what DNS needs
+AssertionError: not json: expected Error: the fake has no route for: flyctl … to be undefined
+Error {
+ FAIL  src/fly-app-create.test.ts > flyAppCreate refuses > to guess between organizations, naming them, and makes nothing
+AssertionError: expected Error: the fake has no route for: flyctl … to be an instance of OpsError
+    240|     expect(result.outcome).toBeInstanceOf(OpsError);
+    241|     expect((result.outcome as OpsError).message).toBe(
+ FAIL  src/fly-app-create.test.ts > flyAppCreate refuses > to go on when the app can't be made, with flyctl's words, and requests no certificate
+AssertionError: expected 'the fake has no route for: flyctl cer…' to be 'fly-app-create: flyctl couldn\'t make…' // Object.is equality
+Expected: "fly-app-create: flyctl couldn't make tadayo-api-dev: exit code 1: Error: Name has already been taken"
+    259|       ["flyctl apps create", { code: 1, stderr: "Error: Name has alrea…
+    261|     expect((result.outcome as OpsError).message).toBe(
+ FAIL  src/fly-app-create.test.ts > flyAppCreate refuses > to say the certificate is requested when flyctl refused it
+AssertionError: expected 'the fake has no route for: flyctl org…' to be 'fly-app-create: flyctl couldn\'t requ…' // Object.is equality
+Expected: "fly-app-create: flyctl couldn't request the certificate for api-dev.tadayo.app: exit code 1: Error: you don't have access"
+    271|       [CERT_ADD, { code: 1, stderr: "Error: you don't have access" }],
+    273|     expect((result.outcome as OpsError).message).toBe(
+ FAIL  src/fly-app-create.test.ts > flyAppCreate refuses > an organization list it can't read
+AssertionError: not json: expected Error: the fake has no route for: flyctl … to be an instance of OpsError
+    285|       expect(result.outcome, stdout).toBeInstanceOf(OpsError);
+    286|       expect((result.outcome as OpsError).message, stdout).toBe(
+ FAIL  src/fly-app-create.test.ts > flyAppCreate refuses > a token that sees no organization, saying so, and makes nothing
+AssertionError: expected Error: the fake has no route for: flyctl … to be an instance of OpsError
+    301|     expect(result.outcome).toBeInstanceOf(OpsError);
+    302|     expect((result.outcome as OpsError).message).toBe("fly-app-create:…

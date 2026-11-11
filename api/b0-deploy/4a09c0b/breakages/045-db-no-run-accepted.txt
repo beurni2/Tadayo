@@ -1,0 +1,33 @@
+breakage: db-no-run-accepted
+patch: [
+ [
+  "tools/ops/src/deploy-branch.ts",
+  "  if (passed === undefined) {",
+  "  if (false) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-branch.test.ts
+exit: 1
+expected words: when there is none, or none of this commit on this branch
+caught: True
+
+     × takes a run only from a push: a run of some merge of the commit isn't the commit's 10ms
+     × doesn't take a run it can't read for one that passed 2ms
+     × when there is none, or none of this commit on this branch 2ms
+     × when every run of it was cancelled 1ms
+ Test Files  1 failed (1)
+      Tests  4 failed | 23 passed (27)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-branch.test.ts > deployBranch when the commit's ci run passed > takes a run only from a push: a run of some merge of the commit isn't the commit's
+AssertionError: expected 'not an OpsError: TypeError: Cannot re…' to be 'deploy-branch: refused: no ci run for…' // Object.is equality
+Received: "not an OpsError: TypeError: Cannot read properties of undefined (reading 'id')"
+ FAIL  src/deploy-branch.test.ts > deployBranch when the commit's ci run passed > doesn't take a run it can't read for one that passed
+AssertionError: {"id":"101"}: expected 'not an OpsError: TypeError: Cannot re…' to be 'deploy-branch: refused: no ci run for…' // Object.is equality
+Received: "not an OpsError: TypeError: Cannot read properties of undefined (reading 'id')"
+ FAIL  src/deploy-branch.test.ts > deployBranch refuses a commit whose ci run isn't green, and deploys nothing > when there is none, or none of this commit on this branch
+AssertionError: expected 'not an OpsError: TypeError: Cannot re…' to be 'deploy-branch: refused: no ci run for…' // Object.is equality
+Received: "not an OpsError: TypeError: Cannot read properties of undefined (reading 'id')"
+ FAIL  src/deploy-branch.test.ts > deployBranch refuses a commit whose ci run isn't green, and deploys nothing > when every run of it was cancelled
+AssertionError: expected 'not an OpsError: TypeError: Cannot re…' to be 'deploy-branch: refused: every ci run …' // Object.is equality
+Received: "not an OpsError: TypeError: Cannot read properties of undefined (reading 'id')"

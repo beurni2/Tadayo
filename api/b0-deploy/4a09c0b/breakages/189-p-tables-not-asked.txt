@@ -1,0 +1,42 @@
+breakage: p-tables-not-asked
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "    for (const table of input.tables) {",
+  "    for (const table of [] as string[]) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: asks every door for each caller: REST for every table, GraphQL, and Storage's buckets and objects
+caught: True
+
+     × passes every check, controls and refusals, and leaves no object, no bucket and no user behind 79ms
+     × asks every door for each caller: REST for every table, GraphQL, and Storage's buckets and objects 21ms
+     × names the surface when rest is open, and leaves nothing behind 8ms
+     × fails each of two leaks together, and each by name 8ms
+     × says what each open surface gave, in a count or a phrase, and never a word the project said 66ms
+     × asks REST for the schema app by name, since it would otherwise be asked for the public one 5ms
+     × deletes the user and the objects even when the run itself throws, which is no excuse to leave them 6ms
+     × stops asking when the budget runs out part-way, says so for every check it didn't ask, and still cleans up 4ms
+ Test Files  1 failed (1)
+      Tests  8 failed | 54 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks on a closed project > passes every check, controls and refusals, and leaves no object, no bucket and no user behind
+AssertionError: expected 20 to be 23 // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks on a closed project > asks every door for each caller: REST for every table, GraphQL, and Storage's buckets and objects
+AssertionError: anon: expected +0 to be 1 // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when rest is open, and leaves nothing behind
+AssertionError: anon: REST users: expected [] to include 'anon: REST users'
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > fails each of two leaks together, and each by name
+AssertionError: expected [ 'user: list the buckets' ] to include 'anon: REST users'
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > says what each open surface gave, in a count or a phrase, and never a word the project said
+AssertionError: expected undefined to be 'it returned rows' // Object.is equality
+ FAIL  src/supabase-probe.test.ts > apiChecks's controls: each must hold, in its own words, before a refusal means anything > asks REST for the schema app by name, since it would otherwise be asked for the public one
+AssertionError: expected [] to deeply equal [ [ '/rest/v1/users', 'app' ], …(5) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks when the project can't be trusted to answer > deletes the user and the objects even when the run itself throws, which is no excuse to leave them
+AssertionError: promise resolved "[ { …(2) }, { …(2) }, { …(2) }, …(54) ]" instead of rejecting
+Error {
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > stops asking when the budget runs out part-way, says so for every check it didn't ask, and still cleans up
+AssertionError: expected [ { …(2) }, { …(2) }, { …(2) }, …(36) ] to have a length of 36 but got 39

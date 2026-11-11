@@ -1,0 +1,21 @@
+breakage: ws-two-workers-taken
+patch: [
+ [
+  "tools/ops/src/worker-scale.ts",
+  "  if (others.length > 0) {",
+  "  if (false) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/worker-scale.test.ts
+exit: 1
+expected words: an app with no worker Machine, or two
+caught: True
+
+     × an app with no worker Machine, or two (a standby would start with it), changing nothing 7ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/worker-scale.test.ts > workerScale refuses > an app with no worker Machine, or two (a standby would start with it), changing nothing
+AssertionError: expected 'the fake has no route for: flyctl mac…' to be 'worker-scale: the app has 2 worker Ma…' // Object.is equality
+    116|     expect((two.outcome as OpsError).message).toBe(

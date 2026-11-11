@@ -1,0 +1,23 @@
+breakage: fac-app-failure-ignored
+patch: [
+ [
+  "tools/ops/src/fly-app-create.ts",
+  "    if (made.code !== 0) throw new OpsError(",
+  "    if (false) throw new OpsError(",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/fly-app-create.test.ts
+exit: 1
+expected words: to go on when the app can't be made, with flyctl's words, and requests no certificate
+caught: True
+
+     × to go on when the app can't be made, with flyctl's words, and requests no certificate 8ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 passed (15)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly-app-create.test.ts > flyAppCreate refuses > to go on when the app can't be made, with flyctl's words, and requests no certificate
+AssertionError: expected 'the fake has no route for: flyctl cer…' to be 'fly-app-create: flyctl couldn\'t make…' // Object.is equality
+Expected: "fly-app-create: flyctl couldn't make tadayo-api-dev: exit code 1: Error: Name has already been taken"
+    259|       ["flyctl apps create", { code: 1, stderr: "Error: Name has alrea…
+    261|     expect((result.outcome as OpsError).message).toBe(

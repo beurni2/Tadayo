@@ -1,0 +1,27 @@
+breakage: web-headers-rule-missing-taken
+patch: [
+ [
+  "apps/web/src/build.ts",
+  "  if (rule === undefined) return [`has no rule for ${ASSOCIATION_PATH}`];\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/apps/web && npx vitest run src/build.test.ts
+exit: 1
+expected words: says what is missing or wrong
+caught: True
+
+     × says what is missing or wrong 4ms
+     × builds nothing when the association file is missing or wrong, and leaves the old output as it was 9ms
+     × says the association file's rules are Tadayo's own, when one of them refused it, and not for any other problem 3ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 14 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/build.test.ts > checkHeaders > says what is missing or wrong
+TypeError: Cannot read properties of undefined (reading 'headers')
+ FAIL  src/build.test.ts > buildSite > builds nothing when the association file is missing or wrong, and leaves the old output as it was
+AssertionError: not served as JSON: expected [Function] to throw error including 'has no rule for /.well-known/apple-ap…' but got 'Cannot read properties of undefined (…'
+ FAIL  src/build.test.ts > buildSite > says the association file's rules are Tadayo's own, when one of them refused it, and not for any other problem
+AssertionError: expected 'Cannot read properties of undefined (…' to contain 'web: _headers has no rule for'
+    250|       other = error instanceof Error ? error.message : "";

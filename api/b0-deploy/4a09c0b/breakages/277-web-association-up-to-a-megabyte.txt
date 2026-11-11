@@ -1,0 +1,20 @@
+breakage: web-association-up-to-a-megabyte
+patch: [
+ [
+  "apps/web/src/build.ts",
+  "const MOST_BYTES = 128 * 1024;",
+  "const MOST_BYTES = 1024 * 1024;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/apps/web && npx vitest run src/build.test.ts
+exit: 1
+expected words: refuses a file Apple would refuse for its size
+caught: True
+
+     × refuses a file Apple would refuse for its size 11ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/build.test.ts > checkAssociation > refuses a file Apple would refuse for its size
+AssertionError: expected [] to deeply equal [ Array(1) ]

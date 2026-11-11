@@ -1,0 +1,29 @@
+breakage: sd-all-connections-never-ended
+patch: [
+ [
+  "services/api/src/shutdown.ts",
+  "          app.server.closeAllConnections();\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/services/api && npx vitest run src/shutdown.test.ts
+exit: 1
+expected words: ends the connections still in use only when the grace is over, says so, and goes on to end the database's connection
+caught: True
+
+     × ends the connections still in use only when the grace is over, says so, and goes on to end the database's connection 7ms
+     × says the server didn't close cleanly when it fails after the grace too 4ms
+     × ends a request still in flight when the grace is over, says so, and stops 5003ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 14 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/shutdown.test.ts > stopOnSignal > ends the connections still in use only when the grace is over, says so, and goes on to end the database's connection
+AssertionError: expected +0 to be 1 // Object.is equality
+ FAIL  src/shutdown.test.ts > stopOnSignal > says the server didn't close cleanly when it fails after the grace too
+AssertionError: expected [ 'api: stopping on SIGTERM', …(3) ] to deeply equal [ 'api: stopping on SIGTERM', …(4) ]
+    164|     closing.reject(new Error("password=hunter2 near the socket"));
+ FAIL  src/shutdown.test.ts > stopOnSignal, with a real server > ends a request still in flight when the grace is over, says so, and stops
+Error: Test timed out in 5000ms.
+ FAIL  src/shutdown.test.ts > stopOnSignal, with a real server > ends a request still in flight when the grace is over, says so, and stops
+Error: Promise returned by `expect(actual).rejects.toThrow()` was not awaited. This assertion is asynchronous and must be awaited; otherwise, it is not guaranteed to complete before the test finishes:

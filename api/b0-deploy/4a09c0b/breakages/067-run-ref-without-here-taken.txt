@@ -1,0 +1,20 @@
+breakage: run-ref-without-here-taken
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  "    if (options.ref !== undefined) throw new OpsError(`${script}: --ref goes with --here`);\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/run.test.ts src/run-remote.test.ts
+exit: 1
+expected words: takes --ref only with --here, and --here only with --ref
+caught: True
+
+     × takes --ref only with --here, and --here only with --ref 10ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 43 passed (44)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/run-remote.test.ts > storage-setup on the runner > takes --ref only with --here, and --here only with --ref
+AssertionError: expected 'the fake has no route for: flyctl mac…' to be 'storage-setup: --ref goes with --here' // Object.is equality

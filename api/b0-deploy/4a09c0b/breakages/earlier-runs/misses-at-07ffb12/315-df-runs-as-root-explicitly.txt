@@ -1,0 +1,20 @@
+breakage: df-runs-as-root-explicitly
+patch: [
+ [
+  "Dockerfile",
+  "USER node\n",
+  "USER root\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-files.test.ts
+exit: 1
+expected words: runs as an unprivileged user, and in production
+caught: False
+
+     × runs, in the stage that is the image, as an unprivileged user and in production, with the dependencies copied once as pnpm laid them 12ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-files.test.ts > Dockerfile > runs, in the stage that is the image, as an unprivileged user and in production, with the dependencies copied once as pnpm laid them
+AssertionError: expected 'root' to be 'node' // Object.is equality

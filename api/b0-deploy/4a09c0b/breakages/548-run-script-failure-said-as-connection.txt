@@ -1,0 +1,20 @@
+breakage: run-script-failure-said-as-connection
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  "      await db`SELECT 1`;\n    } catch (error) {",
+  "      await db`SELECT 1`;\n      return await body(db);\n    } catch (error) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/run.test.ts src/run-remote.test.ts
+exit: 1
+expected words: is not said of a script's own failure: what its queries answer is the script's to say
+caught: True
+
+     × is not said of a script's own failure: what its queries answer is the script's to say 10ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 43 passed (44)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/run.test.ts > a connection that the database refuses > is not said of a script's own failure: what its queries answer is the script's to say
+AssertionError: expected [Function] to throw error matching /^relation "x" does not exist$/ but got 'bootstrap: couldn\'t connect with DAT…'

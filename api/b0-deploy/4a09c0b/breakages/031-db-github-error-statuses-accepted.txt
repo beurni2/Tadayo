@@ -1,0 +1,20 @@
+breakage: db-github-error-statuses-accepted
+patch: [
+ [
+  "tools/ops/src/deploy-branch.ts",
+  "    if (response.status !== 200) {",
+  "    if (response.status >= 500) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-branch.test.ts
+exit: 1
+expected words: says the status GitHub gave, and not its words, and deploys nothing
+caught: True
+
+     × says the status GitHub gave, and not its words, and deploys nothing 11ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-branch.test.ts > deployBranch when GitHub or Fly doesn't answer as it should > says the status GitHub gave, and not its words, and deploys nothing
+AssertionError: 401: expected 'deploy-branch: GitHub\'s answer about…' to be 'deploy-branch: GitHub answered HTTP 4…' // Object.is equality

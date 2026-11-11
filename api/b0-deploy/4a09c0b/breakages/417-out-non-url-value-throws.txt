@@ -1,0 +1,18 @@
+breakage: out-non-url-value-throws
+patch: [
+ [
+  "tools/ops/src/output.ts",
+  "  let password: string;\n  try {\n    password = new URL(value).password;\n  } catch {\n    return [];\n  }\n",
+  "  const password = new URL(value).password;\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/output.test.ts
+exit: 1
+expected words: re:Invalid URL
+caught: True
+
+ Test Files  1 failed (1)
+      Tests  no tests
+ FAIL  src/output.test.ts [ src/output.test.ts ]
+TypeError: Invalid URL

@@ -1,0 +1,20 @@
+breakage: p-sign-in-code-not-checked
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "      link === undefined ? silence() : hashed === undefined ? `no sign-in code: ${describe(link)}` : undefined;",
+  "      link === undefined ? silence() : undefined;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: stops after the controls when the project gives the user no sign-in code
+caught: True
+
+     × stops after the controls when the project gives the user no sign-in code 8ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 61 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks counts only Storage's own refusal as one > stops after the controls when the project gives the user no sign-in code
+AssertionError: expected [] to deeply equal [ Array(1) ]

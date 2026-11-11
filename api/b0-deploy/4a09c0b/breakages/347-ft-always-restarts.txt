@@ -1,0 +1,20 @@
+breakage: ft-always-restarts
+patch: [
+ [
+  "fly.toml",
+  "policy = \"on-failure\"",
+  "policy = \"always\"",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-files.test.ts
+exit: 1
+expected words: stops each group with SIGTERM and time to finish, and restarts one only when it failed
+caught: True
+
+     × stops each group with SIGTERM and time to finish, and restarts one only when it failed 33ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-files.test.ts > fly.toml > stops each group with SIGTERM and time to finish, and restarts one only when it failed
+AssertionError: expected 'always' to be 'on-failure' // Object.is equality

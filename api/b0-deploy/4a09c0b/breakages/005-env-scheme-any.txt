@@ -1,0 +1,21 @@
+breakage: env-scheme-any
+patch: [
+ [
+  "tools/ops/src/environment.ts",
+  "  if (parsed.protocol !== \"postgresql:\" && parsed.protocol !== \"postgres:\") throw refused(\"it isn't a postgresql: URL\");\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/environment.test.ts
+exit: 1
+expected words: refuses a second host, another scheme, and text that isn't a URL
+caught: True
+
+     × refuses a second host, another scheme, and text that isn't a URL 4ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 21 passed (22)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/environment.test.ts > devDatabaseUrl: only tadayo-dev's database, by the reference in the connection > refuses a second host, another scheme, and text that isn't a URL
+AssertionError: http://tadayo_app.rhsycmycocbzakrydahi:pw@aws-0-us-east-1.pooler.supabase.com:5432/postgres
+     94|       expect(() => devDatabaseUrl(given, DEV), given).toThrow(OpsError…

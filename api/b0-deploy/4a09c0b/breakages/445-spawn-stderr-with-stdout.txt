@@ -1,0 +1,23 @@
+breakage: spawn-stderr-with-stdout
+patch: [
+ [
+  "tools/ops/src/spawn.ts",
+  "child.stderr.on(\"data\", (chunk: Buffer) => err.push(chunk));",
+  "child.stderr.on(\"data\", (chunk: Buffer) => out.push(chunk));",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/spawn.test.ts
+exit: 1
+expected words: collects standard output and standard error apart, and the exit code
+caught: True
+
+     × collects standard output and standard error apart, and the exit code 53ms
+     × collects all of what a child wrote on each stream, though it exits at once 83ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 12 passed (14)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/spawn.test.ts > spawnProcess > collects standard output and standard error apart, and the exit code
+AssertionError: expected { code: 3, timedOut: false, …(2) } to deeply equal { code: 3, timedOut: false, …(2) }
+ FAIL  src/spawn.test.ts > spawnProcess > collects all of what a child wrote on each stream, though it exits at once
+AssertionError: expected 'ooooooooooooooooooooooooooooooooooooo…' to be 'ooooooooooooooooooooooooooooooooooooo…' // Object.is equality

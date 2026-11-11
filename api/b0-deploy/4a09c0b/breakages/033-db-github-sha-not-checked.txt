@@ -1,0 +1,20 @@
+breakage: db-github-sha-not-checked
+patch: [
+ [
+  "tools/ops/src/deploy-branch.ts",
+  "  if (typeof onGitHub !== \"string\" || !COMMIT.test(onGitHub)) {",
+  "  if (typeof onGitHub !== \"string\") {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-branch.test.ts
+exit: 1
+expected words: says it got no sense from GitHub when the answer isn't what it asked for
+caught: True
+
+     × says it got no sense from GitHub when the answer isn't what it asked for 8ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-branch.test.ts > deployBranch when GitHub or Fly doesn't answer as it should > says it got no sense from GitHub when the answer isn't what it asked for
+AssertionError: expected 'deploy-branch: refused: the checkout …' to be 'deploy-branch: GitHub\'s answer about…' // Object.is equality

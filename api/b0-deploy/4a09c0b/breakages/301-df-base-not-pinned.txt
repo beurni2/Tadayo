@@ -1,0 +1,20 @@
+breakage: df-base-not-pinned
+patch: [
+ [
+  "Dockerfile",
+  "@sha256:e6bedef217677b276c591795e169840edd9096dbf13f29df8ef8d1856b8820bc",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-files.test.ts
+exit: 1
+expected words: has one base, pinned by digest, at the Node major .nvmrc names, for both stages
+caught: True
+
+     × has one base, pinned by digest, at the Node major .nvmrc names, for both stages 7ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-files.test.ts > Dockerfile > has one base, pinned by digest, at the Node major .nvmrc names, for both stages
+AssertionError: expected 'NODE_IMAGE=node:26.13.1-trixie-slim' to match /^NODE_IMAGE=node:\d+\.\d+\.\d+-[a-z0-…/

@@ -1,0 +1,23 @@
+breakage: ws-flyctl-refusal-ignored
+patch: [
+ [
+  "tools/ops/src/worker-scale.ts",
+  "    if (result.code !== 0)\n      throw new OpsError(`worker-scale: flyctl couldn't ${verb} the worker Machine: ${why(result)}`);\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/worker-scale.test.ts
+exit: 1
+expected words: a stop that flyctl refuses, saying so and not that the Machine is stopped
+caught: True
+
+     × a stop that flyctl refuses, saying so and not that the Machine is stopped 8ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/worker-scale.test.ts > workerScale refuses > a stop that flyctl refuses, saying so and not that the Machine is stopped
+AssertionError: expected 'worker-scale: the worker Machine is s…' to be 'worker-scale: flyctl couldn\'t stop t…' // Object.is equality
+Expected: "worker-scale: flyctl couldn't stop the worker Machine: exit code 1: Error: machine is locked"
+    147|       ["flyctl machine stop", { code: 1, stderr: "Error: machine is lo…
+    149|     expect((result.outcome as OpsError).message).toBe(

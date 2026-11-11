@@ -1,0 +1,23 @@
+breakage: p-db-buckets-not-looked-at
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "for (const wanted of [\"buckets\", \"objects\"]) {",
+  "for (const wanted of [\"objects\"]) {",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-deploy-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/c10a/dbtest-wt.sh src/db/ops-probe.test.ts
+exit: 1
+expected words: fails on a policy on objects, one or more, and on one on buckets
+caught: True
+
+     × fails, naming each table, when Storage's tables aren't there, so a probe of the wrong database passes nothing 18ms
+     × fails on a policy on objects, one or more, and on one on buckets 26ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/ops-probe.test.ts > databaseChecks on Storage's tables > fails, naming each table, when Storage's tables aren't there, so a probe of the wrong database passes nothing
+AssertionError: expected { …(3) } to deeply equal { …(3) }
+ FAIL  src/db/ops-probe.test.ts > databaseChecks on Storage's tables > fails on a policy on objects, one or more, and on one on buckets
+AssertionError: expected 'storage.objects has 2 policies' to be 'storage.buckets has 1 policy; storage…' // Object.is equality
+ Test Files  1 failed (1)
+      Tests  2 failed | 11 passed (13)

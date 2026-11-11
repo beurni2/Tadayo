@@ -1,0 +1,27 @@
+breakage: out-variable-database-admin-url-not-held-back
+patch: [
+ [
+  "tools/ops/src/output.ts",
+  "  \"DATABASE_ADMIN_URL\",\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/output.test.ts
+exit: 1
+expected words: holds back the value of each of the seven secret variables on its own, whatever it looks like
+caught: True
+
+     × holds back the value of each of the seven secret variables on its own, whatever it looks like 7ms
+     × holds back a connection string's password, as it is written in the string and decoded 1ms
+     × does not blank ordinary text because a connection string has no password, or one too short to be one 1ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 15 passed (18)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/output.test.ts > redactor > holds back the value of each of the seven secret variables on its own, whatever it looks like
+AssertionError: DATABASE_ADMIN_URL: expected 'before unshaped-database_admin_url-va…' to be 'before [redacted] after' // Object.is equality
+ FAIL  src/output.test.ts > redactor > holds back a connection string's password, as it is written in the string and decoded
+AssertionError: admin-password-of-many-chars: expected 'admin-password-of-many-chars' to be '[redacted]' // Object.is equality
+     87|       expect(redact(line), line).toBe(expected);
+ FAIL  src/output.test.ts > redactor > does not blank ordinary text because a connection string has no password, or one too short to be one
+AssertionError: expected 'could not connect to postgresql://[re…' to be 'could not connect to [redacted]' // Object.is equality

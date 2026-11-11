@@ -1,0 +1,21 @@
+breakage: bs-failure-unsaid
+patch: [
+ [
+  "tools/ops/src/bootstrap.ts",
+  "  if (result.code !== 0) {\n    const lines = scrub",
+  "  if (false) {\n    const lines = scrub",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/bootstrap.test.ts
+exit: 1
+expected words: fails with psql's own words when it exits non-zero
+caught: True
+
+     × fails with psql's own words when it exits non-zero, holding back the password and the verifier it was given 8ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 7 passed (8)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/bootstrap.test.ts > runBootstrap > fails with psql's own words when it exits non-zero, holding back the password and the verifier it was given
+AssertionError: expected '' to contain 'ERROR:  bad thing'
+    123|       message = error instanceof Error ? error.message : "";

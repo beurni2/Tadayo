@@ -1,0 +1,28 @@
+breakage: fly-machine-without-an-id-taken
+patch: [
+ [
+  "tools/ops/src/fly.ts",
+  "    if (id === undefined || state === undefined) {",
+  "    if (false) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/fly.test.ts src/worker-scale.test.ts src/fly-app-create.test.ts src/on-machine.test.ts src/run-remote.test.ts
+exit: 1
+expected words: an answer it can't read
+caught: True
+
+     × refuses a list it can't read, saying why with flyctl's own words and never the token 8ms
+     × an answer it can't read, with flyctl's own words and never the token 9ms
+ Test Files  2 failed | 3 passed (5)
+      Tests  2 failed | 79 passed (81)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly.test.ts > jsonOf and machines: what flyctl's list of Machines says > refuses a list it can't read, saying why with flyctl's own words and never the token
+AssertionError: expected 'not an OpsError' to match /^flyctl's list of tadayo-api-dev's Ma…/
+"not an OpsError"
+    240|       const message = error instanceof OpsError ? error.message : "not…
+    241|       expect(message).toMatch(expected);
+ FAIL  src/worker-scale.test.ts > workerScale refuses > an answer it can't read, with flyctl's own words and never the token
+AssertionError: expected 'worker-scale: the app has no worker M…' to match /no id or no state/
+    139|     expect((notAList.outcome as OpsError).message).toBe("flyctl's list…
+    141|     expect((noState.outcome as OpsError).message).toMatch(/no id or no…

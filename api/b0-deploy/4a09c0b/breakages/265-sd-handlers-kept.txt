@@ -1,0 +1,20 @@
+breakage: sd-handlers-kept
+patch: [
+ [
+  "services/api/src/shutdown.ts",
+  "      events.off(\"SIGTERM\", handlers.SIGTERM);\n      events.off(\"SIGINT\", handlers.SIGINT);\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/services/api && npx vitest run src/shutdown.test.ts
+exit: 1
+expected words: closes once: after the first signal it lets go of both, so a second one ends the process as it would have
+caught: True
+
+     × closes once: after the first signal it lets go of both, so a second one ends the process as it would have 6ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/shutdown.test.ts > stopOnSignal > closes once: after the first signal it lets go of both, so a second one ends the process as it would have
+AssertionError: expected 1 to be +0 // Object.is equality

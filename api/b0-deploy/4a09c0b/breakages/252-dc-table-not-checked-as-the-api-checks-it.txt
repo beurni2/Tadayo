@@ -1,0 +1,21 @@
+breakage: dc-table-not-checked-as-the-api-checks-it
+patch: [
+ [
+  "tools/ops/src/dev-clock.ts",
+  "  try {\n    await prepareClock(\"dev\", tx);\n  } catch",
+  "  try {\n  } catch",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-deploy-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/c10a/dbtest-wt.sh src/db/ops-dev-clock.test.ts
+exit: 1
+expected words: won't move a clock whose guard is off: a disabled trigger is refused, as at the API's start-up
+caught: True
+
+     × won't move a clock whose guard is off: a disabled trigger is refused, as at the API's start-up 28ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/ops-dev-clock.test.ts > dev-clock, through the schema's own owner > won't move a clock whose guard is off: a disabled trigger is refused, as at the API's start-up
+AssertionError: promise resolved "{ made: false, …(3) }" instead of rejecting
+- Error {
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)

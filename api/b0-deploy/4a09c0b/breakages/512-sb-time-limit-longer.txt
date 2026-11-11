@@ -1,0 +1,20 @@
+breakage: sb-time-limit-longer
+patch: [
+ [
+  "tools/ops/src/supabase.ts",
+  "const TIMEOUT_MS = 20_000;",
+  "const TIMEOUT_MS = 200_000;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase.test.ts
+exit: 1
+expected words: gives each call 20 seconds, with the caller's own signal or without it
+caught: True
+
+     × gives each call 20 seconds, with the caller's own signal or without it 7ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase.test.ts > send: how long a call may take > gives each call 20 seconds, with the caller's own signal or without it
+AssertionError: expected [ 200000, 200000 ] to deeply equal [ 20000, 20000 ]

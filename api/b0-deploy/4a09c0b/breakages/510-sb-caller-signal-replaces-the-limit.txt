@@ -1,0 +1,23 @@
+breakage: sb-caller-signal-replaces-the-limit
+patch: [
+ [
+  "tools/ops/src/supabase.ts",
+  "          : AbortSignal.any([AbortSignal.timeout(TIMEOUT_MS), options.within]),",
+  "          : options.within,",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase.test.ts
+exit: 1
+expected words: gives each call 20 seconds, with the caller's own signal or without it
+caught: True
+
+     × gives each call 20 seconds, with the caller's own signal or without it 8ms
+     × gives the call a signal of its own, which the caller's ends and doesn't replace, so the call's time limit stays 2ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 16 passed (18)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase.test.ts > send: how long a call may take > gives each call 20 seconds, with the caller's own signal or without it
+AssertionError: expected [ 20000 ] to deeply equal [ 20000, 20000 ]
+ FAIL  src/supabase.test.ts > send: a signal that ends a call early, the probe's budget for the whole run > gives the call a signal of its own, which the caller's ends and doesn't replace, so the call's time limit stays
+AssertionError: expected AbortSignal { aborted: false } not to be AbortSignal { aborted: false } // Object.is equality

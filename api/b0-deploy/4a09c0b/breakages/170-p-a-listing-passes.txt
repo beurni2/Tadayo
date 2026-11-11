@@ -1,0 +1,29 @@
+breakage: p-a-listing-passes
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "  return items.length === 0 ? undefined : `it listed ${String(items.length)} ${items.length === 1 ? \"item\" : \"items\"}`;",
+  "  return undefined;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: names the surface when
+caught: True
+
+     × names the surface when list-buckets is open, and leaves nothing behind 15ms
+     × names the surface when list-objects is open, and leaves nothing behind 7ms
+     × fails each of two leaks together, and each by name 4ms
+     × says what each open surface gave, in a count or a phrase, and never a word the project said 10ms
+ Test Files  1 failed (1)
+      Tests  4 failed | 58 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when list-buckets is open, and leaves nothing behind
+AssertionError: user: list the buckets: expected [] to include 'user: list the buckets'
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when list-objects is open, and leaves nothing behind
+AssertionError: user: list the objects of uploads: expected [] to include 'user: list the objects of uploads'
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > fails each of two leaks together, and each by name
+AssertionError: expected [ 'anon: REST users', …(5) ] to include 'user: list the buckets'
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > says what each open surface gave, in a count or a phrase, and never a word the project said
+AssertionError: expected undefined to be 'it listed 2 items' // Object.is equality

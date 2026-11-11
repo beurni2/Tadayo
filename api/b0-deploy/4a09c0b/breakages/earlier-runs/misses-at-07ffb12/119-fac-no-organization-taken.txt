@@ -1,0 +1,16 @@
+breakage: fac-no-organization-taken
+patch: [
+ [
+  "tools/ops/src/fly-app-create.ts",
+  "  if (only === undefined) throw new OpsError(\"fly-app-create: the token sees no organization\");\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/fly-app-create.test.ts
+exit: 0
+expected words: an organization list it can't read
+caught: False
+
+ Test Files  1 passed (1)
+      Tests  14 passed (14)

@@ -1,0 +1,20 @@
+breakage: env-pg-tls-off
+patch: [
+ [
+  "tools/ops/src/environment.ts",
+  "PGSSLMODE: \"require\",",
+  "PGSSLMODE: \"prefer\",",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/environment.test.ts
+exit: 1
+expected words: decodes the user and the password, and asks for TLS
+caught: True
+
+     × decodes the user and the password, and asks for TLS 10ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 21 passed (22)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/environment.test.ts > pgEnvOf: the connection as the environment variables psql reads, so no password is on a command line > decodes the user and the password, and asks for TLS
+AssertionError: expected { …(7) } to deeply equal { …(7) }

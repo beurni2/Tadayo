@@ -1,0 +1,20 @@
+breakage: out-variable-supabase-access-token-not-held-back
+patch: [
+ [
+  "tools/ops/src/output.ts",
+  "  \"SUPABASE_ACCESS_TOKEN\",\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/output.test.ts
+exit: 1
+expected words: holds back the value of each of the seven secret variables on its own, whatever it looks like
+caught: True
+
+     × holds back the value of each of the seven secret variables on its own, whatever it looks like 9ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/output.test.ts > redactor > holds back the value of each of the seven secret variables on its own, whatever it looks like
+AssertionError: SUPABASE_ACCESS_TOKEN: expected 'before unshaped-supabase_access_token…' to be 'before [redacted] after' // Object.is equality

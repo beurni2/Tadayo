@@ -1,0 +1,20 @@
+breakage: r3-app-end-untimed
+patch: [
+ [
+  "services/api/src/app.ts",
+  "    await deps.sql.end({ timeout: END_SECONDS });",
+  "    await deps.sql.end();",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/services/api && npx vitest run src/app.test.ts
+exit: 1
+expected words: ends its connection when it closes, giving queries still running END_SECONDS
+caught: True
+
+     × ends its connection when it closes, giving queries still running END_SECONDS before postgres.js closes it anyway 13ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/app.test.ts > what Fastify answers itself, made to say nothing (T14) > ends its connection when it closes, giving queries still running END_SECONDS before postgres.js closes it anyway
+AssertionError: expected undefined to deeply equal { timeout: 3 }

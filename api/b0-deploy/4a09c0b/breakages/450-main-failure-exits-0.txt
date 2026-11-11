@@ -1,0 +1,32 @@
+breakage: main-failure-exits-0
+patch: [
+ [
+  "tools/ops/src/main.ts",
+  "  process.exitCode = 1;\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/main.test.ts
+exit: 1
+expected words: names the scripts and fails, with nothing on standard output, when no script is named
+caught: True
+
+     × names the scripts and fails, with nothing on standard output, when no script is named 167ms
+     × names the scripts and fails when the one named isn't one 149ms
+     × holds back the environment's token from a failure's message, and prints no stack 165ms
+     × gives the scripts the repository's root: bootstrap names db/bootstrap.sql by its whole path 165ms
+     × prints a script's refusal as its own words, with no stack, and exits 1 173ms
+ Test Files  1 failed (1)
+      Tests  5 failed | 1 passed (6)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/main.test.ts > the ops entry > names the scripts and fails, with nothing on standard output, when no script is named
+AssertionError: expected +0 to be 1 // Object.is equality
+ FAIL  src/main.test.ts > the ops entry > names the scripts and fails when the one named isn't one
+AssertionError: expected +0 to be 1 // Object.is equality
+ FAIL  src/main.test.ts > the ops entry > holds back the environment's token from a failure's message, and prints no stack
+AssertionError: expected +0 to be 1 // Object.is equality
+ FAIL  src/main.test.ts > the ops entry > gives the scripts the repository's root: bootstrap names db/bootstrap.sql by its whole path
+AssertionError: expected +0 to be 1 // Object.is equality
+ FAIL  src/main.test.ts > the ops entry > prints a script's refusal as its own words, with no stack, and exits 1
+AssertionError: expected +0 to be 1 // Object.is equality

@@ -1,0 +1,20 @@
+breakage: p-data-api-refusal-passes
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "  if (reply.status !== 200) return [{ name: DATA_API, ok: false, note: `the Management API ${answered(reply)}` }];\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: fails, saying only the status, when the Management API refuses or answers something else
+caught: True
+
+     × fails, saying only the status, when the Management API refuses or answers something else 8ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 61 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > dataApiChecks, the project's own configuration through the Management API > fails, saying only the status, when the Management API refuses or answers something else
+AssertionError: expected true to be false // Object.is equality

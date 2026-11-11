@@ -1,0 +1,66 @@
+breakage: sd-server-not-closed
+patch: [
+ [
+  "services/api/src/shutdown.ts",
+  "        const closing = app.close();\n",
+  "        const closing = Promise.resolve();\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/services/api && npx vitest run src/shutdown.test.ts
+exit: 1
+expected words: stops listening and lets the requests in flight finish before it ends the database's connection, on SIGTERM
+caught: True
+
+     × stops listening and lets the requests in flight finish before it ends the database's connection, on SIGTERM 15ms
+     × does the same on SIGINT 2ms
+     × closes once: after the first signal it lets go of both, so a second one ends the process as it would have 3ms
+     × ends the connections left idle, every sweep, while the server closes, and stops sweeping once it has 2ms
+     × ends the connections still in use only when the grace is over, says so, and goes on to end the database's connection 1ms
+     × does not wait for the grace when the server closes before it 2ms
+     × still ends the database's connection when closing the server fails, and says so without the error's own words 1ms
+     × says the server didn't close cleanly when it fails after the grace too 2ms
+     × says when the database's connection doesn't end cleanly, without the error's own words, and doesn't say it stopped 2ms
+     × says both failures, in order, and still finishes, when neither the server nor the database's connection closes cleanly 1ms
+     × lets a request in flight finish, and then ends its connection instead of waiting out the keep-alive time 136ms
+     × ends a request still in flight when the grace is over, says so, and stops 5003ms
+ Test Files  1 failed (1)
+      Tests  12 failed | 5 passed (17)
+     Errors  4 errors
+⎯⎯⎯⎯⎯⎯ Failed Tests 12 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/shutdown.test.ts > stopOnSignal > stops listening and lets the requests in flight finish before it ends the database's connection, on SIGTERM
+AssertionError: expected [ 'api: stopping on SIGTERM' ] to deeply equal [ 'api: stopping on SIGTERM', …(1) ]
+ FAIL  src/shutdown.test.ts > stopOnSignal > does the same on SIGINT
+AssertionError: expected [ 'api: stopping on SIGINT', …(2) ] to deeply equal [ 'api: stopping on SIGINT', …(3) ]
+ FAIL  src/shutdown.test.ts > stopOnSignal > closes once: after the first signal it lets go of both, so a second one ends the process as it would have
+AssertionError: expected [] to have a length of 1 but got +0
+ FAIL  src/shutdown.test.ts > stopOnSignal > ends the connections left idle, every sweep, while the server closes, and stops sweeping once it has
+AssertionError: expected +0 to be 3 // Object.is equality
+ FAIL  src/shutdown.test.ts > stopOnSignal > ends the connections still in use only when the grace is over, says so, and goes on to end the database's connection
+AssertionError: expected +0 to be 1 // Object.is equality
+ FAIL  src/shutdown.test.ts > stopOnSignal > does not wait for the grace when the server closes before it
+AssertionError: expected [ 'api: stopping on SIGTERM', …(2) ] to deeply equal [ 'api: stopping on SIGTERM', …(3) ]
+ FAIL  src/shutdown.test.ts > stopOnSignal > still ends the database's connection when closing the server fails, and says so without the error's own words
+AssertionError: expected [ 'api: stopping on SIGTERM', …(2) ] to deeply equal [ 'api: stopping on SIGTERM', …(2) ]
+    154|     closing.reject(new Error("password=hunter2 near the socket"));
+ FAIL  src/shutdown.test.ts > stopOnSignal > says the server didn't close cleanly when it fails after the grace too
+AssertionError: expected [ 'api: stopping on SIGTERM', …(2) ] to deeply equal [ 'api: stopping on SIGTERM', …(4) ]
+    164|     closing.reject(new Error("password=hunter2 near the socket"));
+ FAIL  src/shutdown.test.ts > stopOnSignal > says when the database's connection doesn't end cleanly, without the error's own words, and doesn't say it stopped
+AssertionError: expected [ 'api: stopping on SIGTERM', …(1) ] to deeply equal [ 'api: stopping on SIGTERM', …(2) ]
+ FAIL  src/shutdown.test.ts > stopOnSignal > says both failures, in order, and still finishes, when neither the server nor the database's connection closes cleanly
+AssertionError: expected [ 'api: stopping on SIGTERM', …(1) ] to deeply equal [ 'api: stopping on SIGTERM', …(2) ]
+    188|     closing.reject(new Error("password=hunter2 near the socket"));
+ FAIL  src/shutdown.test.ts > stopOnSignal, with a real server > lets a request in flight finish, and then ends its connection instead of waiting out the keep-alive time
+AssertionError: expected [ 'api: stopping on SIGTERM', …(2) ] to deeply equal [ 'api: stopping on SIGTERM' ]
+ FAIL  src/shutdown.test.ts > stopOnSignal, with a real server > ends a request still in flight when the grace is over, says so, and stops
+Error: Test timed out in 5000ms.
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+Error: password=hunter2 near the socket
+    154|     closing.reject(new Error("password=hunter2 near the socket"));
+Error: password=hunter2 near the socket
+    164|     closing.reject(new Error("password=hunter2 near the socket"));
+Error: password=hunter2 near the socket
+    188|     closing.reject(new Error("password=hunter2 near the socket"));
+Error: socket hang up
+Serialized Error: { code: 'ECONNRESET' }

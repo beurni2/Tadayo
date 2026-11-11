@@ -1,0 +1,20 @@
+breakage: ss-limit-in-decimal-megabytes
+patch: [
+ [
+  "tools/ops/src/storage-setup.ts",
+  "export const FILE_SIZE_LIMIT = 20 * 1024 * 1024;",
+  "export const FILE_SIZE_LIMIT = 20 * 1000 * 1000;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/storage-setup.test.ts
+exit: 1
+expected words: declares D09's limit and the three image types, in numbers a reader can check
+caught: True
+
+     × declares D09's limit and the three image types, in numbers a reader can check 11ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/storage-setup.test.ts > storageSetup > declares D09's limit and the three image types, in numbers a reader can check
+AssertionError: expected 20000000 to be 20971520 // Object.is equality

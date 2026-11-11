@@ -1,0 +1,20 @@
+breakage: run-hint-never-said
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  "  if (heard.length === 0) {",
+  "  if (false) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/run.test.ts src/run-remote.test.ts
+exit: 1
+expected words: says what the project may hold when nothing came back from the Machine
+caught: True
+
+     × says what the project may hold when nothing came back from the Machine, and still fails with the call's own failure 7ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 43 passed (44)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > says what the project may hold when nothing came back from the Machine, and still fails with the call's own failure
+AssertionError: expected 'supabase-probe: ok    the Data API\'s…' to match /^supabase-probe: nothing came back fr…/

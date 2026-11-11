@@ -1,0 +1,23 @@
+breakage: p-authenticator-any-setting
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "       AND pg_catalog.starts_with(s.setting, 'pgrst.db_schemas=')\n",
+  "",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-deploy-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/c10a/dbtest-wt.sh src/db/ops-probe.test.ts
+exit: 1
+expected words: looks only at authenticator: another role's setting, and another setting of its own, aren't the Data API's
+caught: True
+
+     × passes when the role has no list of schemas of its own, or one that is empty or the platform's stand-in for none 20ms
+     × looks only at authenticator: another role's setting, and another setting of its own, aren't the Data API's 10ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/ops-probe.test.ts > databaseChecks on the role the Data API connects as > passes when the role has no list of schemas of its own, or one that is empty or the platform's stand-in for none
+AssertionError: expected { …(3) } to deeply equal { …(2) }
+ FAIL  src/db/ops-probe.test.ts > databaseChecks on the role the Data API connects as > looks only at authenticator: another role's setting, and another setting of its own, aren't the Data API's
+AssertionError: expected { …(3) } to deeply equal { …(2) }
+ Test Files  1 failed (1)
+      Tests  2 failed | 11 passed (13)

@@ -1,0 +1,23 @@
+breakage: dc-longest-offset-in-days
+patch: [
+ [
+  "tools/ops/src/dev-clock.ts",
+  "export const LONGEST_OFFSET_DAYS = 366;",
+  "export const LONGEST_OFFSET_DAYS = 365;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/dev-clock.test.ts
+exit: 1
+expected words: goes as far as the longest offset, to the microsecond, and no further
+caught: True
+
+     × goes as far as the longest offset, to the microsecond, and no further 9ms
+     × measures the longest offset from Postgres's clock, not from the clock's own reading 3ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 5 passed (7)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/dev-clock.test.ts > moveOffset > goes as far as the longest offset, to the microsecond, and no further
+AssertionError: expected 365 to be 366 // Object.is equality
+ FAIL  src/dev-clock.test.ts > moveOffset > measures the longest offset from Postgres's clock, not from the clock's own reading
+AssertionError: expected [Function] to throw error matching /366 days/ but got 'dev-clock: 2028-01-16T08:00:00Z is mo…'

@@ -1,0 +1,23 @@
+breakage: scram-non-ascii-taken
+patch: [
+ [
+  "tools/ops/src/scram.ts",
+  "  if (!/^[\\x20-\\x7e]+$/.test(password)) throw new Error(\"the password must be printable ASCII\");\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/scram.test.ts
+exit: 1
+expected words: takes printable ASCII only, which SASLprep leaves as it is; any other character would be stored changed
+caught: True
+
+     × takes printable ASCII only, which SASLprep leaves as it is; any other character would be stored changed 6ms
+     × never names the password when it refuses 2ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 4 passed (6)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/scram.test.ts > scramVerifier > takes printable ASCII only, which SASLprep leaves as it is; any other character would be stored changed
+AssertionError: expected [Function] to throw an error
+ FAIL  src/scram.test.ts > scramVerifier > never names the password when it refuses
+Error: expected number of assertions to be 1, but got 0

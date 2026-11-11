@@ -1,0 +1,26 @@
+breakage: ss-public-bucket-left-public
+patch: [
+ [
+  "tools/ops/src/storage-setup.ts",
+  "  if (record[\"public\"] !== false) found.push(\"public\");\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/storage-setup.test.ts
+exit: 1
+expected words: makes a bucket private again, and sets its limit and types, when it was made another way, and says what it changed
+caught: True
+
+     × makes a bucket private again, and sets its limit and types, when it was made another way, and says what it changed 5ms
+     × treats a bucket that appears between the look and the make as there, and goes on to make it as declared 2ms
+     × fails when a bucket still isn't as declared after the update, rather than say it is 2ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 10 passed (13)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/storage-setup.test.ts > storageSetup > makes a bucket private again, and sets its limit and types, when it was made another way, and says what it changed
+AssertionError: expected 'storage-setup: uploads: changed: its …' to be 'storage-setup: uploads: changed: it w…' // Object.is equality
+ FAIL  src/storage-setup.test.ts > storageSetup > treats a bucket that appears between the look and the make as there, and goes on to make it as declared
+AssertionError: expected 'storage-setup: uploads: changed: it h…' to match /^storage-setup: uploads: changed: it …/
+ FAIL  src/storage-setup.test.ts > storageSetup > fails when a bucket still isn't as declared after the update, rather than say it is
+AssertionError: expected [Function] to throw error matching /uploads isn't as declared after the u…/ but got 'storage-setup: uploads isn\'t as decl…'

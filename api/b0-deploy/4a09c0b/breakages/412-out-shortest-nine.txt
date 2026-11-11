@@ -1,0 +1,23 @@
+breakage: out-shortest-nine
+patch: [
+ [
+  "tools/ops/src/output.ts",
+  "const SHORTEST = 8;",
+  "const SHORTEST = 9;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/output.test.ts
+exit: 1
+expected words: holds back a value of eight characters and leaves a value of seven alone
+caught: True
+
+     × holds back a value of eight characters and leaves a value of seven alone 8ms
+     × holds back a longer value whole when a shorter one is inside it 1ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 16 passed (18)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/output.test.ts > redactor > holds back a value of eight characters and leaves a value of seven alone
+AssertionError: expected 'the abcdefgh is out' to be 'the [redacted] is out' // Object.is equality
+ FAIL  src/output.test.ts > redactor > holds back a longer value whole when a shorter one is inside it
+AssertionError: expected 'the token [redacted] and the password…' to be 'the token [redacted] and the password…' // Object.is equality

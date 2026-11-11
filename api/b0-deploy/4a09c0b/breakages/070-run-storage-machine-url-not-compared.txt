@@ -1,0 +1,20 @@
+breakage: run-storage-machine-url-not-compared
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  "      const url = machineProject(variables.SUPABASE_URL, where.ref, \"storage-setup\");",
+  "      const url = projectUrl(variables.SUPABASE_URL);",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/run.test.ts src/run-remote.test.ts
+exit: 1
+expected words: refuses a Machine whose SUPABASE_URL isn't the project --ref names, before it sends the key anywhere
+caught: True
+
+     × refuses a Machine whose SUPABASE_URL isn't the project --ref names, before it sends the key anywhere 8ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 43 passed (44)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/run-remote.test.ts > storage-setup on the Machine (--here) > refuses a Machine whose SUPABASE_URL isn't the project --ref names, before it sends the key anywhere
+AssertionError: expected 'GET /storage/v1/bucket/uploads: no an…' to be 'storage-setup: SUPABASE_URL isn\'t th…' // Object.is equality

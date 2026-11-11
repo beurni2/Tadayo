@@ -1,0 +1,20 @@
+breakage: r2-probe-cut-report-unsaid
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  "  } else if (started && !ended) {",
+  "  } else if (false) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/run-remote.test.ts
+exit: 1
+expected words: fails, and says what the project may hold, when the Machine's report has the run's id
+caught: True
+
+     × fails, and says what the project may hold, when the Machine's report has the run's id and doesn't say how its checks went, even with an exit status of 0 7ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 28 passed (29)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > fails, and says what the project may hold, when the Machine's report has the run's id and doesn't say how its checks went, even with an exit status of 0
+AssertionError: supabase-probe: the Machine's report doesn't say its checks passed, so it proves nothing: expected 'supabase-probe: ok    control: the se…' to match /^supabase-probe: the Machine's report…/

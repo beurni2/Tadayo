@@ -1,0 +1,26 @@
+breakage: p-cleanup-leaves-buckets
+patch: [
+ [
+  "tools/ops/src/supabase-probe.ts",
+  "    for (const bucket of left.buckets) {",
+  "    for (const bucket of [] as typeof left.buckets) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/supabase-probe.test.ts
+exit: 1
+expected words: removes what a leaked write made, by name, and says it did
+caught: True
+
+     × names the surface when bucket-create is open, and leaves nothing behind 13ms
+     × removes what a leaked write made, by name, and says it did 7ms
+     × ends a call that is in flight when the budget runs out, and removes what that call may have written 6ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 59 passed (62)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > names the surface when bucket-create is open, and leaves nothing behind
+AssertionError: expected [ Array(3) ] to deeply equal [ 'renditions', 'uploads' ]
+ FAIL  src/supabase-probe.test.ts > apiChecks on a project that leaks > removes what a leaked write made, by name, and says it did
+AssertionError: expected [ …(5) ] to deeply equal [ …(6) ]
+ FAIL  src/supabase-probe.test.ts > apiChecks is limited in time, since a killed command skips its clean-up > ends a call that is in flight when the budget runs out, and removes what that call may have written
+AssertionError: expected false to be true // Object.is equality

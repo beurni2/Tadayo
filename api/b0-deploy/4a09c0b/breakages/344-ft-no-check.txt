@@ -1,0 +1,21 @@
+breakage: ft-no-check
+patch: [
+ [
+  "fly.toml",
+  "  [[services.tcp_checks]]\n    grace_period = \"20s\"\n    interval = \"15s\"\n    timeout = \"3s\"\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/deploy-files.test.ts
+exit: 1
+expected words: serves the API's port over TLS, redirects plain HTTP, never stops the Machine, and checks the port, not a route
+caught: True
+
+     × serves the API's port over TLS, redirects plain HTTP, never stops the Machine, and checks the port, not a route 40ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/deploy-files.test.ts > fly.toml > serves the API's port over TLS, redirects plain HTTP, never stops the Machine, and checks the port, not a route
+Error: [[services.tcp_checks]] isn't a list
+     49|   if (!Array.isArray(value)) throw new Error(`${what} isn't a list`);

@@ -1,0 +1,22 @@
+breakage: out-failure-prints-the-stack
+patch: [
+ [
+  "tools/ops/src/output.ts",
+  "return error instanceof Error ? error.message : \"ops: the script failed\";",
+  "return error instanceof Error ? (error.stack ?? error.message) : \"ops: the script failed\";",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/output.test.ts
+exit: 1
+expected words: is an error's message and never its stack
+caught: True
+
+     × is an error's message and never its stack 10ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/output.test.ts > failureText > is an error's message and never its stack
+AssertionError: expected 'Error: couldn\'t list tadayo-api-dev\…' to be 'couldn\'t list tadayo-api-dev\'s Mach…' // Object.is equality
++ Error: couldn't list tadayo-api-dev's Machines
+    205|     const error = new Error("couldn't list tadayo-api-dev's Machines");

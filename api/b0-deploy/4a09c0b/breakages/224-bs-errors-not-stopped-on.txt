@@ -1,0 +1,21 @@
+breakage: bs-errors-not-stopped-on
+patch: [
+ [
+  "tools/ops/src/bootstrap.ts",
+  "\"-X\", \"-w\", \"-v\", \"ON_ERROR_STOP=1\", \"-f\", \"-\"]",
+  "\"-X\", \"-w\", \"-f\", \"-\"]",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-deploy-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/c10a/dbtest-wt.sh src/db/ops-bootstrap.test.ts
+exit: 1
+expected words: fails with what psql says and nothing secret when the file fails, and keeps nothing of it
+caught: True
+
+     × fails with what psql says and nothing secret when the file fails, and keeps nothing of it 47ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/ops-bootstrap.test.ts > bootstrap, through psql, against the test database > fails with what psql says and nothing secret when the file fails, and keeps nothing of it
+AssertionError: expected '' to match /division by zero/
+    141|       message = error instanceof Error ? error.message : "";
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 passed (6)

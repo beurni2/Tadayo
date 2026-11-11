@@ -1,0 +1,22 @@
+breakage: ws-timeout-is-success
+patch: [
+ [
+  "tools/ops/src/worker-scale.ts",
+  "  throw new OpsError(\n    `worker-scale: the worker Machine is ${state}, ${String((POLLS * POLL_MS) / 1000)} seconds after it was told to ${verb}`,\n  );",
+  "  return;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-deploy-breakages/tools/ops && npx vitest run src/worker-scale.test.ts
+exit: 1
+expected words: says what it found when the Machine isn't stopped in time, and not that it is
+caught: True
+
+     × says what it found when the Machine isn't stopped in time, and not that it is 4ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/worker-scale.test.ts > workerScale to stopped > says what it found when the Machine isn't stopped in time, and not that it is
+AssertionError: expected undefined to be an instance of OpsError
+     67|     expect(result.outcome).toBeInstanceOf(OpsError);
+     68|     expect((result.outcome as OpsError).message).toBe(
