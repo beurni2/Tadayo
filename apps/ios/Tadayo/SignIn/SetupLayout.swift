@@ -31,8 +31,10 @@ enum SetupGap {
     /// From a subtitle to the field below it (A02-email, A02-code): the frames' glyphs are 47
     /// apart, and 32 + 12 puts them 47 apart here.
     static let field = Spacing.xxxl + Spacing.m
-    /// From A03-profile's Continue to the bottom of the safe area: 44 in the frame.
-    static let profileFooter = Spacing.xxxl + Spacing.m
+    /// From a form's pinned primary action to the bottom of the safe area: 44 in handoff 7's
+    /// A02-age, A03-profile and root failure frames (`handoff7.spacing.formFooterToSafeAreaBottom`).
+    /// A03-profile's Continue and the root failures' Retry take it.
+    static let formFooterToSafeAreaBottom = Spacing.xxxl + Spacing.m
 }
 
 /// A setup screen's title, `utilityTitle` 32/35 as a heading, wrapping naturally (handoff 2's

@@ -102,7 +102,7 @@ struct ProfileScreen: View {
                 .padding(.top, Spacing.xxl)
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                SetupFooter(bottom: SetupGap.profileFooter) {
+                SetupFooter(bottom: SetupGap.formFooterToSafeAreaBottom) {
                     if let failure = model.failure {
                         InlineError(Text(verbatim: failure.words))
                     }

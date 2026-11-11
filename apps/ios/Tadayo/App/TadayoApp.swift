@@ -29,10 +29,12 @@ struct RootView: View {
     }
 }
 
-/// The screen for each route. While the session and the account are read, and while Leave
-/// sign-in runs, the canvas alone, as Tadayo's launch screen shows it (`global-launch`; the launch
-/// screen's colour is `LaunchBackground`, canvas's two values, in `project.yml`). A failure says
-/// what failed, with Retry (`RootFailure`). The tabs show the club list for the account.
+/// The screen for each route. While the keychain is read for a session, the canvas alone, as
+/// Tadayo's launch screen shows it (its colour is `LaunchBackground`, canvas's two values, in
+/// `project.yml`), so a launch with no sign-in goes straight to sign-in with nothing said. Once a
+/// sign-in is found, and while Leave sign-in runs, the canvas with an indicator over what is
+/// going on (`RootWait`: `global-launch`, `global-leaving`). A failure says what failed, with
+/// Retry (`RootFailure`). The tabs show the club list for the account.
 struct RoutedView: View {
     let root: RootModel
 
@@ -58,6 +60,10 @@ struct RoutedView: View {
                 retry: { await root.retry() }, logOut: { await root.leave() })
         case .starting:
             Palette.canvas.ignoresSafeArea()
+        case .reading:
+            RootWait(kind: .loading)
+        case .leaving:
+            RootWait(kind: .leaving)
         }
     }
 }

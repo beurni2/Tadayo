@@ -4,9 +4,17 @@ import TadayoDesign
 
 /// The root's failures, with no header and no tabs, since the app doesn't yet know which screen
 /// comes next: a title naming what failed (T43) over a line saying what to do, and Retry, the
-/// primary button, pinned at the foot. In the sign-in screens' form (`SetupScroll`), with no
-/// navigation bar. Built from spec: the words are FQ89's defaults until handoff 7 gives them (its
-/// item 12). VoiceOver says the title and the line as the screen shows, without moving its focus.
+/// primary button, pinned at the foot, 44 points above the safe area as the forms' primary
+/// actions are (`SetupGap.formFooterToSafeAreaBottom`).
+///
+/// Handoff 7's `global-launch-failed-network` draws the first failure with no bar and the title
+/// where the sign-in screens' titles sit under theirs. So the screen is held in the same
+/// container, an empty inline navigation bar, and the system supplies the offset on every iOS
+/// version, where a number of its own would suit one: `RootSnapshotTests` compares the two.
+///
+/// The words are handoff 7's, which equal FQ89's defaults; FQ89 stays the founder's to answer.
+/// VoiceOver says the title and the line as the screen shows them, without moving its focus, and
+/// Retry's hint says what it does.
 struct RootFailure: View {
     enum Kind: Equatable {
         /// The account couldn't be read, at launch or after a verified code: Retry reads it again.
@@ -37,25 +45,39 @@ struct RootFailure: View {
         var spoken: String {
             "\(String(localized: title)) \(String(localized: line))"
         }
+
+        /// What Retry's hint says it does (handoff 7's `vo.retryAccount.hint`,
+        /// `vo.retryLeave.hint` and `vo.retryKeep.hint`); its label stays "Retry".
+        var retryHint: LocalizedStringResource {
+            switch self {
+            case .account: "root.retry.account.hint"
+            case .leave: "root.retry.leave.hint"
+            case .keep: "root.retry.keep.hint"
+            }
+        }
     }
 
     let kind: Kind
     let retry: @MainActor () async -> Void
 
     var body: some View {
-        SetupScroll {
-            SetupHeading(title: LocalizedStringKey(kind.title.key), subtitle: Text(kind.line))
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            SetupFooter(bottom: Spacing.s) {
-                Button {
-                    Task { await retry() }
-                } label: {
-                    Text("common.retry")
-                }
-                .buttonStyle(.tadayoPrimary)
+        NavigationStack {
+            SetupScroll {
+                SetupHeading(title: LocalizedStringKey(kind.title.key), subtitle: Text(kind.line))
             }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                SetupFooter(bottom: SetupGap.formFooterToSafeAreaBottom) {
+                    Button {
+                        Task { await retry() }
+                    } label: {
+                        Text("common.retry")
+                    }
+                    .buttonStyle(.tadayoPrimary)
+                    .accessibilityHint(Text(kind.retryHint))
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .announcing(kind.spoken, initial: true)
         }
-        .announcing(kind.spoken, initial: true)
     }
 }

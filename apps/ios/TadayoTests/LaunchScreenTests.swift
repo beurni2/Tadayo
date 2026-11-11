@@ -5,7 +5,9 @@ import XCTest
 
 /// Tadayo's launch screen, which iOS draws from the Info.plist before the app runs, so no
 /// snapshot holds it (docs/LIMITATIONS.md): it names the colour set `LaunchBackground`, which is
-/// the canvas in light and in dark, as the root draws its starting state (`global-launch`).
+/// the canvas in light and in dark: the canvas the root draws on while the keychain is read, and
+/// the one its waits (`global-launch`, `global-leaving`) are drawn on after it. Handoff 7 keeps
+/// the launch screen canvas alone: no logo, wordmark, spinner or text.
 ///
 /// The canvas is resolved as SwiftUI draws it, through `Color.resolve(in:)` with the appearance's
 /// colour scheme (iOS 17): on iOS 17, `UIColor(Palette.canvas)` doesn't keep the colour's dark
