@@ -110,9 +110,6 @@ struct EmailScreen: View {
         // and keyboard if already shown"). Whether the keyboard dips on the way is a device check:
         // focus set again on Return makes it go down and come back up (Apple's developer forums,
         // thread 770226).
-        .onChange(of: focused) { _, now in
-            if !now, sendingFromReturn { focused = true }
-        }
         .announcing(failure?.words)
         // "Sending a code.", once, as the request begins; the button says "In progress" itself.
         .onChange(of: model.isSending) { was, now in

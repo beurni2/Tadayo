@@ -407,7 +407,7 @@ And slice 7 (PR #27, `4e0201c`; `docs/plans/B0.md`, slice 7; TECH-DESIGN section
 
 ### 1.3 ios lane
 
-**Updated:** 2026-11-11 22:52 UTC, ios/b0-adopt-email
+**Updated:** 2026-11-11 23:03 UTC, ios/b0-adopt-email-check
 
 - **Started:** 2026-11-03 at 11:03 UTC, by the coordinator (ADR-025). Environment: Swift 6.3.3 from swift.org's signed release tarball; the journal hook isn't confirmed to fire in this session, so it runs by hand before each commit (`docs/LIMITATIONS.md`'s row of 2026-11-03 for the ios thread).
 - **This branch:** `ios/b0-adopt-email` from `main` at `65bcaeb` (#34 merged), with `main` at `28a22e9` (#36, the app icon) merged in after its sixth push, pushed at once, a seventh push after it and an eighth that fixes its test's compile; no PR yet: PR 3a of the nine that adopt handoff 7 for the screens on `main` (`docs/plans/ios-b0-adopt-handoff-7.md` section 5; its detail is `docs/plans/ios-b0-adopt-handoff-7/signin.md`, C1 to C3, and `tests.md`). It builds the busy primary button as handoff 7's `busyPrimary` draws it (frames 2 and 4, the sheet's "Primary action · busy"), the address and code fields read-only while their request is out, A02-email's placeholder (W-08) and the announcement for Send a code, and shares the test fakes so that A02-email's new VoiceOver readings run hosted, on the iOS 18.6 and 17.5 runs too (the sign-in readings from before handoff 7 stay in `SignInSnapshotTests`, which those runs skip). Six pushes so far: code and tests at `ff781ef`, `d2ff56f`, `ebc89b6` and `394f695`; at `7aa4120` the 40 references (39 changed, 1 new) that CI's images became once they were read, with the inventory's notes and three rows of `docs/LIMITATIONS.md`; in the sixth (`ef3d587`) the answers to the review's first round (two tests made to hold what they say, and the records); and then the merge of `main` at `28a22e9`, which conflicted in `docs/JOURNAL.md` and `docs/PROGRESS.md` only (`project.yml`, INVENTORY and LIMITATIONS merged without a conflict): the journal was rebuilt on `main`'s whole file, with this branch's six log entries put among #36's by time, its rows of T44, T45 and T47 and its row of #34 in section 4.2 as this branch has them, T46's notes holding both sides' sentences (`main`'s first), and this block rewritten; PROGRESS's ios lane lines were rewritten. The seventh (`c65d5ae`) answers the review's second round (the return key keeps the field's focus, one UI test and one hosted test more, and the records); the eighth, this one, moves `ModelTextTests`' model to file scope, where `@Observable` compiles. As built at the eighth (the merge added #36's icon and its five tests and changed nothing of this branch's):
@@ -1917,6 +1917,14 @@ A new `docs/LIMITATIONS.md` row too: two database-backed runs at once on the ses
 **Next:** Push, check `ci`, then PR #11's description and the founder (block 1.2's Next steps 1 and 2).
 
 ### 3.3 ios lane
+
+#### 2026-11-11 23:03 UTC · ios · ios/b0-adopt-email-check · PR none
+**Did:** A check branch, `ios/b0-adopt-email-check` from `ios/b0-adopt-email` at `f8d59a8`, never to merge: `EmailScreen`'s `onChange(of: focused)` that puts the focus back after Return is taken out, and nothing else changes, so its `ios` run shows whether `SignInUITests.testSendingFromTheReturnKeyKeepsTheFocus` fails without the fix of the review's finding C-01.
+**Why:** The finding rests on SwiftUI's documented default (Return ends a single-line field's editing), which no run had shown, and the new test passed at `f8d59a8` with the fix in: a run without the fix shows that the test catches what it is for.
+**Verified:** `git diff` against `f8d59a8`: the three lines of `onChange(of: focused)` in `apps/ios/Tadayo/SignIn/SignInFlow.swift`, and this journal entry, nothing else.
+**Not verified:** The check run's result: this branch's `ios` run (its `build` job's log, and `logs/test-summary.json` under `ios/b0-adopt-email-check/<short sha>/ios/` on `evidence` if its `evidence` job publishes).
+**Decisions and questions:** None. The branch never merges; its result goes into `ios/b0-adopt-email`'s records.
+**Next:** Read this branch's `ios` run: expected, `testSendingFromTheReturnKeyKeepsTheFocus` fails (no keyboard focus after Return) and every other test passes; then record it on `ios/b0-adopt-email`.
 
 #### 2026-11-11 22:52 UTC · ios · ios/b0-adopt-email · PR none
 **Did:** Fixed the compile of `ModelTextTests` (`apps/ios/TadayoTests/ModelTextTests.swift`): its observable model is now `HeldText`, a `private` class at file scope, where `@Observable`'s extension can see it, in place of a class private to the test class; a `docs/LIMITATIONS.md` row on the macro's limit; block 1.3 and `docs/PROGRESS.md` say so. The test itself is unchanged.
