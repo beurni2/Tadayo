@@ -25,14 +25,18 @@ final class BusyButtonTests: XCTestCase {
     ]
 
     /// A busy-capable primary button as a screen sets it: 20 points in from each side of a
-    /// 393-point window, disabled while it is busy.
-    private func draw(_ title: String, busy: Bool, size: DynamicTypeSize = .large) -> Drawn {
+    /// 393-point window, disabled while it is busy. With `canBeBusy` false it is the plain
+    /// primary button, which keeps no room for an indicator.
+    private func draw(
+        _ title: String, busy: Bool, size: DynamicTypeSize = .large, canBeBusy: Bool = true
+    ) -> Drawn {
+        let style: PrimaryButtonStyle = canBeBusy ? .tadayoPrimary(isBusy: busy) : .tadayoPrimary
         let view =
             Button {
             } label: {
                 Text(verbatim: title)
             }
-            .buttonStyle(.tadayoPrimary(isBusy: busy))
+            .buttonStyle(style)
             .disabled(busy)
             .padding(.horizontal, Spacing.inset)
             .environment(\.dynamicTypeSize, size)
@@ -90,15 +94,22 @@ final class BusyButtonTests: XCTestCase {
     }
 
     /// At the largest size "I’m 18 or older" can't fit between the slots: the indicator is on a
-    /// row of its own, centred, above the label, and the button is taller than one line of the
-    /// label alone would make it.
+    /// row of its own, centred, at the top of the button's face, and the label below it, 8 clear:
+    /// the button is taller than the plain primary button with the same label by the indicator's
+    /// 16 and the 8 between them, so an indicator drawn over the label, or with no room before
+    /// it, fails.
     func testTheIndicatorTakesARowOfItsOwnWhereTheLabelCantFit() {
-        let drawn = draw("I’m 18 or older", busy: true, size: .accessibility5)
+        let title = "I’m 18 or older"
+        let drawn = draw(title, busy: true, size: .accessibility5)
+        let plain = draw(title, busy: false, size: .accessibility5, canBeBusy: false)
         let frame = drawn.indicators.first ?? .zero
-        XCTAssertEqual(frame.midX, drawn.frame.midX, accuracy: 1, "\(frame), \(drawn.frame)")
-        XCTAssertLessThan(frame.midY, drawn.frame.midY, "\(frame), \(drawn.frame)")
-        XCTAssertGreaterThanOrEqual(
-            frame.minY - drawn.frame.minY, Spacing.m, "\(frame), \(drawn.frame)")
+        let place = "\(frame) in \(drawn.frame), plain \(plain.frame)"
+        XCTAssertNotNil(plain.button, place)
+        XCTAssertEqual(frame.midX, drawn.frame.midX, accuracy: 1, place)
+        XCTAssertEqual(frame.minY - drawn.frame.minY, Spacing.m, accuracy: 1, place)
+        XCTAssertEqual(
+            drawn.frame.height - plain.frame.height, Size.busyIndicator + Spacing.s, accuracy: 1,
+            place)
     }
 
     /// VoiceOver finds the button with its own label and, only while it is busy, the value "In

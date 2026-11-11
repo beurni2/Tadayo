@@ -90,6 +90,9 @@ final class SignInUITests: XCTestCase {
         // Typed with no tap: the code field took the focus as the screen appeared.
         app.typeText("529614")
         XCTAssertEqual(code.value as? String, "529614")
+        // A seventh digit is declined by the model, and the field takes it back (`ModelText`).
+        app.typeText("7")
+        XCTAssertEqual(code.value as? String, "529614")
         XCTAssertTrue(verify.isEnabled)
         verify.tap()
 
