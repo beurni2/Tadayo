@@ -1,0 +1,21 @@
+breakage: start-log-level-always-info
+patch: [
+ [
+  "services/api/src/start.ts",
+  "  if (!LOG_LEVELS.includes(value)) throw new Error(\"api: LOG_LEVEL isn't a log level\");\n  return value;\n",
+  "  if (!LOG_LEVELS.includes(value)) throw new Error(\"api: LOG_LEVEL isn't a log level\");\n  return \"info\";\n",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/dbtest.sh src/db/startup.test.ts
+exit: 1
+expected words: writes at the level LOG_LEVEL names
+caught: True
+
+     × writes at the level LOG_LEVEL names: the request line, which is info's, is there by default and gone at warn and at silent (T52) 1500ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/startup.test.ts > the API's entry against the test database > writes at the level LOG_LEVEL names: the request line, which is info's, is there by default and gone at warn and at silent (T52)
+AssertionError: warn: {"level":30,"time":1794394617917,"msg":"Server listening at http://127.0.0.1:33625"}
+: expected [ …(2) ] to have a length of +0 but got 2
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)

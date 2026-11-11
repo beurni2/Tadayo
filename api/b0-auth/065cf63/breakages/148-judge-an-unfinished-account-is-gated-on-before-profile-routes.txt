@@ -1,0 +1,23 @@
+breakage: judge-an-unfinished-account-is-gated-on-before-profile-routes
+patch: [
+ [
+  "tests/src/privacy/account.ts",
+  "if (session === \"unfinished\" && !BEFORE_PROFILE.has(operation.id)) return PROFILE_INCOMPLETE;",
+  "if (session === \"unfinished\") return PROFILE_INCOMPLETE;",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/privtest.sh src/privacy/account.test.ts
+exit: 1
+expected words: answers an unfinished account with the 403
+caught: True
+
+     × answers an unfinished account with the 403 on every route that isn't public or beforeProfile (FQ13, FQ69) 7ms
+     × pins updateMe's 400 for an update with no body, and judges getMe by its status 4ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/account.test.ts > what the gate makes of an account, from its row > answers an unfinished account with the 403 on every route that isn't public or beforeProfile (FQ13, FQ69)
+AssertionError: getMe: expected { status: 403, …(3) } to be undefined // Object.is equality
+ FAIL  src/privacy/account.test.ts > what each cell of each session must get from an ordinary request > pins updateMe's 400 for an update with no body, and judges getMe by its status
+AssertionError: expected [ 'status 200', 'reason "OK"', …(2) ] to deeply equal []
+ Test Files  1 failed (1)
+      Tests  2 failed | 16 passed (18)

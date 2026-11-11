@@ -1,0 +1,21 @@
+breakage: update-key-uuid-v4-only
+patch: [
+ [
+  "services/api/src/identity/me.ts",
+  "const KEY = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;",
+  "const KEY = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$/i;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/identity/me.test.ts
+exit: 1
+expected words: takes the key the app makes, a UUIDv7
+caught: True
+
+     × takes the key the app makes, a UUIDv7 (TECH-DESIGN section 4), in either case, and a UUIDv4 as well 22ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 20 passed (21)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/identity/me.test.ts > PATCH /v1/me: what is refused before the command runs (the contract's INVALID_REQUEST) > takes the key the app makes, a UUIDv7 (TECH-DESIGN section 4), in either case, and a UUIDv4 as well
+AssertionError: 018f3b8e-0f4a-7c3e-9b2d-5e8a6f1c4d20: expected { status: 400, …(2) } to match object { status: 400, …(1) }
+-   "body": "{\"code\":\"INVALID_REQUEST\",\"field\":\"expected_version\"}",

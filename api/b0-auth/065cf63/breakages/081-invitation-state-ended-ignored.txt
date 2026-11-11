@@ -1,0 +1,23 @@
+breakage: invitation-state-ended-ignored
+patch: [
+ [
+  "packages/domain/src/clubs/invitation-state.ts",
+  "  if (facts.candidateEnded) return \"did_not_go_ahead\";\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/packages/domain && npx vitest run src/clubs
+exit: 1
+expected words: did_not_go_ahead
+caught: True
+
+     × {"candidateEnded":true,"acceptedOnOpenRevision":false} is did_not_go_ahead 8ms
+     × {"candidateEnded":true,"acceptedOnOpenRevision":true} is did_not_go_ahead 1ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  2 failed | 25 passed (27)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/clubs/invitation-state.test.ts > where an accepted invitation stands (spec 04, 32; book p30; T7, T33) > {"candidateEnded":true,"acceptedOnOpenRevision":false} is did_not_go_ahead
+AssertionError: expected 'roster_changed' to be 'did_not_go_ahead' // Object.is equality
+ FAIL  src/clubs/invitation-state.test.ts > where an accepted invitation stands (spec 04, 32; book p30; T7, T33) > {"candidateEnded":true,"acceptedOnOpenRevision":true} is did_not_go_ahead
+AssertionError: expected 'waiting' to be 'did_not_go_ahead' // Object.is equality

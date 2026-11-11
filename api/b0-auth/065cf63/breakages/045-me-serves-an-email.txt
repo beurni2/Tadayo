@@ -1,0 +1,26 @@
+breakage: me-serves-an-email
+patch: [
+ [
+  "services/api/src/identity/me.ts",
+  "    age_confirmed: account.ageConfirmed,\n",
+  "    age_confirmed: account.ageConfirmed,\n    email: \"someone@example.invalid\",\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/identity/me.test.ts
+exit: 1
+expected words: re:(answers the contract's Me for the caller|is an explicit field list)
+caught: True
+
+     × answers the contract's Me for the caller, for the caller alone, and nothing else 123ms
+     × leaves the name and the avatar out when there are none, and says the age is not confirmed 13ms
+     × is an explicit field list: whatever else an account object carries never reaches the answer (T55) 2ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 18 passed (21)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/identity/me.test.ts > GET /v1/me (spec 23, T55) > answers the contract's Me for the caller, for the caller alone, and nothing else
+AssertionError: expected { id: 'acct_ana', …(5) } to deeply equal { id: 'acct_ana', …(4) }
+ FAIL  src/identity/me.test.ts > GET /v1/me (spec 23, T55) > leaves the name and the avatar out when there are none, and says the age is not confirmed
+AssertionError: expected { id: 'acct_ana', …(3) } to deeply equal { id: 'acct_ana', …(2) }
+ FAIL  src/identity/me.test.ts > GET /v1/me (spec 23, T55) > is an explicit field list: whatever else an account object carries never reaches the answer (T55)
+AssertionError: expected [ 'age_confirmed', …(5) ] to deeply equal [ 'age_confirmed', …(4) ]

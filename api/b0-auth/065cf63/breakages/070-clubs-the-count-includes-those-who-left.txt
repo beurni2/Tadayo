@@ -1,0 +1,23 @@
+breakage: clubs-the-count-includes-those-who-left
+patch: [
+ [
+  "packages/domain/src/clubs/club-list.ts",
+  "WHERE a.club_id = c.id AND a.state = 'active') AS member_count",
+  "WHERE a.club_id = c.id) AS member_count",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/dbtest.sh src/db/club-list.test.ts
+exit: 1
+expected words: lists only a club with an active interval of the caller's
+caught: True
+
+     × lists only a club with an active interval of the caller's: one they left is never listed, and the members' count drops 36ms
+     × says each state the contract has: proposed, active, paused, suspended (FQ16, spec 22) 32ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/club-list.test.ts > the caller's clubs and invitations (spec 04, 05) > lists only a club with an active interval of the caller's: one they left is never listed, and the members' count drops
+AssertionError: expected [ 3 ] to deeply equal [ 2 ]
+ FAIL  src/db/club-list.test.ts > the caller's clubs and invitations (spec 04, 05) > says each state the contract has: proposed, active, paused, suspended (FQ16, spec 22)
+AssertionError: expected [ 'active' ] to deeply equal [ 'paused' ]
+ Test Files  1 failed (1)
+      Tests  2 failed | 10 passed (12)

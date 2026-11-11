@@ -1,0 +1,20 @@
+breakage: clubs-open-day-listed
+patch: [
+ [
+  "services/api/src/clubs/list.ts",
+  "      member_count: club.memberCount,\n    })),",
+  "      member_count: club.memberCount,\n      open_day: null,\n    })),",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/identity/me.test.ts
+exit: 1
+expected words: lists a club and an invitation by the contract's names alone
+caught: True
+
+     × lists a club and an invitation by the contract's names alone, with no day until B2 12ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 20 passed (21)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/identity/me.test.ts > GET /v1/clubs: the answer's field list (T55) > lists a club and an invitation by the contract's names alone, with no day until B2
+AssertionError: expected { …(3) } to deeply equal { …(3) }

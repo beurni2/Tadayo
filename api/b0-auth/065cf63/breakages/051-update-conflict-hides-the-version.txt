@@ -1,0 +1,29 @@
+breakage: update-conflict-hides-the-version
+patch: [
+ [
+  "packages/domain/src/identity/update-me.ts",
+  "throw new Refused(\"VERSION_CONFLICT\", { current_version: version });",
+  "throw new Refused(\"VERSION_CONFLICT\");",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/dbtest.sh src/db/update-me.test.ts
+exit: 1
+expected words: is VERSION_CONFLICT with the current version
+caught: True
+
+     × is VERSION_CONFLICT with the current version when the caller read an older or a later one 18ms
+     × is judged before the fields: a stale version with a bad avatar is the conflict, not the avatar's 7ms
+     × lets two requests that read the same version race: one wins, the other is told the new version, and nothing waits for ever 17ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/update-me.test.ts > the version > is VERSION_CONFLICT with the current version when the caller read an older or a later one
+AssertionError: 0: expected { code: 'VERSION_CONFLICT', facts: {} } to deeply equal { code: 'VERSION_CONFLICT', …(1) }
+    251|           await refusal(request(tx, ben, { expected_version: stale, di…
+ FAIL  src/db/update-me.test.ts > the version > is judged before the fields: a stale version with a bad avatar is the conflict, not the avatar's
+AssertionError: expected { code: 'VERSION_CONFLICT', facts: {} } to deeply equal { code: 'VERSION_CONFLICT', …(1) }
+    265|       await request(tx, ben, { expected_version: 0, display_name: "Ben…
+    266|       expect(await refusal(request(tx, ben, { expected_version: 0, ava…
+ FAIL  src/db/update-me.test.ts > requests at once, committed (T19, T27) > lets two requests that read the same version race: one wins, the other is told the new version, and nothing waits for ever
+AssertionError: expected Refused: refused: VERSION_CONFLICT { …(2) } to match object { code: 'VERSION_CONFLICT', …(1) }
+ Test Files  1 failed (1)
+      Tests  3 failed | 20 passed (23)

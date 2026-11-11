@@ -1,0 +1,19 @@
+breakage: update-name-ascii-only
+patch: [
+ [
+  "packages/domain/src/identity/update-me.ts",
+  "!edit.display_name.isWellFormed()",
+  "/[^\\x00-\\x7f]/.test(edit.display_name)",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/dbtest.sh src/db/update-me.test.ts
+exit: 1
+expected words: refuses a name that isn't well formed before touching anything
+caught: True
+
+     × refuses a name that isn't well formed before touching anything: Postgres would keep a lone surrogate as U+FFFD, and the API refuses a name rather than changing it 24ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/update-me.test.ts > confirming the age and naming the person (FQ13, FQ69) > refuses a name that isn't well formed before touching anything: Postgres would keep a lone surrogate as U+FFFD, and the API refuses a name rather than changing it
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)

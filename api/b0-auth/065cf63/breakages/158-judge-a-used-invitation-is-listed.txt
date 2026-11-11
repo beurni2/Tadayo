@@ -1,0 +1,29 @@
+breakage: judge-a-used-invitation-is-listed
+patch: [
+ [
+  "tests/src/privacy/account.ts",
+  "found.boundTo === viewer.account && !found.joined && found.inviterName !== null,",
+  "found.boundTo === viewer.account && found.inviterName !== null,",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/privtest.sh src/privacy/account.test.ts
+exit: 1
+expected words: passes the clubs of the viewer's active intervals
+caught: True
+
+     × passes the clubs of the viewer's active intervals, counted by their active members, and the invitations they accepted 11ms
+     × refuses a missing club, another's, a club the viewer left and a count that isn't the active members' (T7, T14) 2ms
+     × refuses an invitation that is missing, another account's, used already or with no one to name, and a repeated one 2ms
+     × refuses an instant that isn't the server's, in whole seconds, and an answer that isn't the lists 1ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/account.test.ts > the viewer's clubs and invitations (clubsJudge) > passes the clubs of the viewer's active intervals, counted by their active members, and the invitations they accepted
+AssertionError: expected [ 'the invitations lacks inv_used' ] to deeply equal []
+ FAIL  src/privacy/account.test.ts > the viewer's clubs and invitations (clubsJudge) > refuses a missing club, another's, a club the viewer left and a count that isn't the active members' (T7, T14)
+AssertionError: expected [ 'the clubs lacks clb_one', …(1) ] to deeply equal [ 'the clubs lacks clb_one' ]
+ FAIL  src/privacy/account.test.ts > the viewer's clubs and invitations (clubsJudge) > refuses an invitation that is missing, another account's, used already or with no one to name, and a repeated one
+AssertionError: expected [ Array(1) ] to deeply equal [ 'the invitations lacks inv_mine' ]
+ FAIL  src/privacy/account.test.ts > the viewer's clubs and invitations (clubsJudge) > refuses an instant that isn't the server's, in whole seconds, and an answer that isn't the lists
+AssertionError: expected [ …(2) ] to deeply equal [ Array(1) ]
+ Test Files  1 failed (1)
+      Tests  4 failed | 14 passed (18)

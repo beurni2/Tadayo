@@ -1,0 +1,20 @@
+breakage: keys-cooldown-default-five-seconds
+patch: [
+ [
+  "services/api/src/identity/token.ts",
+  "    cooldownDuration: options.cooldown ?? 30_000,\n",
+  "    cooldownDuration: options.cooldown ?? 5_000,\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/identity/token.test.ts
+exit: 1
+expected words: finds a rotated key once the cooldown has passed
+caught: True
+
+     × finds a rotated key once the cooldown has passed, which is 30 seconds from the last fetch, with the old key still good 18ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 49 passed (50)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/identity/token.test.ts > the key set at Supabase's address > finds a rotated key once the cooldown has passed, which is 30 seconds from the last fetch, with the old key still good
+AssertionError: expected '6f1c0c9e-39a5-4c7d-b2a5-0f4a7b3b2f11' to be null

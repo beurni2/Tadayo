@@ -1,0 +1,22 @@
+breakage: update-locks-for-update
+patch: [
+ [
+  "packages/domain/src/identity/update-me.ts",
+  "FROM app.users WHERE id = ${userId} FOR NO KEY UPDATE`;",
+  "FROM app.users WHERE id = ${userId} FOR UPDATE`;",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/dbtest.sh src/db/update-me.test.ts
+exit: 1
+expected words: lets twenty requests of one account at once serialize on its row
+caught: True
+
+     × lets twenty requests of one account at once serialize on its row: one writes, nineteen are conflicts, none a deadlock 5006ms
+ FAIL  src/db/update-me.test.ts [ src/db/update-me.test.ts ]
+Error: Hook timed out in 10000ms.
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/update-me.test.ts > requests at once, committed (T19, T27) > lets twenty requests of one account at once serialize on its row: one writes, nineteen are conflicts, none a deadlock
+Error: Test timed out in 5000ms.
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)

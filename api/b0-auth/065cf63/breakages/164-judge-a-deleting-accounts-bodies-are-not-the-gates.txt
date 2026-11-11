@@ -1,0 +1,22 @@
+breakage: judge-a-deleting-accounts-bodies-are-not-the-gates
+patch: [
+ [
+  "tests/src/privacy/account.ts",
+  "    request: (v) => ({ ...one.request(v), expected: UNAUTHENTICATED }),\n    mutates: false,",
+  "    request: (v) => ({ ...one.request(v), expected: NEUTRAL }),\n    mutates: false,",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/privtest.sh src/privacy/account.test.ts
+exit: 1
+expected words: sends the same bodies to each session
+caught: True
+
+     × sends the same bodies to each session, but the finish, and every body of the deleting one is the gate's 401 (T27) 12ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/account.test.ts > the table of updateMe bodies each session sends (updateMeCases) > sends the same bodies to each session, but the finish, and every body of the deleting one is the gate's 401 (T27)
+AssertionError: a name the contract refuses: expected { status: 404, …(3) } to be { status: 401, …(3) } // Object.is equality
+    260|       const { expected } = one.request(4);
+    261|       expect(expected, one.name).toBe(UNAUTHENTICATED);
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)

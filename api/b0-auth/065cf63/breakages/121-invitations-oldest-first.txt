@@ -1,0 +1,20 @@
+breakage: invitations-oldest-first
+patch: [
+ [
+  "packages/domain/src/clubs/club-list.ts",
+  "ORDER BY v.created_at DESC, v.id)",
+  "ORDER BY v.created_at, v.id)",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/dbtest.sh src/db/club-list.test.ts
+exit: 1
+expected words: lists the newest invitation first, and at most the contract's fifty
+caught: True
+
+     × lists the newest invitation first, and at most the contract's fifty 66ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/club-list.test.ts > the caller's clubs and invitations (spec 04, 05) > lists the newest invitation first, and at most the contract's fifty
+AssertionError: expected [ 'inv_QUq193FOlrHjrySpHUNyKQ', …(49) ] to deeply equal [ 'inv_9TvGM9ZW-gV50A49AwRxoQ', …(49) ]
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)

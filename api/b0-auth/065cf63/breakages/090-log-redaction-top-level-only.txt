@@ -1,0 +1,20 @@
+breakage: log-redaction-top-level-only
+patch: [
+ [
+  "services/api/src/logging.ts",
+  "REDACTED_FIELDS.flatMap((field) => [field, `*.${field}`]);",
+  "REDACTED_FIELDS.flatMap((field) => [field]);",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/logging.test.ts
+exit: 1
+expected words: blanks every listed field, at the top and one level down
+caught: True
+
+     × blanks every listed field, at the top and one level down 96ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/logging.test.ts > the redaction list (T52) > blanks every listed field, at the top and one level down
+AssertionError: expected '{"level":30,"time":1794394275501,"aut…' not to contain 'MARKER-must-never-appear'

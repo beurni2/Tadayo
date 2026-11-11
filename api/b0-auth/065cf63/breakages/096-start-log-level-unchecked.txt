@@ -1,0 +1,20 @@
+breakage: start-log-level-unchecked
+patch: [
+ [
+  "services/api/src/start.ts",
+  "  if (!LOG_LEVELS.includes(value)) throw new Error(\"api: LOG_LEVEL isn't a log level\");\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/start.test.ts
+exit: 1
+expected words: stops before it connects when LOG_LEVEL is set but isn't one of pino's levels
+caught: True
+
+     × stops before it connects when LOG_LEVEL is set but isn't one of pino's levels, so a typo never silences the logs 376ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/start.test.ts > the API's entry (ADR-013) > stops before it connects when LOG_LEVEL is set but isn't one of pino's levels, so a typo never silences the logs
+AssertionError: "": expected 'connect ECONNREFUSED 127.0.0.1:1\n' to match /LOG_LEVEL isn't a log level/

@@ -1,0 +1,34 @@
+breakage: keys-never-kept
+patch: [
+ [
+  "services/api/src/identity/token.ts",
+  "    cacheMaxAge: options.cacheMaxAge ?? 10 * 60_000,\n",
+  "    cacheMaxAge: options.cacheMaxAge ?? 0,\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/identity/token.test.ts
+exit: 1
+expected words: is fetched once and kept
+caught: True
+
+     × is fetched once and kept: many tokens, one fetch, even all at once 43ms
+     × isn't fetched again for a token whose key id it lacks, inside the cooldown: no stream of such tokens makes one 44ms
+     × finds a rotated key once the cooldown has passed, which is 30 seconds from the last fetch, with the old key still good 9ms
+     × trusts a fetched key set for ten minutes, asks again after that, and keeps no older copy for when it can't (T53) 6ms
+     × is let alone for a few seconds after a failure, so a down key set isn't asked once for each token 209ms
+     × serves a token it holds keys for, whatever its own pause: a fresh key set is used without a fetch 22ms
+ Test Files  1 failed (1)
+      Tests  6 failed | 44 passed (50)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/identity/token.test.ts > the key set at Supabase's address > is fetched once and kept: many tokens, one fetch, even all at once
+AssertionError: expected 2 to be 1 // Object.is equality
+ FAIL  src/identity/token.test.ts > the key set at Supabase's address > isn't fetched again for a token whose key id it lacks, inside the cooldown: no stream of such tokens makes one
+AssertionError: expected 26 to be 1 // Object.is equality
+ FAIL  src/identity/token.test.ts > the key set at Supabase's address > finds a rotated key once the cooldown has passed, which is 30 seconds from the last fetch, with the old key still good
+AssertionError: expected '6f1c0c9e-39a5-4c7d-b2a5-0f4a7b3b2f11' to be null
+ FAIL  src/identity/token.test.ts > the key set at Supabase's address > trusts a fetched key set for ten minutes, asks again after that, and keeps no older copy for when it can't (T53)
+AssertionError: expected 2 to be 1 // Object.is equality
+ FAIL  src/identity/token.test.ts > the key set at Supabase's address > is let alone for a few seconds after a failure, so a down key set isn't asked once for each token
+AssertionError: expected 3 to be 2 // Object.is equality
+ FAIL  src/identity/token.test.ts > the key set at Supabase's address > serves a token it holds keys for, whatever its own pause: a fresh key set is used without a fetch

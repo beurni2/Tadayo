@@ -1,0 +1,21 @@
+breakage: project-plain-http
+patch: [
+ [
+  "services/api/src/identity/token.ts",
+  "    url.protocol !== \"https:\" ||\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/identity/token.test.ts
+exit: 1
+expected words: refuses what isn't one, without repeating it
+caught: True
+
+     × refuses what isn't one, without repeating it 6ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 49 passed (50)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/identity/token.test.ts > a project's URL (SUPABASE_URL) > refuses what isn't one, without repeating it
+AssertionError: http://rhsycmycocbzakrydahi.supabase.co: expected '' to match /^api: SUPABASE_URL isn't a/
+    557|         message = error instanceof Error ? error.message : "";

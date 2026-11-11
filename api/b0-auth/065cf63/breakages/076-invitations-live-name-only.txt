@@ -1,0 +1,20 @@
+breakage: invitations-live-name-only
+patch: [
+ [
+  "packages/domain/src/clubs/club-list.ts",
+  "CASE WHEN pm.state = 'active' THEN pu.display_name ELSE pm.ended_display_name END AS inviter_name,",
+  "pu.display_name AS inviter_name,",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/dbtest.sh src/db/club-list.test.ts
+exit: 1
+expected words: names the inviter by FQ75's rule
+caught: True
+
+     × names the inviter by FQ75's rule: the live name while their interval is active, the name it ended with after, none for a deleted account 34ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/club-list.test.ts > the caller's clubs and invitations (spec 04, 05) > names the inviter by FQ75's rule: the live name while their interval is active, the name it ended with after, none for a deleted account
+AssertionError: expected [ 'Annabel' ] to deeply equal [ 'Anna' ]
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)

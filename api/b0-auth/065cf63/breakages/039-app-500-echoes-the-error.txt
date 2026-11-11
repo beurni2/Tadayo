@@ -1,0 +1,30 @@
+breakage: app-500-echoes-the-error
+patch: [
+ [
+  "services/api/src/app.ts",
+  "  return reply.code(500).header(\"cache-control\", NO_STORE).send();\n",
+  "  return reply.code(500).header(\"cache-control\", NO_STORE).send(error.message);\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run 
+exit: 1
+expected words: an error that isn't a refusal
+caught: True
+
+     × takes the largest name the contract keeps, every code unit written as an escape: the limit shuts nothing valid out 28ms
+     × answers a refusal whose code isn't the contract's with a bare 500: it is a bug, and says nothing 8ms
+     × answers an error that isn't a refusal, such as the database failing, with a bare 500 and nothing of the error 10ms
+     × answers 500 with an empty body, and never echoes the error 20ms
+ Test Files  2 failed | 4 passed (6)
+      Tests  4 failed | 130 passed (134)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/session.test.ts > anything else that goes wrong while telling who is calling is a bug (500, nothing in it) > answers 500 with an empty body, and never echoes the error
+AssertionError: expected { status: 500, …(2) } to deeply equal { status: 500, body: '', …(1) }
+ FAIL  src/identity/me.test.ts > PATCH /v1/me: how much body it will read > takes the largest name the contract keeps, every code unit written as an escape: the limit shuts nothing valid out
+AssertionError: expected { status: 500, …(2) } to match object { status: 500, body: '' }
+ FAIL  src/identity/me.test.ts > PATCH /v1/me: a refused command is the contract's answer > answers a refusal whose code isn't the contract's with a bare 500: it is a bug, and says nothing
+AssertionError: expected { status: 500, …(2) } to match object { status: 500, body: '' }
+ FAIL  src/identity/me.test.ts > PATCH /v1/me: a refused command is the contract's answer > answers an error that isn't a refusal, such as the database failing, with a bare 500 and nothing of the error
+AssertionError: expected { status: 500, …(2) } to match object { status: 500, body: '' }
+    304|     const got = await refused(new Error("duplicate key value (auth_sub…

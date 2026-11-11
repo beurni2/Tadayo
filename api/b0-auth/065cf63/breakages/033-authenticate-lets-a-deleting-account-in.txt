@@ -1,0 +1,26 @@
+breakage: authenticate-lets-a-deleting-account-in
+patch: [
+ [
+  "services/api/src/session.ts",
+  "    return account !== null && account.state === \"active\" ? account : null;\n",
+  "    return account;\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/session.test.ts src/identity/me.test.ts ; WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/dbtest.sh src/db/identity.test.ts src/db/sign-in.test.ts
+exit: 1
+expected words: is no session for an account whose deletion has begun
+caught: True
+
+     × is no session for an account whose deletion has begun, and makes no new one (T27) 8ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 54 passed (55)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/session.test.ts > the real authenticate (sessions): a verified subject, its account, active only > is no session for an account whose deletion has begun, and makes no new one (T27)
+AssertionError: expected { id: 'acct_a', …(5) } to be null
+     × is that same 401 for an account whose deletion has begun, at once, on the token it was signed in with (T27) 16ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/sign-in.test.ts > a token that is no session (T14, T53) > is that same 401 for an account whose deletion has begun, at once, on the token it was signed in with (T27)
+AssertionError: expected '{"status":200,"headers":{"cache-contr…' to be '{"status":401,"headers":{"cache-contr…' // Object.is equality
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 21 passed (22)

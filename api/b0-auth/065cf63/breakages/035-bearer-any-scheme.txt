@@ -1,0 +1,25 @@
+breakage: bearer-any-scheme
+patch: [
+ [
+  "services/api/src/session.ts",
+  "const BEARER = /^bearer ([^ ]+)$/i;",
+  "const BEARER = /^\\w+ ([^ ]+)$/i;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/session.test.ts src/identity/me.test.ts
+exit: 1
+expected words: the bearer header
+caught: True
+
+     × reads "Basic a.b.c" as no token 6ms
+     × reads "Token a.b.c" as no token 1ms
+     × asks nothing of the verifier or the database for a header that isn't a bearer token 1ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  3 failed | 52 passed (55)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/session.test.ts > the bearer header > reads "Basic a.b.c" as no token
+ FAIL  src/session.test.ts > the bearer header > reads "Token a.b.c" as no token
+AssertionError: expected 'a.b.c' to be null
+ FAIL  src/session.test.ts > the real authenticate (sessions): a verified subject, its account, active only > asks nothing of the verifier or the database for a header that isn't a bearer token
+Error: asked

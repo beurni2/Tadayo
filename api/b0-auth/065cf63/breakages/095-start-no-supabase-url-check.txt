@@ -1,0 +1,20 @@
+breakage: start-no-supabase-url-check
+patch: [
+ [
+  "services/api/src/start.ts",
+  "  if (supabase === undefined || supabase === \"\") throw new Error(\"api: SUPABASE_URL isn't set\");\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/start.test.ts
+exit: 1
+expected words: stops before it connects when SUPABASE_URL is missing or empty
+caught: True
+
+     × stops before it connects when SUPABASE_URL is missing or empty, so it never runs believing no token 401ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/start.test.ts > the API's entry (ADR-013) > stops before it connects when SUPABASE_URL is missing or empty, so it never runs believing no token
+AssertionError: undefined: expected 'api: SUPABASE_URL isn\'t a URL\n' to match /SUPABASE_URL isn't set/
