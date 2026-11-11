@@ -11,13 +11,8 @@ import XCTest
 /// so only a field that stays on screen shows the change reaching it.
 @MainActor
 final class ModelTextTests: XCTestCase {
-    @Observable
-    private final class Held {
-        var text = "529614"
-    }
-
     func testAChangeTheModelMakesReachesTheFieldOnScreen() {
-        let held = Held()
+        let held = HeldText()
         let window = show(
             ModelText(held: { held.text }, offer: { held.text = $0 }) { text in
                 TextField(String(), text: text)
@@ -61,4 +56,13 @@ final class ModelTextTests: XCTestCase {
         }
         return nil
     }
+}
+
+/// The model under the field: a text the test changes as `SignInModel` changes its code. At file
+/// scope, since `@Observable` extends the class outside its declaration, where a type private to
+/// the test class can't be seen (`ios` run 43114302747: "'Held' is inaccessible due to 'private'
+/// protection level").
+@Observable
+private final class HeldText {
+    var text = "529614"
 }
