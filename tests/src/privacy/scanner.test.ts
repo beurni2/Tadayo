@@ -16,8 +16,11 @@ import {
   type Check,
   type MediaClass,
   type ScanContext,
+  type Viewer,
+  type WorldAccount,
   type WorldDrop,
   type WorldFacts,
+  type WorldInvitation,
   type WorldReservation,
 } from "./scanner.ts";
 
@@ -35,14 +38,16 @@ const COLLECTING = REVEAL.subtract({ microseconds: 1 });
 const OPEN = REVEAL.add({ hours: 2 });
 
 // Ana's club: Ana, Ben and Cleo; Fay, who left it after the drops were committed; Eve, who joined
-// after them; and Gus, who joined after Fay left. Stan is in another club, with a day and a drop of
-// Stan's own.
+// after them; and Gus and Hal, who joined after Fay left. Stan is in another club, with a day and a drop
+// of Stan's own. Each has an account (`acct_ana`, and so on), and so have Dan, who is in no club and
+// hasn't finished their profile, and Mo, who accepted an invitation to Ana's club and waits on the roster.
 const ana = "itv_ana";
 const ben = "itv_ben";
 const cleo = "itv_cleo";
 const eve = "itv_eve";
 const fay = "itv_fay";
 const gus = "itv_gus";
+const hal = "itv_hal";
 const stan = "itv_stan";
 
 const instant = (text: string) => Temporal.Instant.from(text);
@@ -72,6 +77,13 @@ function reservation(
 
 function day(club: string, star: string, reveal: string, close: string, collecting: string) {
   return { club, star, revealAt: instant(reveal), closeAt: instant(close), collectingFrom: instant(collecting) };
+}
+
+/** The account of the person named `who`: `acct_cleo` for Cleo's interval `itv_cleo`. */
+const acct = (who: string) => `acct_${who.replace(/^itv_/, "")}`;
+
+function accountOf(name: string | null, version: number, over: Partial<WorldAccount> = {}): WorldAccount {
+  return { name, avatar: null, ageConfirmed: true, version, ...over };
 }
 
 const world: WorldFacts = {
@@ -119,6 +131,7 @@ const world: WorldFacts = {
     [eve, member("clb_sat", "Eve", "2026-11-06T20:10:00Z")],
     [fay, member("clb_sat", "Fay", "2026-10-01T12:00:00Z", "2026-11-06T21:00:00Z")],
     [gus, member("clb_sat", "Gus", "2026-11-06T22:00:00Z")],
+    [hal, member("clb_sat", "Hal", "2026-11-06T23:00:00Z")],
     [stan, member("clb_far", "Stan", "2026-10-01T10:00:00Z")],
   ]),
   clubs: new Map([
@@ -151,14 +164,44 @@ const world: WorldFacts = {
     ["uploads/raw_q1w2e3", []],
     ["v_pending", []],
   ]),
+  // Each person's account, Dan's with no name yet and Mo's; Cleo's has an avatar.
+  accounts: new Map([
+    [acct(ana), accountOf("Ana", 1)],
+    [acct(ben), accountOf("Ben", 3)],
+    [acct(cleo), accountOf("Cleo", 4, { avatar: "v_avatar_cleo" })],
+    [acct(eve), accountOf("Eve", 1)],
+    [acct(fay), accountOf("Fay", 2)],
+    [acct(gus), accountOf("Gus", 1)],
+    [acct(hal), accountOf("Hal", 1)],
+    [acct(stan), accountOf("Stan", 1)],
+    ["acct_dan", accountOf(null, 0, { ageConfirmed: false })],
+    ["acct_mo", accountOf("Mo", 1)],
+  ]),
+  // Mo's, from Ana, which waits on the roster; one Fay accepted, from Hal, who joined after Fay left; and Eve's.
+  invitations: new Map<string, WorldInvitation>([
+    ["inv_mo", { boundTo: "acct_mo", club: "clb_sat", joined: false, clubName: "Saturday People", inviterName: "Ana" }],
+    [
+      "inv_fay",
+      { boundTo: acct(fay), club: "clb_sat", joined: false, clubName: "Saturday People", inviterName: "Hal" },
+    ],
+    // Eve's, which Eve used to join: a membership now.
+    ["inv_eve", { boundTo: acct(eve), club: "clb_sat", joined: true, clubName: "Saturday People", inviterName: "Ana" }],
+  ]),
 };
+
+/** A caller with a session whose account is `account` and who holds no interval. */
+const alone = (account: string, texts: string[] = []): Viewer => ({
+  account,
+  intervals: new Set(),
+  texts: new Set(texts),
+});
 
 function context(id: string, viewer: string, overrides: Partial<ScanContext> = {}): ScanContext {
   return {
     document,
     operation: operation(id),
     skeleton: false,
-    viewer: { intervals: new Set([viewer]), texts: new Set() },
+    viewer: { account: acct(viewer), intervals: new Set([viewer]), texts: new Set() },
     world,
     now: COLLECTING,
     ...overrides,
@@ -890,27 +933,22 @@ describe("the leak scanner catches each planted leak with its own check", () => 
       at(scan(answer(comments(faysAvatar, "Lovely light")), context("listComments", cleo, { now: OPEN })), "world"),
     ).toEqual(["$.items[0].author.avatar_version"]);
     // Gus, who joined after Fay left, is no one Fay may know: Gus's id outside a person, and Gus's
-    // name in text people wrote outside one, though it is also the roster label of the revision that
-    // brought Gus in, made after Fay left. Mo's label, from a revision made while Fay was there, Fay
-    // may read. In any other string, a name shorter than SHORTEST_TEXT passes (Reader.hidden).
+    // name in text people wrote outside one (an invitation that isn't Fay's: the one Fay accepted names
+    // its inviter to Fay, below), though it is also the roster label of the revision that brought Gus
+    // in, made after Fay left. Mo's label, from a revision made while Fay was there, Fay may read. In
+    // any other string, a name shorter than SHORTEST_TEXT passes (Reader.hidden).
     const page = scan(answer({ items: [], next_cursor: gus }), context("listMyDrops", fay));
     expect(at(page, "values")).toEqual(["$.next_cursor"]);
     const invitation = {
-      invitation_id: "inv_fay",
+      invitation_id: "inv_mo",
       club_name: "Saturday People",
       inviter_name: "Gus",
       state: "waiting",
     };
     const invited = { server_now: "2026-11-07T06:59:59Z", clubs: [], invitations: [invitation] };
-    expect(scan(answer(invited), context("listClubs", fay))).toEqual([
-      {
-        check: "values",
-        at: "$.invitations[0].inviter_name",
-        what: "text people wrote that isn't the viewer's to read",
-      },
-    ]);
+    expect(at(scan(answer(invited), context("listClubs", fay)), "values")).toEqual(["$.invitations[0].inviter_name"]);
     const fromMo = { ...invited, invitations: [{ ...invitation, inviter_name: "Mo" }] };
-    expect(scan(answer(fromMo), context("listClubs", fay))).toEqual([]);
+    expect(at(scan(answer(fromMo), context("listClubs", fay)), "values")).toEqual([]);
   });
 
   it("catches counts the viewer may not see: an allowance past their own drops and reservations, and a wrong place in the day (T15)", () => {
@@ -1005,6 +1043,9 @@ describe("the leak scanner catches each planted leak with its own check", () => 
     const time = Buffer.alloc(8);
     time.writeBigUInt64BE(1_794_000_000_000_000n);
     expect(key(Buffer.concat([version, time, Buffer.from("drp_ben")]))).toEqual(["holds an id"]);
+    // An account's id and an invitation's, as any other id of the world is (slice 8).
+    expect(key(Buffer.concat([version, time, Buffer.from(acct(ben))]))).toEqual(["holds an id"]);
+    expect(key(Buffer.concat([version, time, Buffer.from("inv_mo")]))).toEqual(["holds an id"]);
     expect(key(Buffer.concat([version, Buffer.from("1794000000000"), noise]))).toEqual([
       "holds a long number, such as a time or a count",
     ]);
@@ -1072,6 +1113,8 @@ describe("the leak scanner catches each planted leak with its own check", () => 
       ["at_2020-10-19_xx", own.date],
       ["20201019T1929xxx", own.date],
       ["after_drp_ben_xx", own.id],
+      ["after_acct_ben_x", own.id],
+      ["after_inv_mo_xxx", own.id],
     ] as const)
       expect(reasons(cursor), cursor).toEqual([reason]);
     // Each digit of a date is tried as every value it may take, so that no class of OWN_DATE can be
@@ -1364,5 +1407,141 @@ describe("the leak scanner catches each planted leak with its own check", () => 
     const found = scan(sent, context("getOccurrence", cleo));
     expect(checks(found)).toEqual(["keys", "shape", "values"]);
     expect(found.find((finding) => finding.check === "shape")?.at).toBe("$.media_url");
+  });
+});
+
+describe("the leak scanner holds the account routes to the world's accounts and invitations (spec 23; T7, T14, T33, T55)", () => {
+  /** `who`'s `Me`, as the row the world holds for their account says it. */
+  const meOf = (who: string, over: Record<string, unknown> = {}) => {
+    const row = world.accounts.get(acct(who));
+    if (row === undefined) throw new Error(`the test world has no account for ${who}`);
+    return {
+      id: acct(who),
+      ...(row.name === null ? {} : { display_name: row.name }),
+      ...(row.avatar === null ? {} : { avatar_version: row.avatar }),
+      age_confirmed: row.ageConfirmed,
+      version: row.version,
+      ...over,
+    };
+  };
+  const waiting = { invitation_id: "inv_mo", club_name: "Saturday People", inviter_name: "Ana", state: "waiting" };
+  const faysOwn = { invitation_id: "inv_fay", club_name: "Saturday People", inviter_name: "Hal", state: "waiting" };
+  const listing = (invitations: unknown[], clubs: unknown[] = []) => ({
+    server_now: "2026-11-07T06:59:59Z",
+    clubs,
+    invitations,
+  });
+  /** The context of a caller who holds an account and no interval, or any other viewer. */
+  const as = (id: string, viewer: Viewer): ScanContext => ({ ...context(id, cleo), viewer });
+  const nobody: Viewer = { account: null, intervals: new Set(), texts: new Set() };
+
+  it("passes each caller's own account, with a name and an avatar or with neither, and the invitations they accepted", () => {
+    expect(scan(answer(meOf("cleo")), context("getMe", cleo))).toEqual([]);
+    expect(scan(answer(meOf("ana", { version: 1 })), context("updateMe", ana))).toEqual([]);
+    expect(scan(answer(meOf("dan")), as("getMe", alone("acct_dan")))).toEqual([]);
+    // Mo, in no club, is told the club's name and the inviter's, as the invitation they accepted holds them.
+    expect(scan(answer(listing([waiting])), as("listClubs", alone("acct_mo")))).toEqual([]);
+    // Fay left the club, and the invitation Fay accepted still names its inviter, whom Fay may not know.
+    expect(scan(answer(listing([faysOwn])), context("listClubs", fay))).toEqual([]);
+  });
+
+  it("catches a Me whose id isn't the viewer's, and none of the viewer's own fields wrong (spec 23: the only place an account id appears)", () => {
+    const ben2cleo = scan(answer(meOf("cleo", { id: acct(ben) })), context("getMe", cleo));
+    expect(at(ben2cleo, "world")).toEqual(["$.id"]);
+    // The id's position is judged by the world check alone, not read as an unseen id a second time.
+    expect(at(ben2cleo, "values")).toEqual([]);
+    expect(at(scan(answer(meOf("ben")), context("getMe", cleo)), "world")).toEqual([
+      "$.id",
+      "$.display_name",
+      "$.avatar_version",
+      "$.version",
+    ]);
+    const cleos = (over: Record<string, unknown>) =>
+      at(scan(answer(meOf("cleo", over)), context("getMe", cleo)), "world");
+    expect(cleos({ display_name: "Ben" })).toEqual(["$.display_name"]);
+    expect(cleos({ avatar_version: "v_avatar_ben" })).toEqual(["$.avatar_version"]);
+    expect(cleos({ age_confirmed: false })).toEqual(["$.age_confirmed"]);
+    expect(cleos({ version: 5 })).toEqual(["$.version"]);
+    // A name or an avatar the row doesn't have, and one it has that the answer leaves out.
+    expect(
+      at(scan(answer(meOf("dan", { display_name: "Dan" })), as("getMe", alone("acct_dan", ["Dan"]))), "world"),
+    ).toEqual(["$.display_name"]);
+    expect(at(scan(answer(meOf("dan", { avatar_version: "v_x" })), as("getMe", alone("acct_dan"))), "world")).toEqual([
+      "$.avatar_version",
+    ]);
+    const unnamed = { id: acct(cleo), age_confirmed: true, version: 4 };
+    expect(at(scan(answer(unnamed), context("getMe", cleo)), "world")).toEqual(["$.display_name", "$.avatar_version"]);
+  });
+
+  it("catches a Me for an account the world doesn't have, and one shown to a caller with no session", () => {
+    const stranger = { id: "acct_nobody", age_confirmed: true, version: 1 };
+    expect(at(scan(answer(stranger), as("getMe", alone("acct_nobody"))), "world")).toEqual(["$"]);
+    expect(at(scan(answer(meOf("cleo")), as("getMe", nobody)), "world")).toEqual(["$"]);
+  });
+
+  it("catches a field of an account the contract doesn't name: an email address, a phone number, the sign-in subject (T55)", () => {
+    for (const [key, value] of [
+      ["email", "ana@example.invalid"],
+      ["phone", "+10000000000"],
+      ["subject", "5f1c9a1e-3b0a-4a54-9d0e-0a3a7d5f2c11"],
+      ["state", "active"],
+    ] as const)
+      expect(at(scan(answer(meOf("cleo", { [key]: value })), context("getMe", cleo)), "shape"), key).toEqual([
+        `$.${key}`,
+      ]);
+  });
+
+  it("catches an account id anywhere but the viewer's own Me.id: someone else's, the viewer's own, in a cursor and in a header (T14)", () => {
+    const page = (cursor: string) => scan(answer({ items: [], next_cursor: cursor }), context("listMyDrops", cleo));
+    expect(at(page(acct(ben)), "values")).toEqual(["$.next_cursor"]);
+    expect(at(page(acct(cleo)), "values")).toEqual(["$.next_cursor"]);
+    expect(at(page("acct_dan"), "values")).toEqual(["$.next_cursor"]);
+    const header = scan(answer(meOf("cleo"), 200, { "x-account": acct(cleo) }), context("getMe", cleo));
+    expect(at(header, "values")).toEqual(["header x-account"]);
+    // Hidden in a cursor's bytes, as an id of the world's other kinds is.
+    const hidden = Buffer.concat([Buffer.from([0xff, 0x00, 0x9c]), Buffer.from(acct(ben))]).toString("base64url");
+    expect(at(page(hidden), "values")).toEqual(["$.next_cursor (decoded)"]);
+  });
+
+  it("catches an invitation that isn't the viewer's, and each name it carries that the viewer may not read (T7, T33)", () => {
+    // Mo's, shown to a member of the club: not Mo's to give, though the club's names are Cleo's to read.
+    const toCleo = scan(answer(listing([waiting])), context("listClubs", cleo));
+    expect(at(toCleo, "world")).toEqual(["$.invitations[0]"]);
+    expect(at(toCleo, "values")).toEqual([]);
+    // To someone in no club with it, the club's name and the inviter's name are text they may not read too.
+    const toStan = scan(answer(listing([waiting])), context("listClubs", stan));
+    expect(at(toStan, "world")).toEqual(["$.invitations[0]"]);
+    expect(at(toStan, "values")).toEqual(["$.invitations[0].club_name", "$.invitations[0].inviter_name"]);
+    expect(at(scan(answer(listing([waiting])), as("listClubs", nobody)), "world")).toEqual(["$.invitations[0]"]);
+    // Fay's own, shown to Mo, who never accepted it.
+    expect(at(scan(answer(listing([faysOwn])), as("listClubs", alone("acct_mo"))), "world")).toEqual([
+      "$.invitations[0]",
+    ]);
+    // Eve's own, which brought Eve into the club: a membership now, so not an invitation any more.
+    const used = { ...waiting, invitation_id: "inv_eve" };
+    expect(at(scan(answer(listing([used])), context("listClubs", eve)), "world")).toEqual(["$.invitations[0]"]);
+    // An invitation the world doesn't have.
+    const made = { ...waiting, invitation_id: "inv_made_up" };
+    expect(at(scan(answer(listing([made])), as("listClubs", alone("acct_mo"))), "world")).toEqual(["$.invitations[0]"]);
+    // Mo's own, with another club's name and another person as its inviter.
+    const mo = alone("acct_mo");
+    const wrong = scan(
+      answer(listing([{ ...waiting, club_name: "Far Club", inviter_name: "Ben" }])),
+      as("listClubs", mo),
+    );
+    expect(at(wrong, "world")).toEqual(["$.invitations[0].club_name", "$.invitations[0].inviter_name"]);
+    expect(at(wrong, "values")).toEqual(["$.invitations[0].club_name", "$.invitations[0].inviter_name"]);
+  });
+
+  it("catches an invitation's id anywhere but where the invitation is judged, to its own account too (T14)", () => {
+    const page = (viewer: Viewer, cursor: string) =>
+      scan(answer({ items: [], next_cursor: cursor }), as("listMyDrops", viewer));
+    expect(at(page(alone("acct_mo"), "inv_mo"), "values")).toEqual(["$.next_cursor"]);
+    expect(at(page(alone("acct_mo"), "inv_fay"), "values")).toEqual(["$.next_cursor"]);
+    expect(at(scan(answer({ items: [], next_cursor: "inv_mo" }), context("listMyDrops", cleo)), "values")).toEqual([
+      "$.next_cursor",
+    ]);
+    // A club's id is no one's but its members', so an invitation's club is as hidden from Mo as any other.
+    expect(at(page(alone("acct_mo"), "clb_sat"), "values")).toEqual(["$.next_cursor"]);
   });
 });

@@ -6,7 +6,18 @@
 
 import { randomBytes } from "node:crypto";
 import type { Tx, WorldTx } from "./db/harness.ts";
-import { AT, joinByRoster, leave, named, newId, newUser, newWorld, type Member, type World } from "./db/world.ts";
+import {
+  AT,
+  joinByRoster,
+  leave,
+  named,
+  newId,
+  newUnfinishedUser,
+  newUser,
+  newWorld,
+  type Member,
+  type World,
+} from "./db/world.ts";
 
 /** world.ts's helpers take the plain transaction; this one only adds INSTANT_TYPE. */
 const plain = (tx: WorldTx) => tx as unknown as Tx;
@@ -125,10 +136,19 @@ export async function invite(tx: WorldTx, w: World, at: Date): Promise<string> {
   return mo;
 }
 
+/**
+ * What the sign-in gate makes of the role's account (spec 23; T27; FQ13, FQ69): `active` has a session
+ * and a finished profile, `unfinished` has a session but no age confirmation or no name, and `deleting`
+ * has none, since its deletion has begun.
+ */
+export type Session = "active" | "unfinished" | "deleting";
+
 export interface Role {
   name: string;
   /** Whether the role reads Ben's active drop: the caption while collecting, everything from the reveal. */
   reads: boolean;
+  /** What the gate makes of the role's account; `active` when absent. The privacy matrix checks it against the rows. */
+  session?: Session;
   /** Makes the role's rows after Ben's drop is committed, and returns the viewer's account. */
   make(tx: WorldTx, w: World): Promise<string>;
   /** The phases whose server time can follow the role's rows; every phase when absent. */
@@ -196,10 +216,18 @@ export const ROLES: Role[] = [
   {
     name: "deletion pending, the membership not yet ended (T27)",
     reads: false,
+    session: "deleting",
     make: async (tx, w) => {
       await tx`UPDATE app.users SET state = 'deleting', deletion_requested_at = ${AFTER} WHERE id = ${w.cleo.user}`;
       return w.cleo.user;
     },
+  },
+  {
+    // The account a first sign-in makes: no age confirmation, no name, in no club (FQ13, FQ69).
+    name: "signed in, profile not finished (FQ13, FQ69)",
+    reads: false,
+    session: "unfinished",
+    make: (tx) => newUnfinishedUser(plain(tx)),
   },
 ];
 

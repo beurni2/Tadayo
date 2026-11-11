@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./testing": "./src/testing.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
@@ -14,6 +15,7 @@
     "@tadayo/contracts": "workspace:*",
     "@tadayo/domain": "workspace:*",
     "fastify": "5.12.7",
+    "jose": "6.2.13",
     "postgres": "3.4.9"
   }
 }
