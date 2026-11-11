@@ -752,7 +752,7 @@ describe("the leak scanner catches each planted leak with its own check", () => 
     // each mark in capitals; a scheme of one letter, or with a digit; and `www.`, `data:` or a storage
     // path after a byte that isn't a letter or digit, not at the start (NEVER_VALUE, which values and
     // headers use). Right after a letter or digit, those three pass, as do a host's dot as another
-    // byte and a scheme that starts with a digit.
+    // byte and a scheme with no letter in it (`3://x`).
     for (const id of [
       "uploads/k9",
       "renditions/k9",
@@ -1008,22 +1008,67 @@ describe("the leak scanner catches each planted leak with its own check", () => 
       "holds a long number, such as a time or a count",
     ]);
     expect(key(Buffer.concat([noise, Buffer.from("Cleo"), version]))).toEqual(["holds text people wrote"]);
+    // A date among other bytes, with a dash or an underscore between its parts or as 20261106T2000
+    // with a T of either case; a date with no separator and no T after it, or with its day or month
+    // first, passes, as the header says.
+    for (const date of ["2026-11-06", "2026_11_06", "20261106T2000", "20261106t2000"])
+      expect(key(Buffer.concat([version, Buffer.from(date), noise])), date).toEqual(["holds a date"]);
+    for (const date of ["20261106", "06-11-2026", "11-06-2026"])
+      expect(key(Buffer.concat([version, Buffer.from(date), noise])), date).toEqual([]);
     // A key written in base64url's own letters decodes to bytes that look random, so its own text is
-    // read: a date, a run of 16 digits, an id. A count passes, as do a run of 15 digits, and dates out
-    // of this century, with a month or day out of range, or without their dashes and with no T and
-    // four digits after.
+    // read: a date (`2026-11-06` or `2026_11_06`, or `20261106T2000` with a T or a t), a run of 16
+    // digits, an id. A count passes, as does a run of 15 digits; so do a date of another century, a
+    // month whose first digit isn't 0 or 1, a day whose first digit is past 3, a date with no
+    // separator and no T after it (`20201019`), and one with its day or month first (`06-11-2026`).
+    const own = {
+      number: "holds a long number, such as a time, in its own text",
+      date: "holds a date in its own text",
+      id: "holds an id in its own text",
+    };
     for (const [cursor, reason] of [
-      ["1793995200000000", "holds a long number, such as a time, in its own text"],
-      ["2026-11-06T20-00-00Z", "holds a date in its own text"],
-      ["at_2026-09-30_xx", "holds a date in its own text"],
-      ["20261106T2000000", "holds a date in its own text"],
-      ["20260930T2000xxx", "holds a date in its own text"],
-      ["after_drp_ben_xx", "holds an id in its own text"],
+      ["1793995200000000", own.number],
+      ["after_1793995200000000xx", own.number],
+      ["2026-11-06T20-00-00Z", own.date],
+      ["at_2026-09-30_xx", own.date],
+      ["occ_2026_11_06_x", own.date],
+      ["2026_11_06T20_00", own.date],
+      ["20261106T2000000", own.date],
+      ["20261106t2000000", own.date],
+      ["20260930T2000xxx", own.date],
+      ["at_2020-10-19_xx", own.date],
+      ["20201019T1929xxx", own.date],
+      ["after_drp_ben_xx", own.id],
     ] as const)
       expect(reasons(cursor), cursor).toEqual([reason]);
+    // Each digit of a date is tried as every value it may take, so that no class of OWN_DATE can be
+    // narrowed without a case failing: a year's last two digits, a month's and a day's, and a time's
+    // four; a month's first digit is 0 or 1, and a day's 0 to 3.
+    const dashed = (year: string, month: string, day: string) => `at_${year}-${month}-${day}_xx`;
+    const compact = (year: string, month: string, day: string, time: string) => `${year}${month}${day}T${time}xxx`;
+    const dates: string[] = [];
+    for (const digit of "0123456789")
+      dates.push(
+        dashed(`20${digit}1`, "11", "11"),
+        dashed(`202${digit}`, "11", "11"),
+        dashed("2021", `1${digit}`, "11"),
+        dashed("2021", "11", `1${digit}`),
+        compact(`20${digit}1`, "11", "11", "1111"),
+        compact(`202${digit}`, "11", "11", "1111"),
+        compact("2021", `1${digit}`, "11", "1111"),
+        compact("2021", "11", `1${digit}`, "1111"),
+        compact("2021", "11", "11", `${digit}111`),
+        compact("2021", "11", "11", `1${digit}11`),
+        compact("2021", "11", "11", `11${digit}1`),
+        compact("2021", "11", "11", `111${digit}`),
+      );
+    for (const digit of "01") dates.push(dashed("2021", `${digit}1`, "11"), compact("2021", `${digit}1`, "11", "1111"));
+    for (const digit of "0123")
+      dates.push(dashed("2021", "11", `${digit}1`), compact("2021", "11", `${digit}1`, "1111"));
+    for (const cursor of dates) expect(reasons(cursor), cursor).toEqual([own.date]);
     for (const cursor of [
       "hidden_1_of_2_xx",
       "179399520000000x",
+      "at_1026-11-06_xx",
       "2126-11-06T20-00",
       "2026-21-06T20-00",
       "2026-11-46T20-00",
@@ -1031,12 +1076,19 @@ describe("the leak scanner catches each planted leak with its own check", () => 
       "20261106T200xxxx",
       "20262106T2000xxx",
       "20261146T2000xxx",
+      "at_20201019_xxxx",
+      "202611062000xxxx",
+      "06-11-2026_after",
+      "11-06-2026_after",
     ])
       expect(reasons(cursor), cursor).toEqual([]);
     // A run of 24 bytes of text is readable; a shorter one beside other bytes, with no other mark,
     // is the pager's row to judge, since random bytes make such runs: 23 random printable bytes
     // after a version byte pass, as a key of 23 bytes there would.
     expect(key(Buffer.concat([version, Buffer.from("after=7;order=desc;n=24!")]))).toEqual(["holds readable text"]);
+    expect(key(Buffer.concat([version, Buffer.from("o~40~n~20~d~asc~order~xy"), noise]))).toEqual([
+      "holds readable text",
+    ]);
     expect(key(Buffer.concat([version, Buffer.from("k@7v#Q2p!x9Lm*4Tz8&Wc5R")]))).toEqual([]);
     // A cursor that is text from end to end is a key however short, whatever joins its parts, or none:
     // random bytes of 12 to 23 make one now and then, which is why the first pager's row is to hold its
@@ -1093,6 +1145,9 @@ describe("the leak scanner catches each planted leak with its own check", () => 
       "HTTPS://H/P.JPG",
       "WWW.H.IO/P.JPG",
       "DATA:IMAGE/PNG",
+      '{"u":"a://b"}',
+      "~~~~~~~~a://b",
+      "~~~~~~~~~~~~www.",
     ])
       expect(decoded(version, run, noise), JSON.stringify(run)).toEqual(found);
     expect(decoded(version, "k7Qz2pLm9xWv", version, "https://h/p.jpg", noise)).toEqual(found);
@@ -1106,6 +1161,54 @@ describe("the leak scanner catches each planted leak with its own check", () => 
     for (const run of ["https://x/a", "www.k", "data:k", "tiktokxcom"])
       expect(page(encode(version, space, run, noise)), run).toEqual([]);
     expect(page(encode(noise, "a://", noise))).toEqual([]);
+    // A key encoded in base64url behind a prefix decodes from the cursor's first character to bytes
+    // that look random, unless the prefix is a whole number of groups of 4 characters long, and from
+    // the character after the prefix's last whole group to its own: a prefix of 1 to 3 characters
+    // (`x`, `v1`, `abc`), a handle of 22 (16 bytes), or one of those after whole groups of 4
+    // (`abcdef`). What a readable key shows there fails: a date, a long number, an id, text people
+    // wrote, a storage path or a provider host. An id the viewer may not see, and a value the world
+    // keeps back, are found in those bytes as in the first ones.
+    const sealed = (text: string) => Buffer.from(text).toString("base64url");
+    const secret = "drp_secret|2026-11-07T07:00:00";
+    for (const [cursor, from] of [
+      [`x${sealed(`${secret}Z`)}`, 2],
+      [`v1${sealed(`${secret}Z`)}`, 3],
+      [`abc${sealed(secret)}`, 4],
+      [`abcdef${sealed(`${secret}Z`)}`, 3],
+    ] as const) {
+      const where = `decoded from its character ${String(from)}`;
+      expect(reasons(cursor), cursor).toEqual([`holds a date, ${where}`, `holds an id, ${where}`]);
+      expect(at(page(cursor), "values"), cursor).toEqual([`$.next_cursor (${where})`]);
+    }
+    const second = "decoded from its character 2";
+    expect(reasons(`c${sealed('{"after":"drp_ben","at":"2026-11-06T20:00:00Z"}')}`)).toEqual([
+      `holds a date, ${second}`,
+      `holds an id, ${second}`,
+    ]);
+    expect(reasons(`c${sealed("after=drp_ben;n=24x")}`)).toEqual([`holds an id, ${second}`]);
+    expect(reasons(`c${sealed("after=1794000000000|n=24x")}`)).toEqual([
+      `holds a long number, such as a time or a count, ${second}`,
+    ]);
+    expect(reasons(`c${sealed("Cleo;n=24;asc;xy")}`)).toEqual([`holds text people wrote, ${second}`]);
+    for (const date of ["2026_11_06|n=24|asc", "20261106T2000|n=24|asc"])
+      expect(reasons(`c${sealed(date)}`), date).toEqual([`holds a date, ${second}`]);
+    const third = "decoded from its character 3";
+    expect(reasons(noise.toString("base64url") + sealed("occ_sat|2026-11-07T07:00:00Z"))).toEqual([
+      `holds a date, ${third}`,
+      `holds an id, ${third}`,
+    ]);
+    expect(reasons(`c${sealed("k|v_pending|n=24x")}`)).toEqual([]);
+    expect(at(page(`c${sealed("k|v_pending|n=24x")}`), "values")).toEqual([`$.next_cursor (${second})`]);
+    // A storage path or a provider host behind a prefix, as anywhere else in a cursor.
+    for (const path of ["k|uploads/zz_n7p4k2", "k|renditions/zz_n7p4k2", "k|instagram.com/p/x"]) {
+      expect(reasons(`c${sealed(path)}`), path).toEqual([]);
+      expect(at(page(`c${sealed(path)}`), "values"), path).toEqual([`$.next_cursor (${second})`]);
+    }
+    // Text with none of those marks passes behind a prefix, as the header says, a URL with a scheme
+    // among it: the checks of whole-cursor text and of URLs in runs would fail random handles of 24
+    // bytes about once in 370 million, more often than every other check together.
+    for (const text of ["offset=20&order=desc&count=24", "https://h.io/k.jpg|n=24", "left=3;order=asc;p=2"])
+      expect(page(`c${sealed(text)}`), text).toEqual([]);
     expect(key(Buffer.from("4f9a2c", "hex"))).toEqual(["decodes to fewer than 12 bytes"]);
     expect(key(noise)).toEqual([]);
     // The contract's own example, a random handle of 12 bytes.
