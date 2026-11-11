@@ -1,9 +1,11 @@
 // The API's and the worker's entries as processes, against the test database (ADR-013; T1, T14, T52):
 // with `prod`, on a database that has no dev clock, the API listens and answers over HTTP, a request
 // with no session with the one 401 and a path nobody serves with the neutral not-found, and writes a
-// request line of the request's id, operation, status and time alone; the worker starts and exits;
-// with `dev`, which needs the dev clock this database doesn't have, each stops with the time module's
-// message.
+// request line of the request's id, operation, status and time alone; the worker starts and stays up;
+// each stops cleanly, with exit code 0, on SIGTERM (a deploy's signal) and on SIGINT (the signal
+// `fly machine stop` sends by default), so Fly neither restarts a worker that has nothing to do nor
+// cuts a request short; with `dev`, which needs the dev clock this database doesn't have, each
+// stops with the time module's message.
 
 import { spawn, type ChildProcess } from "node:child_process";
 import { join } from "node:path";
@@ -37,6 +39,21 @@ function start(service: "api" | "worker", environment: string, more: Record<stri
   child.stderr.on("data", (chunk: Buffer) => (output.stderr += chunk.toString()));
   const exited = new Promise<number | null>((done) => child.on("close", done));
   return { child, output, exited };
+}
+
+/** Sends `signal` and waits for the exit, which must come within ten seconds. */
+async function stopWith(started: ReturnType<typeof start>, signal: "SIGTERM" | "SIGINT"): Promise<number | null> {
+  started.child.kill(signal);
+  let timer: NodeJS.Timeout | undefined;
+  const timeout = new Promise<"timeout">((done) => {
+    timer = setTimeout(() => {
+      done("timeout");
+    }, 10_000);
+  });
+  const result = await Promise.race([started.exited, timeout]);
+  clearTimeout(timer);
+  expect(result, `${started.output.stdout}${started.output.stderr}`).not.toBe("timeout");
+  return result === "timeout" ? null : result;
 }
 
 /** Waits until `output` has a line matching `pattern`, or the process exits, or 20 seconds pass. */
@@ -122,14 +139,61 @@ describe("the API's entry against the test database", () => {
     expect(api.output.stderr).toMatch(/app\.dev_clock/);
     expect(api.output.stdout).not.toMatch(/listening/);
   }, 30_000);
+
+  it.each(["SIGTERM", "SIGINT"] as const)(
+    "stops on %s with exit code 0, writes its stop lines, and no longer listens",
+    async (signal) => {
+      expect(url, "set DATABASE_URL, as the ci step db-tests does").not.toBe("");
+      const api = start("api", "prod");
+      const listening = await waitFor(api, /api: listening at (http:\/\/127\.0\.0\.1:\d+)/);
+      expect(listening, api.output.stderr).not.toBeNull();
+      const base = listening?.[1] ?? "";
+      // A request has been answered and its connection is kept alive and idle: a stop doesn't wait for it.
+      expect((await fetch(`${base}/v1/me`)).status).toBe(401);
+      expect(await stopWith(api, signal)).toBe(0);
+      expect(api.output.stdout).toContain(`api: stopping on ${signal}\n`);
+      expect(api.output.stdout).toMatch(/api: stopped\n$/);
+      expect(api.output.stderr).toBe("");
+      await expect(fetch(`${base}/v1/me`)).rejects.toThrow();
+    },
+    30_000,
+  );
+
+  it("stops once: a second signal doesn't start a second stop, and the first is allowed to finish", async () => {
+    const api = start("api", "prod");
+    expect(await waitFor(api, /api: listening at/)).not.toBeNull();
+    api.child.kill("SIGTERM");
+    api.child.kill("SIGINT");
+    const code = await api.exited;
+    // The second signal arrived with no handler left for it, which is the default: it may end the
+    // process before the first stop finished. What must hold is that the first stop began once.
+    expect(code === 0 || code === null, api.output.stdout).toBe(true);
+    expect(api.output.stdout.match(/api: stopping on/g)).toHaveLength(1);
+  }, 30_000);
 });
 
 describe("the worker's entry against the test database", () => {
-  it("starts with prod and exits, with no jobs yet", async () => {
+  it("starts with prod and stays up, with no jobs yet, until it is told to stop", async () => {
     const worker = start("worker", "prod");
-    expect(await worker.exited, worker.output.stderr).toBe(0);
-    expect(worker.output.stdout).toMatch(/worker: started/);
+    expect(await waitFor(worker, /worker: started, with no jobs yet\n/), worker.output.stderr).not.toBeNull();
+    // Nothing ends it: a process that exited would be restarted by Fly again and again.
+    await new Promise((done) => setTimeout(done, 1_500));
+    expect(worker.child.exitCode).toBeNull();
+    expect(worker.child.signalCode).toBeNull();
+    expect(await stopWith(worker, "SIGTERM")).toBe(0);
   }, 30_000);
+
+  it.each(["SIGTERM", "SIGINT"] as const)(
+    "stops on %s with exit code 0, and says which",
+    async (signal) => {
+      const worker = start("worker", "prod");
+      expect(await waitFor(worker, /worker: started/), worker.output.stderr).not.toBeNull();
+      expect(await stopWith(worker, signal)).toBe(0);
+      expect(worker.output.stdout).toMatch(new RegExp(`worker: stopped on ${signal}\\n$`));
+      expect(worker.output.stderr).toBe("");
+    },
+    30_000,
+  );
 
   it("stops with dev, which needs the dev clock this database doesn't have (ADR-013)", async () => {
     const worker = start("worker", "dev");

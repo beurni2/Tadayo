@@ -1,0 +1,25 @@
+# The build context goes to Fly's builder, and the repository holds the design renders, the journal
+# and whatever a session leaves in the tree. So this is an allowlist: only what the Dockerfile
+# copies goes (docs/plans/api-b0-deploy.md, section 1; T56). tools/ops/src/deploy-files.test.ts
+# checks that each COPY is allowed here and that nothing else is.
+*
+
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!apps/web/package.json
+!packages/contracts/package.json
+!packages/contracts/src
+!packages/domain/package.json
+!packages/domain/src
+!services/api/package.json
+!services/api/src
+!services/worker/package.json
+!services/worker/src
+!tests/package.json
+!tools/ops/package.json
+!tools/ops/src
+
+# What runs in no process of the image, and what a machine builds for itself.
+**/*.test.ts
+**/node_modules

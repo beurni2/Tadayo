@@ -61,6 +61,11 @@ const KEPT: readonly { file: string; line: string; why: string }[] = [
     line: "applied_at timestamptz NOT NULL DEFAULT pg_catalog.now()",
     why: "the migration runner's record of when it applied a file, which nothing compares with a day's instants",
   },
+  {
+    file: join("tools", "ops", "src", "dev-clock.ts"),
+    line: "SELECT (extract(epoch FROM pg_catalog.clock_timestamp()) OPERATOR(pg_catalog.*) 1000000)",
+    why: "the dev clock's own tool: an instant becomes an offset only by Postgres's own clock, which the offset is from; it runs by hand on dev only (environment.ts), and no request, job or rule of a day reads it",
+  },
 ];
 
 /** The server's folders (docs/MILESTONES.md, "Lanes"), but `tests/`, whole: each must be there. */

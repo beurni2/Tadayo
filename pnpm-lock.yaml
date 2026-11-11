@@ -261,6 +261,9 @@ importers:
 
   tools/ops:
     dependencies:
+      '@tadayo/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       postgres:
         specifier: 3.4.9
         version: 3.4.9
