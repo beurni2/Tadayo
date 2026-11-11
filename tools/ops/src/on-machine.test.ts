@@ -1,6 +1,8 @@
 // `onMachine` against a made-up `flyctl` (test/fake-fly.ts): a command run inside the API's Machine,
 // where the Supabase service key is (docs/plans/api-b0-deploy.md, section 6; T56). `flyctl machine
-// exec` exits 0 even when the command failed, so the exit code is read from its answer.
+// exec` exits 0 even when the command failed, so the exit code is read from its answer, which leaves
+// out every field that is empty or zero (flyctl 0.5.8's source: Go's `omitempty`): a command that
+// worked answers with no `exit_code`.
 
 import { describe, expect, it } from "vitest";
 import { FAKE_FLY_TOKEN, fakeSpawn, json, lineOf, machine, type Route } from "../test/fake-fly.ts";
@@ -30,7 +32,13 @@ async function run(routes: readonly Route[], command: readonly string[] = COMMAN
   return { calls: calls.map(lineOf), raw: calls, said, outcome };
 }
 
-const answer = (stdout: string, stderr = "", exit_code = 0) => json({ stdout, stderr, exit_code, exit_signal: 0 });
+/** What `flyctl machine exec --json` prints: an empty `stdout` or `stderr` and a zero `exit_code` are left out. */
+const answer = (stdout: string, stderr = "", exit_code = 0) =>
+  json({
+    ...(stdout === "" ? {} : { stdout }),
+    ...(stderr === "" ? {} : { stderr }),
+    ...(exit_code === 0 ? {} : { exit_code }),
+  });
 
 describe("onMachine", () => {
   it("runs the command in the API's started Machine, as one string, and says what it printed", async () => {
@@ -84,9 +92,19 @@ describe("onMachine", () => {
     );
     for (const stdout of [
       "not json",
-      JSON.stringify({ stdout: "x" }),
-      JSON.stringify({ exit_code: "0" }),
+      "",
+      "null",
+      '"worked"',
       JSON.stringify([]),
+      JSON.stringify({ exit_code: "0" }),
+      JSON.stringify({ exit_code: null }),
+      JSON.stringify({ exit_code: 1.5 }),
+      JSON.stringify({ stdout: 1 }),
+      JSON.stringify({ stdout: "x", stderr: null }),
+      JSON.stringify({ exit_signal: "9" }),
+      // A key flyctl doesn't print: a renamed `exit_code` must not read as a command that worked.
+      JSON.stringify({ stdout: "x", exitCode: 1 }),
+      JSON.stringify({ stdout: "x", status: "failed" }),
     ]) {
       const result = await run([
         [LIST, machines],
@@ -98,10 +116,57 @@ describe("onMachine", () => {
     }
   });
 
-  it("fails when the API has no started Machine, and runs nothing", async () => {
+  it("reads a command that worked from an answer with no exit code, as flyctl leaves a zero out", async () => {
+    const printedOnly = await run([
+      [LIST, machines],
+      [EXEC, { stdout: JSON.stringify({ stdout: "storage-setup: done\n" }) }],
+    ]);
+    expect(printedOnly.outcome).toBeUndefined();
+    expect(printedOnly.said).toEqual(["storage-setup: done"]);
+
+    const nothingPrinted = await run([
+      [LIST, machines],
+      [EXEC, { stdout: "{}" }],
+    ]);
+    expect(nothingPrinted.outcome).toBeUndefined();
+    expect(nothingPrinted.said).toEqual([]);
+
+    // The Machines API's own spelling, with the zeros in, reads the same.
+    const spelledOut = await run([
+      [LIST, machines],
+      [EXEC, { stdout: JSON.stringify({ stdout: "ok\n", stderr: "", exit_code: 0, exit_signal: 0 }) }],
+    ]);
+    expect(spelledOut.outcome).toBeUndefined();
+    expect(spelledOut.said).toEqual(["ok"]);
+  });
+
+  it("fails when the command was ended by a signal, even with no exit code in the answer", async () => {
+    const result = await run([
+      [LIST, machines],
+      [EXEC, { stdout: JSON.stringify({ stderr: "killed\n", exit_signal: 9 }) }],
+    ]);
+    expect(result.said).toEqual(["killed"]);
+    expect(result.outcome).toBeInstanceOf(OpsError);
+    expect((result.outcome as OpsError).message).toBe("storage-setup: it was ended on the Machine by signal 9");
+  });
+
+  it("fails when the API has no started Machine, names the Machines there are, and runs nothing", async () => {
     const stopped = await run([[LIST, json([machine("a1", "api", "stopped"), machine("w1", "worker", "started")])]]);
-    expect((stopped.outcome as OpsError).message).toBe("storage-setup: the API has no started Machine; deploy first");
+    // A Machine that stopped on its own: deploying again won't start it, and the reason is in Fly's log.
+    expect((stopped.outcome as OpsError).message).toBe(
+      "storage-setup: the API has no started Machine (the app's Machines: a1 (api, stopped), w1 (worker, started)); if it stopped on its own, Fly's log of tadayo-api-dev says why",
+    );
     expect(stopped.calls).toEqual([LIST]);
+    // No Machine at all, or a worker only: nothing has been deployed yet.
+    const none = await run([[LIST, json([])]]);
+    expect((none.outcome as OpsError).message).toBe(
+      "storage-setup: the API has no started Machine (the app's Machines: none); deploy first",
+    );
+    const workerOnly = await run([[LIST, json([machine("w1", "worker", "started")])]]);
+    expect((workerOnly.outcome as OpsError).message).toBe(
+      "storage-setup: the API has no started Machine (the app's Machines: w1 (worker, started)); deploy first",
+    );
+    expect(none.calls).toEqual([LIST]);
   });
 
   it("takes only plain words for the command, so nothing in it is read as anything else", async () => {

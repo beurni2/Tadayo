@@ -5,7 +5,7 @@
 // probe's own request was wrong. The database layer, with Postgres and Supabase's roles, is
 // tests/src/db/ops-probe.test.ts.
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   FAKE_PUBLISHABLE,
   FAKE_SECRET,
@@ -15,8 +15,17 @@ import {
   type FakeOptions,
   type Leak,
 } from "../test/fake-supabase.ts";
+import { EXEC_SECONDS } from "./on-machine.ts";
 import { ALLOWED_TYPES, FILE_SIZE_LIMIT } from "./storage-setup.ts";
-import { apiChecks, dataApiChecks, reportLine, type Check } from "./supabase-probe.ts";
+import {
+  apiChecks,
+  BUDGET_MS,
+  DEADLINE_MS,
+  dataApiChecks,
+  reportLine,
+  type ApiInput,
+  type Check,
+} from "./supabase-probe.ts";
 
 const TABLES = ["users", "clubs", "drops"];
 
@@ -32,7 +41,7 @@ function project(options: FakeOptions = {}): Fake {
   return fake;
 }
 
-async function probe(fake: Fake, fetcher: typeof fetch = fake.fetch): Promise<Check[]> {
+async function probe(fake: Fake, fetcher: typeof fetch = fake.fetch, more: Partial<ApiInput> = {}): Promise<Check[]> {
   let n = 0;
   return apiChecks({
     fetch: fetcher,
@@ -41,6 +50,7 @@ async function probe(fake: Fake, fetcher: typeof fetch = fake.fetch): Promise<Ch
     serviceKey: FAKE_SECRET,
     tables: TABLES,
     id: () => `id${String((n += 1))}`,
+    ...more,
   });
 }
 
@@ -54,9 +64,13 @@ describe("apiChecks on a closed project", () => {
     // Every door is asked for each caller: nothing is dropped without this saying so.
     const count = (prefix: string) => checks.filter((check) => check.name.startsWith(prefix)).length;
     expect(count("control: ")).toBe(12);
+    // And the one question about every bucket the project has, which is no control.
+    expect(count("storage: ")).toBe(1);
     // Per caller: 3 tables and the root of REST, GraphQL, the buckets' list and create, and 8 for each bucket.
     expect(count("anon: ")).toBe(4 + 1 + 2 + 8 * 2);
     expect(count("user: ")).toBe(4 + 1 + 2 + 8 * 2);
+    // And the Data API's root, asked once as the service key.
+    expect(count("service: ")).toBe(1);
     // Two probe objects and the probe user; nothing else was written, so nothing else is deleted.
     expect(count("cleanup: ")).toBe(3);
     expect(fake.objects.size).toBe(0);
@@ -154,7 +168,15 @@ describe("apiChecks on a closed project", () => {
     }
   });
 
-  it("calls with the key each caller has and no other: the secret key only for the controls and the clean-up", async () => {
+  it("asks the Data API's root once as the service key, the one caller the gateway lets read it", async () => {
+    const fake = project();
+    await probe(fake);
+    const root = fake.calls.filter((call) => call.path === "/rest/v1/" && call.who === "service");
+    expect(root).toHaveLength(1);
+    expect(root[0]?.status).toBe(503);
+  });
+
+  it("calls with the key each caller has and no other: the secret key only for the controls, the root and the clean-up", async () => {
     const fake = project();
     await probe(fake);
     expect(fake.calls.map((call) => call.who).filter((who) => who === "bad")).toEqual([]);
@@ -194,6 +216,7 @@ describe("apiChecks on a project that leaks", () => {
     ["sign-upload", ["user: sign an upload URL in uploads"]],
     ["bucket-create", ["user: create a bucket"]],
     ["rest", ["anon: REST users", "user: REST users", "anon: REST clubs", "user: REST drops"]],
+    ["rest-root", ["service: the Data API serves no schema at its root"]],
     ["graphql", ["anon: GraphQL", "user: GraphQL"]],
   ];
 
@@ -233,7 +256,9 @@ describe("apiChecks on a project that leaks", () => {
     expect(await note("new-object", "user: add an object to uploads")).toBe("it wrote the object");
     expect(await note("bucket-create", "user: create a bucket")).toBe("it made a bucket");
     expect(await note("rest", "anon: REST users")).toBe("it returned rows");
-    expect(await note("rest", "anon: REST root")).toBe("answered HTTP 200");
+    expect(await note("rest-root", "service: the Data API serves no schema at its root")).toBe(
+      "answered HTTP 200, with 3 paths",
+    );
     expect(await note("graphql", "anon: GraphQL")).toBe("it answered with data");
   });
 
@@ -250,6 +275,89 @@ describe("apiChecks on a project that leaks", () => {
     ]);
     expect(fake.objects.size).toBe(0);
     expect([...fake.buckets.keys()].sort()).toEqual(["renditions", "uploads"]);
+  });
+});
+
+describe("apiChecks and the Data API's root", () => {
+  const ROOT = "service: the Data API serves no schema at its root";
+  const asRoot = (fake: Fake, reply: (request: Request) => Response | undefined): typeof fetch => {
+    return async (input, init) => {
+      const request = new Request(input, init);
+      return (new URL(request.url).pathname === "/rest/v1/" ? reply(request) : undefined) ?? fake.fetch(input, init);
+    };
+  };
+  const as = (request: Request) => request.headers.get("apikey");
+
+  it("sees the root refused to the public key and to a user's token in every state, as the gateway refuses it, so those two lines show a refusal and not the API off", async () => {
+    // With the Data API's tables open or its root open to the service key, the public callers' root is refused still.
+    for (const leaks of [[], ["rest"], ["rest-root"], ["rest", "rest-root"]] as Leak[][]) {
+      const fake = project({ leaks });
+      const checks = await probe(fake);
+      for (const who of ["anon", "user"]) {
+        expect(failed(checks), JSON.stringify(leaks)).not.toContain(`${who}: REST root`);
+        const roots = fake.calls.filter((call) => call.who === who && call.path === "/rest/v1/");
+        expect(
+          roots.map((call) => call.status),
+          `${who} ${JSON.stringify(leaks)}`,
+        ).toEqual([403]);
+      }
+    }
+  });
+
+  it("still fails the public callers' root when a gateway answers it, which says a schema is served", async () => {
+    const fake = project();
+    const checks = await probe(
+      fake,
+      asRoot(fake, (request) =>
+        as(request) === FAKE_PUBLISHABLE
+          ? new Response(JSON.stringify({ swagger: "2.0", paths: {} }), { status: 200 })
+          : undefined,
+      ),
+    );
+    expect(failed(checks)).toEqual(["anon: REST root", "user: REST root"]);
+    expect(checks.find((check) => check.name === "anon: REST root")?.note).toBe("answered HTTP 200");
+  });
+
+  it("passes the service key's root when the Data API answers an error, whichever one, and fails when it describes a schema", async () => {
+    for (const status of [404, 500, 503]) {
+      const fake = project();
+      const checks = await probe(
+        fake,
+        asRoot(fake, (request) =>
+          as(request) === FAKE_SECRET ? new Response(JSON.stringify({ code: "PGRST002" }), { status }) : undefined,
+        ),
+      );
+      expect(failed(checks), String(status)).toEqual([]);
+    }
+    for (const [body, note] of [
+      [{ swagger: "2.0", paths: { "/clubs": {} } }, "answered HTTP 200, with 1 path"],
+      [{ swagger: "2.0", paths: {} }, "answered HTTP 200, with 0 paths"],
+      [{ openapi: "3.0.0" }, "answered HTTP 200"],
+      [[], "answered HTTP 200"],
+    ] as const) {
+      const fake = project();
+      const checks = await probe(
+        fake,
+        asRoot(fake, (request) =>
+          as(request) === FAKE_SECRET ? new Response(JSON.stringify(body), { status: 200 }) : undefined,
+        ),
+      );
+      expect(failed(checks), JSON.stringify(body)).toEqual([ROOT]);
+      expect(checks.find((check) => check.name === ROOT)?.note, JSON.stringify(body)).toBe(note);
+    }
+  });
+
+  it("fails the service key's root when the project doesn't answer, saying so", async () => {
+    const fake = project();
+    const silent = await probe(fake, async (input, init) => {
+      const request = new Request(input, init);
+      if (new URL(request.url).pathname === "/rest/v1/" && as(request) === FAKE_SECRET) {
+        throw new TypeError("fetch failed");
+      }
+      return fake.fetch(input, init);
+    });
+    expect(failed(silent)).toEqual([ROOT]);
+    expect(silent.find((check) => check.name === ROOT)?.note).toBe("no answer from the project");
   });
 });
 
@@ -275,8 +383,13 @@ describe("apiChecks counts only Storage's own refusal as one", () => {
     const fake = project();
     const checks = await probe(
       fake,
+      // The refusals' callers only: the service key's own list of the buckets is asked too (T53).
       answering(fake, (request) =>
-        request.url.endsWith("/storage/v1/bucket") && request.method === "GET" ? gateway401() : undefined,
+        request.url.endsWith("/storage/v1/bucket") &&
+        request.method === "GET" &&
+        request.headers.get("apikey") !== FAKE_SECRET
+          ? gateway401()
+          : undefined,
       ),
     );
     expect(failed(checks)).toEqual(["anon: list the buckets", "user: list the buckets"]);
@@ -571,6 +684,233 @@ describe("apiChecks when the project can't be trusted to answer", () => {
   });
 });
 
+const BUCKET_CHECK = "storage: every bucket is private, and only storage-setup's two exist";
+
+/** `fake`, except that the service key's list of the buckets is answered by `answer`. */
+function listingBuckets(fake: Fake, answer: () => Response | Promise<Response>): typeof fetch {
+  return async (input: string | URL | Request, init?: RequestInit) => {
+    const request = new Request(input, init);
+    const isList = request.method === "GET" && new URL(request.url).pathname === "/storage/v1/bucket";
+    if (isList && request.headers.get("apikey") === FAKE_SECRET) return answer();
+    return fake.fetch(input, init);
+  };
+}
+
+const bucketNamed = (name: string, more: Record<string, unknown> = {}) => ({
+  name,
+  file_size_limit: FILE_SIZE_LIMIT,
+  allowed_mime_types: [...ALLOWED_TYPES],
+  ...more,
+});
+const THE_TWO = ["uploads", "renditions"].map((name) => bucketNamed(name));
+const jsonReply = (status: number, body: unknown) => () =>
+  new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
+
+describe("apiChecks asks which buckets the project has, and none may be public or another's (T53)", () => {
+  const checkOf = (checks: readonly Check[]) => checks.find((check) => check.name === BUCKET_CHECK);
+
+  it("passes the two private buckets storage-setup makes, asking once, with the service key alone", async () => {
+    const fake = project();
+    const checks = await probe(fake);
+    expect(checkOf(checks)).toEqual({ name: BUCKET_CHECK, ok: true });
+    const asked = fake.calls.filter((call) => call.method === "GET" && call.path === "/storage/v1/bucket");
+    expect(asked.filter((call) => call.who === "service")).toHaveLength(1);
+  });
+
+  it("fails a third bucket, which is none of storage-setup's, and counts it without naming it", async () => {
+    const fake = project({ buckets: [...THE_TWO, bucketNamed("somebody-elses-bucket")] });
+    const checks = await probe(fake);
+    expect(failed(checks)).toEqual([BUCKET_CHECK]);
+    expect(checkOf(checks)?.note).toBe("1 bucket isn't one storage-setup makes");
+    expect(JSON.stringify(checks)).not.toContain("somebody-elses-bucket");
+  });
+
+  it("fails a public bucket, one of the two or a third, since a public bucket serves its objects with no key", async () => {
+    const one = await probe(project({ buckets: [bucketNamed("uploads", { public: true }), THE_TWO[1] ?? {}] }));
+    expect(checkOf(one)?.note).toBe("1 bucket isn't shown to be private");
+    const third = await probe(project({ buckets: [...THE_TWO, bucketNamed("extra", { public: true })] }));
+    expect(checkOf(third)?.note).toBe("1 bucket isn't shown to be private; 1 bucket isn't one storage-setup makes");
+  });
+
+  it("counts several in plural words", async () => {
+    const checks = await probe(
+      project({
+        buckets: [
+          bucketNamed("uploads", { public: true }),
+          bucketNamed("renditions", { public: true }),
+          bucketNamed("a"),
+          bucketNamed("b"),
+        ],
+      }),
+    );
+    expect(checkOf(checks)?.note).toBe(
+      "2 buckets aren't shown to be private; 2 buckets aren't one storage-setup makes",
+    );
+  });
+
+  it("takes a bucket that doesn't say it is private as not shown to be", async () => {
+    const fake = project();
+    const answer = jsonReply(200, [{ name: "uploads", public: false }, { name: "renditions" }]);
+    const checks = await probe(fake, listingBuckets(fake, answer));
+    expect(checkOf(checks)?.note).toBe("1 bucket isn't shown to be private");
+    const text = jsonReply(200, [
+      { name: "uploads", public: "false" },
+      { name: "renditions", public: null },
+    ]);
+    expect(checkOf(await probe(fake, listingBuckets(fake, text)))?.note).toBe("2 buckets aren't shown to be private");
+  });
+
+  it("fails, with the status alone, when the answer is an error or is not a list, and the run goes on to the refusals", async () => {
+    const fake = project();
+    for (const [answer, note] of [
+      [jsonReply(500, { message: "password=hunter2" }), "answered HTTP 500"],
+      [jsonReply(200, { buckets: [] }), "answered HTTP 200"],
+      [() => new Response("not json", { status: 200 }), "answered HTTP 200"],
+    ] as const) {
+      const checks = await probe(fake, listingBuckets(fake, answer));
+      expect(failed(checks), note).toEqual([BUCKET_CHECK]);
+      expect(checkOf(checks)?.note).toBe(note);
+      expect(JSON.stringify(checks)).not.toContain("hunter2");
+      expect(checks.some((check) => check.name.startsWith("user: "))).toBe(true);
+    }
+  });
+
+  it("fails a check, and not the run, when the project gives no answer to it", async () => {
+    const fake = project();
+    const checks = await probe(
+      fake,
+      listingBuckets(fake, () => Promise.reject(new TypeError("fetch failed"))),
+    );
+    expect(failed(checks)).toEqual([BUCKET_CHECK]);
+    expect(checkOf(checks)?.note).toBe("no answer from the project");
+  });
+});
+
+const OUT_OF_TIME = "the run's time ran out";
+
+describe("apiChecks is limited in time, since a killed command skips its clean-up", () => {
+  /** `fake`'s fetch, which runs `before(n)` ahead of the nth call. */
+  function counting(fake: Fake, before: (n: number, init?: RequestInit) => Promise<void> | void): typeof fetch {
+    let n = 0;
+    return async (input: string | URL | Request, init?: RequestInit) => {
+      n += 1;
+      await before(n, init);
+      return fake.fetch(input, init);
+    };
+  }
+  const count = (checks: readonly Check[], prefix: string) =>
+    checks.filter((check) => check.name.startsWith(prefix)).length;
+
+  it("asks nothing when its time is already spent, and says the first control wasn't answered for that reason", async () => {
+    const fake = project();
+    const checks = await probe(fake, fake.fetch, { budget: AbortSignal.abort() });
+    expect(fake.calls).toEqual([]);
+    expect(checks).toEqual([{ name: "control: the service key makes a user", ok: false, note: OUT_OF_TIME }]);
+  });
+
+  it("stops asking when the budget runs out part-way, says so for every check it didn't ask, and still cleans up", async () => {
+    const fake = project();
+    const budget = new AbortController();
+    // The 16th call is the first refusal's; the 20th is anon's GraphQL.
+    const fetcher = counting(fake, (n) => {
+      if (n === 20) budget.abort();
+    });
+    const checks = await probe(fake, fetcher, { budget: budget.signal });
+    const cut = checks.findIndex((check) => check.name === "anon: GraphQL");
+    expect(checks.slice(0, cut + 1).every((check) => check.ok)).toBe(true);
+    const later = checks.slice(cut + 1).filter((check) => !check.name.startsWith("cleanup: "));
+    // Every check of anon and user that wasn't asked, and the service key's root, which comes last.
+    expect(later).toHaveLength(count(checks, "anon: ") + count(checks, "user: ") + count(checks, "service: ") - 5);
+    expect(later.every((check) => !check.ok && check.note === OUT_OF_TIME)).toBe(true);
+    // 20 calls, then only the clean-up's: the two probe objects and the user.
+    expect(fake.calls.map((call) => call.method).slice(20)).toEqual(["DELETE", "DELETE", "DELETE"]);
+    expect(checks.filter((check) => check.name.startsWith("cleanup: ")).every((check) => check.ok)).toBe(true);
+    expect(fake.objects.size).toBe(0);
+    expect(fake.users.size).toBe(0);
+  });
+
+  it("ends a call that is in flight when the budget runs out, and removes what that call may have written", async () => {
+    const fake = project();
+    const budget = new AbortController();
+    const hanging = (async (input: string | URL | Request, init?: RequestInit) => {
+      const request = new Request(input, init);
+      const makes = request.method === "POST" && new URL(request.url).pathname === "/storage/v1/bucket";
+      if (!makes) return fake.fetch(input, init);
+      // anon's request to make a bucket: the time runs out while it waits, and the call is ended.
+      const signal = init?.signal;
+      budget.abort();
+      return new Promise<Response>((_resolve, reject) => {
+        if (signal?.aborted === true) reject(new Error("ended"));
+        signal?.addEventListener("abort", () => {
+          reject(new Error("ended"));
+        });
+      });
+    }) as typeof fetch;
+    const checks = await probe(fake, hanging, { budget: budget.signal });
+    expect(checks.find((check) => check.name === "anon: create a bucket")).toEqual({
+      name: "anon: create a bucket",
+      ok: false,
+      note: OUT_OF_TIME,
+    });
+    // The call may have made the bucket before it was ended, so the clean-up asks for it to be deleted.
+    expect(
+      fake.calls.some((call) => call.method === "DELETE" && call.path === "/storage/v1/bucket/probe-id1-anon"),
+    ).toBe(true);
+    expect(checks.find((check) => check.name === "cleanup: delete the bucket anon made")).toEqual({
+      name: "cleanup: delete the bucket anon made",
+      ok: true,
+    });
+    expect(fake.users.size).toBe(0);
+  });
+
+  it("leaves no bucket to remove for a refusal it never asked", async () => {
+    const fake = project();
+    const budget = new AbortController();
+    // Spent after the controls (14 calls) and the bucket list (15): anon's REST is the next.
+    const fetcher = counting(fake, (n) => {
+      if (n === 16) budget.abort();
+    });
+    const checks = await probe(fake, fetcher, { budget: budget.signal });
+    expect(checks.some((check) => check.name === "anon: create a bucket" && check.note === OUT_OF_TIME)).toBe(true);
+    expect(fake.calls.filter((call) => call.method === "DELETE" && call.path.startsWith("/storage/v1/bucket"))).toEqual(
+      [],
+    );
+  });
+
+  it("stops the clean-up too at the deadline, and names every object and the user it leaves", async () => {
+    const fake = project();
+    const deadline = new AbortController();
+    const fetcher = counting(fake, (n) => {
+      if (n === 16) deadline.abort();
+    });
+    const checks = await probe(fake, fetcher, { deadline: deadline.signal });
+    // 16 calls were made, the 16th the first refusal's, and none after it: not even the clean-up's.
+    expect(fake.calls).toHaveLength(16);
+    expect(checks.filter((check) => check.name.startsWith("cleanup: "))).toEqual([
+      { name: "cleanup: delete the probe object in uploads", ok: false, note: OUT_OF_TIME },
+      { name: "cleanup: delete the probe object in renditions", ok: false, note: OUT_OF_TIME },
+      { name: "cleanup: delete the probe user", ok: false, note: OUT_OF_TIME },
+    ]);
+    expect(fake.users.size).toBe(1);
+    expect(fake.objects.size).toBe(2);
+  });
+
+  it("gives the checks BUDGET_MS and the whole run DEADLINE_MS when nobody gives it others, and DEADLINE_MS ends before the Machine's command does", async () => {
+    const timeout = vi.spyOn(AbortSignal, "timeout");
+    try {
+      await probe(project());
+      const given = timeout.mock.calls.map(([milliseconds]) => milliseconds);
+      expect(given).toContain(BUDGET_MS);
+      expect(given).toContain(DEADLINE_MS);
+    } finally {
+      timeout.mockRestore();
+    }
+    expect(BUDGET_MS).toBeLessThan(DEADLINE_MS);
+    // A minute for what runs before it (the database checks and the start of the process).
+    expect(DEADLINE_MS + 60_000).toBeLessThanOrEqual(EXEC_SECONDS * 1000);
+  });
+});
+
 describe("dataApiChecks, the project's own configuration through the Management API", () => {
   const answer =
     (dbSchema: unknown, status = 200): typeof fetch =>
@@ -589,7 +929,7 @@ describe("dataApiChecks, the project's own configuration through the Management 
   it("passes when no schema is exposed, which is how Supabase says the Data API is off", async () => {
     for (const schema of ["", "pg_pgrst_no_exposed_schemas"]) {
       const checks = await dataApiChecks(answer(schema), "abcdefghijklmnopqrst", "a-token");
-      expect(checks).toEqual([{ name: "the Data API exposes no schema", ok: true }]);
+      expect(checks).toEqual([{ name: "the Data API's settings expose no schema", ok: true }]);
     }
   });
 
@@ -660,7 +1000,7 @@ describe("dataApiChecks, the project's own configuration through the Management 
     }) as typeof fetch;
     for (const fetcher of [refused, stopped]) {
       expect(await dataApiChecks(fetcher, "abcdefghijklmnopqrst", "a-token")).toEqual([
-        { name: "the Data API exposes no schema", ok: false, note: "no answer from the project" },
+        { name: "the Data API's settings expose no schema", ok: false, note: "no answer from the project" },
       ]);
     }
   });

@@ -4,7 +4,8 @@
 // With nothing to run yet, a worker that started has finished what it can check: the database
 // answered and the clock is ready. It ends its connection and stays up, doing nothing, until a
 // SIGTERM or SIGINT (Fly stops a Machine with one of them), then exits 0. A process that exited at
-// once would be restarted by Fly again and again, and `worker-scale` would have nothing to stop.
+// once would leave its Machine stopped, since fly.toml's `[[restart]] on-failure` restarts a failure
+// and not a clean exit, so `worker-scale --to started` would start it and find it stopped again.
 // B1's first job replaces the wait with its loop (start.ts).
 
 import { startWorker } from "./start.ts";

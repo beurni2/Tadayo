@@ -38,7 +38,9 @@ const LIST = "flyctl machine list -a tadayo-api-dev --json";
 const MAIN = "/app/tools/ops/src/main.ts";
 const exec = (script: string) =>
   `flyctl machine exec a1 node ${MAIN} ${script} --here --ref ${REF} -a tadayo-api-dev --json --timeout 300`;
-const answer = (stdout: string, exit_code = 0) => json({ stdout, stderr: "", exit_code, exit_signal: 0 });
+/** What `flyctl machine exec --json` prints: an empty `stdout` and a zero `exit_code` are left out (on-machine.test.ts). */
+const answer = (stdout: string, exit_code = 0) =>
+  json({ ...(stdout === "" ? {} : { stdout }), ...(exit_code === 0 ? {} : { exit_code }) });
 const started = json([machine("a1", "api", "started"), machine("w1", "worker", "started")]);
 
 interface Seen {
@@ -383,7 +385,7 @@ describe("supabase-probe on the runner", () => {
     ]);
     expect(h.lines()).toEqual([LIST, exec("supabase-probe")]);
     expect(h.said).toEqual([
-      "supabase-probe: ok    the Data API exposes no schema",
+      "supabase-probe: ok    the Data API's settings expose no schema",
       "supabase-probe: run r1",
       "supabase-probe: ok    control: the service key lists the buckets",
       "supabase-probe: every check passed",
@@ -395,7 +397,9 @@ describe("supabase-probe on the runner", () => {
   it("still runs the Machine's checks when the Data API check fails, and then fails, naming the schema and not the secret", async () => {
     const h = harness({ routes: MACHINE_PASSES, web: settings("public, storage") });
     expect(await failure("supabase-probe", h.ctx)).toBe("supabase-probe: the Data API check failed");
-    expect(h.said[0]).toBe("supabase-probe: FAIL  the Data API exposes no schema: it exposes public, storage");
+    expect(h.said[0]).toBe(
+      "supabase-probe: FAIL  the Data API's settings expose no schema: it exposes public, storage",
+    );
     expect(h.lines()).toEqual([LIST, exec("supabase-probe")]);
     expect(JSON.stringify(h.said)).not.toContain("must-never-be-printed");
   });
@@ -404,15 +408,44 @@ describe("supabase-probe on the runner", () => {
     const h = harness({
       routes: [
         [LIST, started],
-        [exec("supabase-probe"), answer("supabase-probe: FAIL  anon: list the buckets: answered HTTP 200\n", 1)],
+        [
+          exec("supabase-probe"),
+          answer("supabase-probe: run r1\nsupabase-probe: FAIL  anon: list the buckets: answered HTTP 200\n", 1),
+        ],
       ],
       web: settings(""),
     });
     expect(await failure("supabase-probe", h.ctx)).toBe("supabase-probe: it failed on the Machine, with exit code 1");
+    // The report came back, so it names what is left; nothing is said about what might be.
     expect(h.said).toEqual([
-      "supabase-probe: ok    the Data API exposes no schema",
+      "supabase-probe: ok    the Data API's settings expose no schema",
+      "supabase-probe: run r1",
       "supabase-probe: FAIL  anon: list the buckets: answered HTTP 200",
     ]);
+  });
+
+  it("says what the project may hold when the Machine's report never came back, and still fails with the call's own failure", async () => {
+    for (const reply of [
+      { code: 1, stderr: "Error: deadline exceeded" },
+      { timedOut: true, code: null },
+      json({ stdout: "an answer that isn't a report", exit_signal: 9 }),
+    ]) {
+      const h = harness({
+        routes: [
+          [LIST, started],
+          [exec("supabase-probe"), reply],
+        ],
+        web: settings(""),
+      });
+      const failed = await failure("supabase-probe", h.ctx);
+      expect(failed).toMatch(/^supabase-probe: /);
+      const hint = h.said.at(-1) ?? "";
+      expect(hint).toMatch(/^supabase-probe: the Machine's report didn't come back\./);
+      expect(hint).toContain("probe-");
+      expect(hint).toContain("@probe.invalid");
+      expect(hint).toContain("probe/");
+      expect(hint).toContain("uploads and renditions");
+    }
   });
 
   it("needs the access token, and says the Management API didn't answer as a failed check", async () => {
@@ -421,7 +454,9 @@ describe("supabase-probe on the runner", () => {
     expect(none.calls).toEqual([]);
     const silent = harness({ routes: MACHINE_PASSES });
     expect(await failure("supabase-probe", silent.ctx)).toBe("supabase-probe: the Data API check failed");
-    expect(silent.said[0]).toBe("supabase-probe: FAIL  the Data API exposes no schema: no answer from the project");
+    expect(silent.said[0]).toBe(
+      "supabase-probe: FAIL  the Data API's settings expose no schema: no answer from the project",
+    );
   });
 });
 

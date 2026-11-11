@@ -41,20 +41,23 @@ const POOLER_USER = /^[a-z_][a-z0-9_]*\.([a-z]{20})$/;
  * throws. Nothing but the scheme, the user, the password, the host, the port and the database is
  * allowed, since a query parameter can name another host, user or database; the port is the
  * session pooler's, 5432, since the transaction pooler's would break the sessions' locks; the
- * database is `postgres`. The messages name `name`, the variable the string came from, never the
- * string or the reference.
+ * database is `postgres`; and the password isn't empty. The messages name `name`, the variable the
+ * string came from, never the string or the reference.
  */
 export function devDatabaseUrl(url: string, devRef: string, name = "DATABASE_URL"): DevDatabaseUrl {
   devProjectRef(devRef);
   const refused = (why: string) =>
     new OpsError(`${name} isn't a connection to tadayo-dev's database through Supabase's session pooler: ${why}`);
   // A second host (libpq's `host1,host2`) would let the first one be the pooler and the second not.
-  if (/^[a-z][a-z0-9+.-]*:\/\/[^/?#]*,/i.test(url)) throw refused("it names more than one host");
+  // Only the part after the last `@` is the host: a comma in a password is the password's.
+  const authority = /^[a-z][a-z0-9+.-]*:\/\/([^/?#]*)/i.exec(url)?.[1] ?? "";
+  if (authority.slice(authority.lastIndexOf("@") + 1).includes(",")) throw refused("it names more than one host");
   let parsed: URL;
   try {
     parsed = new URL(url);
   } catch {
-    throw refused("it isn't a connection string");
+    // A # / or ? in a password ends the user-info part, and the rest then reads as a bad host or port.
+    throw refused("it isn't a connection string (a # / or ? in the password has to be written as %23, %2F or %3F)");
   }
   if (parsed.protocol !== "postgresql:" && parsed.protocol !== "postgres:") throw refused("it isn't a postgresql: URL");
   if (parsed.search !== "" || parsed.hash !== "") throw refused("it has a query or a fragment");
@@ -69,7 +72,41 @@ export function devDatabaseUrl(url: string, devRef: string, name = "DATABASE_URL
   }
   const reference = POOLER_USER.exec(user)?.[1];
   if (reference !== devRef) throw refused("its user doesn't carry dev's project reference");
+  // Nothing may ask for one: psql would prompt on a terminal, and a driver would try without.
+  if (parsed.password === "") throw refused("it has no password");
+  try {
+    decodeURIComponent(parsed.password);
+  } catch {
+    throw refused("its password isn't valid percent-encoding: a % in it has to be written as %25");
+  }
   return url as DevDatabaseUrl;
+}
+
+/** The parts of a checked connection string, read once: `psql` and the driver are both given these. */
+export interface DatabaseParts {
+  readonly host: string;
+  readonly port: number;
+  readonly user: string;
+  readonly password: string;
+  readonly database: string;
+}
+
+/**
+ * The parts of `url`, which only `devDatabaseUrl` makes, read the way that guard read them (`new
+ * URL`: the host after the last `@`). The port is a number, 5432 when the string names none, so
+ * neither `psql` nor the driver reads it from the environment (`PGPORT`). Both consumers are given
+ * these parts and never the string, so no other reader (postgres.js's, libpq's) can read it
+ * differently from the guard.
+ */
+export function databaseOf(url: DevDatabaseUrl): DatabaseParts {
+  const parsed = new URL(url);
+  return {
+    host: parsed.hostname.toLowerCase(),
+    port: parsed.port === "" ? 5432 : Number(parsed.port),
+    user: decodeURIComponent(parsed.username),
+    password: decodeURIComponent(parsed.password),
+    database: parsed.pathname.slice(1),
+  };
 }
 
 /**
@@ -77,13 +114,13 @@ export function devDatabaseUrl(url: string, devRef: string, name = "DATABASE_URL
  * line, where the process list shows it. TLS is required, as Supabase's pooler asks.
  */
 export function pgEnvOf(url: DevDatabaseUrl): Record<string, string> {
-  const parsed = new URL(url);
+  const { host, port, user, password, database } = databaseOf(url);
   return {
-    PGHOST: parsed.hostname.toLowerCase(),
-    PGPORT: parsed.port === "" ? "5432" : parsed.port,
-    PGUSER: decodeURIComponent(parsed.username),
-    PGPASSWORD: decodeURIComponent(parsed.password),
-    PGDATABASE: parsed.pathname.slice(1),
+    PGHOST: host,
+    PGPORT: String(port),
+    PGUSER: user,
+    PGPASSWORD: password,
+    PGDATABASE: database,
     PGSSLMODE: "require",
     PGCONNECT_TIMEOUT: "20",
   };

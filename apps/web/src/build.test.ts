@@ -14,7 +14,7 @@ const APP_ID = "ABCDE12345.app.tadayo";
 const association = (details: unknown) => JSON.stringify({ applinks: { details } });
 
 describe("checkAssociation", () => {
-  it("takes the file as iOS 13 and later read it: details, each with app IDs and components", () => {
+  it("takes the iOS 13 form of the file, which is Tadayo's own rule: details, each with app IDs and components", () => {
     expect(checkAssociation(association([]))).toEqual([]);
     expect(
       checkAssociation(
@@ -62,6 +62,14 @@ describe("checkAssociation", () => {
         "detail 1: components isn't a list",
       ],
       ["no components", association([{ appIDs: [APP_ID] }]), "detail 1: components isn't a list"],
+      // Apple takes the singular `appID` and a component with no `/` key (which matches every path):
+      // these are refused on purpose, so a mistyped key can't claim the whole site without a word.
+      ["Apple's singular appID", association([{ appID: APP_ID, components: [] }]), "detail 1 has no appIDs"],
+      [
+        "a component with only a fragment, which matches every path",
+        association([{ appIDs: [APP_ID], components: [{ "#": "no_universal_links", exclude: true }] }]),
+        "detail 1, component 1 has no path: a / key",
+      ],
       [
         "a component with no path",
         association([{ appIDs: [APP_ID], components: [{ comment: "x" }] }]),
@@ -99,6 +107,49 @@ describe("checkHeaders", () => {
       "has no Content-Type for /.well-known/apple-app-site-association",
     ]);
     expect(checkHeaders(`/*\n  X-Other: 1\n${RULE}`)).toEqual([]);
+  });
+
+  it("reads the file as Pages does: a line is trimmed, so a header needs no indentation, and a path starts with a slash", () => {
+    expect(checkHeaders("/.well-known/apple-app-site-association\nContent-Type: application/json\n")).toEqual([]);
+    expect(
+      checkHeaders("  /.well-known/apple-app-site-association  \r\n\tContent-Type: application/json  \r\n"),
+    ).toEqual([]);
+    expect(checkHeaders("/.well-known/apple-app-site-association\nContent-Type: text/plain\n")).toEqual([
+      "serves /.well-known/apple-app-site-association as text/plain, and not as application/json",
+    ]);
+  });
+
+  it("refuses a second rule for the association's path, since what Pages makes of a path written twice isn't something to lean on", () => {
+    const second = "/.well-known/apple-app-site-association\n  X-Other: 1\n";
+    expect(checkHeaders(`${RULE}${second}`)).toEqual([
+      "has 2 rules for /.well-known/apple-app-site-association: it wants one, so that the type served doesn't depend on how Pages treats a path written twice",
+    ]);
+    expect(checkHeaders(`${second}${RULE}`)).toEqual([
+      "has 2 rules for /.well-known/apple-app-site-association: it wants one, so that the type served doesn't depend on how Pages treats a path written twice",
+    ]);
+  });
+
+  it("refuses a Content-Type set or removed under any other path, since Pages applies every rule that matches", () => {
+    const sets = "/.well-known/*\n  Content-Type: text/plain\n";
+    const removes = "/*\n  ! Content-Type\n";
+    expect(checkHeaders(`${sets}${RULE}`)).toEqual([
+      "sets or removes Content-Type for /.well-known/*, and Pages applies every rule that matches, so it could change the type of /.well-known/apple-app-site-association",
+    ]);
+    expect(checkHeaders(`${RULE}${removes}`)).toEqual([
+      "sets or removes Content-Type for /*, and Pages applies every rule that matches, so it could change the type of /.well-known/apple-app-site-association",
+    ]);
+    expect(checkHeaders(`${RULE}${sets}${removes}`)[0]).toContain("for /.well-known/*, /*,");
+    // A header whose name only contains it is another header.
+    expect(checkHeaders(`/*\n  X-Content-Type-Options: nosniff\n${RULE}`)).toEqual([]);
+  });
+
+  it("refuses the association's own rule when it removes the Content-Type, beside setting it or not", () => {
+    expect(checkHeaders("/.well-known/apple-app-site-association\n  ! Content-Type\n")).toEqual([
+      "removes the Content-Type of /.well-known/apple-app-site-association",
+    ]);
+    expect(
+      checkHeaders("/.well-known/apple-app-site-association\n  Content-Type: application/json\n  ! Content-Type\n"),
+    ).toEqual(["removes the Content-Type of /.well-known/apple-app-site-association"]);
   });
 });
 
@@ -171,6 +222,35 @@ describe("buildSite", () => {
       expect(quietly(source, out), name).toThrow(problem);
       expect(treeOf(out), name).toEqual(["keep.html"]);
     }
+  });
+
+  it("says the association file's rules are Tadayo's own, when one of them refused it, and not for any other problem", () => {
+    const out = scratch();
+    const note =
+      "web: the rules for .well-known/apple-app-site-association are Tadayo's own, stricter than Apple's format: checkAssociation in apps/web/src/build.ts says which";
+    const refused = site({
+      ...GOOD,
+      ".well-known/apple-app-site-association": JSON.stringify({ applinks: { details: [] }, webcredentials: {} }),
+    });
+    let said = "";
+    try {
+      buildSite({ source: refused, out, say: () => undefined });
+    } catch (error) {
+      said = error instanceof Error ? error.message : "";
+    }
+    expect(said.split("\n")).toEqual([
+      "web: .well-known/apple-app-site-association has a key other than applinks: webcredentials",
+      note,
+    ]);
+    // A problem with the headers or the 404 page is not about those rules.
+    let other = "";
+    try {
+      buildSite({ source: site({ ...GOOD, _headers: "", "404.html": undefined }), out, say: () => undefined });
+    } catch (error) {
+      other = error instanceof Error ? error.message : "";
+    }
+    expect(other).toContain("web: _headers has no rule for");
+    expect(other).not.toContain("Tadayo's own");
   });
 
   it("refuses a source or an output that is the other's folder, so a build can't erase the site", () => {

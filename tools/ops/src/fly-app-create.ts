@@ -50,13 +50,22 @@ async function onlyOrganization(fly: Fly): Promise<string> {
 
 type CertificateState = "issued" | "issuing" | "waiting for DNS" | "unknown";
 
-/** Where the certificate is, from what `flyctl certs add|check --json` printed. */
+/**
+ * Where the certificate is, from what `flyctl certs add|check --json` printed. The Machines API
+ * names two signs that it exists: the detail's `status` is `Ready`, or an entry's `issued` list has a
+ * certificate in it. An entry's own `status` of `active` says only that Fly has verified the host's
+ * ownership, and the certificate comes after that (`Awaiting certificates`), so it isn't one.
+ */
 function stateOf(answer: unknown): CertificateState {
   const detail = record(answer);
   if (detail === undefined) return "unknown";
   const certificates = Array.isArray(detail["certificates"]) ? (detail["certificates"] as unknown[]) : [];
-  const active = certificates.some((entry) => record(entry)?.["status"] === "active");
-  if (active || detail["status"] === "Ready") return "issued";
+  // Go prints a list with nothing in it as `null`, so what is read is a list, not "has a length".
+  const issued = certificates.some((entry) => {
+    const list = record(entry)?.["issued"];
+    return Array.isArray(list) && list.length > 0;
+  });
+  if (issued || detail["status"] === "Ready") return "issued";
   if (detail["configured"] === true) return "issuing";
   if (detail["configured"] === false) return "waiting for DNS";
   return "unknown";

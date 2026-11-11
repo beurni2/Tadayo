@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import { FAKE_FLY_TOKEN, fakeSpawn, json, machine, type Reply } from "../test/fake-fly.ts";
-import { flyOf, jsonOf, machines, why } from "./fly.ts";
+import { flyOf, forDevApp, jsonOf, machineList, machines, why } from "./fly.ts";
 import { OpsError } from "./ops-error.ts";
 
 const spawned = (over: Partial<Parameters<typeof why>[0]> = {}) => ({
@@ -24,11 +24,11 @@ describe("flyOf: flyctl with the Fly token and HOME and nothing else", () => {
       AWS_SECRET: "not for flyctl",
       PATH: "/bin",
     });
-    await fly.run(["status"], { cwd: "/work" });
+    await fly.run(["status", "-a", "tadayo-api-dev"], { cwd: "/work" });
     expect(calls).toEqual([
       {
         command: "flyctl",
-        args: ["status"],
+        args: ["status", "-a", "tadayo-api-dev"],
         options: { env: { FLY_API_TOKEN: FAKE_FLY_TOKEN, HOME: "/home/runner" }, timeoutMs: 120_000, cwd: "/work" },
       },
     ]);
@@ -37,7 +37,7 @@ describe("flyOf: flyctl with the Fly token and HOME and nothing else", () => {
   it("lets a call set its own time limit, and no other option changes the environment", async () => {
     const { spawn, calls } = fakeSpawn([["flyctl", {}]]);
     const fly = flyOf(spawn, { FLY_API_TOKEN: FAKE_FLY_TOKEN, HOME: "/home/runner" });
-    await fly.run(["deploy"], { timeoutMs: 20 * 60 * 1000 });
+    await fly.run(["deploy", "--app", "tadayo-api-dev"], { timeoutMs: 20 * 60 * 1000 });
     expect(calls[0]?.options).toEqual({
       env: { FLY_API_TOKEN: FAKE_FLY_TOKEN, HOME: "/home/runner" },
       timeoutMs: 20 * 60 * 1000,
@@ -47,7 +47,7 @@ describe("flyOf: flyctl with the Fly token and HOME and nothing else", () => {
   it("gives flyctl no HOME when there is none, or it is empty, rather than an empty one", async () => {
     for (const home of [undefined, ""]) {
       const { spawn, calls } = fakeSpawn([["flyctl", {}]]);
-      await flyOf(spawn, { FLY_API_TOKEN: FAKE_FLY_TOKEN, HOME: home }).run(["status"]);
+      await flyOf(spawn, { FLY_API_TOKEN: FAKE_FLY_TOKEN, HOME: home }).run(["status", "-a", "tadayo-api-dev"]);
       expect(calls[0]?.options.env).toEqual({ FLY_API_TOKEN: FAKE_FLY_TOKEN });
     }
   });
@@ -56,6 +56,93 @@ describe("flyOf: flyctl with the Fly token and HOME and nothing else", () => {
     const { spawn, calls } = fakeSpawn([["flyctl", {}]]);
     for (const env of [{}, { FLY_API_TOKEN: "" }, { FLY_API_TOKEN: `${FAKE_FLY_TOKEN}\n` }]) {
       expect(() => flyOf(spawn, env)).toThrow(/FLY_API_TOKEN/);
+    }
+    expect(calls).toEqual([]);
+  });
+});
+
+describe("forDevApp: a call is about tadayo-api-dev and no other app", () => {
+  const DEV = "tadayo-api-dev";
+
+  it("takes every call the scripts make: -a or --app with the dev app, and the two calls that name none", () => {
+    for (const args of [
+      ["machine", "list", "-a", DEV, "--json"],
+      ["machine", "exec", "a1", "node /app/tools/ops/src/main.ts x --here", "-a", DEV, "--json", "--timeout", "300"],
+      ["machine", "stop", "w1", "-a", DEV],
+      ["machine", "start", "w1", "--app", DEV],
+      ["status", "-a", DEV],
+      ["certs", "check", "api-dev.tadayo.app", "-a", DEV, "--json"],
+      ["deploy", "--remote-only", "--app", DEV, "--config", "fly.toml", "--ha=false", "--yes"],
+      ["orgs", "list", "--json"],
+      ["apps", "create", DEV],
+      ["apps", "create", DEV, "--org", "personal"],
+    ]) {
+      expect(forDevApp(args), args.join(" ")).toBe(true);
+    }
+  });
+
+  it("refuses a call with no app, another app, an app flag with nothing after it, or another app besides the dev one", () => {
+    for (const args of [
+      ["status"],
+      ["deploy"],
+      ["machine", "list", "--json"],
+      ["machine", "list", "-a", "tadayo-api-prod", "--json"],
+      ["machine", "list", "-a", `${DEV}x`],
+      ["machine", "list", "-a", DEV.toUpperCase()],
+      ["machine", "list", "-a"],
+      ["machine", "stop", "w1", "--app"],
+      ["machine", "stop", "w1", "-a", DEV, "-a", "another"],
+      ["machine", "stop", "w1", "-a", "another", "-a", DEV],
+      ["machine", "stop", "w1", "--app", "another", "-a", DEV],
+    ]) {
+      expect(forDevApp(args), args.join(" ")).toBe(false);
+    }
+  });
+
+  it("refuses an app flag in a spelling it doesn't read, which flyctl would, even beside the dev app", () => {
+    for (const args of [
+      ["status", "--app=another"],
+      ["status", `--app=${DEV}`],
+      ["status", "-aanother"],
+      ["status", "-a=another"],
+      ["status", "-a", DEV, "--app=another"],
+      ["status", "-a", DEV, "-aanother"],
+    ]) {
+      expect(forDevApp(args), args.join(" ")).toBe(false);
+    }
+  });
+
+  it("takes the two calls that name none only in the one form each, not with other words after them", () => {
+    for (const args of [
+      ["orgs", "list"],
+      ["orgs", "list", "--json", "--all"],
+      ["orgs", "create", "x"],
+      ["apps", "create"],
+      ["apps", "create", "another"],
+      ["apps", "create", "another", "--org", "personal"],
+      ["apps", "create", DEV, "--org"],
+      ["apps", "create", DEV, "--org", "--json"],
+      ["apps", "create", DEV, "--region", "iad"],
+      ["apps", "create", DEV, "--org", "personal", "--region", "iad"],
+      ["apps", "list"],
+      ["apps", "destroy", DEV],
+    ]) {
+      expect(forDevApp(args), args.join(" ")).toBe(false);
+    }
+  });
+
+  it("makes no call that doesn't name it: Fly.run refuses before anything is spawned, and says so without the arguments", async () => {
+    const { spawn, calls } = fakeSpawn([["flyctl", {}]]);
+    const fly = flyOf(spawn, { FLY_API_TOKEN: FAKE_FLY_TOKEN });
+    for (const args of [["status"], ["machine", "list", "-a", "tadayo-api-prod", "--json"]]) {
+      const error: unknown = await fly.run(args).then(
+        () => undefined,
+        (caught: unknown) => caught,
+      );
+      expect(error).toBeInstanceOf(OpsError);
+      expect((error as OpsError).message).toBe(
+        "flyctl: a call that doesn't name tadayo-api-dev, and no other app, isn't made",
+      );
     }
     expect(calls).toEqual([]);
   });
@@ -110,6 +197,18 @@ describe("jsonOf and machines: what flyctl's list of Machines says", () => {
       },
       { id: "x9", state: "stopped", group: undefined, tag: undefined, image: undefined },
     ]);
+  });
+
+  it("says the Machines in words for a message: id, group and state each, `no group` for a Machine made another way, and `none`", () => {
+    const base = { tag: undefined, image: undefined };
+    expect(machineList([])).toBe("none");
+    expect(
+      machineList([
+        { id: "a1", state: "stopped", group: "api", ...base },
+        { id: "w1", state: "started", group: "worker", ...base },
+        { id: "x1", state: "created", group: undefined, ...base },
+      ]),
+    ).toBe("a1 (api, stopped), w1 (worker, started), x1 (no group, created)");
   });
 
   it("refuses a list it can't read, saying why with flyctl's own words and never the token", async () => {

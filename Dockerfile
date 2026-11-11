@@ -3,11 +3,12 @@
 # ADR-003). Node 26 runs the TypeScript as it is (type stripping), so there is no build step: the
 # image is the production dependencies and the source.
 #
-# The base is a tag for the reader and a digest for the build. It is bumped by hand, in a pull
-# request of its own, when Node's patch moves; its major is .nvmrc's. The pnpm version is the root
+# The base is a tag for the reader and a digest for the build, and the two are changed together (the
+# build uses the digest). It is bumped by hand, in a pull request of its own, when Node's patch moves;
+# its major is .nvmrc's. 26.13.1 is the security release of 10 November 2026. The pnpm version is the root
 # package.json's `packageManager`. Both are checked by tools/ops/src/deploy-files.test.ts. There is no
 # `# syntax=` line: it would pull a floating frontend image at every build, and nothing here needs one.
-ARG NODE_IMAGE=node:26.13.0-trixie-slim@sha256:5adad64f9a1fca2d51972caa65983634c8a774eb300d72b20f7f2a0f60368072
+ARG NODE_IMAGE=node:26.13.1-trixie-slim@sha256:e6bedef217677b276c591795e169840edd9096dbf13f29df8ef8d1856b8820bc
 
 FROM ${NODE_IMAGE} AS deps
 WORKDIR /app

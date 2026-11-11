@@ -3,7 +3,7 @@
 // which key goes in which header, a time limit on every call, Storage's status in the body, and a
 // message that says what a reply was without a word of its body.
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { FAKE_PUBLISHABLE, FAKE_SECRET } from "../test/fake-supabase.ts";
 import { OpsError } from "./ops-error.ts";
 import * as supabase from "./supabase.ts";
@@ -125,6 +125,19 @@ describe("send: the key each caller has, in the header it goes in", () => {
   });
 });
 
+describe("send: how long a call may take", () => {
+  it("gives each call 20 seconds, with the caller's own signal or without it", async () => {
+    const timeout = vi.spyOn(AbortSignal, "timeout");
+    try {
+      await supabase.send(recorder().fetcher, PROJECT, "/storage/v1/bucket");
+      await supabase.send(recorder().fetcher, PROJECT, "/storage/v1/bucket", { within: new AbortController().signal });
+      expect(timeout.mock.calls.map(([milliseconds]) => milliseconds)).toEqual([20_000, 20_000]);
+    } finally {
+      timeout.mockRestore();
+    }
+  });
+});
+
 describe("send: what a reply is", () => {
   const reply =
     (status: number, body: string): (() => Response) =>
@@ -206,6 +219,50 @@ describe("send: what a reply is", () => {
       );
     const message = await failure(supabase.send(recorder(stopped).fetcher, PROJECT, "/a?x=1"));
     expect(message).toBe("GET /a: no answer from the project");
+  });
+});
+
+describe("send: a signal that ends a call early, the probe's budget for the whole run", () => {
+  /** A fetch that never answers; it rejects when the signal it was given aborts, as a real one does. */
+  function waiting() {
+    const signals: AbortSignal[] = [];
+    const fetcher = ((_input: string | URL | Request, init?: RequestInit) =>
+      new Promise<Response>((_resolve, reject) => {
+        const signal = init?.signal;
+        if (signal === undefined || signal === null) return;
+        signals.push(signal);
+        if (signal.aborted) reject(new Error("ended"));
+        signal.addEventListener("abort", () => {
+          reject(new Error("ended"));
+        });
+      })) as typeof fetch;
+    return { fetcher, signals };
+  }
+
+  it("ends a call in flight when the signal aborts, and says it got no answer, as for any other end", async () => {
+    const { fetcher, signals } = waiting();
+    const controller = new AbortController();
+    const call = failure(supabase.send(fetcher, PROJECT, "/rest/v1/", { within: controller.signal }));
+    expect(signals[0]?.aborted).toBe(false);
+    controller.abort();
+    expect(await call).toBe("GET /rest/v1/: no answer from the project");
+    expect(signals[0]?.aborted).toBe(true);
+  });
+
+  it("ends at once a call given a signal that has already aborted", async () => {
+    const { fetcher, signals } = waiting();
+    const message = await failure(supabase.send(fetcher, PROJECT, "/rest/v1/", { within: AbortSignal.abort() }));
+    expect(message).toBe("GET /rest/v1/: no answer from the project");
+    expect(signals[0]?.aborted).toBe(true);
+  });
+
+  it("gives the call a signal of its own, which the caller's ends and doesn't replace, so the call's time limit stays", async () => {
+    const { fetcher, signals } = waiting();
+    const controller = new AbortController();
+    const call = failure(supabase.send(fetcher, PROJECT, "/rest/v1/", { within: controller.signal }));
+    expect(signals[0]).not.toBe(controller.signal);
+    controller.abort();
+    await call;
   });
 });
 

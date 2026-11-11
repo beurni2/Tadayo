@@ -23,6 +23,7 @@ export type Leak =
   | "sign-upload"
   | "bucket-create"
   | "rest"
+  | "rest-root"
   | "graphql";
 
 export interface FakeBucket {
@@ -239,8 +240,25 @@ export function fakeSupabase(options: FakeOptions = {}): Fake {
 
     // ---- Data API: off, so every door answers an error (a 503 for the schema cache it can't build).
     if (path.startsWith("/rest/v1")) {
-      if (leaks.has("rest") && (who === "anon" || signedIn))
+      // The root, which describes the schema, is read only with the secret key, since April 2026
+      // (supabase discussion 42949): the public key and a user's token are refused whatever the Data
+      // API's state, and the service key is told the schema when the Data API is on (`rest-root`).
+      if (path === "/rest/v1/" || path === "/rest/v1") {
+        if (who !== "service") {
+          return {
+            who,
+            response: json(403, {
+              message: "Access to schema is forbidden",
+              hint: "Accessing the schema via the Data API is only allowed using a secret API key.",
+            }),
+          };
+        }
+        if (leaks.has("rest-root")) {
+          return { who, response: json(200, { swagger: "2.0", paths: { "/clubs": {}, "/users": {}, "/": {} } }) };
+        }
+      } else if (leaks.has("rest") && (who === "anon" || signedIn)) {
         return { who, response: json(200, [{ id: "someone-else's row" }]) };
+      }
       return {
         who,
         response: json(503, {

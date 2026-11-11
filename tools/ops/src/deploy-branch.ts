@@ -17,7 +17,7 @@
 // a refusal says the status, which is what the person can act on.
 
 import { DEV_APP, GITHUB_REPOSITORY } from "./environment.ts";
-import { machines, why, type Fly } from "./fly.ts";
+import { machineList, machines, why, type Fly } from "./fly.ts";
 import { OpsError } from "./ops-error.ts";
 import type { Spawn } from "./spawn.ts";
 
@@ -186,7 +186,10 @@ export async function deployBranch(input: DeployBranchInput): Promise<void> {
   const now = await machines(fly);
   const started = now.filter((machine) => machine.state === "started");
   if (!started.some((machine) => machine.group === "api")) {
-    throw new OpsError(`deploy-branch: flyctl deployed, but no API Machine of ${DEV_APP} is started`);
+    // `flyctl deploy` leaves a Machine that is stopped as it was, so a crash at start shows up here.
+    throw new OpsError(
+      `deploy-branch: flyctl deployed, but no API Machine of ${DEV_APP} is started (the app's Machines: ${machineList(now)}); if it stopped on its own, Fly's log of ${DEV_APP} says why`,
+    );
   }
   const runsLabel = (machine: { tag: string | undefined; image: string | undefined }) =>
     machine.tag === label || (machine.image ?? "").endsWith(`:${label}`);

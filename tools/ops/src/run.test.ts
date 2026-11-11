@@ -2,6 +2,7 @@
 // anything, what it hands psql, and that the connection it opens is closed. The database side,
 // with the real psql and Postgres, is tests/src/db/ops-scripts.test.ts.
 
+import { join } from "node:path";
 import type postgres from "postgres";
 import { describe, expect, it } from "vitest";
 import { OpsError } from "./ops-error.ts";
@@ -40,6 +41,8 @@ function harness(
     rows?: Record<string, unknown>[];
     code?: number;
     connectFails?: boolean;
+    /** What the first query is refused with, as a pooler refuses a role it doesn't know or a wrong password. */
+    queryFails?: string;
   } = {},
 ): Harness {
   const said: string[] = [];
@@ -59,7 +62,11 @@ function harness(
     connect: (url) => {
       connected.push(url);
       if (options.connectFails) throw new Error("connected");
-      const sql = Object.assign(() => Promise.resolve(options.rows ?? []), {
+      const answer = () =>
+        options.queryFails === undefined
+          ? Promise.resolve(options.rows ?? [])
+          : Promise.reject(new Error(options.queryFails));
+      const sql = Object.assign(answer, {
         end: () => {
           ended.count += 1;
           return Promise.resolve();
@@ -140,6 +147,71 @@ describe("runScript", () => {
         expect(spawned).toEqual([]);
       }
     }
+  });
+});
+
+describe("a connection that the database refuses", () => {
+  const REFUSED = 'password authentication failed for user "tadayo_app"';
+
+  it("says which script and which variable, the driver's words, and what to look at, then closes it", async () => {
+    // bootstrap runs psql first, and then asks the role's own connection.
+    for (const script of DATABASE_SCRIPTS) {
+      const { ctx: made, ended } = harness({ queryFails: REFUSED });
+      // dev-clock reads its SQL file before it connects, so the repository is the real one.
+      const ctx: OpsContext = { ...made, repo: join(import.meta.dirname, "..", "..", "..") };
+      await expect(runScript(script, ctx), script).rejects.toThrow(
+        new OpsError(
+          `${script}: couldn't connect with DATABASE_URL: ${REFUSED}. Has ops bootstrap run, and does DATABASE_URL hold the password it set?`,
+        ),
+      );
+      expect(ended.count, script).toBe(1);
+    }
+  });
+
+  it("says that no reason was given when the driver's error has no words, or isn't an Error", async () => {
+    for (const thrown of [new Error(""), "refused"]) {
+      const { ctx } = harness();
+      const refusing: OpsContext = {
+        ...ctx,
+        connect: (url) => {
+          const sql = ctx.connect(url);
+          // A driver can reject with anything; the cast is only for the type of a rejection.
+          return Object.assign(() => Promise.reject(thrown as Error), {
+            end: (options?: { timeout?: number }) => sql.end(options),
+          }) as unknown as postgres.Sql;
+        },
+      };
+      await expect(runScript("migrate", refusing), String(thrown)).rejects.toThrow(
+        new OpsError(
+          "migrate: couldn't connect with DATABASE_URL: no reason was given. Has ops bootstrap run, and does DATABASE_URL hold the password it set?",
+        ),
+      );
+    }
+  });
+
+  it("is not said of a script's own failure: what its queries answer is the script's to say", async () => {
+    // The connection works (the first query is answered) and a later query fails: its words are the script's.
+    const { ctx } = harness();
+    let asked = 0;
+    const later: OpsContext = {
+      ...ctx,
+      connect: (url) => {
+        const sql = ctx.connect(url);
+        return Object.assign(
+          () => {
+            asked += 1;
+            return asked === 1 ? Promise.resolve([]) : Promise.reject(new Error('relation "x" does not exist'));
+          },
+          { end: (options?: { timeout?: number }) => sql.end(options) },
+        ) as unknown as postgres.Sql;
+      },
+    };
+    await expect(runScript("bootstrap", later)).rejects.toThrow(/^relation "x" does not exist$/);
+    // And a script's own check after the connection says its own words.
+    const { ctx: another } = harness({ rows: [{ me: "postgres" }] });
+    await expect(runScript("bootstrap", another)).rejects.toThrow(
+      /^bootstrap: DATABASE_URL connects as postgres, not tadayo_app$/,
+    );
   });
 });
 

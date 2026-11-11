@@ -1,6 +1,6 @@
 // The files that make the dev API's image and app, read as files (docs/plans/api-b0-deploy.md,
 // sections 1 and 2; TECH-DESIGN sections 3 and 7; ADR-003, ADR-023; T56): the `Dockerfile`, its
-// `.dockerignore` and `fly.toml`. `flyctl` can't run in a cloud session, so what it will read is
+// `.dockerignore` and `fly.toml`. No `flyctl` has been run in a cloud session, so what it will read is
 // checked against what the repository says elsewhere: the Node and pnpm it pins, the packages the two
 // process groups run, the project the app calls, and the host the iOS app is built to call. The
 // image itself is built and run as evidence (docs/JOURNAL.md), and `fly.toml` is parsed by Python's
@@ -79,10 +79,16 @@ function workspace(): Map<string, { name: string; needs: string[] }> {
   return packages;
 }
 
-const copies = (stage: "deps" | "runtime") => {
+/** The instructions of each stage, in order, each from its `FROM` to the next one. */
+function stages(): Instruction[][] {
   const all = dockerfile();
   const starts = all.flatMap((instruction, index) => (instruction.name === "FROM" ? [index] : []));
-  const part = stage === "deps" ? all.slice(starts[0], starts[1]) : all.slice(starts[1]);
+  return starts.map((start, position) => all.slice(start, starts[position + 1]));
+}
+
+const copies = (stage: "deps" | "runtime") => {
+  const [deps = [], runtime = []] = stages();
+  const part = stage === "deps" ? deps : runtime;
   return part
     .filter((instruction) => instruction.name === "COPY")
     .map((instruction) => {
@@ -172,12 +178,19 @@ describe("Dockerfile", () => {
     expect(JSON.parse(cmd?.args ?? "[]")).toEqual(api);
   });
 
-  it("runs as an unprivileged user, and in production", () => {
-    const users = dockerfile().filter((instruction) => instruction.name === "USER");
-    expect(users.at(-1)?.args).toBe("node");
-    expect(
-      dockerfile().some((instruction) => instruction.name === "ENV" && instruction.args === "NODE_ENV=production"),
-    ).toBe(true);
+  it("runs, in the stage that is the image, as an unprivileged user and in production, with the dependencies copied once as pnpm laid them", () => {
+    expect(stages()).toHaveLength(2);
+    // The second stage is what Fly runs; the first only builds node_modules.
+    const image = stages().at(-1) ?? [];
+    expect(image.filter((instruction) => instruction.name === "USER").at(-1)?.args).toBe("node");
+    expect(image.filter((instruction) => instruction.name === "ENV").map((instruction) => instruction.args)).toContain(
+      "NODE_ENV=production",
+    );
+    // pnpm's symlinks are what makes a workspace import resolve: its tree is taken whole, once.
+    const fromDeps = image.filter(
+      (instruction) => instruction.name === "COPY" && instruction.args.startsWith("--from="),
+    );
+    expect(fromDeps.map((instruction) => instruction.args)).toEqual(["--from=deps /app/ ./"]);
   });
 
   it("names no secret, key, password or environment file in what it sets or copies", () => {
@@ -262,7 +275,7 @@ describe("fly.toml", () => {
     }
   });
 
-  it("scopes every section that binds to a group to its group, since an unscoped one binds to the first only", () => {
+  it("scopes every section that binds to a group to its group: flyctl refuses an unscoped service, and the others go to one group only", () => {
     const config = flyToml();
     for (const section of ["services", "restart", "checks", "http_service", "mounts", "files", "metrics"]) {
       const value = config[section];

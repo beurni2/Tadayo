@@ -1,9 +1,10 @@
 // A made-up `flyctl` and `git`, as a `Spawn`: each call is recorded, and answered by the first route
-// whose text its command line starts with (docs/plans/api-b0-deploy.md, section 6). flyctl can't be
-// installed in a cloud session, so what the scripts say to it is checked here, argument by argument,
-// and what it answers is as the vendor's documentation and source describe it (read on 11 November
-// 2026); the first real run, after slice 10b, checks the rest. Test support, outside `src`, so the
-// image doesn't carry it.
+// whose text its command line starts with (docs/plans/api-b0-deploy.md, section 6). No flyctl has been
+// run in a cloud session (a session refuses to run a downloaded binary), so what the scripts say to it
+// is checked here, argument by argument, and what it answers is as flyctl 0.5.8's source describes
+// it (read on 11 November 2026, with fly-go v0.11.8's types: a field that is zero or empty is left
+// out of what it prints); the first real run, after slice 10b, checks the rest. Test support,
+// outside `src`, so the image doesn't carry it.
 
 import type { Spawn, SpawnOptions, Spawned } from "../src/spawn.ts";
 

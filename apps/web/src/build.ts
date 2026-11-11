@@ -25,7 +25,16 @@ const APP_ID = /^[A-Z0-9]{10}\.[A-Za-z0-9][A-Za-z0-9.-]*$/;
 const record = (value: unknown): Record<string, unknown> | undefined =>
   typeof value === "object" && value !== null && !Array.isArray(value) ? (value as Record<string, unknown>) : undefined;
 
-/** What is wrong with the association file, as iOS 13 and later read it (`applinks.details`); nothing when it is right. */
+/**
+ * What is wrong with the association file by Tadayo's own rules, which are STRICTER than Apple's
+ * format; nothing when it is right. Apple marks every key of `applinks`, of a detail and of a
+ * component optional, takes `appID` beside `appIDs`, reads a component with no `/` key as matching
+ * every path, and shows `webcredentials` and `appclips` beside `applinks` in its sample file. Here
+ * the file is the iOS 13 form (`applinks.details`, each with `appIDs` and `components`), has no key
+ * but `applinks` (nothing is decided about the other grants), and every component names its path
+ * with a `/` key that starts with a slash, so that a mistyped key can't claim the whole site
+ * without a word. A later slice that needs more loosens a rule here, with its test.
+ */
 export function checkAssociation(text: string): string[] {
   if (Buffer.byteLength(text) > MOST_BYTES) return ["is larger than 128 KB, which Apple's CDN refuses"];
   let parsed: unknown;
@@ -71,25 +80,43 @@ export function checkAssociation(text: string): string[] {
   return problems;
 }
 
-/** What is wrong with the `_headers` file: the association file has to be served as JSON. */
+/**
+ * What is wrong with the `_headers` file: the association file has to be served as JSON. Pages
+ * applies EVERY rule whose path matches a request, in file order, and joins a header that more than
+ * one of them sets (`text/plain, application/json`), or removes it (`! Content-Type`). So this
+ * reads the whole file as Pages does (a line is trimmed, and is a path when it starts with a slash
+ * or with `scheme://`; the lines under it are its headers), wants exactly one rule for the
+ * association's path (what Pages makes of one path written twice isn't something to lean on), and
+ * refuses a Content-Type set or removed under any other path, since it can't tell which of those
+ * patterns would match.
+ */
 export function checkHeaders(text: string): string[] {
-  // Pages' format: a path on a line of its own, then its headers, indented.
-  const rules = new Map<string, string[]>();
-  let current: string[] | undefined;
-  for (const line of text.split("\n")) {
-    if (line.trim() === "" || line.trim().startsWith("#")) continue;
-    if (/^\s/.test(line)) {
-      current?.push(line.trim());
-    } else {
-      current = [];
-      rules.set(line.trim(), current);
-    }
+  const rules: { path: string; headers: string[] }[] = [];
+  for (const raw of text.split("\n")) {
+    const line = raw.trim();
+    if (line === "" || line.startsWith("#")) continue;
+    if (/^(\/|[a-z][a-z0-9+.-]*:\/\/)/i.test(line)) rules.push({ path: line, headers: [] });
+    else rules.at(-1)?.headers.push(line);
   }
-  const rule = rules.get(ASSOCIATION_PATH);
+  const ours = rules.filter((rule) => rule.path === ASSOCIATION_PATH);
+  const [rule] = ours;
   if (rule === undefined) return [`has no rule for ${ASSOCIATION_PATH}`];
-  const types = rule
-    .filter((line) => /^content-type\s*:/i.test(line))
-    .map((line) => line.slice(line.indexOf(":") + 1).trim());
+  if (ours.length > 1) {
+    return [
+      `has ${String(ours.length)} rules for ${ASSOCIATION_PATH}: it wants one, so that the type served doesn't depend on how Pages treats a path written twice`,
+    ];
+  }
+  const settingType = (headers: readonly string[]) =>
+    headers.filter((line) => /^(!\s*)?content-type\s*(:|$)/i.test(line));
+  const elsewhere = rules.filter((other) => other !== rule && settingType(other.headers).length > 0);
+  if (elsewhere.length > 0) {
+    return [
+      `sets or removes Content-Type for ${elsewhere.map((other) => other.path).join(", ")}, and Pages applies every rule that matches, so it could change the type of ${ASSOCIATION_PATH}`,
+    ];
+  }
+  const set = rule.headers.filter((line) => /^content-type\s*:/i.test(line));
+  if (settingType(rule.headers).length > set.length) return [`removes the Content-Type of ${ASSOCIATION_PATH}`];
+  const types = set.map((line) => line.slice(line.indexOf(":") + 1).trim());
   if (types.length === 0) return [`has no Content-Type for ${ASSOCIATION_PATH}`];
   if (types.length !== 1 || types[0] !== "application/json") {
     return [`serves ${ASSOCIATION_PATH} as ${types.join(", ")}, and not as application/json`];
@@ -130,6 +157,11 @@ export function buildSite(input: BuildInput): void {
       problems.push(`_headers ${problem}`);
   }
   found("404.html");
+  if (problems.some((problem) => problem.startsWith(`${ASSOCIATION} `))) {
+    problems.push(
+      `the rules for ${ASSOCIATION} are Tadayo's own, stricter than Apple's format: checkAssociation in apps/web/src/build.ts says which`,
+    );
+  }
   if (problems.length > 0) throw new Error(problems.map((problem) => `web: ${problem}`).join("\n"));
 
   rmSync(out, { recursive: true, force: true });

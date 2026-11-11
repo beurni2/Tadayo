@@ -40,7 +40,8 @@ export async function runBootstrap(input: BootstrapInput): Promise<void> {
     throw new OpsError("bootstrap: the path of db/bootstrap.sql isn't a plain path");
   const verifier = scramVerifier(input.password);
   const script = `\\set app_password '${verifier}'\n\\i '${input.file}'\n`;
-  const result = await input.spawn("psql", ["-X", "-v", "ON_ERROR_STOP=1", "-f", "-"], {
+  // -X: no psqlrc. -w: never ask for a password, so a missing or wrong one is a failure with a message.
+  const result = await input.spawn("psql", ["-X", "-w", "-v", "ON_ERROR_STOP=1", "-f", "-"], {
     env: input.pgEnv,
     input: script,
     timeoutMs: 120_000,

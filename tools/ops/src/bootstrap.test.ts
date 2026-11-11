@@ -37,8 +37,10 @@ describe("runBootstrap", () => {
     expect(calls).toHaveLength(1);
     const [call] = calls;
     expect(call?.command).toBe("psql");
-    expect(call?.args).toEqual(["-X", "-v", "ON_ERROR_STOP=1", "-f", "-"]);
+    expect(call?.args).toEqual(["-X", "-w", "-v", "ON_ERROR_STOP=1", "-f", "-"]);
     expect(call?.options.env).toEqual(PG_ENV);
+    // psql is cut off after two minutes, as the message for a timeout says.
+    expect(call?.options.timeoutMs).toBe(120_000);
     expect(call?.options.input).toMatch(
       /^\\set app_password 'SCRAM-SHA-256\$4096:[^']+'\n\\i '\/repo\/db\/bootstrap\.sql'\n$/,
     );
@@ -79,6 +81,18 @@ describe("runBootstrap", () => {
       ).rejects.toThrow(/DATABASE_APP_PASSWORD/);
       expect(calls).toHaveLength(0);
     }
+  });
+
+  it("takes a password of exactly 32 characters, the founder's minimum, and refuses one of 31", async () => {
+    // The number is the plan's (docs/plans/B0.md, section 1.3), written here and not read from the code.
+    expect(SHORTEST_PASSWORD).toBe(32);
+    const { calls, spawn } = recording({ code: 0 });
+    await runBootstrap({ pgEnv: PG_ENV, password: "x".repeat(32), file: FILE, spawn });
+    expect(calls).toHaveLength(1);
+    await expect(runBootstrap({ pgEnv: PG_ENV, password: "x".repeat(31), file: FILE, spawn })).rejects.toThrow(
+      /DATABASE_APP_PASSWORD/,
+    );
+    expect(calls).toHaveLength(1);
   });
 
   it("refuses a file path that isn't plain, which would end its quotes", async () => {

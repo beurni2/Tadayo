@@ -4,7 +4,7 @@
 // reaches a database.
 
 import { describe, expect, it } from "vitest";
-import { DEV_APP, devDatabaseUrl, devProjectRef, pgEnvOf, readVariables } from "./environment.ts";
+import { DEV_APP, databaseOf, devDatabaseUrl, devProjectRef, pgEnvOf, readVariables } from "./environment.ts";
 import { OpsError } from "./ops-error.ts";
 
 const DEV = "rhsycmycocbzakrydahi";
@@ -93,6 +93,51 @@ describe("devDatabaseUrl: only tadayo-dev's database, by the reference in the co
     ]) {
       expect(() => devDatabaseUrl(given, DEV), given).toThrow(OpsError);
     }
+  });
+
+  it("refuses a string with no password, which psql would ask for on a terminal, and says so", () => {
+    for (const given of [
+      `postgresql://tadayo_app.${DEV}@${POOLER}:5432/postgres`,
+      `postgresql://tadayo_app.${DEV}:@${POOLER}:5432/postgres`,
+    ]) {
+      expect(() => devDatabaseUrl(given, DEV), given).toThrow(/it has no password$/);
+    }
+  });
+
+  it("says what is wrong with a password that isn't percent-encoded properly, by the variable's name and never the password", () => {
+    // `%` must be followed by two hexadecimal digits; a driver or `decodeURIComponent` would stop with "URI malformed".
+    for (const password of ["abc%zzdef-0123456789", "abc-0123456789%", "100%-sure-0123456789", "%E0%A4%A"]) {
+      const given = `postgresql://tadayo_app.${DEV}:${password}@${POOLER}:5432/postgres`;
+      let message = "";
+      try {
+        devDatabaseUrl(given, DEV);
+      } catch (error) {
+        message = error instanceof Error ? error.message : "";
+      }
+      expect(message, password).toBe(
+        "DATABASE_URL isn't a connection to tadayo-dev's database through Supabase's session pooler: its password isn't valid percent-encoding: a % in it has to be written as %25",
+      );
+    }
+    expect(() =>
+      devDatabaseUrl(url({ user: `tadayo_app.${DEV}` }).replace(PASSWORD, "abc%zz"), DEV, "DATABASE_ADMIN_URL"),
+    ).toThrow(/^DATABASE_ADMIN_URL isn't .*percent-encoding/);
+  });
+
+  it("tells a password with a # / or ? in it to write them encoded, since those end the user-info part", () => {
+    for (const password of ["abcd#efgh-0123456789", "abcd/efgh-0123456789", "abcd?efgh-0123456789"]) {
+      const given = `postgresql://tadayo_app.${DEV}:${password}@${POOLER}:5432/postgres`;
+      expect(() => devDatabaseUrl(given, DEV), password).toThrow(
+        /it isn't a connection string \(a # \/ or \? in the password has to be written as %23, %2F or %3F\)$/,
+      );
+    }
+  });
+
+  it("takes a comma in the password, which is the password's and not a second host's, and still refuses one after the @", () => {
+    const given = `postgresql://tadayo_app.${DEV}:a,b,c-0123456789@${POOLER}:5432/postgres`;
+    expect(devDatabaseUrl(given, DEV)).toBe(given);
+    expect(databaseOf(devDatabaseUrl(given, DEV)).password).toBe("a,b,c-0123456789");
+    const second = `postgresql://tadayo_app.${DEV}:a,b,c-0123456789@${POOLER}:5432,localhost:5432/postgres`;
+    expect(() => devDatabaseUrl(second, DEV)).toThrow(/it names more than one host$/);
   });
 
   it("says it names more than one host, as the string says it, before any parser reads it", () => {
@@ -188,6 +233,13 @@ describe("pgEnvOf: the connection as the environment variables psql reads, so no
 
   it("gives port 5432 when the string has none", () => {
     expect(pgEnvOf(devDatabaseUrl(url({ port: "" }), DEV)).PGPORT).toBe("5432");
+  });
+
+  it("gives the host in lower case, as the guard read it, whatever case the string wrote it in", () => {
+    // `new URL` leaves the host of a postgresql: URL as it was written; the guard lower-cases it to compare.
+    const shouted = devDatabaseUrl(url({ host: POOLER.toUpperCase() }), DEV);
+    expect(pgEnvOf(shouted).PGHOST).toBe(POOLER);
+    expect(databaseOf(shouted).host).toBe(POOLER);
   });
 });
 

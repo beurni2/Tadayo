@@ -3,7 +3,7 @@
 // that is built and then found running (docs/plans/B0.md, slice 10a; ADR-025; T58). The spikes use
 // it to put server code on `dev` before it merges.
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { FAKE_FLY_TOKEN, fakeSpawn, json, lineOf, machine, type Route } from "../test/fake-fly.ts";
 import { deployBranch } from "./deploy-branch.ts";
 import { flyOf } from "./fly.ts";
@@ -126,6 +126,22 @@ describe("deployBranch when the commit's ci run passed", () => {
       `deploy-branch: ${SHA} is deployed: the API and the worker run the image ${LABEL}`,
       "deploy-branch: the next deploy-dev run, on a merge to main, replaces it",
     ]);
+  });
+
+  it("cuts every git call off after 30 seconds and every GitHub request after 30 seconds, and the deploy after 20 minutes", async () => {
+    const timeout = vi.spyOn(AbortSignal, "timeout");
+    try {
+      const result = await run();
+      expect(result.outcome).toBeUndefined();
+      const gits = result.raw.filter((call) => call.command === "git");
+      expect(gits).toHaveLength(2);
+      expect(gits.map((call) => call.options.timeoutMs)).toEqual([30_000, 30_000]);
+      expect(timeout.mock.calls.map(([milliseconds]) => milliseconds)).toEqual([30_000, 30_000]);
+      const deploy = result.raw.find((call) => call.command === "flyctl" && call.args[0] === "deploy");
+      expect(deploy?.options.timeoutMs).toBe(20 * 60 * 1000);
+    } finally {
+      timeout.mockRestore();
+    }
   });
 
   it("asks GitHub for the branch's head and the ci runs of that commit, with the token, and nothing else", async () => {
@@ -413,7 +429,7 @@ describe("deployBranch when GitHub or Fly doesn't answer as it should", () => {
       machines: [machine("a1", "api", "stopped", LABEL), machine("w1", "worker", "started", LABEL)],
     });
     expect(message(none.outcome)).toBe(
-      "deploy-branch: flyctl deployed, but no API Machine of tadayo-api-dev is started",
+      "deploy-branch: flyctl deployed, but no API Machine of tadayo-api-dev is started (the app's Machines: a1 (api, stopped), w1 (worker, started)); if it stopped on its own, Fly's log of tadayo-api-dev says why",
     );
     expect(older.said.some((line) => line.includes("is deployed"))).toBe(false);
   });

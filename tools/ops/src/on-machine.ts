@@ -5,16 +5,24 @@
 // `--here`, and reads what it printed.
 //
 // `flyctl machine exec` needs only the API token (no tunnel, no SSH), runs the command in a started
-// Machine, and answers once, as JSON, when the command ends: `{stdout, stderr, exit_code}`. It
-// exits 0 even when the command failed, so the exit code is read from the answer. It is limited to
-// 600 seconds; this asks for 300.
+// Machine, and answers once, as JSON, when the command ends. It exits 0 even when the command
+// failed, so the exit code is read from the answer. The answer is flyctl's own rendering of the
+// Machines API's (flyctl 0.5.8, `internal/command/machine/exec.go`, and fly-go's
+// `MachineExecResponse`): an object with `stdout`, `stderr` and `exit_code`, each of them LEFT OUT
+// when it is empty or zero (Go's `omitempty`). So a command that worked answers `{"stdout": "…"}`
+// with no `exit_code` at all, and one that printed nothing answers `{}`; only a failure names its
+// code. The answer is read strictly because a missing code means "worked": nothing but those keys
+// (and `exit_signal`, the Machines API's own, which a later flyctl may print), each of the right
+// type, is accepted, so a flyctl that renamed the code, or an answer of another kind, fails the
+// script instead of passing as a success. The workflow pins the flyctl version this was checked
+// against (slice 10b). `machine exec` is limited to 600 seconds; this asks for 300.
 //
 // Whether the command sees the Machine's secrets is the one thing Fly's documentation doesn't say
 // for `machine exec` (it does for `fly ssh console`); the first run after slice 10b shows it, and
 // docs/LIMITATIONS.md says what to do if it doesn't.
 
 import { DEV_APP } from "./environment.ts";
-import { jsonOf, machines, why, type Fly } from "./fly.ts";
+import { jsonOf, machineList, machines, why, type Fly } from "./fly.ts";
 import { OpsError } from "./ops-error.ts";
 
 export interface OnMachineInput {
@@ -26,20 +34,51 @@ export interface OnMachineInput {
   readonly say: (line: string) => void;
 }
 
-const EXEC_SECONDS = 300;
+/** How long `flyctl machine exec` lets the command run before it ends it (the Machine's, not the call's). */
+export const EXEC_SECONDS = 300;
 // The call is given a little longer than the command, so that flyctl's own timeout is the one that speaks.
 const CALL_MS = (EXEC_SECONDS + 30) * 1000;
 const PLAIN_WORD = /^[A-Za-z0-9._/:=@-]+$/;
 
 const linesOf = (text: string): string[] => (text === "" ? [] : text.replace(/\n$/, "").split("\n"));
 
+/** The only keys of an answer that is one: `flyctl` leaves out the ones that are empty or zero. */
+const ANSWER_KEYS = ["stdout", "stderr", "exit_code", "exit_signal"];
+
+interface Answer {
+  readonly stdout: string;
+  readonly stderr: string;
+  readonly exitCode: number;
+  readonly exitSignal: number;
+}
+
+/** What `flyctl machine exec --json` printed, or nothing when that isn't an answer of its kind. */
+function readAnswer(printed: unknown): Answer | undefined {
+  if (typeof printed !== "object" || printed === null || Array.isArray(printed)) return undefined;
+  const body = printed as Record<string, unknown>;
+  if (Object.keys(body).some((key) => !ANSWER_KEYS.includes(key))) return undefined;
+  const { stdout = "", stderr = "", exit_code: exitCode = 0, exit_signal: exitSignal = 0 } = body;
+  if (typeof stdout !== "string" || typeof stderr !== "string") return undefined;
+  if (typeof exitCode !== "number" || !Number.isInteger(exitCode)) return undefined;
+  if (typeof exitSignal !== "number" || !Number.isInteger(exitSignal)) return undefined;
+  return { stdout, stderr, exitCode, exitSignal };
+}
+
 export async function onMachine(input: OnMachineInput): Promise<void> {
   const { fly, label, say } = input;
   if (input.command.length === 0 || !input.command.every((word) => PLAIN_WORD.test(word))) {
     throw new OpsError(`${label}: a command for the Machine is plain words: letters, digits and . _ / : = @ -`);
   }
-  const target = (await machines(fly)).find((machine) => machine.group === "api" && machine.state === "started");
-  if (target === undefined) throw new OpsError(`${label}: the API has no started Machine; deploy first`);
+  const all = await machines(fly);
+  const target = all.find((machine) => machine.group === "api" && machine.state === "started");
+  if (target === undefined) {
+    // A Machine that crashed is restarted a few times and then left stopped (fly.toml's `[[restart]]`),
+    // and deploying again leaves it stopped: what it died of is in Fly's log, which no script reads.
+    const advice = all.some((machine) => machine.group === "api")
+      ? `if it stopped on its own, Fly's log of ${DEV_APP} says why`
+      : "deploy first";
+    throw new OpsError(`${label}: the API has no started Machine (the app's Machines: ${machineList(all)}); ${advice}`);
+  }
 
   const result = await fly.run(
     ["machine", "exec", target.id, input.command.join(" "), "-a", DEV_APP, "--json", "--timeout", String(EXEC_SECONDS)],
@@ -47,15 +86,13 @@ export async function onMachine(input: OnMachineInput): Promise<void> {
   );
   if (result.code !== 0) throw new OpsError(`${label}: flyctl couldn't run it on the Machine: ${why(result)}`);
 
-  const answer = jsonOf(result);
-  const body =
-    typeof answer === "object" && answer !== null && !Array.isArray(answer) ? (answer as Record<string, unknown>) : {};
-  const exitCode = body["exit_code"];
-  if (typeof exitCode !== "number")
-    throw new OpsError(`${label}: flyctl's answer about the command isn't one it can read`);
-  for (const stream of ["stdout", "stderr"]) {
-    const printed = body[stream];
-    if (typeof printed === "string") for (const line of linesOf(printed)) say(line);
+  const answer = readAnswer(jsonOf(result));
+  if (answer === undefined) throw new OpsError(`${label}: flyctl's answer about the command isn't one it can read`);
+  for (const text of [answer.stdout, answer.stderr]) for (const line of linesOf(text)) say(line);
+  if (answer.exitCode !== 0) {
+    throw new OpsError(`${label}: it failed on the Machine, with exit code ${String(answer.exitCode)}`);
   }
-  if (exitCode !== 0) throw new OpsError(`${label}: it failed on the Machine, with exit code ${String(exitCode)}`);
+  if (answer.exitSignal !== 0) {
+    throw new OpsError(`${label}: it was ended on the Machine by signal ${String(answer.exitSignal)}`);
+  }
 }

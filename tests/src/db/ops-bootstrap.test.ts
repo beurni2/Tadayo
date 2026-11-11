@@ -19,8 +19,17 @@ const OTHER_PASSWORD = "yet-another-password-of-more-than-32-chars";
 
 const adminUrl = process.env.DATABASE_ADMIN_URL ?? "";
 const appUrl = process.env.DATABASE_URL ?? "";
-// The local server has no TLS, and the pooler's string asks for it.
-const pgEnv = { ...pgEnvOf(adminUrl as DevDatabaseUrl), PGSSLMODE: "disable" };
+
+/**
+ * psql's environment for the admin connection. Built in the test that needs it, and not when the
+ * file loads: without DATABASE_ADMIN_URL `pgEnvOf` would stop the whole file at import with
+ * "Invalid URL", where this says what to set. The local server has no TLS, and the pooler's string
+ * asks for it.
+ */
+function pgEnv(): Record<string, string> {
+  expect(adminUrl, "set DATABASE_ADMIN_URL, as the ci step db-tests does").not.toBe("");
+  return { ...pgEnvOf(adminUrl as DevDatabaseUrl), PGSSLMODE: "disable" };
+}
 
 const admin = adminSql();
 afterAll(async () => {
@@ -48,14 +57,13 @@ async function putCiPasswordBack(): Promise<void> {
 
 describe("bootstrap, through psql, against the test database", () => {
   it("gives tadayo_app the password it is given, and takes the old one away", async () => {
-    expect(adminUrl, "set DATABASE_ADMIN_URL, as the ci step db-tests does").not.toBe("");
     try {
-      await runBootstrap({ pgEnv, password: NEW_PASSWORD, file: FILE, spawn: spawnProcess });
+      await runBootstrap({ pgEnv: pgEnv(), password: NEW_PASSWORD, file: FILE, spawn: spawnProcess });
       expect(await logsIn(NEW_PASSWORD)).toBe(true);
       expect(await logsIn(CI_PASSWORD)).toBe(false);
       expect(await logsIn(OTHER_PASSWORD)).toBe(false);
       // It can run again, and the password is set again.
-      await runBootstrap({ pgEnv, password: OTHER_PASSWORD, file: FILE, spawn: spawnProcess });
+      await runBootstrap({ pgEnv: pgEnv(), password: OTHER_PASSWORD, file: FILE, spawn: spawnProcess });
       expect(await logsIn(OTHER_PASSWORD)).toBe(true);
       expect(await logsIn(NEW_PASSWORD)).toBe(false);
     } finally {
@@ -79,7 +87,7 @@ describe("bootstrap, through psql, against the test database", () => {
 
   it("stores a verifier, never the password, when it gives tadayo_app one", async () => {
     try {
-      await runBootstrap({ pgEnv, password: NEW_PASSWORD, file: FILE, spawn: spawnProcess });
+      await runBootstrap({ pgEnv: pgEnv(), password: NEW_PASSWORD, file: FILE, spawn: spawnProcess });
       const [row] = await admin<
         { stored: string }[]
       >`SELECT rolpassword AS stored FROM pg_catalog.pg_authid WHERE rolname = 'tadayo_app'`;
@@ -92,7 +100,7 @@ describe("bootstrap, through psql, against the test database", () => {
 
   it("leaves the role as the bootstrap's own checks demand, and the schema closed", async () => {
     try {
-      await runBootstrap({ pgEnv, password: NEW_PASSWORD, file: FILE, spawn: spawnProcess });
+      await runBootstrap({ pgEnv: pgEnv(), password: NEW_PASSWORD, file: FILE, spawn: spawnProcess });
       const [role] = await admin<{ login: boolean; super: boolean; bypass: boolean; owner: string }[]>`
         SELECT r.rolcanlogin AS login, r.rolsuper AS super, r.rolbypassrls AS bypass,
                (SELECT nspowner::regrole::text FROM pg_catalog.pg_namespace WHERE nspname = 'app') AS owner
@@ -110,7 +118,7 @@ describe("bootstrap, through psql, against the test database", () => {
       return spawnProcess(command, args, options);
     };
     try {
-      await runBootstrap({ pgEnv, password: NEW_PASSWORD, file: FILE, spawn: spy });
+      await runBootstrap({ pgEnv: pgEnv(), password: NEW_PASSWORD, file: FILE, spawn: spy });
     } finally {
       await putCiPasswordBack();
     }
@@ -129,7 +137,7 @@ describe("bootstrap, through psql, against the test database", () => {
     );
     let message = "";
     try {
-      await runBootstrap({ pgEnv, password: NEW_PASSWORD, file: bad, spawn: spawnProcess });
+      await runBootstrap({ pgEnv: pgEnv(), password: NEW_PASSWORD, file: bad, spawn: spawnProcess });
     } catch (error) {
       message = error instanceof Error ? error.message : "";
     }

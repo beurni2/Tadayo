@@ -8,8 +8,10 @@
 # own, set by the founder, and never in this file (T56). tools/ops/src/deploy-files.test.ts reads this
 # file against the Dockerfile and the rest of the repository.
 #
-# A section that binds to a group has `processes`: left out, Fly gives it to the first group only
-# (`[[vm]]` is the exception: left out, it covers every group, as the one at the end does).
+# A section that binds to a group has `processes`. Left out, `flyctl` refuses a `[[services]]` while
+# `[processes]` is defined, gives `[[restart]]`, `[checks]` and the like to the default group only (`app`,
+# else the first name in sorted order, here `api`), and lets `[[vm]]` cover every group, as the one at
+# the end does.
 
 app = "tadayo-api-dev"
 primary_region = "iad"

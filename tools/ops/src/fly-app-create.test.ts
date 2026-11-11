@@ -30,11 +30,26 @@ const ISSUING = {
   certificates: [{ status: "pending_validation" }],
   dns_requirements: { cname: "tadayo-api-dev.fly.dev" },
 };
+// Fly has verified the host (`active` is ownership, in the Machines API's words), and its certificate
+// is not in the list of issued ones yet.
+const VERIFIED = {
+  hostname: HOST,
+  configured: true,
+  status: "Awaiting certificates",
+  certificates: [{ source: "fly", status: "active", issued: [] }],
+  dns_requirements: { cname: "tadayo-api-dev.fly.dev" },
+};
 const ISSUED = {
   hostname: HOST,
   configured: true,
   status: "Ready",
-  certificates: [{ source: "acme", status: "active" }],
+  certificates: [
+    {
+      source: "fly",
+      status: "active",
+      issued: [{ type: "ecdsa", expires_at: "2027-02-09T00:00:00Z", created_at: "2026-11-11T00:00:00Z" }],
+    },
+  ],
   dns_requirements: { cname: "tadayo-api-dev.fly.dev" },
 };
 
@@ -131,6 +146,43 @@ describe("flyAppCreate when it has been run before", () => {
       "fly-app-create: DNS is in place for api-dev.tadayo.app, and Fly is issuing the certificate",
     );
     expect(issuing.said.some((line) => line.includes("CNAME"))).toBe(false);
+  });
+
+  it("says the certificate is on its way, not issued, while Fly has verified the host and no certificate is in its list", async () => {
+    // `active` on an entry is ownership; Go prints a list with nothing in it as null.
+    for (const answer of [
+      VERIFIED,
+      { ...VERIFIED, certificates: [{ source: "fly", status: "active", issued: null }] },
+      { ...VERIFIED, certificates: [{ source: "fly", status: "active" }] },
+      { ...VERIFIED, certificates: [] },
+      { ...VERIFIED, certificates: null },
+    ]) {
+      const result = await run([
+        [STATUS, {}],
+        [CERT_CHECK, json(answer)],
+      ]);
+      const label = JSON.stringify(answer.certificates);
+      expect(result.said, label).toContain(
+        "fly-app-create: DNS is in place for api-dev.tadayo.app, and Fly is issuing the certificate",
+      );
+      expect(result.said.join("\n"), label).not.toContain("is issued");
+    }
+  });
+
+  it("says the certificate is issued when the detail is Ready, or when an entry lists an issued certificate, either alone", async () => {
+    const ready = { ...VERIFIED, status: "Ready" };
+    const listed = { ...ISSUED, status: "Awaiting certificates" };
+    for (const [name, answer] of [
+      ["Ready, nothing listed", ready],
+      ["listed, not Ready", listed],
+    ] as const) {
+      const result = await run([
+        [STATUS, {}],
+        [CERT_CHECK, json(answer)],
+      ]);
+      expect(result.said, name).toContain("fly-app-create: the certificate for api-dev.tadayo.app is issued");
+      expect(result.said.join("\n"), name).not.toContain("issuing");
+    }
   });
 
   it("names the CNAME target Fly gives, and the app's own fly.dev name when it gives none or a strange one", async () => {

@@ -3,9 +3,9 @@
 // with no session with the one 401 and a path nobody serves with the neutral not-found, and writes a
 // request line of the request's id, operation, status and time alone; the worker starts and stays up;
 // each stops cleanly, with exit code 0, on SIGTERM (a deploy's signal) and on SIGINT (the signal
-// `fly machine stop` sends by default), so Fly neither restarts a worker that has nothing to do nor
-// cuts a request short; with `dev`, which needs the dev clock this database doesn't have, each
-// stops with the time module's message.
+// `fly machine stop` sends by default), so a stop isn't a failure that fly.toml's `on-failure` would
+// restart, and no request is cut short; with `dev`, which needs the dev clock this database doesn't
+// have, each stops with the time module's message.
 
 import { spawn, type ChildProcess } from "node:child_process";
 import { join } from "node:path";
@@ -159,14 +159,15 @@ describe("the API's entry against the test database", () => {
     30_000,
   );
 
-  it("stops once: a second signal doesn't start a second stop, and the first is allowed to finish", async () => {
+  it("begins one stop when two signals come in a row, and the second, which has no handler left, ends the process or lets the first finish", async () => {
     const api = start("api", "prod");
     expect(await waitFor(api, /api: listening at/)).not.toBeNull();
     api.child.kill("SIGTERM");
     api.child.kill("SIGINT");
     const code = await api.exited;
     // The second signal arrived with no handler left for it, which is the default: it may end the
-    // process before the first stop finished. What must hold is that the first stop began once.
+    // process (no exit code) before the first stop finished, or after (exit code 0). What this proves
+    // is that only one stop began; that a stop finishes is the test above's, with one signal.
     expect(code === 0 || code === null, api.output.stdout).toBe(true);
     expect(api.output.stdout.match(/api: stopping on/g)).toHaveLength(1);
   }, 30_000);
@@ -176,7 +177,7 @@ describe("the worker's entry against the test database", () => {
   it("starts with prod and stays up, with no jobs yet, until it is told to stop", async () => {
     const worker = start("worker", "prod");
     expect(await waitFor(worker, /worker: started, with no jobs yet\n/), worker.output.stderr).not.toBeNull();
-    // Nothing ends it: a process that exited would be restarted by Fly again and again.
+    // Nothing ends it: a worker that exited would leave its Machine stopped (a clean exit isn't restarted).
     await new Promise((done) => setTimeout(done, 1_500));
     expect(worker.child.exitCode).toBeNull();
     expect(worker.child.signalCode).toBeNull();

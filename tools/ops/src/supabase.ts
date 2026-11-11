@@ -46,6 +46,8 @@ export interface Send {
   readonly body?: Uint8Array;
   readonly contentType?: string;
   readonly headers?: Readonly<Record<string, string>>;
+  /** Ends the call early, besides its own time limit: the probe's budget for the whole run. */
+  readonly within?: AbortSignal;
 }
 
 const TIMEOUT_MS = 20_000;
@@ -90,7 +92,10 @@ export async function send(fetcher: typeof fetch, base: string, path: string, op
     const init: RequestInit = {
       method: options.method ?? "GET",
       headers: headersOf(options),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+      signal:
+        options.within === undefined
+          ? AbortSignal.timeout(TIMEOUT_MS)
+          : AbortSignal.any([AbortSignal.timeout(TIMEOUT_MS), options.within]),
     };
     if (options.json !== undefined) init.body = JSON.stringify(options.json);
     // A copy, so the body is an ArrayBuffer of its own whatever view the caller holds.

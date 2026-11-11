@@ -1,12 +1,16 @@
 // What the `ops` scripts ask of `flyctl` (docs/plans/api-b0-deploy.md, section 6; T56). One place
 // knows how `flyctl` is run and what it prints, so that the scripts can be tested against a fake
-// (test/fake-fly.ts), since `flyctl` can't be installed in a cloud session and the first real run
-// is after slice 10b.
+// (test/fake-fly.ts): no `flyctl` has been run in a cloud session (its 0.5.8 release downloads, but
+// a session refuses to run a downloaded binary, so the argument lists and the JSON keys were read
+// from its source instead), and the first real run is after slice 10b.
 //
 // `flyctl` is given the Fly token and `HOME`, and nothing else of the environment, and is never
-// given a shell. Every call is by an argument list that names the app (`DEV_APP`), so no script
-// can touch another one. `flyctl` prints some failures with exit code 0 (`machine exec` does, for
-// the command it ran), so a script says what it asks for and checks the answer it gets.
+// given a shell. `run` makes no call whose argument list doesn't name the app (`DEV_APP`) with `-a`
+// or `--app`, and no other app anywhere in it, so no script can touch another one; the two calls
+// that name none are the token's list of organizations and the making of the app itself, which
+// takes its name as an argument (`forDevApp`). `flyctl` prints some failures with exit code 0
+// (`machine exec` does, for the command it ran), so a script says what it asks for and checks the
+// answer it gets.
 
 import { DEV_APP, readVariables } from "./environment.ts";
 import { OpsError } from "./ops-error.ts";
@@ -25,13 +29,50 @@ export interface Fly {
 /** A call that isn't a long one (a deploy, a command on a Machine) gets this long. */
 const QUICK_MS = 120_000;
 
+/**
+ * True for an argument list that is about `DEV_APP` and no other app: it has `-a` or `--app` with
+ * `DEV_APP` after it and no other app flag, in any spelling (`--app=x`, `-ax`); or it is one of
+ * the two calls that name no app by a flag: `orgs list --json`, and `apps create DEV_APP`, with
+ * `--org <slug>` or not.
+ */
+export function forDevApp(args: readonly string[]): boolean {
+  if (args.length === 3 && args[0] === "orgs" && args[1] === "list" && args[2] === "--json") return true;
+  if (args[0] === "apps" && args[1] === "create") {
+    const rest = args.slice(3);
+    const org = rest[1];
+    const named = rest.length === 2 && rest[0] === "--org" && org !== undefined && !org.startsWith("-");
+    return args[2] === DEV_APP && (rest.length === 0 || named);
+  }
+  let named = false;
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index] ?? "";
+    if (arg === "-a" || arg === "--app") {
+      if (args[index + 1] !== DEV_APP) return false;
+      named = true;
+      index += 1;
+    } else if (/^-a./.test(arg) || arg.startsWith("--app=")) {
+      return false;
+    }
+  }
+  return named;
+}
+
 /** `flyctl` for `FLY_API_TOKEN`, an org token, which can make the app and add its certificate. */
 export function flyOf(spawn: Spawn, env: Readonly<Record<string, string | undefined>>): Fly {
   const { FLY_API_TOKEN: token } = readVariables(env, ["FLY_API_TOKEN"]);
   const home = env["HOME"];
   const childEnv: Record<string, string> =
     home === undefined || home === "" ? { FLY_API_TOKEN: token } : { FLY_API_TOKEN: token, HOME: home };
-  return { run: (args, options = {}) => spawn("flyctl", args, { env: childEnv, timeoutMs: QUICK_MS, ...options }) };
+  return {
+    run: (args, options = {}) => {
+      if (!forDevApp(args)) {
+        return Promise.reject(
+          new OpsError(`flyctl: a call that doesn't name ${DEV_APP}, and no other app, isn't made`),
+        );
+      }
+      return spawn("flyctl", args, { env: childEnv, timeoutMs: QUICK_MS, ...options });
+    },
+  };
 }
 
 /** Why a call failed, for a message: the exit code and the first lines it printed, each cut short. */
@@ -65,6 +106,13 @@ export interface Machine {
   /** What the Machine runs: the image reference's tag and the image path, each when it has one. */
   readonly tag: string | undefined;
   readonly image: string | undefined;
+}
+
+/** The Machines in words, for a message: `<id> (<group>, <state>)` each, or `none`. */
+export function machineList(list: readonly Machine[]): string {
+  return list.length === 0
+    ? "none"
+    : list.map((machine) => `${machine.id} (${machine.group ?? "no group"}, ${machine.state})`).join(", ");
 }
 
 const record = (value: unknown): Record<string, unknown> | undefined =>

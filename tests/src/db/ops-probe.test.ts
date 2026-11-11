@@ -19,6 +19,7 @@ afterAll(async () => {
 const CLOSED = "database: nothing in app is open to anon, authenticated, service_role or PUBLIC";
 const TABLES = "database: app has tables for REST to be asked for";
 const SEALED = "database: Storage's buckets and objects have row-level security and no policy";
+const OVERRIDE = "database: the role the Data API connects as has no setting of its own that exposes a schema";
 
 const byName = (checks: readonly Check[], name: string) => checks.find((check) => check.name === name);
 
@@ -45,7 +46,10 @@ describe("databaseChecks, as tadayo_app on the migrated database", () => {
     expect(tables).toContain("schema_migrations");
     // It asks about Storage whatever the database has: what it says is the next tests'.
     expect(byName(checks, SEALED)).toBeDefined();
-    expect(checks.map((check) => check.name)).toEqual([CLOSED, TABLES, SEALED]);
+    expect(checks.map((check) => check.name)).toEqual([CLOSED, TABLES, SEALED, OVERRIDE]);
+    // The catalogs it reads for the Data API's role are readable by the API's own role, which has
+    // no `authenticator` here (or one with no setting of its own): nothing to say against it.
+    expect(byName(checks, OVERRIDE)).toEqual({ name: OVERRIDE, ok: true });
   });
 });
 
@@ -168,6 +172,74 @@ describe("databaseChecks on Storage's tables", () => {
         CREATE POLICY other ON storage.ops_probe_other USING (true);
       `);
       expect(byName((await databaseChecks(tx)).checks, SEALED)).toEqual({ name: SEALED, ok: true });
+    });
+  });
+});
+
+describe("databaseChecks on the role the Data API connects as", () => {
+  /** `authenticator`, made when the database has none, then given these settings in the transaction. */
+  async function authenticator(tx: Tx, ...statements: string[]): Promise<void> {
+    await tx.unsafe(`
+      DO $do$ BEGIN
+        IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'authenticator') THEN
+          CREATE ROLE authenticator NOLOGIN;
+        END IF;
+      END $do$;
+      ${statements.join(";\n")}
+    `);
+  }
+  const here = (setting: string) =>
+    `DO $do$ BEGIN
+       EXECUTE pg_catalog.format('ALTER ROLE authenticator IN DATABASE %I SET ${setting}', pg_catalog.current_database());
+     END $do$`;
+
+  it("passes when the role has no list of schemas of its own, or one that is empty or the platform's stand-in for none", async () => {
+    await rolledBack(admin, async (tx) => {
+      await authenticator(tx);
+      expect(byName((await databaseChecks(tx)).checks, OVERRIDE)).toEqual({ name: OVERRIDE, ok: true });
+      await authenticator(tx, "ALTER ROLE authenticator SET statement_timeout = '8s'");
+      expect(byName((await databaseChecks(tx)).checks, OVERRIDE)).toEqual({ name: OVERRIDE, ok: true });
+      await authenticator(tx, "ALTER ROLE authenticator SET pgrst.db_schemas = 'pg_pgrst_no_exposed_schemas'");
+      expect(byName((await databaseChecks(tx)).checks, OVERRIDE)).toEqual({ name: OVERRIDE, ok: true });
+      await authenticator(tx, "ALTER ROLE authenticator SET pgrst.db_schemas = ''");
+      expect(byName((await databaseChecks(tx)).checks, OVERRIDE)).toEqual({ name: OVERRIDE, ok: true });
+    });
+  });
+
+  it("fails, with a count and no name, when the role's own setting exposes a schema, for the cluster or for this database", async () => {
+    await rolledBack(admin, async (tx) => {
+      await authenticator(tx, "ALTER ROLE authenticator SET pgrst.db_schemas = 'public, graphql_public'");
+      expect(byName((await databaseChecks(tx)).checks, OVERRIDE)).toEqual({
+        name: OVERRIDE,
+        ok: false,
+        note: "authenticator's own setting exposes 2 schemas, whatever the project's list says",
+      });
+    });
+    await rolledBack(admin, async (tx) => {
+      // A setting for this database alone beats the cluster-wide one in PostgREST, and `pg_roles` doesn't show it.
+      await authenticator(tx, here("pgrst.db_schemas = ''app''"));
+      expect(byName((await databaseChecks(tx)).checks, OVERRIDE)).toEqual({
+        name: OVERRIDE,
+        ok: false,
+        note: "authenticator's own setting exposes 1 schema, whatever the project's list says",
+      });
+      await authenticator(tx, "ALTER ROLE authenticator SET pgrst.db_schemas = 'public,storage'");
+      expect(byName((await databaseChecks(tx)).checks, OVERRIDE)?.note).toBe(
+        "authenticator's own setting exposes 3 schemas, whatever the project's list says",
+      );
+    });
+  });
+
+  it("looks only at authenticator: another role's setting, and another setting of its own, aren't the Data API's", async () => {
+    await rolledBack(admin, async (tx) => {
+      await authenticator(
+        tx,
+        "CREATE ROLE ops_probe_other NOLOGIN",
+        "ALTER ROLE ops_probe_other SET pgrst.db_schemas = 'public'",
+        "ALTER ROLE authenticator SET pgrst.db_extra_search_path = 'public'",
+        "ALTER ROLE authenticator SET pgrst.db_pre_request = 'app.nothing'",
+      );
+      expect(byName((await databaseChecks(tx)).checks, OVERRIDE)).toEqual({ name: OVERRIDE, ok: true });
     });
   });
 });

@@ -8,7 +8,8 @@
 
 import { join } from "node:path";
 import postgres from "postgres";
-import { failureText, noticeLine, redactor } from "./output.ts";
+import { connectionOptions } from "./database.ts";
+import { failureText, redactor } from "./output.ts";
 import { runScript } from "./run.ts";
 import { spawnProcess } from "./spawn.ts";
 
@@ -21,17 +22,14 @@ try {
     repo: join(import.meta.dirname, "..", "..", ".."),
     spawn: spawnProcess,
     fetch,
-    // Supabase's session pooler, which asks for TLS. Postgres's warnings are shown; its routine notices aren't.
+    // Supabase's session pooler, which asks for TLS, by the parts the guard checked (database.ts).
+    // Postgres's warnings are shown; its routine notices aren't.
     connect: (url) =>
-      postgres(url, {
-        max: 1,
-        ssl: "require",
-        connect_timeout: 20,
-        onnotice: (notice) => {
-          const line = noticeLine(notice);
-          if (line !== undefined) console.error(redact(line));
-        },
-      }),
+      postgres(
+        connectionOptions(url, redact, (line) => {
+          console.error(line);
+        }),
+      ),
     sleep: (ms) =>
       new Promise((resolve) => {
         setTimeout(resolve, ms);

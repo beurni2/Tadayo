@@ -3,9 +3,13 @@
 // only if every check passes:
 //   - `databaseChecks`: the project's Postgres as the API's role reads it: nothing in `app` is open
 //     to `anon`, `authenticated`, `service_role` or PUBLIC (the migrations' own `closedProblems`),
-//     and Storage's two tables have row-level security on and no policy.
+//     Storage's two tables have row-level security on and no policy, and the role the Data API
+//     connects as has no setting of its own that names a schema (it would win over the project's
+//     list, which is what `dataApiChecks` reads).
 //   - `apiChecks`: Supabase's three public doors, REST, GraphQL and Storage, asked as the public key
-//     alone and as a signed-in user's token: every call is refused or comes back empty.
+//     alone and as a signed-in user's token: every call is refused or comes back empty. And the Data
+//     API's root, asked as the service key, the one caller the gateway lets read it: a root that
+//     describes a schema is the Data API on, whatever its settings say.
 //   - `dataApiChecks`: the project's own settings, through the Management API: no schema is exposed.
 //
 // What a refusal is worth. A project that refuses everything, the privileged key included, proves
@@ -23,8 +27,12 @@
 // What it leaves behind: nothing. Everything it makes is named `probe/<run>/…` (the user's address
 // is `probe-<run>@probe.invalid`, which nothing can deliver to), and a `finally` deletes each object
 // a call may have written, each bucket a call may have made, and then the user, whatever failed
-// before. A clean-up that fails is a failed check that names what is left. No check names, and no
-// note, holds a key, a token or a word of a response body: statuses, codes and counts only.
+// before. A clean-up that fails is a failed check that names what is left. The run is limited in
+// time, since the Machine's command is killed at 300 seconds and a kill skips the `finally`: the
+// checks stop asking at `BUDGET_MS`, the clean-up stops at `DEADLINE_MS`, and a call in flight at
+// either time is ended. Each check or clean-up that wasn't asked is a failure that says so, and the
+// clean-up's names what is left. No check names, and no note, holds a key, a token or a word of a
+// response body: statuses, codes and counts only.
 
 import { randomUUID } from "node:crypto";
 import type postgres from "postgres";
@@ -47,6 +55,15 @@ export function reportLine(check: Check): string {
 }
 
 const NO_ANSWER = "no answer from the project";
+const OUT_OF_TIME = "the run's time ran out";
+
+/** When the checks stop asking, in milliseconds from the start of `apiChecks`; the clean-up goes on. */
+export const BUDGET_MS = 150_000;
+/**
+ * When the clean-up stops too. `flyctl machine exec` ends the command at 300 seconds
+ * (on-machine.ts), which no `finally` survives, and the database checks run before this starts.
+ */
+export const DEADLINE_MS = 240_000;
 
 /** A 1×1 transparent PNG, the probe's one test object: Storage looks at its type and its size. */
 const PNG = Uint8Array.from(
@@ -62,6 +79,13 @@ function text(json: unknown, key: string): string | undefined {
   if (typeof json !== "object" || json === null) return undefined;
   const value = (json as Record<string, unknown>)[key];
   return typeof value === "string" ? value : undefined;
+}
+
+/** The boolean at `key` of a JSON object, when it is one. */
+function flag(json: unknown, key: string): boolean | undefined {
+  if (typeof json !== "object" || json === null) return undefined;
+  const value = (json as Record<string, unknown>)[key];
+  return typeof value === "boolean" ? value : undefined;
 }
 
 const itemsOf = (json: unknown): unknown[] | undefined => (Array.isArray(json) ? (json as unknown[]) : undefined);
@@ -129,6 +153,25 @@ function toList(reply: Reply): string | undefined {
   return items.length === 0 ? undefined : `it listed ${String(items.length)} ${items.length === 1 ? "item" : "items"}`;
 }
 
+/**
+ * T53: every bucket of the project is private (a public one serves its objects with no key and no
+ * policy), and none is there but the two `storage-setup` makes (a third is someone's, or a probe's
+ * left over). The note counts, and names no bucket.
+ */
+function toBuckets(reply: Reply): string | undefined {
+  const items = reply.status === 200 ? itemsOf(reply.json) : undefined;
+  if (items === undefined) return answered(reply);
+  // A bucket that doesn't say `public: false` isn't shown to be private.
+  const open = items.filter((item) => flag(item, "public") !== false).length;
+  const strangers = items.filter((item) => !BUCKETS.some((name) => name === text(item, "name"))).length;
+  const notes: string[] = [];
+  if (open > 0) notes.push(`${String(open)} ${open === 1 ? "bucket isn't" : "buckets aren't"} shown to be private`);
+  if (strangers > 0) {
+    notes.push(`${String(strangers)} ${strangers === 1 ? "bucket isn't" : "buckets aren't"} one storage-setup makes`);
+  }
+  return notes.length === 0 ? undefined : notes.join("; ");
+}
+
 /** A batch answers each path, with no URL for the ones it won't sign. */
 function toSignBatch(reply: Reply): string | undefined {
   if (refusedByStorage(reply)) return undefined;
@@ -145,8 +188,25 @@ function restTable(reply: Reply): string | undefined {
   return rows.length === 0 ? undefined : "it returned rows";
 }
 
-/** The Data API's root describes the project's schema when it is on, so any answer but an error is open. */
+/**
+ * The Data API's root describes the project's schema when it is on, so any answer but an error is
+ * open. Since April 2026 the gateway refuses the root to the public key and to a user's token
+ * whatever the Data API's state (supabase discussion 42949), so for those two callers this line
+ * only shows the refusal; the service key's root is what shows the API on (`servedSchema`).
+ */
 const restRoot: Verdict = (reply) => (reply.status >= 400 ? undefined : answered(reply));
+
+/** The root as the service key asks for it: an error is no API, and an answer that describes paths is the API on. */
+const servedSchema: Verdict = (reply) => {
+  if (reply.status >= 400) return undefined;
+  const paths =
+    typeof reply.json === "object" && reply.json !== null
+      ? (reply.json as Record<string, unknown>)["paths"]
+      : undefined;
+  if (typeof paths !== "object" || paths === null) return answered(reply);
+  const count = Object.keys(paths).length;
+  return `${answered(reply)}, with ${String(count)} ${count === 1 ? "path" : "paths"}`;
+};
 
 function graphql(reply: Reply): string | undefined {
   if (reply.status >= 400) return undefined;
@@ -172,6 +232,10 @@ export interface ApiInput {
   readonly tables: readonly string[];
   /** A fresh id for this run's names; a UUID unless a test gives its own. */
   readonly id?: () => string;
+  /** Ends the checks' asking: `BUDGET_MS` after the run starts, unless a test gives its own. */
+  readonly budget?: AbortSignal;
+  /** Ends the clean-up's asking too: `DEADLINE_MS` after the run starts, unless a test gives its own. */
+  readonly deadline?: AbortSignal;
 }
 
 interface Leftovers {
@@ -190,15 +254,30 @@ export async function apiChecks(input: ApiInput): Promise<Check[]> {
   const checks: Check[] = [];
   const left: Leftovers = { objects: [], buckets: [], user: undefined };
 
-  /** One call; a network failure or a timeout is no answer, which is a failed check and not a failed run. */
+  const deadline = input.deadline ?? AbortSignal.timeout(DEADLINE_MS);
+  /** What ends the checks' asking: the budget, or the deadline if that comes first. */
+  const checking = AbortSignal.any([input.budget ?? AbortSignal.timeout(BUDGET_MS), deadline]);
+  /** True once the clean-up has begun: it isn't cut short by the budget, only by the deadline. */
+  let cleaning = false;
+  const limit = () => (cleaning ? deadline : checking);
+
+  /**
+   * One call; a network failure or a timeout is no answer, which is a failed check and not a failed
+   * run. Once the time is spent no call is made, and one in flight is ended.
+   */
   async function ask(path: string, options: Send): Promise<Reply | undefined> {
+    const within = limit();
+    if (within.aborted) return undefined;
     try {
-      return await send(input.fetch, base, path, options);
+      return await send(input.fetch, base, path, { ...options, within });
     } catch (error) {
       if (error instanceof OpsError) return undefined;
       throw error;
     }
   }
+
+  /** Why a call has no answer: the run's time is out, or the project didn't answer. */
+  const silence = () => (limit().aborted ? OUT_OF_TIME : NO_ANSWER);
 
   /** Records a check: `problem` is why it failed, or nothing. */
   function record(name: string, problem: string | undefined): boolean {
@@ -207,7 +286,7 @@ export async function apiChecks(input: ApiInput): Promise<Check[]> {
   }
 
   const settle = (reply: Reply | undefined, good: (reply: Reply) => boolean): string | undefined =>
-    reply === undefined ? NO_ANSWER : good(reply) ? undefined : answered(reply);
+    reply === undefined ? silence() : good(reply) ? undefined : answered(reply);
 
   const listBody = { prefix: folder, limit: 100, offset: 0, sortBy: { column: "name", order: "asc" } };
   const signBody = { expiresIn: 60 };
@@ -242,7 +321,7 @@ export async function apiChecks(input: ApiInput): Promise<Check[]> {
     });
     const hashed = link?.status === 200 ? text(link.json, "hashed_token") : undefined;
     let signIn: string | undefined =
-      link === undefined ? NO_ANSWER : hashed === undefined ? `no sign-in code: ${describe(link)}` : undefined;
+      link === undefined ? silence() : hashed === undefined ? `no sign-in code: ${describe(link)}` : undefined;
     let user: Caller | undefined;
     if (signIn === undefined && hashed !== undefined) {
       const verified = await ask("/auth/v1/verify", {
@@ -251,12 +330,12 @@ export async function apiChecks(input: ApiInput): Promise<Check[]> {
         json: { type: "magiclink", token_hash: hashed },
       });
       const token = verified?.status === 200 ? text(verified.json, "access_token") : undefined;
-      if (verified === undefined) signIn = NO_ANSWER;
+      if (verified === undefined) signIn = silence();
       else if (token === undefined) signIn = `the code wasn't taken: ${describe(verified)}`;
       else {
         user = { kind: "user", key: input.publishableKey, token };
         const me = await ask("/auth/v1/user", { caller: user });
-        if (me === undefined) signIn = NO_ANSWER;
+        if (me === undefined) signIn = silence();
         else if (me.status !== 200 || text(me.json, "id") !== userId)
           signIn = `the token wasn't taken: ${describe(me)}`;
       }
@@ -336,15 +415,25 @@ export async function apiChecks(input: ApiInput): Promise<Check[]> {
         return undefined;
       }
     }
+
+    // T53: every bucket is private, not only the two shown to work above. This isn't a control (no
+    // refusal needs it), so a failure is recorded and the run goes on.
+    const everyBucket = await ask("/storage/v1/bucket", { caller: service });
+    record(
+      "storage: every bucket is private, and only storage-setup's two exist",
+      everyBucket === undefined ? silence() : toBuckets(everyBucket),
+    );
     return user;
   }
 
   /** One refusal: asks, judges, and keeps what a call that wasn't cleanly refused may have written. */
   async function refuse(name: string, path: string, options: Send, verdict: Verdict, kept?: () => void): Promise<void> {
+    // A call that wasn't made wrote nothing, so there is nothing of it to keep.
+    const asked = !checking.aborted;
     const reply = await ask(path, options);
-    const problem = reply === undefined ? NO_ANSWER : verdict(reply);
+    const problem = reply === undefined ? silence() : verdict(reply);
     record(name, problem);
-    if (problem !== undefined) kept?.();
+    if (problem !== undefined && asked) kept?.();
   }
 
   async function refusals(who: string, caller: Caller): Promise<void> {
@@ -432,21 +521,21 @@ export async function apiChecks(input: ApiInput): Promise<Check[]> {
         method: "DELETE",
         caller: service,
       });
-      record(`cleanup: delete ${object.label}`, reply === undefined ? NO_ANSWER : gone(reply));
+      record(`cleanup: delete ${object.label}`, reply === undefined ? silence() : gone(reply));
     }
     for (const bucket of left.buckets) {
       const reply = await ask(`/storage/v1/bucket/${encodeURIComponent(bucket.name)}`, {
         method: "DELETE",
         caller: service,
       });
-      record(`cleanup: delete ${bucket.label}`, reply === undefined ? NO_ANSWER : gone(reply));
+      record(`cleanup: delete ${bucket.label}`, reply === undefined ? silence() : gone(reply));
     }
     if (left.user !== undefined) {
       const reply = await ask(`/auth/v1/admin/users/${encodeURIComponent(left.user)}`, {
         method: "DELETE",
         caller: service,
       });
-      record("cleanup: delete the probe user", reply === undefined ? NO_ANSWER : gone(reply));
+      record("cleanup: delete the probe user", reply === undefined ? silence() : gone(reply));
     }
   }
 
@@ -455,8 +544,15 @@ export async function apiChecks(input: ApiInput): Promise<Check[]> {
     if (user !== undefined) {
       await refusals("anon", anon);
       await refusals("user", user);
+      await refuse(
+        "service: the Data API serves no schema at its root",
+        "/rest/v1/",
+        { caller: service },
+        servedSchema,
+      );
     }
   } finally {
+    cleaning = true;
     await cleanup();
   }
   return checks;
@@ -464,7 +560,15 @@ export async function apiChecks(input: ApiInput): Promise<Check[]> {
 
 // ---- The project's own settings.
 
-const DATA_API = "the Data API exposes no schema";
+const DATA_API = "the Data API's settings expose no schema";
+
+/** The schemas a PostgREST list names: `pg_pgrst_no_exposed_schemas` is the platform's stand-in for none. */
+function schemasOf(list: string): string[] {
+  return list
+    .split(",")
+    .map((name) => name.trim())
+    .filter((name) => name !== "" && name !== "pg_pgrst_no_exposed_schemas");
+}
 
 /**
  * Asks the Management API which schemas the project's Data API exposes. There is no switch for it
@@ -487,10 +591,7 @@ export async function dataApiChecks(fetcher: typeof fetch, ref: string, accessTo
   const schemas = text(reply.json, "db_schema");
   if (schemas === undefined)
     return [{ name: DATA_API, ok: false, note: "the Management API's answer names no db_schema" }];
-  const exposed = schemas
-    .split(",")
-    .map((name) => name.trim())
-    .filter((name) => name !== "" && name !== "pg_pgrst_no_exposed_schemas");
+  const exposed = schemasOf(schemas);
   if (exposed.length === 0) return [{ name: DATA_API, ok: true }];
   const plain = (name: string) => (/^[A-Za-z_][A-Za-z0-9_$]{0,62}$/.test(name) ? name : "a schema with an odd name");
   return [{ name: DATA_API, ok: false, note: `it exposes ${exposed.map(plain).join(", ")}` }];
@@ -560,6 +661,31 @@ export async function databaseChecks(sql: postgres.Sql | postgres.TransactionSql
   }
   const sealed = "database: Storage's buckets and objects have row-level security and no policy";
   checks.push(found.length === 0 ? { name: sealed, ok: true } : { name: sealed, ok: false, note: found.join("; ") });
+
+  // The Data API reads its list of schemas from the settings of the role `authenticator` when that
+  // has one, and they win over the project's own list (the Dashboard warns of it). `pg_roles` shows
+  // only the cluster-wide row, and a setting for this database alone wins over that, so the catalog
+  // is read. A role that isn't there (CI's Postgres) has nothing to read. Counts only: no setting's
+  // value is printed (T56).
+  const override = await sql<{ setting: string }[]>`
+    SELECT s.setting
+      FROM pg_catalog.pg_db_role_setting r
+     CROSS JOIN LATERAL pg_catalog.unnest(r.setconfig) AS s(setting)
+     WHERE r.setrole = pg_catalog.to_regrole('authenticator')
+       AND r.setdatabase IN (0, (SELECT d.oid FROM pg_catalog.pg_database d WHERE d.datname = pg_catalog.current_database()))
+       AND pg_catalog.starts_with(s.setting, 'pgrst.db_schemas=')
+     ORDER BY s.setting`;
+  const exposed = override.flatMap((row) => schemasOf(row.setting.slice("pgrst.db_schemas=".length)));
+  const role = "database: the role the Data API connects as has no setting of its own that exposes a schema";
+  checks.push(
+    exposed.length === 0
+      ? { name: role, ok: true }
+      : {
+          name: role,
+          ok: false,
+          note: `authenticator's own setting exposes ${String(exposed.length)} ${exposed.length === 1 ? "schema" : "schemas"}, whatever the project's list says`,
+        },
+  );
 
   return { checks, tables };
 }

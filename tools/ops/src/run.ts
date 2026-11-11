@@ -67,13 +67,31 @@ function optionsOf<Spec extends Record<string, { type: "string" | "boolean" }>>(
   }
 }
 
+/** The script that opens a connection, and the variable its string came from, for what it says when it can't. */
+interface Site {
+  readonly script: string;
+  readonly variable: string;
+}
+
 async function withDatabase<T>(
   ctx: OpsContext,
+  site: Site,
   url: DevDatabaseUrl,
   body: (db: postgres.Sql) => Promise<T>,
 ): Promise<T> {
   const db = ctx.connect(url);
   try {
+    // The driver connects when it is first asked something, so what fails here is the connection and
+    // not the script's own work. Its words (Supavisor's, mostly) name neither the variable nor the
+    // step that failed, so they come after ours.
+    try {
+      await db`SELECT 1`;
+    } catch (error) {
+      const reason = error instanceof Error && error.message !== "" ? error.message : "no reason was given";
+      throw new OpsError(
+        `${site.script}: couldn't connect with ${site.variable}: ${reason}. Has ops bootstrap run, and does ${site.variable} hold the password it set?`,
+      );
+    }
     return await body(db);
   } finally {
     await db.end();
@@ -126,6 +144,7 @@ const bootstrapScript: Script = {
     // The role the next scripts use, with the password just set.
     const me = await withDatabase(
       ctx,
+      { script: "bootstrap", variable: "DATABASE_URL" },
       app,
       async (db) => (await db<{ me: string }[]>`SELECT current_user AS me`)[0]?.me,
     );
@@ -139,7 +158,9 @@ const migrateScript: Script = {
   async run(ctx) {
     optionsOf(ctx.args, {}, "migrate");
     const url = appUrl(ctx);
-    const applied = await withDatabase(ctx, url, (db) => migrate(db, join(ctx.repo, "db", "migrations"), ctx.say));
+    const applied = await withDatabase(ctx, { script: "migrate", variable: "DATABASE_URL" }, url, (db) =>
+      migrate(db, join(ctx.repo, "db", "migrations"), ctx.say),
+    );
     ctx.say(applied.length === 0 ? "migrate: nothing to apply" : `migrate: ${String(applied.length)} applied`);
   },
 };
@@ -149,7 +170,9 @@ const seedScript: Script = {
   async run(ctx) {
     optionsOf(ctx.args, {}, "seed");
     const url = appUrl(ctx);
-    await withDatabase(ctx, url, (db) => seed(db, join(ctx.repo, "db", "seed"), ctx.say));
+    await withDatabase(ctx, { script: "seed", variable: "DATABASE_URL" }, url, (db) =>
+      seed(db, join(ctx.repo, "db", "seed"), ctx.say),
+    );
   },
 };
 
@@ -160,7 +183,7 @@ const devClockScript: Script = {
     const url = appUrl(ctx);
     const target = to === undefined ? undefined : instantOf(to);
     const makeSql = await readFile(join(ctx.repo, "tools", "ops", "sql", "dev_clock.sql"), "utf8");
-    const report = await withDatabase(ctx, url, (db) =>
+    const report = await withDatabase(ctx, { script: "dev-clock", variable: "DATABASE_URL" }, url, (db) =>
       db.begin((tx) => devClock(tx, target === undefined ? { makeSql } : { makeSql, to: target })),
     );
     ctx.say(`dev-clock: ${report.made ? "made app.dev_clock" : "app.dev_clock was there"}`);
@@ -238,7 +261,9 @@ async function probeOnMachine(ctx: OpsContext, ref: string): Promise<void> {
   // What a failed clean-up leaves is named by this id (`probe/<run>/…`, `probe-<run>@probe.invalid`).
   const run = randomUUID();
   ctx.say(`supabase-probe: run ${run}`);
-  const report = await withDatabase(ctx, database, (db) => databaseChecks(db));
+  const report = await withDatabase(ctx, { script: "supabase-probe", variable: "DATABASE_URL" }, database, (db) =>
+    databaseChecks(db),
+  );
   const api = await apiChecks({
     fetch: ctx.fetch,
     url,
@@ -260,15 +285,35 @@ async function probeFromRunner(ctx: OpsContext): Promise<void> {
   const ref = devProjectRef(variables.SUPABASE_DEV_PROJECT_REF);
   const settings = await dataApiChecks(ctx.fetch, ref, variables.SUPABASE_ACCESS_TOKEN);
   for (const check of settings) ctx.say(`supabase-probe: ${reportLine(check)}`);
-  // Both halves say what they found; the run fails if either failed.
+  // Both halves say what they found; the run fails if either failed. `flyctl machine exec` gives
+  // the Machine's output only when its command ends, so a call that fails gives none: the run's id
+  // (the Machine's first line) says that the report came, clean-up lines included.
+  const heard: string[] = [];
   let onMachineFailure: OpsError | undefined;
   try {
-    await onTheMachine(ctx, "supabase-probe", ref);
+    await onTheMachine(
+      {
+        ...ctx,
+        say: (line) => {
+          heard.push(line);
+          ctx.say(line);
+        },
+      },
+      "supabase-probe",
+      ref,
+    );
   } catch (error) {
     if (!(error instanceof OpsError)) throw error;
     onMachineFailure = error;
   }
-  if (onMachineFailure !== undefined) throw onMachineFailure;
+  if (onMachineFailure !== undefined) {
+    if (!heard.some((line) => line.startsWith("supabase-probe: run "))) {
+      ctx.say(
+        "supabase-probe: the Machine's report didn't come back. If its command had started, the project may hold what the probe makes: a user whose address starts with probe- and ends with @probe.invalid, and objects under probe/ in uploads and renditions. Delete them by those names",
+      );
+    }
+    throw onMachineFailure;
+  }
   if (settings.some((check) => !check.ok)) throw new OpsError("supabase-probe: the Data API check failed");
   ctx.say("supabase-probe: every check passed");
 }

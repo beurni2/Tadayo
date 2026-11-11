@@ -1,7 +1,9 @@
 export { runBootstrap, SHORTEST_PASSWORD, type BootstrapInput } from "./bootstrap.ts";
+export { connectionOptions } from "./database.ts";
 export { deployBranch, type DeployBranchInput } from "./deploy-branch.ts";
 export { devClock, LONGEST_OFFSET_DAYS, moveOffset, type DevClockOptions, type DevClockReport } from "./dev-clock.ts";
 export {
+  databaseOf,
   DEV_APP,
   DEV_HOST,
   devDatabaseUrl,
@@ -10,6 +12,7 @@ export {
   MACHINE_MAIN,
   pgEnvOf,
   readVariables,
+  type DatabaseParts,
   type DevDatabaseUrl,
 } from "./environment.ts";
 export { flyAppCreate, type FlyAppCreateInput } from "./fly-app-create.ts";

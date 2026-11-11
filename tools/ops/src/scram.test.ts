@@ -46,6 +46,12 @@ describe("scramVerifier", () => {
     expect(first).toMatch(/^SCRAM-SHA-256\$4096:/);
   });
 
+  it("makes a salt of 16 random bytes, as Postgres does when it makes a verifier itself", () => {
+    const salt = (verifier: string) =>
+      Buffer.from(/^SCRAM-SHA-256\$4096:([^$]+)\$/.exec(verifier)?.[1] ?? "", "base64");
+    expect(salt(scramVerifier("a-random-password-of-more-than-32-characters"))).toHaveLength(16);
+  });
+
   it("takes printable ASCII only, which SASLprep leaves as it is; any other character would be stored changed", () => {
     expect(() => scramVerifier("pässword-of-many-characters-123456789")).toThrow(/printable ASCII/);
     expect(() => scramVerifier("tab\there-and-more-characters-1234567890")).toThrow(/printable ASCII/);
