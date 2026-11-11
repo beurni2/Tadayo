@@ -110,11 +110,19 @@ describe("the redaction list (T52)", () => {
     expect(lines.join("")).not.toContain("ana@");
   });
 
-  it("drops a whole request or answer object logged by mistake", async () => {
+  it("drops a whole request or answer object logged by mistake, and doesn't merely blank it", async () => {
     const { app, lines } = await logged(() => Promise.resolve(READY));
     app.log.info({ req: { url: "/v1/secret?email=a@b.invalid", headers: { authorization: "Bearer x" } } }, "oops");
     app.log.info({ res: { statusCode: 200, body: "caption" } }, "oops");
     expect(lines.join("")).not.toMatch(/secret|authorization|Bearer|caption|a@b/);
+    // `redact` blanks a `req` or a `res` too, so the words above alone can't tell the serializers that drop
+    // it from the list that blanks it: the key itself is gone, whichever layer is the one still standing.
+    const entries = parse(lines);
+    expect(entries).toHaveLength(2);
+    for (const entry of entries) {
+      expect(entry).not.toHaveProperty("req");
+      expect(entry).not.toHaveProperty("res");
+    }
   });
 });
 

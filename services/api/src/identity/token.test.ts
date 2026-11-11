@@ -182,6 +182,19 @@ describe("a token against the keys the verifier holds", () => {
     expect(await verify(`${header}.${forged}.${signature}`)).toBeNull();
   });
 
+  it("takes a token as large as Supabase's can grow and refuses one past 8 KB, however good its signature", async () => {
+    const signer = await testSigner();
+    const verify = verifierFor(signer.keys, { issuer: signer.issuer });
+    // Real tokens are a few hundred bytes, and a profile claim can add more. These two are signed by the
+    // key and are good in every other way, so that only their size is wrong.
+    const roomy = await signer.token(SUB, { claims: { user_metadata: "x".repeat(4_000) } });
+    const huge = await signer.token(SUB, { claims: { user_metadata: "x".repeat(8_000) } });
+    expect(roomy.length).toBeLessThan(8_192);
+    expect(huge.length).toBeGreaterThan(8_192);
+    expect(await verify(roomy)).toBe(SUB);
+    expect(await verify(huge)).toBeNull();
+  });
+
   it("answers null, and never throws, for anything of the right shape that isn't a token the keys signed", async () => {
     const signer = await testSigner();
     const verify = verifierFor(signer.keys, { issuer: signer.issuer });

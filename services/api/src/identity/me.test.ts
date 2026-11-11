@@ -9,7 +9,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { buildApp, type Deps } from "../app.ts";
 import { clubListBody } from "../clubs/list.ts";
 import type { ApiSql } from "../connection.ts";
-import { meBody } from "./me.ts";
+import { firstBadField, meBody } from "./me.ts";
 
 const account = (over: Partial<Account> = {}): Account => ({
   id: "acct_ana",
@@ -171,6 +171,17 @@ describe("PATCH /v1/me: what is refused before the command runs (the contract's 
       // Whatever the caller sent, none of it comes back.
       expect(got.body).not.toMatch(/ana@example|admin|text|Ben/);
     }
+  });
+
+  it("names only a path that is a field of the contract's, whatever issues the parser gives (a second lock)", () => {
+    // The parser gives an unknown key no path today, so the route alone can't show this list: it is held
+    // shut here, with the issues a later contract that let a key through would give.
+    const named = (...paths: PropertyKey[][]) => firstBadField(paths.map((path) => ({ path })));
+    expect(named(["email"])).toBeUndefined();
+    expect(named(["email"], ["role"], ["display_name"], ["expected_version"])).toBe("display_name");
+    expect(named([], [3], [Symbol("display_name")], ["constructor"], ["__proto__"], ["toString"])).toBeUndefined();
+    expect(named(["avatar_upload_id", 0], ["age_confirmed"])).toBe("avatar_upload_id");
+    expect(named(["Display_Name"], [" display_name"], ["display_name "])).toBeUndefined();
   });
 
   it("refuses a body that isn't JSON, a content type that isn't JSON and no body at all, with INVALID_REQUEST alone", async () => {

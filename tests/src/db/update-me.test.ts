@@ -140,7 +140,7 @@ describe("confirming the age and naming the person (FQ13, FQ69)", () => {
     });
   });
 
-  it("takes the confirmation once: confirming again changes nothing, and the first instant stands (FQ13)", async () => {
+  it("takes the confirmation once: confirming again changes nothing, and a later change leaves the first instant standing (FQ13)", async () => {
     await rolledBack(db, async (tx) => {
       const ben = await account(tx);
       expect(await request(tx, ben, { expected_version: 0, age_confirmed: true })).toMatchObject({
@@ -149,7 +149,11 @@ describe("confirming the age and naming the person (FQ13, FQ69)", () => {
       });
       const row = await rowOf(tx, ben);
       expect(row.version).toBe(0);
-      expect(row.age_confirmed_at?.equals(Temporal.Instant.from("2026-11-01T10:00:00Z"))).toBe(true);
+      const first = Temporal.Instant.from("2026-11-01T10:00:00Z");
+      expect(row.age_confirmed_at?.equals(first)).toBe(true);
+      // The clock reads another instant now (AT_FIRST), and a name written at it doesn't move the confirmation.
+      expect(await request(tx, ben, { expected_version: 0, display_name: "Ben K" })).toMatchObject({ version: 1 });
+      expect((await rowOf(tx, ben)).age_confirmed_at?.equals(first)).toBe(true);
     });
   });
 

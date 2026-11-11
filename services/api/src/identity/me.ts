@@ -25,8 +25,12 @@ export const getMe: Handler = (request, reply) => ok(reply, meBody(signedIn(requ
 const KEY = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const FIELDS: readonly string[] = Object.keys(UpdateMeRequest.shape);
 
-/** The first bad field of a body the contract refused, by the contract's order, or none: never an unknown key. */
-function firstBadField(issues: readonly { readonly path: readonly PropertyKey[] }[]): string | undefined {
+/**
+ * The first bad field of a body the contract refused, by the contract's order, or none: never an unknown
+ * key. The parser puts an unknown key's refusal at no path, so this list is a second lock on that, for a
+ * later change to the contract that lets a key through; `me.test.ts` holds it shut with issues of its own.
+ */
+export function firstBadField(issues: readonly { readonly path: readonly PropertyKey[] }[]): string | undefined {
   for (const issue of issues) {
     const field = issue.path[0];
     if (typeof field === "string" && FIELDS.includes(field)) return field;

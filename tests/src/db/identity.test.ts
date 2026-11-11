@@ -89,11 +89,15 @@ describe("the account behind a sign-in (spec 23)", () => {
     });
   });
 
-  it("gives an avatar's version only for a ready upload of its own, the random version it holds (FQ74)", async () => {
+  it("gives an avatar's version: the random one the account's own avatar upload holds, and none to an account without one (FQ74)", async () => {
     await rolledBack(db, async (tx) => {
       const ben = await account(tx);
       const version = await avatar(tx, ben.id);
       expect((await findAccount(tx, ben.subject))?.avatarVersion).toBe(version);
+      // That the upload is ready is the schema's, not this query's, which also asks: `users_avatar_guard`
+      // takes no other, and ready is final (tests/src/db/drops.test.ts holds both locks). So no account
+      // here can be made to point at an upload that isn't ready, and the query's own check is a second
+      // lock no test can reach.
       // Another account's avatar is not this one's.
       const cleo = await account(tx, { name: "Cleo" });
       expect((await findAccount(tx, cleo.subject))?.avatarVersion).toBeNull();
