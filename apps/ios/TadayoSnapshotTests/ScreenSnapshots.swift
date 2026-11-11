@@ -208,15 +208,21 @@ enum Outcome<Failure: Error & Sendable>: Sendable {
     }
 }
 
-/// Supabase Auth, answering each send and each verify as scripted, in order.
+/// Supabase Auth, answering each send and each verify as scripted, in order, and each sign-out
+/// the same way: with an answer, or, to hold Leave sign-in on its wait, never.
 final class ScriptedAuth: AuthService, @unchecked Sendable {
     private let lock = NSLock()
     private var sends: [Outcome<AuthFailure>]
     private var verifies: [Outcome<AuthFailure>]
+    private let signOutOutcome: Outcome<AuthFailure>
 
-    init(sends: [Outcome<AuthFailure>] = [.answer], verifies: [Outcome<AuthFailure>] = []) {
+    init(
+        sends: [Outcome<AuthFailure>] = [.answer], verifies: [Outcome<AuthFailure>] = [],
+        signOut: Outcome<AuthFailure> = .answer
+    ) {
         self.sends = sends
         self.verifies = verifies
+        self.signOutOutcome = signOut
     }
 
     func sendCode(to email: String) async throws(AuthFailure) {
@@ -231,19 +237,28 @@ final class ScriptedAuth: AuthService, @unchecked Sendable {
     }
 
     func refresh(_ session: AuthSession) async throws(AuthFailure) -> AuthSession { session }
-    func signOut(_ session: AuthSession) async throws(AuthFailure) {}
+    func signOut(_ session: AuthSession) async throws(AuthFailure) {
+        try await signOutOutcome.play()
+    }
 }
 
-/// The API, answering each account change as scripted.
+/// The API, answering each account change as scripted, and each read of the account the same way
+/// (by default with no answer from the network; `.hang` holds the root on its wait).
 final class ScriptedAccounts: AccountService, @unchecked Sendable {
     private let lock = NSLock()
     private var updates: [Outcome<APIFailure>]
+    private let meOutcome: Outcome<APIFailure>
 
-    init(updates: [Outcome<APIFailure>]) {
+    init(updates: [Outcome<APIFailure>], me: Outcome<APIFailure> = .fail(.network)) {
         self.updates = updates
+        self.meOutcome = me
     }
 
-    func me() async throws(APIFailure) -> Account { throw .network }
+    func me() async throws(APIFailure) -> Account {
+        try await meOutcome.play()
+        return Account(
+            id: "ben", displayName: "Ben", avatarVersion: nil, ageConfirmed: true, version: 2)
+    }
 
     func update(_ change: AccountChange, key: IdempotencyKey) async throws(APIFailure) -> Account {
         let outcome = lock.withLock { updates.isEmpty ? .hang : updates.removeFirst() }

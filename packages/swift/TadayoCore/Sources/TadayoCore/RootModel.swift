@@ -14,9 +14,17 @@ import Observation
     }
 
     public enum Route: Sendable, Equatable {
-        /// The session and the account are being read, or Leave sign-in is ending the session:
-        /// the launch screen.
+        /// The device's keychain is being read for a session: the launch screen's canvas alone,
+        /// with nothing on it, until a session is found (handoff 7, FQ96's default). With none,
+        /// sign-in follows at once and no wait was ever shown.
         case starting
+        /// A kept session is found and its account is being read, at launch or on Retry: the
+        /// canvas with the spinner and "Loading your account…" (`root.loading`).
+        case reading
+        /// The session is being ended on the server and here, whether the person asked (Leave
+        /// sign-in, the Lab's Log out) or the server ended it: the canvas with the spinner and
+        /// "Leaving sign-in…" (`root.leaving`, FQ89).
+        case leaving
         /// A02-email and A02-code, in `signIn`.
         case signIn
         /// A02-age, in `profile`.
@@ -96,6 +104,7 @@ import Observation
         guard leaving == nil else { return }
         route = .starting
         guard await session.isSignedIn else { return showSignIn() }
+        route = .reading
         await readAccount()
     }
 
@@ -114,9 +123,10 @@ import Observation
         await start()
     }
 
-    /// Leave sign-in, and A02-age's back: the launch screen while it ends the session on the
-    /// server and here, then A02-email (Welcome, A01, comes in B1). If the device couldn't forget
-    /// the session, the failure line says so, with Retry, rather than show sign-in over a session
+    /// Leave sign-in, A02-age's back and the Lab's Log out, and what an answer of "signed out"
+    /// from the server does too: "Leaving sign-in…" while it ends the session on the server and
+    /// here, then A02-email (Welcome, A01, comes in B1). If the device couldn't forget the
+    /// session, the failure line says so, with Retry, rather than show sign-in over a session
     /// still kept. One Leave runs at a time. `left` purges what the account left behind (T11).
     public func leave() async {
         if let leaving { return await leaving.value }
@@ -132,7 +142,7 @@ import Observation
         profile = nil
         account = nil
         clubs = .loading
-        route = .starting
+        route = .leaving
         let forgotten = await session.signOut()
         left()
         guard forgotten else {

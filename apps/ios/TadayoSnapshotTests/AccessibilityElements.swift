@@ -27,13 +27,29 @@ enum AccessibilityElements {
         var value = ""
         /// The names of its custom actions, such as "Copy caption", in order.
         var actions: [String] = []
+        /// Where it is, in points from the window's top left corner, as the window lays it out.
+        var frame = CGRect.zero
 
         var isHeader: Bool { traits.contains(.header) }
 
         var description: String { "\"\(label)\" hint \"\(hint)\" traits \(traits.rawValue)" }
     }
 
+    /// The elements of a screen and the window it was read in, to measure them against: the
+    /// window's size and the safe areas it was given.
+    struct Layout {
+        let elements: [Element]
+        let size: CGSize
+        let safeArea: UIEdgeInsets
+    }
+
     static func of(_ view: some View) -> [Element] {
+        layout(of: view).elements
+    }
+
+    /// The elements with their frames, and the window's size and safe areas: for a screen's
+    /// geometry, such as where a title sits or how far a button is above the safe area.
+    static func layout(of view: some View) -> Layout {
         prepare()
         return read(view)
     }
@@ -43,7 +59,7 @@ enum AccessibilityElements {
     /// element or action, or its handler declines.
     static func perform(_ action: String, on label: String, in view: some View) -> Bool {
         prepare()
-        return show(view) { objects in
+        return show(view) { objects, _ in
             guard
                 let element = objects.first(where: { $0.accessibilityLabel == label }),
                 let custom = element.accessibilityCustomActions?.first(where: {
@@ -69,21 +85,31 @@ enum AccessibilityElements {
         let probe = "Accessibility probe"
         let deadline = Date().addingTimeInterval(10)
         while Date() < deadline,
-            !read(ScrollView { Text(verbatim: probe) }).contains(where: { $0.label == probe })
+            !read(ScrollView { Text(verbatim: probe) }).elements.contains(where: {
+                $0.label == probe
+            })
         {}
     }
 
-    /// Shows the view, gathers its elements in VoiceOver's order, and hands them to `use` before
-    /// the window goes.
+    /// Shows the view, gathers its elements in VoiceOver's order, and hands them and the window
+    /// to `use` before the window goes.
     private static func show<Result>(
-        _ view: some View, _ use: ([NSObject]) -> Result
+        _ view: some View, _ use: ([NSObject], UIWindow) -> Result
     ) -> Result {
         let scene = UIApplication.shared.connectedScenes.lazy.compactMap { $0 as? UIWindowScene }
             .first
         let window = scene.map { UIWindow(windowScene: $0) } ?? UIWindow()
         window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
-        window.rootViewController = UIHostingController(
+        let controller = UIHostingController(
             rootView: view.environment(\.locale, Locale(identifier: "en_US")))
+        // The snapshots' scale (`ScreenSnapshot.Variant.traits`), not the screen's 3x. In `ios`
+        // run 42990527058 `RootWait` was read here before any snapshot drew its indicator, and
+        // the light snapshots of the tabs' loading states, which draw the same indicator, came
+        // out 203 pixels different from the references, the spokes' inner tips about 0.2 pixel
+        // longer, though nothing of theirs had changed: the first window to show an indicator
+        // seems to fix how the process draws it afterwards.
+        controller.traitOverrides.displayScale = 2
+        window.rootViewController = controller
         window.isHidden = false
         defer {
             window.isHidden = true
@@ -93,17 +119,20 @@ enum AccessibilityElements {
         let settled = Date().addingTimeInterval(0.5)
         while Date() < settled { RunLoop.main.run(until: Date().addingTimeInterval(0.02)) }
         window.layoutIfNeeded()
-        return use(gather(window))
+        return use(gather(window), window)
     }
 
-    private static func read(_ view: some View) -> [Element] {
-        show(view) { objects in
-            objects.map {
-                Element(
-                    label: $0.accessibilityLabel ?? "", hint: $0.accessibilityHint ?? "",
-                    traits: $0.accessibilityTraits, value: $0.accessibilityValue ?? "",
-                    actions: $0.accessibilityCustomActions?.map(\.name) ?? [])
-            }
+    private static func read(_ view: some View) -> Layout {
+        show(view) { objects, window in
+            Layout(
+                elements: objects.map {
+                    Element(
+                        label: $0.accessibilityLabel ?? "", hint: $0.accessibilityHint ?? "",
+                        traits: $0.accessibilityTraits, value: $0.accessibilityValue ?? "",
+                        actions: $0.accessibilityCustomActions?.map(\.name) ?? [],
+                        frame: $0.accessibilityFrame)
+                },
+                size: window.bounds.size, safeArea: window.safeAreaInsets)
         }
     }
 
