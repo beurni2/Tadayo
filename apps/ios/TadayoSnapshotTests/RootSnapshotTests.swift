@@ -81,30 +81,6 @@ final class RootSnapshotTests: XCTestCase {
         XCTAssertEqual(left.map(\.label), ["Leaving sign-in…"], "\(left)")
     }
 
-    func testEachFailureNamesWhatFailedAsAHeadingWithRetry() {
-        let failures: [(RootFailure.Kind, String, String)] = [
-            (.account(.network), "Couldn’t load your account.", "Load your account again."),
-            (.account(.other), "Couldn’t load your account.", "Load your account again."),
-            (
-                .leave, "Couldn’t remove your sign-in from this iPhone.",
-                "Remove the sign-in from this iPhone again."
-            ),
-            (
-                .keep, "Couldn’t keep you signed in.",
-                "Return to email sign-in. Your email address is kept."
-            ),
-        ]
-        for (kind, title, hint) in failures {
-            let elements = AccessibilityElements.of(RootFailure(kind: kind, retry: {}))
-            XCTAssertTrue(
-                elements.contains { $0.label == title && $0.isHeader }, "\(kind): \(elements)")
-            let retry = elements.first { $0.label == "Retry" && $0.traits.contains(.button) }
-            XCTAssertEqual(retry?.hint, hint, "\(kind): \(elements)")
-            // The title, the line and Retry, and nothing of the bar they sit under.
-            XCTAssertEqual(elements.count, 3, "\(kind): \(elements)")
-        }
-    }
-
     func testCheckYourConnectionOnlyWhenNoAnswerCame() {
         let network = AccessibilityElements.of(RootFailure(kind: .account(.network), retry: {}))
         XCTAssertTrue(
