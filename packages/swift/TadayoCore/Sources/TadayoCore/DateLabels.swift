@@ -20,6 +20,24 @@ public struct DateLabels: Sendable {
         format(date, template: includingYear ? "EEEEdMMMMy" : "EEEEdMMMM")
     }
 
+    /// The full date in capitals, "FRIDAY, NOVEMBER 6" (en-US), "FRIDAY 6 NOVEMBER" (en-GB), as the
+    /// open day's header draws its date above the day's title (handoff 0's and 2.1's `H01-open`).
+    public func fullDateInCapitals(_ date: LocalDate, includingYear: Bool = false) -> String {
+        fullDate(date, includingYear: includingYear).uppercased(with: locale)
+    }
+
+    /// The date an instant falls on in a zone, written as `fullDate(_:includingYear:)` writes a
+    /// date: only for a second line beside an occurrence's own date, such as the date a club's
+    /// opening falls on where a travelling member is (T2; handoff 6's `travellingRows`). The
+    /// person's day is always the server's `local_date` (T1, T41).
+    public func fullDate(of instant: Date, in zone: TimeZone, includingYear: Bool = false)
+        -> String
+    {
+        let formatter = makeFormatter(template: includingYear ? "EEEEdMMMMy" : "EEEEdMMMM")
+        formatter.timeZone = zone
+        return formatter.string(from: instant)
+    }
+
     /// "Fri, Nov 13" (en-US), "Fri 13 Nov" (en-GB): where a full date doesn't fit, as in a card's
     /// "Opens Fri 13 Nov".
     public func shortDate(_ date: LocalDate) -> String {

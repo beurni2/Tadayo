@@ -49,6 +49,42 @@
         }
       }
     },
+    "day.opens" : {
+      "comment" : "the day header's opening line, {openTime} then {clubZoneName}, as handoff 0's F02-upcoming and 2.1's F02-upcoming draw it (\"Opens at 7 AM, New York\") and book p8 writes it (\"Opens at 7 AM\"); no copy contract words F02 in the club's zone",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens at %1$@, %2$@"
+          }
+        }
+      }
+    },
+    "day.until" : {
+      "comment" : "the open day header's line, {closeTime}, as handoff 0's H01-open and 2.1's H01-open and H01-your-day draw it (\"Until 1 AM · Kept in Memories\"); no copy contract words it",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Until %@ · Kept in Memories"
+          }
+        }
+      }
+    },
+    "day.until.vo" : {
+      "comment" : "the open day header's line as VoiceOver reads it (FQ92): {closeFullDateTime}, {clubZoneName}, the closing in full with its year as handoff 5's spoken templates read a date",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Until %1$@, %2$@. Kept in Memories."
+          }
+        }
+      }
+    },
     "drop.captionCopy.vo" : {
       "comment" : "handoff 7 copy-contracts, handoff7.vo.drop.captionCopy: the revealed caption's accessibility action, which puts the caption on the pasteboard word for word",
       "extractionState" : "manual",
@@ -193,6 +229,126 @@
         }
       }
     },
+    "friends.date" : {
+      "comment" : "handoff 5 copy-contracts, handoff5.friends.date: {fullDate} then {openTime}",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "friends.date.club" : {
+      "comment" : "handoff 5 copy-contracts, handoff5.friends.date.club: {clubOpenTime} then {clubZoneName}, under the travelling line when the dates are the same",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "friends.date.club.dated" : {
+      "comment" : "handoff 6 copy-contracts, handoff6.friends.date.club.dated: {clubFullDate} then {clubOpenTime} then {clubZoneName}, when the dates differ",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$@ · %3$@"
+          }
+        }
+      }
+    },
+    "friends.date.travelling" : {
+      "comment" : "handoff 5 copy-contracts, handoff5.friends.date.travelling: {fullDate} then {localOpenTime} then {deviceZoneName}",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$@ · %3$@"
+          }
+        }
+      }
+    },
+    "friends.nextUp" : {
+      "comment" : "handoff 3 copy-contracts, handoff3.F01.nextUp (handoff6.home.upNext has the same words)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next up"
+          }
+        }
+      }
+    },
+    "friends.nextUp.vo" : {
+      "comment" : "handoff 5 copy-contracts, handoff5.friends.nextUp.vo: {nextUpText} in friends.row.vo, with its space",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next up. "
+          }
+        }
+      }
+    },
+    "friends.row.hint" : {
+      "comment" : "handoff 6 copy-contracts, handoff6.friends.row.hint: {occasionInSentence}",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open %@."
+          }
+        }
+      }
+    },
+    "friends.row.noDate.vo" : {
+      "comment" : "handoff 6 copy-contracts, handoff6.friends.row.noDate.vo: {personSpeech}",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@."
+          }
+        }
+      }
+    },
+    "friends.row.travelling.vo" : {
+      "comment" : "handoff 5 copy-contracts, handoff5.friends.row.travelling.vo: {personSpeech}, {nextUpText}, {localFullDateTime}, {deviceZoneName}, {clubFullDateTime}, {clubZoneName}",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@. %2$@%3$@, %4$@; %5$@, %6$@."
+          }
+        }
+      }
+    },
+    "friends.row.vo" : {
+      "comment" : "handoff 5 copy-contracts, handoff5.friends.row.vo: {personSpeech}, {nextUpText}, {fullDateTime}, {clubZoneName}",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@. %2$@%3$@, %4$@."
+          }
+        }
+      }
+    },
     "highlight.label" : {
       "comment" : "handoff 4 copy-contracts, handoff4.highlight.label (handoff 7's drop.highlight has the same word, D-25)",
       "extractionState" : "manual",
@@ -201,6 +357,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Highlight"
+          }
+        }
+      }
+    },
+    "occasion.self" : {
+      "comment" : "handoff 5 copy-contracts, handoff5.occasion.self: {weekday}, the viewer's own day as a title (handoff 6's selfName.occasions)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your %@"
+          }
+        }
+      }
+    },
+    "occasion.self.inSentence" : {
+      "comment" : "handoff 6 copy-contracts, handoff6.occasion.self.inSentence: {weekday}, the viewer's own day inside a sentence",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "your %@"
           }
         }
       }
@@ -285,6 +465,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@ · Opens at %2$@"
+          }
+        }
+      }
+    },
+    "target.audience" : {
+      "comment" : "book p8 and 2.1's C02-photo (\"Sunday people · Opens at 7 AM\"): the club's name, then {openTime}",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · Opens at %2$@"
+          }
+        }
+      }
+    },
+    "target.title" : {
+      "comment" : "book p8 and p15, 2.1's C02-photo (\"For Debby · Friday 13 Nov\"; TECH-DESIGN section 4): the person's name, then the date whole as DateLabels.fullDate writes it (the handoffs' wide weekday and month names)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For %1$@ · %2$@"
           }
         }
       }

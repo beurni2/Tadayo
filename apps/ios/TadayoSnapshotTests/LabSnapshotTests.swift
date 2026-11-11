@@ -101,6 +101,17 @@ final class LabSnapshotTests: XCTestCase {
         }
     }
 
+    /// The day header, the person row and the target block at 320 points and the largest
+    /// accessibility size, which no 393-point image reaches: each keeps inside the screen, the
+    /// plaque above the date, Next up on its own line, the avatars level with their first lines.
+    /// A word wider than its line breaks inside itself, as the drop card's do (the ios lane's
+    /// needs list).
+    func testTheRowsKeepInsideA320PointScreenAtTheLargestSize() {
+        for section in [LabSection.day, .people, .peopleMore, .target] {
+            snap(section, .xl, width: 320, named: "Lab-\(section.rawValue)-320-xl")
+        }
+    }
+
     /// At 320 points and the first accessibility size, "Make my highlight" wraps while one of its
     /// lines is still under the 44-point target, the case the largest size never reaches: the
     /// full 12 is under the words once they fill the target (`compactReceipt.actionInsets`).
@@ -149,7 +160,9 @@ final class LabSnapshotTests: XCTestCase {
         let scale: CGFloat? =
             switch section {
             case .photos: 1
-            case .revealed: 2
+            // The roster sections run tall at the largest sizes: at 2x they stay inside what
+            // the image comparison can draw.
+            case .revealed, .people, .peopleMore: 2
             default: nil
             }
         snap(
