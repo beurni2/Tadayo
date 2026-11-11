@@ -36,7 +36,7 @@ The 21 new:
 ## How to run them again
 
 1. Check out the commit above in a working tree, with Node 26 and pnpm 12.16.1 (`docs/JOURNAL.md`, block 1.1, "How to run and check everything"), and run `pnpm install`.
-2. Make a server like `ci`'s on port 5432 (`pgci.sh`, as root: it stops and deletes the cluster at `/var/lib/postgresql/pgci`, then `initdb --username=supabase_admin` with the password `postgres`, `ci`'s throwaway one, and starts it), then `python3 tools/ci/ci_steps.py db-bootstrap`. `FRESH=1 bash privtest.sh` does both.
+2. Make a server like `ci`'s on port 5432 (`pgci.sh`, as root: it stops and deletes the cluster at `/var/lib/postgresql/pgci`, then `initdb --username=supabase_admin` with the password `postgres`, `ci`'s throwaway one, and starts it), then `python3 tools/ci/ci_steps.py db-bootstrap`. `FRESH=1 bash privtest.sh` does both, once line 7 of `privtest.sh` and of `dbtest.sh`, which runs `pgci.sh` by the path it had in the session's scratch folder, points at the `pgci.sh` beside them in this folder (`breakages.py` never sets `FRESH`, so a run of the breakages doesn't reach that line).
 3. Edit the paths at the top of `breakages.py`, `privtest.sh` and `dbtest.sh` (`ROOT`, `S`, the `cd`) to your working tree and this folder, or set `BREAK_ROOT`, `BREAK_OUT`, `BREAK_PRIV` and `BREAK_DB`; `python3 breakages.py --check` only counts the anchors (each text to change must occur the number of times stated), `python3 breakages.py` runs all, `--only NAME …` picks some (it has no other flag: an unknown one runs everything). Nothing else may read or change the working tree, or use the database, while it runs, since it edits files in place.
 
 ## The breakages
