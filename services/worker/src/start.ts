@@ -1,0 +1,25 @@
+// The worker's startup: the configuration, the database and the server's clock. The environment's
+// value goes to the time module as it is, so a missing or mistyped one stops the worker instead of
+// picking a clock (ADR-013). It has no jobs yet: they come from B1, and with the first of them, or
+// with slice 10a's `worker` process group if that is first, the loop that keeps it running.
+
+import { prepareClock, type Clock } from "@tadayo/domain";
+import { connect, type WorkerSql } from "./connection.ts";
+
+export interface Started {
+  sql: WorkerSql;
+  clock: Clock;
+}
+
+/** Connects and prepares the clock of `TADAYO_ENVIRONMENT`, or throws. */
+export async function startWorker(env: Readonly<Record<string, string | undefined>>): Promise<Started> {
+  const url = env.DATABASE_URL;
+  if (url === undefined || url === "") throw new Error("worker: DATABASE_URL isn't set");
+  const sql = connect(url);
+  try {
+    return { sql, clock: await prepareClock(env.TADAYO_ENVIRONMENT ?? "", sql) };
+  } catch (error) {
+    await sql.end();
+    throw error;
+  }
+}

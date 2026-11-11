@@ -2,7 +2,18 @@
   "name": "@tadayo/api",
   "private": true,
   "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "start": "node src/main.ts"
+  },
+  "dependencies": {
+    "@tadayo/contracts": "workspace:*",
+    "@tadayo/domain": "workspace:*",
+    "fastify": "5.12.7",
+    "postgres": "3.4.9"
   }
 }
