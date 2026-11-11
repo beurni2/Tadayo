@@ -33,8 +33,9 @@ final class AppIconTests: XCTestCase {
         let sha256: String
     }
 
-    /// Each appearance (the key is its `Contents.json` name), its file in the catalog, the
-    /// brand's master it must be byte for byte, whether the master has an alpha channel, and the
+    /// Each appearance (the key names its well in Xcode, Any, Dark or Tinted; for the dark and
+    /// tinted ones it is also the luminosity value in `Contents.json`), its file in the catalog,
+    /// the brand's master it must be byte for byte, whether the master has an alpha channel, and the
     /// master's SHA-256, which pins it: a replacement master fails until a person puts its digest
     /// here, in the PR that remakes `brand/` from an adopted revision (ADR-027). App Store Connect
     /// rejects an App Store icon (the Any image) with an alpha channel (ITMS-90717), so the Any
@@ -135,7 +136,8 @@ final class AppIconTests: XCTestCase {
 
 /// What a PNG's chunks say about its size and transparency: its width and height, and whether it
 /// has an alpha channel (colour type 4 or 6) or a `tRNS` chunk, which makes a colour transparent.
-/// The first chunk must be a whole `IHDR`, and no chunk may run past the data.
+/// The first chunk must be a whole `IHDR`, the last must be `IEND`, and the chunks must end
+/// exactly where the data does, so a file cut short, or with bytes after its end, is not a PNG.
 private struct PNGHeader {
     let width: Int
     let height: Int
@@ -145,7 +147,7 @@ private struct PNGHeader {
 
     init(_ data: Data) throws {
         let signature: [UInt8] = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]
-        guard data.count > 33, Array(data.prefix(8)) == signature else { throw NotAPNG() }
+        guard Array(data.prefix(8)) == signature else { throw NotAPNG() }
         func number(at offset: Int) -> Int {
             (0..<4).reduce(0) { ($0 << 8) | Int(data[data.startIndex + offset + $1]) }
         }
@@ -154,6 +156,7 @@ private struct PNGHeader {
         var colourType = -1
         var transparency = false
         var offset = 8
+        var last = ""
         while offset + 12 <= data.count {
             let length = number(at: offset)
             let name = String(
@@ -173,9 +176,10 @@ private struct PNGHeader {
             default:
                 break
             }
+            last = name
             offset += 12 + length
         }
-        guard colourType >= 0 else { throw NotAPNG() }
+        guard colourType >= 0, offset == data.count, last == "IEND" else { throw NotAPNG() }
         self.width = width
         self.height = height
         self.hasAlpha = colourType == 4 || colourType == 6 || transparency
