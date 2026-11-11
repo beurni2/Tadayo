@@ -105,9 +105,11 @@ targets:
         # iPhone only (ADR-001). Each target sets it: XcodeGen's iOS preset sets "1,2" at target
         # level, which a project-level setting can't override.
         TARGETED_DEVICE_FAMILY: "1"
-        # No app icon until slice 11b brings it from design/reference/brand/ (XcodeGen's default
-        # names AppIcon, which no catalog holds yet).
-        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        # The app icon is the brand's three masters (design/reference/brand/) as one universal
+        # 1024-point icon with a dark and a tinted appearance: Tadayo/Assets.xcassets/
+        # AppIcon.appiconset (slice 11b). XcodeGen's default names it AppIcon too; saying it here
+        # keeps the name beside the catalog that holds it.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
   TadayoShare:
     type: app-extension
     platform: iOS
