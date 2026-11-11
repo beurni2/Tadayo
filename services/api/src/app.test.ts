@@ -135,21 +135,29 @@ describe("what Fastify answers itself, made to say nothing (T14)", () => {
   });
 
   it("reads a body up to its limit and refuses one past it unread, with INVALID_REQUEST alone, whatever the route", async () => {
-    // A body of exactly `bytes`, JSON, for a route nobody has built (which answers the neutral not-found once it has read it).
+    // A body of exactly `bytes`, JSON, for a request that answers the neutral not-found once it has read it.
     const sized = (bytes: number): string => {
       const head = '{"name":"';
       return `${head}${"x".repeat(bytes - head.length - 2)}"}`;
     };
-    const post = (bytes: number) =>
-      answer({
-        method: "POST",
-        url: "/v1/clubs",
-        headers: { "content-type": "application/json" },
-        payload: sized(bytes),
-      });
-    expect(await post(BODY_LIMIT), "the limit itself").toEqual(NEUTRAL);
-    expect(await post(BODY_LIMIT + 1), "one byte past it").toEqual(INVALID);
-    expect(await post(1_000_000), "a megabyte").toEqual(INVALID);
+    // No source names the limit (the review of slice 8 chose it), so this test holds its value: moving it is
+    // an edit of this line. tests/src/privacy/body-limits.test.ts holds it above what any valid body needs.
+    expect(BODY_LIMIT, "the general limit is 64 KiB").toBe(64 * 1024);
+    // A route of the contract, which carries the limit itself, and the two kinds of request only the app's
+    // own limit holds, since Fastify's not-found context takes no route's: a path the contract hasn't and a
+    // method the path hasn't. A route nobody has built answers the neutral not-found once it has read its body.
+    for (const [method, url] of [
+      ["POST", "/v1/clubs"],
+      ["POST", "/v1/nowhere"],
+      ["POST", "/v1/me"],
+      ["PUT", "/v1/me"],
+    ] as const) {
+      const send = (bytes: number) =>
+        answer({ method, url, headers: { "content-type": "application/json" }, payload: sized(bytes) });
+      expect(await send(BODY_LIMIT), `${method} ${url}, the limit itself`).toEqual(NEUTRAL);
+      expect(await send(BODY_LIMIT + 1), `${method} ${url}, one byte past it`).toEqual(INVALID);
+      expect(await send(1_000_000), `${method} ${url}, a megabyte`).toEqual(INVALID);
+    }
     // Every route has the limit, and none has a higher one: a route with its own is lower.
     for (const operation of OPERATIONS) expect(bodyLimitOf(operation.id), operation.id).toBeLessThanOrEqual(BODY_LIMIT);
     expect(bodyLimitOf("updateMe")).toBe(8 * 1024);
@@ -179,8 +187,11 @@ describe("what Node's parser answers, over a socket of its own (T14)", () => {
     await listening.close();
   });
 
-  /** What the app answers `bytes`, written as they are, with the transport's own headers left out. */
-  function raw(bytes: string): Promise<{ status: number; body: string; headers: Record<string, string> }> {
+  /** What the app answers `bytes`, written as they are, with the transport's own headers left out, but those `keep` names. */
+  function raw(
+    bytes: string,
+    keep: readonly string[] = [],
+  ): Promise<{ status: number; body: string; headers: Record<string, string> }> {
     return new Promise((done) => {
       const socket = connect(port, "127.0.0.1");
       const chunks: Buffer[] = [];
@@ -196,7 +207,7 @@ describe("what Node's parser answers, over a socket of its own (T14)", () => {
         for (const field of fields) {
           const colon = field.indexOf(":");
           const name = field.slice(0, colon).toLowerCase();
-          if (!TRANSPORT.has(name)) headers[name] = field.slice(colon + 1).trim();
+          if (!TRANSPORT.has(name) || keep.includes(name)) headers[name] = field.slice(colon + 1).trim();
         }
         let body = split < 0 ? "" : text.slice(split + 4);
         if (headers["transfer-encoding"] === "chunked") {
@@ -235,6 +246,23 @@ describe("what Node's parser answers, over a socket of its own (T14)", () => {
       expect(await raw(`GET ${path} HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n`), path).toEqual(NEUTRAL);
     }
   });
+
+  it("refuses a body past the limit before any of it is sent, and closes the connection, wherever the request goes", async () => {
+    // Only the head of each request goes out, declaring one byte more than the limit: an app that waited for
+    // the body would wait for ever, and `raw` would end the socket after 5 seconds with no answer to read.
+    for (const [method, path] of [
+      ["POST", "/v1/clubs"],
+      ["POST", "/v1/nowhere"],
+      ["POST", "/v1/me"],
+      ["PUT", "/v1/me"],
+    ] as const) {
+      const head = `${method} ${path} HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json\r\nContent-Length: ${String(BODY_LIMIT + 1)}\r\n\r\n`;
+      expect(await raw(head, ["connection"]), `${method} ${path}`).toEqual({
+        ...INVALID,
+        headers: { ...INVALID.headers, connection: "close" },
+      });
+    }
+  }, 20_000);
 
   it("keeps a connection open with Fastify's own timeout, the one Keep-Alive the leak scanner allows", async () => {
     const headers = await new Promise<IncomingHttpHeaders>((done, fail) => {

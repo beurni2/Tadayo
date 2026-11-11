@@ -8,7 +8,8 @@
 //
 // An invitation's inviter is the candidate's proposer, by FQ75's rule: the interval's person's name
 // while the interval is active, the name it ended with after (a deleted account may have none, and the
-// invitation then has no name to show and is left out; B1 settles what the app shows).
+// invitation then has no name to show and is left out; FQ75 settles what the app shows, needed by B6,
+// which builds the deletion).
 
 import type { QuerySql } from "../authorization/read-sql.ts";
 import { clubState, type ClubState } from "./club-state.ts";
