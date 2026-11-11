@@ -322,7 +322,7 @@
     struct LabTarget: View {
         var body: some View {
             LabGroup(title: "Target block") {
-                LabState("For Debby, with her photo") {
+                LabState("For Debby, with a photograph") {
                     target(FixtureCast.collectingDay, FixtureCast.debby)
                 }
                 LabState("In the current year") {
@@ -332,7 +332,7 @@
                     target(FixtureCast.alexsWednesday, FixtureCast.alex)
                 }
                 LabState("A long name") {
-                    // A test-data choice: the cast gives Alexandria-Rose no day of her own.
+                    // A test-data choice: the cast gives Alexandria-Rose no day.
                     target(FixtureCast.alexandriaRosesWednesday, FixtureCast.alexandriaRose)
                 }
             }

@@ -77,7 +77,7 @@
 
         /// Each member's next day in the book's week, opening at 7 AM in New York (12:00 UTC, in
         /// standard time after 1 November), as handoff 3's `F01.row.vo.*` and handoff 6's
-        /// `F01-friends` give them, with Nina's first, so she is Next up.
+        /// `F01-friends` give them, with Nina's first, so Nina is Next up.
         static let week: [String: (date: LocalDate, opensAt: Date)] = [
             "Nina": (LocalDate(iso: "2026-11-07")!, Date(timeIntervalSince1970: 1_794_052_800)),
             "Ben": (LocalDate(iso: "2026-11-09")!, Date(timeIntervalSince1970: 1_794_225_600)),

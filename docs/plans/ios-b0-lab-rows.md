@@ -354,7 +354,7 @@ The other gaps have a delivered rule or an existing question:
 - **48. The person row at larger sizes and pressed.**
     - when Next up leaves the name line, including a long name beside it at the default size on a narrow screen;
     - the avatar's place: the frames' top against the sheet's centre, at larger sizes, and in the no-occurrence row;
-    - the chevron's place (the sheet's 2 in and about 14 before it), and whether it grows;
+    - the chevron's glyph and place (handoff 6's `F01-friends` draws it 5 by 9, 4 in from the row's edge and centred on the two lines; handoff 3's `F01-friends-dark` 7.5 by 13, 8 in; the sheet's box 2 in; the build keeps the Private drafts row's, about 6 by 11), and whether its box grows (at AX5 it is 56 points wide and leaves the words about 139 on a 320-point screen);
     - the travelling row's minimum (the contract's 100, the frame's 108);
     - the pressed form;
     - the separator under a native list;
@@ -362,6 +362,7 @@ The other gaps have a delivered rule or an existing question:
     - words breaking inside themselves at AX5 on 320 points (as items 38 and 45).
 - **49. The target block in the brand, and its B4 forms.**
     - light, dark, AX5 and 320; its inset (2.1's 14); the `chevron.down`'s size and growth;
+    - its words at the largest sizes: at AX5 on 393 points "November" and "Wednesday," break inside themselves, and on 320 points the words get about 150 and break every few letters, beside an avatar that keeps its size and a chevron box that grows to 56 points;
     - its date form (the handoffs' whole date against book p8's "Friday 13 Nov");
     - its spoken form (FQ92);
     - pressed.
@@ -434,3 +435,16 @@ Each finding and what became of it. "Refuted" means its skeptic showed it wrong 
 | scope-9 | Fixed. Slice 12's TestFlight notes gain the VoiceOver checks |
 | scope-10 | Fixed. As platform-8 |
 | scope-11 | Refuted. The two rules differ for a stated reason |
+
+## 11. Changes after the first run (`ios` run 42931366048 at `aae627c`)
+
+The first push compiled on the first try: 129 tests passed and 3 failed: `testLabSections` and `testTheRowsKeepInsideA320PointScreenAtTheLargestSize`, each for the twenty new images that have no reference yet (CI never records), and the catalog's middle-dot test. All twenty new images were read against the renders they stand in for (INVENTORY.md's Known differences, "The day header, the person row and the target block in the Lab").
+
+| Finding | Disposition |
+|---|---|
+| `DesignCatalogTests.testEveryMiddleDotIsBoundToTheWordBeforeIt` | Fixed. Seven keys (`day.until`, `friends.date`, `friends.date.club`, `friends.date.club.dated`, `friends.date.travelling`, `target.audience`, `target.title`) had an ordinary space before "·"; each is bound with a no-break space, as the check of handoff 7's V-19 asks |
+| A pronoun in a Lab label, "For Debby, with her photo" | Fixed. The label reads "For Debby, with a photograph" (T42); the Lab's own words follow the rules too |
+| The roster chevron against handoff 6's frame (5 by 9, 4 in) | Kept. The critic's ruling (INVENTORY.md, the Friends group: "the row chevron 20 points, where the frames draw them regular and 14") makes it the Private drafts row's, so both chevrons on the Friends tab are one size; the three measurements are recorded, and needs item 48 asks |
+| Next up bold against the frame's regular | Kept, by the same ruling |
+| The target block's title on two lines at 393 points, and its words breaking at AX5 | Kept. The date is written whole (the plan's section 2); recorded, and needs item 49 asks |
+| Everything else | The row pitch, separators, text and avatar columns and the date line match `F01-friends` at the default size to within 1.5 points; the day header matches handoff 0's `F02-upcoming` apart from the recorded gap (12 against 15) and date form |
