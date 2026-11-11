@@ -37,6 +37,16 @@ export interface World {
   version: string;
   /** Ana's Saturday. */
   day: string;
+  /**
+   * What ends every name in the world, its people's, its club's and its roster's labels: empty but
+   * in the privacy matrix, whose worlds each take their own, so no two worlds share a name.
+   */
+  suffix: string;
+}
+
+/** `name` as the world `w` writes it, with its suffix. */
+export function named(w: Pick<World, "suffix">, name: string): string {
+  return `${name}${w.suffix}`;
 }
 
 export async function newUser(tx: Tx, name: string): Promise<string> {
@@ -119,18 +129,19 @@ export async function joinByRoster(
   return intervals;
 }
 
-export async function newWorld(tx: Tx): Promise<World> {
+export async function newWorld(tx: Tx, suffix = ""): Promise<World> {
+  const w = { suffix };
   const [ana, ben, cleo, dan] = [
-    await newUser(tx, "Ana"),
-    await newUser(tx, "Ben"),
-    await newUser(tx, "Cleo"),
-    await newUser(tx, "Dan"),
+    await newUser(tx, named(w, "Ana")),
+    await newUser(tx, named(w, "Ben")),
+    await newUser(tx, named(w, "Cleo")),
+    await newUser(tx, named(w, "Dan")),
   ];
   const club = newId("club");
   const anaInterval = newId("mem");
   await tx`
     INSERT INTO app.clubs (id, name, timezone, creator_interval_id, created_at)
-    VALUES (${club}, 'Saturday people', 'Europe/London', ${anaInterval}, ${AT.created})
+    VALUES (${club}, ${named(w, "Saturday people")}, 'Europe/London', ${anaInterval}, ${AT.created})
   `;
   await tx`
     INSERT INTO app.memberships (interval_id, club_id, user_id, origin, joined_at)
@@ -142,8 +153,8 @@ export async function newWorld(tx: Tx): Promise<World> {
     club,
     anaMember,
     [
-      { user: ben, label: "Ben" },
-      { user: cleo, label: "Cleo" },
+      { user: ben, label: named(w, "Ben") },
+      { user: cleo, label: named(w, "Cleo") },
     ],
     AT.joined,
   );
@@ -178,6 +189,7 @@ export async function newWorld(tx: Tx): Promise<World> {
     dan: { user: dan },
     version,
     day,
+    suffix,
   };
 }
 
