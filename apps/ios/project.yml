@@ -85,9 +85,10 @@ targets:
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         ITSAppUsesNonExemptEncryption: false
         LSRequiresIPhoneOS: true
-        # Tadayo's launch screen is the canvas, light and dark: the colour set LaunchBackground
-        # in Tadayo/Assets.xcassets holds canvas's two values (Palette.canvas), as the root's
-        # starting state draws it (global-launch). Built from spec: handoff 7 asks what it holds.
+        # Tadayo's launch screen is the canvas alone, light and dark, with no logo, wordmark,
+        # spinner or text (handoff 7's launch.iOSLaunchScreen): the colour set LaunchBackground
+        # in Tadayo/Assets.xcassets holds canvas's two values (Palette.canvas), the canvas the
+        # root's waits (global-launch, global-leaving) are drawn on.
         UILaunchScreen:
           UIColorName: LaunchBackground
         UIApplicationSceneManifest:
@@ -161,10 +162,10 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: app.tadayo.snapshot-tests
         TARGETED_DEVICE_FAMILY: "1"
   # Hosted unit tests (the keychain store, the launch and its screen's colour, the connections,
-  # what the tabs announce, the drop card's spoken labels and TadayoDesign's string catalog),
-  # which also run on the iOS 17 and 18 compatibility runs: only targets ending in
-  # SnapshotTests are skipped there. The in-process accessibility reader is the snapshot tests'
-  # own file, compiled here too.
+  # what the tabs announce, the root's waits and where its failure sits, the drop card's spoken
+  # labels and TadayoDesign's string catalog), which also run on the iOS 17 and 18 compatibility
+  # runs: only targets ending in SnapshotTests are skipped there. The in-process accessibility
+  # reader is the snapshot tests' own file, compiled here too.
   TadayoTests:
     type: bundle.unit-test
     platform: iOS

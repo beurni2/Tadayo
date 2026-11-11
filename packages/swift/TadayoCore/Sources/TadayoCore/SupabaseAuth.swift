@@ -151,9 +151,10 @@ public struct SupabaseAuth: Sendable {
         throw .sessionEnded
     }
 
-    /// How long a sign-out waits for Supabase. The device forgets the session whatever the
-    /// answer, and the app shows the launch screen meanwhile, so a stalled network doesn't hold
-    /// Leave sign-in for URLSession's minute.
+    /// How long the sign-out request waits for Supabase. The device forgets the session whatever
+    /// the answer. Leave sign-in can still show "Leaving sign-in…" for longer: it waits for a
+    /// refresh already in flight, or makes one for an expired token, and a refresh waits
+    /// URLSession's default minute.
     static let signOutTimeout: TimeInterval = 15
 
     /// Ends this session on the server: `scope=local`, since Supabase's default signs out every

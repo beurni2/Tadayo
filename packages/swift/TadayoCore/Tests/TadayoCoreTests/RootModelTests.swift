@@ -1,7 +1,37 @@
 import Foundation
+import Observation
 import Testing
 
 @testable import TadayoCore
+
+/// Every route a `RootModel` takes, in order, by observing it. A route held across one turn of
+/// the main actor can be drawn and spoken, so a test that reads the route at two instants can't
+/// say a route never showed: this one can.
+@MainActor private final class RouteHistory {
+    private let root: RootModel
+    private var left: [RootModel.Route] = []
+
+    /// The routes the model has held since this began, in order, the current one last.
+    var routes: [RootModel.Route] { left + [root.route] }
+
+    init(_ root: RootModel) {
+        self.root = root
+        track()
+    }
+
+    private func track() {
+        withObservationTracking {
+            _ = root.route
+        } onChange: { [self] in
+            // `onChange` runs just before the route changes, so `root.route` is still the one
+            // being left, and the next change needs a new observation.
+            MainActor.assumeIsolated {
+                left.append(root.route)
+                track()
+            }
+        }
+    }
+}
 
 @MainActor @Suite struct RootModelTests {
     // Thursday 5 November 2026, 3:00 AM UTC, as the device's clock reads it.
@@ -115,10 +145,17 @@ import Testing
         await signIn.verify()
         #expect(root.route == .signInNotKept)
         #expect(accounts.calls.isEmpty)
+        let history = RouteHistory(root)
         await root.retry()
         #expect(root.route == .signIn)
         #expect(root.signIn?.step == .email)
         #expect(root.signIn?.email == "ben@example.com")
+        // Nothing is kept, so there was no account to read, and no wait to show, not for a turn
+        // either (FQ96): the routes taken are the canvas alone, then sign-in, and nothing else. The
+        // exact list is what shows the history was recorded at all: a recorder that saw nothing
+        // would pass a check that a route is absent.
+        #expect(accounts.calls.isEmpty)
+        #expect(history.routes == [.signInNotKept, .starting, .signIn])
     }
 
     @Test func clubsB0CantDrawAreNeitherEmptyNorAFailure() async {
@@ -246,7 +283,7 @@ import Testing
         await root!.leave()
         #expect(seen.count == 1)
         #expect(seen.first?.calls == ["signOut access-1"])
-        #expect(seen.first?.route == .starting)
+        #expect(seen.first?.route == .leaving)
         #expect(seen.first?.kept == nil)
         #expect(root!.route == .signIn)
     }
@@ -386,13 +423,13 @@ import Testing
         await root.start()
         let first = Task { await root.leave() }
         await gate.reached()
-        #expect(root.route == .starting)
+        #expect(root.route == .leaving)
         #expect(root.profile == nil)
         let second = Task { await root.leave() }
         await Task.yield()
         await root.retry()
         await root.start()
-        #expect(root.route == .starting)
+        #expect(root.route == .leaving)
         #expect(root.signIn == nil)
         gate.open()
         await first.value
@@ -434,6 +471,115 @@ import Testing
         #expect(root.route == .leaveFailed)
         #expect(root.account == nil)
         #expect(root.clubs == .loading)
+    }
+
+    // MARK: The two waits (handoff 7's `root.loading` and `root.leaving`; FQ96's default)
+
+    @Test func whileTheKeychainIsReadTheRouteIsTheCanvasAloneThenTheWaitOnceASignInIsFound()
+        async
+    {
+        // FQ96: nothing shows or is spoken before a sign-in is found. `Task.immediate` runs
+        // `start()` as far as its first suspension, the read of the keychain, and gives this test
+        // the main actor back before that read can answer: the route is the canvas alone. Once the
+        // session is found the wait shows, and holds until the account answers.
+        let gate = Gate()
+        let accounts = FakeAccounts(me: [.success(named)], clubs: [.success(clubs(empty: true))])
+        accounts.duringMe = { await gate.wait() }
+        let root = root(accounts, store: InMemorySessionStore(stored))
+        let starting = Task.immediate { await root.start() }
+        #expect(root.route == .starting)
+        await gate.reached()
+        #expect(root.route == .reading)
+        gate.open()
+        await starting.value
+        #expect(root.route == .tabs)
+    }
+
+    @Test func withNoSessionTheWaitNeverShows() async {
+        // Nobody is signed in: the canvas alone while the keychain is read, then A02-email, and no
+        // account was read for a wait to show (FQ96). The history is what makes "never" true: the
+        // route read at two instants could miss a wait held for one turn. It is asserted as the
+        // exact list, so a recorder that saw nothing fails it too.
+        let accounts = FakeAccounts()
+        let root = root(accounts)
+        let history = RouteHistory(root)
+        let starting = Task.immediate { await root.start() }
+        #expect(root.route == .starting)
+        await starting.value
+        #expect(root.route == .signIn)
+        #expect(accounts.calls.isEmpty)
+        #expect(history.routes == [.starting, .signIn])
+    }
+
+    @Test func aRetryAfterAFailedReadShowsTheWaitAgainUntilTheAccountAnswers() async {
+        let gate = Gate()
+        let accounts = FakeAccounts(
+            me: [.failure(.network), .success(named)], clubs: [.success(clubs(empty: true))])
+        let root = root(accounts, store: InMemorySessionStore(stored))
+        await root.start()
+        #expect(root.route == .failed(.network))
+        accounts.duringMe = { await gate.wait() }
+        let retrying = Task { await root.retry() }
+        await gate.reached()
+        #expect(root.route == .reading)
+        gate.open()
+        await retrying.value
+        #expect(root.route == .tabs)
+    }
+
+    @Test func aRetryAfterALeaveThatCouldntFinishShowsLeavingAgain() async {
+        let gate = Gate()
+        let auth = FakeAuth()
+        let root = root(
+            FakeAccounts(me: [.success(account())]), auth: auth,
+            store: StubbornStore(stored, failures: 2))
+        await root.start()
+        await root.leave()
+        #expect(root.route == .leaveFailed)
+        auth.duringSignOut = { await gate.wait() }
+        let retrying = Task { await root.retry() }
+        await gate.reached()
+        #expect(root.route == .leaving)
+        gate.open()
+        await retrying.value
+        #expect(root.route == .signIn)
+    }
+
+    @Test func aVerifiedCodesAccountReadLeavesTheRouteOnSignInWhereVerifyCodeIsBusy() async throws {
+        // R-09: the read after a verified code isn't a wait of its own, so A02-code keeps its
+        // busy Verify code rather than flash the start-up wait.
+        let gate = Gate()
+        let auth = FakeAuth(verify: [.success(stored)])
+        let accounts = FakeAccounts(me: [.success(account())])
+        accounts.duringMe = { await gate.wait() }
+        let root = root(accounts, auth: auth)
+        await root.start()
+        let signIn = try #require(root.signIn)
+        signIn.email = "ben@example.com"
+        await signIn.sendCode()
+        signIn.code = "529614"
+        let verifying = Task { await signIn.verify() }
+        await gate.reached()
+        #expect(root.route == .signIn)
+        gate.open()
+        await verifying.value
+        #expect(root.route == .confirmAge)
+    }
+
+    @Test func aSessionTheServerEndsDuringTheReadShowsLeavingThenSignIn() async {
+        // R-10: the removal of a session the person didn't end is the same wait as Leave sign-in.
+        let gate = Gate()
+        let auth = FakeAuth()
+        auth.duringSignOut = { await gate.wait() }
+        let root = root(
+            FakeAccounts(me: [.failure(.signedOut)]), auth: auth,
+            store: InMemorySessionStore(stored))
+        let starting = Task { await root.start() }
+        await gate.reached()
+        #expect(root.route == .leaving)
+        gate.open()
+        await starting.value
+        #expect(root.route == .signIn)
     }
 }
 

@@ -434,7 +434,7 @@
       }
     },
     "common.error.network" : {
-      "comment" : "handoff 3 H01.error.network, its second sentence: the line when no answer came",
+      "comment" : "handoff 3 H01.error.network, its second sentence, and handoff 7 root.network and tabs.error.network: the line when no answer came",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -446,7 +446,7 @@
       }
     },
     "common.error.tryAgain" : {
-      "comment" : "handoff 4's refused form (auth.firstSend.refused), as FQ86 uses it: the line when an answer came",
+      "comment" : "handoff 4's refused form (auth.firstSend.refused), as FQ86 uses it, and handoff 7 root.refused and tabs.error.refused: the line when an answer came",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -458,7 +458,7 @@
       }
     },
     "common.retry" : {
-      "comment" : "handoff 3 and 4 common.retry",
+      "comment" : "handoff 3 and 4 common.retry, and handoff 7 root.retry",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -698,7 +698,7 @@
       }
     },
     "root.error.account" : {
-      "comment" : "FQ89's default: the account couldn't be read, at launch or after a verified code, until handoff 7 gives the words",
+      "comment" : "handoff 7 root.account.title, the words of FQ89's default (FQ89 stays the founder's to answer): the account couldn't be read, at launch or after a verified code",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -710,7 +710,7 @@
       }
     },
     "root.error.keep" : {
-      "comment" : "FQ89's default: the iPhone couldn't keep a verified session, until handoff 7 gives the words",
+      "comment" : "handoff 7 root.keep.title, the words of FQ89's default: the iPhone couldn't keep a verified session",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -722,13 +722,73 @@
       }
     },
     "root.error.leave" : {
-      "comment" : "FQ89's default: Leave sign-in couldn't remove the session from the iPhone, until handoff 7 gives the words",
+      "comment" : "handoff 7 root.leave.title, the words of FQ89's default: Leave sign-in couldn't remove the session from the iPhone",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn’t remove your sign-in from this iPhone."
+          }
+        }
+      }
+    },
+    "root.leaving" : {
+      "comment" : "handoff 7 root.leaving (FQ89): the wait while Leave sign-in, the Lab's Log out or a session the server ended removes the session; said politely once as it shows",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leaving sign-in…"
+          }
+        }
+      }
+    },
+    "root.loading" : {
+      "comment" : "handoff 7 root.loading (FQ89): the wait while the account is read, at launch or on Retry; said politely once as it shows, with no other spoken form",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading your account…"
+          }
+        }
+      }
+    },
+    "root.retry.account.hint" : {
+      "comment" : "handoff 7 vo.retryAccount.hint: Retry's hint when the account couldn't be read",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Load your account again."
+          }
+        }
+      }
+    },
+    "root.retry.keep.hint" : {
+      "comment" : "handoff 7 vo.retryKeep.hint: Retry's hint when a verified session couldn't be kept",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Return to email sign-in. Your email address is kept."
+          }
+        }
+      }
+    },
+    "root.retry.leave.hint" : {
+      "comment" : "handoff 7 vo.retryLeave.hint: Retry's hint when the session couldn't be removed from the iPhone",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove the sign-in from this iPhone again."
           }
         }
       }
