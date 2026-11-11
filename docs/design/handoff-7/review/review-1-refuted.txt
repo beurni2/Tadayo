@@ -1,0 +1,210 @@
+=== F-5 [should]
+LOC: Report section 6: "One rule for the new names: -failed is a lost connection and -refused is the server's refusal or failure, as on A02. So the plan's A03-profile-failed-network becomes A03-profile-failed, and its A03-profile-failed becomes A03-profile-refused." (line 59)
+PROBLEM: The note remaps only A03's two names. The ios plan's section 8 already set one scheme for A02 and A03: `-failed-network` for a lost connection and `-refused` for the server, with A02-age getting both. Under that scheme the lane's A02 snapshots would be A02-email-failed-network, A02-code-verify-failed-network, A02-code-resend-failed-network and A02-age-failed-network. The frames will be titled A02-email-failed and so on, so pairing by name breaks for every A02 failure state.
+WHY REFUTED: The plan does say what the finding quotes. Section 8 (line 105 of /mnt/project-files/plans/ios-slice-11-second-part.md) sets "one naming scheme (`-failed-network`, `-refused`) with A02-age getting both". The draft's A03 remap does refer to section 4's list (line 74), which has A02-email-failed, A03-profile-failed and A03-profile-failed-network, so the draft quotes that list accurately. The pairing still doesn't break, because the draft already settles the names for the ios thread.
+
+First, section 6 of the draft states one rule with no exceptions: "-failed is a lost connection and -refused is t
+
+=== F-11 [could]
+LOC: Brief, Questions, "Back and leave" (line 185); items 1 to 3, "Closest: your handoff 1 A02-email" (lines 90-98)
+PROBLEM: In B0, A02-email is the first screen and the plan builds it with no back. The A02-email frame draws a back chevron that would lead nowhere in B0. The plan sends this to needs item 12, but the brief asks only about A02-age and A03, so frames 1 to 3 copy the chevron and the brief says nothing about it.
+WHY REFUTED: The facts in F-11 are right, but nothing it points to would change a frame or what the founder understands. The handoff 1 A02-email render (design/reference/screens/A02-email.png) does draw a back chevron. Plan line 105 does say "A02-email has no back in B0 … both go to needs item 12". signin.md 12(f) does note that the chevron isn't raised.
+
+That chevron leads to Welcome (A01). It is the right design for the product from B1 on, when Welcome exists (plan line 37: "Welcome (A01) is B1"; plan line 123 builds A01 in B1). In B0 the chevron is missing only because a screen behind it hasn't been bui
+
+=== F-13 [could]
+LOC: Brief, "What to design": "send that frame again under its own title, after frame 22" (line 83); Questions: "Send A02-age and A03-profile again if they change." (line 185); add-on A: "send your A02-code and A02-code-error again with it, after frame 22" (line 198); add-on B: "After frame 22, draw G06-
+PROBLEM: Up to five or more optional frames come after frame 22, from three places, in no set order. If the export loses its titles, the order can't identify them, against the protocol's fallback.
+WHY REFUTED: The locations are quoted correctly (handoff-7-brief.md lines 83, 185, 198 and 206). The order of the frames after 22 is open, but that doesn't stop anyone identifying them, and it changes nothing Claude Design draws. Four reasons:
+(1) The brief's "Return" asks for "a frame manifest". That file names every frame and numbers it, whether or not the frame titles survive.
+(2) The earlier brief has the same open wording and it worked. Handoff 6's brief, which the founder uses as the model, says "send that frame again under its own title, after frame 16, and say so in writing" and sets no order for t
+
+=== F-14 [could]
+LOC: Brief item 12: "Closest: frame 14 for the words' form." and "In writing: ... Tadayo's launch screen ...: what it holds, light and dark." (lines 129-131)
+PROBLEM: The closest frame isn't delivered: it's drawn later in this same brief. No delivered layout is named for a screen that may have neither a tab bar nor a header. The launch screen ships in the B0 TestFlight build but is asked for in words only, so if it holds more than a colour, nothing can be checked against a frame.
+WHY REFUTED: Both parts fail on checking. (1) Pointing to a frame in the same brief as the closest is a pattern the draft already uses: item 7 says "Closest: frame 6", and items 15 and 16 say "Closest: frame 13" and "Closest: frame 14". Claude Design gets the whole brief, so nothing goes unreachable. Frame 14's own closest already names the delivered layout: "your handoff 6 H01-access-lost for the layout (its title 32 points under the header)". So the delivered frame is already one step away. The proposed fix would also skew the drawing. In h6x/u6/frames/H01-access-lost.png, the "Choose a club" screen has 
+
+=== F-15 [could]
+LOC: Report section 4: "Frame 12: you open Tadayo with no connection while still signed in. Frames 14 and 16: the club list fails to load." (lines 41-42)
+PROBLEM: The founder's list of made-up fixtures doesn't match the brief. The brief marks only frame 12 "constructed". Frames 14 and 16 aren't marked, and frames 3, 5, 8, 9, 11, 13 and 15 are moments that no source draws either.
+WHY REFUTED: The mismatch exists, but it changes nothing. Section 4 of the report (lines 41-42) lists frames 14 and 16, and the brief marks only item 12 "Fixture (constructed)" (line 130). Three checks show it doesn't matter.
+
+(1) Claude Design never sees section 4. Inside the brief, the rule (line 83: "Where a fixture is "constructed", no source has it") is applied consistently. The fixture under items 13 to 16 is handoff 1's Ben, signed in, with no club and no photo. A source already has that fixture: handoff 4's G06-no-club (INVENTORY row 75; INVENTORY line 272: "Ben has no photo in `G06-no-club`"). The
+
+=== F-16 [could]
+LOC: Brief item 7: "from frame 6, Ben tapped Send a new code", where frame 6 has "Ben has typed nothing" (lines 107-110); item 8: "the same, after the request failed ... Closest: your A02-code-error" (line 113)
+PROBLEM: With nothing typed, frame 8 can't show that a failed resend keeps the typed digits, which is the contract's retained state. Frame 7 can't show whether Verify code works during a resend: both are left to words. Item 8's closest frame (A02-code-error) shows 529614, which contradicts its own fixture.
+WHY REFUTED: I checked the brief (brief.txt lines 35-43) against src/signin.md items 5 to 7 and the ios lane's needs 5 to 7. Each of the finding's three points falls short.
+
+(1) Kept digits. The brief already states this as a rule for every frame: "Every failure names the action that failed and keeps what Ben typed (T43)" (line 15). The SignInModel plan already builds "digits kept on failure" from the failureStates contract. Frame 8 also asks in writing "which message shows when a code error is already showing and a resend then fails". That is the case where digits are on screen, so the retained state is c
+
+=== R-1 [should]
+LOC: Brief, item 11, "Default (FQ70): a name is 1 to 40 characters … or nothing visible (only spaces, zero-width or blank filler characters)." (handoff-7-brief.md line 127). The brief also says at line 75: "each Default it relies on is stated here in full".
+PROBLEM: The FQ70 Default is not stated in full, although the brief says every Default is. It leaves out line and paragraph separators. It narrows "nothing visible" so that it drops combining marks with nothing to sit on and characters Unicode draws as nothing (U+034F, U+FE0F). It also drops the clause that keeps spaces and format characters between visible characters. Claude Design therefore writes the A03-profile-name-refused lines against a smaller rule. Item 17d's question about which first character
+WHY REFUTED: The brief's FQ70 Default (handoff-7-brief.md line 127) is a shorter plain-language version of docs/QUESTIONS.md line 304, but it keeps every part that could change what Claude Design writes. It gives the 40-grapheme length, the trimmed space at either end, control and text-direction characters, and a name with nothing visible. The word "only" in "nothing visible (only spaces, zero-width or blank filler characters)" already limits that refusal to a name made entirely of such characters. No line of the brief refuses zero-width or format characters between visible ones, so "Ana María" and emoji j
+
+=== R-4 [should]
+LOC: Brief, "Questions I need answered", "Back and leave" (line 185), and items 1 to 3 ("Closest: your handoff 1 A02-email").
+PROBLEM: The brief gives the app's reading for A02-age's chevron and for A03, but it says nothing about A02-email's chevron. That chevron leads to Welcome, which doesn't exist in B0, and the plan shows no back there. Frames 1 to 3 copy handoff 1's A02-email, so they will draw a chevron the B0 app leaves out. The brief also doesn't say that handoff 1 sends Leave sign-in to Welcome, while the app sends it to A02-email.
+WHY REFUTED: The facts are right, but the gap wouldn't change anything Claude Design draws or the founder understands.
+
+1. The chevron is correct product design. screens/A02-email.png draws a back chevron beside "Sign in", and handoff 1 sends Leave sign-in to Welcome ("Leave sign-in exits the restricted setup session and returns to Welcome", IMPLEMENTATION.md line 43). That is the product flow: A01 Welcome leads to A02-email (spec's screen table; book p9). So frames 1 to 3 drawn from handoff 1's A02-email, chevron included, are right for the product, and they stay right from stage B1, when Welcome exists.
+
+
+=== R-10 [should]
+LOC: Brief, "Rules that apply to every frame": "Default (FQ68): the delivered "Sent to {email}" on the code screen stays as it is; the ban on Sent covers drop states (book p41)." (line 182). Report: "Your two open cards don't hold it up. The brief draws the recommended answers." (line 15), and section 3,
+PROBLEM: T41 bans "Sent" on every surface, and the invariants give way only to the founder's direct instruction. The ios plan itself says T41 beats FQ68's Default, so the line waits for the founder's answer. The brief tells Claude Design to keep "Sent to {email}" in seven new frames (4 to 8, 18 and 19) on the strength of that Default, and the report tells the founder the card doesn't hold the brief up. That relaxes T41 on a Default.
+WHY REFUTED: The brief doesn't relax T41 on its own. It repeats a Default the docs already hold: docs/QUESTIONS.md FQ68 says "Default: the ban covers drop states, so this sign-in line stays, and the copy lint says so openly." The brief also cites the ban's source correctly. Book p41 ("Labels", line 853) says "Do not compress these states into Sent", and spec 03 (line 141) bans Dressing room, Edition, Publication and Quota but not Sent. The brief keeps T41 for everything new ("never \"Sent\" in a new string (T41, T43)").
+
+The plan's line "T41 beats a default, so the line waits for a direct answer" is about 
+
+=== R-15 [could]
+LOC: Brief, item 15: "The app shows the system's spinner with no words meanwhile, which tells a VoiceOver user nothing." (line 145). Report section 6: "A wordless spinner on Friends and Memories gives VoiceOver nothing to read (T47)." (line 67)
+PROBLEM: The root skeptic flagged this as overstated, and the draft kept it. A system indicator has a generic accessibility label. The real gap is that handoff 3 makes the indicator unfocusable, so nothing says what is loading.
+WHY REFUTED: The draft's sentence holds, and the proposed rewording would change neither what Claude Design is asked for nor what the founder takes from it.
+
+1. Under Claude Design's own rules the statement is literally true. `handoff3.loadingAndCutoffFocus.firstLoad` is a top-level rule in handoff 3's component-contracts.json (line 518), not a Home-only one: "One polite loading announcement after the shell is visible. Indicator not independently focusable." Handoff 5 carries the same rule (u5 component-contracts.json line 545; IMPLEMENTATION.md line 141: "keep the native indicator unfocusable"), and so do
+
+=== R-16 [could]
+LOC: Brief, item 9 (A02-age-failed, a lost connection): "The app shows "Couldn’t save your profile. Try again." meanwhile" (line 118).
+PROBLEM: For the connection failure this frame draws, the app's model pairs the network failure with handoff 4's connection line, not with the server line the brief quotes. The interim line the brief reports is the wrong one for this frame.
+WHY REFUTED: The brief quotes the interim line the ios lane itself gave for this state. /mnt/project-files/design/handoff-7/ios-lane-needs.md, item 8 (`A02-age-saving` and `A02-age-failed`), says: "The app uses \"Couldn’t save your profile. Try again.\" meanwhile, since the confirmation is saved to the profile, and wants the real words." That file was last changed at 04:14 UTC. ProfileModel.swift was last committed on origin/ios/b0-api-client at 04:13:40 UTC. So the lane wrote that sentence after the model existed. No view anywhere maps `ProfileModel.Failure` to words for A02-age: no ios branch has any app
+
+=== R-17 [could]
+LOC: Brief, item 17e, Rules: "Before the reveal, other members see a drop's caption, author, target and date, and nothing of its photo (T10)." (line 164)
+PROBLEM: This is narrower than T10, which also allows the media class and a safe status. "Nothing of its photo" could lead Claude Design to drop the media word from the card. Spec 14's placeholder and T41's vocabulary use that word: "Photo opens Friday at 7 AM".
+WHY REFUTED: The paraphrase in item 17e is narrower than T10. T10 also allows "the media class and a safe status" (INVARIANTS.md line 68), and FQ74's default keeps `media_class` on the caption card. But the harm the finding names doesn't happen. There is no media word on the card for Claude Design to drop. Every delivered collecting card status leaves it out: handoff4.sheet.card.status is "Opens Friday, November 13, 2026 at 7 AM", handoff5.card.status is "Opens {fullDate} · {openTime}", and its VoiceOver line is "Opens {fullDateTime}, {clubZoneName}. Hidden content." handoff5.collectingCardStatus.fields ar
+
+=== R-18 [could]
+LOC: Add-on A: "The copy lint suggests "We emailed a code to {email}"." (line 198)
+PROBLEM: The quote doesn't match the source. The lint's own suggestion is "We emailed a code". The "to {email}" template is the card's wording, not the lint's.
+WHY REFUTED: The facts are right but the slip doesn't matter. The only place the lint suggests anything is a code comment, at packages/domain/src/copy/rules.ts line 16: `// the action instead ("We emailed a code").` The lint's own message to a writer (line 33) gives no suggested line at all. So add-on A (line 198 of the draft, and addon-fq68.txt line 3) adds "to {email}" when it says the lint suggests "We emailed a code to {email}". But that sentence doesn't quote any file Claude Design can see. It proposes a line and asks Claude Design to "Confirm it, or give a line without the word Sent, with its templat
+
+=== R-19 [could]
+LOC: Report section 6: "One rule for the new names: `-failed` is a lost connection and `-refused` is the server's refusal or failure, as on A02. So the plan's `A03-profile-failed-network` becomes `A03-profile-failed`…" (line 59).
+PROBLEM: The plan's latest section already chose a naming scheme, and the brief's rule reverses it without saying so. The ios thread may already be naming snapshots by the plan's scheme, so the frame titles and the inventory rows could disagree.
+WHY REFUTED: The draft does say it is changing the plan's names. Section 6 states the rule and then says outright: "So the plan's `A03-profile-failed-network` becomes `A03-profile-failed`, and its `A03-profile-failed` becomes `A03-profile-refused`." The finding claims the draft "reverses it without saying so", and that is not true.
+
+The rest of the plan's scheme needs no rename note:
+- The plan's line 105 ("one naming scheme (`-failed-network`, `-refused`) with A02-age getting both") already uses `-refused`.
+- Its only other `-failed-network` name is the A03 one the draft maps.
+- For A02-age, line 105 name
+
+=== R-21 [could]
+LOC: Report section 5: "Stage B2's next brief: handoff 6's check, section 7, including the selection circle on Proposed rows." (line 53)
+PROBLEM: The check says "proposed days" (G04's day rows). "Proposed rows" could be read as the Proposed member row (Leila's), which is a different component.
+WHY REFUTED: The line is in the founder report only (section 5, "Left out on purpose", draft line 53). It is not in the brief, so it cannot change what Claude Design draws. It also isn't ambiguous enough to mislead the founder. It names "the selection circle", and only the day-choice rows have one. Leila's proposed-member row has no selection circle. The draft says nothing about Leila anywhere. The founder already read handoff 6's check, which explains the defect as "a day proposed for someone else has lost its empty selection circle" (handoff-6-check.md line 25) and lists it first in section 7 (line 147).
+
+=== V-05 [could]
+LOC: Brief, "The app follows these points…": "The no-club buttons are 16 points apart (handoff 5: noClubButtonGap), where your frames draw 17."
+PROBLEM: Only handoff 4's G06-no-club draws 17. Handoff 2's F01-no-club already draws 16. "Your frames" overstates the error, and Claude Design may "fix" F01-no-club, which is already correct.
+WHY REFUTED: The measurements are right. Handoff 4's G06-no-club (design/reference/claude-design/handoff-4/frames/G06-no-club.svg) puts Create a club at y 321 with height 50, so it ends at 371, and puts I have an invite at y 388: a gap of 17. Handoff 2's F01-no-club has the first button at y 492 with height 50, so it ends at 542, and the second at y 558: a gap of 16. Handoff 1's frames draw I have an invite as text, not a filled button, so they have no comparable gap. INVENTORY.md lines 75 and 99 confirm that the current G06-no-club comes from handoff 4 and the current F01-no-club from handoff 2. So "your 
+
+=== V-07 [could]
+LOC: Brief, item 17f, fourth bullet: "2.1's H01-open draws an outline star of about 11 points …, 9 points below the tile's top and 9 from its right edge. … Built: star.fill at 12, level with the avatar, left of the 18-point fold."
+PROBLEM: The measurements are right (I measured about 11 × 11, 9 to 10 below the top, 9 from the right). But the brief doesn't say that 2.1's place no longer fits. 2.1's fold was about 13 points; at brand 1.1's 18-point fold, a star 9 from the top and 9 from the right edge lands on the fold's flap. Claude Design could copy 2.1's place and draw a collision.
+WHY REFUTED: The finding's geometry is right. On brand-components.svg the tile spans x 32–123, y 415–484, and the fold is the 18 × 18 corner "M105 415 V433 H123". On 2.1/H01-open.png the fold is about 13 points and the outline star sits at about x 91–101, y 239–249, roughly 9–10 points from the top and from the right edge. Moved onto the brand tile, that place (about x 103–114, y 424–435) would fall inside the fold's flap, below the diagonal from (105,415) to (123,433).
+
+The draft already covers this, though. Item 17f gives 2.1's place only as a measurement of an old render. It then states the app's differ
+
+=== V-08 [could]
+LOC: Brief, Content: "Ben's photograph for Debby's Friday, 13 November 2026 at 7 AM, with "This has your name on it.""
+PROBLEM: The same paragraph says "the book's photographs (book p50) for Ben, Maya and Debby", which are portrait avatars. "Ben's photograph" can therefore be read as Ben's portrait. The thumbnail in 2.1's C07-uploading and C07-failed rows is the book's coffee photograph. Claude Design could put Ben's face in the upload, pending, processing and failed rows.
+WHY REFUTED: The finding's facts are right. The thumbnail in 2.1's C07-uploading.png and C07-failed.png is the pour-over coffee photograph, and book line 1008 lists "Ben avatar 1500648767791-…" and "coffee 1442512595331-…" as separate images. The draft already settles which image goes in the rows, though. The Content paragraph (brief.txt line 108) introduces the fixture with "The drafts and upload rows keep 2.1's own fixtures:". It then names Ben's photograph by the drop it belongs to ("for Debby's Friday, 13 November 2026 at 7 AM, with \"This has your name on it.\""), and that target, date and caption are
+
+=== V-11 [could]
+LOC: Brief, item 17b: "And the form of a failure line on a screen with no field (frames 9 and 14)."
+PROBLEM: This puts two different things under one sheet specimen. Frame 9 is an inline failure line for one action on A02-age. Frame 14 is a whole-screen load failure, whose closest frame is the denial layout (title and body, as on H01-access-lost). Asking for one shared form invites Claude Design to draw frame 14 as an inline line, or frame 9 as a page state.
+WHY REFUTED: Frames 9 and 14 are not two different kinds of screen. Handoff 1's A02-age (design/reference/screens/A02-age.png) and handoff 6's H01-access-lost (h6x/u6/frames/H01-access-lost.png) have the same structure: a header, a title and body text near the top, no field, and one primary button pinned at the bottom. The brief points frame 14 to H01-access-lost for its layout and frame 9 to A02-age, so both frames show a failure on a screen with no field above a pinned button. Asking the sheet for "the form of a failure line on a screen with no field" therefore names a real shared question: where the lin
+
+=== W-4 [should]
+LOC: The answer, fourth bullet: "If you chose otherwise, paste the matching add-on after it (section 2)." Section 2: "If you chose 'Reword it', paste add-on A ... after the brief."
+PROBLEM: Both cards are still open, but the report says "If you chose", in the past tense. It never says when to paste: whether the add-on goes in the same message as the brief, and what to do if the founder answers a card after sending the brief. Add-on A only works inside the same request ("Use it on every A02-code frame of this handoff ... after frame 22").
+WHY REFUTED: The finding rests on add-on A "only working inside the same request", and that is wrong. Both add-ons stand on their own. Each opens with its own heading ("Design handoff 7, add-on A: the founder's answer on 'Sent to {email}' (FQ68)"; handoff-7-brief.md line 196, addon-fq68.txt line 1). Each asks for its frames as re-sends or additions placed "after frame 22". Add-on A says "send your A02-code and A02-code-error again with it, after frame 22" (line 198). Add-on B says "After frame 22, draw G06-no-club-disabled" and restates frame 17. So Claude Design gets the same result whether the founder pa
+
+=== W-13 [could]
+LOC: Add-on A: "The copy lint suggests "We emailed a code to {email}"."
+PROBLEM: Claude Design has never been told what "the copy lint" is, and the brief itself never mentions it.
+WHY REFUTED: The facts in the finding are right, but the wording would not change what Claude Design draws or writes. No brief or delivery from handoffs 0 to 6 mentions a "lint": I found none in design/reference/claude-design/, the h5x/h6x packs or /mnt/project-files/design/handoff-*/, and brief.txt has none either. In context, though, "the copy lint suggests" plainly means an automated wording check that proposes a line. The action is fully stated around it. Add-on A line 3 gives the candidate line "We emailed a code to {email}" and says "Confirm it, or give a line without the word Sent, with its template
+
+=== W-15 [could]
+LOC: Brief, What to design ("if an export loses the titles, the order identifies the frames") against the extra frames "after frame 22".
+PROBLEM: Up to five extra frames go "after frame 22" in no stated order: resent A02-age and A03-profile, add-on A's A02-code and A02-code-error, and add-on B's G06-no-club-disabled. If the titles are lost, the order can't identify them.
+WHY REFUTED: Handoff 7 follows the brief it was modelled on, and that pattern has already worked. The handoff-6 brief (/mnt/project-files/design/handoff-6/handoff-6-brief.md, line 75) uses the same wording: "send that frame again under its own title, after frame 16", with no order for the frames that come back. Claude Design sent 11 such redraws after frame 16. Each was a file named after its state (for example frames/G04-conflict.svg), and its frame-manifest.json kept a "requiredOrder" list apart from an "additionalRedrawOrder" list. Handoff 7 asks for the same safeguards in its Return line (draft line 19
+
+=== W-16 [could]
+LOC: Item 17e and Content: "removed: a neutral placeholder"; "the removed placeholder holds the place of Sam's photograph on Debby's Friday, 6 November"
+PROBLEM: The brief's own rule says a placeholder appears only where it holds a place in an open conversation, and otherwise the list closes up. The fixture never says a conversation is open, so by the rule there is nothing to draw.
+WHY REFUTED: The finding says that, under the brief's own rule, the fixture gives Claude Design nothing to draw. The draft says otherwise. Item 17e is a specimen on the Lab component sheet, and it says outright "Draw all eight", listing "removed: a neutral placeholder" among them. So Claude Design is told to draw the placeholder whatever the surrounding context.
+
+The rule at line 164 ("A removed drop keeps a placeholder only where it holds someone's place in an open conversation; otherwise the list closes up (spec 15)") is a faithful paraphrase of spec 15 (spec line 392: "A removed item becomes a neutral p
+
+=== W-17 [could]
+LOC: Brief, Content (frame 17): "the book's photographs (book p50) for Ben, Maya and Debby, initials for everyone else", with item 17e "revealed: Maya's photo item, as your handoff 0 H01-open draws it" and Ben's card "as your handoff 0 F02-upcoming draws it".
+PROBLEM: Handoff 0's H01-open and F02-upcoming, which the item says to follow, draw Maya and Ben with initials (M, B). The Content line asks for their photographs. The two instructions disagree about the avatars on the revealed item and on Ben's card.
+WHY REFUTED: The finding is right about what the old frames show, but the clash would not make Claude Design draw anything wrong. design/reference/screens/H01-open.png draws the rail tiles as D, B, M and S and Maya's row avatar as M. screens/F02-upcoming.png draws "B" beside "Ben · You". The brief's line 180, though, is the one sentence that sets the fixture people. It gives photographs to Ben, Maya and Debby from book p50 (its photo references list a "Debby avatar", a "Ben avatar" and a "Maya avatar") and initials to everyone else. That matches what Claude Design itself has drawn since handoff 5. Handoff 
+
+=== W-18 [could]
+LOC: Founder report section 5: "Stage B1, for the next brief (handoff 8, if you want it)" and "Stage B2's next brief: handoff 6's check, section 7".
+PROBLEM: Handoff 6's check told the founder its section 7 was for handoff 7 ("For a later brief (handoff 7)"), with the selection circle listed as "First". The report moves it without saying so, and doesn't say whether B1's or B2's brief comes next. "If you want it" also suggests B1's brief is optional, though the protocol asks for one at the start of every stage.
+WHY REFUTED: The draft already tells the founder about the move, and it says which brief comes next. "The answer" (handoff-7-brief.md line 14) says: "It keeps to stage B0, because the protocol keeps a brief to one stage. The ios thread's items 26 to 30 (stages B1 and B4) and the leftovers from handoff 6's check (B2) wait for their stages' briefs (section 5)." Section 5 then gives the order: line 47, "Stage B1, for the next brief (handoff 8 ...)", comes before line 53, "Stage B2's next brief: handoff 6's check, section 7". Keeping to B0 follows the protocol: docs/DESIGN-HANDOFF.md line 60 says "Keep a brief
+
+=== W-19 [could]
+LOC: Add-on B: "Each keeps its visible words as its VoiceOver label"
+PROBLEM: The account button has no visible words (it shows Ben's initial), so the sentence can't apply to it as written.
+WHY REFUTED: The sentence is in Add-on B ("Each keeps its visible words as its VoiceOver label", addon-fq85.txt line 3; handoff-7-brief.md line 206), and the account button does draw Ben's initial. But Claude Design's own records already settle what this sentence means for that button. Handoff 6's cumulative screen-copy.json lists the account control as "visible": "Account", "label": "Account" in every header that has it (lines 48-49, 1252-1253, 1604-1605 and others). copy-contracts.json has "common.account": "Account" and "header.account.vo": "Account". Handoff 1's IMPLEMENTATION.md line 103 asks for "an 
+
+=== X-4 [should]
+LOC: Brief frame 11, "In writing: … A03-profile-name-refused, a name the server refuses, which takes this frame's place: give its line or lines, and say whether the field should instead stop accepting characters at 40." (needs item 11)
+PROBLEM: Needs item 11 is answered only in part, and the ask points the wrong way. The plan checks the 40-character limit in the app: a longer name isn't cut, and Continue waits. So the server's length refusal never reaches the screen. Only a name refused for its characters does (control or text-direction characters, or nothing visible). The brief doesn't state the app's reading for a name that is too long, as the house rule asks ("built …", "the app's reading"), and names no state for it. Claude Design 
+WHY REFUTED: I checked the draft against the sources and the finding doesn't hold up.
+
+1. **Needs item 11 is answered.** The item (ios-lane-needs.md line 21) frames the need as server-side: "a name longer than 40 grapheme clusters (FQ70) is refused by the API… no line says why a long one can't be saved." Frame 11 of the brief asks for that line ("give its line or lines"). It also asks the other way out: "say whether the field should instead stop accepting characters at 40". The FQ70 Default in the same item tells Claude Design that the server refuses "a longer one". The brief asks the question the checked 
+
+=== X-5 [should]
+LOC: Brief frames 4 to 8 (A02-code states). Report section 6 lists.
+PROBLEM: The plan names A02-code-error-waiting as a new built-from-spec state for handoff 7: a wrong or expired code within the first minute, with the resend row still showing its waiting sentence. The delivered A02-code-error draws only the state after the minute, with "Send a new code". The brief neither asks for nor names this state, and the report doesn't leave it out, so it is dropped silently.
+WHY REFUTED: Claude Design has already settled this state, so the brief has nothing to ask about it. Handoff 1's own PDF says, in the Authentication behaviour section under "Resend result": "The expired error frame shows an elapsed cooldown; an earlier error keeps the static wait row until eligible." (design/reference/claude-design/handoff-1/Tadayo_Handoff_1_Implementation.pdf, run through pdftotext.) So A02-code-error-waiting is fully defined: it is the delivered A02-code-error frame with the resend row showing "You can send a new code after one minute." DESIGN-HANDOFF.md line 17 says the app "builds each
+
+=== X-6 [should]
+LOC: Brief, Questions, "Back and leave". Frame 1: "A02-email-empty: Ben's first arrival on the email screen" (needs item 12)
+PROBLEM: Item 12 is answered only in part. In B0, A02-email is the first screen, because Welcome (A01) comes in B1. The plan builds A02-email with no back chevron and sends this point to item 12. Handoff 1's A02-email draws a chevron, so frames 1 to 3 will draw one the B0 app doesn't have. The brief also never says that Leave sign-in and A02-age's chevron return to A02-email in this build, where handoff 1 sends Leave sign-in to Welcome. signin.md flagged both points ("`A02-email`'s chevron isn't raised a
+WHY REFUTED: The brief already answers needs item 12 as the ios lane wrote it (ios-lane-needs.md line 22). Item 12 asks two things: whether A02-age's chevron acts as Leave sign-in, and whether A03 shows no chevron once the age is recorded. The brief's "Back and leave" covers both. It says "The app treats A02-age's chevron as Leave sign-in, which ends the sign-in, and shows no chevron on A03 once the age is recorded". It then asks whether A02-age keeps its chevron, how Ben leaves A03, and whether leaving asks first, with its words.
+
+Item 12 never mentions A02-email's chevron. Only the plan's note at line 10
+
+=== X-7 [should]
+LOC: Report section 6, "One rule for the new names" and the two lists of names. Brief frames 3, 8, 12 and 14, and the Questions.
+PROBLEM: Several states the brief asks for in writing have no state name in either the brief or report section 6. The ios thread can't add their inventory rows, and the check can't match the export's answers to states. They are: the launch while Ben's account record is on its way, and the launch's server failure (frame 12 and the general Failures rule); the server failure of H01-error-no-club, F01-error-no-club and M01-error-no-club (frame 14 "In writing"); A02-email after a sign-in ends (Questions); an 
+WHY REFUTED: I checked the finding against the draft, docs/DESIGN-HANDOFF.md at 1f4ba1d, the plan, the ios lane's needs list and RootModel on origin/ios/b0-api-client. It changes neither what Claude Design draws or writes nor what the founder understands.
+
+1. The protocol's naming rule covers frames. DESIGN-HANDOFF.md says "Name every frame you expect, so you can check what came back" (line 60) and gives the `<screen id>-<state>` names for PNGs in screens/ (lines 64 to 70). All 22 frames in the brief are named. The line the finding quotes, "The snapshot tests use the same state names, so the pairing is aut
+
+=== X-10 [could]
+LOC: Brief item 17e. Report section 5.
+PROBLEM: Several drop-card variants that components.md's related states found are neither asked for in 17e nor left out in report section 5: the author's own card in its held state (FQ76's Default: the author sees the held state); a blank caption (book p13 says "Photo for Debby", 2.1 draws "A photo for Debby.", and the Lab already builds one); a video drop's card (spec 14's "Video opens Friday at 7 AM"); a draft's glyph (2.1's lock against handoff 4's "A lock is reserved for hidden content before reveal"
+WHY REFUTED: None of the five variants is a B0 need the brief leaves unanswered, and leaving them out of report section 5 misleads nobody.
+
+The ios lane's item 21 asks for "the drop card in all six states". Those are the six that TECH-DESIGN section 4 (line 146) gives the B0 Lab: private draft, uploading, processing, committed collecting caption, revealed and removed. Brief item 17e asks for those six, plus pending and failed. components.md's "missed that B0's sheet needs" is the map's own opinion, and the sources don't support it:
+
+- **Held:** this state arrives in a later stage. MILESTONES line 154 puts 
+
+=== X-11 [could]
+LOC: Add-on A (addon-fq68.txt). Report section 6. Both add-ons' "after frame 22".
+PROBLEM: (a) Report section 6 lists the rows for add-on B but none for add-on A, which re-requests A02-code and A02-code-error. (b) With both add-ons pasted, A02-code, A02-code-error and G06-no-club-disabled all go "after frame 22", along with the brief's own conditional redraws, in no stated order. The brief says the order identifies frames if the titles are lost. (c) Under add-on A, the brief's question "A long address in 'Sent to {email}': how it wraps" and the Return line that keys "Sent to {email}" 
+WHY REFUTED: I checked each of the four parts against the draft and the sources. None of them would change what Claude Design draws or what the founder understands.
+
+(a) Report section 6 is the ios thread's bookkeeping ("nothing for you to do"), and it lists only new rows. A02-code and A02-code-error are already in INVENTORY.md as `received` (lines 31 and 32). The inventory has no convention for moving a received row back to `requested N` when it is redrawn: the A02-code-error row went from `missing` to `received`, with "Handoff 2 (1 before)" in its source column, and never showed a requested status. Secti
+
+=== X-12 [could]
+LOC: Report section 4: "Frames 14 and 16: the club list fails to load." Brief frame 13: "Fixture: handoff 1's Ben, …". Frames 14 to 16 have no fixture line.
+PROBLEM: The report and the brief disagree on which fixtures are made up. By the brief's own rule ("Where a fixture is 'constructed', no source has it"), only frame 12 is marked constructed. Yet the report tells the founder that frames 14 and 16 are made up, and frames 13 and 15 (the no-club loading shell) are just as constructed, since no source has them.
+WHY REFUTED: The mismatch in labels is real, but it changes neither what Claude Design draws nor what the founder understands.
+
+1. **Claude Design's drawing.** The brief's rule for "constructed" is: "it uses handoff 1's fixtures and nothing else". Frame 13 already says "Fixture: handoff 1's Ben, signed in and set up, no photo; the app holds no selected club, and the club list hasn't come back" (handoff-7-brief.md line 134). Adding "(constructed)" would not change a pixel. Frame 14 needs no fixture line of its own. It says "the same, after the club list failed to load for want of a connection" (line 139), w
+
+=== X-14 [could]
+LOC: Report sections 1 and 2: `handoff-7-brief.txt`, `handoff-7-addon-a-fq68.txt`, `handoff-7-addon-b-fq85.txt`
+PROBLEM: The file names the report gives the founder don't match the draft files (brief.txt, addon-fq68.txt, addon-fq85.txt). If the files are published without being renamed, the founder, reading on an iPhone, won't find the files named in the steps.
+WHY REFUTED: This finding is about how the files get published later, not about the draft. The files in the scratchpad draft folder (brief.txt, addon-fq68.txt, addon-fq85.txt) are working copies. The report never says they are the delivered files. The names the report gives the founder follow the convention already used for the previous handoff: /mnt/project-files/design/handoff-6/ holds handoff-6-brief.md and handoff-6-brief.txt, so publishing handoff 7 as handoff-7-brief.txt and handoff-7-addon-a/b-*.txt is the expected next step. /mnt/project-files/design/handoff-7/ currently holds only ios-lane-needs.m
+
