@@ -31,6 +31,29 @@ export const NEUTRAL: Answer = {
   body: '{"code":"NOT_FOUND"}',
 };
 
+/**
+ * The gate's one 401 (T14, T27, T53): no session, whatever is wrong with the token or the account behind
+ * it, in the neutral not-found's own form. Pinned here, not taken from the app under test, so a gate
+ * that answers by its cause fails.
+ */
+export const UNAUTHENTICATED: Answer = pinned(401, "Unauthorized", '{"code":"UNAUTHENTICATED"}');
+
+/** The gate's 403 for an account whose profile isn't finished, on a route that isn't `beforeProfile` (FQ13, FQ69). */
+export const PROFILE_INCOMPLETE: Answer = pinned(403, "Forbidden", '{"code":"PROFILE_INCOMPLETE"}');
+
+/**
+ * An answer the app sends whole, as the neutral not-found is: the same headers, its own status, reason and
+ * body. What a cell's row pins, byte for byte, where the answer carries nothing the cell's world changes.
+ */
+export function pinned(status: number, reason: string, body: string): Answer {
+  return {
+    status,
+    reason,
+    headers: { ...NEUTRAL.headers, "content-length": String(Buffer.byteLength(body)) },
+    body,
+  };
+}
+
 /** The neutral not-found's headers in the order they are sent, with Node's Date before Connection. */
 const NEUTRAL_ORDER = ["cache-control", "content-type", "content-length", "date", "connection"];
 
@@ -53,17 +76,17 @@ export function said(answer: Answer): string {
   return `${String(answer.status)} ${answer.reason} ${JSON.stringify(headers)} ${answer.body}`;
 }
 
-/** How `answer` differs from the neutral not-found; empty when it's the same, byte for byte. */
-export function neutralProblems(answer: Answer): string[] {
+/** How `answer` differs from the answer `expected` pins; empty when it's the same, byte for byte. */
+export function pinnedProblems(answer: Answer, expected: Answer): string[] {
   const problems: string[] = [];
-  if (answer.status !== NEUTRAL.status) problems.push(`status ${String(answer.status)}`);
-  if (answer.reason !== NEUTRAL.reason) problems.push(`reason ${JSON.stringify(answer.reason)}`);
-  if (answer.body !== NEUTRAL.body) problems.push(`body ${JSON.stringify(answer.body.slice(0, 200))}`);
-  for (const [header, value] of Object.entries(NEUTRAL.headers)) {
+  if (answer.status !== expected.status) problems.push(`status ${String(answer.status)}`);
+  if (answer.reason !== expected.reason) problems.push(`reason ${JSON.stringify(answer.reason)}`);
+  if (answer.body !== expected.body) problems.push(`body ${JSON.stringify(answer.body.slice(0, 200))}`);
+  for (const [header, value] of Object.entries(expected.headers)) {
     if (answer.headers[header] !== value) problems.push(`${header}: ${String(answer.headers[header])}`);
   }
   for (const [header, value] of Object.entries(answer.headers)) {
-    if (Object.hasOwn(NEUTRAL.headers, header)) continue;
+    if (Object.hasOwn(expected.headers, header)) continue;
     if (header !== "date") problems.push(`an extra header, ${header}`);
     else {
       const problem = transportProblem(header, value, answer.clock);
@@ -76,13 +99,21 @@ export function neutralProblems(answer: Answer): string[] {
   return problems;
 }
 
+/** How `answer` differs from the neutral not-found; empty when it's the same, byte for byte. */
+export function neutralProblems(answer: Answer): string[] {
+  return pinnedProblems(answer, NEUTRAL);
+}
+
 /**
- * Whether `answer` is one a malformed id may get: the neutral not-found, or the contract's 400 for a
- * request that doesn't match `Id` (errors.ts), naming at most the parameter and never its value. A
- * malformed id names no object, so T14 isn't at stake; its answer is checked for what it echoes.
+ * Whether `answer` is one a malformed id may get: the neutral not-found (which Fastify's router gives an
+ * id it can't route, before any gate), the gate's own answer when the caller has `gate` to meet (a
+ * route the caller may not reach never looks at its ids), or the contract's 400 for a request that
+ * doesn't match `Id` (errors.ts), naming at most the parameter and never its value. A malformed id names
+ * no object, so T14 isn't at stake; its answer is checked for what it echoes.
  */
-export function malformedProblems(answer: Answer, parameter: string, value: string): string[] {
+export function malformedProblems(answer: Answer, parameter: string, value: string, gate?: Answer): string[] {
   if (neutralProblems(answer).length === 0) return [];
+  if (gate !== undefined && pinnedProblems(answer, gate).length === 0) return [];
   if (answer.status !== 400)
     return [`status ${String(answer.status)}: neither the neutral not-found nor INVALID_REQUEST`];
   let body: unknown;
@@ -133,7 +164,12 @@ const lastDates = new WeakMap<FastifyInstance, number>();
 export async function answerOf(app: FastifyInstance, request: Request): Promise<Answer> {
   await new Promise((resolve) => setImmediate(resolve));
   const from = Date.now();
-  const response = await app.inject({ method: request.method as "GET", url: request.url, headers: request.headers });
+  const response = await app.inject({
+    method: request.method as "GET",
+    url: request.url,
+    headers: request.headers,
+    ...(request.payload === undefined ? {} : { payload: request.payload }),
+  });
   const clock = {
     earliest: Math.max(lastDates.get(app) ?? 0, Math.floor(from / 1000) * 1000 - DATE_LAG_MS),
     latest: Date.now(),
@@ -152,6 +188,8 @@ export interface Request {
   method: string;
   url: string;
   headers: Record<string, string>;
+  /** The body as sent: JSON, or any bytes a test wants refused. */
+  payload?: string;
 }
 
 /** A request before it's written out: its operation and each parameter's value, as sent. */
@@ -161,14 +199,8 @@ export interface Spec {
   path: Readonly<Record<string, string>>;
   query: Readonly<Record<string, string>>;
   headers: Readonly<Record<string, string>>;
-}
-
-/**
- * The role's credentials. In this slice a stand-in naming the account, which the skeleton ignores;
- * slice 8 replaces it with a Supabase access token signed for the account (T53), here and nowhere else.
- */
-export function credentials(account: string): Record<string, string> {
-  return { authorization: `Bearer matrix-${account}` };
+  /** The body, as the raw string sent; none for the requests `specsFor` makes. */
+  body?: string;
 }
 
 function isId(parameter: Parameter): boolean {
@@ -191,15 +223,16 @@ export function freshCursor(): string {
 }
 
 /**
- * The requests a cell makes to `operation`, as `account`, naming the cell's world: one for each value
+ * The requests a cell makes to `operation`, with `authorization` as the caller's header (the role's
+ * signed token; a stand-in where no app checks it), naming the cell's world: one for each value
  * of a required enum query parameter, then each of those again with each optional Id query parameter
  * filled, so it is sent and guessed like the required ones. A required parameter it can't fill, or
  * an Id parameter with no binding, stops the harness. The other optional parameters are left out:
  * the cursor has its own step (guessStep), and the rest name nothing (`month`, `q`, `limit`).
  */
-export function specsFor(operation: ContractOperation, targets: Targets, account: string): Spec[] {
+export function specsFor(operation: ContractOperation, targets: Targets, authorization: string): Spec[] {
   const path: Record<string, string> = {};
-  const headers: Record<string, string> = credentials(account);
+  const headers: Record<string, string> = { authorization };
   let queries: Record<string, string>[] = [{}];
   const optional: string[] = [];
   for (const parameter of operation.parameters) {
@@ -236,7 +269,12 @@ export function render(spec: Spec): Request {
   // Each idempotent request is its own action, so it never meets another's key (T19).
   const headers = { ...spec.headers };
   if (headers["idempotency-key"] !== undefined) headers["idempotency-key"] = randomUUID();
-  return { method: spec.operation.method, url: query === "" ? url : `${url}?${query}`, headers };
+  return {
+    method: spec.operation.method,
+    url: query === "" ? url : `${url}?${query}`,
+    headers,
+    ...(spec.body === undefined ? {} : { payload: spec.body }),
+  };
 }
 
 /**
@@ -341,21 +379,32 @@ export interface Step {
   answers: { spec: Spec; answer: Answer }[];
 }
 
-/** A cell, as its row NONE has it: the request answered with the neutral not-found (T14). */
-export async function cellStep(app: FastifyInstance, spec: Spec): Promise<Step> {
+/**
+ * What a request must get: an answer pinned byte for byte (the neutral not-found, or one of the gate's),
+ * or a judge of it that a route's row makes for the cell, naming each way the answer is wrong.
+ */
+export type Expected = Answer | ((answer: Answer) => string[]);
+
+function problemsOf(answer: Answer, expected: Expected): string[] {
+  return typeof expected === "function" ? expected(answer) : pinnedProblems(answer, expected);
+}
+
+/** A cell, as its row says: by default the skeleton's NONE, the neutral not-found for everyone (T14). */
+export async function cellStep(app: FastifyInstance, spec: Spec, expected: Expected = NEUTRAL): Promise<Step> {
   const answer = await answerOf(app, render(spec));
   return {
-    problems: neutralProblems(answer).map((problem) => `${spec.operation.id}: ${problem}`),
+    problems: problemsOf(answer, expected).map((problem) => `${spec.operation.id}: ${problem}`),
     answers: [{ spec, answer }],
   };
 }
 
-/** The cell's request with the client's clock and parameters past the reveal: each still neutral (T16, Q09). */
+/** The cell's request with the client's clock and parameters past the reveal: each still what the cell gets (T16, Q09). */
 export async function manipulationStep(
   app: FastifyInstance,
   spec: Spec,
   author: string,
   later: Temporal.Instant,
+  expected: Expected = NEUTRAL,
 ): Promise<Step> {
   const step: Step = { problems: [], answers: [] };
   const own = new Set(Object.keys(spec.headers));
@@ -365,7 +414,7 @@ export async function manipulationStep(
       query: changed.query,
       headers: Object.fromEntries(Object.entries(changed.headers).filter(([name]) => !own.has(name))),
     });
-    for (const problem of neutralProblems(answer))
+    for (const problem of problemsOf(answer, expected))
       step.problems.push(`${spec.operation.id}, manipulated ${what}: ${problem}`);
     step.answers.push({ spec: changed, answer });
   }
@@ -374,7 +423,8 @@ export async function manipulationStep(
 
 /**
  * The cell's request with each Id parameter in turn guessed (T14): a fresh id and another club's
- * object, each neutral. Then each malformed id, whose answer is one a malformed id may get, and the
+ * object, each neutral, or `gate`'s answer for a caller the gate stops before any route. Then each
+ * malformed id, whose answer is one a malformed id may get (`gate` too), and the
  * same whether the other Id parameters name the cell's objects, nothing, or another club's, so a
  * route that looks a parent up before it checks the child tells no one which parents exist. Then,
  * where the operation pages, a cursor no server issued and each malformed one, each answered as a
@@ -386,6 +436,7 @@ export async function guessStep(
   app: FastifyInstance,
   spec: Spec,
   elsewhere: Targets,
+  gate?: Answer,
 ): Promise<Step & { malformed: Map<string, string> }> {
   const step = { problems: [] as string[], answers: [] as Step["answers"], malformed: new Map<string, string>() };
   const ids = idParameters(spec);
@@ -394,7 +445,7 @@ export async function guessStep(
     for (const guess of guesses) {
       const guessed = withId(spec, parameter, { raw: guess, decoded: guess });
       const answer = await answerOf(app, render(guessed));
-      for (const problem of neutralProblems(answer))
+      for (const problem of pinnedProblems(answer, gate ?? NEUTRAL))
         step.problems.push(`${spec.operation.id}, ${parameter.name} guessed: ${problem}`);
       step.answers.push({ spec: guessed, answer });
     }
@@ -404,7 +455,7 @@ export async function guessStep(
       const malformed = withId(spec, parameter, value);
       const answer = await answerOf(app, render(malformed));
       step.answers.push({ spec: malformed, answer });
-      for (const problem of malformedProblems(answer, parameter.name, value.decoded))
+      for (const problem of malformedProblems(answer, parameter.name, value.decoded, gate))
         step.problems.push(`${label}: ${problem}`);
       step.malformed.set(`${spec.operation.id} ${parameter.name} ${value.raw}`, said(answer));
       if (others.length === 0) continue;
@@ -419,7 +470,7 @@ export async function guessStep(
         );
         const besideAnswer = await answerOf(app, render(beside));
         step.answers.push({ spec: beside, answer: besideAnswer });
-        for (const problem of malformedProblems(besideAnswer, parameter.name, value.decoded))
+        for (const problem of malformedProblems(besideAnswer, parameter.name, value.decoded, gate))
           step.problems.push(`${label}, beside ids that name ${names}: ${problem}`);
         if (said(besideAnswer) !== said(answer))
           step.problems.push(`${label}: another answer when the other ids name ${names} (T14)`);
@@ -432,7 +483,7 @@ export async function guessStep(
       const paged = { ...spec, query: { ...spec.query, cursor: value.decoded } };
       const answer = await answerOf(app, render(paged));
       step.answers.push({ spec: paged, answer });
-      for (const problem of malformedProblems(answer, "cursor", value.decoded))
+      for (const problem of malformedProblems(answer, "cursor", value.decoded, gate))
         step.problems.push(`${label}: ${problem}`);
       step.malformed.set(`${spec.operation.id} cursor ${value.raw}`, said(answer));
       if (ids.length === 0) continue;
@@ -443,7 +494,7 @@ export async function guessStep(
         const beside = withIds(paged, (other) => id(other));
         const besideAnswer = await answerOf(app, render(beside));
         step.answers.push({ spec: beside, answer: besideAnswer });
-        for (const problem of malformedProblems(besideAnswer, "cursor", value.decoded))
+        for (const problem of malformedProblems(besideAnswer, "cursor", value.decoded, gate))
           step.problems.push(`${label}, beside ids that name ${names}: ${problem}`);
         if (said(besideAnswer) !== said(answer))
           step.problems.push(`${label}: another answer when the ids name ${names} (T14)`);
@@ -461,12 +512,19 @@ export function guessCount(spec: Spec): number {
   return ids * (2 + MALFORMED.length * (1 + beside)) + cursors;
 }
 
+/** A caller without a session, by the `Authorization` header they send (none when null). */
+export interface Caller {
+  name: string;
+  authorization: string | null;
+}
+
 /**
- * Callers without a session, each in place of the role's credentials: none at all, a token that
- * isn't one, and another scheme. Slice 8 adds an expired token and a deleted account's, once real
- * tokens exist (T53).
+ * Callers without a session that need no key or token of any project: none at all, a token that isn't
+ * one, and another scheme. The matrix adds the callers real tokens make (tokens.ts: an expired token, a
+ * token of another key, issuer or audience, the anon key's, an unsecured one, a shared secret's, a
+ * deleted account's, T53).
  */
-export const SIGNED_OUT: readonly { name: string; authorization: string | null }[] = [
+export const SIGNED_OUT: readonly Caller[] = [
   { name: "no session", authorization: null },
   { name: "a token that isn't one", authorization: "Bearer not-a-token" },
   { name: "another scheme", authorization: "Basic bWF0cml4Om1hdHJpeA==" },
@@ -476,10 +534,17 @@ export const SIGNED_OUT: readonly { name: string; authorization: string | null }
  * The cell's request from each caller without a session, with the cell's ids, then ids that name
  * nothing, then another club's, and, where the operation pages, each of those again with a cursor no
  * server issued: the same answer, byte for byte, whatever the ids and the cursor name, so a route
- * that looks an object up before it checks the session tells no one which objects exist (T14). The
- * skeleton's row asks the neutral not-found of each.
+ * that looks an object up before it checks the session tells no one which objects exist (T14). Each
+ * gets `expected`: the neutral not-found for a route the gate lets anyone reach (a `public` one, and
+ * the skeleton's), the gate's one 401 for every other.
  */
-export async function signedOutStep(app: FastifyInstance, spec: Spec, elsewhere: Targets): Promise<Step> {
+export async function signedOutStep(
+  app: FastifyInstance,
+  spec: Spec,
+  elsewhere: Targets,
+  expected: Answer = NEUTRAL,
+  callers: readonly Caller[] = SIGNED_OUT,
+): Promise<Step> {
   const step: Step = { problems: [], answers: [] };
   const variants: [string, Spec][] = [["the cell's", spec]];
   if (idParameters(spec).length > 0) {
@@ -495,7 +560,7 @@ export async function signedOutStep(app: FastifyInstance, spec: Spec, elsewhere:
         { ...variant, query: { ...variant.query, cursor: freshCursor() } },
       ]);
   }
-  for (const caller of SIGNED_OUT) {
+  for (const caller of callers) {
     let first: string | undefined;
     for (const [ids, variant] of variants) {
       const headers = Object.fromEntries(Object.entries(variant.headers).filter(([name]) => name !== "authorization"));
@@ -503,7 +568,7 @@ export async function signedOutStep(app: FastifyInstance, spec: Spec, elsewhere:
       const sent = { ...variant, headers };
       const answer = await answerOf(app, render(sent));
       step.answers.push({ spec: sent, answer });
-      for (const problem of neutralProblems(answer))
+      for (const problem of pinnedProblems(answer, expected))
         step.problems.push(`${spec.operation.id}, ${caller.name}, ${ids} ids: ${problem}`);
       const text = said(answer);
       if (first === undefined) first = text;
@@ -515,6 +580,6 @@ export async function signedOutStep(app: FastifyInstance, spec: Spec, elsewhere:
 }
 
 /** How many answers signedOutStep gets for `spec`. */
-export function signedOutCount(spec: Spec): number {
-  return SIGNED_OUT.length * (idParameters(spec).length > 0 ? 3 : 1) * (pages(spec.operation) ? 2 : 1);
+export function signedOutCount(spec: Spec, callers: readonly Caller[] = SIGNED_OUT): number {
+  return callers.length * (idParameters(spec).length > 0 ? 3 : 1) * (pages(spec.operation) ? 2 : 1);
 }

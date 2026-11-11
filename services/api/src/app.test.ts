@@ -1,18 +1,19 @@
-// The API's skeleton on its own, with no database (T14; docs/plans/B0.md, slice 7): every operation
-// of the contract has its route and answers the neutral not-found, and so does whatever Fastify
-// itself answers a request it routes: an unknown path, another method, an id past the router's
-// limit or a broken escape. A body Fastify can't read, and a request Node's parser can't, get the
-// contract's INVALID_REQUEST, never the error's message; the second is sent over a socket of its
-// own, since `inject` never reaches the parser. The privacy matrix (tests/src/privacy) runs every
-// route as every role on top.
+// The API's app on its own, with no database and a signed-in caller the tests supply (T14;
+// docs/plans/B0.md, slices 7 and 8): every operation of the contract has its route, those nobody has
+// built answer the neutral not-found, and so does whatever Fastify itself answers a request it routes:
+// an unknown path, another method, an id past the router's limit or a broken escape. A body Fastify
+// can't read, and a request Node's parser can't, get the contract's INVALID_REQUEST, never the error's
+// message; the second is sent over a socket of its own, since `inject` never reaches the parser. The
+// sign-in gate has its own tests (session.test.ts), and the privacy matrix (tests/src/privacy) runs
+// every route as every role on top.
 
 import { request as httpRequest, type IncomingHttpHeaders } from "node:http";
 import { connect, type AddressInfo } from "node:net";
 import { OPERATIONS } from "@tadayo/contracts";
-import type { Clock } from "@tadayo/domain";
+import type { Account, Clock } from "@tadayo/domain";
 import type { FastifyInstance, InjectOptions } from "fastify";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { buildApp, routesOf } from "./app.ts";
+import { buildApp, routesOf, type Deps } from "./app.ts";
 import type { ApiSql } from "./connection.ts";
 
 /** The neutral not-found, pinned here byte for byte, not taken from the app. */
@@ -43,10 +44,23 @@ const sql = {
     return Promise.resolve();
   },
 } as unknown as ApiSql;
+
+/** Who is calling: an account with its profile finished, which every route lets through. */
+const READY: Account = {
+  id: "acct_ready",
+  state: "active",
+  displayName: "Ana",
+  ageConfirmed: true,
+  version: 0,
+  avatarVersion: null,
+};
+const deps: Deps = { sql, clock: {} as Clock, authenticate: () => Promise.resolve(READY), log: { level: "silent" } };
+/** The operations slice 8 builds; every other answers the neutral not-found (T14). */
+const BUILT = new Set(["getMe", "updateMe", "listClubs"]);
 let app: FastifyInstance;
 
 beforeAll(async () => {
-  app = buildApp({ sql, clock: {} as Clock });
+  app = buildApp(deps);
   await app.ready();
 });
 
@@ -70,8 +84,10 @@ describe("the skeleton's routes (T14)", () => {
     expect(routesOf(app)).toHaveLength(66);
   });
 
-  it("answers every operation with the neutral not-found, and nothing else", async () => {
-    for (const operation of OPERATIONS) {
+  it("answers every operation nobody has built yet with the neutral not-found, and nothing else", async () => {
+    const unbuilt = OPERATIONS.filter((operation) => !BUILT.has(operation.id));
+    expect(unbuilt).toHaveLength(63);
+    for (const operation of unbuilt) {
       const url = operation.path.replace(/\{[a-z_]+\}/g, "drp_x");
       expect(await answer({ method: operation.method.toUpperCase(), url }), operation.id).toEqual(NEUTRAL);
     }
@@ -87,7 +103,8 @@ describe("what Fastify answers itself, made to say nothing (T14)", () => {
       ["GET", "/v1/me/"],
       ["GET", "//v1/me"],
       ["DELETE", "/v1/me"],
-      ["PATCH", "/v1/me"],
+      ["PUT", "/v1/me"],
+      ["POST", "/v1/me"],
       ["TRACE", "/v1/me"],
       ["HEAD", "/v1/me"],
       ["OPTIONS", "/v1/me"],
@@ -118,7 +135,7 @@ describe("what Fastify answers itself, made to say nothing (T14)", () => {
   });
 
   it("ends its connection when it closes", async () => {
-    const other = buildApp({ sql, clock: {} as Clock });
+    const other = buildApp(deps);
     await other.ready();
     const before = ended.count;
     await other.close();
@@ -131,7 +148,7 @@ describe("what Node's parser answers, over a socket of its own (T14)", () => {
   let port: number;
 
   beforeAll(async () => {
-    listening = buildApp({ sql, clock: {} as Clock });
+    listening = buildApp(deps);
     await listening.listen({ port: 0, host: "127.0.0.1" });
     port = (listening.server.address() as AddressInfo).port;
   });
@@ -218,7 +235,7 @@ describe("what Node's parser answers, over a socket of its own (T14)", () => {
 
   it("writes nothing into an answer already under way when a request pipelined behind it can't be read", async () => {
     // A route that starts its answer and finishes it later, as a media route streams its bytes.
-    const streaming = buildApp({ sql, clock: {} as Clock });
+    const streaming = buildApp(deps);
     streaming.get("/stream", (_request, reply) => {
       reply.raw.writeHead(200, { "content-type": "application/octet-stream", "cache-control": "private, no-store" });
       reply.raw.write("first|");

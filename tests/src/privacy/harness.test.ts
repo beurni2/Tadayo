@@ -11,18 +11,23 @@ import {
   cellStep,
   guessCount,
   guessStep,
+  malformedProblems,
   manipulationStep,
   manipulations,
   NEUTRAL,
+  PROFILE_INCOMPLETE,
   render,
   routeProblems,
   said,
   signedOutCount,
   signedOutStep,
   specsFor,
+  UNAUTHENTICATED,
+  type Caller,
   type Spec,
 } from "./harness.ts";
 import { contractOperations, readDocument, type ContractOperation } from "./operations.ts";
+import { JUDGED } from "./account.ts";
 import { NONE, ROWS, rowProblems } from "./rows.ts";
 import { transportProblem } from "./scanner.ts";
 
@@ -94,13 +99,13 @@ async function plantedApp(
 }
 
 function spec(id: string): Spec {
-  const [first] = specsFor(operation(id), here, "acct_viewer");
+  const [first] = specsFor(operation(id), here, "Bearer planted");
   if (!first) throw new Error(id);
   return first;
 }
 
 describe("a route with no row fails (TECH-DESIGN section 8)", () => {
-  it("gives every operation of the contract its row, and every row an operation, each the skeleton's", () => {
+  it("gives every operation of the contract its row, and every row an operation, each the skeleton's but the account routes'", () => {
     expect(operations).toHaveLength(66);
     expect(rowProblems(operations, ROWS)).toEqual([]);
   });
@@ -110,13 +115,18 @@ describe("a route with no row fails (TECH-DESIGN section 8)", () => {
     expect(rowProblems(added, ROWS)).toEqual(["getDropTwice has no row in the privacy matrix"]);
   });
 
-  it("reports a row whose operation is gone, and a row that isn't NONE", () => {
+  it("reports a row whose operation is gone, a row that isn't NONE and that nothing judges, and a judged operation's NONE", () => {
     expect(rowProblems(operations, { ...ROWS, getDropTwice: NONE })).toEqual([
       "getDropTwice has a row but no operation in the contract",
     ]);
     expect(rowProblems(operations, { ...ROWS, getDrop: { grants: "everyone" } })).toEqual([
-      "getDrop's row isn't NONE: the slice that builds a route defines its row and its checks",
+      "getDrop's row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks",
     ]);
+    expect(rowProblems(operations, { ...ROWS, getMe: NONE })).toEqual(["getMe is judged but its row is NONE"]);
+    // The slice that builds a route names it among the judged, and its row is no longer NONE.
+    expect(
+      rowProblems(operations, { ...ROWS, getDrop: { grants: "everyone" } }, new Set([...JUDGED, "getDrop"])),
+    ).toEqual([]);
   });
 });
 
@@ -140,7 +150,7 @@ describe("the requests a cell makes, from the contract's parameters", () => {
   });
 
   it("sends each optional Id parameter too, filled from the world, in a request of its own", () => {
-    expect(specsFor(operation("listMemories"), here, "acct_viewer").map((made) => made.query)).toEqual([
+    expect(specsFor(operation("listMemories"), here, "Bearer planted").map((made) => made.query)).toEqual([
       { club_id: "clb_here" },
       { club_id: "clb_here", star: "itv_star_here" },
     ]);
@@ -153,11 +163,11 @@ describe("the requests a cell makes, from the contract's parameters", () => {
   });
 
   it("makes one request for each value of a required enum, and gives each idempotent one a key", () => {
-    expect(specsFor(operation("getDropMedia"), here, "acct_viewer").map((made) => made.query)).toEqual([
+    expect(specsFor(operation("getDropMedia"), here, "Bearer planted").map((made) => made.query)).toEqual([
       { rendition: "display" },
       { rendition: "full" },
     ]);
-    expect(specsFor(operation("removeDrop"), here, "acct_viewer").map((made) => made.query)).toEqual([
+    expect(specsFor(operation("removeDrop"), here, "Bearer planted").map((made) => made.query)).toEqual([
       { reason: "withdraw" },
       { reason: "pictured" },
     ]);
@@ -171,7 +181,7 @@ describe("the requests a cell makes, from the contract's parameters", () => {
       path: "/v1/weeks/{week_id}",
       parameters: [{ ...operation("getDrop").parameters[0], name: "week_id" }],
     } as ContractOperation;
-    expect(() => specsFor(planted, here, "acct_viewer")).toThrow(/no binding for the parameter week_id/);
+    expect(() => specsFor(planted, here, "Bearer planted")).toThrow(/no binding for the parameter week_id/);
     expect(Object.keys(BINDINGS).sort()).toEqual([
       "club_id",
       "comment_id",
@@ -424,7 +434,7 @@ describe("each step of the matrix reports a planted wrong answer", () => {
         ? reply.code(403).header("cache-control", "private, no-store").send({ code: "NOT_ALLOWED" })
         : neutral(reply);
     });
-    const [plain, withStar] = specsFor(operation("listMemories"), here, "acct_viewer");
+    const [plain, withStar] = specsFor(operation("listMemories"), here, "Bearer planted");
     if (!plain || !withStar) throw new Error("listMemories");
     const cursor = (await guessStep(app, plain, elsewhere)).problems;
     expect(cursor).toContainEqual(
@@ -541,6 +551,231 @@ describe("each step of the matrix reports a planted wrong answer", () => {
       "listComments, no session: another answer for the cell's, with a forged cursor, ids (T14)",
     );
     expect(step.problems.filter((problem) => !problem.includes("no session"))).toEqual([]);
+    await app.close();
+  });
+});
+
+/** The gate's 401, as the app writes it (src/answers.ts). */
+function unauthenticated(reply: FastifyReply) {
+  return reply
+    .code(401)
+    .header("cache-control", "private, no-store")
+    .type("application/json; charset=utf-8")
+    .send('{"code":"UNAUTHENTICATED"}');
+}
+
+/** The gate's 403, as the app writes it. */
+function incomplete(reply: FastifyReply) {
+  return reply
+    .code(403)
+    .header("cache-control", "private, no-store")
+    .type("application/json; charset=utf-8")
+    .send('{"code":"PROFILE_INCOMPLETE"}');
+}
+
+describe("the gate's answers are pinned like the neutral not-found (T14, T27; FQ13, FQ69)", () => {
+  it("pins the 401 and the 403 byte for byte, each its own and neither the neutral not-found's", async () => {
+    const unauthorized = await plantedApp("getDrop", (_request, reply) => unauthenticated(reply));
+    expect((await cellStep(unauthorized, spec("getDrop"), UNAUTHENTICATED)).problems).toEqual([]);
+    expect((await cellStep(unauthorized, spec("getDrop"), PROFILE_INCOMPLETE)).problems).toContainEqual(
+      expect.stringMatching(/^getDrop: status 401$/),
+    );
+    expect((await cellStep(unauthorized, spec("getDrop"))).problems).toContainEqual(
+      expect.stringMatching(/^getDrop: status 401$/),
+    );
+    await unauthorized.close();
+    const forbidden = await plantedApp("getDrop", (_request, reply) => incomplete(reply));
+    expect((await cellStep(forbidden, spec("getDrop"), PROFILE_INCOMPLETE)).problems).toEqual([]);
+    expect((await cellStep(forbidden, spec("getDrop"), UNAUTHENTICATED)).problems).toContainEqual(
+      expect.stringMatching(/^getDrop: status 403$/),
+    );
+    await forbidden.close();
+    expect(UNAUTHENTICATED.headers["content-length"]).toBe("26");
+    expect(PROFILE_INCOMPLETE.headers["content-length"]).toBe("29");
+  });
+
+  const wrong: [string, (reply: FastifyReply) => FastifyReply, string][] = [
+    [
+      "a 401 that says why",
+      (reply) =>
+        reply
+          .code(401)
+          .header("cache-control", "private, no-store")
+          .type("application/json; charset=utf-8")
+          .send('{"code":"UNAUTHENTICATED","reason":"expired"}'),
+      "getDrop: body ",
+    ],
+    [
+      "a 401 with a WWW-Authenticate the contract doesn't declare",
+      (reply) => unauthenticated(reply.header("www-authenticate", 'Bearer error="invalid_token"')),
+      "getDrop: an extra header, www-authenticate",
+    ],
+    [
+      "a 401 without no-store",
+      (reply) => reply.code(401).type("application/json; charset=utf-8").send('{"code":"UNAUTHENTICATED"}'),
+      "getDrop: cache-control: undefined",
+    ],
+    [
+      "a 401 whose body is another code's",
+      (reply) =>
+        reply
+          .code(401)
+          .header("cache-control", "private, no-store")
+          .type("application/json; charset=utf-8")
+          .send('{"code":"NOT_FOUND"}'),
+      'getDrop: body "{\\"code\\":\\"NOT_FOUND\\"}"',
+    ],
+  ];
+  for (const [name, answer, problem] of wrong) {
+    it(`reports a gate that answers ${name}`, async () => {
+      const app = await plantedApp("getDrop", (_request, reply) => answer(reply));
+      expect((await cellStep(app, spec("getDrop"), UNAUTHENTICATED)).problems).toContainEqual(
+        expect.stringContaining(problem),
+      );
+      await app.close();
+    });
+  }
+
+  it("reports a gate that tells apart the causes of no session: a bad token's answer isn't the missing header's (T14, T27)", async () => {
+    const app = await plantedApp("getDrop", (request, reply) =>
+      request.headers.authorization === "Bearer not-a-token"
+        ? reply
+            .code(401)
+            .header("cache-control", "private, no-store")
+            .type("application/json; charset=utf-8")
+            .send('{"code":"UNAUTHENTICATED","field":"token"}')
+        : unauthenticated(reply),
+    );
+    const step = await signedOutStep(app, spec("getDrop"), elsewhere, UNAUTHENTICATED);
+    expect(step.problems.filter((problem) => !problem.includes("a token that isn't one"))).toEqual([]);
+    expect(step.problems).toContainEqual(
+      expect.stringMatching(/^getDrop, a token that isn't one, the cell's ids: body /),
+    );
+    await app.close();
+  });
+
+  it("reports a gate that answers by what the ids name: a drop that exists gets another answer than one that doesn't (T14)", async () => {
+    const app = await plantedApp("getDrop", (request, reply) =>
+      (request.params as { drop_id: string }).drop_id === here.drop ? neutral(reply) : unauthenticated(reply),
+    );
+    const step = await signedOutStep(app, spec("getDrop"), elsewhere, UNAUTHENTICATED);
+    expect(step.problems).toContain("getDrop, no session: another answer for fresh ids (T14)");
+    expect(step.problems).toContain("getDrop, a token that isn't one: another answer for fresh ids (T14)");
+    expect(step.problems).toContainEqual(expect.stringMatching(/^getDrop, no session, the cell's ids: status 404$/));
+    await app.close();
+  });
+
+  it("takes the callers it is given, and counts their answers", async () => {
+    const callers: Caller[] = [
+      { name: "no session", authorization: null },
+      { name: "an expired token", authorization: "Bearer a.b.c" },
+    ];
+    const app = await plantedApp("getDrop", (_request, reply) => unauthenticated(reply));
+    const step = await signedOutStep(app, spec("getDrop"), elsewhere, UNAUTHENTICATED, callers);
+    expect(step.problems).toEqual([]);
+    expect(step.answers).toHaveLength(6);
+    expect(signedOutCount(spec("getDrop"), callers)).toBe(6);
+    // The header each variant sends is the caller's, and none carries the cell's role.
+    expect(step.answers.map(({ spec: sent }) => sent.headers.authorization)).toEqual([
+      undefined,
+      undefined,
+      undefined,
+      "Bearer a.b.c",
+      "Bearer a.b.c",
+      "Bearer a.b.c",
+    ]);
+    await app.close();
+  });
+
+  it("holds the guessed and malformed ids of a caller the gate stops to the gate's answer, and to nothing else (T14)", async () => {
+    const app = await plantedApp("getDrop", (_request, reply) => incomplete(reply));
+    const gated = await guessStep(app, spec("getDrop"), elsewhere, PROFILE_INCOMPLETE);
+    // Fastify's router answers the ids it can't route itself, the neutral not-found, which a malformed id may get.
+    expect(gated.problems).toEqual([]);
+    expect(gated.answers).toHaveLength(guessCount(spec("getDrop")));
+    expect((await guessStep(app, spec("getDrop"), elsewhere)).problems).toContainEqual(
+      expect.stringMatching(/^getDrop, drop_id guessed: status 403$/),
+    );
+    await app.close();
+    // A gate that looks the object up first: another club's drop gets the neutral not-found.
+    const looks = await plantedApp("getDrop", (request, reply) =>
+      (request.params as { drop_id: string }).drop_id === elsewhere.drop ? neutral(reply) : incomplete(reply),
+    );
+    expect((await guessStep(looks, spec("getDrop"), elsewhere, PROFILE_INCOMPLETE)).problems).toContainEqual(
+      expect.stringMatching(/^getDrop, drop_id guessed: status 404$/),
+    );
+    await looks.close();
+  });
+
+  it("lets a malformed id get the gate's answer only when the caller has a gate to meet", async () => {
+    const app = await plantedApp("getDrop", (_request, reply) => incomplete(reply));
+    const answer = await answerOf(app, render(spec("getDrop")));
+    expect(malformedProblems(answer, "drop_id", "x".repeat(65), PROFILE_INCOMPLETE)).toEqual([]);
+    expect(malformedProblems(answer, "drop_id", "x".repeat(65))).toEqual([
+      "status 403: neither the neutral not-found nor INVALID_REQUEST",
+    ]);
+    expect(malformedProblems(answer, "drop_id", "x".repeat(65), UNAUTHENTICATED)).toEqual([
+      "status 403: neither the neutral not-found nor INVALID_REQUEST",
+    ]);
+    await app.close();
+  });
+});
+
+describe("a request with a body (updateMe's table)", () => {
+  const sent = (): Spec => {
+    const [first] = specsFor(operation("updateMe"), here, "Bearer planted");
+    if (!first) throw new Error("updateMe");
+    return {
+      ...first,
+      headers: { ...first.headers, "content-type": "application/json" },
+      body: '{"expected_version":0}',
+    };
+  };
+
+  it("sends the body as it is written, with the headers the spec names, and gives each send its own key", async () => {
+    const seen: { body: unknown; key: unknown; type: unknown }[] = [];
+    const app = await plantedApp("updateMe", (request, reply) => {
+      seen.push({ body: request.body, key: request.headers["idempotency-key"], type: request.headers["content-type"] });
+      return reply
+        .code(200)
+        .header("cache-control", "private, no-store")
+        .type("application/json; charset=utf-8")
+        .send('{"ok":true}');
+    });
+    const judge = (answer: { status: number }) => (answer.status === 200 ? [] : [`status ${String(answer.status)}`]);
+    expect((await cellStep(app, sent(), judge)).problems).toEqual([]);
+    expect((await cellStep(app, sent(), judge)).problems).toEqual([]);
+    expect(seen.map((one) => one.body)).toEqual([{ expected_version: 0 }, { expected_version: 0 }]);
+    expect(seen[0]?.type).toBe("application/json");
+    expect(seen[0]?.key).toMatch(/^[0-9a-f-]{36}$/);
+    expect(seen[0]?.key).not.toBe(seen[1]?.key);
+    expect(render(sent()).payload).toBe('{"expected_version":0}');
+    const [bodiless] = specsFor(operation("updateMe"), here, "Bearer planted");
+    expect(bodiless === undefined ? "" : render(bodiless).payload).toBeUndefined();
+    await app.close();
+  });
+
+  it("reports an answer the cell's judge refuses, each reason as its own problem, under the operation's id", async () => {
+    const app = await plantedApp("updateMe", (_request, reply) => neutral(reply));
+    const step = await cellStep(app, sent(), () => ["not the viewer's Me", "no version"]);
+    expect(step.problems).toEqual(["updateMe: not the viewer's Me", "updateMe: no version"]);
+    expect(step.answers).toHaveLength(1);
+    await app.close();
+  });
+
+  it("holds each manipulated request to the same judge as the cell's own (T16, Q09)", async () => {
+    const app = await plantedApp("updateMe", (request, reply) =>
+      Object.hasOwn(request.query as object, "now")
+        ? neutral(reply)
+        : reply
+            .code(200)
+            .header("cache-control", "private, no-store")
+            .type("application/json; charset=utf-8")
+            .send("{}"),
+    );
+    const judge = (answer: { status: number }) => (answer.status === 200 ? [] : [`status ${String(answer.status)}`]);
+    const step = await manipulationStep(app, sent(), "itv_author", LATER, judge);
+    expect(step.problems).toEqual([expect.stringMatching(/^updateMe, manipulated .*"now".*: status 404$/)]);
     await app.close();
   });
 });

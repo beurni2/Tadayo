@@ -67,6 +67,10 @@
 //     before its reveal, and the viewer's reservations in it still live at the answer's instant, and
 //     a day's ViewerDay from the viewer's own membership and the day's star (T15);
 //   - a day link only to a closed day the viewer can read a drop in, its cover a photo;
+//   - an account only as the viewer's own `Me`, with the id, name, avatar version, age confirmation and
+//     version of the viewer's own row (spec 23: the only place an account id appears; none for a
+//     caller with no session), and an invitation only as one the viewer accepted, with the club's name
+//     and the inviter's name it holds (T7, T33);
 //   - nothing opened before its day opens, and who reacted only for the drop's author while their
 //     interval is active (FQ73);
 // - keys: no key that names a URL, a token, a provider, dimensions, colours, a highlight or another
@@ -91,8 +95,9 @@
 //   `data:` are); in every other value, header
 //   and decoded cursor, no value the world keeps back (a storage key, a content
 //   version, a source's link or post id) but a drop's own once its day has opened to a viewer in its
-//   audience, and no id of a drop, day, club, person or reservation the viewer may not see, outside
-//   the positions the world check judges; and in every other string of the body, no text people
+//   audience, and no id of a drop, day, club, person, reservation, account or invitation the viewer may
+//   not see, outside the positions the world check judges (an account's id is the viewer's `Me.id` and
+//   nowhere else, their own included); and in every other string of the body, no text people
 //   wrote that the viewer may not read, of 6 characters or more (an error's field, say). A header
 //   holds no such text in a form the shape check allows.
 //
@@ -114,7 +119,7 @@
 //   proposer's invitation link (B1);
 // - listClubs' invitations to the person who accepted one, before they are in the club: the club's
 //   name and the inviter's name of an invitation bound to their account, read from the world's
-//   invitations into their own text, and nothing else of that club (slice 8);
+//   invitations into their own text, and nothing else of that club (slice 8: Reader.texts);
 // - the avatars' images (B1);
 // - the author preview to its author, the media route's image and ETag after the reveal to the
 //   drop's readers, and T40's source details to their resolver (B3);
@@ -207,6 +212,28 @@ export interface WorldClub {
   labels: ReadonlyMap<string, Temporal.Instant>;
 }
 
+/** An account, as its row says (spec 23): what `Me` shows its owner, and no one else. */
+export interface WorldAccount {
+  /** The profile name now, or null while it has none. */
+  name: string | null;
+  /** The content version of its avatar, or null while it has none. */
+  avatar: string | null;
+  ageConfirmed: boolean;
+  version: number;
+}
+
+/** An invitation, as its rows say: the link, the candidate it is for and the club that candidate is to join. */
+export interface WorldInvitation {
+  /** The account that accepted it with its own link (T7), or null while no one has. */
+  boundTo: string | null;
+  club: string;
+  /** Its candidate has joined the club: it is a membership now, and listClubs no longer lists the invitation. */
+  joined: boolean;
+  /** What listClubs shows of it: the club's name, and the name members see of whoever proposed the person (FQ75). */
+  clubName: string;
+  inviterName: string | null;
+}
+
 export interface WorldFacts {
   drops: ReadonlyMap<string, WorldDrop>;
   days: ReadonlyMap<string, WorldDay>;
@@ -222,9 +249,15 @@ export interface WorldFacts {
    * person's display identity, shown before the reveal (FQ74, ADR-031).
    */
   canaries: ReadonlyMap<string, readonly string[]>;
+  /** Each account of the world, by id. */
+  accounts: ReadonlyMap<string, WorldAccount>;
+  /** Each invitation of the world, by id. */
+  invitations: ReadonlyMap<string, WorldInvitation>;
 }
 
 export interface Viewer {
+  /** The viewer's account, which a caller without a session has none of. */
+  account: string | null;
   /** The viewer's membership intervals, active or not; none for a caller without a session. */
   intervals: ReadonlySet<string>;
   /** Text that is the viewer's own: their profile's name, and the names they gave the people they blocked. */
@@ -481,17 +514,22 @@ interface Reader {
   /**
    * The text people wrote that the viewer may read: their own; captions of their drops and of drops
    * in their audience, and comments once those have opened; the names of the people they may know;
-   * their clubs' names; and the roster labels of a club they are in, or of one they left from the
-   * revisions made before they left.
+   * their clubs' names; the roster labels of a club they are in, or of one they left from the
+   * revisions made before they left; and the club's name and the inviter's name of an invitation they
+   * accepted, which they read before they are in the club (T7).
    */
   texts: ReadonlySet<string>;
   /** The text people wrote, in the world or as the viewer's own, that the viewer may not read. */
   hidden: ReadonlySet<string>;
   /** Every text people wrote, in the world or as the viewer's own. */
   written: ReadonlySet<string>;
-  /** The ids of the world's drops, days, clubs, people and reservations the viewer may not see. */
+  /**
+   * The ids of the world's drops, days, clubs, people, reservations, accounts and invitations the viewer
+   * may not see: an account's and an invitation's id is no one's to see but where the world check
+   * judges it, the viewer's own `Me.id` and the invitation they accepted.
+   */
   unseen: ReadonlySet<string>;
-  /** Every id of the world's drops, days, clubs, people and reservations, seen or not. */
+  /** Every id of the world's drops, days, clubs, people, reservations, accounts and invitations, seen or not. */
   ids: ReadonlySet<string>;
   /** The ids' forms without their type tags (untaggedOf), of those that have them. */
   untagged(): readonly Untagged[];
@@ -581,6 +619,13 @@ function readerOf(context: ScanContext): Reader {
     texts.add(club.name);
     for (const [label, since] of club.labels) if (inClubSince(id, since)) texts.add(label);
   }
+  for (const found of world.invitations.values()) {
+    written.add(found.clubName);
+    if (found.inviterName !== null) written.add(found.inviterName);
+    if (viewer.account === null || found.boundTo !== viewer.account) continue;
+    texts.add(found.clubName);
+    if (found.inviterName !== null) texts.add(found.inviterName);
+  }
   const hidden = new Set([...written].filter((text) => !texts.has(text)));
   const unseen = new Set<string>();
   for (const [id, found] of world.drops) if (!readable(found)) unseen.add(id);
@@ -588,12 +633,16 @@ function readerOf(context: ScanContext): Reader {
   for (const id of world.members.keys()) if (!knows(id)) unseen.add(id);
   for (const id of world.clubs.keys()) if (!clubs.has(id)) unseen.add(id);
   for (const [id, reservation] of world.reservations) if (!viewer.intervals.has(reservation.interval)) unseen.add(id);
+  for (const id of world.accounts.keys()) unseen.add(id);
+  for (const id of world.invitations.keys()) unseen.add(id);
   const ids = new Set([
     ...world.drops.keys(),
     ...world.days.keys(),
     ...world.members.keys(),
     ...world.clubs.keys(),
     ...world.reservations.keys(),
+    ...world.accounts.keys(),
+    ...world.invitations.keys(),
   ]);
   // Only a cursor's checks ask for these, so they are made when one does.
   let untagged: Untagged[] | undefined;
@@ -826,7 +875,11 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
     }
     for (const id of reader.unseen) {
       if (value.includes(id))
-        find("values", at, "an id of a drop, day, club, person or reservation the viewer may not see (T14)");
+        find(
+          "values",
+          at,
+          "an id of a drop, day, club, person, reservation, account or invitation the viewer may not see (T14)",
+        );
     }
   };
   const noLinks = (value: string, at: string, patterns = NEVER_VALUE) => {
@@ -1038,6 +1091,44 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
           );
         if (!reader.knows(membership))
           find("world", at, "a person who joined after the viewer's last interval in the club ended (T14)");
+      }
+    }
+    if (kind === "Me") {
+      // The only place an account id appears (spec 23): the viewer's own, with the viewer's own row's fields.
+      judged.add(`${at}.id`);
+      const account = context.viewer.account;
+      const row = account === null ? undefined : world.accounts.get(account);
+      if (account === null) find("world", at, "an account shown to a caller with no session (spec 23)");
+      else if (row === undefined) find("world", at, "an account this world doesn't have");
+      else {
+        if (node.id !== account)
+          find("world", `${at}.id`, "not the viewer's own account id, which no one else's appears beside (spec 23)");
+        if ((node.display_name ?? null) !== row.name) find("world", `${at}.display_name`, "not the viewer's own name");
+        if ((node.avatar_version ?? null) !== row.avatar)
+          find("world", `${at}.avatar_version`, "not the viewer's own avatar's version");
+        if (node.age_confirmed !== row.ageConfirmed)
+          find("world", `${at}.age_confirmed`, "not whether the viewer's age is confirmed (FQ13)");
+        if (node.version !== row.version) find("world", `${at}.version`, "not the viewer's own account's version");
+      }
+    }
+    if (kind === "MyInvitation") {
+      // Only an invitation the viewer accepted, with the club's name and the inviter's it holds (T7, T33).
+      judged.add(`${at}.invitation_id`);
+      const invitation = typeof node.invitation_id === "string" ? world.invitations.get(node.invitation_id) : undefined;
+      if (!invitation) find("world", at, "an invitation this world doesn't have");
+      else if (context.viewer.account === null || invitation.boundTo !== context.viewer.account)
+        find("world", at, "an invitation the viewer didn't accept (T7, T14)");
+      else if (invitation.joined)
+        find(
+          "world",
+          at,
+          "an invitation whose person has joined the club: it is a membership now (the contract's ClubList)",
+        );
+      else {
+        if (node.club_name !== invitation.clubName)
+          find("world", `${at}.club_name`, "not the invitation's club's name");
+        if (node.inviter_name !== invitation.inviterName)
+          find("world", `${at}.inviter_name`, "not the name members see of the invitation's inviter (FQ75)");
       }
     }
     if (kind === "Occurrence") {

@@ -2,14 +2,19 @@
 // with no matrix row fails the build"). A row says what each cell (a role, a state of the drop, a
 // phase of the day) gets from its route.
 //
-// The only row in B0's slice 7 is NONE, the skeleton's: every role, in every state and phase, gets
-// the neutral not-found (T14; docs/plans/B0.md, slice 7), and so does every caller without a
-// session. The harness refuses any other row, so the slice that first builds a route defines the
-// row's shape and tests each of its branches. What that shape must carry (docs/JOURNAL.md, block
-// 1.2, "Next"):
-// - for an account route (slice 8: getMe, updateMe, listClubs), the answer each role gets, and the
-//   one answer every caller without a session gets, an expired token and a deleted account's among
-//   them once real tokens exist (T53);
+// A row is NONE, the skeleton's, until the slice that builds a route gives it its own: every role, in
+// every state and phase, gets the neutral not-found (T14; docs/plans/B0.md, slice 7), and so does every
+// caller without a session. The harness refuses a row that nothing judges, so the slice that first builds
+// a route defines the row's shape, writes the judge of each of its branches (account.ts is the first) and
+// tests that each can fail. Slice 8 built the account routes and the sign-in gate in front of every route:
+// - the answer each role gets from getMe, updateMe and listClubs, by what the gate makes of its account
+//   (account.ts: gateOf, cellExpected, clubsJudge, updateMeCases), and the one 401 every caller without a
+//   session gets from every route that isn't `public`, whatever its token (tokens.ts: an expired token, one
+//   of another key, project, issuer or audience, an anon, service-role or anonymous person's, an unsecured
+//   one, a shared secret's). A deleted account has no sign-in subject left, so its old token is no
+//   session for anything but a new account (docs/LIMITATIONS.md: B6's deletion job ends the Supabase
+//   user); the role "deletion pending" is the account whose deletion has begun (T27). What the sources
+//   leave to a later slice:
 // - for the first route that answers drop references (B1, B2), each cell's status and, for each of
 //   the world's drops, the form it may take, absent, caption, own or revealed, from the role, the
 //   state, the phase and who wrote it, checked by finding drop ids in every answer in every phase.
@@ -40,14 +45,35 @@
 //   nobody has accepted ties no account to the club;
 // - for createUpload, the replays of its intent (TECH-DESIGN section 8), before it grants anything:
 //   spike S1's server part needs them before Gate A;
-// - for listClubs (slice 8), the invitations the role "invited, not yet a member" has accepted: the
-//   club's name and the inviter's name, read by factsOf from the world's invitations bound to that
-//   account into the viewer's own text, and nothing else of that club (scanner.ts, its header);
+// - for listClubs (slice 8, done), the invitations the role "invited, not yet a member" has accepted: the
+//   club's name and the inviter's name, read from the world's invitations bound to that account (the
+//   scanner's `WorldInvitation`), and nothing else of that club (scanner.ts, its header);
 // - for a route that changes the world (a commit, a reservation, a leave, a block), the facts each
 //   answer is scanned against, read from the world after it (scanner.ts, its header).
 
+import { JUDGED } from "./account.ts";
+
 /** The skeleton's row: the neutral not-found to everyone (T14). */
 export const NONE = Object.freeze({ answer: "the neutral NOT_FOUND to every role, in every state and phase" });
+
+const GATE =
+  "the gate's one 401 to an account whose deletion has begun (T27) and to every caller without a session, " +
+  "the 403 PROFILE_INCOMPLETE to an account that hasn't finished its profile unless the route is beforeProfile";
+
+/** getMe (slice 8): the viewer's own account, and no one else's. */
+export const ME = Object.freeze({
+  answer: `200 with the viewer's own Me, in every state and phase, to an account with a session (${GATE})`,
+});
+
+/** updateMe (slice 8): the table of bodies in account.ts, each answered byte for byte. */
+export const UPDATE_ME = Object.freeze({
+  answer: `each body of account.ts's table answered as it says, in every state and phase (${GATE})`,
+});
+
+/** listClubs (slice 8): the viewer's active clubs and the invitations they accepted, from the world's rows. */
+export const CLUBS = Object.freeze({
+  answer: `200 with the viewer's active clubs and accepted invitations, in every state and phase (${GATE})`,
+});
 
 export const ROWS: Readonly<Record<string, unknown>> = {
   acceptInvitation: NONE,
@@ -76,7 +102,7 @@ export const ROWS: Readonly<Record<string, unknown>> = {
   getDropMedia: NONE,
   getEmbed: NONE,
   getHome: NONE,
-  getMe: NONE,
+  getMe: ME,
   getMemberAvatar: NONE,
   getMyAvatar: NONE,
   getNotificationPreferences: NONE,
@@ -88,7 +114,7 @@ export const ROWS: Readonly<Record<string, unknown>> = {
   hideDrop: NONE,
   leaveClub: NONE,
   listBlocks: NONE,
-  listClubs: NONE,
+  listClubs: CLUBS,
   listComments: NONE,
   listFavourites: NONE,
   listMembers: NONE,
@@ -115,11 +141,19 @@ export const ROWS: Readonly<Record<string, unknown>> = {
   setThreadNotifications: NONE,
   updateComment: NONE,
   updateDrop: NONE,
-  updateMe: NONE,
+  updateMe: UPDATE_ME,
 };
 
-/** What's wrong with `rows` for `operations`: an operation with no row, a row with no operation, a row that isn't NONE. */
-export function rowProblems(operations: readonly { id: string }[], rows: Readonly<Record<string, unknown>>): string[] {
+/**
+ * What's wrong with `rows` for `operations`: an operation with no row, a row with no operation, a row that
+ * isn't NONE and that nothing judges (account.ts's JUDGED, the operations whose cells it answers), and an
+ * operation it judges whose row is NONE, which would leave its judge unasked.
+ */
+export function rowProblems(
+  operations: readonly { id: string }[],
+  rows: Readonly<Record<string, unknown>>,
+  judged: ReadonlySet<string> = JUDGED,
+): string[] {
   const ids = new Set(operations.map((operation) => operation.id));
   return [
     ...[...ids].filter((id) => !Object.hasOwn(rows, id)).map((id) => `${id} has no row in the privacy matrix`),
@@ -127,7 +161,13 @@ export function rowProblems(operations: readonly { id: string }[], rows: Readonl
       .filter((id) => !ids.has(id))
       .map((id) => `${id} has a row but no operation in the contract`),
     ...Object.entries(rows)
-      .filter(([, row]) => row !== NONE)
-      .map(([id]) => `${id}'s row isn't NONE: the slice that builds a route defines its row and its checks`),
+      .filter(([id, row]) => row !== NONE && !judged.has(id))
+      .map(
+        ([id]) =>
+          `${id}'s row isn't NONE and nothing judges it: the slice that builds a route writes its judge and its checks`,
+      ),
+    ...Object.entries(rows)
+      .filter(([id, row]) => row === NONE && judged.has(id))
+      .map(([id]) => `${id} is judged but its row is NONE`),
   ];
 }

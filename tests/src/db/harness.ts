@@ -48,13 +48,13 @@ export function commandSql() {
 export type WorldTypes = { instant: Temporal.Instant };
 export type WorldTx = postgres.TransactionSql<WorldTypes>;
 
-export function worldSql(): postgres.Sql<WorldTypes> {
+export function worldSql(max = 2): postgres.Sql<WorldTypes> {
   const instant = {
     ...INSTANT_TYPE,
     serialize: (value: Temporal.Instant | Date) =>
       value instanceof Date ? value.toISOString() : INSTANT_TYPE.serialize(value),
   };
-  return postgres(url("DATABASE_URL"), { max: 2, onnotice: () => undefined, types: { instant } });
+  return postgres(url("DATABASE_URL"), { max, onnotice: () => undefined, types: { instant } });
 }
 
 /**

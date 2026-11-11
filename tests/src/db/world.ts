@@ -59,6 +59,19 @@ export async function newUser(tx: Tx, name: string): Promise<string> {
 }
 
 /**
+ * An account that has just signed in for the first time and finished nothing: no age confirmation and no
+ * name (FQ13, FQ69), as the API's first request makes it (spec 23). It belongs to no club.
+ */
+export async function newUnfinishedUser(tx: Tx): Promise<string> {
+  const id = newId("acct");
+  await tx`
+    INSERT INTO app.users (id, auth_subject, created_at)
+    VALUES (${id}, ${randomUUID()}, ${AT.created})
+  `;
+  return id;
+}
+
+/**
  * Adds `newcomers` to the club by one exact roster revision: `proposer` proposes it, each
  * newcomer accepts it with their own link, every active member approves it, and it is applied
  * (T7). Returns each newcomer's new interval.
@@ -297,4 +310,26 @@ export async function leave(tx: Tx, member: Member, name: string, at: Date): Pro
     UPDATE app.memberships SET state = 'left', left_at = ${at}, contributions = 'keep', ended_display_name = ${name}
      WHERE interval_id = ${member.interval}
   `;
+}
+
+export type UploadState = "pending" | "preparing" | "ready" | "held" | "rejected";
+
+/**
+ * An avatar upload of `owner`'s that preparation has left in `state`, the row as the upload commands will
+ * write it (spec 23): a ready one has its random content version, which is what `Me` shows as the avatar's.
+ */
+export async function newAvatar(tx: Tx, owner: string, state: UploadState): Promise<{ id: string; version: string }> {
+  const id = newId("upl");
+  const version = newId("v");
+  await tx`
+    INSERT INTO app.uploads (id, owner_user_id, purpose, content_type, byte_size, object_key, created_at, expires_at)
+    VALUES (${id}, ${owner}, 'avatar', 'image/jpeg', 1000, ${newId("uploads/raw")}, ${AT.created}, ${AT.close})`;
+  if (state !== "pending") await tx`UPDATE app.uploads SET state = 'preparing' WHERE id = ${id}`;
+  if (state === "ready") {
+    await tx`UPDATE app.uploads SET state = 'ready', content_hash = ${randomBytes(32)}, content_version = ${version} WHERE id = ${id}`;
+  }
+  if (state === "held") await tx`UPDATE app.uploads SET state = 'held' WHERE id = ${id}`;
+  if (state === "rejected")
+    await tx`UPDATE app.uploads SET state = 'rejected', rejection = 'unreadable' WHERE id = ${id}`;
+  return { id, version };
 }

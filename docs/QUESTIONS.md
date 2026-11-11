@@ -321,7 +321,8 @@ Brought in with the handoffs (ADR-027). Their sources: the briefs (`docs/design/
     - Needed by: B0 (slice 11's sign-in).
 - **FQ69. An account that stops at the 18-or-older step.** By then Supabase has already created the account with its email.
     - Default: such an account can only finish setup or leave. How long it's kept is proposed, with a default, when sign-in is built (slice 8).
-    - Needed by: B0 (slice 8).
+    - Slice 8's proposal (`api/b0-auth`, 11 November 2026): it's kept 30 days from the day its account was made (`app.users.created_at`), then deleted with its Supabase user and the email address that user holds, by the retention job B6 builds (B6 also ends the Supabase user of every deleted account, so no old token makes a new one). Until then the API lets it use only the routes that work before the profile is finished (the contract's `beforeProfile` set: read and edit its account, its avatar, `deleteAccount`, `getConfig` and the upload routes); every other route answers 403 `PROFILE_INCOMPLETE`, `GET /v1/clubs` among them, since the contract doesn't mark `listClubs` `beforeProfile`: the app reads the account first and asks for clubs once the profile is finished. The API's account keeps no email address (spec 23), and slice 8 deletes nothing. 30 days is one setting for the job; a different length is a change to it alone.
+    - Needed by: B0 (slice 8) for the proposal, B6 for the job.
 
 ## Raised by the contract (B0 slice 3)
 

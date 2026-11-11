@@ -1,7 +1,9 @@
-// The API's and the worker's entries as processes, against the test database (ADR-013; T1, T14):
-// with `prod`, on a database that has no dev clock, the API listens and answers over HTTP with the
-// neutral not-found, and the worker starts and exits; with `dev`, which needs the dev clock this
-// database doesn't have, each stops with the time module's message.
+// The API's and the worker's entries as processes, against the test database (ADR-013; T1, T14, T52):
+// with `prod`, on a database that has no dev clock, the API listens and answers over HTTP, a request
+// with no session with the one 401 and a path nobody serves with the neutral not-found, and writes a
+// request line of the request's id, operation, status and time alone; the worker starts and exits;
+// with `dev`, which needs the dev clock this database doesn't have, each stops with the time module's
+// message.
 
 import { spawn, type ChildProcess } from "node:child_process";
 import { join } from "node:path";
@@ -9,6 +11,8 @@ import { afterEach, describe, expect, it } from "vitest";
 
 const SERVICES = join(import.meta.dirname, "..", "..", "..", "services");
 const url = process.env.DATABASE_URL ?? "";
+/** A Supabase project's URL as theirs are, which no request here makes the API fetch from. */
+const PROJECT = "https://abcdefghijklmnopqrst.supabase.co";
 const running: ChildProcess[] = [];
 
 afterEach(() => {
@@ -20,6 +24,7 @@ function start(service: "api" | "worker", environment: string) {
     env: {
       PATH: process.env.PATH ?? "",
       DATABASE_URL: url,
+      ...(service === "api" ? { SUPABASE_URL: PROJECT } : {}),
       TADAYO_ENVIRONMENT: environment,
       PORT: "0",
       HOST: "127.0.0.1",
@@ -47,16 +52,44 @@ async function waitFor(started: ReturnType<typeof start>, pattern: RegExp): Prom
 }
 
 describe("the API's entry against the test database", () => {
-  it("listens with prod and answers a request over HTTP with the neutral not-found (T14)", async () => {
+  it("listens with prod and answers over HTTP: the one 401 without a session, the neutral not-found for a path nobody serves (T14)", async () => {
     expect(url, "set DATABASE_URL, as the ci step db-tests does").not.toBe("");
     const api = start("api", "prod");
     const listening = await waitFor(api, /api: listening at (http:\/\/127\.0\.0\.1:\d+)/);
     expect(listening, api.output.stderr).not.toBeNull();
-    const response = await fetch(`${listening?.[1] ?? ""}/v1/me`, { headers: { authorization: "Bearer x" } });
-    expect(response.status).toBe(404);
-    expect(response.headers.get("cache-control")).toBe("private, no-store");
-    expect(response.headers.get("content-type")).toBe("application/json; charset=utf-8");
-    expect(await response.text()).toBe('{"code":"NOT_FOUND"}');
+    const base = listening?.[1] ?? "";
+    // A header that isn't a token is no session, and says so without asking Supabase for anything.
+    for (const headers of [{ authorization: "Bearer x" }, {}]) {
+      const response = await fetch(`${base}/v1/me`, { headers });
+      expect(response.status).toBe(401);
+      expect(response.headers.get("cache-control")).toBe("private, no-store");
+      expect(response.headers.get("content-type")).toBe("application/json; charset=utf-8");
+      expect(await response.text()).toBe('{"code":"UNAUTHENTICATED"}');
+    }
+    const unknown = await fetch(`${base}/v1/very-secret-path?email=ana@example.invalid`, {
+      headers: { authorization: "Bearer x" },
+    });
+    expect(unknown.status).toBe(404);
+    expect(unknown.headers.get("cache-control")).toBe("private, no-store");
+    expect(unknown.headers.get("content-type")).toBe("application/json; charset=utf-8");
+    expect(await unknown.text()).toBe('{"code":"NOT_FOUND"}');
+    // The log is the listening line and one line a request, which names neither the path nor a header (T52).
+    const request = await waitFor(api, /"msg":"request"[^\n]*\n[^\n]*"msg":"request"[^\n]*\n[^\n]*"msg":"request"/);
+    expect(request, api.output.stdout).not.toBeNull();
+    const lines = api.output.stdout.split("\n").filter((line) => line.startsWith("{"));
+    const entries = lines.map((line) => JSON.parse(line) as Record<string, unknown>);
+    expect(entries.map((entry) => entry["msg"])).toEqual([
+      expect.stringMatching(/^Server listening at http:\/\/127\.0\.0\.1:\d+$/) as string,
+      "request",
+      "request",
+      "request",
+    ]);
+    expect(entries.slice(1).map((entry) => [entry["op"], entry["status"]])).toEqual([
+      ["getMe", 401],
+      ["getMe", 401],
+      [undefined, 404],
+    ]);
+    expect(api.output.stdout).not.toMatch(/Bearer|very-secret|ana@|example\.invalid/);
   }, 30_000);
 
   it("stops with dev, which needs the dev clock this database doesn't have (ADR-013)", async () => {
