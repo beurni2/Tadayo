@@ -1,0 +1,302 @@
+## A-01 must adjusted | WHERE: The answer: "**It also redrew eight earlier screens that nobody asked for:**"; and section 3: "The brief asked for no redraws. It said the app follows six points over the earlier frames, such as the curly apostrophe and the named spacing, and not to resend a frame for those alone."
+P: The report says the redraws weren't asked for, but the brief asked for them. It asked Claude Design to resend any earlier frame an answer changed, and named A02-age and A03-profile. Only the six points alone were ruled out. The findings agree: F-19 and F-23 call the A02-email and A03 redraws justified by answers, and F-20 picks out A02-code as the one with no answer behind it.
+R: True. Brief line 88: "If an answer below changes a frame you delivered in handoffs 1 to 6, send that frame again under its own title", and line 199: "Send A02-age and A03-profile again if they change." So "nobody asked for" and "The brief asked for no redraws" are false. The proposed section 3 sentence is still slightly off. It says the other seven redraws have answers behind them, but A02-code-er
+FIX: The answer: "**It also sent eight earlier screens again.** The brief asked for that only where an answer changed a frame, and named the 18-or-older step and the profile. The eight are:" Section 3, first paragraph: "The brief asked for an earlier frame again only where an answer changed it, naming the 18-or-older step and the profile, and not for the six points alone, such as the curly apostrophe and the named spacing. Claude Design resent eight, saying they make sign-in's entry and exit, its spacing and the header before a club consistent (`redraws-before-after.png`). No answer is behind the code screen's or the code error's redraw: they bring only the shared sign-in spacing and, on the code error, the curly apostrophe. The other six change more than their answers explain."
+
+## A-02 must confirmed | WHERE: The answer: "**Claude Design did everything the brief asked.** What it did:"
+P: The lead sentence contradicts the report's own body. The two failure lines break the brief's Failures rule. The highlight sample breaks the brief's Content rule and FQ41. The replaced list leaves keys out that the brief's Return asked it to name. Several frames don't draw the named spacing the brief asked for. The handoff 6 check said "almost everything" in the same situation.
+FIX: **Claude Design did almost everything the brief asked.** Besides the two errors and the two failure lines below, its highlight sample breaks the brief's photograph rule and your colour Default, its list of replaced lines leaves some out, and some frames don't keep the spacing it writes down (section 4, items 1, 6 and 8; section 7). What it did:
+
+## A-03 must adjusted | WHERE: Section 4, item 6: "**Gaps the delivery writes down win over the frames,** where the frames differ: 12 points from a field to its error line, which the frames draw at 2 to 13; the gap under "Sent to {email}"; Verify code staying in place at the usual text size and sitting just above the keyboard onl
+P: Three errors. (a) The gaps "2 to 13" come from X-05's measure. On the delivery's own line-box measure, which gives its fieldLabelGap 8, F-08, V-03 and D-22 all find 5, 8 and 16, and 18 at the largest text. (b) The delivery writes no value for the gap under "Sent to {email}". The app keeps its own SetupGap.field. (c) For Verify code it's the other way round. The written rule pins it above the keyboard at every size, and the app follows the frames at the usual size, as the critic ruled. So it isn'
+R: All three errors check out. (a) On the delivery's own line-box measure (baseline minus 0.82 times the size, which gives its fieldLabelGap 8 and contentStart 32), the gaps are: frame 3, 336.66 minus 10.66 is 326, against the field's bottom at 321, so 5. Frame 5 gives 297 against 289, so 8. Frame 11 gives 362 against 346, so 16. Frame 19 at 44 points gives 280 against 262, so 18. "2 to 13" comes fro
+FIX: 6. **Gaps the delivery writes down win over the frames,** where the frames differ: 12 points from a field to its error line, which the frames draw at 5 to 18. The gap under "Sent to {email}" has no written value, so the app keeps its own (section 3). Verify code is the other way round: the written rule pins it above the keyboard at every size, but the frames keep it in place at the usual text size and pin it only at the largest. The app follows the frames, pinning it 12 points above the keyboard only where it would otherwise sit under it, and a later brief asks which rule holds.
+
+## A-04 should adjusted | WHERE: Section 8, the needs list: "handoff 7 answers items 1 to 25, 13a, 13b, 39 to 42 and 44, and item 31 (the field doesn't wrap). The open items are 26 to 38, 43, 45 and 46, plus section 7's leftovers."
+P: Item 31 is listed as both answered and open, since 26 to 38 includes it. Item 18 is counted as answered, but it doesn't apply.
+R: Item 31 is listed both as answered and inside 26 to 38. Item 18 is inside "1 to 25" but doesn't apply (the X per-item list). The proposed fix still says "answers items 1 to 25" and then excepts item 18, which contradicts itself. It also misses item 35 ("Say whether each says something" when the list comes back). Handoff 7 answers it: IMPLEMENTATION section 4 says "Friends and Memories resolve with
+FIX: - **The needs list:** handoff 7 answers items 1 to 17, 19 to 25, 13a, 13b, 31 (the field doesn't wrap), 35 (Friends and Memories say nothing when the list comes back), 39 to 42 and 44, with 13b, 21 and 39 only in part (section 7 has the rest). Item 18 isn't needed, since the founder's FQ85 answer shows the later buttons doing nothing yet. The open items are 26 to 30, 32 to 34, 36 to 38, 43, 45 and 46, plus section 7's leftovers.
+
+## A-05 should confirmed | WHERE: Section 1: "**Two new font files,** fixed regular and bold versions of the same Arimo font, under its licence. The app keeps using the variable font it has."
+P: The app has no Arimo font. It uses the iOS system font, and Arimo only stands in for it in the frames.
+FIX: - **Two new font files,** fixed regular and bold versions of the same Arimo font, under its licence. Arimo only stands in for the iOS system font in the frames; the app uses the system font, so nothing changes.
+
+## A-06 should confirmed | WHERE: The answer: "A check of every new string finds only "Sent to {email}", which you approved (FQ68)."
+P: This reads as if the only thing the copy check found was "Sent to {email}". The same check found two lines that break T43, and the next paragraph reports them. The handoff 6 report's version said what the check looked for.
+FIX: A check of every new string finds no inferred pronoun and no "Sent" apart from "Sent to {email}", which you approved (FQ68). Two new lines break T43; they're below.
+
+## A-07 should confirmed | WHERE: The answer: "your Defaults drawn as stated: "Couldn’t verify the code. Try again." (FQ86), the start-up failures (FQ89), the tabs' loading and failure words (FQ90) and the drop card's words (FQ91);"
+P: FQ86 isn't a Default. The founder answered it on 6 November (ADR-030). It also isn't drawn: no frame shows A02-code-verify-unavailable, and the pack confirms the line in writing. Most of FQ89's lines are confirmed in writing too, not drawn.
+FIX: - the line you chose for a code the sign-in service can't answer, "Couldn’t verify the code. Try again." (FQ86), and your Defaults' words, drawn or confirmed in writing: the start-up failures (FQ89), the tabs' loading and failure words (FQ90) and the drop card's words (FQ91);
+
+## A-08 should confirmed | WHERE: Section 2, Also answered in writing: "**VoiceOver:** words for every busy state, failure and change of the resend row, each said once without moving focus."
+P: This repeats the wording R-08's second reviewer corrected. After a successful resend, the delivery returns focus to the code field, which the app already does. As written, it would tell the ios thread to remove that.
+FIX: - **VoiceOver:** words for every busy state, failure and change of the resend row, each said once. None moves focus, except that a successful resend returns focus to the code field, as the app already does.
+
+## A-09 should confirmed | WHERE: Section 4, item 4: "**Back is hidden while a code is checked or a new one is sent.** The delivery's written rule says so; frames 4 and 7 draw it active."
+P: The written rule says Back is unavailable, not hidden. Hiding it is the app's own reading, and X-03 asks Claude Design to say hidden or dimmed.
+FIX: 4. **Back stays hidden while a code is checked or a new one is sent.** The delivery's written rule makes it unavailable then, without saying hidden or dimmed; frames 4 and 7 draw it active.
+
+## A-10 should confirmed | WHERE: Section 5, FQ94: "Before 7 AM nothing about the photo may leave the server (T10)."
+P: This overstates T10. T10 lets the media class go out before the reveal. That is exactly why a screenshot kind is a risk: if it travelled as a media class it would give away the photo's shape.
+FIX: Before 7 AM nothing about the photo but whether it's a photo or a video may leave the server, so nothing about its shape (T10).
+
+## A-11 should confirmed | WHERE: The answer: "Many don't: grey explanatory text turned black, gaps tightened, and text buttons moved from the centre to the left. Section 3 shows them. The app takes the changes an answer or a rule explains and keeps the rest until Claude Design explains them."
+P: The text buttons on the left are listed with the changes the app keeps, but section 3 and section 8 take them, because the sheet's current sample draws them so (the critic's ruling on F-06). The sentence leaves out that third reason.
+FIX: Some changes follow from its answers, such as a "Leave sign-in" button at the top left of the 18-or-older step and the profile. Many don't: grey explanatory text turned black, gaps tightened, and text buttons moved from the centre to the left. Section 3 shows them. The app takes the changes an answer, a rule or the sheet's current sample explains, which includes the text buttons on the left, and keeps the rest until Claude Design explains them.
+
+## A-12 should adjusted | WHERE: Section 8, "Changes on `ios/b0-drop-card`, before its PR:", after "at the largest text, the photo label's padding and the star gaps fixed, with only the star and the word growing (D-12);"
+P: An app change is missing. V-19 asks the date and time helpers to stop a line starting with a middle dot or with "AM".
+R: V-19 does ask for this, but half of it is already built. ICU puts a narrow no-break space (U+202F) before AM and PM. dropcard's DateLabelsTests pins "7\u{202F}AM" (line 113-116), and DropCardTests does too (line 20-21). So the time already can't break before "AM". Only the middle dot is unbound: card.status "Opens %1$@ · %2$@" and drop.when "%1$@ · %2$@" use ordinary spaces. Asking for a no-break 
+FIX: - at the largest text, the date lines' middle dot kept with the word before it, so no line starts with "·" (V-19); the time already keeps "AM" with its number, through ICU's narrow no-break space;
+
+## A-13 should confirmed | WHERE: Section 8: "**Text actions** leading at the 20-point inset, keeping the full-width 44-point target, including A03's Add photo and Optional under the centred avatar (X-25, VM-03, the critic's ruling on F-06)."
+P: Two problems. First, it leaves out the resend row's waiting and resending lines. They aren't TextAction buttons, and X-25's second reviewer says the change is incomplete without them. Second, the critic's ruling covers only the resend and Change email rows. Add photo and Optional rest on VM-03 and X-25, against F-07's "keep centred".
+FIX: - **Text actions** leading at the 20-point inset, keeping the full-width 44-point target, and the resend row's waiting and resending lines leading too, which aren't text actions (X-25, the critic's ruling on F-06). A03's Add photo and Optional also go leading under the centred avatar (VM-03, X-25), over F-07; the critic's ruling names only the resend and Change email rows.
+
+## A-14 should adjusted | WHERE: Section 8, the header before a club: "+ Add at [241,56,80,44] and Account at [329,56,44,44], with the avatar at [337,64,28,28];"
+P: The delivery's replacement scope covers handoff 6's denied header too, and W-13 asks the app to change it. Section 8 lists only the header before a club.
+R: handoff7.replaces.noClubRootHeader reads "noClubRootHeader + H6 denied header geometry and scroll behavior only", and W-13 says so. But this list is "Changes to what's on `main`", and the denied header isn't on main: INVENTORY gives H01-access-lost and M01-access-lost stage B2, and the app has no denied screen. So the point should be recorded for B2, not given as a main change.
+FIX: - + Add at [241,56,80,44] and Account at [329,56,44,44], with the avatar at [337,64,28,28], on every tab with no club; the delivery's replaced scope also covers handoff 6's denied header, which takes the same rectangles when B2 builds it (W-13);
+
+## A-15 should adjusted | WHERE: Section 8, Questions: "FQ89, FQ90 and FQ91: note Claude Design's agreement and leave them open unless the founder answers;"
+P: X-34 asks for three more QUESTIONS.md changes the report leaves out. FQ86 should note the delivered line matches. FQ90 has a stale bullet saying the brief lacks the words and hasn't gone out. FQ91 should note the revealed item's grouping is answered (X-32), and its preface still says "until its export is checked".
+R: X-34 asks for these updates, and dropcard QUESTIONS.md still reads "The brief hasn't gone to Claude Design yet." under FQ90. The "until its export is checked" wording is in two prefaces, not one. The tabs section ("these defaults stand until its export is checked", before FQ89) and the drop card section both have it. Once the export is checked, both read as if the Defaults lapse, while the founder
+FIX: - FQ86: note that the delivery's line for a code check the sign-in service can't answer is the founder's answered line (X-34);
+    - FQ89, FQ90 and FQ91: note Claude Design's agreement and leave them open unless the founder answers;
+    - FQ90: also rewrite the stale bullet that says the brief lacks the failure words and hasn't gone to Claude Design (X-34);
+    - FQ91: also note that the revealed item's grouping is answered and keeps (c)'s words and order (X-32, X-34);
+    - both prefaces, the tabs' and the drop card's: their "these defaults stand until its export is checked" becomes "these defaults stand until the founder answers" (X-34);
+
+## A-16 note confirmed | WHERE: The answer: "nothing that leaks. A hidden card shows and speaks only its sender, caption, opening time and "Hidden content"."
+P: A hidden card doesn't show the words "Hidden content". It shows a lock and the opening date and time. "Hidden content" is only spoken.
+FIX: - nothing that leaks. A hidden card shows only its sender, caption, opening date and time and a lock, and VoiceOver reads only the sender, caption, opening and "Hidden content". A removed drop shows only "This drop is no longer available".
+
+## A-17 note refuted | WHERE: The answer: "One more thing: the pack twice says it leaves out a "guest-contribution/SMS proposal"."
+P: The phrase "guest-contribution/SMS proposal" appears once, in IMPLEMENTATION.md section 1, and again in its HTML copy. The pack rules out guest and SMS features four times in all: README, IMPLEMENTATION, stageScope and PDF page 1.
+R: The report's sentence is literally right. The exact words "guest-contribution/SMS proposal" appear in two files of the pack, IMPLEMENTATION.md line 14 and implementation-guide.html. A-17's own evidence concedes this ("once, in IMPLEMENTATION.md section 1, and again in its HTML copy"). README, stageScope, the PDF and validation-report's "no guest feature frames" exclude guest or SMS features withou
+FIX: No change: keep "One more thing: the pack twice says it leaves out a "guest-contribution/SMS proposal"."
+
+## A-18 note confirmed | WHERE: Section 5, FQ93: "It keeps the address only where your Default does, when it couldn't keep you signed in."
+P: R-06's meanwhile, which the report follows, also keeps the address after a sign-in the server ended, if it is still in memory. "Only" contradicts that.
+FIX: It keeps the address where your Default does, when it couldn't keep you signed in, and after a sign-in the server ended, if the address is still in memory.
+
+## A-19 note adjusted | WHERE: Section 1: "**Pictures beside this file:** `contact-sheet-1-11.png` and `contact-sheet-12-22.png`: the new frames; `redraws-before-after.png`: each redraw to the right of its earlier version;"
+P: Three of the six named pictures don't exist yet. h7x/pics holds only the three sheet images, and the redraw comparison is h7x/cmp-redraws.png under another name. Make or rename them before the report goes. If they won't be made, use the replacement below and drop section 3's reference to `redraws-before-after.png`.
+R: Neither contact-sheet-1-11.png, contact-sheet-12-22.png nor redraws-before-after.png exists anywhere in the scratchpad. h7x/pics holds the three sheet images. The redraw comparison does exist, as h7x/cmp-redraws.png (1636x3472, which W-05's second reviewer cites). Renaming it keeps section 3's reference valid, so there's no need to drop it. Only the two contact sheets are missing.
+FIX: - **Pictures beside this file:** `redraws-before-after.png` (today's `h7x/cmp-redraws.png`, copied under this name): each redraw to the right of its earlier version; `sheet-b0-components.png`, `sheet-drop-card-states.png` and `sheet-highlight-and-receipt.png`: the new parts of the component sheet. (Add `contact-sheet-1-11.png` and `contact-sheet-12-22.png` back only once they are made from the frames' PNGs.)
+
+## A-20 note confirmed | WHERE: Section 4, item 13: "at the largest text a long address breaks after "ben@", which fills the line, where frame 19 breaks after "example"."
+P: Frame 19 also breaks before "ben@", putting "Sent to" on a line of its own. That is the real difference from the app's line.
+FIX: at the largest text the app's line reads "Sent to ben@" over "example.com", which fills the width, where frame 19 has three lines: "Sent to", "ben@example" and ".com".
+
+## A-21 note confirmed | WHERE: Section 4, item 8: "every tile and row keeps its folded corner and the sizes the delivery writes down. The sample draws some tiles unfolded and the row taller."
+P: Every tile and the row lose the cut corner and keep only a crease line. Ben's tile has no fold at all. "Some tiles unfolded" understates this.
+FIX: - every tile and row keeps its folded corner and the sizes the delivery writes down. The sample draws the tiles and the row with round corners and only a crease, Ben's tile with no fold at all, and the row taller.
+
+## A-22 note confirmed | WHERE: Section 5: "**Claude Design agrees with three of your Defaults:** the start-up failure words (FQ89), "This version of Tadayo can’t show clubs yet." (FQ90) and the drop card's words (FQ91)."
+P: The pack names three Defaults as confirmed (RM-02). The written-asks reviewer also counts FQ69 and FQ70: the pack restates both without naming them. The founder should know its answers fit those two as well.
+FIX: - **Claude Design agrees with three of your Defaults by name:** the start-up failure words (FQ89), "This version of Tadayo can’t show clubs yet." (FQ90) and the drop card's words (FQ91). Its answers also fit FQ69 (finish setup or leave) and FQ70 (a name of 1 to 40 characters) without naming them. Agreement doesn't answer them for you. If you're happy with the three, say "keep FQ89 to FQ91" and I'll record it.
+
+## A-23 note confirmed | WHERE: Section 8, Kept as built: "the no-club tabs' gaps (F-24, F-25, X-08),"
+P: The findings disagree on whether G06's two lines become two paragraphs, and the critic made no ruling. F-24 keeps one text. V-13 and W-05 split them 16 apart, which matches the named homeBodyToSecondary. The report should say which reading it takes.
+FIX: the no-club tabs' gaps, and G06's two lines as one text (F-24, F-25, X-08; V-13 and W-05 would split them 16 apart, and the critic didn't rule),
+
+## A-24 note confirmed | WHERE: Section 8, Kept as built: "and the title-then-line announcements (W-11, RM-01)."
+P: Add R-08's "kept as built" point so the ios thread doesn't remove the focus return after a resend (see A-08).
+FIX: the title-then-line announcements (W-11, RM-01), and a successful resend returning focus to the code field (R-08).
+
+## A-25 note adjusted | WHERE: Section 7, For a later brief (the whole list)
+P: Several items the findings send to a later brief are missing from section 7.
+R: The listed findings do send these items to a later brief, and section 7 lacks them. Three corrections to the fix. (1) The critic ruled the ink change out (keep secondaryText), and section 7 already asks Claude Design to explain or undo it. So only W-05's leading text actions are a live beyond-B0 question. (2) F-17 is about the loading shell's position (25 to 32 points higher), not its height. (3) 
+FIX: - **Smaller points:** the field-to-error gap the frames draw (F-08, D-22); whether the leading text actions reach beyond B0 (W-05); Home's two announcements in a row (R-12); the loading shell's place, about 25 to 32 points higher than handoff 3's (F-17); whether the start-up spinner waits a moment before it shows (W-09, V-14); the stretched coffee photograph and Maya's crop (V-23); the dark avatar sample's labels (V-20); the folded card's sender gap and its avatar at the largest text (D-19, D-24); the upload caption's darker ink (D-07); the samples' missing year (D-23); and, for B6, the unsaved bookmark (D-18).
+
+## A-26 note confirmed | WHERE: Section 8, Inventory: "Record each difference section 4 keeps on its row."
+P: Three inventory records the findings ask for are missing.
+FIX: - Record each difference section 4 keeps on its row, the revealed item's later controls as B6 (D-18), the text screenshot's fit as waiting on FQ94 (X-31), and A03's arrival focus skipped under VoiceOver (C-01).
+
+## A-27 note confirmed | WHERE: Section 8 (no line covers it)
+P: Two findings ask the ios thread to record its key readings, and section 8 doesn't mention either.
+FIX: - **Keys:** keep the built keys where a handoff 7 key repeats one word for word (person.self, highlight.label), noting the mapping in the strings' comments, and record that the earlier keys the replaced list leaves out stay current outside the no-club context (D-25, W-14).
+
+## A-28 note confirmed | WHERE: Section 2, row 19: "The code error at the largest text, scrolled with the field at the top. The rest of the error, Send a new code and Change email address continue below in the scroll."
+P: The row leaves out the frame's most consequential detail: Verify code is pinned just above the keyboard. Section 4, item 6 depends on it.
+FIX: | 19 A02-code-error-xl | The code error at the largest text, scrolled with the field at the top and Verify code just above the keyboard. The rest of the error, Send a new code and Change email address continue below in the scroll. |
+
+## A-29 note adjusted | WHERE: Section 4, item 7: "**Dates on the folded card** keep one date that follows the phone's region, with the year when it isn't this year (FQ44)."
+P: FQ44's Default adds the year in more cases than a date outside this year. It also does when the dates shown cross a year, or when nothing around a date sets the year.
+R: True: FQ44 also gives the year "when the dates shown cross a year, or when nothing around it sets the year". But that year rule isn't the founder's Default itself. QUESTIONS.md records it under FQ44 as "When a date carries its year (handoff 6's rule ...)". The Default is the region and clock formatting. So "where your Default calls for one" misattributes it.
+FIX: 7. **Dates on the folded card** keep one date that follows the phone's region, with the year where the year rule under FQ44 calls for one, such as a date outside this year (FQ44).
+
+## A-30 note confirmed | WHERE: Section 7, Frames: "frames 4 and 7 with Back hidden;"
+P: Hidden is the app's reading. The findings ask Claude Design to draw Back unavailable and to say whether that means hidden or dimmed.
+FIX: - frames 4 and 7 with Back unavailable, and whether it's hidden or dimmed;
+
+## MISSED AM-01 should | WHERE: Section 6, Described in words only: "**the photo circle with no initial,** on every avatar, not only the profile;"
+P: The fallback is drawn, not described in words only. Sheet 17d draws it at 68, 36, 28 and 18 points, on canvas and on a cover, light and dark, and frames 10 and 20 draw it on the profile. Section 2 row 17 itself lists "the photo circle with no initial" on the sheet. Section 8 then tells the ios thread to add section 6's states "as built from spec", which would mislabel a drawn component.
+FIX: Delete the bullet "**the photo circle with no initial,** on every avatar, not only the profile;" from section 6. The sheet (frame 17) and frames 10 and 20 draw it.
+
+## MISSED AM-02 should | WHERE: Section 8, Busy buttons: "a 16-point indicator 8 before the centred label in two fixed 24-point slots, on its own row at accessibility sizes, ..."
+P: The delivery's rule is conditional, and it reserves the row when the button is idle too. Section 8 turns "if that group cannot fit" into "at accessibility sizes" and leaves out the idle reservation. Built that way, the button would grow, and its label move, the moment it turns busy. That is what the busy rule forbids ("neither the label nor the height shifts"). D-13's meanwhile carries the reservation, but section 8 drops it.
+FIX: - **Busy buttons** (`PrimaryButton.swift`): a 16-point indicator 8 before the centred label in two fixed 24-point slots; at large text, where the indicator and the label don't fit on one line, the indicator moves to its own centred row, which the button reserves when idle too, so nothing moves when it turns busy; the value "In progress", one announcement per action, and the field read-only (not disabled) while busy (D-13, X-15, W-06).
+
+## MISSED AM-03 note | WHERE: Section 7, Frames: "the receipt's spacing, and its tick at the largest text (drawn 64 points, with no rule);"
+P: There is a written rule. The disc grows with the row's text, and section 8 builds it so ("the receipt's disc and check scaling with row from 28 and 12"). What's open is that the 64-point drawing doesn't follow that rule. As written, section 7 contradicts section 8.
+FIX: - the receipt's spacing, and its tick at the largest text, drawn 64 points where growing with the row's text, as written, gives about 87 (a cap or an error);
+
+## MISSED AM-04 note | WHERE: Section 4, item 12: "frame 20 has an empty band of about 166 points between Optional and the name field."
+P: The 166 points run from Optional to the name field's label, not to the field. The field starts 62 points lower, so the gap from Optional to the field is about 228.
+FIX: 12. **The profile at the largest text:** frame 20 has an empty band of about 166 points between Optional and the name field's label. The app keeps the content continuous.
+
+## MISSED AM-05 note | WHERE: Section 2, Also answered in writing: "**Leaving setup:** ... It is greyed out while a save runs."
+P: The delivery says Leave sign-in is inactive while a save runs, and no frame draws that state. "Greyed out" gives it a look the delivery never states. This is the same slip as hidden for Back (A-09, A-30), where X-03 asks Claude Design to say hidden or dimmed.
+FIX: - **Leaving setup:** "Leave sign-in" at the top left of the 18-or-older step and the profile, with no "are you sure?". It is inactive while a save runs.
+
+## C-01 must adjusted | WHERE: The answer: "**Claude Design did everything the brief asked.** What it did:"
+P: The opening verdict is wrong, and it is the first thing the founder reads. The delivery breaks several things the brief asked for. It also misses two of the founder's Defaults, and The answer never mentions them; they appear only in section 4, items 7 and 8.
+R: The problem is real. The report's own body lists exceptions to "everything": the two errors, the two failure lines that break the brief's Failures rule (W-15), the missing replaces entry (X-01), gaps that ignore "Draw this handoff's frames to the named values" (F-08), FQ44 (D-02) and FQ41 plus the Deborah-Anne portrait (D-11, R-13). The handoff 6 report opened with "did almost everything" and name
+FIX: **Claude Design did almost everything the brief asked.** Besides the errors, the two failure lines and the redraws' extra changes below, its drop card parts miss two of your Defaults: the folded card's new date line fixes the US order and has no room for a year (FQ44), and the highlight sample gives Debby's pick Ben's colour (FQ41). That sample also puts Debby's portrait on Deborah-Anne, though the brief kept it for Debby. The app keeps your Defaults and the brief's rule (section 4, items 7 and 8). What it did:
+
+## C-02 must adjusted | WHERE: The answer: "**It also redrew eight earlier screens that nobody asked for:**"; section 3: "The brief asked for no redraws."
+P: Both sentences contradict the brief. The brief told Claude Design to send again any earlier frame that an answer changes, and named A02-age and A03-profile. The delivery calls them "consequent redraws". The real problem is that they change more than the answers explain, which is what the rest of the report says.
+R: Confirmed against the brief. It says "If an answer below changes a frame you delivered in handoffs 1 to 6, send that frame again under its own title, after frame 22" and "Send A02-age and A03-profile again if they change." IMPLEMENTATION.md line 10 calls the eight "consequent redraws". So "nobody asked for" and "The brief asked for no redraws" are both wrong. But the proposed line for The answer, 
+FIX: In The answer, replace the line with: **It also redrew eight earlier screens,** which the brief asks for only where an answer changes one:
+
+In section 3, replace "The brief asked for no redraws. It said the app follows six points over the earlier frames, such as the curly apostrophe and the named spacing, and not to resend a frame for those alone. Claude Design resent eight, saying they make sign-in's entry and exit, its spacing and the header before a club consistent (`redraws-before-after.png`)." with: The brief asked for an earlier frame again only where an answer changes it. It said the app follows six points over the earlier frames, such as the curly apostrophe and the named spacing, and not to redraw a frame for those alone. Claude Design redrew eight, saying they make sign-in's entry and exit, its spacing and the header before a club consistent with its answers (`redraws-before-after.png`). They also change more than its answers explain.
+
+## C-03 should confirmed | WHERE: The answer: "Many don't: grey explanatory text turned black, gaps tightened, and text buttons moved from the centre to the left. Section 3 shows them. The app takes the changes an answer or a rule explains and keeps the rest until Claude Design explains them."
+P: This contradicts section 3. The answer lists the move of text buttons to the left as unexplained, and says the app keeps unexplained changes out. But section 3 says the app takes that move, and the Private drafts folder at 16, because the component sheet's current sample draws them.
+FIX: Many don't: grey explanatory text turned black, and gaps tightened. Section 3 shows them. The app takes the changes that an answer, a rule or the component sheet explains, such as text buttons moving from the centre to the left, and keeps the rest until Claude Design explains them.
+
+## C-04 should confirmed | WHERE: Section 4: "6. **Gaps the delivery writes down win over the frames,** where the frames differ: 12 points from a field to its error line, which the frames draw at 2 to 13; the gap under "Sent to {email}"; Verify code staying in place at the usual text size and sitting just above the keyboard only at 
+P: Three faults in one item. (1) No written value exists for the gap under "Sent to {email}". Section 3 already lists that gap as an unexplained change the app keeps, so the report files it twice, under opposite reasons. (2) Verify code goes the other way: the written rule pins it at every size, and the app follows the default frames instead. (3) "2 to 13" uses a different measure from the delivery's own; its line-box measure gives 5 to 18.
+FIX: 6. **Gaps the delivery writes down win over the frames,** where the frames differ: 12 points from a field to its error line, which the frames draw at about 5 to 18. Verify code is the other way round: the written rule pins it just above the keyboard at every size, but every frame at the usual text size draws it in place. The app keeps it in place, as those frames do, and pins it just above the keyboard only where the keyboard would otherwise hide it, as frame 19 does. Section 7 asks which holds.
+
+## C-05 should confirmed | WHERE: Section 5: "- **A (FQ93). Does Leave sign-in keep the address you typed?** Claude Design returns you to the email screen with your address still filled in. The app opens an empty field, because you chose to leave and nothing then needs your address. It keeps the address only where your Default does,
+P: The question leans one way. It argues for the default ("because you chose to leave and nothing then needs your address") and gives no consequence for keeping the address. "Only" contradicts R-06's meanwhile and the delivery: both keep the address after a sign-in the server ended, if the app still has it. That data-handling choice is left out of the question, so it is decided without the founder. The question also has no "Needed by".
+FIX: - **A (FQ93). Does Leave sign-in keep the address you typed?** Leave sign-in, on the 18-or-older step and the profile, takes you back to the email screen. Claude Design keeps your address filled in there, held in the app's memory and never saved, so signing in again with the same address needs only a new code. The app opens an empty field, so nothing of the account you left stays on screen. Either way, the app keeps the address after "Couldn’t keep you signed in.", as your Default does, and after the server ends a sign-in, if the app still has it, as the delivery says. Default: an empty field after Leave sign-in. Needed by B0.
+
+In section 8, A02-email, replace "the signed-out notice above the field after a server-ended sign-in only (X-16, W-10)." with: the signed-out notice above the field after a server-ended sign-in only, with the address kept if the app still has it (X-16, W-10, R-06).
+
+## C-06 should confirmed | WHERE: Section 5: "- **B (FQ94). Who marks a photo as a text screenshot?** The delivery fits a screenshot of text inside the photo frame rather than cropping it, as the book asks (book p27). But nothing says how the app knows a photo is a screenshot: the sender could mark it when adding it, or the server c
+P: "Before 7 AM nothing about the photo may leave the server" isn't what T10 says: T10 lets the media class (photo or video) go to other members before the reveal. "Decide after 7 AM" mixes up when the server decides with when other members learn it. The question doesn't say what each choice means. It also doesn't say what the default costs: a screenshot gets cropped, which book p27 asks to avoid.
+FIX: - **B (FQ94). Who marks a photo as a text screenshot?** The book asks that a screenshot of text show whole, not cropped (book p27), and the delivery fits it inside the photo frame. But nothing says how the app knows a photo is a screenshot. There are two ways. The sender marks it when adding it, which adds a choice when adding a photo. Or the server decides from the photo itself, with no step for the sender. Either way, other members learn it only from 7 AM: before then, only whether it's a photo or a video may leave the server (T10). Default: every photo fills the frame, as built, so a screenshot loses its edges until you answer. Needed by B5.
+
+## C-07 should confirmed | WHERE: Section 5: "- **C (FQ95). Before B6, does the revealed photo show its later buttons?** The ··· menu, the heart, comments and Save arrive in B6. Claude Design says leave them out until then. In B0 you chose to show such buttons doing nothing yet (FQ85). Default: B5 follows your FQ85 answer and shows 
+P: The question doesn't say what each choice means for someone using B5. "In B0 you chose to show such buttons" overstates FQ85: FQ85 names specific controls on B0's screens. The B0 Lab leaves the revealed photo's B6 buttons out today, so there is no B0 conflict. The open question is B5's.
+FIX: - **C (FQ95). Before B6, does the revealed photo show its later buttons?** The revealed photo arrives in B5. Its ··· menu, heart, comments and Save work only from B6. Showing them, doing nothing yet, keeps the photo as designed, as you chose for B0's screens (FQ85), but tapping them does nothing for one stage. Leaving them out, as Claude Design suggests, shows a plainer photo until B6. Default: show them, doing nothing yet. Needed by B5.
+
+## C-08 should confirmed | WHERE: Section 5: "- **Claude Design agrees with three of your Defaults:** the start-up failure words (FQ89), "This version of Tadayo can’t show clubs yet." (FQ90) and the drop card's words (FQ91). Agreement doesn't answer them for you. If you're happy with them, say "keep FQ89 to FQ91" and I'll record it.
+P: The report invites a one-line answer that keeps all of FQ90 without saying that Claude Design's frames break FQ90 on one point. The tabs' failure titles are drawn larger than the form the Default names. The founder should see that before answering.
+FIX: - **Claude Design agrees with three of your Defaults:** the start-up failure words (FQ89), "This version of Tadayo can’t show clubs yet." (FQ90) and the drop card's words (FQ91). Agreement doesn't answer them for you. One difference: its tab failure frames draw a larger title than FQ90's form (section 4, item 5), and keeping FQ90 keeps your form. If you're happy with them, say "keep FQ89 to FQ91" and I'll record it.
+
+## C-09 should confirmed | WHERE: Section 1: "- **Two new font files,** fixed regular and bold versions of the same Arimo font, under its licence. The app keeps using the variable font it has."
+P: This is factually wrong. The app doesn't use Arimo at all. It uses the iPhone's system font, and Arimo only stands in for it in the frames. The sentence tells the founder the app ships Arimo.
+FIX: - **Two new font files,** fixed regular and bold versions of the same Arimo font, under its licence. Arimo only stands in for the iPhone's own font in the frames; the app doesn't use it, so nothing changes.
+
+## C-10 should confirmed | WHERE: Section 8: "- **The needs list:** handoff 7 answers items 1 to 25, 13a, 13b, 39 to 42 and 44, and item 31 (the field doesn't wrap). The open items are 26 to 38, 43, 45 and 46, plus section 7's leftovers."
+P: The line contradicts itself. Item 31 is called answered, and then "26 to 38" lists it as open again.
+FIX: - **The needs list:** handoff 7 answers items 1 to 25, 13a, 13b, 39 to 42 and 44, and item 31 (the field doesn't wrap). The open items are 26 to 30, 32 to 38, 43, 45 and 46, plus section 7's leftovers.
+
+## C-11 note confirmed | WHERE: The answer: "- your Defaults drawn as stated: "Couldn’t verify the code. Try again." (FQ86), the start-up failures (FQ89), the tabs' loading and failure words (FQ90) and the drop card's words (FQ91);"
+P: FQ86 isn't a Default any more: the founder answered it on 6 November. Its line is also confirmed in writing, not drawn, and so are parts of FQ89 and FQ90 (the leave and keep failures, Memories, the not-in-build line).
+FIX: - your answer and Defaults used as stated: "Couldn’t verify the code. Try again." (FQ86, which you answered on 6 November), the start-up failures (FQ89), the tabs' loading and failure words (FQ90) and the drop card's words (FQ91);
+
+## C-12 note confirmed | WHERE: The answer: "A check of every new string finds only "Sent to {email}", which you approved (FQ68)."
+P: This is ambiguous for a non-developer: it reads as if the check found only one string. It also leaves out the pronoun result, which the house rules make a standing check (handoff 6's report gave both).
+FIX: A check of every new string finds no inferred pronoun, and no "Sent" apart from "Sent to {email}", which you approved (FQ68).
+
+## C-13 note adjusted | WHERE: The answer: "- nothing that leaks. A hidden card shows and speaks only its sender, caption, opening time and "Hidden content". A removed drop shows only "This drop is no longer available"."
+P: "Shows and speaks" runs two things together. "Hidden content" is only spoken, never shown, and the card also shows a lock. Since "hidden means hidden" comes first for the founder, the sentence should be exact.
+R: Right that "Hidden content" is spoken, never shown, and that the card also shows a lock. But the fix's "VoiceOver adds only "Hidden content"" is also inexact. vo.drop.collecting.other is "{author}. {caption}. Opens {fullDateTime}, {clubZoneName}. Hidden content.", so VoiceOver also says the year and the club's time zone, which the visible line leaves out. A sentence that begins "nothing that leaks
+FIX: - nothing that leaks. A hidden card shows other members only its sender, caption, opening time and a lock. VoiceOver reads the sender, the caption and the full opening date and time with the club's time zone, then "Hidden content". A removed drop shows only "This drop is no longer available".
+
+## C-14 note confirmed | WHERE: The answer: "- The Memories redraw changes "Days shared after you join a club will appear here after they open." to "Days shared after you joined…". That isn't true for someone with no club, so the app keeps the earlier line."
+P: The quote is cut short with "…", but the app's own strings use "…" as a real character ("Loading Home…"). A reader can take it for the delivered string. The full line is short enough to quote whole.
+FIX: - The Memories redraw changes "Days shared after you join a club will appear here after they open." to "Days shared after you joined will appear here after they open.". That isn't true for someone with no club, so the app keeps the earlier line.
+
+## C-15 note adjusted | WHERE: Section 4: "4. **Back is hidden while a code is checked or a new one is sent.** The delivery's written rule says so; frames 4 and 7 draw it active."; section 7: "- frames 4 and 7 with Back hidden;"
+P: The written rule says Back is unavailable, not hidden, so "says so" overstates it. Section 7 then asks Claude Design to draw the app's own reading instead of asking which form it means. The item also uses "sent", which the house rules keep for "Sent to {email}" alone.
+R: Confirmed. The written rule says "unavailable" (IMPLEMENTATION.md: "Those actions are unavailable while verification/resend is in flight"; authForm.codeBack "only while idle"), not hidden. X-03 asks Claude Design whether an unavailable Back is hidden or dimmed, so section 7 shouldn't prescribe the app's own reading. The word "sent" goes too. But "a new code is on its way" can read as the code trav
+FIX: Section 4: 4. **Back can't be used while a code is checked or a new code is requested.** The delivery's written rule says so, and the app hides Back then, as it does today. Frames 4 and 7 draw it active.
+
+Section 7: - frames 4 and 7 with Back unavailable, and whether it is hidden or greyed out;
+
+## C-16 note confirmed | WHERE: Section 4, item 8: "    - each cover's VoiceOver name stays "Open Maya’s highlight", as T47 sets it. The delivery's own words for the covers ("Debby’s pick", "Your pick") don't say the cover opens anything;"
+P: Read literally, every cover would be called "Open Maya’s highlight". T47 gives Maya only as the example.
+FIX:     - each cover's VoiceOver name stays "Open {name}’s highlight", such as "Open Maya’s highlight", as T47 sets it. The delivery's own words for the covers ("Debby’s pick", "Your pick") don't say the cover opens anything;
+
+## C-17 note confirmed | WHERE: Section 4: "10. **A draft row** keeps its arrow, since tapping it opens the draft. The sample leaves the arrow out without saying why."
+P: The item sits under "follows the rules" but cites no rule. What the app keeps is 2.1's own drawing of the row. Naming that source shows it isn't Claude Code's design choice.
+FIX: 10. **A draft row** keeps its arrow, as 2.1's C05-drafts draws it, since tapping the row opens the draft. The sample leaves the arrow out without saying why, so section 7 asks.
+
+## C-18 note confirmed | WHERE: Section 2: "- **Leaving setup:** "Leave sign-in" at the top left of the 18-or-older step and the profile, with no "are you sure?". It is greyed out while a save runs." and "- **VoiceOver:** words for every busy state, failure and change of the resend row, each said once without moving focus."
+P: "are you sure?" is in quote marks but isn't in the delivery, so it reads like an app string. The VoiceOver line misstates one case: after a new code goes out, the delivery returns focus to the code field.
+FIX: - **Leaving setup:** "Leave sign-in" at the top left of the 18-or-older step and the profile, with no question before leaving. It is greyed out while a save runs.
+
+- **VoiceOver:** words for every busy state, failure and change of the resend row, each said once without moving focus, except that focus returns to the code field once a new code has gone out.
+
+## C-19 note confirmed | WHERE: Section 6: "- **the photo circle with no initial,** on every avatar, not only the profile;"
+P: Section 6 is for states with "words or rules but no frame". The component sheet draws the circle with no initial at every size, so it doesn't belong here.
+FIX: Delete the bullet "- **the photo circle with no initial,** on every avatar, not only the profile;".
+
+## C-20 note adjusted | WHERE: Section 7, "- **Frames:**" list
+P: Section 4, item 5 keeps the tabs' failure titles at the Default's size against frames 14 and 16. But section 7 never asks Claude Design about it, though F-04 says a later brief should.
+R: Confirmed. Section 4, item 5 departs from frames 14 and 16, and section 7 never asks about it, though F-04 says a later brief asks "to confirm the tab failure title's role and the line's ink". The fix covers only the title. The line under it is drawn black in frames 12, 14 and 16 (F-05, V-05, X-07). Those are new frames, not redraws, so section 7's "explain or undo the changes section 3 keeps" doe
+FIX: Add after "    - frame 20 with continuous content;":
+    - the tabs' failure titles at the size your Default names (FQ90), or why frames 14 and 16 draw them larger, and why frames 12, 14 and 16 draw the line under the title black where the earlier screens draw it grey;
+
+## C-21 note confirmed | WHERE: Section 7: "    - the refused address and the refused name, each naming what failed, the name's covering length too;", "    - the folded card's date as one date with an optional year." and "    - the receipt's spacing, and its tick at the largest text (drawn 64 points, with no rule);"
+P: "The name's covering length too" is hard to parse. "With no rule" is wrong: the rule exists (the tick grows with the text), and the 64-point drawing is just smaller than that rule gives. The date ask also leaves out the upload rows and the receipt, whose new template has no year either.
+FIX:     - the refused address and the refused name, each naming what failed, with the name's line also covering a name that's too long;
+    - the folded card's date as one date with an optional year, and room for a year on the upload rows and the receipt.
+    - the receipt's spacing, and its tick at the largest text (drawn 64 points, smaller than growing with the text would make it);
+
+## C-22 note confirmed | WHERE: Section 5: "- **The guest-contribution/SMS proposal:** the line under The answer."; The answer: "Section 5 has three new questions, FQ93 to FQ95, each with a default the app builds meanwhile."
+P: The section 5 bullet only points back to The answer, so the founder reads the same thing twice for nothing. The answer's pointer to section 5 also leaves out the one shortcut there that the founder can act on: keeping FQ89 to FQ91.
+FIX: Delete "- **The guest-contribution/SMS proposal:** the line under The answer." In The answer, replace the sentence with: Section 5 has three new questions, FQ93 to FQ95, each with a default the app builds meanwhile, and three of your Defaults that Claude Design agrees with, which you can keep in one answer.
+
+## C-23 note confirmed | WHERE: Section 5: "- **FQ58, Home while loading before a club.** Claude Design says your initial may show once your own account has loaded. The app already shows it, as the frames do. The question stays yours to answer."
+P: The founder isn't told what FQ58 asks or what its Default is, so "stays yours to answer" gives no basis for answering.
+FIX: - **FQ58, Home while loading before a club.** Your Default shows only the club's name and your own photo until the server answers. With no club and no photo, the app shows your initial in the photo's place, as the frames do, and Claude Design says it may show once your own account has loaded. The question stays yours to answer.
+
+## C-24 note adjusted | WHERE: Section 8, Questions: "    - FQ89, FQ90 and FQ91: note Claude Design's agreement and leave them open unless the founder answers;" and "    - FQ44: record the split template the app doesn't take (X-34, RM-02)."
+P: RM-02 is cited on FQ44, but it covers the agreement with FQ89 to FQ91. The list also leaves out two X-34 updates: FQ90's out-of-date bullet, which says the brief hasn't gone to Claude Design, and FQ86's note.
+R: Confirmed. RM-02 covers the agreement with FQ89 to FQ91, not FQ44. X-34 and its second reviewer also ask for FQ90's out-of-date bullet to be rewritten (QUESTIONS.md: "The brief hasn't gone to Claude Design yet.") and for FQ86's note. The fix still misses X-34's FQ91 updates: record that the revealed item's grouping is answered (X-32), and update the drop card preface, which says these Defaults sta
+FIX:     - FQ89, FQ90 and FQ91: note Claude Design's agreement and leave them open unless the founder answers (RM-02);
+    - FQ90: also rewrite the bullet that says the brief hasn't gone to Claude Design and doesn't state the failure words (X-34);
+    - FQ91: also note that the revealed photo's VoiceOver grouping is answered (X-32), and update the drop card preface's "until its export is checked" (X-34);
+    - FQ86: note that the delivery's line for a code the service couldn't answer matches the founder's answer (X-34);
+    - FQ44: record the split template the app doesn't take (X-34).
+
+## C-25 note confirmed | WHERE: Section 3, "**What it keeps until Claude Design explains it:**" list; section 8: "A02-age's subtitle gap 24 (F-22, BM-04),"
+P: The profile redraw's two tighter gaps aren't listed. Because section 7 asks only about "the changes section 3 keeps", those gaps never reach the next brief. Section 8 also doesn't tell the ios thread to keep them as built.
+FIX: In section 3, add after "- the earlier gaps on the 18-or-older step and the tabs before a club;":
+- the profile's earlier gaps above the photo circle and between Optional and the name's label;
+
+In section 8, replace "A02-age's subtitle gap 24 (F-22, BM-04)," with: A02-age's subtitle gap 24 (F-22, BM-04), A03's gaps from handoff 1 apart from the label's 8 (F-23),
+
+## MISSED CM-01 should | WHERE: Section 6 intro: "These have words or rules but no frame. The ios thread adds each to the inventory and builds it, marked "built from spec":"; section 8, Inventory: "Add the section 6 states as built from spec."
+P: Followed literally, this tells the ios thread to add rows, and build states, that already exist, which would duplicate inventory rows. Most section 6 states already have a built-from-spec row and are built on main. Only a few are new.
+FIX: Section 6 intro: These have words or rules but no frame. Most already have a "built from spec" row and are built: the ios thread updates those rows' words and source to handoff 7, and adds rows, marked "built from spec", only for the new states X-33 lists, such as the "Leaving sign-in…" wait and a resend failure under a code error:
+
+Section 8, Inventory: replace "Add the section 6 states as built from spec." with: Add the new states X-33 lists as built from spec, and update the existing built-from-spec rows for the rest of section 6.
+
+## MISSED CM-02 should | WHERE: Section 8: "**Text actions** leading at the 20-point inset, keeping the full-width 44-point target, including A03's Add photo and Optional under the centred avatar (X-25, VM-03, the critic's ruling on F-06)."; section 3: "text buttons such as Send a new code, Change email address and Go to Home on t
+P: The ios thread gets two contradictory instructions. F-07 (confirmed) says the app keeps Add photo and Optional centred. The cited critic's ruling covers only the resend and Change email rows. "Optional" is a label, not a text button the sheet's sample draws, and section 3, which states the report's rule for what the app takes, doesn't mention the profile at all. The report never says that it takes VM-03 over F-07, or why.
+FIX: In section 3, replace "- text buttons such as Send a new code, Change email address and Go to Home on the left, as the sheet's sample draws them;" with: - text buttons such as Send a new code, Change email address, Go to Home and the profile's Add photo on the left, as the sheet's sample draws them, with Optional under Add photo as frames 10, 11 and 27 draw it;
+
+In section 8, replace "(X-25, VM-03, the critic's ruling on F-06)" with: (X-25, VM-03 over F-07, the critic's ruling on F-06)
+
+## MISSED CM-03 note | WHERE: Section 7: "- **The redraws:** explain or undo the changes section 3 keeps, and name the gaps they use."
+P: Section 7 asks only about the changes the app keeps. It never asks Claude Design to confirm the two changes the app takes from the sheet's sample alone, with no written answer and no replaces entry. Those are text buttons on the left, including the profile's mixed alignment under a centred photo circle, and the Private drafts folder 16 in. The findings say a later brief asks about both.
+FIX: Replace the bullet with: - **The redraws:** explain or undo the changes section 3 keeps, and name the gaps they use; confirm the two the app takes from the sheet's sample alone, text buttons on the left (with the profile's Add photo and Optional on the left under a centred photo circle) and the Private drafts folder 16 in, and list them under replaces.
+
+## MISSED CM-04 note | WHERE: Section 4, item 3: ""Choose a name…" also doesn't cover a name over 40 characters."
+P: The same cut quote as C-14. "Choose a name…" isn't the delivered string, and the app uses "…" as a real character, so it can read as a string of its own. The full line is quoted in The answer already, so a plain reference is clearer.
+FIX: Replace ""Choose a name…" also doesn't cover a name over 40 characters." with: The name's line also doesn't cover a name over 40 characters.
+
+## MISSED CM-05 note | WHERE: Section 8: "- **The needs list:** handoff 7 answers items 1 to 25, 13a, 13b, 39 to 42 and 44, and item 31 (the field doesn't wrap)."
+P: "Answers items 1 to 25" includes item 18, which no longer applies, and claims full answers where the consistency review found only partial ones. The ios thread would then close items that still need a follow-up.
+FIX: - **The needs list:** handoff 7 answers items 1 to 17, 13a, 19 to 25, 39 to 42 and 44, and item 31 (the field doesn't wrap), with 13b, 21 and 39 in part; item 18 no longer applies, since the founder chose to show later-stage controls (FQ85). The open items are 26 to 30, 32 to 38, 43, 45 and 46, plus section 7's leftovers.
+
