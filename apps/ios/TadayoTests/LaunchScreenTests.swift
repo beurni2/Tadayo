@@ -6,6 +6,10 @@ import XCTest
 /// Tadayo's launch screen, which iOS draws from the Info.plist before the app runs, so no
 /// snapshot holds it (docs/LIMITATIONS.md): it names the colour set `LaunchBackground`, which is
 /// the canvas in light and in dark, as the root draws its starting state (`global-launch`).
+///
+/// The canvas is resolved as SwiftUI draws it, through `Color.resolve(in:)` with the appearance's
+/// colour scheme (iOS 17): on iOS 17, `UIColor(Palette.canvas)` doesn't keep the colour's dark
+/// value, so it resolved light in dark (`docs/LIMITATIONS.md`, 2026-11-07).
 final class LaunchScreenTests: XCTestCase {
     func testTheLaunchScreenIsTheCanvasInLightAndDark() throws {
         let info = try XCTUnwrap(Bundle.main.infoDictionary)
@@ -13,17 +17,23 @@ final class LaunchScreenTests: XCTestCase {
         XCTAssertEqual(launch["UIColorName"] as? String, "LaunchBackground")
         let named = try XCTUnwrap(
             UIColor(named: "LaunchBackground", in: .main, compatibleWith: nil))
-        let canvas = UIColor(Palette.canvas)
-        for style in [UIUserInterfaceStyle.light, .dark] {
+        for (style, scheme) in [(UIUserInterfaceStyle.light, ColorScheme.light), (.dark, .dark)] {
             let traits = UITraitCollection(userInterfaceStyle: style)
+            var environment = EnvironmentValues()
+            environment.colorScheme = scheme
             XCTAssertEqual(
-                bytes(named.resolvedColor(with: traits)), bytes(canvas.resolvedColor(with: traits)),
-                "\(style.rawValue)")
+                bytes(named.resolvedColor(with: traits)),
+                bytes(Palette.canvas.resolve(in: environment)), "\(style.rawValue)")
         }
         // The two differ, so the comparison can't pass on a colour that ignores the appearance.
         XCTAssertNotEqual(
             bytes(named.resolvedColor(with: UITraitCollection(userInterfaceStyle: .light))),
             bytes(named.resolvedColor(with: UITraitCollection(userInterfaceStyle: .dark))))
+    }
+
+    /// Red, green, blue and opacity in sRGB, each as a byte.
+    private func bytes(_ colour: Color.Resolved) -> [Int] {
+        [colour.red, colour.green, colour.blue, colour.opacity].map { Int(($0 * 255).rounded()) }
     }
 
     /// Red, green, blue and alpha in sRGB, each as a byte.
