@@ -127,6 +127,27 @@ describe("the account behind a sign-in (spec 23)", () => {
     });
   });
 
+  it("makes a new, empty account for the subject of a deleted shell, and leaves the shell as it was: a token still valid after a deletion starts over (docs/LIMITATIONS.md)", async () => {
+    await rolledBack(db, async (tx) => {
+      const gone = await account(tx);
+      await tx`
+        UPDATE app.users
+           SET state = 'deleted', deletion_requested_at = ${AT.edited}, deleted_at = ${AT.edited}, auth_subject = NULL,
+               age_confirmed_at = NULL, display_name = NULL
+         WHERE id = ${gone.id}`;
+      const clock = fakeClock(AT_FIRST);
+      const again = await createAccount(tx, clock, gone.subject);
+      expect(again).toMatchObject({ state: "active", displayName: null, ageConfirmed: false, version: 0 });
+      expect(again?.id).not.toBe(gone.id);
+      // The next request finds the new account, and the shell keeps its state and no subject.
+      expect((await findAccount(tx, gone.subject))?.id).toBe(again?.id);
+      expect(await rowsOf(tx, gone.subject)).toEqual([{ id: again?.id }]);
+      const [shell] = await tx<{ state: string; auth_subject: string | null }[]>`
+        SELECT state, auth_subject FROM app.users WHERE id = ${gone.id}`;
+      expect(shell).toEqual({ state: "deleted", auth_subject: null });
+    });
+  });
+
   it("refuses a subject that isn't a lowercase UUID before it reaches Postgres", async () => {
     await rolledBack(db, async (tx) => {
       const clock = fakeClock(AT_FIRST);

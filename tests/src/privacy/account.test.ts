@@ -296,6 +296,12 @@ describe("the table of updateMe bodies each session sends (updateMeCases)", () =
       display_name: "Renamed",
     });
     expect(body("active", "a new name", 7)).toEqual({ expected_version: 7, display_name: "Renamed" });
+    // A lone surrogate, as JSON.parse gives it back from its escape.
+    expect(body("active", "a name that isn't well formed")).toEqual({ expected_version: 4, display_name: "A\ud800B" });
+    // The route's limit is 8 KiB: a body past it, by a little, so every cell that sends one stays cheap.
+    const long = asked("active", "a body past the route's limit").body;
+    expect(Buffer.byteLength(long)).toBeGreaterThan(8 * 1024);
+    expect(Buffer.byteLength(long)).toBeLessThan(9 * 1024);
     expect(body("active", "another account's avatar")).toEqual({
       expected_version: 4,
       avatar_upload_id: "upl_foreign",
@@ -330,6 +336,15 @@ describe("the table of updateMe bodies each session sends (updateMeCases)", () =
       '{"code":"INVALID_REQUEST","field":"display_name"}',
     );
     expect(pin("active", "a field the contract doesn't have", 4).body).toBe('{"code":"INVALID_REQUEST"}');
+    expect(pin("active", "a name that isn't well formed", 4).body).toBe(
+      '{"code":"INVALID_REQUEST","field":"display_name"}',
+    );
+    // Past the route's limit the body is never read: no field is named, and Fastify closes the connection.
+    expect(pin("active", "a body past the route's limit", 4)).toEqual(
+      pinned(400, "Bad Request", '{"code":"INVALID_REQUEST"}', "close"),
+    );
+    expect(pin("active", "a body past the route's limit", 4).headers.connection).toBe("close");
+    expect(pin("active", "a field the contract doesn't have", 4).headers.connection).toBe("keep-alive");
     expect(pin("active", "a version that isn't the account's", 4)).toEqual(
       pinned(409, "Conflict", '{"code":"VERSION_CONFLICT","current_version":4}'),
     );

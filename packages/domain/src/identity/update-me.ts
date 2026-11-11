@@ -3,7 +3,10 @@
 // one confirmation that the person is 18 or older (FQ13: `true` only, never taken back, no birthdate),
 // the name every club sees and the avatar. The first command, so it sets the pattern of TECH-DESIGN
 // section 5, in one READ COMMITTED transaction the caller opens (a refusal throws `Refused`, which
-// rolls it back, so a refused request leaves nothing, its receipt included):
+// rolls it back, so a refused request leaves nothing, its receipt included). Before the database is
+// touched, a name that isn't well formed (a lone surrogate, which Postgres would keep as U+FFFD) is
+// INVALID_REQUEST with `display_name`: the contract says the API refuses a name rather than changing it
+// (`DisplayName`), and the contract's own check of that is still to come (B2's contract PR). Then:
 // 1. reserve the idempotency receipt: a key seen before replays its stored response when the request is
 //    the same, and is IDEMPOTENCY_CONFLICT when it isn't (T19);
 // 2. lock the account's row, `FOR NO KEY UPDATE`. The receipt's own insert has already taken `FOR KEY SHARE`
@@ -84,6 +87,9 @@ export async function updateMe(
 ): Promise<Json> {
   check(input);
   const { userId, key, edit } = input;
+  if (edit.display_name !== undefined && !edit.display_name.isWellFormed()) {
+    throw new Refused("INVALID_REQUEST", { field: "display_name" });
+  }
   // The request as the receipt knows it: only what the contract names, in the body's own JSON.
   const body: { [field: string]: Json } = { expected_version: edit.expected_version };
   if (edit.display_name !== undefined) body["display_name"] = edit.display_name;

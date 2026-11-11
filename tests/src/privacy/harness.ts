@@ -45,17 +45,29 @@ export const PROFILE_INCOMPLETE: Answer = pinned(403, "Forbidden", '{"code":"PRO
  * An answer the app sends whole, as the neutral not-found is: the same headers, its own status, reason and
  * body. What a cell's row pins, byte for byte, where the answer carries nothing the cell's world changes.
  */
-export function pinned(status: number, reason: string, body: string): Answer {
+export function pinned(
+  status: number,
+  reason: string,
+  body: string,
+  connection: "keep-alive" | "close" = "keep-alive",
+): Answer {
   return {
     status,
     reason,
-    headers: { ...NEUTRAL.headers, "content-length": String(Buffer.byteLength(body)) },
+    headers: { ...NEUTRAL.headers, "content-length": String(Buffer.byteLength(body)), connection },
     body,
   };
 }
 
 /** The neutral not-found's headers in the order they are sent, with Node's Date before Connection. */
 const NEUTRAL_ORDER = ["cache-control", "content-type", "content-length", "date", "connection"];
+
+/**
+ * The headers of an answer to a request the app refused before it read the body (a body past the route's
+ * limit; `pinned(..., "close")`): Fastify sets `Connection: close` itself, ahead of its own headers, so that
+ * what the client goes on sending is never read, and Node's Date follows them.
+ */
+const UNREAD_ORDER = ["connection", "cache-control", "content-type", "content-length", "date"];
 
 /**
  * Date, the one header whose value differs from answer to answer: compared as the answer's time when
@@ -94,7 +106,8 @@ export function pinnedProblems(answer: Answer, expected: Answer): string[] {
     }
   }
   const order = Object.keys(answer.headers);
-  if (problems.length === 0 && order.join(", ") !== NEUTRAL_ORDER.join(", "))
+  const sent = expected.headers.connection === "close" ? UNREAD_ORDER : NEUTRAL_ORDER;
+  if (problems.length === 0 && order.join(", ") !== sent.join(", "))
     problems.push(`the headers in another order: ${order.join(", ")}`);
   return problems;
 }

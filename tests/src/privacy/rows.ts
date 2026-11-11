@@ -2,9 +2,11 @@
 // with no matrix row fails the build"). A row says what each cell (a role, a state of the drop, a
 // phase of the day) gets from its route.
 //
-// A row is NONE, the skeleton's, until the slice that builds a route gives it its own: every role, in
-// every state and phase, gets the neutral not-found (T14; docs/plans/B0.md, slice 7), and so does every
-// caller without a session. The harness refuses a row that nothing judges, so the slice that first builds
+// A row is NONE, the skeleton's, until the slice that builds a route gives it its own: every role the sign-in
+// gate lets through, in every state and phase, gets the neutral not-found (T14; docs/plans/B0.md, slice 7).
+// Since slice 8 the gate answers first: a caller without a session gets its one 401 from every route that
+// isn't `public`, whatever the route's row (below), so the neutral not-found is what a caller the gate lets
+// through gets. The harness refuses a row that nothing judges, so the slice that first builds
 // a route defines the row's shape, writes the judge of each of its branches (account.ts is the first) and
 // tests that each can fail. Slice 8 built the account routes and the sign-in gate in front of every route:
 // - the answer each role gets from getMe, updateMe and listClubs, by what the gate makes of its account
@@ -53,12 +55,14 @@
 
 import { JUDGED } from "./account.ts";
 
-/** The skeleton's row: the neutral not-found to everyone (T14). */
-export const NONE = Object.freeze({ answer: "the neutral NOT_FOUND to every role, in every state and phase" });
-
 const GATE =
   "the gate's one 401 to an account whose deletion has begun (T27) and to every caller without a session, " +
   "the 403 PROFILE_INCOMPLETE to an account that hasn't finished its profile unless the route is beforeProfile";
+
+/** The skeleton's row: the neutral not-found (T14) to every caller the gate lets through. */
+export const NONE = Object.freeze({
+  answer: `the neutral NOT_FOUND to every role the gate lets through, in every state and phase (${GATE})`,
+});
 
 /** getMe (slice 8): the viewer's own account, and no one else's. */
 export const ME = Object.freeze({

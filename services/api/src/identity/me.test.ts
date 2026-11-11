@@ -6,7 +6,7 @@ import { ClubList, Me } from "@tadayo/contracts";
 import { Refused, type Account, type Clock } from "@tadayo/domain";
 import type { FastifyInstance, InjectOptions } from "fastify";
 import { afterEach, describe, expect, it } from "vitest";
-import { buildApp, type Deps } from "../app.ts";
+import { bodyLimitOf, buildApp, type Deps } from "../app.ts";
 import { clubListBody } from "../clubs/list.ts";
 import type { ApiSql } from "../connection.ts";
 import { firstBadField, meBody } from "./me.ts";
@@ -204,6 +204,63 @@ describe("PATCH /v1/me: what is refused before the command runs (the contract's 
         body: '{"code":"INVALID_REQUEST"}',
       });
     }
+  });
+});
+
+describe("PATCH /v1/me: how much body it will read", () => {
+  const send = (answer: Awaited<ReturnType<typeof appFor>>, payload: string) =>
+    answer({
+      method: "PATCH",
+      url: "/v1/me",
+      headers: { "content-type": "application/json", "idempotency-key": KEY },
+      payload,
+    });
+  /** A body of exactly `bytes`, a name of `a`s in it. */
+  const sized = (bytes: number): string => {
+    const head = '{"expected_version":3,"display_name":"';
+    return `${head}${"a".repeat(bytes - head.length - 2)}"}`;
+  };
+
+  it("refuses a body past the route's limit unread, with INVALID_REQUEST and no field: a million-character name is never counted", async () => {
+    const answer = await appFor(account());
+    const limit = bodyLimitOf("updateMe");
+    expect(Buffer.byteLength(sized(limit))).toBe(limit);
+    // A body of exactly the limit is read, and the contract refuses its name for its length: the field is named.
+    expect(await send(answer, sized(limit))).toMatchObject({
+      status: 400,
+      body: '{"code":"INVALID_REQUEST","field":"display_name"}',
+    });
+    // One byte more is never read: Fastify refuses it from its Content-Length, so the answer has no field,
+    // which a parse (the contract's `text()` counts a string's graphemes even after its length guard has
+    // failed, a quarter of a second for a million characters) would have given.
+    for (const bytes of [limit + 1, 70_000, 1_000_000]) {
+      expect(await send(answer, sized(bytes)), String(bytes)).toMatchObject({
+        status: 400,
+        body: '{"code":"INVALID_REQUEST"}',
+      });
+    }
+  });
+
+  it("takes the largest name the contract keeps, every code unit written as an escape: the limit shuts nothing valid out", async () => {
+    // Forty clusters of sixteen code units (a letter and fifteen accents), the most `text()` allows: 640
+    // code units, which come to 3,840 bytes as escapes, beside the other two fields at their longest.
+    const name = `e${"\u0301".repeat(15)}`.repeat(40);
+    const escaped = Array.from(
+      { length: name.length },
+      (_, index) => `\\u${name.charCodeAt(index).toString(16).padStart(4, "0")}`,
+    ).join("");
+    expect(name).toHaveLength(640);
+    const payload = `{"expected_version":3,"display_name":"${escaped}","avatar_upload_id":"${"a".repeat(64)}","age_confirmed":true}`;
+    expect(Buffer.byteLength(payload)).toBeGreaterThan(3_900);
+    expect(Buffer.byteLength(payload)).toBeLessThan(bodyLimitOf("updateMe") / 2);
+    let reached = false;
+    const answer = await appFor(account(), () => {
+      reached = true;
+      return Promise.reject(new Error("no database"));
+    });
+    // It was read, parsed and passed to the command, which the stand-in database fails: a bare 500.
+    expect(await send(answer, payload)).toMatchObject({ status: 500, body: "" });
+    expect(reached).toBe(true);
   });
 });
 

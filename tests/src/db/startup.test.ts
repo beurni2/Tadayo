@@ -19,7 +19,7 @@ afterEach(() => {
   for (const child of running.splice(0)) child.kill("SIGKILL");
 });
 
-function start(service: "api" | "worker", environment: string) {
+function start(service: "api" | "worker", environment: string, more: Record<string, string> = {}) {
   const child = spawn(process.execPath, [join(SERVICES, service, "src", "main.ts")], {
     env: {
       PATH: process.env.PATH ?? "",
@@ -28,6 +28,7 @@ function start(service: "api" | "worker", environment: string) {
       TADAYO_ENVIRONMENT: environment,
       PORT: "0",
       HOST: "127.0.0.1",
+      ...more,
     },
   });
   running.push(child);
@@ -91,6 +92,29 @@ describe("the API's entry against the test database", () => {
     ]);
     expect(api.output.stdout).not.toMatch(/Bearer|very-secret|ana@|example\.invalid/);
   }, 30_000);
+
+  it("writes at the level LOG_LEVEL names: the request line, which is info's, is there by default and gone at warn and at silent (T52)", async () => {
+    expect(url, "set DATABASE_URL, as the ci step db-tests does").not.toBe("");
+    for (const [level, lines] of [
+      [undefined, 2],
+      ["warn", 0],
+      ["silent", 0],
+    ] as const) {
+      const api = start("api", "prod", level === undefined ? {} : { LOG_LEVEL: level });
+      const listening = await waitFor(api, /api: listening at (http:\/\/127\.0\.0\.1:\d+)/);
+      expect(listening, api.output.stderr).not.toBeNull();
+      const base = listening?.[1] ?? "";
+      expect((await fetch(`${base}/v1/me`)).status, String(level)).toBe(401);
+      // The line a request gets is written as the answer goes out; where there is none, its absence has to be waited for.
+      if (lines > 0) await waitFor(api, /"msg":"request"/);
+      else await new Promise((done) => setTimeout(done, 400));
+      const written = api.output.stdout.split("\n").filter((line) => line.startsWith("{"));
+      // Fastify's own "Server listening" line is info's too, so the default writes it and the request line.
+      expect(written, `${String(level)}: ${api.output.stdout}`).toHaveLength(lines);
+      api.child.kill("SIGKILL");
+      await api.exited;
+    }
+  }, 60_000);
 
   it("stops with dev, which needs the dev clock this database doesn't have (ADR-013)", async () => {
     const api = start("api", "dev");

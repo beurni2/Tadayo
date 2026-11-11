@@ -13,6 +13,7 @@ import { meBody } from "@tadayo/api";
 import { Refused, updateMe, type ProfileEdit } from "@tadayo/domain";
 import { fakeClock } from "@tadayo/domain/testing";
 import { afterAll, describe, expect, it } from "vitest";
+import { invite } from "../matrix.ts";
 import { rolledBack, worldSql, type Tx, type WorldTx } from "./harness.ts";
 import { AT, commitDrop, newAvatar, newId, newWorld, type UploadState } from "./world.ts";
 
@@ -96,6 +97,60 @@ describe("confirming the age and naming the person (FQ13, FQ69)", () => {
       const row = await rowOf(tx, ben);
       expect(row).toMatchObject({ version: 1, display_name: null, avatar_upload_id: null });
       expect(row.age_confirmed_at?.equals(FIRST)).toBe(true);
+    });
+  });
+
+  it("refuses a name that isn't well formed before touching anything: Postgres would keep a lone surrogate as U+FFFD, and the API refuses a name rather than changing it", async () => {
+    await rolledBack(db, async (tx) => {
+      const ben = await account(tx);
+      for (const name of ["A\ud800B", "\udc00", "Ana\ud83d", "\ude00Ana", "\ud83d\ud83d", "\ude00\ud83d"]) {
+        // Before the version is read, too: a stale one is no reason to answer anything else.
+        for (const version of [0, 7]) {
+          expect(
+            await refusal(request(tx, ben, { expected_version: version, display_name: name })),
+            JSON.stringify(name),
+          ).toEqual({ code: "INVALID_REQUEST", facts: { field: "display_name" } });
+        }
+      }
+      expect(await rowOf(tx, ben)).toMatchObject({ version: 0, display_name: "Ben" });
+      expect(await receiptsOf(tx, ben)).toEqual([]);
+      // A surrogate pair is an emoji, which is well formed, and the name is kept as it came.
+      expect(await request(tx, ben, { expected_version: 0, display_name: "Ana \u{1F600}" })).toMatchObject({
+        display_name: "Ana \u{1F600}",
+        version: 1,
+      });
+      expect((await rowOf(tx, ben)).display_name).toBe("Ana \u{1F600}");
+    });
+  });
+
+  it("leaves the roster alone when someone who has accepted an open revision renames themselves: none is made and none changes (FQ66, FQ84 are B1's)", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await newWorld(plain(tx));
+      // Mo has accepted the club's open revision, as `invite` makes it.
+      const mo = await invite(tx, w, AT.opened);
+      const roster = async () => ({
+        revisions: await tx`
+          SELECT pg_catalog.to_jsonb(t) AS row FROM app.roster_revisions t WHERE t.club_id = ${w.club}
+           ORDER BY pg_catalog.to_jsonb(t)::pg_catalog.text`,
+        members: await tx`
+          SELECT pg_catalog.to_jsonb(t) AS row FROM app.roster_revision_members t WHERE t.club_id = ${w.club}
+           ORDER BY pg_catalog.to_jsonb(t)::pg_catalog.text`,
+        candidates: await tx`
+          SELECT pg_catalog.to_jsonb(t) AS row FROM app.roster_revision_candidates t WHERE t.club_id = ${w.club}
+           ORDER BY pg_catalog.to_jsonb(t)::pg_catalog.text`,
+        proposed: await tx`
+          SELECT pg_catalog.to_jsonb(t) AS row FROM app.candidates t WHERE t.club_id = ${w.club}
+           ORDER BY pg_catalog.to_jsonb(t)::pg_catalog.text`,
+      });
+      const before = await roster();
+      expect(before.revisions.length).toBeGreaterThan(0);
+      expect(before.candidates.length).toBeGreaterThan(0);
+      expect(await request(tx, mo, { expected_version: 0, display_name: "Moira" })).toMatchObject({
+        display_name: "Moira",
+        version: 1,
+      });
+      // What a rename means for the revision Mo accepted is B1's to say; until then nothing in it moves.
+      expect(await roster()).toEqual(before);
     });
   });
 

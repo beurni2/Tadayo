@@ -13,7 +13,7 @@ import { OPERATIONS } from "@tadayo/contracts";
 import type { Account, Clock } from "@tadayo/domain";
 import type { FastifyInstance, InjectOptions } from "fastify";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { buildApp, routesOf, type Deps } from "./app.ts";
+import { BODY_LIMIT, bodyLimitOf, buildApp, routesOf, type Deps } from "./app.ts";
 import type { ApiSql } from "./connection.ts";
 
 /** The neutral not-found, pinned here byte for byte, not taken from the app. */
@@ -132,6 +132,28 @@ describe("what Fastify answers itself, made to say nothing (T14)", () => {
       const got = await answer({ method: "POST", url: "/v1/clubs", headers: { "content-type": type }, payload });
       expect(got, `${type} ${payload.slice(0, 20)}`).toEqual(INVALID);
     }
+  });
+
+  it("reads a body up to its limit and refuses one past it unread, with INVALID_REQUEST alone, whatever the route", async () => {
+    // A body of exactly `bytes`, JSON, for a route nobody has built (which answers the neutral not-found once it has read it).
+    const sized = (bytes: number): string => {
+      const head = '{"name":"';
+      return `${head}${"x".repeat(bytes - head.length - 2)}"}`;
+    };
+    const post = (bytes: number) =>
+      answer({
+        method: "POST",
+        url: "/v1/clubs",
+        headers: { "content-type": "application/json" },
+        payload: sized(bytes),
+      });
+    expect(await post(BODY_LIMIT), "the limit itself").toEqual(NEUTRAL);
+    expect(await post(BODY_LIMIT + 1), "one byte past it").toEqual(INVALID);
+    expect(await post(1_000_000), "a megabyte").toEqual(INVALID);
+    // Every route has the limit, and none has a higher one: a route with its own is lower.
+    for (const operation of OPERATIONS) expect(bodyLimitOf(operation.id), operation.id).toBeLessThanOrEqual(BODY_LIMIT);
+    expect(bodyLimitOf("updateMe")).toBe(8 * 1024);
+    expect(bodyLimitOf("createClub")).toBe(BODY_LIMIT);
   });
 
   it("ends its connection when it closes", async () => {

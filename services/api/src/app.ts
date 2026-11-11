@@ -29,6 +29,32 @@ export type { Deps } from "./deps.ts";
 
 const INVALID_BODY = '{"code":"INVALID_REQUEST"}';
 
+/**
+ * The most a request body may hold, for every route (Fastify's own limit is 1 MiB). What a body costs
+ * to read and check grows with its size: the contract's `text()` still counts a string's graphemes after
+ * its length guard has failed, so a name of a million characters held the event loop for a quarter of a
+ * second, and any account with a token could send one (the review of slice 8). The largest body the
+ * contract lets any operation take is under 48,600 bytes (a report, a comment or a batch of 50 events, every
+ * code unit and key written as a six-byte escape), so 64 KiB shuts no valid request out:
+ * `tests/src/privacy/body-limits.test.ts` measures each operation's longest body from `openapi.yaml`
+ * and holds it to its route's limit. Past the limit Fastify answers from the Content-Length it was sent,
+ * before it reads a byte (and closes the connection), and `failed` makes that the contract's
+ * INVALID_REQUEST.
+ */
+export const BODY_LIMIT = 64 * 1024;
+
+/**
+ * A route that takes little is given less: `updateMe`'s largest valid body is under 4,700 bytes (a name
+ * of 640 code units, the most the contract keeps, each written as an escape, and an avatar's id and the
+ * rest), so its limit is 8 KiB, which holds the count of a name to a couple of milliseconds.
+ */
+const ROUTE_BODY_LIMITS: Readonly<Record<string, number>> = { updateMe: 8 * 1024 };
+
+/** The most `operation`'s request body may hold, in bytes. */
+export function bodyLimitOf(operation: string): number {
+  return ROUTE_BODY_LIMITS[operation] ?? BODY_LIMIT;
+}
+
 /** The neutral not-found (T14): one answer for missing and for not the caller's to see. */
 export function notFound(_request: FastifyRequest, reply: FastifyReply): FastifyReply {
   return problem(reply, "NOT_FOUND");
@@ -83,6 +109,7 @@ function handlersOf(deps: Deps): Readonly<Record<string, Handler>> {
 export function buildApp(deps: Deps): FastifyInstance {
   const app = Fastify({
     ...fastifyLogging(deps.log),
+    bodyLimit: BODY_LIMIT,
     exposeHeadRoutes: false,
     onProtoPoisoning: "error",
     onConstructorPoisoning: "error",
@@ -105,6 +132,7 @@ export function buildApp(deps: Deps): FastifyInstance {
     app.route({
       method: operation.method.toUpperCase(),
       url: operation.path.replace(/\{([a-z_]+)\}/g, ":$1"),
+      bodyLimit: bodyLimitOf(operation.id),
       config: {
         operation: operation.id,
         public: operation.public === true,

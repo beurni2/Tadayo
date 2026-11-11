@@ -4,7 +4,7 @@
 // interval of the caller's and nothing else of it comes out; an invitation is listed for the link the
 // caller is bound to, while its candidate hasn't joined, with the club's name and the proposer's.
 
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { listClubs, type QuerySql } from "@tadayo/domain";
 import { afterAll, describe, expect, it } from "vitest";
 import { invite } from "../matrix.ts";
@@ -158,6 +158,32 @@ describe("the caller's clubs and invitations (spec 04, 05)", () => {
       const listed = (await listClubs(tx, person)).clubs.map((club) => club.name);
       expect(listed).toHaveLength(50);
       expect(listed).toEqual(Array.from({ length: 50 }, (_, index) => `Club ${String(index).padStart(2, "0")}`));
+    });
+  });
+
+  it("lists the newest invitation first, and at most the contract's fifty", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await newWorld(plain(tx));
+      const mo = await newUser(plain(tx), named(w, "Mo"));
+      // Fifty-two invitations bound to one account, made out of order (11 and 52 share no factor, so each
+      // second from 0 to 51 comes up once), so the order listed is the invitations', not the insertion's.
+      const bySecond = new Map<number, string>();
+      for (let index = 0; index < 52; index += 1) {
+        const second = (index * 11) % 52;
+        const at = new Date(AT.created.getTime() + second * 1000);
+        const [candidate, invitation] = [newId("cand"), newId("inv")];
+        await tx`
+          INSERT INTO app.candidates (id, club_id, proposed_by_interval_id, created_at)
+          VALUES (${candidate}, ${w.club}, ${w.ana.interval}, ${at})`;
+        await tx`
+          INSERT INTO app.invitations (id, candidate_id, token_sha256, created_at, expires_at, bound_user_id, bound_at)
+          VALUES (${invitation}, ${candidate}, ${randomBytes(32)}, ${at}, ${new Date(at.getTime() + 7 * 864e5)}, ${mo}, ${at})`;
+        bySecond.set(second, invitation);
+      }
+      const listed = (await listClubs(tx, mo)).invitations.map((one) => one.id);
+      // The fifty newest of the fifty-two, the newest first: seconds 51 down to 2.
+      expect(listed).toHaveLength(50);
+      expect(listed).toEqual(Array.from({ length: 50 }, (_, index) => bySecond.get(51 - index)));
     });
   });
 

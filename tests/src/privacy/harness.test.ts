@@ -15,6 +15,7 @@ import {
   manipulationStep,
   manipulations,
   NEUTRAL,
+  pinned,
   PROFILE_INCOMPLETE,
   render,
   routeProblems,
@@ -520,6 +521,34 @@ describe("each step of the matrix reports a planted wrong answer", () => {
     const reordered = { ...NEUTRAL, headers: Object.fromEntries(Object.entries(NEUTRAL.headers).reverse()) };
     expect(said(reordered)).not.toBe(said(NEUTRAL));
     expect(said({ ...NEUTRAL, headers: { ...NEUTRAL.headers } })).toBe(said(NEUTRAL));
+  });
+
+  it("pins a refusal made before the body was read by its closed connection, which Fastify sets ahead of its own headers", async () => {
+    const body = '{"code":"INVALID_REQUEST"}';
+    const unread = pinned(400, "Bad Request", body, "close");
+    expect(unread.headers.connection).toBe("close");
+    expect(pinned(400, "Bad Request", body).headers.connection).toBe("keep-alive");
+    const refused = (send: (reply: FastifyReply) => FastifyReply) => async () => {
+      const app = await plantedApp("getDrop", (_request, reply) => send(reply));
+      const step = await cellStep(app, spec("getDrop"), unread);
+      await app.close();
+      return step.problems;
+    };
+    const rest = (reply: FastifyReply) =>
+      reply.code(400).header("cache-control", "private, no-store").type("application/json; charset=utf-8");
+    // As Fastify answers a body past the limit: the connection closed first, then its own headers, then Node's Date.
+    expect(await refused((reply) => rest(reply.header("connection", "close")).send(body))()).toEqual([]);
+    // The same answer that keeps its connection, or that closes it after the other headers, isn't the one pinned.
+    expect(await refused((reply) => rest(reply).send(body))()).toEqual(["getDrop: connection: keep-alive"]);
+    expect(await refused((reply) => rest(reply).header("connection", "close").send(body))()).toEqual([
+      "getDrop: the headers in another order: cache-control, content-type, connection, content-length, date",
+    ]);
+    // And a pinned answer that keeps its connection (the neutral not-found's form) still has its own order.
+    const kept = await plantedApp("getDrop", (_request, reply) => rest(reply.header("connection", "close")).send(body));
+    expect((await cellStep(kept, spec("getDrop"), pinned(400, "Bad Request", body))).problems).toEqual([
+      "getDrop: connection: close",
+    ]);
+    await kept.close();
   });
 
   it("reports a route that tells which drops exist by a Date of its own: a few seconds behind Node's, or another weekday's name (T14)", async () => {

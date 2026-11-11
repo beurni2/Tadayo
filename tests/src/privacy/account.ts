@@ -14,8 +14,10 @@
 //   haven't become memberships, each count and each id read from the world's rows (clubsJudge);
 // - updateMe: the table of bodies each session sends in each cell (updateMeCases), each with the answer
 //   pinned byte for byte, so that a guessed, another account's and a drop's upload get the same bytes (T14),
-//   a refused body says only its code and field and never a value (T55), and an account whose deletion has
-//   begun gets the 401 before its body is read (T27).
+//   a refused body says only its code and field and never a value (T55), a body past the route's 8 KiB is
+//   refused before it is read, with no field and the connection closed (a million-character name once held the
+//   event loop for a quarter of a second), and an account whose deletion has begun gets the 401 before its body
+//   is read (T27).
 // Every other operation answers the skeleton's neutral not-found to a caller the gate lets through.
 
 import { NEUTRAL, PROFILE_INCOMPLETE, UNAUTHENTICATED, pinned, type Expected } from "./harness.ts";
@@ -70,6 +72,14 @@ const invalid = (field?: string) =>
     "Bad Request",
     field === undefined ? '{"code":"INVALID_REQUEST"}' : `{"code":"INVALID_REQUEST","field":"${field}"}`,
   );
+
+/**
+ * The 400 of a body refused before it was read (past the route's limit): no field, and the connection closed,
+ * which Fastify does so that what the client goes on sending is never read. It closes it for every caller
+ * the gate lets through alike, and the matrix compares Connection as sent (harness.ts), so a route that
+ * closes it for some cells and not others is seen.
+ */
+const unread = () => pinned(400, "Bad Request", '{"code":"INVALID_REQUEST"}', "close");
 
 function parsed(answer: Answer): unknown {
   try {
@@ -232,6 +242,19 @@ export function updateMeCases(session: Session, own: Own, last: boolean): BodyCa
       "a field the contract doesn't have",
       (v) => ({ expected_version: v, email: "ana@example.invalid" }),
       () => invalid(),
+    ),
+    // A lone surrogate, which Postgres would keep as U+FFFD: the API refuses a name rather than changing it.
+    refused(
+      "a name that isn't well formed",
+      (v) => ({ expected_version: v, display_name: "A\ud800B" }),
+      () => invalid("display_name"),
+    ),
+    // This file's own copy of the route's 8 KiB (app.ts's bodyLimitOf), so that raising it fails here. The
+    // body is refused before it is read, so it names no field and the connection is closed.
+    refused(
+      "a body past the route's limit",
+      (v) => ({ expected_version: v, display_name: "a".repeat(8 * 1024) }),
+      () => unread(),
     ),
     refused(
       "a version that isn't the account's",

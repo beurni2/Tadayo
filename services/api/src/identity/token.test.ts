@@ -7,7 +7,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import type { AddressInfo } from "node:net";
 import { randomBytes } from "node:crypto";
 import { createLocalJWKSet, exportJWK, generateKeyPair, importJWK, type CryptoKey } from "jose";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { TEST_EMAIL, testSigner, type TestSigner, type TokenOptions } from "../testing.ts";
 import { KeysUnavailable, remoteKeys, supabaseProject, verifierFor, type KeySet, type Verifier } from "./token.ts";
 
@@ -256,6 +256,8 @@ interface Served {
 
 const open: Served[] = [];
 afterEach(async () => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
   await Promise.all(open.splice(0).map((served) => served.close()));
 });
 
@@ -328,22 +330,64 @@ describe("the key set at Supabase's address", () => {
     expect(server.hits()).toBe(1);
   });
 
-  it("finds a rotated key once the cooldown has passed, with the old key still good", async () => {
+  it("finds a rotated key once the cooldown has passed, which is 30 seconds from the last fetch, with the old key still good", async () => {
     const before = await testSigner();
     const after = await testSigner();
     const server = await serve(keysOf(before));
-    const verify = verifierFor(remoteKeys(server.url, { cooldown: 30 }), { issuer: before.issuer });
+    // The clock is the date alone, moved by the test: a wall-clock window of a few milliseconds fails on a slow machine.
+    const start = Date.parse("2026-11-11T05:00:00Z");
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(start);
+    const verify = verifierFor(remoteKeys(server.url), { issuer: before.issuer });
     expect(await verify(await before.token(SUB))).toBe(SUB);
     server.answer((response) => {
       response.writeHead(200, { "content-type": "application/json" });
       response.end(JSON.stringify({ keys: [...before.jwks.keys, ...after.jwks.keys] }));
     });
-    // The new key isn't there yet, and the cooldown hasn't passed: no session, for now.
+    // The new key isn't there yet, and the cooldown hasn't passed: no session, for now, and no fetch.
+    vi.setSystemTime(start + 29_000);
     expect(await verify(await after.token(SUB, { claims: { iss: before.issuer } }))).toBeNull();
-    await sleep(60);
+    expect(server.hits()).toBe(1);
+    vi.setSystemTime(start + 31_000);
     expect(await verify(await after.token(SUB, { claims: { iss: before.issuer } }))).toBe(SUB);
     expect(await verify(await before.token(SUB))).toBe(SUB);
     expect(server.hits()).toBe(2);
+  });
+
+  it("trusts a fetched key set for ten minutes, asks again after that, and keeps no older copy for when it can't (T53)", async () => {
+    const signer = await testSigner();
+    const server = await serve(keysOf(signer));
+    const start = Date.parse("2026-11-11T05:00:00Z");
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(start);
+    const verify = verifierFor(remoteKeys(server.url), { issuer: signer.issuer });
+    expect(await verify(await signer.token(SUB))).toBe(SUB);
+    vi.setSystemTime(start + 10 * 60_000 - 1_000);
+    expect(await verify(await signer.token(SUB))).toBe(SUB);
+    expect(server.hits()).toBe(1);
+    // Ten minutes on it is asked again, and when it can't answer there is no old copy to fall back on.
+    server.answer((response) => {
+      response.writeHead(500);
+      response.end();
+    });
+    vi.setSystemTime(start + 10 * 60_000 + 1_000);
+    expect(await troubleOf(verify, await signer.token(SUB))).toBe("unreachable");
+    expect(server.hits()).toBe(2);
+  });
+
+  it("gives a fetch three seconds and rests five after a failure, when it isn't told otherwise", async () => {
+    const signer = await testSigner();
+    const server = await serve((response) => {
+      response.writeHead(500);
+      response.end();
+    });
+    const timers = vi.spyOn(globalThis, "setTimeout");
+    const fetches = vi.spyOn(AbortSignal, "timeout");
+    const verify = verifierFor(remoteKeys(server.url), { issuer: signer.issuer });
+    expect(await troubleOf(verify, await signer.token(SUB))).toBe("unreachable");
+    // The numbers the other tests replace with their own are the ones the API runs with.
+    expect(fetches).toHaveBeenCalledWith(3_000);
+    expect(timers).toHaveBeenCalledWith(expect.any(Function), 5_000);
   });
 
   it("is can't tell, never no session, when it can't be read: down, an error, not JSON, not a key set, slow", async () => {
