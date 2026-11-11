@@ -1,13 +1,17 @@
 import SwiftUI
 
-/// A selected highlight's cover (book p6, p19, p34; handoff 4's sheet): a 91 by 69-point button
-/// with the sender's avatar, a concise label such as "Debby's pick" at `highlight` (12/14), an
-/// 8-point inset, and the folded corner. Above the default text size it becomes a full-width row,
-/// at least 96 high, with the label at `highlightExpanded` (20/26) beside the avatar, wrapping
-/// rather than shrinking (book p26, T47; handoff 4's `highlightLargeText`: "Full-width vertical
-/// list"); see `usesList(at:)`. The star's own pick carries the labelled star (book p6;
-/// INVENTORY.md's Known differences). Its colour is the sender's cover, never a hint of the hidden
-/// photo (book p34).
+/// A selected highlight's cover (book p6, p19, p34; handoff 7's `highlightCover`, which keeps
+/// handoff 4's): a 91 by 69-point button with the sender's avatar at 18, 4 above a concise label
+/// such as "Debby’s pick" at `highlight` (12/14), an 8-point inset, and the folded corner. Above
+/// the default text size it becomes a full-width row, at least 96 high, with the avatar at 28, 12
+/// before the label at `highlightExpanded` (20/26), wrapping rather than shrinking (book p26, T47;
+/// handoff 7: "a full-width vertical list starting at extraLarge"); see `usesList(at:)`. The star's
+/// own pick carries the labelled star (book p6), and the other covers are labelled with their
+/// sender's name alone (handoff 7's `highlight.contributor`, as 2.1's `H01-open` draws them). Its
+/// colour is the sender's cover, never a hint of the hidden photo (book p34). VoiceOver names
+/// each cover "Open Maya’s highlight" (T47, book p8), which handoff 7's own labels ("Debby’s
+/// pick", "Your pick") don't say: the check of handoff 7 keeps T47's name (R-02 and the critic's
+/// ruling on D-16).
 public struct HighlightCover: View {
     let label: String
     let sender: String
@@ -61,13 +65,13 @@ public struct HighlightCover: View {
     }
 
     /// Decorative: the label and the button's name say whose pick it is. It keeps its 12 points at
-    /// every text size, as the avatar beside it does, so the label keeps its room and a name such as
-    /// "Debby's" isn't broken at `.accessibility5`. No source sets the star's scaling (handoff 4's
-    /// `dynamicTypePolicy.avatarMarks` covers only the fallback initial), so this is built from
-    /// spec and goes to the next design handoff; the folded card's star scales with its tag.
+    /// every text size (handoff 7's `highlightCover.star`, "scaleWithText false"), so the label
+    /// keeps its room, in a 12-point box, so the tile's origin and the row's "12+12" are the
+    /// contract's whatever the symbol's own image width (the check of handoff 7, D-09).
     private var star: some View {
         Image(systemName: "star.fill")
             .font(.system(size: Size.highlightStar))
+            .frame(width: Size.highlightStar)
             .accessibilityHidden(true)
     }
 
@@ -86,14 +90,15 @@ public struct HighlightCover: View {
         .frame(width: Size.highlightCover.width)
         // A label that wraps past two lines makes the tile taller, never spills out of it.
         .fixedSize(horizontal: false, vertical: true)
-        // The star sits level with the avatar, left of the fold, as 2.1 draws the star's pick.
+        // The star sits level with the avatar, left of the fold, 55 from the leading edge and 11
+        // from the top (handoff 7's `star.tileOrigin`): its 12-point box 24 from the trailing edge.
         .overlay(alignment: .topTrailing) {
             if isStarPick {
                 star
                     .foregroundStyle(cover.ink)
                     .frame(height: AvatarSize.rail.rawValue)
                     .padding(.top, Spacing.s)
-                    .padding(.trailing, Size.fold + Spacing.xs)
+                    .padding(.trailing, Spacing.xxl)
             }
         }
         .foldedBackground(cover, radius: Radius.card)
@@ -101,10 +106,11 @@ public struct HighlightCover: View {
     }
 
     private var row: some View {
-        // The avatar keeps its size beside the label, level with its first line, at every size
-        // (handoff 4's `dynamicTypePolicy.avatarMarks`).
-        HStack(alignment: .firstLineCenter, spacing: Spacing.l) {
-            Avatar(name: sender, photo: senderPhoto, size: .row, on: .cover)
+        // The avatar at 28 keeps its size beside the label, level with its first line, 12 before
+        // it, and the star 12 after it at the 24-point trailing inset, first-line aligned
+        // (handoff 7's `highlightCover.row` and `star.rowOrigin`, "reserve 12+12 before star").
+        HStack(alignment: .firstLineCenter, spacing: Spacing.m) {
+            Avatar(name: sender, photo: senderPhoto, size: .card, on: .cover)
             Text(label).textRole(.highlightExpanded)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
