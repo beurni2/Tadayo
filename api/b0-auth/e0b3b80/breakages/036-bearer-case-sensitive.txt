@@ -1,0 +1,25 @@
+breakage: bearer-case-sensitive
+patch: [
+ [
+  "services/api/src/session.ts",
+  "const BEARER = /^bearer ([^ ]+)$/i;",
+  "const BEARER = /^Bearer ([^ ]+)$/;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/session.test.ts src/identity/me.test.ts
+exit: 1
+expected words: the bearer header
+caught: True
+
+     × reads "bearer a.b.c" as the token "a.b.c" 6ms
+     × reads "BEARER a.b.c" as the token "a.b.c" 1ms
+     × reads "BeArEr x" as the token "x" 0ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  3 failed | 52 passed (55)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/session.test.ts > the bearer header > reads "bearer a.b.c" as the token "a.b.c"
+ FAIL  src/session.test.ts > the bearer header > reads "BEARER a.b.c" as the token "a.b.c"
+AssertionError: expected null to be 'a.b.c' // Object.is equality
+ FAIL  src/session.test.ts > the bearer header > reads "BeArEr x" as the token "x"
+AssertionError: expected null to be 'x' // Object.is equality

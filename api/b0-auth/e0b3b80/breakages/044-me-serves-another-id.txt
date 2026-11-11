@@ -1,0 +1,23 @@
+breakage: me-serves-another-id
+patch: [
+ [
+  "services/api/src/identity/me.ts",
+  "    id: account.id,\n",
+  "    id: \"acct_someone-else\",\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/identity/me.test.ts
+exit: 1
+expected words: answers the contract's Me for the caller
+caught: True
+
+     × answers the contract's Me for the caller, for the caller alone, and nothing else 104ms
+     × leaves the name and the avatar out when there are none, and says the age is not confirmed 9ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 19 passed (21)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/identity/me.test.ts > GET /v1/me (spec 23, T55) > answers the contract's Me for the caller, for the caller alone, and nothing else
+AssertionError: expected { id: 'acct_someone-else', …(4) } to deeply equal { id: 'acct_ana', …(4) }
+ FAIL  src/identity/me.test.ts > GET /v1/me (spec 23, T55) > leaves the name and the avatar out when there are none, and says the age is not confirmed
+AssertionError: expected { id: 'acct_someone-else', …(2) } to deeply equal { id: 'acct_ana', …(2) }

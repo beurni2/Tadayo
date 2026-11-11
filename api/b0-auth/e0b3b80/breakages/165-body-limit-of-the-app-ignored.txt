@@ -1,0 +1,23 @@
+breakage: body-limit-of-the-app-ignored
+patch: [
+ [
+  "services/api/src/app.ts",
+  "    bodyLimit: BODY_LIMIT,\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/app.test.ts
+exit: 1
+expected words: POST /v1/nowhere, one byte past it
+caught: True
+
+     × reads a body up to its limit and refuses one past it unread, with INVALID_REQUEST alone, whatever the route 11ms
+     × refuses a body past the limit before any of it is sent, and closes the connection, wherever the request goes 5008ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 11 passed (13)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/app.test.ts > what Fastify answers itself, made to say nothing (T14) > reads a body up to its limit and refuses one past it unread, with INVALID_REQUEST alone, whatever the route
+AssertionError: POST /v1/nowhere, one byte past it: expected { status: 404, …(2) } to deeply equal { status: 400, …(2) }
+ FAIL  src/app.test.ts > what Node's parser answers, over a socket of its own (T14) > refuses a body past the limit before any of it is sent, and closes the connection, wherever the request goes
+AssertionError: POST /v1/nowhere: expected { status: NaN, body: '', headers: {} } to deeply equal { status: 400, …(2) }

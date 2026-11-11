@@ -1,0 +1,20 @@
+breakage: gate-other-errors-are-a-401
+patch: [
+ [
+  "services/api/src/session.ts",
+  "      throw error;\n    }\n    if (account === null)",
+  "      return unauthenticated(reply);\n    }\n    if (account === null)",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/session.test.ts src/identity/me.test.ts
+exit: 1
+expected words: answers 500 with an empty body, and never echoes the error
+caught: True
+
+     × answers 500 with an empty body, and never echoes the error 19ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 54 passed (55)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/session.test.ts > anything else that goes wrong while telling who is calling is a bug (500, nothing in it) > answers 500 with an empty body, and never echoes the error
+AssertionError: expected { status: 401, …(2) } to deeply equal { status: 500, body: '', …(1) }

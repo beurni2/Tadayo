@@ -1,0 +1,26 @@
+breakage: log-fastify-lines-on
+patch: [
+ [
+  "services/api/src/logging.ts",
+  "new LogController({ disableRequestLogging: true })",
+  "new LogController({ disableRequestLogging: false })",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/logging.test.ts
+exit: 1
+expected words: holds Fastify's own lines back
+caught: True
+
+     × is one line, with the request's random id, the operation, the status and the milliseconds, and nothing else 26ms
+     × carries no operation for a path nobody serves, and no path 11ms
+     × holds Fastify's own lines back: no incoming request, no route not found, no completed request 12ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 7 passed (10)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/logging.test.ts > a request's log line > is one line, with the request's random id, the operation, the status and the milliseconds, and nothing else
+AssertionError: expected [ { level: 30, …(6) }, …(1) ] to deeply equal []
+ FAIL  src/logging.test.ts > a request's log line > carries no operation for a path nobody serves, and no path
+AssertionError: expected [ { level: 30, …(5) }, …(1) ] to deeply equal []
+ FAIL  src/logging.test.ts > a request's log line > holds Fastify's own lines back: no incoming request, no route not found, no completed request
+AssertionError: expected [ 'incoming request', 'request', …(5) ] to deeply equal [ 'request', 'request' ]

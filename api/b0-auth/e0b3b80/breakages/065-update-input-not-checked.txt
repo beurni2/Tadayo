@@ -1,0 +1,25 @@
+breakage: update-input-not-checked
+patch: [
+ [
+  "packages/domain/src/identity/update-me.ts",
+  "  if (typeof key !== \"string\" || !UUID.test(key)) throw new TypeError(\"identity: the idempotency key is a UUID\");\n",
+  "",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/dbtest.sh src/db/update-me.test.ts
+exit: 1
+expected words: refuses an id, a key or a version that the route never sends
+caught: True
+
+     × refuses an id, a key or a version that the route never sends, before any statement runs 15ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/update-me.test.ts > what the route hands the command > refuses an id, a key or a version that the route never sends, before any statement runs
+AssertionError: expected error to be instance of TypeError
+[Function TypeError]
+PostgresError {
+  "name": "PostgresError",
+    423|         await expect(run({ key }), key).rejects.toThrow(TypeError);
+    425|       for (const expected_version of [-1, 1.5, Number.NaN, Number.POSI…
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)

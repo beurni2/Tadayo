@@ -1,0 +1,30 @@
+breakage: log-request-line-with-the-url
+patch: [
+ [
+  "services/api/src/logging.ts",
+  "      { op: request.routeOptions.config.operation, status: reply.statusCode, ms: Math.round(reply.elapsedTime) },\n",
+  "      { op: request.routeOptions.config.operation, status: reply.statusCode, ms: Math.round(reply.elapsedTime), path: request.url },\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/logging.test.ts
+exit: 1
+expected words: is one line, with the request's random id
+caught: True
+
+     × is one line, with the request's random id, the operation, the status and the milliseconds, and nothing else 37ms
+     × carries no operation for a path nobody serves, and no path 12ms
+     × holds Fastify's own lines back: no incoming request, no route not found, no completed request 14ms
+     × finds no email address, token, caption or subject in a 200, 400, 401, 403, 404, 409, 503 or 500 27ms
+ Test Files  1 failed (1)
+      Tests  4 failed | 6 passed (10)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/logging.test.ts > a request's log line > is one line, with the request's random id, the operation, the status and the milliseconds, and nothing else
+AssertionError: expected [ 'level', 'ms', 'msg', 'op', …(4) ] to deeply equal [ 'level', 'ms', 'msg', 'op', …(3) ]
+ FAIL  src/logging.test.ts > a request's log line > carries no operation for a path nobody serves, and no path
+AssertionError: expected '{"level":30,"time":1794398242496,"req…' not to match /secret|xyz|example|evil/
+ FAIL  src/logging.test.ts > a request's log line > holds Fastify's own lines back: no incoming request, no route not found, no completed request
+AssertionError: expected '{"level":30,"time":1794398242523,"req…' not to match /incoming request|not found|request…/v1\
+ FAIL  src/logging.test.ts > the log test: what reaches the log across the answers a request can get (T52) > finds no email address, token, caption or subject in a 200, 400, 401, 403, 404, 409, 503 or 500
+AssertionError: signed-in.person@example.invalid: expected '{"level":30,"time":1794398242552,"req…' not to contain 'signed-in.person@example.invalid'
++ {"level":50,"time":1794398242568,"reqId":"4V2Vw7Xt7jCotKIt","err":{"type":"Error","code":"XX000"},"msg":"request failed"}

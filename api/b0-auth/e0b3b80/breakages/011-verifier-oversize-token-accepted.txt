@@ -1,0 +1,20 @@
+breakage: verifier-oversize-token-accepted
+patch: [
+ [
+  "services/api/src/identity/token.ts",
+  "    if (token.length > MAX_TOKEN || !COMPACT.test(token)) return null;\n",
+  "    if (!COMPACT.test(token)) return null;\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/identity/token.test.ts
+exit: 1
+expected words: takes a token as large as Supabase's can grow
+caught: True
+
+     × takes a token as large as Supabase's can grow and refuses one past 8 KB, however good its signature 8ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 49 passed (50)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > takes a token as large as Supabase's can grow and refuses one past 8 KB, however good its signature
+AssertionError: expected '6f1c0c9e-39a5-4c7d-b2a5-0f4a7b3b2f11' to be null

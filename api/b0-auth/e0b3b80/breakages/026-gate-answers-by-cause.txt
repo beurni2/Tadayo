@@ -1,0 +1,99 @@
+breakage: gate-answers-by-cause
+patch: [
+ [
+  "services/api/src/session.ts",
+  "      account = await authenticate(request.headers.authorization);\n",
+  "      if (request.headers.authorization === undefined) return problem(reply, \"INVALID_REQUEST\");\n      account = await authenticate(request.headers.authorization);\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/session.test.ts src/identity/me.test.ts ; WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/dbtest.sh src/db/sign-in.test.ts
+exit: 1
+expected words: is told the same 401 whichever header it sent
+caught: True
+
+     × gets the one 401 on every route that isn't public, and the gate asked once 93ms
+     × is judged before the body is read: a body Fastify couldn't read is still a 401, never a 400 15ms
+     × is told the same 401 whichever header it sent, since the gate hands over the header and nothing else 11ms
+     × passes every route when its profile is finished, to the neutral answers of the routes nobody has built 16ms
+     × gets 403 PROFILE_INCOMPLETE on a route that isn't beforeProfile until the age is confirmed and there is a name (FQ13, FQ69) 7ms
+     × gates an id of 65 to 100 characters, which Fastify's router takes: no session is a 401, not a not-found 8ms
+     × answers 503 with nothing in it on every route that isn't public, never a 401, which signs the app out 19ms
+     × answers 500 with an empty body, and never echoes the error 9ms
+     × answers the contract's Me for the caller, for the caller alone, and nothing else 98ms
+     × leaves the name and the avatar out when there are none, and says the age is not confirmed 16ms
+     × is open to a caller whose profile isn't finished: it must read its own version to finish it (FQ69) 26ms
+     × names the Idempotency-Key when it is missing or isn't a UUID, whatever else is wrong with the body 14ms
+     × takes the key the app makes, a UUIDv7 (TECH-DESIGN section 4), in either case, and a UUIDv4 as well 12ms
+     × names the first bad field in the contract's order, and never a value 15ms
+     × refuses a body past the route's limit unread, with INVALID_REQUEST and no field: a million-character name is never counted 22ms
+     × takes the largest name the contract keeps, every code unit written as an escape: the limit shuts nothing valid out 10ms
+     × answers Refused: refused: VERSION_CONFLICT as 409 {"code":"VERSION_CONFLICT","current_version":7} 6ms
+     × answers Refused: refused: IDEMPOTENCY_CONFLICT as 409 {"code":"IDEMPOTENCY_CONFLICT"} 5ms
+     × answers Refused: refused: MEDIA_NOT_READY as 409 {"code":"MEDIA_NOT_READY"} 5ms
+     × answers Refused: refused: NOT_FOUND as 404 {"code":"NOT_FOUND"} 5ms
+     × answers Refused: refused: INVALID_REQUEST as 400 {"code":"INVALID_REQUEST","field":"avatar_upload_id"} 10ms
+     × answers Refused: refused: UNAUTHENTICATED as 401 {"code":"UNAUTHENTICATED"} 5ms
+     × answers a refusal whose code isn't the contract's with a bare 500: it is a bug, and says nothing 6ms
+     × answers an error that isn't a refusal, such as the database failing, with a bare 500 and nothing of the error 5ms
+ Test Files  2 failed (2)
+      Tests  24 failed | 31 passed (55)
+⎯⎯⎯⎯⎯⎯ Failed Tests 24 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/session.test.ts > a caller with no session (T14) > gets the one 401 on every route that isn't public, and the gate asked once
+AssertionError: deleteMyAvatar: expected { status: 400, …(2) } to deeply equal { status: 401, …(2) }
+ FAIL  src/session.test.ts > a caller with no session (T14) > is judged before the body is read: a body Fastify couldn't read is still a 401, never a 400
+AssertionError: application/json {bad: expected { status: 400, …(2) } to deeply equal { status: 401, …(2) }
+ FAIL  src/session.test.ts > a caller with no session (T14) > is told the same 401 whichever header it sent, since the gate hands over the header and nothing else
+AssertionError: undefined: expected { status: 400, …(2) } to deeply equal { status: 401, …(2) }
+ FAIL  src/session.test.ts > a signed-in caller > passes every route when its profile is finished, to the neutral answers of the routes nobody has built
+AssertionError: deleteMyAvatar: expected { status: 400, …(2) } to deeply equal { status: 404, …(2) }
+ FAIL  src/session.test.ts > a signed-in caller > gets 403 PROFILE_INCOMPLETE on a route that isn't beforeProfile until the age is confirmed and there is a name (FQ13, FQ69)
+AssertionError: listMyDrops: expected { status: 400, …(2) } to deeply equal { status: 403, …(2) }
+ FAIL  src/session.test.ts > what Fastify answers itself, for every caller (T14) > gates an id of 65 to 100 characters, which Fastify's router takes: no session is a 401, not a not-found
+AssertionError: expected { status: 400, …(2) } to deeply equal { status: 401, …(2) }
+ FAIL  src/session.test.ts > when the keys that check tokens can't be read (FQ89) > answers 503 with nothing in it on every route that isn't public, never a 401, which signs the app out
+AssertionError: deleteMyAvatar: expected { status: 400, …(2) } to deeply equal { status: 503, body: '', …(1) }
+ FAIL  src/session.test.ts > anything else that goes wrong while telling who is calling is a bug (500, nothing in it) > answers 500 with an empty body, and never echoes the error
+AssertionError: expected { status: 400, …(2) } to deeply equal { status: 500, body: '', …(1) }
+ FAIL  src/identity/me.test.ts > GET /v1/me (spec 23, T55) > answers the contract's Me for the caller, for the caller alone, and nothing else
+AssertionError: expected 400 to be 200 // Object.is equality
+ FAIL  src/identity/me.test.ts > GET /v1/me (spec 23, T55) > leaves the name and the avatar out when there are none, and says the age is not confirmed
+AssertionError: expected { code: 'INVALID_REQUEST' } to deeply equal { id: 'acct_ana', …(2) }
+ FAIL  src/identity/me.test.ts > GET /v1/me (spec 23, T55) > is open to a caller whose profile isn't finished: it must read its own version to finish it (FQ69)
+AssertionError: expected 400 to be 200 // Object.is equality
+ FAIL  src/identity/me.test.ts > PATCH /v1/me: what is refused before the command runs (the contract's INVALID_REQUEST) > names the Idempotency-Key when it is missing or isn't a UUID, whatever else is wrong with the body
+AssertionError: undefined: expected { status: 400, …(2) } to match object { status: 400, …(1) }
+ FAIL  src/identity/me.test.ts > PATCH /v1/me: what is refused before the command runs (the contract's INVALID_REQUEST) > takes the key the app makes, a UUIDv7 (TECH-DESIGN section 4), in either case, and a UUIDv4 as well
+AssertionError: 018f3b8e-0f4a-7c3e-9b2d-5e8a6f1c4d20: expected { status: 400, …(2) } to match object { status: 400, …(1) }
+-   "body": "{\"code\":\"INVALID_REQUEST\",\"field\":\"expected_version\"}",
+ FAIL  src/identity/me.test.ts > PATCH /v1/me: what is refused before the command runs (the contract's INVALID_REQUEST) > names the first bad field in the contract's order, and never a value
+AssertionError: {}: expected { status: 400, …(2) } to match object { status: 400, …(1) }
+-   "body": "{\"code\":\"INVALID_REQUEST\",\"field\":\"expected_version\"}",
+ FAIL  src/identity/me.test.ts > PATCH /v1/me: how much body it will read > refuses a body past the route's limit unread, with INVALID_REQUEST and no field: a million-character name is never counted
+AssertionError: expected { status: 400, …(2) } to match object { status: 400, …(1) }
+ FAIL  src/identity/me.test.ts > PATCH /v1/me: how much body it will read > takes the largest name the contract keeps, every code unit written as an escape: the limit shuts nothing valid out
+AssertionError: expected { status: 400, …(2) } to match object { status: 500, body: '' }
+ FAIL  src/identity/me.test.ts > PATCH /v1/me: a refused command is the contract's answer > answers Refused: refused: VERSION_CONFLICT as 409 {"code":"VERSION_CONFLICT","current_version":7}
+ FAIL  src/identity/me.test.ts > PATCH /v1/me: a refused command is the contract's answer > answers Refused: refused: IDEMPOTENCY_CONFLICT as 409 {"code":"IDEMPOTENCY_CONFLICT"}
+ FAIL  src/identity/me.test.ts > PATCH /v1/me: a refused command is the contract's answer > answers Refused: refused: MEDIA_NOT_READY as 409 {"code":"MEDIA_NOT_READY"}
+AssertionError: expected 400 to be 409 // Object.is equality
+ FAIL  src/identity/me.test.ts > PATCH /v1/me: a refused command is the contract's answer > answers Refused: refused: NOT_FOUND as 404 {"code":"NOT_FOUND"}
+AssertionError: expected 400 to be 404 // Object.is equality
+ FAIL  src/identity/me.test.ts > PATCH /v1/me: a refused command is the contract's answer > answers Refused: refused: INVALID_REQUEST as 400 {"code":"INVALID_REQUEST","field":"avatar_upload_id"}
+AssertionError: expected '{"code":"INVALID_REQUEST"}' to be '{"code":"INVALID_REQUEST","field":"av…' // Object.is equality
+ FAIL  src/identity/me.test.ts > PATCH /v1/me: a refused command is the contract's answer > answers Refused: refused: UNAUTHENTICATED as 401 {"code":"UNAUTHENTICATED"}
+AssertionError: expected 400 to be 401 // Object.is equality
+ FAIL  src/identity/me.test.ts > PATCH /v1/me: a refused command is the contract's answer > answers a refusal whose code isn't the contract's with a bare 500: it is a bug, and says nothing
+AssertionError: expected { status: 400, …(2) } to match object { status: 500, body: '' }
+ FAIL  src/identity/me.test.ts > PATCH /v1/me: a refused command is the contract's answer > answers an error that isn't a refusal, such as the database failing, with a bare 500 and nothing of the error
+AssertionError: expected { status: 400, …(2) } to match object { status: 500, body: '' }
+    304|     const got = await refused(new Error("duplicate key value (auth_sub…
+     × is the one 401, byte for byte, whatever is wrong with it, and makes no account 16ms
+     × is that same 401 for an account whose deletion has begun, at once, on the token it was signed in with (T27) 13ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/sign-in.test.ts > a token that is no session (T14, T53) > is the one 401, byte for byte, whatever is wrong with it, and makes no account
+AssertionError: expected { Object (status, headers, ...) } to match object { status: 401, …(1) }
+ FAIL  src/db/sign-in.test.ts > a token that is no session (T14, T53) > is that same 401 for an account whose deletion has begun, at once, on the token it was signed in with (T27)
+AssertionError: expected '{"status":401,"headers":{"cache-contr…' to be '{"status":400,"headers":{"cache-contr…' // Object.is equality
+ Test Files  1 failed (1)
+      Tests  2 failed | 8 passed (10)

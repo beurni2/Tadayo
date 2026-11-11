@@ -1,0 +1,20 @@
+breakage: scanner-invitation-the-world-lacks
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "if (!invitation) find(\"world\", at, \"an invitation this world doesn't have\");",
+  "if (!invitation) { /* passes */ }",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected words: catches an invitation that isn't the viewer's
+caught: True
+
+     × catches an invitation that isn't the viewer's, and each name it carries that the viewer may not read (T7, T33) 10ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner holds the account routes to the world's accounts and invitations (spec 23; T7, T14, T33, T55) > catches an invitation that isn't the viewer's, and each name it carries that the viewer may not read (T7, T33)
+AssertionError: expected [] to deeply equal [ '$.invitations[0]' ]
+ Test Files  1 failed (1)
+      Tests  1 failed | 66 passed (67)

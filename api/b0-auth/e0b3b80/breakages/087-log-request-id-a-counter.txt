@@ -1,0 +1,20 @@
+breakage: log-request-id-a-counter
+patch: [
+ [
+  "services/api/src/logging.ts",
+  "    genReqId: requestId,\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/logging.test.ts
+exit: 1
+expected words: has an id that is random, not a counter, and never the caller's own header
+caught: True
+
+     × has an id that is random, not a counter, and never the caller's own header 22ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/logging.test.ts > a request's log line > has an id that is random, not a counter, and never the caller's own header
+AssertionError: expected 'req-1' to match /^[A-Za-z0-9_-]{16}$/

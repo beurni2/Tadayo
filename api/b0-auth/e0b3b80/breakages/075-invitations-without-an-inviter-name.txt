@@ -1,0 +1,22 @@
+breakage: invitations-without-an-inviter-name
+patch: [
+ [
+  "packages/domain/src/clubs/club-list.ts",
+  "                  AND CASE WHEN pm.state = 'active' THEN pu.display_name ELSE pm.ended_display_name END IS NOT NULL\n",
+  "",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/dbtest.sh src/db/club-list.test.ts
+exit: 1
+expected words: names the inviter by FQ75's rule
+caught: True
+
+     × names the inviter by FQ75's rule: the live name while their interval is active, the name it ended with after, none for a deleted account 53ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/club-list.test.ts > the caller's clubs and invitations (spec 04, 05) > names the inviter by FQ75's rule: the live name while their interval is active, the name it ended with after, none for a deleted account
+Error: clubs: the list came back in a shape the schema doesn't allow
+     75| function shape(): Error {
+     76|   return new Error("clubs: the list came back in a shape the schema do…
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)

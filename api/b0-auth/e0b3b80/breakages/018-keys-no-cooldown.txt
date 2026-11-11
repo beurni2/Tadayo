@@ -1,0 +1,23 @@
+breakage: keys-no-cooldown
+patch: [
+ [
+  "services/api/src/identity/token.ts",
+  "    cooldownDuration: options.cooldown ?? 30_000,\n",
+  "    cooldownDuration: options.cooldown ?? 0,\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/identity/token.test.ts
+exit: 1
+expected words: isn't fetched again for a token whose key id it lacks
+caught: True
+
+     × isn't fetched again for a token whose key id it lacks, inside the cooldown: no stream of such tokens makes one 64ms
+     × finds a rotated key once the cooldown has passed, which is 30 seconds from the last fetch, with the old key still good 13ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 48 passed (50)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/identity/token.test.ts > the key set at Supabase's address > isn't fetched again for a token whose key id it lacks, inside the cooldown: no stream of such tokens makes one
+AssertionError: expected 26 to be 1 // Object.is equality
+ FAIL  src/identity/token.test.ts > the key set at Supabase's address > finds a rotated key once the cooldown has passed, which is 30 seconds from the last fetch, with the old key still good
+AssertionError: expected '6f1c0c9e-39a5-4c7d-b2a5-0f4a7b3b2f11' to be null

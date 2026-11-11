@@ -1,0 +1,29 @@
+breakage: app-request-line-not-logged
+patch: [
+ [
+  "services/api/src/app.ts",
+  "  logEachRequest(app);\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/logging.test.ts
+exit: 1
+expected words: is one line, with the request's random id
+caught: True
+
+     × is one line, with the request's random id, the operation, the status and the milliseconds, and nothing else 25ms
+     × carries no operation for a path nobody serves, and no path 10ms
+     × has an id that is random, not a counter, and never the caller's own header 9ms
+     × finds no email address, token, caption or subject in a 200, 400, 401, 403, 404, 409, 503 or 500 14ms
+ Test Files  1 failed (1)
+      Tests  4 failed | 6 passed (10)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/logging.test.ts > a request's log line > is one line, with the request's random id, the operation, the status and the milliseconds, and nothing else
+AssertionError: expected [] to deeply equal [ 'level', 'ms', 'msg', 'op', …(3) ]
+ FAIL  src/logging.test.ts > a request's log line > carries no operation for a path nobody serves, and no path
+AssertionError: expected undefined to match object { msg: 'request', status: 404 }
+ FAIL  src/logging.test.ts > a request's log line > has an id that is random, not a counter, and never the caller's own header
+AssertionError: expected +0 to be 5 // Object.is equality
+ FAIL  src/logging.test.ts > the log test: what reaches the log across the answers a request can get (T52) > finds no email address, token, caption or subject in a 200, 400, 401, 403, 404, 409, 503 or 500
+AssertionError: expected [] to have a length of 8 but got +0

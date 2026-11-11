@@ -1,0 +1,23 @@
+breakage: log-request-id-from-the-header
+patch: [
+ [
+  "services/api/src/logging.ts",
+  "    requestIdHeader: false,\n",
+  "    requestIdHeader: \"x-request-id\",\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/logging.test.ts
+exit: 1
+expected words: has an id that is random, not a counter, and never the caller's own header
+caught: True
+
+     × carries no operation for a path nobody serves, and no path 18ms
+     × has an id that is random, not a counter, and never the caller's own header 16ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 8 passed (10)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/logging.test.ts > a request's log line > carries no operation for a path nobody serves, and no path
+AssertionError: expected '{"level":30,"time":1794398234728,"req…' not to match /secret|xyz|example|evil/
+ FAIL  src/logging.test.ts > a request's log line > has an id that is random, not a counter, and never the caller's own header
+AssertionError: expected 1 to be 5 // Object.is equality

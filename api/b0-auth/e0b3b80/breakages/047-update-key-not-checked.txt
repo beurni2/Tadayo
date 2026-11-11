@@ -1,0 +1,21 @@
+breakage: update-key-not-checked
+patch: [
+ [
+  "services/api/src/identity/me.ts",
+  "    if (typeof key !== \"string\" || !KEY.test(key))\n      return problem(reply, \"INVALID_REQUEST\", { field: \"Idempotency-Key\" });\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/identity/me.test.ts
+exit: 1
+expected words: names the Idempotency-Key when it is missing
+caught: True
+
+     × names the Idempotency-Key when it is missing or isn't a UUID, whatever else is wrong with the body 20ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 20 passed (21)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/identity/me.test.ts > PATCH /v1/me: what is refused before the command runs (the contract's INVALID_REQUEST) > names the Idempotency-Key when it is missing or isn't a UUID, whatever else is wrong with the body
+AssertionError: undefined: expected { status: 400, …(2) } to match object { status: 400, …(1) }
++   "body": "{\"code\":\"INVALID_REQUEST\",\"field\":\"expected_version\"}",

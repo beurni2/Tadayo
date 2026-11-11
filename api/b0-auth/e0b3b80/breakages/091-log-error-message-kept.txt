@@ -1,0 +1,21 @@
+breakage: log-error-message-kept
+patch: [
+ [
+  "services/api/src/logging.ts",
+  "  if (typeof code === \"string\") described.code = code;\n",
+  "  if (typeof code === \"string\") described.code = code;\n  (described as Record<string, unknown>).message = (error as Error).message;\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/logging.test.ts
+exit: 1
+expected words: reduces an error to its class and its code
+caught: True
+
+     × reduces an error to its class and its code, never its message, which can quote rows 13ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/logging.test.ts > the redaction list (T52) > reduces an error to its class and its code, never its message, which can quote rows
+AssertionError: expected [ 'code', 'message', 'type' ] to deeply equal [ 'code', 'type' ]
+    103|     expect(entry).toMatchObject({ err: { type: "Error", code: "23505" …

@@ -1,0 +1,29 @@
+breakage: gate-asks-for-public-routes
+patch: [
+ [
+  "services/api/src/session.ts",
+  "    if (config.operation === undefined || config.public === true) return;\n",
+  "    if (config.operation === undefined) return;\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/session.test.ts src/identity/me.test.ts ; WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/dbtest.sh src/db/sign-in.test.ts
+exit: 1
+expected words: never ask who is calling, whatever the header says
+caught: True
+
+     × never ask who is calling, whatever the header says, and make no account 19ms
+     × answers 503 with nothing in it on every route that isn't public, never a 401, which signs the app out 22ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  2 failed | 53 passed (55)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/session.test.ts > the public routes > never ask who is calling, whatever the header says, and make no account
+AssertionError: removeDevice: expected { status: 500, body: '', …(1) } to deeply equal { status: 404, …(2) }
+ FAIL  src/session.test.ts > when the keys that check tokens can't be read (FQ89) > answers 503 with nothing in it on every route that isn't public, never a 401, which signs the app out
+AssertionError: removeDevice: expected { status: 503, body: '', …(1) } to deeply equal { status: 404, …(2) }
+     × isn't asked for on a public route: no header is read there, so a good token makes no account and a bad one changes nothing 17ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/sign-in.test.ts > a token that is no session (T14, T53) > isn't asked for on a public route: no header is read there, so a good token makes no account and a bad one changes nothing
+AssertionError: /v1/device-removals: expected [ [ 403, …(1) ], [ 401, …(1) ], …(1) ] to deeply equal [ …(3) ]
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)

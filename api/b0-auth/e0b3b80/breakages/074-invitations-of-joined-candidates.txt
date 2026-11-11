@@ -1,0 +1,26 @@
+breakage: invitations-of-joined-candidates
+patch: [
+ [
+  "packages/domain/src/clubs/club-list.ts",
+  "WHERE i.bound_user_id = ${userId} AND cd.state <> 'joined'",
+  "WHERE i.bound_user_id = ${userId}",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/dbtest.sh src/db/club-list.test.ts
+exit: 1
+expected words: stops listing an invitation once its candidate has joined
+caught: True
+
+     × lists a member's club with their own membership, the active members and the state, and nobody else's (T14) 60ms
+     × lists an invitation the caller accepted, with the club's name, the proposer's and where it stands (T7) 24ms
+     × stops listing an invitation once its candidate has joined: it is a club then, not an invitation 18ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/club-list.test.ts > the caller's clubs and invitations (spec 04, 05) > lists a member's club with their own membership, the active members and the state, and nobody else's (T14)
+AssertionError: expected { clubs: [ { …(6) } ], …(1) } to deeply equal { Object (clubs, invitations) }
+ FAIL  src/db/club-list.test.ts > the caller's clubs and invitations (spec 04, 05) > lists an invitation the caller accepted, with the club's name, the proposer's and where it stands (T7)
+AssertionError: expected [ { …(4) } ] to deeply equal []
+ FAIL  src/db/club-list.test.ts > the caller's clubs and invitations (spec 04, 05) > stops listing an invitation once its candidate has joined: it is a club then, not an invitation
+AssertionError: expected [ { …(4) } ] to deeply equal []
+ Test Files  1 failed (1)
+      Tests  3 failed | 9 passed (12)

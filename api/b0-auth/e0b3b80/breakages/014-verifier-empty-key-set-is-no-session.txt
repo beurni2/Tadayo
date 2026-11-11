@@ -1,0 +1,20 @@
+breakage: verifier-empty-key-set-is-no-session
+patch: [
+ [
+  "services/api/src/identity/token.ts",
+  "      if (error instanceof errors.JWKSNoMatchingKey && (keys.jwks()?.keys.length ?? 0) === 0) {\n",
+  "      if (false) {\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/identity/token.test.ts
+exit: 1
+expected words: is can't tell when it holds no key at all
+caught: True
+
+     × is can't tell when it holds no key at all, a project still on its legacy secret, and a token is no session when it holds keys 15ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 49 passed (50)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/identity/token.test.ts > the key set at Supabase's address > is can't tell when it holds no key at all, a project still on its legacy secret, and a token is no session when it holds keys
+AssertionError: expected 'answered null' to be 'empty' // Object.is equality

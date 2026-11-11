@@ -1,0 +1,23 @@
+breakage: account-made-at-the-wrong-clock
+patch: [
+ [
+  "packages/domain/src/identity/account.ts",
+  "${checkSubject(subject)}::pg_catalog.uuid, ${at}::pg_catalog.timestamptz)",
+  "${checkSubject(subject)}::pg_catalog.uuid, pg_catalog.now())",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/dbtest.sh src/db/identity.test.ts src/db/sign-in.test.ts
+exit: 1
+expected words: makes the account: active, no name, no age confirmation
+caught: True
+
+       × makes the account: active, no name, no age confirmation, version 0, made at the server clock's sample (T1) 13ms
+       × finds the same account when the first sign-in is retried (spec 23) 6ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/identity.test.ts > the account behind a sign-in (spec 23) > the first sign-in > makes the account: active, no name, no age confirmation, version 0, made at the server clock's sample (T1)
+AssertionError: expected false to be true // Object.is equality
+ FAIL  src/db/identity.test.ts > the account behind a sign-in (spec 23) > the first sign-in > finds the same account when the first sign-in is retried (spec 23)
+AssertionError: expected false to be true // Object.is equality
+ Test Files  1 failed | 1 passed (2)
+      Tests  2 failed | 20 passed (22)

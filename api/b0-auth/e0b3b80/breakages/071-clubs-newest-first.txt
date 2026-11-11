@@ -1,0 +1,20 @@
+breakage: clubs-newest-first
+patch: [
+ [
+  "packages/domain/src/clubs/club-list.ts",
+  "ORDER BY k.joined_at, k.interval_id), '[]'::pg_catalog.jsonb)",
+  "ORDER BY k.joined_at DESC, k.interval_id), '[]'::pg_catalog.jsonb)",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/dbtest.sh src/db/club-list.test.ts
+exit: 1
+expected words: lists the oldest membership first, and at most the contract's fifty
+caught: True
+
+     × lists the oldest membership first, and at most the contract's fifty 57ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/club-list.test.ts > the caller's clubs and invitations (spec 04, 05) > lists the oldest membership first, and at most the contract's fifty
+AssertionError: expected [ 'Club 49', 'Club 48', …(48) ] to deeply equal [ 'Club 00', 'Club 01', …(48) ]
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)

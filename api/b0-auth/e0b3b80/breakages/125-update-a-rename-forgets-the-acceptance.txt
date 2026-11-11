@@ -1,0 +1,22 @@
+breakage: update-a-rename-forgets-the-acceptance
+patch: [
+ [
+  "packages/domain/src/identity/update-me.ts",
+  "       WHERE id = ${userId}`;\n  }\n  const now = await accountById(tx, userId);\n",
+  "       WHERE id = ${userId}`;\n    await bound(tx)`\n      UPDATE app.roster_revision_candidates SET accepted_invitation_id = NULL\n       WHERE accepted_invitation_id IN (SELECT id FROM app.invitations WHERE bound_user_id = ${userId})`;\n  }\n  const now = await accountById(tx, userId);\n",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/dbtest.sh src/db/update-me.test.ts
+exit: 1
+expected words: leaves the roster alone when someone who has accepted an open revision renames themselves
+caught: True
+
+     × leaves the roster alone when someone who has accepted an open revision renames themselves: none is made and none changes (FQ66, FQ84 are B1's) 61ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/update-me.test.ts > confirming the age and naming the person (FQ13, FQ69) > leaves the roster alone when someone who has accepted an open revision renames themselves: none is made and none changes (FQ66, FQ84 are B1's)
+PostgresError: app.roster_revision_candidates.accepted_invitation_id is set once and can't change
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)

@@ -1,0 +1,23 @@
+breakage: clubs-server-now-with-a-fraction
+patch: [
+ [
+  "services/api/src/clubs/list.ts",
+  "    server_now: contractInstant(now),\n",
+  "    server_now: now.toString(),\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/identity/me.test.ts
+exit: 1
+expected words: is two empty lists and the server's instant, whole seconds rounded down
+caught: True
+
+     × is two empty lists and the server's instant, whole seconds rounded down, for an account with nothing 8ms
+     × lists a club and an invitation by the contract's names alone, with no day until B2 2ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 19 passed (21)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/identity/me.test.ts > GET /v1/clubs: the answer's field list (T55) > is two empty lists and the server's instant, whole seconds rounded down, for an account with nothing
+AssertionError: expected { …(3) } to deeply equal { …(3) }
+ FAIL  src/identity/me.test.ts > GET /v1/clubs: the answer's field list (T55) > lists a club and an invitation by the contract's names alone, with no day until B2
+AssertionError: expected { …(3) } to deeply equal { …(3) }

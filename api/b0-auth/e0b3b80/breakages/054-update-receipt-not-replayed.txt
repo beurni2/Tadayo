@@ -1,0 +1,33 @@
+breakage: update-receipt-not-replayed
+patch: [
+ [
+  "packages/domain/src/identity/update-me.ts",
+  "  if (reserved.length === 0) {\n",
+  "  if (false) {\n",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/dbtest.sh src/db/update-me.test.ts
+exit: 1
+expected words: gives the same key and the same request the first answer again
+caught: True
+
+     × gives the same key and the same request the first answer again, writing nothing a second time 20ms
+     × gives the first answer even after the account has changed since, not the account as it is now 9ms
+     × is IDEMPOTENCY_CONFLICT when the same key comes with another request, whatever the difference 13ms
+     × gives two sends of the same key at once the same answer, and writes once 9ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/update-me.test.ts > the idempotency key (T19) > gives the same key and the same request the first answer again, writing nothing a second time
+    128|   if (typeof version !== "number") throw new Error("identity: an accou…
+    129|   if (version !== edit.expected_version) throw new Refused("VERSION_CO…
+ FAIL  src/db/update-me.test.ts > the idempotency key (T19) > gives the first answer even after the account has changed since, not the account as it is now
+    128|   if (typeof version !== "number") throw new Error("identity: an accou…
+    129|   if (version !== edit.expected_version) throw new Refused("VERSION_CO…
+ FAIL  src/db/update-me.test.ts > the idempotency key (T19) > is IDEMPOTENCY_CONFLICT when the same key comes with another request, whatever the difference
+AssertionError: {"expected_version":0,"display_name":"Cleo"}: expected { code: 'VERSION_CONFLICT', …(1) } to deeply equal { code: 'IDEMPOTENCY_CONFLICT', …(1) }
+    316|         { expected_version: 0, display_name: "Ben K", age_confirmed: t…
+ FAIL  src/db/update-me.test.ts > requests at once, committed (T19, T27) > gives two sends of the same key at once the same answer, and writes once
+    128|   if (typeof version !== "number") throw new Error("identity: an accou…
+    129|   if (version !== edit.expected_version) throw new Refused("VERSION_CO…
+ Test Files  1 failed (1)
+      Tests  4 failed | 19 passed (23)
