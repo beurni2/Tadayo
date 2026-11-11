@@ -48,20 +48,26 @@ struct EmailScreen: View {
             LabelledField(Text("auth.email.label"), isFocused: focus ?? focused) {
                 // The placeholder repeats the label's words (handoff 7's frame 1, `auth.email.
                 // placeholder`), in `secondaryText`: the field carries the label for VoiceOver
-                // and says it once (W-08).
-                TextField(
-                    text: $model.email,
-                    prompt: Text("auth.email.label").foregroundStyle(Palette.secondaryText)
-                ) {
-                    Text("auth.email.label")
+                // and says it once (W-08), its value being the address and nothing, where UIKit
+                // would read the placeholder as an empty field's value. The address is read-only
+                // while a code is on its way, so what is typed is offered to the model, which
+                // declines it, and the field shows what the model kept.
+                ModelText(held: { model.email }, offer: { model.email = $0 }) { text in
+                    TextField(
+                        text: text,
+                        prompt: Text("auth.email.label").foregroundStyle(Palette.secondaryText)
+                    ) {
+                        Text("auth.email.label")
+                    }
+                    .keyboardType(.emailAddress)
+                    .textContentType(.emailAddress)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .submitLabel(.next)
+                    .onSubmit { Task { await model.sendCode() } }
+                    .focused($focused)
+                    .accessibilityValue(Text(verbatim: model.email))
                 }
-                .keyboardType(.emailAddress)
-                .textContentType(.emailAddress)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .submitLabel(.next)
-                .onSubmit { Task { await model.sendCode() } }
-                .focused($focused)
             }
             .padding(.top, SetupGap.field)
             if let failure {
@@ -126,15 +132,20 @@ struct CodeScreen: View {
                 isInvalid: model.failure == .codeNotVerified,
                 error: model.failure.map { Text(verbatim: $0.words) }
             ) {
-                TextField(
-                    text: $model.code,
-                    prompt: Text("auth.code.placeholder").foregroundStyle(Palette.secondaryText)
-                ) {
-                    Text("auth.code.label")
+                // The code is read-only while it is checked, and the model keeps six digits at
+                // most: `ModelText` shows what it kept.
+                ModelText(held: { model.code }, offer: { model.code = $0 }) { text in
+                    TextField(
+                        text: text,
+                        prompt: Text("auth.code.placeholder")
+                            .foregroundStyle(Palette.secondaryText)
+                    ) {
+                        Text("auth.code.label")
+                    }
+                    .keyboardType(.numberPad)
+                    .textContentType(.oneTimeCode)
+                    .focused($focused)
                 }
-                .keyboardType(.numberPad)
-                .textContentType(.oneTimeCode)
-                .focused($focused)
             }
             .padding(.top, SetupGap.field)
             errorRegion
