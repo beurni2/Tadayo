@@ -89,9 +89,12 @@ function troubleOf(error: unknown): Trouble | null {
 export function verifierFor(keys: KeySet, options: { readonly issuer: string }): Verifier {
   // Only what the key set throws is about the keys; any other error of the library is about the token.
   const resolve: JWTVerifyGetKey = async (header, token) => {
-    // A token names the key that signed it: Supabase's always do. Without a name the library picks the one
-    // key of the algorithm the set holds, and refuses when it holds two (a rotation puts two there), so
-    // whether such a token is a session would depend on the set and no token is worth that.
+    // A token names the key that signed it: Supabase's auth server writes the id of a signing key that has
+    // one, and the key sets in its documentation carry one (a legacy-secret token is HS256, which this
+    // verifier doesn't take); no real token has been seen yet, and Gate 0's first sign-in is that check.
+    // Without a name the library picks the one key of the algorithm the set holds, and refuses when it
+    // holds two (a rotation puts two there), so whether such a token is a session would depend on the set
+    // and no token is worth that.
     if (typeof header.kid !== "string" || header.kid === "") throw new errors.JWSInvalid("a token with no key id");
     try {
       return await keys(header, token);
