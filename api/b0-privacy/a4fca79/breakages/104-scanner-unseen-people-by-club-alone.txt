@@ -1,0 +1,20 @@
+breakage: scanner-unseen-people-by-club-alone
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "  for (const id of world.members.keys()) if (!knows(id)) unseen.add(id);",
+  "  for (const [id, member] of world.members) if (!clubs.has(member.club)) unseen.add(id);"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × catches a former member's club as one of theirs, a person who joined after they left
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (60 tests | 1 failed) 231ms
+     × catches a former member's club as one of theirs, a person who joined after they left, and avatars once an interval has ended (FQ75) 11ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a former member's club as one of theirs, a person who joined after they left, and avatars once an interval has ended (FQ75)
+AssertionError: expected [] to deeply equal [ '$.next_cursor' ]
+ Test Files  1 failed (1)
+      Tests  1 failed | 59 passed (60)
