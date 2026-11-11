@@ -25,12 +25,16 @@
 //   only the server can read (the contract's Cursor; T15). The leak scanner catches a cursor's common
 //   readable forms but can't prove one random: a key that shows none of their marks passes, packed
 //   in binary, in runs of text shorter than 24 bytes among other bytes, written in base64url's own
-//   letters (`hidden_1_of_2_xx`, a count, or a time in milliseconds) or encoded behind a prefix with
-//   only text in it (scanner.ts's header lists them). Random handles fail the scanner by chance
-//   about once in 1.5 billion at 24 bytes and once in 660 million at 32, longer values more often
-//   (about once in 310 million at 48 bytes, and once in 26 million at the contract's longest, 384),
-//   and handles of 12 about once in 100,000, which the matrix's runs would meet (scanner.ts:
-//   readableKey, READABLE_TEXT, URL_RUN, LINK_MARKS, ownTextKey);
+//   letters (`hidden_1_of_2_xx`, a count, or a time in milliseconds), with a date in another writing
+//   than the three it looks for (`20261106`, `06-11-2026`, `2026-11-6`) or encoded behind a prefix
+//   with only text in it (scanner.ts's header lists them). A version tag goes inside the encoded
+//   bytes or fills whole groups of 4 characters, as the ids' `drp_` does: the scanner refuses a
+//   cursor that isn't base64url as the server writes it, which a text prefix before encoded bytes is
+//   only at some lengths of key, and that check is not to be loosened to fit a prefix. Random
+//   handles fail the scanner by chance about once in 1.5 billion at 24 bytes and once in 660 million
+//   at 32, longer values more often (about once in 310 million at 48 bytes, and once in 26 million at
+//   the contract's longest, 384), and handles of 12 about once in 100,000, which the matrix's runs
+//   would meet (scanner.ts: readableKey, READABLE_TEXT, URL_RUN, LINK_MARKS, ownTextKey);
 // - for the invitation's routes (B1), a person who holds a link and hasn't accepted it: the matrix's
 //   role "invited, not yet a member" has accepted and waits for the roster (Q05), since a link
 //   nobody has accepted ties no account to the club;

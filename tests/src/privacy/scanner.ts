@@ -19,24 +19,34 @@
 //   lag, or from an earlier answer's Date if that is later, to the moment the answer came; a
 //   Content-Length that is the body's, only JSON's Content-Type), an error with only its code's
 //   fields, every 404 the neutral one (T14), no key the contract doesn't name at any depth (a
-//   planted field), and every cursor in base64url, decoding to 12 bytes or more with no readable
-//   key among them: not text from end to end (printable bytes, and the tab, newline and CR that JSON
-//   and lines put between parts), and no run of 24 bytes of text, date, long number, id of the world
-//   or text people wrote (the contract's Cursor: "never a readable key"), so a random handle goes out
-//   as its own bytes, not as their text; nor, in the cursor's own text before it is decoded, a date
+//   planted field), and every cursor in base64url as the server writes it (decoded and encoded
+//   again, it is the same string), decoding to 12 bytes or more with no readable key among them:
+//   not text from end to end (printable bytes, and the tab, newline and CR that JSON and lines put
+//   between parts), and no run of 24 bytes of text, date, long number, id of the world or text
+//   people wrote (the contract's Cursor: "never a readable key"), so a random handle goes out as
+//   its own bytes, not as their text; nor, in the cursor's own text before it is decoded, a date
 //   (`2026-11-06`, `2026_11_06` or `20261106T2000`, its T in either case), a run of 16 digits or an
 //   id of the world (ownTextKey); nor, in the bytes it decodes to from its second, third or fourth
-//   character (a key encoded behind a prefix, `v1` or a handle of 22 characters, say, whatever its
-//   length: shiftedBytes), a date of those forms, long number, id or text people wrote, a storage
-//   path or provider host, or a value the world keeps back. These checks catch a cursor's common
-//   readable forms; they can't prove it random. A key that shows none of their marks passes, among
-//   others: one packed in binary; one in runs of text shorter than 24 bytes among other bytes (a
-//   longer key split by a NUL, another control byte or a non-ASCII byte); one written in base64url's
-//   own letters (`hidden_1_of_2_xx`, a count; a time in milliseconds; a date with no separator and no
-//   T after it, `20261106`, or with its day or month first); and one encoded behind a prefix that is
-//   only text or a URL (`v1` and `offset=20&order=desc`, or `https://h.io/k`), which would fail
-//   random handles too often to look for (shiftedBytes). The pager's row is to check its cursors,
-//   and to hold its random handles to 24 to 32 bytes (rows.ts);
+//   character (a key encoded behind a prefix, `c` or a handle of 22 characters, say: shiftedBytes),
+//   a date of those forms, long number, id or text people wrote, a storage path or provider host,
+//   or a value the world keeps back. An id is looked for whole and without its type tag, as its 22
+//   characters or the 16 bytes they spell, in a cursor's own text and in its bytes (untaggedOf).
+//   These checks catch a cursor's common readable forms; they can't prove it random. A key that
+//   shows none of their marks passes, among others: one packed in binary; one in runs of text
+//   shorter than 24 bytes among other bytes (a longer key split by a NUL, another control byte or a
+//   non-ASCII byte); one written in base64url's own letters (`hidden_1_of_2_xx`, a count; a time in
+//   milliseconds); one with a date in another writing than those above, in its own text or its
+//   bytes: with no separator and no T after it (`20261106`), with its day or month first
+//   (`06-11-2026`), or with a month or day of one digit (`2026-11-6`), or, in its bytes, with `/`,
+//   `.` or a space between its parts (`2026/11/06`); one with an id written another way (as hex
+//   text, say); and one encoded behind a prefix that is only text or a URL (`c` and
+//   `offset=20&order=desc`, or `https://h.io/k`), which would fail random handles too often to look
+//   for (shiftedBytes). A cursor is base64url as the server writes it as a whole, so a prefix of
+//   text before a key's encoding gets it so only at some lengths (`c` before
+//   `offset=20&order=desc` does; `v1` makes 29 characters, which no bytes encode to), and a cursor
+//   that isn't is refused as such. The pager's row is to check its cursors, to hold its random
+//   handles to 24 to 32 bytes, and to put a version tag inside the encoded bytes or in whole groups
+//   of 4 characters (rows.ts);
 // - whitelist: a caption card is exactly T10's list, as FQ74's answer reads it (this file's own
 //   copy, so a contract change alone can't widen it);
 // - world: each of these an answer names is the world's and the viewer's to see:
@@ -76,8 +86,9 @@
 //   make now and then, only in such runs: URL_RUN; a URL in a shorter run among other bytes, such as
 //   `s3://b/k`, passes, beyond what the scanner can see, like the short runs of text of the shape
 //   check; the marks are literal, so an escaped or percent-encoded mark, a scheme not followed by
-//   `//` (`mailto:`), a host with no scheme, `www.` or `data:` (`//cdn.h.io/k`) and the providers'
-//   other hosts aren't looked for, in a value, a header or a cursor); in every other value, header
+//   `//` (`mailto:`), a host with no scheme and no `www.` or `data:` before it (`//cdn.h.io/k`) and
+//   the providers' other hosts aren't looked for, in a value, a header or a cursor, while `www.` and
+//   `data:` are); in every other value, header
 //   and decoded cursor, no value the world keeps back (a storage key, a content
 //   version, a source's link or post id) but a drop's own once its day has opened to a viewer in its
 //   audience, and no id of a drop, day, club, person or reservation the viewer may not see, outside
@@ -348,14 +359,18 @@ const ALL_TEXT = /^[\t\n\r\x20-\x7e]+$/;
  * `2026_11_06` (base64url's two separators), or `20261106T2000` (or `t2000`) without them. Random
  * base64url text makes one about once in 100 billion handles of 32 bytes. A date with no separator
  * and no T after it, `20261106`, it would make about once in 100 million, too often to fail; one with
- * its day or month first isn't looked for.
+ * its day or month first (`06-11-2026`), which it makes about as rarely as these, isn't looked for,
+ * nor is one with a month or day of one digit (`2026-11-6`), which it makes about once in 170 million
+ * handles of 32 bytes (245 million of 24), too often to fail. No form is looked for that has a `/`,
+ * a `.` or a space: base64url has none of them, so a cursor holding one is refused as not base64url.
  */
 const OWN_DATE = /20[0-9]{2}([-_][01][0-9][-_][0-3][0-9]|[01][0-9][0-3][0-9][Tt][0-9]{4})/;
 
 /**
  * A date as a key's bytes spell it: `2026-11-06` or `2026_11_06`, or `20261106T2000` (its T either
  * case). Random bytes make one about once in 130 trillion handles of 32 bytes (and once in 8
- * trillion of 384), so no digit's range is asked for beyond the form's own.
+ * trillion of 384), so no digit's range is asked for beyond the form's own. A date in another writing
+ * (`2026/11/06`, `2026.11.06`, `2026 11 06`, `2026-11-6`, `06-11-2026`, `20261106`) isn't looked for.
  */
 const BYTES_DATE = /[0-9]{4}[-_][0-9]{2}[-_][0-9]{2}|[0-9]{8}[Tt][0-9]{4}/;
 
@@ -478,6 +493,34 @@ interface Reader {
   unseen: ReadonlySet<string>;
   /** Every id of the world's drops, days, clubs, people and reservations, seen or not. */
   ids: ReadonlySet<string>;
+  /** The ids' forms without their type tags (untaggedOf), of those that have them. */
+  untagged(): readonly Untagged[];
+}
+
+/**
+ * An id's forms other than the whole of it, which a key built from a row's id might take: the text
+ * after its type tag (`drp_`, `occ_`), when that is 16 characters or more, as it is in every id of
+ * the matrix's world (`newId`, tests/src/db/world.ts: a tag, `_` and 22 characters), and the bytes
+ * it spells in base64url (16), when it is base64url as the server writes it. The contract's `Id` has
+ * no tag, so an id of another shape has no such form, and its whole text is looked for as before. A
+ * given 22 characters or 16 bytes turn up in random text or bytes about once in 2^128 places, so no
+ * rate here moves. An id that is short after its tag (a test's own, `drp_ben`) has no such forms: a
+ * few characters would turn up everywhere. An id written another way (as hex text, reversed, masked)
+ * passes, as the header says.
+ */
+interface Untagged {
+  text: string;
+  bytes: Buffer | undefined;
+}
+
+const SHORTEST_UNTAGGED = 16;
+
+function untaggedOf(id: string): Untagged | undefined {
+  const cut = id.indexOf("_");
+  const text = id.slice(cut + 1);
+  if (cut < 0 || text.length < SHORTEST_UNTAGGED) return undefined;
+  const bytes = Buffer.from(text, "base64url");
+  return { text, bytes: bytes.toString("base64url") === text ? bytes : undefined };
 }
 
 function readerOf(context: ScanContext): Reader {
@@ -552,6 +595,9 @@ function readerOf(context: ScanContext): Reader {
     ...world.clubs.keys(),
     ...world.reservations.keys(),
   ]);
+  // Only a cursor's checks ask for these, so they are made when one does.
+  let untagged: Untagged[] | undefined;
+  const untaggedIds = () => (untagged ??= [...ids].flatMap((id) => untaggedOf(id) ?? []));
   return {
     clubs,
     activeClubs,
@@ -569,6 +615,7 @@ function readerOf(context: ScanContext): Reader {
     written,
     unseen,
     ids,
+    untagged: untaggedIds,
   };
 }
 
@@ -699,14 +746,24 @@ function readableKey(bytes: Buffer, reader: Reader): string[] {
 
 /**
  * The marks of a readable key in a cursor's bytes, which random bytes don't make at the matrix's
- * scale: a date, a long number (a time or a count), an id of the world, or text people wrote.
+ * scale: a date, a long number (a time or a count), an id of the world, or text people wrote. A long
+ * number is 10 digits or more, which a time in seconds is. An id is looked for whole, as its text
+ * without its type tag, and as the 16 bytes that text spells (untaggedOf). Text people wrote counts
+ * from 4 characters: a name of 3 (Ben) would turn up in 24 random bytes, over the four decodings
+ * that run this, about once in 200,000 handles, for each such name in a world.
  */
 function marksIn(bytes: Buffer, reader: Reader): string[] {
   const text = bytes.toString("latin1");
   const reasons: string[] = [];
   if (BYTES_DATE.test(text)) reasons.push("holds a date");
   if (/[0-9]{10,}/.test(text)) reasons.push("holds a long number, such as a time or a count");
-  if ([...reader.ids].some((id) => text.includes(id))) reasons.push("holds an id");
+  if (
+    [...reader.ids].some((id) => text.includes(id)) ||
+    reader
+      .untagged()
+      .some((form) => text.includes(form.text) || (form.bytes !== undefined && bytes.includes(form.bytes)))
+  )
+    reasons.push("holds an id");
   if ([...reader.written].some((written) => written.length >= 4 && bytes.includes(Buffer.from(written))))
     reasons.push("holds text people wrote");
   return reasons;
@@ -714,14 +771,18 @@ function marksIn(bytes: Buffer, reader: Reader): string[] {
 
 /**
  * The bytes a cursor decodes to from its second, third and fourth characters. A key encoded in
- * base64url behind a prefix (`v1`, say, or a random handle of 16 bytes, 22 characters) decodes from
+ * base64url behind a prefix (`c`, say, or a random handle of 16 bytes, 22 characters) decodes from
  * the first character to bytes that look random unless the prefix is a whole number of groups of 4
  * characters, and from one of these three characters to its own: only the prefix's length in
- * characters, modulo 4, matters. Only checks random bytes don't trip are run on them: marksIn, the
- * storage paths and provider hosts (PATH_MARKS) and the values kept back. Text from end to end in
- * them would fail random handles of 24 bytes about once in 370 million, four times as often as every
- * other check together, and a URL's scheme in a run of text would add to that: so a key behind a
- * prefix that is only text, or a URL with a scheme, passes, as the header says.
+ * characters, modulo 4, matters. The cursor as a whole must be base64url as the server writes it
+ * (decodeCursor), which a text prefix before a key's encoding is only at some lengths: one character
+ * before a key of 2 mod 3 bytes, two before 1 mod 3, three before a multiple of 3 whose last byte is
+ * a multiple of 4; a cursor that isn't is refused, whatever its key. Only checks random bytes don't
+ * trip are run on these bytes: marksIn, the storage paths and provider hosts (PATH_MARKS) and the
+ * values kept back. Text from end to end in them would fail random handles of 24 bytes about once in
+ * 370 million, four times as often as every other check together, and a URL's scheme in a run of
+ * text would add to that: so a key behind a prefix that is only text, or a URL with a scheme, passes,
+ * as the header says.
  */
 function shiftedBytes(cursor: string): Buffer[] {
   return [1, 2, 3].map((shift) => Buffer.from(cursor.slice(shift), "base64url"));
@@ -732,16 +793,17 @@ function shiftedBytes(cursor: string): Buffer[] {
  * base64url's own letters decodes to bytes that look random (`1793995200000000` decodes to 12 bytes
  * with no text in them), so the checks of readableKey can't see it. A date (OWN_DATE), a run of 16
  * digits (OWN_NUMBER), or an id of the world (an order key: the matrix's ids are 26 characters or
- * more, which random text never makes). Together the date and the number fail random handles about
- * once in 120 billion of 24 bytes and once in 80 billion of 32. A key in base64url's letters with
- * none of these (`hidden_1_of_2_xx`, a count) looks like a random handle to the scanner: the pager's
- * row is to check its cursors (rows.ts).
+ * more, which random text never makes), whole or without its type tag (untaggedOf). Together the
+ * date and the number fail random handles about once in 120 billion of 24 bytes and once in 80
+ * billion of 32. A key in base64url's letters with none of these (`hidden_1_of_2_xx`, a count) looks
+ * like a random handle to the scanner: the pager's row is to check its cursors (rows.ts).
  */
 function ownTextKey(cursor: string, reader: Reader): string[] {
   const reasons: string[] = [];
   if (OWN_DATE.test(cursor)) reasons.push("holds a date in its own text");
   if (OWN_NUMBER.test(cursor)) reasons.push("holds a long number, such as a time, in its own text");
-  if ([...reader.ids].some((id) => cursor.includes(id))) reasons.push("holds an id in its own text");
+  if ([...reader.ids].some((id) => cursor.includes(id)) || reader.untagged().some((form) => cursor.includes(form.text)))
+    reasons.push("holds an id in its own text");
   return reasons;
 }
 
