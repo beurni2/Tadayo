@@ -293,15 +293,15 @@ IDs are mine (TL Linux, TH hosted, TS snapshot, TV VoiceOver in a snapshot targe
 | TL-06 | `RootModel`: `.leaving` replaces `.starting` at 249, 389, 395; Retry from `.failed` shows `.starting` until the account answers; Retry from `.leaveFailed` shows `.leaving` again; a verified code's account read leaves the route at `.signIn` (R-09); a server-ended answer during a read shows `.leaving` then `.signIn` (R-10) | root.md part A | 2 |
 | TL-07 | `ProfileModel`: `canLeave` (inactive while a save runs, active after a failure) only if the plan adds it | X-19, F-10 | 3 or 5 |
 | TL-08 | `AvatarInitial` table test if the pure rule lives in `TadayoCore`: "Ben" gives B; "élodie" and decomposed e + U+0301 give É; "3D" gives 3; an Arabic-Indic digit gives itself; "日本" gives 日; "Ørjan" gives Ø; emoji (U+1F600), keycap 1 + U+FE0F + U+20E3, a flag, a joined family, "-", "(", "@", "", "   " and a lone U+0301 give none; "ß" once for the uppercasing; values the sources do not fix (superscript, roman numeral, a leading U+200B) marked as defaults | D-14, X-20; CC `avatarWithoutInitial.initialRule` (peer, `profile.md` 5, 6.7) | 5 |
-| TL-09 | pure decisions, if built in `TadayoCore`: the Verify pin (pinned only where it would otherwise sit under the keyboard: V-02, X-04, signin.md F1), the busy group's fit (label width + 2 x 24 at most the 321 available: C1, F9), the footer's bottom (12 with the keyboard, 44 without: VM-02, WM-02) | decision in section 9 | 3, 4, 5 |
+| TL-09 | pure decisions, if built in `TadayoCore`: the Verify pin (pinned only where it would otherwise sit under the keyboard: V-02, X-04, F-09, W-02, signin.md F1), the busy group's fit (label width + 2 x 24 at most the 321 available: C1, F9), the footer's bottom (12 with the keyboard, 44 without: VM-02, WM-02) | decision in section 9 | 3, 4, 5 |
 
 ### 7.2 Hosted (`TadayoTests`; runs on the newest iOS, 18.6 and 17.5)
 
 | ID | Test | Source | PR |
 |---|---|---|---|
-| TH-01 | `SignInAnnouncementTests` (peer name): the words and once-only rule for busy (`vo.email.busy`, `vo.code.busy`, `vo.age.busy`, `vo.profile.busy`), the resend row (`vo.resend.busy`, `.available`, `.wait`, `.success` with the address, never logged: T52) and failures; a pure function in the app, like `TabsView.announcement` | W-02, F-09, VM-04, R-08 | 3, extended in 4 and 5 |
+| TH-01 | `SignInAnnouncementTests` (peer name): the words and once-only rule for busy (`vo.email.busy`, `vo.code.busy`, `vo.age.busy`, `vo.profile.busy`), the resend row (`vo.resend.busy`, `.available`, `.wait`, `.success` with the address, never logged: T52) and failures; a pure function in the app, like `TabsView.announcement` | VM-04, R-08 | 3, extended in 4 and 5 |
 | TH-02 | `RootWait.Kind.spoken` equals the visible words ("Loading your account…", "Leaving sign-in…"); polite, once | W-09, V-14 | 2 |
-| TH-03 | VoiceOver readings that should run on 18.6 and 17.5 (busy value and traits, field not `.notEnabled`, Leave count, A03 order): placed here only if the Scripted fakes are made shared (section 9, decision 1) | | 3, 4, 5 |
+| TH-03 | VoiceOver readings that should run on 18.6 and 17.5 (busy value and traits, field not `.notEnabled`, Leave count, A03 order): placed here only if the Scripted fakes are made shared (section 9, decision 1) | | 3, 4, 5, 6 |
 | TH-04 | `DesignCatalogTests` and `LaunchScreenTests` unchanged; they guard the new package keys (the busy value: key, lookup with `bundle: .module`, no "sent") and the launch colour | | all |
 | TH-05 | an Avatar glyph-coverage test for "a letter whose glyph the font cannot draw" (CoreText, iOS only; font coverage can differ across 17.5, 18.6 and 26: do not add unless a source names the font) | `profile.md` 6.7 | 5 |
 
