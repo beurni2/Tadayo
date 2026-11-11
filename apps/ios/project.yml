@@ -161,13 +161,16 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: app.tadayo.snapshot-tests
         TARGETED_DEVICE_FAMILY: "1"
   # Hosted unit tests (the keychain store, the launch and its screen's colour, the connections,
-  # what the tabs announce), which also run on the iOS 17 and 18 compatibility runs: only
-  # targets ending in SnapshotTests are skipped there.
+  # what the tabs announce, the drop card's spoken labels and TadayoDesign's string catalog),
+  # which also run on the iOS 17 and 18 compatibility runs: only targets ending in
+  # SnapshotTests are skipped there. The in-process accessibility reader is the snapshot tests'
+  # own file, compiled here too.
   TadayoTests:
     type: bundle.unit-test
     platform: iOS
     sources:
       - path: TadayoTests
+      - path: TadayoSnapshotTests/AccessibilityElements.swift
     dependencies:
       - target: Tadayo
       - package: TadayoCore

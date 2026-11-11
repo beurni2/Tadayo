@@ -1,0 +1,294 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "card.blank" : {
+      "comment" : "book p13: a collecting card with no caption, for the star by name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo for %@"
+          }
+        }
+      }
+    },
+    "card.status" : {
+      "comment" : "handoff 5 copy-contracts, handoff5.card.status: the folded card's status line, {fullDate} then {openTime}; kept over handoff 7's drop.collecting.opening, which splits the date and has no year (D-02, X-10); the middle dot bound to the word before it by a no-break space, so no line starts with it (the check of handoff 7, V-19)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens %1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "card.status.vo" : {
+      "comment" : "handoff 5 copy-contracts, handoff5.card.status.vo: {fullDateTime} then {clubZoneName}; handoff 7's vo.drop.collecting.other, .own and .ownHighlight read it word for word",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens %1$@, %2$@. Hidden content."
+          }
+        }
+      }
+    },
+    "date.inZone" : {
+      "comment" : "a spoken opening in its zone, handoff 5's \"{fullDateTime}, {clubZoneName}\" (card.status.vo, friends.row.vo), the date and time from DateLabels.fullDateTime",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@, %2$@"
+          }
+        }
+      }
+    },
+    "drop.captionCopy.vo" : {
+      "comment" : "handoff 7 copy-contracts, handoff7.vo.drop.captionCopy: the revealed caption's accessibility action, which puts the caption on the pasteboard word for word",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy caption"
+          }
+        }
+      }
+    },
+    "drop.draft.private" : {
+      "comment" : "handoff 7 copy-contracts, handoff7.drop.draft.privacy; 2.1 C05-drafts",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not shared with anyone"
+          }
+        }
+      }
+    },
+    "drop.draft.title" : {
+      "comment" : "handoff 7 copy-contracts, handoff7.drop.draft.title; 2.1 C05-drafts: a private draft with no person chosen",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a friend later"
+          }
+        }
+      }
+    },
+    "drop.for" : {
+      "comment" : "handoff 7 copy-contracts, handoff7.drop.target (\"For {person}’s {weekday}\"), with the occasion as DateLabels.personDay writes it; 2.1 C07-uploading",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For %@"
+          }
+        }
+      }
+    },
+    "drop.photo.vo" : {
+      "comment" : "handoff 7 copy-contracts, handoff7.vo.drop.photo and vo.drop.photoHighlight (\"Photo.\", \"Photo. Highlight.\", with highlight.label): a revealed photograph as VoiceOver reads it, spec 14's noun, with no description until the contract carries spec 14's user-supplied one (FQ91 (c))",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo"
+          }
+        }
+      }
+    },
+    "drop.processing" : {
+      "comment" : "handoff 7 copy-contracts, handoff7.drop.processing, which confirms FQ91 (a): a new drop's photo, checked on the server before the commit (never a committed drop's replacement, which stays Added); the middle dot bound to the word before it by a no-break space, so no line starts with it (the check of handoff 7, V-19)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Processing · Not added yet"
+          }
+        }
+      }
+    },
+    "drop.processing.vo" : {
+      "comment" : "drop.processing as VoiceOver reads it, the middle dot as a sentence break, as handoff 7's vo.drop.processing reads it",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Processing. Not added yet."
+          }
+        }
+      }
+    },
+    "drop.progress.vo" : {
+      "comment" : "handoff 7 copy-contracts, handoff7.vo.drop.progress (\"{percentage} percent\"): an upload's progress as VoiceOver's value, the whole percentage in the phone's number form",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ percent"
+          }
+        }
+      }
+    },
+    "drop.removed" : {
+      "comment" : "handoff 7 copy-contracts, handoff7.drop.removed, which confirms FQ91 (b): spec 21's words, the same whoever removed the drop and why (T25), with no full stop",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This drop is no longer available"
+          }
+        }
+      }
+    },
+    "drop.uploading" : {
+      "comment" : "handoff 7 copy-contracts, handoff7.drop.uploading; 2.1 C07-uploading; book p16: \"Uploading names the intended occurrence and says Not added yet\"; the middle dot bound to the word before it by a no-break space, so no line starts with it (the check of handoff 7, V-19)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uploading · Not added yet"
+          }
+        }
+      }
+    },
+    "drop.uploading.vo" : {
+      "comment" : "drop.uploading as VoiceOver reads it, the middle dot as a sentence break, as handoff 7's vo.drop.uploading reads it",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uploading. Not added yet."
+          }
+        }
+      }
+    },
+    "drop.when" : {
+      "comment" : "handoff 7 copy-contracts, handoff7.drop.opening (\"{monthDay} · Opens at {time}\"): an upload row's date line, the day and month in the phone's form with the year where FQ44 asks, then the opening time; the middle dot bound to the word before it by a no-break space, so no line starts with it (the check of handoff 7, V-19)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · Opens at %2$@"
+          }
+        }
+      }
+    },
+    "highlight.label" : {
+      "comment" : "handoff 4 copy-contracts, handoff4.highlight.label (handoff 7's drop.highlight has the same word, D-25)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Highlight"
+          }
+        }
+      }
+    },
+    "opens.vo" : {
+      "comment" : "an upload's or a receipt's opening as VoiceOver reads it, in card.status.vo's form: {fullDateTime}, {clubZoneName} (FQ91)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens %@."
+          }
+        }
+      }
+    },
+    "person.self" : {
+      "comment" : "handoff 5 copy-contracts, handoff5.calendar.person.self (handoff 7's drop.collecting.authorSelf has the same words, D-25); the middle dot bound to the word before it by a no-break space, so no line starts with it (the check of handoff 7, V-19)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · You"
+          }
+        }
+      }
+    },
+    "person.self.vo" : {
+      "comment" : "handoff 5 copy-contracts, handoff5.calendar.person.self.vo",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, you"
+          }
+        }
+      }
+    },
+    "receipt.added" : {
+      "comment" : "handoff 7 copy-contracts, handoff7.receipt.title (\"Added for {person}’s {weekday}\"), with the occasion as DateLabels.personDay writes it; book p8 \"Added for Debby’s Friday is enough\"; 2.1 F02-added (the book's \"for\" over spec 10's \"to\", INVENTORY.md)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Added for %@"
+          }
+        }
+      }
+    },
+    "receipt.makeHighlight" : {
+      "comment" : "handoff 7 copy-contracts, handoff7.receipt.highlight; book p8 and p15: optional, never forced",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Make my highlight"
+          }
+        }
+      }
+    },
+    "receipt.makeHighlight.hint" : {
+      "comment" : "handoff 7 copy-contracts, handoff7.vo.receipt.highlightHint (\"Choose this drop as your highlight for {person}’s {weekday}.\"): Make my highlight's VoiceOver hint, with the occasion as DateLabels.personDay writes it, as receipt.added takes it",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose this drop as your highlight for %@."
+          }
+        }
+      }
+    },
+    "receipt.opens" : {
+      "comment" : "handoff 7 copy-contracts, handoff7.receipt.opening (\"{monthDay} · Opens at {time}\"), as 2.1 F02-added draws it: the day and month in the phone's form with the year where FQ44 asks, then the opening time; the middle dot bound to the word before it by a no-break space, so no line starts with it (the check of handoff 7, V-19)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · Opens at %2$@"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
