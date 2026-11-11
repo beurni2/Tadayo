@@ -264,7 +264,7 @@ final class ScriptedTransport: HTTPTransport, @unchecked Sendable {
                 == "https://example-ref.supabase.co/auth/v1/logout?scope=local")
         #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer access-1")
         #expect(request.value(forHTTPHeaderField: "apikey") == "sb_publishable_example")
-        // A stalled network holds Leave sign-in for 15 seconds, not URLSession's minute.
+        // The sign-out request waits 15 seconds for Supabase, not URLSession's minute.
         #expect(request.timeoutInterval == 15)
     }
 

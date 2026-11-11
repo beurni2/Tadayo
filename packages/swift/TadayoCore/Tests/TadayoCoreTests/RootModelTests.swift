@@ -151,10 +151,11 @@ import Testing
         #expect(root.signIn?.step == .email)
         #expect(root.signIn?.email == "ben@example.com")
         // Nothing is kept, so there was no account to read, and no wait to show, not for a turn
-        // either (FQ96).
+        // either (FQ96): the routes taken are the canvas alone, then sign-in, and nothing else. The
+        // exact list is what shows the history was recorded at all: a recorder that saw nothing
+        // would pass a check that a route is absent.
         #expect(accounts.calls.isEmpty)
-        #expect(!history.routes.contains(.reading))
-        #expect(history.routes.last == .signIn)
+        #expect(history.routes == [.signInNotKept, .starting, .signIn])
     }
 
     @Test func clubsB0CantDrawAreNeitherEmptyNorAFailure() async {
@@ -497,7 +498,8 @@ import Testing
     @Test func withNoSessionTheWaitNeverShows() async {
         // Nobody is signed in: the canvas alone while the keychain is read, then A02-email, and no
         // account was read for a wait to show (FQ96). The history is what makes "never" true: the
-        // route read at two instants could miss a wait held for one turn.
+        // route read at two instants could miss a wait held for one turn. It is asserted as the
+        // exact list, so a recorder that saw nothing fails it too.
         let accounts = FakeAccounts()
         let root = root(accounts)
         let history = RouteHistory(root)
@@ -506,8 +508,7 @@ import Testing
         await starting.value
         #expect(root.route == .signIn)
         #expect(accounts.calls.isEmpty)
-        #expect(history.routes.allSatisfy { [.starting, .signIn].contains($0) })
-        #expect(history.routes.last == .signIn)
+        #expect(history.routes == [.starting, .signIn])
     }
 
     @Test func aRetryAfterAFailedReadShowsTheWaitAgainUntilTheAccountAnswers() async {

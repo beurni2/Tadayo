@@ -130,6 +130,7 @@ None of these can be judged in a cloud session or a hosted test. Each is listed 
 5. **Leave sign-in (PRs 3b, 5b):** from A02-age and A03 it shows "Leaving sign-in…" and returns to an empty email field (FQ93); from a sign-in the server ended it shows the notice once; from the Lab's Log out on a build that points at `dev`.
 6. **The header (PR 6):** the opaque band behind the status bar while scrolling, on iOS 17 or 18 and on iOS 26, on an iPhone with and without the Dynamic Island; the header stacked at the accessibility sizes on a real screen; Switch Control reaching + Add and Account.
 7. **A03's person symbol (PR 5a):** type a name starting with an emoji, a symbol, a letter, a digit.
+8. **A failure scrolled under its empty bar (PR 2):** cold-launch signed in with the network off, so the account read fails; at the largest text, and with Display Zoom on if the iPhone offers it (about 320 points wide), scroll the failure up under the status bar: the bar draws what the sign-in screens' bars draw when they scroll, the status bar's own text stays readable, and Retry stays at the foot and reachable. The account failure is the one to use: the leave failure can't be forced on a device (`SessionManager.signOut()` fails only when the keychain refuses twice). No snapshot or hosted test scrolls a failure, so the state is looked at on no iOS version (`docs/LIMITATIONS.md`), and one iPhone covers one iOS.
 
 ## 10. Design handoff 8
 
