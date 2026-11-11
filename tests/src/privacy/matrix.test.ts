@@ -1,40 +1,57 @@
 /// <reference lib="esnext.temporal" />
-// The privacy matrix over the API's app (TECH-DESIGN section 8; T9, T10, T14, T16; Q05 to Q09),
-// generated from the contract's operations: every route, as every role, in each of the drop's six
-// states and a cancelled day, at each phase of the day by the server's clock. Each cell is checked
-// against its row (rows.ts), and every answer it gets goes through the leak scanner (scanner.ts).
-// Then each request again with the client's clock and parameters moved past the reveal (T16, Q09),
-// and with each id and cursor guessed or malformed (T14); and each request from callers without a
-// session, with the cell's ids, ids that name nothing and another club's.
+// The privacy matrix over the API's app (TECH-DESIGN section 8; T9, T10, T14, T16, T27, T53, T55; Q05 to Q09),
+// generated from the contract's operations: every route, as every role, in each of the drop's six states and a
+// cancelled day, at each phase of the day by the server's clock. Each cell is checked against its row (rows.ts,
+// account.ts), and every answer it gets goes through the leak scanner (scanner.ts). Then each request again
+// with the client's clock and parameters moved past the reveal (T16, Q09), and with each id and cursor guessed
+// or malformed (T14); and each request from callers without a session, with the cell's ids, ids that name
+// nothing and another club's.
+//
+// The app is the real one: every request carries a token signed as Supabase signs it, checked by the real
+// verifier against the project's key set and mapped by the real gate to the role's account (tokens.ts), so
+// what an account's state makes of a request is the gate's, not a stand-in's (spec 23; T27, T53). The roles
+// are 12: the 11 of a club's world, and an account that has signed in and finished nothing (FQ13, FQ69).
 //
 // Each role's world is committed, with random ids, so the app's own connection reads it as a request
 // would, and every name in it ends in the world's own random suffix: its people's, its club's, its
 // roster's labels and its captions, so no other world has them. Ana's Saturday holds Ben's photo, the
 // drop the states act on, and Cleo's video link, so the day has two contributors. The scanner's facts
-// come from the world's rows, never from the authorization module it tests.
+// come from the world's rows, never from the authorization module it tests. Nothing the sign-in token
+// carries may reach an answer: the person's address, the sign-in subject of each account, and the token
+// itself are values the world keeps back.
 //
 // Each role's test prints the cells it ran and the answers it scanned, and asserts both: the cells
 // against the contract's 69 requests a world, the answers against what each step says it sends.
 
 import { randomBytes } from "node:crypto";
-import { buildApp, connect, routesOf, type ApiSql } from "@tadayo/api";
+import { buildApp, connect, routesOf, sessions, type ApiSql } from "@tadayo/api";
+import { TEST_EMAIL } from "@tadayo/api/testing";
 import { fakeClock, type FakeClock } from "@tadayo/domain/testing";
 import type { FastifyInstance } from "fastify";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { worldSql, type Tx, type WorldTx } from "../db/harness.ts";
-import { AT, checkAsAtCommit, commitDrop, named, newWorld, type World } from "../db/world.ts";
+import { AT, checkAsAtCommit, commitDrop, named, newAvatar, newWorld, type World } from "../db/world.ts";
 import { PHASES, REVEAL, ROLES, STATES, type Phase } from "../matrix.ts";
-import type { Targets } from "./bindings.ts";
+import { PUBLIC, cellExpected, gateOf, sessionOf, updateMeCases, type Own, type Session } from "./account.ts";
+import { freshId, type Targets } from "./bindings.ts";
 import {
+  SIGNED_OUT,
+  UNAUTHENTICATED,
+  NEUTRAL,
   cellStep,
   guessCount,
   guessStep,
   manipulations,
   manipulationStep,
+  pinnedProblems,
+  answerOf,
+  render,
   routeProblems,
+  said,
   signedOutCount,
   signedOutStep,
   specsFor,
+  type Spec,
   type Step,
 } from "./harness.ts";
 import { contractOperations, readDocument } from "./operations.ts";
@@ -43,10 +60,13 @@ import {
   scan,
   type MediaClass,
   type Viewer,
+  type WorldAccount,
   type WorldDrop,
   type WorldFacts,
+  type WorldInvitation,
   type WorldReservation,
 } from "./scanner.ts";
+import { bearer, signing, tokenCallers, type Signing } from "./tokens.ts";
 
 const document = readDocument();
 const operations = contractOperations(document);
@@ -63,11 +83,15 @@ const REQUESTS_PER_WORLD = 69;
 /** A world's own suffix, so its names are no other world's. */
 const suffix = () => ` ${randomBytes(6).toString("hex")}`;
 
+/** Another club's objects, with an avatar of one of its people that is ready, and one of them's sign-in subject. */
+type Elsewhere = Targets & { avatar: string; subject: string };
+
 const db = worldSql();
 let api: ApiSql;
 let clock: FakeClock;
 let app: FastifyInstance;
-let elsewhere: Targets;
+let keys: Signing;
+let elsewhere: Elsewhere;
 
 /**
  * Ben's photo "From Ben" and Cleo's video link "Cleo's pick" to Ana's Saturday, each caption ending
@@ -88,14 +112,31 @@ async function twoContributors(tx: WorldTx, w: World): Promise<string> {
 beforeAll(async () => {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error("set DATABASE_URL, as the ci step privacy does (tools/ci/ci_steps.py)");
+  keys = await signing();
   api = connect(url);
   clock = fakeClock(REVEAL);
-  app = buildApp({ sql: api, clock });
+  app = buildApp({
+    sql: api,
+    clock,
+    authenticate: sessions({ verifier: keys.verifier, sql: api, clock }),
+    log: { level: "silent" },
+  });
   await app.ready();
   elsewhere = await db.begin(async (tx) => {
     const w = await newWorld(plain(tx), suffix());
     const drop = await twoContributors(tx, w);
-    return { club: w.club, drop, day: w.day, author: w.ben.interval, star: w.ana.interval };
+    const avatar = await newAvatar(plain(tx), w.ben.user, "ready");
+    const [subject] = await tx<{ auth_subject: string }[]>`SELECT auth_subject FROM app.users WHERE id = ${w.ben.user}`;
+    if (subject === undefined) throw new Error("the other club's author has no sign-in subject");
+    return {
+      club: w.club,
+      drop,
+      day: w.day,
+      author: w.ben.interval,
+      star: w.ana.interval,
+      avatar: avatar.id,
+      subject: subject.auth_subject,
+    };
   });
 });
 
@@ -105,11 +146,22 @@ afterAll(async () => {
   await db.end();
 });
 
+interface Facts {
+  world: WorldFacts;
+  viewer: Viewer;
+}
+
 /**
- * What the scanner knows of the clubs `clubs`, read from their rows, and of the viewer: their
- * intervals, and the text that is their own. A caller without a session is a viewer with neither.
+ * What the scanner knows of the clubs `clubs`, read from their rows, and of the viewer: their account, their
+ * intervals, and the text that is their own. A caller without a session is a viewer with none. `accounts` are
+ * the accounts of the world that belong to no club; `secrets` are the tokens in use: the world keeps them back
+ * with the sign-in subject of each account and the address every token carries.
  */
-async function factsOf(clubs: string[], viewer: string | null): Promise<{ world: WorldFacts; viewer: Viewer }> {
+async function factsOf(
+  clubs: string[],
+  viewer: string | null,
+  options: { accounts?: string[]; secrets?: string[] } = {},
+): Promise<Facts> {
   const drops = await db<
     {
       id: string;
@@ -177,6 +229,39 @@ async function factsOf(clubs: string[], viewer: string | null): Promise<{ world:
       FROM app.roster_revision_candidates c JOIN app.roster_revisions v ON v.id = c.revision_id
      WHERE c.club_id IN ${db(clubs)}
      GROUP BY c.club_id, c.label`;
+  // The accounts: the people of these clubs, those that accepted an invitation to one of them, the
+  // viewer's, and the world's that belong to no club. An avatar's version is the content version of the
+  // upload the account holds, and the sign-in subject is kept back, never shown.
+  const asked = [viewer ?? "", ...(options.accounts ?? [])];
+  const accountRows = await db<
+    {
+      id: string;
+      name: string | null;
+      avatar: string | null;
+      age_confirmed: boolean;
+      version: number;
+      subject: string | null;
+    }[]
+  >`
+    SELECT u.id, u.display_name AS name, a.content_version AS avatar, u.age_confirmed_at IS NOT NULL AS age_confirmed,
+           u.version, u.auth_subject AS subject
+      FROM app.users u LEFT JOIN app.uploads a ON a.id = u.avatar_upload_id
+     WHERE u.id IN (SELECT user_id FROM app.memberships WHERE club_id IN ${db(clubs)})
+        OR u.id IN (SELECT i.bound_user_id FROM app.invitations i JOIN app.candidates c ON c.id = i.candidate_id
+                     WHERE c.club_id IN ${db(clubs)})
+        OR u.id IN ${db(asked)}`;
+  // An invitation, its candidate's club and state, the club's name and the inviter's name as members see it.
+  const invitationRows = await db<
+    { id: string; bound: string | null; club: string; joined: boolean; club_name: string; inviter: string | null }[]
+  >`
+    SELECT i.id, i.bound_user_id AS bound, c.club_id AS club, c.state = 'joined' AS joined, k.name AS club_name,
+           coalesce(m.ended_display_name, u.display_name) AS inviter
+      FROM app.invitations i
+      JOIN app.candidates c ON c.id = i.candidate_id
+      JOIN app.clubs k ON k.id = c.club_id
+      JOIN app.memberships m ON m.interval_id = c.proposed_by_interval_id
+      JOIN app.users u ON u.id = m.user_id
+     WHERE c.club_id IN ${db(clubs)}`;
   // A photo's content version and a video's link and post id are their drop's; storage keys, and the
   // versions and links no drop holds (a replacement still being checked, an upload or a source left
   // unused), are no drop's. Avatars' versions are left out: a person's avatar version is shown before
@@ -198,6 +283,10 @@ async function factsOf(clubs: string[], viewer: string | null): Promise<{ world:
     if (drop !== null) holders.push(drop);
     canaries.set(value, holders);
   }
+  // What a sign-in token carries is no one's to be shown, whatever the answer: the address, each
+  // account's subject, and the token itself.
+  for (const secret of [TEST_EMAIL, ...(options.secrets ?? []), ...accountRows.flatMap((row) => row.subject ?? [])])
+    canaries.set(secret, []);
   const intervals = await db<{ interval_id: string }[]>`
     SELECT interval_id FROM app.memberships WHERE user_id = ${viewer ?? ""}`;
   const own = await db<{ text: string }[]>`
@@ -256,8 +345,30 @@ async function factsOf(clubs: string[], viewer: string | null): Promise<{ world:
         ]),
       ),
       canaries,
+      accounts: new Map(
+        accountRows.map((row): [string, WorldAccount] => [
+          row.id,
+          { name: row.name, avatar: row.avatar, ageConfirmed: row.age_confirmed, version: row.version },
+        ]),
+      ),
+      invitations: new Map(
+        invitationRows.map((row): [string, WorldInvitation] => [
+          row.id,
+          {
+            boundTo: row.bound,
+            club: row.club,
+            joined: row.joined,
+            clubName: row.club_name,
+            inviterName: row.inviter,
+          },
+        ]),
+      ),
     },
-    viewer: { intervals: new Set(intervals.map((row) => row.interval_id)), texts: new Set(own.map((row) => row.text)) },
+    viewer: {
+      account: viewer,
+      intervals: new Set(intervals.map((row) => row.interval_id)),
+      texts: new Set(own.map((row) => row.text)),
+    },
   };
 }
 
@@ -265,20 +376,21 @@ async function factsOf(clubs: string[], viewer: string | null): Promise<{ world:
 function scanner(
   wrong: string[],
   where: string,
-  facts: { world: WorldFacts; viewer: Viewer },
+  facts: () => Facts,
   now: Temporal.Instant,
   counted: { answers: number },
 ) {
   return (step: Step) => {
     for (const problem of step.problems) wrong.push(`${where}: ${problem}`);
+    const known = facts();
     for (const { spec, answer } of step.answers) {
       counted.answers += 1;
       const context = {
         document,
         operation: spec.operation,
         skeleton: ROWS[spec.operation.id] === NONE,
-        viewer: facts.viewer,
-        world: facts.world,
+        viewer: known.viewer,
+        world: known.world,
         now,
       };
       for (const finding of scan(answer, context)) {
@@ -288,59 +400,118 @@ function scanner(
   };
 }
 
-/** A malformed id's or cursor's answer, by its request, the first time any role got it (T14). */
+/**
+ * A malformed id's or cursor's answer, by its request and the gate's answer to the caller, the first time any
+ * role got it (T14): a route the gate stops answers the gate's, so only callers it treats alike are compared.
+ */
 const malformed = new Map<string, { answer: string; role: string }>();
 
 describe("a route with no row fails, and no route is outside the contract (TECH-DESIGN section 8)", () => {
-  it("gives every operation of the contract a row, the skeleton's, and the app a route for each and no other", () => {
+  it("gives every operation of the contract a row, and the app a route for each and no other", () => {
     expect(rowProblems(operations, ROWS)).toEqual([]);
     expect(routeProblems(routesOf(app), operations)).toEqual([]);
     expect(routesOf(app)).toHaveLength(operations.length);
   });
 });
 
-describe("every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09)", () => {
+describe("every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09)", () => {
   for (const role of ROLES) {
-    it(`answers the ${role.name} with the neutral not-found, and leaks nothing the scanner can find`, async () => {
+    it(`answers the ${role.name} as its account and its row say, and leaks nothing the scanner can find`, async () => {
       const wrong: string[] = [];
-      const counted = { cells: 0, answers: 0, expectedAnswers: 0 };
+      const counted = { cells: 0, answers: 0, expectedAnswers: 0, bodies: 0, expectedBodies: 0 };
       const phases = (Object.keys(PHASES) as Phase[]).filter((phase) => !role.phases || role.phases.includes(phase));
+      const expectedSession: Session = role.session ?? "active";
       for (const state of STATES) {
         const cell = await db.begin(async (tx) => {
           const w = await newWorld(plain(tx), suffix());
           const drop = await twoContributors(tx, w);
           const viewer = await role.make(tx, w);
           await state.make(tx, w, drop);
+          // The viewer's own avatars, one not ready and one ready, and the drop's photo, which is no avatar.
+          const pending = await newAvatar(plain(tx), viewer, "pending");
+          const ready = await newAvatar(plain(tx), viewer, "ready");
+          const [photo] = await tx<{ upload_id: string }[]>`SELECT upload_id FROM app.drops WHERE id = ${drop}`;
           await checkAsAtCommit(plain(tx));
           const targets: Targets = { club: w.club, drop, day: w.day, author: w.ben.interval, star: w.ana.interval };
-          return { w, targets, viewer };
+          return { w, targets, viewer, pending: pending.id, ready, photo: photo?.upload_id ?? "" };
         });
+        const [account] = await db<
+          { state: string; age_confirmed: boolean; name: string | null; subject: string | null; version: number }[]
+        >`
+          SELECT state, age_confirmed_at IS NOT NULL AS age_confirmed, display_name AS name, auth_subject AS subject, version
+            FROM app.users WHERE id = ${cell.viewer}`;
+        if (account === undefined || account.subject === null)
+          throw new Error("the role's account has no sign-in subject");
+        // What the gate makes of the account is read from its row, and is the role's own (matrix.ts).
+        const session = sessionOf({ state: account.state, ageConfirmed: account.age_confirmed, name: account.name });
+        if (session !== expectedSession)
+          wrong.push(`${state.name}: the account is ${session}, but the role says ${expectedSession}`);
+        const authorization = bearer(await keys.signer.token(account.subject));
         const viewerClubs = await db<{ club_id: string }[]>`
           SELECT club_id FROM app.memberships WHERE user_id = ${cell.viewer}`;
         const clubs = [...new Set([cell.w.club, elsewhere.club, ...viewerClubs.map((row) => row.club_id)])];
-        const facts = await factsOf(clubs, cell.viewer);
-        const specs = operations.flatMap((operation) => specsFor(operation, cell.targets, cell.viewer));
-        for (const phase of phases) {
+        const load = () =>
+          factsOf(clubs, cell.viewer, {
+            accounts: [cell.w.dan.user],
+            secrets: [authorization.slice("Bearer ".length)],
+          });
+        let facts = await load();
+        const specs = operations.flatMap((operation) => specsFor(operation, cell.targets, authorization));
+        for (const [index, phase] of phases.entries()) {
           const now = PHASES[phase];
           clock.set(now);
-          const record = scanner(wrong, `${state.name}, ${phase}`, facts, now, counted);
+          const seen = () => ({ world: facts.world, viewer: facts.viewer, now });
+          const record = scanner(wrong, `${state.name}, ${phase}`, () => facts, now, counted);
           for (const spec of specs) {
+            const expected = cellExpected(session, spec.operation, seen);
+            const gate = gateOf(session, spec.operation);
             counted.cells += 1;
             counted.expectedAnswers += 1 + guessCount(spec);
-            record(await cellStep(app, spec));
+            record(await cellStep(app, spec, expected));
             if (phase === "collecting") {
               counted.expectedAnswers += manipulations(spec, cell.w.ben.interval, CLAIMED).length;
-              record(await manipulationStep(app, spec, cell.w.ben.interval, CLAIMED));
+              record(await manipulationStep(app, spec, cell.w.ben.interval, CLAIMED, expected));
             }
-            const guessed = await guessStep(app, spec, elsewhere);
+            const guessed = await guessStep(app, spec, elsewhere, gate);
             record(guessed);
-            // A malformed id or cursor gets the same answer in every state and phase, for every role (T14).
+            // A malformed id or cursor gets the same answer in every state and phase, for every role the gate treats alike (T14).
             for (const [request, answer] of guessed.malformed) {
-              const first = malformed.get(request);
-              if (first === undefined) malformed.set(request, { answer, role: role.name });
+              const key = `${gate === undefined ? "through the gate" : String(gate.status)}: ${request}`;
+              const first = malformed.get(key);
+              if (first === undefined) malformed.set(key, { answer, role: role.name });
               else if (first.answer !== answer)
                 wrong.push(`${state.name}, ${phase}, ${request}: ${answer}, but the ${first.role} got ${first.answer}`);
             }
+          }
+          // updateMe's table of bodies: refusals first, then the changes, after which the world is read again.
+          const update = specs.find((spec) => spec.operation.id === "updateMe");
+          if (update === undefined) throw new Error("the contract has no updateMe");
+          const own: Own = {
+            pending: cell.pending,
+            ready: cell.ready,
+            foreign: elsewhere.avatar,
+            photo: cell.photo,
+            guessed: freshId(),
+            name: `${named(cell.w, "Renamed")} ${String(index)}`,
+          };
+          const sameBytes = new Map<string, string>();
+          for (const one of updateMeCases(session, own, index === phases.length - 1)) {
+            const [row] = await db<{ version: number }[]>`SELECT version FROM app.users WHERE id = ${cell.viewer}`;
+            const { body, expected } = one.request(row?.version ?? -1);
+            const sent: Spec = { ...update, headers: { ...update.headers, "content-type": "application/json" }, body };
+            counted.expectedBodies += 1;
+            counted.expectedAnswers += 1;
+            const step = await cellStep(app, sent, expected);
+            counted.bodies += 1;
+            const first = step.answers[0];
+            if (one.group !== undefined && first !== undefined) {
+              const before = sameBytes.get(one.group);
+              if (before === undefined) sameBytes.set(one.group, said(first.answer));
+              else if (before !== said(first.answer))
+                wrong.push(`${state.name}, ${phase}, updateMe, ${one.name}: another answer than its group's (T14)`);
+            }
+            if (one.mutates) facts = await load();
+            record({ ...step, problems: step.problems.map((problem) => `${problem} (${one.name})`) });
           }
         }
       }
@@ -348,23 +519,32 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqual({ count: 0, first: [] });
       // Every cell ran: the contract's 69 requests a world (each operation with each value of a
       // required enum, and again with its optional ids), in each of the 7 states and each phase the
-      // role has. And every answer was scanned, with the manipulated and guessed requests.
+      // role has. And every answer was scanned, with the manipulated and guessed requests and the bodies.
       const specsPerWorld = operations.reduce(
-        (sum, operation) => sum + specsFor(operation, elsewhere, "acct_x").length,
+        (sum, operation) => sum + specsFor(operation, elsewhere, "Bearer x").length,
         0,
       );
       expect(specsPerWorld).toBe(REQUESTS_PER_WORLD);
       expect(counted.cells).toBe(7 * phases.length * REQUESTS_PER_WORLD);
+      expect(counted.bodies).toBe(counted.expectedBodies);
+      expect(counted.bodies).toBeGreaterThanOrEqual(7 * phases.length * 8);
       expect(counted.answers).toBe(counted.expectedAnswers);
       expect(malformed.size).toBeGreaterThan(0);
     });
   }
 });
 
-describe("callers without a session, in each state of the drop and phase of the day (T14)", () => {
-  it("answers each the same whatever the ids name, the neutral not-found, and leaks nothing the scanner can find", async () => {
+describe("callers without a session, in each state of the drop and phase of the day (T14, T27, T53)", () => {
+  it("answers each the same whatever the ids name, the gate's one 401 or the neutral not-found for a public route, and leaks nothing the scanner can find", async () => {
     const wrong: string[] = [];
     const counted = { answers: 0, expected: 0 };
+    // Each way a token fails to be a session, signed by real keys and naming an account that exists, beside
+    // the callers that need none (harness.ts): none of them may get what that account would.
+    const callers = [...SIGNED_OUT, ...(await tokenCallers(keys, elsewhere.subject))];
+    expect(callers.length).toBeGreaterThanOrEqual(19);
+    const secrets = callers.flatMap((caller) =>
+      caller.authorization === null ? [] : [caller.authorization.slice("Bearer ".length)],
+    );
     for (const state of STATES) {
       const cell = await db.begin(async (tx) => {
         const w = await newWorld(plain(tx), suffix());
@@ -373,16 +553,40 @@ describe("callers without a session, in each state of the drop and phase of the 
         await checkAsAtCommit(plain(tx));
         return { w, targets: { club: w.club, drop, day: w.day, author: w.ben.interval, star: w.ana.interval } };
       });
-      const facts = await factsOf([cell.w.club, elsewhere.club], null);
-      const specs = operations.flatMap((operation) => specsFor(operation, cell.targets, cell.w.ben.user));
+      const facts = await factsOf([cell.w.club, elsewhere.club], null, { accounts: [cell.w.dan.user], secrets });
+      const specs = operations.flatMap((operation) => specsFor(operation, cell.targets, "Bearer unused"));
       for (const phase of Object.keys(PHASES) as Phase[]) {
         const now = PHASES[phase];
         clock.set(now);
-        const record = scanner(wrong, `${state.name}, ${phase}`, facts, now, counted);
+        const record = scanner(wrong, `${state.name}, ${phase}`, () => facts, now, counted);
         for (const spec of specs) {
-          counted.expected += signedOutCount(spec);
-          record(await signedOutStep(app, spec, elsewhere));
+          const expected = PUBLIC.has(spec.operation.id) ? NEUTRAL : UNAUTHENTICATED;
+          counted.expected += signedOutCount(spec, callers);
+          record(await signedOutStep(app, spec, elsewhere, expected, callers));
         }
+        // An update is refused at the gate before its body is read: a valid body, a broken one and none.
+        const update = specs.find((spec) => spec.operation.id === "updateMe");
+        if (update === undefined) throw new Error("the contract has no updateMe");
+        const step: Step = { problems: [], answers: [] };
+        for (const caller of callers) {
+          for (const payload of ['{"expected_version":0,"display_name":"Ana"}', "{bad", ""]) {
+            const headers = Object.fromEntries(
+              Object.entries(update.headers).filter(([name]) => name !== "authorization"),
+            );
+            if (caller.authorization !== null) headers["authorization"] = caller.authorization;
+            const sent: Spec = {
+              ...update,
+              headers: { ...headers, "content-type": "application/json" },
+              body: payload,
+            };
+            const answer = await answerOf(app, render(sent));
+            step.answers.push({ spec: sent, answer });
+            for (const problem of pinnedProblems(answer, UNAUTHENTICATED))
+              step.problems.push(`updateMe, ${caller.name}, a body of ${String(payload.length)} bytes: ${problem}`);
+          }
+        }
+        counted.expected += step.answers.length;
+        record(step);
       }
     }
     console.log(`callers without a session: ${String(counted.answers)} answers scanned`);
