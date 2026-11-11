@@ -21,7 +21,10 @@ final class SignInReadingTests: XCTestCase {
     }
 
     /// The placeholder repeats the label's words (frame 1), so the field must not say them twice
-    /// (W-08): "Email address" is read once across every element's label, value and hint.
+    /// (W-08): "Email address" is read once across every element's label, value and hint. The
+    /// screen draws the placeholder over a field with no prompt, since a prompt is what UIKit says
+    /// as an empty field's value, and an empty accessibility value doesn't replace it (`ios` run
+    /// 43091597765).
     func testTheEmptyAddressFieldIsReadOnce() {
         let elements = AccessibilityElements.of(
             EmailScreen(model: signIn(ScriptedAuth()), focus: true))
