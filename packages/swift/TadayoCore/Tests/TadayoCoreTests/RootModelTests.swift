@@ -1,7 +1,37 @@
 import Foundation
+import Observation
 import Testing
 
 @testable import TadayoCore
+
+/// Every route a `RootModel` takes, in order, by observing it. A route held across one turn of
+/// the main actor can be drawn and spoken, so a test that reads the route at two instants can't
+/// say a route never showed: this one can.
+@MainActor private final class RouteHistory {
+    private let root: RootModel
+    private var left: [RootModel.Route] = []
+
+    /// The routes the model has held since this began, in order, the current one last.
+    var routes: [RootModel.Route] { left + [root.route] }
+
+    init(_ root: RootModel) {
+        self.root = root
+        track()
+    }
+
+    private func track() {
+        withObservationTracking {
+            _ = root.route
+        } onChange: { [self] in
+            // `onChange` runs just before the route changes, so `root.route` is still the one
+            // being left, and the next change needs a new observation.
+            MainActor.assumeIsolated {
+                left.append(root.route)
+                track()
+            }
+        }
+    }
+}
 
 @MainActor @Suite struct RootModelTests {
     // Thursday 5 November 2026, 3:00 AM UTC, as the device's clock reads it.
@@ -115,12 +145,16 @@ import Testing
         await signIn.verify()
         #expect(root.route == .signInNotKept)
         #expect(accounts.calls.isEmpty)
+        let history = RouteHistory(root)
         await root.retry()
         #expect(root.route == .signIn)
         #expect(root.signIn?.step == .email)
         #expect(root.signIn?.email == "ben@example.com")
-        // Nothing is kept, so there was no account to read, and no wait to show (FQ96).
+        // Nothing is kept, so there was no account to read, and no wait to show, not for a turn
+        // either (FQ96).
         #expect(accounts.calls.isEmpty)
+        #expect(!history.routes.contains(.reading))
+        #expect(history.routes.last == .signIn)
     }
 
     @Test func clubsB0CantDrawAreNeitherEmptyNorAFailure() async {
@@ -462,14 +496,18 @@ import Testing
 
     @Test func withNoSessionTheWaitNeverShows() async {
         // Nobody is signed in: the canvas alone while the keychain is read, then A02-email, and no
-        // account was read for a wait to show (FQ96).
+        // account was read for a wait to show (FQ96). The history is what makes "never" true: the
+        // route read at two instants could miss a wait held for one turn.
         let accounts = FakeAccounts()
         let root = root(accounts)
+        let history = RouteHistory(root)
         let starting = Task.immediate { await root.start() }
         #expect(root.route == .starting)
         await starting.value
         #expect(root.route == .signIn)
         #expect(accounts.calls.isEmpty)
+        #expect(history.routes.allSatisfy { [.starting, .signIn].contains($0) })
+        #expect(history.routes.last == .signIn)
     }
 
     @Test func aRetryAfterAFailedReadShowsTheWaitAgainUntilTheAccountAnswers() async {

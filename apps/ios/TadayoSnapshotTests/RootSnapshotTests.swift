@@ -81,6 +81,16 @@ final class RootSnapshotTests: XCTestCase {
         XCTAssertEqual(left.map(\.label), ["Leaving sign-in…"], "\(left)")
     }
 
+    func testBeforeASignInIsFoundTheRootReadsNothing() {
+        // FQ96's default: until a kept sign-in is found the root draws the canvas alone, as the
+        // launch screen did, and says nothing. A root that hasn't read the keychain is in that
+        // state, so a view that drew the wait for `.starting` would read its words here.
+        let fresh = root()
+        XCTAssertEqual(fresh.route, .starting)
+        let elements = AccessibilityElements.of(RoutedView(root: fresh))
+        XCTAssertEqual(elements.map(\.label), [], "\(elements)")
+    }
+
     func testCheckYourConnectionOnlyWhenNoAnswerCame() {
         let network = AccessibilityElements.of(RootFailure(kind: .account(.network), retry: {}))
         XCTAssertTrue(

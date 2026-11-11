@@ -152,7 +152,7 @@ public struct SupabaseAuth: Sendable {
     }
 
     /// How long a sign-out waits for Supabase. The device forgets the session whatever the
-    /// answer, and the app shows the launch screen meanwhile, so a stalled network doesn't hold
+    /// answer, and the app shows "Leaving sign-in…" meanwhile, so a stalled network doesn't hold
     /// Leave sign-in for URLSession's minute.
     static let signOutTimeout: TimeInterval = 15
 

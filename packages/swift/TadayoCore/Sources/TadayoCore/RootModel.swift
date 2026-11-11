@@ -21,8 +21,9 @@ import Observation
         /// A kept session is found and its account is being read, at launch or on Retry: the
         /// canvas with the spinner and "Loading your account…" (`root.loading`).
         case reading
-        /// Leave sign-in is ending the session on the server and here: the canvas with the
-        /// spinner and "Leaving…" (`root.leaving`).
+        /// The session is being ended on the server and here, whether the person asked (Leave
+        /// sign-in, the Lab's Log out) or the server ended it: the canvas with the spinner and
+        /// "Leaving sign-in…" (`root.leaving`, FQ89).
         case leaving
         /// A02-email and A02-code, in `signIn`.
         case signIn
@@ -122,9 +123,10 @@ import Observation
         await start()
     }
 
-    /// Leave sign-in, and A02-age's back: "Leaving…" while it ends the session on the server and
-    /// here, then A02-email (Welcome, A01, comes in B1). If the device couldn't forget
-    /// the session, the failure line says so, with Retry, rather than show sign-in over a session
+    /// Leave sign-in, A02-age's back and the Lab's Log out, and what an answer of "signed out"
+    /// from the server does too: "Leaving sign-in…" while it ends the session on the server and
+    /// here, then A02-email (Welcome, A01, comes in B1). If the device couldn't forget the
+    /// session, the failure line says so, with Retry, rather than show sign-in over a session
     /// still kept. One Leave runs at a time. `left` purges what the account left behind (T11).
     public func leave() async {
         if let leaving { return await leaving.value }

@@ -9,13 +9,16 @@ import TadayoDesign
 ///
 /// Handoff 7's `global-launch-failed-network` draws the first failure with no bar and the title
 /// where the sign-in screens' titles sit under theirs. So the screen is held in the same
-/// container, an empty inline navigation bar, and the system supplies the offset on every iOS
-/// version, where a number of its own would suit one: `RootFailureTests` compares the two, on each
-/// iOS the compatibility runs use. An empty bar is kept visible
+/// container, an empty inline navigation bar with its background hidden, and the system supplies
+/// the offset on every iOS version, where a number of its own would suit one: `RootFailureTests`
+/// compares the two, on each iOS the compatibility runs use. An empty bar is kept visible
 /// (`.toolbar(.visible, for: .navigationBar)`): on iOS 26 SwiftUI gives a bar with nothing in it
 /// no height at all, and the title sat 54 points above the sign-in titles, which sit under a bar
 /// of 54 (a check on that iOS measured it); kept visible, the bar is the one the sign-in screens
-/// have, draws nothing and gives VoiceOver no element.
+/// have, and at rest it draws nothing and gives VoiceOver no element. Its background is hidden so
+/// that a failure scrolled under it, at the largest text on a small screen, has no bar material
+/// to show; no snapshot or test scrolls it, so what that looks like has not been looked at on any
+/// iOS version (docs/LIMITATIONS.md).
 ///
 /// The words are handoff 7's, which equal FQ89's defaults; FQ89 stays the founder's to answer.
 /// VoiceOver says the title and the line as the screen shows them, without moving its focus, and
@@ -83,6 +86,7 @@ struct RootFailure: View {
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.visible, for: .navigationBar)
+            .toolbarBackground(.hidden, for: .navigationBar)
             .announcing(kind.spoken, initial: true)
         }
     }
