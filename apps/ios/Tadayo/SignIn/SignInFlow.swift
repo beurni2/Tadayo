@@ -46,14 +46,22 @@ struct EmailScreen: View {
         SetupScroll {
             SetupHeading(title: "auth.email.title", subtitle: Text("auth.email.subtitle"))
             LabelledField(Text("auth.email.label"), isFocused: focus ?? focused) {
-                TextField(String(), text: $model.email)
-                    .keyboardType(.emailAddress)
-                    .textContentType(.emailAddress)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .submitLabel(.next)
-                    .onSubmit { Task { await model.sendCode() } }
-                    .focused($focused)
+                // The placeholder repeats the label's words (handoff 7's frame 1, `auth.email.
+                // placeholder`), in `secondaryText`: the field carries the label for VoiceOver
+                // and says it once (W-08).
+                TextField(
+                    text: $model.email,
+                    prompt: Text("auth.email.label").foregroundStyle(Palette.secondaryText)
+                ) {
+                    Text("auth.email.label")
+                }
+                .keyboardType(.emailAddress)
+                .textContentType(.emailAddress)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .submitLabel(.next)
+                .onSubmit { Task { await model.sendCode() } }
+                .focused($focused)
             }
             .padding(.top, SetupGap.field)
             if let failure {
@@ -77,6 +85,12 @@ struct EmailScreen: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { if focus == nil { focused = true } }
         .announcing(failure?.words)
+        // "Sending a code.", once, as the request begins; the button says "In progress" itself.
+        .onChange(of: model.isSending) { was, now in
+            if let words = SignInAnnouncement.sending(from: was, to: now) {
+                Announcement.post(words)
+            }
+        }
     }
 
     /// This screen's own failures, sending the first code (handoff 4's `failureStates`). It stays

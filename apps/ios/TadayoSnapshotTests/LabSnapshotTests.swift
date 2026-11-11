@@ -7,10 +7,10 @@ import XCTest
 
 /// The Lab's sections at the 393-point width, in light, in dark, at the largest standard text
 /// size and at the largest accessibility size (docs/TECH-DESIGN.md sections 2 and 4), the
-/// no-club header and the drop card's sections at 320 points, the receipt with its action
-/// wrapped, and the author's own Highlight in a current-year card at 393 and 430. The Lab isn't
-/// an inventory state, so the contact sheets show these alone; book p34 and p35 and handoffs 0
-/// and 7's component sheets are what they are judged against.
+/// no-club header, the actions and the drop card's sections at 320 points, the receipt with its
+/// action wrapped, and the author's own Highlight in a current-year card at 393 and 430. The Lab
+/// isn't an inventory state, so the contact sheets show these alone; book p34 and p35 and
+/// handoffs 0 and 7's component sheets are what they are judged against.
 ///
 /// CI runs in record mode `never`: a snapshot with no committed reference fails, and its image
 /// goes to the evidence branch for review (`tools/ci/ios_steps.py test`).
@@ -117,6 +117,14 @@ final class LabSnapshotTests: XCTestCase {
         for section in [LabSection.day, .people, .peopleMore, .target] {
             snap(section, .xl, width: 320, named: "Lab-\(section.rawValue)-320-xl")
         }
+    }
+
+    /// The actions at 320 points and the largest accessibility size, which no 393-point image
+    /// reaches: "Send a code" can't fit between the busy button's two 24-point slots there, so
+    /// its indicator takes a row of its own above the label, which the button reserves idle and
+    /// busy alike (handoff 7's `busyPrimary.layout`, which no frame draws; INVENTORY.md).
+    func testTheActionsKeepInsideA320PointScreenAtTheLargestSize() {
+        snap(.actions, .xl, width: 320, named: "Lab-actions-320-xl")
     }
 
     /// At 320 points and the first accessibility size, "Make my highlight" wraps while one of its

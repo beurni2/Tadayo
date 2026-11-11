@@ -32,15 +32,20 @@ enum AccessibilityElements {
 
         var isHeader: Bool { traits.contains(.header) }
 
-        var description: String { "\"\(label)\" hint \"\(hint)\" traits \(traits.rawValue)" }
+        var description: String {
+            "\"\(label)\" value \"\(value)\" hint \"\(hint)\" traits \(traits.rawValue) at \(frame)"
+        }
     }
 
     /// The elements of a screen and the window it was read in, to measure them against: the
-    /// window's size and the safe areas it was given.
+    /// window's size and the safe areas it was given, and where each activity indicator the
+    /// screen draws is, as drawn, with any scale it has (they aren't elements: a screen hides
+    /// them from VoiceOver).
     struct Layout {
         let elements: [Element]
         let size: CGSize
         let safeArea: UIEdgeInsets
+        var indicators: [CGRect] = []
     }
 
     static func of(_ view: some View) -> [Element] {
@@ -132,7 +137,18 @@ enum AccessibilityElements {
                         actions: $0.accessibilityCustomActions?.map(\.name) ?? [],
                         frame: $0.accessibilityFrame)
                 },
-                size: window.bounds.size, safeArea: window.safeAreaInsets)
+                size: window.bounds.size, safeArea: window.safeAreaInsets,
+                indicators: indicators(in: window))
+        }
+    }
+
+    /// The frames, in the window's coordinates, of the activity indicators below `view`.
+    private static func indicators(in view: UIView) -> [CGRect] {
+        view.subviews.flatMap { subview -> [CGRect] in
+            if let indicator = subview as? UIActivityIndicatorView {
+                return [indicator.convert(indicator.bounds, to: nil)]
+            }
+            return indicators(in: subview)
         }
     }
 

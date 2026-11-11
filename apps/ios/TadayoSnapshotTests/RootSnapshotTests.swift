@@ -29,13 +29,13 @@ final class RootSnapshotTests: XCTestCase {
     private func reading() -> RootModel {
         let root = root()
         XCTAssertEqual(root.route, .starting)
-        ScreenSnapshot.drive({ await root.start() }, until: { root.route == .reading })
+        drive({ await root.start() }, until: { root.route == .reading })
         return root
     }
 
     private func leaving() -> RootModel {
         let root = root(signOut: .hang)
-        ScreenSnapshot.drive({ await root.leave() }, until: { root.route == .leaving })
+        drive({ await root.leave() }, until: { root.route == .leaving })
         return root
     }
 

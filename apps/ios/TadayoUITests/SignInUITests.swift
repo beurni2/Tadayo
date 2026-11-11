@@ -31,6 +31,32 @@ final class SignInUITests: XCTestCase {
         XCTAssertFalse(app.navigationBars["Sign in"].buttons.firstMatch.exists)
     }
 
+    /// While a code is on its way A02-email keeps its focus and its keyboard with the address
+    /// read-only, not disabled (handoff 7's `busyPrimary`: "read-only, keep first responder and
+    /// keyboard if already shown"): typing then goes nowhere, and `typeText` fails the test if
+    /// the field had lost its focus. Send a code keeps its label, says "In progress" and is
+    /// dimmed, as the screen disables it. The request never answers (`-TadayoUITestHangingSend`).
+    @MainActor func testTheAddressIsReadOnlyWhileACodeIsOnItsWay() {
+        let app = launch("-TadayoUITestHangingSend")
+        let field = app.textFields["Email address"]
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        app.typeText("ben@example.com")
+        let send = app.buttons["Send a code"]
+        XCTAssertTrue(send.isEnabled)
+        XCTAssertNotEqual(send.value as? String, "In progress")
+        send.tap()
+
+        let busy = expectation(
+            for: NSPredicate(format: "value == %@", "In progress"), evaluatedWith: send)
+        wait(for: [busy], timeout: 5)
+        XCTAssertFalse(send.isEnabled)
+        XCTAssertEqual(send.label, "Send a code")
+
+        app.typeText("x")
+        XCTAssertEqual(field.value as? String, "ben@example.com")
+        XCTAssertTrue(app.staticTexts["What’s your email?"].exists)
+    }
+
     /// Sign-in to its end on stand-in services. Back and Change email address return to A02-email
     /// with the address kept; a code the server doesn't verify keeps its digits and Verify code;
     /// the right one goes on, the age then the name, then the tabs, on Home with no club.
