@@ -41,6 +41,8 @@ struct EmailScreen: View {
     @Bindable var model: SignInModel
     let focus: Bool?
     @FocusState private var focused: Bool
+    /// A code sent from the keyboard's return key is on its way.
+    @State private var sendingFromReturn = false
 
     var body: some View {
         SetupScroll {
@@ -62,7 +64,13 @@ struct EmailScreen: View {
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .submitLabel(.next)
-                        .onSubmit { Task { await model.sendCode() } }
+                        .onSubmit {
+                            sendingFromReturn = true
+                            Task {
+                                await model.sendCode()
+                                sendingFromReturn = false
+                            }
+                        }
                         .focused($focused)
                         .overlay(alignment: .leading) {
                             if model.email.isEmpty {
@@ -96,6 +104,15 @@ struct EmailScreen: View {
         .navigationTitle(Text("auth.signIn.navTitle"))
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { if focus == nil { focused = true } }
+        // Return ends a field's editing, so a code sent from it would leave the address with no
+        // focus and no keyboard while it goes. The focus is put back, so the field keeps it as it
+        // does when Send a code is tapped (handoff 7's `busyPrimary.field`: "keep first responder
+        // and keyboard if already shown"). Whether the keyboard dips on the way is a device check:
+        // focus set again on Return makes it go down and come back up (Apple's developer forums,
+        // thread 770226).
+        .onChange(of: focused) { _, now in
+            if !now, sendingFromReturn { focused = true }
+        }
         .announcing(failure?.words)
         // "Sending a code.", once, as the request begins; the button says "In progress" itself.
         .onChange(of: model.isSending) { was, now in

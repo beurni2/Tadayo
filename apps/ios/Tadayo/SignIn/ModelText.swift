@@ -10,8 +10,8 @@ import SwiftUI
 ///
 /// The field here is bound to a copy of the text that every edit offers to the model and then
 /// reads back, so what the field shows is what the model holds, and a change the model makes
-/// itself (a code cleared for a new one) reaches the field too. The caret goes to the end when a
-/// write is taken back, which is where the person was typing.
+/// itself (a code cleared for a new one) reaches the field too (`ModelTextTests`). When a write is
+/// taken back the caret goes to the end of the text, wherever the person was typing.
 struct ModelText<Field: View>: View {
     private let held: () -> String
     private let offer: (String) -> Void
