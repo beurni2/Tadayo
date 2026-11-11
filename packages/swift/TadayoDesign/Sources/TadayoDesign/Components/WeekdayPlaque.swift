@@ -13,8 +13,8 @@ public struct WeekdayPlaque: View {
     @ScaledMetric(relativeTo: TypeRole.plaqueDay.textStyle) private var width = Size.plaque.width
     @ScaledMetric(relativeTo: TypeRole.plaqueDay.textStyle) private var height = Size.plaque.height
 
-    /// - Parameter spoken: the full date VoiceOver reads, such as "Friday, November 6": never
-    ///   the plaque's abbreviations alone (T41, T47).
+    /// - Parameter spoken: the full date VoiceOver reads, such as "Friday, November 6, 2026":
+    ///   never the plaque's abbreviations alone (T41, T47), and with its year (FQ44).
     public init(weekday: String, day: String, spoken: String) {
         self.weekday = weekday
         self.day = day
@@ -23,7 +23,9 @@ public struct WeekdayPlaque: View {
 
     public init(date: LocalDate, labels: DateLabels) {
         let plaque = labels.plaque(date)
-        self.init(weekday: plaque.weekday, day: plaque.day, spoken: labels.fullDate(date))
+        self.init(
+            weekday: plaque.weekday, day: plaque.day,
+            spoken: labels.fullDate(date, includingYear: true))
     }
 
     public var body: some View {

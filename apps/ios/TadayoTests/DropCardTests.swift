@@ -18,8 +18,6 @@ import XCTest
 /// snapshot tests, so the iOS 17 and 18 compatibility runs read the labels too.
 @MainActor
 final class DropCardTests: XCTestCase {
-    /// ICU puts a narrow no-break space before AM and PM.
-    private let seven = "7\u{202F}AM"
     private var opens: String {
         "Opens Friday, November 13, 2026 at \(seven), New York. Hidden content."
     }
@@ -259,54 +257,5 @@ final class DropCardTests: XCTestCase {
             AddedDrop(occasion: occasion, isHighlight: isHighlight),
             labels: FixtureCast.labels, makeHighlight: {}
         ).padding(.horizontal, 20)
-    }
-
-    private func labels(_ view: some View) -> [String] {
-        AccessibilityElements.of(view).map(\.label)
-    }
-
-    /// What VoiceOver finds in one element: its label, its value and hint (none unless given),
-    /// whether it is a button, and its custom actions (none unless given). No state but the receipt's action is a button: the taps that
-    /// open a draft or explain the opening time are B4's (Q07).
-    private struct Read: Equatable, CustomStringConvertible {
-        let label: String
-        var value = ""
-        var hint = ""
-        var isButton = false
-        var actions: [String] = []
-
-        init(
-            _ label: String, value: String = "", hint: String = "", isButton: Bool = false,
-            actions: [String] = []
-        ) {
-            self.label = label
-            self.value = value
-            self.hint = hint
-            self.isButton = isButton
-            self.actions = actions
-        }
-
-        var description: String {
-            "\"\(label)\" value \"\(value)\" hint \"\(hint)\"\(isButton ? " button" : "")"
-                + (actions.isEmpty ? "" : " actions \(actions)")
-        }
-    }
-
-    /// Every element of the view, in order, is exactly one of these, so nothing else is spoken.
-    private func assertReads(
-        _ view: some View, _ expected: [Read], file: StaticString = #filePath, line: UInt = #line
-    ) {
-        let read = AccessibilityElements.of(view).map {
-            Read(
-                $0.label, value: $0.value, hint: $0.hint, isButton: $0.traits.contains(.button),
-                actions: $0.actions)
-        }
-        XCTAssertEqual(read, expected, file: file, line: line)
-    }
-
-    private func fields(_ value: Any) -> [String] {
-        Mirror(reflecting: value).children.map {
-            "\($0.label ?? "?"): \(String(describing: type(of: $0.value)))"
-        }
     }
 }

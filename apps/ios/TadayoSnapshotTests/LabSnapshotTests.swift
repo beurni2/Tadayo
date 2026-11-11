@@ -23,6 +23,13 @@ import XCTest
 /// is drawn at 2x, as the screens are, not the simulator's 3x: about 1 MB a variant, not 2.
 ///
 /// Each section is drawn through `StillHost`, so the busy button's spinner is at rest.
+///
+/// A section's window is measured before it is drawn, so it is drawn at the scale it is measured
+/// at, the simulator's own 3x, unless it can't be (the photographs). Measured at one scale and
+/// drawn at another, a line that sits at the edge of its column breaks differently in the two
+/// passes and the image comes out a line off its window: cropped of its padding, or with a strip
+/// of the window's colour above and below, either of which the reference would then record.
+/// `ImageMargins` fails an image whose content sits nearer than 20 points to its top or bottom.
 @MainActor
 final class LabSnapshotTests: XCTestCase {
     enum Variant {
@@ -97,6 +104,17 @@ final class LabSnapshotTests: XCTestCase {
     /// lane's needs list, items 39 and 45).
     func testTheDropCardKeepsInsideA320PointScreenAtTheLargestSize() {
         for section in [LabSection.cards, .drops, .revealed, .receipt] {
+            snap(section, .xl, width: 320, named: "Lab-\(section.rawValue)-320-xl")
+        }
+    }
+
+    /// The day header, the person row and the target block at 320 points and the largest
+    /// accessibility size, which no 393-point image reaches: each keeps inside the screen, the
+    /// plaque above the date, Next up on its own line, the avatars level with their first lines.
+    /// A word wider than its line breaks inside itself, as the drop card's do (the ios lane's
+    /// needs list).
+    func testTheRowsKeepInsideA320PointScreenAtTheLargestSize() {
+        for section in [LabSection.day, .people, .peopleMore, .target] {
             snap(section, .xl, width: 320, named: "Lab-\(section.rawValue)-320-xl")
         }
     }
@@ -180,12 +198,40 @@ final class LabSnapshotTests: XCTestCase {
         let host = StillHost(rootView: view)
         host.safeAreaRegions = []
         let fitted = host.sizeThatFits(in: .zero)
+        // The image the library draws is the one whose margins are read, so there is no second
+        // render.
+        let drawn = Snapshotting<UIViewController, UIImage>.image(
+            on: ViewImageConfig(safeArea: .zero, size: fitted, traits: traits),
+            perceptualPrecision: 0.98, traits: traits)
+        let seen = Seen()
+        let strategy = Snapshotting<UIViewController, UIImage>(
+            pathExtension: drawn.pathExtension, diffing: drawn.diffing,
+            asyncSnapshot: { controller in
+                drawn.snapshot(controller).map { image in
+                    seen.margins = ImageMargins(image)
+                    return image
+                }
+            })
         assertSnapshot(
-            of: host as UIViewController,
-            as: .image(
-                on: ViewImageConfig(safeArea: .zero, size: fitted, traits: traits),
-                perceptualPrecision: 0.98, traits: traits),
-            named: name, file: file, testName: testName, line: line)
+            of: host as UIViewController, as: strategy, named: name, file: file,
+            testName: testName, line: line)
         Spinners.check(host.view, busy: busy, name, file: file, line: line)
+        guard let margins = seen.margins else {
+            XCTFail("\(name): the image's margins couldn't be read", file: file, line: line)
+            return
+        }
+        XCTAssertGreaterThanOrEqual(
+            margins.top, ImageMargins.least,
+            "\(name): the first thing drawn is \(margins.top) points from the top, where the section keeps 24: its window and its content are out of step",
+            file: file, line: line)
+        XCTAssertGreaterThanOrEqual(
+            margins.bottom, ImageMargins.least,
+            "\(name): the last thing drawn is \(margins.bottom) points from the bottom, where the section keeps 24: its window and its content are out of step",
+            file: file, line: line)
+    }
+
+    /// Where the margins of the image being drawn are kept, out of the library's callback.
+    private final class Seen {
+        var margins: ImageMargins?
     }
 }

@@ -25,6 +25,67 @@ import Testing
         #expect(uk.shortDate(friday) == "Fri 13 Nov")
     }
 
+    /// The open day's header draws its date in capitals, in the phone's region (FQ44).
+    @Test func fullDateInCapitalsIsTheFullDateUpperCased() {
+        let sixth = LocalDate(iso: "2026-11-06")!
+        #expect(us.fullDateInCapitals(sixth) == "FRIDAY, NOVEMBER 6")
+        #expect(uk.fullDateInCapitals(sixth) == "FRIDAY 6 NOVEMBER")
+        #expect(us.fullDateInCapitals(sixth, includingYear: true) == "FRIDAY, NOVEMBER 6, 2026")
+    }
+
+    /// The date an instant falls on in a zone: Ben's Monday opens at 7 AM in New York (12:00
+    /// UTC on 9 November 2026), which is 1 AM on Tuesday in Auckland and noon on Monday in
+    /// London; Nina's Saturday is Sunday in Auckland (handoff 6's travelling frames).
+    @Test func fullDateOfAnInstantIsItsDateInThatZone() throws {
+        let monday = Date(timeIntervalSince1970: 1_794_225_600)
+        let saturday = Date(timeIntervalSince1970: 1_794_052_800)
+        let auckland = try #require(TimeZone(identifier: "Pacific/Auckland"))
+        #expect(us.fullDate(of: monday, in: auckland) == "Tuesday, November 10")
+        #expect(us.fullDate(of: monday, in: london) == "Monday, November 9")
+        #expect(us.fullDate(of: monday, in: newYork) == "Monday, November 9")
+        #expect(us.fullDate(of: saturday, in: auckland) == "Sunday, November 8")
+        #expect(uk.fullDate(of: monday, in: auckland) == "Tuesday 10 November")
+        #expect(
+            us.fullDate(of: monday, in: auckland, includingYear: true)
+                == "Tuesday, November 10, 2026")
+        // As with fullDate, CLDR's en-GB pattern with a year has changed between ICU releases.
+        let ukYear = uk.fullDate(of: monday, in: auckland, includingYear: true)
+        #expect(ukYear.hasPrefix("Tuesday") && ukYear.hasSuffix("10 November 2026"))
+    }
+
+    /// Midnight belongs to the day it starts, in the zone's own clock across a change of
+    /// offset: New York left daylight time at 2 AM on 1 November 2026, London on 25 October.
+    @Test func fullDateOfAnInstantReadsMidnightInTheZonesOwnClock() {
+        // Midnight starting 1 November in New York is 04:00 UTC (still daylight time, UTC-4);
+        // midnight starting 2 November is 05:00 UTC (standard time, UTC-5).
+        let first = Date(timeIntervalSince1970: 1_793_505_600)
+        #expect(us.fullDate(of: first, in: newYork) == "Sunday, November 1")
+        #expect(
+            us.fullDate(of: first.addingTimeInterval(-1), in: newYork) == "Saturday, October 31")
+        let second = Date(timeIntervalSince1970: 1_793_595_600)
+        #expect(us.fullDate(of: second, in: newYork) == "Monday, November 2")
+        #expect(us.fullDate(of: second.addingTimeInterval(-1), in: newYork) == "Sunday, November 1")
+        // Midnight starting 26 October in London is 00:00 UTC (GMT after the change).
+        let october = Date(timeIntervalSince1970: 1_792_972_800)
+        #expect(us.fullDate(of: october, in: london) == "Monday, October 26")
+        #expect(us.fullDate(of: october.addingTimeInterval(-1), in: london) == "Sunday, October 25")
+    }
+
+    /// A day at the year's end opens in the next year where the phone is: 7 AM on Thursday 31
+    /// December 2026 in New York is 1 AM on Friday 1 January 2027 in Auckland, so the screen
+    /// must write the year on both lines (FQ44: "when the dates shown cross a year … Both zones'
+    /// times follow the same rule").
+    @Test func fullDateOfAnInstantCanCrossTheYear() throws {
+        let auckland = try #require(TimeZone(identifier: "Pacific/Auckland"))
+        let lastDay = Date(timeIntervalSince1970: 1_798_718_400)
+        #expect(
+            us.fullDate(of: lastDay, in: newYork, includingYear: true)
+                == "Thursday, December 31, 2026")
+        #expect(
+            us.fullDate(of: lastDay, in: auckland, includingYear: true) == "Friday, January 1, 2027"
+        )
+    }
+
     @Test func dayMonthKeepsTheMonthInWords() {
         #expect(us.dayMonth(friday) == "November 13")
         #expect(uk.dayMonth(friday) == "13 November")
@@ -107,9 +168,13 @@ import Testing
         #expect(us.plaque(LocalDate(iso: "2026-11-06")!) == ("FRI", "06"))
         #expect(us.personDay(name: "Debby", date: friday) == "Debby’s Friday")
         #expect(us.dayMonth(friday) == "November 13")
+        #expect(us.fullDateInCapitals(friday) == "FRIDAY, NOVEMBER 13")
         // An opening is written in the club's zone, whatever the phone's.
         let seven = Date(timeIntervalSince1970: 1_794_571_200)
         let newYork = try #require(TimeZone(identifier: "America/New_York"))
+        // A date of an instant is the instant's in the zone given, never the phone's.
+        let mondaySeven = Date(timeIntervalSince1970: 1_794_225_600)
+        #expect(us.fullDate(of: mondaySeven, in: newYork) == "Monday, November 9")
         #expect(us.fullDateTime(seven, in: newYork) == "Friday, November 13, 2026 at 7\u{202F}AM")
         #expect(us.time(seven, in: newYork) == "7\u{202F}AM")
         let half = seven.addingTimeInterval(-5.5 * 3600)  // 1:30 AM in New York

@@ -86,6 +86,15 @@ public enum TypeRole: Sendable, CaseIterable {
     var uiWeight: UIFont.Weight {
         weight == .bold ? .bold : .regular
     }
+
+    /// How far below the top of a text set in this role, at its scaled size, the middle of its
+    /// first line sits: the baseline less half the capitals, as `VerticalAlignment.firstLineCenter`
+    /// takes it. A mark beside a column of several lines uses it, since a stack's custom alignment
+    /// is the mean of its children's.
+    func firstLineMiddle(atSize size: CGFloat) -> CGFloat {
+        let font = UIFont.systemFont(ofSize: size, weight: uiWeight)
+        return font.ascender - font.capHeight / 2
+    }
 }
 
 struct TypeRoleModifier: ViewModifier {
