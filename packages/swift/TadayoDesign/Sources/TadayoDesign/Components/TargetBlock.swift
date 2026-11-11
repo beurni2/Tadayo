@@ -21,8 +21,9 @@ import TadayoCore
 /// their lines, the chevron in a 20-point box at the trailing inset, at the size whose glyph
 /// matches 2.1's 8 by 5, growing with the text as the drafts row's does. The avatar keeps its
 /// size (handoff 4's `dynamicTypePolicy.avatarMarks`); its top meets the title's until the
-/// title's first line outgrows it, and from then it stays level with that line, as the compact
-/// receipt's disc does; the chevron keeps the avatar's middle.
+/// title's first line outgrows it, and from then it stays level with that line
+/// (`TypeRole.firstLineMiddle`, as `PersonRow` places its avatar); the chevron keeps the
+/// avatar's middle.
 ///
 /// VoiceOver finds one button (FQ92): the person, the club, then the date and the time as one
 /// opening, "For Debby. Sunday people. Opens Friday, November 13, 2026 at 7 AM, New York." No

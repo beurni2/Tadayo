@@ -105,8 +105,9 @@ public enum Size {
     /// 36-point avatar and 13 after it (`friendsRow.textInset`, `separatorLeadingInset`).
     public static let personRowTextInset: CGFloat = 49
     /// A roster row's chevron: the contract's 20-point box (`friendsRow.chevronSize`), holding
-    /// SF Symbol `chevron.right` at the size whose glyph matches handoff 3's frame, 6 by 12, as
-    /// the drafts row's does.
+    /// SF Symbol `chevron.right` at the size whose glyph matches the Private drafts row's, 6 by
+    /// 12 in handoff 4's `G06-no-club`, as the drafts row's does; handoff 3's `F01-friends-dark`
+    /// draws 7.5 by 13 and handoff 6's `F01-friends` 5 by 9 (the ios lane's needs list).
     public static let personRowChevronBox: CGFloat = 20
     public static let personRowChevron: CGFloat = 13
     /// The roster chevron's box from the row's trailing edge: handoff 6's sheet draws 2, which

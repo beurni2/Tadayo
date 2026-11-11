@@ -70,6 +70,21 @@ final class PersonRowTests: XCTestCase {
         assertReads(row(FixtureCast.member(FixtureCast.debby, dated: false)), [Read("Debby.")])
     }
 
+    /// A row with no day says nothing but the name, and VoiceOver reads it as the name alone,
+    /// so "Next up" is drawn only where there is a day for it to stand beside, whatever the
+    /// server's mark says (`friendsRow.noOccurrence`; the accessibility reading can't see a
+    /// drawn word on that row, so the rule is tested where the row decides it).
+    func testNextUpIsShownOnlyWithADay() {
+        let marked = FixtureCast.member(FixtureCast.nina, dated: false)
+        XCTAssertTrue(marked.isNextUp, "the fixture marks Nina Next up")
+        XCTAssertNil(marked.day)
+        XCTAssertFalse(marked.showsNextUp)
+        assertReads(row(marked), [Read("Nina.")])
+        XCTAssertTrue(FixtureCast.member(FixtureCast.nina).showsNextUp)
+        XCTAssertFalse(FixtureCast.member(FixtureCast.ben).showsNextUp)
+        XCTAssertFalse(FixtureCast.member(FixtureCast.ben, dated: false).showsNextUp)
+    }
+
     /// The year is visible only where the screen asks; it is always spoken.
     func testTheStandingAloneRowReadsTheSame() {
         assertReads(
@@ -94,6 +109,13 @@ final class PersonRowTests: XCTestCase {
         XCTAssertEqual(
             fields(member.day!),
             ["date: LocalDate", "opensAt: Date", "zone: TimeZone", "includingYear: Bool"])
+        // The view holds the member, the phone's zone, the date labels and the action, and no
+        // field of its own (the underscored ones are its environment and scaled metrics).
+        let view = PersonRow(
+            member, device: FixtureCast.zone, labels: FixtureCast.labels, action: {})
+        XCTAssertEqual(
+            fields(view).filter { !$0.hasPrefix("_") },
+            ["member: Member", "device: TimeZone", "labels: DateLabels", "action: () -> ()"])
     }
 
     private func row(

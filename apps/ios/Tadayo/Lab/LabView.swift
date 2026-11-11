@@ -383,8 +383,9 @@
         }
     }
 
-    /// The person row's other forms: travelling, long names, the viewer as Next up (a test-data
-    /// choice: no frame draws it), and one row standing alone, with the year.
+    /// The person row's other forms: travelling, long names (the second marked Next up, a
+    /// test-data choice that shows Next up under a name that wraps: no frame draws it), the viewer
+    /// as Next up (the same), and one row standing alone, with the year.
     struct LabPeopleMore: View {
         var body: some View {
             LabGroup(title: "Person row, more") {
@@ -397,13 +398,14 @@
                     LabRoster(
                         members: [FixtureCast.member(FixtureCast.nina)], device: FixtureCast.london)
                 }
-                LabState("Long names") {
-                    // As 2.1's F01-long-names: in Alex's and Debby's places, with Debby's photo.
+                LabState("Long names, the second Next up") {
+                    // As 2.1's F01-long-names: in Alex's and Debby's places, with Debby's photo;
+                    // Debby's is marked Next up, which 2.1 doesn't draw there.
                     LabRoster(members: [
                         FixtureCast.member(FixtureCast.alexandriaRose, day: FixtureCast.alex),
                         FixtureCast.member(
                             FixtureCast.deborahAnne, day: FixtureCast.debby,
-                            photo: FixtureCast.debby.image),
+                            photo: FixtureCast.debby.image, isNextUp: true),
                     ])
                 }
                 LabState("Ben, Next up") {

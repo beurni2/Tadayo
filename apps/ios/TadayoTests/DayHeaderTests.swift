@@ -75,5 +75,15 @@ final class DayHeaderTests: XCTestCase {
                 "star: String", "isViewer: Bool", "date: LocalDate", "closesAt: Date",
                 "zone: TimeZone", "includingYear: Bool",
             ])
+        // The header holds its form and the date labels, and no field of its own (the form's
+        // payloads are the occasion, pinned with the drop card's, and this open day).
+        for header in [
+            DayHeader(collecting: FixtureCast.collectingDay, labels: FixtureCast.labels),
+            DayHeader(open: FixtureCast.openDay, labels: FixtureCast.labels),
+        ] {
+            XCTAssertEqual(
+                fields(header).filter { !$0.hasPrefix("_") },
+                ["form: Form", "labels: DateLabels"])
+        }
     }
 }

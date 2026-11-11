@@ -17,7 +17,8 @@ import TadayoCore
 /// contract's fixture), the words 49 from the leading edge, a 1-point `separator` under the row
 /// from 49 to the trailing edge, drawn by the row on every row as the frames draw it, and the
 /// chevron's 20-point box. What it doesn't name is built from handoff 6's frames and sheet (the
-/// ios lane's needs list): 12 above the words, the lines 4 apart; the chevron's box 4 in from the
+/// ios lane's needs list): 12 above the words (8 on a row with no day, whose 36-point avatar and
+/// padding then make its 52), the lines 4 apart; the chevron's box 4 in from the
 /// trailing edge (the sheet draws 2) and 12 after the words (the sheet draws about 14), its glyph
 /// growing with the text as the Private drafts row's does; the avatar's top meeting the name's,
 /// as the frames draw it, until the name's first line outgrows it and from then level with that
@@ -68,6 +69,13 @@ public struct PersonRow: View {
             self.isNextUp = isNextUp
             self.day = day
         }
+
+        /// Whether the row says "Next up": the server's mark, on a member whose day the row
+        /// shows. A member with no day yet is the name and the avatar alone
+        /// (`friendsRow.noOccurrence`: "no date, status, placeholder, chevron or tap action"), and
+        /// VoiceOver reads that row as the name alone, so a word drawn there would be seen and
+        /// never heard.
+        public var showsNextUp: Bool { isNextUp && day != nil }
     }
 
     let member: Member
@@ -132,7 +140,7 @@ public struct PersonRow: View {
                     .accessibilityHidden(true)
             }
         }
-        .padding(.vertical, Spacing.m)
+        .padding(.vertical, dated ? Spacing.m : Spacing.s)
         .frame(
             maxWidth: .infinity, minHeight: minHeight(dated: dated),
             alignment: dated ? .top : .center
@@ -163,7 +171,7 @@ public struct PersonRow: View {
     /// either. At the accessibility sizes Next up always has its own line (`friendsRow.AX5`), and
     /// the name comes first in the stack, so the avatar finds its first line.
     @ViewBuilder private var nameAndNextUp: some View {
-        if member.isNextUp, !typeSize.isAccessibilitySize {
+        if member.showsNextUp, !typeSize.isAccessibilitySize {
             ViewThatFits(in: .horizontal) {
                 HStack(alignment: .firstTextBaseline, spacing: Spacing.s) {
                     name.fixedSize()
@@ -177,7 +185,7 @@ public struct PersonRow: View {
             }
         } else {
             name.fixedSize(horizontal: false, vertical: true)
-            if member.isNextUp {
+            if member.showsNextUp {
                 nextUp.fixedSize(horizontal: false, vertical: true)
             }
         }

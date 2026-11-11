@@ -1,6 +1,6 @@
 # `ios/b0-lab-rows`: plan (ios lane, B0, slice 11's last PR, "4b")
 
-Written 2026-11-07 by the ios thread from `ios/b0-drop-card` at `c44529d`, before PR #28 merged, and brought into the repository on 2026-11-11 (ADR-032) for the branch that builds from it, which starts at `main` `a569278`, where #28 merged. Four readers mapped the sources and a critic checked them. The plan was then revised after four fresh critics, each followed by a skeptic (workflow `wf_5d94e96a-057`: 36 findings, 10 refuted; section 10). Only this paragraph, the needs list's path in section 6 and section 9's first step differ from the plan as written.
+Written 2026-11-07 by the ios thread from `ios/b0-drop-card` at `c44529d`, before PR #28 merged, and brought into the repository on 2026-11-11 (ADR-032) for the branch that builds from it, which starts at `main` `a569278`, where #28 merged. Four readers mapped the sources and a critic checked them. The plan was then revised after four fresh critics, each followed by a skeptic (workflow `wf_5d94e96a-057`: 36 findings, 9 refuted; section 10), and the pushed code by five fresh reviewers (workflow `wf_33f60588-373`: 16 findings, none refuted; section 12). Only this paragraph, the needs list's path in section 6 and section 9's first step differ from the plan as written.
 
 Scope: spec 09, 10, 24; book p6, p7, p8, p12, p13, p15, p26, p27, p34; T1, T2, T10, T12, T31, T33, T41 to T47; Q03 (the app half).
 
@@ -84,7 +84,7 @@ Each is noted in the PR.
     - `people` (the roster and first days) and `people-more` (travelling, long names, Ben as Next up, and one row standing alone), after `avatars`;
     - `target`, after `receipt`.
 
-    `header` is already taken by the no-club header. The roster sections are split and drawn at 2x, because at AX5 on 320 points one section would be taller than the image comparison can draw (Metal textures stop at 16,384 pixels; the tallest reference so far is 8,282). No existing reference changes.
+    `header` is already taken by the no-club header. The roster sections are split, because at AX5 on 320 points one section would be taller than the image comparison can draw (Metal textures stop at 16,384 pixels; the tallest reference so far is 8,282). They were first drawn at 2x; section 12's S1 draws them at the simulator's 3x, where `people-320-xl` is about 10,400 pixels and `people-more-320-xl` about 12,900. No existing reference changes.
 - **The 320-point images get a test of their own,** `testTheRowsKeepInsideA320PointScreenAtTheLargestSize`. It gives `Lab-day-320-xl`, `Lab-people-320-xl`, `Lab-people-more-320-xl` and `Lab-target-320-xl`.
     - With the cast, none of the three components changes form by width alone at the default size.
     - Next up's second form appears in `-xl` and `-320-xl`.
@@ -93,7 +93,7 @@ Each is noted in the PR.
 - **Pressed looks the same** (`UnchangedWhenPressed`), as needs item 34. No source draws a pressed row or block.
 - **Avatars keep a fixed size** (`handoff4.dynamicTypePolicy.avatarMarks`) and are hidden from VoiceOver, as `Avatar` already is.
     - Photographs are the person's profile photo, never anything of a drop (T12).
-    - An avatar beside several lines is placed with `TypeRole.firstLineMiddle(atSize:)`, the formula `CompactReceipt`'s `discDrop` already uses, which moves into `TypeRole`. `firstLineCenter` isn't used here: a stack's custom alignment is the mean of its children's (Apple's `combineExplicit`), so beside a column of several `textRole` lines it doesn't land on the first line.
+    - An avatar beside several lines is placed with `TypeRole.firstLineMiddle(atSize:)`, a formula that is new in this slice, in `TypeRole` (the folded card places its avatar by `.firstLineCenter`, and the compact receipt keeps its disc's top level with the title's, so neither proves it). `firstLineCenter` isn't used here: a stack's custom alignment is the mean of its children's (Apple's `combineExplicit`), so beside a column of several `textRole` lines it doesn't land on the first line.
 
 ### The day header (`DayHeader`)
 
@@ -133,9 +133,9 @@ Each is noted in the PR.
     - 12 above the words, and the lines 4 apart. At the default size, the 68 minimum, not the padding, sets the height.
     - A dated row's content sits at the top, as the frames draw it. A row with no date is centred (`noOccurrence`: "vertically centered").
     - The chevron box is 4 in from the trailing edge. The sheet draws 2, which isn't a step of book p35's scale. The text is 12 before it, the nearest step to the sheet's 14.
-    - The chevron glyph is `Size.personRowChevron` (13: the 6-by-12 glyph handoff 3's 20-point box holds), and it grows with the text, as `PrivateDraftsEntry`'s does.
+    - The chevron glyph is `Size.personRowChevron` (13: the 6-by-12 glyph the Private drafts row holds, from handoff 4's `G06-no-club`; handoff 3's `F01-friends-dark` draws 7.5 by 13), and it grows with the text, as `PrivateDraftsEntry`'s does.
 - **The avatar and the chevron:**
-    - In a dated row, the avatar's top meets the name line's top. That's how handoff 6's frames draw every row, the 108-point travelling row included (avatar centre at top+28, against the sheet's centred 68-point specimen). Once the name's first line is taller than the avatar, the avatar stays level with that line instead (`friendsRow.AX5`: "Avatar aligns to first line"). This is the compact receipt's rule.
+    - In a dated row, the avatar's top meets the name line's top. That's how handoff 6's frames draw every row, the 108-point travelling row included (avatar centre at top+28, against the sheet's centred 68-point specimen). Once the name's first line is taller than the avatar, the avatar stays level with that line instead (`friendsRow.AX5`: "Avatar aligns to first line"). The rule is new in this slice: the compact receipt keeps its disc's top level with the title's, as #28 has it.
     - The chevron keeps the avatar's middle.
     - A row with no date centres its avatar on the name's first line.
 - **The separator: the row draws it.**
@@ -160,7 +160,7 @@ Each is noted in the PR.
     - Whether the member is travelling, and whether the dates differ, is `TadayoCore`'s `LocalOpening`, tested on Linux.
     - A legacy alias of the club's zone on the phone would read as travelling, with two true lines that say the same thing. That needs a cross-version alias rename, which is unlikely in the trial. Noted in the PR.
 - **No occurrence** (`friendsRow.noOccurrence`; FQ48): the name and the avatar only, 52 minimum. No date, status, placeholder, chevron or tap action, so it isn't a button.
-    - Who hasn't confirmed shows by elimination, as drawn (INVENTORY.md:343; FQ48). The row adds no word, glyph or placeholder.
+    - Who hasn't confirmed shows by elimination, as drawn (INVENTORY.md:343; FQ48). The row adds no word, glyph or placeholder, and "Next up" is drawn only for a member with a day (`Member.showsNextUp`), whatever the server's mark says.
 - **Spoken:** one element, with the avatar and the chevron unread, and the button trait when dated.
     - Label: `friends.row.vo` "{personSpeech}. {nextUpText}{fullDateTime}, {clubZoneName}.", or travelling `friends.row.travelling.vo`. `personSpeech` is `person.self.vo` or the name. `nextUpText` is `friends.nextUp.vo` "Next up. " or nothing.
     - Hint: `friends.row.hint` "Open {occasionInSentence}.". That's `occasion.self.inSentence` "your {weekday}" for the viewer, or `personDay` for others. The weekday is always the club date's.
@@ -237,7 +237,7 @@ Each is noted in the PR.
 - **`people-more`:**
     - travelling to Auckland with the dates different (Ben · You, and Nina with Next up);
     - travelling to London with the same date (Nina);
-    - long names, as 2.1's `F01-long-names`: Alexandria-Rose Mensah on Wednesday the 11th with an initial, and Deborah-Anne Ouédraogo on Friday the 13th with Debby's photograph. That photograph is built in the Lab; `FixtureCast.deborahAnne` keeps `photo: nil`, which PR #28's references use;
+    - long names, as 2.1's `F01-long-names`: Alexandria-Rose Mensah on Wednesday the 11th with an initial, and Deborah-Anne Ouédraogo on Friday the 13th with Debby's photograph, marked Next up (a test-data choice, section 12's S5, so that Next up under a name that wraps is seen). That photograph is built in the Lab; `FixtureCast.deborahAnne` keeps `photo: nil`, which PR #28's references use;
     - Ben · You as Next up. This is a test-data choice the contract allows; the sheet's "You and Next up" panel shows the two type samples apart;
     - one standalone row with the year.
 - **`target`:**
@@ -340,7 +340,7 @@ The other gaps have a delivered rule or an existing question:
 
 - **47. The day header in the brand.** Light, dark, AX5 and 320.
     - **Collecting:**
-        - the gap from the plaque (2.1's 12, handoff 0's 15), the title's top against the plaque's, the line's gap, and the stacking at accessibility sizes;
+        - the gap from the plaque (2.1's 12, handoff 0's 15), the title's top against the plaque's (the build keeps 2.1's, the words' top level with the plaque's; handoff 0's frame sets the words about 4 points lower), the line's gap, and the stacking at accessibility sizes;
         - book p12 (line 239): "The day header and compact highlight rail leave the whole first feed preview visible at default size";
         - where the travelling header's title goes, since handoff 5's `upcoming.local` carries the date.
     - **Open:**
@@ -354,15 +354,15 @@ The other gaps have a delivered rule or an existing question:
 - **48. The person row at larger sizes and pressed.**
     - when Next up leaves the name line, including a long name beside it at the default size on a narrow screen;
     - the avatar's place: the frames' top against the sheet's centre, at larger sizes, and in the no-occurrence row;
-    - the chevron's glyph and place (handoff 6's `F01-friends` draws it 5 by 9, 4 in from the row's edge and centred on the two lines; handoff 3's `F01-friends-dark` 7.5 by 13, 8 in; the sheet's box 2 in; the build keeps the Private drafts row's, about 6 by 11), and whether its box grows (at AX5 it is 56 points wide and leaves the words about 139 on a 320-point screen);
+    - the chevron's glyph and place (handoff 6's `F01-friends` draws it 5 by 9, 4 in from the row's edge and centred on the two lines; handoff 3's `F01-friends-dark` 7.5 by 13, 8 in; the sheet's box 2 in; the build keeps the Private drafts row's, about 6 by 11), and whether its box grows (at AX5 it is 56 points wide and, with its two gaps, takes 72 points of the row: it leaves the words about 159 on a 320-point screen, where "Novembe" breaks over "r", and about 232 on a 393-point one, where the long names break inside themselves, "Alexandri" over "a-Rose" and "Ouédraog" over "o");
     - the travelling row's minimum (the contract's 100, the frame's 108);
     - the pressed form;
     - the separator under a native list;
     - Friends' use of `localTimesSheet.selection`;
-    - words breaking inside themselves at AX5 on 320 points (as items 38 and 45).
+    - words breaking inside themselves at AX5, on 393 points as well as 320 (as items 38 and 45).
 - **49. The target block in the brand, and its B4 forms.**
     - light, dark, AX5 and 320; its inset (2.1's 14); the `chevron.down`'s size and growth;
-    - its words at the largest sizes: at AX5 on 393 points "November" and "Wednesday," break inside themselves, and on 320 points the words get about 150 and break every few letters, beside an avatar that keeps its size and a chevron box that grows to 56 points;
+    - its words at the largest sizes: at AX5 on 393 points "November" and "Wednesday," break inside themselves, and on 320 points the words get about 140 and break every few letters, beside an avatar that keeps its size and a chevron box that grows to 56 points;
     - its date form (the handoffs' whole date against book p8's "Friday 13 Nov");
     - its spoken form (FQ92);
     - pressed.
@@ -378,9 +378,9 @@ The other gaps have a delivered rule or an existing question:
 ## 8. Risks
 
 - **Size.** About 1,000 lines with tests and records, over the 400-line target (`docs/GITHUB.md`). It stays one PR: the three share the Lab, the moved helpers and the new `DateLabels`, and they close slice 11 together. The review runs by dimension: privacy and rules, design fidelity, platform and accessibility, tests and records.
-- **Image heights.** The roster sections are split and drawn at 2x. Each image's height is checked on the first run.
+- **Image heights.** The roster sections are split and drawn at 3x (section 12's S1). Each image's height is checked on every run: the tallest reference so far is `Lab-target-320-xl`, 10,945 pixels, and `Lab-people-more-320-xl` is expected near 12,900, under the 16,384 of the limit above. If the render server refuses it, the split goes one section further.
 - **Words breaking at AX5 on 320 points** ("Wednesday,", "Ouédraogo", "Alexandria-Rose"), as in needs items 38, 45 and 46. They're listed in the PR, not hidden.
-- **The avatar rule depends on `TypeRole.firstLineMiddle`.** That is the formula `CompactReceipt` already proved at AX5. Checked in `-xl` and `-320-xl`.
+- **The avatar rule depends on `TypeRole.firstLineMiddle`.** The formula is new in this slice and has no earlier proof at AX5: only this branch's `-xl` and `-320-xl` images check it.
 - **Each `ios` run costs about 15 macOS minutes,** so pushes are batched (TadayoDesign compiles only on CI).
 - **Merging `main`:** if the api lane merges first, `main` is merged in and pushed at once.
 
@@ -423,7 +423,7 @@ Each finding and what became of it. "Refuted" means its skeptic showed it wrong 
 | platform-5 | Fixed. The Markdown checks are dropped; `Text(verbatim:)` and the catalog test pin it |
 | platform-6 | Refuted. The contract gives the separator to the row; recorded for B2 |
 | platform-7 | Fixed. `Size.targetChevron` 9, to be checked on the first image |
-| platform-8 | Fixed. The roster split into two sections, drawn at 2x |
+| platform-8 | Fixed. The roster split into two sections, drawn at 2x (at 3x from section 12's S1) |
 | scope-1 | Fixed. The open day's header is built; the past and quiet headers are left with a needs item |
 | scope-2 | Fixed. en-GB with the year is checked by prefix and suffix |
 | scope-3 | Fixed. The device-zone suite gains the new functions |
@@ -447,4 +447,25 @@ The first push compiled on the first try: 129 tests passed and 3 failed: `testLa
 | The roster chevron against handoff 6's frame (5 by 9, 4 in) | Kept. The critic's ruling (INVENTORY.md, the Friends group: "the row chevron 20 points, where the frames draw them regular and 14") makes it the Private drafts row's, so both chevrons on the Friends tab are one size; the three measurements are recorded, and needs item 48 asks |
 | Next up bold against the frame's regular | Kept, by the same ruling |
 | The target block's title on two lines at 393 points, and its words breaking at AX5 | Kept. The date is written whole (the plan's section 2); recorded, and needs item 49 asks |
-| Everything else | The row pitch, separators, text and avatar columns and the date line match `F01-friends` at the default size to within 1.5 points; the day header matches handoff 0's `F02-upcoming` apart from the recorded gap (12 against 15) and date form |
+| Everything else | The row pitch, separators, text and avatar columns and the date line match `F01-friends` at the default size to within 1.5 points; the day header matches handoff 0's `F02-upcoming` apart from the recorded gap (12 against 15), the date form, and the words' height against the plaque (section 12, S6) |
+
+## 12. Changes after the review of the pushed code (`wf_33f60588-373`, at `b6b6cec`)
+
+Five fresh reviewers (rules and privacy, platform and accessibility, the design against the renders, the tests, the records), each finding put to a skeptic told to refute it (the two medium ones to two): 16 findings, none refuted; 10 stand and 6 stand in part, 14 distinct points (G1 and R2 are one, R1 and S2 are one).
+
+| Finding | Disposition |
+|---|---|
+| S1 (medium): `Lab-people-more-large` is cropped of its padding, and `Lab-people-more-320-xl` has a strip of the window's colour, 25 points, above and below | Fixed. The roster sections are drawn at the simulator's 3x, the scale they are measured at: the first push drew them at 2x and measured at 3x, and the day and target sections, drawn at 3x, were exact in every variant. `ImageMargins` fails any Lab image whose content sits nearer than 20 points to its top or bottom (a point of rounding at an edge is passed over, as the 1x `Lab-photos` needs). Run over the 58 committed references and the first run's 20 images, in Python and in the Swift the test uses (compiled on Linux), it passes 76 and fails exactly those two. Their references wait for a run that passes it |
+| T1 (medium): `LocalOpeningTests` pin only a phone ahead of the club, in November: two wrong date rules pass all 144 tests | Fixed. Three tests: a phone behind the club (Auckland's Tuesday read in New York, Kolkata's in Los Angeles), the offset at the opening rather than the offset now (Auckland in June and in March), and the days Auckland changes its clocks (3 and 4 April and 25 and 26 September 2027). Run against three mutants of `LocalOpening` (the date rule for a phone ahead only, the offset now, the standard offset), each fails; the suite is 147 tests |
+| G1 / R2: TargetBlock's comment and the plan cite a `discDrop` rule the compact receipt doesn't have | Fixed. `TypeRole.firstLineMiddle` is new in this slice: TargetBlock's comment, the plan's lines 96, 138 and 383 say so, and that only this branch's `-xl` and `-320-xl` images check it |
+| P1: a member with no day could still draw "Next up", which VoiceOver never says | Fixed. `PersonRow.Member.showsNextUp`, the server's mark on a member with a day, draws it; `PersonRowTests.testNextUpIsShownOnlyWithADay` pins it, since the row's accessibility reading can't see a drawn word on that row |
+| S3: a row with no day is 60 high where the frame draws 52, and the 52 constant can never apply | Fixed. A row with no day keeps 8 above and below its avatar, so it is 52, the frame's and the contract's minimum; INVENTORY records it |
+| S5: Next up under a name that wraps, at a standard size, is shown by no specimen | Fixed. "Long names" marks Deborah-Anne Next up, a test-data choice; INVENTORY records it |
+| S2 / R1: the recorded widths at 320 points are 139 and 150, and the images give 159 and 140 | Fixed in INVENTORY, in items 48 and 49 above, and in the needs list |
+| S4: at AX5 on 393 points the long names break inside themselves, which the record says they don't | Recorded in INVENTORY and item 48, with the 232 points the words keep |
+| S6: the day header's words sit about 4 points higher against the plaque than handoff 0's frame | Recorded in INVENTORY and item 47; the build keeps 2.1's top-level reading until Claude Design answers |
+| T2: the "holds nothing else" tripwires pin the data structs, not `PersonRow`'s and `DayHeader`'s own stored properties | Fixed. Both views get `TargetBlockTests`' tripwire: a defaulted parameter added to either init now fails a test |
+| R3: `personRowChevron`'s comment says handoff 3's frame draws 6 by 12 | Fixed. 6 by 12 is the Private drafts row's glyph (handoff 4's `G06-no-club`); handoff 3 draws 7.5 by 13 |
+| R4: the T1 audit row says the three components take only the server's instants, dates and zones, and `PersonRow` takes the phone's zone | Fixed in the row: the club's zone and the phone's zone identifier, never its clock |
+| R5: the 00:57 entry and block 1.3 list audit rows "T41 to T47", but T43's row is unchanged | Fixed in block 1.3 and in the entry that records this review; the old entry stays as written |
+| R6: the plan's header counts 10 refuted findings, and its table has 9 | Fixed |
