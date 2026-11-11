@@ -1,0 +1,20 @@
+breakage: new-id-not-random
+patch: [
+ [
+  "packages/domain/src/ids.ts",
+  "randomBytes(16).toString(\"base64url\")",
+  "Buffer.alloc(16).toString(\"base64url\")",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/packages/domain && npx vitest run src/ids.test.ts
+exit: 1
+expected words: random
+caught: False
+
+     × never repeat, and carry no order: a thousand ids differ, and sorted they aren't in the order made 9ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/ids.test.ts > new ids (T10, T15) > never repeat, and carry no order: a thousand ids differ, and sorted they aren't in the order made
+AssertionError: expected 1 to be 1000 // Object.is equality

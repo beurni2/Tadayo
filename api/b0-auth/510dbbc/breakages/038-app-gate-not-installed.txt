@@ -1,0 +1,54 @@
+breakage: app-gate-not-installed
+patch: [
+ [
+  "services/api/src/app.ts",
+  "  installGate(app, deps.authenticate);\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run 
+exit: 1
+expected words: re:(gets the one 401 on every route|never ask who is calling|answers 503 with nothing in it)
+caught: True
+
+     × gets the one 401 on every route that isn't public, and the gate asked once 108ms
+     × is judged before the body is read: a body Fastify couldn't read is still a 401, never a 400 17ms
+     × is told the same 401 whichever header it sent, since the gate hands over the header and nothing else 17ms
+     × gets 403 PROFILE_INCOMPLETE on a route that isn't beforeProfile until the age is confirmed and there is a name (FQ13, FQ69) 7ms
+     × gates an id of 65 to 100 characters, which Fastify's router takes: no session is a 401, not a not-found 17ms
+     × answers 503 with nothing in it on every route that isn't public, never a 401, which signs the app out 9ms
+     × is one line, with the request's random id, the operation, the status and the milliseconds, and nothing else 31ms
+     × honours the level: silent says nothing, warn says no request line 24ms
+     × finds no email address, token, caption or subject in a 200, 400, 401, 403, 404, 409, 503 or 500 19ms
+     × answers the contract's Me for the caller, for the caller alone, and nothing else 167ms
+     × leaves the name and the avatar out when there are none, and says the age is not confirmed 14ms
+     × is open to a caller whose profile isn't finished: it must read its own version to finish it (FQ69) 10ms
+ Test Files  3 failed | 3 passed (6)
+      Tests  12 failed | 117 passed (129)
+⎯⎯⎯⎯⎯⎯ Failed Tests 12 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/logging.test.ts > a request's log line > is one line, with the request's random id, the operation, the status and the milliseconds, and nothing else
+AssertionError: expected [ { level: 30, …(6) } ] to deeply equal []
+ FAIL  src/logging.test.ts > a request's log line > honours the level: silent says nothing, warn says no request line
+AssertionError: expected [ Array(1) ] to deeply equal []
++   "{\"level\":50,\"time\":1794383385630,\"reqId\":\"NtwZ9U_EZUlF1SAW\",\"err\":{\"type\":\"TypeError\"},\"msg\":\"request failed\"}
+ FAIL  src/logging.test.ts > the log test: what reaches the log across the answers a request can get (T52) > finds no email address, token, caption or subject in a 200, 400, 401, 403, 404, 409, 503 or 500
+AssertionError: expected [ 500, 400, 500, 500, 404, 409, …(2) ] to deeply equal [ 200, 400, 401, 403, 404, 409, …(2) ]
+ FAIL  src/session.test.ts > a caller with no session (T14) > gets the one 401 on every route that isn't public, and the gate asked once
+AssertionError: deleteMyAvatar: expected { status: 404, …(2) } to deeply equal { status: 401, …(2) }
+ FAIL  src/session.test.ts > a caller with no session (T14) > is judged before the body is read: a body Fastify couldn't read is still a 401, never a 400
+AssertionError: application/json {bad: expected { status: 400, …(2) } to deeply equal { status: 401, …(2) }
+ FAIL  src/session.test.ts > a caller with no session (T14) > is told the same 401 whichever header it sent, since the gate hands over the header and nothing else
+AssertionError: undefined: expected { status: 500, body: '', …(1) } to deeply equal { status: 401, …(2) }
+ FAIL  src/session.test.ts > a signed-in caller > gets 403 PROFILE_INCOMPLETE on a route that isn't beforeProfile until the age is confirmed and there is a name (FQ13, FQ69)
+AssertionError: listMyDrops: expected { status: 404, …(2) } to deeply equal { status: 403, …(2) }
+ FAIL  src/session.test.ts > what Fastify answers itself, for every caller (T14) > gates an id of 65 to 100 characters, which Fastify's router takes: no session is a 401, not a not-found
+AssertionError: expected { status: 404, …(2) } to deeply equal { status: 401, …(2) }
+ FAIL  src/session.test.ts > when the keys that check tokens can't be read (FQ89) > answers 503 with nothing in it on every route that isn't public, never a 401, which signs the app out
+AssertionError: deleteMyAvatar: expected { status: 404, …(2) } to deeply equal { status: 503, body: '', …(1) }
+ FAIL  src/identity/me.test.ts > GET /v1/me (spec 23, T55) > answers the contract's Me for the caller, for the caller alone, and nothing else
+AssertionError: expected 500 to be 200 // Object.is equality
+ FAIL  src/identity/me.test.ts > GET /v1/me (spec 23, T55) > leaves the name and the avatar out when there are none, and says the age is not confirmed
+SyntaxError: Unexpected end of JSON input
+ FAIL  src/identity/me.test.ts > GET /v1/me (spec 23, T55) > is open to a caller whose profile isn't finished: it must read its own version to finish it (FQ69)
+AssertionError: expected 500 to be 200 // Object.is equality

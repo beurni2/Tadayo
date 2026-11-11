@@ -1,0 +1,43 @@
+breakage: club-state-suspended-ignored
+patch: [
+ [
+  "packages/domain/src/clubs/club-state.ts",
+  "  if (facts.suspended) return \"suspended\";\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/packages/domain && npx vitest run src/clubs
+exit: 1
+expected words: suspended
+caught: True
+
+     × {"suspended":true,"activated":false,"activeMembers":0} is suspended 7ms
+     × {"suspended":true,"activated":false,"activeMembers":1} is suspended 1ms
+     × {"suspended":true,"activated":false,"activeMembers":2} is suspended 1ms
+     × {"suspended":true,"activated":false,"activeMembers":3} is suspended 0ms
+     × {"suspended":true,"activated":false,"activeMembers":6} is suspended 1ms
+     × {"suspended":true,"activated":true,"activeMembers":0} is suspended 1ms
+     × {"suspended":true,"activated":true,"activeMembers":1} is suspended 0ms
+     × {"suspended":true,"activated":true,"activeMembers":2} is suspended 1ms
+     × {"suspended":true,"activated":true,"activeMembers":3} is suspended 0ms
+     × {"suspended":true,"activated":true,"activeMembers":6} is suspended 1ms
+     × holds the readings the sources give: a suspension beats not having started, a start waits for two 0ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  11 failed | 16 passed (27)
+⎯⎯⎯⎯⎯⎯ Failed Tests 11 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/clubs/club-state.test.ts > a club's state (FQ16, spec 04, spec 22) > {"suspended":true,"activated":false,"activeMembers":0} is suspended
+ FAIL  src/clubs/club-state.test.ts > a club's state (FQ16, spec 04, spec 22) > {"suspended":true,"activated":false,"activeMembers":1} is suspended
+ FAIL  src/clubs/club-state.test.ts > a club's state (FQ16, spec 04, spec 22) > {"suspended":true,"activated":false,"activeMembers":2} is suspended
+ FAIL  src/clubs/club-state.test.ts > a club's state (FQ16, spec 04, spec 22) > {"suspended":true,"activated":false,"activeMembers":3} is suspended
+ FAIL  src/clubs/club-state.test.ts > a club's state (FQ16, spec 04, spec 22) > {"suspended":true,"activated":false,"activeMembers":6} is suspended
+AssertionError: expected 'proposed' to be 'suspended' // Object.is equality
+ FAIL  src/clubs/club-state.test.ts > a club's state (FQ16, spec 04, spec 22) > {"suspended":true,"activated":true,"activeMembers":0} is suspended
+ FAIL  src/clubs/club-state.test.ts > a club's state (FQ16, spec 04, spec 22) > {"suspended":true,"activated":true,"activeMembers":1} is suspended
+AssertionError: expected 'paused' to be 'suspended' // Object.is equality
+ FAIL  src/clubs/club-state.test.ts > a club's state (FQ16, spec 04, spec 22) > {"suspended":true,"activated":true,"activeMembers":2} is suspended
+ FAIL  src/clubs/club-state.test.ts > a club's state (FQ16, spec 04, spec 22) > {"suspended":true,"activated":true,"activeMembers":3} is suspended
+ FAIL  src/clubs/club-state.test.ts > a club's state (FQ16, spec 04, spec 22) > {"suspended":true,"activated":true,"activeMembers":6} is suspended
+AssertionError: expected 'active' to be 'suspended' // Object.is equality
+ FAIL  src/clubs/club-state.test.ts > a club's state (FQ16, spec 04, spec 22) > holds the readings the sources give: a suspension beats not having started, a start waits for two
+AssertionError: expected 'proposed' to be 'suspended' // Object.is equality

@@ -1,0 +1,25 @@
+breakage: verifier-any-issuer
+patch: [
+ [
+  "services/api/src/identity/token.ts",
+  "        issuer: options.issuer,\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/identity/token.test.ts
+exit: 1
+expected words: a token of another issuer
+caught: True
+
+     × a token of another issuer 9ms
+     × an issuer with a trailing slash 2ms
+     × a token with no issuer 2ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 45 passed (48)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > a token of another issuer
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > an issuer with a trailing slash
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > a token with no issuer
+AssertionError: expected '6f1c0c9e-39a5-4c7d-b2a5-0f4a7b3b2f11' to be null // Object.is equality
+    101|     expect(await verify(token)).toBe(expected);

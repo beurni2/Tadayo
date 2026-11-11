@@ -1,0 +1,21 @@
+breakage: matrix-another-issuer-accepted
+patch: [
+ [
+  "services/api/src/identity/token.ts",
+  "        issuer: options.issuer,\n",
+  "",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/privtest.sh src/privacy/matrix.test.ts -t "callers without a session"
+exit: 1
+expected words: callers without a session
+caught: True
+
+     × answers each the same whatever the ids name, the gate's one 401 or the neutral not-found for a public route, and leaks nothing the scanner can find 35455ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/matrix.test.ts > callers without a session, in each state of the drop and phase of the day (T14, T27, T53) > answers each the same whatever the ids name, the gate's one 401 or the neutral not-found for a public route, and leaks nothing the scanner can find
+AssertionError: expected { count: 20050, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+    594|     expect(counted.answers).toBe(counted.expected);
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 skipped (14)

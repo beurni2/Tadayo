@@ -1,0 +1,30 @@
+breakage: update-bumps-the-version-on-no-change
+patch: [
+ [
+  "packages/domain/src/identity/update-me.ts",
+  "  if (confirmsAge || name !== null || avatar !== null) {\n",
+  "  if (true) {\n",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/dbtest.sh src/db/update-me.test.ts
+exit: 1
+expected words: moves by one for each change and not at all when nothing changes
+caught: True
+
+     × takes the confirmation once: confirming again changes nothing, and a later change leaves the first instant standing (FQ13) 16ms
+     × moves by one for each change and not at all when nothing changes 10ms
+     × takes a ready avatar upload of its own: the avatar's version is the upload's random one 9ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/update-me.test.ts > confirming the age and naming the person (FQ13, FQ69) > takes the confirmation once: confirming again changes nothing, and a later change leaves the first instant standing (FQ13)
+AssertionError: expected { …(4) } to match object { age_confirmed: true, version: +0 }
+    146|       expect(await request(tx, ben, { expected_version: 0, age_confirm…
+ FAIL  src/db/update-me.test.ts > the version > moves by one for each change and not at all when nothing changes
+AssertionError: expected { …(4) } to match object { display_name: 'Ben K', version: 1 }
+    176|       expect(await request(tx, ben, { expected_version: 0, display_nam…
+    178|       expect(await request(tx, ben, { expected_version: 1, display_nam…
+ FAIL  src/db/update-me.test.ts > the avatar (FQ74) > takes a ready avatar upload of its own: the avatar's version is the upload's random one
+AssertionError: expected { …(5) } to match object { version: 1 }
+    312|       expect(await request(tx, ben, { expected_version: 1, avatar_uplo…
+ Test Files  1 failed (1)
+      Tests  3 failed | 18 passed (21)

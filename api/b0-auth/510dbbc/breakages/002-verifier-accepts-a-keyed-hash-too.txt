@@ -1,0 +1,25 @@
+breakage: verifier-accepts-a-keyed-hash-too
+patch: [
+ [
+  "services/api/src/identity/token.ts",
+  "const ALGORITHMS = [\"ES256\", \"RS256\"];",
+  "const ALGORITHMS = [\"ES256\", \"RS256\", \"HS256\", \"RS512\", \"PS256\"];",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/identity/token.test.ts
+exit: 1
+expected words: takes RS256 from an RSA key the set holds
+caught: True
+
+     × a token keyed with the public key as a … 9ms
+     × a token keyed with a legacy shared secr… 2ms
+     × takes RS256 from an RSA key the set holds, as a project on RSA signing keys signs, and no other algorithm of it 48ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 45 passed (48)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > a token keyed with the public key as a …
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > a token keyed with a legacy shared secr…
+Serialized Error: { code: 'ERR_JOSE_NOT_SUPPORTED' }
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > takes RS256 from an RSA key the set holds, as a project on RSA signing keys signs, and no other algorithm of it
+AssertionError: expected '6f1c0c9e-39a5-4c7d-b2a5-0f4a7b3b2f11' to be null

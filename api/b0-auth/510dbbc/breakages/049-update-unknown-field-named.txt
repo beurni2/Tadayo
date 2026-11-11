@@ -1,0 +1,21 @@
+breakage: update-unknown-field-named
+patch: [
+ [
+  "services/api/src/identity/me.ts",
+  "    if (typeof field === \"string\" && FIELDS.includes(field)) return field;\n",
+  "    if (typeof field === \"string\") return field;\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/identity/me.test.ts
+exit: 1
+expected words: names only a path that is a field of the contract's
+caught: True
+
+     × names only a path that is a field of the contract's, whatever issues the parser gives (a second lock) 7ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 passed (19)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/identity/me.test.ts > PATCH /v1/me: what is refused before the command runs (the contract's INVALID_REQUEST) > names only a path that is a field of the contract's, whatever issues the parser gives (a second lock)
+AssertionError: expected 'email' to be undefined
+    181|     expect(named(["email"], ["role"], ["display_name"], ["expected_ver…

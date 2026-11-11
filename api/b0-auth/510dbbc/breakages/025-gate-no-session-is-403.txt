@@ -1,0 +1,29 @@
+breakage: gate-no-session-is-403
+patch: [
+ [
+  "services/api/src/session.ts",
+  "    if (account === null) return unauthenticated(reply);\n",
+  "    if (account === null) return problem(reply, \"PROFILE_INCOMPLETE\");\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/session.test.ts src/identity/me.test.ts
+exit: 1
+expected words: gets the one 401 on every route that isn't public
+caught: True
+
+     × gets the one 401 on every route that isn't public, and the gate asked once 92ms
+     × is judged before the body is read: a body Fastify couldn't read is still a 401, never a 400 15ms
+     × is told the same 401 whichever header it sent, since the gate hands over the header and nothing else 21ms
+     × gates an id of 65 to 100 characters, which Fastify's router takes: no session is a 401, not a not-found 6ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  4 failed | 49 passed (53)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/session.test.ts > a caller with no session (T14) > gets the one 401 on every route that isn't public, and the gate asked once
+AssertionError: deleteMyAvatar: expected { status: 403, …(2) } to deeply equal { status: 401, …(2) }
+ FAIL  src/session.test.ts > a caller with no session (T14) > is judged before the body is read: a body Fastify couldn't read is still a 401, never a 400
+AssertionError: application/json {bad: expected { status: 403, …(2) } to deeply equal { status: 401, …(2) }
+ FAIL  src/session.test.ts > a caller with no session (T14) > is told the same 401 whichever header it sent, since the gate hands over the header and nothing else
+AssertionError: undefined: expected { status: 403, …(2) } to deeply equal { status: 401, …(2) }
+ FAIL  src/session.test.ts > what Fastify answers itself, for every caller (T14) > gates an id of 65 to 100 characters, which Fastify's router takes: no session is a 401, not a not-found
+AssertionError: expected { status: 403, …(2) } to deeply equal { status: 401, …(2) }

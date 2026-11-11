@@ -1,0 +1,16 @@
+breakage: log-request-and-answer-objects-kept
+patch: [
+ [
+  "services/api/src/logging.ts",
+  "serializers: { err: safeError, req: () => undefined, res: () => undefined },",
+  "serializers: { err: safeError },",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/logging.test.ts
+exit: 0
+expected words: drops a whole request or answer object logged by mistake
+caught: False
+
+ Test Files  1 passed (1)
+      Tests  10 passed (10)

@@ -1,0 +1,18 @@
+breakage: account-avatar-of-any-state
+patch: [
+ [
+  "packages/domain/src/identity/account.ts",
+  "WHERE up.id = u.avatar_upload_id AND up.state = 'ready') AS avatar_version",
+  "WHERE up.id = u.avatar_upload_id) AS avatar_version",
+  2
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/dbtest.sh src/db/identity.test.ts src/db/sign-in.test.ts ; WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/dbtest.sh src/db/update-me.test.ts
+exit: 0
+expected words: re:(gives an avatar's version only for a ready upload|is MEDIA_NOT_READY)
+caught: False
+
+ Test Files  2 passed (2)
+      Tests  21 passed (21)
+ Test Files  1 passed (1)
+      Tests  21 passed (21)

@@ -1,0 +1,20 @@
+breakage: authenticate-makes-no-account
+patch: [
+ [
+  "services/api/src/session.ts",
+  "    const account = known ?? (await deps.sql.begin((tx) => createAccount(tx, deps.clock, subject)));\n",
+  "    const account = known;\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/session.test.ts src/identity/me.test.ts
+exit: 1
+expected words: makes the account on the first request, in one transaction
+caught: True
+
+     × makes the account on the first request, in one transaction, and returns it 8ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 52 passed (53)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/session.test.ts > the real authenticate (sessions): a verified subject, its account, active only > makes the account on the first request, in one transaction, and returns it
+AssertionError: expected null to match object { id: 'acct_a' }

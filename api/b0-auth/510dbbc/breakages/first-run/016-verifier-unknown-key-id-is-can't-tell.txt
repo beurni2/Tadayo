@@ -1,0 +1,36 @@
+breakage: verifier-unknown-key-id-is-can't-tell
+patch: [
+ [
+  "services/api/src/identity/token.ts",
+  "  if (error instanceof errors.JWKSNoMatchingKey || error instanceof errors.JWKSMultipleMatchingKeys) return null;\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/identity/token.test.ts
+exit: 1
+expected words: a token whose key id the set doesn't hold
+caught: False
+
+     × a token of another project: its own key… 8ms
+     × a token whose key id the set doesn't ho… 2ms
+     × refuses a token signed with RS256 when the set holds only an ES256 key 45ms
+     × answers null, and never throws, for anything of the right shape that isn't a token the keys signed 47ms
+     × isn't fetched again for a token whose key id it lacks, inside the cooldown: no stream of such tokens makes one 10ms
+     × finds a rotated key once the cooldown has passed, with the old key still good 6ms
+     × is can't tell when it holds no key at all, a project still on its legacy secret, and a token is no session when it holds keys 9ms
+ Test Files  1 failed (1)
+      Tests  7 failed | 40 passed (47)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > a token of another project: its own key…
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > a token whose key id the set doesn't ho…
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > refuses a token signed with RS256 when the set holds only an ES256 key
+Serialized Error: { code: 'ERR_JWKS_NO_MATCHING_KEY' }
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > answers null, and never throws, for anything of the right shape that isn't a token the keys signed
+AssertionError: eyJhbGciOiJFUzI1NiIsImtpZCI6Il9fcHJvdG9fXyJ9.e30.AAAA: expected KeysUnavailable: sign-in keys unavailable… { trouble: '…' } to be null
+ FAIL  src/identity/token.test.ts > the key set at Supabase's address > isn't fetched again for a token whose key id it lacks, inside the cooldown: no stream of such tokens makes one
+Serialized Error: { code: 'ERR_JWKS_NO_MATCHING_KEY' }
+ FAIL  src/identity/token.test.ts > the key set at Supabase's address > finds a rotated key once the cooldown has passed, with the old key still good
+Serialized Error: { code: 'ERR_JWKS_NO_MATCHING_KEY' }
+ FAIL  src/identity/token.test.ts > the key set at Supabase's address > is can't tell when it holds no key at all, a project still on its legacy secret, and a token is no session when it holds keys
+Serialized Error: { code: 'ERR_JWKS_NO_MATCHING_KEY' }

@@ -1,0 +1,35 @@
+breakage: invitations-of-anyone
+patch: [
+ [
+  "packages/domain/src/clubs/club-list.ts",
+  "                WHERE i.bound_user_id = ${userId} AND cd.state <> 'joined'\n",
+  "                WHERE cd.state <> 'joined'\n",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/dbtest.sh src/db/club-list.test.ts
+exit: 1
+expected words: lists an invitation the caller accepted
+caught: True
+
+     × lists nothing for an account with no club and no invitation: two empty lists (G06-no-club) 46ms
+     × lists a member's club with their own membership, the active members and the state, and nobody else's (T14) 66ms
+     × lists an invitation the caller accepted, with the club's name, the proposer's and where it stands (T7) 33ms
+     × says the roster changed once the open revision is not the one they accepted, and that it didn't go ahead once the proposal ended 18ms
+     × stops listing an invitation once its candidate has joined: it is a club then, not an invitation 13ms
+     × names the inviter by FQ75's rule: the live name while their interval is active, the name it ended with after, none for a deleted account 15ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/club-list.test.ts > the caller's clubs and invitations (spec 04, 05) > lists nothing for an account with no club and no invitation: two empty lists (G06-no-club)
+AssertionError: expected { clubs: [], invitations: [ …(28) ] } to deeply equal { clubs: [], invitations: [] }
+ FAIL  src/db/club-list.test.ts > the caller's clubs and invitations (spec 04, 05) > lists a member's club with their own membership, the active members and the state, and nobody else's (T14)
+AssertionError: expected { clubs: [ { …(6) } ], …(1) } to deeply equal { Object (clubs, invitations) }
+ FAIL  src/db/club-list.test.ts > the caller's clubs and invitations (spec 04, 05) > lists an invitation the caller accepted, with the club's name, the proposer's and where it stands (T7)
+AssertionError: expected { clubs: [], invitations: [ …(29) ] } to deeply equal { Object (clubs, invitations) }
+ FAIL  src/db/club-list.test.ts > the caller's clubs and invitations (spec 04, 05) > says the roster changed once the open revision is not the one they accepted, and that it didn't go ahead once the proposal ended
+AssertionError: expected [ 'waiting', 'waiting', …(27) ] to deeply equal [ 'waiting' ]
+ FAIL  src/db/club-list.test.ts > the caller's clubs and invitations (spec 04, 05) > stops listing an invitation once its candidate has joined: it is a club then, not an invitation
+AssertionError: expected [ { …(4) }, { …(4) }, { …(4) }, …(25) ] to deeply equal []
+ FAIL  src/db/club-list.test.ts > the caller's clubs and invitations (spec 04, 05) > names the inviter by FQ75's rule: the live name while their interval is active, the name it ended with after, none for a deleted account
+AssertionError: expected [ 'Ana', 'Ana 659bf691aea8', …(27) ] to deeply equal [ 'Ana' ]
+ Test Files  1 failed (1)
+      Tests  6 failed | 5 passed (11)

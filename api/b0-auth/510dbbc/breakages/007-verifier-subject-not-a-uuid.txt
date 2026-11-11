@@ -1,0 +1,25 @@
+breakage: verifier-subject-not-a-uuid
+patch: [
+ [
+  "services/api/src/identity/token.ts",
+  "    if (typeof subject !== \"string\" || !UUID.test(subject)) return null;\n",
+  "    if (typeof subject !== \"string\") return null;\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/identity/token.test.ts
+exit: 1
+expected words: a subject that isn't a UUID
+caught: True
+
+     × a subject that isn't a UUID 7ms
+     × a subject that is a UUID with something… 2ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 46 passed (48)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > a subject that isn't a UUID
+AssertionError: expected 'someone' to be null // Object.is equality
+    101|     expect(await verify(token)).toBe(expected);
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > a subject that is a UUID with something…
+AssertionError: expected '6f1c0c9e-39a5-4c7d-b2a5-0f4a7b3b2f11x' to be null // Object.is equality
+    101|     expect(await verify(token)).toBe(expected);

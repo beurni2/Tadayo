@@ -1,0 +1,48 @@
+breakage: update-age-overwritten
+patch: [
+ [
+  "packages/domain/src/identity/update-me.ts",
+  "         SET age_confirmed_at = CASE WHEN ${confirmsAge}::pg_catalog.bool THEN ${at}::pg_catalog.timestamptz\n                                     ELSE age_confirmed_at END,\n",
+  "         SET age_confirmed_at = ${at}::pg_catalog.timestamptz,\n",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/dbtest.sh src/db/update-me.test.ts
+exit: 1
+expected words: takes the confirmation once
+caught: False
+
+     × writes a name with a link-like shape in it, which the receipt's content check lets through under display_name 8ms
+     × moves by one for each change and not at all when nothing changes 4ms
+     × is VERSION_CONFLICT with the current version when the caller read an older or a later one 3ms
+     × is judged before the fields: a stale version with a bad avatar is the conflict, not the avatar's 4ms
+     × gives the same key and the same request the first answer again, writing nothing a second time 4ms
+     × gives the first answer even after the account has changed since, not the account as it is now 4ms
+     × is IDEMPOTENCY_CONFLICT when the same key comes with another request, whatever the difference 4ms
+     × belongs to the account: another account's use of the same key is its own request 5ms
+     × leaves no receipt behind when the request is refused, so the same key can be sent again 6ms
+     × takes a ready avatar upload of its own: the avatar's version is the upload's random one 6ms
+     × lets two requests that read the same version race: one wins, the other is told the new version, and nothing waits for ever 29ms
+     × lets twenty requests of one account at once serialize on its row: one writes, nineteen are conflicts, none a deadlock 126ms
+     × gives two sends of the same key at once the same answer, and writes once 3ms
+⎯⎯⎯⎯⎯⎯ Failed Tests 13 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/update-me.test.ts > confirming the age and naming the person (FQ13, FQ69) > writes a name with a link-like shape in it, which the receipt's content check lets through under display_name
+ FAIL  src/db/update-me.test.ts > the version > moves by one for each change and not at all when nothing changes
+ FAIL  src/db/update-me.test.ts > the version > is VERSION_CONFLICT with the current version when the caller read an older or a later one
+ FAIL  src/db/update-me.test.ts > the version > is judged before the fields: a stale version with a bad avatar is the conflict, not the avatar's
+ FAIL  src/db/update-me.test.ts > the idempotency key (T19) > gives the same key and the same request the first answer again, writing nothing a second time
+ FAIL  src/db/update-me.test.ts > the idempotency key (T19) > gives the first answer even after the account has changed since, not the account as it is now
+ FAIL  src/db/update-me.test.ts > the idempotency key (T19) > is IDEMPOTENCY_CONFLICT when the same key comes with another request, whatever the difference
+ FAIL  src/db/update-me.test.ts > the idempotency key (T19) > belongs to the account: another account's use of the same key is its own request
+ FAIL  src/db/update-me.test.ts > the idempotency key (T19) > leaves no receipt behind when the request is refused, so the same key can be sent again
+ FAIL  src/db/update-me.test.ts > the avatar (FQ74) > takes a ready avatar upload of its own: the avatar's version is the upload's random one
+ FAIL  src/db/update-me.test.ts > requests at once, committed (T19, T27) > gives two sends of the same key at once the same answer, and writes once
+PostgresError: app.users: the age confirmation can't be taken back (FQ13)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ FAIL  src/db/update-me.test.ts > requests at once, committed (T19, T27) > lets two requests that read the same version race: one wins, the other is told the new version, and nothing waits for ever
+AssertionError: expected [ …(2) ] to have a length of 1 but got 2
+ FAIL  src/db/update-me.test.ts > requests at once, committed (T19, T27) > lets twenty requests of one account at once serialize on its row: one writes, nineteen are conflicts, none a deadlock
+AssertionError: expected [] to have a length of 19 but got +0
+ Test Files  1 failed (1)
+      Tests  13 failed | 8 passed (21)

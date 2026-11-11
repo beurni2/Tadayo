@@ -1,0 +1,16 @@
+breakage: update-unknown-field-named
+patch: [
+ [
+  "services/api/src/identity/me.ts",
+  "    if (typeof field === \"string\" && FIELDS.includes(field)) return field;\n",
+  "    if (typeof field === \"string\") return field;\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/identity/me.test.ts
+exit: 0
+expected words: names the first bad field in the contract's order
+caught: False
+
+ Test Files  1 passed (1)
+      Tests  18 passed (18)

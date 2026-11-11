@@ -1,0 +1,23 @@
+breakage: verifier-anonymous-person-accepted
+patch: [
+ [
+  "services/api/src/identity/token.ts",
+  "    if (payload[\"is_anonymous\"] !== undefined && payload[\"is_anonymous\"] !== false) return null;\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/identity/token.test.ts
+exit: 1
+expected words: an anonymous person's token
+caught: True
+
+     × an anonymous person's token 7ms
+     × an is_anonymous that is text 2ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 46 passed (48)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > an anonymous person's token
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > an is_anonymous that is text
+AssertionError: expected '6f1c0c9e-39a5-4c7d-b2a5-0f4a7b3b2f11' to be null // Object.is equality
+    101|     expect(await verify(token)).toBe(expected);

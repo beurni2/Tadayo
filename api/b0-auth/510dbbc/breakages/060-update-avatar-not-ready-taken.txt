@@ -1,0 +1,22 @@
+breakage: update-avatar-not-ready-taken
+patch: [
+ [
+  "packages/domain/src/identity/update-me.ts",
+  "    if (upload[\"state\"] !== \"ready\") throw new Refused(\"MEDIA_NOT_READY\");\n",
+  "",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/dbtest.sh src/db/update-me.test.ts
+exit: 1
+expected words: is MEDIA_NOT_READY for its own avatar upload until it is ready
+caught: True
+
+     × is MEDIA_NOT_READY for its own avatar upload until it is ready, and for one that never will be 12ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/update-me.test.ts > the avatar (FQ74) > is MEDIA_NOT_READY for its own avatar upload until it is ready, and for one that never will be
+PostgresError: app.users: an avatar is a ready upload made as one (T12, FQ74)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ Test Files  1 failed (1)
+      Tests  1 failed | 20 passed (21)

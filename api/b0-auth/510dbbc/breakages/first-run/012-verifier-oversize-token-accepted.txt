@@ -1,0 +1,16 @@
+breakage: verifier-oversize-token-accepted
+patch: [
+ [
+  "services/api/src/identity/token.ts",
+  "    if (token.length > MAX_TOKEN || !COMPACT.test(token)) return null;\n",
+  "    if (!COMPACT.test(token)) return null;\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/identity/token.test.ts
+exit: 0
+expected words: refuses what isn't a compact token, or is too long to be one
+caught: False
+
+ Test Files  1 passed (1)
+      Tests  47 passed (47)

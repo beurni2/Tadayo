@@ -1,0 +1,85 @@
+breakage: answers-store-allowed
+patch: [
+ [
+  "services/api/src/answers.ts",
+  "export const NO_STORE = \"private, no-store\";",
+  "export const NO_STORE = \"no-store\";",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run 
+exit: 1
+expected words: private, no-store
+caught: True
+
+     × gets the one 401 on every route that isn't public, and the gate asked once 100ms
+     × is judged before the body is read: a body Fastify couldn't read is still a 401, never a 400 21ms
+     × is told the same 401 whichever header it sent, since the gate hands over the header and nothing else 24ms
+     × passes every route when its profile is finished, to the neutral answers of the routes nobody has built 23ms
+     × gets 403 PROFILE_INCOMPLETE on a route that isn't beforeProfile until the age is confirmed and there is a name (FQ13, FQ69) 25ms
+     × never ask who is calling, whatever the header says, and make no account 17ms
+     × is the neutral not-found, and the gate is never asked 18ms
+     × gates an id of 65 to 100 characters, which Fastify's router takes: no session is a 401, not a not-found 21ms
+     × answers 503 with nothing in it on every route that isn't public, never a 401, which signs the app out 17ms
+     × answers 500 with an empty body, and never echoes the error 17ms
+     × answers the contract's Me for the caller, for the caller alone, and nothing else 139ms
+     × names the first bad field in the contract's order, and never a value 11ms
+     × answers Refused: refused: VERSION_CONFLICT as 409 {"code":"VERSION_CONFLICT","current_version":7} 11ms
+     × answers Refused: refused: IDEMPOTENCY_CONFLICT as 409 {"code":"IDEMPOTENCY_CONFLICT"} 10ms
+     × answers Refused: refused: MEDIA_NOT_READY as 409 {"code":"MEDIA_NOT_READY"} 6ms
+     × answers Refused: refused: NOT_FOUND as 404 {"code":"NOT_FOUND"} 8ms
+     × answers Refused: refused: INVALID_REQUEST as 400 {"code":"INVALID_REQUEST","field":"avatar_upload_id"} 19ms
+     × answers Refused: refused: UNAUTHENTICATED as 401 {"code":"UNAUTHENTICATED"} 7ms
+     × answers every operation nobody has built yet with the neutral not-found, and nothing else 21ms
+     × answers an unknown path, another method, HEAD and OPTIONS with the neutral not-found 3ms
+     × answers an id past the router's limit and a broken escape with the neutral not-found, never echoing the path 3ms
+     × answers a body it can't read with INVALID_REQUEST alone, never the error's message 8ms
+     × answers a request the parser can't read with INVALID_REQUEST alone, in place of Fastify's own words 8ms
+     × answers a path with dot segments, sent as it is, with the neutral not-found 6ms
+ Test Files  3 failed | 3 passed (6)
+      Tests  24 failed | 105 passed (129)
+⎯⎯⎯⎯⎯⎯ Failed Tests 24 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/app.test.ts > the skeleton's routes (T14) > answers every operation nobody has built yet with the neutral not-found, and nothing else
+AssertionError: deleteMyAvatar: expected { status: 404, …(2) } to deeply equal { status: 404, …(2) }
+ FAIL  src/app.test.ts > what Fastify answers itself, made to say nothing (T14) > answers an unknown path, another method, HEAD and OPTIONS with the neutral not-found
+AssertionError: GET /: expected { status: 404, …(2) } to deeply equal { status: 404, …(2) }
+ FAIL  src/app.test.ts > what Fastify answers itself, made to say nothing (T14) > answers an id past the router's limit and a broken escape with the neutral not-found, never echoing the path
+AssertionError: aaaaaaaaaaaa: expected { status: 404, …(2) } to deeply equal { status: 404, …(2) }
+ FAIL  src/app.test.ts > what Fastify answers itself, made to say nothing (T14) > answers a body it can't read with INVALID_REQUEST alone, never the error's message
+AssertionError: application/json {bad: expected { status: 400, …(2) } to deeply equal { status: 400, …(2) }
+ FAIL  src/app.test.ts > what Node's parser answers, over a socket of its own (T14) > answers a request the parser can't read with INVALID_REQUEST alone, in place of Fastify's own words
+AssertionError: GET /v1/drops/cafÃ© HTTP/1.1
+Host: 127.: expected { status: 400, …(2) } to deeply equal { status: 400, …(2) }
+ FAIL  src/app.test.ts > what Node's parser answers, over a socket of its own (T14) > answers a path with dot segments, sent as it is, with the neutral not-found
+AssertionError: /v1/drops/drp_x/../../me: expected { status: 404, …(2) } to deeply equal { status: 404, …(2) }
+ FAIL  src/session.test.ts > a caller with no session (T14) > gets the one 401 on every route that isn't public, and the gate asked once
+AssertionError: deleteMyAvatar: expected { status: 401, …(2) } to deeply equal { status: 401, …(2) }
+ FAIL  src/session.test.ts > a caller with no session (T14) > is judged before the body is read: a body Fastify couldn't read is still a 401, never a 400
+AssertionError: application/json {bad: expected { status: 401, …(2) } to deeply equal { status: 401, …(2) }
+ FAIL  src/session.test.ts > a caller with no session (T14) > is told the same 401 whichever header it sent, since the gate hands over the header and nothing else
+AssertionError: undefined: expected { status: 401, …(2) } to deeply equal { status: 401, …(2) }
+ FAIL  src/session.test.ts > a signed-in caller > passes every route when its profile is finished, to the neutral answers of the routes nobody has built
+AssertionError: deleteMyAvatar: expected { status: 404, …(2) } to deeply equal { status: 404, …(2) }
+ FAIL  src/session.test.ts > a signed-in caller > gets 403 PROFILE_INCOMPLETE on a route that isn't beforeProfile until the age is confirmed and there is a name (FQ13, FQ69)
+AssertionError: listMyDrops: expected { status: 403, …(2) } to deeply equal { status: 403, …(2) }
+ FAIL  src/session.test.ts > the public routes > never ask who is calling, whatever the header says, and make no account
+AssertionError: removeDevice: expected { status: 404, …(2) } to deeply equal { status: 404, …(2) }
+ FAIL  src/session.test.ts > what Fastify answers itself, for every caller (T14) > is the neutral not-found, and the gate is never asked
+AssertionError: GET /: expected { status: 404, …(2) } to deeply equal { status: 404, …(2) }
+ FAIL  src/session.test.ts > what Fastify answers itself, for every caller (T14) > gates an id of 65 to 100 characters, which Fastify's router takes: no session is a 401, not a not-found
+AssertionError: expected { status: 401, …(2) } to deeply equal { status: 401, …(2) }
+ FAIL  src/session.test.ts > when the keys that check tokens can't be read (FQ89) > answers 503 with nothing in it on every route that isn't public, never a 401, which signs the app out
+AssertionError: deleteMyAvatar: expected { status: 503, body: '', …(1) } to deeply equal { status: 503, body: '', …(1) }
+ FAIL  src/session.test.ts > anything else that goes wrong while telling who is calling is a bug (500, nothing in it) > answers 500 with an empty body, and never echoes the error
+AssertionError: expected { status: 500, body: '', …(1) } to deeply equal { status: 500, body: '', …(1) }
+ FAIL  src/identity/me.test.ts > GET /v1/me (spec 23, T55) > answers the contract's Me for the caller, for the caller alone, and nothing else
+AssertionError: expected 'no-store' to be 'private, no-store' // Object.is equality
+ FAIL  src/identity/me.test.ts > PATCH /v1/me: what is refused before the command runs (the contract's INVALID_REQUEST) > names the first bad field in the contract's order, and never a value
+AssertionError: expected 'no-store' to be 'private, no-store' // Object.is equality
+ FAIL  src/identity/me.test.ts > PATCH /v1/me: a refused command is the contract's answer > answers Refused: refused: VERSION_CONFLICT as 409 {"code":"VERSION_CONFLICT","current_version":7}
+ FAIL  src/identity/me.test.ts > PATCH /v1/me: a refused command is the contract's answer > answers Refused: refused: IDEMPOTENCY_CONFLICT as 409 {"code":"IDEMPOTENCY_CONFLICT"}
+ FAIL  src/identity/me.test.ts > PATCH /v1/me: a refused command is the contract's answer > answers Refused: refused: MEDIA_NOT_READY as 409 {"code":"MEDIA_NOT_READY"}
+ FAIL  src/identity/me.test.ts > PATCH /v1/me: a refused command is the contract's answer > answers Refused: refused: NOT_FOUND as 404 {"code":"NOT_FOUND"}
+ FAIL  src/identity/me.test.ts > PATCH /v1/me: a refused command is the contract's answer > answers Refused: refused: INVALID_REQUEST as 400 {"code":"INVALID_REQUEST","field":"avatar_upload_id"}
+ FAIL  src/identity/me.test.ts > PATCH /v1/me: a refused command is the contract's answer > answers Refused: refused: UNAUTHENTICATED as 401 {"code":"UNAUTHENTICATED"}
+AssertionError: expected 'no-store' to be 'private, no-store' // Object.is equality

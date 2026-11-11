@@ -1,0 +1,21 @@
+breakage: update-conflicting-key-replays
+patch: [
+ [
+  "packages/domain/src/identity/update-me.ts",
+  "    if (replayOutcome(receipt[\"request_hash\"], request) !== \"replay\") throw new Refused(\"IDEMPOTENCY_CONFLICT\");\n",
+  "",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/dbtest.sh src/db/update-me.test.ts
+exit: 1
+expected words: is IDEMPOTENCY_CONFLICT when the same key comes with another request
+caught: True
+
+     × is IDEMPOTENCY_CONFLICT when the same key comes with another request, whatever the difference 10ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/update-me.test.ts > the idempotency key (T19) > is IDEMPOTENCY_CONFLICT when the same key comes with another request, whatever the difference
+Error: the request wasn't refused
+     57|   throw new Error("the request wasn't refused");
+ Test Files  1 failed (1)
+      Tests  1 failed | 20 passed (21)

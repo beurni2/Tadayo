@@ -1,0 +1,26 @@
+breakage: keys-never-paused
+patch: [
+ [
+  "services/api/src/identity/token.ts",
+  "    paused = true;\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/identity/token.test.ts
+exit: 1
+expected words: is let alone for a few seconds after a failure
+caught: True
+
+     × is let alone for a few seconds after a failure, so a down key set isn't asked once for each token 12ms
+     × pauses again after the next failure, and not before it 127ms
+     × serves a token it holds keys for, whatever its own pause: a fresh key set is used without a fetch 19ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 45 passed (48)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/identity/token.test.ts > the key set at Supabase's address > is let alone for a few seconds after a failure, so a down key set isn't asked once for each token
+AssertionError: expected 'unreachable' to be 'paused' // Object.is equality
+ FAIL  src/identity/token.test.ts > the key set at Supabase's address > pauses again after the next failure, and not before it
+AssertionError: expected 'unreachable' to be 'paused' // Object.is equality
+ FAIL  src/identity/token.test.ts > the key set at Supabase's address > serves a token it holds keys for, whatever its own pause: a fresh key set is used without a fetch
+AssertionError: expected 'unreachable' to be 'paused' // Object.is equality

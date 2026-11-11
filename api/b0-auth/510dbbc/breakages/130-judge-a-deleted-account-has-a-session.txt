@@ -1,0 +1,20 @@
+breakage: judge-a-deleted-account-has-a-session
+patch: [
+ [
+  "tests/src/privacy/account.ts",
+  "if (row.state !== \"active\") return \"deleting\";",
+  "if (row.state === \"deleting\") return \"deleting\";",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/privtest.sh src/privacy/account.test.ts
+exit: 1
+expected words: lets an active account with a name and a confirmed age have a session
+caught: True
+
+     × lets an active account with a name and a confirmed age have a session, and tells the others apart 7ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/account.test.ts > what the gate makes of an account, from its row > lets an active account with a name and a confirmed age have a session, and tells the others apart
+AssertionError: expected 'unfinished' to be 'deleting' // Object.is equality
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)

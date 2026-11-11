@@ -1,0 +1,20 @@
+breakage: gate-after-the-body
+patch: [
+ [
+  "services/api/src/session.ts",
+  "  app.addHook(\"onRequest\", async (request, reply) => {\n",
+  "  app.addHook(\"preHandler\", async (request, reply) => {\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/session.test.ts src/identity/me.test.ts
+exit: 1
+expected words: is judged before the body is read
+caught: True
+
+     × is judged before the body is read: a body Fastify couldn't read is still a 401, never a 400 24ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 52 passed (53)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/session.test.ts > a caller with no session (T14) > is judged before the body is read: a body Fastify couldn't read is still a 401, never a 400
+AssertionError: application/json {bad: expected { status: 400, …(2) } to deeply equal { status: 401, …(2) }

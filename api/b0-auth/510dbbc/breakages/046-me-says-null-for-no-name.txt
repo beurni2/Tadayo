@@ -1,0 +1,20 @@
+breakage: me-says-null-for-no-name
+patch: [
+ [
+  "services/api/src/identity/me.ts",
+  "    ...(account.displayName === null ? {} : { display_name: account.displayName }),\n",
+  "    display_name: account.displayName,\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/identity/me.test.ts
+exit: 1
+expected words: leaves the name and the avatar out when there are none
+caught: True
+
+     × leaves the name and the avatar out when there are none, and says the age is not confirmed 15ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 passed (19)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/identity/me.test.ts > GET /v1/me (spec 23, T55) > leaves the name and the avatar out when there are none, and says the age is not confirmed
+AssertionError: expected { id: 'acct_ana', …(3) } to deeply equal { id: 'acct_ana', …(2) }

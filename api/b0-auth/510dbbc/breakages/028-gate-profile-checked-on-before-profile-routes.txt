@@ -1,0 +1,26 @@
+breakage: gate-profile-checked-on-before-profile-routes
+patch: [
+ [
+  "services/api/src/session.ts",
+  "config.beforeProfile !== true && !profileFinished(account)",
+  "!profileFinished(account)",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/session.test.ts src/identity/me.test.ts
+exit: 1
+expected words: is open to a caller whose profile isn't finished
+caught: True
+
+     × leaves the name and the avatar out when there are none, and says the age is not confirmed 21ms
+     × is open to a caller whose profile isn't finished: it must read its own version to finish it (FQ69) 16ms
+     × gets 403 PROFILE_INCOMPLETE on a route that isn't beforeProfile until the age is confirmed and there is a name (FQ13, FQ69) 37ms
+ Test Files  2 failed (2)
+      Tests  3 failed | 50 passed (53)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/session.test.ts > a signed-in caller > gets 403 PROFILE_INCOMPLETE on a route that isn't beforeProfile until the age is confirmed and there is a name (FQ13, FQ69)
+AssertionError: deleteMyAvatar: expected { status: 403, …(2) } to deeply equal { status: 404, …(2) }
+ FAIL  src/identity/me.test.ts > GET /v1/me (spec 23, T55) > leaves the name and the avatar out when there are none, and says the age is not confirmed
+AssertionError: expected { code: 'PROFILE_INCOMPLETE' } to deeply equal { id: 'acct_ana', …(2) }
+ FAIL  src/identity/me.test.ts > GET /v1/me (spec 23, T55) > is open to a caller whose profile isn't finished: it must read its own version to finish it (FQ69)
+AssertionError: expected 403 to be 200 // Object.is equality

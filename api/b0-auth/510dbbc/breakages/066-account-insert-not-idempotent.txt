@@ -1,0 +1,31 @@
+breakage: account-insert-not-idempotent
+patch: [
+ [
+  "packages/domain/src/identity/account.ts",
+  "\n    ON CONFLICT (auth_subject) DO NOTHING`;",
+  "`;",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/dbtest.sh src/db/identity.test.ts src/db/sign-in.test.ts
+exit: 1
+expected words: makes one account when twenty first requests arrive at once
+caught: True
+
+     × makes one account when the first request is retried at once, twenty times, on one token or on a fresh token each 75ms
+     × finds an account that is being deleted, with its state, so the gate can end its session at once (T27) 11ms
+       × finds the same account when the first sign-in is retried (spec 23) 4ms
+       × makes one account when twenty first requests arrive at once 76ms
+       × reads the account another request committed when it waited on that request's insert 35ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/identity.test.ts > the account behind a sign-in (spec 23) > finds an account that is being deleted, with its state, so the gate can end its session at once (T27)
+ FAIL  src/db/identity.test.ts > the account behind a sign-in (spec 23) > the first sign-in > finds the same account when the first sign-in is retried (spec 23)
+ FAIL  src/db/identity.test.ts > the account behind a sign-in (spec 23) > the first sign-in > makes one account when twenty first requests arrive at once
+ FAIL  src/db/identity.test.ts > the account behind a sign-in (spec 23) > the first sign-in > reads the account another request committed when it waited on that request's insert
+PostgresError: duplicate key value violates unique constraint "users_auth_subject_key"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ FAIL  src/db/sign-in.test.ts > the first sign-in (spec 23) > makes one account when the first request is retried at once, twenty times, on one token or on a fresh token each
+AssertionError: expected [ 200, 200, 200, 200, 200, 200, …(14) ] to deeply equal [ 200, 200, 200, 200, 200, 200, …(14) ]
+ Test Files  2 failed (2)
+      Tests  5 failed | 16 passed (21)

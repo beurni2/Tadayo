@@ -1,0 +1,21 @@
+breakage: verifier-expiry-not-required
+patch: [
+ [
+  "services/api/src/identity/token.ts",
+  "        requiredClaims: [\"exp\", \"sub\"],\n",
+  "        requiredClaims: [\"sub\"],\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/identity/token.test.ts
+exit: 1
+expected words: a token with no expiry
+caught: True
+
+     × a token with no expiry 11ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 47 passed (48)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > a token with no expiry
+AssertionError: expected '6f1c0c9e-39a5-4c7d-b2a5-0f4a7b3b2f11' to be null // Object.is equality
+    101|     expect(await verify(token)).toBe(expected);

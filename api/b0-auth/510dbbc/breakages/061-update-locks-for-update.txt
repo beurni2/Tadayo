@@ -1,0 +1,25 @@
+breakage: update-locks-for-update
+patch: [
+ [
+  "packages/domain/src/identity/update-me.ts",
+  "FROM app.users WHERE id = ${userId} FOR NO KEY UPDATE`;",
+  "FROM app.users WHERE id = ${userId} FOR UPDATE`;",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/dbtest.sh src/db/update-me.test.ts
+exit: 1
+expected words: lets twenty requests of one account at once serialize on its row
+caught: True
+
+     × lets twenty requests of one account at once serialize on its row: one writes, nineteen are conflicts, none a deadlock 5004ms
+     × gives two sends of the same key at once the same answer, and writes once 1006ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/update-me.test.ts > requests at once, committed (T19, T27) > lets twenty requests of one account at once serialize on its row: one writes, nineteen are conflicts, none a deadlock
+Error: Test timed out in 5000ms.
+ FAIL  src/db/update-me.test.ts > requests at once, committed (T19, T27) > gives two sends of the same key at once the same answer, and writes once
+PostgresError: deadlock detected
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ Test Files  1 failed (1)
+      Tests  2 failed | 19 passed (21)

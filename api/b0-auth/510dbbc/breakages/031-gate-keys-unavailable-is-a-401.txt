@@ -1,0 +1,20 @@
+breakage: gate-keys-unavailable-is-a-401
+patch: [
+ [
+  "services/api/src/session.ts",
+  "        return unavailable(reply);\n",
+  "        return unauthenticated(reply);\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/session.test.ts src/identity/me.test.ts
+exit: 1
+expected words: answers 503 with nothing in it on every route
+caught: True
+
+     × answers 503 with nothing in it on every route that isn't public, never a 401, which signs the app out 11ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 52 passed (53)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/session.test.ts > when the keys that check tokens can't be read (FQ89) > answers 503 with nothing in it on every route that isn't public, never a 401, which signs the app out
+AssertionError: deleteMyAvatar: expected { status: 401, …(2) } to deeply equal { status: 503, body: '', …(1) }

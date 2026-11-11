@@ -1,0 +1,20 @@
+breakage: profile-needs-only-a-name
+patch: [
+ [
+  "services/api/src/session.ts",
+  "  return account.ageConfirmed && account.displayName !== null;",
+  "  return account.displayName !== null;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/session.test.ts src/identity/me.test.ts
+exit: 1
+expected words: gets 403 PROFILE_INCOMPLETE on a route that isn't beforeProfile
+caught: True
+
+     × gets 403 PROFILE_INCOMPLETE on a route that isn't beforeProfile until the age is confirmed and there is a name (FQ13, FQ69) 60ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 52 passed (53)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/session.test.ts > a signed-in caller > gets 403 PROFILE_INCOMPLETE on a route that isn't beforeProfile until the age is confirmed and there is a name (FQ13, FQ69)
+AssertionError: listMyDrops: expected { status: 404, …(2) } to deeply equal { status: 403, …(2) }

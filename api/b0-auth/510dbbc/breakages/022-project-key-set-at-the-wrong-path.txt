@@ -1,0 +1,20 @@
+breakage: project-key-set-at-the-wrong-path
+patch: [
+ [
+  "services/api/src/identity/token.ts",
+  "    keys: new URL(`${url.origin}/auth/v1/.well-known/jwks.json`),\n",
+  "    keys: new URL(`${url.origin}/auth/v1/.well-known/jwks`),\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/identity/token.test.ts
+exit: 1
+expected words: gives the issuer and the key set's address of a project
+caught: True
+
+     × gives the issuer and the key set's address of a project 9ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 47 passed (48)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/identity/token.test.ts > a project's URL (SUPABASE_URL) > gives the issuer and the key set's address of a project
+AssertionError: expected 'https://rhsycmycocbzakrydahi.supabase…' to be 'https://rhsycmycocbzakrydahi.supabase…' // Object.is equality

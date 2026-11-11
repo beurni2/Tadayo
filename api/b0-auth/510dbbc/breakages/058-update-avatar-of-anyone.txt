@@ -1,0 +1,22 @@
+breakage: update-avatar-of-anyone
+patch: [
+ [
+  "packages/domain/src/identity/update-me.ts",
+  "       WHERE id = ${edit.avatar_upload_id} AND owner_user_id = ${userId} AND purpose = 'avatar'`;",
+  "       WHERE id = ${edit.avatar_upload_id} AND purpose = 'avatar'`;",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/dbtest.sh src/db/update-me.test.ts
+exit: 1
+expected words: answers NOT_FOUND alike for an upload that never existed
+caught: True
+
+     × answers NOT_FOUND alike for an upload that never existed, another account's, and one made for a drop (T14) 62ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/update-me.test.ts > the avatar (FQ74) > answers NOT_FOUND alike for an upload that never existed, another account's, and one made for a drop (T14)
+PostgresError: insert or update on table "users" violates foreign key constraint "users_avatar"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ Test Files  1 failed (1)
+      Tests  1 failed | 20 passed (21)

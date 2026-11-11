@@ -1,0 +1,21 @@
+breakage: update-a-deleting-account-edits
+patch: [
+ [
+  "packages/domain/src/identity/update-me.ts",
+  "  if (row === undefined || row[\"state\"] !== \"active\") throw new Refused(\"UNAUTHENTICATED\");\n",
+  "  if (row === undefined) throw new Refused(\"UNAUTHENTICATED\");\n",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/dbtest.sh src/db/update-me.test.ts
+exit: 1
+expected words: is refused once the account's deletion has begun
+caught: True
+
+     × is refused once the account's deletion has begun, whether it began before the request or while it waited (T27) 16ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/update-me.test.ts > requests at once, committed (T19, T27) > is refused once the account's deletion has begun, whether it began before the request or while it waited (T27)
+Error: the request wasn't refused
+     57|   throw new Error("the request wasn't refused");
+ Test Files  1 failed (1)
+      Tests  1 failed | 20 passed (21)

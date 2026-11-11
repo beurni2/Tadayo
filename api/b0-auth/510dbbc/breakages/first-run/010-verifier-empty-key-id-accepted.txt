@@ -1,0 +1,16 @@
+breakage: verifier-empty-key-id-accepted
+patch: [
+ [
+  "services/api/src/identity/token.ts",
+  "if (typeof header.kid !== \"string\" || header.kid === \"\") throw",
+  "if (typeof header.kid !== \"string\") throw",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/identity/token.test.ts
+exit: 0
+expected words: a token whose key id is empty
+caught: False
+
+ Test Files  1 passed (1)
+      Tests  47 passed (47)

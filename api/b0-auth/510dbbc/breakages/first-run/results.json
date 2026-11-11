@@ -1,0 +1,727 @@
+{
+ "account-avatar-of-any-state": {
+  "caught": false,
+  "exit": 0,
+  "index": 70
+ },
+ "account-insert-not-idempotent": {
+  "caught": true,
+  "exit": 1,
+  "index": 67
+ },
+ "account-made-at-the-wrong-clock": {
+  "caught": true,
+  "exit": 1,
+  "index": 68
+ },
+ "account-subject-not-checked": {
+  "caught": true,
+  "exit": 1,
+  "index": 69
+ },
+ "answers-503-with-a-body": {
+  "caught": true,
+  "exit": 1,
+  "index": 43
+ },
+ "answers-error-with-a-message": {
+  "caught": true,
+  "exit": 1,
+  "index": 44
+ },
+ "answers-store-allowed": {
+  "caught": true,
+  "exit": 1,
+  "index": 42
+ },
+ "app-500-echoes-the-error": {
+  "caught": true,
+  "exit": 1,
+  "index": 40
+ },
+ "app-gate-not-installed": {
+  "caught": true,
+  "exit": 1,
+  "index": 39
+ },
+ "app-request-line-not-logged": {
+  "caught": true,
+  "exit": 1,
+  "index": 41
+ },
+ "authenticate-lets-a-deleting-account-in": {
+  "caught": true,
+  "exit": 1,
+  "index": 34
+ },
+ "authenticate-makes-no-account": {
+  "caught": true,
+  "exit": 1,
+  "index": 35
+ },
+ "bearer-any-scheme": {
+  "caught": true,
+  "exit": 1,
+  "index": 36
+ },
+ "bearer-case-sensitive": {
+  "caught": true,
+  "exit": 1,
+  "index": 37
+ },
+ "bearer-token-with-spaces": {
+  "caught": true,
+  "exit": 1,
+  "index": 38
+ },
+ "club-never-suspended": {
+  "caught": true,
+  "exit": 1,
+  "index": 80
+ },
+ "club-state-paused-below-one": {
+  "caught": true,
+  "exit": 1,
+  "index": 82
+ },
+ "club-state-suspended-ignored": {
+  "caught": true,
+  "exit": 1,
+  "index": 81
+ },
+ "clubs-a-left-club-is-listed": {
+  "caught": true,
+  "exit": 1,
+  "index": 71
+ },
+ "clubs-newest-first": {
+  "caught": true,
+  "exit": 1,
+  "index": 73
+ },
+ "clubs-no-limit": {
+  "caught": true,
+  "exit": 1,
+  "index": 74
+ },
+ "clubs-open-day-listed": {
+  "caught": true,
+  "exit": 1,
+  "index": 85
+ },
+ "clubs-server-now-with-a-fraction": {
+  "caught": true,
+  "exit": 1,
+  "index": 84
+ },
+ "clubs-the-count-includes-those-who-left": {
+  "caught": true,
+  "exit": 1,
+  "index": 72
+ },
+ "gate-after-the-body": {
+  "caught": true,
+  "exit": 1,
+  "index": 25
+ },
+ "gate-answers-by-cause": {
+  "caught": true,
+  "exit": 1,
+  "index": 27
+ },
+ "gate-asks-for-public-routes": {
+  "caught": true,
+  "exit": 1,
+  "index": 24
+ },
+ "gate-keys-unavailable-is-a-401": {
+  "caught": true,
+  "exit": 1,
+  "index": 32
+ },
+ "gate-no-session-is-403": {
+  "caught": true,
+  "exit": 1,
+  "index": 26
+ },
+ "gate-other-errors-are-a-401": {
+  "caught": true,
+  "exit": 1,
+  "index": 33
+ },
+ "gate-profile-checked-on-before-profile-routes": {
+  "caught": true,
+  "exit": 1,
+  "index": 29
+ },
+ "gate-profile-never-checked": {
+  "caught": true,
+  "exit": 1,
+  "index": 28
+ },
+ "invitation-never-did-not-go-ahead": {
+  "caught": true,
+  "exit": 1,
+  "index": 79
+ },
+ "invitation-state-ended-ignored": {
+  "caught": true,
+  "exit": 1,
+  "index": 83
+ },
+ "invitations-live-name-only": {
+  "caught": true,
+  "exit": 1,
+  "index": 78
+ },
+ "invitations-of-anyone": {
+  "caught": true,
+  "exit": 1,
+  "index": 75
+ },
+ "invitations-of-joined-candidates": {
+  "caught": true,
+  "exit": 1,
+  "index": 76
+ },
+ "invitations-without-an-inviter-name": {
+  "caught": true,
+  "exit": 1,
+  "index": 77
+ },
+ "judge-a-deleted-account-has-a-session": {
+  "caught": true,
+  "exit": 1,
+  "index": 132
+ },
+ "judge-a-deleting-account-gets-the-403": {
+  "caught": true,
+  "exit": 1,
+  "index": 128
+ },
+ "judge-a-deleting-accounts-bodies-are-not-the-gates": {
+  "caught": true,
+  "exit": 1,
+  "index": 145
+ },
+ "judge-a-left-interval-is-a-club": {
+  "caught": true,
+  "exit": 1,
+  "index": 137
+ },
+ "judge-a-name-without-the-age-is-finished": {
+  "caught": true,
+  "exit": 1,
+  "index": 131
+ },
+ "judge-a-public-route-is-gated": {
+  "caught": true,
+  "exit": 1,
+  "index": 127
+ },
+ "judge-a-repeated-id-passes": {
+  "caught": true,
+  "exit": 1,
+  "index": 141
+ },
+ "judge-a-used-invitation-is-listed": {
+  "caught": true,
+  "exit": 1,
+  "index": 139
+ },
+ "judge-an-invitation-with-no-inviter-is-listed": {
+  "caught": true,
+  "exit": 1,
+  "index": 140
+ },
+ "judge-an-unfinished-account-is-gated-on-before-profile-routes": {
+  "caught": true,
+  "exit": 1,
+  "index": 129
+ },
+ "judge-an-unfinished-account-passes-every-route": {
+  "caught": true,
+  "exit": 1,
+  "index": 130
+ },
+ "judge-an-unfinished-accounts-avatar-names-another-field": {
+  "caught": true,
+  "exit": 1,
+  "index": 144
+ },
+ "judge-anothers-invitation-is-the-viewers": {
+  "caught": true,
+  "exit": 1,
+  "index": 138
+ },
+ "judge-member-count-not-read": {
+  "caught": true,
+  "exit": 1,
+  "index": 136
+ },
+ "judge-server-now-not-read": {
+  "caught": true,
+  "exit": 1,
+  "index": 135
+ },
+ "judge-the-foreign-avatar-may-answer-anything": {
+  "caught": true,
+  "exit": 1,
+  "index": 143
+ },
+ "judge-the-public-set-gains-a-route": {
+  "caught": true,
+  "exit": 1,
+  "index": 133
+ },
+ "judge-the-stale-version-is-not-the-current": {
+  "caught": true,
+  "exit": 1,
+  "index": 142
+ },
+ "judge-updateMe-expects-the-neutral": {
+  "caught": true,
+  "exit": 1,
+  "index": 134
+ },
+ "keys-never-kept": {
+  "caught": true,
+  "exit": 1,
+  "index": 18
+ },
+ "keys-never-paused": {
+  "caught": true,
+  "exit": 1,
+  "index": 17
+ },
+ "keys-no-cooldown": {
+  "caught": true,
+  "exit": 1,
+  "index": 19
+ },
+ "log-error-message-kept": {
+  "caught": true,
+  "exit": 1,
+  "index": 93
+ },
+ "log-fastify-lines-on": {
+  "caught": true,
+  "exit": 1,
+  "index": 87
+ },
+ "log-level-ignored": {
+  "caught": true,
+  "exit": 1,
+  "index": 96
+ },
+ "log-redaction-email-unlisted": {
+  "caught": true,
+  "exit": 1,
+  "index": 91
+ },
+ "log-redaction-off": {
+  "caught": true,
+  "exit": 1,
+  "index": 90
+ },
+ "log-redaction-top-level-only": {
+  "caught": true,
+  "exit": 1,
+  "index": 92
+ },
+ "log-request-and-answer-objects-kept": {
+  "caught": false,
+  "exit": 0,
+  "index": 95
+ },
+ "log-request-id-a-counter": {
+  "caught": true,
+  "exit": 1,
+  "index": 89
+ },
+ "log-request-id-from-the-header": {
+  "caught": true,
+  "exit": 1,
+  "index": 88
+ },
+ "log-request-line-with-the-url": {
+  "caught": true,
+  "exit": 1,
+  "index": 94
+ },
+ "matrix-a-deleting-account-is-let-in": {
+  "caught": true,
+  "exit": 1,
+  "index": 101
+ },
+ "matrix-an-unfinished-account-passes-the-gate": {
+  "caught": true,
+  "exit": 1,
+  "index": 105
+ },
+ "matrix-another-issuer-accepted": {
+  "caught": true,
+  "exit": 1,
+  "index": 106
+ },
+ "matrix-gate-not-installed": {
+  "caught": true,
+  "exit": 1,
+  "index": 100
+ },
+ "matrix-getMe-serves-another-account": {
+  "caught": true,
+  "exit": 1,
+  "index": 102
+ },
+ "matrix-listClubs-lists-a-club-that-was-left": {
+  "caught": true,
+  "exit": 1,
+  "index": 103
+ },
+ "matrix-token-with-no-key-id-accepted": {
+  "caught": true,
+  "exit": 1,
+  "index": 99
+ },
+ "matrix-updateMe-ignores-the-version": {
+  "caught": true,
+  "exit": 1,
+  "index": 104
+ },
+ "me-says-null-for-no-name": {
+  "caught": true,
+  "exit": 1,
+  "index": 47
+ },
+ "me-serves-an-email": {
+  "caught": true,
+  "exit": 1,
+  "index": 46
+ },
+ "me-serves-another-id": {
+  "caught": true,
+  "exit": 1,
+  "index": 45
+ },
+ "new-id-not-random": {
+  "caught": false,
+  "exit": 1,
+  "index": 86
+ },
+ "profile-needs-only-a-name": {
+  "caught": true,
+  "exit": 1,
+  "index": 31
+ },
+ "profile-needs-only-the-age": {
+  "caught": true,
+  "exit": 1,
+  "index": 30
+ },
+ "project-any-host": {
+  "caught": true,
+  "exit": 1,
+  "index": 20
+ },
+ "project-issuer-without-the-auth-path": {
+  "caught": true,
+  "exit": 1,
+  "index": 22
+ },
+ "project-key-set-at-the-wrong-path": {
+  "caught": true,
+  "exit": 1,
+  "index": 23
+ },
+ "project-plain-http": {
+  "caught": true,
+  "exit": 1,
+  "index": 21
+ },
+ "scanner-accepted-invitation-names-not-the-viewers-text": {
+  "caught": true,
+  "exit": 1,
+  "index": 121
+ },
+ "scanner-accounts-not-unseen-ids": {
+  "caught": true,
+  "exit": 1,
+  "index": 123
+ },
+ "scanner-cursor-may-hold-an-account-id": {
+  "caught": true,
+  "exit": 1,
+  "index": 125
+ },
+ "scanner-cursor-may-hold-an-invitation-id": {
+  "caught": true,
+  "exit": 1,
+  "index": 126
+ },
+ "scanner-every-invitation-names-are-the-viewers-text": {
+  "caught": true,
+  "exit": 1,
+  "index": 122
+ },
+ "scanner-invitation-already-a-membership": {
+  "caught": true,
+  "exit": 1,
+  "index": 120
+ },
+ "scanner-invitation-any-club-name": {
+  "caught": true,
+  "exit": 1,
+  "index": 118
+ },
+ "scanner-invitation-any-inviter-name": {
+  "caught": true,
+  "exit": 1,
+  "index": 119
+ },
+ "scanner-invitation-id-not-judged": {
+  "caught": true,
+  "exit": 1,
+  "index": 115
+ },
+ "scanner-invitation-of-anyone": {
+  "caught": true,
+  "exit": 1,
+  "index": 117
+ },
+ "scanner-invitation-the-world-lacks": {
+  "caught": true,
+  "exit": 1,
+  "index": 116
+ },
+ "scanner-invitations-not-unseen-ids": {
+  "caught": true,
+  "exit": 1,
+  "index": 124
+ },
+ "scanner-me-any-age-confirmation": {
+  "caught": true,
+  "exit": 1,
+  "index": 111
+ },
+ "scanner-me-any-avatar-version": {
+  "caught": true,
+  "exit": 1,
+  "index": 110
+ },
+ "scanner-me-any-id": {
+  "caught": true,
+  "exit": 1,
+  "index": 108
+ },
+ "scanner-me-any-name": {
+  "caught": true,
+  "exit": 1,
+  "index": 109
+ },
+ "scanner-me-any-version": {
+  "caught": true,
+  "exit": 1,
+  "index": 112
+ },
+ "scanner-me-for-a-caller-with-no-session": {
+  "caught": true,
+  "exit": 1,
+  "index": 114
+ },
+ "scanner-me-id-not-judged": {
+  "caught": true,
+  "exit": 1,
+  "index": 107
+ },
+ "scanner-me-of-an-account-the-world-lacks": {
+  "caught": true,
+  "exit": 1,
+  "index": 113
+ },
+ "start-log-level-unchecked": {
+  "caught": true,
+  "exit": 1,
+  "index": 98
+ },
+ "start-no-supabase-url-check": {
+  "caught": true,
+  "exit": 1,
+  "index": 97
+ },
+ "update-a-deleting-account-edits": {
+  "caught": true,
+  "exit": 1,
+  "index": 64
+ },
+ "update-age-overwritten": {
+  "caught": false,
+  "exit": 1,
+  "index": 54
+ },
+ "update-answer-not-read-from-the-receipt": {
+  "caught": true,
+  "exit": 1,
+  "index": 65
+ },
+ "update-avatar-before-the-age": {
+  "caught": true,
+  "exit": 1,
+  "index": 58
+ },
+ "update-avatar-not-ready-taken": {
+  "caught": true,
+  "exit": 1,
+  "index": 61
+ },
+ "update-avatar-of-any-purpose": {
+  "caught": true,
+  "exit": 1,
+  "index": 60
+ },
+ "update-avatar-of-anyone": {
+  "caught": true,
+  "exit": 1,
+  "index": 59
+ },
+ "update-bumps-the-version-on-no-change": {
+  "caught": true,
+  "exit": 1,
+  "index": 53
+ },
+ "update-conflict-hides-the-version": {
+  "caught": true,
+  "exit": 1,
+  "index": 52
+ },
+ "update-conflicting-key-replays": {
+  "caught": true,
+  "exit": 1,
+  "index": 56
+ },
+ "update-input-not-checked": {
+  "caught": true,
+  "exit": 1,
+  "index": 66
+ },
+ "update-key-not-checked": {
+  "caught": true,
+  "exit": 1,
+  "index": 48
+ },
+ "update-key-uuid-v4-only": {
+  "caught": true,
+  "exit": 1,
+  "index": 49
+ },
+ "update-locks-for-update": {
+  "caught": true,
+  "exit": 1,
+  "index": 62
+ },
+ "update-name-before-the-age": {
+  "caught": true,
+  "exit": 1,
+  "index": 57
+ },
+ "update-no-lock": {
+  "caught": false,
+  "exit": 1,
+  "index": 63
+ },
+ "update-receipt-not-replayed": {
+  "caught": true,
+  "exit": 1,
+  "index": 55
+ },
+ "update-unknown-field-named": {
+  "caught": false,
+  "exit": 0,
+  "index": 50
+ },
+ "update-version-ignored": {
+  "caught": true,
+  "exit": 1,
+  "index": 51
+ },
+ "verifier-accepts-a-keyed-hash-too": {
+  "caught": true,
+  "exit": 1,
+  "index": 2
+ },
+ "verifier-accepts-every-token": {
+  "caught": true,
+  "exit": 1,
+  "index": 13
+ },
+ "verifier-algorithm-list-removed": {
+  "caught": true,
+  "exit": 1,
+  "index": 1
+ },
+ "verifier-anonymous-person-accepted": {
+  "caught": true,
+  "exit": 1,
+  "index": 6
+ },
+ "verifier-any-audience": {
+  "caught": true,
+  "exit": 1,
+  "index": 3
+ },
+ "verifier-any-issuer": {
+  "caught": true,
+  "exit": 1,
+  "index": 4
+ },
+ "verifier-any-role": {
+  "caught": true,
+  "exit": 1,
+  "index": 5
+ },
+ "verifier-empty-key-id-accepted": {
+  "caught": false,
+  "exit": 0,
+  "index": 10
+ },
+ "verifier-empty-key-set-is-no-session": {
+  "caught": true,
+  "exit": 1,
+  "index": 15
+ },
+ "verifier-expiry-not-required": {
+  "caught": true,
+  "exit": 1,
+  "index": 11
+ },
+ "verifier-key-trouble-is-no-session": {
+  "caught": true,
+  "exit": 1,
+  "index": 14
+ },
+ "verifier-no-key-id-accepted": {
+  "caught": true,
+  "exit": 1,
+  "index": 9
+ },
+ "verifier-oversize-token-accepted": {
+  "caught": false,
+  "exit": 0,
+  "index": 12
+ },
+ "verifier-subject-not-a-uuid": {
+  "caught": true,
+  "exit": 1,
+  "index": 7
+ },
+ "verifier-subject-not-lowercased": {
+  "caught": true,
+  "exit": 1,
+  "index": 8
+ },
+ "verifier-unknown-key-id-is-can't-tell": {
+  "caught": false,
+  "exit": 1,
+  "index": 16
+ }
+}

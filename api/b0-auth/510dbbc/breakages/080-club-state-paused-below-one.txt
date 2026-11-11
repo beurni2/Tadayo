@@ -1,0 +1,23 @@
+breakage: club-state-paused-below-one
+patch: [
+ [
+  "packages/domain/src/clubs/club-state.ts",
+  "facts.activeMembers < 2 ? \"paused\" : \"active\"",
+  "facts.activeMembers < 1 ? \"paused\" : \"active\"",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/packages/domain && npx vitest run src/clubs
+exit: 1
+expected words: paused
+caught: True
+
+     × {"suspended":false,"activated":true,"activeMembers":1} is paused 7ms
+     × holds the readings the sources give: a suspension beats not having started, a start waits for two 1ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  2 failed | 25 passed (27)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/clubs/club-state.test.ts > a club's state (FQ16, spec 04, spec 22) > {"suspended":false,"activated":true,"activeMembers":1} is paused
+AssertionError: expected 'active' to be 'paused' // Object.is equality
+ FAIL  src/clubs/club-state.test.ts > a club's state (FQ16, spec 04, spec 22) > holds the readings the sources give: a suspension beats not having started, a start waits for two
+AssertionError: expected 'active' to be 'paused' // Object.is equality

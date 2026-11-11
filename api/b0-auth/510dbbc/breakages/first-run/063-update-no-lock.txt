@@ -1,0 +1,24 @@
+breakage: update-no-lock
+patch: [
+ [
+  "packages/domain/src/identity/update-me.ts",
+  "FROM app.users WHERE id = ${userId} FOR NO KEY UPDATE`;",
+  "FROM app.users WHERE id = ${userId}`;",
+  1
+ ]
+]
+command: WT=/home/user/tadayo-auth-breakages bash /tmp/claude-0/-home-user/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/auth/dbtest.sh src/db/update-me.test.ts
+exit: 1
+expected words: lets two requests that read the same version race
+caught: False
+
+     × lets twenty requests of one account at once serialize on its row: one writes, nineteen are conflicts, none a deadlock 102ms
+     × is refused once the account's deletion has begun, whether it began before the request or while it waited (T27) 318ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/update-me.test.ts > requests at once, committed (T19, T27) > lets twenty requests of one account at once serialize on its row: one writes, nineteen are conflicts, none a deadlock
+AssertionError: expected [ …(18) ] to have a length of 19 but got 18
+ FAIL  src/db/update-me.test.ts > requests at once, committed (T19, T27) > is refused once the account's deletion has begun, whether it began before the request or while it waited (T27)
+Error: the request wasn't refused
+     57|   throw new Error("the request wasn't refused");
+ Test Files  1 failed (1)
+      Tests  2 failed | 19 passed (21)

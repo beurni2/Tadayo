@@ -1,0 +1,20 @@
+breakage: keys-no-cooldown
+patch: [
+ [
+  "services/api/src/identity/token.ts",
+  "    cooldownDuration: options.cooldown ?? 30_000,\n",
+  "    cooldownDuration: options.cooldown ?? 0,\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/identity/token.test.ts
+exit: 1
+expected words: isn't fetched again for a token whose key id it lacks
+caught: True
+
+     × isn't fetched again for a token whose key id it lacks, inside the cooldown: no stream of such tokens makes one 64ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 47 passed (48)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/identity/token.test.ts > the key set at Supabase's address > isn't fetched again for a token whose key id it lacks, inside the cooldown: no stream of such tokens makes one
+AssertionError: expected 26 to be 1 // Object.is equality

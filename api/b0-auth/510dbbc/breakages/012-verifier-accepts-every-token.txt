@@ -1,0 +1,117 @@
+breakage: verifier-accepts-every-token
+patch: [
+ [
+  "services/api/src/identity/token.ts",
+  "    if (token.length > MAX_TOKEN || !COMPACT.test(token)) return null;\n",
+  "    return \"6f1c0c9e-39a5-4c7d-b2a5-0f4a7b3b2f11\";\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-auth-breakages/services/api && npx vitest run src/identity/token.test.ts
+exit: 1
+expected words: an expired token, by one second
+caught: True
+
+     × an expired token, by one second 11ms
+     × an expired token, long ago 2ms
+     × a token not yet valid 2ms
+     × a token with no expiry 1ms
+     × a token whose expiry isn't a number 1ms
+     × a token signed by another key under thi… 1ms
+     × a token of another project: its own key… 1ms
+     × a token whose key id the set doesn't ho… 1ms
+     × a token with no key id 1ms
+     × a token whose key id is empty 1ms
+     × an unsecured token (alg none) 1ms
+     × a token keyed with the public key as a … 2ms
+     × a token keyed with a legacy shared secr… 1ms
+     × a token of another issuer 1ms
+     × an issuer with a trailing slash 1ms
+     × a token with no issuer 1ms
+     × a token for another audience 1ms
+     × a token with no audience 1ms
+     × a token for an audience that is a list … 1ms
+     × a service role's token 1ms
+     × an anon role's token 1ms
+     × a token with no role 1ms
+     × an anonymous person's token 1ms
+     × an is_anonymous that is text 9ms
+     × a token with no subject 2ms
+     × a subject that isn't a UUID 1ms
+     × a subject that is a number 1ms
+     × a subject that is a UUID with something… 1ms
+     × refuses a token with no key id whether the set holds one key of its algorithm or two, as a rotation leaves it (T53) 2ms
+     × refuses a token signed with RS256 when the set holds only an ES256 key 42ms
+     × takes RS256 from an RSA key the set holds, as a project on RSA signing keys signs, and no other algorithm of it 74ms
+     × refuses what isn't a compact token, or is too long to be one 2ms
+     × takes a token as large as Supabase's can grow and refuses one past 8 KB, however good its signature 2ms
+     × answers null, and never throws, for anything of the right shape that isn't a token the keys signed 1ms
+     × is fetched once and kept: many tokens, one fetch, even all at once 9ms
+     × isn't fetched again for a token whose key id it lacks, inside the cooldown: no stream of such tokens makes one 2ms
+     × finds a rotated key once the cooldown has passed, with the old key still good 2ms
+     × is can't tell, never no session, when it can't be read: down, an error, not JSON, not a key set, slow 3ms
+     × is can't tell when it holds no key at all, a project still on its legacy secret, and a token is no session when it holds keys 1ms
+     × is let alone for a few seconds after a failure, so a down key set isn't asked once for each token 2ms
+     × pauses again after the next failure, and not before it 1ms
+     × serves a token it holds keys for, whatever its own pause: a fresh key set is used without a fetch 12ms
+ Test Files  1 failed (1)
+      Tests  42 failed | 6 passed (48)
+⎯⎯⎯⎯⎯⎯ Failed Tests 42 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > an expired token, by one second
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > an expired token, long ago
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > a token not yet valid
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > a token with no expiry
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > a token whose expiry isn't a number
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > a token signed by another key under thi…
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > a token of another project: its own key…
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > a token whose key id the set doesn't ho…
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > a token with no key id
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > a token whose key id is empty
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > an unsecured token (alg none)
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > a token keyed with the public key as a …
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > a token keyed with a legacy shared secr…
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > a token of another issuer
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > an issuer with a trailing slash
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > a token with no issuer
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > a token for another audience
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > a token with no audience
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > a token for an audience that is a list …
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > a service role's token
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > an anon role's token
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > a token with no role
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > an anonymous person's token
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > an is_anonymous that is text
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > a token with no subject
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > a subject that isn't a UUID
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > a subject that is a number
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > a subject that is a UUID with something…
+AssertionError: expected '6f1c0c9e-39a5-4c7d-b2a5-0f4a7b3b2f11' to be null // Object.is equality
+    101|     expect(await verify(token)).toBe(expected);
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > refuses a token with no key id whether the set holds one key of its algorithm or two, as a rotation leaves it (T53)
+AssertionError: expected '6f1c0c9e-39a5-4c7d-b2a5-0f4a7b3b2f11' to be null
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > refuses a token signed with RS256 when the set holds only an ES256 key
+AssertionError: expected '6f1c0c9e-39a5-4c7d-b2a5-0f4a7b3b2f11' to be null
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > takes RS256 from an RSA key the set holds, as a project on RSA signing keys signs, and no other algorithm of it
+AssertionError: expected '6f1c0c9e-39a5-4c7d-b2a5-0f4a7b3b2f11' to be null
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > refuses what isn't a compact token, or is too long to be one
+AssertionError: "": expected '6f1c0c9e-39a5-4c7d-b2a5-0f4a7b3b2f11' to be null
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > takes a token as large as Supabase's can grow and refuses one past 8 KB, however good its signature
+AssertionError: expected '6f1c0c9e-39a5-4c7d-b2a5-0f4a7b3b2f11' to be null
+ FAIL  src/identity/token.test.ts > a token against the keys the verifier holds > answers null, and never throws, for anything of the right shape that isn't a token the keys signed
+AssertionError: e30.e30.: expected '6f1c0c9e-39a5-4c7d-b2a5-0f4a7b3b2f11' to be null
+ FAIL  src/identity/token.test.ts > the key set at Supabase's address > is fetched once and kept: many tokens, one fetch, even all at once
+AssertionError: expected +0 to be 1 // Object.is equality
+ FAIL  src/identity/token.test.ts > the key set at Supabase's address > isn't fetched again for a token whose key id it lacks, inside the cooldown: no stream of such tokens makes one
+AssertionError: expected '6f1c0c9e-39a5-4c7d-b2a5-0f4a7b3b2f11' to be null
+ FAIL  src/identity/token.test.ts > the key set at Supabase's address > finds a rotated key once the cooldown has passed, with the old key still good
+AssertionError: expected '6f1c0c9e-39a5-4c7d-b2a5-0f4a7b3b2f11' to be null
+ FAIL  src/identity/token.test.ts > the key set at Supabase's address > is can't tell, never no session, when it can't be read: down, an error, not JSON, not a key set, slow
+AssertionError: expected 'answered 6f1c0c9e-39a5-4c7d-b2a5-0f4a…' to be 'unreachable' // Object.is equality
+ FAIL  src/identity/token.test.ts > the key set at Supabase's address > is can't tell when it holds no key at all, a project still on its legacy secret, and a token is no session when it holds keys
+AssertionError: expected 'answered 6f1c0c9e-39a5-4c7d-b2a5-0f4a…' to be 'empty' // Object.is equality
+ FAIL  src/identity/token.test.ts > the key set at Supabase's address > is let alone for a few seconds after a failure, so a down key set isn't asked once for each token
+AssertionError: expected 'answered 6f1c0c9e-39a5-4c7d-b2a5-0f4a…' to be 'unreachable' // Object.is equality
+ FAIL  src/identity/token.test.ts > the key set at Supabase's address > pauses again after the next failure, and not before it
+AssertionError: expected 'answered 6f1c0c9e-39a5-4c7d-b2a5-0f4a…' to be 'unreachable' // Object.is equality
+ FAIL  src/identity/token.test.ts > the key set at Supabase's address > serves a token it holds keys for, whatever its own pause: a fresh key set is used without a fetch
+AssertionError: expected 'answered 6f1c0c9e-39a5-4c7d-b2a5-0f4a…' to be 'unreachable' // Object.is equality
