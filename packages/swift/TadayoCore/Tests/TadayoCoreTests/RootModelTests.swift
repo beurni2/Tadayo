@@ -441,20 +441,18 @@ import Testing
     // MARK: The two waits (handoff 7's `root.loading` and `root.leaving`; FQ96's default)
 
     @Test func whileTheKeychainIsReadTheRouteIsTheCanvasAloneThenTheWaitOnceASignInIsFound()
-        async throws
+        async
     {
-        // FQ96: nothing shows or is spoken before a sign-in is found. The keychain read is held,
-        // as it is in the instant after launch, and the route is the canvas alone; once the
+        // FQ96: nothing shows or is spoken before a sign-in is found. `Task.immediate` runs
+        // `start()` as far as its first suspension, the read of the keychain, and gives this test
+        // the main actor back before that read can answer: the route is the canvas alone. Once the
         // session is found the wait shows, and holds until the account answers.
-        let store = HeldStore(stored)
         let gate = Gate()
         let accounts = FakeAccounts(me: [.success(named)], clubs: [.success(clubs(empty: true))])
         accounts.duringMe = { await gate.wait() }
-        let root = root(accounts, store: store)
-        let starting = Task { await root.start() }
-        try #require(await store.reached())
+        let root = root(accounts, store: InMemorySessionStore(stored))
+        let starting = Task.immediate { await root.start() }
         #expect(root.route == .starting)
-        store.release()
         await gate.reached()
         #expect(root.route == .reading)
         gate.open()
@@ -462,16 +460,13 @@ import Testing
         #expect(root.route == .tabs)
     }
 
-    @Test func withNoSessionTheWaitNeverShows() async throws {
+    @Test func withNoSessionTheWaitNeverShows() async {
         // Nobody is signed in: the canvas alone while the keychain is read, then A02-email, and no
         // account was read for a wait to show (FQ96).
-        let store = HeldStore(nil)
         let accounts = FakeAccounts()
-        let root = root(accounts, store: store)
-        let starting = Task { await root.start() }
-        try #require(await store.reached())
+        let root = root(accounts)
+        let starting = Task.immediate { await root.start() }
         #expect(root.route == .starting)
-        store.release()
         await starting.value
         #expect(root.route == .signIn)
         #expect(accounts.calls.isEmpty)
@@ -546,41 +541,6 @@ import Testing
         gate.open()
         await starting.value
         #expect(root.route == .signIn)
-    }
-}
-
-/// A keychain whose read waits until the test lets it go: the instant after launch, when the app
-/// doesn't yet know whether anyone is signed in.
-final class HeldStore: SessionStore, @unchecked Sendable {
-    private let lock = NSLock()
-    private let inner: InMemorySessionStore
-    private let released = DispatchSemaphore(value: 0)
-    private var read = false
-
-    init(_ session: AuthSession?) {
-        inner = InMemorySessionStore(session)
-    }
-
-    func load() throws -> AuthSession? {
-        lock.withLock { read = true }
-        released.wait()
-        return try inner.load()
-    }
-
-    func save(_ session: AuthSession) throws { try inner.save(session) }
-    func delete() throws { try inner.delete() }
-
-    /// Lets the read through.
-    func release() { released.signal() }
-
-    /// True once the read has reached the store; false if it hasn't within 5 seconds.
-    func reached() async -> Bool {
-        let deadline = Date().addingTimeInterval(5)
-        while Date() < deadline {
-            if lock.withLock({ read }) { return true }
-            try? await Task.sleep(for: .milliseconds(5))
-        }
-        return false
     }
 }
 
