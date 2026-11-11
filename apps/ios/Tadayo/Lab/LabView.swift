@@ -35,8 +35,9 @@
 
     /// The Lab's sections, each drawn alone by the snapshot tests.
     enum LabSection: String, CaseIterable, Identifiable {
-        case colours, type, plaque, avatars, cards, drops, revealed, receipt, highlights, actions
-        case fields, header, photos
+        case colours, type, plaque, day, avatars, people
+        case peopleMore = "people-more"
+        case cards, drops, revealed, receipt, target, highlights, actions, fields, header, photos
 
         var id: String { rawValue }
 
@@ -45,11 +46,15 @@
             case .colours: LabColours()
             case .type: LabType()
             case .plaque: LabPlaques()
+            case .day: LabDayHeader()
             case .avatars: LabAvatars()
+            case .people: LabPeople()
+            case .peopleMore: LabPeopleMore()
             case .cards: LabCards()
             case .drops: LabDrops()
             case .revealed: LabRevealed()
             case .receipt: LabReceipt()
+            case .target: LabTarget()
             case .highlights: LabHighlights()
             case .actions: LabActions()
             case .fields: LabFields()
@@ -142,6 +147,34 @@
                     WeekdayPlaque(date: FixtureCast.open, labels: labels)
                     WeekdayPlaque(date: FixtureCast.collecting, labels: labels)
                     WeekdayPlaque(date: LocalDate(iso: "2026-11-09")!, labels: labels)
+                }
+            }
+        }
+    }
+
+    /// The day header in its two forms: each specimen stands alone, so its date has the year,
+    /// with the current year's form once each (handoff 6's `travellingRows.targetYear`).
+    struct LabDayHeader: View {
+        var body: some View {
+            LabGroup(title: "Day header") {
+                LabState("Collecting: Debby’s Friday") {
+                    DayHeader(collecting: FixtureCast.collectingDay, labels: FixtureCast.labels)
+                }
+                LabState("Collecting, in the current year") {
+                    DayHeader(
+                        collecting: FixtureCast.collectingDayThisYear, labels: FixtureCast.labels)
+                }
+                LabState("Collecting: the longest weekday") {
+                    DayHeader(collecting: FixtureCast.alexsWednesday, labels: FixtureCast.labels)
+                }
+                LabState("Open: Debby’s Friday") {
+                    DayHeader(open: FixtureCast.openDay, labels: FixtureCast.labels)
+                }
+                LabState("Open, in the current year") {
+                    DayHeader(open: FixtureCast.openDayThisYear, labels: FixtureCast.labels)
+                }
+                LabState("Open: Ben’s own Monday") {
+                    DayHeader(open: FixtureCast.bensOpenDay, labels: FixtureCast.labels)
                 }
             }
         }
@@ -284,6 +317,34 @@
         }
     }
 
+    /// Who a drop is for, before Add, as 2.1's `C02-photo` draws it: standalone specimens with
+    /// the year, and the current year's form once.
+    struct LabTarget: View {
+        var body: some View {
+            LabGroup(title: "Target block") {
+                LabState("For Debby, with a photograph") {
+                    target(FixtureCast.collectingDay, FixtureCast.debby)
+                }
+                LabState("In the current year") {
+                    target(FixtureCast.collectingDayThisYear, FixtureCast.debby)
+                }
+                LabState("With an initial") {
+                    target(FixtureCast.alexsWednesday, FixtureCast.alex)
+                }
+                LabState("A long name") {
+                    // A test-data choice: the cast gives Alexandria-Rose no day.
+                    target(FixtureCast.alexandriaRosesWednesday, FixtureCast.alexandriaRose)
+                }
+            }
+        }
+
+        private func target(_ occasion: Occasion, _ star: FixtureCast.Person) -> some View {
+            TargetBlock(
+                for: occasion, photo: star.image, club: FixtureCast.club,
+                labels: FixtureCast.labels, action: {})
+        }
+    }
+
     /// A state's name over the component, as a workbench labels it.
     struct LabState<Content: View>: View {
         let name: String
@@ -298,6 +359,76 @@
             VStack(alignment: .leading, spacing: Spacing.s) {
                 Text(name).textRole(.metadata).foregroundStyle(Palette.secondaryText)
                 content
+            }
+        }
+    }
+
+    /// The roster as Friends lists it, in the server's order (Ben, Maya, Alex, Sam, Debby,
+    /// Nina, as every roster frame draws it), viewed by Ben, in the current year, so with no year
+    /// (handoff 6's `travellingRows.targetYear`: "Snapshot current-year live Home/Friends omit
+    /// year").
+    struct LabPeople: View {
+        var body: some View {
+            LabGroup(title: "Person row") {
+                LabState("Friends") {
+                    LabRoster(members: FixtureCast.sundayPeople.map { FixtureCast.member($0) })
+                }
+                LabState("First days: Ben and Debby have no day yet") {
+                    LabRoster(
+                        members: FixtureCast.sundayPeople.map {
+                            FixtureCast.member($0, dated: $0.id != "Ben" && $0.id != "Debby")
+                        })
+                }
+            }
+        }
+    }
+
+    /// The person row's other forms: travelling, long names (the second marked Next up, a
+    /// test-data choice that shows Next up under a name that wraps: no frame draws it), the viewer
+    /// as Next up (the same), and one row standing alone, with the year.
+    struct LabPeopleMore: View {
+        var body: some View {
+            LabGroup(title: "Person row, more") {
+                LabState("In Auckland: the next day there") {
+                    LabRoster(
+                        members: [FixtureCast.ben, FixtureCast.nina].map { FixtureCast.member($0) },
+                        device: FixtureCast.auckland)
+                }
+                LabState("In London: the same date") {
+                    LabRoster(
+                        members: [FixtureCast.member(FixtureCast.nina)], device: FixtureCast.london)
+                }
+                LabState("Long names, the second Next up") {
+                    // As 2.1's F01-long-names: in Alex's and Debby's places, with Debby's photo;
+                    // Debby's is marked Next up, which 2.1 doesn't draw there.
+                    LabRoster(members: [
+                        FixtureCast.member(FixtureCast.alexandriaRose, day: FixtureCast.alex),
+                        FixtureCast.member(
+                            FixtureCast.deborahAnne, day: FixtureCast.debby,
+                            photo: FixtureCast.debby.image, isNextUp: true),
+                    ])
+                }
+                LabState("Ben, Next up") {
+                    LabRoster(members: [FixtureCast.member(FixtureCast.ben, isNextUp: true)])
+                }
+                LabState("Standing alone, with the year") {
+                    LabRoster(members: [FixtureCast.member(FixtureCast.nina, includingYear: true)])
+                }
+            }
+        }
+    }
+
+    /// Roster rows one under another, each drawing its own separator.
+    struct LabRoster: View {
+        let members: [PersonRow.Member]
+        var device = FixtureCast.zone
+
+        var body: some View {
+            VStack(spacing: 0) {
+                ForEach(members.indices, id: \.self) { index in
+                    PersonRow(
+                        members[index], device: device, labels: FixtureCast.labels, action: {})
+                }
             }
         }
     }

@@ -94,6 +94,31 @@ public enum Size {
     /// `CompactReceipt`).
     public static let receiptDisc: CGFloat = 28
     public static let receiptCheck: CGFloat = 12
+    /// A roster row's least height with a date, and without one, both growing with the text
+    /// (handoff 6's `friendsRow.minimumHeight` and `noOccurrence`: "52 minimum").
+    public static let personRowMinHeight: CGFloat = 68
+    public static let personRowNoDateMinHeight: CGFloat = 52
+    /// A travelling roster row's least height: the contract's "100-point minimum in fixture"
+    /// (`friendsRow.travelling`), which the frame draws at 108.
+    public static let personRowTravellingMinHeight: CGFloat = 100
+    /// Where a roster row's words and its separator start, from the row's leading edge: the
+    /// 36-point avatar and 13 after it (`friendsRow.textInset`, `separatorLeadingInset`).
+    public static let personRowTextInset: CGFloat = 49
+    /// A roster row's chevron: the contract's 20-point box (`friendsRow.chevronSize`), holding
+    /// SF Symbol `chevron.right` at the size whose glyph matches the Private drafts row's, 6 by
+    /// 12 in handoff 4's `G06-no-club`, as the drafts row's does; handoff 3's `F01-friends-dark`
+    /// draws 7.5 by 13 and handoff 6's `F01-friends` 5 by 9 (the ios lane's needs list).
+    public static let personRowChevronBox: CGFloat = 20
+    public static let personRowChevron: CGFloat = 13
+    /// The roster chevron's box from the row's trailing edge: handoff 6's sheet draws 2, which
+    /// is no step of book p35's scale, so the nearest inside it, 4.
+    public static let personRowChevronInset: CGFloat = 4
+    /// A separator's width (handoff 6's `invitationRosterRow.separatorWidth`).
+    public static let separatorWidth: CGFloat = 1
+    /// The target block's chevron: a 20-point box, as the drafts row's, holding SF Symbol
+    /// `chevron.down` at the size whose glyph matches 2.1's `C02-photo`, about 8 by 5.
+    public static let targetChevronBox: CGFloat = 20
+    public static let targetChevron: CGFloat = 9
     /// The wordmark's width in the no-club header (handoff 2's `noClubRootHeader`: "outlined
     /// wordmark, width 96"; revision 1.1's `minimumWidth`).
     public static let headerWordmark: CGFloat = 96
