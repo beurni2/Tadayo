@@ -1,0 +1,50 @@
+Design handoff 1: sign-in and clubs
+
+Sources: the linked Tadayo repository: docs/tadayo-design-book-2.1.md, docs/tadayo-build-spec-v3.md, and design/reference/, with the 2.1 renders and the brand from design handoff 0 in design/reference/brand/ (brand-tokens.md, brand-components.png, the wordmark and the icon). If the repository isn't linked: the attached Tadayo_UI_UX_Design_Book.pdf (design revision 2.1), Tadayo_v3_Build_and_Design.pdf, brand-tokens.md, brand-components.png and Tadayo_Brand_Implementation_Handoff.pdf (design handoff 0, with its wordmark, its four screens and its text). Use the brand's tokens, cover colours and components as they are; if you have Tadayo's design system, it holds the same brand.
+
+What to design: one frame per state, 393×852 points, each titled with the state's exact name, in the order listed below (if an export loses the titles, the order identifies the frames).
+
+Sign-in and profile. Screens A02 and A03 of the spec (section 29; sections 04 and 23). Sign-in is a six-digit code sent by email, not a magic link. Closest 2.1 screen: A01-welcome (state 01, book p9) for the type and spacing.
+- A02-email: enter your email to get a code. Ben is signing in. One field, one 50-point primary button.
+- A02-code: enter the six-digit code sent to the address, which is shown. A way to send a new code that appears after 60 seconds, and a way to change the address.
+- A02-code-error: the code was wrong or has expired; the code field keeps what was typed, the message names what failed, and "Send a new code" is offered.
+- A02-age: a single confirmation, "I'm 18 or older", after the code is accepted and before the profile (A03). No birthdate.
+- A03-profile: your name and an optional photo. With no photo, the avatar fallback from the brand (an initial). Continue works without a photo.
+
+Club creation and invitation, and the tabs before a club exists. Screens G01, G02, G03, G05, G06, F01 and M01 (spec 04, 07, 09, 18). Closest 2.1 screens: G01-create (state 47, book p33), G02-invitation (state 02, book p9), G03-approve (state 30, book p30), G05-club-details (state 20, book p24), G06-switcher (state 45, book p32), F01-friends (state 07, book p13), M01-empty (state 50, book p23).
+- G01-invite-people: after naming Sunday people, Ben makes one invitation link per person and shares each with the system share sheet. Contacts access is never needed. Shows who has a link and who has accepted, without counts or progress.
+- G01-pending: the club isn't active yet (it activates when at least two people approve the same roster). Says that work prepared now stays private in Drafts.
+- G02-expired: an invitation that has expired. Says so plainly and how to ask for a new one. Shows nothing about the club beyond the inviter's name.
+- G02-changed: the roster changed after the invitation was made, so the candidate reviews the new exact roster before accepting.
+- G02-full: the club already has six members.
+- G02-web: the signed-out web page a link opens without the app. It shows only the inviter's name ("Ben invited you to a club on Tadayo"), the wordmark and a "Get Tadayo" link. No club name, no roster, no photos. Size it for a phone browser, 393 wide.
+- G03-waiting: Leila has accepted the Kitchen table roster and waits for the existing members to approve.
+- G03-declined: neutral: the invitation didn't go ahead. Never says who declined.
+- G05-members: Sunday people's roster in its stable order (Ben, Maya, Alex, Sam, Debby, Nina) with each person's day. The club is full, so there is no way to invite another member (book p24).
+- G06-no-club: signed in with no club yet, on Home: Create a club, and I have an invite.
+- F01-no-club: the Friends tab with no club yet. Nothing invented: no example roster.
+- M01-no-club: the Memories tab with no club yet. No fabricated history.
+
+Content: the book's fixture clubs. Sunday people: Ben (Monday, the viewer unless stated), Maya, Alex, Sam, Debby (Friday), Nina. Kitchen table: five members, Leila proposed. Dates as the book uses them (Friday 6 and 13 November 2026). Nothing invented.
+
+Rules that apply: book p7, p8, p9, p23, p24, p30, p32, p33, p34 (components), p35 (tokens), p41 (routes and labels); spec 04, 07, 23. Names, not inferred pronouns ("Leila will see only drops shared after joining"). Exact dates. Native iOS controls: the system keyboard, the system share sheet, the system's one-time-code field. The type is the iOS system font at the book's sizes; in the frames, Arimo stands in for it, included in the export. No progress rings, and no counts or lists of who hasn't approved or accepted; member counts such as "5 current members" stay, as the book shows them (book p24, p30). G01-invite-people's per-person link state is shown to the club's creator only. An invitation link grants nothing before acceptance: no screen before sign-in shows the club or roster.
+
+2.1 renders this stage keeps, with wording that changes (no frames needed unless you choose to redraw them): A01-welcome says "An example · before and on the day", not "on her day", and shows the brand's wordmark at 144 points in place of 2.1's mark and word; G03-approve says "Leila will see only drops shared after joining", not "She'll see only drops shared after she joins"; G06-switcher's sheet sits over "Debby's pick", not "Her pick".
+
+Questions I need answered in the design:
+- How a proposed member (Leila, proposed by Ben for Kitchen table) appears in a club's members list, as one row: what marks it as proposed.
+- Where the "Send a new code" action sits before and after its 60 seconds, and how the wait is shown without a ticking countdown.
+- How the 18-or-older confirmation reads and looks as one step, not a form.
+- On G01-invite-people, how a person's link state (not yet shared, shared, accepted) shows without colour alone.
+- How the web page (G02-web) shows the wordmark at phone size, and which stem of the t sets its clear space (above or below the crossbar).
+
+Brand questions from design handoff 0 (answer them on the frames above where they show, or in writing with the export; if an answer changes a brand asset, send that asset again, whole, as a frame titled exactly as in handoff 0: "brand-tokens", "brand-components" or "brand-icon-dark"):
+- The avatar fallback's circle is cover2 everywhere, so it disappears on cover2 (Maya's card and rail cover) and nearly on cover5, and H01-open-dark's rail uses the light value. Give the fallback's fill on canvas and on each of the six covers, light and dark, and mark its sizes: the sheet draws 36 points, the screens 28 and 18.
+- The primary button's disabled and pressed states, and its focus ring (A02-email and A02-code show them first).
+- Name the sizes handoff 0 draws that no type role names: the card's status line (about 11 points; 12 on the sheet), the plaque's two lines (about 10 and 25), F02's date title (about 25), the header's club name and "+ Add" (16 and 15), the button's label (16). And the card radius: handoff 0's frames draw 14, its text says card 16, as spec 24 does, and book p35 has a ticket at 18. Until you answer, the app builds the card's status line at the metadata role, 13/18, and the card radius at 16.
+- A label on a photograph, such as 2.1's Highlight chip on a revealed photo: its colours, light and dark.
+- The light input border is 2.92:1 on surface (3.17:1 on canvas). Should a field ever sit on surface, which border does it take?
+- cover1 is the same yellow as the day plaque's accent, so the first member's cards share the plaque's colour. Keep it, or change one of them?
+- The dark app icon is an opaque square; Apple asks for a dark icon with a transparent background, so the system's own background shows. Confirm the opaque square, or give a transparent dark master.
+
+Dark and large-text frames: only where listed above, titled <state>-dark and <state>-xl.
