@@ -1,0 +1,25 @@
+breakage: scanner-header-canaries-not-checked
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "    noLinks(value, where);\n    keptBack(value, where);\n",
+  "    noLinks(value, where);\n"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest-fixes.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: values header date
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (60 tests | 1 failed) 242ms
+     × catches a value the world keeps back, wherever it is, until its drop opens to the viewer (Q07) 9ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a value the world keeps back, wherever it is, until its drop opens to the viewer (Q07)
+AssertionError: expected [ 'shape header date' ] to deeply equal [ 'shape header date', …(1) ]
+    "shape header date",
+-   "values header date",
+    724|     // In a header too: Date's form is the shape check's, and what it …
+    727|       "shape header date",
+    728|       "values header date",
+ Test Files  1 failed (1)
+      Tests  1 failed | 59 passed (60)

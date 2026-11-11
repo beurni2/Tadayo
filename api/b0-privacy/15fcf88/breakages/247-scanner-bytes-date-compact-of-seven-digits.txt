@@ -1,0 +1,20 @@
+breakage: scanner-bytes-date-compact-of-seven-digits
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "const BYTES_DATE = /[0-9]{4}[-_][0-9]{2}[-_][0-9]{2}|[0-9]{8}[Tt][0-9]{4}/;",
+  "const BYTES_DATE = /[0-9]{4}[-_][0-9]{2}[-_][0-9]{2}|[0-9]{7}[Tt][0-9]{4}/;"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest-fixes.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × catches an id the viewer may not see anywhere else, and a cursor
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (60 tests | 1 failed) 255ms
+     × catches an id the viewer may not see anywhere else, and a cursor that is a readable key or hides one (T14; the contract's Cursor) 74ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches an id the viewer may not see anywhere else, and a cursor that is a readable key or hides one (T14; the contract's Cursor)
+AssertionError: 1234567T2000: expected [ 'holds a date' ] to deeply equal []
+ Test Files  1 failed (1)
+      Tests  1 failed | 59 passed (60)

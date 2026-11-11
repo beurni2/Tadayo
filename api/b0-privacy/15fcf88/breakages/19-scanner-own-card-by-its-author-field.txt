@@ -1,0 +1,20 @@
+breakage: scanner-own-card-by-its-author-field
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "if (reader.own(drop)) ownCards.add(node);",
+  "if (isObject(node.author) && context.viewer.intervals.has(String(node.author.membership_id))) ownCards.add(node);"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest-fixes.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × judges an own card by the world's author, never by the card's own author field
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (60 tests | 1 failed) 269ms
+     × judges an own card by the world's author, never by the card's own author field (TECH-DESIGN section 8) 10ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > judges an own card by the world's author, never by the card's own author field (TECH-DESIGN section 8)
+AssertionError: expected [ 'world' ] to deeply equal [ 'keys', 'world' ]
+ Test Files  1 failed (1)
+      Tests  1 failed | 59 passed (60)

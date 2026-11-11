@@ -1,0 +1,138 @@
+breakage: framework-errors-removed
+patch: [
+ [
+  "services/api/src/app.ts",
+  "    frameworkErrors: (_error, request, reply) => {\n      void notFound(request, reply);\n    },\n",
+  ""
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-fixes/services/api && npx vitest run; bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest-fixes.sh src/privacy/matrix.test.ts
+exit: 1
+expected pattern: (414|echoes the value|status 400)
+caught: True
+
+ ❯ src/app.test.ts (11 tests | 1 failed) 256ms
+     × answers an id past the router's limit and a broken escape with the neutral not-found, never echoing the path 7ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 14 passed (15)
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the author with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the star with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the member in the audience with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the member who joined after the commit (T8) with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the rejoined member, a new interval (T8) with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the former member with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the invited, not yet a member (T7) with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the stranger from another club with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the blocked: Cleo blocked the author, leaving by the block with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88) with the neutral not-found, and leaks nothing the scanner can find
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the deletion pending, the membership not yet ended (T27) with the neutral not-found, and leaks nothing the scanner can find
+ ❯ src/privacy/matrix.test.ts (13 tests | 11 failed) 324502ms
+     × answers the author with the neutral not-found, and leaks nothing the scanner can find 31764ms
+     × answers the star with the neutral not-found, and leaks nothing the scanner can find 31609ms
+     × answers the member in the audience with the neutral not-found, and leaks nothing the scanner can find 28773ms
+     × answers the member who joined after the commit (T8) with the neutral not-found, and leaks nothing the scanner can find 29381ms
+     × answers the rejoined member, a new interval (T8) with the neutral not-found, and leaks nothing the scanner can find 29328ms
+     × answers the former member with the neutral not-found, and leaks nothing the scanner can find 29718ms
+     × answers the invited, not yet a member (T7) with the neutral not-found, and leaks nothing the scanner can find 29376ms
+     × answers the stranger from another club with the neutral not-found, and leaks nothing the scanner can find 30282ms
+     × answers the blocked: Cleo blocked the author, leaving by the block with the neutral not-found, and leaks nothing the scanner can find 30311ms
+     × answers the blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88) with the neutral not-found, and leaks nothing the scanner can find 22147ms
+     × answers the deletion pending, the membership not yet ended (T27) with the neutral not-found, and leaks nothing the scanner can find 30640ms
+⎯⎯⎯⎯⎯⎯ Failed Tests 11 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the author with the neutral not-found, and leaks nothing the scanner can find
+AssertionError: expected { count: 56032, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
++     "active, collecting: getClub, club_id \"aaaaaaaaaaaa\": status 414: neither the neutral not-found nor INVALID_REQUEST",
++     "active, collecting: getClub, club_id \"aaaaaaaaaaaa\": status 414: neither the neutral not-found nor INVALID_REQUEST",
++     "active, collecting, getClub: shape at header content-type: a type that isn't JSON: no answer may carry an image or other bytes yet",
++     "active, collecting, getClub: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, collecting, getClub: shape at $: not the contract's Error",
++     "active, collecting, getClub: shape at header content-type: a type that isn't JSON: no answer may carry an image or other bytes yet",
++     "active, collecting, getClub: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, collecting, getClub: shape at $: not the contract's Error",
++     "active, collecting, getClub: shape at header content-type: a type that isn't JSON: no answer may carry an image or other bytes yet",
++     "active, collecting, getClub: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, collecting, getClub: shape at $: not the contract's Error",
++     "active, collecting, getClub: shape at header content-type: a type that isn't JSON: no answer may carry an image or other bytes yet",
++     "active, collecting, getClub: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, collecting, getClub: shape at $: not the contract's Error",
++     "active, collecting, getClub: shape at header content-type: a type that isn't JSON: no answer may carry an image or other bytes yet",
++     "active, collecting, getClub: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, collecting, getClub: shape at $: not the contract's Error",
++     "active, collecting: getHome, club_id \"aaaaaaaaaaaa\": status 414: neither the neutral not-found nor INVALID_REQUEST",
++     "active, collecting: getHome, club_id \"aaaaaaaaaaaa\": status 414: neither the neutral not-found nor INVALID_REQUEST",
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the star with the neutral not-found, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the member in the audience with the neutral not-found, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the member who joined after the commit (T8) with the neutral not-found, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the rejoined member, a new interval (T8) with the neutral not-found, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the former member with the neutral not-found, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the blocked: Cleo blocked the author, leaving by the block with the neutral not-found, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the deletion pending, the membership not yet ended (T27) with the neutral not-found, and leaks nothing the scanner can find
+AssertionError: expected { count: 56112, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
++     "active, collecting: getClub, club_id \"aaaaaaaaaaaa\": status 414: neither the neutral not-found nor INVALID_REQUEST",
++     "active, collecting: getClub, club_id \"aaaaaaaaaaaa\": status 414: neither the neutral not-found nor INVALID_REQUEST",
++     "active, collecting, getClub: shape at header content-type: a type that isn't JSON: no answer may carry an image or other bytes yet",
++     "active, collecting, getClub: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, collecting, getClub: shape at $: not the contract's Error",
++     "active, collecting, getClub: shape at header content-type: a type that isn't JSON: no answer may carry an image or other bytes yet",
++     "active, collecting, getClub: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, collecting, getClub: shape at $: not the contract's Error",
++     "active, collecting, getClub: shape at header content-type: a type that isn't JSON: no answer may carry an image or other bytes yet",
++     "active, collecting, getClub: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, collecting, getClub: shape at $: not the contract's Error",
++     "active, collecting, getClub: shape at header content-type: a type that isn't JSON: no answer may carry an image or other bytes yet",
++     "active, collecting, getClub: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, collecting, getClub: shape at $: not the contract's Error",
++     "active, collecting, getClub: shape at header content-type: a type that isn't JSON: no answer may carry an image or other bytes yet",
++     "active, collecting, getClub: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, collecting, getClub: shape at $: not the contract's Error",
++     "active, collecting: getHome, club_id \"aaaaaaaaaaaa\": status 414: neither the neutral not-found nor INVALID_REQUEST",
++     "active, collecting: getHome, club_id \"aaaaaaaaaaaa\": status 414: neither the neutral not-found nor INVALID_REQUEST",
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the invited, not yet a member (T7) with the neutral not-found, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the stranger from another club with the neutral not-found, and leaks nothing the scanner can find
+AssertionError: expected { count: 56672, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
++     "active, collecting: getClub, club_id \"aaaaaaaaaaaa\": status 414: neither the neutral not-found nor INVALID_REQUEST",
++     "active, collecting: getClub, club_id \"aaaaaaaaaaaa\": status 414: neither the neutral not-found nor INVALID_REQUEST",
++     "active, collecting, getClub: shape at header content-type: a type that isn't JSON: no answer may carry an image or other bytes yet",
++     "active, collecting, getClub: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, collecting, getClub: shape at $: not the contract's Error",
++     "active, collecting, getClub: shape at header content-type: a type that isn't JSON: no answer may carry an image or other bytes yet",
++     "active, collecting, getClub: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, collecting, getClub: shape at $: not the contract's Error",
++     "active, collecting, getClub: shape at header content-type: a type that isn't JSON: no answer may carry an image or other bytes yet",
++     "active, collecting, getClub: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, collecting, getClub: shape at $: not the contract's Error",
++     "active, collecting, getClub: shape at header content-type: a type that isn't JSON: no answer may carry an image or other bytes yet",
++     "active, collecting, getClub: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, collecting, getClub: shape at $: not the contract's Error",
++     "active, collecting, getClub: shape at header content-type: a type that isn't JSON: no answer may carry an image or other bytes yet",
++     "active, collecting, getClub: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, collecting, getClub: shape at $: not the contract's Error",
++     "active, collecting: getHome, club_id \"aaaaaaaaaaaa\": status 414: neither the neutral not-found nor INVALID_REQUEST",
++     "active, collecting: getHome, club_id \"aaaaaaaaaaaa\": status 414: neither the neutral not-found nor INVALID_REQUEST",
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16; Q05 to Q09) > answers the blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88) with the neutral not-found, and leaks nothing the scanner can find
+AssertionError: expected { count: 42084, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
++     "active, open: getClub, club_id \"aaaaaaaaaaaa\": status 414: neither the neutral not-found nor INVALID_REQUEST",
++     "active, open: getClub, club_id \"aaaaaaaaaaaa\": status 414: neither the neutral not-found nor INVALID_REQUEST",
++     "active, open, getClub: shape at header content-type: a type that isn't JSON: no answer may carry an image or other bytes yet",
++     "active, open, getClub: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, open, getClub: shape at $: not the contract's Error",
++     "active, open, getClub: shape at header content-type: a type that isn't JSON: no answer may carry an image or other bytes yet",
++     "active, open, getClub: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, open, getClub: shape at $: not the contract's Error",
++     "active, open, getClub: shape at header content-type: a type that isn't JSON: no answer may carry an image or other bytes yet",
++     "active, open, getClub: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, open, getClub: shape at $: not the contract's Error",
++     "active, open, getClub: shape at header content-type: a type that isn't JSON: no answer may carry an image or other bytes yet",
++     "active, open, getClub: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, open, getClub: shape at $: not the contract's Error",
++     "active, open, getClub: shape at header content-type: a type that isn't JSON: no answer may carry an image or other bytes yet",
++     "active, open, getClub: shape at header cache-control: an answer with a body says private, no-store, and an empty one says that or nothing (T11, T12)",
++     "active, open, getClub: shape at $: not the contract's Error",
++     "active, open: getHome, club_id \"aaaaaaaaaaaa\": status 414: neither the neutral not-found nor INVALID_REQUEST",
++     "active, open: getHome, club_id \"aaaaaaaaaaaa\": status 414: neither the neutral not-found nor INVALID_REQUEST",
+ Test Files  1 failed (1)
+      Tests  11 failed | 2 passed (13)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/app.test.ts > what Fastify answers itself, made to say nothing (T14) > answers an id past the router's limit and a broken escape with the neutral not-found, never echoing the path
+AssertionError: aaaaaaaaaaaa: expected { status: 414, …(2) } to deeply equal { status: 404, …(2) }
+    "headers": {

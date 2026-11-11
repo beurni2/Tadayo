@@ -1,0 +1,9 @@
+committed (tests/src/privacy/):
+ba4052f12e047455595a3d4663d3c3d85950e016ec7b1fb6467da89f7818468e  scanner.ts
+17f86ad256bd0281d70d58f1c663a61398e714d694fad8c0c1f09432eb052fc8  scanner.test.ts
+f694a59d715f4021f97e9a6ed764ff3d86045e1283a2fc376da337e0d9c3a1af  rows.ts
+of the run (tree-of-the-run/):
+b70d37a60a975f05f4babc1e1060da1a0765568c561eab7847821577b5a53979  scanner.ts
+17f86ad256bd0281d70d58f1c663a61398e714d694fad8c0c1f09432eb052fc8  scanner.test.ts
+f694a59d715f4021f97e9a6ed764ff3d86045e1283a2fc376da337e0d9c3a1af  rows.ts
+scanner.test.ts and rows.ts are the run's, byte for byte. scanner.ts differs by one comment (OWN_DATE's rate for a month or day of one digit, corrected after the run to "about once in 170 million handles of 32 bytes (245 million of 24)"): the diff is tree-of-the-run/scanner.ts.run-to-committed.diff, and no line of code differs.

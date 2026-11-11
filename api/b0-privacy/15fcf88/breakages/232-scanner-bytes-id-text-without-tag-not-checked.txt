@@ -1,0 +1,20 @@
+breakage: scanner-bytes-id-text-without-tag-not-checked
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  ".some((form) => text.includes(form.text) || (form.bytes !== undefined && bytes.includes(form.bytes)))",
+  ".some((form) => form.bytes !== undefined && bytes.includes(form.bytes))"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest-fixes.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: × catches an id the viewer may not see anywhere else, and a cursor
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (60 tests | 1 failed) 402ms
+     × catches an id the viewer may not see anywhere else, and a cursor that is a readable key or hides one (T14; the contract's Cursor) 207ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches an id the viewer may not see anywhere else, and a cursor that is a readable key or hides one (T14; the contract's Cursor)
+AssertionError: 015137794b325f6d5a30764e2d35635838624c773352678f1ce2a7b3d9046e5f7a1c3e9b2d4f60: expected [] to deeply equal [ 'holds an id' ]
+ Test Files  1 failed (1)
+      Tests  1 failed | 59 passed (60)

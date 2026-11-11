@@ -1,0 +1,15 @@
+--- tree-of-the-run/scanner.ts
++++ tests/src/privacy/scanner.ts
+@@ -360,9 +360,9 @@
+  * base64url text makes one about once in 100 billion handles of 32 bytes. A date with no separator
+  * and no T after it, `20261106`, it would make about once in 100 million, too often to fail; one with
+  * its day or month first (`06-11-2026`), which it makes about as rarely as these, isn't looked for,
+- * nor is one with a month or day of one digit (`2026-11-6`), which it makes about once in 150 million,
+- * too often to fail. No form is looked for that has a `/`, a `.` or a space: base64url has none of
+- * them, so a cursor holding one is refused as not base64url.
++ * nor is one with a month or day of one digit (`2026-11-6`), which it makes about once in 170 million
++ * handles of 32 bytes (245 million of 24), too often to fail. No form is looked for that has a `/`,
++ * a `.` or a space: base64url has none of them, so a cursor holding one is refused as not base64url.
+  */
+ const OWN_DATE = /20[0-9]{2}([-_][01][0-9][-_][0-3][0-9]|[01][0-9][0-3][0-9][Tt][0-9]{4})/;
+ 

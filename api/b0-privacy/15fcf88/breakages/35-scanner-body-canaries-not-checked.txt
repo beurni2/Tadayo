@@ -1,0 +1,27 @@
+breakage: scanner-body-canaries-not-checked
+patch: [
+ [
+  "tests/src/privacy/scanner.ts",
+  "      if (value.includes(canary) && !reader.shown(drops)) find(\"values\", at, \"a value the world keeps back (Q07)\");\n    }\n    for (const id of reader.unseen)",
+  "      if (Math.random() > 2) find(\"values\", at, \"a value the world keeps back (Q07)\");\n    }\n    for (const id of reader.unseen)"
+ ]
+]
+command: bash /tmp/claude-0/-home-user-Tadayo/9ca8d668-d4fe-50df-8373-630646f606e4/scratchpad/privacy/privtest-fixes.sh src/privacy/scanner.test.ts
+exit: 1
+expected pattern: next_cursor
+caught: True
+
+ ❯ src/privacy/scanner.test.ts (60 tests | 3 failed) 274ms
+     × catches a revealed card before its day opens (T10) 11ms
+     × catches a value the world keeps back, wherever it is, until its drop opens to the viewer (Q07) 2ms
+     × catches an id the viewer may not see anywhere else, and a cursor that is a readable key or hides one (T14; the contract's Cursor) 79ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a revealed card before its day opens (T10)
+AssertionError: expected [ 'keys', 'world' ] to deeply equal [ 'keys', 'values', 'world' ]
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches a value the world keeps back, wherever it is, until its drop opens to the viewer (Q07)
+AssertionError: expected [] to deeply equal [ '$.next_cursor' ]
+    724|     // In a header too: Date's form is the shape check's, and what it …
+ FAIL  src/privacy/scanner.test.ts > the leak scanner catches each planted leak with its own check > catches an id the viewer may not see anywhere else, and a cursor that is a readable key or hides one (T14; the contract's Cursor)
+AssertionError: expected [] to deeply equal [ Array(1) ]
+ Test Files  1 failed (1)
+      Tests  3 failed | 57 passed (60)
