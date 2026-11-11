@@ -408,7 +408,7 @@ And slice 6 (PR #24, `b8fa77a`; `docs/plans/B0.md`, slice 6; spec 07, 14, 33; T1
 
 ### 1.3 ios lane
 
-**Updated:** 2026-11-11 08:50 UTC, ios/b0-adopt-root
+**Updated:** 2026-11-11 09:16 UTC, ios/b0-adopt-root-probe
 
 - **Started:** 2026-11-03 at 11:03 UTC, by the coordinator (ADR-025). Environment: Swift 6.3.3 from swift.org's signed release tarball; the journal hook isn't confirmed to fire in this session, so it runs by hand before each commit (`docs/LIMITATIONS.md`'s row of 2026-11-03 for the ios thread).
 
@@ -1830,6 +1830,14 @@ Two earlier entries claim more than their commits show, and the log is append-on
 **Next:** Push, check `ci`, then PR #11's description and the founder (block 1.2's Next steps 1 and 2).
 
 ### 3.3 ios lane
+
+#### 2026-11-11 09:16 UTC · ios · ios/b0-adopt-root-probe · PR none
+**Did:** A check branch (never merged) from `ios/b0-adopt-root` at `f712edf` that adds one throwaway test class, `ZBarProbeTests` (`apps/ios/TadayoSnapshotTests/ZBarProbeTests.swift`, named to run last), which measures on iOS 26.5 where a setup screen's title sits under nine navigation-bar containers and what a bare UIKit navigation bar measures, and fails on purpose so its lines land in the run's test log.
+**Why:** The first `ios` run of PR 2 (42990527058, at `f712edf`) built and ran, and its `testTheFailureTitleSitsWhereTheSignInTitlesSit` failed by 54 points: with an empty inline navigation bar the failure's title sits at 82 points, where it sat before, and A02-age's sits at 136, so on iOS 26 an empty bar adds nothing. The probe finds a container that keeps a bar the system draws, with nothing in it, and so puts the title where the sign-in screens' titles sit on every iOS version, which a hard-coded number would not. The same run, with PR 2's code unchanged and its probe added, also shows whether the three tabs loading snapshots (`F01-loading-no-club`, `H01-loading-no-club`, `M01-loading-no-club`, light only, 203 pixels of the spinner in each) differ again or were a one-run difference.
+**Verified:** Nothing yet: the run is read after the push.
+**Not verified:** Whether the container that works on iOS 26.5 also works on 17.5 and 18.6 (the probe can be dispatched there with `ios_version`).
+**Decisions and questions:** None. This branch never merges; PR 2's branch takes the container the probe chooses.
+**Next:** Read the probe's lines in `logs/test.log` of `ios/b0-adopt-root-probe/<short sha>/ios/` on the `evidence` branch, choose the container, put it in `RootFailure` on `ios/b0-adopt-root`, and compare the three tabs loading snapshots with the earlier run's.
 
 #### 2026-11-11 08:50 UTC · ios · ios/b0-adopt-root · PR none
 **Did:** Started PR 2 of the nine that adopt handoff 7 (`ios/b0-adopt-root`, from `main` at `339fac2`). `RootModel.Route` gains `.reading` (a sign-in is found and its account is read, at launch or on Retry) and `.leaving` (Leave sign-in, the Lab's Log out or a session the server ended), `.starting` staying the canvas alone while the keychain is read; six new `RootModelTests` (TL-06, TL-10) and three reworded. In the app: `RootWait` (`apps/ios/Tadayo/App/RootWait.swift`) and its two routes in `RoutedView`; `RootFailure` held in an empty inline navigation bar, its Retry 44 above the safe area and a hint on it per failure; `SetupGap.profileFooter` renamed `formFooterToSafeAreaBottom`; five catalog keys (`root.loading`, `root.leaving`, `root.retry.account.hint`, `root.retry.leave.hint`, `root.retry.keep.hint`) and the comments of the root's and `common.*` keys naming handoff 7's; the comments of `LaunchScreenTests` and `project.yml` (the launch screen stays canvas alone). Tests: `RootSnapshotTests` (the waits as the routes draw them, TV-01, TV-02, TS-13), `RootWaitTests` (TH-02), `AccessibilityElements` reading frames and the window's safe areas, `ScriptedAccounts` and `ScriptedAuth` able to hold a read and a sign-out.
