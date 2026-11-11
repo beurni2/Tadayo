@@ -5,10 +5,11 @@
 // does with the answers is in its own test file, and the database side of `supabase-probe` is
 // tests/src/db/ops-scripts.test.ts.
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { FAKE_FLY_TOKEN, fakeSpawn, json, lineOf, machine, type RecordedCall, type Route } from "../test/fake-fly.ts";
 import { FAKE_PUBLISHABLE, FAKE_SECRET, FAKE_URL, fakeSupabase } from "../test/fake-supabase.ts";
 import { runScript, type OpsContext } from "./run.ts";
+import { BUDGET_MS, DEADLINE_MS } from "./supabase-probe.ts";
 
 const REF = "abcdefghijklmnopqrst";
 const OTHER_REF = "tsrqponmlkjihgfedcba";
@@ -280,12 +281,15 @@ describe("storage-setup on the runner", () => {
     const h = harness({
       routes: [
         [LIST, started],
-        [exec("storage-setup"), answer("storage-setup: uploads is there\n")],
+        [
+          exec("storage-setup"),
+          answer("storage-setup: uploads: already as declared\nstorage-setup: renditions: created\n"),
+        ],
       ],
     });
     await runScript("storage-setup", h.ctx);
     expect(h.lines()).toEqual([LIST, exec("storage-setup")]);
-    expect(h.said).toEqual(["storage-setup: uploads is there"]);
+    expect(h.said).toEqual(["storage-setup: uploads: already as declared", "storage-setup: renditions: created"]);
     // Nothing of Supabase is asked from here: the service key isn't here.
     expect(h.requests).toEqual([]);
   });
@@ -311,6 +315,24 @@ describe("storage-setup on the runner", () => {
     });
     expect(await failure("storage-setup", h.ctx)).toBe("storage-setup: it failed on the Machine, with exit code 1");
     expect(h.said).toEqual(["storage-setup: uploads: couldn't make it"]);
+  });
+
+  it("fails when the Machine's report ends before it says what became of each bucket, even with an exit status of 0", async () => {
+    for (const [stdout, missing] of [
+      ["", "uploads"],
+      ["storage-setup: uploads: created\n", "renditions"],
+      ["storage-setup: renditions: created\n", "uploads"],
+    ] as const) {
+      const h = harness({
+        routes: [
+          [LIST, started],
+          [exec("storage-setup"), answer(stdout)],
+        ],
+      });
+      expect(await failure("storage-setup", h.ctx), stdout).toBe(
+        `storage-setup: the Machine's report ended before it said what became of ${missing}; run it again, since it makes only what is missing`,
+      );
+    }
   });
 
   it("takes --ref only with --here, and --here only with --ref", async () => {
@@ -373,7 +395,9 @@ describe("supabase-probe on the runner", () => {
     [LIST, started],
     [
       exec("supabase-probe"),
-      answer("supabase-probe: run r1\nsupabase-probe: ok    control: the service key lists the buckets\n"),
+      answer(
+        "supabase-probe: run r1\nsupabase-probe: ok    control: the service key lists the buckets\nsupabase-probe: all 1 checks passed\n",
+      ),
     ],
   ] as const satisfies readonly Route[];
 
@@ -388,6 +412,7 @@ describe("supabase-probe on the runner", () => {
       "supabase-probe: ok    the Data API's settings expose no schema",
       "supabase-probe: run r1",
       "supabase-probe: ok    control: the service key lists the buckets",
+      "supabase-probe: all 1 checks passed",
       "supabase-probe: every check passed",
     ]);
     expect(JSON.stringify(h.said)).not.toContain("must-never-be-printed");
@@ -410,25 +435,89 @@ describe("supabase-probe on the runner", () => {
         [LIST, started],
         [
           exec("supabase-probe"),
-          answer("supabase-probe: run r1\nsupabase-probe: FAIL  anon: list the buckets: answered HTTP 200\n", 1),
+          json({
+            stdout: "supabase-probe: run r1\nsupabase-probe: FAIL  anon: list the buckets: answered HTTP 200\n",
+            stderr: "supabase-probe: 1 of 1 checks failed\n",
+            exit_code: 1,
+          }),
         ],
       ],
       web: settings(""),
     });
     expect(await failure("supabase-probe", h.ctx)).toBe("supabase-probe: it failed on the Machine, with exit code 1");
-    // The report came back, so it names what is left; nothing is said about what might be.
+    // The report came back whole, so it names what is left; nothing is said about what might be.
     expect(h.said).toEqual([
       "supabase-probe: ok    the Data API's settings expose no schema",
       "supabase-probe: run r1",
       "supabase-probe: FAIL  anon: list the buckets: answered HTTP 200",
+      "supabase-probe: 1 of 1 checks failed",
     ]);
   });
 
-  it("says what the project may hold when the Machine's report never came back, and still fails with the call's own failure", async () => {
+  it("says nothing of what the project may hold when the Machine's half failed before it made anything", async () => {
+    // A Machine without the service key, say: its report comes back, without the run's id.
+    const h = harness({
+      routes: [
+        [LIST, started],
+        [exec("supabase-probe"), json({ stderr: "set SUPABASE_SERVICE_KEY\n", exit_code: 1 })],
+      ],
+      web: settings(""),
+    });
+    expect(await failure("supabase-probe", h.ctx)).toBe("supabase-probe: it failed on the Machine, with exit code 1");
+    expect(h.said).toEqual([
+      "supabase-probe: ok    the Data API's settings expose no schema",
+      "set SUPABASE_SERVICE_KEY",
+    ]);
+  });
+
+  it("fails, and says what the project may hold, when the Machine's report has the run's id and doesn't say how its checks went, even with an exit status of 0", async () => {
+    for (const [reply, failed] of [
+      [
+        json({ stdout: "supabase-probe: run r1\nsupabase-probe: ok    control: the service key lists the buckets\n" }),
+        "supabase-probe: the Machine's report doesn't say its checks passed, so it proves nothing",
+      ],
+      [
+        json({ stdout: "supabase-probe: run r1\n", exit_signal: 9 }),
+        "supabase-probe: it was ended on the Machine by signal 9",
+      ],
+    ] as const) {
+      const h = harness({
+        routes: [
+          [LIST, started],
+          [exec("supabase-probe"), reply],
+        ],
+        web: settings(""),
+      });
+      expect(await failure("supabase-probe", h.ctx), failed).toBe(failed);
+      const hint = h.said.at(-1) ?? "";
+      expect(hint, failed).toMatch(
+        /^supabase-probe: the Machine's report ended before its checks did, so the project may hold/,
+      );
+      expect(h.said, failed).not.toContain("supabase-probe: every check passed");
+    }
+  });
+
+  it("doesn't take a report without the run's id, or one that only says its checks passed, as a pass", async () => {
+    for (const stdout of ["", "supabase-probe: ok    control: the service key lists the buckets\n"]) {
+      const h = harness({
+        routes: [
+          [LIST, started],
+          [exec("supabase-probe"), answer(stdout)],
+        ],
+        web: settings(""),
+      });
+      expect(await failure("supabase-probe", h.ctx), stdout).toBe(
+        "supabase-probe: the Machine's report doesn't say its checks passed, so it proves nothing",
+      );
+    }
+  });
+
+  it("says what the project may hold when nothing came back from the Machine, and still fails with the call's own failure", async () => {
     for (const reply of [
       { code: 1, stderr: "Error: deadline exceeded" },
       { timedOut: true, code: null },
-      json({ stdout: "an answer that isn't a report", exit_signal: 9 }),
+      json({ stdout: "supabase-probe: run r1\n", exit_status: 9 }),
+      json({ exit_code: 137 }),
     ]) {
       const h = harness({
         routes: [
@@ -440,11 +529,14 @@ describe("supabase-probe on the runner", () => {
       const failed = await failure("supabase-probe", h.ctx);
       expect(failed).toMatch(/^supabase-probe: /);
       const hint = h.said.at(-1) ?? "";
-      expect(hint).toMatch(/^supabase-probe: the Machine's report didn't come back\./);
+      expect(hint).toMatch(
+        /^supabase-probe: nothing came back from the Machine\. If its command had started, the project may hold/,
+      );
       expect(hint).toContain("probe-");
       expect(hint).toContain("@probe.invalid");
       expect(hint).toContain("probe/");
       expect(hint).toContain("uploads and renditions");
+      expect(hint).toContain("buckets whose names start with probe-");
     }
   });
 
@@ -481,6 +573,45 @@ describe("supabase-probe on the Machine (--here)", () => {
       expect(h.connected).toEqual([]);
       expect(h.requests).toEqual([]);
       expect(h.said).toEqual([]);
+    }
+  });
+
+  it("starts the run's time limits before it opens the database, so that the database's checks count against them", async () => {
+    const timeout = vi.spyOn(AbortSignal, "timeout");
+    try {
+      const h = harness({ args, env: MACHINE_ENV });
+      let before: number[] = [];
+      const ctx: OpsContext = {
+        ...h.ctx,
+        connect: (url) => {
+          before = timeout.mock.calls.map(([milliseconds]) => milliseconds);
+          return h.ctx.connect(url);
+        },
+      };
+      // The harness's database refuses as it is opened: what matters is what had started by then.
+      expect(await failure("supabase-probe", ctx)).toBe("no database here");
+      expect(before).toEqual(expect.arrayContaining([BUDGET_MS, DEADLINE_MS]));
+    } finally {
+      timeout.mockRestore();
+    }
+  });
+
+  it("gives the doors' checks those same limits, so that the run has one budget and one deadline", async () => {
+    const timeout = vi.spyOn(AbortSignal, "timeout");
+    try {
+      const h = harness({ args, env: MACHINE_ENV });
+      // A database that answers every question with no rows, and a project that never answers.
+      const nothing = Object.assign(() => Promise.resolve([]), {
+        unsafe: () => Promise.resolve([]),
+        end: () => Promise.resolve(),
+      });
+      const ctx: OpsContext = { ...h.ctx, connect: () => nothing as unknown as ReturnType<OpsContext["connect"]> };
+      expect(await failure("supabase-probe", ctx)).toMatch(/^supabase-probe: \d+ of \d+ checks failed$/);
+      const given = timeout.mock.calls.map(([milliseconds]) => milliseconds);
+      expect(given.filter((milliseconds) => milliseconds === BUDGET_MS)).toHaveLength(1);
+      expect(given.filter((milliseconds) => milliseconds === DEADLINE_MS)).toHaveLength(1);
+    } finally {
+      timeout.mockRestore();
     }
   });
 

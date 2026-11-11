@@ -6,7 +6,7 @@
 //
 // `flyctl` is given the Fly token and `HOME`, and nothing else of the environment, and is never
 // given a shell. `run` makes no call whose argument list doesn't name the app (`DEV_APP`) with `-a`
-// or `--app`, and no other app anywhere in it, so no script can touch another one; the two calls
+// or `--app`, and has no other app flag in any spelling (`--app=x`, `-ax`); the two calls
 // that name none are the token's list of organizations and the making of the app itself, which
 // takes its name as an argument (`forDevApp`). `flyctl` prints some failures with exit code 0
 // (`machine exec` does, for the command it ran), so a script says what it asks for and checks the

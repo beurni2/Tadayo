@@ -906,7 +906,7 @@ describe("apiChecks is limited in time, since a killed command skips its clean-u
       timeout.mockRestore();
     }
     expect(BUDGET_MS).toBeLessThan(DEADLINE_MS);
-    // A minute for what runs before it (the database checks and the start of the process).
+    // A minute for the process to start before the limits do, and for flyctl to answer.
     expect(DEADLINE_MS + 60_000).toBeLessThanOrEqual(EXEC_SECONDS * 1000);
   });
 });

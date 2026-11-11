@@ -1,6 +1,7 @@
 // The API's entry: start, then listen. A failure writes its message alone, never the error object,
 // its cause or its stack, which could carry the database URL's password (T52, T56), and stops the
-// process before it listens. A SIGTERM or SIGINT stops it cleanly (shutdown.ts).
+// process before it listens. A SIGTERM or SIGINT stops it cleanly (shutdown.ts), and the process
+// ends when the stop has finished, with the exit code the stop left (1 when something failed).
 
 import { stopOnSignal } from "./shutdown.ts";
 import { startApi } from "./start.ts";
@@ -17,7 +18,7 @@ try {
       process.stderr.write(`${message}\n`);
       process.exitCode = 1;
     },
-  });
+  }).then(() => process.exit());
 } catch (error) {
   process.stderr.write(`${error instanceof Error ? error.message : "api: failed to start"}\n`);
   process.exit(1);

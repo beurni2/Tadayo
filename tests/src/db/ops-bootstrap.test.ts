@@ -21,13 +21,12 @@ const adminUrl = process.env.DATABASE_ADMIN_URL ?? "";
 const appUrl = process.env.DATABASE_URL ?? "";
 
 /**
- * psql's environment for the admin connection. Built in the test that needs it, and not when the
- * file loads: without DATABASE_ADMIN_URL `pgEnvOf` would stop the whole file at import with
- * "Invalid URL", where this says what to set. The local server has no TLS, and the pooler's string
- * asks for it.
+ * psql's environment for the admin connection, built in the test that needs it. Without
+ * DATABASE_ADMIN_URL the file stops as it loads, at `adminSql()` below, with the harness's words
+ * that say what to set, as the suite's other files do (and no longer with `pgEnvOf`'s "Invalid
+ * URL"). The local server has no TLS, and the pooler's string asks for it.
  */
 function pgEnv(): Record<string, string> {
-  expect(adminUrl, "set DATABASE_ADMIN_URL, as the ci step db-tests does").not.toBe("");
   return { ...pgEnvOf(adminUrl as DevDatabaseUrl), PGSSLMODE: "disable" };
 }
 

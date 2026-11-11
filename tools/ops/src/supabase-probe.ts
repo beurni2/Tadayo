@@ -57,11 +57,14 @@ export function reportLine(check: Check): string {
 const NO_ANSWER = "no answer from the project";
 const OUT_OF_TIME = "the run's time ran out";
 
-/** When the checks stop asking, in milliseconds from the start of `apiChecks`; the clean-up goes on. */
+/**
+ * When the checks stop asking, in milliseconds from the start of the Machine's half (run.ts starts
+ * both limits before the database's checks, so that they count too); the clean-up goes on.
+ */
 export const BUDGET_MS = 150_000;
 /**
  * When the clean-up stops too. `flyctl machine exec` ends the command at 300 seconds
- * (on-machine.ts), which no `finally` survives, and the database checks run before this starts.
+ * (on-machine.ts), which no `finally` survives.
  */
 export const DEADLINE_MS = 240_000;
 
@@ -232,9 +235,9 @@ export interface ApiInput {
   readonly tables: readonly string[];
   /** A fresh id for this run's names; a UUID unless a test gives its own. */
   readonly id?: () => string;
-  /** Ends the checks' asking: `BUDGET_MS` after the run starts, unless a test gives its own. */
+  /** Ends the checks' asking: the Machine's half gives `BUDGET_MS` from its start; alone, from this call's. */
   readonly budget?: AbortSignal;
-  /** Ends the clean-up's asking too: `DEADLINE_MS` after the run starts, unless a test gives its own. */
+  /** Ends the clean-up's asking too: `DEADLINE_MS`, likewise. */
   readonly deadline?: AbortSignal;
 }
 

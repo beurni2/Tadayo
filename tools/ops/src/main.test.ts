@@ -63,7 +63,7 @@ describe("the ops entry", () => {
   it("holds back the environment's token from a line a script says, and exits 0 when the script worked", async () => {
     const bin = await flyctl(`case "$2" in
   list) printf '%s' '[{"id":"a1","state":"started","config":{"metadata":{"fly_process_group":"api"}}}]' ;;
-  exec) printf '{"stdout":"the key is %s"}' "$FLY_API_TOKEN" ;;
+  exec) printf '{"stdout":"storage-setup: uploads: created\\\\nstorage-setup: renditions: created\\\\nthe key is %s"}' "$FLY_API_TOKEN" ;;
   *) echo "unexpected: $*" >&2; exit 2 ;;
 esac`);
     const result = await entry(["storage-setup"], {
@@ -72,7 +72,9 @@ esac`);
       SUPABASE_DEV_PROJECT_REF: REF,
     });
     expect(result.stderr).toBe("");
-    expect(result.stdout).toBe("the key is [redacted]\n");
+    expect(result.stdout).toBe(
+      "storage-setup: uploads: created\nstorage-setup: renditions: created\nthe key is [redacted]\n",
+    );
     expect(result.code).toBe(0);
   });
 

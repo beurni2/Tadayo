@@ -1,9 +1,12 @@
 // How the API stops (docs/plans/api-b0-deploy.md, section 3). Fly stops a Machine with a signal
 // (SIGTERM from a deploy, SIGINT from `fly machine stop`'s default), and kills it after
 // `kill_timeout` (fly.toml: 30 seconds). On the first signal the API stops listening, lets the
-// requests in flight finish, ends its database connection and lets the process end with exit code
-// 0, so a deploy cuts no request short. A second signal isn't caught, so it ends the process as
-// signals do.
+// requests in flight finish, ends its database connection (giving queries still running
+// `END_SECONDS`, after which postgres.js closes it anyway: the app's own `onClose` hook does it as
+// it closes, app.ts, and this asks again in case the close failed first) and resolves, and main.ts
+// then ends the process, with exit code 0 when all went well, so that nothing left open (a socket
+// postgres.js half-closed) holds it past `kill_timeout`. A second signal isn't caught, so it ends
+// the process as signals do.
 //
 // Closing Fastify waits for every connection to end, and a connection a request has finished on
 // stays open for the keep-alive time (Fastify's default is 72 seconds, longer than Fly waits), so a
@@ -38,11 +41,17 @@ export const SWEEP_MS = 250;
  * seconds, and what follows the grace, ending the database's connection, needs the rest.
  */
 export const GRACE_MS = 25_000;
+/**
+ * How long ending the database's connection waits for queries still running (seconds, as postgres.js's
+ * `end({ timeout })` takes it): a request cut at the grace may leave its query running, and the end
+ * mustn't outlast `kill_timeout`.
+ */
+export const END_SECONDS = 3;
 
 /** What a stop needs of the server, the database connection and the process. */
 export interface StopOptions {
   readonly app: StoppableApp;
-  readonly sql: { end(): Promise<unknown> };
+  readonly sql: { end(options: { timeout: number }): Promise<unknown> };
   /** Writes a line to the log; the caller adds nothing to it but its newline. */
   readonly say: (line: string) => void;
   /** Called with a message, which holds none of the error's own words (T52, T56), when closing fails. */
@@ -103,7 +112,7 @@ export function stopOnSignal(options: StopOptions): Promise<void> {
         clearTimeout(grace);
       }
       try {
-        await options.sql.end();
+        await options.sql.end({ timeout: END_SECONDS });
       } catch {
         clean = false;
         options.fail("api: the database's connection didn't end cleanly");

@@ -277,16 +277,29 @@ describe("flyAppCreate refuses", () => {
   });
 
   it("an organization list it can't read", async () => {
-    for (const stdout of ["not json", JSON.stringify([]), JSON.stringify({})]) {
+    for (const stdout of ["not json", JSON.stringify([]), JSON.stringify("personal")]) {
       const result = await run([
         [STATUS, { code: 1 }],
         ["flyctl orgs list --json", { stdout }],
       ]);
       expect(result.outcome, stdout).toBeInstanceOf(OpsError);
+      expect((result.outcome as OpsError).message, stdout).toBe(
+        "fly-app-create: flyctl's list of organizations isn't one it can read",
+      );
       expect(
         result.calls.some((call) => call.includes("apps create")),
         stdout,
       ).toBe(false);
     }
+  });
+
+  it("a token that sees no organization, saying so, and makes nothing", async () => {
+    const result = await run([
+      [STATUS, { code: 1 }],
+      ["flyctl orgs list --json", json({})],
+    ]);
+    expect(result.outcome).toBeInstanceOf(OpsError);
+    expect((result.outcome as OpsError).message).toBe("fly-app-create: the token sees no organization");
+    expect(result.calls.some((call) => call.includes("apps create"))).toBe(false);
   });
 });

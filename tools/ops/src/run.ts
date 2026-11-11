@@ -30,9 +30,17 @@ import { onMachine } from "./on-machine.ts";
 import { OpsError } from "./ops-error.ts";
 import { seed } from "./seed.ts";
 import type { Spawn } from "./spawn.ts";
-import { storageSetup } from "./storage-setup.ts";
+import { BUCKETS, storageSetup } from "./storage-setup.ts";
 import { projectUrl } from "./supabase.ts";
-import { apiChecks, databaseChecks, dataApiChecks, reportLine, type Check } from "./supabase-probe.ts";
+import {
+  apiChecks,
+  BUDGET_MS,
+  databaseChecks,
+  dataApiChecks,
+  DEADLINE_MS,
+  reportLine,
+  type Check,
+} from "./supabase-probe.ts";
 import { workerScale } from "./worker-scale.ts";
 
 export interface OpsContext {
@@ -223,14 +231,19 @@ function machineProject(url: string, ref: string, script: string): string {
   return project;
 }
 
-/** Starts `<script> --here --ref <reference>` on the API's Machine, and says what it prints. */
-async function onTheMachine(ctx: OpsContext, script: string, ref: string): Promise<void> {
+/** Starts `<script> --here --ref <reference>` on the API's Machine, says what it prints, and gives back its lines. */
+async function onTheMachine(ctx: OpsContext, script: string, ref: string): Promise<string[]> {
+  const heard: string[] = [];
   await onMachine({
     fly: flyOf(ctx.spawn, ctx.env),
     label: script,
     command: ["node", MACHINE_MAIN, script, "--here", "--ref", ref],
-    say: ctx.say,
+    say: (line) => {
+      heard.push(line);
+      ctx.say(line);
+    },
   });
+  return heard;
 }
 
 const storageSetupScript: Script = {
@@ -244,7 +257,16 @@ const storageSetupScript: Script = {
       return;
     }
     const variables = readVariables(ctx.env, ["FLY_API_TOKEN", "SUPABASE_DEV_PROJECT_REF"]);
-    await onTheMachine(ctx, "storage-setup", devProjectRef(variables.SUPABASE_DEV_PROJECT_REF));
+    const heard = await onTheMachine(ctx, "storage-setup", devProjectRef(variables.SUPABASE_DEV_PROJECT_REF));
+    // An exit status of 0 isn't enough: a command that `machine exec` ended may answer without one
+    // that says so, so each bucket's own line is what says the Machine got that far.
+    for (const bucket of BUCKETS) {
+      if (!heard.some((line) => line.startsWith(`storage-setup: ${bucket}: `))) {
+        throw new OpsError(
+          `storage-setup: the Machine's report ended before it said what became of ${bucket}; run it again, since it makes only what is missing`,
+        );
+      }
+    }
   },
 };
 
@@ -258,7 +280,12 @@ async function probeOnMachine(ctx: OpsContext, ref: string): Promise<void> {
   ]);
   const url = machineProject(variables.SUPABASE_URL, ref, "supabase-probe");
   const database = devDatabaseUrl(variables.DATABASE_URL, ref);
-  // What a failed clean-up leaves is named by this id (`probe/<run>/…`, `probe-<run>@probe.invalid`).
+  // The time limits run from here, so that the database's checks count against them too, and the
+  // clean-up still ends before `machine exec` ends the command (supabase-probe.ts, DEADLINE_MS).
+  const budget = AbortSignal.timeout(BUDGET_MS);
+  const deadline = AbortSignal.timeout(DEADLINE_MS);
+  // What a failed clean-up leaves is named by this id (`probe/<run>/…`, `probe-<run>@probe.invalid`,
+  // the buckets `probe-<run>-anon` and `probe-<run>-user`).
   const run = randomUUID();
   ctx.say(`supabase-probe: run ${run}`);
   const report = await withDatabase(ctx, { script: "supabase-probe", variable: "DATABASE_URL" }, database, (db) =>
@@ -271,6 +298,8 @@ async function probeOnMachine(ctx: OpsContext, ref: string): Promise<void> {
     serviceKey: variables.SUPABASE_SERVICE_KEY,
     tables: report.tables,
     id: () => run,
+    budget,
+    deadline,
   });
   const checks: Check[] = [...report.checks, ...api];
   for (const check of checks) ctx.say(`supabase-probe: ${reportLine(check)}`);
@@ -279,6 +308,13 @@ async function probeOnMachine(ctx: OpsContext, ref: string): Promise<void> {
   ctx.say(`supabase-probe: all ${String(checks.length)} checks passed`);
 }
 
+/** The Machine's half's last line, on stdout when every check passed, on stderr (the failure) when not. */
+const PROBE_PASSED = /^supabase-probe: all \d+ checks passed$/;
+const PROBE_FAILED = /^supabase-probe: \d+ of \d+ checks failed$/;
+/** What the probe makes, by the names its clean-up deletes them by (supabase-probe.ts). */
+const PROBE_LEFTOVERS =
+  "the project may hold what the probe makes: a user whose address starts with probe- and ends with @probe.invalid, objects under probe/ in uploads and renditions, and buckets whose names start with probe-. Delete them by those names";
+
 /** The runner's half: the project's own settings, through the Management API, then the Machine's half. */
 async function probeFromRunner(ctx: OpsContext): Promise<void> {
   const variables = readVariables(ctx.env, ["FLY_API_TOKEN", "SUPABASE_DEV_PROJECT_REF", "SUPABASE_ACCESS_TOKEN"]);
@@ -286,8 +322,13 @@ async function probeFromRunner(ctx: OpsContext): Promise<void> {
   const settings = await dataApiChecks(ctx.fetch, ref, variables.SUPABASE_ACCESS_TOKEN);
   for (const check of settings) ctx.say(`supabase-probe: ${reportLine(check)}`);
   // Both halves say what they found; the run fails if either failed. `flyctl machine exec` gives
-  // the Machine's output only when its command ends, so a call that fails gives none: the run's id
-  // (the Machine's first line) says that the report came, clean-up lines included.
+  // the Machine's output only when its command ends, so a call that fails gives none, and nothing
+  // heard says nothing of how far the command got. The Machine's half says its run's id before it
+  // makes anything and ends by saying how its checks went, so a report with the first line and not
+  // the last is one whose command was ended part way, which an exit status of 0 doesn't rule out
+  // (flyctl 0.5.8 doesn't print the Machines API's `exit_signal`): either way the probe's own
+  // clean-up may not have run. A report without the run's id is one that failed before it made
+  // anything (a Machine without the service key, say).
   const heard: string[] = [];
   let onMachineFailure: OpsError | undefined;
   try {
@@ -306,13 +347,17 @@ async function probeFromRunner(ctx: OpsContext): Promise<void> {
     if (!(error instanceof OpsError)) throw error;
     onMachineFailure = error;
   }
-  if (onMachineFailure !== undefined) {
-    if (!heard.some((line) => line.startsWith("supabase-probe: run "))) {
-      ctx.say(
-        "supabase-probe: the Machine's report didn't come back. If its command had started, the project may hold what the probe makes: a user whose address starts with probe- and ends with @probe.invalid, and objects under probe/ in uploads and renditions. Delete them by those names",
-      );
-    }
-    throw onMachineFailure;
+  const started = heard.some((line) => line.startsWith("supabase-probe: run "));
+  const passed = heard.some((line) => PROBE_PASSED.test(line));
+  const ended = passed || heard.some((line) => PROBE_FAILED.test(line));
+  if (heard.length === 0) {
+    ctx.say(`supabase-probe: nothing came back from the Machine. If its command had started, ${PROBE_LEFTOVERS}`);
+  } else if (started && !ended) {
+    ctx.say(`supabase-probe: the Machine's report ended before its checks did, so ${PROBE_LEFTOVERS}`);
+  }
+  if (onMachineFailure !== undefined) throw onMachineFailure;
+  if (!passed) {
+    throw new OpsError("supabase-probe: the Machine's report doesn't say its checks passed, so it proves nothing");
   }
   if (settings.some((check) => !check.ok)) throw new OpsError("supabase-probe: the Data API check failed");
   ctx.say("supabase-probe: every check passed");

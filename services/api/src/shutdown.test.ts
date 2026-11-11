@@ -9,7 +9,7 @@ import { Agent, request } from "node:http";
 import { join } from "node:path";
 import Fastify from "fastify";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { GRACE_MS, SWEEP_MS, stopOnSignal } from "./shutdown.ts";
+import { END_SECONDS, GRACE_MS, SWEEP_MS, stopOnSignal } from "./shutdown.ts";
 
 function rig(sqlFails = false) {
   const events = new EventEmitter();
@@ -17,6 +17,7 @@ function rig(sqlFails = false) {
   const closing = Promise.withResolvers<undefined>();
   const failures: string[] = [];
   const connections = { idle: 0, all: 0 };
+  const ends: { timeout: number }[] = [];
   const done = stopOnSignal({
     app: {
       close: () => {
@@ -34,8 +35,9 @@ function rig(sqlFails = false) {
       },
     },
     sql: {
-      end: () => {
+      end: (options) => {
         order.push("sql.end");
+        ends.push(options);
         return sqlFails ? Promise.reject(new Error("host=db.internal password=hunter2")) : Promise.resolve();
       },
     },
@@ -45,7 +47,7 @@ function rig(sqlFails = false) {
     },
     events,
   });
-  return { events, order, closing, failures, connections, done };
+  return { events, order, closing, failures, connections, ends, done };
 }
 
 describe("stopOnSignal", () => {
@@ -198,11 +200,20 @@ describe("stopOnSignal", () => {
     expect(SWEEP_MS * 10).toBeLessThanOrEqual(GRACE_MS);
   });
 
-  it("leaves the end of the database's connection time inside what Fly waits for before it kills the Machine", () => {
+  it("gives the database's connection END_SECONDS to end, after which postgres.js closes it with queries still running", async () => {
+    const { events, closing, ends, done } = rig();
+    events.emit("SIGTERM");
+    closing.resolve(undefined);
+    await done;
+    expect(ends).toEqual([{ timeout: END_SECONDS }]);
+  });
+
+  it("fits the grace and the database's end inside what Fly waits for before it kills the Machine, with time to spare", () => {
     const toml = readFileSync(join(import.meta.dirname, "..", "..", "..", "fly.toml"), "utf8");
     const killTimeout = Number(/^kill_timeout = (\d+)$/m.exec(toml)?.[1]);
     expect(killTimeout).toBeGreaterThan(0);
-    expect(GRACE_MS).toBeLessThanOrEqual((killTimeout - 5) * 1000);
+    expect(END_SECONDS).toBeGreaterThan(0);
+    expect(GRACE_MS + END_SECONDS * 1000).toBeLessThanOrEqual((killTimeout - 2) * 1000);
   });
 });
 

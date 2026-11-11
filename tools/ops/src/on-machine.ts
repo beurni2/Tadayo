@@ -12,10 +12,12 @@
 // when it is empty or zero (Go's `omitempty`). So a command that worked answers `{"stdout": "…"}`
 // with no `exit_code` at all, and one that printed nothing answers `{}`; only a failure names its
 // code. The answer is read strictly because a missing code means "worked": nothing but those keys
-// (and `exit_signal`, the Machines API's own, which a later flyctl may print), each of the right
-// type, is accepted, so a flyctl that renamed the code, or an answer of another kind, fails the
-// script instead of passing as a success. The workflow pins the flyctl version this was checked
-// against (slice 10b). `machine exec` is limited to 600 seconds; this asks for 300.
+// (and `exit_signal`, the Machines API's own, which flyctl 0.5.8 doesn't print, since fly-go's
+// type has no such field, and a later one may), each of the right type, is accepted, so a flyctl
+// that renamed the code, or an answer of another kind, fails the script instead of passing as a
+// success. A command ended part way (by memory, say) may still answer with no code, so what says a
+// script finished is its own last line, which run.ts asks for. The workflow pins the flyctl version
+// this was checked against (slice 10b). `machine exec` is limited to 600 seconds; this asks for 300.
 //
 // Whether the command sees the Machine's secrets is the one thing Fly's documentation doesn't say
 // for `machine exec` (it does for `fly ssh console`); the first run after slice 10b shows it, and
