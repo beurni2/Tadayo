@@ -8,9 +8,11 @@
     "migrate": "node src/migrate-cli.ts"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./testing": "./test/fake-supabase.ts"
   },
   "dependencies": {
+    "@tadayo/domain": "workspace:*",
     "postgres": "3.4.9"
   }
 }

@@ -1,0 +1,73 @@
+# The dev API's Fly app (docs/plans/api-b0-deploy.md, section 2; TECH-DESIGN sections 1, 7 and 9; ADR-003,
+# ADR-017, ADR-023). One image, two process groups: the API, which Fly's proxy serves on
+# api-dev.tadayo.app, and the worker, which has no service, so the proxy never starts or stops it
+# (`ops` worker-scale does). One Machine of each: `dev` has no spare, and the deploys pass --ha=false.
+#
+# What is set here is public: the Supabase project's URL and publishable key are in the iOS app's Dev
+# build too (T53). The secrets, the database's connection string and Supabase's service key, are Fly's
+# own, set by the founder, and never in this file (T56). tools/ops/src/deploy-files.test.ts reads this
+# file against the Dockerfile and the rest of the repository.
+#
+# A section that binds to a group has `processes`. Left out, `flyctl` refuses a `[[services]]` while
+# `[processes]` is defined, gives `[[restart]]`, `[checks]` and the like to the default group only (`app`,
+# else the first name in sorted order, here `api`), and lets `[[vm]]` cover every group, as the one at
+# the end does.
+
+app = "tadayo-api-dev"
+primary_region = "iad"
+
+# A stop is SIGTERM, which both entries handle: the API finishes the requests it has and the worker
+# exits; the time is for a request still in flight.
+kill_signal = "SIGTERM"
+kill_timeout = 30
+
+[build]
+  dockerfile = "Dockerfile"
+
+# Migrations run before the deploy, from the runner, so there is no release command: a failed
+# migration stops the deploy before a Machine changes.
+[deploy]
+  strategy = "rolling"
+
+[env]
+  TADAYO_ENVIRONMENT = "dev"
+  SUPABASE_URL = "https://rhsycmycocbzakrydahi.supabase.co"
+  SUPABASE_PUBLISHABLE_KEY = "sb_publishable_5kJcQ8JCyWiHHMGjucf00w_8ehpABvL"
+  LOG_LEVEL = "info"
+
+[processes]
+  api = "node services/api/src/main.ts"
+  worker = "node services/worker/src/main.ts"
+
+# The API's service. It listens only after the database and the clock are ready, so an open port is a
+# started API. The check is on the port and not on a route: a route to ask would be one outside the
+# contract, which the privacy matrix would have to cover (T58).
+[[services]]
+  processes = ["api"]
+  protocol = "tcp"
+  internal_port = 8080
+  auto_stop_machines = "off"
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+  [[services.tcp_checks]]
+    grace_period = "20s"
+    interval = "15s"
+    timeout = "3s"
+
+# A group is restarted only when it failed: a clean exit, which is what a stop is, leaves it stopped, so
+# the worker stays down across deploys until `ops` worker-scale starts it.
+[[restart]]
+  policy = "on-failure"
+  processes = ["api", "worker"]
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

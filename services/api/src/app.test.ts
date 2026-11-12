@@ -15,6 +15,7 @@ import type { FastifyInstance, InjectOptions } from "fastify";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { BODY_LIMIT, bodyLimitOf, buildApp, routesOf, type Deps } from "./app.ts";
 import type { ApiSql } from "./connection.ts";
+import { END_SECONDS } from "./shutdown.ts";
 
 /** The neutral not-found, pinned here byte for byte, not taken from the app. */
 const NEUTRAL = {
@@ -37,10 +38,11 @@ const INVALID = {
 };
 const TRANSPORT = new Set(["date", "connection", "keep-alive"]);
 
-const ended = { count: 0 };
+const ended: { count: number; options: unknown[] } = { count: 0, options: [] };
 const sql = {
-  end: () => {
+  end: (options?: unknown) => {
     ended.count += 1;
+    ended.options.push(options);
     return Promise.resolve();
   },
 } as unknown as ApiSql;
@@ -164,12 +166,13 @@ describe("what Fastify answers itself, made to say nothing (T14)", () => {
     expect(bodyLimitOf("createClub")).toBe(BODY_LIMIT);
   });
 
-  it("ends its connection when it closes", async () => {
+  it("ends its connection when it closes, giving queries still running END_SECONDS before postgres.js closes it anyway", async () => {
     const other = buildApp(deps);
     await other.ready();
     const before = ended.count;
     await other.close();
     expect(ended.count).toBe(before + 1);
+    expect(ended.options.at(-1)).toEqual({ timeout: END_SECONDS });
   });
 });
 

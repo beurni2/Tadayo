@@ -24,6 +24,7 @@ import type { Deps, Handler } from "./deps.ts";
 import { getMe, updateMeHandler } from "./identity/me.ts";
 import { fastifyLogging, logEachRequest } from "./logging.ts";
 import { installGate } from "./session.ts";
+import { END_SECONDS } from "./shutdown.ts";
 
 export type { Deps } from "./deps.ts";
 
@@ -143,9 +144,11 @@ export function buildApp(deps: Deps): FastifyInstance {
   }
   app.setNotFoundHandler(notFound);
   app.setErrorHandler(failed);
-  // The app owns the connection: closing the app ends it, once its requests are answered.
+  // The app owns the connection: closing the app ends it, once its requests are answered or cut
+  // (shutdown.ts). Queries still running get `END_SECONDS`, and then postgres.js closes it anyway,
+  // so the end can't outlast what Fly waits for.
   app.addHook("onClose", async () => {
-    await deps.sql.end();
+    await deps.sql.end({ timeout: END_SECONDS });
   });
   return app;
 }
