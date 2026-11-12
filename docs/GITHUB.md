@@ -122,10 +122,15 @@ gh api 'repos/{owner}/{repo}/pulls?state=all&per_page=100' --jq '.[] | [.number,
 gh api "repos/{owner}/{repo}/actions/runs?head_sha={sha}" --jq '.workflow_runs[] | [.id, .name, .event, .conclusion] | @tsv'
 gh api -X POST repos/{owner}/{repo}/actions/runs/{id}/rerun
 
-# Start a workflow that runs by hand (ops, ios-release, load), with its inputs. ops runs only from main (each job's check
-# step refuses another ref: tools/ci/ops_steps.py), so its ref is main; deploy-branch names the branch it deploys with -f 'inputs[branch]=<branch>'.
-# If the session's token may not, ask the founder to start it from the Actions tab, naming the inputs.
+# Start a workflow that runs by hand, with its inputs.
+# - ops runs only from main (each job's check step refuses another ref: tools/ci/ops_steps.py), so its ref is main. Add
+#   the input its script takes, if any: -f 'inputs[branch]=<branch>' (deploy-branch), -f 'inputs[to]=…' (worker-scale,
+#   dev-clock), -f 'inputs[org]=<slug>' (fly-app-create, when the token sees several organizations).
+# - ios's compatibility run, and ios-release once it exists, run on the branch named as ref (docs/TECH-DESIGN.md section 9).
+# If the session's token may not, ask the founder to start it from the Actions tab, naming the branch to choose under
+# "Use workflow from" and the inputs.
 gh api -X POST repos/{owner}/{repo}/actions/workflows/ops.yml/dispatches -f ref=main -f 'inputs[script]=<script name>'
+gh api -X POST repos/{owner}/{repo}/actions/workflows/ios.yml/dispatches -f ref='<branch>' -f 'inputs[ios_version]=18.6'
 
 # Close a PR, for example one replaced by a fresh branch
 gh api -X PATCH repos/{owner}/{repo}/pulls/{n} -f state=closed
