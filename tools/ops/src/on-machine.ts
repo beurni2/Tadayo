@@ -12,8 +12,10 @@
 //   - its agent, a flyctl left running in the background on the runner, makes a WireGuard peer in
 //     the app's organization and brings up a tunnel to Fly's private network over a websocket (no
 //     root, no kernel module, no UDP), then checks the tunnel once, with a DNS lookup of at most five
-//     seconds (`agent/client.go`, `WaitForTunnel`, within a 4-minute bound: `TUNNEL_SECONDS`); a
-//     check that fails ends the session with `Error: tunnel unavailable: …`, and nothing retries it;
+//     seconds (`agent/client.go`, `WaitForTunnel`); a check that fails ends the session with
+//     `Error: tunnel unavailable: …`, and nothing retries it. That check is all flyctl bounds: making
+//     the peer and connecting the websocket have no deadline of their own, so only `SESSION_MS` ends
+//     a session that hangs there;
 //   - Fly issues a one-hour SSH certificate for the session;
 //   - the command runs on the Machine in its own environment, secrets and fly.toml's `[env]` with it
 //     (Fly's documentation runs `fly ssh console -C` for a migration that needs the database's
@@ -38,7 +40,9 @@
 // group), though a host named like this one with more after a dash couldn't be told from it. When
 // the peers can't be listed first, no session starts. Before the session the runner says that it
 // makes a peer and how to remove it by hand, for a run cancelled or cut off before its clean-up. The
-// names hold an email, so none is printed. A peer this run couldn't remove fails the run.
+// names hold an email, so none is printed. A peer this run couldn't remove fails the run, and so does
+// finding none of this run's after a session that reached the Machine, which must have made one;
+// after a session that failed short of it, which may have, the runner says what to look at by hand.
 
 import { hostname } from "node:os";
 import { DEV_APP } from "./environment.ts";
@@ -62,7 +66,7 @@ export interface OnMachineInput {
 
 /** What the command gets on the Machine, once it has started, before the runner gives up on it (supabase-probe.ts keeps its own deadline a minute inside it). */
 export const COMMAND_SECONDS = 300;
-/** The bound flyctl 0.5.8 puts on bringing its tunnel up (`agent/client.go`, `WaitForTunnel`'s 4 minutes); it checks the tunnel only once, for at most five seconds, so this is room, not a wait. */
+/** Room for flyctl's agent to make the peer and bring its tunnel up: flyctl 0.5.8 bounds neither (`internal/wireguard/wg.go`'s `Create` runs under `context.TODO()`), only its one check of the tunnel, five seconds. */
 export const TUNNEL_SECONDS = 240;
 /** The certificate, the SSH handshake and Node's start, with room to spare. */
 const CONNECT_SECONDS = 60;
@@ -76,8 +80,11 @@ function linesOf(text: string): string[] {
   return trimmed === "" ? [] : trimmed.split("\n");
 }
 
-// flyctl prints its own failure last, as `Error: <what went wrong>` (`internal/cli/cli.go`,
-// `printError`), with the first word in colour only on a terminal; the code that ends the colour is left out of the match.
+// flyctl prints its own failure as `Error: <what went wrong>` (`internal/cli/cli.go`, `printError`),
+// with the first word in colour only on a terminal (the code that ends the colour is left out of the
+// match). A session's failures end there; an error that carries a description, a suggestion or a
+// link has those printed after it (the agent's own failure to start, with its log, does), so that
+// failure's lines are all said and `why` words it.
 // eslint-disable-next-line no-control-regex -- the escape that starts a terminal colour
 const COLOUR = /\u001b\[[0-9;]*m/g;
 const FLYCTL_ERROR = /^Error: /;
@@ -115,19 +122,22 @@ function peerNames(answer: unknown): string[] | undefined {
   return names;
 }
 
-/** A flyctl call's answer, or a failure in its place when `Fly.run` refused it or the spawn failed, so that the clean-up never throws. */
-async function attempt(fly: Fly, args: readonly string[]): Promise<Spawned> {
+/** A flyctl call's answer, or, when `Fly.run` refused it or flyctl couldn't be started, why not. */
+type Attempted = Spawned | { readonly unmade: string };
+
+/** Makes a flyctl call without throwing, so that the clean-up always gets to its end. */
+async function attempt(fly: Fly, args: readonly string[]): Promise<Attempted> {
   try {
     return await fly.run(args);
   } catch (error) {
-    const reason = error instanceof Error ? error.message : String(error);
-    return { code: 1, timedOut: false, stdout: "", stderr: `${reason}\n` };
+    return { unmade: error instanceof Error ? error.message : String(error) };
   }
 }
 
 /** The names of the organization's peers, in flyctl's order, or why there are none to read. */
 async function listPeers(fly: Fly, org: string): Promise<{ names: ReadonlySet<string> } | { reason: string }> {
   const listed = await attempt(fly, ["wireguard", "list", org, "--json"]);
+  if ("unmade" in listed) return { reason: `the call wasn't made: ${listed.unmade}` };
   const names = listed.code === 0 ? peerNames(jsonOf(listed)) : undefined;
   if (names !== undefined) return { names: new Set(names) };
   return { reason: listed.code === 0 ? "its answer isn't a list it can read" : why(listed) };
@@ -167,25 +177,32 @@ async function removeThisRunsPeers(
   const ours = fresh.filter((name) => sessionPeerOf(name, host));
   const strangers = fresh.length - ours.length;
   // A peer that appeared during the session under another name is left, and said, without its name.
+  // flyctl names each peer its agent makes interactive-<host>-…, so once one of this run's is found,
+  // the others aren't its; with none found, this run's may be among them under a name not foreseen.
   const unknown =
     strangers === 0
       ? undefined
-      : `${label}: ${String(strangers)} WireGuard ${strangers === 1 ? "peer that isn't" : "peers that aren't"} named for this runner appeared in the organization during the session and ${strangers === 1 ? "is" : "are"} left, though this run's may be among them: ${byHand}`;
+      : `${label}: ${String(strangers)} WireGuard ${strangers === 1 ? "peer that isn't" : "peers that aren't"} named for this runner appeared in the organization during the session and ${strangers === 1 ? "is" : "are"} left${ours.length === 0 ? ", though this run's may be among them" : ""}: ${byHand}`;
   if (ours.length === 0) {
     if (unknown !== undefined) return unknown;
+    // A session that reached the Machine made a peer; one that failed short of it may have, before or after flyctl's agent made it.
     return session.reached
       ? `${label}: none of the organization's WireGuard peers is one this run made, though its session reached the Machine, so it can't say it removed it: ${byHand}`
-      : undefined;
+      : `${label}: no new WireGuard peer named for this runner is listed, so none was removed; if the session made one before it failed, ${byHand}`;
   }
   const failed: string[] = [];
   for (const name of ours) {
     const removed = await attempt(fly, ["wireguard", "remove", org, name]);
-    // What flyctl prints names the peer, and so the token's email: only its exit code is said.
-    if (removed.code === 0) continue;
+    if (!("unmade" in removed) && removed.code === 0) continue;
     failed.push(name);
-    note(
-      `${label}: flyctl's removal of a WireGuard peer this run made ${removed.timedOut ? "ran out of time" : `ended with exit code ${String(removed.code)}`}`,
-    );
+    // What flyctl prints names the peer, and so the token's email, as may the reason a call wasn't made: only how it ended is said.
+    const ending =
+      "unmade" in removed
+        ? "couldn't be started"
+        : removed.timedOut
+          ? "ran out of time"
+          : `ended with exit code ${String(removed.code)}`;
+    note(`${label}: flyctl's removal of a WireGuard peer this run made ${ending}`);
   }
   // flyctl 0.5.8 can exit 1 after removing the peer (its `PruneInvalidPeers` runs after the removal),
   // so a peer counts as left only when a new list still shows it, or when no list can be had.

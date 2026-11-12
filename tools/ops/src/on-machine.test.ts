@@ -85,8 +85,11 @@ const BY_HAND =
 const MAKING = `storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, ${BY_HAND}`;
 const REMOVED = "storage-setup: removed the WireGuard peer this run made";
 const NONE_FOUND = `storage-setup: none of the organization's WireGuard peers is one this run made, though its session reached the Machine, so it can't say it removed it: ${BY_HAND}`;
-const strangers = (n: number) =>
-  `storage-setup: ${String(n)} WireGuard ${n === 1 ? "peer that isn't" : "peers that aren't"} named for this runner appeared in the organization during the session and ${n === 1 ? "is" : "are"} left, though this run's may be among them: ${BY_HAND}`;
+/** Said after a session that failed short of the Machine when no new peer of this run's is listed. */
+const NONE_LISTED = `storage-setup: no new WireGuard peer named for this runner is listed, so none was removed; if the session made one before it failed, ${BY_HAND}`;
+/** Beside a peer of this run's, found by its name, the others can't be this run's, and aren't said to be. */
+const strangers = (n: number, besideOurs = false) =>
+  `storage-setup: ${String(n)} WireGuard ${n === 1 ? "peer that isn't" : "peers that aren't"} named for this runner appeared in the organization during the session and ${n === 1 ? "is" : "are"} left${besideOurs ? "" : ", though this run's may be among them"}: ${BY_HAND}`;
 
 describe("onMachine: the command, over SSH", () => {
   it("runs the command in the API's started Machine, as one string, says what it printed, then removes the run's peer", async () => {
@@ -163,13 +166,27 @@ describe("onMachine: the command, over SSH", () => {
     expect(result.said).toEqual([MAKING, "machine: supabase-probe: run 1", REMOVED]);
   });
 
-  it("says flyctl's own failure in its words, and nothing about a peer when the session made none", async () => {
-    // The agent couldn't start, before any peer was made: no new peer, and the session didn't reach the Machine.
-    const result = await run(routes({ code: 1, stderr: "Error: can't establish agent: failed to start\n" }, []));
+  it("says every line of flyctl's failure to start its agent, which ends with its log, and words the failure from them", async () => {
+    // printError's `Error:` line, then the error's description: the agent's log and where a copy is (agent/start.go).
+    const stderr =
+      "Error: can't establish agent: agent: failed to start\n" +
+      "The agent failed to start with the following error log:\n\n" +
+      "2026/11/12 08:00:00 the log's line\n\n" +
+      "A copy of this log has been saved at /home/runner/.fly/agent-logs/1.log\n\n";
+    const result = await run(routes({ code: 1, stderr }, []));
     expect(message(result.outcome)).toBe(
-      "storage-setup: flyctl couldn't run it on the Machine: exit code 1: Error: can't establish agent: failed to start",
+      "storage-setup: flyctl couldn't run it on the Machine: exit code 1: Error: can't establish agent: agent: failed to start / The agent failed to start with the following error log: / 2026/11/12 08:00:00 the log's line",
     );
-    expect(result.said).toEqual([MAKING]);
+    expect(result.said).toEqual([
+      MAKING,
+      "machine: Error: can't establish agent: agent: failed to start",
+      "machine: The agent failed to start with the following error log:",
+      "machine: ",
+      "machine: 2026/11/12 08:00:00 the log's line",
+      "machine: ",
+      "machine: A copy of this log has been saved at /home/runner/.fly/agent-logs/1.log",
+      NONE_LISTED,
+    ]);
     expect(result.calls).toEqual([LIST, ORGS, PEERS, SSH, PEERS]);
   });
 
@@ -344,7 +361,7 @@ describe("onMachine: the run's WireGuard peer, and no other", () => {
     const beside = await run(routes({ stdout: "done\n" }, [OURS, LAPTOP]));
     expect(beside.calls.at(-1)).toBe(`${REMOVE} ${OURS}`);
     expect(beside.said).toEqual([MAKING, "machine: done", REMOVED]);
-    expect(message(beside.outcome)).toBe(strangers(1));
+    expect(message(beside.outcome)).toBe(strangers(1, true));
   });
 
   it("never says a peer's name, which holds the token's email, nor what flyctl printed about it", async () => {
@@ -400,7 +417,7 @@ describe("onMachine: the run's WireGuard peer, and no other", () => {
       MAKING,
       "machine: done",
       "storage-setup: flyctl's removal of a WireGuard peer this run made ended with exit code 1",
-      strangers(1),
+      strangers(1, true),
     ]);
     expect(message(result.outcome)).toBe(
       `storage-setup: 1 of the WireGuard peers this run made is still there: ${BY_HAND}`,
@@ -418,7 +435,7 @@ describe("onMachine: the run's WireGuard peer, and no other", () => {
     expect(result.said).toEqual([
       MAKING,
       "machine: done",
-      "storage-setup: flyctl's removal of a WireGuard peer this run made ended with exit code 1",
+      "storage-setup: flyctl's removal of a WireGuard peer this run made couldn't be started",
     ]);
     expect(message(result.outcome)).toBe(
       `storage-setup: 1 of the WireGuard peers this run made is still there: ${BY_HAND}`,
@@ -478,6 +495,34 @@ describe("onMachine: the run's WireGuard peer, and no other", () => {
     }
   });
 
+  it("says no peer of this run's is listed after a session that failed short of the Machine, and what to look at by hand", async () => {
+    for (const session of [
+      { code: 1, stderr: "Error: tunnel unavailable: context deadline exceeded\n" },
+      { code: 1, stderr: "Error: error connecting to SSH server: ssh: handshake failed\n" },
+      { code: null, timedOut: true },
+    ]) {
+      const result = await run(routes(session, []));
+      expect(result.said, JSON.stringify(session)).toEqual([MAKING, NONE_LISTED]);
+      expect(message(result.outcome), JSON.stringify(session)).not.toBe(NONE_LISTED);
+    }
+  });
+
+  it("counts as left only a peer whose removal failed and a new list still shows, not one flyctl said it removed", async () => {
+    const second = sessionPeer(HOST, MADE + 1_000, "another-example-invalid");
+    const result = await run([
+      [LIST, machines],
+      [SSH, { stdout: "done\n" }],
+      [ORGS, orgs],
+      // Both still listed after the removals: flyctl's exit 0 for the first is taken as its removal.
+      [PEERS, peersOf(peerList([]), peerList([OURS, second]))],
+      [REMOVE, (call) => (call.args.at(-1) === OURS ? {} : { code: 1 })],
+    ]);
+    expect(result.calls.slice(5)).toEqual([`${REMOVE} ${OURS}`, `${REMOVE} ${second}`, PEERS]);
+    expect(message(result.outcome)).toBe(
+      `storage-setup: 1 of the WireGuard peers this run made is still there: ${BY_HAND}`,
+    );
+  });
+
   it("fails when the peers can't be listed after the session, or their list read, and says how to look by hand", async () => {
     for (const [reply, reason] of [
       [{ code: 1, stderr: "Error: unauthorized\n" }, "exit code 1: Error: unauthorized"],
@@ -519,6 +564,15 @@ describe("onMachine: the run's WireGuard peer, and no other", () => {
       expect(result.calls, JSON.stringify(reply)).toEqual([LIST, ORGS, PEERS]);
       expect(result.said).toEqual([]);
     }
+    // A listing that couldn't be started says so, not as an exit code of flyctl's.
+    const unmade = await run([
+      [LIST, machines],
+      [SSH, { stdout: "done\n" }],
+      [ORGS, orgs],
+    ]);
+    expect(message(unmade.outcome)).toBe(
+      `storage-setup: flyctl couldn't list the organization's WireGuard peers (the call wasn't made: the fake has no route for: ${PEERS}), so no SSH session is started: the peer one makes couldn't be told from the others and removed`,
+    );
   });
 
   it("starts no session when the token's organization can't be told, naming the ones it sees, with no advice the runner can't take", async () => {
