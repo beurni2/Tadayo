@@ -1,0 +1,44 @@
+tools/ci/ops_steps.py
+--- old
+FLYCTL_VERSION = "0.5.8"
+--- new
+FLYCTL_VERSION = "0.5.9"
+--- expected: test_the_pinned_release
+--- exit 1
+.................F..F...F........s..
+======================================================================
+FAIL: test_a_failed_download_is_said (__main__.SetupFlyctlTest.test_a_failed_download_is_said)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpt_mdhqrs/tools/ci/ops_steps_test.py", line 346, in test_a_failed_download_is_said
+    self.assertIn("couldn't download flyctl 0.5.8: the network is down", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: "couldn't download flyctl 0.5.8: the network is down" not found in "ops: setup-flyctl: couldn't download flyctl 0.5.9: the network is down\n"
+
+======================================================================
+FAIL: test_flyctl_goes_on_the_job_s_path (__main__.SetupFlyctlTest.test_flyctl_goes_on_the_job_s_path)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpt_mdhqrs/tools/ci/ops_steps_test.py", line 315, in test_flyctl_goes_on_the_job_s_path
+    self.assertIn("flyctl 0.5.8 (SHA-256 checked) is on the job's PATH", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: "flyctl 0.5.8 (SHA-256 checked) is on the job's PATH" not found in "ops: setup-flyctl: flyctl 0.5.9 (SHA-256 checked) is on the job's PATH\n"
+
+======================================================================
+FAIL: test_the_pinned_release (__main__.SetupFlyctlTest.test_the_pinned_release)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpt_mdhqrs/tools/ci/ops_steps_test.py", line 298, in test_the_pinned_release
+    self.assertEqual(ops_steps.FLYCTL_VERSION, "0.5.8")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '0.5.9' != '0.5.8'
+- 0.5.9
+?     ^
++ 0.5.8
+?     ^
+
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.425s
+
+FAILED (failures=3, skipped=1)

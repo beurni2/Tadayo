@@ -1,0 +1,29 @@
+.github/workflows/ops.yml
+--- old
+  cancel-in-progress: false
+
+--- new
+  cancel-in-progress: true
+
+--- expected: test_one_run_at_a_time
+--- exit 1
+.............................F...s..
+======================================================================
+FAIL: test_one_run_at_a_time_and_none_cancelled (__main__.WorkflowFileTest.test_one_run_at_a_time_and_none_cancelled)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpsy6hcb3d/tools/ci/ops_steps_test.py", line 673, in test_one_run_at_a_time_and_none_cancelled
+    self.assertEqual(self.document["concurrency"], {"group": "ops-dev", "cancel-in-progress": "false"})
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'group': 'ops-dev', 'cancel-in-progress': 'true'} != {'group': 'ops-dev', 'cancel-in-progress': 'false'}
+- {'cancel-in-progress': 'true', 'group': 'ops-dev'}
+?                         ^^^
+
++ {'cancel-in-progress': 'false', 'group': 'ops-dev'}
+?                         ^^^^
+
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.349s
+
+FAILED (failures=1, skipped=1)

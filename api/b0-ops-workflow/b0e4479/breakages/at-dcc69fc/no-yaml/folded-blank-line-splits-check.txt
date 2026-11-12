@@ -1,0 +1,21 @@
+.github/workflows/ops.yml
+--- old
+      - run: python3 tools/ci/ops_steps.py check
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref:
+--- new
+      - run: >-
+          python3
+
+          tools/ci/ops_steps.py check
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref:
+--- expected: test_each_script_has_its_own_job
+--- exit 0
+.................................s..
+----------------------------------------------------------------------
+Ran 36 tests in 0.368s
+
+OK (skipped=1)

@@ -1,0 +1,66 @@
+tools/ci/ops_steps.py
+--- old
+        name = self.validated()
+        if name is None:
+            return 1
+        missing
+--- new
+        name = self.value('OPS_SCRIPT')
+        missing
+--- expected: test_run_refuses_what_check_refuses
+--- exit 1
+............FEFFF....................s..
+======================================================================
+ERROR: test_run_refuses_what_check_refuses (__main__.RunTest.test_run_refuses_what_check_refuses) (environ={'GITHUB_REF': 'refs/heads/main', 'OPS_SCRIPT': 'deploy'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpj5a9n6ct/tools/ci/ops_steps_test.py", line 247, in test_run_refuses_what_check_refuses
+    code, out, shell = call("run", environ)
+                       ~~~~^^^^^^^^^^^^^^^^
+  File "/tmp/tmpj5a9n6ct/tools/ci/ops_steps_test.py", line 59, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpj5a9n6ct/tools/ci/ops_steps.py", line 240, in run
+    missing = [v for v in SCRIPTS[name].variables if not self.value(v)]
+                          ~~~~~~~^^^^^^
+KeyError: 'deploy'
+
+======================================================================
+FAIL: test_run_refuses_what_check_refuses (__main__.RunTest.test_run_refuses_what_check_refuses) (environ={'GITHUB_REF': 'refs/heads/api/b1-clubs', 'OPS_SCRIPT': 'migrate'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpj5a9n6ct/tools/ci/ops_steps_test.py", line 248, in test_run_refuses_what_check_refuses
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_run_refuses_what_check_refuses (__main__.RunTest.test_run_refuses_what_check_refuses) (environ={'GITHUB_REF': 'refs/heads/main', 'OPS_SCRIPT': 'migrate', 'OPS_TO': 'x'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpj5a9n6ct/tools/ci/ops_steps_test.py", line 248, in test_run_refuses_what_check_refuses
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_run_refuses_what_check_refuses (__main__.RunTest.test_run_refuses_what_check_refuses) (environ={'GITHUB_REF': 'refs/heads/main', 'OPS_SCRIPT': 'worker-scale'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpj5a9n6ct/tools/ci/ops_steps_test.py", line 248, in test_run_refuses_what_check_refuses
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_run_refuses_what_check_refuses (__main__.RunTest.test_run_refuses_what_check_refuses) (environ={'GITHUB_REF': 'refs/heads/main', 'OPS_SCRIPT': 'deploy-branch', 'GITHUB_TOKEN': 'value-of-GITHUB_TOKEN', 'OPS_BRANCH': '-x'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpj5a9n6ct/tools/ci/ops_steps_test.py", line 248, in test_run_refuses_what_check_refuses
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.415s
+
+FAILED (failures=4, errors=1, skipped=1)

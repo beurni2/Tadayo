@@ -1,0 +1,28 @@
+tools/ci/ops_steps.py
+--- old
+        except (OSError, http.client.HTTPException) as error:
+--- new
+        except http.client.HTTPException as error:
+--- expected: test_a_failed_download
+--- exit 1
+.................E...............s..
+======================================================================
+ERROR: test_a_failed_download_is_said (__main__.SetupFlyctlTest.test_a_failed_download_is_said)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp3sgfq_ie/tools/ci/ops_steps_test.py", line 344, in test_a_failed_download_is_said
+    code, out, _ = call("setup_flyctl", self.environ(), fetch=fetch)
+                   ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp3sgfq_ie/tools/ci/ops_steps_test.py", line 59, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmp3sgfq_ie/tools/ci/ops_steps.py", line 210, in setup_flyctl
+    self.fetch(FLYCTL_URL, archive)
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp3sgfq_ie/tools/ci/ops_steps_test.py", line 343, in fetch
+    raise OSError("the network is down")
+OSError: the network is down
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.355s
+
+FAILED (errors=1, skipped=1)

@@ -1,0 +1,21 @@
+tools/ci/ops_steps.py
+--- old
+ and not branch.endswith(".")
+--- new
+
+--- expected: test_a_branch_s_name
+--- exit 1
+F...................................
+======================================================================
+FAIL: test_a_branch_s_name_follows_deploy_branch_s_rule (__main__.CheckTest.test_a_branch_s_name_follows_deploy_branch_s_rule) (branch='main.')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpgs5dnb61/tools/ci/ops_steps_test.py", line 172, in test_a_branch_s_name_follows_deploy_branch_s_rule
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.457s
+
+FAILED (failures=1)

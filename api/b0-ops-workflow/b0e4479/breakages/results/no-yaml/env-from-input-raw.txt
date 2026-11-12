@@ -1,0 +1,49 @@
+.github/workflows/ops.yml
+--- old
+  OPS_TO: ${{ inputs.to }}
+
+--- new
+  OPS_TO: ${{ inputs.org }}
+
+--- expected: test_the_inputs_reach_the_steps_as_variables_only
+--- exit 1
+...........................F...F.s..
+======================================================================
+FAIL: test_every_expression_in_the_file_is_one_this_test_knows (__main__.WorkflowFileTest.test_every_expression_in_the_file_is_one_this_test_knows)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpykrzeiwm/tools/ci/ops_steps_test.py", line 693, in test_every_expression_in_the_file_is_one_this_test_knows
+    self.assertEqual(found, sorted(wanted))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['${{[95 chars]puts.org }}', '${{ inputs.script }}', '${{ sec[669 chars] }}'] != ['${{[95 chars]puts.script }}', '${{ inputs.to }}', '${{ secr[668 chars] }}']
+
+First differing element 4:
+'${{ inputs.org }}'
+'${{ inputs.script }}'
+
+Diff is 915 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_the_inputs_reach_the_steps_as_variables_only (__main__.WorkflowFileTest.test_the_inputs_reach_the_steps_as_variables_only)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpykrzeiwm/tools/ci/ops_steps_test.py", line 668, in test_the_inputs_reach_the_steps_as_variables_only
+    self.assertEqual(self.document["env"], {"OPS_SCRIPT": "${{ inputs.script }}", "OPS_ORG": "${{ inputs.org }}",
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                            "OPS_TO": "${{ inputs.to }}", "OPS_BRANCH": "${{ inputs.branch }}"})
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'OPS[71 chars]TO': '${{ inputs.org }}', 'OPS_BRANCH': '${{ inputs.branch }}'} != {'OPS[71 chars]TO': '${{ inputs.to }}', 'OPS_BRANCH': '${{ inputs.branch }}'}
+  {'OPS_BRANCH': '${{ inputs.branch }}',
+   'OPS_ORG': '${{ inputs.org }}',
+   'OPS_SCRIPT': '${{ inputs.script }}',
+-  'OPS_TO': '${{ inputs.org }}'}
+?                         --
+
++  'OPS_TO': '${{ inputs.to }}'}
+?                        +
+
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.363s
+
+FAILED (failures=2, skipped=1)

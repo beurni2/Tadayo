@@ -1,0 +1,125 @@
+.github/workflows/ops.yml
+--- old
+      - run: python3 tools/ci/ops_steps.py check
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref:
+--- new
+      - run: >-
+          python3
+
+          tools/ci/ops_steps.py check
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref:
+--- expected: test_each_script_has_its_own_job
+--- exit 1
+..........................EEEEEEEE..
+======================================================================
+ERROR: test_each_script_has_its_own_job_with_its_own_secrets_and_nothing_else (__main__.WorkflowFileTest.test_each_script_has_its_own_job_with_its_own_secrets_and_nothing_else)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp3nyu9x1s/tools/ci/ops_steps_test.py", line 643, in setUp
+    self.document = parse_yaml(self.text)
+                    ~~~~~~~~~~^^^^^^^^^^^
+  File "/tmp/tmp3nyu9x1s/tools/ci/ops_steps_test.py", line 480, in parse_yaml
+    lines = significant_lines(text)
+  File "/tmp/tmp3nyu9x1s/tools/ci/ops_steps_test.py", line 440, in significant_lines
+    raise ValueError(f"line {number}: a blank line inside a folded value")
+ValueError: line 237: a blank line inside a folded value
+
+======================================================================
+ERROR: test_every_expression_in_the_file_is_one_this_test_knows (__main__.WorkflowFileTest.test_every_expression_in_the_file_is_one_this_test_knows)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp3nyu9x1s/tools/ci/ops_steps_test.py", line 643, in setUp
+    self.document = parse_yaml(self.text)
+                    ~~~~~~~~~~^^^^^^^^^^^
+  File "/tmp/tmp3nyu9x1s/tools/ci/ops_steps_test.py", line 480, in parse_yaml
+    lines = significant_lines(text)
+  File "/tmp/tmp3nyu9x1s/tools/ci/ops_steps_test.py", line 440, in significant_lines
+    raise ValueError(f"line {number}: a blank line inside a folded value")
+ValueError: line 237: a blank line inside a folded value
+
+======================================================================
+ERROR: test_it_runs_only_by_hand_with_these_inputs (__main__.WorkflowFileTest.test_it_runs_only_by_hand_with_these_inputs)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp3nyu9x1s/tools/ci/ops_steps_test.py", line 643, in setUp
+    self.document = parse_yaml(self.text)
+                    ~~~~~~~~~~^^^^^^^^^^^
+  File "/tmp/tmp3nyu9x1s/tools/ci/ops_steps_test.py", line 480, in parse_yaml
+    lines = significant_lines(text)
+  File "/tmp/tmp3nyu9x1s/tools/ci/ops_steps_test.py", line 440, in significant_lines
+    raise ValueError(f"line {number}: a blank line inside a folded value")
+ValueError: line 237: a blank line inside a folded value
+
+======================================================================
+ERROR: test_one_run_at_a_time_and_none_cancelled (__main__.WorkflowFileTest.test_one_run_at_a_time_and_none_cancelled)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp3nyu9x1s/tools/ci/ops_steps_test.py", line 643, in setUp
+    self.document = parse_yaml(self.text)
+                    ~~~~~~~~~~^^^^^^^^^^^
+  File "/tmp/tmp3nyu9x1s/tools/ci/ops_steps_test.py", line 480, in parse_yaml
+    lines = significant_lines(text)
+  File "/tmp/tmp3nyu9x1s/tools/ci/ops_steps_test.py", line 440, in significant_lines
+    raise ValueError(f"line {number}: a blank line inside a folded value")
+ValueError: line 237: a blank line inside a folded value
+
+======================================================================
+ERROR: test_the_file_holds_these_keys_and_no_other (__main__.WorkflowFileTest.test_the_file_holds_these_keys_and_no_other)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp3nyu9x1s/tools/ci/ops_steps_test.py", line 643, in setUp
+    self.document = parse_yaml(self.text)
+                    ~~~~~~~~~~^^^^^^^^^^^
+  File "/tmp/tmp3nyu9x1s/tools/ci/ops_steps_test.py", line 480, in parse_yaml
+    lines = significant_lines(text)
+  File "/tmp/tmp3nyu9x1s/tools/ci/ops_steps_test.py", line 440, in significant_lines
+    raise ValueError(f"line {number}: a blank line inside a folded value")
+ValueError: line 237: a blank line inside a folded value
+
+======================================================================
+ERROR: test_the_inputs_reach_the_steps_as_variables_only (__main__.WorkflowFileTest.test_the_inputs_reach_the_steps_as_variables_only)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp3nyu9x1s/tools/ci/ops_steps_test.py", line 643, in setUp
+    self.document = parse_yaml(self.text)
+                    ~~~~~~~~~~^^^^^^^^^^^
+  File "/tmp/tmp3nyu9x1s/tools/ci/ops_steps_test.py", line 480, in parse_yaml
+    lines = significant_lines(text)
+  File "/tmp/tmp3nyu9x1s/tools/ci/ops_steps_test.py", line 440, in significant_lines
+    raise ValueError(f"line {number}: a blank line inside a folded value")
+ValueError: line 237: a blank line inside a folded value
+
+======================================================================
+ERROR: test_the_pins_are_ci_yml_s (__main__.WorkflowFileTest.test_the_pins_are_ci_yml_s)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp3nyu9x1s/tools/ci/ops_steps_test.py", line 643, in setUp
+    self.document = parse_yaml(self.text)
+                    ~~~~~~~~~~^^^^^^^^^^^
+  File "/tmp/tmp3nyu9x1s/tools/ci/ops_steps_test.py", line 480, in parse_yaml
+    lines = significant_lines(text)
+  File "/tmp/tmp3nyu9x1s/tools/ci/ops_steps_test.py", line 440, in significant_lines
+    raise ValueError(f"line {number}: a blank line inside a folded value")
+ValueError: line 237: a blank line inside a folded value
+
+======================================================================
+ERROR: test_it_reads_ops_yml_as_a_yaml_library_would (__main__.YamlReaderTest.test_it_reads_ops_yml_as_a_yaml_library_would)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp3nyu9x1s/tools/ci/ops_steps_test.py", line 633, in test_it_reads_ops_yml_as_a_yaml_library_would
+    self.assertEqual(text(theirs), parse_yaml(workflow()))
+                                   ~~~~~~~~~~^^^^^^^^^^^^
+  File "/tmp/tmp3nyu9x1s/tools/ci/ops_steps_test.py", line 480, in parse_yaml
+    lines = significant_lines(text)
+  File "/tmp/tmp3nyu9x1s/tools/ci/ops_steps_test.py", line 440, in significant_lines
+    raise ValueError(f"line {number}: a blank line inside a folded value")
+ValueError: line 237: a blank line inside a folded value
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.440s
+
+FAILED (errors=8)

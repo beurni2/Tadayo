@@ -1,0 +1,264 @@
+tools/ci/ops_steps.py
+--- old
+            if given and variable not in script.options:
+
+--- new
+            if False:
+
+--- expected: test_an_input_the_script_doesnt_take
+--- exit 1
+...FFFFFFFFFFFFFFFFFFFFFFF.F......F....................s..
+======================================================================
+FAIL: test_an_input_the_script_doesnt_take_is_refused (__main__.CheckTest.test_an_input_the_script_doesnt_take_is_refused) (script='fly-app-create', input='OPS_TO')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpm5fjic21/tools/ci/ops_steps_test.py", line 142, in test_an_input_the_script_doesnt_take_is_refused
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_an_input_the_script_doesnt_take_is_refused (__main__.CheckTest.test_an_input_the_script_doesnt_take_is_refused) (script='fly-app-create', input='OPS_BRANCH')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpm5fjic21/tools/ci/ops_steps_test.py", line 142, in test_an_input_the_script_doesnt_take_is_refused
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_an_input_the_script_doesnt_take_is_refused (__main__.CheckTest.test_an_input_the_script_doesnt_take_is_refused) (script='bootstrap', input='OPS_ORG')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpm5fjic21/tools/ci/ops_steps_test.py", line 142, in test_an_input_the_script_doesnt_take_is_refused
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_an_input_the_script_doesnt_take_is_refused (__main__.CheckTest.test_an_input_the_script_doesnt_take_is_refused) (script='bootstrap', input='OPS_TO')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpm5fjic21/tools/ci/ops_steps_test.py", line 142, in test_an_input_the_script_doesnt_take_is_refused
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_an_input_the_script_doesnt_take_is_refused (__main__.CheckTest.test_an_input_the_script_doesnt_take_is_refused) (script='bootstrap', input='OPS_BRANCH')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpm5fjic21/tools/ci/ops_steps_test.py", line 142, in test_an_input_the_script_doesnt_take_is_refused
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_an_input_the_script_doesnt_take_is_refused (__main__.CheckTest.test_an_input_the_script_doesnt_take_is_refused) (script='migrate', input='OPS_ORG')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpm5fjic21/tools/ci/ops_steps_test.py", line 142, in test_an_input_the_script_doesnt_take_is_refused
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_an_input_the_script_doesnt_take_is_refused (__main__.CheckTest.test_an_input_the_script_doesnt_take_is_refused) (script='migrate', input='OPS_TO')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpm5fjic21/tools/ci/ops_steps_test.py", line 142, in test_an_input_the_script_doesnt_take_is_refused
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_an_input_the_script_doesnt_take_is_refused (__main__.CheckTest.test_an_input_the_script_doesnt_take_is_refused) (script='migrate', input='OPS_BRANCH')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpm5fjic21/tools/ci/ops_steps_test.py", line 142, in test_an_input_the_script_doesnt_take_is_refused
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_an_input_the_script_doesnt_take_is_refused (__main__.CheckTest.test_an_input_the_script_doesnt_take_is_refused) (script='seed', input='OPS_ORG')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpm5fjic21/tools/ci/ops_steps_test.py", line 142, in test_an_input_the_script_doesnt_take_is_refused
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_an_input_the_script_doesnt_take_is_refused (__main__.CheckTest.test_an_input_the_script_doesnt_take_is_refused) (script='seed', input='OPS_TO')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpm5fjic21/tools/ci/ops_steps_test.py", line 142, in test_an_input_the_script_doesnt_take_is_refused
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_an_input_the_script_doesnt_take_is_refused (__main__.CheckTest.test_an_input_the_script_doesnt_take_is_refused) (script='seed', input='OPS_BRANCH')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpm5fjic21/tools/ci/ops_steps_test.py", line 142, in test_an_input_the_script_doesnt_take_is_refused
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_an_input_the_script_doesnt_take_is_refused (__main__.CheckTest.test_an_input_the_script_doesnt_take_is_refused) (script='dev-clock', input='OPS_ORG')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpm5fjic21/tools/ci/ops_steps_test.py", line 142, in test_an_input_the_script_doesnt_take_is_refused
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_an_input_the_script_doesnt_take_is_refused (__main__.CheckTest.test_an_input_the_script_doesnt_take_is_refused) (script='dev-clock', input='OPS_BRANCH')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpm5fjic21/tools/ci/ops_steps_test.py", line 142, in test_an_input_the_script_doesnt_take_is_refused
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_an_input_the_script_doesnt_take_is_refused (__main__.CheckTest.test_an_input_the_script_doesnt_take_is_refused) (script='worker-scale', input='OPS_ORG')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpm5fjic21/tools/ci/ops_steps_test.py", line 142, in test_an_input_the_script_doesnt_take_is_refused
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_an_input_the_script_doesnt_take_is_refused (__main__.CheckTest.test_an_input_the_script_doesnt_take_is_refused) (script='worker-scale', input='OPS_BRANCH')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpm5fjic21/tools/ci/ops_steps_test.py", line 142, in test_an_input_the_script_doesnt_take_is_refused
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_an_input_the_script_doesnt_take_is_refused (__main__.CheckTest.test_an_input_the_script_doesnt_take_is_refused) (script='deploy-branch', input='OPS_ORG')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpm5fjic21/tools/ci/ops_steps_test.py", line 142, in test_an_input_the_script_doesnt_take_is_refused
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_an_input_the_script_doesnt_take_is_refused (__main__.CheckTest.test_an_input_the_script_doesnt_take_is_refused) (script='deploy-branch', input='OPS_TO')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpm5fjic21/tools/ci/ops_steps_test.py", line 142, in test_an_input_the_script_doesnt_take_is_refused
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_an_input_the_script_doesnt_take_is_refused (__main__.CheckTest.test_an_input_the_script_doesnt_take_is_refused) (script='storage-setup', input='OPS_ORG')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpm5fjic21/tools/ci/ops_steps_test.py", line 142, in test_an_input_the_script_doesnt_take_is_refused
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_an_input_the_script_doesnt_take_is_refused (__main__.CheckTest.test_an_input_the_script_doesnt_take_is_refused) (script='storage-setup', input='OPS_TO')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpm5fjic21/tools/ci/ops_steps_test.py", line 142, in test_an_input_the_script_doesnt_take_is_refused
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_an_input_the_script_doesnt_take_is_refused (__main__.CheckTest.test_an_input_the_script_doesnt_take_is_refused) (script='storage-setup', input='OPS_BRANCH')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpm5fjic21/tools/ci/ops_steps_test.py", line 142, in test_an_input_the_script_doesnt_take_is_refused
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_an_input_the_script_doesnt_take_is_refused (__main__.CheckTest.test_an_input_the_script_doesnt_take_is_refused) (script='supabase-probe', input='OPS_ORG')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpm5fjic21/tools/ci/ops_steps_test.py", line 142, in test_an_input_the_script_doesnt_take_is_refused
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_an_input_the_script_doesnt_take_is_refused (__main__.CheckTest.test_an_input_the_script_doesnt_take_is_refused) (script='supabase-probe', input='OPS_TO')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpm5fjic21/tools/ci/ops_steps_test.py", line 142, in test_an_input_the_script_doesnt_take_is_refused
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_an_input_the_script_doesnt_take_is_refused (__main__.CheckTest.test_an_input_the_script_doesnt_take_is_refused) (script='supabase-probe', input='OPS_BRANCH')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpm5fjic21/tools/ci/ops_steps_test.py", line 142, in test_an_input_the_script_doesnt_take_is_refused
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_every_problem_is_said (__main__.CheckTest.test_every_problem_is_said)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpm5fjic21/tools/ci/ops_steps_test.py", line 155, in test_every_problem_is_said
+    self.assertEqual(out.splitlines(), [
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+        "ops: worker-scale takes no --org, and one was given",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        "ops: worker-scale takes no --branch, and one was given",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        "ops: worker-scale needs --to: give it in the run's inputs",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ])
+    ^^
+AssertionError: Lists differ: ["ops: worker-scale needs --to: give it in[14 chars]uts"] != ['ops: worker-scale takes no --org, and on[127 chars]uts"]
+
+First differing element 0:
+"ops: worker-scale needs --to: give it in the run's inputs"
+'ops: worker-scale takes no --org, and one was given'
+
+Second list contains 2 additional elements.
+First extra element 1:
+'ops: worker-scale takes no --branch, and one was given'
+
++ ['ops: worker-scale takes no --org, and one was given',
++  'ops: worker-scale takes no --branch, and one was given',
+- ["ops: worker-scale needs --to: give it in the run's inputs"]
+? ^
+
++  "ops: worker-scale needs --to: give it in the run's inputs"]
+? ^
+
+
+======================================================================
+FAIL: test_run_refuses_what_check_refuses (__main__.RunTest.test_run_refuses_what_check_refuses) (environ={'GITHUB_REF': 'refs/heads/main', 'OPS_SCRIPT': 'migrate', 'OPS_TO': 'x'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpm5fjic21/tools/ci/ops_steps_test.py", line 248, in test_run_refuses_what_check_refuses
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.404s
+
+FAILED (failures=25, skipped=1)

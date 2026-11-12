@@ -1,0 +1,47 @@
+.github/workflows/ops.yml
+--- old
+      - run: python3 tools/ci/ops_steps.py setup-flyctl
+      - name: storage-setup
+
+--- new
+      - env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 tools/ci/ops_steps.py setup-flyctl
+      - name: storage-setup
+
+--- expected: test_each_script_has_its_own_job
+--- exit 1
+..........................FF.....s..
+======================================================================
+FAIL: test_each_script_has_its_own_job_with_its_own_secrets_and_nothing_else (__main__.WorkflowFileTest.test_each_script_has_its_own_job_with_its_own_secrets_and_nothing_else) (job='storage-setup')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp13u7evdh/tools/ci/ops_steps_test.py", line 681, in test_each_script_has_its_own_job_with_its_own_secrets_and_nothing_else
+    self.assertEqual(jobs[name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'nam[569 chars]}, {'env': {'GITHUB_TOKEN': '${{ github.token [255 chars]n'}]} != {'nam[569 chars]}, {'run': 'python3 tools/ci/ops_steps.py setu[207 chars]n'}]}
+Diff is 1297 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_every_expression_in_the_file_is_one_this_test_knows (__main__.WorkflowFileTest.test_every_expression_in_the_file_is_one_this_test_knows)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp13u7evdh/tools/ci/ops_steps_test.py", line 693, in test_every_expression_in_the_file_is_one_this_test_knows
+    self.assertEqual(found, sorted(wanted))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['${{[19 chars]'${{ github.token }}', '${{ inputs.branch }}',[767 chars] }}'] != ['${{[19 chars]'${{ inputs.branch }}', '${{ inputs.branch }}'[744 chars] }}']
+
+First differing element 1:
+'${{ github.token }}'
+'${{ inputs.branch }}'
+
+First list contains 1 additional elements.
+First extra element 24:
+'${{ secrets.SUPABASE_DEV_PROJECT_REF }}'
+
+Diff is 917 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.435s
+
+FAILED (failures=2, skipped=1)

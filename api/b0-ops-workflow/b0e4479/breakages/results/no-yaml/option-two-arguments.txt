@@ -1,0 +1,150 @@
+tools/ci/ops_steps.py
+--- old
+                cmd.append(f"{option.flag}={given}")
+--- new
+                cmd += [option.flag, given]
+--- expected: test_each_script_runs_with_its_option
+--- exit 1
+........F.FFFFF......................s..
+======================================================================
+FAIL: test_an_input_reaches_node_as_one_argument_and_its_exit_code_is_the_step_s (__main__.ProcessTest.test_an_input_reaches_node_as_one_argument_and_its_exit_code_is_the_step_s)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpb9f2vpnr/tools/ci/ops_steps_test.py", line 406, in test_an_input_reaches_node_as_one_argument_and_its_exit_code_is_the_step_s
+    self.assertEqual([a.decode() for a in args],
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     [os.path.join("tools", "ops", "src", "main.ts"), "dev-clock", "--to=" + value])
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['too[34 chars]'--to', '$(touch /tmp/tmpqvn0i1tk/ran) `touch [62 chars]n x'] != ['too[34 chars]'--to=$(touch /tmp/tmpqvn0i1tk/ran) `touch /tm[59 chars]n x']
+
+First differing element 2:
+'--to'
+'--to=$(touch /tmp/tmpqvn0i1tk/ran) `touch /tm[58 chars]in x'
+
+First list contains 1 additional elements.
+First extra element 3:
+'$(touch /tmp/tmpqvn0i1tk/ran) `touch /tmp/tmpqvn0i1tk/ran`; touch /tmp/tmpqvn0i1tk/ran --branch=main x'
+
+  ['tools/ops/src/main.ts',
+   'dev-clock',
+-  '--to',
+-  '$(touch /tmp/tmpqvn0i1tk/ran) `touch /tmp/tmpqvn0i1tk/ran`; touch '
++  '--to=$(touch /tmp/tmpqvn0i1tk/ran) `touch /tmp/tmpqvn0i1tk/ran`; touch '
+?   +++++
+
+   '/tmp/tmpqvn0i1tk/ran --branch=main x']
+
+======================================================================
+FAIL: test_each_script_runs_with_its_option_as_one_argument (__main__.RunTest.test_each_script_runs_with_its_option_as_one_argument) (script='fly-app-create', inputs={'OPS_ORG': 'tadayo'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpb9f2vpnr/tools/ci/ops_steps_test.py", line 200, in test_each_script_runs_with_its_option_as_one_argument
+    self.assertEqual(shell.commands,
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+                     [["node", os.path.join("tools", "ops", "src", "main.ts"), name, *options]])
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [['node', 'tools/ops/src/main.ts', 'fly-app-create', '--org', 'tadayo']] != [['node', 'tools/ops/src/main.ts', 'fly-app-create', '--org=tadayo']]
+
+First differing element 0:
+['node', 'tools/ops/src/main.ts', 'fly-app-create', '--org', 'tadayo']
+['node', 'tools/ops/src/main.ts', 'fly-app-create', '--org=tadayo']
+
+- [['node', 'tools/ops/src/main.ts', 'fly-app-create', '--org', 'tadayo']]
+?                                                            ^^^^
+
++ [['node', 'tools/ops/src/main.ts', 'fly-app-create', '--org=tadayo']]
+?                                                            ^
+
+
+======================================================================
+FAIL: test_each_script_runs_with_its_option_as_one_argument (__main__.RunTest.test_each_script_runs_with_its_option_as_one_argument) (script='dev-clock', inputs={'OPS_TO': '2026-11-20T06:59:00Z'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpb9f2vpnr/tools/ci/ops_steps_test.py", line 200, in test_each_script_runs_with_its_option_as_one_argument
+    self.assertEqual(shell.commands,
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+                     [["node", os.path.join("tools", "ops", "src", "main.ts"), name, *options]])
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [['node', 'tools/ops/src/main.ts', 'dev-clock', '--to', '2026-11-20T06:59:00Z']] != [['node', 'tools/ops/src/main.ts', 'dev-clock', '--to=2026-11-20T06:59:00Z']]
+
+First differing element 0:
+['node', 'tools/ops/src/main.ts', 'dev-clock', '--to', '2026-11-20T06:59:00Z']
+['node', 'tools/ops/src/main.ts', 'dev-clock', '--to=2026-11-20T06:59:00Z']
+
+- [['node', 'tools/ops/src/main.ts', 'dev-clock', '--to', '2026-11-20T06:59:00Z']]
+?                                                      ^^^^
+
++ [['node', 'tools/ops/src/main.ts', 'dev-clock', '--to=2026-11-20T06:59:00Z']]
+?                                                      ^
+
+
+======================================================================
+FAIL: test_each_script_runs_with_its_option_as_one_argument (__main__.RunTest.test_each_script_runs_with_its_option_as_one_argument) (script='worker-scale', inputs={'OPS_TO': 'stopped'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpb9f2vpnr/tools/ci/ops_steps_test.py", line 200, in test_each_script_runs_with_its_option_as_one_argument
+    self.assertEqual(shell.commands,
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+                     [["node", os.path.join("tools", "ops", "src", "main.ts"), name, *options]])
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [['node', 'tools/ops/src/main.ts', 'worker-scale', '--to', 'stopped']] != [['node', 'tools/ops/src/main.ts', 'worker-scale', '--to=stopped']]
+
+First differing element 0:
+['node', 'tools/ops/src/main.ts', 'worker-scale', '--to', 'stopped']
+['node', 'tools/ops/src/main.ts', 'worker-scale', '--to=stopped']
+
+- [['node', 'tools/ops/src/main.ts', 'worker-scale', '--to', 'stopped']]
+?                                                         ^^^^
+
++ [['node', 'tools/ops/src/main.ts', 'worker-scale', '--to=stopped']]
+?                                                         ^
+
+
+======================================================================
+FAIL: test_each_script_runs_with_its_option_as_one_argument (__main__.RunTest.test_each_script_runs_with_its_option_as_one_argument) (script='worker-scale', inputs={'OPS_TO': '--branch'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpb9f2vpnr/tools/ci/ops_steps_test.py", line 200, in test_each_script_runs_with_its_option_as_one_argument
+    self.assertEqual(shell.commands,
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+                     [["node", os.path.join("tools", "ops", "src", "main.ts"), name, *options]])
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [['node', 'tools/ops/src/main.ts', 'worker-scale', '--to', '--branch']] != [['node', 'tools/ops/src/main.ts', 'worker-scale', '--to=--branch']]
+
+First differing element 0:
+['node', 'tools/ops/src/main.ts', 'worker-scale', '--to', '--branch']
+['node', 'tools/ops/src/main.ts', 'worker-scale', '--to=--branch']
+
+- [['node', 'tools/ops/src/main.ts', 'worker-scale', '--to', '--branch']]
+?                                                         ^^^^
+
++ [['node', 'tools/ops/src/main.ts', 'worker-scale', '--to=--branch']]
+?                                                         ^
+
+
+======================================================================
+FAIL: test_each_script_runs_with_its_option_as_one_argument (__main__.RunTest.test_each_script_runs_with_its_option_as_one_argument) (script='deploy-branch', inputs={'OPS_BRANCH': 'api/b1-clubs'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpb9f2vpnr/tools/ci/ops_steps_test.py", line 200, in test_each_script_runs_with_its_option_as_one_argument
+    self.assertEqual(shell.commands,
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+                     [["node", os.path.join("tools", "ops", "src", "main.ts"), name, *options]])
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [['node', 'tools/ops/src/main.ts', 'deploy-branch', '--branch', 'api/b1-clubs']] != [['node', 'tools/ops/src/main.ts', 'deploy-branch', '--branch=api/b1-clubs']]
+
+First differing element 0:
+['node', 'tools/ops/src/main.ts', 'deploy-branch', '--branch', 'api/b1-clubs']
+['node', 'tools/ops/src/main.ts', 'deploy-branch', '--branch=api/b1-clubs']
+
+- [['node', 'tools/ops/src/main.ts', 'deploy-branch', '--branch', 'api/b1-clubs']]
+?                                                              ^^^^
+
++ [['node', 'tools/ops/src/main.ts', 'deploy-branch', '--branch=api/b1-clubs']]
+?                                                              ^
+
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.350s
+
+FAILED (failures=6, skipped=1)

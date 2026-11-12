@@ -1,0 +1,14 @@
+.github/workflows/ops.yml
+--- old
+          slug (--org)
+
+--- new
+          slug (--org) #${{ secrets.FLY_API_TOKEN }}
+
+--- expected: test_it_runs_only_by_hand
+--- exit 0
+.................................s..
+----------------------------------------------------------------------
+Ran 36 tests in 0.381s
+
+OK (skipped=1)

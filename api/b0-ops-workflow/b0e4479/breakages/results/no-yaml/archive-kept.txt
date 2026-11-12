@@ -1,0 +1,45 @@
+tools/ci/ops_steps.py
+--- old
+        os.remove(archive)
+
+--- new
+
+--- expected: test_flyctl_goes_on_the_job_s_path
+--- exit 1
+....................F..F.........s..
+======================================================================
+FAIL: test_flyctl_goes_on_the_job_s_path (__main__.SetupFlyctlTest.test_flyctl_goes_on_the_job_s_path)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp9vcfickr/tools/ci/ops_steps_test.py", line 312, in test_flyctl_goes_on_the_job_s_path
+    self.assertEqual(sorted(os.listdir(self.folder())), ["flyctl"])  # the archive is gone
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['flyctl', 'flyctl.tar.gz'] != ['flyctl']
+
+First list contains 1 additional elements.
+First extra element 1:
+'flyctl.tar.gz'
+
+- ['flyctl', 'flyctl.tar.gz']
++ ['flyctl']
+
+======================================================================
+FAIL: test_only_the_member_named_flyctl_is_taken (__main__.SetupFlyctlTest.test_only_the_member_named_flyctl_is_taken)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp9vcfickr/tools/ci/ops_steps_test.py", line 320, in test_only_the_member_named_flyctl_is_taken
+    self.assertEqual(sorted(os.listdir(self.folder())), ["flyctl"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['flyctl', 'flyctl.tar.gz'] != ['flyctl']
+
+First list contains 1 additional elements.
+First extra element 1:
+'flyctl.tar.gz'
+
+- ['flyctl', 'flyctl.tar.gz']
++ ['flyctl']
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.410s
+
+FAILED (failures=2, skipped=1)

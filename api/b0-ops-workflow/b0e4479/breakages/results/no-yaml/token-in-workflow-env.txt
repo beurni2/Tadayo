@@ -1,0 +1,55 @@
+.github/workflows/ops.yml
+--- old
+  OPS_BRANCH: ${{ inputs.branch }}
+
+--- new
+  OPS_BRANCH: ${{ inputs.branch }}
+  FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+--- expected: test_the_inputs_reach_the_steps_as_variables_only
+--- exit 1
+...........................F...F.s..
+======================================================================
+FAIL: test_every_expression_in_the_file_is_one_this_test_knows (__main__.WorkflowFileTest.test_every_expression_in_the_file_is_one_this_test_knows)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp2xshn9ri/tools/ci/ops_steps_test.py", line 693, in test_every_expression_in_the_file_is_one_this_test_knows
+    self.assertEqual(found, sorted(wanted))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['${{[525 chars]rets.FLY_API_TOKEN }}', '${{ secrets.SUPABASE_[270 chars] }}'] != ['${{[525 chars]rets.SUPABASE_ACCESS_TOKEN }}', '${{ secrets.S[238 chars] }}']
+
+First differing element 17:
+'${{ secrets.FLY_API_TOKEN }}'
+'${{ secrets.SUPABASE_ACCESS_TOKEN }}'
+
+First list contains 1 additional elements.
+First extra element 24:
+'${{ secrets.SUPABASE_DEV_PROJECT_REF }}'
+
+Diff is 926 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_the_inputs_reach_the_steps_as_variables_only (__main__.WorkflowFileTest.test_the_inputs_reach_the_steps_as_variables_only)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp2xshn9ri/tools/ci/ops_steps_test.py", line 668, in test_the_inputs_reach_the_steps_as_variables_only
+    self.assertEqual(self.document["env"], {"OPS_SCRIPT": "${{ inputs.script }}", "OPS_ORG": "${{ inputs.org }}",
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                            "OPS_TO": "${{ inputs.to }}", "OPS_BRANCH": "${{ inputs.branch }}"})
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'OPS[119 chars]ts.branch }}', 'FLY_API_TOKEN': '${{ secrets.FLY_API_TOKEN }}'} != {'OPS[119 chars]ts.branch }}'}
+- {'FLY_API_TOKEN': '${{ secrets.FLY_API_TOKEN }}',
+-  'OPS_BRANCH': '${{ inputs.branch }}',
+? ^
+
++ {'OPS_BRANCH': '${{ inputs.branch }}',
+? ^
+
+   'OPS_ORG': '${{ inputs.org }}',
+   'OPS_SCRIPT': '${{ inputs.script }}',
+   'OPS_TO': '${{ inputs.to }}'}
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.324s
+
+FAILED (failures=2, skipped=1)

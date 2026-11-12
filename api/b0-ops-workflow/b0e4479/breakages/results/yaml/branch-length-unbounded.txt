@@ -1,0 +1,21 @@
+tools/ci/ops_steps.py
+--- old
+len(branch) <= BRANCH_MAX and 
+--- new
+
+--- expected: test_a_branch_s_name
+--- exit 1
+F...................................
+======================================================================
+FAIL: test_a_branch_s_name_follows_deploy_branch_s_rule (__main__.CheckTest.test_a_branch_s_name_follows_deploy_branch_s_rule) (branch='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpoehqw122/tools/ci/ops_steps_test.py", line 172, in test_a_branch_s_name_follows_deploy_branch_s_rule
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.458s
+
+FAILED (failures=1)

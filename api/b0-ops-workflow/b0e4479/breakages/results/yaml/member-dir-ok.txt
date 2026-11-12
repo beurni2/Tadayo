@@ -1,0 +1,30 @@
+tools/ci/ops_steps.py
+--- old
+            if member is None or not member.isfile():
+
+--- new
+            if member is None:
+
+--- expected: test_an_archive_without_the_file
+--- exit 1
+...................E................
+======================================================================
+ERROR: test_an_archive_without_the_file_is_refused (__main__.SetupFlyctlTest.test_an_archive_without_the_file_is_refused) (members=['flyctl'])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp0de0do3s/tools/ci/ops_steps_test.py", line 335, in test_an_archive_without_the_file_is_refused
+    code, out, _ = self.setup(archive(members))
+                   ~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp0de0do3s/tools/ci/ops_steps_test.py", line 292, in setup
+    return call("setup_flyctl", environ or self.environ(), fetch=self.fetch_bytes(data))
+  File "/tmp/tmp0de0do3s/tools/ci/ops_steps_test.py", line 59, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmp0de0do3s/tools/ci/ops_steps.py", line 227, in setup_flyctl
+    with source, open(binary, "wb") as out:
+         ^^^^^^
+TypeError: 'NoneType' object does not support the context manager protocol
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.404s
+
+FAILED (errors=1)

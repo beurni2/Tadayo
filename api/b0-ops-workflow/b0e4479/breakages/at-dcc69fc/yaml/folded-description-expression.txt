@@ -1,0 +1,24 @@
+.github/workflows/ops.yml
+--- old
+          slug (--org)
+
+--- new
+          slug (--org) #${{ secrets.FLY_API_TOKEN }}
+
+--- expected: test_it_runs_only_by_hand
+--- exit 1
+.................................F..
+======================================================================
+FAIL: test_it_reads_ops_yml_as_a_yaml_library_would (__main__.YamlReaderTest.test_it_reads_ops_yml_as_a_yaml_library_would)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpby4e611b/tools/ci/ops_steps_test.py", line 593, in test_it_reads_ops_yml_as_a_yaml_library_would
+    self.assertEqual(text(theirs), parse_yaml(workflow()))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'name': 'ops', 'permissions': {}, 'concurrency': {'group'[8760 chars]}}}}} != {'name': 'ops', 'on': {'workflow_dispatch': {'inputs': {'s[8730 chars]}]}}}
+Diff is 22950 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.406s
+
+FAILED (failures=1)

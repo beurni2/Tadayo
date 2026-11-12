@@ -1,0 +1,62 @@
+tools/ci/ops_steps.py
+--- old
+{"OPS_TO": Option("--to", False)}),
+--- new
+{"OPS_TO": Option("--to", True)}),
+--- expected: test_the_options_each_takes
+--- exit 1
+......F...F...F.....................
+======================================================================
+FAIL: test_every_script_passes_from_main_with_what_it_needs (__main__.CheckTest.test_every_script_passes_from_main_with_what_it_needs) (script='dev-clock')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpphl23lux/tools/ci/ops_steps_test.py", line 113, in test_every_script_passes_from_main_with_what_it_needs
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : ops: dev-clock needs --to: give it in the run's inputs
+
+
+======================================================================
+FAIL: test_each_script_runs_with_its_option_as_one_argument (__main__.RunTest.test_each_script_runs_with_its_option_as_one_argument) (script='dev-clock', inputs={})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpphl23lux/tools/ci/ops_steps_test.py", line 199, in test_each_script_runs_with_its_option_as_one_argument
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : ops: dev-clock needs --to: give it in the run's inputs
+
+
+======================================================================
+FAIL: test_the_options_each_takes (__main__.ScriptsTest.test_the_options_each_takes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpphl23lux/tools/ci/ops_steps_test.py", line 86, in test_the_options_each_takes
+    self.assertEqual(options, {
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+        "fly-app-create": {"OPS_ORG": ("--org", False)},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+        "storage-setup": {}, "supabase-probe": {},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    })
+    ^^
+AssertionError: {'fly[117 chars]to', True)}, 'worker-scale': {'OPS_TO': ('--to[101 chars]: {}} != {'fly[117 chars]to', False)}, 'worker-scale': {'OPS_TO': ('--t[102 chars]: {}}
+  {'bootstrap': {},
+   'deploy-branch': {'OPS_BRANCH': ('--branch', True)},
+-  'dev-clock': {'OPS_TO': ('--to', True)},
+?                                   ^^^
+
++  'dev-clock': {'OPS_TO': ('--to', False)},
+?                                   ^^^^
+
+   'fly-app-create': {'OPS_ORG': ('--org', False)},
+   'migrate': {},
+   'seed': {},
+   'storage-setup': {},
+   'supabase-probe': {},
+   'worker-scale': {'OPS_TO': ('--to', True)}}
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.355s
+
+FAILED (failures=3)

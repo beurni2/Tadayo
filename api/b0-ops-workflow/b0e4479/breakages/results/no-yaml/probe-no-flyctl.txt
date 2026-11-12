@@ -1,0 +1,50 @@
+tools/ci/ops_steps.py
+--- old
+"SUPABASE_ACCESS_TOKEN"), flyctl=True),
+--- new
+"SUPABASE_ACCESS_TOKEN")),
+--- expected: test_the_scripts_that_call_flyctl
+--- exit 1
+................F.........F......s..
+======================================================================
+FAIL: test_the_scripts_that_call_flyctl (__main__.ScriptsTest.test_the_scripts_that_call_flyctl)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpzx4ug1yv/tools/ci/ops_steps_test.py", line 100, in test_the_scripts_that_call_flyctl
+    self.assertEqual(sorted(n for n, s in ops_steps.SCRIPTS.items() if s.flyctl),
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     ["deploy-branch", "fly-app-create", "storage-setup", "supabase-probe",
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                      "worker-scale"])
+                      ^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['dep[18 chars]app-create', 'storage-setup', 'worker-scale'] != ['dep[18 chars]app-create', 'storage-setup', 'supabase-probe', 'worker-scale']
+
+First differing element 3:
+'worker-scale'
+'supabase-probe'
+
+Second list contains 1 additional elements.
+First extra element 4:
+'worker-scale'
+
+- ['deploy-branch', 'fly-app-create', 'storage-setup', 'worker-scale']
++ ['deploy-branch',
++  'fly-app-create',
++  'storage-setup',
++  'supabase-probe',
++  'worker-scale']
+
+======================================================================
+FAIL: test_each_script_has_its_own_job_with_its_own_secrets_and_nothing_else (__main__.WorkflowFileTest.test_each_script_has_its_own_job_with_its_own_secrets_and_nothing_else) (job='supabase-probe')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpzx4ug1yv/tools/ci/ops_steps_test.py", line 681, in test_each_script_has_its_own_job_with_its_own_secrets_and_nothing_else
+    self.assertEqual(jobs[name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'nam[571 chars]}, {'run': 'python3 tools/ci/ops_steps.py setu[273 chars]n'}]} != {'nam[571 chars]}, {'name': 'supabase-probe', 'env': {'FLY_API[218 chars]n'}]}
+Diff is 1275 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.341s
+
+FAILED (failures=2, skipped=1)
