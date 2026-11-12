@@ -427,11 +427,35 @@ final class SignInReadingTests: XCTestCase {
             let keyboardTop = layout.size.height - layout.safeArea.bottom - stand
             XCTAssertEqual(
                 keyboardTop - verify.maxY, pinned ? Spacing.m : clear, accuracy: 0.5,
-                "\(clear) clear: \(layout.elements)")
+                "\(clear) clear: \(layout.elements); \(readerProbe(stand: stand))")
             XCTAssertEqual(
                 layout.elements.filter { $0.label == "Verify code" }.count, 1,
                 "\(clear) clear: \(layout.elements)")
         }
+    }
+
+    /// What a geometry reader behind a scroll view in a navigation stack sees, with a stand-in
+    /// keyboard `stand` high, as `readingKeyboardRoom` reads it: said only when the threshold
+    /// test fails, so a failure says where the frame and its safe area were.
+    private func readerProbe(stand: CGFloat) -> String {
+        let layout = AccessibilityElements.layout(
+            of: NavigationStack {
+                ScrollView { Color.clear.frame(height: 1) }
+                    .background {
+                        GeometryReader { reader in
+                            Color.clear.accessibilityElement()
+                                .accessibilityLabel(
+                                    Text(
+                                        verbatim:
+                                            "reader \(reader.frame(in: .global)) safe area "
+                                            + "\(reader.safeAreaInsets)"))
+                        }
+                    }
+                    .navigationTitle(Text(verbatim: "Probe"))
+                    .navigationBarTitleDisplayMode(.inline)
+            }
+            .safeAreaInset(edge: .bottom, spacing: 0) { Color.clear.frame(height: stand) })
+        return layout.elements.map(\.label).filter { $0.hasPrefix("reader") }.joined()
     }
 
     /// `row` is shown once, and Change email address starts 8 + 44 under Verify code.

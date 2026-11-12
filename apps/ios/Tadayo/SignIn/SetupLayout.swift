@@ -33,7 +33,8 @@ enum SetupColumn {
 
 /// The room a setup screen has while the keyboard is up (`readingKeyboardRoom`).
 struct KeyboardRoom: Equatable {
-    /// The screen's height above the keyboard, or down to the safe area's bottom with none.
+    /// The screen's height from the safe area's top, where the column starts, down to the
+    /// keyboard, or to the safe area's bottom with none.
     var height: CGFloat = 0
     /// How far the keyboard, or a hardware keyboard's bar, reaches up into the screen, past the
     /// safe area's bottom: 0 while none shows.
@@ -96,17 +97,23 @@ struct SetupFooter<Content: View>: View {
 
 extension View {
     /// Keeps `room` up to date: the view's height, which SwiftUI's keyboard avoidance shortens
-    /// by the keyboard, and how much taller the same view is when it ignores the keyboard's safe
-    /// area. It is read from the view's own frame rather than from the keyboard's notifications,
-    /// so a screen that appears with the keyboard already up knows it at once. A02-code's pin
-    /// reads it, and A03's footer is to (`ios/b0-adopt-profile`).
+    /// by the keyboard, less the safe area's insets within it, and how much taller the same view
+    /// is when it ignores the keyboard's safe area. Where the view's frame reaches under a bar,
+    /// a scroll view's content starts only at the safe area's top, so the height is counted from
+    /// there, where the column's own measures start (`SetupColumn`): in a navigation stack, the
+    /// frame's whole height left Verify code in the column 11 points above the keyboard (`ios`
+    /// run 43189663223, `SignInReadingTests`' threshold test). It is read from the view's own
+    /// frame rather than from the keyboard's notifications, so a screen that appears with the
+    /// keyboard already up knows it at once. A02-code's pin reads it, and A03's footer is to
+    /// (`ios/b0-adopt-profile`).
     func readingKeyboardRoom(_ room: Binding<KeyboardRoom>) -> some View {
         background {
             GeometryReader { avoiding in
                 GeometryReader { ignoring in
                     Color.clear.onChange(
                         of: KeyboardRoom(
-                            height: avoiding.size.height,
+                            height: avoiding.size.height - avoiding.safeAreaInsets.top
+                                - avoiding.safeAreaInsets.bottom,
                             keyboard: max(0, ignoring.size.height - avoiding.size.height)),
                         initial: true
                     ) { _, now in

@@ -12,9 +12,10 @@ public enum KeyboardFooter {
     /// column: only while the keyboard shows, and only where the action, in the column scrolled
     /// to its top, would end less than `gap` above the keyboard. `bottom` is how far down the
     /// column it would end, measured from the column's top as if it weren't pinned, and
-    /// `visibleHeight` the height of the column's view above the keyboard, the pinned footer's
-    /// room included: neither changes as the action is pinned, so the choice can't undo itself
-    /// as the column shortens. Nothing is pinned before the screen has measured itself.
+    /// `visibleHeight` the height of the column's view above the keyboard, measured from where
+    /// the column starts, the pinned footer's room included: neither changes as the action is
+    /// pinned, so the choice can't undo itself as the column shortens. Nothing is pinned before
+    /// the screen has measured itself.
     ///
     /// Nor while VoiceOver runs (FQ97's default): it reads a pinned footer after everything in
     /// the column, where handoff 7's `codeAccessibilityOrder` reads Verify code before the resend

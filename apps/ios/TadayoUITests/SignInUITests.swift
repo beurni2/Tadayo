@@ -252,15 +252,24 @@ final class SignInUITests: XCTestCase {
         assertPinned(
             verify, below: code, on: kept(app.screenshot(), as: "A02-code-error-xl"), in: app)
 
+        // Dragged up from the middle of the screen, over the column's text, a few times at most,
+        // until Change email address can be tapped; where it went each time is said if it can't,
+        // and the screen is kept before that is checked, since a failure ends the test.
         let change = app.buttons["Change email address"]
+        var went = ["\(change.frame)"]
         for _ in 0..<4 where !change.isHittable {
-            app.scrollViews.firstMatch.swipeUp()
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45))
+                .press(
+                    forDuration: 0.1,
+                    thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.15)))
+            went.append("\(change.frame)")
         }
-        XCTAssertTrue(change.isHittable)
+        let scrolled = kept(app.screenshot(), as: "A02-code-error-xl-scrolled")
+        XCTAssertTrue(
+            change.isHittable,
+            "Change email address went \(went); keyboard \(app.keyboards.firstMatch.exists)")
         XCTAssertTrue(app.keyboards.firstMatch.exists)
-        assertPinned(
-            verify, below: code, on: kept(app.screenshot(), as: "A02-code-error-xl-scrolled"),
-            in: app)
+        assertPinned(verify, below: code, on: scrolled, in: app)
     }
 
     /// `shot`, attached as `state` for a failure's evidence: named as `tools/ci/ios_steps.py`
