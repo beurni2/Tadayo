@@ -122,9 +122,19 @@ gh api 'repos/{owner}/{repo}/pulls?state=all&per_page=100' --jq '.[] | [.number,
 gh api "repos/{owner}/{repo}/actions/runs?head_sha={sha}" --jq '.workflow_runs[] | [.id, .name, .event, .conclusion] | @tsv'
 gh api -X POST repos/{owner}/{repo}/actions/runs/{id}/rerun
 
-# Start a workflow that runs by hand (ops, ios-release, load), on a branch, with its inputs.
-# If the session's token may not, ask the founder to start it from the Actions tab, naming the inputs.
-gh api -X POST repos/{owner}/{repo}/actions/workflows/ops.yml/dispatches -f ref='<branch>' -f 'inputs[script]=<script name>'
+# Start a workflow that runs by hand, with its inputs.
+# - ops runs only from main (each job's check step refuses another ref: tools/ci/ops_steps.py), so its ref is main. Add
+#   the input its script takes, if any: -f 'inputs[branch]=<branch>' (deploy-branch), -f 'inputs[to]=<stopped|started>'
+#   (worker-scale) or -f 'inputs[to]=<instant>' (dev-clock), -f 'inputs[org]=<slug>' (fly-app-create, when the token sees
+#   several organizations).
+# - ios run by hand, and ios-release once it exists (docs/TECH-DESIGN.md section 9), run on the branch named as ref. ios
+#   with inputs[ios_version] is the UI and unit tests on that iOS, without the snapshot tests (its section 8, the row
+#   Screens; the docs/LIMITATIONS.md row of 2026-11-01); with none it is the full set on the newest iOS, as a gate wants. While a push's
+#   ios run is going, start it only once that run's evidence job has started (the docs/LIMITATIONS.md row of 2026-11-11).
+# If the session's token may not, ask the founder to start it from the Actions tab, naming the branch to choose under
+# "Use workflow from" and the inputs.
+gh api -X POST repos/{owner}/{repo}/actions/workflows/ops.yml/dispatches -f ref=main -f 'inputs[script]=<script name>'
+gh api -X POST repos/{owner}/{repo}/actions/workflows/ios.yml/dispatches -f ref='<branch>' -f 'inputs[ios_version]=18.6'
 
 # Close a PR, for example one replaced by a fresh branch
 gh api -X PATCH repos/{owner}/{repo}/pulls/{n} -f state=closed
