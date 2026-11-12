@@ -351,7 +351,8 @@ final class ManualContinuousClock: @unchecked Sendable {
         #expect(model.step == .code)
         gate.open()
         await resending.value
-        #expect(model.failure == .resendNetwork)
+        #expect(model.resendFailure == .network)
+        #expect(model.failure == nil)
         #expect(model.step == .code)
         #expect(model.canChangeEmail)
     }
@@ -399,7 +400,10 @@ final class ManualContinuousClock: @unchecked Sendable {
         await model.resend()
         #expect(auth.calls.last == "sendCode ben@example.com")
         #expect(model.code == "")
+        // The line was about digits that are gone (handoff 7's `authForm.resendSuccess`: "Only
+        // server success clears old code").
         #expect(model.failure == nil)
+        #expect(model.resendFailure == nil)
         #expect(!model.canResend)
         model.code = "529614"
         #expect(model.canVerify)
@@ -407,9 +411,11 @@ final class ManualContinuousClock: @unchecked Sendable {
         #expect(clock.waits == [.seconds(120)])
     }
 
+    /// Handoff 7's `authForm.resendSuccess`: "Failed resend keeps old challenge/digits and does
+    /// not restart interval." The line is the resend's own, not the code's.
     @Test func aRefusedNewCodeKeepsTheDigitsAndTheRow() async {
         for (answer, failure) in [
-            (AuthFailure.network, SignInModel.Failure.resendNetwork), (.refused, .resendRefused),
+            (AuthFailure.network, SignInModel.ResendFailure.network), (.refused, .refused),
         ] {
             let auth = FakeAuth(send: [nil, answer])
             let clock = ManualContinuousClock()
@@ -418,10 +424,228 @@ final class ManualContinuousClock: @unchecked Sendable {
             clock.advance(.seconds(60))
             await model.waitForResend()
             await model.resend()
-            #expect(model.failure == failure)
+            #expect(model.resendFailure == failure)
+            #expect(model.failure == nil)
             #expect(model.code == "52961")
             #expect(model.canResend)
             #expect(model.resendDue == nil)
         }
+    }
+
+    /// While a new code is on its way the code is read-only, as it is while it is checked
+    /// (handoff 7's `authForm.resendConcurrency`: "Verify, Change email address and input edits
+    /// are inactive while resending. Verify remains unavailable even if the previous challenge
+    /// has six digits."). A refusal gives editing back with the digits kept; a new code gives it
+    /// back with the digits cleared. Send a new code stays offered throughout and after a
+    /// refusal, so the screen has no availability to say again (handoff 7's
+    /// `announcementPolicy.resend`: "restores resend action without a second availability
+    /// announcement").
+    @Test func theCodeCantBeEditedWhileANewCodeIsOnItsWay() async {
+        for answer in [AuthFailure.network, .refused, nil] {
+            let gate = Gate()
+            let clock = ManualContinuousClock()
+            let auth = FakeAuth(send: [nil, answer])
+            let model = await onCode(auth, clock)
+            model.code = "529614"
+            clock.advance(.seconds(60))
+            await model.waitForResend()
+            auth.duringSignIn = { await gate.wait() }
+            let resending = Task { await model.resend() }
+            await gate.reached()
+            #expect(model.isResending)
+            #expect(model.canResend)
+            #expect(!model.canVerify)
+            model.code = "529613"
+            #expect(model.code == "529614")
+            model.code = ""
+            #expect(model.code == "529614")
+            gate.open()
+            await resending.value
+            #expect(!model.isResending)
+            #expect(model.canResend == (answer != nil))
+            #expect(model.code == (answer == nil ? "" : "529614"))
+            model.code = "529613"
+            #expect(model.code == "529613")
+            #expect(model.canVerify)
+        }
+    }
+
+    /// Handoff 7's `authForm.resendFailure`: "Dedicated block below resend action, not the code
+    /// validation block. Keep an existing wrong-code message in its original block too." A code
+    /// not verified stays while a new code is on its way and after it fails, beside the resend's
+    /// own line, and the field stays marked; the order the two come in makes no difference.
+    @Test func aFailedNewCodeLeavesAWrongCodeLineAlone() async {
+        let gate = Gate()
+        let clock = ManualContinuousClock()
+        let auth = FakeAuth(send: [nil, .network], verify: [.failure(.codeNotVerified)])
+        let model = await onCode(auth, clock)
+        model.code = "529614"
+        await model.verify()
+        #expect(model.failure == .codeNotVerified)
+        clock.advance(.seconds(60))
+        await model.waitForResend()
+        auth.duringSignIn = { await gate.wait() }
+        let resending = Task { await model.resend() }
+        await gate.reached()
+        #expect(model.failure == .codeNotVerified)
+        gate.open()
+        await resending.value
+        #expect(model.failure == .codeNotVerified)
+        #expect(model.resendFailure == .network)
+        #expect(model.code == "529614")
+
+        // The other way round: the resend fails first, then the code isn't verified.
+        let first = FakeAuth(send: [nil, .refused], verify: [.failure(.codeNotVerified)])
+        let laterClock = ManualContinuousClock()
+        let other = await onCode(first, laterClock)
+        laterClock.advance(.seconds(60))
+        await other.waitForResend()
+        await other.resend()
+        other.code = "529614"
+        await other.verify()
+        #expect(other.failure == .codeNotVerified)
+        #expect(other.resendFailure == .refused)
+    }
+
+    /// How long a resend's line lasts, which no source says (`signin.md` F4): until the next
+    /// resend starts, or a new code goes, or Change email address. Typing a code, or a verify
+    /// that fails, leaves it: it is about the new code, not the digits.
+    @Test func aResendsLineLastsUntilTheNextResend() async {
+        let gate = Gate()
+        let clock = ManualContinuousClock()
+        let auth = FakeAuth(
+            send: [nil, .network, .refused, nil], verify: [.failure(.network)])
+        let model = await onCode(auth, clock)
+        clock.advance(.seconds(60))
+        await model.waitForResend()
+        await model.resend()
+        #expect(model.resendFailure == .network)
+        model.code = "52961"
+        model.code = "529614"
+        #expect(model.resendFailure == .network)
+        await model.verify()
+        #expect(model.failure == .verifyNetwork)
+        #expect(model.resendFailure == .network)
+
+        // The next resend clears it as it starts, and leaves the code's line.
+        auth.duringSignIn = { await gate.wait() }
+        let again = Task { await model.resend() }
+        await gate.reached()
+        #expect(model.resendFailure == nil)
+        #expect(model.failure == .verifyNetwork)
+        gate.open()
+        await again.value
+        #expect(model.resendFailure == .refused)
+
+        // A new code that goes clears both: the digits the code's line named are gone.
+        auth.duringSignIn = {}
+        await model.resend()
+        #expect(model.resendFailure == nil)
+        #expect(model.failure == nil)
+        #expect(model.code == "")
+    }
+
+    /// A code that goes clears both lines, whichever request sent it: the model's own rule, not
+    /// only the screens' order (A02-email is behind A02-code, so the first code is sent with
+    /// neither line showing). The two requests here run one after the other; neither can start
+    /// while the other runs (`sendNothingWhileACheckOrANewCodeIsOnItsWay`).
+    @Test func aCodeThatGoesClearsBothLinesWhicheverRequestSentIt() async {
+        let clock = ManualContinuousClock()
+        let auth = FakeAuth(send: [nil, .network], verify: [.failure(.codeNotVerified)])
+        let model = await onCode(auth, clock)
+        model.code = "529614"
+        await model.verify()
+        clock.advance(.seconds(60))
+        await model.waitForResend()
+        await model.resend()
+        #expect(model.resendFailure == .network)
+        await model.sendCode()
+        #expect(auth.calls.last == "sendCode ben@example.com")
+        #expect(model.failure == nil)
+        #expect(model.resendFailure == nil)
+        #expect(model.code == "")
+    }
+
+    /// Send a new code waits while the code is checked, even once its minute has passed
+    /// (handoff 7's `busyPrimary.leaveChangeResend`: "Inactive while primary request or routing
+    /// account read runs; do not queue another action"; IMPLEMENTATION.md: "Send a new code is
+    /// also inactive if its minute has elapsed"). Nothing goes, the digits stay, and the check's
+    /// answer is about those digits.
+    @Test func noNewCodeGoesWhileTheCodeIsChecked() async {
+        let gate = Gate()
+        let clock = ManualContinuousClock()
+        let auth = FakeAuth(verify: [.failure(.codeNotVerified)])
+        let model = await onCode(auth, clock)
+        clock.advance(.seconds(60))
+        await model.waitForResend()
+        #expect(model.canResend)
+        model.code = "529614"
+        auth.duringSignIn = { await gate.wait() }
+        let verifying = Task { await model.verify() }
+        await gate.reached()
+        auth.duringSignIn = {}
+        await model.resend()
+        #expect(!model.isResending)
+        gate.open()
+        await verifying.value
+        #expect(auth.calls == ["sendCode ben@example.com", "verify ben@example.com 529614"])
+        #expect(model.code == "529614")
+        #expect(model.failure == .codeNotVerified)
+        #expect(model.resendFailure == nil)
+        #expect(model.canResend)
+    }
+
+    /// Each request goes once at a time: while a code is checked or a new code is on its way, a
+    /// code isn't sent either, whatever asks (no screen can: A02-email is under A02-code). So a
+    /// late answer never lands on a screen that has moved on.
+    @Test func sendNothingWhileACheckOrANewCodeIsOnItsWay() async {
+        for checking in [true, false] {
+            let gate = Gate()
+            let clock = ManualContinuousClock()
+            let auth = FakeAuth(verify: [.failure(.codeNotVerified)])
+            let model = await onCode(auth, clock)
+            clock.advance(.seconds(60))
+            await model.waitForResend()
+            model.code = "529614"
+            auth.duringSignIn = { await gate.wait() }
+            let running = Task {
+                if checking { await model.verify() } else { await model.resend() }
+            }
+            await gate.reached()
+            auth.duringSignIn = {}
+            let calls = auth.calls
+            let due = model.resendDue
+            #expect(!model.canSend)
+            await model.sendCode()
+            #expect(auth.calls == calls)
+            #expect(model.resendDue == due)
+            #expect(!model.isSending)
+            gate.open()
+            await running.value
+        }
+    }
+
+    /// Change email address leaves both lines behind: back on A02-email neither shows, and a
+    /// code sent from there comes to A02-code with none.
+    @Test func changingTheAddressClearsBothLines() async {
+        let clock = ManualContinuousClock()
+        let auth = FakeAuth(send: [nil, .network], verify: [.failure(.codeNotVerified)])
+        let model = await onCode(auth, clock)
+        model.code = "529614"
+        await model.verify()
+        clock.advance(.seconds(60))
+        await model.waitForResend()
+        await model.resend()
+        #expect(model.failure == .codeNotVerified)
+        #expect(model.resendFailure == .network)
+        model.changeEmail()
+        #expect(model.step == .email)
+        #expect(model.failure == nil)
+        #expect(model.resendFailure == nil)
+        model.email = "debby@example.com"
+        await model.sendCode()
+        #expect(model.step == .code)
+        #expect(model.failure == nil)
+        #expect(model.resendFailure == nil)
     }
 }
