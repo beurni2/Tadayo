@@ -57,61 +57,186 @@ struct AgeScreen: View {
     }
 }
 
-/// A03-profile (handoff 1's frame 5): a name, required, and a photo, optional, with the 68-point
-/// avatar showing the name's initial as it's typed. Add photo is drawn and does nothing in B0
-/// (FQ85; the picker is B3's). Continue waits for a name with something in it besides spaces and
-/// no longer than 40 characters (FQ70). There's no back once the age is recorded.
+/// A03-profile (handoff 7's frames 10, 11, 20 and 27, redrawing handoff 1's frame 5): a name,
+/// required, and a photo, optional, with the 68-point avatar showing the name's initial as it's
+/// typed, or the person symbol until a name gives one (`Avatar`). Add photo is drawn and does
+/// nothing in B0 (FQ85; the picker is B3's). Continue waits for a name with something in it
+/// besides spaces and no longer than 40 characters (FQ70). There's no back once the age is
+/// recorded: Leave sign-in, in the bar's leading place as on A02-age (`LeaveSignInButton`;
+/// `ageExit`: "Same on A03."), ends this sign-in and returns to A02-email, the age staying
+/// recorded on the server.
 struct ProfileScreen: View {
-    @Bindable var model: ProfileModel
-    /// As `SignInFlow.focus`. The field isn't focused on arrival: the frame shows no keyboard.
+    let model: ProfileModel
+    let leave: @MainActor () async -> Void
+    /// As `SignInFlow.focus`. Nil in the app, where the field is focused on arrival unless
+    /// VoiceOver runs (`ProfileForm`).
     var focus: Bool?
-    @FocusState private var focused: Bool
 
     var body: some View {
         NavigationStack {
-            SetupScroll {
-                SetupHeading(title: "auth.profile.title", subtitle: Text("auth.profile.subtitle"))
-                VStack(spacing: 0) {
-                    Avatar(name: model.name, size: .profile)
-                    Button("auth.profile.addPhoto") {}
-                        .buttonStyle(.tadayoText)
-                        .padding(.top, Spacing.s)
-                    Text("auth.profile.optional")
-                        .textRole(.metadata)
-                        .foregroundStyle(Palette.secondaryText)
+            ProfileForm(model: model, leave: leave, focus: focus)
+        }
+        .tint(Palette.action)
+    }
+}
+
+/// A03-profile's content inside its navigation stack, apart from `ProfileScreen` so a hosted test
+/// can put a stand-in keyboard inside the stack, where the screen meets it (a safe area inset
+/// outside a navigation stack doesn't reach the screen in it: `ios` run 43192475721).
+///
+/// The column scrolls, title, helper, avatar, Add photo and Optional, the name's label and field,
+/// then the name's one line, if any, 12 under the field (`handoff7.spacing.fieldErrorGap`), with
+/// no invalid border: a save's failure, or, while the name is longer than 40 characters, "Use 40
+/// characters or fewer for your name." in its place (`auth.profile.tooLong`; X-19), the name kept
+/// as typed and never cut. Continue is pinned under the column, 12 above the keyboard
+/// (`authForm.keyboardFooter`: "Continue and Verify code pinned above keyboard with 12-point
+/// clear gap"), or, with none, 44 above the safe area's bottom (`formFooterToSafeAreaBottom`).
+/// As a line shows, the column is scrolled to it, so it and the field above it stay in view
+/// above Continue, and the keyboard stays up (IMPLEMENTATION.md: "The body scrolls to keep the
+/// field and error reachable above Continue; it does not dismiss the keyboard"); scrolling the
+/// column doesn't dismiss it either.
+///
+/// While the name is saved it is read-only, not disabled, so it keeps its focus and its keyboard;
+/// Add photo and Leave sign-in are inactive; Continue is busy and says "In progress"; and
+/// VoiceOver says "Saving your profile." once (`busyPrimary`). A failure keeps the name and the
+/// focus.
+struct ProfileForm: View {
+    let model: ProfileModel
+    let leave: @MainActor () async -> Void
+    let focus: Bool?
+    /// Whether a keyboard shows, for a test, which has none: nil in the app, where the screen
+    /// reads it from its own frame (`readingKeyboardRoom`).
+    var keyboard: Bool?
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
+    @FocusState private var focused: Bool
+    /// A save made from the keyboard's return key is on its way.
+    @State private var savingFromReturn = false
+    @State private var room = KeyboardRoom()
+    /// The name's line and the 8 points under it, to scroll to.
+    private static let lineID = "profile.line"
+
+    var body: some View {
+        ScrollViewReader { scroll in
+            column
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    SetupFooter(
+                        bottom: keyboardShows ? Spacing.m : SetupGap.formFooterToSafeAreaBottom
+                    ) {
+                        Button {
+                            Task { await model.saveName() }
+                        } label: {
+                            Text("auth.profile.continue")
+                        }
+                        .buttonStyle(.tadayoPrimary(isBusy: model.isSaving))
+                        .disabled(!model.canContinue)
+                    }
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.top, Spacing.xxxl)
-                LabelledField(Text("auth.profile.nameLabel"), isFocused: focus ?? focused) {
-                    TextField(String(), text: $model.name)
+                .readingKeyboardRoom($room)
+                // Its bottom at the column's visible foot: the line ends 8 + 8 = 16 above
+                // Continue (`handoff7.spacing.errorToActionMinimum`), the field 12 above it.
+                .onChange(of: line) { _, shown in
+                    if shown != nil { scroll.scrollTo(Self.lineID, anchor: .bottom) }
+                }
+        }
+        .navigationTitle(Text("auth.profile.navTitle"))
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                LeaveSignInButton(leave: leave)
+                    .disabled(model.isSaving)
+            }
+        }
+        // Focused on arrival, at every text size (IMPLEMENTATION.md: "A03-profile-empty is
+        // focused on arrival"), except while VoiceOver runs, which says the screen first and
+        // moves its own focus (`authForm.profileArrivalFocus`: "unless VoiceOver focus would be
+        // stolen"; the check's C-01). Nothing is said of Switch Control (needs item 58).
+        .onAppear { if focus == nil, !voiceOverEnabled { focused = true } }
+        // Return ends a field's editing; the focus is put back while the save goes, as on
+        // A02-email, so the keyboard stays (`busyPrimary.field`).
+        .onChange(of: focused) { _, now in
+            if !now, savingFromReturn { focused = true }
+        }
+        // A save's failure is said as it shows, as on the other setup screens; the too-long
+        // line politely, after the character VoiceOver echoes as it is typed (needs item 58).
+        .announcing(line, politely: model.nameIsTooLong)
+        // "Saving your profile.", once, as the request begins; the button says "In progress"
+        // itself.
+        .onChange(of: model.isSaving) { was, now in
+            if let words = SignInAnnouncement.savingProfile(from: was, to: now) {
+                Announcement.post(words)
+            }
+        }
+    }
+
+    private var column: some View {
+        SetupScroll {
+            SetupHeading(title: "auth.profile.title", subtitle: Text("auth.profile.subtitle"))
+            // The circle centred, Add photo and Optional at the leading edge under it, as the
+            // frames and the component sheet's text action draw them (X-25, VM-03).
+            VStack(alignment: .leading, spacing: 0) {
+                Avatar(name: model.name, size: .profile)
+                    .frame(maxWidth: .infinity)
+                Button("auth.profile.addPhoto") {}
+                    .buttonStyle(.tadayoText)
+                    .disabled(model.isSaving)
+                    .padding(.top, Spacing.s)
+                Text("auth.profile.optional")
+                    .textRole(.metadata)
+                    .foregroundStyle(Palette.secondaryText)
+            }
+            .padding(.top, Spacing.xxxl)
+            LabelledField(Text("auth.profile.nameLabel"), isFocused: focus ?? focused) {
+                // The placeholder repeats the label's words (frames 10 and 20,
+                // `auth.profile.placeholder`), drawn and hidden from VoiceOver as A02-email's is,
+                // so the field says them once (W-08, W-14). The name is read-only while it is
+                // saved: what is typed is offered to the model, which declines it, and the field
+                // shows what the model kept (`ModelText`).
+                ModelText(held: { model.name }, offer: { model.name = $0 }) { text in
+                    TextField(String(), text: text)
                         .textContentType(.givenName)
                         .textInputAutocapitalization(.words)
                         .autocorrectionDisabled()
                         .submitLabel(.continue)
-                        .onSubmit { Task { await model.saveName() } }
+                        .onSubmit {
+                            savingFromReturn = true
+                            Task {
+                                await model.saveName()
+                                savingFromReturn = false
+                            }
+                        }
                         .focused($focused)
-                }
-                .padding(.top, Spacing.xxl)
-            }
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                SetupFooter(bottom: SetupGap.formFooterToSafeAreaBottom) {
-                    if let failure = model.failure {
-                        InlineError(Text(verbatim: failure.words))
-                    }
-                    Button {
-                        Task { await model.saveName() }
-                    } label: {
-                        Text("auth.profile.continue")
-                    }
-                    .buttonStyle(.tadayoPrimary(isBusy: model.isSaving))
-                    .disabled(!model.canContinue)
+                        .overlay(alignment: .leading) {
+                            if model.name.isEmpty {
+                                Text("auth.profile.nameLabel")
+                                    .foregroundStyle(Palette.secondaryText)
+                                    .lineLimit(1)
+                                    .allowsHitTesting(false)
+                                    .accessibilityHidden(true)
+                            }
+                        }
                 }
             }
-            .navigationTitle(Text("auth.profile.navTitle"))
-            .navigationBarTitleDisplayMode(.inline)
-            .announcing(model.failure?.words)
+            .padding(.top, Spacing.xxl)
+            if let line {
+                InlineError(Text(verbatim: line))
+                    .padding(.top, Spacing.m)
+                    .padding(.bottom, Spacing.s)
+                    .id(Self.lineID)
+            }
         }
-        .tint(Palette.action)
+        .scrollDismissesKeyboard(.never)
+    }
+
+    /// The name's one line: "Use 40 characters or fewer for your name." while the name is too
+    /// long, in place of a save's failure if one is still shown (the plan's section 6.12), else
+    /// the failure; nothing for a name that is fine, typed or not.
+    private var line: String? {
+        model.nameIsTooLong ? String(localized: "auth.profile.tooLong") : model.failure?.words
+    }
+
+    /// Whether a keyboard, or a hardware keyboard's bar, shows.
+    private var keyboardShows: Bool {
+        keyboard ?? (room.keyboard > 0)
     }
 }
 

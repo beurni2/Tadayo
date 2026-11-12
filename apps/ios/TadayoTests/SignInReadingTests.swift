@@ -491,21 +491,195 @@ final class SignInReadingTests: XCTestCase {
 
     // MARK: A03
 
+    private func profile(updates: [Outcome<APIFailure>] = []) -> ProfileModel {
+        ProfileModel(
+            account: Account(
+                id: "ben", displayName: nil, avatarVersion: nil, ageConfirmed: true, version: 1),
+            accounts: ScriptedAccounts(updates: updates), saved: { _ in }, signedOut: {})
+    }
+
+    /// The bar's two elements, which the hosted tree hands over after the column and the
+    /// footer (`ios` run 43178940741 read A02-code's title last), though VoiceOver starts from
+    /// the bar: they are matched apart from the rest.
+    private let bar: Set = ["Leave sign-in", "Your profile"]
+
+    /// A03 is read, in document order, as its title, the helper line, Add photo, Optional, the
+    /// name's field, the name's one line if it shows, and Continue, with nothing else: the
+    /// avatar, its initial and its person symbol aren't read (`Avatar`; handoff 7's
+    /// `avatarWithoutInitial`; WM-04), nor the placeholder, so the empty field says "Your name"
+    /// once (W-08, W-14); and the bar holds Leave sign-in, one button above the title, and the
+    /// screen's name (IMPLEMENTATION.md's order; `ageExit`: "Same on A03."; the plan's TV-06).
+    /// The line is a save's failure, or the too-long line in its place, under the field, never
+    /// its hint, since neither marks it (X-19); Continue waits for a name of 1 to 40 characters.
+    func testA03IsReadInOrderWithTheNamesOneLineUnderTheField() {
+        let network = "Couldn’t save your profile. Check your connection and try again."
+        let tooLong = "Use 40 characters or fewer for your name."
+        // Book p27's two long names together: 45 characters, over FQ70's 40.
+        let long = "Alexandria-Rose Mensah Deborah-Anne Ouédraogo"
+        let ben = profile()
+        ben.name = "Ben"
+        let failed = profile(updates: [.fail(.network)])
+        failed.name = "Ben"
+        drive({ await failed.saveName() }, until: { failed.failure == .network })
+        let longer = profile()
+        longer.name = long
+        let cases: [(model: ProfileModel, name: String, line: String?, continues: Bool)] = [
+            (profile(), "", nil, false), (ben, "Ben", nil, true), (failed, "Ben", network, true),
+            (longer, long, tooLong, false),
+        ]
+        for (model, name, line, continues) in cases {
+            let elements = AccessibilityElements.of(
+                ProfileScreen(model: model, leave: {}, focus: true))
+            let read = elements.filter { !bar.contains($0.label) }.map {
+                Read(
+                    $0.label, value: $0.value, hint: $0.hint,
+                    isButton: $0.traits.contains(.button), actions: $0.actions)
+            }
+            let expected =
+                [
+                    Read("What should we call you?"), Read("A name your friends know."),
+                    Read("Add photo", isButton: true), Read("Optional"),
+                    Read("Your name", value: name),
+                ] + (line.map { [Read($0)] } ?? []) + [Read("Continue", isButton: true)]
+            XCTAssertEqual(read, expected, "\(name): \(elements)")
+            XCTAssertEqual(
+                elements.filter { bar.contains($0.label) }.map(\.label).sorted(),
+                bar.sorted(), "\(name): \(elements)")
+            let leave = elements.first { $0.label == "Leave sign-in" }
+            XCTAssertTrue(leave?.traits.contains(.button) ?? false, "\(name): \(elements)")
+            XCTAssertFalse(leave?.traits.contains(.notEnabled) ?? true, "\(name): \(elements)")
+            let title = elements.first { $0.label == "What should we call you?" }
+            XCTAssertTrue(title?.isHeader ?? false, "\(name): \(elements)")
+            XCTAssertLessThanOrEqual(
+                leave?.frame.maxY ?? .infinity, title?.frame.minY ?? -.infinity,
+                "\(name): \(elements)")
+            XCTAssertEqual(
+                elements.first { $0.label == "Continue" }?.traits.contains(.notEnabled),
+                !continues, "\(name): \(elements)")
+        }
+    }
+
+    /// While the name is saved (`busyPrimary`; X-19): Continue keeps its label and says "In
+    /// progress", dimmed; Add photo and Leave sign-in are dimmed; the name is read-only, not
+    /// disabled, so it isn't dimmed and keeps its value; and nothing else says "In progress".
+    /// A failure makes Add photo, Leave sign-in and Continue available again.
+    func testWhileTheNameIsSavedContinueIsBusyAndTheRestWaits() {
+        let model = profile(updates: [.hang])
+        model.name = "Ben"
+        drive({ await model.saveName() }, until: { model.isSaving })
+        let elements = AccessibilityElements.of(
+            ProfileScreen(model: model, leave: {}, focus: true))
+        let next = elements.first { $0.label == "Continue" }
+        XCTAssertEqual(next?.value, "In progress", "\(elements)")
+        XCTAssertTrue(next?.traits.contains(.button) ?? false, "\(elements)")
+        XCTAssertTrue(next?.traits.contains(.notEnabled) ?? false, "\(elements)")
+        for label in ["Add photo", "Leave sign-in"] {
+            let inactive = elements.filter { $0.label == label }
+            XCTAssertEqual(inactive.count, 1, "\(label): \(elements)")
+            XCTAssertTrue(
+                inactive.first?.traits.contains(.notEnabled) ?? false, "\(label): \(elements)")
+        }
+        let field = elements.first { $0.label == "Your name" }
+        XCTAssertEqual(field?.value, "Ben", "\(elements)")
+        XCTAssertFalse(field?.traits.contains(.notEnabled) ?? true, "\(elements)")
+        let said = elements.flatMap { [$0.label, $0.value, $0.hint] }
+            .filter { $0.contains("In progress") }
+        XCTAssertEqual(said, ["In progress"], "\(elements)")
+
+        let failed = profile(updates: [.fail(.refused)])
+        failed.name = "Ben"
+        drive({ await failed.saveName() }, until: { failed.failure == .other })
+        let after = AccessibilityElements.of(
+            ProfileScreen(model: failed, leave: {}, focus: true))
+        for label in ["Add photo", "Leave sign-in", "Continue"] {
+            XCTAssertFalse(
+                after.first { $0.label == label }?.traits.contains(.notEnabled) ?? true,
+                "\(label): \(after)")
+        }
+        XCTAssertTrue(
+            after.contains { $0.label == "Couldn’t save your profile. Try again." }, "\(after)")
+    }
+
+    /// Continue is pinned 12 above the keyboard, here a 300-point stand-in since a hosted test
+    /// has none, and 44 above the safe area's bottom with none (`authForm.keyboardFooter`;
+    /// `formFooterToSafeAreaBottom`), 20 in from each edge, at the default and the largest text.
+    /// The stand-in is inside the navigation stack, where the screen meets it (`ProfileForm`).
+    func testContinueSits12AboveTheKeyboardOr44AboveTheSafeArea() {
+        let stand: CGFloat = 300
+        for size in [DynamicTypeSize.large, .accessibility5] {
+            for keyboard in [true, false] {
+                let model = profile()
+                model.name = "Ben"
+                let layout = AccessibilityElements.layout(
+                    of: NavigationStack {
+                        ProfileForm(model: model, leave: {}, focus: false, keyboard: keyboard)
+                            .safeAreaInset(edge: .bottom, spacing: 0) {
+                                Color.clear.frame(height: keyboard ? stand : 0)
+                            }
+                    }
+                    .environment(\.dynamicTypeSize, size))
+                let named = "\(size), keyboard \(keyboard): \(layout.elements)"
+                let next = layout.elements.first { $0.label == "Continue" }?.frame ?? .zero
+                let foot = layout.size.height - layout.safeArea.bottom - (keyboard ? stand : 0)
+                XCTAssertEqual(
+                    foot - next.maxY,
+                    keyboard ? Spacing.m : SetupGap.formFooterToSafeAreaBottom, accuracy: 0.5,
+                    named)
+                XCTAssertEqual(next.minX, Spacing.inset, accuracy: 0.5, named)
+                XCTAssertEqual(
+                    next.width, layout.size.width - 2 * Spacing.inset, accuracy: 0.5, named)
+            }
+        }
+    }
+
+    /// A save that fails with the keyboard up (the stand-in again): the line shows 12 under the
+    /// field, and the column is scrolled so the line ends 16 above Continue
+    /// (`errorToActionMinimum`) with the field above it, below the bar (frame 11;
+    /// IMPLEMENTATION.md: "The body scrolls to keep the field and error reachable above
+    /// Continue"). At this size, with the column at its top, the field would be under
+    /// Continue. The save starts a moment after the screen shows, so the line comes as it does
+    /// in the app, after the column is laid out.
+    func testAFailureWithTheKeyboardUpIsScrolledIntoViewAboveContinue() {
+        let model = profile(updates: [.fail(.network)])
+        model.name = "Ben"
+        let layout = AccessibilityElements.layout(
+            of: NavigationStack {
+                ProfileForm(model: model, leave: {}, focus: false, keyboard: true)
+                    .safeAreaInset(edge: .bottom, spacing: 0) {
+                        Color.clear.frame(height: 300)
+                    }
+                    .task {
+                        try? await Task.sleep(for: .milliseconds(100))
+                        await model.saveName()
+                    }
+            })
+        let elements = layout.elements
+        let network = "Couldn’t save your profile. Check your connection and try again."
+        XCTAssertEqual(model.failure, .network, "\(elements)")
+        let line = elements.first { $0.label == network }?.frame ?? .zero
+        let field = elements.first { $0.label == "Your name" }?.frame ?? .zero
+        let next = elements.first { $0.label == "Continue" }?.frame ?? .zero
+        let title = elements.first { $0.label == "Your profile" }?.frame ?? .zero
+        XCTAssertGreaterThan(line.height, 0, "\(elements)")
+        XCTAssertGreaterThan(title.height, 0, "\(elements)")
+        XCTAssertEqual(line.minY - field.maxY, Spacing.m, accuracy: 1, "\(elements)")
+        XCTAssertEqual(next.minY - line.maxY, Spacing.l, accuracy: 1, "\(elements)")
+        XCTAssertGreaterThanOrEqual(field.minY, title.maxY, "\(elements)")
+    }
+
     /// The avatar is decorative (`Avatar`): with no initial, its person symbol isn't read
     /// either, neither as the symbol's name nor as "No profile photo", which no contract gives an
     /// element yet (handoff 7's `avatarWithoutInitial`; the check's WM-04). So a name that gives no
     /// initial, nothing typed or an emoji, leaves A03 with the same elements in the same order as
     /// "Ben" does, whose "B" isn't read (the plan's TV-06, read here so that iOS 17.5 and 18.6
-    /// read it too; `SignInSnapshotTests.testTheAvatarIsntRead` holds the same cases).
+    /// read it too; `SignInSnapshotTests.testTheAvatarIsntRead` holds the same cases). The field's
+    /// value, the name, is left out, as it differs.
     func testTheAvatarsPersonSymbolIsntRead() {
         func labels(_ name: String) -> [String] {
-            let model = ProfileModel(
-                account: Account(
-                    id: "ben", displayName: nil, avatarVersion: nil, ageConfirmed: true,
-                    version: 1),
-                accounts: ScriptedAccounts(updates: []), saved: { _ in }, signedOut: {})
+            let model = profile()
             model.name = name
-            return AccessibilityElements.of(ProfileScreen(model: model, focus: false)).map(\.label)
+            return AccessibilityElements.of(ProfileScreen(model: model, leave: {}, focus: true))
+                .map(\.label)
         }
         let ben = labels("Ben")
         XCTAssertTrue(ben.contains("Your name"), "\(ben)")

@@ -50,7 +50,7 @@ enum SetupGap {
     static let field = Spacing.xxxl + Spacing.m
     /// From a form's pinned primary action to the bottom of the safe area: 44 in handoff 7's
     /// A02-age, A03-profile and root failure frames (`handoff7.spacing.formFooterToSafeAreaBottom`).
-    /// A03-profile's Continue and the root failures' Retry take it.
+    /// A03-profile's Continue, while no keyboard shows, and the root failures' Retry take it.
     static let formFooterToSafeAreaBottom = Spacing.xxxl + Spacing.m
 }
 
@@ -105,7 +105,7 @@ extension View {
     /// top inset is 116 all the same; taking them off pinned Verify code at the usual size, `ios`
     /// run 43192475721). It is read from the view's own frame rather than from the keyboard's
     /// notifications, so a screen that appears with the keyboard already up knows it at once.
-    /// A02-code's pin reads it, and A03's footer is to (`ios/b0-adopt-profile`).
+    /// A02-code's pin reads it, and A03's footer, for its gap above the keyboard (`ProfileForm`).
     func readingKeyboardRoom(_ room: Binding<KeyboardRoom>) -> some View {
         background {
             GeometryReader { avoiding in

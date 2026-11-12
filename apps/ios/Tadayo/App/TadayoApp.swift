@@ -47,7 +47,9 @@ struct RoutedView: View {
                 AgeScreen(model: profile, leave: { await root.leave() })
             }
         case .profile:
-            if let profile = root.profile { ProfileScreen(model: profile) }
+            if let profile = root.profile {
+                ProfileScreen(model: profile, leave: { await root.leave() })
+            }
         case .failed(let failure):
             RootFailure(kind: .account(failure), retry: { await root.retry() })
         case .leaveFailed:

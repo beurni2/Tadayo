@@ -27,6 +27,9 @@ enum AppLaunch {
             if process.arguments.contains(UITestLaunch.hangingSend) {
                 return .live(UITestLaunch.fakeGraph(hangingSend: true))
             }
+            if process.arguments.contains(UITestLaunch.nameFailsThenHangs) {
+                return .live(UITestLaunch.fakeGraph(nameFailsThenHangs: true))
+            }
         #endif
         if isHostingTests(process) { return .inert }
         return configured(

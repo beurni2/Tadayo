@@ -26,6 +26,15 @@ final class SignInAnnouncementTests: XCTestCase {
         XCTAssertNil(SignInAnnouncement.savingAge(from: false, to: false))
     }
 
+    /// A03-profile's Continue (handoff 7's `vo.profile.busy`), by the same rule.
+    func testSavingTheProfileIsSaidOnceAsTheRequestBegins() {
+        XCTAssertEqual(
+            SignInAnnouncement.savingProfile(from: false, to: true), "Saving your profile.")
+        XCTAssertNil(SignInAnnouncement.savingProfile(from: true, to: false))
+        XCTAssertNil(SignInAnnouncement.savingProfile(from: true, to: true))
+        XCTAssertNil(SignInAnnouncement.savingProfile(from: false, to: false))
+    }
+
     /// A02-code's Verify code (handoff 7's `vo.code.busy`), by the same rule.
     func testVerifyingIsSaidOnceAsTheRequestBegins() {
         XCTAssertEqual(SignInAnnouncement.verifying(from: false, to: true), "Verifying code.")
