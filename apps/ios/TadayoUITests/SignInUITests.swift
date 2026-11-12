@@ -277,14 +277,16 @@ final class SignInUITests: XCTestCase {
         assertPinned(verify, below: code, on: scrolled, in: app, read: read)
     }
 
-    /// Reads where the code field ends against Verify code's top until the field ends 8 above
-    /// it, as the column puts it once Verify code is pinned, for 2 seconds at most, and says what
-    /// it read, so the screen is taken and checked once it has settled. The pin, and the scroll
-    /// that takes the field to the top, come as the keyboard rises, and the keyboard can be found
-    /// before the scroll lands: `ios` run 43208004744 (on `main` at `1e3651c`) read the field at
-    /// 399 to 482, where it is before the scroll, under Verify code from 476, though its screen,
-    /// taken a moment before, drew the field scrolled to the top. The check is unchanged: a
-    /// field still under the button after 2 seconds fails it, with what was read.
+    /// Reads where the code field's frame ends against Verify code's top until the field ends 8
+    /// above it, as the column puts it once Verify code is pinned, for 2 seconds at most, and logs
+    /// what it read as an activity, so a passing run's log shows whether it had to wait; the
+    /// screen is then taken and checked. What lagged on `main` was the field's accessibility
+    /// frame, not the screen: `ios` run 43208004744 (at `1e3651c`) took the screen first, which
+    /// drew the field scrolled to the top and Verify code from 476, then read the field's frame
+    /// twice, about 0.2 seconds apart, at 399 to 482, its place before the scroll, while Verify
+    /// code's frame matched the screen. So this waits for the field's frame to reach what is
+    /// drawn; where the field is drawn isn't measured. The check is unchanged: a field still under
+    /// the button after 2 seconds fails it, with what was read.
     @MainActor private func settle(_ field: XCUIElement, above verify: XCUIElement) -> [String] {
         var read: [String] = []
         let until = Date(timeIntervalSinceNow: 2)
@@ -295,6 +297,10 @@ final class SignInUITests: XCTestCase {
             if foot <= top - 8 + 0.5 { break }
             RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.2))
         } while Date() < until
+        XCTContext.runActivity(
+            named: "The code field's foot over Verify code's top, read \(read.count) "
+                + "times: \(read.joined(separator: ", "))"
+        ) { _ in }
         return read
     }
 

@@ -56,9 +56,11 @@ public enum Size {
     /// 18 (handoff 7's `avatarWithoutInitial.glyphSizeRatio`, 0.56).
     public static let avatarGlyphRatio: CGFloat = 0.56
     /// How far that symbol's middle sits above the circle's, as a share of the circle: handoff 7's
-    /// sheet ("Avatar with no readable initial") and frame 10 draw it 4 percent of the circle
-    /// high at every size (2.75 points at 68, 1.5 at 36, 1 at 28, 0.5 at 18), and no contract
-    /// names it. The symbol at `avatarGlyphRatio` is as tall as the drawn one at each size.
+    /// sheet ("Avatar with no readable initial") draws it 4 percent of the circle high at every
+    /// size, 2.72, 1.44, 1.12 and 0.72 points at 68, 36, 28 and 18 in its vector source
+    /// (`brand-components.svg`; read on its 2x image, to the half point, 2.75, 1.5, 1 and 0.5),
+    /// frame 10 2.75 at 68 on its 2x image, and no contract names it. The symbol at
+    /// `avatarGlyphRatio` is as tall as the drawn one at each size.
     public static let avatarGlyphLift: CGFloat = 0.04
     /// The fold's edge (handoff 4's `foldCornerLine`).
     public static let foldLine: CGFloat = 0.75
