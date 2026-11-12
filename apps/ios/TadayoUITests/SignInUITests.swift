@@ -16,6 +16,9 @@ final class SignInUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["What’s your email?"].exists)
         XCTAssertTrue(app.staticTexts["We’ll send a six-digit code to sign in."].exists)
         XCTAssertTrue(app.staticTexts["Use the same email whenever you sign in."].exists)
+        // No sign-in ended, so A02-email says nothing of one.
+        XCTAssertFalse(
+            app.staticTexts["Your sign-in ended. Enter your email to sign in again."].exists)
         let field = app.textFields["Email address"]
         XCTAssertTrue(field.exists)
         let send = app.buttons["Send a code"]
@@ -129,8 +132,8 @@ final class SignInUITests: XCTestCase {
         XCTAssertTrue(confirm.waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Before you continue"].exists)
         XCTAssertTrue(app.staticTexts["Tadayo is for people aged 18 and older."].exists)
-        // The chevron that stands in for back is Leave sign-in too, by its label.
-        XCTAssertEqual(leaveButtons(in: app).count, 2)
+        // Leave sign-in is one button, in the bar, with no chevron or link under the button.
+        XCTAssertEqual(leaveButtons(in: app).count, 1)
         confirm.tap()
 
         let name = app.textFields["Your name"]
@@ -171,7 +174,7 @@ final class SignInUITests: XCTestCase {
     }
 
     /// In builds with the Lab (Debug here), its tab's Log out ends the session and opens
-    /// A02-email again, empty (spec 23).
+    /// A02-email again, empty (spec 23), with no notice that the sign-in ended.
     @MainActor func testTheLabsLogOutReturnsToSignIn() {
         let app = launch("-TadayoUITestFakes")
         signInToTheTabs(app)
@@ -183,26 +186,25 @@ final class SignInUITests: XCTestCase {
         XCTAssertTrue(email.waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["What’s your email?"].exists)
         XCTAssertNotEqual(email.value as? String, "ben@example.com")
+        XCTAssertFalse(
+            app.staticTexts["Your sign-in ended. Enter your email to sign in again."].exists)
     }
 
-    /// Leave sign-in on A02-age, by the chevron and then by the button under I’m 18 or older:
-    /// each ends the session and opens A02-email again, empty, and going back can't skip the age
-    /// (handoff 1).
+    /// Leave sign-in on A02-age, the bar's leading text action (handoff 7's `ageExit`), ends the
+    /// session and opens A02-email again, empty (FQ93's default), with no notice that the sign-in
+    /// ended, since the person ended it; going back can't skip the age.
     @MainActor func testLeavingSignInFromTheAgeScreenStartsAgain() {
         let app = launch("-TadayoUITestFakes")
         signInToTheAge(app)
+        // The bar holds Leave sign-in and nothing else: no back button skips the age.
+        XCTAssertEqual(app.navigationBars["Sign in"].buttons.count, 1)
         app.navigationBars["Sign in"].buttons["Leave sign-in"].tap()
         let email = app.textFields["Email address"]
         XCTAssertTrue(email.waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["What’s your email?"].exists)
         XCTAssertNotEqual(email.value as? String, "ben@example.com")
-
-        signInToTheAge(app)
-        let lowest = leaveButtons(in: app).max { $0.frame.minY < $1.frame.minY }
-        XCTAssertNotNil(lowest)
-        lowest?.tap()
-        XCTAssertTrue(email.waitForExistence(timeout: 5))
-        XCTAssertNotEqual(email.value as? String, "ben@example.com")
+        XCTAssertFalse(
+            app.staticTexts["Your sign-in ended. Enter your email to sign in again."].exists)
     }
 
     @MainActor private func signInToTheAge(_ app: XCUIApplication) {

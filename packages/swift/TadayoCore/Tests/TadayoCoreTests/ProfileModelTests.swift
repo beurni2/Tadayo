@@ -261,4 +261,18 @@ func account(name: String? = nil, age: Bool = false, version: Int = 0) -> Accoun
         await model.confirmAge()
         #expect(routes.signedOut == 1)
     }
+
+    @Test func aSessionEndedBeforeTheReReadSignsOutWithNoFailure() async {
+        // A conflict, then the read of the account as it is now answers "signed out": the server
+        // ended the session, so A02-age shows no failure of its own.
+        let accounts = FakeAccounts(
+            me: [.failure(.signedOut)], update: [.failure(.versionConflict)])
+        let routes = Routes()
+        let model = model(accounts, account(), routes)
+        await model.confirmAge()
+        #expect(accounts.calls == ["update", "me"])
+        #expect(routes.signedOut == 1)
+        #expect(routes.saved.isEmpty)
+        #expect(model.failure == nil)
+    }
 }

@@ -13,6 +13,18 @@
         }
       }
     },
+    "auth.age.busy.vo" : {
+      "comment" : "handoff 7 copy-contracts, handoff7.vo.age.busy: said once, at the default priority, when I’m 18 or older's request begins (SignInAnnouncement); the button's own value is In progress (TadayoDesign's busy.value.vo)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saving your age confirmation."
+          }
+        }
+      }
+    },
     "auth.age.confirm" : {
       "comment" : "handoff 1 screen-copy, A02-age",
       "extractionState" : "manual",
@@ -26,13 +38,37 @@
       }
     },
     "auth.age.leave" : {
-      "comment" : "handoff 1 screen-copy, A02-age",
+      "comment" : "handoff 1 screen-copy, A02-age; handoff 7's ageExit: the navigation bar's leading text action (LeaveSignInButton)",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Leave sign-in"
+          }
+        }
+      }
+    },
+    "auth.age.network" : {
+      "comment" : "handoff 7 copy-contracts, auth.age.network: A02-age's line when no answer came to I’m 18 or older (ProfileModel.Failure.ageWords)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t save your age confirmation. Check your connection and try again."
+          }
+        }
+      }
+    },
+    "auth.age.refused" : {
+      "comment" : "handoff 7 copy-contracts, auth.age.refused: A02-age's line when I’m 18 or older was refused (ProfileModel.Failure.ageWords)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t save your age confirmation. Try again."
           }
         }
       }
@@ -217,6 +253,18 @@
         }
       }
     },
+    "auth.email.signedOut" : {
+      "comment" : "handoff 7 copy-contracts, auth.email.signedOut: A02-email's notice after a sign-in the server ended (an answer of signed out), never after Leave sign-in; shown between the subtitle and the field and said once, politely, as the screen first shows it, gone once a code is sent (SignInAnnouncement.signedOutNotice; built from spec, W-10)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your sign-in ended. Enter your email to sign in again."
+          }
+        }
+      }
+    },
     "auth.email.subtitle" : {
       "comment" : "handoff 1 screen-copy, A02-email",
       "extractionState" : "manual",
@@ -374,7 +422,7 @@
       }
     },
     "auth.profile.saveFailed" : {
-      "comment" : "handoff 4 failureStates, Save profile; A02-age's line until handoff 7",
+      "comment" : "handoff 4 failureStates, Save profile: A03-profile's line (A02-age has its own since handoff 7: auth.age.refused)",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {

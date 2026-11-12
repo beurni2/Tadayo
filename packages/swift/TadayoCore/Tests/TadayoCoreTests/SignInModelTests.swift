@@ -70,6 +70,29 @@ final class ManualContinuousClock: @unchecked Sendable {
         }
     }
 
+    @Test func aSignInStartsWithNothingEnded() {
+        #expect(model(FakeAuth()).signInEnded == false)
+    }
+
+    @Test func aSignInTheServerEndedSaysSoUntilACodeIsSent() async {
+        // Handoff 7's `auth.email.signedOut`: shown on A02-email for a sign-in the server ended,
+        // through a failed send, and cleared once a code is sent, so going back to A02-email
+        // afterwards doesn't show it again.
+        let auth = FakeAuth(send: [.network])
+        let model = SignInModel(auth: auth, verified: { _ in }, signInEnded: true)
+        #expect(model.signInEnded)
+        model.email = "ben@example.com"
+        await model.sendCode()
+        #expect(model.failure == .sendNetwork)
+        #expect(model.signInEnded)
+        await model.sendCode()
+        #expect(model.step == .code)
+        #expect(!model.signInEnded)
+        model.changeEmail()
+        #expect(model.step == .email)
+        #expect(!model.signInEnded)
+    }
+
     @Test func theCodeScreenComesOnlyOnceTheServerAccepts() async {
         let auth = FakeAuth()
         let model = model(auth)
