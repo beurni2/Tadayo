@@ -159,11 +159,17 @@ public struct PrimaryButtonFace<Label: View>: View {
 /// grows with Dynamic Type, to about 56 points at the largest, and the contract is 16 at every
 /// size (handoff 7's `busyPrimary.indicatorSize`), so this holds the UIKit indicator, which keeps
 /// its own size, in a 16-point box and scales it by the factor that makes it 16 (T45: it is
-/// the system's indicator, which turns as the system's does).
-private struct BusyIndicator: UIViewRepresentable {
+/// the system's indicator, which turns as the system's does). The busy primary button holds it,
+/// and so does A02-code's row while a new code is on its way (handoff 7's frame 7: "a small
+/// native activity indicator"). It says nothing to VoiceOver; the words beside it do.
+public struct BusyIndicator: UIViewRepresentable {
     let tint: Color
 
-    func makeUIView(context: Context) -> UIView {
+    public init(tint: Color) {
+        self.tint = tint
+    }
+
+    public func makeUIView(context: Context) -> UIView {
         let box = UIView()
         let spinner = UIActivityIndicatorView(style: .medium)
         spinner.hidesWhenStopped = false
@@ -179,11 +185,13 @@ private struct BusyIndicator: UIViewRepresentable {
         return box
     }
 
-    func updateUIView(_ box: UIView, context: Context) {
+    public func updateUIView(_ box: UIView, context: Context) {
         (box.subviews.first as? UIActivityIndicatorView)?.color = UIColor(tint)
     }
 
-    func sizeThatFits(_ proposal: ProposedViewSize, uiView: UIView, context: Context) -> CGSize? {
+    public func sizeThatFits(
+        _ proposal: ProposedViewSize, uiView: UIView, context: Context
+    ) -> CGSize? {
         CGSize(width: Size.busyIndicator, height: Size.busyIndicator)
     }
 }

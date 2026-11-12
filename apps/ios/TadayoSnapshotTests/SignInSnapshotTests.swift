@@ -57,6 +57,14 @@ final class SignInSnapshotTests: XCTestCase {
         snap(onCode(), named: "A02-code")
     }
 
+    /// Handoff 7's frame 24: six digits typed, Verify code available.
+    func testA02CodeTyped() {
+        let model = onCode()
+        model.code = "529614"
+        XCTAssertTrue(model.canVerify)
+        snap(model, named: "A02-code-typed")
+    }
+
     func testA02CodeVerifying() {
         let model = onCode(verifies: [.hang])
         model.code = "529614"
@@ -78,6 +86,24 @@ final class SignInSnapshotTests: XCTestCase {
         let model = refused(.codeNotVerified, until: .codeNotVerified)
         letTheMinutePass(model)
         snap(model, named: "A02-code-error")
+        // At the largest text on a 320-point screen, the width of a 375-point iPhone with Display
+        // Zoom on (docs/TECH-DESIGN.md section 2: the representative `-xl` states at 320 points).
+        ScreenSnapshot.assert(
+            SignInFlow(model: model, focus: true), named: "A02-code-error-320", variants: [.xl],
+            width: 320)
+    }
+
+    /// A code not verified, then a new code that didn't go: each line in its own block, the
+    /// code's under the field and the new code's under the row (handoff 7's
+    /// `authForm.resendFailure`: "Keep an existing wrong-code message in its original block
+    /// too"; built from spec, as no frame draws the two together).
+    func testA02CodeErrorResendFailedNetwork() {
+        let model = refused(
+            .codeNotVerified, until: .codeNotVerified, sends: [.answer, .fail(.network)])
+        letTheMinutePass(model)
+        drive({ await model.resend() }, until: { model.resendFailure == .network })
+        XCTAssertEqual(model.failure, .codeNotVerified)
+        snap(model, named: "A02-code-error-resend-failed-network")
     }
 
     func testA02CodeErrorWaiting() {
@@ -101,14 +127,14 @@ final class SignInSnapshotTests: XCTestCase {
     func testA02CodeResendFailedNetwork() {
         let model = onCode(sends: [.answer, .fail(.network)])
         letTheMinutePass(model)
-        drive({ await model.resend() }, until: { model.failure == .resendNetwork })
+        drive({ await model.resend() }, until: { model.resendFailure == .network })
         snap(model, named: "A02-code-resend-failed-network")
     }
 
     func testA02CodeResendRefused() {
         let model = onCode(sends: [.answer, .fail(.refused)])
         letTheMinutePass(model)
-        drive({ await model.resend() }, until: { model.failure == .resendRefused })
+        drive({ await model.resend() }, until: { model.resendFailure == .refused })
         snap(model, named: "A02-code-resend-refused")
     }
 
@@ -258,11 +284,13 @@ final class SignInSnapshotTests: XCTestCase {
         return model
     }
 
-    /// A02-code after 529614 came back with `failure`.
+    /// A02-code after 529614 came back with `failure`; `sends` answers the first code and any new
+    /// one.
     private func refused(
-        _ failure: AuthFailure, until shown: SignInModel.Failure
+        _ failure: AuthFailure, until shown: SignInModel.Failure,
+        sends: [Outcome<AuthFailure>] = [.answer]
     ) -> SignInModel {
-        let model = onCode(verifies: [.fail(failure)])
+        let model = onCode(sends: sends, verifies: [.fail(failure)])
         model.code = "529614"
         drive({ await model.verify() }, until: { model.failure == shown })
         return model
@@ -289,7 +317,8 @@ final class SignInSnapshotTests: XCTestCase {
     ) {
         ScreenSnapshot.assert(
             SignInFlow(model: model, focus: true), named: state,
-            busy: model.isSending || model.isVerifying, testName: testName, line: line)
+            busy: model.isSending || model.isVerifying || model.isResending, testName: testName,
+            line: line)
     }
 
     private func snapAge(

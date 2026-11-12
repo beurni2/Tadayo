@@ -1,14 +1,16 @@
 import SwiftUI
 import TadayoCore
+import TadayoDesign
 import XCTest
 
 @testable import Tadayo
 
-/// What VoiceOver finds on A02-email and A02-age, read in the hosted tests so it is read on iOS 17.5 and
-/// 18.6 too (the snapshot tests, which hold the sign-in readings from before handoff 7, are
-/// skipped there): the busy button's value and the field that is read-only, not disabled
-/// (handoff 7's `busyPrimary`), and the empty field's one reading of its label. A hosted test
-/// can't speak, so what the person hears is a device check in the TestFlight notes.
+/// What VoiceOver finds on A02-email, A02-code and A02-age, read in the hosted tests so it is read
+/// on iOS 17.5 and 18.6 too (the snapshot tests, which hold the sign-in readings from before
+/// handoff 7, are skipped there): the busy button's value and the field that is read-only, not
+/// disabled (handoff 7's `busyPrimary`), the empty field's one reading of its label, and
+/// A02-code's resend row and its failure's own block. A hosted test can't speak, so what the
+/// person hears is a device check in the TestFlight notes.
 @MainActor
 final class SignInReadingTests: XCTestCase {
     private let clock = StillClock()
@@ -18,6 +20,21 @@ final class SignInReadingTests: XCTestCase {
         return SignInModel(
             auth: auth, verified: { _ in }, signInEnded: ended, now: { clock.now },
             sleep: { try await clock.sleep(until: $0) })
+    }
+
+    /// A02-code, after a code went to ben@example.com.
+    private func onCode(
+        sends: [Outcome<AuthFailure>] = [.answer], verifies: [Outcome<AuthFailure>] = []
+    ) -> SignInModel {
+        let model = signIn(ScriptedAuth(sends: sends, verifies: verifies))
+        model.email = "ben@example.com"
+        drive({ await model.sendCode() }, until: { model.step == .code })
+        return model
+    }
+
+    private func letTheMinutePass(_ model: SignInModel) {
+        clock.letTheMinutePass()
+        drive({ await model.waitForResend() }, until: { model.canResend })
     }
 
     private func age(updates: [Outcome<APIFailure>] = []) -> ProfileModel {
@@ -156,5 +173,133 @@ final class SignInReadingTests: XCTestCase {
                 $0.label
                     == "Couldn’t save your age confirmation. Check your connection and try again."
             }, "\(after)")
+    }
+
+    // MARK: A02-code
+
+    /// While the code is checked (handoff 7's frame 4): Verify code keeps its label and says "In
+    /// progress", dimmed; Change email address is dimmed (`authForm.codeBack`: "only while
+    /// idle"); the field is read-only, not disabled, and keeps its digits.
+    func testWhileTheCodeIsCheckedVerifyCodeIsBusyAndChangeEmailWaits() {
+        let model = onCode(verifies: [.hang])
+        model.code = "529614"
+        drive({ await model.verify() }, until: { model.isVerifying })
+        let elements = AccessibilityElements.of(CodeScreen(model: model, focus: true))
+
+        let verify = elements.first { $0.label == "Verify code" }
+        XCTAssertEqual(verify?.value, "In progress", "\(elements)")
+        XCTAssertTrue(verify?.traits.contains(.notEnabled) ?? false, "\(elements)")
+        let change = elements.first { $0.label == "Change email address" }
+        XCTAssertTrue(change?.traits.contains(.button) ?? false, "\(elements)")
+        XCTAssertTrue(change?.traits.contains(.notEnabled) ?? false, "\(elements)")
+        let field = elements.first { $0.label == "Six-digit code" }
+        XCTAssertEqual(field?.value, "529614", "\(elements)")
+        XCTAssertFalse(field?.traits.contains(.notEnabled) ?? true, "\(elements)")
+        let said = elements.flatMap { [$0.label, $0.value, $0.hint] }
+            .filter { $0.contains("In progress") }
+        XCTAssertEqual(said, ["In progress"], "\(elements)")
+    }
+
+    /// While a new code is on its way (handoff 7's frame 7; `authForm.resendConcurrency`): the
+    /// row reads "Sending a new code…" once, as words, not a button, its indicator unread;
+    /// Verify code is dimmed though six digits are typed, and isn't busy, since the request
+    /// isn't its own; Change email address is dimmed; the field keeps its digits, read-only.
+    func testWhileANewCodeIsOnItsWayTheRowSaysSoAndTheRestWaits() {
+        let model = onCode(sends: [.answer, .hang])
+        model.code = "529614"
+        letTheMinutePass(model)
+        drive({ await model.resend() }, until: { model.isResending })
+        let elements = AccessibilityElements.of(CodeScreen(model: model, focus: true))
+
+        let row = elements.filter { $0.label == "Sending a new code…" }
+        XCTAssertEqual(row.count, 1, "\(elements)")
+        XCTAssertFalse(row.first?.traits.contains(.button) ?? true, "\(elements)")
+        XCTAssertFalse(elements.contains { $0.label == "Send a new code" }, "\(elements)")
+        let verify = elements.first { $0.label == "Verify code" }
+        XCTAssertTrue(verify?.traits.contains(.notEnabled) ?? false, "\(elements)")
+        XCTAssertEqual(verify?.value, "", "\(elements)")
+        let change = elements.first { $0.label == "Change email address" }
+        XCTAssertTrue(change?.traits.contains(.notEnabled) ?? false, "\(elements)")
+        let field = elements.first { $0.label == "Six-digit code" }
+        XCTAssertEqual(field?.value, "529614", "\(elements)")
+        XCTAssertFalse(field?.traits.contains(.notEnabled) ?? true, "\(elements)")
+    }
+
+    /// The row while a new code is on its way (frame 7): the system's indicator, 16 points at
+    /// every text size (VM-04), at the leading edge, 8 before the words and level with them.
+    func testTheNewCodesIndicatorIs16PointsAndLeadsItsWords() {
+        for size: DynamicTypeSize in [.large, .accessibility5] {
+            let model = onCode(sends: [.answer, .hang])
+            letTheMinutePass(model)
+            drive({ await model.resend() }, until: { model.isResending })
+            let layout = AccessibilityElements.layout(
+                of: CodeScreen(model: model, focus: true).environment(\.dynamicTypeSize, size))
+            XCTAssertEqual(layout.indicators.count, 1, "\(size)")
+            let spinner = layout.indicators.first ?? .zero
+            let words = layout.elements.first { $0.label == "Sending a new code…" }?.frame ?? .zero
+            XCTAssertEqual(spinner.width, Size.busyIndicator, accuracy: 0.5, "\(size): \(spinner)")
+            XCTAssertEqual(spinner.height, Size.busyIndicator, accuracy: 0.5, "\(size): \(spinner)")
+            XCTAssertEqual(spinner.minX, Spacing.inset, accuracy: 0.5, "\(size): \(spinner)")
+            XCTAssertEqual(
+                words.minX - spinner.maxX, Spacing.s, accuracy: 0.5, "\(size): \(words)")
+            XCTAssertEqual(spinner.midY, words.midY, accuracy: 1, "\(size): \(words)")
+        }
+    }
+
+    /// A code not verified, then a new code that didn't go (handoff 7's `authForm.resendFailure`;
+    /// built from spec): the code's line stays under the field and stays the field's hint; the
+    /// new code's line is its own element, under Send a new code and above Change email address,
+    /// read in that order (`codeAccessibilityOrder`: resend, resendFailure, changeEmail), 8 from
+    /// each (`resendToFailure`; frame 8); and Send a new code is offered again.
+    func testANewCodesFailureIsItsOwnLineUnderTheRow() {
+        let model = onCode(sends: [.answer, .fail(.network)], verifies: [.fail(.codeNotVerified)])
+        model.code = "529614"
+        drive({ await model.verify() }, until: { model.failure == .codeNotVerified })
+        letTheMinutePass(model)
+        drive({ await model.resend() }, until: { model.resendFailure == .network })
+        let elements = AccessibilityElements.of(CodeScreen(model: model, focus: true))
+        let labels = elements.map(\.label)
+
+        let codeLine = "This code couldn’t be verified. Try again or send a new one."
+        let resendLine = "Couldn’t send a new code. Check your connection and try again."
+        XCTAssertEqual(
+            elements.first { $0.label == "Six-digit code" }?.hint, codeLine, "\(elements)")
+        let code = labels.firstIndex(of: codeLine)
+        let verify = labels.firstIndex(of: "Verify code")
+        let resend = labels.firstIndex(of: "Send a new code")
+        let failure = labels.firstIndex(of: resendLine)
+        let change = labels.firstIndex(of: "Change email address")
+        XCTAssertLessThan(code ?? .max, verify ?? .min, "\(elements)")
+        XCTAssertLessThan(resend ?? .max, failure ?? .min, "\(elements)")
+        XCTAssertLessThan(failure ?? .max, change ?? .min, "\(elements)")
+        XCTAssertFalse(
+            elements.first { $0.label == "Send a new code" }?.traits.contains(.notEnabled)
+                ?? true, "\(elements)")
+
+        let row = elements.first { $0.label == "Send a new code" }?.frame ?? .zero
+        let line = elements.first { $0.label == resendLine }?.frame ?? .zero
+        let below = elements.first { $0.label == "Change email address" }?.frame ?? .zero
+        XCTAssertEqual(row.height, Size.touchTarget, accuracy: 0.5, "\(row)")
+        XCTAssertEqual(line.minY - row.maxY, Spacing.s, accuracy: 2, "\(line) under \(row)")
+        XCTAssertEqual(below.minY - line.maxY, Spacing.s, accuracy: 2, "\(below) under \(line)")
+    }
+
+    /// With no new code's failure, Change email address is right under the 44-point row, which is
+    /// 8 under Verify code (frames 6 and 24), whatever the row holds.
+    func testChangeEmailIsRightUnderTheRow() {
+        let waiting = onCode()
+        let offered = onCode()
+        letTheMinutePass(offered)
+        let sending = onCode(sends: [.answer, .hang])
+        letTheMinutePass(sending)
+        drive({ await sending.resend() }, until: { sending.isResending })
+        for (name, model) in [("waiting", waiting), ("offered", offered), ("sending", sending)] {
+            let elements = AccessibilityElements.of(CodeScreen(model: model, focus: true))
+            let verify = elements.first { $0.label == "Verify code" }?.frame ?? .zero
+            let change = elements.first { $0.label == "Change email address" }?.frame ?? .zero
+            XCTAssertEqual(
+                change.minY - verify.maxY, Spacing.s + Size.touchTarget, accuracy: 0.5,
+                "\(name): \(elements)")
+        }
     }
 }

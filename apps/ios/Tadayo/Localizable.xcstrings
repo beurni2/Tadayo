@@ -97,6 +97,18 @@
         }
       }
     },
+    "auth.code.busy.vo" : {
+      "comment" : "handoff 7 copy-contracts, handoff7.vo.code.busy: said once, at the default priority, when Verify code's request begins (SignInAnnouncement); the button's own value is In progress (TadayoDesign's busy.value.vo)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verifying code."
+          }
+        }
+      }
+    },
     "auth.code.label" : {
       "comment" : "handoff 1 screen-copy, A02-code",
       "extractionState" : "manual",
@@ -145,6 +157,18 @@
         }
       }
     },
+    "auth.code.resendAvailable.vo" : {
+      "comment" : "handoff 7 copy-contracts, handoff7.vo.resend.available: said once, politely, when the minute has passed and Send a new code takes the wait sentence's place, and not again after a failed new code (SignInAnnouncement)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send a new code is available."
+          }
+        }
+      }
+    },
     "auth.code.resendWait" : {
       "comment" : "handoff 1 screen-copy, A02-code",
       "extractionState" : "manual",
@@ -158,13 +182,25 @@
       }
     },
     "auth.code.resending" : {
-      "comment" : "handoff 1 PDF p20, the resend row while it sends",
+      "comment" : "handoff 1 PDF p20; handoff 7's auth.code.resending and vo.resend.busy (frame 7): the resend row while a new code is on its way, beside the system's indicator, and said once as it begins (SignInAnnouncement)",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sending a new code…"
+          }
+        }
+      }
+    },
+    "auth.code.resent.vo" : {
+      "comment" : "handoff 7 copy-contracts, handoff7.vo.resend.success: said once when a new code has gone and its minute begun, with the address it went to, on the device only and never logged (T52; SignInAnnouncement)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check %@ for a new code. You can send a new code after one minute."
           }
         }
       }
@@ -326,7 +362,7 @@
       }
     },
     "auth.error.verifyUnavailable" : {
-      "comment" : "FQ86's default until handoff 7: Supabase couldn't answer (429 or 5xx)",
+      "comment" : "FQ86's default, kept by the founder: Supabase couldn't answer (429 or 5xx); handoff 7's auth.code.unavailable has the same words",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
