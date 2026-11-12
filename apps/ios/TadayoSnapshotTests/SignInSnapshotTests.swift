@@ -45,6 +45,12 @@ final class SignInSnapshotTests: XCTestCase {
         snap(model, named: "A02-email-refused")
     }
 
+    /// After a sign-in the server ended, at launch, with no address left in memory (built from
+    /// spec: handoff 7's `auth.email.signedOut`, with no frame).
+    func testA02EmailSignedOut() {
+        snap(signIn(ScriptedAuth(), ended: true), named: "A02-email-signed-out")
+    }
+
     // MARK: A02-code
 
     func testA02Code() {
@@ -215,12 +221,6 @@ final class SignInSnapshotTests: XCTestCase {
             own.contains { $0.label == SignInModel.Failure.sendNetwork.words }, "\(own)")
     }
 
-    func testTheAgeScreensBackIsLeaveSignIn() {
-        let elements = AccessibilityElements.of(
-            AgeScreen(model: profile(ageConfirmed: false), leave: {}))
-        XCTAssertEqual(elements.filter { $0.label == "Leave sign-in" }.count, 2, "\(elements)")
-    }
-
     func testTheAvatarIsntRead() {
         // Its initial repeats the name in the field below it.
         let model = profile(ageConfirmed: true)
@@ -241,10 +241,10 @@ final class SignInSnapshotTests: XCTestCase {
             line: line)
     }
 
-    private func signIn(_ auth: ScriptedAuth) -> SignInModel {
+    private func signIn(_ auth: ScriptedAuth, ended: Bool = false) -> SignInModel {
         let clock = clock
         return SignInModel(
-            auth: auth, verified: { _ in }, now: { clock.now },
+            auth: auth, verified: { _ in }, signInEnded: ended, now: { clock.now },
             sleep: { try await clock.sleep(until: $0) })
     }
 

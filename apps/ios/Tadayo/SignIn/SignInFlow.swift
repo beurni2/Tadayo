@@ -36,7 +36,8 @@ struct SignInFlow: View {
 }
 
 /// A02-email: one email field and Send a code, which is available only for a plausible address
-/// and goes once; a failure keeps the address (handoff 1).
+/// and goes once; a failure keeps the address (handoff 1). After a sign-in the server ended, a
+/// notice under the subtitle says so until a code is sent (handoff 7's `auth.email.signedOut`).
 struct EmailScreen: View {
     @Bindable var model: SignInModel
     let focus: Bool?
@@ -47,6 +48,16 @@ struct EmailScreen: View {
     var body: some View {
         SetupScroll {
             SetupHeading(title: "auth.email.title", subtitle: Text("auth.email.subtitle"))
+            // A neutral body line, not an invalid-address failure (IMPL §4): no icon, no border,
+            // no field hint. With no frame, it takes the subtitle's role, ink and gap above it,
+            // and the field keeps its gap below (built from spec, W-10).
+            if let notice {
+                Text(verbatim: notice)
+                    .textRole(.body)
+                    .foregroundStyle(Palette.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, Spacing.l)
+            }
             LabelledField(Text("auth.email.label"), isFocused: focus ?? focused) {
                 // The placeholder repeats the label's words (handoff 7's frame 1, `auth.email.
                 // placeholder`), in `secondaryText`, drawn over a field that has none of its own
@@ -114,12 +125,18 @@ struct EmailScreen: View {
             if !now, sendingFromReturn { focused = true }
         }
         .announcing(failure?.words)
+        // Said politely, so VoiceOver first says what it says of the screen that just appeared.
+        .announcing(notice, politely: true, initial: true)
         // "Sending a code.", once, as the request begins; the button says "In progress" itself.
         .onChange(of: model.isSending) { was, now in
             if let words = SignInAnnouncement.sending(from: was, to: now) {
                 Announcement.post(words)
             }
         }
+    }
+
+    private var notice: String? {
+        SignInAnnouncement.signedOutNotice(signInEnded: model.signInEnded)
     }
 
     /// This screen's own failures, sending the first code (handoff 4's `failureStates`). It stays

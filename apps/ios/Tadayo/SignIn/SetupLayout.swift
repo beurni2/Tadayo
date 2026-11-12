@@ -60,13 +60,15 @@ struct SetupHeading: View {
 }
 
 /// A primary action pinned above the bottom edge, or the keyboard, while the content scrolls
-/// under it (handoff 1, PDF p30: "keeping the primary action reachable").
+/// under it (handoff 1, PDF p30: "keeping the primary action reachable"). `spacing` is the gap
+/// between what it holds, such as a failure line and the button it names.
 struct SetupFooter<Content: View>: View {
     let bottom: CGFloat
+    var spacing: CGFloat = Spacing.s
     @ViewBuilder let content: Content
 
     var body: some View {
-        VStack(spacing: Spacing.s) {
+        VStack(spacing: spacing) {
             content
         }
         .padding(.horizontal, Spacing.inset)
