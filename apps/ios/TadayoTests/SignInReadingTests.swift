@@ -85,7 +85,8 @@ final class SignInReadingTests: XCTestCase {
     /// After a sign-in the server ended, A02-email says so in a plain line under the subtitle and
     /// above the field (handoff 7's `auth.email.signedOut`; IMPL §4: "a neutral body notice above
     /// the field, not as an invalid-email error"): not a button, with no hint, and the field
-    /// unmarked, its value the address and its hint none.
+    /// unmarked with no hint; when the address typed in this launch is still held, the field's
+    /// value is that address (IMPL §4: "Retain the address if still available").
     func testASignInTheServerEndedIsSaidInAPlainLineAboveTheField() {
         let words = "Your sign-in ended. Enter your email to sign in again."
         let elements = AccessibilityElements.of(
@@ -108,6 +109,13 @@ final class SignInReadingTests: XCTestCase {
         let none = AccessibilityElements.of(
             EmailScreen(model: signIn(ScriptedAuth()), focus: true))
         XCTAssertFalse(none.contains { $0.label == words }, "\(none)")
+        // As `RootModel` builds it after a server ending: the notice, and the address kept.
+        let kept = signIn(ScriptedAuth(), ended: true)
+        kept.email = "ben@example.com"
+        let held = AccessibilityElements.of(EmailScreen(model: kept, focus: true))
+        XCTAssertTrue(held.contains { $0.label == words }, "\(held)")
+        XCTAssertEqual(
+            held.first { $0.label == "Email address" }?.value, "ben@example.com", "\(held)")
     }
 
     /// A02-age's Leave sign-in is one button, the bar's leading text action, with no chevron or
@@ -119,6 +127,14 @@ final class SignInReadingTests: XCTestCase {
         XCTAssertEqual(leave.count, 1, "\(idle)")
         XCTAssertTrue(leave.first?.traits.contains(.button) ?? false, "\(idle)")
         XCTAssertFalse(leave.first?.traits.contains(.notEnabled) ?? true, "\(idle)")
+        // The screen's only buttons are Leave sign-in and I’m 18 or older, so no back button,
+        // whatever its label, can skip the age; and Leave sign-in is in the bar, above the title.
+        let buttons = Set(idle.filter { $0.traits.contains(.button) }.map(\.label))
+        XCTAssertEqual(buttons, ["Leave sign-in", "I’m 18 or older"], "\(idle)")
+        let title = idle.first { $0.label == "Before you continue" }
+        XCTAssertNotNil(title, "\(idle)")
+        XCTAssertLessThanOrEqual(
+            leave.first?.frame.maxY ?? .infinity, title?.frame.minY ?? -.infinity, "\(idle)")
 
         let saving = age(updates: [.hang])
         drive({ await saving.confirmAge() }, until: { saving.isSaving })

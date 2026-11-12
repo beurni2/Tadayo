@@ -100,9 +100,16 @@ import Observation
     /// (the age, or this very name, from another device or from an earlier try whose answer was
     /// lost), the root routes by it. Else the save failed, what was typed stays, and the next tap
     /// is a new action from the version read here: a name saved elsewhere first never stands in
-    /// for the one typed here.
+    /// for the one typed here. A read that says the session ended hands it to the root, as a
+    /// save's answer of "signed out" does.
     private func reread(after change: AccountChange) async {
-        guard let current = try? await accounts.me() else {
+        let current: Account
+        do {
+            current = try await accounts.me()
+        } catch .signedOut {
+            await signedOut()
+            return
+        } catch {
             failure = .other
             return
         }

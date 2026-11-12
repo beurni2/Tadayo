@@ -194,12 +194,21 @@ import Observation
             clubs = list.isEmpty ? .noClub : .notInThisBuild
         case .failure(.profileIncomplete):
             // The account changed since it was read. If it still reads as complete, the two
-            // answers disagree: a failure, not a loop.
-            let account = try? await accounts.me()
+            // answers disagree: a failure, not a loop. If the read says the session ended, the
+            // server ended it.
+            let reread: Result<Account, APIFailure>
+            do {
+                reread = .success(try await accounts.me())
+            } catch {
+                reread = .failure(error)
+            }
             guard epoch == asked else { return }
-            if let account, !Self.isComplete(account) {
+            switch reread {
+            case .success(let account) where !Self.isComplete(account):
                 await show(account)
-            } else {
+            case .failure(.signedOut):
+                await endedByServer()
+            default:
                 clubs = .failed(.other)
             }
         case .failure(.signedOut):

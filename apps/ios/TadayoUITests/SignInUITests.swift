@@ -16,6 +16,9 @@ final class SignInUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["What’s your email?"].exists)
         XCTAssertTrue(app.staticTexts["We’ll send a six-digit code to sign in."].exists)
         XCTAssertTrue(app.staticTexts["Use the same email whenever you sign in."].exists)
+        // No sign-in ended, so A02-email says nothing of one.
+        XCTAssertFalse(
+            app.staticTexts["Your sign-in ended. Enter your email to sign in again."].exists)
         let field = app.textFields["Email address"]
         XCTAssertTrue(field.exists)
         let send = app.buttons["Send a code"]
@@ -193,6 +196,8 @@ final class SignInUITests: XCTestCase {
     @MainActor func testLeavingSignInFromTheAgeScreenStartsAgain() {
         let app = launch("-TadayoUITestFakes")
         signInToTheAge(app)
+        // The bar holds Leave sign-in and nothing else: no back button skips the age.
+        XCTAssertEqual(app.navigationBars["Sign in"].buttons.count, 1)
         app.navigationBars["Sign in"].buttons["Leave sign-in"].tap()
         let email = app.textFields["Email address"]
         XCTAssertTrue(email.waitForExistence(timeout: 5))

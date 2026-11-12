@@ -68,6 +68,8 @@ import Testing
         await root.start()
         #expect(root.route == .signIn)
         #expect(root.signIn != nil)
+        // No sign-in ended: A02-email says nothing of one (handoff 7's `auth.email.signedOut`).
+        #expect(root.signIn?.signInEnded == false)
         #expect(accounts.calls.isEmpty)
         #expect(purges == 0)
     }
@@ -150,6 +152,8 @@ import Testing
         #expect(root.route == .signIn)
         #expect(root.signIn?.step == .email)
         #expect(root.signIn?.email == "ben@example.com")
+        // The device couldn't keep the session, but nothing ended it: no notice.
+        #expect(root.signIn?.signInEnded == false)
         // Nothing is kept, so there was no account to read, and no wait to show, not for a turn
         // either (FQ96): the routes taken are the canvas alone, then sign-in, and nothing else. The
         // exact list is what shows the history was recorded at all: a recorder that saw nothing
@@ -365,11 +369,75 @@ import Testing
     }
 
     @Test func aSessionTheServerEndsOnTheTabsSaysSoWithAnEmptyField() async throws {
-        // The tabs hold no sign-in, so no address is left to keep.
+        // A session kept from an earlier launch: no address was typed in this one.
         let root = root(
             FakeAccounts(me: [.success(named)], clubs: [.failure(.signedOut)]),
             store: InMemorySessionStore(stored))
         await root.start()
+        #expect(root.route == .signIn)
+        #expect(root.signIn?.signInEnded == true)
+        #expect(root.signIn?.email == "")
+    }
+
+    @Test func aSignInMadeInThisLaunchLeavesNoAddressOnceTheTabsShow() async throws {
+        // The tabs hold no sign-in (signin.md C7: "when signIn is already gone (Home, or a cold
+        // launch), the field is empty and the notice shows"), though the address was typed in this
+        // launch.
+        let gate = Gate()
+        let auth = FakeAuth(verify: [.success(stored)])
+        let accounts = FakeAccounts(me: [.success(named)], clubs: [.failure(.signedOut)])
+        accounts.duringClubs = { await gate.wait() }
+        let root = root(accounts, auth: auth)
+        await root.start()
+        let signIn = try #require(root.signIn)
+        signIn.email = "ben@example.com"
+        await signIn.sendCode()
+        signIn.code = "529614"
+        let verifying = Task { await signIn.verify() }
+        await gate.reached()
+        #expect(root.route == .tabs)
+        #expect(root.signIn == nil)
+        gate.open()
+        await verifying.value
+        #expect(root.route == .signIn)
+        #expect(auth.calls.last == "signOut access-1")
+        #expect(root.signIn?.signInEnded == true)
+        #expect(root.signIn?.email == "")
+    }
+
+    @Test func aSignedOutAnswerToTheClubsReReadEndsTheSignIn() async {
+        // The clubs say the profile is unfinished and the account read that follows says the
+        // session ended: that's the server's ending, not a failure of the clubs.
+        let auth = FakeAuth()
+        let accounts = FakeAccounts(
+            me: [.success(named), .failure(.signedOut)], clubs: [.failure(.profileIncomplete)])
+        let root = root(accounts, auth: auth, store: InMemorySessionStore(stored))
+        await root.start()
+        #expect(accounts.calls == ["me", "clubs", "me"])
+        #expect(auth.calls == ["signOut access-1"])
+        #expect(root.route == .signIn)
+        #expect(root.signIn?.signInEnded == true)
+    }
+
+    @Test func aLeaveDuringTheServersEndingLeavesItsCause() async {
+        // One ending runs at a time, and the first one's reason stands: Leave sign-in tapped while
+        // the server's ending is being carried out waits for it, and A02-email still says the
+        // sign-in ended.
+        let gate = Gate()
+        let auth = FakeAuth()
+        auth.duringSignOut = { await gate.wait() }
+        let root = root(
+            FakeAccounts(me: [.failure(.signedOut)]), auth: auth,
+            store: InMemorySessionStore(stored))
+        let starting = Task { await root.start() }
+        await gate.reached()
+        #expect(root.route == .leaving)
+        let leaving = Task { await root.leave() }
+        await Task.yield()
+        gate.open()
+        await starting.value
+        await leaving.value
+        #expect(auth.calls == ["signOut access-1"])
         #expect(root.route == .signIn)
         #expect(root.signIn?.signInEnded == true)
         #expect(root.signIn?.email == "")
@@ -497,7 +565,8 @@ import Testing
         #expect(auth.calls == ["signOut access-1"])
         #expect(root.route == .signIn)
         #expect(root.signIn === signIn)
-        // The person's Leave came first, so A02-email doesn't say the server ended it.
+        // The late "signed out" answered for the account left: the Leave moved the epoch, so it's
+        // dropped, and A02-email says nothing ended.
         #expect(root.signIn?.signInEnded == false)
     }
 

@@ -7,7 +7,9 @@ import TadayoDesign
 /// the bar's leading place, where no back chevron is, so going back can't skip the step. Leave
 /// sign-in ends this sign-in, doesn't mean the person is under 18, and returns to A02-email, since
 /// Welcome (A01) comes in B1; it is inactive while the confirmation is saved. A failure is A02-age's
-/// own line, 16 points above the button (`handoff7.spacing.errorToActionMinimum`).
+/// own line, 24 points above the button's frame, as A02-email's is: its ink ends 25.5 points above
+/// it, as frame 9's does, and its line box at least 16 (`handoff7.spacing.errorToActionMinimum`,
+/// a minimum measured between line boxes, which a text's frame sits inside).
 struct AgeScreen: View {
     let model: ProfileModel
     let leave: @MainActor () async -> Void
@@ -20,7 +22,7 @@ struct AgeScreen: View {
                     subtitleGap: Spacing.xxl)
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                SetupFooter(bottom: SetupGap.formFooterToSafeAreaBottom, spacing: Spacing.l) {
+                SetupFooter(bottom: SetupGap.formFooterToSafeAreaBottom, spacing: Spacing.xxl) {
                     if let failure = model.failure {
                         InlineError(Text(verbatim: failure.ageWords))
                     }
