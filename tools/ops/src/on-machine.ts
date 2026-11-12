@@ -42,7 +42,8 @@
 // makes a peer and how to remove it by hand, for a run cancelled or cut off before its clean-up. The
 // names hold an email, so none is printed. A peer this run couldn't remove fails the run, and so does
 // finding none of this run's after a session that reached the Machine, which must have made one;
-// after a session that failed short of it, which may have, the runner says what to look at by hand.
+// after flyctl's own failure or a timeout, which may have made one, the runner says what to look at
+// by hand.
 
 import { hostname } from "node:os";
 import { DEV_APP } from "./environment.ts";
@@ -153,7 +154,7 @@ interface Session {
   readonly org: string;
   /** The organization's peers before the session. */
   readonly before: ReadonlySet<string>;
-  /** Whether the session got as far as the Machine, so that a peer of this run's must be there. */
+  /** Whether flyctl said how the command ended, or that it ended unsaid: the session reached the Machine, so a peer of this run's must be there. */
   readonly reached: boolean;
 }
 
@@ -185,10 +186,10 @@ async function removeThisRunsPeers(
       : `${label}: ${String(strangers)} WireGuard ${strangers === 1 ? "peer that isn't" : "peers that aren't"} named for this runner appeared in the organization during the session and ${strangers === 1 ? "is" : "are"} left${ours.length === 0 ? ", though this run's may be among them" : ""}: ${byHand}`;
   if (ours.length === 0) {
     if (unknown !== undefined) return unknown;
-    // A session that reached the Machine made a peer; one that failed short of it may have, before or after flyctl's agent made it.
+    // A session that reached the Machine made a peer. flyctl's own failure may have come before or after its agent made one, and a timeout before or after the Machine.
     return session.reached
       ? `${label}: none of the organization's WireGuard peers is one this run made, though its session reached the Machine, so it can't say it removed it: ${byHand}`
-      : `${label}: no new WireGuard peer named for this runner is listed, so none was removed; if the session made one before it failed, ${byHand}`;
+      : `${label}: no new WireGuard peer named for this runner is listed, so none was removed; if the session made one, ${byHand}`;
   }
   const failed: string[] = [];
   for (const name of ours) {

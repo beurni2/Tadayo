@@ -86,7 +86,7 @@ const MAKING = `storage-setup: the SSH session makes a WireGuard peer in tadayo-
 const REMOVED = "storage-setup: removed the WireGuard peer this run made";
 const NONE_FOUND = `storage-setup: none of the organization's WireGuard peers is one this run made, though its session reached the Machine, so it can't say it removed it: ${BY_HAND}`;
 /** Said after a session that failed short of the Machine when no new peer of this run's is listed. */
-const NONE_LISTED = `storage-setup: no new WireGuard peer named for this runner is listed, so none was removed; if the session made one before it failed, ${BY_HAND}`;
+const NONE_LISTED = `storage-setup: no new WireGuard peer named for this runner is listed, so none was removed; if the session made one, ${BY_HAND}`;
 /** Beside a peer of this run's, found by its name, the others can't be this run's, and aren't said to be. */
 const strangers = (n: number, besideOurs = false) =>
   `storage-setup: ${String(n)} WireGuard ${n === 1 ? "peer that isn't" : "peers that aren't"} named for this runner appeared in the organization during the session and ${n === 1 ? "is" : "are"} left${besideOurs ? "" : ", though this run's may be among them"}: ${BY_HAND}`;
@@ -167,22 +167,25 @@ describe("onMachine: the command, over SSH", () => {
   });
 
   it("says every line of flyctl's failure to start its agent, which ends with its log, and words the failure from them", async () => {
-    // printError's `Error:` line, then the error's description: the agent's log and where a copy is (agent/start.go).
+    // printError's `Error:` line, then the error's description and an empty line (internal/cli/cli.go):
+    // the agent's log, whose lines its logger ends with a newline, printed with one more, an empty line,
+    // and where a copy is (agent/start.go, `startError.Description`).
     const stderr =
       "Error: can't establish agent: agent: failed to start\n" +
       "The agent failed to start with the following error log:\n\n" +
-      "2026/11/12 08:00:00 the log's line\n\n" +
+      "2026/11/12 08:00:00.000000 srv the log's line\n\n\n" +
       "A copy of this log has been saved at /home/runner/.fly/agent-logs/1.log\n\n";
     const result = await run(routes({ code: 1, stderr }, []));
     expect(message(result.outcome)).toBe(
-      "storage-setup: flyctl couldn't run it on the Machine: exit code 1: Error: can't establish agent: agent: failed to start / The agent failed to start with the following error log: / 2026/11/12 08:00:00 the log's line",
+      "storage-setup: flyctl couldn't run it on the Machine: exit code 1: Error: can't establish agent: agent: failed to start / The agent failed to start with the following error log: / 2026/11/12 08:00:00.000000 srv the log's line",
     );
     expect(result.said).toEqual([
       MAKING,
       "machine: Error: can't establish agent: agent: failed to start",
       "machine: The agent failed to start with the following error log:",
       "machine: ",
-      "machine: 2026/11/12 08:00:00 the log's line",
+      "machine: 2026/11/12 08:00:00.000000 srv the log's line",
+      "machine: ",
       "machine: ",
       "machine: A copy of this log has been saved at /home/runner/.fly/agent-logs/1.log",
       NONE_LISTED,
@@ -425,7 +428,8 @@ describe("onMachine: the run's WireGuard peer, and no other", () => {
   });
 
   it("goes on with the clean-up when a removal's flyctl can't be started, and counts its peer as left", async () => {
-    // No route for the removal: the fake's spawn fails, as starting a flyctl that isn't there would.
+    // No route for the removal: the fake's call rejects, as a call `forDevApp` refuses does, or a spawn
+    // that fails before flyctl starts (too many open files, an argument list too long).
     const result = await run([
       [LIST, machines],
       [SSH, { stdout: "done\n" }],
@@ -495,7 +499,7 @@ describe("onMachine: the run's WireGuard peer, and no other", () => {
     }
   });
 
-  it("says no peer of this run's is listed after a session that failed short of the Machine, and what to look at by hand", async () => {
+  it("says no peer of this run's is listed after flyctl's own failure or a timeout, and what to look at by hand", async () => {
     for (const session of [
       { code: 1, stderr: "Error: tunnel unavailable: context deadline exceeded\n" },
       { code: 1, stderr: "Error: error connecting to SSH server: ssh: handshake failed\n" },
