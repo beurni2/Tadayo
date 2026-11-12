@@ -173,10 +173,10 @@ final class SignInUITests: XCTestCase {
         XCTAssertLessThanOrEqual(
             name.frame.maxY, next.frame.minY - 8 + 0.5,
             "the field \(name.frame), Continue \(next.frame); read \(typed)")
-        let edge = drawnEdge(below: next.frame.maxY, on: app.screenshot(), in: app)
+        let foot = drawnEdge(below: next.frame.maxY, on: app.screenshot(), in: app)
         XCTAssertEqual(
-            (edge.top ?? 0) - next.frame.maxY, 12, accuracy: 1,
-            "Continue \(next.frame), \(edge.said)")
+            (foot.top ?? 0) - next.frame.maxY, 12, accuracy: 1,
+            "Continue \(next.frame), \(foot.said)")
         next.tap()
 
         XCTAssertTrue(app.staticTexts["Start your club."].waitForExistence(timeout: 5))
