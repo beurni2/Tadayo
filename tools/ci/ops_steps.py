@@ -13,20 +13,24 @@ The workflow passes its inputs as environment variables, OPS_SCRIPT, OPS_ORG, OP
 OPS_BRANCH, and never writes them into a command line, so an input is only ever an argument, and
 always as `--option=value`, so that a value starting with a dash is never read as an option.
 SCRIPTS is the interface of docs/plans/api-b0-deploy.md, section 4's table: what each script reads
-on the runner (the workflow's step for it is given those and no other secret: ops_steps_test.py
-reads ops.yml to check it) and the one option it takes, if any. The repository secrets keep a
-`DEV_` prefix that the scripts' names don't have (DEV_DATABASE_URL is DATABASE_URL).
+on the runner and the one option it takes, if any. ops.yml has one job per script, run only for
+that script and naming only its secrets (a job's `if:` is decided before a runner gets the job, so
+a skipped job's secrets reach no runner; a step's `if:` would not do), and ops_steps_test.py reads
+ops.yml to hold it to that. SECRETS is the repository secret behind each variable: the repository's
+names keep a `DEV_` prefix that the scripts' don't have (DEV_DATABASE_URL is DATABASE_URL).
 
 The scripts themselves check what they are given (tools/ops: the guard keeps them on tadayo-dev,
 and the redactor goes over every line they print), so this file checks only what the workflow
 decides: where it runs from, which script, and which option goes with it.
 
-A run is main's, so that main's reviewed files run with the secrets; a branch's own ops.yml could
-drop the check, so the check stops a mistake, not a branch (docs/LIMITATIONS.md). deploy-branch is
-the one script that runs a branch's files: it builds the checkout as it is, so the workflow checks
-out the branch after `check`, and from then on that branch's copy of this file, of tools/ops and
-of their dependencies runs, with FLY_API_TOKEN and the job's read-only GITHUB_TOKEN. Only a branch
-made from main once this file is there can be deployed.
+A run is main's, so that main's reviewed files run with the secrets. The check stops a mistake,
+not a branch: a branch's own copy of ops.yml or of this file could drop it, and any workflow on any
+branch can name the repository's secrets (docs/LIMITATIONS.md, 2026-11-12). deploy-branch is the one
+script that runs a branch's files: it builds the checkout as it is, so its job checks out the branch
+after `check`, and from then on that branch's own files run (its copy of this file and of
+ci_steps.py, its pnpm settings and lockfile, tools/ops and their dependencies), in a job that holds
+FLY_API_TOKEN and the job's read-only token and no other secret. Only a branch made from main once
+this file is there can be deployed.
 
 Tests: python3 tools/ci/ops_steps_test.py
 CI configuration: change this file only in its own PR (docs/INVARIANTS.md T58).
@@ -86,6 +90,17 @@ SCRIPTS = {
     "supabase-probe": Script(("FLY_API_TOKEN", "SUPABASE_DEV_PROJECT_REF",
                               "SUPABASE_ACCESS_TOKEN"), flyctl=True),
 }
+# The repository secret each variable is given from (docs/plans/B0.md's secrets row). GITHUB_TOKEN
+# is the job's own token, not a secret.
+SECRETS = {
+    "FLY_API_TOKEN": "FLY_API_TOKEN",
+    "DATABASE_ADMIN_URL": "DEV_DATABASE_ADMIN_URL",
+    "DATABASE_APP_PASSWORD": "DEV_DATABASE_APP_PASSWORD",
+    "DATABASE_URL": "DEV_DATABASE_URL",
+    "SUPABASE_DEV_PROJECT_REF": "SUPABASE_DEV_PROJECT_REF",
+    "SUPABASE_ACCESS_TOKEN": "SUPABASE_ACCESS_TOKEN",
+}
+JOB_TOKEN = "GITHUB_TOKEN"
 INPUTS = ("OPS_ORG", "OPS_TO", "OPS_BRANCH")
 FLAGS = {"OPS_ORG": "--org", "OPS_TO": "--to", "OPS_BRANCH": "--branch"}
 
@@ -225,9 +240,15 @@ class Steps:
         if name is None:
             return 1
         missing = [v for v in SCRIPTS[name].variables if not self.value(v)]
+        for variable in missing:
+            # ops_steps_test.py holds ops.yml to giving every variable, so an empty one is most
+            # likely a repository secret that isn't set: say which, before node starts.
+            if variable == JOB_TOKEN:
+                print(f"ops: {name} has no {variable}: its step in ops.yml gives it the job's token")
+            else:
+                print(f"ops: {name} has no {variable}: the repository secret {SECRETS[variable]} is "
+                      "empty in this run (is it set? Settings, Secrets and variables, Actions)")
         if missing:
-            # The script would say so too; this says it before node starts, naming the step.
-            print(f"ops: {name}'s step in ops.yml doesn't give it {', '.join(missing)}")
             return 1
         cmd = ["node", os.path.join("tools", "ops", "src", "main.ts"), name]
         for variable, option in SCRIPTS[name].options.items():

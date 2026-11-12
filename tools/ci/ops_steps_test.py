@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Tests for tools/ci/ops_steps.py. Run: python3 tools/ci/ops_steps_test.py
 
-The steps run against a fake environment and a fake shell that records the commands. setup-flyctl
-is given a fake download that writes an archive made here, so the checksum, the archive's member
-and the job's PATH file are tested without the network; the real release's SHA-256 was read once,
-when the version was chosen (docs/LIMITATIONS.md, flyctl's row). One test class reads
-.github/workflows/ops.yml itself: each script's step is given exactly the secrets SCRIPTS names.
+The steps run against a fake environment and a fake shell that records the commands, and, in
+ProcessTest, as the workflow runs them: as a process, with a fake node on PATH. setup-flyctl is
+given a fake download that writes an archive made here, so the checksum, the archive's member and
+the job's PATH file are tested without the network; the real release's SHA-256 was read once, when
+the version was chosen (docs/LIMITATIONS.md, flyctl's row). WorkflowFileTest reads
+.github/workflows/ops.yml whole, with a strict reader of the YAML it uses, and holds every key and
+value to the ones built from SCRIPTS and SECRETS: each script's job names exactly its secrets.
 CI configuration: change this file only in its own PR (docs/INVARIANTS.md T58).
 """
 
@@ -16,6 +18,7 @@ import os
 import re
 import shutil
 import stat
+import subprocess
 import sys
 import tarfile
 import tempfile
@@ -30,18 +33,6 @@ import ops_steps  # noqa: E402
 MAIN = {"GITHUB_REF": "refs/heads/main"}
 # A value for each script's required options, so that it passes.
 REQUIRED = {"worker-scale": {"OPS_TO": "stopped"}, "deploy-branch": {"OPS_BRANCH": "main"}}
-# The repository's secret behind each variable the scripts read (docs/plans/B0.md's secrets row;
-# docs/plans/api-b0-deploy.md, section 4: "the names are the repository secrets' without the
-# DEV_ prefix"), and the job's own token for GITHUB_TOKEN.
-SOURCE = {
-    "FLY_API_TOKEN": "${{ secrets.FLY_API_TOKEN }}",
-    "DATABASE_ADMIN_URL": "${{ secrets.DEV_DATABASE_ADMIN_URL }}",
-    "DATABASE_APP_PASSWORD": "${{ secrets.DEV_DATABASE_APP_PASSWORD }}",
-    "DATABASE_URL": "${{ secrets.DEV_DATABASE_URL }}",
-    "SUPABASE_DEV_PROJECT_REF": "${{ secrets.SUPABASE_DEV_PROJECT_REF }}",
-    "SUPABASE_ACCESS_TOKEN": "${{ secrets.SUPABASE_ACCESS_TOKEN }}",
-    "GITHUB_TOKEN": "${{ github.token }}",
-}
 
 
 class FakeShell:
@@ -213,14 +204,36 @@ class RunTest(unittest.TestCase):
         code, _, _ = call("run", self.environ("migrate"), shell=FakeShell(code=3))
         self.assertEqual(code, 3)
 
-    def test_a_missing_variable_is_named_and_nothing_runs(self):
+    def test_a_missing_variable_names_its_repository_secret_and_nothing_runs(self):
         environ = self.environ("bootstrap")
         del environ["DATABASE_APP_PASSWORD"]
         environ["DATABASE_URL"] = ""
         code, out, shell = call("run", environ)
         self.assertEqual(code, 1)
-        self.assertIn("ops: bootstrap's step in ops.yml doesn't give it DATABASE_APP_PASSWORD, DATABASE_URL", out)
+        self.assertEqual(out.splitlines(), [
+            "ops: bootstrap has no DATABASE_APP_PASSWORD: the repository secret DEV_DATABASE_APP_PASSWORD is "
+            "empty in this run (is it set? Settings, Secrets and variables, Actions)",
+            "ops: bootstrap has no DATABASE_URL: the repository secret DEV_DATABASE_URL is "
+            "empty in this run (is it set? Settings, Secrets and variables, Actions)",
+        ])
         self.assertEqual(shell.commands, [])
+        environ = self.environ("deploy-branch", OPS_BRANCH="main")
+        del environ["GITHUB_TOKEN"]
+        code, out, shell = call("run", environ)
+        self.assertEqual(code, 1)
+        self.assertEqual(out, "ops: deploy-branch has no GITHUB_TOKEN: its step in ops.yml gives it the job's token\n")
+        self.assertEqual(shell.commands, [])
+
+    def test_every_variable_has_its_repository_secret(self):
+        self.assertEqual(ops_steps.SECRETS, {
+            "FLY_API_TOKEN": "FLY_API_TOKEN",
+            "DATABASE_ADMIN_URL": "DEV_DATABASE_ADMIN_URL",
+            "DATABASE_APP_PASSWORD": "DEV_DATABASE_APP_PASSWORD",
+            "DATABASE_URL": "DEV_DATABASE_URL",
+            "SUPABASE_DEV_PROJECT_REF": "SUPABASE_DEV_PROJECT_REF",
+            "SUPABASE_ACCESS_TOKEN": "SUPABASE_ACCESS_TOKEN",
+        })
+        self.assertEqual(ops_steps.JOB_TOKEN, "GITHUB_TOKEN")
 
     def test_run_refuses_what_check_refuses(self):
         for environ in (
@@ -352,163 +365,299 @@ class SetupFlyctlTest(unittest.TestCase):
         self.assertIn("isn't one of the scripts", out)
 
 
+class ProcessTest(unittest.TestCase):
+    """ops_steps.py run as the workflow runs it: its exit status is what stops the job, and the real
+    Shell starts node with the command as a list, never through a shell."""
+
+    def setUp(self):
+        self.temp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.temp)
+        self.args_file = os.path.join(self.temp, "args")
+        # A fake node: it writes each argument it was given, each ended by a NUL, and exits 3.
+        node = os.path.join(self.temp, "node")
+        with open(node, "w", encoding="utf-8") as f:
+            f.write('#!/bin/sh\nprintf \'%s\\0\' "$@" > "$OPS_TEST_ARGS"\nexit 3\n')
+        os.chmod(node, 0o755)
+
+    def process(self, step, environ):
+        env = {"PATH": self.temp + os.pathsep + "/usr/bin:/bin", "OPS_TEST_ARGS": self.args_file, **environ}
+        return subprocess.run([sys.executable, "-I", "-B", os.path.join(HERE, "ops_steps.py"), step],
+                              env=env, capture_output=True, text=True, timeout=60)
+
+    def test_a_refusal_is_the_process_s_failure(self):
+        done = self.process("check", {"GITHUB_REF": "refs/heads/api/b1-clubs", "OPS_SCRIPT": "migrate"})
+        self.assertEqual(done.returncode, 1)
+        self.assertIn("ops: runs only from main", done.stdout)
+        done = self.process("run", {**MAIN, "OPS_SCRIPT": "migrate", "SUPABASE_DEV_PROJECT_REF": "x"})
+        self.assertEqual(done.returncode, 1)
+        self.assertIn("the repository secret DEV_DATABASE_URL is empty", done.stdout)
+        self.assertFalse(os.path.exists(self.args_file))  # node never started
+        done = self.process("check", {**MAIN, "OPS_SCRIPT": "migrate"})
+        self.assertEqual(done.returncode, 0, done.stdout)
+
+    def test_an_input_reaches_node_as_one_argument_and_its_exit_code_is_the_step_s(self):
+        marker = os.path.join(self.temp, "ran")
+        value = f"$(touch {marker}) `touch {marker}`; touch {marker} --branch=main x"
+        done = self.process("run", {**MAIN, "OPS_SCRIPT": "dev-clock", "OPS_TO": value,
+                                    "DATABASE_URL": "u", "SUPABASE_DEV_PROJECT_REF": "r"})
+        self.assertEqual(done.returncode, 3, done.stdout + done.stderr)
+        with open(self.args_file, "rb") as f:
+            args = f.read().split(b"\0")[:-1]
+        self.assertEqual([a.decode() for a in args],
+                         [os.path.join("tools", "ops", "src", "main.ts"), "dev-clock", "--to=" + value])
+        self.assertFalse(os.path.exists(marker))
+
+
 def workflow():
     with open(os.path.join(ROOT, ".github", "workflows", "ops.yml"), encoding="utf-8") as f:
         return f.read()
 
 
-def steps_of(text):
-    """The job's steps, each as its text from its `      - ` line to the next step."""
-    body = text.split("\n    steps:\n", 1)[1]
-    blocks = re.split(r"\n(?=      - )", body)
-    return [b for b in blocks if b.startswith("      - ")]
+KEY = re.compile(r"[A-Za-z0-9_-]+")
 
 
-def block_map(step, key):
-    """A step's `key:` block (env or with) as {name: value}; a line it can't read fails."""
-    lines = step.splitlines()
-    try:
-        start = lines.index(f"        {key}:")
-    except ValueError:
-        return {}
-    found = {}
-    for line in lines[start + 1:]:
-        if not line.startswith("          "):
-            break
-        pair = re.fullmatch(r"          ([A-Za-z0-9_-]+): (.+?)(?:  # .*)?", line)
-        if pair is None:
-            raise AssertionError(f"a {key} line this test can't read: {line!r}")
-        found[pair.group(1)] = pair.group(2)
+def significant_lines(text):
+    """(line number, indent, content) for each line that isn't blank or a comment, its comment cut
+    (a `#` after a space or at the start). A tab fails: YAML refuses one in indentation."""
+    found = []
+    for number, line in enumerate(text.splitlines(), 1):
+        if "\t" in line:
+            raise ValueError(f"line {number}: a tab")
+        content = re.split(r"(?:^| )#", line, maxsplit=1)[0].rstrip()
+        if content.strip():
+            found.append((number, len(content) - len(content.lstrip(" ")), content.strip()))
     return found
 
 
+def scalar(number, text):
+    """A plain scalar, '' or a quoted string with no quote inside; anything else fails."""
+    if text == "{}":
+        return {}
+    if text.startswith("'"):
+        if len(text) < 2 or not text.endswith("'") or "'" in text[1:-1]:
+            raise ValueError(f"line {number}: a quoted value this reader doesn't take: {text!r}")
+        return text[1:-1]
+    if text[0] in "\"[]{}&*!|>%@`,?:-<" or ": " in text or text.endswith(":"):
+        raise ValueError(f"line {number}: a value this reader doesn't take: {text!r}")
+    return text
+
+
+def parse_yaml(text):
+    """A workflow file as dicts, lists and strings, read strictly: block mappings and sequences,
+    plain and single-quoted scalars, `{}`, folded `>-` scalars and comments, and nothing else. Any
+    other line, a duplicate key, or a line indented where nothing can be, fails, so no line of the
+    file goes unread."""
+    lines = significant_lines(text)
+    position = 0
+
+    def block(indent):
+        nonlocal position
+        number, at, content = lines[position]
+        if at != indent:
+            raise ValueError(f"line {number}: indented {at}, where {indent} was expected")
+        if content == "-" or content.startswith("- "):
+            return sequence(indent)
+        return mapping(indent)
+
+    def value_after(number, indent, rest):
+        """The value of a key whose text after the colon is rest."""
+        nonlocal position
+        if rest in (">-", ">"):
+            words = []
+            while position < len(lines) and lines[position][1] > indent:
+                words.append(lines[position][2])
+                position += 1
+            if not words:
+                raise ValueError(f"line {number}: a folded value with no text")
+            return " ".join(words)
+        if rest:
+            return scalar(number, rest)
+        if position >= len(lines) or lines[position][1] <= indent:
+            raise ValueError(f"line {number}: a key with no value")
+        return block(lines[position][1])
+
+    def mapping(indent, first=None):
+        nonlocal position
+        found = {}
+        while position < len(lines) or first:
+            if first:
+                number, content = first
+                first = None
+            else:
+                number, at, content = lines[position]
+                if at < indent:
+                    break
+                if at > indent:
+                    raise ValueError(f"line {number}: indented {at}, where {indent} was expected")
+                if content == "-" or content.startswith("- "):
+                    break
+                position += 1
+            key, colon, rest = content.partition(":")
+            if not colon or not KEY.fullmatch(key) or (rest and not rest.startswith(" ")):
+                raise ValueError(f"line {number}: not a `key: value` this reader takes: {content!r}")
+            if key in found:
+                raise ValueError(f"line {number}: {key} twice")
+            found[key] = value_after(number, indent, rest.strip())
+        return found
+
+    def sequence(indent):
+        nonlocal position
+        found = []
+        while position < len(lines):
+            number, at, content = lines[position]
+            if at < indent:
+                break
+            if at > indent or not (content == "-" or content.startswith("- ")):
+                raise ValueError(f"line {number}: expected an item of the list at indent {indent}")
+            position += 1
+            item = content[2:].strip()
+            if not item:
+                raise ValueError(f"line {number}: an empty item")
+            if re.match(r"[A-Za-z0-9_-]+:(?: |$)", item):
+                found.append(mapping(indent + 2, first=(number, item)))
+            else:
+                found.append(scalar(number, item))
+        return found
+
+    document = block(0)
+    if position != len(lines):
+        raise ValueError(f"line {lines[position][0]}: left unread")
+    return document
+
+
+def pins():
+    """The actions ci.yml uses, by name: ops.yml must use the same commits."""
+    with open(os.path.join(ROOT, ".github", "workflows", "ci.yml"), encoding="utf-8") as f:
+        found = dict(re.findall(r"uses: ([a-z-]+/[a-z-]+)@([0-9a-f]{40})", f.read()))
+    return {name: f"{name}@{sha}" for name, sha in found.items()}
+
+
+def expected_jobs():
+    """Every job of ops.yml, exactly, built from SCRIPTS and SECRETS."""
+    pinned = pins()
+    checkout = {"uses": pinned["actions/checkout"], "with": {"persist-credentials": "false"}}
+    jobs = {}
+    for name, script in ops_steps.SCRIPTS.items():
+        steps = [checkout, {"run": "python3 tools/ci/ops_steps.py check"}]
+        if name == "deploy-branch":
+            steps.append({"uses": pinned["actions/checkout"],
+                          "with": {"ref": "refs/heads/${{ inputs.branch }}", "persist-credentials": "false"}})
+        steps += [{"uses": pinned["actions/setup-node"],
+                   "with": {"node-version-file": ".nvmrc", "package-manager-cache": "false"}},
+                  {"run": "python3 tools/ci/ci_steps.py setup-pnpm"},
+                  {"run": "python3 tools/ci/ci_steps.py install"}]
+        if script.flyctl:
+            steps.append({"run": "python3 tools/ci/ops_steps.py setup-flyctl"})
+        env = {v: "${{ github.token }}" if v == ops_steps.JOB_TOKEN else "${{ secrets.%s }}" % ops_steps.SECRETS[v]
+               for v in script.variables}
+        steps.append({"name": name, "env": env, "run": "python3 tools/ci/ops_steps.py run"})
+        permissions = {"contents": "read"}
+        if name == "deploy-branch":
+            permissions["actions"] = "read"
+        jobs[name] = {"name": name, "if": f"inputs.script == '{name}'", "runs-on": "ubuntu-24.04",
+                      "timeout-minutes": "40" if name == "deploy-branch" else "20",
+                      "permissions": permissions, "steps": steps}
+    return jobs
+
+
+class YamlReaderTest(unittest.TestCase):
+    """The reader WorkflowFileTest stands on: what it reads, and that it refuses what it can't."""
+
+    def test_it_reads_the_subset(self):
+        self.assertEqual(parse_yaml("a: 1  # c\n# c\nb:\n  c: ''\n\n  d: {}\n  e: >-\n    x\n    y\nf:\n  - g\n"
+                                    "  - h: i\n    j: 'k'\n"),
+                         {"a": "1", "b": {"c": "", "d": {}, "e": "x y"}, "f": ["g", {"h": "i", "j": "k"}]})
+
+    def test_it_refuses_what_it_can_t_read(self):
+        for text in ("a: 1\na: 2\n", "a:\n  b: 1\n   c: 2\n", "a: [1]\n", "a: \"x\"\n", "a: |\n  x\n",
+                     "a: &x 1\n", "a: *x\n", "<<: x\n", "a: 'x'y'\n", "a:\n\tb: 1\n", "a: b: c\n", "a:\n",
+                     "- a\nb: 1\n", "a:b\n", "'a': 1\n", "a: 1\n  b: 2\n"):
+            with self.subTest(text=text):
+                with self.assertRaises(ValueError):
+                    parse_yaml(text)
+
+    def test_it_reads_ops_yml_as_a_yaml_library_would(self):
+        try:
+            import yaml  # not on ci's runner; the session has it
+        except ImportError:
+            self.skipTest("no yaml library here")
+        theirs = yaml.safe_load(workflow())
+        theirs["on"] = theirs.pop(True)  # YAML 1.1 reads the key `on` as true
+
+        def text(value):
+            if isinstance(value, dict):
+                return {k: text(v) for k, v in value.items()}
+            if isinstance(value, list):
+                return [text(v) for v in value]
+            return str(value).lower() if isinstance(value, bool) else str(value)
+        self.assertEqual(text(theirs), parse_yaml(workflow()))
+
+
 class WorkflowFileTest(unittest.TestCase):
-    """ops.yml stays thin, gives each script its own secrets and no other's, and keeps the rules
-    of docs/TECH-DESIGN.md section 9."""
+    """ops.yml, read whole: every key and value is the one this test builds from SCRIPTS and
+    SECRETS, the inputs' descriptions aside, so a script's job names exactly its secrets and nothing
+    else anywhere names one (docs/TECH-DESIGN.md section 9)."""
 
     def setUp(self):
         self.text = workflow()
-        self.steps = steps_of(self.text)
-        self.top = self.text.split("\njobs:\n", 1)[0]
+        self.document = parse_yaml(self.text)
 
-    def test_it_runs_only_by_hand(self):
-        on = self.top.split("\non:\n", 1)[1].split("\npermissions:", 1)[0]
-        self.assertEqual(re.findall(r"^  ([a-z_]+):", on, flags=re.M), ["workflow_dispatch"])
-        self.assertEqual(re.findall(r"^      ([a-z_]+):", on, flags=re.M), ["script", "org", "to", "branch"])
+    def test_the_file_holds_these_keys_and_no_other(self):
+        self.assertEqual(list(self.document), ["name", "on", "permissions", "concurrency", "env", "defaults", "jobs"])
+        self.assertEqual(self.document["name"], "ops")
+        self.assertEqual(self.document["permissions"], {})
+        self.assertEqual(self.document["defaults"], {"run": {"shell": "bash"}})
 
-    def test_the_script_input_lists_every_script_in_order(self):
-        on = self.top.split("\non:\n", 1)[1]
-        script = on.split("      script:\n", 1)[1].split("\n      org:", 1)[0]
-        self.assertIn("        type: choice\n", script)
-        self.assertIn("        required: true\n", script)
-        options = re.findall(r"^          - ([a-z-]+)$", script, flags=re.M)
-        self.assertEqual(options, list(ops_steps.SCRIPTS))
-        for name in ("org", "to", "branch"):
+    def test_it_runs_only_by_hand_with_these_inputs(self):
+        inputs = self.document["on"]["workflow_dispatch"]["inputs"]
+        self.assertEqual(list(self.document["on"]), ["workflow_dispatch"])
+        self.assertEqual(list(self.document["on"]["workflow_dispatch"]), ["inputs"])
+        descriptions = {name: given.pop("description") for name, given in inputs.items()}
+        self.assertEqual(inputs, {
+            "script": {"type": "choice", "required": "true", "options": list(ops_steps.SCRIPTS)},
+            "org": {"type": "string", "required": "false", "default": ""},
+            "to": {"type": "string", "required": "false", "default": ""},
+            "branch": {"type": "string", "required": "false", "default": ""},
+        })
+        for name, description in descriptions.items():
             with self.subTest(input=name):
-                block = re.search(rf"\n      {name}:\n((?:        [^\n]*\n|          [^\n]*\n)+)", on)
-                self.assertIsNotNone(block)
-                self.assertIn("        type: string\n", block.group(1))
-                self.assertIn("        required: false\n", block.group(1))
-                self.assertIn("        default: ''\n", block.group(1))
+                self.assertTrue(description)
+                self.assertNotIn("${{", description)
 
     def test_the_inputs_reach_the_steps_as_variables_only(self):
-        job = self.text.split("\njobs:\n", 1)[1].split("\n    steps:\n", 1)[0]
-        env = job.split("\n    env:\n", 1)[1]
-        self.assertEqual(re.findall(r"^      ([A-Z_]+): (.*)$", env, flags=re.M), [
-            ("OPS_SCRIPT", "${{ inputs.script }}"), ("OPS_ORG", "${{ inputs.org }}"),
-            ("OPS_TO", "${{ inputs.to }}"), ("OPS_BRANCH", "${{ inputs.branch }}")])
-        self.assertEqual(set(ops_steps.INPUTS) | {"OPS_SCRIPT"},
-                         {"OPS_SCRIPT", "OPS_ORG", "OPS_TO", "OPS_BRANCH"})
-        # No expression in any command (zizmor's template-injection), and no multi-line run.
-        runs = re.findall(r"^\s+(?:- )?run:(.*)$", self.text, flags=re.M)
-        self.assertTrue(runs)
-        for run in runs:
-            with self.subTest(run=run):
-                self.assertNotIn("${{", run)
-                self.assertNotIn(run.strip(), ("|", ">", "|-", ">-"))
-
-    def test_every_run_calls_a_step_here(self):
-        runs = [r.strip() for r in re.findall(r"^\s+(?:- )?run: (.*)$", self.text, flags=re.M)]
-        for run in runs:
-            with self.subTest(run=run):
-                ops = re.fullmatch(r"python3 tools/ci/ops_steps\.py ([a-z-]+)", run)
-                ci = re.fullmatch(r"python3 tools/ci/ci_steps\.py (setup-pnpm|install)", run)
-                self.assertTrue(ops or ci, "a run: that isn't a step of ops_steps.py or ci_steps.py")
-                if ops:
-                    self.assertIn(ops.group(1), ops_steps.STEPS)
-
-    def test_the_steps_in_order(self):
-        def what(step):
-            uses = re.search(r"uses: ([a-z/-]+)@", step)
-            run = re.search(r"run: python3 tools/ci/(\w+)\.py ([a-z-]+)", step)
-            name = re.search(r"name: ([a-z -]+)\n", step + "\n")
-            if uses:
-                return uses.group(1)
-            if run.group(1) == "ops_steps" and run.group(2) == "run":
-                return "run " + name.group(1)
-            return run.group(2)
-        self.assertEqual([what(s) for s in self.steps], [
-            "actions/checkout", "check", "actions/checkout", "actions/setup-node", "setup-pnpm",
-            "install", "setup-flyctl", *[f"run {name}" for name in ops_steps.SCRIPTS]])
-
-    def test_the_branch_is_checked_out_only_for_deploy_branch_and_after_check(self):
-        branch = self.steps[2]
-        self.assertIn("        if: inputs.script == 'deploy-branch'\n", branch)
-        self.assertEqual(block_map(branch, "with"),
-                         {"ref": "refs/heads/${{ inputs.branch }}", "persist-credentials": "false"})
-        self.assertIn("run: python3 tools/ci/ops_steps.py check", self.steps[1])
-        self.assertNotIn("if:", self.steps[1])
-        # The first checkout is the run's own ref, which check holds to main.
-        self.assertEqual(block_map(self.steps[0], "with"), {"persist-credentials": "false"})
-
-    def test_each_script_has_its_own_secrets_and_no_other_s(self):
-        scripts = [s for s in self.steps if "ops_steps.py run" in s]
-        self.assertEqual(len(scripts), len(ops_steps.SCRIPTS))
-        for step, (name, script) in zip(scripts, ops_steps.SCRIPTS.items(), strict=True):
-            with self.subTest(script=name):
-                self.assertTrue(step.startswith(f"      - name: {name}\n"))
-                self.assertIn(f"        if: inputs.script == '{name}'\n", step)
-                self.assertEqual(block_map(step, "env"), {v: SOURCE[v] for v in script.variables})
-        # No secret or token anywhere else: not in the job's env, nor in a step that isn't a script's.
-        others = "\n".join(s for s in self.steps if "ops_steps.py run" not in s) + self.top
-        others += self.text.split("\njobs:\n", 1)[1].split("\n    steps:\n", 1)[0]
-        self.assertNotIn("secrets.", others)
-        self.assertNotIn("github.token", others)
-        self.assertNotIn("secrets: inherit", self.text)
-        self.assertNotRegex(self.text, r"toJSON\(\s*secrets\s*\)")
+        self.assertEqual(self.document["env"], {"OPS_SCRIPT": "${{ inputs.script }}", "OPS_ORG": "${{ inputs.org }}",
+                                                "OPS_TO": "${{ inputs.to }}", "OPS_BRANCH": "${{ inputs.branch }}"})
+        self.assertEqual(set(ops_steps.FLAGS), set(ops_steps.INPUTS))
 
     def test_one_run_at_a_time_and_none_cancelled(self):
-        self.assertIn("\nconcurrency:\n  group: ops-dev\n  cancel-in-progress: false\n", self.top)
-        self.assertEqual(len(re.findall(r"^ *concurrency:", self.text, flags=re.M)), 1)
+        self.assertEqual(self.document["concurrency"], {"group": "ops-dev", "cancel-in-progress": "false"})
 
-    def test_permissions_are_least_privilege(self):
-        self.assertIn("\npermissions: {}\n", self.top)
-        self.assertNotRegex(self.text, r"(?:read|write)-all")
-        job = self.text.split("\njobs:\n", 1)[1].split("\n    steps:\n", 1)[0]
-        block = re.search(r"\n    permissions:\n((?:      [^\n]*\n)+)", job + "\n")
-        self.assertIsNotNone(block)
-        perms = [re.fullmatch(r"      ([a-z-]+): ([a-z]+)(?:  # .*)?", line) for line in block.group(1).splitlines()]
-        self.assertTrue(all(perms), block.group(1))
-        self.assertEqual([p.groups() for p in perms], [("contents", "read"), ("actions", "read")])
-        self.assertEqual(len(re.findall(r"^ *permissions:", self.text, flags=re.M)), 2)
-        self.assertEqual(re.findall(r"^  ([a-z_-]+):$", self.text.split("\njobs:\n", 1)[1], flags=re.M), ["ops"])
+    def test_each_script_has_its_own_job_with_its_own_secrets_and_nothing_else(self):
+        jobs = self.document["jobs"]
+        expected = expected_jobs()
+        self.assertEqual(list(jobs), list(expected))
+        for name in expected:
+            with self.subTest(job=name):
+                self.assertEqual(jobs[name], expected[name])
 
-    def test_actions_are_pinned_to_commits(self):
+    def test_every_expression_in_the_file_is_one_this_test_knows(self):
+        # The same check, counted on the file's own text, apart from the reader above: every
+        # `${{ … }}` outside comments, as often as the jobs and the inputs' variables need it.
+        found = sorted(re.findall(r"\$\{\{.*?\}\}", "\n".join(c for _, _, c in significant_lines(self.text))))
+        wanted = ["${{ inputs.%s }}" % name for name in ("script", "org", "to", "branch", "branch")]
+        for script in ops_steps.SCRIPTS.values():
+            wanted += ["${{ github.token }}" if v == ops_steps.JOB_TOKEN else "${{ secrets.%s }}" % ops_steps.SECRETS[v]
+                       for v in script.variables]
+        self.assertEqual(found, sorted(wanted))
+        self.assertEqual(set(ops_steps.SECRETS) | {ops_steps.JOB_TOKEN},
+                         {v for s in ops_steps.SCRIPTS.values() for v in s.variables})
+
+    def test_the_pins_are_ci_yml_s(self):
+        pinned = pins()
+        self.assertEqual(sorted(pinned), ["actions/checkout", "actions/setup-node"])
         uses = re.findall(r"uses: (\S+)", self.text)
-        self.assertEqual(len(uses), 3)
-        for use in uses:
-            with self.subTest(use=use):
-                self.assertRegex(use, r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+@[0-9a-f]{40}$")
-
-    def test_checkouts_keep_no_credentials(self):
-        checkouts = self.text.count("uses: actions/checkout@")
-        self.assertEqual(checkouts, 2)
-        self.assertEqual(self.text.count("persist-credentials: false"), checkouts)
-
-    def test_the_runner_and_the_job_s_limit(self):
-        job = self.text.split("\njobs:\n", 1)[1].split("\n    steps:\n", 1)[0]
-        self.assertIn("\n    runs-on: ubuntu-24.04\n", job)
-        self.assertIn("\n    timeout-minutes: 40\n", job)
+        self.assertEqual(len(uses), 2 * len(ops_steps.SCRIPTS) + 1)
+        self.assertTrue(set(uses) <= set(pinned.values()))
 
 
 class UsageTest(unittest.TestCase):
