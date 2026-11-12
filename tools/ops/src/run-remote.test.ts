@@ -80,6 +80,9 @@ const onMachineCalls = (script: string) => [
   expect.stringMatching(new RegExp(`^${REMOVE} interactive-`)) as unknown as string,
 ];
 const removed = (script: string) => `${script}: removed the WireGuard peer this run made`;
+/** What a script says before its session: the peer it makes, and how to remove it if the run is cut off first. */
+const making = (script: string) =>
+  `${script}: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, \`flyctl wireguard list tadayo-org\` lists the organization's peers, and \`flyctl wireguard remove tadayo-org <name>\` removes one; this run's names start with interactive-${hostSlug(hostname())}-`;
 
 interface Seen {
   readonly url: string;
@@ -328,6 +331,7 @@ describe("storage-setup on the runner", () => {
     await runScript("storage-setup", h.ctx);
     expect(h.lines()).toEqual(onMachineCalls("storage-setup"));
     expect(h.said).toEqual([
+      making("storage-setup"),
       "storage-setup: uploads: already as declared",
       "storage-setup: renditions: created",
       removed("storage-setup"),
@@ -357,7 +361,11 @@ describe("storage-setup on the runner", () => {
       ],
     });
     expect(await failure("storage-setup", h.ctx)).toBe("storage-setup: it failed on the Machine, with exit code 1");
-    expect(h.said).toEqual(["storage-setup: uploads: couldn't make it", removed("storage-setup")]);
+    expect(h.said).toEqual([
+      making("storage-setup"),
+      "storage-setup: uploads: couldn't make it",
+      removed("storage-setup"),
+    ]);
   });
 
   it("fails when the Machine's report ends before it says what became of each bucket, even with an exit status of 0", async () => {
@@ -451,6 +459,7 @@ describe("supabase-probe on the runner", () => {
     expect(h.lines()).toEqual(onMachineCalls("supabase-probe"));
     expect(h.said).toEqual([
       "supabase-probe: ok    the Data API's settings expose no schema",
+      making("supabase-probe"),
       "supabase-probe: run r1",
       "supabase-probe: ok    control: the service key lists the buckets",
       "supabase-probe: all 1 checks passed",
@@ -491,6 +500,7 @@ describe("supabase-probe on the runner", () => {
     // The report came back whole, so it names what is left; nothing is said about what might be.
     expect(h.said).toEqual([
       "supabase-probe: ok    the Data API's settings expose no schema",
+      making("supabase-probe"),
       "supabase-probe: run r1",
       "supabase-probe: FAIL  anon: list the buckets: answered HTTP 200",
       "supabase-probe: 1 of 1 checks failed",
@@ -507,6 +517,7 @@ describe("supabase-probe on the runner", () => {
     expect(await failure("supabase-probe", h.ctx)).toBe("supabase-probe: it failed on the Machine, with exit code 1");
     expect(h.said).toEqual([
       "supabase-probe: ok    the Data API's settings expose no schema",
+      making("supabase-probe"),
       "set SUPABASE_SERVICE_KEY",
       removed("supabase-probe"),
     ]);
@@ -531,8 +542,13 @@ describe("supabase-probe on the runner", () => {
         "supabase-probe: the session ran out of time after 600 seconds, and the command may still be running on the Machine",
       ],
       [
-        { code: 1, stdout: "supabase-probe: run r1\n", stderr: "Error: ssh shell: connection reset by peer\n" },
-        "supabase-probe: flyctl couldn't run it on the Machine: exit code 1: Error: ssh shell: connection reset by peer",
+        // A connection lost mid-command closes the session's channel with no status (x/crypto's ExitMissingError).
+        {
+          code: 1,
+          stdout: "supabase-probe: run r1\n",
+          stderr: "Error: ssh shell: wait: remote command exited without exit status or exit signal\n",
+        },
+        "supabase-probe: the session ended without saying how the command ended: the Machine closed it, or the connection to it was lost",
       ],
     ] as const) {
       const h = harness({

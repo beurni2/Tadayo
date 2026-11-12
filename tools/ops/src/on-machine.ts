@@ -11,7 +11,9 @@
 // lasts as long as its command. What flyctl 0.5.8 does (its source, read on 12 November 2026):
 //   - its agent, a flyctl left running in the background on the runner, makes a WireGuard peer in
 //     the app's organization and brings up a tunnel to Fly's private network over a websocket (no
-//     root, no kernel module, no UDP), waiting up to 240 seconds for it (`TUNNEL_SECONDS`);
+//     root, no kernel module, no UDP), then checks the tunnel once, with a DNS lookup of at most five
+//     seconds (`agent/client.go`, `WaitForTunnel`, within a 4-minute bound: `TUNNEL_SECONDS`); a
+//     check that fails ends the session with `Error: tunnel unavailable: …`, and nothing retries it;
 //   - Fly issues a one-hour SSH certificate for the session;
 //   - the command runs on the Machine in its own environment, secrets and fly.toml's `[env]` with it
 //     (Fly's documentation runs `fly ssh console -C` for a migration that needs the database's
@@ -27,17 +29,22 @@
 // The peer reaches the organization's whole private network until it is removed, and flyctl never
 // removes one it made: on a fresh runner, every run would leave one more. So the runner lists the
 // organization's peers before the session and again after it, whatever the command did, and removes
-// the ones the session made (ADR-034): those that weren't there before and are named as flyctl's
-// agent names its peers on this runner, `interactive-<host>-<the token's email, as a slug>-<ULID>`.
-// None other is touched, and no clock is read (T1: only the time module reads one). When the peers
-// can't be listed first, no session starts, since its peer couldn't be told apart. The names hold an
-// email, so none is printed. A peer this run couldn't remove fails the run, with the commands that
-// remove it by hand.
+// the ones the session made (ADR-034): those that weren't there before and whose names start as
+// flyctl's agent names a peer on this runner, `interactive-<host>-` (the whole name is
+// `interactive-<host>-<the token's email, as a slug>-<ULID>`). A peer that was there before is never
+// touched, and no clock is read (T1: only the time module reads one). A new peer named otherwise is
+// left, but fails the run with the commands to look at it by hand, since it may be this run's under a
+// name not foreseen; no other runner holds the token while this one runs (`ops-dev`'s concurrency
+// group), though a host named like this one with more after a dash couldn't be told from it. When
+// the peers can't be listed first, no session starts. Before the session the runner says that it
+// makes a peer and how to remove it by hand, for a run cancelled or cut off before its clean-up. The
+// names hold an email, so none is printed. A peer this run couldn't remove fails the run.
 
 import { hostname } from "node:os";
 import { DEV_APP } from "./environment.ts";
 import { jsonOf, machineList, machines, onlyOrganization, why, type Fly } from "./fly.ts";
 import { OpsError } from "./ops-error.ts";
+import type { Spawned } from "./spawn.ts";
 
 export interface OnMachineInput {
   readonly fly: Fly;
@@ -55,7 +62,7 @@ export interface OnMachineInput {
 
 /** What the command gets on the Machine, once it has started, before the runner gives up on it (supabase-probe.ts keeps its own deadline a minute inside it). */
 export const COMMAND_SECONDS = 300;
-/** How long flyctl 0.5.8 waits for its tunnel before it gives up (`agent/client.go`, `WaitForTunnel`). */
+/** The bound flyctl 0.5.8 puts on bringing its tunnel up (`agent/client.go`, `WaitForTunnel`'s 4 minutes); it checks the tunnel only once, for at most five seconds, so this is room, not a wait. */
 export const TUNNEL_SECONDS = 240;
 /** The certificate, the SSH handshake and Node's start, with room to spare. */
 const CONNECT_SECONDS = 60;
@@ -63,7 +70,11 @@ const CONNECT_SECONDS = 60;
 export const SESSION_MS = (TUNNEL_SECONDS + CONNECT_SECONDS + COMMAND_SECONDS) * 1000;
 const PLAIN_WORD = /^[A-Za-z0-9._/:=@-]+$/;
 
-const linesOf = (text: string): string[] => (text === "" ? [] : text.replace(/\n$/, "").split("\n"));
+/** The lines of a text, without the empty lines it ends with (flyctl ends some of its errors with one). */
+function linesOf(text: string): string[] {
+  const trimmed = text.replace(/\n+$/, "");
+  return trimmed === "" ? [] : trimmed.split("\n");
+}
 
 // flyctl prints its own failure last, as `Error: <what went wrong>` (`internal/cli/cli.go`,
 // `printError`), with the first word in colour only on a terminal; the code that ends the colour is left out of the match.
@@ -72,24 +83,21 @@ const COLOUR = /\u001b\[[0-9;]*m/g;
 const FLYCTL_ERROR = /^Error: /;
 // golang.org/x/crypto's `Waitmsg.String`, which flyctl wraps as `ssh shell`.
 const EXITED = /^Error: ssh shell: Process exited with status (\d+)(?: from signal (\w+))?(?:\. Reason was: .*)?$/;
+// x/crypto's `ExitMissingError`: the session's channel closed with no status, which the Machine's end
+// and a connection lost on the way both give.
 const NO_STATUS = "Error: ssh shell: wait: remote command exited without exit status or exit signal";
+// The agent's one check of its new tunnel failed (`agent/remote.go`).
+const TUNNEL_UNAVAILABLE = /^Error: tunnel unavailable\b/;
 
 // ---- The run's WireGuard peer.
-
-/** A ULID: 26 characters of Crockford's base 32, the first at most 7, as flyctl's agent ends its peer's name with one. */
-const ULID = /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/;
 
 /** The host as flyctl puts it in a peer's name: the name's first label, with anything but letters, digits, `\` and `-` made a `-` (`internal/wireguard/wg.go`). */
 export const hostSlug = (host: string): string => (host.split(".")[0] ?? "").replace(/[^a-zA-Z0-9\\-]/g, "-");
 
-/** True for a name flyctl's agent gives the peer it makes on this host: `interactive-<host>-<email>-<ULID>`. */
+/** True for a name that starts as flyctl's agent names the peer it makes on this host: `interactive-<host>-`, then its email part and a ULID. */
 export function sessionPeerOf(name: string, host: string): boolean {
   const slug = hostSlug(host);
-  const prefix = `interactive-${slug}-`;
-  if (slug === "" || !name.startsWith(prefix)) return false;
-  const rest = name.slice(prefix.length);
-  const dash = rest.lastIndexOf("-");
-  return dash >= 1 && ULID.test(rest.slice(dash + 1));
+  return slug !== "" && name.startsWith(`interactive-${slug}-`);
 }
 
 const record = (value: unknown): Record<string, unknown> | undefined =>
@@ -107,13 +115,27 @@ function peerNames(answer: unknown): string[] | undefined {
   return names;
 }
 
+/** A flyctl call's answer, or a failure in its place when `Fly.run` refused it or the spawn failed, so that the clean-up never throws. */
+async function attempt(fly: Fly, args: readonly string[]): Promise<Spawned> {
+  try {
+    return await fly.run(args);
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    return { code: 1, timedOut: false, stdout: "", stderr: `${reason}\n` };
+  }
+}
+
 /** The names of the organization's peers, in flyctl's order, or why there are none to read. */
 async function listPeers(fly: Fly, org: string): Promise<{ names: ReadonlySet<string> } | { reason: string }> {
-  const listed = await fly.run(["wireguard", "list", org, "--json"]);
+  const listed = await attempt(fly, ["wireguard", "list", org, "--json"]);
   const names = listed.code === 0 ? peerNames(jsonOf(listed)) : undefined;
   if (names !== undefined) return { names: new Set(names) };
   return { reason: listed.code === 0 ? "its answer isn't a list it can read" : why(listed) };
 }
+
+/** What to do by hand about the organization's peers, for the founder. */
+const byHandFor = (org: string, host: string) =>
+  `\`flyctl wireguard list ${org}\` lists the organization's peers, and \`flyctl wireguard remove ${org} <name>\` removes one; this run's names start with interactive-${hostSlug(host)}-`;
 
 interface Session {
   readonly label: string;
@@ -136,31 +158,48 @@ async function removeThisRunsPeers(
   note: (line: string) => void,
 ): Promise<string | undefined> {
   const { label, host, org } = session;
-  const byHand = `\`flyctl wireguard list ${org}\` lists the organization's peers, and \`flyctl wireguard remove ${org} <name>\` removes one; this run's names start with interactive-${hostSlug(host)}-`;
+  const byHand = byHandFor(org, host);
   const after = await listPeers(fly, org);
   if ("reason" in after) {
     return `${label}: flyctl couldn't list the organization's WireGuard peers (${after.reason}), so the one this run may have made can't be removed: ${byHand}`;
   }
-  const ours = [...after.names].filter((name) => !session.before.has(name) && sessionPeerOf(name, host));
+  const fresh = [...after.names].filter((name) => !session.before.has(name));
+  const ours = fresh.filter((name) => sessionPeerOf(name, host));
+  const strangers = fresh.length - ours.length;
+  // A peer that appeared during the session under another name is left, and said, without its name.
+  const unknown =
+    strangers === 0
+      ? undefined
+      : `${label}: ${String(strangers)} WireGuard ${strangers === 1 ? "peer that isn't" : "peers that aren't"} named for this runner appeared in the organization during the session and ${strangers === 1 ? "is" : "are"} left, though this run's may be among them: ${byHand}`;
   if (ours.length === 0) {
+    if (unknown !== undefined) return unknown;
     return session.reached
       ? `${label}: none of the organization's WireGuard peers is one this run made, though its session reached the Machine, so it can't say it removed it: ${byHand}`
       : undefined;
   }
-  let left = 0;
+  const failed: string[] = [];
   for (const name of ours) {
-    const removed = await fly.run(["wireguard", "remove", org, name]);
+    const removed = await attempt(fly, ["wireguard", "remove", org, name]);
     // What flyctl prints names the peer, and so the token's email: only its exit code is said.
     if (removed.code === 0) continue;
-    left += 1;
+    failed.push(name);
     note(
-      `${label}: flyctl couldn't remove a WireGuard peer this run made (${removed.timedOut ? "it ran out of time" : `exit code ${String(removed.code)}`})`,
+      `${label}: flyctl's removal of a WireGuard peer this run made ${removed.timedOut ? "ran out of time" : `ended with exit code ${String(removed.code)}`}`,
     );
   }
-  if (left > 0)
+  // flyctl 0.5.8 can exit 1 after removing the peer (its `PruneInvalidPeers` runs after the removal),
+  // so a peer counts as left only when a new list still shows it, or when no list can be had.
+  let left = failed.length;
+  if (left > 0) {
+    const again = await listPeers(fly, org);
+    if (!("reason" in again)) left = failed.filter((name) => again.names.has(name)).length;
+  }
+  if (left > 0) {
+    if (unknown !== undefined) note(unknown);
     return `${label}: ${String(left)} of the WireGuard peers this run made ${left === 1 ? "is" : "are"} still there: ${byHand}`;
+  }
   note(`${label}: removed the WireGuard peer this run made`);
-  return undefined;
+  return unknown;
 }
 
 export async function onMachine(input: OnMachineInput): Promise<void> {
@@ -195,6 +234,10 @@ export async function onMachine(input: OnMachineInput): Promise<void> {
       `${label}: flyctl couldn't list the organization's WireGuard peers (${before.reason}), so no SSH session is started: the peer one makes couldn't be told from the others and removed`,
     );
   }
+  const host = input.host ?? hostname();
+  note(
+    `${label}: the SSH session makes a WireGuard peer in ${org}, which this run removes after it; if the run is cancelled or cut off first, ${byHandFor(org, host)}`,
+  );
 
   const result = await fly.run(
     ["ssh", "console", "-a", DEV_APP, "--machine", target.id, "-q", "-C", input.command.join(" ")],
@@ -220,14 +263,19 @@ export async function onMachine(input: OnMachineInput): Promise<void> {
     const signal = exited[2] === undefined ? "" : `, ended by signal ${exited[2]}`;
     failure = new OpsError(`${label}: it failed on the Machine, with exit code ${exited[1] ?? ""}${signal}`);
   } else if (noStatus) {
-    failure = new OpsError(`${label}: the Machine ended the session without saying how the command ended`);
+    failure = new OpsError(
+      `${label}: the session ended without saying how the command ended: the Machine closed it, or the connection to it was lost`,
+    );
   } else if (result.code !== 0) {
     const reason = flyctlFailed ? `exit code ${String(result.code)}: ${last}` : why(result);
-    failure = new OpsError(`${label}: flyctl couldn't run it on the Machine: ${reason}`);
+    const hint =
+      flyctlFailed && TUNNEL_UNAVAILABLE.test(last)
+        ? "; flyctl checks a new tunnel only once, for at most five seconds, so running the script again may work"
+        : "";
+    failure = new OpsError(`${label}: flyctl couldn't run it on the Machine: ${reason}${hint}`);
   }
 
   const reached = result.code === 0 || exited !== null || noStatus;
-  const host = input.host ?? hostname();
   const leftover = await removeThisRunsPeers(fly, { label, host, org, before: before.names, reached }, note);
   if (failure !== undefined) {
     if (leftover !== undefined) note(leftover);

@@ -122,10 +122,9 @@ gh api 'repos/{owner}/{repo}/pulls?state=all&per_page=100' --jq '.[] | [.number,
 gh api "repos/{owner}/{repo}/actions/runs?head_sha={sha}" --jq '.workflow_runs[] | [.id, .name, .event, .conclusion] | @tsv'
 gh api -X POST repos/{owner}/{repo}/actions/runs/{id}/rerun
 
-# Start a workflow that runs by hand (ops, ios-release, load), with its inputs. ops runs only from main (each job's check
-# step refuses another ref: tools/ci/ops_steps.py), so its ref is main; deploy-branch names the branch it deploys with -f 'inputs[branch]=<branch>'.
+# Start a workflow that runs by hand (ops, ios-release, load), on a branch, with its inputs.
 # If the session's token may not, ask the founder to start it from the Actions tab, naming the inputs.
-gh api -X POST repos/{owner}/{repo}/actions/workflows/ops.yml/dispatches -f ref=main -f 'inputs[script]=<script name>'
+gh api -X POST repos/{owner}/{repo}/actions/workflows/ops.yml/dispatches -f ref='<branch>' -f 'inputs[script]=<script name>'
 
 # Close a PR, for example one replaced by a fresh branch
 gh api -X PATCH repos/{owner}/{repo}/pulls/{n} -f state=closed

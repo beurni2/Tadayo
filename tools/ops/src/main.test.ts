@@ -83,9 +83,15 @@ esac`);
       SUPABASE_DEV_PROJECT_REF: REF,
     });
     expect(result.stderr).toBe("");
+    const slug =
+      hostname()
+        .split(".")[0]
+        ?.replace(/[^a-zA-Z0-9-]/g, "-") ?? "";
     expect(result.stdout).toBe(
-      "storage-setup: uploads: created\nstorage-setup: renditions: created\nthe key is [redacted]\nstorage-setup: removed the WireGuard peer this run made\n",
+      `storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, \`flyctl wireguard list tadayo-org\` lists the organization's peers, and \`flyctl wireguard remove tadayo-org <name>\` removes one; this run's names start with interactive-${slug}-\n` +
+        "storage-setup: uploads: created\nstorage-setup: renditions: created\nthe key is [redacted]\nstorage-setup: removed the WireGuard peer this run made\n",
     );
+    expect(result.stdout).not.toContain("someone-example-invalid");
     expect(result.code).toBe(0);
   });
 
