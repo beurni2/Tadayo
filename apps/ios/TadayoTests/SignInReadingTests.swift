@@ -343,8 +343,8 @@ final class SignInReadingTests: XCTestCase {
     /// With the keyboard up, here a 300-point stand-in since a hosted test has none, Verify code
     /// stays in the column at the default size, 16 under the error region's line as frames 24 and
     /// 25 draw it; at the largest size, where the column would leave it under the keyboard, it is
-    /// pinned 12 above it, 20 in from each edge, and the column closes up under the line (frame
-    /// 19; `authForm.keyboardFooter`); with no keyboard, or while VoiceOver runs (FQ97's
+    /// pinned 12 above it, 20 in from each edge, the column closes up under the line and the
+    /// field is scrolled clear of the footer (frame 19; `authForm.keyboardFooter`); with no keyboard, or while VoiceOver runs (FQ97's
     /// default), it stays in the column whatever the size. It is drawn once each time. In the
     /// column it is read in its place, after the code's line and before the wait sentence and
     /// Change email address (`codeAccessibilityOrder`: field, error, verify, resend,
@@ -384,6 +384,10 @@ final class SignInReadingTests: XCTestCase {
                 XCTAssertEqual(
                     verify.width, layout.size.width - 2 * Spacing.inset, accuracy: 0.5, named)
                 XCTAssertEqual(row.minY - line.maxY, Spacing.l + Spacing.s, accuracy: 1, named)
+                // The field scrolled clear of the footer, which starts 8 above the button.
+                let field = elements.first { $0.label == "Six-digit code" }?.frame ?? .zero
+                XCTAssertGreaterThan(field.height, 0, named)
+                XCTAssertLessThanOrEqual(field.maxY, verify.minY - Spacing.s + 0.5, named)
             } else {
                 XCTAssertEqual(verify.minY - line.maxY, Spacing.l, accuracy: 1, named)
                 let order = [

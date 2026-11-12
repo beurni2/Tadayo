@@ -235,7 +235,7 @@ final class SignInUITests: XCTestCase {
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
         let verify = app.buttons["Verify code"]
         XCTAssertTrue(verify.isEnabled)
-        assertPinned(verify, on: app.screenshot(), in: app)
+        assertPinned(verify, below: code, on: app.screenshot(), in: app)
         verify.tap()
 
         let refused = app.staticTexts[
@@ -249,15 +249,20 @@ final class SignInUITests: XCTestCase {
             "testVerifyCodeIsPinnedAboveTheKeyboardAtTheLargestText.A02-code-error-xl.png"
         screen.lifetime = .keepAlways
         add(screen)
-        assertPinned(verify, on: shot, in: app)
+        assertPinned(verify, below: code, on: shot, in: app)
     }
 
     /// Verify code ends 12 points, within 1, above the keyboard's top as `shot` draws it, and
-    /// can be tapped there.
+    /// can be tapped there; the code field ends above the pinned footer, which starts 8 above the
+    /// button, so the button covers none of it (handoff 7: "controls are never overlaid on form
+    /// text"; frame 19 scrolls the field under the navigation bar).
     @MainActor private func assertPinned(
-        _ verify: XCUIElement, on shot: XCUIScreenshot, in app: XCUIApplication,
-        line: UInt = #line
+        _ verify: XCUIElement, below field: XCUIElement, on shot: XCUIScreenshot,
+        in app: XCUIApplication, line: UInt = #line
     ) {
+        XCTAssertLessThanOrEqual(
+            field.frame.maxY, verify.frame.minY - 8 + 0.5,
+            "the field \(field.frame) above Verify code \(verify.frame)", line: line)
         let foot = verify.frame.maxY
         let edge = drawnEdge(below: foot, on: shot, in: app)
         XCTAssertEqual(

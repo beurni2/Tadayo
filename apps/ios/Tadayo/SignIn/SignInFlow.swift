@@ -180,69 +180,30 @@ struct CodeScreen: View {
     @State private var room = KeyboardRoom()
     @State private var regionFoot: CGFloat = 0
     @State private var verifyHeight: CGFloat = 0
+    /// The labelled field's identity, to scroll to.
+    private static let field = "code.field"
 
     var body: some View {
-        SetupScroll {
-            SetupHeading(
-                title: "auth.code.title",
-                subtitle: Text(verbatim: sentTo(breakable(model.address)))
-                    .accessibilityLabel(Text(verbatim: sentTo(model.address))))
-            LabelledField(
-                Text("auth.code.label"), isFocused: focus ?? focused,
-                isInvalid: model.failure == .codeNotVerified,
-                error: model.failure.map { Text(verbatim: $0.words) }
-            ) {
-                // The code is read-only while it is checked or a new code is on its way, and the
-                // model keeps six digits at most: `ModelText` shows what it kept.
-                ModelText(held: { model.code }, offer: { model.code = $0 }) { text in
-                    TextField(
-                        text: text,
-                        prompt: Text("auth.code.placeholder")
-                            .foregroundStyle(Palette.secondaryText)
-                    ) {
-                        Text("auth.code.label")
-                    }
-                    .keyboardType(.numberPad)
-                    .textContentType(.oneTimeCode)
-                    .focused($focused)
-                }
-            }
-            .padding(.top, SetupGap.field)
-            errorRegion
-                .background {
-                    GeometryReader { region in
-                        Color.clear.onChange(
-                            of: region.frame(in: .named(SetupColumn.space)).maxY, initial: true
-                        ) { _, foot in
-                            regionFoot = foot
-                        }
+        ScrollViewReader { scroll in
+            column
+                // Verify code pinned 12 above the keyboard, with no motion as it goes there (T48).
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    if pinsVerify {
+                        SetupFooter(bottom: Spacing.m) { verify }
                     }
                 }
-            if !pinsVerify {
-                verify
-            }
-            // 8 under Verify code, as frames 6 to 8 and 24 draw it.
-            resendRow
-                .padding(.top, Spacing.s)
-            // A new code's failure, 8 under the row and 8 above Change email address (frame 8;
-            // `resendToFailure`); with none, Change email address is right under the row, as
-            // frames 6 and 24 draw it.
-            if let resendFailure = model.resendFailure {
-                InlineError(Text(verbatim: resendFailure.words))
-                    .padding(.vertical, Spacing.s)
-            }
-            Button("auth.changeEmail") { model.changeEmail() }
-                .buttonStyle(.tadayoText)
-                .disabled(!model.canChangeEmail)
+                .transaction(value: pinsVerify) { $0.animation = nil }
+                .readingKeyboardRoom($room)
+                // Once Verify code is pinned, the field, its label first, is scrolled to the top
+                // of the screen, so the pinned button covers none of it: the keyboard's own
+                // scrolling keeps the field clear of the keyboard, not of the button over it,
+                // and `ios` run 43181241212 drew the button over the field's last 12 points.
+                // Frame 19 is scrolled so, the field under the navigation bar and the error
+                // continuing behind the button.
+                .onChange(of: pinsVerify) { _, pinned in
+                    if pinned { scroll.scrollTo(Self.field, anchor: .top) }
+                }
         }
-        // Verify code pinned 12 above the keyboard, with no motion as it goes there (T48).
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            if pinsVerify {
-                SetupFooter(bottom: Spacing.m) { verify }
-            }
-        }
-        .transaction(value: pinsVerify) { $0.animation = nil }
-        .readingKeyboardRoom($room)
         .navigationTitle(Text("auth.signIn.navTitle"))
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(!model.canChangeEmail)
@@ -277,6 +238,65 @@ struct CodeScreen: View {
             if let words = SignInAnnouncement.resending(from: was, to: now) {
                 Announcement.post(words)
             }
+        }
+    }
+
+    /// The column: the heading, the field, the error region, Verify code where it isn't pinned,
+    /// the resend row, a new code's failure and Change email address.
+    private var column: some View {
+        SetupScroll {
+            SetupHeading(
+                title: "auth.code.title",
+                subtitle: Text(verbatim: sentTo(breakable(model.address)))
+                    .accessibilityLabel(Text(verbatim: sentTo(model.address))))
+            LabelledField(
+                Text("auth.code.label"), isFocused: focus ?? focused,
+                isInvalid: model.failure == .codeNotVerified,
+                error: model.failure.map { Text(verbatim: $0.words) }
+            ) {
+                // The code is read-only while it is checked or a new code is on its way, and the
+                // model keeps six digits at most: `ModelText` shows what it kept.
+                ModelText(held: { model.code }, offer: { model.code = $0 }) { text in
+                    TextField(
+                        text: text,
+                        prompt: Text("auth.code.placeholder")
+                            .foregroundStyle(Palette.secondaryText)
+                    ) {
+                        Text("auth.code.label")
+                    }
+                    .keyboardType(.numberPad)
+                    .textContentType(.oneTimeCode)
+                    .focused($focused)
+                }
+            }
+            .id(Self.field)
+            .padding(.top, SetupGap.field)
+            errorRegion
+                .background {
+                    GeometryReader { region in
+                        Color.clear.onChange(
+                            of: region.frame(in: .named(SetupColumn.space)).maxY, initial: true
+                        ) { _, foot in
+                            regionFoot = foot
+                        }
+                    }
+                }
+            if !pinsVerify {
+                verify
+            }
+            // 8 under Verify code, as frames 6 to 8 and 24 draw it.
+            resendRow
+                .padding(.top, Spacing.s)
+            // A new code's failure, 8 under the row and 8 above Change email address (frame 8;
+            // `resendToFailure`); with none, Change email address is right under the row, as
+            // frames 6 and 24 draw it.
+            if let resendFailure = model.resendFailure {
+                InlineError(Text(verbatim: resendFailure.words))
+                    .padding(.vertical, Spacing.s)
+            }
+            Button("auth.changeEmail") { model.changeEmail() }
+                .buttonStyle(.tadayoText)
+                .disabled(!model.canChangeEmail)
         }
     }
 
