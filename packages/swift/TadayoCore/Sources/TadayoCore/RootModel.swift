@@ -69,6 +69,20 @@ import Observation
     private(set) var epoch = 0
     /// The Leave sign-in under way: a second one waits for it, and nothing starts meanwhile.
     private var leaving: Task<Void, Never>?
+    /// What a Leave that couldn't forget the session was ending, so its Retry ends it the same
+    /// way.
+    private var unfinished: Ending?
+
+    /// Why a session is being ended. Only the server's ending is said on A02-email ("Your sign-in
+    /// ended. Enter your email to sign in again.", handoff 7's `auth.email.signedOut`), which then
+    /// holds the address typed in this launch, if the sign-in model still has it (IMPL §4:
+    /// "Retain the address if still available in the current flow; never reconstruct it from an
+    /// account record"). A Leave the person asked for returns to an empty field (FQ93's default).
+    /// The address is held in memory only, never kept or logged.
+    private enum Ending: Equatable {
+        case asked
+        case byServer(address: String?)
+    }
 
     let session: SessionManager
     let auth: any AuthService
@@ -112,7 +126,7 @@ import Observation
     /// or a session the device couldn't keep, where sign-in starts again with the address typed,
     /// so only the code is asked for again.
     public func retry() async {
-        if route == .leaveFailed { return await leave() }
+        if route == .leaveFailed { return await end(unfinished ?? .asked) }
         if route == .tabs { return await loadClubs() }
         if route == .signInNotKept {
             let typed = signIn?.email ?? ""
@@ -123,20 +137,31 @@ import Observation
         await start()
     }
 
-    /// Leave sign-in, A02-age's back and the Lab's Log out, and what an answer of "signed out"
-    /// from the server does too: "Leaving sign-in…" while it ends the session on the server and
-    /// here, then A02-email (Welcome, A01, comes in B1). If the device couldn't forget the
-    /// session, the failure line says so, with Retry, rather than show sign-in over a session
-    /// still kept. One Leave runs at a time. `left` purges what the account left behind (T11).
+    /// Leave sign-in, on A02-age and the Lab's Log out: "Leaving sign-in…" while it ends the
+    /// session on the server and here, then A02-email, empty (Welcome, A01, comes in B1). If the
+    /// device couldn't forget the session, the failure line says so, with Retry, rather than show
+    /// sign-in over a session still kept. One Leave runs at a time, and the first one's reason
+    /// stands. `left` purges what the account left behind (T11).
     public func leave() async {
+        await end(.asked)
+    }
+
+    /// An answer of "signed out" from the server ends the session as Leave sign-in does, and
+    /// A02-email says the sign-in ended, with the address typed if the sign-in model still has it.
+    private func endedByServer() async {
+        await end(.byServer(address: signIn?.email))
+    }
+
+    private func end(_ ending: Ending) async {
         if let leaving { return await leaving.value }
-        let task = Task { await self.endSession() }
+        let task = Task { await self.endSession(ending) }
         leaving = task
         await task.value
         leaving = nil
     }
 
-    private func endSession() async {
+    private func endSession(_ ending: Ending) async {
+        unfinished = nil
         epoch += 1
         signIn = nil
         profile = nil
@@ -146,10 +171,11 @@ import Observation
         let forgotten = await session.signOut()
         left()
         guard forgotten else {
+            unfinished = ending
             route = .leaveFailed
             return
         }
-        showSignIn()
+        showSignIn(after: ending)
     }
 
     /// Home, Friends and Memories, each time the tabs show or Retry is tapped.
@@ -177,23 +203,33 @@ import Observation
                 clubs = .failed(.other)
             }
         case .failure(.signedOut):
-            await leave()
+            await endedByServer()
         case .failure(let failure):
             clubs = .failed(failure == .network ? .network : .other)
         }
     }
 
-    private func showSignIn() {
+    /// A02-email, empty unless the server ended the sign-in before while the address was still
+    /// in memory (`Ending`).
+    private func showSignIn(after ending: Ending? = nil) {
         profile = nil
         account = nil
         clubs = .loading
         let asked = epoch
-        signIn = SignInModel(
+        var endedByServer = false
+        var address: String?
+        if case .byServer(let typed) = ending {
+            endedByServer = true
+            address = typed
+        }
+        let model = SignInModel(
             auth: auth,
             verified: { [weak self] verified in
                 guard let self, self.epoch == asked else { return }
                 await self.signedIn(verified)
-            }, now: now, sleep: sleep)
+            }, signInEnded: endedByServer, now: now, sleep: sleep)
+        if let address { model.email = address }
+        signIn = model
         route = .signIn
     }
 
@@ -220,7 +256,7 @@ import Observation
         case .success(let account):
             await show(account)
         case .failure(.signedOut):
-            await leave()
+            await endedByServer()
         case .failure(let failure):
             route = .failed(failure == .network ? .network : .other)
         }
@@ -245,7 +281,7 @@ import Observation
                     },
                     signedOut: { [weak self] in
                         guard let self, self.epoch == asked else { return }
-                        await self.leave()
+                        await self.endedByServer()
                     })
             }
             route = account.ageConfirmed ? .profile : .confirmAge

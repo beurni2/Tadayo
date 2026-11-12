@@ -2,10 +2,12 @@ import SwiftUI
 import TadayoCore
 import TadayoDesign
 
-/// A02-age (handoff 1's frame 4): one confirmation, I’m 18 or older, with no birthdate, checkbox
-/// or second screen (FQ13), and Leave sign-in, which ends this sign-in and doesn't mean the person
-/// is under 18. The frame's back chevron leaves sign-in too, so going back can't skip the step;
-/// it returns to A02-email, since Welcome (A01) comes in B1.
+/// A02-age (handoff 7's frames 26 and 9): one confirmation, I’m 18 or older, with no birthdate,
+/// checkbox or second screen (FQ13), pinned 44 points above the safe area, and Leave sign-in in
+/// the bar's leading place, where no back chevron is, so going back can't skip the step. Leave
+/// sign-in ends this sign-in, doesn't mean the person is under 18, and returns to A02-email, since
+/// Welcome (A01) comes in B1; it is inactive while the confirmation is saved. A failure is A02-age's
+/// own line, 16 points above the button (`handoff7.spacing.errorToActionMinimum`).
 struct AgeScreen: View {
     let model: ProfileModel
     let leave: @MainActor () async -> Void
@@ -18,9 +20,9 @@ struct AgeScreen: View {
                     subtitleGap: Spacing.xxl)
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                SetupFooter(bottom: Spacing.s) {
+                SetupFooter(bottom: SetupGap.formFooterToSafeAreaBottom, spacing: Spacing.l) {
                     if let failure = model.failure {
-                        InlineError(Text(verbatim: failure.words))
+                        InlineError(Text(verbatim: failure.ageWords))
                     }
                     Button {
                         Task { await model.confirmAge() }
@@ -29,39 +31,26 @@ struct AgeScreen: View {
                     }
                     .buttonStyle(.tadayoPrimary(isBusy: model.isSaving))
                     .disabled(model.isSaving)
-                    Button("auth.age.leave") { Task { await leave() } }
-                        .buttonStyle(.tadayoText)
                 }
             }
             .navigationTitle(Text("auth.signIn.navTitle"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        Task { await leave() }
-                    } label: {
-                        Image(systemName: "chevron.backward")
-                    }
-                    .modifier(SystemBackColour())
-                    .accessibilityLabel(Text("auth.age.leave"))
+                    LeaveSignInButton(leave: leave)
+                        .disabled(model.isSaving)
                 }
             }
-            .announcing(model.failure?.words)
+            .announcing(model.failure?.ageWords)
+            // "Saving your age confirmation.", once, as the request begins; the button says
+            // "In progress" itself.
+            .onChange(of: model.isSaving) { was, now in
+                if let words = SignInAnnouncement.savingAge(from: was, to: now) {
+                    Announcement.post(words)
+                }
+            }
         }
         .tint(Palette.action)
-    }
-}
-
-/// The colour of the system's own back button, for the chevron that stands in for it (T45): the
-/// tint before iOS 26; on iOS 26's glass, where A02-code's back button takes the label's colour,
-/// `primaryText`, the token nearest it (T44).
-private struct SystemBackColour: ViewModifier {
-    func body(content: Content) -> some View {
-        if #available(iOS 26, *) {
-            content.tint(Palette.primaryText)
-        } else {
-            content
-        }
     }
 }
 
@@ -124,12 +113,21 @@ struct ProfileScreen: View {
 }
 
 extension ProfileModel.Failure {
-    /// "Check your connection" only when no answer came (handoff 4's `auth.profile`). A02-age has
-    /// no line of its own yet: it uses the profile's until handoff 7 gives one.
+    /// A03-profile's lines: "Check your connection" only when no answer came (handoff 4's
+    /// `auth.profile`).
     var words: String {
         switch self {
         case .network: String(localized: "auth.profile.networkFailure")
         case .other: String(localized: "auth.profile.saveFailed")
+        }
+    }
+
+    /// A02-age's own lines, which name the age confirmation (handoff 7's `auth.age.network` and
+    /// `auth.age.refused`); `ProfileModel` is shared with A03, which keeps the profile's.
+    var ageWords: String {
+        switch self {
+        case .network: String(localized: "auth.age.network")
+        case .other: String(localized: "auth.age.refused")
         }
     }
 }

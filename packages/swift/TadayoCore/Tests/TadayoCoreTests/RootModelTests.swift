@@ -267,6 +267,8 @@ import Testing
         #expect(root.route == .signIn)
         #expect(root.profile == nil)
         #expect(root.signIn?.email == "")
+        // The person asked: A02-email doesn't say the sign-in ended.
+        #expect(root.signIn?.signInEnded == false)
     }
 
     @Test func leavingPurgesOnceTheServerHasHeardAndBeforeSignInShows() async throws {
@@ -296,6 +298,111 @@ import Testing
         await root.start()
         #expect(root.route == .signIn)
         #expect(purges == 1)
+        // The server ended it: A02-email says so (handoff 7's `auth.email.signedOut`), with an
+        // empty field, since at launch no address was typed in this one (IMPL §4: "never
+        // reconstruct it from an account record").
+        #expect(root.signIn?.signInEnded == true)
+        #expect(root.signIn?.email == "")
+    }
+
+    // MARK: Why a session ended (handoff 7's `auth.email.signedOut`; FQ93's default)
+
+    /// A02-code to A02-age with ben@example.com typed: the sign-in model, holding the address,
+    /// lives on while the account is unfinished.
+    func onTheAge(
+        _ accounts: FakeAccounts, auth: FakeAuth, store: any SessionStore = InMemorySessionStore()
+    ) async throws -> RootModel {
+        let root = root(accounts, auth: auth, store: store)
+        await root.start()
+        let signIn = try #require(root.signIn)
+        signIn.email = "ben@example.com"
+        await signIn.sendCode()
+        signIn.code = "529614"
+        await signIn.verify()
+        #expect(root.route == .confirmAge)
+        return root
+    }
+
+    @Test func aSignInTheServerEndedKeepsTheAddressIfItIsInMemory() async throws {
+        // IMPL §4: "Retain the address if still available in the current flow."
+        let auth = FakeAuth(verify: [.success(stored)])
+        let accounts = FakeAccounts(me: [.success(account())], update: [.failure(.signedOut)])
+        let root = try await onTheAge(accounts, auth: auth)
+        let profile = try #require(root.profile)
+        await profile.confirmAge()
+        #expect(root.route == .signIn)
+        #expect(auth.calls.last == "signOut access-1")
+        #expect(root.signIn?.signInEnded == true)
+        #expect(root.signIn?.email == "ben@example.com")
+        #expect(root.signIn?.step == .email)
+    }
+
+    @Test func leavingSignInFromTheAgeLeavesTheFieldEmptyThoughTheAddressIsInMemory() async throws {
+        // FQ93's default: Leave sign-in returns to an empty field and says nothing ended.
+        let auth = FakeAuth(verify: [.success(stored)])
+        let root = try await onTheAge(FakeAccounts(me: [.success(account())]), auth: auth)
+        await root.leave()
+        #expect(root.route == .signIn)
+        #expect(root.signIn?.signInEnded == false)
+        #expect(root.signIn?.email == "")
+    }
+
+    @Test func aSignInTheServerEndsAfterTheCodeKeepsTheAddress() async throws {
+        // The account read after a verified code answers "signed out": A02-code's address is
+        // still in memory.
+        let auth = FakeAuth(verify: [.success(stored)])
+        let root = root(FakeAccounts(me: [.failure(.signedOut)]), auth: auth)
+        await root.start()
+        let signIn = try #require(root.signIn)
+        signIn.email = "ben@example.com"
+        await signIn.sendCode()
+        signIn.code = "529614"
+        await signIn.verify()
+        #expect(root.route == .signIn)
+        #expect(root.signIn !== signIn)
+        #expect(root.signIn?.signInEnded == true)
+        #expect(root.signIn?.email == "ben@example.com")
+    }
+
+    @Test func aSessionTheServerEndsOnTheTabsSaysSoWithAnEmptyField() async throws {
+        // The tabs hold no sign-in, so no address is left to keep.
+        let root = root(
+            FakeAccounts(me: [.success(named)], clubs: [.failure(.signedOut)]),
+            store: InMemorySessionStore(stored))
+        await root.start()
+        #expect(root.route == .signIn)
+        #expect(root.signIn?.signInEnded == true)
+        #expect(root.signIn?.email == "")
+    }
+
+    @Test func aLeaveRetriedAfterAFailedRemovalKeepsItsCause() async throws {
+        // The server ended it and the device couldn't forget it at first: Retry removes it again
+        // and A02-email still says the sign-in ended, with the address typed.
+        let auth = FakeAuth(verify: [.success(stored)])
+        let accounts = FakeAccounts(me: [.success(account())], update: [.failure(.signedOut)])
+        let root = try await onTheAge(
+            accounts, auth: auth, store: StubbornStore(nil, failures: 2))
+        let profile = try #require(root.profile)
+        await profile.confirmAge()
+        #expect(root.route == .leaveFailed)
+        #expect(root.signIn == nil)
+        await root.retry()
+        #expect(root.route == .signIn)
+        #expect(root.signIn?.signInEnded == true)
+        #expect(root.signIn?.email == "ben@example.com")
+    }
+
+    @Test func aLeaveThePersonAskedForRetriedSaysNothingEnded() async throws {
+        let auth = FakeAuth(verify: [.success(stored)])
+        let root = try await onTheAge(
+            FakeAccounts(me: [.success(account())]), auth: auth,
+            store: StubbornStore(nil, failures: 2))
+        await root.leave()
+        #expect(root.route == .leaveFailed)
+        await root.retry()
+        #expect(root.route == .signIn)
+        #expect(root.signIn?.signInEnded == false)
+        #expect(root.signIn?.email == "")
     }
 
     @Test func aSaveThatLandsAfterLeavingIsDropped() async throws {
@@ -390,6 +497,8 @@ import Testing
         #expect(auth.calls == ["signOut access-1"])
         #expect(root.route == .signIn)
         #expect(root.signIn === signIn)
+        // The person's Leave came first, so A02-email doesn't say the server ended it.
+        #expect(root.signIn?.signInEnded == false)
     }
 
     @Test func aCodeVerifiedAfterLeavingIsDropped() async throws {

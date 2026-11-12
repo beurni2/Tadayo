@@ -54,6 +54,10 @@ import Observation
     public private(set) var isResending = false
     /// The minute since the last successful send has passed: the resend row offers a new code.
     public private(set) var canResend = false
+    /// The sign-in before this one was ended by the server, not by the person: A02-email says so
+    /// (handoff 7's `auth.email.signedOut`) until a code is sent. It lives in this model, in
+    /// memory, and is never kept or logged.
+    public private(set) var signInEnded: Bool
     /// When the resend row next changes, while A02-code waits; the view waits on it.
     public private(set) var resendDue: ContinuousClock.Instant?
 
@@ -65,11 +69,13 @@ import Observation
     let now: @Sendable () -> ContinuousClock.Instant
     let sleep: @Sendable (ContinuousClock.Instant) async throws -> Void
 
-    /// `verified` takes the session a code gave; `now` and `sleep` time the resend wait on the
-    /// continuous clock, which keeps counting while the phone sleeps.
+    /// `verified` takes the session a code gave; `signInEnded` says the server ended the sign-in
+    /// before; `now` and `sleep` time the resend wait on the continuous clock, which keeps counting
+    /// while the phone sleeps.
     public init(
         auth: any AuthService,
         verified: @escaping @MainActor (AuthSession) async -> Void,
+        signInEnded: Bool = false,
         now: @escaping @Sendable () -> ContinuousClock.Instant = { .now },
         sleep: @escaping @Sendable (ContinuousClock.Instant) async throws -> Void = {
             try await Task.sleep(until: $0, clock: .continuous)
@@ -77,6 +83,7 @@ import Observation
     ) {
         self.auth = auth
         self.verified = verified
+        self.signInEnded = signInEnded
         self.now = now
         self.sleep = sleep
     }
@@ -118,6 +125,7 @@ import Observation
         do {
             try await auth.sendCode(to: address)
             codeWasSent(to: address)
+            signInEnded = false
             step = .code
         } catch .network {
             failure = .sendNetwork
