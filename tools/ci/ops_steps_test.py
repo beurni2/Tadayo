@@ -416,16 +416,45 @@ def workflow():
 KEY = re.compile(r"[A-Za-z0-9_-]+")
 
 
+FOLDED = re.compile(r"(?:^|[ -])[A-Za-z0-9_-]+: >-$")
+
+
 def significant_lines(text):
     """(line number, indent, content) for each line that isn't blank or a comment, its comment cut
-    (a `#` after a space or at the start). A tab fails: YAML refuses one in indentation."""
+    (a `#` after a space or at the start), except in a folded value: YAML reads every line of a
+    block scalar as its text, a `#` or a blank line among them, so those lines are taken whole,
+    and one holding a `#`, a blank line inside one, or one indented unlike the first, fails. A tab
+    fails (YAML refuses one in indentation), and so does a line ending in a space."""
     found = []
-    for number, line in enumerate(text.splitlines(), 1):
+    lines = text.splitlines()
+    folded = None  # (the key's indent, the first line's indent) while a folded value is read
+    for number, line in enumerate(lines, 1):
         if "\t" in line:
             raise ValueError(f"line {number}: a tab")
+        if line != line.rstrip():
+            raise ValueError(f"line {number}: ends in a space")
+        indent = len(line) - len(line.lstrip(" "))
+        if folded and not line:
+            later = next((rest for rest in lines[number:] if rest), "")
+            if len(later) - len(later.lstrip(" ")) > folded[0]:
+                raise ValueError(f"line {number}: a blank line inside a folded value")
+            folded = None
+            continue
+        if folded and indent > folded[0]:
+            if "#" in line:
+                raise ValueError(f"line {number}: a `#` inside a folded value, which YAML reads as text")
+            if folded[1] is None:
+                folded = (folded[0], indent)
+            elif indent != folded[1]:
+                raise ValueError(f"line {number}: a folded value's line indented unlike its first")
+            found.append((number, indent, line.strip()))
+            continue
+        folded = None
         content = re.split(r"(?:^| )#", line, maxsplit=1)[0].rstrip()
         if content.strip():
             found.append((number, len(content) - len(content.lstrip(" ")), content.strip()))
+            if FOLDED.search(content):
+                folded = (indent, None)
     return found
 
 
@@ -444,9 +473,10 @@ def scalar(number, text):
 
 def parse_yaml(text):
     """A workflow file as dicts, lists and strings, read strictly: block mappings and sequences,
-    plain and single-quoted scalars, `{}`, folded `>-` scalars and comments, and nothing else. Any
-    other line, a duplicate key, or a line indented where nothing can be, fails, so no line of the
-    file goes unread."""
+    plain and single-quoted scalars, `{}`, folded `>-` scalars (their lines taken whole, as YAML
+    takes them: significant_lines) and comments, and nothing else. Any other line, a duplicate key,
+    or a line indented where nothing can be, fails, so no line of the file goes unread or is read
+    otherwise than YAML reads it."""
     lines = significant_lines(text)
     position = 0
 
@@ -462,7 +492,7 @@ def parse_yaml(text):
     def value_after(number, indent, rest):
         """The value of a key whose text after the colon is rest."""
         nonlocal position
-        if rest in (">-", ">"):
+        if rest == ">-":
             words = []
             while position < len(lines) and lines[position][1] > indent:
                 words.append(lines[position][2])
@@ -564,22 +594,32 @@ class YamlReaderTest(unittest.TestCase):
     """The reader WorkflowFileTest stands on: what it reads, and that it refuses what it can't."""
 
     def test_it_reads_the_subset(self):
-        self.assertEqual(parse_yaml("a: 1  # c\n# c\nb:\n  c: ''\n\n  d: {}\n  e: >-\n    x\n    y\nf:\n  - g\n"
-                                    "  - h: i\n    j: 'k'\n"),
-                         {"a": "1", "b": {"c": "", "d": {}, "e": "x y"}, "f": ["g", {"h": "i", "j": "k"}]})
+        self.assertEqual(parse_yaml("a: 1  # c\n# c\nb:\n  c: ''\n\n  d: {}\n  e: >-  # c\n    x\n    y\n  # c\nf:\n"
+                                    "  - g\n  - h: i\n    j: 'k'\n  - l: >-\n      m\n\n"),
+                         {"a": "1", "b": {"c": "", "d": {}, "e": "x y"}, "f": ["g", {"h": "i", "j": "k"}, {"l": "m"}]})
 
     def test_it_refuses_what_it_can_t_read(self):
-        for text in ("a: 1\na: 2\n", "a:\n  b: 1\n   c: 2\n", "a: [1]\n", "a: \"x\"\n", "a: |\n  x\n",
+        for text in ("a: 1\na: 2\n", "a:\n  b: 1\n   c: 2\n", "a: [1]\n", "a: \"x\"\n", "a: |\n  x\n", "a: >\n  x\n",
                      "a: &x 1\n", "a: *x\n", "<<: x\n", "a: 'x'y'\n", "a:\n\tb: 1\n", "a: b: c\n", "a:\n",
-                     "- a\nb: 1\n", "a:b\n", "'a': 1\n", "a: 1\n  b: 2\n"):
+                     "- a\nb: 1\n", "a:b\n", "'a': 1\n", "a: 1\n  b: 2\n", "a: 1 \n",
+                     # a folded value's lines are its text, as YAML reads them: a `#` among them,
+                     # a blank line inside one, or a line indented unlike the first, fails
+                     "a: >-\n  x #y\n", "a: >-\n  x\n  #y\n", "a: >-\n  #\n  x\n", "- a: >-\n    x #y\n",
+                     "a: >-\n  x\n\n  y\n", "a: >-\n  x\n    y\n", "a: >-\n    x\n  y\n"):
             with self.subTest(text=text):
                 with self.assertRaises(ValueError):
                     parse_yaml(text)
 
     def test_it_reads_ops_yml_as_a_yaml_library_would(self):
+        # ci's runner has one: the ubuntu-24.04 image's python3-yaml, which `python3 -I` imports
+        # (ci run 43138850682 ran this test). It isn't pinned, so on ci its absence fails the test
+        # rather than skipping it; elsewhere, without one, the test is skipped.
         try:
-            import yaml  # not on ci's runner; the session has it
+            import yaml
         except ImportError:
+            if os.environ.get("GITHUB_ACTIONS") == "true":
+                self.fail("no yaml library on ci's runner: the image's python3-yaml has gone, so "
+                          "install one before this step or say in docs/LIMITATIONS.md why not")
             self.skipTest("no yaml library here")
         theirs = yaml.safe_load(workflow())
         theirs["on"] = theirs.pop(True)  # YAML 1.1 reads the key `on` as true
@@ -642,8 +682,10 @@ class WorkflowFileTest(unittest.TestCase):
 
     def test_every_expression_in_the_file_is_one_this_test_knows(self):
         # The same check, counted on the file's own text, apart from the reader above: every
-        # `${{ … }}` outside comments, as often as the jobs and the inputs' variables need it.
-        found = sorted(re.findall(r"\$\{\{.*?\}\}", "\n".join(c for _, _, c in significant_lines(self.text))))
+        # `${{ … }}` in the file, comments included (none needs one), each whole on its line, as
+        # often as the jobs and the inputs' variables need it.
+        found = sorted(re.findall(r"\$\{\{.*?\}\}", self.text))
+        self.assertEqual(self.text.count("${{"), len(found))
         wanted = ["${{ inputs.%s }}" % name for name in ("script", "org", "to", "branch", "branch")]
         for script in ops_steps.SCRIPTS.values():
             wanted += ["${{ github.token }}" if v == ops_steps.JOB_TOKEN else "${{ secrets.%s }}" % ops_steps.SECRETS[v]
