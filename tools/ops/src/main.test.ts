@@ -6,7 +6,7 @@
 
 import { existsSync } from "node:fs";
 import { chmod, mkdtemp, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { hostname, tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { spawnProcess } from "./spawn.ts";
@@ -61,19 +61,19 @@ describe("the ops entry", () => {
   });
 
   it("holds back the environment's token from a line a script says, and exits 0 when the script worked", async () => {
-    // The session prints the Machine's lines; the organization's peers are listed with the one this
-    // session made, named by this host and made just now, as flyctl's agent names it (on-machine.ts).
-    const peers = [
-      'const C="0123456789ABCDEFGHJKMNPQRSTVWXYZ";let t=Date.now(),u="";',
-      "for(let i=0;i<10;i++){u=C[t%32]+u;t=Math.floor(t/32)}",
-      'const h=require("os").hostname().split(".")[0].replace(/[^a-zA-Z0-9-]/g,"-");',
-      'process.stdout.write(JSON.stringify([{Name:"interactive-"+h+"-someone-example-invalid-"+u+"0000000000000000"}]))',
-    ].join("");
+    // The session prints the Machine's lines and leaves a mark beside this made-up flyctl; the
+    // organization's peers are none before it and, after it, the one it made, named for this host as
+    // flyctl's agent names it (on-machine.ts).
+    const peer = `interactive-${
+      hostname()
+        .split(".")[0]
+        ?.replace(/[^a-zA-Z0-9-]/g, "-") ?? ""
+    }-someone-example-invalid-01ARYZ6S41TSV4RRFFQ69G5FAV`;
     const bin = await flyctl(`case "$1 $2" in
   "machine list") printf '%s' '[{"id":"a1","state":"started","config":{"metadata":{"fly_process_group":"api"}}}]' ;;
-  "ssh console") printf 'storage-setup: uploads: created\\nstorage-setup: renditions: created\\nthe key is %s\\n' "$FLY_API_TOKEN" ;;
+  "ssh console") touch "$(dirname "$0")/session"; printf 'storage-setup: uploads: created\\nstorage-setup: renditions: created\\nthe key is %s\\n' "$FLY_API_TOKEN" ;;
   "orgs list") printf '%s' '{"tadayo-org":"Tadayo"}' ;;
-  "wireguard list") "${process.execPath}" -e '${peers}' ;;
+  "wireguard list") if [ -e "$(dirname "$0")/session" ]; then printf '%s' '[{"Name":"${peer}"}]'; else printf '[]'; fi ;;
   "wireguard remove") echo "Removing WireGuard peer \\"$4\\" for organization $3"; echo "Removed peer." ;;
   *) echo "unexpected: $*" >&2; exit 2 ;;
 esac`);

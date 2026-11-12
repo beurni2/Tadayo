@@ -2,7 +2,8 @@
 // where the Supabase service key is (docs/plans/api-b0-deploy.md, section 6; T56; ADR-034). It goes
 // over `flyctl ssh console`, which exits 0 when the command did and 1 otherwise, with flyctl's own
 // last line saying the command's exit status (flyctl 0.5.8 and golang.org/x/crypto's source); and
-// whatever the command did, the WireGuard peer the session made is removed, and no other.
+// whatever the command did, the WireGuard peer the session made is removed, and no other: the
+// organization's peers are listed before and after it, and only a new one named for this runner goes.
 
 import { describe, expect, it } from "vitest";
 import {
@@ -19,15 +20,7 @@ import {
   type Route,
 } from "../test/fake-fly.ts";
 import { flyOf } from "./fly.ts";
-import {
-  COMMAND_SECONDS,
-  SESSION_MS,
-  TUNNEL_SECONDS,
-  hostSlug,
-  onMachine,
-  peerOfThisRun,
-  ulidTime,
-} from "./on-machine.ts";
+import { COMMAND_SECONDS, SESSION_MS, TUNNEL_SECONDS, hostSlug, onMachine, sessionPeerOf } from "./on-machine.ts";
 import { OpsError } from "./ops-error.ts";
 
 const LIST = "flyctl machine list -a tadayo-api-dev --json";
@@ -39,10 +32,9 @@ const REMOVE = "flyctl wireguard remove tadayo-org";
 const ENV = { FLY_API_TOKEN: FAKE_FLY_TOKEN, HOME: "/home/runner" };
 
 const HOST = "runnervm0abc1";
-/** When the session starts and ends, by the runner's clock. */
-const SINCE = 1_794_460_000_000;
-const UNTIL = SINCE + 40_000;
-const OURS = sessionPeer(HOST, SINCE + 3_000);
+/** When the session's peer was made: only its name holds it, and nothing reads it. */
+const MADE = 1_794_460_003_000;
+const OURS = sessionPeer(HOST, MADE);
 
 const machines = json([machine("w1", "worker", "started"), machine("a1", "api", "started")]);
 const orgs = json({ "tadayo-org": "Tadayo" });
@@ -51,19 +43,24 @@ const orgs = json({ "tadayo-org": "Tadayo" });
 const exited = (status: number, extra = "") =>
   `Error: ssh shell: Process exited with status ${String(status)}${extra}\n`;
 
-/** The routes of a run whose session answers `session`, with the organization's peers `peers`. */
-const routes = (session: Reply, peers: readonly string[] = [OURS]): Route[] => [
+/** The peer listing's answers: `before` the session, then `after` it. */
+const peersOf =
+  (before: Reply, after: Reply) =>
+  (_call: unknown, earlier: number): Reply =>
+    earlier === 0 ? before : after;
+
+/** The routes of a run whose session answers `session`, with the organization's peers `before` and `after` it. */
+const routes = (session: Reply, after: readonly string[] = [OURS], before: readonly string[] = []): Route[] => [
   [LIST, machines],
   [SSH, session],
   [ORGS, orgs],
-  [PEERS, peerList(peers)],
+  [PEERS, peersOf(peerList(before), peerList(after))],
   [REMOVE, { stdout: 'Removing WireGuard peer "…" for organization tadayo-org\nRemoved peer.\n' }],
 ];
 
 async function run(list: readonly Route[], command: readonly string[] = COMMAND) {
   const { spawn, calls } = fakeSpawn(list);
   const said: string[] = [];
-  const clock = [SINCE, UNTIL];
   const outcome = await onMachine({
     fly: flyOf(spawn, ENV),
     label: "storage-setup",
@@ -71,7 +68,6 @@ async function run(list: readonly Route[], command: readonly string[] = COMMAND)
     say: (line) => said.push(`machine: ${line}`),
     note: (line) => said.push(line),
     host: HOST,
-    now: () => clock.shift() ?? UNTIL,
   }).then(
     () => undefined,
     (caught: unknown) => caught,
@@ -89,8 +85,8 @@ describe("onMachine: the command, over SSH", () => {
   it("runs the command in the API's started Machine, as one string, says what it printed, then removes the run's peer", async () => {
     const result = await run(routes({ stdout: "first\nsecond\n", stderr: "a warning\n" }));
     expect(result.outcome).toBeUndefined();
-    expect(result.calls).toEqual([LIST, SSH, ORGS, PEERS, `${REMOVE} ${OURS}`]);
-    expect(result.raw[1]?.args).toEqual([
+    expect(result.calls).toEqual([LIST, ORGS, PEERS, SSH, PEERS, `${REMOVE} ${OURS}`]);
+    expect(result.raw[3]?.args).toEqual([
       "ssh",
       "console",
       "-a",
@@ -108,10 +104,12 @@ describe("onMachine: the command, over SSH", () => {
     const result = await run(routes({}));
     expect(SESSION_MS).toBe((TUNNEL_SECONDS + 60 + COMMAND_SECONDS) * 1000);
     expect(SESSION_MS).toBe(600_000);
-    expect(result.raw[1]?.options.timeoutMs).toBe(600_000);
+    expect(result.raw[3]?.options.timeoutMs).toBe(600_000);
     for (const call of result.raw) expect(call.options.env).toEqual(ENV);
-    // The listing and the removal are quick calls.
-    expect(result.raw.slice(2).map((call) => call.options.timeoutMs)).toEqual([120_000, 120_000, 120_000]);
+    // The organization, the listings and the removal are quick calls.
+    expect([1, 2, 4, 5].map((index) => result.raw[index]?.options.timeoutMs)).toEqual([
+      120_000, 120_000, 120_000, 120_000,
+    ]);
   });
 
   it("fails with the command's exit code, after saying what it printed, when the command failed, and still removes the peer", async () => {
@@ -161,7 +159,7 @@ describe("onMachine: the command, over SSH", () => {
     );
     // Nothing reached the Machine, so finding no peer of this run's is no news.
     expect(result.said).toEqual([]);
-    expect(result.calls).toEqual([LIST, SSH, ORGS, PEERS]);
+    expect(result.calls).toEqual([LIST, ORGS, PEERS, SSH, PEERS]);
   });
 
   it("removes a peer the agent made before its tunnel failed", async () => {
@@ -248,20 +246,19 @@ describe("onMachine: the command, over SSH", () => {
 });
 
 describe("onMachine: the run's WireGuard peer, and no other", () => {
-  it("removes only the peers this runner's host made during the session", async () => {
+  it("removes only the peers that are new since the session started and named for this runner", async () => {
+    const earlier = sessionPeer(HOST, MADE - 3_600_000); // this host's name, there before the session
     const others = [
-      sessionPeer("founders-laptop", SINCE + 3_000), // another host, at the same time
-      sessionPeer(HOST, SINCE - 3_600_000), // this host's name, an hour before
-      sessionPeer(HOST, UNTIL + 60_000), // this host's name, a minute after
-      sessionPeer(`${HOST}x`, SINCE + 3_000), // a host whose name starts like this one's
-      `static-${HOST}-${PEER_EMAIL}-${ulidAt(SINCE + 3_000)}`, // a peer made by hand
+      sessionPeer("founders-laptop", MADE), // another host, made during the session
+      sessionPeer(`${HOST}x`, MADE), // a host whose name starts like this one's
+      `static-${HOST}-${PEER_EMAIL}-${ulidAt(MADE)}`, // a peer made by hand
       `interactive-${HOST}-${PEER_EMAIL}-not-a-ulid`,
-      `interactive-${HOST}-${ulidAt(SINCE + 3_000)}`, // no email part
+      `interactive-${HOST}-${ulidAt(MADE)}`, // no email part
     ];
-    const second = sessionPeer(HOST, UNTIL - 1_000, "another-example-invalid");
-    const result = await run(routes({}, [...others.slice(0, 3), OURS, ...others.slice(3), second]));
+    const second = sessionPeer(HOST, MADE + 1_000, "another-example-invalid");
+    const result = await run(routes({}, [earlier, ...others.slice(0, 2), OURS, ...others.slice(2), second], [earlier]));
     expect(result.outcome).toBeUndefined();
-    expect(result.calls.slice(4)).toEqual([`${REMOVE} ${OURS}`, `${REMOVE} ${second}`]);
+    expect(result.calls.slice(5)).toEqual([`${REMOVE} ${OURS}`, `${REMOVE} ${second}`]);
     expect(result.said).toEqual([REMOVED]);
   });
 
@@ -270,14 +267,14 @@ describe("onMachine: the run's WireGuard peer, and no other", () => {
       [LIST, machines],
       [SSH, {}],
       [ORGS, orgs],
-      [PEERS, peerList([OURS])],
+      [PEERS, peersOf(peerList([]), peerList([OURS]))],
       [REMOVE, { code: 1, stdout: `Removing WireGuard peer "${OURS}"\n`, stderr: `Error: couldn't remove ${OURS}\n` }],
     ];
     for (const list of [routes({ stdout: "done\n" }), failing]) {
       const result = await run(list);
       const all = [...result.said, message(result.outcome)].join("\n");
       expect(all).not.toContain(PEER_EMAIL);
-      expect(all).not.toContain(ulidAt(SINCE + 3_000));
+      expect(all).not.toContain(ulidAt(MADE));
     }
   });
 
@@ -286,7 +283,7 @@ describe("onMachine: the run's WireGuard peer, and no other", () => {
       [LIST, machines],
       [SSH, { stdout: "done\n" }],
       [ORGS, orgs],
-      [PEERS, peerList([OURS])],
+      [PEERS, peersOf(peerList([]), peerList([OURS]))],
       [REMOVE, { code: 1, stderr: "Error: not allowed\n" }],
     ]);
     expect(result.said).toEqual([
@@ -298,15 +295,21 @@ describe("onMachine: the run's WireGuard peer, and no other", () => {
     );
   });
 
-  it("fails when the session reached the Machine and no peer of this run's is found, since one must have been made", async () => {
-    const result = await run(routes({ stdout: "done\n" }, [sessionPeer("founders-laptop", SINCE)]));
-    expect(message(result.outcome)).toBe(
-      `storage-setup: none of the organization's WireGuard peers is one this run made, though its session reached the Machine, so it can't say it removed it: ${BY_HAND}`,
-    );
-    expect(result.calls).toEqual([LIST, SSH, ORGS, PEERS]);
+  it("fails when the session reached the Machine and no new peer of this run's is found, since one must have been made", async () => {
+    for (const [before, after] of [
+      [[], [sessionPeer("founders-laptop", MADE)]],
+      // Named for this runner, but there before the session: not this session's to remove.
+      [[OURS], [OURS]],
+    ] as const) {
+      const result = await run(routes({ stdout: "done\n" }, after, before));
+      expect(message(result.outcome)).toBe(
+        `storage-setup: none of the organization's WireGuard peers is one this run made, though its session reached the Machine, so it can't say it removed it: ${BY_HAND}`,
+      );
+      expect(result.calls).toEqual([LIST, ORGS, PEERS, SSH, PEERS]);
+    }
   });
 
-  it("fails when the peers can't be listed, or their list read, and says how to look by hand", async () => {
+  it("fails when the peers can't be listed after the session, or their list read, and says how to look by hand", async () => {
     for (const reply of [
       { code: 1, stderr: "Error: unauthorized\n" },
       { stdout: "not json" },
@@ -317,7 +320,7 @@ describe("onMachine: the run's WireGuard peer, and no other", () => {
         [LIST, machines],
         [SSH, { stdout: "done\n" }],
         [ORGS, orgs],
-        [PEERS, reply],
+        [PEERS, peersOf(peerList([]), reply)],
       ]);
       expect(message(result.outcome), JSON.stringify(reply)).toMatch(
         /^storage-setup: flyctl couldn't list the organization's WireGuard peers \((exit code 1: Error: unauthorized|its answer isn't a list it can read)\), so the one this run may have made can't be removed: /,
@@ -326,23 +329,40 @@ describe("onMachine: the run's WireGuard peer, and no other", () => {
     }
   });
 
-  it("fails when the token's organization can't be told, naming the ones it sees, with no advice the runner can't take", async () => {
+  it("starts no session when the peers can't be listed first, since its peer couldn't be told from them", async () => {
+    for (const reply of [{ code: 1, stderr: "Error: unauthorized\n" }, { stdout: "not json" }, json([{ name: "x" }])]) {
+      const result = await run([
+        [LIST, machines],
+        [SSH, { stdout: "done\n" }],
+        [ORGS, orgs],
+        [PEERS, reply],
+      ]);
+      expect(message(result.outcome), JSON.stringify(reply)).toMatch(
+        /^storage-setup: flyctl couldn't list the organization's WireGuard peers \((exit code 1: Error: unauthorized|its answer isn't a list it can read)\), so no SSH session is started: the peer one makes couldn't be told from the others and removed$/,
+      );
+      expect(result.calls, JSON.stringify(reply)).toEqual([LIST, ORGS, PEERS]);
+    }
+  });
+
+  it("starts no session when the token's organization can't be told, naming the ones it sees, with no advice the runner can't take", async () => {
     const several = await run([
       [LIST, machines],
       [SSH, { stdout: "done\n" }],
       [ORGS, json({ a: "A", b: "B" })],
     ]);
     expect(message(several.outcome)).toBe(
-      "storage-setup: the token sees 2 organizations, a and b, so the WireGuard peer this run may have made can't be removed: `flyctl wireguard list <org>` lists the organization's peers, and `flyctl wireguard remove <org> <name>` removes one; this run's names start with interactive-runnervm0abc1-",
+      "storage-setup: the token sees 2 organizations, a and b, so no SSH session is started: the WireGuard peer one makes couldn't be removed",
     );
+    expect(several.calls).toEqual([LIST, ORGS]);
     const refused = await run([
       [LIST, machines],
       [SSH, { stdout: "done\n" }],
       [ORGS, { code: 1, stderr: "Error: unauthorized\n" }],
     ]);
     expect(message(refused.outcome)).toMatch(
-      /^storage-setup: flyctl couldn't list the organizations: exit code 1: Error: unauthorized, so the WireGuard peer/,
+      /^storage-setup: flyctl couldn't list the organizations: exit code 1: Error: unauthorized, so no SSH session is started/,
     );
+    expect(refused.calls).toEqual([LIST, ORGS]);
   });
 
   it("throws the command's failure, not the peer's, when both went wrong, and says the peer's first", async () => {
@@ -350,7 +370,7 @@ describe("onMachine: the run's WireGuard peer, and no other", () => {
       [LIST, machines],
       [SSH, { code: 1, stderr: exited(4) }],
       [ORGS, orgs],
-      [PEERS, peerList([OURS])],
+      [PEERS, peersOf(peerList([]), peerList([OURS]))],
       [REMOVE, { code: 1 }],
     ]);
     expect(message(result.outcome)).toBe("storage-setup: it failed on the Machine, with exit code 4");
@@ -362,35 +382,32 @@ describe("onMachine: the run's WireGuard peer, and no other", () => {
 });
 
 describe("the peer's name, as flyctl makes it", () => {
-  it("reads a ULID's time from its first ten characters, and nothing from what isn't one", () => {
-    // The ULID specification's own example: `ulid(1469918176385)` is 01ARYZ6S41TSV4RRFFQ69G5FAV.
-    expect(ulidTime("01ARYZ6S41TSV4RRFFQ69G5FAV")).toBe(1_469_918_176_385);
-    expect(ulidTime(ulidAt(SINCE))).toBe(SINCE);
-    for (const text of [
-      "",
-      "01ARZ3NDEKTSV4RRFFQ69G5FA",
-      "01ARZ3NDEKTSV4RRFFQ69G5FAVX",
-      "01arz3ndektsv4rrffq69g5fav",
-      "8ZZZZZZZZZZZZZZZZZZZZZZZZZ",
-      "01ARZ3NDEKTSV4RRFFQ69G5FAU",
-    ]) {
-      expect(ulidTime(text), text).toBeUndefined();
-    }
-  });
-
   it("puts the host in it as flyctl does: the first label, with any other character a hyphen", () => {
     expect(hostSlug("fv-az123-456.internal.cloudapp.net")).toBe("fv-az123-456");
     expect(hostSlug("runner_vm 1")).toBe("runner-vm-1");
     expect(hostSlug("")).toBe("");
   });
 
-  it("takes a peer as this run's only when it names this host and was made in the session, give or take two seconds", () => {
-    expect(peerOfThisRun(sessionPeer(HOST, SINCE - 2_000), HOST, SINCE, UNTIL)).toBe(true);
-    expect(peerOfThisRun(sessionPeer(HOST, UNTIL + 2_000), HOST, SINCE, UNTIL)).toBe(true);
-    expect(peerOfThisRun(sessionPeer(HOST, SINCE - 2_001), HOST, SINCE, UNTIL)).toBe(false);
-    expect(peerOfThisRun(sessionPeer(HOST, UNTIL + 2_001), HOST, SINCE, UNTIL)).toBe(false);
-    expect(peerOfThisRun(sessionPeer("fv-az1", SINCE), "fv-az1.internal.cloudapp.net", SINCE, UNTIL)).toBe(true);
+  it("takes a name as a session's on this host only when it is interactive-<host>-<email>-<ULID>", () => {
+    // The ULID specification's own example: `ulid(1469918176385)` is 01ARYZ6S41TSV4RRFFQ69G5FAV.
+    expect(sessionPeerOf(`interactive-${HOST}-${PEER_EMAIL}-01ARYZ6S41TSV4RRFFQ69G5FAV`, HOST)).toBe(true);
+    expect(sessionPeerOf(OURS, HOST)).toBe(true);
+    expect(sessionPeerOf(sessionPeer("fv-az1", MADE), "fv-az1.internal.cloudapp.net")).toBe(true);
+    for (const ulid of [
+      "",
+      "01ARYZ6S41TSV4RRFFQ69G5FA",
+      "01ARYZ6S41TSV4RRFFQ69G5FAVX",
+      "01aryz6s41tsv4rrffq69g5fav",
+      "8ZZZZZZZZZZZZZZZZZZZZZZZZZ",
+      "01ARYZ6S41TSV4RRFFQ69G5FAU",
+    ]) {
+      expect(sessionPeerOf(`interactive-${HOST}-${PEER_EMAIL}-${ulid}`, HOST), ulid).toBe(false);
+    }
+    expect(sessionPeerOf(sessionPeer("founders-laptop", MADE), HOST)).toBe(false);
+    expect(sessionPeerOf(sessionPeer(`${HOST}x`, MADE), HOST)).toBe(false);
+    expect(sessionPeerOf(`static-${HOST}-${PEER_EMAIL}-${ulidAt(MADE)}`, HOST)).toBe(false);
+    expect(sessionPeerOf(`interactive-${HOST}-${ulidAt(MADE)}`, HOST)).toBe(false);
     // A host with no name names no peer.
-    expect(peerOfThisRun(`interactive--${PEER_EMAIL}-${ulidAt(SINCE)}`, "", SINCE, UNTIL)).toBe(false);
+    expect(sessionPeerOf(`interactive--${PEER_EMAIL}-${ulidAt(MADE)}`, "")).toBe(false);
   });
 });

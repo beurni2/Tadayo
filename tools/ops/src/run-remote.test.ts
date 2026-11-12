@@ -64,17 +64,18 @@ const started = json([machine("a1", "api", "started"), machine("w1", "worker", "
 const ORGS = "flyctl orgs list --json";
 const PEERS = "flyctl wireguard list tadayo-org --json";
 const REMOVE = "flyctl wireguard remove tadayo-org";
-/** The run's peer clean-up: the session's peer is listed with this host's name, made just now. */
+/** The run's peers: none before the session, and after it the one it made, named for this host as flyctl's agent names it. */
 const CLEAN_UP: readonly Route[] = [
   [ORGS, json({ "tadayo-org": "Tadayo" })],
-  [PEERS, () => peerList([sessionPeer(hostSlug(hostname()), Date.now())])],
+  [PEERS, (_call, earlier) => peerList(earlier === 0 ? [] : [sessionPeer(hostSlug(hostname()), 1_794_460_003_000)])],
   [REMOVE, {}],
 ];
-/** The calls a script makes to run on the Machine: the Machines, the session, then the clean-up. */
+/** The calls a script makes to run on the Machine: the Machines, the peers, the session, then the clean-up. */
 const onMachineCalls = (script: string) => [
   LIST,
-  ssh(script),
   ORGS,
+  PEERS,
+  ssh(script),
   PEERS,
   expect.stringMatching(new RegExp(`^${REMOVE} interactive-`)) as unknown as string,
 ];
