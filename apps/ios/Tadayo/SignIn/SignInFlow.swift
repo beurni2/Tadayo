@@ -155,62 +155,62 @@ struct EmailScreen: View {
 /// 19, 24 and 25). A code's failure takes the two-line region between the field and Verify code,
 /// which is kept even when empty; only a code the server didn't verify marks the field, which
 /// keeps its digits and its focus. A new code's failure has a block of its own under the row,
-/// beside a code's line, never in its place (handoff 7's `authForm.resendFailure`).
+/// beside a code's line, never in its place (handoff 7's `authForm.resendFailure`). With the
+/// keyboard up, Verify code stays in the column unless the column, scrolled to its top, would
+/// leave it under the keyboard or nearer than 12 points; then it is pinned 12 above the keyboard,
+/// as frame 19 draws it at the largest size (`KeyboardFooter`; `authForm.keyboardFooter`). While
+/// VoiceOver runs it stays in the column, where it is read in its place, before the resend row
+/// (`codeAccessibilityOrder`), and VoiceOver is expected to scroll it into view as it reaches it:
+/// VoiceOver reads a pinned footer after the whole column (FQ97's default). Switch Control and
+/// Full Keyboard Access still get it pinned, so they reach it last too, but on screen, without
+/// scrolling (FQ97 says so).
 struct CodeScreen: View {
     @Bindable var model: SignInModel
     let focus: Bool?
+    /// Whether a keyboard shows, for a test, which has none: nil in the app, where the screen
+    /// reads it from its own frame (`readingKeyboardRoom`).
+    var keyboard: Bool?
+    /// Whether VoiceOver runs, for a test, which can't turn it on: nil in the app, where the
+    /// environment says.
+    var voiceOver: Bool?
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
     @FocusState private var focused: Bool
     /// Whether this minute's "Send a new code is available." has been said.
     @State private var availability = SignInAnnouncement.ResendAvailability()
+    /// The screen's room above the keyboard, the foot of the error region in the column as
+    /// measured and as held at its tallest while a code is checked with the keyboard up
+    /// (`KeyboardFooter.heldFoot`), and Verify code's height: where Verify code would end in the
+    /// column, and whether it fits.
+    @State private var room = KeyboardRoom()
+    @State private var regionFoot: CGFloat = 0
+    @State private var heldFoot: CGFloat = 0
+    @State private var verifyHeight: CGFloat = 0
+    /// The labelled field's identity, to scroll to.
+    private static let field = "code.field"
 
     var body: some View {
-        SetupScroll {
-            SetupHeading(
-                title: "auth.code.title",
-                subtitle: Text(verbatim: sentTo(breakable(model.address)))
-                    .accessibilityLabel(Text(verbatim: sentTo(model.address))))
-            LabelledField(
-                Text("auth.code.label"), isFocused: focus ?? focused,
-                isInvalid: model.failure == .codeNotVerified,
-                error: model.failure.map { Text(verbatim: $0.words) }
-            ) {
-                // The code is read-only while it is checked or a new code is on its way, and the
-                // model keeps six digits at most: `ModelText` shows what it kept.
-                ModelText(held: { model.code }, offer: { model.code = $0 }) { text in
-                    TextField(
-                        text: text,
-                        prompt: Text("auth.code.placeholder")
-                            .foregroundStyle(Palette.secondaryText)
-                    ) {
-                        Text("auth.code.label")
+        ScrollViewReader { scroll in
+            column
+                // Verify code pinned 12 above the keyboard, with no motion as it goes there (T48).
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    if pinsVerify {
+                        SetupFooter(bottom: Spacing.m) { verify }
                     }
-                    .keyboardType(.numberPad)
-                    .textContentType(.oneTimeCode)
-                    .focused($focused)
                 }
-            }
-            .padding(.top, SetupGap.field)
-            errorRegion
-            Button {
-                Task { await model.verify() }
-            } label: {
-                Text("auth.code.verify")
-            }
-            .buttonStyle(.tadayoPrimary(isBusy: model.isVerifying))
-            .disabled(!model.canVerify)
-            // 8 under Verify code, as frames 6 to 8 and 24 draw it.
-            resendRow
-                .padding(.top, Spacing.s)
-            // A new code's failure, 8 under the row and 8 above Change email address (frame 8;
-            // `resendToFailure`); with none, Change email address is right under the row, as
-            // frames 6 and 24 draw it.
-            if let resendFailure = model.resendFailure {
-                InlineError(Text(verbatim: resendFailure.words))
-                    .padding(.vertical, Spacing.s)
-            }
-            Button("auth.changeEmail") { model.changeEmail() }
-                .buttonStyle(.tadayoText)
-                .disabled(!model.canChangeEmail)
+                .transaction(value: pinsVerify) { $0.animation = nil }
+                .readingKeyboardRoom($room)
+                // Once Verify code is pinned, the field, its label first, is scrolled to the top
+                // of the screen, so the pinned button covers none of it: the keyboard's own
+                // scrolling keeps the field clear of the keyboard, not of the button over it,
+                // and `ios` run 43181241212 drew the button over the field's last 12 points.
+                // Frame 19 is scrolled so, the field under the navigation bar and the error
+                // continuing behind the button.
+                .onChange(of: pinsVerify) { _, pinned in
+                    if pinned { scroll.scrollTo(Self.field, anchor: .top) }
+                }
+                // Each time the keyboard comes up or goes, the held foot starts from the region
+                // as it is.
+                .onChange(of: keyboardShows) { heldFoot = regionFoot }
         }
         .navigationTitle(Text("auth.signIn.navTitle"))
         .navigationBarTitleDisplayMode(.inline)
@@ -247,6 +247,113 @@ struct CodeScreen: View {
                 Announcement.post(words)
             }
         }
+    }
+
+    /// The column: the heading, the field, the error region, Verify code where it isn't pinned,
+    /// the resend row, a new code's failure and Change email address.
+    private var column: some View {
+        SetupScroll {
+            SetupHeading(
+                title: "auth.code.title",
+                subtitle: Text(verbatim: sentTo(breakable(model.address)))
+                    .accessibilityLabel(Text(verbatim: sentTo(model.address))))
+            LabelledField(
+                Text("auth.code.label"), isFocused: focus ?? focused,
+                isInvalid: model.failure == .codeNotVerified,
+                error: model.failure.map { Text(verbatim: $0.words) }
+            ) {
+                // The code is read-only while it is checked or a new code is on its way, and the
+                // model keeps six digits at most: `ModelText` shows what it kept.
+                ModelText(held: { model.code }, offer: { model.code = $0 }) { text in
+                    TextField(
+                        text: text,
+                        prompt: Text("auth.code.placeholder")
+                            .foregroundStyle(Palette.secondaryText)
+                    ) {
+                        Text("auth.code.label")
+                    }
+                    .keyboardType(.numberPad)
+                    .textContentType(.oneTimeCode)
+                    .focused($focused)
+                }
+            }
+            .id(Self.field)
+            .padding(.top, SetupGap.field)
+            errorRegion
+                .background {
+                    GeometryReader { region in
+                        Color.clear.onChange(
+                            of: region.frame(in: .named(SetupColumn.space)).maxY, initial: true
+                        ) { _, foot in
+                            regionFoot = foot
+                            // The code's line clears as its check begins, in the same update,
+                            // so the foot it leaves is measured while the check runs.
+                            heldFoot = KeyboardFooter.heldFoot(
+                                heldFoot, now: foot, holding: keyboardShows && model.isVerifying)
+                        }
+                    }
+                }
+            if !pinsVerify {
+                verify
+            }
+            // 8 under Verify code, as frames 6 to 8 and 24 draw it.
+            resendRow
+                .padding(.top, Spacing.s)
+            // A new code's failure, 8 under the row and 8 above Change email address (frame 8;
+            // `resendToFailure`); with none, Change email address is right under the row, as
+            // frames 6 and 24 draw it.
+            if let resendFailure = model.resendFailure {
+                InlineError(Text(verbatim: resendFailure.words))
+                    .padding(.vertical, Spacing.s)
+            }
+            Button("auth.changeEmail") { model.changeEmail() }
+                .buttonStyle(.tadayoText)
+                .disabled(!model.canChangeEmail)
+        }
+        // Scrolling keeps the keyboard up, so the rest of the error, the resend row and Change
+        // email address are reached with the field focused and Verify code still pinned (handoff
+        // 7's `authForm.AX5`: "Scroll to access them without dismissing keyboard"), where Apple's
+        // documentation has a scroll view dismiss it on a scroll by default, from iOS 16.
+        .scrollDismissesKeyboard(.never)
+    }
+
+    /// Verify code, busy while the code is checked; its height is measured wherever it is, the
+    /// same in the column and pinned, since both are 20 in from each edge.
+    private var verify: some View {
+        Button {
+            Task { await model.verify() }
+        } label: {
+            Text("auth.code.verify")
+        }
+        .buttonStyle(.tadayoPrimary(isBusy: model.isVerifying))
+        .disabled(!model.canVerify)
+        .background {
+            GeometryReader { button in
+                Color.clear.onChange(of: button.size.height, initial: true) { _, height in
+                    verifyHeight = height
+                }
+            }
+        }
+    }
+
+    /// Whether Verify code is pinned above the keyboard: where it would end in the column, the
+    /// column scrolled to its top, against the screen's height above the keyboard, and never
+    /// while VoiceOver runs (`KeyboardFooter.pinsAction`; the error region is above it, so its
+    /// foot doesn't move as Verify code is pinned, and the screen's height counts the footer's
+    /// room). The region's foot is held at its tallest while a code is checked with the keyboard
+    /// up, so a pinned, busy Verify code stays pinned as the check clears the code's line, until
+    /// the check ends and the next line shows; otherwise it follows what is measured, so nothing
+    /// measured as the screen settles, or before a smaller text size, keeps a pin.
+    private var pinsVerify: Bool {
+        KeyboardFooter.pinsAction(
+            bottom: Double(heldFoot + verifyHeight), visibleHeight: Double(room.height),
+            keyboardShows: keyboardShows, voiceOverRuns: voiceOver ?? voiceOverEnabled,
+            gap: Double(Spacing.m))
+    }
+
+    /// Whether a keyboard, or a hardware keyboard's bar, shows.
+    private var keyboardShows: Bool {
+        keyboard ?? (room.keyboard > 0)
     }
 
     /// "Send a new code is available.", politely, when `ResendAvailability` says so.

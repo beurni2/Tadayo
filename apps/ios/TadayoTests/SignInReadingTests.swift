@@ -340,6 +340,141 @@ final class SignInReadingTests: XCTestCase {
         checkChangeEmail(under: sending, showing: "Sending a new code…")
     }
 
+    /// With the keyboard up, here a 300-point stand-in since a hosted test has none, Verify code
+    /// stays in the column at the default size, 16 under the error region's line as frames 24 and
+    /// 25 draw it; at the largest size, where the column would leave it under the keyboard, it is
+    /// pinned 12 above it, 20 in from each edge, the column closes up under the line and the
+    /// field is scrolled clear of the footer (frame 19; `authForm.keyboardFooter`); with no keyboard, or while VoiceOver runs (FQ97's
+    /// default), it stays in the column whatever the size. It is drawn once each time. In the
+    /// column it is read in its place, after the code's line and before the wait sentence and
+    /// Change email address (`codeAccessibilityOrder`: field, error, verify, resend,
+    /// changeEmail); pinned, it would be read after the whole column, which is why VoiceOver keeps
+    /// it there (the first `ios` run of `ios/b0-adopt-pin`, 43178940741, read it last, past a
+    /// sort priority that doesn't reach out of the scroll view).
+    func testWithTheKeyboardUpVerifyCodeIsPinnedOnlyWhereItWouldBeHidden() {
+        let stand: CGFloat = 300
+        let cases: [(size: DynamicTypeSize, keyboard: Bool, voiceOver: Bool, pinned: Bool)] = [
+            (.large, true, false, false), (.accessibility5, true, false, true),
+            (.accessibility5, true, true, false), (.accessibility5, false, false, false),
+        ]
+        for (size, keyboard, voiceOver, pinned) in cases {
+            let model = onCode(verifies: [.fail(.codeNotVerified)])
+            model.code = "529614"
+            drive({ await model.verify() }, until: { model.failure == .codeNotVerified })
+            let layout = AccessibilityElements.layout(
+                of: CodeScreen(model: model, focus: true, keyboard: keyboard, voiceOver: voiceOver)
+                    .safeAreaInset(edge: .bottom, spacing: 0) {
+                        Color.clear.frame(height: stand)
+                    }
+                    .environment(\.dynamicTypeSize, size))
+            let elements = layout.elements
+            let labels = elements.map(\.label)
+            let named = "\(size), keyboard \(keyboard), VoiceOver \(voiceOver): \(elements)"
+
+            let codeLine = "This code couldn’t be verified. Try again or send a new one."
+            let wait = "You can send a new code after one minute."
+            XCTAssertEqual(labels.filter { $0 == "Verify code" }.count, 1, named)
+            let line = elements.first { $0.label == codeLine }?.frame ?? .zero
+            let verify = elements.first { $0.label == "Verify code" }?.frame ?? .zero
+            let row = elements.first { $0.label == wait }?.frame ?? .zero
+            if pinned {
+                let keyboardTop = layout.size.height - layout.safeArea.bottom - stand
+                XCTAssertEqual(verify.maxY, keyboardTop - Spacing.m, accuracy: 0.5, named)
+                XCTAssertEqual(verify.minX, Spacing.inset, accuracy: 0.5, named)
+                XCTAssertEqual(
+                    verify.width, layout.size.width - 2 * Spacing.inset, accuracy: 0.5, named)
+                XCTAssertEqual(row.minY - line.maxY, Spacing.l + Spacing.s, accuracy: 1, named)
+                // The field scrolled clear of the footer, which starts 8 above the button.
+                let field = elements.first { $0.label == "Six-digit code" }?.frame ?? .zero
+                XCTAssertGreaterThan(field.height, 0, named)
+                XCTAssertLessThanOrEqual(field.maxY, verify.minY - Spacing.s + 0.5, named)
+                // Pinned, the tree reads it after the whole column, which is why it stays in the
+                // column while VoiceOver runs (FQ97).
+                XCTAssertEqual(labels.last, "Verify code", named)
+            } else {
+                XCTAssertEqual(verify.minY - line.maxY, Spacing.l, accuracy: 1, named)
+                let order = [
+                    "Six-digit code", codeLine, "Verify code", wait, "Change email address",
+                ]
+                .map { labels.firstIndex(of: $0) }
+                XCTAssertFalse(order.contains(nil), named)
+                XCTAssertEqual(order.compactMap { $0 }, order.compactMap { $0 }.sorted(), named)
+            }
+        }
+    }
+
+    /// Where the column, scrolled to its top, would leave Verify code 11 points above the keyboard
+    /// it is pinned 12 above it, and where it would leave 13 it stays (`KeyboardFooter`'s
+    /// threshold), read as the app shows it, pushed onto a navigation stack (`SignInFlow`), so
+    /// the column's foot and the screen's room above the keyboard are measured from the same
+    /// top, below the bar. As the stack's root, the screen was first laid out under a taller bar
+    /// and pinned Verify code for a moment, which scrolled the column to the field (`ios` run
+    /// 43197232393). The keyboard is a stand-in whose height is set from where Verify code ends
+    /// with none, on the screen inside the stack, where it reaches it: one outside the stack
+    /// doesn't (`ios` run 43192475721), and a geometry reader behind a scroll view, placed the
+    /// same way, checks that it ends where the stand-in begins, so neither case passes with a
+    /// stand-in that changes nothing.
+    func testVerifyCodeIsPinnedOnlyWhereTheColumnLeavesItNearerThan12() {
+        func read(stand: CGFloat, keyboard: Bool) -> AccessibilityElements.Layout {
+            let model = onCode()
+            return AccessibilityElements.layout(
+                of: pushed {
+                    CodeScreen(model: model, focus: true, keyboard: keyboard, voiceOver: false)
+                        .safeAreaInset(edge: .bottom, spacing: 0) {
+                            Color.clear.frame(height: stand)
+                        }
+                })
+        }
+        let free = read(stand: 0, keyboard: false)
+        let foot = free.elements.first { $0.label == "Verify code" }?.frame.maxY ?? 0
+        XCTAssertGreaterThan(foot, 0, "\(free.elements)")
+        for (clear, pinned) in [(CGFloat(11), true), (CGFloat(13), false)] {
+            let stand = free.size.height - free.safeArea.bottom - foot - clear
+            let layout = read(stand: stand, keyboard: true)
+            let verify = layout.elements.first { $0.label == "Verify code" }?.frame ?? .zero
+            let keyboardTop = layout.size.height - layout.safeArea.bottom - stand
+            let probe = reader(stand: stand)
+            XCTAssertEqual(
+                probe?.frame.maxY ?? 0, keyboardTop, accuracy: 0.5,
+                "\(clear) clear: \(probe?.description ?? "no reader")")
+            XCTAssertEqual(
+                keyboardTop - verify.maxY, pinned ? Spacing.m : clear, accuracy: 0.5,
+                "\(clear) clear: \(layout.elements); \(probe?.description ?? "no reader")")
+            XCTAssertEqual(
+                layout.elements.filter { $0.label == "Verify code" }.count, 1,
+                "\(clear) clear: \(layout.elements)")
+        }
+    }
+
+    /// A geometry reader behind a scroll view pushed onto a navigation stack, as
+    /// `readingKeyboardRoom` reads one, with a stand-in keyboard `stand` high placed as the
+    /// threshold test places it: its frame, and its safe area in its label.
+    private func reader(stand: CGFloat) -> AccessibilityElements.Element? {
+        AccessibilityElements.layout(
+            of: pushed {
+                ScrollView { Color.clear.frame(height: 1) }
+                    .background {
+                        GeometryReader { reader in
+                            Color.clear.accessibilityElement()
+                                .accessibilityLabel(
+                                    Text(verbatim: "reader safe area \(reader.safeAreaInsets)"))
+                        }
+                    }
+                    .navigationTitle(Text(verbatim: "Probe"))
+                    .navigationBarTitleDisplayMode(.inline)
+                    .safeAreaInset(edge: .bottom, spacing: 0) { Color.clear.frame(height: stand) }
+            }
+        ).elements.first { $0.label.hasPrefix("reader") }
+    }
+
+    /// `screen` pushed onto a navigation stack from its first frame, as `SignInFlow` shows
+    /// A02-code over A02-email.
+    private func pushed<Screen: View>(_ screen: @escaping () -> Screen) -> some View {
+        NavigationStack(path: .constant([1])) {
+            Color.clear.navigationDestination(for: Int.self) { _ in screen() }
+        }
+    }
+
     /// `row` is shown once, and Change email address starts 8 + 44 under Verify code.
     private func checkChangeEmail(
         under model: SignInModel, showing row: String, line: UInt = #line
