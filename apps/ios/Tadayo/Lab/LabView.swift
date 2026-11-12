@@ -208,6 +208,28 @@
                             .background(Palette.cover(slot: slot).fill, in: Circle())
                     }
                 }
+                LabState("No readable initial") {
+                    withoutAnInitial(on: .canvas)
+                }
+                LabState("No readable initial, on a cover") {
+                    withoutAnInitial(on: .cover)
+                        .padding(Spacing.l)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            Palette.cover(slot: 1).fill,
+                            in: RoundedRectangle(cornerRadius: Radius.card))
+                }
+            }
+        }
+
+        /// Handoff 7's sheet, "Avatar with no readable initial": the person symbol at each size,
+        /// on the canvas and on the second cover (every cover takes the same pair), for a name
+        /// with nothing typed yet.
+        private func withoutAnInitial(on placement: Avatar.Placement) -> some View {
+            HStack(spacing: Spacing.xxl) {
+                ForEach(AvatarSize.allCases, id: \.self) { size in
+                    Avatar(name: "", size: size, on: placement)
+                }
             }
         }
     }

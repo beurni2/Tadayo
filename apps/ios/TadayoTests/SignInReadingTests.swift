@@ -5,7 +5,7 @@ import XCTest
 
 @testable import Tadayo
 
-/// What VoiceOver finds on A02-email, A02-code and A02-age, read in the hosted tests so it is read
+/// What VoiceOver finds on A02-email, A02-code, A02-age and A03, read in the hosted tests so it is read
 /// on iOS 17.5 and 18.6 too (the snapshot tests, which hold the sign-in readings from before
 /// handoff 7, are skipped there): the busy button's value and the field that is read-only, not
 /// disabled (handoff 7's `busyPrimary`), the empty field's one reading of its label, and
@@ -487,5 +487,35 @@ final class SignInReadingTests: XCTestCase {
         XCTAssertEqual(
             change.minY - verify.maxY, Spacing.s + Size.touchTarget, accuracy: 0.5,
             "\(row): \(elements)", line: line)
+    }
+
+    // MARK: A03
+
+    /// The avatar is decorative (`Avatar`): with no initial, its person symbol isn't read
+    /// either, neither as the symbol's name nor as "No profile photo", which no contract gives an
+    /// element yet (handoff 7's `avatarWithoutInitial`; the check's WM-04). So a name that gives no
+    /// initial, nothing typed or an emoji, leaves A03 with the same elements in the same order as
+    /// "Ben" does, whose "B" isn't read (the plan's TV-06, read here so that iOS 17.5 and 18.6
+    /// read it too; `SignInSnapshotTests.testTheAvatarIsntRead` holds the same cases).
+    func testTheAvatarsPersonSymbolIsntRead() {
+        func labels(_ name: String) -> [String] {
+            let model = ProfileModel(
+                account: Account(
+                    id: "ben", displayName: nil, avatarVersion: nil, ageConfirmed: true,
+                    version: 1),
+                accounts: ScriptedAccounts(updates: []), saved: { _ in }, signedOut: {})
+            model.name = name
+            return AccessibilityElements.of(ProfileScreen(model: model, focus: false)).map(\.label)
+        }
+        let ben = labels("Ben")
+        XCTAssertTrue(ben.contains("Your name"), "\(ben)")
+        XCTAssertFalse(ben.contains("B"), "\(ben)")
+        for name in ["", "\u{1F600}"] {
+            let read = labels(name)
+            XCTAssertEqual(read, ben, "\(name.unicodeScalars.map(\.value))")
+            XCTAssertFalse(
+                read.contains { $0.lowercased().contains("person") || $0 == "No profile photo" },
+                "\(read)")
+        }
     }
 }

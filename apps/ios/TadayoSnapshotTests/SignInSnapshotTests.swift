@@ -254,6 +254,15 @@ final class SignInSnapshotTests: XCTestCase {
         let elements = AccessibilityElements.of(ProfileScreen(model: model, focus: false))
         XCTAssertTrue(elements.contains { $0.label == "Your name" }, "\(elements)")
         XCTAssertFalse(elements.contains { $0.label == "B" }, "\(elements)")
+        // With no initial, nothing typed or an emoji, its person symbol isn't read either
+        // (handoff 7's `avatarWithoutInitial`; the check's WM-04).
+        for name in ["", "\u{1F600}"] {
+            model.name = name
+            let read = AccessibilityElements.of(ProfileScreen(model: model, focus: false))
+            XCTAssertEqual(read.map(\.label), elements.map(\.label), "\(read)")
+            XCTAssertFalse(
+                read.contains { $0.label.lowercased().contains("person") }, "\(read)")
+        }
     }
 
     // MARK: Helpers

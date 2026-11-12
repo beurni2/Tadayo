@@ -240,8 +240,10 @@ final class SignInUITests: XCTestCase {
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
         let verify = app.buttons["Verify code"]
         XCTAssertTrue(verify.isEnabled)
+        let typed = settle(code, above: verify)
         assertPinned(
-            verify, below: code, on: kept(app.screenshot(), as: "A02-code-typed-xl"), in: app)
+            verify, below: code, on: kept(app.screenshot(), as: "A02-code-typed-xl"), in: app,
+            read: typed)
         verify.tap()
 
         let refused = app.staticTexts[
@@ -249,8 +251,10 @@ final class SignInUITests: XCTestCase {
         XCTAssertTrue(refused.waitForExistence(timeout: 5))
         XCTAssertEqual(code.value as? String, "529614")
         XCTAssertTrue(app.keyboards.firstMatch.exists)
+        let error = settle(code, above: verify)
         assertPinned(
-            verify, below: code, on: kept(app.screenshot(), as: "A02-code-error-xl"), in: app)
+            verify, below: code, on: kept(app.screenshot(), as: "A02-code-error-xl"), in: app,
+            read: error)
 
         // Dragged up from the middle of the screen, over the column's text, a few times at most,
         // until Change email address can be tapped; where it went each time is said if it can't,
@@ -264,12 +268,40 @@ final class SignInUITests: XCTestCase {
                     thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.15)))
             went.append("\(change.frame)")
         }
+        let read = settle(code, above: verify)
         let scrolled = kept(app.screenshot(), as: "A02-code-error-xl-scrolled")
         XCTAssertTrue(
             change.isHittable,
             "Change email address went \(went); keyboard \(app.keyboards.firstMatch.exists)")
         XCTAssertTrue(app.keyboards.firstMatch.exists)
-        assertPinned(verify, below: code, on: scrolled, in: app)
+        assertPinned(verify, below: code, on: scrolled, in: app, read: read)
+    }
+
+    /// Reads where the code field's frame ends against Verify code's top until the field ends 8
+    /// above it, as the column puts it once Verify code is pinned, for 2 seconds at most, and logs
+    /// what it read as an activity, so a passing run's log shows whether it had to wait; the
+    /// screen is then taken and checked. What lagged on `main` was the field's accessibility
+    /// frame, not the screen: `ios` run 43208004744 (at `1e3651c`) took the screen first, which
+    /// drew the field scrolled to the top and Verify code from 476, then read the field's frame
+    /// twice, about 0.2 seconds apart, at 399 to 482, its place before the scroll, while Verify
+    /// code's frame matched the screen. So this waits for the field's frame to reach what is
+    /// drawn; where the field is drawn isn't measured. The check is unchanged: a field still under
+    /// the button after 2 seconds fails it, with what was read.
+    @MainActor private func settle(_ field: XCUIElement, above verify: XCUIElement) -> [String] {
+        var read: [String] = []
+        let until = Date(timeIntervalSinceNow: 2)
+        repeat {
+            let foot = field.frame.maxY
+            let top = verify.frame.minY
+            read.append("\(Int(foot.rounded())) over \(Int(top.rounded()))")
+            if foot <= top - 8 + 0.5 { break }
+            RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.2))
+        } while Date() < until
+        XCTContext.runActivity(
+            named: "The code field's foot over Verify code's top, read \(read.count) "
+                + "times: \(read.joined(separator: ", "))"
+        ) { _ in }
+        return read
     }
 
     /// `shot`, attached as `state` for a failure's evidence: named as `tools/ci/ios_steps.py`
@@ -288,11 +320,12 @@ final class SignInUITests: XCTestCase {
     /// text"; frame 19 scrolls the field under the navigation bar).
     @MainActor private func assertPinned(
         _ verify: XCUIElement, below field: XCUIElement, on shot: XCUIScreenshot,
-        in app: XCUIApplication, line: UInt = #line
+        in app: XCUIApplication, read: [String], line: UInt = #line
     ) {
         XCTAssertLessThanOrEqual(
             field.frame.maxY, verify.frame.minY - 8 + 0.5,
-            "the field \(field.frame) above Verify code \(verify.frame)", line: line)
+            "the field \(field.frame) above Verify code \(verify.frame); its foot over Verify "
+                + "code's top as it settled: \(read)", line: line)
         let foot = verify.frame.maxY
         let edge = drawnEdge(below: foot, on: shot, in: app)
         XCTAssertEqual(
