@@ -6,11 +6,12 @@
 //
 // `flyctl` is given the Fly token and `HOME`, and nothing else of the environment, and is never
 // given a shell. `run` makes no call whose argument list doesn't name the app (`DEV_APP`) with `-a`
-// or `--app`, and has no other app flag in any spelling (`--app=x`, `-ax`); the two calls
-// that name none are the token's list of organizations and the making of the app itself, which
-// takes its name as an argument (`forDevApp`). `flyctl` prints some failures with exit code 0
-// (`machine exec` does, for the command it ran), so a script says what it asks for and checks the
-// answer it gets.
+// or `--app`, and has no other app flag in any spelling (`--app=x`, `-ax`); the calls that name
+// none are the token's list of organizations, the making of the app itself, which takes its name
+// as an argument, and the listing and removing of the organization's WireGuard peers, which
+// on-machine.ts does for the peer its own SSH session made (`forDevApp`; ADR-034). `flyctl` prints
+// some failures with exit code 0 (`certs check` does, for a host whose DNS isn't ready), so a
+// script says what it asks for and checks the answer it gets.
 
 import { DEV_APP, readVariables } from "./environment.ts";
 import { OpsError } from "./ops-error.ts";
@@ -29,14 +30,25 @@ export interface Fly {
 /** A call that isn't a long one (a deploy, a command on a Machine) gets this long. */
 const QUICK_MS = 120_000;
 
+/** An organization's slug, as Fly writes one. */
+export const SLUG = /^[a-z0-9][a-z0-9-]{0,62}$/;
+/** The name flyctl's agent gives a WireGuard peer it makes for a session (`internal/wireguard/wg.go`). */
+const SESSION_PEER = /^interactive-[A-Za-z0-9-]+$/;
+
 /**
  * True for an argument list that is about `DEV_APP` and no other app: it has `-a` or `--app` with
  * `DEV_APP` after it and no other app flag, in any spelling (`--app=x`, `-ax`); or it is one of
- * the two calls that name no app by a flag: `orgs list --json`, and `apps create DEV_APP`, with
- * `--org <slug>` or not.
+ * the calls that name no app by a flag: `orgs list --json`; `apps create DEV_APP`, with
+ * `--org <slug>` or not; `wireguard list <slug> --json`; and `wireguard remove <slug> <peer>`, for
+ * a peer of the kind an SSH session makes and no other (on-machine.ts says which of those are its own).
  */
 export function forDevApp(args: readonly string[]): boolean {
   if (args.length === 3 && args[0] === "orgs" && args[1] === "list" && args[2] === "--json") return true;
+  if (args[0] === "wireguard") {
+    const [, verb, org = "", last = ""] = args;
+    if (args.length !== 4 || !SLUG.test(org)) return false;
+    return (verb === "list" && last === "--json") || (verb === "remove" && SESSION_PEER.test(last));
+  }
   if (args[0] === "apps" && args[1] === "create") {
     const rest = args.slice(3);
     const org = rest[1];
@@ -96,6 +108,33 @@ export function jsonOf(result: Spawned): unknown {
   } catch {
     return undefined;
   }
+}
+
+const listing = (names: readonly string[]) =>
+  names.length < 2 ? names.join("") : `${names.slice(0, -1).join(", ")} and ${names.at(-1) ?? ""}`;
+
+/**
+ * The one organization the token sees, by its slug (`flyctl orgs list --json`: `{"<slug>": "<name>"}`).
+ * It won't guess between several: it fails, with `several` (what the caller can do about it) after the list.
+ */
+export async function onlyOrganization(fly: Fly, label: string, several?: string): Promise<string> {
+  const result = await fly.run(["orgs", "list", "--json"]);
+  if (result.code !== 0) throw new OpsError(`${label}: flyctl couldn't list the organizations: ${why(result)}`);
+  const answer = jsonOf(result);
+  const orgs =
+    typeof answer === "object" && answer !== null && !Array.isArray(answer)
+      ? (answer as Record<string, unknown>)
+      : undefined;
+  if (orgs === undefined) throw new OpsError(`${label}: flyctl's list of organizations isn't one it can read`);
+  const slugs = Object.keys(orgs);
+  const [only] = slugs;
+  if (only === undefined) throw new OpsError(`${label}: the token sees no organization`);
+  if (slugs.length > 1) {
+    throw new OpsError(
+      `${label}: the token sees ${String(slugs.length)} organizations, ${listing(slugs)}${several === undefined ? "" : `: ${several}`}`,
+    );
+  }
+  return only;
 }
 
 export interface Machine {

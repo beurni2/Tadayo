@@ -64,10 +64,10 @@ describe("flyOf: flyctl with the Fly token and HOME and nothing else", () => {
 describe("forDevApp: a call is about tadayo-api-dev and no other app", () => {
   const DEV = "tadayo-api-dev";
 
-  it("takes every call the scripts make: -a or --app with the dev app, and the two calls that name none", () => {
+  it("takes every call the scripts make: -a or --app with the dev app, and the calls that name none", () => {
     for (const args of [
       ["machine", "list", "-a", DEV, "--json"],
-      ["machine", "exec", "a1", "node /app/tools/ops/src/main.ts x --here", "-a", DEV, "--json", "--timeout", "300"],
+      ["ssh", "console", "-a", DEV, "--machine", "a1", "-q", "-C", "node /app/tools/ops/src/main.ts x --here"],
       ["machine", "stop", "w1", "-a", DEV],
       ["machine", "start", "w1", "--app", DEV],
       ["status", "-a", DEV],
@@ -76,6 +76,13 @@ describe("forDevApp: a call is about tadayo-api-dev and no other app", () => {
       ["orgs", "list", "--json"],
       ["apps", "create", DEV],
       ["apps", "create", DEV, "--org", "personal"],
+      ["wireguard", "list", "tadayo-org", "--json"],
+      [
+        "wireguard",
+        "remove",
+        "tadayo-org",
+        "interactive-runnervm0abc1-someone-example-invalid-01ARYZ6S41TSV4RRFFQ69G5FAV",
+      ],
     ]) {
       expect(forDevApp(args), args.join(" ")).toBe(true);
     }
@@ -126,6 +133,32 @@ describe("forDevApp: a call is about tadayo-api-dev and no other app", () => {
       ["apps", "create", DEV, "--org", "personal", "--region", "iad"],
       ["apps", "list"],
       ["apps", "destroy", DEV],
+    ]) {
+      expect(forDevApp(args), args.join(" ")).toBe(false);
+    }
+  });
+
+  it("takes the organization's WireGuard peers only to list them, or to remove one an SSH session made, in one form each", () => {
+    const peer = "interactive-runnervm0abc1-someone-example-invalid-01ARYZ6S41TSV4RRFFQ69G5FAV";
+    for (const args of [
+      ["wireguard", "list"],
+      ["wireguard", "list", "tadayo-org"],
+      ["wireguard", "list", "tadayo-org", "--json", "--all"],
+      ["wireguard", "list", "Tadayo-Org", "--json"],
+      ["wireguard", "list", "-a", DEV, "--json"],
+      ["wireguard", "list", "--json", "tadayo-org"],
+      ["wireguard", "remove", "tadayo-org"],
+      ["wireguard", "remove", "tadayo-org", "static-laptop"],
+      ["wireguard", "remove", "tadayo-org", "interactive-"],
+      ["wireguard", "remove", "tadayo-org", `${peer} x`],
+      ["wireguard", "remove", "tadayo-org", peer, "-a", DEV],
+      ["wireguard", "remove", "-a", DEV],
+      ["wireguard", "remove", "--org", peer],
+      ["wireguard", "reset", "tadayo-org", "--json"],
+      ["wireguard", "create", "tadayo-org", "iad", "interactive-x"],
+      ["wireguard", "websockets", "disable", "x"],
+      ["wireguard", "token-mode", "enable", "x"],
+      ["wireguard", "list", "tadayo-org", "-a", DEV],
     ]) {
       expect(forDevApp(args), args.join(" ")).toBe(false);
     }
