@@ -56,14 +56,16 @@ import Testing
         #expect(!pins(355, above: 366, voiceOver: true))
     }
 
-    /// While the keyboard shows, the foot above the action holds at its tallest: a failure line
-    /// that clears as a check begins doesn't shorten it, so a pinned Verify code stays pinned
-    /// through the check; with no keyboard it follows what is measured.
-    @Test func whileTheKeyboardShowsTheFootHoldsAtItsTallest() {
-        #expect(KeyboardFooter.heldFoot(0, now: 300, keyboardShows: true) == 300)
-        #expect(KeyboardFooter.heldFoot(300, now: 400, keyboardShows: true) == 400)
-        #expect(KeyboardFooter.heldFoot(400, now: 300, keyboardShows: true) == 400)
-        #expect(KeyboardFooter.heldFoot(400, now: 300, keyboardShows: false) == 300)
+    /// While it holds (the keyboard up, at one text size), the foot above the action stays at
+    /// its tallest: a failure line that clears as a check begins doesn't shorten it, so a pinned
+    /// Verify code stays pinned through the check; otherwise (no keyboard, or a new text size)
+    /// it follows what is measured.
+    @Test func whileItHoldsTheFootStaysAtItsTallest() {
+        #expect(KeyboardFooter.heldFoot(0, now: 300, holding: true) == 300)
+        #expect(KeyboardFooter.heldFoot(300, now: 400, holding: true) == 400)
+        #expect(KeyboardFooter.heldFoot(400, now: 300, holding: true) == 400)
+        #expect(KeyboardFooter.heldFoot(400, now: 300, holding: false) == 300)
+        #expect(KeyboardFooter.heldFoot(770, now: 280, holding: false) == 280)
     }
 
     /// Until the screen has measured itself, nothing is pinned.

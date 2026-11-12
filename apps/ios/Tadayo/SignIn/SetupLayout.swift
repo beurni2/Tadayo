@@ -97,23 +97,22 @@ struct SetupFooter<Content: View>: View {
 
 extension View {
     /// Keeps `room` up to date: the view's height, which SwiftUI's keyboard avoidance shortens
-    /// by the keyboard, less the safe area's insets within it, and how much taller the same view
-    /// is when it ignores the keyboard's safe area. Where the view's frame reaches under a bar,
-    /// a scroll view's content starts only at the safe area's top, so the height is counted from
-    /// there, where the column's own measures start (`SetupColumn`): in a navigation stack, the
-    /// frame's whole height left Verify code in the column 11 points above the keyboard (`ios`
-    /// run 43189663223, `SignInReadingTests`' threshold test). It is read from the view's own
-    /// frame rather than from the keyboard's notifications, so a screen that appears with the
-    /// keyboard already up knows it at once. A02-code's pin reads it, and A03's footer is to
-    /// (`ios/b0-adopt-profile`).
+    /// by the keyboard, and how much taller the same view is when it ignores the keyboard's safe
+    /// area. Its top is the safe area's, below any bar, where the column starts (`SetupColumn`).
+    /// Its geometry's safe area insets aren't taken off: they are the container's, not the part
+    /// of the view under a bar (`SignInReadingTests`' threshold test probes a reader behind a
+    /// scroll view in a navigation stack: its frame starts at 116 points, below the bar, and its
+    /// top inset is 116 all the same; taking them off pinned Verify code at the usual size, `ios`
+    /// run 43192475721). It is read from the view's own frame rather than from the keyboard's
+    /// notifications, so a screen that appears with the keyboard already up knows it at once.
+    /// A02-code's pin reads it, and A03's footer is to (`ios/b0-adopt-profile`).
     func readingKeyboardRoom(_ room: Binding<KeyboardRoom>) -> some View {
         background {
             GeometryReader { avoiding in
                 GeometryReader { ignoring in
                     Color.clear.onChange(
                         of: KeyboardRoom(
-                            height: avoiding.size.height - avoiding.safeAreaInsets.top
-                                - avoiding.safeAreaInsets.bottom,
+                            height: avoiding.size.height,
                             keyboard: max(0, ignoring.size.height - avoiding.size.height)),
                         initial: true
                     ) { _, now in

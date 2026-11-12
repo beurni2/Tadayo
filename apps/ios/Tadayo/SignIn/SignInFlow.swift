@@ -178,11 +178,14 @@ struct CodeScreen: View {
     /// Whether this minute's "Send a new code is available." has been said.
     @State private var availability = SignInAnnouncement.ResendAvailability()
     /// The screen's room above the keyboard, the foot of the error region in the column as
-    /// measured and as held at its tallest while the keyboard shows (`KeyboardFooter.heldFoot`),
-    /// and Verify code's height: where Verify code would end in the column, and whether it fits.
+    /// measured and as held at its tallest while the keyboard shows at one text size
+    /// (`KeyboardFooter.heldFoot`; `heldAt` is the size it was held at), and Verify code's
+    /// height: where Verify code would end in the column, and whether it fits.
+    @Environment(\.dynamicTypeSize) private var textSize
     @State private var room = KeyboardRoom()
     @State private var regionFoot: CGFloat = 0
     @State private var heldFoot: CGFloat = 0
+    @State private var heldAt: DynamicTypeSize?
     @State private var verifyHeight: CGFloat = 0
     /// The labelled field's identity, to scroll to.
     private static let field = "code.field"
@@ -285,8 +288,11 @@ struct CodeScreen: View {
                             of: region.frame(in: .named(SetupColumn.space)).maxY, initial: true
                         ) { _, foot in
                             regionFoot = foot
+                            // A new text size starts the hold again from what it measures.
                             heldFoot = KeyboardFooter.heldFoot(
-                                heldFoot, now: foot, keyboardShows: keyboardShows)
+                                heldFoot, now: foot,
+                                holding: keyboardShows && heldAt == textSize)
+                            heldAt = textSize
                         }
                     }
                 }
@@ -337,8 +343,9 @@ struct CodeScreen: View {
     /// column scrolled to its top, against the screen's height above the keyboard, and never
     /// while VoiceOver runs (`KeyboardFooter.pinsAction`; the error region is above it, so its
     /// foot doesn't move as Verify code is pinned, and the screen's height counts the footer's
-    /// room). The region's foot is held at its tallest while the keyboard shows, so a pinned
-    /// Verify code stays pinned as a check clears the code's line and until the next one shows.
+    /// room). The region's foot is held at its tallest while the keyboard shows at one text
+    /// size, so a pinned Verify code stays pinned as a check clears the code's line and until the
+    /// next one shows.
     private var pinsVerify: Bool {
         KeyboardFooter.pinsAction(
             bottom: Double(heldFoot + verifyHeight), visibleHeight: Double(room.height),

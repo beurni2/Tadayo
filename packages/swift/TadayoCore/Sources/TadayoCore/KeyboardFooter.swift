@@ -30,12 +30,14 @@ public enum KeyboardFooter {
         return bottom + gap > visibleHeight
     }
 
-    /// The foot of what sits above the action in the column, as the choice reads it: its tallest
-    /// since the keyboard came up, so that a failure line clearing, as a check or the first edit
-    /// begins, doesn't take a pinned action back into the column under the person's finger, and
-    /// bring it back when the next failure shows; with no keyboard, as measured `now`. A screen
-    /// starts it again from what it measures each time the keyboard comes up.
-    public static func heldFoot(_ held: Double, now: Double, keyboardShows: Bool) -> Double {
-        keyboardShows ? max(held, now) : now
+    /// The foot of what sits above the action in the column, as the choice reads it: while
+    /// `holding`, its tallest since the hold began, so that a failure line clearing, as a check
+    /// or the first edit begins, doesn't take a pinned action back into the column under the
+    /// person's finger, and bring it back when the next failure shows; otherwise as measured
+    /// `now`. A screen holds while the keyboard shows at one text size, and starts again from
+    /// what it measures each time the keyboard comes up or the text size changes, so a smaller
+    /// size doesn't keep a pin the column no longer needs.
+    public static func heldFoot(_ held: Double, now: Double, holding: Bool) -> Double {
+        holding ? max(held, now) : now
     }
 }

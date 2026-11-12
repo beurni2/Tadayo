@@ -406,16 +406,22 @@ final class SignInReadingTests: XCTestCase {
     /// Where the column, scrolled to its top, would leave Verify code 11 points above the keyboard
     /// it is pinned 12 above it, and where it would leave 13 it stays (`KeyboardFooter`'s
     /// threshold), read in the navigation stack the app shows it in, so the column's foot and the
-    /// screen's room above the keyboard are measured from the same top, under the bar. The
-    /// keyboard is a stand-in whose height is set from where Verify code ends with none.
+    /// screen's room above the keyboard are measured from the same top, below the bar. The
+    /// keyboard is a stand-in whose height is set from where Verify code ends with none, inside
+    /// the stack, where it reaches the screen: one outside it doesn't (`ios` run 43192475721),
+    /// and a geometry reader behind a scroll view, placed as `CodeScreen`'s is, checks that it
+    /// ends where the stand-in begins, so neither case passes with a stand-in that changes
+    /// nothing.
     func testVerifyCodeIsPinnedOnlyWhereTheColumnLeavesItNearerThan12() {
         func read(stand: CGFloat, keyboard: Bool) -> AccessibilityElements.Layout {
             let model = onCode()
             return AccessibilityElements.layout(
                 of: NavigationStack {
                     CodeScreen(model: model, focus: true, keyboard: keyboard, voiceOver: false)
-                }
-                .safeAreaInset(edge: .bottom, spacing: 0) { Color.clear.frame(height: stand) })
+                        .safeAreaInset(edge: .bottom, spacing: 0) {
+                            Color.clear.frame(height: stand)
+                        }
+                })
         }
         let free = read(stand: 0, keyboard: false)
         let foot = free.elements.first { $0.label == "Verify code" }?.frame.maxY ?? 0
@@ -425,37 +431,38 @@ final class SignInReadingTests: XCTestCase {
             let layout = read(stand: stand, keyboard: true)
             let verify = layout.elements.first { $0.label == "Verify code" }?.frame ?? .zero
             let keyboardTop = layout.size.height - layout.safeArea.bottom - stand
+            let probe = reader(stand: stand)
+            XCTAssertEqual(
+                probe?.frame.maxY ?? 0, keyboardTop, accuracy: 0.5,
+                "\(clear) clear: \(probe?.description ?? "no reader")")
             XCTAssertEqual(
                 keyboardTop - verify.maxY, pinned ? Spacing.m : clear, accuracy: 0.5,
-                "\(clear) clear: \(layout.elements); \(readerProbe(stand: stand))")
+                "\(clear) clear: \(layout.elements); \(probe?.description ?? "no reader")")
             XCTAssertEqual(
                 layout.elements.filter { $0.label == "Verify code" }.count, 1,
                 "\(clear) clear: \(layout.elements)")
         }
     }
 
-    /// What a geometry reader behind a scroll view in a navigation stack sees, with a stand-in
-    /// keyboard `stand` high, as `readingKeyboardRoom` reads it: said only when the threshold
-    /// test fails, so a failure says where the frame and its safe area were.
-    private func readerProbe(stand: CGFloat) -> String {
-        let layout = AccessibilityElements.layout(
+    /// A geometry reader behind a scroll view in a navigation stack, as `readingKeyboardRoom`
+    /// reads one, with a stand-in keyboard `stand` high placed as the threshold test places it:
+    /// its frame, and its safe area in its label.
+    private func reader(stand: CGFloat) -> AccessibilityElements.Element? {
+        AccessibilityElements.layout(
             of: NavigationStack {
                 ScrollView { Color.clear.frame(height: 1) }
                     .background {
                         GeometryReader { reader in
                             Color.clear.accessibilityElement()
                                 .accessibilityLabel(
-                                    Text(
-                                        verbatim:
-                                            "reader \(reader.frame(in: .global)) safe area "
-                                            + "\(reader.safeAreaInsets)"))
+                                    Text(verbatim: "reader safe area \(reader.safeAreaInsets)"))
                         }
                     }
                     .navigationTitle(Text(verbatim: "Probe"))
                     .navigationBarTitleDisplayMode(.inline)
+                    .safeAreaInset(edge: .bottom, spacing: 0) { Color.clear.frame(height: stand) }
             }
-            .safeAreaInset(edge: .bottom, spacing: 0) { Color.clear.frame(height: stand) })
-        return layout.elements.map(\.label).filter { $0.hasPrefix("reader") }.joined()
+        ).elements.first { $0.label.hasPrefix("reader") }
     }
 
     /// `row` is shown once, and Change email address starts 8 + 44 under Verify code.
