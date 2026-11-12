@@ -405,18 +405,20 @@ final class SignInReadingTests: XCTestCase {
 
     /// Where the column, scrolled to its top, would leave Verify code 11 points above the keyboard
     /// it is pinned 12 above it, and where it would leave 13 it stays (`KeyboardFooter`'s
-    /// threshold), read in the navigation stack the app shows it in, so the column's foot and the
-    /// screen's room above the keyboard are measured from the same top, below the bar. The
-    /// keyboard is a stand-in whose height is set from where Verify code ends with none, inside
-    /// the stack, where it reaches the screen: one outside it doesn't (`ios` run 43192475721),
-    /// and a geometry reader behind a scroll view, placed as `CodeScreen`'s is, checks that it
-    /// ends where the stand-in begins, so neither case passes with a stand-in that changes
-    /// nothing.
+    /// threshold), read as the app shows it, pushed onto a navigation stack (`SignInFlow`), so
+    /// the column's foot and the screen's room above the keyboard are measured from the same
+    /// top, below the bar. As the stack's root, the screen was first laid out under a taller bar
+    /// and pinned Verify code for a moment, which scrolled the column to the field (`ios` run
+    /// 43197232393). The keyboard is a stand-in whose height is set from where Verify code ends
+    /// with none, on the screen inside the stack, where it reaches it: one outside the stack
+    /// doesn't (`ios` run 43192475721), and a geometry reader behind a scroll view, placed the
+    /// same way, checks that it ends where the stand-in begins, so neither case passes with a
+    /// stand-in that changes nothing.
     func testVerifyCodeIsPinnedOnlyWhereTheColumnLeavesItNearerThan12() {
         func read(stand: CGFloat, keyboard: Bool) -> AccessibilityElements.Layout {
             let model = onCode()
             return AccessibilityElements.layout(
-                of: NavigationStack {
+                of: pushed {
                     CodeScreen(model: model, focus: true, keyboard: keyboard, voiceOver: false)
                         .safeAreaInset(edge: .bottom, spacing: 0) {
                             Color.clear.frame(height: stand)
@@ -444,12 +446,12 @@ final class SignInReadingTests: XCTestCase {
         }
     }
 
-    /// A geometry reader behind a scroll view in a navigation stack, as `readingKeyboardRoom`
-    /// reads one, with a stand-in keyboard `stand` high placed as the threshold test places it:
-    /// its frame, and its safe area in its label.
+    /// A geometry reader behind a scroll view pushed onto a navigation stack, as
+    /// `readingKeyboardRoom` reads one, with a stand-in keyboard `stand` high placed as the
+    /// threshold test places it: its frame, and its safe area in its label.
     private func reader(stand: CGFloat) -> AccessibilityElements.Element? {
         AccessibilityElements.layout(
-            of: NavigationStack {
+            of: pushed {
                 ScrollView { Color.clear.frame(height: 1) }
                     .background {
                         GeometryReader { reader in
@@ -463,6 +465,14 @@ final class SignInReadingTests: XCTestCase {
                     .safeAreaInset(edge: .bottom, spacing: 0) { Color.clear.frame(height: stand) }
             }
         ).elements.first { $0.label.hasPrefix("reader") }
+    }
+
+    /// `screen` pushed onto a navigation stack from its first frame, as `SignInFlow` shows
+    /// A02-code over A02-email.
+    private func pushed<Screen: View>(_ screen: @escaping () -> Screen) -> some View {
+        NavigationStack(path: .constant([1])) {
+            Color.clear.navigationDestination(for: Int.self) { _ in screen() }
+        }
     }
 
     /// `row` is shown once, and Change email address starts 8 + 44 under Verify code.
