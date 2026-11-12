@@ -15,7 +15,7 @@ import {
   type FakeOptions,
   type Leak,
 } from "../test/fake-supabase.ts";
-import { EXEC_SECONDS } from "./on-machine.ts";
+import { COMMAND_SECONDS } from "./on-machine.ts";
 import { ALLOWED_TYPES, FILE_SIZE_LIMIT } from "./storage-setup.ts";
 import {
   apiChecks,
@@ -895,7 +895,7 @@ describe("apiChecks is limited in time, since a killed command skips its clean-u
     expect(fake.objects.size).toBe(2);
   });
 
-  it("gives the checks BUDGET_MS and the whole run DEADLINE_MS when nobody gives it others, and DEADLINE_MS ends before the Machine's command does", async () => {
+  it("gives the checks BUDGET_MS and the whole run DEADLINE_MS when nobody gives it others, and DEADLINE_MS ends a minute before the runner may give up on the Machine's command", async () => {
     const timeout = vi.spyOn(AbortSignal, "timeout");
     try {
       await probe(project());
@@ -906,8 +906,8 @@ describe("apiChecks is limited in time, since a killed command skips its clean-u
       timeout.mockRestore();
     }
     expect(BUDGET_MS).toBeLessThan(DEADLINE_MS);
-    // A minute for the process to start before the limits do, and for flyctl to answer.
-    expect(DEADLINE_MS + 60_000).toBeLessThanOrEqual(EXEC_SECONDS * 1000);
+    // A minute for the process to start before the limits do, and for its last lines to reach the runner.
+    expect(DEADLINE_MS + 60_000).toBeLessThanOrEqual(COMMAND_SECONDS * 1000);
   });
 });
 

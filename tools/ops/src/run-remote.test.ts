@@ -5,9 +5,22 @@
 // does with the answers is in its own test file, and the database side of `supabase-probe` is
 // tests/src/db/ops-scripts.test.ts.
 
+import { hostname } from "node:os";
 import { describe, expect, it, vi } from "vitest";
-import { FAKE_FLY_TOKEN, fakeSpawn, json, lineOf, machine, type RecordedCall, type Route } from "../test/fake-fly.ts";
+import {
+  FAKE_FLY_TOKEN,
+  fakeSpawn,
+  json,
+  lineOf,
+  machine,
+  peerList,
+  sessionPeer,
+  type RecordedCall,
+  type Reply,
+  type Route,
+} from "../test/fake-fly.ts";
 import { FAKE_PUBLISHABLE, FAKE_SECRET, FAKE_URL, fakeSupabase } from "../test/fake-supabase.ts";
+import { hostSlug } from "./on-machine.ts";
 import { runScript, type OpsContext } from "./run.ts";
 import { BUDGET_MS, DEADLINE_MS } from "./supabase-probe.ts";
 
@@ -37,12 +50,39 @@ const MACHINE_ENV = {
 
 const LIST = "flyctl machine list -a tadayo-api-dev --json";
 const MAIN = "/app/tools/ops/src/main.ts";
-const exec = (script: string) =>
-  `flyctl machine exec a1 node ${MAIN} ${script} --here --ref ${REF} -a tadayo-api-dev --json --timeout 300`;
-/** What `flyctl machine exec --json` prints: an empty `stdout` and a zero `exit_code` are left out (on-machine.test.ts). */
-const answer = (stdout: string, exit_code = 0) =>
-  json({ ...(stdout === "" ? {} : { stdout }), ...(exit_code === 0 ? {} : { exit_code }) });
+const ssh = (script: string) =>
+  `flyctl ssh console -a tadayo-api-dev --machine a1 -q -C node ${MAIN} ${script} --here --ref ${REF}`;
+/**
+ * What `flyctl ssh console` gives for a command that printed `stdout` and `stderr` and exited with
+ * `code`: flyctl exits 1 for a command that failed, and says its code last (on-machine.test.ts).
+ */
+const answer = (stdout: string, code = 0, stderr = ""): Reply =>
+  code === 0
+    ? { stdout, stderr }
+    : { code: 1, stdout, stderr: `${stderr}Error: ssh shell: Process exited with status ${String(code)}\n` };
 const started = json([machine("a1", "api", "started"), machine("w1", "worker", "started")]);
+const ORGS = "flyctl orgs list --json";
+const PEERS = "flyctl wireguard list tadayo-org --json";
+const REMOVE = "flyctl wireguard remove tadayo-org";
+/** The run's peers: none before the session, and after it the one it made, named for this host as flyctl's agent names it. */
+const CLEAN_UP: readonly Route[] = [
+  [ORGS, json({ "tadayo-org": "Tadayo" })],
+  [PEERS, (_call, earlier) => peerList(earlier === 0 ? [] : [sessionPeer(hostSlug(hostname()), 1_794_460_003_000)])],
+  [REMOVE, {}],
+];
+/** The calls a script makes to run on the Machine: the Machines, the peers, the session, then the clean-up. */
+const onMachineCalls = (script: string) => [
+  LIST,
+  ORGS,
+  PEERS,
+  ssh(script),
+  PEERS,
+  expect.stringMatching(new RegExp(`^${REMOVE} interactive-`)) as unknown as string,
+];
+const removed = (script: string) => `${script}: removed the WireGuard peer this run made`;
+/** What a script says before its session: the peer it makes, and how to remove it if the run is cut off first. */
+const making = (script: string) =>
+  `${script}: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, \`flyctl wireguard list tadayo-org\` lists the organization's peers, and \`flyctl wireguard remove tadayo-org <name>\` removes one; this run's names start with interactive-${hostSlug(hostname())}-`;
 
 interface Seen {
   readonly url: string;
@@ -282,14 +322,20 @@ describe("storage-setup on the runner", () => {
       routes: [
         [LIST, started],
         [
-          exec("storage-setup"),
+          ssh("storage-setup"),
           answer("storage-setup: uploads: already as declared\nstorage-setup: renditions: created\n"),
         ],
+        ...CLEAN_UP,
       ],
     });
     await runScript("storage-setup", h.ctx);
-    expect(h.lines()).toEqual([LIST, exec("storage-setup")]);
-    expect(h.said).toEqual(["storage-setup: uploads: already as declared", "storage-setup: renditions: created"]);
+    expect(h.lines()).toEqual(onMachineCalls("storage-setup"));
+    expect(h.said).toEqual([
+      making("storage-setup"),
+      "storage-setup: uploads: already as declared",
+      "storage-setup: renditions: created",
+      removed("storage-setup"),
+    ]);
     // Nothing of Supabase is asked from here: the service key isn't here.
     expect(h.requests).toEqual([]);
   });
@@ -310,11 +356,16 @@ describe("storage-setup on the runner", () => {
     const h = harness({
       routes: [
         [LIST, started],
-        [exec("storage-setup"), answer("storage-setup: uploads: couldn't make it\n", 1)],
+        [ssh("storage-setup"), answer("storage-setup: uploads: couldn't make it\n", 1)],
+        ...CLEAN_UP,
       ],
     });
     expect(await failure("storage-setup", h.ctx)).toBe("storage-setup: it failed on the Machine, with exit code 1");
-    expect(h.said).toEqual(["storage-setup: uploads: couldn't make it"]);
+    expect(h.said).toEqual([
+      making("storage-setup"),
+      "storage-setup: uploads: couldn't make it",
+      removed("storage-setup"),
+    ]);
   });
 
   it("fails when the Machine's report ends before it says what became of each bucket, even with an exit status of 0", async () => {
@@ -324,10 +375,7 @@ describe("storage-setup on the runner", () => {
       ["storage-setup: renditions: created\n", "uploads"],
     ] as const) {
       const h = harness({
-        routes: [
-          [LIST, started],
-          [exec("storage-setup"), answer(stdout)],
-        ],
+        routes: [[LIST, started], [ssh("storage-setup"), answer(stdout)], ...CLEAN_UP],
       });
       expect(await failure("storage-setup", h.ctx), stdout).toBe(
         `storage-setup: the Machine's report ended before it said what became of ${missing}; run it again, since it makes only what is missing`,
@@ -394,11 +442,12 @@ describe("supabase-probe on the runner", () => {
   const MACHINE_PASSES = [
     [LIST, started],
     [
-      exec("supabase-probe"),
+      ssh("supabase-probe"),
       answer(
         "supabase-probe: run r1\nsupabase-probe: ok    control: the service key lists the buckets\nsupabase-probe: all 1 checks passed\n",
       ),
     ],
+    ...CLEAN_UP,
   ] as const satisfies readonly Route[];
 
   it("asks the Management API from here, with the access token, and the rest on the Machine, and passes when both do", async () => {
@@ -407,12 +456,14 @@ describe("supabase-probe on the runner", () => {
     expect(h.requests).toEqual([
       { url: `api.supabase.com/v1/projects/${REF}/postgrest`, authorization: `Bearer ${ACCESS_TOKEN}`, apikey: null },
     ]);
-    expect(h.lines()).toEqual([LIST, exec("supabase-probe")]);
+    expect(h.lines()).toEqual(onMachineCalls("supabase-probe"));
     expect(h.said).toEqual([
       "supabase-probe: ok    the Data API's settings expose no schema",
+      making("supabase-probe"),
       "supabase-probe: run r1",
       "supabase-probe: ok    control: the service key lists the buckets",
       "supabase-probe: all 1 checks passed",
+      removed("supabase-probe"),
       "supabase-probe: every check passed",
     ]);
     expect(JSON.stringify(h.said)).not.toContain("must-never-be-printed");
@@ -425,7 +476,7 @@ describe("supabase-probe on the runner", () => {
     expect(h.said[0]).toBe(
       "supabase-probe: FAIL  the Data API's settings expose no schema: it exposes public, storage",
     );
-    expect(h.lines()).toEqual([LIST, exec("supabase-probe")]);
+    expect(h.lines()).toEqual(onMachineCalls("supabase-probe"));
     expect(JSON.stringify(h.said)).not.toContain("must-never-be-printed");
   });
 
@@ -434,13 +485,14 @@ describe("supabase-probe on the runner", () => {
       routes: [
         [LIST, started],
         [
-          exec("supabase-probe"),
-          json({
-            stdout: "supabase-probe: run r1\nsupabase-probe: FAIL  anon: list the buckets: answered HTTP 200\n",
-            stderr: "supabase-probe: 1 of 1 checks failed\n",
-            exit_code: 1,
-          }),
+          ssh("supabase-probe"),
+          answer(
+            "supabase-probe: run r1\nsupabase-probe: FAIL  anon: list the buckets: answered HTTP 200\n",
+            1,
+            "supabase-probe: 1 of 1 checks failed\n",
+          ),
         ],
+        ...CLEAN_UP,
       ],
       web: settings(""),
     });
@@ -448,44 +500,59 @@ describe("supabase-probe on the runner", () => {
     // The report came back whole, so it names what is left; nothing is said about what might be.
     expect(h.said).toEqual([
       "supabase-probe: ok    the Data API's settings expose no schema",
+      making("supabase-probe"),
       "supabase-probe: run r1",
       "supabase-probe: FAIL  anon: list the buckets: answered HTTP 200",
       "supabase-probe: 1 of 1 checks failed",
+      removed("supabase-probe"),
     ]);
   });
 
   it("says nothing of what the project may hold when the Machine's half failed before it made anything", async () => {
     // A Machine without the service key, say: its report comes back, without the run's id.
     const h = harness({
-      routes: [
-        [LIST, started],
-        [exec("supabase-probe"), json({ stderr: "set SUPABASE_SERVICE_KEY\n", exit_code: 1 })],
-      ],
+      routes: [[LIST, started], [ssh("supabase-probe"), answer("", 1, "set SUPABASE_SERVICE_KEY\n")], ...CLEAN_UP],
       web: settings(""),
     });
     expect(await failure("supabase-probe", h.ctx)).toBe("supabase-probe: it failed on the Machine, with exit code 1");
     expect(h.said).toEqual([
       "supabase-probe: ok    the Data API's settings expose no schema",
+      making("supabase-probe"),
       "set SUPABASE_SERVICE_KEY",
+      removed("supabase-probe"),
     ]);
   });
 
   it("fails, and says what the project may hold, when the Machine's report has the run's id and doesn't say how its checks went, even with an exit status of 0", async () => {
     for (const [reply, failed] of [
       [
-        json({ stdout: "supabase-probe: run r1\nsupabase-probe: ok    control: the service key lists the buckets\n" }),
+        answer("supabase-probe: run r1\nsupabase-probe: ok    control: the service key lists the buckets\n"),
         "supabase-probe: the Machine's report doesn't say its checks passed, so it proves nothing",
       ],
       [
-        json({ stdout: "supabase-probe: run r1\n", exit_signal: 9 }),
-        "supabase-probe: it was ended on the Machine by signal 9",
+        {
+          code: 1,
+          stdout: "supabase-probe: run r1\n",
+          stderr: "Error: ssh shell: Process exited with status 137 from signal KILL\n",
+        },
+        "supabase-probe: it failed on the Machine, with exit code 137, ended by signal KILL",
+      ],
+      [
+        { code: null, timedOut: true, stdout: "supabase-probe: run r1\n" },
+        "supabase-probe: the session ran out of time after 600 seconds, and the command may still be running on the Machine",
+      ],
+      [
+        // A connection lost mid-command closes the session's channel with no status (x/crypto's ExitMissingError).
+        {
+          code: 1,
+          stdout: "supabase-probe: run r1\n",
+          stderr: "Error: ssh shell: wait: remote command exited without exit status or exit signal\n",
+        },
+        "supabase-probe: the session ended without saying how the command ended: the Machine closed it, or the connection to it was lost",
       ],
     ] as const) {
       const h = harness({
-        routes: [
-          [LIST, started],
-          [exec("supabase-probe"), reply],
-        ],
+        routes: [[LIST, started], [ssh("supabase-probe"), reply], ...CLEAN_UP],
         web: settings(""),
       });
       expect(await failure("supabase-probe", h.ctx), failed).toBe(failed);
@@ -500,10 +567,7 @@ describe("supabase-probe on the runner", () => {
   it("doesn't take a report without the run's id, or one that only says its checks passed, as a pass", async () => {
     for (const stdout of ["", "supabase-probe: ok    control: the service key lists the buckets\n"]) {
       const h = harness({
-        routes: [
-          [LIST, started],
-          [exec("supabase-probe"), answer(stdout)],
-        ],
+        routes: [[LIST, started], [ssh("supabase-probe"), answer(stdout)], ...CLEAN_UP],
         web: settings(""),
       });
       expect(await failure("supabase-probe", h.ctx), stdout).toBe(
@@ -514,16 +578,15 @@ describe("supabase-probe on the runner", () => {
 
   it("says what the project may hold when nothing came back from the Machine, and still fails with the call's own failure", async () => {
     for (const reply of [
-      { code: 1, stderr: "Error: deadline exceeded" },
+      { code: 1, stderr: "Error: tunnel unavailable: context deadline exceeded" },
       { timedOut: true, code: null },
-      json({ stdout: "supabase-probe: run r1\n", exit_status: 9 }),
-      json({ exit_code: 137 }),
-    ]) {
+      { code: 1, stderr: "Error: ssh shell: Process exited with status 137 from signal KILL\n" },
+      { code: 1, stderr: "Error: ssh shell: wait: remote command exited without exit status or exit signal\n" },
+      // A session that closed before the command was acknowledged: flyctl exits 0 having printed nothing.
+      {},
+    ] satisfies Reply[]) {
       const h = harness({
-        routes: [
-          [LIST, started],
-          [exec("supabase-probe"), reply],
-        ],
+        routes: [[LIST, started], [ssh("supabase-probe"), reply], ...CLEAN_UP],
         web: settings(""),
       });
       const failed = await failure("supabase-probe", h.ctx);

@@ -28,9 +28,10 @@
 // is `probe-<run>@probe.invalid`, which nothing can deliver to), and a `finally` deletes each object
 // a call may have written, each bucket a call may have made, and then the user, whatever failed
 // before. A clean-up that fails is a failed check that names what is left. The run is limited in
-// time, since the Machine's command is killed at 300 seconds and a kill skips the `finally`: the
-// checks stop asking at `BUDGET_MS`, the clean-up stops at `DEADLINE_MS`, and a call in flight at
-// either time is ended. Each check or clean-up that wasn't asked is a failure that says so, and the
+// time, since the runner gives up on the Machine's command 300 seconds after it starts, at the
+// earliest (on-machine.ts, `COMMAND_SECONDS`), and no `finally` can count on what Fly does to the
+// command then: the checks stop asking at `BUDGET_MS`, the clean-up stops at `DEADLINE_MS`, and a
+// call in flight at either time is ended. Each check or clean-up that wasn't asked is a failure that says so, and the
 // clean-up's names what is left. No check names, and no note, holds a key, a token or a word of a
 // response body: statuses, codes and counts only.
 
@@ -63,8 +64,8 @@ const OUT_OF_TIME = "the run's time ran out";
  */
 export const BUDGET_MS = 150_000;
 /**
- * When the clean-up stops too. `flyctl machine exec` ends the command at 300 seconds
- * (on-machine.ts), which no `finally` survives.
+ * When the clean-up stops too: a minute before the runner may give up on the Machine's command
+ * (on-machine.ts, `COMMAND_SECONDS`), after which no `finally` can be counted on.
  */
 export const DEADLINE_MS = 240_000;
 

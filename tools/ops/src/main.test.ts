@@ -6,7 +6,7 @@
 
 import { existsSync } from "node:fs";
 import { chmod, mkdtemp, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { hostname, tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { spawnProcess } from "./spawn.ts";
@@ -61,9 +61,20 @@ describe("the ops entry", () => {
   });
 
   it("holds back the environment's token from a line a script says, and exits 0 when the script worked", async () => {
-    const bin = await flyctl(`case "$2" in
-  list) printf '%s' '[{"id":"a1","state":"started","config":{"metadata":{"fly_process_group":"api"}}}]' ;;
-  exec) printf '{"stdout":"storage-setup: uploads: created\\\\nstorage-setup: renditions: created\\\\nthe key is %s"}' "$FLY_API_TOKEN" ;;
+    // The session prints the Machine's lines and leaves a mark beside this made-up flyctl; the
+    // organization's peers are none before it and, after it, the one it made, named for this host as
+    // flyctl's agent names it (on-machine.ts).
+    const peer = `interactive-${
+      hostname()
+        .split(".")[0]
+        ?.replace(/[^a-zA-Z0-9-]/g, "-") ?? ""
+    }-someone-example-invalid-01ARYZ6S41TSV4RRFFQ69G5FAV`;
+    const bin = await flyctl(`case "$1 $2" in
+  "machine list") printf '%s' '[{"id":"a1","state":"started","config":{"metadata":{"fly_process_group":"api"}}}]' ;;
+  "ssh console") touch "$(dirname "$0")/session"; printf 'storage-setup: uploads: created\\nstorage-setup: renditions: created\\nthe key is %s\\n' "$FLY_API_TOKEN" ;;
+  "orgs list") printf '%s' '{"tadayo-org":"Tadayo"}' ;;
+  "wireguard list") if [ -e "$(dirname "$0")/session" ]; then printf '%s' '[{"Name":"${peer}"}]'; else printf '[]'; fi ;;
+  "wireguard remove") echo "Removing WireGuard peer \\"$4\\" for organization $3"; echo "Removed peer." ;;
   *) echo "unexpected: $*" >&2; exit 2 ;;
 esac`);
     const result = await entry(["storage-setup"], {
@@ -72,9 +83,15 @@ esac`);
       SUPABASE_DEV_PROJECT_REF: REF,
     });
     expect(result.stderr).toBe("");
+    const slug =
+      hostname()
+        .split(".")[0]
+        ?.replace(/[^a-zA-Z0-9-]/g, "-") ?? "";
     expect(result.stdout).toBe(
-      "storage-setup: uploads: created\nstorage-setup: renditions: created\nthe key is [redacted]\n",
+      `storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, \`flyctl wireguard list tadayo-org\` lists the organization's peers, and \`flyctl wireguard remove tadayo-org <name>\` removes one; this run's names start with interactive-${slug}-\n` +
+        "storage-setup: uploads: created\nstorage-setup: renditions: created\nthe key is [redacted]\nstorage-setup: removed the WireGuard peer this run made\n",
     );
+    expect(result.stdout).not.toContain("someone-example-invalid");
     expect(result.code).toBe(0);
   });
 

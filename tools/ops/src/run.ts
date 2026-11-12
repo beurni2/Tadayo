@@ -231,9 +231,12 @@ function machineProject(url: string, ref: string, script: string): string {
   return project;
 }
 
-/** Starts `<script> --here --ref <reference>` on the API's Machine, says what it prints, and gives back its lines. */
-async function onTheMachine(ctx: OpsContext, script: string, ref: string): Promise<string[]> {
-  const heard: string[] = [];
+/**
+ * Starts `<script> --here --ref <reference>` on the API's Machine, says what it prints, and puts
+ * each of its lines in `heard` as it is said, so that they are there also when it fails; the
+ * runner's own lines about the run's WireGuard peer are said, and aren't among them.
+ */
+async function onTheMachine(ctx: OpsContext, script: string, ref: string, heard: string[] = []): Promise<string[]> {
   await onMachine({
     fly: flyOf(ctx.spawn, ctx.env),
     label: script,
@@ -242,6 +245,7 @@ async function onTheMachine(ctx: OpsContext, script: string, ref: string): Promi
       heard.push(line);
       ctx.say(line);
     },
+    note: ctx.say,
   });
   return heard;
 }
@@ -258,8 +262,8 @@ const storageSetupScript: Script = {
     }
     const variables = readVariables(ctx.env, ["FLY_API_TOKEN", "SUPABASE_DEV_PROJECT_REF"]);
     const heard = await onTheMachine(ctx, "storage-setup", devProjectRef(variables.SUPABASE_DEV_PROJECT_REF));
-    // An exit status of 0 isn't enough: a command that `machine exec` ended may answer without one
-    // that says so, so each bucket's own line is what says the Machine got that far.
+    // An exit status of 0 isn't enough: flyctl also exits 0 for a session that closed before the
+    // command ran (on-machine.ts), so each bucket's own line is what says the Machine got that far.
     for (const bucket of BUCKETS) {
       if (!heard.some((line) => line.startsWith(`storage-setup: ${bucket}: `))) {
         throw new OpsError(
@@ -281,7 +285,7 @@ async function probeOnMachine(ctx: OpsContext, ref: string): Promise<void> {
   const url = machineProject(variables.SUPABASE_URL, ref, "supabase-probe");
   const database = devDatabaseUrl(variables.DATABASE_URL, ref);
   // The time limits run from here, so that the database's checks count against them too, and the
-  // clean-up still ends before `machine exec` ends the command (supabase-probe.ts, DEADLINE_MS).
+  // clean-up still ends before the runner gives up on the command (supabase-probe.ts, DEADLINE_MS).
   const budget = AbortSignal.timeout(BUDGET_MS);
   const deadline = AbortSignal.timeout(DEADLINE_MS);
   // What a failed clean-up leaves is named by this id (`probe/<run>/…`, `probe-<run>@probe.invalid`,
@@ -321,28 +325,18 @@ async function probeFromRunner(ctx: OpsContext): Promise<void> {
   const ref = devProjectRef(variables.SUPABASE_DEV_PROJECT_REF);
   const settings = await dataApiChecks(ctx.fetch, ref, variables.SUPABASE_ACCESS_TOKEN);
   for (const check of settings) ctx.say(`supabase-probe: ${reportLine(check)}`);
-  // Both halves say what they found; the run fails if either failed. `flyctl machine exec` gives
-  // the Machine's output only when its command ends, so a call that fails gives none, and nothing
-  // heard says nothing of how far the command got. The Machine's half says its run's id before it
-  // makes anything and ends by saying how its checks went, so a report with the first line and not
-  // the last is one whose command was ended part way, which an exit status of 0 doesn't rule out
-  // (flyctl 0.5.8 doesn't print the Machines API's `exit_signal`): either way the probe's own
-  // clean-up may not have run. A report without the run's id is one that failed before it made
-  // anything (a Machine without the service key, say).
+  // Both halves say what they found; the run fails if either failed. The Machine's half says its
+  // run's id before it makes anything and ends by saying how its checks went, and every line it
+  // printed comes back, also from a session that failed or was cut short (on-machine.ts). So a
+  // report with the first line and not the last is one whose command, or whose session, was ended
+  // part way, and the probe's own clean-up may not have run; an exit status of 0 doesn't rule that
+  // out, since flyctl also exits 0 for a session that closed before the command ran. A report
+  // without the run's id is one that failed before it made anything (a Machine without the service
+  // key, say), or whose command never started.
   const heard: string[] = [];
   let onMachineFailure: OpsError | undefined;
   try {
-    await onTheMachine(
-      {
-        ...ctx,
-        say: (line) => {
-          heard.push(line);
-          ctx.say(line);
-        },
-      },
-      "supabase-probe",
-      ref,
-    );
+    await onTheMachine(ctx, "supabase-probe", ref, heard);
   } catch (error) {
     if (!(error instanceof OpsError)) throw error;
     onMachineFailure = error;

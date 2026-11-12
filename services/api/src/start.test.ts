@@ -36,7 +36,10 @@ const PROJECT = "https://abcdefghijklmnopqrst.supabase.co";
 /** The settings that are right, to which a test adds the one that is wrong. */
 const RIGHT = { DATABASE_URL: NOWHERE, SUPABASE_URL: PROJECT, TADAYO_ENVIRONMENT: "prod" };
 
-describe("the API's entry (ADR-013)", () => {
+// Each test starts the entry as a process, some of them several times, and each start is given 20 seconds
+// before it is killed (`run`); vitest's default of 5 seconds for a whole test is less than a few slow starts
+// take on a busy runner (`ci` run 43183039976), so the tests here get the time their processes are given.
+describe("the API's entry (ADR-013)", { timeout: 60_000 }, () => {
   it("stops before it listens when TADAYO_ENVIRONMENT is missing, empty or neither dev nor prod", async () => {
     for (const environment of [undefined, "", "Dev", "staging", "production"]) {
       const result = await run({

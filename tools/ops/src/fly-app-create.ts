@@ -12,7 +12,7 @@
 // answers are read, and what is still to do is said in words the founder can follow.
 
 import { DEV_APP, DEV_HOST } from "./environment.ts";
-import { jsonOf, why, type Fly } from "./fly.ts";
+import { jsonOf, onlyOrganization, SLUG, why, type Fly } from "./fly.ts";
 import { OpsError } from "./ops-error.ts";
 
 export interface FlyAppCreateInput {
@@ -22,31 +22,10 @@ export interface FlyAppCreateInput {
   readonly say: (line: string) => void;
 }
 
-const SLUG = /^[a-z0-9][a-z0-9-]{0,62}$/;
 const HOST_NAME = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/;
 
 const record = (value: unknown): Record<string, unknown> | undefined =>
   typeof value === "object" && value !== null && !Array.isArray(value) ? (value as Record<string, unknown>) : undefined;
-
-const listing = (names: readonly string[]) =>
-  names.length < 2 ? names.join("") : `${names.slice(0, -1).join(", ")} and ${names.at(-1) ?? ""}`;
-
-async function onlyOrganization(fly: Fly): Promise<string> {
-  const result = await fly.run(["orgs", "list", "--json"]);
-  if (result.code !== 0) throw new OpsError(`fly-app-create: flyctl couldn't list the organizations: ${why(result)}`);
-  // `{"<slug>": "<name>"}`.
-  const orgs = record(jsonOf(result));
-  if (orgs === undefined) throw new OpsError("fly-app-create: flyctl's list of organizations isn't one it can read");
-  const slugs = Object.keys(orgs);
-  const [only] = slugs;
-  if (only === undefined) throw new OpsError("fly-app-create: the token sees no organization");
-  if (slugs.length > 1) {
-    throw new OpsError(
-      `fly-app-create: the token sees ${String(slugs.length)} organizations, ${listing(slugs)}: say which with --org <slug>`,
-    );
-  }
-  return only;
-}
 
 type CertificateState = "issued" | "issuing" | "waiting for DNS" | "unknown";
 
@@ -88,7 +67,7 @@ export async function flyAppCreate(input: FlyAppCreateInput): Promise<void> {
   if (status.code === 0) {
     say(`fly-app-create: ${DEV_APP} is there`);
   } else {
-    const org = input.org ?? (await onlyOrganization(fly));
+    const org = input.org ?? (await onlyOrganization(fly, "fly-app-create", "say which with --org <slug>"));
     const made = await fly.run(["apps", "create", DEV_APP, "--org", org]);
     if (made.code !== 0) throw new OpsError(`fly-app-create: flyctl couldn't make ${DEV_APP}: ${why(made)}`);
     say(`fly-app-create: ${DEV_APP} is made, in the organization ${org}`);

@@ -64,3 +64,36 @@ export function machine(id: string, group: string, state: string, tag = "deploym
 }
 
 export const json = (value: unknown): Reply => ({ stdout: JSON.stringify(value) });
+
+const CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+
+/** A ULID made at `ms`: its first ten characters are the time, in Crockford's base 32; the rest is fixed here. */
+export function ulidAt(ms: number, rest = "0123456789ABCDEFGH"): string {
+  let time = "";
+  let left = ms;
+  for (let index = 0; index < 10; index += 1) {
+    time = `${CROCKFORD[left % 32] ?? ""}${time}`;
+    left = Math.floor(left / 32);
+  }
+  return `${time}${rest.slice(0, 16)}`;
+}
+
+/** A made-up token's email, as flyctl puts it in a peer's name: no real person's. */
+export const PEER_EMAIL = "someone-example-invalid";
+
+/** The name flyctl 0.5.8's agent gives the peer it makes for a session: `interactive-<host>-<email>-<ULID>`. */
+export const sessionPeer = (host: string, ms: number, email = PEER_EMAIL) =>
+  `interactive-${host}-${email}-${ulidAt(ms)}`;
+
+/** What `flyctl wireguard list <org> --json` prints: fly-go's `WireGuardPeer`, whose fields carry no JSON names of their own. */
+export const peerList = (names: readonly string[]): Reply =>
+  json(
+    names.map((name, index) => ({
+      ID: `peer${String(index)}`,
+      Pubkey: "cHVibGljLWtleS1vZi1hLXBlZXItbm90LWEtc2VjcmV0PQ==",
+      Region: "iad",
+      Name: name,
+      Peerip: `fdaa:0:1:a7b::${String(index + 2)}`,
+      GatewayStatus: null,
+    })),
+  );
