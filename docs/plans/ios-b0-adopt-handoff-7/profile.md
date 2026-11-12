@@ -113,7 +113,7 @@ FQ69 (an account at the age step can only finish setup or leave), FQ93 (reserved
   `SetupFooter` `:62-75` (`VStack(spacing: Spacing.s)`, top 8, bottom a parameter, canvas background); `announcing(_:politely:initial:)` `:82-89` and `Announcement.post` `:95-100`
   (`UIAccessibility.post(.announcement)` with default or low priority).
 - `TadayoDesign/Components/TextAction.swift:7-35`: `textAction` 16/22 regular, `.multilineTextAlignment(.center)` `:22`, `.frame(maxWidth: .infinity, minHeight: Size.touchTarget)` `:28`;
-  unavailable ink `secondaryText` ("no delivery draws it yet, so it's built from spec (handoff 7 asks)", `:5-6`). Users: `SignInFlow.swift:137` (Change email address), `:194` (Send a new code),
+  unavailable ink `secondaryText` ("no delivery draws it yet, so it's built from spec (handoff 7 asks)", `:5-6`; a stale sentence, which `ios/b0-adopt-code` corrected: handoff 7's frames 4 and 7 draw it). Users: `SignInFlow.swift:137` (Change email address), `:194` (Send a new code),
   `ProfileScreens.swift:33` (age footer link) and `:85` (Add photo), `NoClubTabs.swift:83` (Go to Home), `LabView.swift:381` and `:385`.
 - `InlineError.swift`: `exclamationmark.circle` icon plus the literal words, `metadata` 13/18, `destructive`, leading, icon hidden from VoiceOver.
 - `LabelledField.swift:17-69`: label `fieldLabel` 13/18 bold, 8 above the field (`:38`); field min 54, inset `Size.fieldInset` 16 (`:47-49`, `Metrics.swift:65`); `isInvalid` draws a 1-point
@@ -359,7 +359,7 @@ Order that keeps each step buildable: A1 to A3 (Avatar, independent) and S5 (tex
 **P8. While saving.**
 - Name field: read-only, first responder and keyboard kept, editing restored after a failure (CC.busyPrimary.field; IMPL 2 and 3; W-06: "read-only during requests without resigning focus"). `.disabled(true)` is not it (it can resign first responder).
   SwiftUI has no read-only text field and the sources name no technique (section 6.10).
-- Add photo: `.disabled(model.isSaving)`. Leave sign-in: P1. (IMPL 3: "Add photo/Leave sign-in inactive".) The inactive look of a text action: `secondaryText` per `TextAction.swift:5-6`; no delivery draws it (the sources are silent).
+- Add photo: `.disabled(model.isSaving)`. Leave sign-in: P1. (IMPL 3: "Add photo/Leave sign-in inactive".) The inactive look of a text action: `secondaryText` per `TextAction.swift:5-6`, as handoff 7's frames 4 and 7 draw Change email address while a request runs (corrected by `ios/b0-adopt-code`; this line first said no delivery draws it).
 - Continue: `.buttonStyle(.tadayoPrimary(isBusy: model.isSaving))` and `.disabled(!model.canContinue)` stay (`:114-115`); label stays "Continue", value "In progress" (S3).
 - Announcement: "Saving your profile." (`vo.profile.busy`) once when the save starts, no repeat on re-render, focus not moved (COPY.announcementPolicy.busy). A retry after a failure is a new action. Add an app-catalog key; the post goes through `Announcement.post`.
 - Frame: none (built from spec; INV `:51` keeps "built from spec" with the words from handoff 7).

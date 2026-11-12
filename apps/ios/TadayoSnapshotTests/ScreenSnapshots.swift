@@ -45,22 +45,26 @@ enum ScreenSnapshot {
         /// The safe areas are the window's own and `FramedHost`'s (above). The frames' are given
         /// all the same: with none, SnapshotTesting moves the view off the screen, and the key
         /// window then drew the bar 52 points above where it laid it out.
-        var config: ViewImageConfig {
+        func config(width: CGFloat) -> ViewImageConfig {
             ViewImageConfig(
                 safeArea: UIEdgeInsets(top: 59, left: 0, bottom: 34, right: 0),
-                size: CGSize(width: 393, height: self == .xl ? 2200 : 852),
+                size: CGSize(width: width, height: self == .xl ? 2200 : 852),
                 traits: traits)
         }
     }
 
     /// Snapshots `view` as `state`, `state-dark` and `state-xl`, named so the contact sheets
     /// pair each with its render (`tools/ci/ios_steps.py`). A `busy` state must hold an indicator
-    /// (`Spinners.check`); the comparison with its reference shows it drawn.
+    /// (`Spinners.check`); the comparison with its reference shows it drawn. `variants` and
+    /// `width` draw some of them at another width, 320 points say, named for it
+    /// (`A02-code-error-320-xl`), as docs/TECH-DESIGN.md section 2 asks of the representative
+    /// `-dark` and `-xl` states.
     static func assert(
         _ view: some View, named state: String, busy: Bool = false,
+        variants: [Variant] = Variant.allCases, width: CGFloat = 393,
         file: StaticString = #filePath, testName: String = #function, line: UInt = #line
     ) {
-        for variant in Variant.allCases {
+        for variant in variants {
             let shown =
                 view
                 .environment(\.colorScheme, variant == .dark ? .dark : .light)
@@ -70,7 +74,7 @@ enum ScreenSnapshot {
             assertSnapshot(
                 of: host as UIViewController,
                 as: .image(
-                    on: variant.config,
+                    on: variant.config(width: width),
                     drawHierarchyInKeyWindow: true,
                     perceptualPrecision: 0.98,
                     traits: variant.traits),
