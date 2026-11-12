@@ -35,7 +35,17 @@ import Observation
     public static let resendWait: Duration = .seconds(60)
 
     public private(set) var step = Step.email
-    public var email = ""
+    /// The address as typed. While a code is on its way the field is read-only, not disabled, so
+    /// it keeps its focus and its keyboard (handoff 7's `busyPrimary.field`: "read-only, keep
+    /// first responder and keyboard if already shown; restore editing after failure"): a write
+    /// made then is ignored, and the address stays what was sent.
+    public var email: String {
+        get { typedAddress }
+        set {
+            guard !isSending else { return }
+            typedAddress = newValue
+        }
+    }
     /// The address the last code went to, as A02-code shows it.
     public private(set) var address = ""
     public private(set) var failure: Failure?
@@ -47,6 +57,7 @@ import Observation
     /// When the resend row next changes, while A02-code waits; the view waits on it.
     public private(set) var resendDue: ContinuousClock.Instant?
 
+    private var typedAddress = ""
     private var digits = ""
 
     let auth: any AuthService
@@ -71,10 +82,13 @@ import Observation
     }
 
     /// The code as typed or pasted: ASCII digits only, at most six. Editing it clears a failed
-    /// verification's line; Verify code needs no edit to try the same six digits again.
+    /// verification's line; Verify code needs no edit to try the same six digits again. While
+    /// the code is checked, through the account read that follows a verified one, the field is
+    /// read-only, as the address is while a code is sent, and editing returns after a failure.
     public var code: String {
         get { digits }
         set {
+            guard !isVerifying else { return }
             let typed = String(
                 newValue.filter { $0.isASCII && $0.isWholeNumber }.prefix(Self.codeLength))
             guard typed != digits else { return }

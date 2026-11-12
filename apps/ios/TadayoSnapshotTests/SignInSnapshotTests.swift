@@ -27,21 +27,21 @@ final class SignInSnapshotTests: XCTestCase {
     func testA02EmailSending() {
         let model = signIn(ScriptedAuth(sends: [.hang]))
         model.email = "ben@example.com"
-        ScreenSnapshot.drive({ await model.sendCode() }, until: { model.isSending })
+        drive({ await model.sendCode() }, until: { model.isSending })
         snap(model, named: "A02-email-sending")
     }
 
     func testA02EmailFailedNetwork() {
         let model = signIn(ScriptedAuth(sends: [.fail(.network)]))
         model.email = "ben@example.com"
-        ScreenSnapshot.drive({ await model.sendCode() }, until: { model.failure == .sendNetwork })
+        drive({ await model.sendCode() }, until: { model.failure == .sendNetwork })
         snap(model, named: "A02-email-failed-network")
     }
 
     func testA02EmailRefused() {
         let model = signIn(ScriptedAuth(sends: [.fail(.refused)]))
         model.email = "ben@example.com"
-        ScreenSnapshot.drive({ await model.sendCode() }, until: { model.failure == .sendRefused })
+        drive({ await model.sendCode() }, until: { model.failure == .sendRefused })
         snap(model, named: "A02-email-refused")
     }
 
@@ -54,7 +54,7 @@ final class SignInSnapshotTests: XCTestCase {
     func testA02CodeVerifying() {
         let model = onCode(verifies: [.hang])
         model.code = "529614"
-        ScreenSnapshot.drive({ await model.verify() }, until: { model.isVerifying })
+        drive({ await model.verify() }, until: { model.isVerifying })
         snap(model, named: "A02-code-verifying")
     }
 
@@ -88,21 +88,21 @@ final class SignInSnapshotTests: XCTestCase {
     func testA02CodeResending() {
         let model = onCode(sends: [.answer, .hang])
         letTheMinutePass(model)
-        ScreenSnapshot.drive({ await model.resend() }, until: { model.isResending })
+        drive({ await model.resend() }, until: { model.isResending })
         snap(model, named: "A02-code-resending")
     }
 
     func testA02CodeResendFailedNetwork() {
         let model = onCode(sends: [.answer, .fail(.network)])
         letTheMinutePass(model)
-        ScreenSnapshot.drive({ await model.resend() }, until: { model.failure == .resendNetwork })
+        drive({ await model.resend() }, until: { model.failure == .resendNetwork })
         snap(model, named: "A02-code-resend-failed-network")
     }
 
     func testA02CodeResendRefused() {
         let model = onCode(sends: [.answer, .fail(.refused)])
         letTheMinutePass(model)
-        ScreenSnapshot.drive({ await model.resend() }, until: { model.failure == .resendRefused })
+        drive({ await model.resend() }, until: { model.failure == .resendRefused })
         snap(model, named: "A02-code-resend-refused")
     }
 
@@ -114,19 +114,19 @@ final class SignInSnapshotTests: XCTestCase {
 
     func testA02AgeSaving() {
         let model = profile(ageConfirmed: false, updates: [.hang])
-        ScreenSnapshot.drive({ await model.confirmAge() }, until: { model.isSaving })
+        drive({ await model.confirmAge() }, until: { model.isSaving })
         snapAge(model, named: "A02-age-saving")
     }
 
     func testA02AgeFailedNetwork() {
         let model = profile(ageConfirmed: false, updates: [.fail(.network)])
-        ScreenSnapshot.drive({ await model.confirmAge() }, until: { model.failure == .network })
+        drive({ await model.confirmAge() }, until: { model.failure == .network })
         snapAge(model, named: "A02-age-failed-network")
     }
 
     func testA02AgeRefused() {
         let model = profile(ageConfirmed: false, updates: [.fail(.refused)])
-        ScreenSnapshot.drive({ await model.confirmAge() }, until: { model.failure == .other })
+        drive({ await model.confirmAge() }, until: { model.failure == .other })
         snapAge(model, named: "A02-age-refused")
     }
 
@@ -145,21 +145,21 @@ final class SignInSnapshotTests: XCTestCase {
     func testA03ProfileSaving() {
         let model = profile(ageConfirmed: true, updates: [.hang])
         model.name = "Ben"
-        ScreenSnapshot.drive({ await model.saveName() }, until: { model.isSaving })
+        drive({ await model.saveName() }, until: { model.isSaving })
         snapProfile(model, named: "A03-profile-saving")
     }
 
     func testA03ProfileFailedNetwork() {
         let model = profile(ageConfirmed: true, updates: [.fail(.network)])
         model.name = "Ben"
-        ScreenSnapshot.drive({ await model.saveName() }, until: { model.failure == .network })
+        drive({ await model.saveName() }, until: { model.failure == .network })
         snapProfile(model, named: "A03-profile-failed-network")
     }
 
     func testA03ProfileRefused() {
         let model = profile(ageConfirmed: true, updates: [.fail(.refused)])
         model.name = "Ben"
-        ScreenSnapshot.drive({ await model.saveName() }, until: { model.failure == .other })
+        drive({ await model.saveName() }, until: { model.failure == .other })
         snapProfile(model, named: "A03-profile-refused")
     }
 
@@ -209,7 +209,7 @@ final class SignInSnapshotTests: XCTestCase {
             under.contains { $0.label == SignInModel.Failure.verifyNetwork.words }, "\(under)")
         let sent = signIn(ScriptedAuth(sends: [.fail(.network)]))
         sent.email = "ben@example.com"
-        ScreenSnapshot.drive({ await sent.sendCode() }, until: { sent.failure == .sendNetwork })
+        drive({ await sent.sendCode() }, until: { sent.failure == .sendNetwork })
         let own = AccessibilityElements.of(EmailScreen(model: sent, focus: true))
         XCTAssertTrue(
             own.contains { $0.label == SignInModel.Failure.sendNetwork.words }, "\(own)")
@@ -254,7 +254,7 @@ final class SignInSnapshotTests: XCTestCase {
     ) -> SignInModel {
         let model = signIn(ScriptedAuth(sends: sends, verifies: verifies))
         model.email = "ben@example.com"
-        ScreenSnapshot.drive({ await model.sendCode() }, until: { model.step == .code })
+        drive({ await model.sendCode() }, until: { model.step == .code })
         return model
     }
 
@@ -264,13 +264,13 @@ final class SignInSnapshotTests: XCTestCase {
     ) -> SignInModel {
         let model = onCode(verifies: [.fail(failure)])
         model.code = "529614"
-        ScreenSnapshot.drive({ await model.verify() }, until: { model.failure == shown })
+        drive({ await model.verify() }, until: { model.failure == shown })
         return model
     }
 
     private func letTheMinutePass(_ model: SignInModel) {
         clock.letTheMinutePass()
-        ScreenSnapshot.drive({ await model.waitForResend() }, until: { model.canResend })
+        drive({ await model.waitForResend() }, until: { model.canResend })
     }
 
     private func profile(

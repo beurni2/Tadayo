@@ -109,6 +109,47 @@ final class ManualContinuousClock: @unchecked Sendable {
         #expect(auth.calls == ["sendCode ben@example.com"])
     }
 
+    /// Handoff 7's `busyPrimary.field`: while a code is on its way the address is read-only, not
+    /// disabled, so the field keeps its focus and its keyboard; "restore editing after failure".
+    /// A write made then is ignored, so the field shows what was sent, and each failure gives
+    /// editing back with the address as it was.
+    @Test func theAddressCantBeEditedWhileACodeIsOnItsWay() async {
+        for (answer, failure) in [
+            (AuthFailure.network, SignInModel.Failure.sendNetwork), (.refused, .sendRefused),
+        ] {
+            let gate = Gate()
+            let auth = FakeAuth(send: [answer])
+            auth.duringSignIn = { await gate.wait() }
+            let model = model(auth)
+            model.email = "ben@example.com"
+            let sending = Task { await model.sendCode() }
+            await gate.reached()
+            #expect(model.isSending)
+            model.email = "ben@example.co"
+            #expect(model.email == "ben@example.com")
+            model.email = ""
+            #expect(model.email == "ben@example.com")
+            gate.open()
+            await sending.value
+            #expect(!model.isSending)
+            #expect(model.failure == failure)
+            #expect(model.email == "ben@example.com")
+            model.email = "ben@example.co"
+            #expect(model.email == "ben@example.co")
+            #expect(auth.calls == ["sendCode ben@example.com"])
+        }
+    }
+
+    /// The address is editable again once a code has gone, so Change email address returns to a
+    /// field that takes what is typed, with the address as it was.
+    @Test func theAddressCanBeEditedAgainOnceACodeHasGone() async {
+        let model = await onCode(FakeAuth())
+        model.changeEmail()
+        #expect(model.email == "ben@example.com")
+        model.email = "ben@example.org"
+        #expect(model.email == "ben@example.org")
+    }
+
     // MARK: A02-code
 
     @Test func theCodeTakesSixDigitsAndNothingElse() async {
@@ -199,6 +240,57 @@ final class ManualContinuousClock: @unchecked Sendable {
         await model.verify()
         #expect(model.failure == nil)
         #expect(verified.sessions == [session])
+    }
+
+    /// The same for the code while it is checked (handoff 7: "Input edits ... are inactive until
+    /// the request completes, even if the old challenge has six digits"). The digits stay as they
+    /// were, a failure gives editing back, and a refused code's line goes on the first edit, as
+    /// it did before. Verifying holds through the account read that follows a verified code.
+    @Test func theCodeCantBeEditedWhileItIsChecked() async {
+        for (answer, failure) in [
+            (AuthFailure.network, SignInModel.Failure.verifyNetwork),
+            (.unavailable, .verifyUnavailable), (.codeNotVerified, .codeNotVerified),
+        ] {
+            let gate = Gate()
+            let auth = FakeAuth(verify: [.failure(answer)])
+            let model = await onCode(auth)
+            auth.duringSignIn = { await gate.wait() }
+            model.code = "529614"
+            let verifying = Task { await model.verify() }
+            await gate.reached()
+            #expect(model.isVerifying)
+            model.code = "529613"
+            #expect(model.code == "529614")
+            model.code = ""
+            #expect(model.code == "529614")
+            gate.open()
+            await verifying.value
+            #expect(!model.isVerifying)
+            #expect(model.failure == failure)
+            #expect(model.code == "529614")
+            model.code = "529613"
+            #expect(model.code == "529613")
+            #expect(model.failure == nil)
+        }
+    }
+
+    @Test func theCodeCantBeEditedWhileTheAccountAfterItIsRead() async {
+        let gate = Gate()
+        let auth = FakeAuth(verify: [.success(session)])
+        let clock = ManualContinuousClock()
+        let model = SignInModel(
+            auth: auth, verified: { _ in await gate.wait() }, now: { clock.now },
+            sleep: { clock.sleep(until: $0) })
+        model.email = "ben@example.com"
+        await model.sendCode()
+        model.code = "529614"
+        let verifying = Task { await model.verify() }
+        await gate.reached()
+        #expect(model.isVerifying)
+        model.code = "529613"
+        #expect(model.code == "529614")
+        gate.open()
+        await verifying.value
     }
 
     @Test func theAddressCantChangeWhileACodeIsOnItsWay() async {
