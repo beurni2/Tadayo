@@ -109,6 +109,26 @@ import Testing
         #expect(AvatarInitial.of("\u{115F}\u{1161}") == "\u{115F}\u{1161}")
     }
 
+    /// A prepended sign (the Arabic number sign U+0600, the end of ayah U+06DD, the Syriac
+    /// abbreviation mark U+070F, the Kaithi number sign U+110BD) is a format character that draws,
+    /// and it joins the character after it: that cluster has no initial, whether a letter or a
+    /// space follows, rather than one that draws the sign beside the letter.
+    @Test func aSignThatSpansWhatFollowsIsVisible() {
+        let signs = [
+            "\u{0600}", "\u{0601}", "\u{0602}", "\u{0603}", "\u{0604}", "\u{0605}", "\u{06DD}",
+            "\u{070F}", "\u{0890}", "\u{0891}", "\u{08E2}", "\u{110BD}", "\u{110CD}",
+        ]
+        for sign in signs {
+            let label = "\(sign.unicodeScalars.map(\.value))"
+            #expect(AvatarInitial.of(sign + "A") == nil, "\(label)")
+            #expect(AvatarInitial.of(sign + " Ben") == nil, "\(label)")
+            #expect(AvatarInitial.of(sign) == nil, "\(label)")
+        }
+        #expect(AvatarInitial.of("\u{070F}\u{0710}\u{0712}") == nil)
+        // A format character that draws nothing and doesn't join what follows is still passed over.
+        #expect(AvatarInitial.of("\u{FFF9}Ben") == "B")
+    }
+
     /// Capitals as built: one letter can become two, and a Georgian letter becomes its Mtavruli
     /// capital.
     @Test func capitalsAsBuilt() {

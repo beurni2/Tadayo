@@ -21,7 +21,10 @@
 /// trimmed; controls and format characters (U+200B, U+2060, U+FEFF); the code points Unicode says
 /// to ignore when drawing (U+034F, U+FE0F); and FQ70's blank fillers (U+115F, U+1160, U+2800,
 /// U+3164, U+FFA0), the list the API's own test of a name that shows something uses
-/// (`packages/contracts/src/common.ts`, `VISIBLE`). FQ70's default lets a name hold them before a
+/// (`packages/contracts/src/common.ts`, `VISIBLE`). The format characters that do draw, Unicode's
+/// prepended concatenation marks (the Arabic number sign U+0600, the end of ayah U+06DD), are
+/// visible: each joins the character after it in one cluster and leads it, so the cluster has no
+/// initial, rather than an initial that draws the sign beside the letter. FQ70's default lets a name hold them before a
 /// visible character, and they are passed over, so the letter after them is the initial: the
 /// contract says "first visible", and no source says such a character ends the rule (the plan's
 /// TL-08 lists a leading U+200B as a default, not a source's reading). gaps.md's check of the old
@@ -61,15 +64,24 @@ public enum AvatarInitial {
         character.unicodeScalars.allSatisfy(drawsNothing)
     }
 
-    /// Whether a scalar draws nothing: a space or line break, a control, a format character, one
-    /// Unicode says to ignore when drawing, or one of FQ70's blank fillers.
+    /// Whether a scalar draws nothing: a space or line break, a control, a format character other
+    /// than a prepended sign, one Unicode says to ignore when drawing, or one of FQ70's blank
+    /// fillers.
     static func drawsNothing(_ scalar: Unicode.Scalar) -> Bool {
         let properties = scalar.properties
         return properties.isWhitespace || properties.isDefaultIgnorableCodePoint
             || properties.generalCategory == .control
-            || properties.generalCategory == .format
+            || (properties.generalCategory == .format && !prependedSigns.contains(scalar))
             || blankFillers.contains(scalar)
     }
+
+    /// Unicode's prepended concatenation marks (`PropList.txt`'s Prepended_Concatenation_Mark),
+    /// the format characters that draw: a sign that spans the digits or letters after it.
+    /// `Unicode.Scalar.Properties` doesn't carry the property, so they are listed.
+    static let prependedSigns: Set<Unicode.Scalar> = [
+        "\u{0600}", "\u{0601}", "\u{0602}", "\u{0603}", "\u{0604}", "\u{0605}", "\u{06DD}",
+        "\u{070F}", "\u{0890}", "\u{0891}", "\u{08E2}", "\u{110BD}", "\u{110CD}",
+    ]
 
     /// FQ70's blank fillers, as `VISIBLE` lists them: the Hangul fillers, which Unicode also says
     /// to ignore when drawing, and U+2800 BRAILLE PATTERN BLANK, a symbol (So) that draws nothing.
