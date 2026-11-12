@@ -196,6 +196,7 @@ describe("onMachine: the command, over SSH", () => {
       { code: 126, stderr: "Error: context deadline exceeded\n" },
       { code: 127, stderr: exited(1) },
       { code: 2, stderr: exited(0) },
+      { code: 2, stderr: "Error: ssh shell: wait: remote command exited without exit status or exit signal\n" },
       { code: 1, stderr: "panic: a bug\ngoroutine 1 [running]:\n" },
       { code: 1 },
     ]) {
@@ -207,11 +208,43 @@ describe("onMachine: the command, over SSH", () => {
   });
 
   it("fails after saying what came back when the session ran out of time, and still removes the peer", async () => {
-    const result = await run(routes({ code: null, timedOut: true, stdout: "supabase-probe: run 1\n" }));
+    // What the Machine printed last is said, even a line that starts as flyctl's own do: flyctl ended no session here.
+    const result = await run(
+      routes({ code: null, timedOut: true, stdout: "supabase-probe: run 1\n", stderr: "Error: still waiting\n" }),
+    );
     expect(message(result.outcome)).toBe(
       "storage-setup: the session ran out of time after 600 seconds, and the command may still be running on the Machine",
     );
-    expect(result.said).toEqual([MAKING, "machine: supabase-probe: run 1", REMOVED]);
+    expect(result.said).toEqual([MAKING, "machine: supabase-probe: run 1", "machine: Error: still waiting", REMOVED]);
+  });
+
+  it("says that the session makes a peer, and how to remove one by hand, before the session starts", async () => {
+    const said: string[] = [];
+    let beforeTheSession: string[] = [];
+    const { spawn } = fakeSpawn([
+      [LIST, machines],
+      [
+        SSH,
+        () => {
+          beforeTheSession = [...said];
+          return { stdout: "done\n" };
+        },
+      ],
+      [ORGS, orgs],
+      [PEERS, peersOf(peerList([]), peerList([OURS]))],
+      [REMOVE, {}],
+    ]);
+    await onMachine({
+      fly: flyOf(spawn, ENV),
+      label: "storage-setup",
+      command: COMMAND,
+      say: (line) => said.push(`machine: ${line}`),
+      note: (line) => said.push(line),
+      host: HOST,
+    });
+    // A run cancelled during its session has the line in its log already.
+    expect(beforeTheSession).toEqual([MAKING]);
+    expect(said).toEqual([MAKING, "machine: done", REMOVED]);
   });
 
   it("passes a session that exited 0 having printed nothing, which only the script's own last line can judge (run.ts)", async () => {
@@ -355,6 +388,44 @@ describe("onMachine: the run's WireGuard peer, and no other", () => {
     }
   });
 
+  it("says a new peer not named for this runner too when one of this run's is still there, and fails with the one left", async () => {
+    const result = await run([
+      [LIST, machines],
+      [SSH, { stdout: "done\n" }],
+      [ORGS, orgs],
+      [PEERS, peersOf(peerList([]), peerList([OURS, LAPTOP]))],
+      [REMOVE, { code: 1 }],
+    ]);
+    expect(result.said).toEqual([
+      MAKING,
+      "machine: done",
+      "storage-setup: flyctl's removal of a WireGuard peer this run made ended with exit code 1",
+      strangers(1),
+    ]);
+    expect(message(result.outcome)).toBe(
+      `storage-setup: 1 of the WireGuard peers this run made is still there: ${BY_HAND}`,
+    );
+  });
+
+  it("goes on with the clean-up when a removal's flyctl can't be started, and counts its peer as left", async () => {
+    // No route for the removal: the fake's spawn fails, as starting a flyctl that isn't there would.
+    const result = await run([
+      [LIST, machines],
+      [SSH, { stdout: "done\n" }],
+      [ORGS, orgs],
+      [PEERS, peersOf(peerList([]), peerList([OURS]))],
+    ]);
+    expect(result.said).toEqual([
+      MAKING,
+      "machine: done",
+      "storage-setup: flyctl's removal of a WireGuard peer this run made ended with exit code 1",
+    ]);
+    expect(message(result.outcome)).toBe(
+      `storage-setup: 1 of the WireGuard peers this run made is still there: ${BY_HAND}`,
+    );
+    expect([...result.said, message(result.outcome)].join("\n")).not.toContain(PEER_EMAIL);
+  });
+
   it("counts a peer as removed when flyctl failed after removing it, and as left when no list can tell", async () => {
     // flyctl 0.5.8 exits 1 when its clean-up of local state fails after the removal: a new list shows the peer gone.
     const gone = await run([
@@ -392,6 +463,18 @@ describe("onMachine: the run's WireGuard peer, and no other", () => {
       const result = await run(routes({ stdout: "done\n" }, after, before));
       expect(message(result.outcome)).toBe(NONE_FOUND);
       expect(result.calls).toEqual([LIST, ORGS, PEERS, SSH, PEERS]);
+    }
+    // A command that failed there, with a status or without one, reached it too: the peer is said, then the failure.
+    for (const [session, failure] of [
+      [{ code: 1, stderr: exited(3) }, "storage-setup: it failed on the Machine, with exit code 3"],
+      [
+        { code: 1, stderr: "Error: ssh shell: wait: remote command exited without exit status or exit signal\n" },
+        "storage-setup: the session ended without saying how the command ended: the Machine closed it, or the connection to it was lost",
+      ],
+    ] as const) {
+      const result = await run(routes(session, []));
+      expect(result.said, failure).toEqual([MAKING, NONE_FOUND]);
+      expect(message(result.outcome)).toBe(failure);
     }
   });
 

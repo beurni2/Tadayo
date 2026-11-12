@@ -29,7 +29,10 @@ function run(env: Record<string, string>): Promise<{ code: number | null; stdout
 /** A database URL to a port nothing answers on. */
 const NOWHERE = "postgres://tadayo_app:password@127.0.0.1:1/tadayo";
 
-describe("the worker's entry (ADR-013)", () => {
+// Each test starts the entry as a process, some of them several times, and each start is given 20 seconds
+// before it is killed (`run`); vitest's default of 5 seconds for a whole test is less than a few slow starts
+// take on a busy runner (`ci` run 43183039976), so the tests here get the time their processes are given.
+describe("the worker's entry (ADR-013)", { timeout: 60_000 }, () => {
   it("stops when TADAYO_ENVIRONMENT is missing, empty or neither dev nor prod", async () => {
     for (const environment of [undefined, "", "Dev", "staging", "production"]) {
       const result = await run({

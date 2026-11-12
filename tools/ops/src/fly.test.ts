@@ -144,6 +144,7 @@ describe("forDevApp: a call is about tadayo-api-dev and no other app", () => {
       ["wireguard", "list"],
       ["wireguard", "list", "tadayo-org"],
       ["wireguard", "list", "tadayo-org", "--json", "--all"],
+      ["wireguard", "list", "tadayo-org", "--all"],
       ["wireguard", "list", "Tadayo-Org", "--json"],
       ["wireguard", "list", "-a", DEV, "--json"],
       ["wireguard", "list", "--json", "tadayo-org"],
