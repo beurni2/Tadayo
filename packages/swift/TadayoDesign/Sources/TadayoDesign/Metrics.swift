@@ -56,6 +56,12 @@ public enum Size {
     /// The keyboard focus ring: 2 points wide, outside a 2-point gap (1.1's `focusRingWidth`, `focusRingGap`).
     public static let focusRingWidth: CGFloat = 2
     public static let focusRingGap: CGFloat = 2
+    /// The busy primary button's indicator, the system's own, 16 points at every text size, in a
+    /// 24-point slot on each side of the label: the label stays where it is idle and the
+    /// indicator's right edge is 8 before it (handoff 7's `busyPrimary`: `indicatorSize` 16,
+    /// `indicatorGap` 8, symmetric 24-point accessory slots).
+    public static let busyIndicator: CGFloat = 16
+    public static let busySlot: CGFloat = 24
     /// The labelled field's least height, which grows with the text: 54 is not a cap (handoff 4's
     /// `componentGeometry.field`).
     public static let fieldMinHeight: CGFloat = 54

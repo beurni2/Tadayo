@@ -41,19 +41,47 @@ struct EmailScreen: View {
     @Bindable var model: SignInModel
     let focus: Bool?
     @FocusState private var focused: Bool
+    /// A code sent from the keyboard's return key is on its way.
+    @State private var sendingFromReturn = false
 
     var body: some View {
         SetupScroll {
             SetupHeading(title: "auth.email.title", subtitle: Text("auth.email.subtitle"))
             LabelledField(Text("auth.email.label"), isFocused: focus ?? focused) {
-                TextField(String(), text: $model.email)
-                    .keyboardType(.emailAddress)
-                    .textContentType(.emailAddress)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .submitLabel(.next)
-                    .onSubmit { Task { await model.sendCode() } }
-                    .focused($focused)
+                // The placeholder repeats the label's words (handoff 7's frame 1, `auth.email.
+                // placeholder`), in `secondaryText`, drawn over a field that has none of its own
+                // (an empty title) and hidden from VoiceOver: the field carries the label and says
+                // it once (W-08), its value being the address and nothing. A prompt would be read
+                // as an empty field's value, and so would a title or a label view, which a
+                // `TextField` also draws as its placeholder; no accessibility value takes its
+                // place, an empty one being ignored (`ios` runs 43091597765 and 43094144185). The
+                // address is read-only while a code is on its way, so what is typed is offered to
+                // the model, which declines it, and the field shows what the model kept.
+                ModelText(held: { model.email }, offer: { model.email = $0 }) { text in
+                    TextField(String(), text: text)
+                        .keyboardType(.emailAddress)
+                        .textContentType(.emailAddress)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .submitLabel(.next)
+                        .onSubmit {
+                            sendingFromReturn = true
+                            Task {
+                                await model.sendCode()
+                                sendingFromReturn = false
+                            }
+                        }
+                        .focused($focused)
+                        .overlay(alignment: .leading) {
+                            if model.email.isEmpty {
+                                Text("auth.email.label")
+                                    .foregroundStyle(Palette.secondaryText)
+                                    .lineLimit(1)
+                                    .allowsHitTesting(false)
+                                    .accessibilityHidden(true)
+                            }
+                        }
+                }
             }
             .padding(.top, SetupGap.field)
             if let failure {
@@ -76,7 +104,22 @@ struct EmailScreen: View {
         .navigationTitle(Text("auth.signIn.navTitle"))
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { if focus == nil { focused = true } }
+        // Return ends a field's editing, so a code sent from it would leave the address with no
+        // focus and no keyboard while it goes. The focus is put back, so the field keeps it as it
+        // does when Send a code is tapped (handoff 7's `busyPrimary.field`: "keep first responder
+        // and keyboard if already shown"). Whether the keyboard dips on the way is a device check:
+        // focus set again on Return makes it go down and come back up (Apple's developer forums,
+        // thread 770226).
+        .onChange(of: focused) { _, now in
+            if !now, sendingFromReturn { focused = true }
+        }
         .announcing(failure?.words)
+        // "Sending a code.", once, as the request begins; the button says "In progress" itself.
+        .onChange(of: model.isSending) { was, now in
+            if let words = SignInAnnouncement.sending(from: was, to: now) {
+                Announcement.post(words)
+            }
+        }
     }
 
     /// This screen's own failures, sending the first code (handoff 4's `failureStates`). It stays
@@ -112,15 +155,20 @@ struct CodeScreen: View {
                 isInvalid: model.failure == .codeNotVerified,
                 error: model.failure.map { Text(verbatim: $0.words) }
             ) {
-                TextField(
-                    text: $model.code,
-                    prompt: Text("auth.code.placeholder").foregroundStyle(Palette.secondaryText)
-                ) {
-                    Text("auth.code.label")
+                // The code is read-only while it is checked, and the model keeps six digits at
+                // most: `ModelText` shows what it kept.
+                ModelText(held: { model.code }, offer: { model.code = $0 }) { text in
+                    TextField(
+                        text: text,
+                        prompt: Text("auth.code.placeholder")
+                            .foregroundStyle(Palette.secondaryText)
+                    ) {
+                        Text("auth.code.label")
+                    }
+                    .keyboardType(.numberPad)
+                    .textContentType(.oneTimeCode)
+                    .focused($focused)
                 }
-                .keyboardType(.numberPad)
-                .textContentType(.oneTimeCode)
-                .focused($focused)
             }
             .padding(.top, SetupGap.field)
             errorRegion

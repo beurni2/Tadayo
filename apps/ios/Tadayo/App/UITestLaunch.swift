@@ -11,10 +11,14 @@
         /// network at all: any address takes a code, 123456 is the right one, and the account
         /// is new until it gives its age and its name.
         static let fakes = "-TadayoUITestFakes"
+        /// The same, except that sending a code never answers, so a test can look at A02-email
+        /// while its request is on its way: the address read-only with the keyboard still up,
+        /// and Send a code saying "In progress". A test seam, not product.
+        static let hangingSend = "-TadayoUITestHangingSend"
         static let rightCode = "123456"
 
-        @MainActor static func fakeGraph() -> AppGraph {
-            let auth = FakeAuth()
+        @MainActor static func fakeGraph(hangingSend: Bool = false) -> AppGraph {
+            let auth = FakeAuth(hangsOnSend: hangingSend)
             let accounts = FakeAccounts()
             let session = SessionManager(auth: auth, store: InMemorySessionStore())
             let root = RootModel(session: session, auth: auth, accounts: accounts)
@@ -22,7 +26,11 @@
         }
 
         struct FakeAuth: AuthService {
-            func sendCode(to email: String) async throws(AuthFailure) {}
+            var hangsOnSend = false
+
+            func sendCode(to email: String) async throws(AuthFailure) {
+                if hangsOnSend { try? await Task.sleep(for: .seconds(3600)) }
+            }
 
             func verify(email: String, code: String) async throws(AuthFailure) -> AuthSession {
                 guard code == UITestLaunch.rightCode else { throw .codeNotVerified }
