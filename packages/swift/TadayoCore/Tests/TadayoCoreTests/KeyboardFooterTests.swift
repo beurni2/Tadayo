@@ -56,10 +56,10 @@ import Testing
         #expect(!pins(355, above: 366, voiceOver: true))
     }
 
-    /// While it holds (the keyboard up, at one text size), the foot above the action stays at
-    /// its tallest: a failure line that clears as a check begins doesn't shorten it, so a pinned
-    /// Verify code stays pinned through the check; otherwise (no keyboard, or a new text size)
-    /// it follows what is measured.
+    /// While it holds (a check runs with the keyboard up), the foot above the action stays at
+    /// its tallest: a failure line that clears as the check begins doesn't shorten it, so a
+    /// pinned Verify code stays pinned through the check; otherwise (no check, no keyboard) it
+    /// follows what is measured, as after a smaller text size: 770 held, 280 measured.
     @Test func whileItHoldsTheFootStaysAtItsTallest() {
         #expect(KeyboardFooter.heldFoot(0, now: 300, holding: true) == 300)
         #expect(KeyboardFooter.heldFoot(300, now: 400, holding: true) == 400)
