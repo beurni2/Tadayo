@@ -18,10 +18,26 @@ struct SetupScroll<Content: View>: View {
             .padding(.horizontal, Spacing.inset)
             .padding(.top, Spacing.xl)
             .padding(.bottom, Spacing.l)
+            .coordinateSpace(.named(SetupColumn.space))
         }
         .scrollBounceBehavior(.basedOnSize)
         .background { Palette.canvas.ignoresSafeArea() }
     }
+}
+
+/// The column of a setup screen, as a coordinate space: a view's place in it is measured from
+/// the column's top, wherever the column is scrolled.
+enum SetupColumn {
+    static let space = "setup.column"
+}
+
+/// The room a setup screen has while the keyboard is up (`readingKeyboardRoom`).
+struct KeyboardRoom: Equatable {
+    /// The screen's height above the keyboard, or down to the safe area's bottom with none.
+    var height: CGFloat = 0
+    /// How far the keyboard, or a hardware keyboard's bar, reaches up into the screen, past the
+    /// safe area's bottom: 0 while none shows.
+    var keyboard: CGFloat = 0
 }
 
 /// The setup screens' gaps wider than book p35's largest step (32), each a sum of its steps,
@@ -79,6 +95,29 @@ struct SetupFooter<Content: View>: View {
 }
 
 extension View {
+    /// Keeps `room` up to date: the view's height, which SwiftUI's keyboard avoidance shortens
+    /// by the keyboard, and how much taller the same view is when it ignores the keyboard's safe
+    /// area. It is read from the view's own frame rather than from the keyboard's notifications,
+    /// so a screen that appears with the keyboard already up knows it at once. A02-code's pin
+    /// reads it, and A03's footer is to (`ios/b0-adopt-profile`).
+    func readingKeyboardRoom(_ room: Binding<KeyboardRoom>) -> some View {
+        background {
+            GeometryReader { avoiding in
+                GeometryReader { ignoring in
+                    Color.clear.onChange(
+                        of: KeyboardRoom(
+                            height: avoiding.size.height,
+                            keyboard: max(0, ignoring.size.height - avoiding.size.height)),
+                        initial: true
+                    ) { _, now in
+                        room.wrappedValue = now
+                    }
+                }
+                .ignoresSafeArea(.keyboard)
+            }
+        }
+    }
+
     /// Says `words` each time they change to something, without moving VoiceOver's focus
     /// (handoff 1: "Announce errors and resend availability without stealing focus"); politely
     /// lets what VoiceOver is saying finish first. With `initial`, also the words the view

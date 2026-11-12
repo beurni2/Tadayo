@@ -340,6 +340,56 @@ final class SignInReadingTests: XCTestCase {
         checkChangeEmail(under: sending, showing: "Sending a new code…")
     }
 
+    /// With the keyboard up, here a 300-point stand-in since a hosted test has none, Verify code
+    /// stays in the column at the default size, 8 + 44 above Change email address as frames 6
+    /// to 8 and 24 draw it; at the largest size, where the column would leave it under the
+    /// keyboard, it is pinned 12 above it (frame 19; `authForm.keyboardFooter`); and with no
+    /// keyboard it stays in the column whatever the size and whatever covers the screen's foot.
+    /// Pinned or not it is drawn once, and read in its place: after the code's line, before the
+    /// wait sentence and Change email address (`codeAccessibilityOrder`: field, error, verify,
+    /// resend, changeEmail), not last as a pinned footer otherwise is.
+    func testWithTheKeyboardUpVerifyCodeIsPinnedOnlyWhereItWouldBeHidden() {
+        let stand: CGFloat = 300
+        let cases: [(size: DynamicTypeSize, keyboard: Bool, pinned: Bool)] = [
+            (.large, true, false), (.accessibility5, true, true), (.accessibility5, false, false),
+        ]
+        for (size, keyboard, pinned) in cases {
+            let model = onCode(verifies: [.fail(.codeNotVerified)])
+            model.code = "529614"
+            drive({ await model.verify() }, until: { model.failure == .codeNotVerified })
+            let layout = AccessibilityElements.layout(
+                of: CodeScreen(model: model, focus: true, keyboard: keyboard)
+                    .safeAreaInset(edge: .bottom, spacing: 0) {
+                        Color.clear.frame(height: stand)
+                    }
+                    .environment(\.dynamicTypeSize, size))
+            let elements = layout.elements
+            let labels = elements.map(\.label)
+            let named = "\(size), keyboard \(keyboard): \(elements)"
+
+            let codeLine = "This code couldn’t be verified. Try again or send a new one."
+            let wait = "You can send a new code after one minute."
+            XCTAssertEqual(labels.filter { $0 == "Verify code" }.count, 1, named)
+            let order = ["Six-digit code", codeLine, "Verify code", wait, "Change email address"]
+                .map { labels.firstIndex(of: $0) }
+            XCTAssertFalse(order.contains(nil), named)
+            XCTAssertEqual(order.compactMap { $0 }, order.compactMap { $0 }.sorted(), named)
+
+            let verify = elements.first { $0.label == "Verify code" }?.frame ?? .zero
+            let change = elements.first { $0.label == "Change email address" }?.frame ?? .zero
+            if pinned {
+                let keyboardTop = layout.size.height - layout.safeArea.bottom - stand
+                XCTAssertEqual(verify.maxY, keyboardTop - Spacing.m, accuracy: 0.5, named)
+                XCTAssertEqual(verify.minX, Spacing.inset, accuracy: 0.5, named)
+                XCTAssertEqual(
+                    verify.width, layout.size.width - 2 * Spacing.inset, accuracy: 0.5, named)
+            } else {
+                XCTAssertEqual(
+                    change.minY - verify.maxY, Spacing.s + Size.touchTarget, accuracy: 0.5, named)
+            }
+        }
+    }
+
     /// `row` is shown once, and Change email address starts 8 + 44 under Verify code.
     private func checkChangeEmail(
         under model: SignInModel, showing row: String, line: UInt = #line

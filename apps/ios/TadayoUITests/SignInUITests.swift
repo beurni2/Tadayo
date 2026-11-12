@@ -115,6 +115,14 @@ final class SignInUITests: XCTestCase {
         app.typeText("7")
         XCTAssertEqual(code.value as? String, "529614")
         XCTAssertTrue(verify.isEnabled)
+        // At this size Verify code stays in the column with the keyboard up, 8 + 44 above Change
+        // email address, and clear of the keyboard by more than the 12 points it is pinned at
+        // where it wouldn't be (frames 4 to 8, 24 and 25; `KeyboardFooter`).
+        let keyboard = app.keyboards.firstMatch
+        XCTAssertTrue(keyboard.exists)
+        XCTAssertEqual(
+            app.buttons["Change email address"].frame.minY - verify.frame.maxY, 52, accuracy: 1)
+        XCTAssertGreaterThan(keyboard.frame.minY - verify.frame.maxY, 13)
         verify.tap()
 
         let refused = app.staticTexts[
@@ -207,6 +215,50 @@ final class SignInUITests: XCTestCase {
             app.staticTexts["Your sign-in ended. Enter your email to sign in again."].exists)
     }
 
+    /// At the largest text size, Verify code on A02-code would sit under the keyboard, so it is
+    /// pinned 12 points above it, where it can be tapped, before a code is checked and once one
+    /// isn't verified (handoff 7's frame 19 and `authForm.keyboardFooter`; `KeyboardFooter`). The
+    /// keyboard is the simulator's own. The screen with the refusal is attached as the evidence's
+    /// `A02-code-error-xl` beside frame 19, kept whether or not the test passes.
+    @MainActor func testVerifyCodeIsPinnedAboveTheKeyboardAtTheLargestText() {
+        let app = launch(
+            "-TadayoUITestFakes", "-UIPreferredContentSizeCategoryName",
+            "UICTContentSizeCategoryAccessibilityXXXL")
+        XCTAssertTrue(app.textFields["Email address"].waitForExistence(timeout: 10))
+        app.typeText("ben@example.com\n")
+        let code = app.textFields["Six-digit code"]
+        XCTAssertTrue(code.waitForExistence(timeout: 5))
+        app.typeText("529614")
+        let keyboard = app.keyboards.firstMatch
+        XCTAssertTrue(keyboard.waitForExistence(timeout: 5))
+        let verify = app.buttons["Verify code"]
+        XCTAssertTrue(verify.isEnabled)
+        assertPinned(verify, above: keyboard)
+        verify.tap()
+
+        let refused = app.staticTexts[
+            "This code couldn’t be verified. Try again or send a new one."]
+        XCTAssertTrue(refused.waitForExistence(timeout: 5))
+        XCTAssertEqual(code.value as? String, "529614")
+        XCTAssertTrue(keyboard.exists)
+        assertPinned(verify, above: keyboard)
+        let screen = XCTAttachment(screenshot: app.screenshot())
+        screen.name =
+            "testVerifyCodeIsPinnedAboveTheKeyboardAtTheLargestText.A02-code-error-xl.png"
+        screen.lifetime = .keepAlways
+        add(screen)
+    }
+
+    /// Verify code ends 12 points above the keyboard's top and can be tapped there.
+    @MainActor private func assertPinned(
+        _ verify: XCUIElement, above keyboard: XCUIElement, line: UInt = #line
+    ) {
+        XCTAssertEqual(
+            keyboard.frame.minY - verify.frame.maxY, 12, accuracy: 1,
+            "\(verify.frame) above \(keyboard.frame)", line: line)
+        XCTAssertTrue(verify.isHittable, line: line)
+    }
+
     @MainActor private func signInToTheAge(_ app: XCUIApplication) {
         XCTAssertTrue(app.textFields["Email address"].waitForExistence(timeout: 10))
         app.typeText("ben@example.com")
@@ -234,9 +286,9 @@ final class SignInUITests: XCTestCase {
             .allElementsBoundByIndex
     }
 
-    @MainActor private func launch(_ mode: String) -> XCUIApplication {
+    @MainActor private func launch(_ arguments: String...) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = [mode]
+        app.launchArguments = arguments
         app.launch()
         return app
     }
