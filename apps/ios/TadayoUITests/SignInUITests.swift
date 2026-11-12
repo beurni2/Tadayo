@@ -1,3 +1,4 @@
+import UIKit
 import XCTest
 
 /// The app launched as a person launches it (TECH-DESIGN section 8's accessibility row): what
@@ -116,13 +117,14 @@ final class SignInUITests: XCTestCase {
         XCTAssertEqual(code.value as? String, "529614")
         XCTAssertTrue(verify.isEnabled)
         // At this size Verify code stays in the column with the keyboard up, 8 + 44 above Change
-        // email address, and clear of the keyboard by more than the 12 points it is pinned at
-        // where it wouldn't be (frames 4 to 8, 24 and 25; `KeyboardFooter`).
+        // email address and above the keyboard's keys, where it can be tapped (frames 4 to 8, 24
+        // and 25; `KeyboardFooter`).
         let keyboard = app.keyboards.firstMatch
         XCTAssertTrue(keyboard.exists)
         XCTAssertEqual(
             app.buttons["Change email address"].frame.minY - verify.frame.maxY, 52, accuracy: 1)
-        XCTAssertGreaterThan(keyboard.frame.minY - verify.frame.maxY, 13)
+        XCTAssertLessThan(verify.frame.maxY, keyboard.frame.minY)
+        XCTAssertTrue(verify.isHittable)
         verify.tap()
 
         let refused = app.staticTexts[
@@ -218,8 +220,9 @@ final class SignInUITests: XCTestCase {
     /// At the largest text size, Verify code on A02-code would sit under the keyboard, so it is
     /// pinned 12 points above it, where it can be tapped, before a code is checked and once one
     /// isn't verified (handoff 7's frame 19 and `authForm.keyboardFooter`; `KeyboardFooter`). The
-    /// keyboard is the simulator's own. The screen with the refusal is attached as the evidence's
-    /// `A02-code-error-xl` beside frame 19, kept whether or not the test passes.
+    /// keyboard is the simulator's own, and the 12 is measured on the screen as drawn
+    /// (`drawnEdge`). The screen with the refusal is attached as the evidence's
+    /// `A02-code-error-xl`, beside frame 19, before it is measured, so a failure has it too.
     @MainActor func testVerifyCodeIsPinnedAboveTheKeyboardAtTheLargestText() {
         let app = launch(
             "-TadayoUITestFakes", "-UIPreferredContentSizeCategoryName",
@@ -229,34 +232,81 @@ final class SignInUITests: XCTestCase {
         let code = app.textFields["Six-digit code"]
         XCTAssertTrue(code.waitForExistence(timeout: 5))
         app.typeText("529614")
-        let keyboard = app.keyboards.firstMatch
-        XCTAssertTrue(keyboard.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
         let verify = app.buttons["Verify code"]
         XCTAssertTrue(verify.isEnabled)
-        assertPinned(verify, above: keyboard)
+        assertPinned(verify, on: app.screenshot(), in: app)
         verify.tap()
 
         let refused = app.staticTexts[
             "This code couldn’t be verified. Try again or send a new one."]
         XCTAssertTrue(refused.waitForExistence(timeout: 5))
         XCTAssertEqual(code.value as? String, "529614")
-        XCTAssertTrue(keyboard.exists)
-        assertPinned(verify, above: keyboard)
-        let screen = XCTAttachment(screenshot: app.screenshot())
+        XCTAssertTrue(app.keyboards.firstMatch.exists)
+        let shot = app.screenshot()
+        let screen = XCTAttachment(screenshot: shot)
         screen.name =
             "testVerifyCodeIsPinnedAboveTheKeyboardAtTheLargestText.A02-code-error-xl.png"
         screen.lifetime = .keepAlways
         add(screen)
+        assertPinned(verify, on: shot, in: app)
     }
 
-    /// Verify code ends 12 points above the keyboard's top and can be tapped there.
+    /// Verify code ends 12 points, within 1, above the keyboard's top as `shot` draws it, and
+    /// can be tapped there.
     @MainActor private func assertPinned(
-        _ verify: XCUIElement, above keyboard: XCUIElement, line: UInt = #line
+        _ verify: XCUIElement, on shot: XCUIScreenshot, in app: XCUIApplication,
+        line: UInt = #line
     ) {
+        let foot = verify.frame.maxY
+        let edge = drawnEdge(below: foot, on: shot, in: app)
         XCTAssertEqual(
-            keyboard.frame.minY - verify.frame.maxY, 12, accuracy: 1,
-            "\(verify.frame) above \(keyboard.frame)", line: line)
+            (edge.top ?? 0) - foot, 12, accuracy: 1,
+            "Verify code \(verify.frame), \(edge.said); the keyboard's keys from "
+                + "\(app.keyboards.firstMatch.frame.minY)",
+            line: line)
         XCTAssertTrue(verify.isHittable, line: line)
+    }
+
+    /// Where `shot` draws the keyboard's top below `y`: the first row of points, down the screen's
+    /// middle, whose colour is no longer that of the row a point under `y`, the canvas of the
+    /// pinned footer's last 12 points. The keyboard element's frame doesn't say: on iOS 26.5 it
+    /// began 29 points under the foot of a Verify code the app had pinned 12 above the keyboard
+    /// it was given (the first `ios` run of `ios/b0-adopt-pin`, 43178940741), its keys' top
+    /// rather than the keyboard's. `said` gives the colours read, for a failure's message.
+    @MainActor private func drawnEdge(
+        below y: CGFloat, on shot: XCUIScreenshot, in app: XCUIApplication
+    ) -> (top: CGFloat?, said: String) {
+        guard let image = shot.image.cgImage, app.frame.height > 0 else {
+            return (nil, "no screenshot")
+        }
+        let width = image.width
+        let height = image.height
+        let scale = CGFloat(height) / app.frame.height
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        let drawn = pixels.withUnsafeMutableBytes { buffer -> Bool in
+            guard
+                let context = CGContext(
+                    data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8,
+                    bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+            else { return false }
+            context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+            return true
+        }
+        let start = Int(((y + 1) * scale).rounded(.up))
+        guard drawn, start < height else { return (nil, "nothing read under \(y)") }
+        let x = width / 2
+        func colour(_ row: Int) -> [Int] {
+            (0..<3).map { Int(pixels[(row * width + x) * 4 + $0]) }
+        }
+        let canvas = colour(start)
+        for row in start..<height
+        where zip(colour(row), canvas).map({ abs($0 - $1) }).reduce(0, +) > 9 {
+            let top = CGFloat(row) / scale
+            return (top, "canvas \(canvas) to \(colour(row)) at \(top) (scale \(scale))")
+        }
+        return (nil, "canvas \(canvas) to the screen's foot (scale \(scale))")
     }
 
     @MainActor private func signInToTheAge(_ app: XCUIApplication) {

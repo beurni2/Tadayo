@@ -15,10 +15,15 @@ public enum KeyboardFooter {
     /// `visibleHeight` the height of the column's view above the keyboard, the pinned footer's
     /// room included: neither changes as the action is pinned, so the choice can't undo itself
     /// as the column shortens. Nothing is pinned before the screen has measured itself.
+    ///
+    /// Nor while VoiceOver runs (FQ97's default): it reads a pinned footer after everything in
+    /// the column, where handoff 7's `codeAccessibilityOrder` reads Verify code before the resend
+    /// row, and it scrolls an action in the column into view above the keyboard as it reaches it.
     public static func pinsAction(
-        bottom: Double, visibleHeight: Double, keyboardShows: Bool, gap: Double
+        bottom: Double, visibleHeight: Double, keyboardShows: Bool, voiceOverRuns: Bool,
+        gap: Double
     ) -> Bool {
-        guard keyboardShows, bottom > 0, visibleHeight > 0 else { return false }
+        guard keyboardShows, !voiceOverRuns, bottom > 0, visibleHeight > 0 else { return false }
         return bottom + gap > visibleHeight
     }
 }

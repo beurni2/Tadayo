@@ -158,14 +158,20 @@ struct EmailScreen: View {
 /// beside a code's line, never in its place (handoff 7's `authForm.resendFailure`). With the
 /// keyboard up, Verify code stays in the column unless the column, scrolled to its top, would
 /// leave it under the keyboard or nearer than 12 points; then it is pinned 12 above the keyboard,
-/// as frame 19 draws it at the largest size, and read in its place in the column all the same
-/// (`KeyboardFooter`; `authForm.keyboardFooter` and `codeAccessibilityOrder`).
+/// as frame 19 draws it at the largest size (`KeyboardFooter`; `authForm.keyboardFooter`). While
+/// VoiceOver runs it stays in the column, where it is read in its place, before the resend row
+/// (`codeAccessibilityOrder`), and VoiceOver scrolls it into view: VoiceOver reads a pinned
+/// footer after the whole column (FQ97's default).
 struct CodeScreen: View {
     @Bindable var model: SignInModel
     let focus: Bool?
     /// Whether a keyboard shows, for a test, which has none: nil in the app, where the screen
     /// reads it from its own frame (`readingKeyboardRoom`).
     var keyboard: Bool?
+    /// Whether VoiceOver runs, for a test, which can't turn it on: nil in the app, where the
+    /// environment says.
+    var voiceOver: Bool?
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
     @FocusState private var focused: Bool
     /// Whether this minute's "Send a new code is available." has been said.
     @State private var availability = SignInAnnouncement.ResendAvailability()
@@ -215,25 +221,19 @@ struct CodeScreen: View {
             if !pinsVerify {
                 verify
             }
-            // What follows Verify code is read after it, wherever it is (`codeAccessibilityOrder`:
-            // verify, resend, resendFailure, changeEmail): a pinned footer is otherwise read last.
-            VStack(alignment: .leading, spacing: 0) {
-                // 8 under Verify code, as frames 6 to 8 and 24 draw it.
-                resendRow
-                    .padding(.top, Spacing.s)
-                // A new code's failure, 8 under the row and 8 above Change email address (frame
-                // 8; `resendToFailure`); with none, Change email address is right under the row,
-                // as frames 6 and 24 draw it.
-                if let resendFailure = model.resendFailure {
-                    InlineError(Text(verbatim: resendFailure.words))
-                        .padding(.vertical, Spacing.s)
-                }
-                Button("auth.changeEmail") { model.changeEmail() }
-                    .buttonStyle(.tadayoText)
-                    .disabled(!model.canChangeEmail)
+            // 8 under Verify code, as frames 6 to 8 and 24 draw it.
+            resendRow
+                .padding(.top, Spacing.s)
+            // A new code's failure, 8 under the row and 8 above Change email address (frame 8;
+            // `resendToFailure`); with none, Change email address is right under the row, as
+            // frames 6 and 24 draw it.
+            if let resendFailure = model.resendFailure {
+                InlineError(Text(verbatim: resendFailure.words))
+                    .padding(.vertical, Spacing.s)
             }
-            .accessibilityElement(children: .contain)
-            .accessibilitySortPriority(-1)
+            Button("auth.changeEmail") { model.changeEmail() }
+                .buttonStyle(.tadayoText)
+                .disabled(!model.canChangeEmail)
         }
         // Verify code pinned 12 above the keyboard, with no motion as it goes there (T48).
         .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -243,7 +243,6 @@ struct CodeScreen: View {
         }
         .transaction(value: pinsVerify) { $0.animation = nil }
         .readingKeyboardRoom($room)
-        .accessibilityElement(children: .contain)
         .navigationTitle(Text("auth.signIn.navTitle"))
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(!model.canChangeEmail)
@@ -301,13 +300,15 @@ struct CodeScreen: View {
     }
 
     /// Whether Verify code is pinned above the keyboard: where it would end in the column, the
-    /// column scrolled to its top, against the screen's height above the keyboard
-    /// (`KeyboardFooter.pinsAction`; the error region is above it, so its foot doesn't move as
-    /// Verify code is pinned, and the screen's height counts the footer's room).
+    /// column scrolled to its top, against the screen's height above the keyboard, and never
+    /// while VoiceOver runs (`KeyboardFooter.pinsAction`; the error region is above it, so its
+    /// foot doesn't move as Verify code is pinned, and the screen's height counts the footer's
+    /// room).
     private var pinsVerify: Bool {
         KeyboardFooter.pinsAction(
             bottom: Double(regionFoot + verifyHeight), visibleHeight: Double(room.height),
-            keyboardShows: keyboard ?? (room.keyboard > 0), gap: Double(Spacing.m))
+            keyboardShows: keyboard ?? (room.keyboard > 0),
+            voiceOverRuns: voiceOver ?? voiceOverEnabled, gap: Double(Spacing.m))
     }
 
     /// "Send a new code is available.", politely, when `ResendAvailability` says so.

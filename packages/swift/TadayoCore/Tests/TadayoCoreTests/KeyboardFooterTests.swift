@@ -6,16 +6,20 @@ import Testing
 /// plan's TL-09): in the column wherever the column, scrolled to its top, leaves it 12 points or
 /// more clear of the keyboard, and pinned 12 above the keyboard only where it would otherwise sit
 /// under it or nearer than that (handoff 7's frame 19 and `authForm.keyboardFooter`; the check's
-/// V-02 and X-04; `docs/plans/ios-b0-adopt-handoff-7/signin.md` F1). The numbers are the
+/// V-02 and X-04; `docs/plans/ios-b0-adopt-handoff-7/signin.md` F1), and never while VoiceOver
+/// runs (FQ97's default). The numbers are the
 /// default size's and the largest's on a 393 by 852 point screen; the gap is the screen's
 /// `Spacing.m`, handoff 7's "12-point clear gap".
 @Suite struct KeyboardFooterTests {
     /// Whether an action that would end `bottom` points down the column is pinned, with
     /// `visibleHeight` points of screen above the keyboard and a 12-point gap.
-    private func pins(_ bottom: Double, above visibleHeight: Double, keyboard: Bool = true) -> Bool
-    {
+    private func pins(
+        _ bottom: Double, above visibleHeight: Double, keyboard: Bool = true,
+        voiceOver: Bool = false
+    ) -> Bool {
         KeyboardFooter.pinsAction(
-            bottom: bottom, visibleHeight: visibleHeight, keyboardShows: keyboard, gap: 12)
+            bottom: bottom, visibleHeight: visibleHeight, keyboardShows: keyboard,
+            voiceOverRuns: voiceOver, gap: 12)
     }
 
     /// The default size: Verify code ends 330 points down the column, which has 366 above a
@@ -41,6 +45,14 @@ import Testing
     /// like the rest (the critic's ruling: only where it would sit under the keyboard).
     @Test func withNoKeyboardNothingIsPinned() {
         #expect(!pins(1_400, above: 702, keyboard: false))
+    }
+
+    /// While VoiceOver runs nothing is pinned, even under the keyboard: VoiceOver reads a pinned
+    /// footer last, after the resend row Verify code comes before (`codeAccessibilityOrder`), and
+    /// scrolls an action in the column into view as it reaches it (FQ97's default).
+    @Test func whileVoiceOverRunsNothingIsPinned() {
+        #expect(!pins(700, above: 366, voiceOver: true))
+        #expect(!pins(355, above: 366, voiceOver: true))
     }
 
     /// Until the screen has measured itself, nothing is pinned.

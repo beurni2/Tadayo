@@ -341,51 +341,57 @@ final class SignInReadingTests: XCTestCase {
     }
 
     /// With the keyboard up, here a 300-point stand-in since a hosted test has none, Verify code
-    /// stays in the column at the default size, 8 + 44 above Change email address as frames 6
-    /// to 8 and 24 draw it; at the largest size, where the column would leave it under the
-    /// keyboard, it is pinned 12 above it (frame 19; `authForm.keyboardFooter`); and with no
-    /// keyboard it stays in the column whatever the size and whatever covers the screen's foot.
-    /// Pinned or not it is drawn once, and read in its place: after the code's line, before the
-    /// wait sentence and Change email address (`codeAccessibilityOrder`: field, error, verify,
-    /// resend, changeEmail), not last as a pinned footer otherwise is.
+    /// stays in the column at the default size, 16 under the error region's line as frames 24 and
+    /// 25 draw it; at the largest size, where the column would leave it under the keyboard, it is
+    /// pinned 12 above it, 20 in from each edge, and the column closes up under the line (frame
+    /// 19; `authForm.keyboardFooter`); with no keyboard, or while VoiceOver runs (FQ97's
+    /// default), it stays in the column whatever the size. It is drawn once each time. In the
+    /// column it is read in its place, after the code's line and before the wait sentence and
+    /// Change email address (`codeAccessibilityOrder`: field, error, verify, resend,
+    /// changeEmail); pinned, it would be read after the whole column, which is why VoiceOver keeps
+    /// it there (the first `ios` run of `ios/b0-adopt-pin`, 43178940741, read it last, past a
+    /// sort priority that doesn't reach out of the scroll view).
     func testWithTheKeyboardUpVerifyCodeIsPinnedOnlyWhereItWouldBeHidden() {
         let stand: CGFloat = 300
-        let cases: [(size: DynamicTypeSize, keyboard: Bool, pinned: Bool)] = [
-            (.large, true, false), (.accessibility5, true, true), (.accessibility5, false, false),
+        let cases: [(size: DynamicTypeSize, keyboard: Bool, voiceOver: Bool, pinned: Bool)] = [
+            (.large, true, false, false), (.accessibility5, true, false, true),
+            (.accessibility5, true, true, false), (.accessibility5, false, false, false),
         ]
-        for (size, keyboard, pinned) in cases {
+        for (size, keyboard, voiceOver, pinned) in cases {
             let model = onCode(verifies: [.fail(.codeNotVerified)])
             model.code = "529614"
             drive({ await model.verify() }, until: { model.failure == .codeNotVerified })
             let layout = AccessibilityElements.layout(
-                of: CodeScreen(model: model, focus: true, keyboard: keyboard)
+                of: CodeScreen(model: model, focus: true, keyboard: keyboard, voiceOver: voiceOver)
                     .safeAreaInset(edge: .bottom, spacing: 0) {
                         Color.clear.frame(height: stand)
                     }
                     .environment(\.dynamicTypeSize, size))
             let elements = layout.elements
             let labels = elements.map(\.label)
-            let named = "\(size), keyboard \(keyboard): \(elements)"
+            let named = "\(size), keyboard \(keyboard), VoiceOver \(voiceOver): \(elements)"
 
             let codeLine = "This code couldn’t be verified. Try again or send a new one."
             let wait = "You can send a new code after one minute."
             XCTAssertEqual(labels.filter { $0 == "Verify code" }.count, 1, named)
-            let order = ["Six-digit code", codeLine, "Verify code", wait, "Change email address"]
-                .map { labels.firstIndex(of: $0) }
-            XCTAssertFalse(order.contains(nil), named)
-            XCTAssertEqual(order.compactMap { $0 }, order.compactMap { $0 }.sorted(), named)
-
+            let line = elements.first { $0.label == codeLine }?.frame ?? .zero
             let verify = elements.first { $0.label == "Verify code" }?.frame ?? .zero
-            let change = elements.first { $0.label == "Change email address" }?.frame ?? .zero
+            let row = elements.first { $0.label == wait }?.frame ?? .zero
             if pinned {
                 let keyboardTop = layout.size.height - layout.safeArea.bottom - stand
                 XCTAssertEqual(verify.maxY, keyboardTop - Spacing.m, accuracy: 0.5, named)
                 XCTAssertEqual(verify.minX, Spacing.inset, accuracy: 0.5, named)
                 XCTAssertEqual(
                     verify.width, layout.size.width - 2 * Spacing.inset, accuracy: 0.5, named)
+                XCTAssertEqual(row.minY - line.maxY, Spacing.l + Spacing.s, accuracy: 1, named)
             } else {
-                XCTAssertEqual(
-                    change.minY - verify.maxY, Spacing.s + Size.touchTarget, accuracy: 0.5, named)
+                XCTAssertEqual(verify.minY - line.maxY, Spacing.l, accuracy: 1, named)
+                let order = [
+                    "Six-digit code", codeLine, "Verify code", wait, "Change email address",
+                ]
+                .map { labels.firstIndex(of: $0) }
+                XCTAssertFalse(order.contains(nil), named)
+                XCTAssertEqual(order.compactMap { $0 }, order.compactMap { $0 }.sorted(), named)
             }
         }
     }
