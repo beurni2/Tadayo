@@ -257,8 +257,9 @@ struct CodeScreen: View {
 
     /// Two `metadata` lines reserved under the field, so a failure never moves what's below it
     /// (handoff 1, PDF p20); a longer line at a large text size grows it. 12 above it and 16
-    /// below it (`handoff7.spacing.fieldErrorGap` and `errorToActionMinimum`): 64 points in all
-    /// where handoff 7's frames draw 60, the written values winning (V-03).
+    /// below it (`handoff7.spacing.fieldErrorGap` and `errorToActionMinimum`): 62 points in all,
+    /// the two lines 34 as `TypeRole` sets them, where handoff 7's frames draw 8 + 36 + 16 = 60,
+    /// the written values winning (V-03).
     private var errorRegion: some View {
         ZStack(alignment: .topLeading) {
             Text(verbatim: " \n ")

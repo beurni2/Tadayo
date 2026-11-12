@@ -540,6 +540,26 @@ final class ManualContinuousClock: @unchecked Sendable {
         #expect(model.code == "")
     }
 
+    /// A code that goes clears both lines, whichever request sent it: the model's own rule, not
+    /// only the screens' order (A02-email is behind A02-code, so the first code is sent with
+    /// neither line showing).
+    @Test func aCodeThatGoesClearsBothLinesWhicheverRequestSentIt() async {
+        let clock = ManualContinuousClock()
+        let auth = FakeAuth(send: [nil, .network], verify: [.failure(.codeNotVerified)])
+        let model = await onCode(auth, clock)
+        model.code = "529614"
+        await model.verify()
+        clock.advance(.seconds(60))
+        await model.waitForResend()
+        await model.resend()
+        #expect(model.resendFailure == .network)
+        await model.sendCode()
+        #expect(auth.calls.last == "sendCode ben@example.com")
+        #expect(model.failure == nil)
+        #expect(model.resendFailure == nil)
+        #expect(model.code == "")
+    }
+
     /// Change email address leaves both lines behind: back on A02-email neither shows, and a
     /// code sent from there comes to A02-code with none.
     @Test func changingTheAddressClearsBothLines() async {
