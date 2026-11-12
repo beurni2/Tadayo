@@ -1,0 +1,302 @@
+# ops: runs one script of tools/ops against dev, by hand (docs/TECH-DESIGN.md section 9; the B0
+# plan's slice 10b; docs/plans/api-b0-deploy.md section 4, whose table this file follows).
+# Thin on purpose: every step calls tools/ci/ops_steps.py or ci_steps.py, where the logic and its
+# tests live (ops_steps_test.py reads this file).
+# One job per script, each run only for its script (a job's `if:` is decided before a runner is
+# given the job, so a skipped job's secrets reach no runner) and holding only that script's
+# secrets. deploy-branch's job is the one that checks out a branch other than main.
+# CI configuration: change this file only in its own PR (docs/INVARIANTS.md T58).
+name: ops
+
+on:
+  workflow_dispatch:
+    inputs:
+      script:
+        description: The script to run (tools/ops/src/run.ts says what each does)
+        type: choice
+        required: true
+        options:
+          - fly-app-create
+          - bootstrap
+          - migrate
+          - seed
+          - dev-clock
+          - worker-scale
+          - deploy-branch
+          - storage-setup
+          - supabase-probe
+      org:
+        description: >-
+          fly-app-create only, when the Fly token sees several organizations: the organization's
+          slug (--org)
+        type: string
+        required: false
+        default: ''
+      to:
+        description: >-
+          worker-scale: stopped or started (needed). dev-clock: the instant to move the dev clock
+          forward to, such as 2026-11-20T06:59:00Z (when left empty, the clock is only made) (--to)
+        type: string
+        required: false
+        default: ''
+      branch:
+        description: >-
+          deploy-branch only: the branch whose head to deploy, once that commit's ci run is green
+          (--branch)
+        type: string
+        required: false
+        default: ''
+
+permissions: {}
+
+# One script acts on dev at a time, and a run that has begun is never cancelled; deploy-dev.yml
+# (slice 10c) joins this group. GitHub keeps one pending run per group and a newer one cancels
+# it, so `queue: max` goes here once actionlint accepts the key (docs/LIMITATIONS.md); until
+# then, start ops only when no deploy-dev run is running or waiting.
+concurrency:
+  group: ops-dev
+  cancel-in-progress: false
+
+# The inputs reach the steps as variables and are never written into a command, so an input is
+# only ever an argument (ops_steps.py).
+env:
+  OPS_SCRIPT: ${{ inputs.script }}
+  OPS_ORG: ${{ inputs.org }}
+  OPS_TO: ${{ inputs.to }}
+  OPS_BRANCH: ${{ inputs.branch }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  fly-app-create:
+    name: fly-app-create
+    if: inputs.script == 'fly-app-create'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - run: python3 tools/ci/ops_steps.py check
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - run: python3 tools/ci/ci_steps.py setup-pnpm
+      - run: python3 tools/ci/ci_steps.py install
+      - run: python3 tools/ci/ops_steps.py setup-flyctl
+      - name: fly-app-create
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: python3 tools/ci/ops_steps.py run
+
+  bootstrap:
+    name: bootstrap
+    if: inputs.script == 'bootstrap'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - run: python3 tools/ci/ops_steps.py check
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - run: python3 tools/ci/ci_steps.py setup-pnpm
+      - run: python3 tools/ci/ci_steps.py install
+      - name: bootstrap
+        env:
+          DATABASE_ADMIN_URL: ${{ secrets.DEV_DATABASE_ADMIN_URL }}
+          DATABASE_APP_PASSWORD: ${{ secrets.DEV_DATABASE_APP_PASSWORD }}
+          DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
+          SUPABASE_DEV_PROJECT_REF: ${{ secrets.SUPABASE_DEV_PROJECT_REF }}
+        run: python3 tools/ci/ops_steps.py run
+
+  migrate:
+    name: migrate
+    if: inputs.script == 'migrate'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - run: python3 tools/ci/ops_steps.py check
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - run: python3 tools/ci/ci_steps.py setup-pnpm
+      - run: python3 tools/ci/ci_steps.py install
+      - name: migrate
+        env:
+          DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
+          SUPABASE_DEV_PROJECT_REF: ${{ secrets.SUPABASE_DEV_PROJECT_REF }}
+        run: python3 tools/ci/ops_steps.py run
+
+  seed:
+    name: seed
+    if: inputs.script == 'seed'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - run: python3 tools/ci/ops_steps.py check
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - run: python3 tools/ci/ci_steps.py setup-pnpm
+      - run: python3 tools/ci/ci_steps.py install
+      - name: seed
+        env:
+          DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
+          SUPABASE_DEV_PROJECT_REF: ${{ secrets.SUPABASE_DEV_PROJECT_REF }}
+        run: python3 tools/ci/ops_steps.py run
+
+  dev-clock:
+    name: dev-clock
+    if: inputs.script == 'dev-clock'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - run: python3 tools/ci/ops_steps.py check
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - run: python3 tools/ci/ci_steps.py setup-pnpm
+      - run: python3 tools/ci/ci_steps.py install
+      - name: dev-clock
+        env:
+          DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
+          SUPABASE_DEV_PROJECT_REF: ${{ secrets.SUPABASE_DEV_PROJECT_REF }}
+        run: python3 tools/ci/ops_steps.py run
+
+  worker-scale:
+    name: worker-scale
+    if: inputs.script == 'worker-scale'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - run: python3 tools/ci/ops_steps.py check
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - run: python3 tools/ci/ci_steps.py setup-pnpm
+      - run: python3 tools/ci/ci_steps.py install
+      - run: python3 tools/ci/ops_steps.py setup-flyctl
+      - name: worker-scale
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: python3 tools/ci/ops_steps.py run
+
+  # deploy-branch builds the checkout's files as they are, and refuses a checkout that isn't the
+  # branch's head on GitHub, so the branch replaces main's checkout once check has passed; from
+  # then on the branch's own files run (docs/LIMITATIONS.md, 2026-11-12). The job's token reads
+  # the commit's ci runs, hence `actions: read`, in this job alone.
+  deploy-branch:
+    name: deploy-branch
+    if: inputs.script == 'deploy-branch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      actions: read  # the commit's ci runs, read by deploy-branch
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - run: python3 tools/ci/ops_steps.py check
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: refs/heads/${{ inputs.branch }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - run: python3 tools/ci/ci_steps.py setup-pnpm
+      - run: python3 tools/ci/ci_steps.py install
+      - run: python3 tools/ci/ops_steps.py setup-flyctl
+      - name: deploy-branch
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 tools/ci/ops_steps.py run
+
+  storage-setup:
+    name: storage-setup
+    if: inputs.script == 'storage-setup'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - run: python3 tools/ci/ops_steps.py check
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - run: python3 tools/ci/ci_steps.py setup-pnpm
+      - run: python3 tools/ci/ci_steps.py install
+      - run: python3 tools/ci/ops_steps.py setup-flyctl
+      - name: storage-setup
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          SUPABASE_DEV_PROJECT_REF: ${{ secrets.SUPABASE_DEV_PROJECT_REF }}
+        run: python3 tools/ci/ops_steps.py run
+
+  supabase-probe:
+    name: supabase-probe
+    if: inputs.script == 'supabase-probe'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - run: python3 tools/ci/ops_steps.py check
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - run: python3 tools/ci/ci_steps.py setup-pnpm
+      - run: python3 tools/ci/ci_steps.py install
+      - run: python3 tools/ci/ops_steps.py setup-flyctl
+      - name: supabase-probe
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          SUPABASE_DEV_PROJECT_REF: ${{ secrets.SUPABASE_DEV_PROJECT_REF }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: python3 tools/ci/ops_steps.py run
