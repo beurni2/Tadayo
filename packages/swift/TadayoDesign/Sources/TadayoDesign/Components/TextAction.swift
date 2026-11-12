@@ -5,7 +5,8 @@ import SwiftUI
 /// text actions use textAction 16/22 regular"; T47). Handoff 7's frames draw every text action
 /// from the leading edge, and its component sheet's specimen too (X-25, VM-03); they were centred
 /// before it. Pressed takes `actionPressed`. Unavailable takes `secondaryText`, the ink of words
-/// that aren't an action: no delivery draws it yet, so it's built from spec (handoff 7 asks).
+/// that aren't an action, as handoff 7's frames 4 and 7 draw Change email address while a request
+/// runs.
 public struct TextActionStyle: ButtonStyle {
     public init() {}
 

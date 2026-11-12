@@ -223,10 +223,34 @@ final class SignInReadingTests: XCTestCase {
         let field = elements.first { $0.label == "Six-digit code" }
         XCTAssertEqual(field?.value, "529614", "\(elements)")
         XCTAssertFalse(field?.traits.contains(.notEnabled) ?? true, "\(elements)")
+        // The indicator says nothing: no "In progress" anywhere, since nothing is busy but the
+        // row, whose words say so.
+        let said = elements.flatMap { [$0.label, $0.value, $0.hint] }
+            .filter { $0.contains("In progress") }
+        XCTAssertEqual(said, [], "\(elements)")
+    }
+
+    /// Send a new code waits while the code is checked, even once its minute has passed
+    /// (handoff 7's IMPLEMENTATION.md: "Send a new code is also inactive if its minute has
+    /// elapsed"; `busyPrimary.leaveChangeResend`): it shows, dimmed, as a button.
+    func testSendANewCodeWaitsWhileTheCodeIsChecked() {
+        let model = onCode(verifies: [.hang])
+        letTheMinutePass(model)
+        model.code = "529614"
+        drive({ await model.verify() }, until: { model.isVerifying })
+        let elements = AccessibilityElements.of(CodeScreen(model: model, focus: true))
+
+        let resend = elements.filter { $0.label == "Send a new code" }
+        XCTAssertEqual(resend.count, 1, "\(elements)")
+        XCTAssertTrue(resend.first?.traits.contains(.button) ?? false, "\(elements)")
+        XCTAssertTrue(resend.first?.traits.contains(.notEnabled) ?? false, "\(elements)")
     }
 
     /// The row while a new code is on its way (frame 7): the system's indicator, 16 points at
-    /// every text size (VM-04), at the leading edge, 8 before the words and level with them.
+    /// every text size (VM-04), at the leading edge, 8 before the words and level with their
+    /// first line: with the words at the default size, and above the middle of the words where
+    /// they wrap at the largest (no frame draws that size; a mark beside wrapped words keeps to
+    /// their first line, as `InlineError`'s icon does).
     func testTheNewCodesIndicatorIs16PointsAndLeadsItsWords() {
         for size: DynamicTypeSize in [.large, .accessibility5] {
             let model = onCode(sends: [.answer, .hang])
@@ -242,7 +266,14 @@ final class SignInReadingTests: XCTestCase {
             XCTAssertEqual(spinner.minX, Spacing.inset, accuracy: 0.5, "\(size): \(spinner)")
             XCTAssertEqual(
                 words.minX - spinner.maxX, Spacing.s, accuracy: 0.5, "\(size): \(words)")
-            XCTAssertEqual(spinner.midY, words.midY, accuracy: 1, "\(size): \(words)")
+            if size == .large {
+                XCTAssertEqual(spinner.midY, words.midY, accuracy: 1, "\(size): \(words)")
+            } else {
+                XCTAssertGreaterThan(words.height, 2 * Size.busyIndicator, "wraps: \(words)")
+                XCTAssertGreaterThanOrEqual(spinner.minY, words.minY, "\(spinner) in \(words)")
+                XCTAssertLessThan(
+                    spinner.midY, words.midY - Size.busyIndicator, "\(spinner) in \(words)")
+            }
         }
     }
 
@@ -285,21 +316,32 @@ final class SignInReadingTests: XCTestCase {
     }
 
     /// With no new code's failure, Change email address is right under the 44-point row, which is
-    /// 8 under Verify code (frames 6 and 24), whatever the row holds.
+    /// 8 under Verify code (frames 6 and 24), whatever the row holds: the wait sentence, Send a
+    /// new code, or the words while one is on its way. Each is read before the test's clock lets
+    /// a minute pass for the next, since the clock is the test's own and a passed minute would
+    /// turn the wait sentence into Send a new code.
     func testChangeEmailIsRightUnderTheRow() {
-        let waiting = onCode()
+        checkChangeEmail(under: onCode(), showing: "You can send a new code after one minute.")
         let offered = onCode()
         letTheMinutePass(offered)
+        checkChangeEmail(under: offered, showing: "Send a new code")
         let sending = onCode(sends: [.answer, .hang])
         letTheMinutePass(sending)
         drive({ await sending.resend() }, until: { sending.isResending })
-        for (name, model) in [("waiting", waiting), ("offered", offered), ("sending", sending)] {
-            let elements = AccessibilityElements.of(CodeScreen(model: model, focus: true))
-            let verify = elements.first { $0.label == "Verify code" }?.frame ?? .zero
-            let change = elements.first { $0.label == "Change email address" }?.frame ?? .zero
-            XCTAssertEqual(
-                change.minY - verify.maxY, Spacing.s + Size.touchTarget, accuracy: 0.5,
-                "\(name): \(elements)")
-        }
+        checkChangeEmail(under: sending, showing: "Sending a new code…")
+    }
+
+    /// `row` is shown once, and Change email address starts 8 + 44 under Verify code.
+    private func checkChangeEmail(
+        under model: SignInModel, showing row: String, line: UInt = #line
+    ) {
+        let elements = AccessibilityElements.of(CodeScreen(model: model, focus: true))
+        XCTAssertEqual(
+            elements.filter { $0.label == row }.count, 1, "\(row): \(elements)", line: line)
+        let verify = elements.first { $0.label == "Verify code" }?.frame ?? .zero
+        let change = elements.first { $0.label == "Change email address" }?.frame ?? .zero
+        XCTAssertEqual(
+            change.minY - verify.maxY, Spacing.s + Size.touchTarget, accuracy: 0.5,
+            "\(row): \(elements)", line: line)
     }
 }

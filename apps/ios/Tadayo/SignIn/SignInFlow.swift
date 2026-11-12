@@ -160,6 +160,8 @@ struct CodeScreen: View {
     @Bindable var model: SignInModel
     let focus: Bool?
     @FocusState private var focused: Bool
+    /// Whether this minute's "Send a new code is available." has been said.
+    @State private var availability = SignInAnnouncement.ResendAvailability()
 
     var body: some View {
         SetupScroll {
@@ -222,12 +224,19 @@ struct CodeScreen: View {
             guard let words = SignInAnnouncement.newCode(to: model.address, due: due) else {
                 return
             }
+            availability.newMinute()
             if focus == nil { focused = true }
             Announcement.post(words)
         }
         .announcing(model.failure?.words)
         .announcing(model.resendFailure?.words)
-        .announcing(SignInAnnouncement.resendAvailable(model.canResend), politely: true)
+        // "Send a new code is available.", once a minute, once Send a new code is offered and no
+        // check keeps it inactive (`SignInAnnouncement.ResendAvailability`).
+        .onChange(of: model.canResend && !model.isVerifying) { _, offered in
+            if let words = availability.words(offered: offered) {
+                Announcement.post(words, politely: true)
+            }
+        }
         // "Verifying code." and "Sending a new code…", once each, as the request begins; the
         // button and the row say the rest themselves.
         .onChange(of: model.isVerifying) { was, now in
@@ -280,11 +289,14 @@ struct CodeScreen: View {
     /// ticking label and no disabled link (handoff 1; `authForm.resendStaticWait`). While a new
     /// code is on its way, the system's indicator, 16 points at every text size, 8 before
     /// "Sending a new code…" in `textAction`, both in `secondaryText` (frame 7); the indicator
-    /// says nothing to VoiceOver, so the words are read once.
+    /// says nothing to VoiceOver, so the words are read once. Where the words wrap, at the
+    /// largest sizes, the indicator stays level with their first line, as a mark beside wrapped
+    /// words does elsewhere (`InlineError`'s icon, the drop card's rows); no frame draws the row
+    /// there.
     private var resendRow: some View {
         Group {
             if model.isResending {
-                HStack(spacing: Spacing.s) {
+                HStack(alignment: .firstLineCenter, spacing: Spacing.s) {
                     BusyIndicator(tint: Palette.secondaryText)
                         .frame(width: Size.busyIndicator, height: Size.busyIndicator)
                         .accessibilityHidden(true)

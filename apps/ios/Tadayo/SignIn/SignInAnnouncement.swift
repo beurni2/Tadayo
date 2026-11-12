@@ -32,13 +32,29 @@ enum SignInAnnouncement {
         begins(from: was, to: now) ? String(localized: "auth.code.resending") : nil
     }
 
-    /// "Send a new code is available." once the minute has passed (handoff 7's
-    /// `vo.resend.available`), nil while it runs; the screen says it, politely, as it changes to
-    /// something. A failed new code leaves Send a new code offered, so it isn't said again then:
-    /// handoff 7's "Failed resend uses its exact failure announcement and restores resend action
-    /// without a second availability announcement" (`copy-contracts.json`).
-    static func resendAvailable(_ canResend: Bool) -> String? {
-        canResend ? String(localized: "auth.code.resendAvailable.vo") : nil
+    /// "Send a new code is available." (handoff 7's `vo.resend.available`: "Announce Send a new
+    /// code is available. once"), said politely at the first moment Send a new code is offered
+    /// and active: as its minute passes, or, if the minute passes while the code is checked, when
+    /// Send a new code is inactive (IMPLEMENTATION.md: "Send a new code is also inactive if its
+    /// minute has elapsed"), as that check ends without a sign-in. Never while the check runs, so
+    /// a code that verifies says nothing of it; and only once a minute, so a failed new code or a
+    /// failed check after it was said says its failure and nothing more (handoff 7's
+    /// `announcementPolicy.resend`: "Failed resend uses its exact failure announcement and
+    /// restores resend action without a second availability announcement"). A new code that goes
+    /// begins a new minute, and the words may be said once more.
+    struct ResendAvailability: Equatable {
+        private var said = false
+
+        /// The words to say as Send a new code becomes `offered` (its minute passed and no check
+        /// running) or stops being so; nil when there's nothing to say.
+        mutating func words(offered: Bool) -> String? {
+            guard offered, !said else { return nil }
+            said = true
+            return String(localized: "auth.code.resendAvailable.vo")
+        }
+
+        /// A new code went, and its minute begins.
+        mutating func newMinute() { said = false }
     }
 
     /// "Check ben@example.com for a new code. You can send a new code after one minute.", once a

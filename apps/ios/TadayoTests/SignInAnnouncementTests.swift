@@ -43,14 +43,38 @@ final class SignInAnnouncementTests: XCTestCase {
         XCTAssertNil(SignInAnnouncement.resending(from: false, to: false))
     }
 
-    /// Once the minute has passed (handoff 7's `vo.resend.available`), and nothing while it
-    /// runs. The screen says the words as they change to something, so a failed new code, which
-    /// leaves Send a new code offered, says its failure and nothing more (handoff 7: "restores
-    /// resend action without a second availability announcement").
-    func testANewCodeBeingAvailableIsSaidWhenTheMinuteHasPassed() {
-        XCTAssertEqual(
-            SignInAnnouncement.resendAvailable(true), "Send a new code is available.")
-        XCTAssertNil(SignInAnnouncement.resendAvailable(false))
+    /// Once the minute has passed (handoff 7's `vo.resend.available`: "Announce Send a new code
+    /// is available. once"), and nothing while it runs or when the screen redraws.
+    func testANewCodeBeingAvailableIsSaidOnceWhenTheMinuteHasPassed() {
+        var availability = SignInAnnouncement.ResendAvailability()
+        XCTAssertNil(availability.words(offered: false))
+        XCTAssertEqual(availability.words(offered: true), "Send a new code is available.")
+        XCTAssertNil(availability.words(offered: true))
+    }
+
+    /// A minute that passes while the code is checked, when Send a new code is inactive
+    /// (handoff 7's IMPLEMENTATION.md: "Send a new code is also inactive if its minute has
+    /// elapsed"), says nothing then; if the check fails, the words are said as Send a new code
+    /// comes back, once; if it succeeds, they are never said.
+    func testAMinuteThatPassesWhileTheCodeIsCheckedIsSaidOnlyOnceTheCheckFails() {
+        var availability = SignInAnnouncement.ResendAvailability()
+        // The minute passes during the check: Send a new code shows, inactive.
+        XCTAssertNil(availability.words(offered: false))
+        // The check ends without a sign-in: Send a new code is active.
+        XCTAssertEqual(availability.words(offered: true), "Send a new code is available.")
+    }
+
+    /// Once said, a failed check or a failed new code says its failure and nothing more (handoff
+    /// 7's `announcementPolicy.resend`: "restores resend action without a second availability
+    /// announcement"); a new code that went begins a new minute, said once more as it passes.
+    func testTheWordsComeOnceAMinute() {
+        var availability = SignInAnnouncement.ResendAvailability()
+        XCTAssertEqual(availability.words(offered: true), "Send a new code is available.")
+        XCTAssertNil(availability.words(offered: false))
+        XCTAssertNil(availability.words(offered: true))
+        availability.newMinute()
+        XCTAssertNil(availability.words(offered: false))
+        XCTAssertEqual(availability.words(offered: true), "Send a new code is available.")
     }
 
     /// A new code that went (handoff 7's `vo.resend.success`, which "includes waiting state"):

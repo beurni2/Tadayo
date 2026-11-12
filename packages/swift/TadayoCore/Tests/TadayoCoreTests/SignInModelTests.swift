@@ -400,8 +400,8 @@ final class ManualContinuousClock: @unchecked Sendable {
         await model.resend()
         #expect(auth.calls.last == "sendCode ben@example.com")
         #expect(model.code == "")
-        // The line was about digits that are gone (handoff 7's `authForm.resendSuccess`: "only
-        // success clears old code").
+        // The line was about digits that are gone (handoff 7's `authForm.resendSuccess`: "Only
+        // server success clears old code").
         #expect(model.failure == nil)
         #expect(model.resendFailure == nil)
         #expect(!model.canResend)
@@ -411,8 +411,8 @@ final class ManualContinuousClock: @unchecked Sendable {
         #expect(clock.waits == [.seconds(120)])
     }
 
-    /// Handoff 7's `authForm.resendSuccess`: "a failed resend keeps the old challenge and digits
-    /// and does not restart the interval". The line is the resend's own, not the code's.
+    /// Handoff 7's `authForm.resendSuccess`: "Failed resend keeps old challenge/digits and does
+    /// not restart interval." The line is the resend's own, not the code's.
     @Test func aRefusedNewCodeKeepsTheDigitsAndTheRow() async {
         for (answer, failure) in [
             (AuthFailure.network, SignInModel.ResendFailure.network), (.refused, .refused),
@@ -433,10 +433,13 @@ final class ManualContinuousClock: @unchecked Sendable {
     }
 
     /// While a new code is on its way the code is read-only, as it is while it is checked
-    /// (handoff 7's `authForm.resendConcurrency`: "Verify code, Change email address, and input
-    /// edits are inactive until the request completes, even if the old challenge has six
-    /// digits"). A refusal gives editing back with the digits kept; a new code gives it back with
-    /// the digits cleared.
+    /// (handoff 7's `authForm.resendConcurrency`: "Verify, Change email address and input edits
+    /// are inactive while resending. Verify remains unavailable even if the previous challenge
+    /// has six digits."). A refusal gives editing back with the digits kept; a new code gives it
+    /// back with the digits cleared. Send a new code stays offered throughout and after a
+    /// refusal, so the screen has no availability to say again (handoff 7's
+    /// `announcementPolicy.resend`: "restores resend action without a second availability
+    /// announcement").
     @Test func theCodeCantBeEditedWhileANewCodeIsOnItsWay() async {
         for answer in [AuthFailure.network, .refused, nil] {
             let gate = Gate()
@@ -450,6 +453,7 @@ final class ManualContinuousClock: @unchecked Sendable {
             let resending = Task { await model.resend() }
             await gate.reached()
             #expect(model.isResending)
+            #expect(model.canResend)
             #expect(!model.canVerify)
             model.code = "529613"
             #expect(model.code == "529614")
@@ -458,6 +462,7 @@ final class ManualContinuousClock: @unchecked Sendable {
             gate.open()
             await resending.value
             #expect(!model.isResending)
+            #expect(model.canResend == (answer != nil))
             #expect(model.code == (answer == nil ? "" : "529614"))
             model.code = "529613"
             #expect(model.code == "529613")
@@ -542,7 +547,8 @@ final class ManualContinuousClock: @unchecked Sendable {
 
     /// A code that goes clears both lines, whichever request sent it: the model's own rule, not
     /// only the screens' order (A02-email is behind A02-code, so the first code is sent with
-    /// neither line showing).
+    /// neither line showing). The two requests here run one after the other; neither can start
+    /// while the other runs (`sendNothingWhileACheckOrANewCodeIsOnItsWay`).
     @Test func aCodeThatGoesClearsBothLinesWhicheverRequestSentIt() async {
         let clock = ManualContinuousClock()
         let auth = FakeAuth(send: [nil, .network], verify: [.failure(.codeNotVerified)])
@@ -558,6 +564,65 @@ final class ManualContinuousClock: @unchecked Sendable {
         #expect(model.failure == nil)
         #expect(model.resendFailure == nil)
         #expect(model.code == "")
+    }
+
+    /// Send a new code waits while the code is checked, even once its minute has passed
+    /// (handoff 7's `busyPrimary.leaveChangeResend`: "Inactive while primary request or routing
+    /// account read runs; do not queue another action"; IMPLEMENTATION.md: "Send a new code is
+    /// also inactive if its minute has elapsed"). Nothing goes, the digits stay, and the check's
+    /// answer is about those digits.
+    @Test func noNewCodeGoesWhileTheCodeIsChecked() async {
+        let gate = Gate()
+        let clock = ManualContinuousClock()
+        let auth = FakeAuth(verify: [.failure(.codeNotVerified)])
+        let model = await onCode(auth, clock)
+        clock.advance(.seconds(60))
+        await model.waitForResend()
+        #expect(model.canResend)
+        model.code = "529614"
+        auth.duringSignIn = { await gate.wait() }
+        let verifying = Task { await model.verify() }
+        await gate.reached()
+        auth.duringSignIn = {}
+        await model.resend()
+        #expect(!model.isResending)
+        gate.open()
+        await verifying.value
+        #expect(auth.calls == ["sendCode ben@example.com", "verify ben@example.com 529614"])
+        #expect(model.code == "529614")
+        #expect(model.failure == .codeNotVerified)
+        #expect(model.resendFailure == nil)
+        #expect(model.canResend)
+    }
+
+    /// Each request goes once at a time: while a code is checked or a new code is on its way, a
+    /// code isn't sent either, whatever asks (no screen can: A02-email is under A02-code). So a
+    /// late answer never lands on a screen that has moved on.
+    @Test func sendNothingWhileACheckOrANewCodeIsOnItsWay() async {
+        for checking in [true, false] {
+            let gate = Gate()
+            let clock = ManualContinuousClock()
+            let auth = FakeAuth(verify: [.failure(.codeNotVerified)])
+            let model = await onCode(auth, clock)
+            clock.advance(.seconds(60))
+            await model.waitForResend()
+            model.code = "529614"
+            auth.duringSignIn = { await gate.wait() }
+            let running = Task {
+                if checking { await model.verify() } else { await model.resend() }
+            }
+            await gate.reached()
+            auth.duringSignIn = {}
+            let calls = auth.calls
+            let due = model.resendDue
+            #expect(!model.canSend)
+            await model.sendCode()
+            #expect(auth.calls == calls)
+            #expect(model.resendDue == due)
+            #expect(!model.isSending)
+            gate.open()
+            await running.value
+        }
     }
 
     /// Change email address leaves both lines behind: back on A02-email neither shows, and a

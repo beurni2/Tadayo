@@ -121,8 +121,12 @@ import Observation
         }
     }
 
-    /// Send a code: a plausible address, and no request already on its way.
-    public var canSend: Bool { Self.isPlausible(email) && !isSending }
+    /// Send a code: a plausible address, and no request already on its way: neither a code, nor
+    /// a check of one, nor a new code (A02-email sits under A02-code, so none of the screens can
+    /// ask while another request runs, and the model doesn't let them either).
+    public var canSend: Bool {
+        Self.isPlausible(email) && !isSending && !isVerifying && !isResending
+    }
 
     /// Verify code: six digits and nothing on its way. After a refused code it stays available,
     /// with the digits kept, as handoff 2's A02-code-error has it: "Verify code remains enabled
@@ -170,8 +174,8 @@ import Observation
     }
 
     /// Sends a new code to the same address. A refusal keeps the digits, the row and a code's
-    /// line as they are, and says why in its own (handoff 7's `authForm.resendSuccess`: "a failed
-    /// resend keeps the old challenge and digits and does not restart the interval").
+    /// line as they are, and says why in its own (handoff 7's `authForm.resendSuccess`: "Failed
+    /// resend keeps old challenge/digits and does not restart interval.").
     public func resend() async {
         guard canResend, !isResending, !isVerifying else { return }
         isResending = true
@@ -210,9 +214,9 @@ import Observation
         canResend = true
     }
 
-    /// A code went: the digits and any line about them or about the last new code go too
-    /// (handoff 7's `authForm.resendSuccess`: "only success clears old code, updates challenge,
-    /// starts a new 60-second interval").
+    /// A code went, as the server answered: the digits and any line about them or about the last
+    /// new code go too (handoff 7's `authForm.resendSuccess`: "Only server success clears old
+    /// code, updates challenge, begins new 60-second interval").
     private func codeWasSent(to address: String) {
         self.address = address
         digits = ""
