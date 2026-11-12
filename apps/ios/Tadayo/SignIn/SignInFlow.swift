@@ -160,8 +160,10 @@ struct EmailScreen: View {
 /// leave it under the keyboard or nearer than 12 points; then it is pinned 12 above the keyboard,
 /// as frame 19 draws it at the largest size (`KeyboardFooter`; `authForm.keyboardFooter`). While
 /// VoiceOver runs it stays in the column, where it is read in its place, before the resend row
-/// (`codeAccessibilityOrder`), and VoiceOver scrolls it into view: VoiceOver reads a pinned
-/// footer after the whole column (FQ97's default).
+/// (`codeAccessibilityOrder`), and VoiceOver is expected to scroll it into view as it reaches it:
+/// VoiceOver reads a pinned footer after the whole column (FQ97's default). Switch Control and
+/// Full Keyboard Access still get it pinned, so they reach it last too, but on screen, without
+/// scrolling (FQ97 says so).
 struct CodeScreen: View {
     @Bindable var model: SignInModel
     let focus: Bool?
@@ -175,10 +177,12 @@ struct CodeScreen: View {
     @FocusState private var focused: Bool
     /// Whether this minute's "Send a new code is available." has been said.
     @State private var availability = SignInAnnouncement.ResendAvailability()
-    /// The screen's room above the keyboard, the foot of the error region in the column, and
-    /// Verify code's height: where Verify code would end in the column, and whether it fits.
+    /// The screen's room above the keyboard, the foot of the error region in the column as
+    /// measured and as held at its tallest while the keyboard shows (`KeyboardFooter.heldFoot`),
+    /// and Verify code's height: where Verify code would end in the column, and whether it fits.
     @State private var room = KeyboardRoom()
     @State private var regionFoot: CGFloat = 0
+    @State private var heldFoot: CGFloat = 0
     @State private var verifyHeight: CGFloat = 0
     /// The labelled field's identity, to scroll to.
     private static let field = "code.field"
@@ -203,6 +207,9 @@ struct CodeScreen: View {
                 .onChange(of: pinsVerify) { _, pinned in
                     if pinned { scroll.scrollTo(Self.field, anchor: .top) }
                 }
+                // Each time the keyboard comes up or goes, the held foot starts from the region
+                // as it is.
+                .onChange(of: keyboardShows) { heldFoot = regionFoot }
         }
         .navigationTitle(Text("auth.signIn.navTitle"))
         .navigationBarTitleDisplayMode(.inline)
@@ -278,6 +285,8 @@ struct CodeScreen: View {
                             of: region.frame(in: .named(SetupColumn.space)).maxY, initial: true
                         ) { _, foot in
                             regionFoot = foot
+                            heldFoot = KeyboardFooter.heldFoot(
+                                heldFoot, now: foot, keyboardShows: keyboardShows)
                         }
                     }
                 }
@@ -298,6 +307,11 @@ struct CodeScreen: View {
                 .buttonStyle(.tadayoText)
                 .disabled(!model.canChangeEmail)
         }
+        // Scrolling keeps the keyboard up, so the rest of the error, the resend row and Change
+        // email address are reached with the field focused and Verify code still pinned (handoff
+        // 7's `authForm.AX5`: "Scroll to access them without dismissing keyboard"), where Apple's
+        // documentation has a scroll view dismiss it on a scroll by default, from iOS 16.
+        .scrollDismissesKeyboard(.never)
     }
 
     /// Verify code, busy while the code is checked; its height is measured wherever it is, the
@@ -323,12 +337,18 @@ struct CodeScreen: View {
     /// column scrolled to its top, against the screen's height above the keyboard, and never
     /// while VoiceOver runs (`KeyboardFooter.pinsAction`; the error region is above it, so its
     /// foot doesn't move as Verify code is pinned, and the screen's height counts the footer's
-    /// room).
+    /// room). The region's foot is held at its tallest while the keyboard shows, so a pinned
+    /// Verify code stays pinned as a check clears the code's line and until the next one shows.
     private var pinsVerify: Bool {
         KeyboardFooter.pinsAction(
-            bottom: Double(regionFoot + verifyHeight), visibleHeight: Double(room.height),
-            keyboardShows: keyboard ?? (room.keyboard > 0),
-            voiceOverRuns: voiceOver ?? voiceOverEnabled, gap: Double(Spacing.m))
+            bottom: Double(heldFoot + verifyHeight), visibleHeight: Double(room.height),
+            keyboardShows: keyboardShows, voiceOverRuns: voiceOver ?? voiceOverEnabled,
+            gap: Double(Spacing.m))
+    }
+
+    /// Whether a keyboard, or a hardware keyboard's bar, shows.
+    private var keyboardShows: Bool {
+        keyboard ?? (room.keyboard > 0)
     }
 
     /// "Send a new code is available.", politely, when `ResendAvailability` says so.

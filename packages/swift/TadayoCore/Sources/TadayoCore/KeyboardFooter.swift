@@ -18,12 +18,23 @@ public enum KeyboardFooter {
     ///
     /// Nor while VoiceOver runs (FQ97's default): it reads a pinned footer after everything in
     /// the column, where handoff 7's `codeAccessibilityOrder` reads Verify code before the resend
-    /// row, and it scrolls an action in the column into view above the keyboard as it reaches it.
+    /// row, and it is expected to scroll an action in the column into view above the keyboard as
+    /// it reaches it. Switch Control and Full Keyboard Access aren't asked about: they reach a
+    /// pinned action last too, but it is on screen, where they reach it without scrolling (FQ97).
     public static func pinsAction(
         bottom: Double, visibleHeight: Double, keyboardShows: Bool, voiceOverRuns: Bool,
         gap: Double
     ) -> Bool {
         guard keyboardShows, !voiceOverRuns, bottom > 0, visibleHeight > 0 else { return false }
         return bottom + gap > visibleHeight
+    }
+
+    /// The foot of what sits above the action in the column, as the choice reads it: its tallest
+    /// since the keyboard came up, so that a failure line clearing, as a check or the first edit
+    /// begins, doesn't take a pinned action back into the column under the person's finger, and
+    /// bring it back when the next failure shows; with no keyboard, as measured `now`. A screen
+    /// starts it again from what it measures each time the keyboard comes up.
+    public static func heldFoot(_ held: Double, now: Double, keyboardShows: Bool) -> Double {
+        keyboardShows ? max(held, now) : now
     }
 }

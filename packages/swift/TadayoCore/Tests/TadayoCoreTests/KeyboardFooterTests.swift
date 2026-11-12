@@ -7,9 +7,10 @@ import Testing
 /// more clear of the keyboard, and pinned 12 above the keyboard only where it would otherwise sit
 /// under it or nearer than that (handoff 7's frame 19 and `authForm.keyboardFooter`; the check's
 /// V-02 and X-04; `docs/plans/ios-b0-adopt-handoff-7/signin.md` F1), and never while VoiceOver
-/// runs (FQ97's default). The numbers are the
-/// default size's and the largest's on a 393 by 852 point screen; the gap is the screen's
-/// `Spacing.m`, handoff 7's "12-point clear gap".
+/// runs (FQ97's default). The numbers are round ones, not measures: on the screen the column ends
+/// Verify code a few hundred points down at the default size, well clear of a keyboard, and about
+/// 770 down at the largest, far under it (the hosted reading in `ios` run 43178940741); the gap is
+/// the screen's `Spacing.m`, handoff 7's "12-point clear gap".
 @Suite struct KeyboardFooterTests {
     /// Whether an action that would end `bottom` points down the column is pinned, with
     /// `visibleHeight` points of screen above the keyboard and a 12-point gap.
@@ -22,13 +23,13 @@ import Testing
             voiceOverRuns: voiceOver, gap: 12)
     }
 
-    /// The default size: Verify code ends 330 points down the column, which has 366 above a
-    /// keyboard: in the column, as frames 4 to 8, 24 and 25 draw it.
+    /// As at the default size: Verify code ends 330 points down the column, which has 366 above
+    /// a keyboard: in the column, as frames 4 to 8, 24 and 25 draw it.
     @Test func anActionWellClearOfTheKeyboardStaysInTheColumn() {
         #expect(!pins(330, above: 366))
     }
 
-    /// The largest size: Verify code would end 700 points down, far under the keyboard, so it is
+    /// As at the largest size: Verify code would end 700 points down, far under the keyboard, so it is
     /// pinned (frame 19).
     @Test func anActionUnderTheKeyboardIsPinned() {
         #expect(pins(700, above: 366))
@@ -53,6 +54,16 @@ import Testing
     @Test func whileVoiceOverRunsNothingIsPinned() {
         #expect(!pins(700, above: 366, voiceOver: true))
         #expect(!pins(355, above: 366, voiceOver: true))
+    }
+
+    /// While the keyboard shows, the foot above the action holds at its tallest: a failure line
+    /// that clears as a check begins doesn't shorten it, so a pinned Verify code stays pinned
+    /// through the check; with no keyboard it follows what is measured.
+    @Test func whileTheKeyboardShowsTheFootHoldsAtItsTallest() {
+        #expect(KeyboardFooter.heldFoot(0, now: 300, keyboardShows: true) == 300)
+        #expect(KeyboardFooter.heldFoot(300, now: 400, keyboardShows: true) == 400)
+        #expect(KeyboardFooter.heldFoot(400, now: 300, keyboardShows: true) == 400)
+        #expect(KeyboardFooter.heldFoot(400, now: 300, keyboardShows: false) == 300)
     }
 
     /// Until the screen has measured itself, nothing is pinned.

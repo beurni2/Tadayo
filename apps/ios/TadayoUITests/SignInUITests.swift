@@ -117,13 +117,15 @@ final class SignInUITests: XCTestCase {
         XCTAssertEqual(code.value as? String, "529614")
         XCTAssertTrue(verify.isEnabled)
         // At this size Verify code stays in the column with the keyboard up, 8 + 44 above Change
-        // email address and above the keyboard's keys, where it can be tapped (frames 4 to 8, 24
-        // and 25; `KeyboardFooter`).
-        let keyboard = app.keyboards.firstMatch
-        XCTAssertTrue(keyboard.exists)
-        XCTAssertEqual(
-            app.buttons["Change email address"].frame.minY - verify.frame.maxY, 52, accuracy: 1)
-        XCTAssertLessThan(verify.frame.maxY, keyboard.frame.minY)
+        // email address and at least 12 above the keyboard's top as the screen draws it, read
+        // from under Change email address, where only the canvas is (frames 4 to 8, 24 and 25;
+        // `KeyboardFooter`).
+        XCTAssertTrue(app.keyboards.firstMatch.exists)
+        let change = app.buttons["Change email address"]
+        XCTAssertEqual(change.frame.minY - verify.frame.maxY, 52, accuracy: 1)
+        let edge = drawnEdge(below: change.frame.maxY, on: app.screenshot(), in: app)
+        XCTAssertGreaterThanOrEqual(
+            (edge.top ?? 0) - verify.frame.maxY, 12, "Verify code \(verify.frame), \(edge.said)")
         XCTAssertTrue(verify.isHittable)
         verify.tap()
 
@@ -221,8 +223,11 @@ final class SignInUITests: XCTestCase {
     /// pinned 12 points above it, where it can be tapped, before a code is checked and once one
     /// isn't verified (handoff 7's frame 19 and `authForm.keyboardFooter`; `KeyboardFooter`). The
     /// keyboard is the simulator's own, and the 12 is measured on the screen as drawn
-    /// (`drawnEdge`). The screen with the refusal is attached as the evidence's
-    /// `A02-code-error-xl`, beside frame 19, before it is measured, so a failure has it too.
+    /// (`drawnEdge`). Scrolling then reaches Change email address with the keyboard still up and
+    /// Verify code still pinned (`authForm.AX5`: "Scroll to access them without dismissing
+    /// keyboard"). Each screen measured is attached before it is measured, kept only if the test
+    /// fails (`deleteOnSuccess`), so a failure's evidence has it beside frame 19 and a passing run
+    /// carries no image no reference could hold (the keyboard is the system's).
     @MainActor func testVerifyCodeIsPinnedAboveTheKeyboardAtTheLargestText() {
         let app = launch(
             "-TadayoUITestFakes", "-UIPreferredContentSizeCategoryName",
@@ -235,7 +240,8 @@ final class SignInUITests: XCTestCase {
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
         let verify = app.buttons["Verify code"]
         XCTAssertTrue(verify.isEnabled)
-        assertPinned(verify, below: code, on: app.screenshot(), in: app)
+        assertPinned(
+            verify, below: code, on: kept(app.screenshot(), as: "A02-code-typed-xl"), in: app)
         verify.tap()
 
         let refused = app.staticTexts[
@@ -243,13 +249,28 @@ final class SignInUITests: XCTestCase {
         XCTAssertTrue(refused.waitForExistence(timeout: 5))
         XCTAssertEqual(code.value as? String, "529614")
         XCTAssertTrue(app.keyboards.firstMatch.exists)
-        let shot = app.screenshot()
+        assertPinned(
+            verify, below: code, on: kept(app.screenshot(), as: "A02-code-error-xl"), in: app)
+
+        let change = app.buttons["Change email address"]
+        for _ in 0..<4 where !change.isHittable {
+            app.scrollViews.firstMatch.swipeUp()
+        }
+        XCTAssertTrue(change.isHittable)
+        XCTAssertTrue(app.keyboards.firstMatch.exists)
+        assertPinned(
+            verify, below: code, on: kept(app.screenshot(), as: "A02-code-error-xl-scrolled"),
+            in: app)
+    }
+
+    /// `shot`, attached as `state` for a failure's evidence: named as `tools/ci/ios_steps.py`
+    /// collects a snapshot, and kept only if the test fails.
+    @MainActor private func kept(_ shot: XCUIScreenshot, as state: String) -> XCUIScreenshot {
         let screen = XCTAttachment(screenshot: shot)
-        screen.name =
-            "testVerifyCodeIsPinnedAboveTheKeyboardAtTheLargestText.A02-code-error-xl.png"
-        screen.lifetime = .keepAlways
+        screen.name = "testVerifyCodeIsPinnedAboveTheKeyboardAtTheLargestText.\(state).png"
+        screen.lifetime = .deleteOnSuccess
         add(screen)
-        assertPinned(verify, below: code, on: shot, in: app)
+        return shot
     }
 
     /// Verify code ends 12 points, within 1, above the keyboard's top as `shot` draws it, and

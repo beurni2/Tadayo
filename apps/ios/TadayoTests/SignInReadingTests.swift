@@ -388,6 +388,9 @@ final class SignInReadingTests: XCTestCase {
                 let field = elements.first { $0.label == "Six-digit code" }?.frame ?? .zero
                 XCTAssertGreaterThan(field.height, 0, named)
                 XCTAssertLessThanOrEqual(field.maxY, verify.minY - Spacing.s + 0.5, named)
+                // Pinned, the tree reads it after the whole column, which is why it stays in the
+                // column while VoiceOver runs (FQ97).
+                XCTAssertEqual(labels.last, "Verify code", named)
             } else {
                 XCTAssertEqual(verify.minY - line.maxY, Spacing.l, accuracy: 1, named)
                 let order = [
@@ -397,6 +400,37 @@ final class SignInReadingTests: XCTestCase {
                 XCTAssertFalse(order.contains(nil), named)
                 XCTAssertEqual(order.compactMap { $0 }, order.compactMap { $0 }.sorted(), named)
             }
+        }
+    }
+
+    /// Where the column, scrolled to its top, would leave Verify code 11 points above the keyboard
+    /// it is pinned 12 above it, and where it would leave 13 it stays (`KeyboardFooter`'s
+    /// threshold), read in the navigation stack the app shows it in, so the column's foot and the
+    /// screen's room above the keyboard are measured from the same top, under the bar. The
+    /// keyboard is a stand-in whose height is set from where Verify code ends with none.
+    func testVerifyCodeIsPinnedOnlyWhereTheColumnLeavesItNearerThan12() {
+        func read(stand: CGFloat, keyboard: Bool) -> AccessibilityElements.Layout {
+            let model = onCode()
+            return AccessibilityElements.layout(
+                of: NavigationStack {
+                    CodeScreen(model: model, focus: true, keyboard: keyboard, voiceOver: false)
+                }
+                .safeAreaInset(edge: .bottom, spacing: 0) { Color.clear.frame(height: stand) })
+        }
+        let free = read(stand: 0, keyboard: false)
+        let foot = free.elements.first { $0.label == "Verify code" }?.frame.maxY ?? 0
+        XCTAssertGreaterThan(foot, 0, "\(free.elements)")
+        for (clear, pinned) in [(CGFloat(11), true), (CGFloat(13), false)] {
+            let stand = free.size.height - free.safeArea.bottom - foot - clear
+            let layout = read(stand: stand, keyboard: true)
+            let verify = layout.elements.first { $0.label == "Verify code" }?.frame ?? .zero
+            let keyboardTop = layout.size.height - layout.safeArea.bottom - stand
+            XCTAssertEqual(
+                keyboardTop - verify.maxY, pinned ? Spacing.m : clear, accuracy: 0.5,
+                "\(clear) clear: \(layout.elements)")
+            XCTAssertEqual(
+                layout.elements.filter { $0.label == "Verify code" }.count, 1,
+                "\(clear) clear: \(layout.elements)")
         }
     }
 
