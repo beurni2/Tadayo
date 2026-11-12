@@ -1,0 +1,25 @@
+breakage: no-status-unread
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "  const noStatus = result.code === 1 && flyctlFailed && last === NO_STATUS;",
+  "  const noStatus = false;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: fails when the session ended without an exit status
+caught: True
+
+     × fails when the session ended without an exit status, which the Machine's end and a lost connection both give 14ms
+     × fails, and says what the project may hold, when the Machine's report has the run's id and doesn't say how its checks went, even with an exit status of 0 22ms
+ Test Files  2 failed | 2 passed (4)
+      Tests  2 failed | 79 passed (81)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > fails when the session ended without an exit status, which the Machine's end and a lost connection both give
+AssertionError: expected 'storage-setup: flyctl couldn\'t run i…' to be 'storage-setup: the session ended with…' // Object.is equality
+Received: "storage-setup: flyctl couldn't run it on the Machine: exit code 1: Error: ssh shell: wait: remote command exited without exit status or exit signal"
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > fails, and says what the project may hold, when the Machine's report has the run's id and doesn't say how its checks went, even with an exit status of 0
+AssertionError: supabase-probe: the session ended without saying how the command ended: the Machine closed it, or the connection to it was lost: expected 'supabase-probe: flyctl couldn\'t run …' to be 'supabase-probe: the session ended wit…' // Object.is equality
+Received: "supabase-probe: flyctl couldn't run it on the Machine: exit code 1: Error: ssh shell: wait: remote command exited without exit status or exit signal"

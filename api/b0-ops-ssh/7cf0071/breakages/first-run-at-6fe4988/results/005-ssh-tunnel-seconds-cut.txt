@@ -1,0 +1,26 @@
+breakage: ssh-tunnel-seconds-cut
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "export const TUNNEL_SECONDS = 240;",
+  "export const TUNNEL_SECONDS = 180;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: gives the session the tunnel's bound, the connection and the command's time
+caught: True
+
+     × gives the session the tunnel's bound, the connection and the command's time, and flyctl the token and HOME only 11ms
+     × fails after saying what came back when the session ran out of time, and still removes the peer 2ms
+     × fails, and says what the project may hold, when the Machine's report has the run's id and doesn't say how its checks went, even with an exit status of 0 15ms
+ Test Files  2 failed | 2 passed (4)
+      Tests  3 failed | 78 passed (81)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > gives the session the tunnel's bound, the connection and the command's time, and flyctl the token and HOME only
+AssertionError: expected 540000 to be 600000 // Object.is equality
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > fails after saying what came back when the session ran out of time, and still removes the peer
+AssertionError: expected 'storage-setup: the session ran out of…' to be 'storage-setup: the session ran out of…' // Object.is equality
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > fails, and says what the project may hold, when the Machine's report has the run's id and doesn't say how its checks went, even with an exit status of 0
+AssertionError: supabase-probe: the session ran out of time after 600 seconds, and the command may still be running on the Machine: expected 'supabase-probe: the session ran out o…' to be 'supabase-probe: the session ran out o…' // Object.is equality

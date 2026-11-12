@@ -1,0 +1,22 @@
+breakage: exited-reason-unread
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "(\\d+)(?: from signal (\\w+))?(?:\\. Reason was: .*)?$/;",
+  "(\\d+)(?: from signal (\\w+))?$/;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: names the signal when one ended the command
+caught: True
+
+     × names the signal when one ended the command, with or without the reason x/crypto adds 14ms
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 80 passed (81)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > names the signal when one ended the command, with or without the reason x/crypto adds
+AssertionError: Error: ssh shell: Process exited with status 143 from signal TERM. Reason was: out of memory
+: expected 'storage-setup: flyctl couldn\'t run i…' to be 'storage-setup: it failed on the Machi…' // Object.is equality
+Received: "storage-setup: flyctl couldn't run it on the Machine: exit code 1: Error: ssh shell: Process exited with status 143 from signal TERM. Reason was: out of memory"

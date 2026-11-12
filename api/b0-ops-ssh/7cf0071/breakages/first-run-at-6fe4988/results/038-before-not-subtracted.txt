@@ -1,0 +1,26 @@
+breakage: before-not-subtracted
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "  const fresh = [...after.names].filter((name) => !session.before.has(name));",
+  "  const fresh = [...after.names];",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: removes every new peer named for this runner, and never one that was there before
+caught: True
+
+     × removes every new peer named for this runner, and never one that was there before 10ms
+     × fails when the session reached the Machine and no new peer of this run's is found, since one must have been made 8ms
+ Test Files  1 failed | 3 passed (4)
+      Tests  2 failed | 79 passed (81)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > removes every new peer named for this runner, and never one that was there before
+AssertionError: expected OpsError: storage-setup: 2 WireGuard peer… to be undefined
+OpsError {
+  "name": "OpsError",
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > fails when the session reached the Machine and no new peer of this run's is found, since one must have been made
+AssertionError: expected 'not an OpsError: undefined' to be 'storage-setup: none of the organizati…' // Object.is equality
+Received: "not an OpsError: undefined"

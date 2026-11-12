@@ -1,0 +1,20 @@
+breakage: strangers-unsaid-when-ours-left
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "    if (unknown !== undefined) note(unknown);\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ops/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: says a new peer not named for this runner too when one of this run's is still there
+caught: True
+
+     × says a new peer not named for this runner too when one of this run's is still there, and fails with the one left 16ms
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 83 passed (84)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > says a new peer not named for this runner too when one of this run's is still there, and fails with the one left
+AssertionError: expected [ …(3) ] to deeply equal [ …(4) ]

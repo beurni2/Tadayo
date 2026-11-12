@@ -1,0 +1,20 @@
+breakage: notes-read-as-the-machine
+patch: [
+ [
+  "tools/ops/src/run.ts",
+  "    note: ctx.say,\n",
+  "    note: (line) => {\n      heard.push(line);\n      ctx.say(line);\n    },\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: re:says what the project may hold when nothing came back|says nothing of what the project may hold
+caught: True
+
+     × says what the project may hold when nothing came back from the Machine, and still fails with the call's own failure 5ms
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 85 passed (86)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > says what the project may hold when nothing came back from the Machine, and still fails with the call's own failure
+AssertionError: expected 'supabase-probe: removed the WireGuard…' to match /^supabase-probe: nothing came back fr…/

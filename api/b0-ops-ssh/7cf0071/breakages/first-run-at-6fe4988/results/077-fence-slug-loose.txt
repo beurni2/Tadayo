@@ -1,0 +1,23 @@
+breakage: fence-slug-loose
+patch: [
+ [
+  "tools/ops/src/fly.ts",
+  "export const SLUG = /^[a-z0-9][a-z0-9-]{0,62}$/;",
+  "export const SLUG = /^[A-Za-z0-9-]+$/;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: takes the organization's WireGuard peers only to list them
+caught: True
+
+     × takes the organization's WireGuard peers only to list them, or to remove one an SSH session made, in one form each 17ms
+     × takes an organization's slug, and refuses anything else before it calls flyctl 9ms
+ Test Files  2 failed | 2 passed (4)
+      Tests  2 failed | 79 passed (81)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly.test.ts > forDevApp: a call is about tadayo-api-dev and no other app > takes the organization's WireGuard peers only to list them, or to remove one an SSH session made, in one form each
+AssertionError: wireguard list Tadayo-Org --json: expected true to be false // Object.is equality
+ FAIL  src/run-remote.test.ts > fly-app-create > takes an organization's slug, and refuses anything else before it calls flyctl
+AssertionError: --org=-flag: expected 'the fake has no route for: flyctl sta…' to match /^fly-app-create: --org takes an organ…/

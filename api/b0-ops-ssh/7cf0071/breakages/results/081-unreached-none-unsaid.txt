@@ -1,0 +1,23 @@
+breakage: unreached-none-unsaid
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "      : `${label}: no new WireGuard peer named for this runner is listed, so none was removed; if the session made one, ${byHand}`;",
+  "      : undefined;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: re:says\ no\ peer\ of\ this\ run's\ is\ listed\ after\ flyctl's\ own\ failure\ or\ a\ timeout|says\ every\ line\ of\ flyctl's\ failure\ to\ start\ its\ agent
+caught: True
+
+     × says every line of flyctl's failure to start its agent, which ends with its log, and words the failure from them 11ms
+     × says no peer of this run's is listed after flyctl's own failure or a timeout, and what to look at by hand 1ms
+ Test Files  1 failed | 3 passed (4)
+      Tests  2 failed | 84 passed (86)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > says every line of flyctl's failure to start its agent, which ends with its log, and words the failure from them
+AssertionError: expected [ …(8) ] to deeply equal [ …(9) ]
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > says no peer of this run's is listed after flyctl's own failure or a timeout, and what to look at by hand
+AssertionError: {"code":1,"stderr":"Error: tunnel unavailable: context deadline exceeded\n"}: expected [ Array(1) ] to deeply equal [ …(2) ]

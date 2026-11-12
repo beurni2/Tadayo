@@ -1,0 +1,16 @@
+breakage: attempt-throws
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "  } catch (error) {\n    const reason = error instanceof Error ? error.message : String(error);\n    return { code: 1,",
+  "  } catch (error) {\n    throw error;\n    const reason = error instanceof Error ? error.message : String(error);\n    return { code: 1,",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 0
+expected words: re:.
+caught: False
+
+ Test Files  4 passed (4)
+      Tests  81 passed (81)

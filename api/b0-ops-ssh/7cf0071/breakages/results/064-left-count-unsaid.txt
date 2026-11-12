@@ -1,0 +1,37 @@
+breakage: left-count-unsaid
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "  if (left > 0) {\n    if (unknown",
+  "  if (false) {\n    if (unknown",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: fails a session that worked when a peer of this run's is still there
+caught: True
+
+     × fails a session that worked when a peer of this run's is still there, with the way to remove it by hand 10ms
+     × says a new peer not named for this runner too when one of this run's is still there, and fails with the one left 2ms
+     × goes on with the clean-up when a removal's flyctl can't be started, and counts its peer as left 5ms
+     × counts a peer as removed when flyctl failed after removing it, and as left when no list can tell 4ms
+     × counts as left only a peer whose removal failed and a new list still shows, not one flyctl said it removed 2ms
+     × throws the command's failure, not the peer's, when both went wrong, and says the peer's first 1ms
+ Test Files  1 failed | 3 passed (4)
+      Tests  6 failed | 80 passed (86)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > fails a session that worked when a peer of this run's is still there, with the way to remove it by hand
+AssertionError: flyctl's removal of a WireGuard peer this run made ended with exit code 1: expected [ …(4) ] to deeply equal [ …(3) ]
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > says a new peer not named for this runner too when one of this run's is still there, and fails with the one left
+AssertionError: expected [ …(4) ] to deeply equal [ …(4) ]
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > goes on with the clean-up when a removal's flyctl can't be started, and counts its peer as left
+AssertionError: expected [ …(4) ] to deeply equal [ …(3) ]
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > counts a peer as removed when flyctl failed after removing it, and as left when no list can tell
+AssertionError: expected 'not an OpsError: undefined' to be 'storage-setup: 1 of the WireGuard pee…' // Object.is equality
+Received: "not an OpsError: undefined"
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > counts as left only a peer whose removal failed and a new list still shows, not one flyctl said it removed
+AssertionError: expected 'not an OpsError: undefined' to be 'storage-setup: 1 of the WireGuard pee…' // Object.is equality
+Received: "not an OpsError: undefined"
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > throws the command's failure, not the peer's, when both went wrong, and says the peer's first
+AssertionError: expected [ …(3) ] to deeply equal [ …(3) ]

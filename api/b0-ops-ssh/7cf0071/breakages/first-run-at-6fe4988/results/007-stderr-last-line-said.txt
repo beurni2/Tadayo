@@ -1,0 +1,76 @@
+breakage: stderr-last-line-said
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "  for (const line of flyctlFailed ? errors.slice(0, -1) : errors) say(line);",
+  "  for (const line of errors) say(line);",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: fails with the command's exit code, after saying what it printed
+caught: True
+
+     × fails with the command's exit code, after saying what it printed, when the command failed, and still removes the peer 17ms
+     × names the signal when one ended the command, with or without the reason x/crypto adds 2ms
+     × reads flyctl's line in colour, as a terminal would show it, the same way 2ms
+     × fails when the session ended without an exit status, which the Machine's end and a lost connection both give 2ms
+     × says flyctl's own failure in its words, and nothing about a peer when the session made none 1ms
+     × removes the peer the agent made before its one check of the tunnel failed, and says running it again may work 1ms
+     × reads flyctl's failure as its own though it ends with an empty line, and says none of it as the Machine's 2ms
+     × gives a line the Machine printed that looks like flyctl's no weight: only flyctl's exit code and last line count 1ms
+     × takes a new peer named for this runner whatever follows the host, an empty email part among them 1ms
+     × throws the command's failure, not the peer's, when both went wrong, and says the peer's first 1ms
+     × fails when it fails on the Machine, after saying what it printed 8ms
+     × fails with the Machine's failure, after both have said what they found 2ms
+     × says nothing of what the project may hold when the Machine's half failed before it made anything 2ms
+     × says what the project may hold when nothing came back from the Machine, and still fails with the call's own failure 2ms
+ Test Files  2 failed | 2 passed (4)
+      Tests  14 failed | 67 passed (81)
+⎯⎯⎯⎯⎯⎯ Failed Tests 14 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > fails with the command's exit code, after saying what it printed, when the command failed, and still removes the peer
+AssertionError: expected [ …(5) ] to deeply equal [ …(4) ]
++   "machine: Error: ssh shell: Process exited with status 1",
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > names the signal when one ended the command, with or without the reason x/crypto adds
+AssertionError: Error: ssh shell: Process exited with status 137 from signal KILL
+: expected [ …(3) ] to deeply equal [ …(2) ]
++   "machine: Error: ssh shell: Process exited with status 137 from signal KILL",
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > reads flyctl's line in colour, as a terminal would show it, the same way
+AssertionError: expected [ …(3) ] to deeply equal [ …(2) ]
++   "machine: [31mError: [0mssh shell: Process exited with status 3",
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > fails when the session ended without an exit status, which the Machine's end and a lost connection both give
+AssertionError: expected [ …(4) ] to deeply equal [ …(3) ]
++   "machine: Error: ssh shell: wait: remote command exited without exit status or exit signal",
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > says flyctl's own failure in its words, and nothing about a peer when the session made none
+AssertionError: expected [ …(2) ] to deeply equal [ Array(1) ]
++   "machine: Error: can't establish agent: failed to start",
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > removes the peer the agent made before its one check of the tunnel failed, and says running it again may work
+AssertionError: expected [ …(3) ] to deeply equal [ …(2) ]
++   "machine: Error: tunnel unavailable: context deadline exceeded",
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > reads flyctl's failure as its own though it ends with an empty line, and says none of it as the Machine's
+AssertionError: expected [ …(3) ] to deeply equal [ …(2) ]
++   "machine: Error: ssh: can't build tunnel for tadayo-org: websocket: bad handshake",
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > gives a line the Machine printed that looks like flyctl's no weight: only flyctl's exit code and last line count
+AssertionError: expected [ …(4) ] to deeply equal [ …(3) ]
+    "machine: Error: ssh shell: Process exited with status 0",
++   "machine: Error: connection lost",
+    232|     expect(failed.said).toEqual([MAKING, "machine: Error: ssh shell: P…
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > takes a new peer named for this runner whatever follows the host, an empty email part among them
+AssertionError: expected [ …(3) ] to deeply equal [ …(2) ]
++   "machine: Error: error connecting to SSH server: ssh: handshake failed",
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > throws the command's failure, not the peer's, when both went wrong, and says the peer's first
+AssertionError: expected [ …(4) ] to deeply equal [ …(3) ]
++   "machine: Error: ssh shell: Process exited with status 4",
+ FAIL  src/run-remote.test.ts > storage-setup on the runner > fails when it fails on the Machine, after saying what it printed
+AssertionError: expected [ …(4) ] to deeply equal [ …(3) ]
++   "Error: ssh shell: Process exited with status 1",
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > fails with the Machine's failure, after both have said what they found
+AssertionError: expected [ …(7) ] to deeply equal [ …(6) ]
+    "supabase-probe: FAIL  anon: list the buckets: answered HTTP 200",
++   "Error: ssh shell: Process exited with status 1",
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > says nothing of what the project may hold when the Machine's half failed before it made anything
+AssertionError: expected [ …(5) ] to deeply equal [ …(4) ]
++   "Error: ssh shell: Process exited with status 1",
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > says what the project may hold when nothing came back from the Machine, and still fails with the call's own failure
+AssertionError: expected 'supabase-probe: removed the WireGuard…' to match /^supabase-probe: nothing came back fr…/

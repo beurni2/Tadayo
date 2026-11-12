@@ -1,0 +1,21 @@
+breakage: strangers-pass-beside-ours
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "  note(`${label}: removed the WireGuard peer this run made`);\n  return unknown;",
+  "  note(`${label}: removed the WireGuard peer this run made`);\n  return undefined;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: leaves a new peer not named for this runner, but fails the run
+caught: True
+
+     × leaves a new peer not named for this runner, but fails the run, saying so without its name, whatever the session did 15ms
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 85 passed (86)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > leaves a new peer not named for this runner, but fails the run, saying so without its name, whatever the session did
+AssertionError: expected 'not an OpsError: undefined' to be 'storage-setup: 1 WireGuard peer that …' // Object.is equality
+Received: "not an OpsError: undefined"

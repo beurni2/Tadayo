@@ -1,0 +1,23 @@
+breakage: prefix-any-interactive
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "  return slug !== \"\" && name.startsWith(`interactive-${slug}-`);",
+  "  return slug !== \"\" && name.startsWith(\"interactive-\");",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: removes every new peer named for this runner, and never one that was there before
+caught: False
+
+     × leaves a new peer not named for this runner, but fails the run, saying so without its name, whatever the session did 18ms
+     × takes a name as one this host's session makes when it starts interactive-<host>-, and no other 1ms
+ Test Files  1 failed | 3 passed (4)
+      Tests  2 failed | 79 passed (81)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > leaves a new peer not named for this runner, but fails the run, saying so without its name, whatever the session did
+AssertionError: {"stdout":"done\n"}: expected [ …(2) ] to deeply equal []
+ FAIL  src/on-machine.test.ts > the peer's name, as flyctl makes it > takes a name as one this host's session makes when it starts interactive-<host>-, and no other
+AssertionError: expected true to be false // Object.is equality

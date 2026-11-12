@@ -1,0 +1,20 @@
+breakage: ssh-no-time-limit
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "    { timeoutMs: SESSION_MS },\n",
+  "    {},\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: gives the session the tunnel's bound, the connection and the command's time
+caught: True
+
+     × gives the session the tunnel's bound, the connection and the command's time, and flyctl the token and HOME only 9ms
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 80 passed (81)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > gives the session the tunnel's bound, the connection and the command's time, and flyctl the token and HOME only
+AssertionError: expected 120000 to be 600000 // Object.is equality

@@ -1,0 +1,23 @@
+breakage: timeout-unseen
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "  if (result.timedOut) {\n    failure = new OpsError(",
+  "  if (false) {\n    failure = new OpsError(",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: fails after saying what came back when the session ran out of time
+caught: True
+
+     × fails after saying what came back when the session ran out of time, and still removes the peer 16ms
+     × fails, and says what the project may hold, when the Machine's report has the run's id and doesn't say how its checks went, even with an exit status of 0 16ms
+ Test Files  2 failed | 2 passed (4)
+      Tests  2 failed | 84 passed (86)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > fails after saying what came back when the session ran out of time, and still removes the peer
+AssertionError: expected 'storage-setup: flyctl couldn\'t run i…' to be 'storage-setup: the session ran out of…' // Object.is equality
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > fails, and says what the project may hold, when the Machine's report has the run's id and doesn't say how its checks went, even with an exit status of 0
+AssertionError: supabase-probe: the session ran out of time after 600 seconds, and the command may still be running on the Machine: expected 'supabase-probe: flyctl couldn\'t run …' to be 'supabase-probe: the session ran out o…' // Object.is equality

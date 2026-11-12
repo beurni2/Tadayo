@@ -1,0 +1,21 @@
+breakage: trailing-empty-line-kept
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "  const trimmed = text.replace(/\\n+$/, \"\");",
+  "  const trimmed = text.replace(/\\n$/, \"\");",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: reads flyctl's failure as its own though it ends with an empty line
+caught: True
+
+     × reads flyctl's failure as its own though it ends with an empty line, and says none of it as the Machine's 14ms
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 80 passed (81)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > reads flyctl's failure as its own though it ends with an empty line, and says none of it as the Machine's
+AssertionError: expected [ …(4) ] to deeply equal [ …(2) ]
++   "machine: Error: ssh: can't build tunnel for tadayo-org: websocket: bad handshake",

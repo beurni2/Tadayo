@@ -1,0 +1,23 @@
+breakage: host-slug-whole-name
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "(host.split(\".\")[0] ?? \"\").replace(",
+  "host.replace(",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: puts the host in it as flyctl does
+caught: True
+
+     × puts the host in it as flyctl does: the first label, with any other character a hyphen 6ms
+     × takes a name as one this host's session makes when it starts interactive-<host>-, and no other 2ms
+ Test Files  1 failed | 3 passed (4)
+      Tests  2 failed | 79 passed (81)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > the peer's name, as flyctl makes it > puts the host in it as flyctl does: the first label, with any other character a hyphen
+AssertionError: expected 'fv-az123-456-internal-cloudapp-net' to be 'fv-az123-456' // Object.is equality
+ FAIL  src/on-machine.test.ts > the peer's name, as flyctl makes it > takes a name as one this host's session makes when it starts interactive-<host>-, and no other
+AssertionError: expected false to be true // Object.is equality

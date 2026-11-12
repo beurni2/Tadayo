@@ -1,0 +1,22 @@
+breakage: making-line-after-session
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "  note(\n    `${label}: the SSH session makes a WireGuard peer in ${org}, which this run removes after it; if the run is cancelled or cut off first, ${byHandFor(org, host)}`,\n  );\n",
+  "",
+  1
+ ],
+ [
+  "tools/ops/src/on-machine.ts",
+  "    { timeoutMs: SESSION_MS },\n  );\n",
+  "    { timeoutMs: SESSION_MS },\n  );\n  note(\n    `${label}: the SSH session makes a WireGuard peer in ${org}, which this run removes after it; if the run is cancelled or cut off first, ${byHandFor(org, host)}`,\n  );\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 0
+expected words: runs the command in the API's started Machine, as one string
+caught: False
+
+ Test Files  4 passed (4)
+      Tests  81 passed (81)

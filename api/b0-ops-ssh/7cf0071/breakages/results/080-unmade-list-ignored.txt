@@ -1,0 +1,21 @@
+breakage: unmade-list-ignored
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "  if (\"unmade\" in listed) return { reason: `the call wasn't made: ${listed.unmade}` };\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: re:fails\ when\ the\ peers\ can't\ be\ listed\ after\ the\ session,\ or\ their\ list\ read|starts\ no\ session\ when\ the\ peers\ can't\ be\ listed\ first
+caught: True
+
+     × starts no session when the peers can't be listed first, since its peer couldn't be told from them 18ms
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 85 passed (86)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > starts no session when the peers can't be listed first, since its peer couldn't be told from them
+AssertionError: expected 'not an OpsError: TypeError: Cannot re…' to be 'storage-setup: flyctl couldn\'t list …' // Object.is equality
+Received: "not an OpsError: TypeError: Cannot read properties of undefined (reading 'trim')"

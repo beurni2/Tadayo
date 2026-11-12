@@ -1,0 +1,29 @@
+breakage: removal-name-said
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "`${label}: flyctl's removal of a WireGuard peer this run made ${removed.timedOut",
+  "`${label}: flyctl's removal of a WireGuard peer this run made (${name}) ${removed.timedOut",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: never says a peer's name, which holds the token's email
+caught: True
+
+     × never says a peer's name, which holds the token's email, nor what flyctl printed about it 10ms
+     × fails a session that worked when a peer of this run's is still there, with the way to remove it by hand 12ms
+     × counts a peer as removed when flyctl failed after removing it, and as left when no list can tell 2ms
+     × throws the command's failure, not the peer's, when both went wrong, and says the peer's first 1ms
+ Test Files  1 failed | 3 passed (4)
+      Tests  4 failed | 77 passed (81)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > never says a peer's name, which holds the token's email, nor what flyctl printed about it
+AssertionError: {"code":1,"stdout":"Removing WireGuard peer \"interactive-runnervm0abc1-someone-example-invalid-01M772DANR0123456789ABCDEF\"\n","stderr":"Error: couldn't remove interactive-runnervm0abc1-someone-example-invalid-01M772DANR0123456789ABCDEF\n"}: expected 'storage-setup: the SSH session makes …' not to contain 'someone-example-invalid'
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > fails a session that worked when a peer of this run's is still there, with the way to remove it by hand
+AssertionError: flyctl's removal of a WireGuard peer this run made ended with exit code 1: expected [ …(3) ] to deeply equal [ …(3) ]
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > counts a peer as removed when flyctl failed after removing it, and as left when no list can tell
+AssertionError: expected [ …(4) ] to deeply equal [ …(4) ]
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > throws the command's failure, not the peer's, when both went wrong, and says the peer's first
+AssertionError: expected [ …(3) ] to deeply equal [ …(3) ]

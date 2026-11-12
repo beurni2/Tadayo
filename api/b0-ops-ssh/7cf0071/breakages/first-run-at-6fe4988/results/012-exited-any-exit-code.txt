@@ -1,0 +1,20 @@
+breakage: exited-any-exit-code
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "  const exited = result.code === 1 && flyctlFailed ? EXITED.exec(last) : null;",
+  "  const exited = flyctlFailed ? EXITED.exec(last) : null;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: reads any other exit code as flyctl's failure
+caught: True
+
+     × reads any other exit code as flyctl's failure, never as the command's, even with a status line last 9ms
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 80 passed (81)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > reads any other exit code as flyctl's failure, never as the command's, even with a status line last
+AssertionError: {"code":127,"stderr":"Error: ssh shell: Process exited with status 1\n"}: expected 'storage-setup: it failed on the Machi…' to match /^storage-setup: flyctl couldn't run i…/

@@ -1,0 +1,16 @@
+breakage: timeout-error-line-taken-as-flyctl
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "  const flyctlFailed = !result.timedOut && result.code !== 0 && FLYCTL_ERROR.test(last);",
+  "  const flyctlFailed = result.code !== 0 && FLYCTL_ERROR.test(last);",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 0
+expected words: fails after saying what came back when the session ran out of time
+caught: False
+
+ Test Files  4 passed (4)
+      Tests  81 passed (81)

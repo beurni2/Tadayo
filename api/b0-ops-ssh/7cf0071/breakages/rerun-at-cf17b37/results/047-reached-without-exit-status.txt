@@ -1,0 +1,20 @@
+breakage: reached-without-exit-status
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "  const reached = result.code === 0 || exited !== null || noStatus;",
+  "  const reached = result.code === 0 || noStatus;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ops/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: fails when the session reached the Machine and no new peer of this run's is found
+caught: True
+
+     × fails when the session reached the Machine and no new peer of this run's is found, since one must have been made 16ms
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 83 passed (84)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > fails when the session reached the Machine and no new peer of this run's is found, since one must have been made
+AssertionError: storage-setup: it failed on the Machine, with exit code 3: expected [ Array(1) ] to deeply equal [ …(2) ]

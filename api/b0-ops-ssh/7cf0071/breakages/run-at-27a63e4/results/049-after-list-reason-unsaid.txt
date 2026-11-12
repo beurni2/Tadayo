@@ -1,0 +1,21 @@
+breakage: after-list-reason-unsaid
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "flyctl couldn't list the organization's WireGuard peers (${after.reason}), so the one this run may have made",
+  "flyctl couldn't list the organization's WireGuard peers, so the one this run may have made",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: fails when the peers can't be listed after the session, or their list read
+caught: True
+
+     × fails when the peers can't be listed after the session, or their list read, and says how to look by hand 19ms
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 85 passed (86)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > fails when the peers can't be listed after the session, or their list read, and says how to look by hand
+AssertionError: {"code":1,"stderr":"Error: unauthorized\n"}: expected 'storage-setup: flyctl couldn\'t list …' to be 'storage-setup: flyctl couldn\'t list …' // Object.is equality
+Expected: "storage-setup: flyctl couldn't list the organization's WireGuard peers (exit code 1: Error: unauthorized), so the one this run may have made can't be removed: `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-"

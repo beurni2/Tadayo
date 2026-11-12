@@ -1,0 +1,23 @@
+breakage: strangers-named
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "though this run's may be among them: ${byHand}`;",
+  "though this run's may be among them: ${byHand} (${fresh.filter((name) => !sessionPeerOf(name, host)).join(\", \")})`;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: leaves a new peer not named for this runner, but fails the run
+caught: True
+
+     × leaves a new peer not named for this runner, but fails the run, saying so without its name, whatever the session did 8ms
+     × never says a peer's name, which holds the token's email, nor what flyctl printed about it 6ms
+ Test Files  1 failed | 3 passed (4)
+      Tests  2 failed | 79 passed (81)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > leaves a new peer not named for this runner, but fails the run, saying so without its name, whatever the session did
+AssertionError: expected 'storage-setup: 2 WireGuard peers that…' to be 'storage-setup: 2 WireGuard peers that…' // Object.is equality
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > never says a peer's name, which holds the token's email, nor what flyctl printed about it
+AssertionError: {}: expected 'storage-setup: the SSH session makes …' not to contain 'someone-example-invalid'

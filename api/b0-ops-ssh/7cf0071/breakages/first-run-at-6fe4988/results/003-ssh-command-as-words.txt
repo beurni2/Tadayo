@@ -1,0 +1,20 @@
+breakage: ssh-command-as-words
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "\"-C\", input.command.join(\" \")]",
+  "\"-C\", ...input.command]",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: runs the command in the API's started Machine, as one string
+caught: True
+
+     × runs the command in the API's started Machine, as one string, says what it printed, then removes the run's peer 17ms
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 80 passed (81)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > runs the command in the API's started Machine, as one string, says what it printed, then removes the run's peer
+AssertionError: expected [ 'ssh', 'console', '-a', …(11) ] to deeply equal [ 'ssh', 'console', '-a', …(6) ]

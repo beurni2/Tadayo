@@ -1,0 +1,50 @@
+breakage: leftover-passes
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "  if (leftover !== undefined) throw new OpsError(leftover);",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: re:fails\ a\ session\ that\ worked\ when\ a\ peer\ of\ this\ run's\ is\ still\ there|fails\ when\ the\ session\ reached\ the\ Machine\ and\ no\ new\ peer\ of\ this\ run's\ is\ found
+caught: True
+
+     × leaves a new peer not named for this runner, but fails the run, saying so without its name, whatever the session did 14ms
+     × fails a session that worked when a peer of this run's is still there, with the way to remove it by hand 2ms
+     × says a new peer not named for this runner too when one of this run's is still there, and fails with the one left 1ms
+     × goes on with the clean-up when a removal's flyctl can't be started, and counts its peer as left 4ms
+     × counts a peer as removed when flyctl failed after removing it, and as left when no list can tell 3ms
+     × fails when the session reached the Machine and no new peer of this run's is found, since one must have been made 1ms
+     × counts as left only a peer whose removal failed and a new list still shows, not one flyctl said it removed 5ms
+     × fails when the peers can't be listed after the session, or their list read, and says how to look by hand 1ms
+ Test Files  1 failed | 3 passed (4)
+      Tests  8 failed | 78 passed (86)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > leaves a new peer not named for this runner, but fails the run, saying so without its name, whatever the session did
+AssertionError: expected 'not an OpsError: undefined' to be 'storage-setup: 2 WireGuard peers that…' // Object.is equality
+Received: "not an OpsError: undefined"
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > fails a session that worked when a peer of this run's is still there, with the way to remove it by hand
+AssertionError: expected 'not an OpsError: undefined' to be 'storage-setup: 1 of the WireGuard pee…' // Object.is equality
+Received: "not an OpsError: undefined"
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > says a new peer not named for this runner too when one of this run's is still there, and fails with the one left
+AssertionError: expected 'not an OpsError: undefined' to be 'storage-setup: 1 of the WireGuard pee…' // Object.is equality
+Received: "not an OpsError: undefined"
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > goes on with the clean-up when a removal's flyctl can't be started, and counts its peer as left
+AssertionError: expected 'not an OpsError: undefined' to be 'storage-setup: 1 of the WireGuard pee…' // Object.is equality
+Received: "not an OpsError: undefined"
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > counts a peer as removed when flyctl failed after removing it, and as left when no list can tell
+AssertionError: expected 'not an OpsError: undefined' to be 'storage-setup: 1 of the WireGuard pee…' // Object.is equality
+Received: "not an OpsError: undefined"
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > fails when the session reached the Machine and no new peer of this run's is found, since one must have been made
+AssertionError: expected 'not an OpsError: undefined' to be 'storage-setup: none of the organizati…' // Object.is equality
+Received: "not an OpsError: undefined"
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > counts as left only a peer whose removal failed and a new list still shows, not one flyctl said it removed
+AssertionError: expected 'not an OpsError: undefined' to be 'storage-setup: 1 of the WireGuard pee…' // Object.is equality
+Received: "not an OpsError: undefined"
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > fails when the peers can't be listed after the session, or their list read, and says how to look by hand
+AssertionError: {"code":1,"stderr":"Error: unauthorized\n"}: expected 'not an OpsError: undefined' to be 'storage-setup: flyctl couldn\'t list …' // Object.is equality
+Expected: "storage-setup: flyctl couldn't list the organization's WireGuard peers (exit code 1: Error: unauthorized), so the one this run may have made can't be removed: `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-"
+Received: "not an OpsError: undefined"

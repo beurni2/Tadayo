@@ -1,0 +1,34 @@
+breakage: tunnel-hint-always
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "      flyctlFailed && TUNNEL_UNAVAILABLE.test(last)\n",
+  "      flyctlFailed\n",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: re:says\ flyctl's\ own\ failure\ in\ its\ words,\ and\ nothing\ about\ a\ peer|reads\ flyctl's\ failure\ as\ its\ own\ though\ it\ ends\ with\ an\ empty\ line
+caught: True
+
+     × says flyctl's own failure in its words, and nothing about a peer when the session made none 20ms
+     × reads flyctl's failure as its own though it ends with an empty line, and says none of it as the Machine's 1ms
+     × gives a line the Machine printed that looks like flyctl's no weight: only flyctl's exit code and last line count 2ms
+ Test Files  1 failed | 3 passed (4)
+      Tests  3 failed | 78 passed (81)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > says flyctl's own failure in its words, and nothing about a peer when the session made none
+AssertionError: expected 'storage-setup: flyctl couldn\'t run i…' to be 'storage-setup: flyctl couldn\'t run i…' // Object.is equality
+Expected: "storage-setup: flyctl couldn't run it on the Machine: exit code 1: Error: can't establish agent: failed to start"
+Received: "storage-setup: flyctl couldn't run it on the Machine: exit code 1: Error: can't establish agent: failed to start; flyctl checks a new tunnel only once, for at most five seconds, so running the script again may work"
+    168|     const result = await run(routes({ code: 1, stderr: "Error: can't e…
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > reads flyctl's failure as its own though it ends with an empty line, and says none of it as the Machine's
+AssertionError: expected 'storage-setup: flyctl couldn\'t run i…' to be 'storage-setup: flyctl couldn\'t run i…' // Object.is equality
+Expected: "storage-setup: flyctl couldn't run it on the Machine: exit code 1: Error: ssh: can't build tunnel for tadayo-org: websocket: bad handshake"
+Received: "storage-setup: flyctl couldn't run it on the Machine: exit code 1: Error: ssh: can't build tunnel for tadayo-org: websocket: bad handshake; flyctl checks a new tunnel only once, for at most five seconds, so running the script again may work"
+    186|       routes({ code: 1, stderr: "Error: ssh: can't build tunnel for ta…
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > gives a line the Machine printed that looks like flyctl's no weight: only flyctl's exit code and last line count
+AssertionError: expected 'storage-setup: flyctl couldn\'t run i…' to be 'storage-setup: flyctl couldn\'t run i…' // Object.is equality
+Expected: "storage-setup: flyctl couldn't run it on the Machine: exit code 1: Error: connection lost"
+Received: "storage-setup: flyctl couldn't run it on the Machine: exit code 1: Error: connection lost; flyctl checks a new tunnel only once, for at most five seconds, so running the script again may work"

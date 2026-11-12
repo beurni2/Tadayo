@@ -1,0 +1,20 @@
+breakage: fence-length-unchecked
+patch: [
+ [
+  "tools/ops/src/fly.ts",
+  "    if (args.length !== 4 || !SLUG.test(org)) return false;",
+  "    if (!SLUG.test(org)) return false;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: takes the organization's WireGuard peers only to list them
+caught: True
+
+     × takes the organization's WireGuard peers only to list them, or to remove one an SSH session made, in one form each 12ms
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 80 passed (81)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly.test.ts > forDevApp: a call is about tadayo-api-dev and no other app > takes the organization's WireGuard peers only to list them, or to remove one an SSH session made, in one form each
+AssertionError: wireguard list tadayo-org --json --all: expected true to be false // Object.is equality

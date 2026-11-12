@@ -1,0 +1,16 @@
+breakage: reached-without-exit-status
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "  const reached = result.code === 0 || exited !== null || noStatus;",
+  "  const reached = result.code === 0 || noStatus;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 0
+expected words: fails when the session reached the Machine and no new peer of this run's is found
+caught: False
+
+ Test Files  4 passed (4)
+      Tests  81 passed (81)

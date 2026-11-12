@@ -1,0 +1,23 @@
+breakage: prefix-needs-email
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "  return slug !== \"\" && name.startsWith(`interactive-${slug}-`);",
+  "  return slug !== \"\" && name.startsWith(`interactive-${slug}-`) && !name.startsWith(`interactive-${slug}--`);",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: takes a new peer named for this runner whatever follows the host
+caught: True
+
+     × takes a new peer named for this runner whatever follows the host, an empty email part among them 11ms
+     × takes a name as one this host's session makes when it starts interactive-<host>-, and no other 3ms
+ Test Files  1 failed | 3 passed (4)
+      Tests  2 failed | 84 passed (86)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > takes a new peer named for this runner whatever follows the host, an empty email part among them
+AssertionError: expected 'flyctl wireguard list tadayo-org --js…' to be 'flyctl wireguard remove tadayo-org in…' // Object.is equality
+ FAIL  src/on-machine.test.ts > the peer's name, as flyctl makes it > takes a name as one this host's session makes when it starts interactive-<host>-, and no other
+AssertionError: expected false to be true // Object.is equality

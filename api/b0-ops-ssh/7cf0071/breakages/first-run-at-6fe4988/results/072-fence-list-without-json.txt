@@ -1,0 +1,16 @@
+breakage: fence-list-without-json
+patch: [
+ [
+  "tools/ops/src/fly.ts",
+  "(verb === \"list\" && last === \"--json\")",
+  "(verb === \"list\")",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 0
+expected words: takes the organization's WireGuard peers only to list them
+caught: False
+
+ Test Files  4 passed (4)
+      Tests  81 passed (81)

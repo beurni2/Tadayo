@@ -1,0 +1,21 @@
+breakage: timeout-error-line-taken-as-flyctl
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "  const flyctlFailed = !result.timedOut && result.code !== 0 && FLYCTL_ERROR.test(last);",
+  "  const flyctlFailed = result.code !== 0 && FLYCTL_ERROR.test(last);",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: fails after saying what came back when the session ran out of time
+caught: True
+
+     × fails after saying what came back when the session ran out of time, and still removes the peer 10ms
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 85 passed (86)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > fails after saying what came back when the session ran out of time, and still removes the peer
+AssertionError: expected [ …(3) ] to deeply equal [ …(4) ]
+-   "machine: Error: still waiting",

@@ -1,0 +1,20 @@
+breakage: org-failure-unexplained
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "    throw new OpsError(\n      `${error.message}, so no SSH session is started: the WireGuard peer one makes couldn't be removed`,\n    );",
+  "    throw error;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: starts no session when the token's organization can't be told
+caught: True
+
+     × starts no session when the token's organization can't be told, naming the ones it sees, with no advice the runner can't take 12ms
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 85 passed (86)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > starts no session when the token's organization can't be told, naming the ones it sees, with no advice the runner can't take
+AssertionError: expected 'storage-setup: the token sees 2 organ…' to be 'storage-setup: the token sees 2 organ…' // Object.is equality

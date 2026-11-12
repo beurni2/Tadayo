@@ -1,0 +1,23 @@
+breakage: list-exit-code-ignored
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "  const names = listed.code === 0 ? peerNames(jsonOf(listed)) : undefined;",
+  "  const names = peerNames(jsonOf(listed));",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: re:fails\ when\ the\ peers\ can't\ be\ listed\ after\ the\ session,\ or\ their\ list\ read|starts\ no\ session\ when\ the\ peers\ can't\ be\ listed\ first
+caught: True
+
+     × fails when the peers can't be listed after the session, or their list read, and says how to look by hand 10ms
+     × starts no session when the peers can't be listed first, since its peer couldn't be told from them 4ms
+ Test Files  1 failed | 3 passed (4)
+      Tests  2 failed | 84 passed (86)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > fails when the peers can't be listed after the session, or their list read, and says how to look by hand
+AssertionError: {"code":1,"stdout":"[]"}: expected 'storage-setup: none of the organizati…' to be 'storage-setup: flyctl couldn\'t list …' // Object.is equality
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > starts no session when the peers can't be listed first, since its peer couldn't be told from them
+AssertionError: {"code":1,"stdout":"[]"}: expected 'storage-setup: none of the organizati…' to be 'storage-setup: flyctl couldn\'t list …' // Object.is equality

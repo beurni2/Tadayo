@@ -1,0 +1,22 @@
+breakage: flyctl-failure-by-why
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "    const reason = flyctlFailed ? `exit code ${String(result.code)}: ${last}` : why(result);",
+  "    const reason = why(result);",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: gives a line the Machine printed that looks like flyctl's no weight
+caught: True
+
+     × gives a line the Machine printed that looks like flyctl's no weight: only flyctl's exit code and last line count 12ms
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 85 passed (86)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > gives a line the Machine printed that looks like flyctl's no weight: only flyctl's exit code and last line count
+AssertionError: expected 'storage-setup: flyctl couldn\'t run i…' to be 'storage-setup: flyctl couldn\'t run i…' // Object.is equality
+Expected: "storage-setup: flyctl couldn't run it on the Machine: exit code 1: Error: connection lost"
+Received: "storage-setup: flyctl couldn't run it on the Machine: exit code 1: Error: ssh shell: Process exited with status 0 / Error: connection lost"

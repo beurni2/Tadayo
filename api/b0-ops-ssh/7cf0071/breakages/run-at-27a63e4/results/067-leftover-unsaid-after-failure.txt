@@ -1,0 +1,32 @@
+breakage: leftover-unsaid-after-failure
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "    if (leftover !== undefined) note(leftover);\n    throw failure;",
+  "    throw failure;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: throws the command's failure, not the peer's, when both went wrong
+caught: True
+
+     × says every line of flyctl's failure to start its agent, which ends with its log, and words the failure from them 7ms
+     × leaves a new peer not named for this runner, but fails the run, saying so without its name, whatever the session did 10ms
+     × fails when the session reached the Machine and no new peer of this run's is found, since one must have been made 2ms
+     × says no peer of this run's is listed after a session that failed short of the Machine, and what to look at by hand 1ms
+     × throws the command's failure, not the peer's, when both went wrong, and says the peer's first 1ms
+ Test Files  1 failed | 3 passed (4)
+      Tests  5 failed | 81 passed (86)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > says every line of flyctl's failure to start its agent, which ends with its log, and words the failure from them
+AssertionError: expected [ …(7) ] to deeply equal [ …(8) ]
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > leaves a new peer not named for this runner, but fails the run, saying so without its name, whatever the session did
+AssertionError: {"code":1,"stderr":"Error: create ssh certificate: no CA (try `flyctl ssh issue`)\n"}: expected 'storage-setup: the SSH session makes …' to be 'storage-setup: 2 WireGuard peers that…' // Object.is equality
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > fails when the session reached the Machine and no new peer of this run's is found, since one must have been made
+AssertionError: storage-setup: it failed on the Machine, with exit code 3: expected [ Array(1) ] to deeply equal [ …(2) ]
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > says no peer of this run's is listed after a session that failed short of the Machine, and what to look at by hand
+AssertionError: {"code":1,"stderr":"Error: tunnel unavailable: context deadline exceeded\n"}: expected [ Array(1) ] to deeply equal [ …(2) ]
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > throws the command's failure, not the peer's, when both went wrong, and says the peer's first
+AssertionError: expected [ …(2) ] to deeply equal [ …(3) ]

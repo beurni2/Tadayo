@@ -1,0 +1,72 @@
+breakage: stdout-unsaid
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "  for (const line of linesOf(result.stdout)) say(line);\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: runs the command in the API's started Machine, as one string
+caught: True
+
+     × runs the command in the API's started Machine, as one string, says what it printed, then removes the run's peer 21ms
+     × fails with the command's exit code, after saying what it printed, when the command failed, and still removes the peer 3ms
+     × fails when the session ended without an exit status, which the Machine's end and a lost connection both give 2ms
+     × fails after saying what came back when the session ran out of time, and still removes the peer 1ms
+     × leaves a new peer not named for this runner, but fails the run, saying so without its name, whatever the session did 2ms
+     × fails a session that worked when a peer of this run's is still there, with the way to remove it by hand 1ms
+     × counts a peer as removed when flyctl failed after removing it, and as left when no list can tell 4ms
+     × runs itself on the API's Machine, with --here and the dev project's reference, and says what it printed 9ms
+     × fails when it fails on the Machine, after saying what it printed 4ms
+     × fails when the Machine's report ends before it says what became of each bucket, even with an exit status of 0 3ms
+     × asks the Management API from here, with the access token, and the rest on the Machine, and passes when both do 1ms
+     × still runs the Machine's checks when the Data API check fails, and then fails, naming the schema and not the secret 3ms
+     × fails with the Machine's failure, after both have said what they found 2ms
+     × fails, and says what the project may hold, when the Machine's report has the run's id and doesn't say how its checks went, even with an exit status of 0 1ms
+     × needs the access token, and says the Management API didn't answer as a failed check 2ms
+     × holds back the environment's token from a line a script says, and exits 0 when the script worked 203ms
+ Test Files  3 failed | 1 passed (4)
+      Tests  16 failed | 65 passed (81)
+⎯⎯⎯⎯⎯⎯ Failed Tests 16 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/main.test.ts > the ops entry > holds back the environment's token from a line a script says, and exits 0 when the script worked
+AssertionError: expected 'storage-setup: the Machine\'s report …' to be '' // Object.is equality
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > runs the command in the API's started Machine, as one string, says what it printed, then removes the run's peer
+AssertionError: expected [ …(3) ] to deeply equal [ …(5) ]
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > fails with the command's exit code, after saying what it printed, when the command failed, and still removes the peer
+AssertionError: expected [ …(3) ] to deeply equal [ …(4) ]
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > fails when the session ended without an exit status, which the Machine's end and a lost connection both give
+AssertionError: expected [ …(2) ] to deeply equal [ …(3) ]
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > fails after saying what came back when the session ran out of time, and still removes the peer
+AssertionError: expected [ …(2) ] to deeply equal [ …(3) ]
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > leaves a new peer not named for this runner, but fails the run, saying so without its name, whatever the session did
+AssertionError: expected [ …(2) ] to deeply equal [ …(3) ]
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > fails a session that worked when a peer of this run's is still there, with the way to remove it by hand
+AssertionError: flyctl's removal of a WireGuard peer this run made ended with exit code 1: expected [ …(2) ] to deeply equal [ …(3) ]
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > counts a peer as removed when flyctl failed after removing it, and as left when no list can tell
+AssertionError: expected [ …(3) ] to deeply equal [ …(4) ]
+ FAIL  src/run-remote.test.ts > storage-setup on the runner > runs itself on the API's Machine, with --here and the dev project's reference, and says what it printed
+OpsError: storage-setup: the Machine's report ended before it said what became of uploads; run it again, since it makes only what is missing
+    269|         throw new OpsError(
+ FAIL  src/run-remote.test.ts > storage-setup on the runner > fails when it fails on the Machine, after saying what it printed
+AssertionError: expected [ …(2) ] to deeply equal [ …(3) ]
+ FAIL  src/run-remote.test.ts > storage-setup on the runner > fails when the Machine's report ends before it says what became of each bucket, even with an exit status of 0
+AssertionError: storage-setup: uploads: created
+: expected 'storage-setup: the Machine\'s report …' to be 'storage-setup: the Machine\'s report …' // Object.is equality
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > asks the Management API from here, with the access token, and the rest on the Machine, and passes when both do
+OpsError: supabase-probe: the Machine's report doesn't say its checks passed, so it proves nothing
+    354|     throw new OpsError("supabase-probe: the Machine's report doesn't s…
+    356|   if (settings.some((check) => !check.ok)) throw new OpsError("supabas…
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > still runs the Machine's checks when the Data API check fails, and then fails, naming the schema and not the secret
+AssertionError: expected 'supabase-probe: the Machine\'s report…' to be 'supabase-probe: the Data API check fa…' // Object.is equality
+    477|       "supabase-probe: FAIL  the Data API's settings expose no schema:…
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > fails with the Machine's failure, after both have said what they found
+AssertionError: expected [ …(4) ] to deeply equal [ …(6) ]
+-   "supabase-probe: FAIL  anon: list the buckets: answered HTTP 200",
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > fails, and says what the project may hold, when the Machine's report has the run's id and doesn't say how its checks went, even with an exit status of 0
+AssertionError: supabase-probe: the Machine's report doesn't say its checks passed, so it proves nothing: expected 'supabase-probe: nothing came back fro…' to match /^supabase-probe: the Machine's report…/
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > needs the access token, and says the Management API didn't answer as a failed check
+AssertionError: expected 'supabase-probe: the Machine\'s report…' to be 'supabase-probe: the Data API check fa…' // Object.is equality
+    613|       "supabase-probe: FAIL  the Data API's settings expose no schema:…

@@ -1,0 +1,22 @@
+breakage: exit-0-error-line-taken-as-flyctl
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "  const flyctlFailed = !result.timedOut && result.code !== 0 && FLYCTL_ERROR.test(last);",
+  "  const flyctlFailed = !result.timedOut && FLYCTL_ERROR.test(last);",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: gives a line the Machine printed that looks like flyctl's no weight
+caught: True
+
+     × gives a line the Machine printed that looks like flyctl's no weight: only flyctl's exit code and last line count 11ms
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 85 passed (86)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > gives a line the Machine printed that looks like flyctl's no weight: only flyctl's exit code and last line count
+AssertionError: expected [ …(2) ] to deeply equal [ …(3) ]
+-   "machine: Error: ssh shell: Process exited with status 1",
+    279|     expect(passed.said).toEqual([MAKING, "machine: Error: ssh shell: P…

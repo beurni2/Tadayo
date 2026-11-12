@@ -1,0 +1,22 @@
+breakage: first-list-failure-starts-session
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "  const before = await listPeers(fly, org);\n  if (\"reason\" in before) {",
+  "  const before = await listPeers(fly, org);\n  if (\"reason\" in before && false) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: starts no session when the peers can't be listed first
+caught: True
+
+     × starts no session when the peers can't be listed first, since its peer couldn't be told from them 18ms
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 85 passed (86)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > starts no session when the peers can't be listed first, since its peer couldn't be told from them
+AssertionError: {"code":1,"stderr":"Error: unauthorized\n"}: expected 'storage-setup: flyctl couldn\'t list …' to be 'storage-setup: flyctl couldn\'t list …' // Object.is equality
+Expected: "storage-setup: flyctl couldn't list the organization's WireGuard peers (exit code 1: Error: unauthorized), so no SSH session is started: the peer one makes couldn't be told from the others and removed"
+Received: "storage-setup: flyctl couldn't list the organization's WireGuard peers (exit code 1: Error: unauthorized), so the one this run may have made can't be removed: `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-"

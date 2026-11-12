@@ -1,0 +1,16 @@
+breakage: no-status-any-exit-code
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "  const noStatus = result.code === 1 && flyctlFailed && last === NO_STATUS;",
+  "  const noStatus = flyctlFailed && last === NO_STATUS;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 0
+expected words: reads any other exit code as flyctl's failure
+caught: False
+
+ Test Files  4 passed (4)
+      Tests  81 passed (81)

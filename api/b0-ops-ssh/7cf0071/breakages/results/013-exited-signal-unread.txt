@@ -1,0 +1,26 @@
+breakage: exited-signal-unread
+patch: [
+ [
+  "tools/ops/src/on-machine.ts",
+  "(\\d+)(?: from signal (\\w+))?(?:\\. Reason was: .*)?$/;",
+  "(\\d+)(?:\\. Reason was: .*)?$/;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: names the signal when one ended the command
+caught: True
+
+     × names the signal when one ended the command, with or without the reason x/crypto adds 18ms
+     × fails, and says what the project may hold, when the Machine's report has the run's id and doesn't say how its checks went, even with an exit status of 0 18ms
+ Test Files  2 failed | 2 passed (4)
+      Tests  2 failed | 84 passed (86)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > names the signal when one ended the command, with or without the reason x/crypto adds
+AssertionError: Error: ssh shell: Process exited with status 137 from signal KILL
+: expected 'storage-setup: flyctl couldn\'t run i…' to be 'storage-setup: it failed on the Machi…' // Object.is equality
+Received: "storage-setup: flyctl couldn't run it on the Machine: exit code 1: Error: ssh shell: Process exited with status 137 from signal KILL"
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > fails, and says what the project may hold, when the Machine's report has the run's id and doesn't say how its checks went, even with an exit status of 0
+AssertionError: supabase-probe: it failed on the Machine, with exit code 137, ended by signal KILL: expected 'supabase-probe: flyctl couldn\'t run …' to be 'supabase-probe: it failed on the Mach…' // Object.is equality
+Received: "supabase-probe: flyctl couldn't run it on the Machine: exit code 1: Error: ssh shell: Process exited with status 137 from signal KILL"

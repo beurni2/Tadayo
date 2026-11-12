@@ -1,0 +1,163 @@
+breakage: fence-wireguard-refused
+patch: [
+ [
+  "tools/ops/src/fly.ts",
+  "  if (args[0] === \"wireguard\") {",
+  "  if (args[0] === \"wireguard\" && false) {",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ssh-breakages/tools/ops && npx vitest run src/on-machine.test.ts src/run-remote.test.ts src/main.test.ts src/fly.test.ts
+exit: 1
+expected words: runs the command in the API's started Machine, as one string
+caught: True
+
+     × takes every call the scripts make: -a or --app with the dev app, and the calls that name none 13ms
+     × takes the organization's WireGuard peers only to list them, or to remove one an SSH session made, in one form each 1ms
+     × runs itself on the API's Machine, with --here and the dev project's reference, and says what it printed 18ms
+     × fails when it fails on the Machine, after saying what it printed 10ms
+     × fails when the Machine's report ends before it says what became of each bucket, even with an exit status of 0 4ms
+     × asks the Management API from here, with the access token, and the rest on the Machine, and passes when both do 2ms
+     × still runs the Machine's checks when the Data API check fails, and then fails, naming the schema and not the secret 2ms
+     × fails with the Machine's failure, after both have said what they found 5ms
+     × says nothing of what the project may hold when the Machine's half failed before it made anything 2ms
+     × fails, and says what the project may hold, when the Machine's report has the run's id and doesn't say how its checks went, even with an exit status of 0 2ms
+     × doesn't take a report without the run's id, or one that only says its checks passed, as a pass 3ms
+     × needs the access token, and says the Management API didn't answer as a failed check 1ms
+     × runs the command in the API's started Machine, as one string, says what it printed, then removes the run's peer 8ms
+     × gives the session the tunnel's bound, the connection and the command's time, and flyctl the token and HOME only 2ms
+     × fails with the command's exit code, after saying what it printed, when the command failed, and still removes the peer 4ms
+     × names the signal when one ended the command, with or without the reason x/crypto adds 6ms
+     × reads flyctl's line in colour, as a terminal would show it, the same way 3ms
+     × fails when the session ended without an exit status, which the Machine's end and a lost connection both give 5ms
+     × says every line of flyctl's failure to start its agent, which ends with its log, and words the failure from them 5ms
+     × removes the peer the agent made before its one check of the tunnel failed, and says running it again may work 1ms
+     × reads flyctl's failure as its own though it ends with an empty line, and says none of it as the Machine's 1ms
+     × reads any other exit code as flyctl's failure, never as the command's, even with a status line last 1ms
+     × fails after saying what came back when the session ran out of time, and still removes the peer 1ms
+     × says that the session makes a peer, and how to remove one by hand, before the session starts 3ms
+     × passes a session that exited 0 having printed nothing, which only the script's own last line can judge (run.ts) 0ms
+     × gives a line the Machine printed that looks like flyctl's no weight: only flyctl's exit code and last line count 1ms
+     × removes every new peer named for this runner, and never one that was there before 3ms
+     × takes a new peer named for this runner whatever follows the host, an empty email part among them 1ms
+     × leaves a new peer not named for this runner, but fails the run, saying so without its name, whatever the session did 4ms
+     × fails a session that worked when a peer of this run's is still there, with the way to remove it by hand 2ms
+     × says a new peer not named for this runner too when one of this run's is still there, and fails with the one left 1ms
+     × goes on with the clean-up when a removal's flyctl can't be started, and counts its peer as left 0ms
+     × counts a peer as removed when flyctl failed after removing it, and as left when no list can tell 0ms
+     × fails when the session reached the Machine and no new peer of this run's is found, since one must have been made 2ms
+     × says no peer of this run's is listed after flyctl's own failure or a timeout, and what to look at by hand 1ms
+     × counts as left only a peer whose removal failed and a new list still shows, not one flyctl said it removed 1ms
+     × fails when the peers can't be listed after the session, or their list read, and says how to look by hand 9ms
+     × starts no session when the peers can't be listed first, since its peer couldn't be told from them 1ms
+     × throws the command's failure, not the peer's, when both went wrong, and says the peer's first 2ms
+     × holds back the environment's token from a line a script says, and exits 0 when the script worked 165ms
+ Test Files  4 failed (4)
+      Tests  40 failed | 46 passed (86)
+⎯⎯⎯⎯⎯⎯ Failed Tests 40 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/fly.test.ts > forDevApp: a call is about tadayo-api-dev and no other app > takes every call the scripts make: -a or --app with the dev app, and the calls that name none
+AssertionError: wireguard list tadayo-org --json: expected false to be true // Object.is equality
+ FAIL  src/fly.test.ts > forDevApp: a call is about tadayo-api-dev and no other app > takes the organization's WireGuard peers only to list them, or to remove one an SSH session made, in one form each
+AssertionError: wireguard list -a tadayo-api-dev --json: expected true to be false // Object.is equality
+ FAIL  src/main.test.ts > the ops entry > holds back the environment's token from a line a script says, and exits 0 when the script worked
+AssertionError: expected 'storage-setup: flyctl couldn\'t list …' to be '' // Object.is equality
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > runs the command in the API's started Machine, as one string, says what it printed, then removes the run's peer
+AssertionError: expected OpsError: storage-setup: flyctl couldn't … to be undefined
+OpsError {
+  "name": "OpsError",
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > gives the session the tunnel's bound, the connection and the command's time, and flyctl the token and HOME only
+AssertionError: expected undefined to be 600000 // Object.is equality
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > fails with the command's exit code, after saying what it printed, when the command failed, and still removes the peer
+AssertionError: expected 'storage-setup: flyctl couldn\'t list …' to be 'storage-setup: it failed on the Machi…' // Object.is equality
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > names the signal when one ended the command, with or without the reason x/crypto adds
+AssertionError: Error: ssh shell: Process exited with status 137 from signal KILL
+: expected 'storage-setup: flyctl couldn\'t list …' to be 'storage-setup: it failed on the Machi…' // Object.is equality
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > reads flyctl's line in colour, as a terminal would show it, the same way
+AssertionError: expected 'storage-setup: flyctl couldn\'t list …' to be 'storage-setup: it failed on the Machi…' // Object.is equality
+    149|       routes({ code: 1, stderr: "\u001b[31mError: \u001b[0mssh shell: …
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > fails when the session ended without an exit status, which the Machine's end and a lost connection both give
+AssertionError: expected 'storage-setup: flyctl couldn\'t list …' to be 'storage-setup: the session ended with…' // Object.is equality
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > says every line of flyctl's failure to start its agent, which ends with its log, and words the failure from them
+AssertionError: expected 'storage-setup: flyctl couldn\'t list …' to be 'storage-setup: flyctl couldn\'t run i…' // Object.is equality
+Expected: "storage-setup: flyctl couldn't run it on the Machine: exit code 1: Error: can't establish agent: agent: failed to start / The agent failed to start with the following error log: / 2026/11/12 08:00:00.000000 srv the log's line"
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > removes the peer the agent made before its one check of the tunnel failed, and says running it again may work
+AssertionError: expected 'storage-setup: flyctl couldn\'t list …' to be 'storage-setup: flyctl couldn\'t run i…' // Object.is equality
+Expected: "storage-setup: flyctl couldn't run it on the Machine: exit code 1: Error: tunnel unavailable: context deadline exceeded; flyctl checks a new tunnel only once, for at most five seconds, so running the script again may work"
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > reads flyctl's failure as its own though it ends with an empty line, and says none of it as the Machine's
+AssertionError: expected 'storage-setup: flyctl couldn\'t list …' to be 'storage-setup: flyctl couldn\'t run i…' // Object.is equality
+Expected: "storage-setup: flyctl couldn't run it on the Machine: exit code 1: Error: ssh: can't build tunnel for tadayo-org: websocket: bad handshake"
+    206|       routes({ code: 1, stderr: "Error: ssh: can't build tunnel for ta…
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > reads any other exit code as flyctl's failure, never as the command's, even with a status line last
+AssertionError: {"code":126,"stderr":"Error: context deadline exceeded\n"}: expected 'storage-setup: flyctl couldn\'t list …' to match /^storage-setup: flyctl couldn't run i…/
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > fails after saying what came back when the session ran out of time, and still removes the peer
+AssertionError: expected 'storage-setup: flyctl couldn\'t list …' to be 'storage-setup: the session ran out of…' // Object.is equality
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > says that the session makes a peer, and how to remove one by hand, before the session starts
+OpsError: storage-setup: flyctl couldn't list the organization's WireGuard peers (the call wasn't made: flyctl: a call that doesn't name tadayo-api-dev, and no other app, isn't made), so no SSH session is started: the peer one makes couldn't be told from the others and removed
+    251|     throw new OpsError(
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > passes a session that exited 0 having printed nothing, which only the script's own last line can judge (run.ts)
+AssertionError: expected OpsError: storage-setup: flyctl couldn't … to be undefined
+OpsError {
+  "name": "OpsError",
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > gives a line the Machine printed that looks like flyctl's no weight: only flyctl's exit code and last line count
+AssertionError: expected OpsError: storage-setup: flyctl couldn't … to be undefined
+OpsError {
+  "name": "OpsError",
+    279|     expect(passed.said).toEqual([MAKING, "machine: Error: ssh shell: P…
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > removes every new peer named for this runner, and never one that was there before
+AssertionError: expected OpsError: storage-setup: flyctl couldn't … to be undefined
+OpsError {
+  "name": "OpsError",
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > takes a new peer named for this runner whatever follows the host, an empty email part among them
+AssertionError: expected 'storage-setup: flyctl couldn\'t list …' to match /^storage-setup: flyctl couldn't run i…/
+    339|       routes({ code: 1, stderr: "Error: error connecting to SSH server…
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > leaves a new peer not named for this runner, but fails the run, saying so without its name, whatever the session did
+AssertionError: expected 'storage-setup: flyctl couldn\'t list …' to be 'storage-setup: 2 WireGuard peers that…' // Object.is equality
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > fails a session that worked when a peer of this run's is still there, with the way to remove it by hand
+AssertionError: flyctl's removal of a WireGuard peer this run made ended with exit code 1: expected [] to deeply equal [ …(3) ]
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > says a new peer not named for this runner too when one of this run's is still there, and fails with the one left
+AssertionError: expected [] to deeply equal [ …(4) ]
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > goes on with the clean-up when a removal's flyctl can't be started, and counts its peer as left
+AssertionError: expected [] to deeply equal [ …(3) ]
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > counts a peer as removed when flyctl failed after removing it, and as left when no list can tell
+AssertionError: expected OpsError: storage-setup: flyctl couldn't … to be undefined
+OpsError {
+  "name": "OpsError",
+    457|       [REMOVE, { code: 1, stdout: "Removed peer.\n", stderr: "Error: e…
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > fails when the session reached the Machine and no new peer of this run's is found, since one must have been made
+AssertionError: expected 'storage-setup: flyctl couldn\'t list …' to be 'storage-setup: none of the organizati…' // Object.is equality
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > says no peer of this run's is listed after flyctl's own failure or a timeout, and what to look at by hand
+AssertionError: {"code":1,"stderr":"Error: tunnel unavailable: context deadline exceeded\n"}: expected [] to deeply equal [ …(2) ]
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > counts as left only a peer whose removal failed and a new list still shows, not one flyctl said it removed
+AssertionError: expected [] to deeply equal [ …(3) ]
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > fails when the peers can't be listed after the session, or their list read, and says how to look by hand
+AssertionError: {"code":1,"stderr":"Error: unauthorized\n"}: expected 'storage-setup: flyctl couldn\'t list …' to be 'storage-setup: flyctl couldn\'t list …' // Object.is equality
+Expected: "storage-setup: flyctl couldn't list the organization's WireGuard peers (exit code 1: Error: unauthorized), so the one this run may have made can't be removed: `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-"
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > starts no session when the peers can't be listed first, since its peer couldn't be told from them
+AssertionError: {"code":1,"stderr":"Error: unauthorized\n"}: expected 'storage-setup: flyctl couldn\'t list …' to be 'storage-setup: flyctl couldn\'t list …' // Object.is equality
+Expected: "storage-setup: flyctl couldn't list the organization's WireGuard peers (exit code 1: Error: unauthorized), so no SSH session is started: the peer one makes couldn't be told from the others and removed"
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > throws the command's failure, not the peer's, when both went wrong, and says the peer's first
+AssertionError: expected 'storage-setup: flyctl couldn\'t list …' to be 'storage-setup: it failed on the Machi…' // Object.is equality
+ FAIL  src/run-remote.test.ts > storage-setup on the runner > runs itself on the API's Machine, with --here and the dev project's reference, and says what it printed
+OpsError: storage-setup: flyctl couldn't list the organization's WireGuard peers (the call wasn't made: flyctl: a call that doesn't name tadayo-api-dev, and no other app, isn't made), so no SSH session is started: the peer one makes couldn't be told from the others and removed
+    251|     throw new OpsError(
+ FAIL  src/run-remote.test.ts > storage-setup on the runner > fails when it fails on the Machine, after saying what it printed
+AssertionError: expected 'storage-setup: flyctl couldn\'t list …' to be 'storage-setup: it failed on the Machi…' // Object.is equality
+ FAIL  src/run-remote.test.ts > storage-setup on the runner > fails when the Machine's report ends before it says what became of each bucket, even with an exit status of 0
+AssertionError: expected 'storage-setup: flyctl couldn\'t list …' to be 'storage-setup: the Machine\'s report …' // Object.is equality
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > asks the Management API from here, with the access token, and the rest on the Machine, and passes when both do
+OpsError: supabase-probe: flyctl couldn't list the organization's WireGuard peers (the call wasn't made: flyctl: a call that doesn't name tadayo-api-dev, and no other app, isn't made), so no SSH session is started: the peer one makes couldn't be told from the others and removed
+    251|     throw new OpsError(
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > still runs the Machine's checks when the Data API check fails, and then fails, naming the schema and not the secret
+AssertionError: expected 'supabase-probe: flyctl couldn\'t list…' to be 'supabase-probe: the Data API check fa…' // Object.is equality
+    477|       "supabase-probe: FAIL  the Data API's settings expose no schema:…
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > fails with the Machine's failure, after both have said what they found
+AssertionError: expected 'supabase-probe: flyctl couldn\'t list…' to be 'supabase-probe: it failed on the Mach…' // Object.is equality
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > says nothing of what the project may hold when the Machine's half failed before it made anything
+AssertionError: expected 'supabase-probe: flyctl couldn\'t list…' to be 'supabase-probe: it failed on the Mach…' // Object.is equality
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > fails, and says what the project may hold, when the Machine's report has the run's id and doesn't say how its checks went, even with an exit status of 0
+AssertionError: supabase-probe: the Machine's report doesn't say its checks passed, so it proves nothing: expected 'supabase-probe: flyctl couldn\'t list…' to be 'supabase-probe: the Machine\'s report…' // Object.is equality
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > doesn't take a report without the run's id, or one that only says its checks passed, as a pass
+AssertionError: expected 'supabase-probe: flyctl couldn\'t list…' to be 'supabase-probe: the Machine\'s report…' // Object.is equality
+ FAIL  src/run-remote.test.ts > supabase-probe on the runner > needs the access token, and says the Management API didn't answer as a failed check
+AssertionError: expected 'supabase-probe: flyctl couldn\'t list…' to be 'supabase-probe: the Data API check fa…' // Object.is equality
+    613|       "supabase-probe: FAIL  the Data API's settings expose no schema:…
