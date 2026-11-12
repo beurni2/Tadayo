@@ -60,9 +60,9 @@ public struct Avatar: View {
     }
 
     /// The initial in the size's type role, or, with none, the person symbol: the symbol's point
-    /// size is 56 percent of the circle, at the regular weight every symbol here has, centred
-    /// (where the sheet's schematic glyph sits 4 percent of the circle higher: a difference
-    /// `design/reference/INVENTORY.md` records).
+    /// size is 56 percent of the circle, at the regular weight every symbol here has, its middle
+    /// 4 percent of the circle above the circle's, as handoff 7's sheet and frame 10 draw it at
+    /// every size.
     @ViewBuilder private func mark(_ role: TypeRole) -> some View {
         if let initial = AvatarInitial.of(name) {
             Text(verbatim: initial)
@@ -71,6 +71,7 @@ public struct Avatar: View {
         } else {
             Image(systemName: "person")
                 .font(.system(size: size.rawValue * Size.avatarGlyphRatio, weight: .regular))
+                .offset(y: -size.rawValue * Size.avatarGlyphLift)
         }
     }
 
