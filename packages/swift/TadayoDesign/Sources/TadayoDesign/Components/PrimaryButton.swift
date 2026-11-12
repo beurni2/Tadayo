@@ -162,9 +162,9 @@ public struct PrimaryButtonFace<Label: View>: View {
 /// the system's indicator, which turns as the system's does). The busy primary button holds it,
 /// and so does A02-code's row while a new code is on its way (handoff 7's frame 7: "a small
 /// native activity indicator"). It says nothing to VoiceOver, whoever holds it: UIKit's indicator
-/// would say "In progress", which the busy button already says as its value and A02-code's row
-/// says in its words, so it is hidden here (handoff 7's `announcementPolicy.busy`: "Do not
-/// repeat").
+/// would say "In progress", which the busy button already says as its value (handoff 7's
+/// `announcementPolicy.busy`: "button label stable, value vo.busy.value") and A02-code's row says
+/// in its words, so it is hidden here, and the words are read once.
 public struct BusyIndicator: UIViewRepresentable {
     let tint: Color
 

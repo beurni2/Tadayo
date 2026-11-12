@@ -43,25 +43,35 @@ final class SignInAnnouncementTests: XCTestCase {
         XCTAssertNil(SignInAnnouncement.resending(from: false, to: false))
     }
 
-    /// Once the minute has passed (handoff 7's `vo.resend.available`: "Announce Send a new code
-    /// is available. once"), and nothing while it runs or when the screen redraws.
+    /// Once the minute has passed (handoff 7's `vo.resend.available`; IMPLEMENTATION.md:
+    /// "Announce Send a new code is available. once"), and nothing while it runs or when the
+    /// screen redraws.
     func testANewCodeBeingAvailableIsSaidOnceWhenTheMinuteHasPassed() {
         var availability = SignInAnnouncement.ResendAvailability()
-        XCTAssertNil(availability.words(offered: false))
-        XCTAssertEqual(availability.words(offered: true), "Send a new code is available.")
-        XCTAssertNil(availability.words(offered: true))
+        XCTAssertNil(availability.words(canResend: false, isVerifying: false))
+        XCTAssertEqual(
+            availability.words(canResend: true, isVerifying: false),
+            "Send a new code is available.")
+        XCTAssertNil(availability.words(canResend: true, isVerifying: false))
     }
 
     /// A minute that passes while the code is checked, when Send a new code is inactive
-    /// (handoff 7's IMPLEMENTATION.md: "Send a new code is also inactive if its minute has
-    /// elapsed"), says nothing then; if the check fails, the words are said as Send a new code
-    /// comes back, once; if it succeeds, they are never said.
+    /// (IMPLEMENTATION.md: "Send a new code is also inactive if its minute has elapsed"), says
+    /// nothing then. If the code verifies, the screen has moved on before the check ends
+    /// (`RootModel.signedIn`), so the words never come; if it doesn't, they are said as the check
+    /// ends, once, and a second failed check says nothing more.
     func testAMinuteThatPassesWhileTheCodeIsCheckedIsSaidOnlyOnceTheCheckFails() {
         var availability = SignInAnnouncement.ResendAvailability()
-        // The minute passes during the check: Send a new code shows, inactive.
-        XCTAssertNil(availability.words(offered: false))
+        // The check begins within the minute, which then passes: Send a new code shows, inactive.
+        XCTAssertNil(availability.words(canResend: false, isVerifying: true))
+        XCTAssertNil(availability.words(canResend: true, isVerifying: true))
         // The check ends without a sign-in: Send a new code is active.
-        XCTAssertEqual(availability.words(offered: true), "Send a new code is available.")
+        XCTAssertEqual(
+            availability.words(canResend: true, isVerifying: false),
+            "Send a new code is available.")
+        // Another code is checked, and isn't verified either.
+        XCTAssertNil(availability.words(canResend: true, isVerifying: true))
+        XCTAssertNil(availability.words(canResend: true, isVerifying: false))
     }
 
     /// Once said, a failed check or a failed new code says its failure and nothing more (handoff
@@ -69,12 +79,16 @@ final class SignInAnnouncementTests: XCTestCase {
     /// announcement"); a new code that went begins a new minute, said once more as it passes.
     func testTheWordsComeOnceAMinute() {
         var availability = SignInAnnouncement.ResendAvailability()
-        XCTAssertEqual(availability.words(offered: true), "Send a new code is available.")
-        XCTAssertNil(availability.words(offered: false))
-        XCTAssertNil(availability.words(offered: true))
+        XCTAssertEqual(
+            availability.words(canResend: true, isVerifying: false),
+            "Send a new code is available.")
+        XCTAssertNil(availability.words(canResend: true, isVerifying: true))
+        XCTAssertNil(availability.words(canResend: true, isVerifying: false))
         availability.newMinute()
-        XCTAssertNil(availability.words(offered: false))
-        XCTAssertEqual(availability.words(offered: true), "Send a new code is available.")
+        XCTAssertNil(availability.words(canResend: false, isVerifying: false))
+        XCTAssertEqual(
+            availability.words(canResend: true, isVerifying: false),
+            "Send a new code is available.")
     }
 
     /// A new code that went (handoff 7's `vo.resend.success`, which "includes waiting state"):

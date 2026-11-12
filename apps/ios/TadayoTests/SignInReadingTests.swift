@@ -269,7 +269,16 @@ final class SignInReadingTests: XCTestCase {
             if size == .large {
                 XCTAssertEqual(spinner.midY, words.midY, accuracy: 1, "\(size): \(words)")
             } else {
-                XCTAssertGreaterThan(words.height, 2 * Size.busyIndicator, "wraps: \(words)")
+                // One line of the words, as `TypeRole` sets `textAction` at this size: the
+                // system font at 16 points, scaled with body.
+                let traits = UITraitCollection(
+                    preferredContentSizeCategory: .accessibilityExtraExtraExtraLarge)
+                let oneLine = UIFont.systemFont(
+                    ofSize: UIFontMetrics(forTextStyle: .body).scaledValue(
+                        for: TypeRole.textAction.size, compatibleWith: traits)
+                ).lineHeight
+                XCTAssertGreaterThan(
+                    words.height, 1.5 * oneLine, "wraps: \(words), one line \(oneLine)")
                 XCTAssertGreaterThanOrEqual(spinner.minY, words.minY, "\(spinner) in \(words)")
                 XCTAssertLessThan(
                     spinner.midY, words.midY - Size.busyIndicator, "\(spinner) in \(words)")

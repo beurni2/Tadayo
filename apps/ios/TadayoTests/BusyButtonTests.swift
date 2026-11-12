@@ -130,4 +130,53 @@ final class BusyButtonTests: XCTestCase {
         XCTAssertTrue(idle.button?.traits.contains(.button) ?? false)
         XCTAssertFalse(idle.button?.traits.contains(.notEnabled) ?? true)
     }
+
+    /// The indicator says nothing itself, whoever holds it (`BusyIndicator`), so a screen that
+    /// holds it without hiding it still says "In progress" no more than once. Drawn bare, with
+    /// nothing hiding it, above UIKit's own indicator held the same way but left as UIKit makes
+    /// it, which VoiceOver does find: that one shows the reading reaches an indicator inside a
+    /// view SwiftUI holds, so the bare one's silence is its own.
+    func testTheIndicatorSaysNothingWhoeverHoldsIt() {
+        let view = VStack(spacing: 40) {
+            BusyIndicator(tint: Palette.secondaryText)
+                .frame(width: Size.busyIndicator, height: Size.busyIndicator)
+            AsUIKitMakesIt()
+                .frame(width: Size.busyIndicator, height: Size.busyIndicator)
+            Text(verbatim: "Sending a new code…")
+        }
+        let layout = AccessibilityElements.layout(of: view)
+        let elements = layout.elements
+        XCTAssertEqual(layout.indicators.count, 2, "\(layout.indicators)")
+        let indicators = layout.indicators.sorted { $0.minY < $1.minY }
+        let bare = indicators.first ?? .zero
+        let control = indicators.last ?? .zero
+        XCTAssertTrue(
+            elements.contains { $0.label == "Sending a new code…" }, "\(elements)")
+        XCTAssertTrue(
+            elements.contains { $0.frame.intersects(control) }, "\(control) in \(elements)")
+        XCTAssertFalse(elements.contains { $0.frame.intersects(bare) }, "\(bare) in \(elements)")
+        let said = elements.filter { !$0.frame.intersects(control) }
+            .flatMap { [$0.label, $0.value, $0.hint] }
+            .filter { $0.contains("In progress") }
+        XCTAssertEqual(said, [], "\(elements)")
+    }
+}
+
+/// UIKit's indicator in a box, as `BusyIndicator` holds it, turning, but neither hidden from
+/// VoiceOver: the control for `testTheIndicatorSaysNothingWhoeverHoldsIt`.
+private struct AsUIKitMakesIt: UIViewRepresentable {
+    func makeUIView(context: Context) -> UIView {
+        let box = UIView()
+        let spinner = UIActivityIndicatorView(style: .medium)
+        spinner.translatesAutoresizingMaskIntoConstraints = false
+        box.addSubview(spinner)
+        NSLayoutConstraint.activate([
+            spinner.centerXAnchor.constraint(equalTo: box.centerXAnchor),
+            spinner.centerYAnchor.constraint(equalTo: box.centerYAnchor),
+        ])
+        spinner.startAnimating()
+        return box
+    }
+
+    func updateUIView(_ box: UIView, context: Context) {}
 }

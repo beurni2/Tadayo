@@ -32,23 +32,26 @@ enum SignInAnnouncement {
         begins(from: was, to: now) ? String(localized: "auth.code.resending") : nil
     }
 
-    /// "Send a new code is available." (handoff 7's `vo.resend.available`: "Announce Send a new
-    /// code is available. once"), said politely at the first moment Send a new code is offered
-    /// and active: as its minute passes, or, if the minute passes while the code is checked, when
-    /// Send a new code is inactive (IMPLEMENTATION.md: "Send a new code is also inactive if its
-    /// minute has elapsed"), as that check ends without a sign-in. Never while the check runs, so
-    /// a code that verifies says nothing of it; and only once a minute, so a failed new code or a
-    /// failed check after it was said says its failure and nothing more (handoff 7's
-    /// `announcementPolicy.resend`: "Failed resend uses its exact failure announcement and
-    /// restores resend action without a second availability announcement"). A new code that goes
-    /// begins a new minute, and the words may be said once more.
+    /// "Send a new code is available." (handoff 7's `vo.resend.available`), said politely and
+    /// once (IMPLEMENTATION.md: "Announce Send a new code is available. once, without stealing
+    /// focus."), at the first moment Send a new code is offered and active: as its minute passes,
+    /// or, if the minute passes while the code is checked, when Send a new code is inactive
+    /// (IMPLEMENTATION.md: "Send a new code is also inactive if its minute has elapsed"), as that
+    /// check ends without a sign-in. Never while the check runs; a code that verifies has moved
+    /// the screen on before its check ends (`RootModel.signedIn`), so nothing of it is said. And
+    /// only once a minute, so a failed new code or a failed check after it was said says its
+    /// failure and nothing more (handoff 7's `announcementPolicy.resend`: "Failed resend uses its
+    /// exact failure announcement and restores resend action without a second availability
+    /// announcement"). A new code that goes begins a new minute, and the words may be said once
+    /// more. The screen hands over the model's own two values, so the whole choice is made here,
+    /// where a hosted test reads it.
     struct ResendAvailability: Equatable {
         private var said = false
 
-        /// The words to say as Send a new code becomes `offered` (its minute passed and no check
-        /// running) or stops being so; nil when there's nothing to say.
-        mutating func words(offered: Bool) -> String? {
-            guard offered, !said else { return nil }
+        /// The words to say as the model's `canResend` (its minute passed) or `isVerifying` (a
+        /// check running) changes; nil when there's nothing to say.
+        mutating func words(canResend: Bool, isVerifying: Bool) -> String? {
+            guard canResend, !isVerifying, !said else { return nil }
             said = true
             return String(localized: "auth.code.resendAvailable.vo")
         }

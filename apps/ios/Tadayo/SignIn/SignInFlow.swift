@@ -231,23 +231,30 @@ struct CodeScreen: View {
         .announcing(model.failure?.words)
         .announcing(model.resendFailure?.words)
         // "Send a new code is available.", once a minute, once Send a new code is offered and no
-        // check keeps it inactive (`SignInAnnouncement.ResendAvailability`).
-        .onChange(of: model.canResend && !model.isVerifying) { _, offered in
-            if let words = availability.words(offered: offered) {
-                Announcement.post(words, politely: true)
-            }
-        }
+        // check keeps it inactive: `SignInAnnouncement.ResendAvailability` decides from the
+        // model's two values whenever either changes.
+        .onChange(of: model.canResend) { sayANewCodeIsAvailable() }
         // "Verifying code." and "Sending a new code…", once each, as the request begins; the
         // button and the row say the rest themselves.
         .onChange(of: model.isVerifying) { was, now in
             if let words = SignInAnnouncement.verifying(from: was, to: now) {
                 Announcement.post(words)
             }
+            sayANewCodeIsAvailable()
         }
         .onChange(of: model.isResending) { was, now in
             if let words = SignInAnnouncement.resending(from: was, to: now) {
                 Announcement.post(words)
             }
+        }
+    }
+
+    /// "Send a new code is available.", politely, when `ResendAvailability` says so.
+    private func sayANewCodeIsAvailable() {
+        if let words = availability.words(
+            canResend: model.canResend, isVerifying: model.isVerifying)
+        {
+            Announcement.post(words, politely: true)
         }
     }
 
