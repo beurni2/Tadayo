@@ -1,0 +1,42 @@
+.github/workflows/ops.yml
+--- old
+  seed:
+    name: seed
+
+--- new
+  seedless:
+    name: seed
+
+--- expected: test_each_script_has_its_own_job
+--- exit 1
+..........................F.........
+======================================================================
+FAIL: test_each_script_has_its_own_job_with_its_own_secrets_and_nothing_else (__main__.WorkflowFileTest.test_each_script_has_its_own_job_with_its_own_secrets_and_nothing_else)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpv8alq9yo/tools/ci/ops_steps_test.py", line 638, in test_each_script_has_its_own_job_with_its_own_secrets_and_nothing_else
+    self.assertEqual(list(jobs), list(expected))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['fly[38 chars]'seedless', 'dev-clock', 'worker-scale', 'depl[41 chars]obe'] != ['fly[38 chars]'seed', 'dev-clock', 'worker-scale', 'deploy-b[37 chars]obe']
+
+First differing element 3:
+'seedless'
+'seed'
+
+  ['fly-app-create',
+   'bootstrap',
+   'migrate',
+-  'seedless',
+?       ----
+
++  'seed',
+   'dev-clock',
+   'worker-scale',
+   'deploy-branch',
+   'storage-setup',
+   'supabase-probe']
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.380s
+
+FAILED (failures=1)

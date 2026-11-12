@@ -1,0 +1,23 @@
+tools/ci/ops_steps.py
+--- old
+        if ref != MAIN:
+
+--- new
+        if not ref.startswith(MAIN):
+
+--- expected: test_a_run_from_another_ref
+--- exit 1
+..F.................................
+======================================================================
+FAIL: test_a_run_from_another_ref_is_refused (__main__.CheckTest.test_a_run_from_another_ref_is_refused) (ref='refs/heads/mainx')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpkziqhyqb/tools/ci/ops_steps_test.py", line 120, in test_a_run_from_another_ref_is_refused
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.436s
+
+FAILED (failures=1)

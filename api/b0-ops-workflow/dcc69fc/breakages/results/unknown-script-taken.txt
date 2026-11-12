@@ -1,0 +1,118 @@
+tools/ci/ops_steps.py
+--- old
+        if name not in SCRIPTS:
+
+--- new
+        if not name:
+
+--- expected: test_an_unknown_script
+--- exit 1
+....EEEE.......E........E..............
+======================================================================
+ERROR: test_an_unknown_script_is_refused (__main__.CheckTest.test_an_unknown_script_is_refused) (script='deploy')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpnmef1ebp/tools/ci/ops_steps_test.py", line 130, in test_an_unknown_script_is_refused
+    code, out, _ = call("check", {**MAIN, "OPS_SCRIPT": name})
+                   ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpnmef1ebp/tools/ci/ops_steps_test.py", line 59, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpnmef1ebp/tools/ci/ops_steps.py", line 188, in check
+    name = self.validated()
+  File "/tmp/tmpnmef1ebp/tools/ci/ops_steps.py", line 180, in validated
+    found = self.problems(name)
+  File "/tmp/tmpnmef1ebp/tools/ci/ops_steps.py", line 154, in problems
+    script = SCRIPTS[name]
+             ~~~~~~~^^^^^^
+KeyError: 'deploy'
+
+======================================================================
+ERROR: test_an_unknown_script_is_refused (__main__.CheckTest.test_an_unknown_script_is_refused) (script='migrate ')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpnmef1ebp/tools/ci/ops_steps_test.py", line 130, in test_an_unknown_script_is_refused
+    code, out, _ = call("check", {**MAIN, "OPS_SCRIPT": name})
+                   ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpnmef1ebp/tools/ci/ops_steps_test.py", line 59, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpnmef1ebp/tools/ci/ops_steps.py", line 188, in check
+    name = self.validated()
+  File "/tmp/tmpnmef1ebp/tools/ci/ops_steps.py", line 180, in validated
+    found = self.problems(name)
+  File "/tmp/tmpnmef1ebp/tools/ci/ops_steps.py", line 154, in problems
+    script = SCRIPTS[name]
+             ~~~~~~~^^^^^^
+KeyError: 'migrate '
+
+======================================================================
+ERROR: test_an_unknown_script_is_refused (__main__.CheckTest.test_an_unknown_script_is_refused) (script='MIGRATE')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpnmef1ebp/tools/ci/ops_steps_test.py", line 130, in test_an_unknown_script_is_refused
+    code, out, _ = call("check", {**MAIN, "OPS_SCRIPT": name})
+                   ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpnmef1ebp/tools/ci/ops_steps_test.py", line 59, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpnmef1ebp/tools/ci/ops_steps.py", line 188, in check
+    name = self.validated()
+  File "/tmp/tmpnmef1ebp/tools/ci/ops_steps.py", line 180, in validated
+    found = self.problems(name)
+  File "/tmp/tmpnmef1ebp/tools/ci/ops_steps.py", line 154, in problems
+    script = SCRIPTS[name]
+             ~~~~~~~^^^^^^
+KeyError: 'MIGRATE'
+
+======================================================================
+ERROR: test_an_unknown_script_is_refused (__main__.CheckTest.test_an_unknown_script_is_refused) (script='../migrate')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpnmef1ebp/tools/ci/ops_steps_test.py", line 130, in test_an_unknown_script_is_refused
+    code, out, _ = call("check", {**MAIN, "OPS_SCRIPT": name})
+                   ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpnmef1ebp/tools/ci/ops_steps_test.py", line 59, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpnmef1ebp/tools/ci/ops_steps.py", line 188, in check
+    name = self.validated()
+  File "/tmp/tmpnmef1ebp/tools/ci/ops_steps.py", line 180, in validated
+    found = self.problems(name)
+  File "/tmp/tmpnmef1ebp/tools/ci/ops_steps.py", line 154, in problems
+    script = SCRIPTS[name]
+             ~~~~~~~^^^^^^
+KeyError: '../migrate'
+
+======================================================================
+ERROR: test_run_refuses_what_check_refuses (__main__.RunTest.test_run_refuses_what_check_refuses) (environ={'GITHUB_REF': 'refs/heads/main', 'OPS_SCRIPT': 'deploy'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpnmef1ebp/tools/ci/ops_steps_test.py", line 247, in test_run_refuses_what_check_refuses
+    code, out, shell = call("run", environ)
+                       ~~~~^^^^^^^^^^^^^^^^
+  File "/tmp/tmpnmef1ebp/tools/ci/ops_steps_test.py", line 59, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpnmef1ebp/tools/ci/ops_steps.py", line 239, in run
+    name = self.validated()
+  File "/tmp/tmpnmef1ebp/tools/ci/ops_steps.py", line 180, in validated
+    found = self.problems(name)
+  File "/tmp/tmpnmef1ebp/tools/ci/ops_steps.py", line 154, in problems
+    script = SCRIPTS[name]
+             ~~~~~~~^^^^^^
+KeyError: 'deploy'
+
+======================================================================
+ERROR: test_it_needs_the_job_s_path_file_and_a_script (__main__.SetupFlyctlTest.test_it_needs_the_job_s_path_file_and_a_script)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpnmef1ebp/tools/ci/ops_steps_test.py", line 363, in test_it_needs_the_job_s_path_file_and_a_script
+    code, out, _ = call("setup_flyctl", self.environ("deploy"))
+                   ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpnmef1ebp/tools/ci/ops_steps_test.py", line 59, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpnmef1ebp/tools/ci/ops_steps.py", line 198, in setup_flyctl
+    if not SCRIPTS[name].flyctl:
+           ~~~~~~~^^^^^^
+KeyError: 'deploy'
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.333s
+
+FAILED (errors=6)

@@ -1,0 +1,50 @@
+tools/ci/ops_steps.py
+--- old
+                print(f"ops: {name} has no {variable}: the repository secret {SECRETS[variable]} is "
+                      "empty in this run (is it set? Settings, Secrets and variables, Actions)")
+--- new
+                print(f"ops: {name}'s step in ops.yml doesn't give it {variable}")
+--- expected: test_a_missing_variable_names_its_repository_secret
+--- exit 1
+.......F.F..........................
+======================================================================
+FAIL: test_a_refusal_is_the_process_s_failure (__main__.ProcessTest.test_a_refusal_is_the_process_s_failure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp5i7vc_ca/tools/ci/ops_steps_test.py", line 393, in test_a_refusal_is_the_process_s_failure
+    self.assertIn("the repository secret DEV_DATABASE_URL is empty", done.stdout)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'the repository secret DEV_DATABASE_URL is empty' not found in "ops: migrate's step in ops.yml doesn't give it DATABASE_URL\n"
+
+======================================================================
+FAIL: test_a_missing_variable_names_its_repository_secret_and_nothing_runs (__main__.RunTest.test_a_missing_variable_names_its_repository_secret_and_nothing_runs)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp5i7vc_ca/tools/ci/ops_steps_test.py", line 213, in test_a_missing_variable_names_its_repository_secret_and_nothing_runs
+    self.assertEqual(out.splitlines(), [
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+        "ops: bootstrap has no DATABASE_APP_PASSWORD: the repository secret DEV_DATABASE_APP_PASSWORD is "
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+        "empty in this run (is it set? Settings, Secrets and variables, Actions)",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ])
+    ^^
+AssertionError: Lists differ: ["ops: bootstrap's step in ops.yml doesn't[92 chars]URL"] != ['ops: bootstrap has no DATABASE_APP_PASSW[277 chars]ns)']
+
+First differing element 0:
+"ops: bootstrap's step in ops.yml doesn't[26 chars]WORD"
+'ops: bootstrap has no DATABASE_APP_PASSW[123 chars]ons)'
+
+- ["ops: bootstrap's step in ops.yml doesn't give it DATABASE_APP_PASSWORD",
+-  "ops: bootstrap's step in ops.yml doesn't give it DATABASE_URL"]
++ ['ops: bootstrap has no DATABASE_APP_PASSWORD: the repository secret '
++  'DEV_DATABASE_APP_PASSWORD is empty in this run (is it set? Settings, Secrets '
++  'and variables, Actions)',
++  'ops: bootstrap has no DATABASE_URL: the repository secret DEV_DATABASE_URL '
++  'is empty in this run (is it set? Settings, Secrets and variables, Actions)']
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.302s
+
+FAILED (failures=2)

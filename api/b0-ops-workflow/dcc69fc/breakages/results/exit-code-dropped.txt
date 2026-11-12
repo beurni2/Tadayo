@@ -1,0 +1,32 @@
+tools/ci/ops_steps.py
+--- old
+        return self.shell.run(cmd)
+--- new
+        self.shell.run(cmd)
+        return 0
+--- expected: test_the_script_s_exit_code
+--- exit 1
+........F....F......................
+======================================================================
+FAIL: test_an_input_reaches_node_as_one_argument_and_its_exit_code_is_the_step_s (__main__.ProcessTest.test_an_input_reaches_node_as_one_argument_and_its_exit_code_is_the_step_s)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpogfk4rcf/tools/ci/ops_steps_test.py", line 403, in test_an_input_reaches_node_as_one_argument_and_its_exit_code_is_the_step_s
+    self.assertEqual(done.returncode, 3, done.stdout + done.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 3 : + node tools/ops/src/main.ts dev-clock --to=$(touch /tmp/tmpc91fg8jx/ran) `touch /tmp/tmpc91fg8jx/ran`; touch /tmp/tmpc91fg8jx/ran --branch=main x
+
+
+======================================================================
+FAIL: test_the_script_s_exit_code_is_the_step_s (__main__.RunTest.test_the_script_s_exit_code_is_the_step_s)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpogfk4rcf/tools/ci/ops_steps_test.py", line 205, in test_the_script_s_exit_code_is_the_step_s
+    self.assertEqual(code, 3)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 3
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.366s
+
+FAILED (failures=2)

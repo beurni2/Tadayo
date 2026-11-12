@@ -1,0 +1,26 @@
+tools/ci/ops_steps.py
+--- old
+"0115ae5202c9984695e22e4e99a375565ae3d7edc462377ce00c833406c877ac"
+--- new
+"0115ae5202c9984695e22e4e99a375565ae3d7edc462377ce00c833406c877ad"
+--- expected: test_the_pinned_release
+--- exit 1
+........................F...........
+======================================================================
+FAIL: test_the_pinned_release (__main__.SetupFlyctlTest.test_the_pinned_release)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpes20apaw/tools/ci/ops_steps_test.py", line 301, in test_the_pinned_release
+    self.assertEqual(ops_steps.FLYCTL_SHA256, "0115ae5202c9984695e22e4e99a375565ae3d7edc462377ce00c833406c877ac")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '0115ae5202c9984695e22e4e99a375565ae3d7edc462377ce00c833406c877ad' != '0115ae5202c9984695e22e4e99a375565ae3d7edc462377ce00c833406c877ac'
+- 0115ae5202c9984695e22e4e99a375565ae3d7edc462377ce00c833406c877ad
+?                                                                ^
++ 0115ae5202c9984695e22e4e99a375565ae3d7edc462377ce00c833406c877ac
+?                                                                ^
+
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.367s
+
+FAILED (failures=1)

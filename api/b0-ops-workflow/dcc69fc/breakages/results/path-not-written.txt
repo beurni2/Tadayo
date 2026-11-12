@@ -1,0 +1,23 @@
+tools/ci/ops_steps.py
+--- old
+            f.write(folder + "\n")
+--- new
+            f.write("")
+--- expected: test_flyctl_goes_on_the_job_s_path
+--- exit 1
+....................F...............
+======================================================================
+FAIL: test_flyctl_goes_on_the_job_s_path (__main__.SetupFlyctlTest.test_flyctl_goes_on_the_job_s_path)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpw76mnuib/tools/ci/ops_steps_test.py", line 314, in test_flyctl_goes_on_the_job_s_path
+    self.assertEqual(f.read(), self.folder() + "\n")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '' != '/tmp/tmpd461an8_/flyctl-0.5.8\n'
++ /tmp/tmpd461an8_/flyctl-0.5.8
+
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.413s
+
+FAILED (failures=1)

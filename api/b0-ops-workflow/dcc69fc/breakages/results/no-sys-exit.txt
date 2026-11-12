@@ -1,0 +1,31 @@
+tools/ci/ops_steps.py
+--- old
+    sys.exit(main(sys.argv))
+--- new
+    main(sys.argv)
+--- expected: test_a_refusal_is_the_process_s_failure
+--- exit 1
+.......FF...........................
+======================================================================
+FAIL: test_a_refusal_is_the_process_s_failure (__main__.ProcessTest.test_a_refusal_is_the_process_s_failure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpsme2i1zc/tools/ci/ops_steps_test.py", line 389, in test_a_refusal_is_the_process_s_failure
+    self.assertEqual(done.returncode, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_an_input_reaches_node_as_one_argument_and_its_exit_code_is_the_step_s (__main__.ProcessTest.test_an_input_reaches_node_as_one_argument_and_its_exit_code_is_the_step_s)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpsme2i1zc/tools/ci/ops_steps_test.py", line 403, in test_an_input_reaches_node_as_one_argument_and_its_exit_code_is_the_step_s
+    self.assertEqual(done.returncode, 3, done.stdout + done.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 3 : + node tools/ops/src/main.ts dev-clock --to=$(touch /tmp/tmp51nx9i02/ran) `touch /tmp/tmp51nx9i02/ran`; touch /tmp/tmp51nx9i02/ran --branch=main x
+
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.182s
+
+FAILED (failures=2)

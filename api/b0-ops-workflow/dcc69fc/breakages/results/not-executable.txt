@@ -1,0 +1,22 @@
+tools/ci/ops_steps.py
+--- old
+        os.chmod(binary, 0o755)
+
+--- new
+
+--- expected: test_flyctl_goes_on_the_job_s_path
+--- exit 1
+....................F...............
+======================================================================
+FAIL: test_flyctl_goes_on_the_job_s_path (__main__.SetupFlyctlTest.test_flyctl_goes_on_the_job_s_path)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp7ngso64p/tools/ci/ops_steps_test.py", line 311, in test_flyctl_goes_on_the_job_s_path
+    self.assertTrue(os.stat(path).st_mode & stat.S_IXUSR)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 is not true
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.350s
+
+FAILED (failures=1)

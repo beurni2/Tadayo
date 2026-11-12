@@ -1,0 +1,90 @@
+tools/ci/ops_steps.py
+--- old
+        if not SCRIPTS[name].flyctl:
+
+--- new
+        if False:
+
+--- expected: test_nothing_is_installed
+--- exit 1
+......................FFFF.............
+======================================================================
+FAIL: test_nothing_is_installed_for_a_script_that_doesn_t_call_it (__main__.SetupFlyctlTest.test_nothing_is_installed_for_a_script_that_doesn_t_call_it) (script='bootstrap')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp78vxhqf2/tools/ci/ops_steps_test.py", line 351, in test_nothing_is_installed_for_a_script_that_doesn_t_call_it
+    code, out, _ = call("setup_flyctl", self.environ(name))  # its fetch fails the test
+                   ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp78vxhqf2/tools/ci/ops_steps_test.py", line 59, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmp78vxhqf2/tools/ci/ops_steps.py", line 210, in setup_flyctl
+    self.fetch(FLYCTL_URL, archive)
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp78vxhqf2/tools/ci/ops_steps_test.py", line 56, in <lambda>
+    fetch=fetch or (lambda url, path: (_ for _ in ()).throw(AssertionError("no fetch"))))
+                                      ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp78vxhqf2/tools/ci/ops_steps_test.py", line 56, in <genexpr>
+    fetch=fetch or (lambda url, path: (_ for _ in ()).throw(AssertionError("no fetch"))))
+AssertionError: no fetch
+
+======================================================================
+FAIL: test_nothing_is_installed_for_a_script_that_doesn_t_call_it (__main__.SetupFlyctlTest.test_nothing_is_installed_for_a_script_that_doesn_t_call_it) (script='migrate')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp78vxhqf2/tools/ci/ops_steps_test.py", line 351, in test_nothing_is_installed_for_a_script_that_doesn_t_call_it
+    code, out, _ = call("setup_flyctl", self.environ(name))  # its fetch fails the test
+                   ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp78vxhqf2/tools/ci/ops_steps_test.py", line 59, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmp78vxhqf2/tools/ci/ops_steps.py", line 210, in setup_flyctl
+    self.fetch(FLYCTL_URL, archive)
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp78vxhqf2/tools/ci/ops_steps_test.py", line 56, in <lambda>
+    fetch=fetch or (lambda url, path: (_ for _ in ()).throw(AssertionError("no fetch"))))
+                                      ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp78vxhqf2/tools/ci/ops_steps_test.py", line 56, in <genexpr>
+    fetch=fetch or (lambda url, path: (_ for _ in ()).throw(AssertionError("no fetch"))))
+AssertionError: no fetch
+
+======================================================================
+FAIL: test_nothing_is_installed_for_a_script_that_doesn_t_call_it (__main__.SetupFlyctlTest.test_nothing_is_installed_for_a_script_that_doesn_t_call_it) (script='seed')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp78vxhqf2/tools/ci/ops_steps_test.py", line 351, in test_nothing_is_installed_for_a_script_that_doesn_t_call_it
+    code, out, _ = call("setup_flyctl", self.environ(name))  # its fetch fails the test
+                   ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp78vxhqf2/tools/ci/ops_steps_test.py", line 59, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmp78vxhqf2/tools/ci/ops_steps.py", line 210, in setup_flyctl
+    self.fetch(FLYCTL_URL, archive)
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp78vxhqf2/tools/ci/ops_steps_test.py", line 56, in <lambda>
+    fetch=fetch or (lambda url, path: (_ for _ in ()).throw(AssertionError("no fetch"))))
+                                      ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp78vxhqf2/tools/ci/ops_steps_test.py", line 56, in <genexpr>
+    fetch=fetch or (lambda url, path: (_ for _ in ()).throw(AssertionError("no fetch"))))
+AssertionError: no fetch
+
+======================================================================
+FAIL: test_nothing_is_installed_for_a_script_that_doesn_t_call_it (__main__.SetupFlyctlTest.test_nothing_is_installed_for_a_script_that_doesn_t_call_it) (script='dev-clock')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp78vxhqf2/tools/ci/ops_steps_test.py", line 351, in test_nothing_is_installed_for_a_script_that_doesn_t_call_it
+    code, out, _ = call("setup_flyctl", self.environ(name))  # its fetch fails the test
+                   ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp78vxhqf2/tools/ci/ops_steps_test.py", line 59, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmp78vxhqf2/tools/ci/ops_steps.py", line 210, in setup_flyctl
+    self.fetch(FLYCTL_URL, archive)
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp78vxhqf2/tools/ci/ops_steps_test.py", line 56, in <lambda>
+    fetch=fetch or (lambda url, path: (_ for _ in ()).throw(AssertionError("no fetch"))))
+                                      ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp78vxhqf2/tools/ci/ops_steps_test.py", line 56, in <genexpr>
+    fetch=fetch or (lambda url, path: (_ for _ in ()).throw(AssertionError("no fetch"))))
+AssertionError: no fetch
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.368s
+
+FAILED (failures=4)

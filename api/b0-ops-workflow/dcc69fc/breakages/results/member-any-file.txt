@@ -1,0 +1,21 @@
+tools/ci/ops_steps.py
+--- old
+m.name == "flyctl"
+--- new
+m.name.endswith("flyctl")
+--- expected: test_an_archive_without_the_file
+--- exit 1
+...................F................
+======================================================================
+FAIL: test_an_archive_without_the_file_is_refused (__main__.SetupFlyctlTest.test_an_archive_without_the_file_is_refused) (members=['bin/flyctl'])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpciw4ih83/tools/ci/ops_steps_test.py", line 336, in test_an_archive_without_the_file_is_refused
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.351s
+
+FAILED (failures=1)

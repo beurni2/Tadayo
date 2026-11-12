@@ -1,0 +1,43 @@
+.github/workflows/ops.yml
+--- old
+          - seed
+
+--- new
+
+--- expected: test_it_runs_only_by_hand
+--- exit 1
+............................F.......
+======================================================================
+FAIL: test_it_runs_only_by_hand_with_these_inputs (__main__.WorkflowFileTest.test_it_runs_only_by_hand_with_these_inputs)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpjb08v4kp/tools/ci/ops_steps_test.py", line 616, in test_it_runs_only_by_hand_with_these_inputs
+    self.assertEqual(inputs, {
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^
+        "script": {"type": "choice", "required": "true", "options": list(ops_steps.SCRIPTS)},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+        "branch": {"type": "string", "required": "false", "default": ""},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    })
+    ^^
+AssertionError: {'scr[95 chars]e', 'dev-clock', 'worker-scale', 'deploy-branc[226 chars] ''}} != {'scr[95 chars]e', 'seed', 'dev-clock', 'worker-scale', 'depl[234 chars] ''}}
+  {'branch': {'default': '', 'required': 'false', 'type': 'string'},
+   'org': {'default': '', 'required': 'false', 'type': 'string'},
+   'script': {'options': ['fly-app-create',
+                          'bootstrap',
+                          'migrate',
++                         'seed',
+                          'dev-clock',
+                          'worker-scale',
+                          'deploy-branch',
+                          'storage-setup',
+                          'supabase-probe'],
+              'required': 'true',
+              'type': 'choice'},
+   'to': {'default': '', 'required': 'false', 'type': 'string'}}
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.395s
+
+FAILED (failures=1)

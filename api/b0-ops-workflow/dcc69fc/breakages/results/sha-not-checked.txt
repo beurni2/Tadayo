@@ -1,0 +1,23 @@
+tools/ci/ops_steps.py
+--- old
+        if digest != FLYCTL_SHA256:
+
+--- new
+        if False:
+
+--- expected: test_an_archive_with_another_checksum
+--- exit 1
+..................F.................
+======================================================================
+FAIL: test_an_archive_with_another_checksum_isn_t_used (__main__.SetupFlyctlTest.test_an_archive_with_another_checksum_isn_t_used)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpr3l14rw5/tools/ci/ops_steps_test.py", line 326, in test_an_archive_with_another_checksum_isn_t_used
+    self.assertEqual(code, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^
+AssertionError: 0 != 1
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.392s
+
+FAILED (failures=1)

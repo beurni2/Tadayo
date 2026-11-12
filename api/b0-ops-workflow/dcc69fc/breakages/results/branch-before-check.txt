@@ -1,0 +1,27 @@
+.github/workflows/ops.yml
+--- old
+      - run: python3 tools/ci/ops_steps.py check
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref:
+--- new
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref:
+--- expected: test_each_script_has_its_own_job
+--- exit 1
+..........................F.........
+======================================================================
+FAIL: test_each_script_has_its_own_job_with_its_own_secrets_and_nothing_else (__main__.WorkflowFileTest.test_each_script_has_its_own_job_with_its_own_secrets_and_nothing_else) (job='deploy-branch')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpzxq4fq8_/tools/ci/ops_steps_test.py", line 641, in test_each_script_has_its_own_job_with_its_own_secrets_and_nothing_else
+    self.assertEqual(jobs[name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'nam[291 chars]}, {'uses': 'actions/checkout@3d3c42e5aac5ba80[579 chars]n'}]} != {'nam[291 chars]}, {'run': 'python3 tools/ci/ops_steps.py chec[627 chars]n'}]}
+Diff is 1221 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 36 tests in 0.364s
+
+FAILED (failures=1)
