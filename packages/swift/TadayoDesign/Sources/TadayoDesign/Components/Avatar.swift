@@ -1,12 +1,18 @@
 import SwiftUI
+import TadayoCore
 
 /// A person's photograph in a circle, or, with none, their initial on the fallback colours for
 /// where it sits (spec 29's A03; brand revision 1.1's avatar placement: canvas or surface, or any
-/// of the six covers). Decorative: the name beside it is what VoiceOver reads.
+/// of the six covers). Where the name gives no initial (`AvatarInitial`: it doesn't start with a
+/// letter or a decimal digit, or nothing is typed yet), the outlined SF Symbol `person` at 56
+/// percent of the circle, in the same ink on the same fill (handoff 7's `avatarWithoutInitial`;
+/// the check's D-14 and X-20). Decorative: the name beside it is what VoiceOver reads, so the
+/// symbol isn't read either, neither as "person" nor as "No profile photo", which no contract
+/// gives an element yet (the check's WM-04).
 ///
-/// It keeps its size at every text size, initial included, while the name beside it grows
-/// (handoff 4's `dynamicTypePolicy.avatarMarks`). A photograph has a 1-point `separator` edge
-/// just outside its circle, in both themes (handoff 3's `photoAvatarEdge`).
+/// It keeps its size at every text size, initial and symbol included, while the name beside it
+/// grows (handoff 4's `dynamicTypePolicy.avatarMarks`). A photograph has a 1-point `separator`
+/// edge just outside its circle, in both themes (handoff 3's `photoAvatarEdge`).
 public struct Avatar: View {
     /// What the avatar sits on, which picks its fallback colours.
     public enum Placement: Sendable {
@@ -33,12 +39,10 @@ public struct Avatar: View {
             if let photo {
                 photo.resizable().scaledToFill()
             } else {
-                Text(Avatar.initial(of: name))
-                    .font(.system(size: role.size, weight: role.weight))
+                mark(role)
                     .foregroundStyle(
                         placement == .cover ? Palette.onAvatarOnCover : Palette.onAvatarCanvas
                     )
-                    .lineLimit(1)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(placement == .cover ? Palette.avatarOnCover : Palette.avatarCanvas)
             }
@@ -55,6 +59,21 @@ public struct Avatar: View {
         .accessibilityHidden(true)
     }
 
+    /// The initial in the size's type role, or, with none, the person symbol: the symbol's point
+    /// size is 56 percent of the circle, at the regular weight every symbol here has, centred
+    /// (where the sheet's schematic glyph sits 4 percent of the circle higher: a difference
+    /// `design/reference/INVENTORY.md` records).
+    @ViewBuilder private func mark(_ role: TypeRole) -> some View {
+        if let initial = AvatarInitial.of(name) {
+            Text(verbatim: initial)
+                .font(.system(size: role.size, weight: role.weight))
+                .lineLimit(1)
+        } else {
+            Image(systemName: "person")
+                .font(.system(size: size.rawValue * Size.avatarGlyphRatio, weight: .regular))
+        }
+    }
+
     static func role(for size: AvatarSize) -> TypeRole {
         switch size {
         case .profile: .avatarProfile
@@ -62,14 +81,5 @@ public struct Avatar: View {
         case .card: .avatarCard
         case .rail: .avatarRail
         }
-    }
-
-    /// The first character of the name, as a person reads it (a whole grapheme, so "Élodie" is
-    /// "É"), in capitals.
-    static func initial(of name: String) -> String {
-        guard let first = name.trimmingCharacters(in: .whitespacesAndNewlines).first else {
-            return ""
-        }
-        return String(first).uppercased()
     }
 }
