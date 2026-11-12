@@ -1,0 +1,1236 @@
++ xcodebuild test-without-building -project apps/ios/Tadayo.xcodeproj -scheme Tadayo -destination platform=iOS Simulator,id=23C8F95C-765D-46A9-AE82-0BEE2921C8D7 -derivedDataPath /Users/runner/work/_temp/DerivedData -resultBundlePath /Users/runner/work/_temp/ios-out/Tests.xcresult -skipPackagePluginValidation
+Command line invocation:
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/xcodebuild test-without-building -project apps/ios/Tadayo.xcodeproj -scheme Tadayo -destination "platform=iOS Simulator,id=23C8F95C-765D-46A9-AE82-0BEE2921C8D7" -derivedDataPath /Users/runner/work/_temp/DerivedData -resultBundlePath /Users/runner/work/_temp/ios-out/Tests.xcresult -skipPackagePluginValidation
+
+Resolve Package Graph
+
+
+Resolved source packages:
+  TadayoDesign: /Users/runner/work/Tadayo/Tadayo/packages/swift/TadayoDesign
+  swift-http-types: https://github.com/apple/swift-http-types @ 1.8.0
+  swift-openapi-runtime: https://github.com/apple/swift-openapi-runtime @ 1.13.4
+  swift-snapshot-testing: https://github.com/pointfreeco/swift-snapshot-testing @ 1.19.7
+  swift-custom-dump: https://github.com/pointfreeco/swift-custom-dump @ 1.7.3
+  swift-algorithms: https://github.com/apple/swift-algorithms @ 1.2.1
+  swift-argument-parser: https://github.com/apple/swift-argument-parser @ 1.8.2
+  TadayoAPI: /Users/runner/work/Tadayo/Tadayo/packages/swift/TadayoAPI
+  xctest-dynamic-overlay: https://github.com/pointfreeco/xctest-dynamic-overlay @ 1.13.1
+  OpenAPIKit: https://github.com/mattpolzin/OpenAPIKit @ 6.4.0
+  Yams: https://github.com/jpsim/Yams @ 6.2.2
+  swift-openapi-generator: https://github.com/apple/swift-openapi-generator @ 1.14.3
+  TadayoCore: /Users/runner/work/Tadayo/Tadayo/packages/swift/TadayoCore
+  swift-numerics: https://github.com/apple/swift-numerics.git @ 1.1.1
+  swift-collections: https://github.com/apple/swift-collections @ 1.7.6
+  swift-syntax: https://github.com/swiftlang/swift-syntax @ 604.0.0
+  swift-openapi-urlsession: https://github.com/apple/swift-openapi-urlsession @ 1.4.0
+
+Writing result bundle at path:
+	/Users/runner/work/_temp/ios-out/Tests.xcresult
+
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:iOS Simulator, arch:arm64, id:23C8F95C-765D-46A9-AE82-0BEE2921C8D7, OS:26.5, name:iPhone 17 }
+{ platform:iOS Simulator, arch:x86_64, id:23C8F95C-765D-46A9-AE82-0BEE2921C8D7, OS:26.5, name:iPhone 17 }
+Test Suite 'All tests' started at 2026-11-12 05:11:43.911.
+Test Suite 'TadayoSnapshotTests.xctest' started at 2026-11-12 05:11:43.912.
+Test Suite 'LabSnapshotTests' started at 2026-11-12 05:11:43.912.
+Test Case '-[TadayoSnapshotTests.LabSnapshotTests testLabSections]' started.
+Test Case '-[TadayoSnapshotTests.LabSnapshotTests testLabSections]' passed (9.220 seconds).
+Test Case '-[TadayoSnapshotTests.LabSnapshotTests testTheActionsKeepInsideA320PointScreenAtTheLargestSize]' started.
+Test Case '-[TadayoSnapshotTests.LabSnapshotTests testTheActionsKeepInsideA320PointScreenAtTheLargestSize]' passed (0.181 seconds).
+Test Case '-[TadayoSnapshotTests.LabSnapshotTests testTheAuthorsHighlightTakesItsOwnLineInACurrentYearCard]' started.
+Test Case '-[TadayoSnapshotTests.LabSnapshotTests testTheAuthorsHighlightTakesItsOwnLineInACurrentYearCard]' passed (0.115 seconds).
+Test Case '-[TadayoSnapshotTests.LabSnapshotTests testTheDropCardKeepsInsideA320PointScreenAtTheLargestSize]' started.
+Test Case '-[TadayoSnapshotTests.LabSnapshotTests testTheDropCardKeepsInsideA320PointScreenAtTheLargestSize]' passed (0.580 seconds).
+Test Case '-[TadayoSnapshotTests.LabSnapshotTests testTheFeedFramesALandscapePhotoTheSameWay]' started.
+Test Case '-[TadayoSnapshotTests.LabSnapshotTests testTheFeedFramesALandscapePhotoTheSameWay]' passed (0.046 seconds).
+Test Case '-[TadayoSnapshotTests.LabSnapshotTests testTheHeaderStacksWhenItsActionsDontFit]' started.
+Test Case '-[TadayoSnapshotTests.LabSnapshotTests testTheHeaderStacksWhenItsActionsDontFit]' passed (0.085 seconds).
+Test Case '-[TadayoSnapshotTests.LabSnapshotTests testTheReceiptKeeps12UnderAWrappedAction]' started.
+Test Case '-[TadayoSnapshotTests.LabSnapshotTests testTheReceiptKeeps12UnderAWrappedAction]' passed (0.077 seconds).
+Test Case '-[TadayoSnapshotTests.LabSnapshotTests testTheRowsKeepInsideA320PointScreenAtTheLargestSize]' started.
+Test Case '-[TadayoSnapshotTests.LabSnapshotTests testTheRowsKeepInsideA320PointScreenAtTheLargestSize]' passed (1.106 seconds).
+Test Suite 'LabSnapshotTests' passed at 2026-11-12 05:11:55.327.
+	 Executed 8 tests, with 0 failures (0 unexpected) in 11.410 (11.415) seconds
+Test Suite 'RootSnapshotTests' started at 2026-11-12 05:11:55.327.
+Test Case '-[TadayoSnapshotTests.RootSnapshotTests testBeforeASignInIsFoundTheRootReadsNothing]' started.
+2026-11-12 05:11:55.465990+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1072d0c00>.
+2026-11-12 05:11:55.466669+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1072d1400>.
+2026-11-12 05:11:55.467072+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1072d1c00>.
+2026-11-12 05:11:55.467705+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1072d2400>.
+2026-11-12 05:11:55.468089+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1072d2c00>.
+2026-11-12 05:11:55.468389+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1072d3400>.
+2026-11-12 05:11:55.468695+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1072d3c00>.
+2026-11-12 05:11:55.469006+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x112d84400>.
+2026-11-12 05:11:55.469298+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x112d84c00>.
+2026-11-12 05:11:55.469606+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x112d85400>.
+2026-11-12 05:11:55.475182+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x112d85c00>.
+2026-11-12 05:11:55.475879+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x112d86400>.
+2026-11-12 05:11:55.476334+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x112d86c00>.
+2026-11-12 05:11:55.476861+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x112d87400>.
+2026-11-12 05:11:55.477260+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x112d87c00>.
+2026-11-12 05:11:55.477534+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x129724400>.
+2026-11-12 05:11:55.477812+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x129724c00>.
+2026-11-12 05:11:55.478059+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x129725400>.
+2026-11-12 05:11:55.478446+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x129725c00>.
+2026-11-12 05:11:55.478800+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x129726400>.
+2026-11-12 05:11:55.479198+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x129726c00>.
+2026-11-12 05:11:55.479622+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x129727400>.
+2026-11-12 05:11:55.479913+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x136e28000>.
+2026-11-12 05:11:55.480209+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x136e28800>.
+2026-11-12 05:11:55.480558+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x136e29000>.
+2026-11-12 05:11:55.480870+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x136e29800>.
+2026-11-12 05:11:55.481143+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x136e2a000>.
+2026-11-12 05:11:55.481508+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x136e2a800>.
+2026-11-12 05:11:55.482469+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x136e2b000>.
+2026-11-12 05:11:55.482863+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x136e2b800>.
+2026-11-12 05:11:55.483200+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1498e0000>.
+2026-11-12 05:11:55.484359+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1498e0800>.
+2026-11-12 05:11:55.484755+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1498e1000>.
+2026-11-12 05:11:55.485006+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1498e1800>.
+2026-11-12 05:11:55.485353+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1498e2000>.
+2026-11-12 05:11:55.485600+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1498e2800>.
+2026-11-12 05:11:55.485887+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1498e3000>.
+2026-11-12 05:11:55.486240+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1498e3800>.
+2026-11-12 05:11:55.486563+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x161b08000>.
+2026-11-12 05:11:55.486851+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x161b08800>.
+2026-11-12 05:11:55.487104+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x161b09000>.
+2026-11-12 05:11:55.487375+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x161b09800>.
+2026-11-12 05:11:55.487799+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x161b0a000>.
+2026-11-12 05:11:55.488187+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x161b0a800>.
+2026-11-12 05:11:55.488507+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x161b0b000>.
+2026-11-12 05:11:55.488829+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x161b0b800>.
+2026-11-12 05:11:55.489114+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x176820000>.
+2026-11-12 05:11:55.489362+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x176820800>.
+2026-11-12 05:11:55.489629+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x176821000>.
+2026-11-12 05:11:55.489878+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x176821800>.
+2026-11-12 05:11:55.490183+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x176822000>.
+2026-11-12 05:11:55.490428+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x176822800>.
+2026-11-12 05:11:55.490747+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x176823000>.
+2026-11-12 05:11:55.491071+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x176823800>.
+2026-11-12 05:11:55.491406+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17fa70000>.
+2026-11-12 05:11:55.491650+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17fa70800>.
+2026-11-12 05:11:55.492333+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17fa72000>.
+2026-11-12 05:11:55.492665+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17fa73800>.
+2026-11-12 05:11:55.492971+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff49000>.
+2026-11-12 05:11:55.493333+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4a800>.
+2026-11-12 05:11:55.493657+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4b400>.
+2026-11-12 05:11:55.493946+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4bc00>.
+2026-11-12 05:11:55.494197+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x30030c400>.
+2026-11-12 05:11:55.494463+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x30030cc00>.
+2026-11-12 05:11:55.494693+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x30030d400>.
+2026-11-12 05:11:55.494995+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x30030dc00>.
+2026-11-12 05:11:55.495300+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x30030e400>.
+2026-11-12 05:11:55.495540+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x30030ec00>.
+2026-11-12 05:11:55.495852+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x30030f400>.
+2026-11-12 05:11:55.496112+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x30030fc00>.
+2026-11-12 05:11:55.496370+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17fa71400>.
+2026-11-12 05:11:55.496633+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17fa70c00>.
+2026-11-12 05:11:55.496894+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17fa72c00>.
+2026-11-12 05:11:55.497142+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17fa72400>.
+2026-11-12 05:11:55.497373+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48800>.
+2026-11-12 05:11:55.497617+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48000>.
+2026-11-12 05:11:55.497865+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff49c00>.
+2026-11-12 05:11:55.498113+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff49400>.
+2026-11-12 05:11:55.498383+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca0400>.
+Test Case '-[TadayoSnapshotTests.RootSnapshotTests testBeforeASignInIsFoundTheRootReadsNothing]' passed (2.149 seconds).
+Test Case '-[TadayoSnapshotTests.RootSnapshotTests testCheckYourConnectionOnlyWhenNoAnswerCame]' started.
+objc[19465]: Class UIAccessibilityLoaderWebShared is implemented in both /Library/Developer/CoreSimulator/Volumes/iOS_23F77/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x10eac4398) and /Library/Developer/CoreSimulator/Volumes/iOS_23F77/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x10f4d4310). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+Test Case '-[TadayoSnapshotTests.RootSnapshotTests testCheckYourConnectionOnlyWhenNoAnswerCame]' passed (2.081 seconds).
+Test Case '-[TadayoSnapshotTests.RootSnapshotTests testEachFailureIsSaidAsItShowsTitleThenLine]' started.
+Test Case '-[TadayoSnapshotTests.RootSnapshotTests testEachFailureIsSaidAsItShowsTitleThenLine]' passed (0.002 seconds).
+Test Case '-[TadayoSnapshotTests.RootSnapshotTests testEachWaitReadsOnlyItsWords]' started.
+Test Case '-[TadayoSnapshotTests.RootSnapshotTests testEachWaitReadsOnlyItsWords]' passed (2.079 seconds).
+Test Case '-[TadayoSnapshotTests.RootSnapshotTests testGlobalLaunch]' started.
+Test Case '-[TadayoSnapshotTests.RootSnapshotTests testGlobalLaunch]' passed (0.349 seconds).
+Test Case '-[TadayoSnapshotTests.RootSnapshotTests testGlobalLaunchFailedNetwork]' started.
+Test Case '-[TadayoSnapshotTests.RootSnapshotTests testGlobalLaunchFailedNetwork]' passed (0.367 seconds).
+Test Case '-[TadayoSnapshotTests.RootSnapshotTests testGlobalLaunchRefused]' started.
+Test Case '-[TadayoSnapshotTests.RootSnapshotTests testGlobalLaunchRefused]' passed (0.412 seconds).
+Test Case '-[TadayoSnapshotTests.RootSnapshotTests testGlobalLeaveFailed]' started.
+Test Case '-[TadayoSnapshotTests.RootSnapshotTests testGlobalLeaveFailed]' passed (0.381 seconds).
+Test Case '-[TadayoSnapshotTests.RootSnapshotTests testGlobalLeaving]' started.
+Test Case '-[TadayoSnapshotTests.RootSnapshotTests testGlobalLeaving]' passed (0.319 seconds).
+Test Case '-[TadayoSnapshotTests.RootSnapshotTests testGlobalSignInNotKept]' started.
+Test Case '-[TadayoSnapshotTests.RootSnapshotTests testGlobalSignInNotKept]' passed (0.385 seconds).
+Test Suite 'RootSnapshotTests' passed at 2026-11-12 05:12:03.857.
+	 Executed 10 tests, with 0 failures (0 unexpected) in 8.525 (8.530) seconds
+Test Suite 'SignInSnapshotTests' started at 2026-11-12 05:12:03.858.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02Age]' started.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02Age]' passed (0.604 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02AgeFailedNetwork]' started.
+2026-11-12 05:12:04.466065+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca2800>.
+2026-11-12 05:12:04.466543+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca0800>.
+2026-11-12 05:12:04.466902+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca1400>.
+2026-11-12 05:12:04.467204+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca1000>.
+2026-11-12 05:12:04.467486+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca0000>.
+2026-11-12 05:12:04.467797+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca3800>.
+2026-11-12 05:12:04.468141+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca3000>.
+2026-11-12 05:12:04.468396+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca3c00>.
+2026-11-12 05:12:04.468644+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff49800>.
+2026-11-12 05:12:04.469018+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff49c00>.
+2026-11-12 05:12:04.469383+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48000>.
+2026-11-12 05:12:04.469679+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48800>.
+2026-11-12 05:12:04.479454+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4a000>.
+2026-11-12 05:12:04.479916+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4b400>.
+2026-11-12 05:12:04.480177+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4a800>.
+2026-11-12 05:12:04.480515+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4b800>.
+2026-11-12 05:12:04.480773+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4a400>.
+2026-11-12 05:12:04.481233+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48c00>.
+2026-11-12 05:12:04.481709+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca2c00>.
+2026-11-12 05:12:04.482077+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca3400>.
+2026-11-12 05:12:04.482432+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4b000>.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02AgeFailedNetwork]' passed (0.536 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02AgeRefused]' started.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02AgeRefused]' passed (0.490 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02AgeSaving]' started.
+2026-11-12 05:12:05.492820+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48c00>.
+2026-11-12 05:12:05.493232+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4b400>.
+2026-11-12 05:12:05.493777+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4bc00>.
+2026-11-12 05:12:05.496198+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4a400>.
+2026-11-12 05:12:05.496509+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48800>.
+2026-11-12 05:12:05.496896+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff49c00>.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02AgeSaving]' passed (0.534 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02Code]' started.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02Code]' passed (0.657 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeError]' started.
+2026-11-12 05:12:06.686378+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48800>.
+2026-11-12 05:12:06.686870+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4b400>.
+2026-11-12 05:12:06.687249+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4b000>.
+2026-11-12 05:12:06.702412+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4a400>.
+2026-11-12 05:12:06.703179+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48000>.
+2026-11-12 05:12:06.703828+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff49000>.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeError]' passed (0.810 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeErrorResendFailedNetwork]' started.
+2026-11-12 05:12:07.502205+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca3400>.
+2026-11-12 05:12:07.502781+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca1400>.
+2026-11-12 05:12:07.503156+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca2400>.
+2026-11-12 05:12:07.503558+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4b800>.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeErrorResendFailedNetwork]' passed (0.595 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeErrorWaiting]' started.
+2026-11-12 05:12:08.102591+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48000>.
+2026-11-12 05:12:08.103178+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48c00>.
+2026-11-12 05:12:08.103454+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4a000>.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeErrorWaiting]' passed (0.553 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeResend]' started.
+2026-11-12 05:12:08.652749+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48c00>.
+2026-11-12 05:12:08.653753+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff49000>.
+2026-11-12 05:12:08.654257+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff49c00>.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeResend]' passed (0.543 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeResendFailedNetwork]' started.
+2026-11-12 05:12:09.189337+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff49000>.
+2026-11-12 05:12:09.189679+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48000>.
+2026-11-12 05:12:09.190316+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4a800>.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeResendFailedNetwork]' passed (0.538 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeResending]' started.
+2026-11-12 05:12:09.737071+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48000>.
+2026-11-12 05:12:09.737711+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48c00>.
+2026-11-12 05:12:09.738324+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48800>.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeResending]' passed (0.489 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeResendRefused]' started.
+2026-11-12 05:12:10.220583+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48c00>.
+2026-11-12 05:12:10.220916+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff49000>.
+2026-11-12 05:12:10.221186+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4a400>.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeResendRefused]' passed (0.549 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeTyped]' started.
+2026-11-12 05:12:10.770461+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff49000>.
+2026-11-12 05:12:10.771449+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48000>.
+2026-11-12 05:12:10.772229+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4b000>.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeTyped]' passed (0.524 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeVerifyFailedNetwork]' started.
+2026-11-12 05:12:11.304155+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48000>.
+2026-11-12 05:12:11.304548+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48c00>.
+2026-11-12 05:12:11.305147+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4b800>.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeVerifyFailedNetwork]' passed (0.523 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeVerifying]' started.
+2026-11-12 05:12:11.821240+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48c00>.
+2026-11-12 05:12:11.821598+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4a800>.
+2026-11-12 05:12:11.821863+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48400>.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeVerifying]' passed (0.523 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeVerifyUnavailable]' started.
+2026-11-12 05:12:12.339534+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca1400>.
+2026-11-12 05:12:12.340464+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca1000>.
+2026-11-12 05:12:12.341206+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4a800>.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02CodeVerifyUnavailable]' passed (0.515 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02Email]' started.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02Email]' passed (0.426 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02EmailEmpty]' started.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02EmailEmpty]' passed (0.422 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02EmailFailedNetwork]' started.
+2026-11-12 05:12:13.706757+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48400>.
+2026-11-12 05:12:13.707217+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4b400>.
+2026-11-12 05:12:13.707506+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff49800>.
+2026-11-12 05:12:13.708570+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca1400>.
+2026-11-12 05:12:13.708924+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca2400>.
+2026-11-12 05:12:13.709233+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca3800>.
+2026-11-12 05:12:13.709525+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca3000>.
+2026-11-12 05:12:13.709780+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca3400>.
+2026-11-12 05:12:13.710033+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca2800>.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02EmailFailedNetwork]' passed (0.469 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02EmailRefused]' started.
+2026-11-12 05:12:14.173019+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4b400>.
+2026-11-12 05:12:14.173605+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48c00>.
+2026-11-12 05:12:14.173994+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48000>.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02EmailRefused]' passed (0.426 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02EmailSending]' started.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02EmailSending]' passed (0.454 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02EmailShowsOnlyItsOwnFailures]' started.
+2026-11-12 05:12:15.051384+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48c00>.
+2026-11-12 05:12:15.051781+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48400>.
+2026-11-12 05:12:15.052062+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4b000>.
+2026-11-12 05:12:15.056362+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4b800>.
+2026-11-12 05:12:15.056745+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48800>.
+2026-11-12 05:12:15.057063+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4bc00>.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02EmailShowsOnlyItsOwnFailures]' passed (1.068 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02EmailSignedOut]' started.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA02EmailSignedOut]' passed (0.395 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA03Profile]' started.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA03Profile]' passed (0.464 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileEmpty]' started.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileEmpty]' passed (0.373 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileFailedNetwork]' started.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileFailedNetwork]' passed (0.465 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileNameTooLong]' started.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileNameTooLong]' passed (0.435 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileRefused]' started.
+2026-11-12 05:12:18.256150+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4b800>.
+2026-11-12 05:12:18.256464+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48000>.
+2026-11-12 05:12:18.256712+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff49000>.
+2026-11-12 05:12:18.256962+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4bc00>.
+2026-11-12 05:12:18.257426+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff49c00>.
+2026-11-12 05:12:18.257714+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca2800>.
+2026-11-12 05:12:18.258036+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca3000>.
+2026-11-12 05:12:18.258298+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca1400>.
+2026-11-12 05:12:18.258545+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca0000>.
+2026-11-12 05:12:18.276659+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca3800>.
+2026-11-12 05:12:18.277674+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca0800>.
+2026-11-12 05:12:18.278199+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48c00>.
+2026-11-12 05:12:18.278536+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48800>.
+2026-11-12 05:12:18.278883+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4a000>.
+2026-11-12 05:12:18.279621+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca2400>.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileRefused]' passed (0.474 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileSaving]' started.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testA03ProfileSaving]' passed (0.476 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testACodeNotVerifiedIsTheFieldsHint]' started.
+2026-11-12 05:12:19.203775+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca0800>.
+2026-11-12 05:12:19.204241+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca3000>.
+2026-11-12 05:12:19.204619+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca3400>.
+2026-11-12 05:12:19.208198+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca2c00>.
+2026-11-12 05:12:19.208537+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca1000>.
+2026-11-12 05:12:19.208817+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4a000>.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testACodeNotVerifiedIsTheFieldsHint]' passed (1.119 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testEachTitleIsAHeading]' started.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testEachTitleIsAHeading]' passed (2.115 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testTheAddressIsReadAsItIs]' started.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testTheAddressIsReadAsItIs]' passed (0.534 seconds).
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testTheAvatarIsntRead]' started.
+Test Case '-[TadayoSnapshotTests.SignInSnapshotTests testTheAvatarIsntRead]' passed (0.525 seconds).
+Test Suite 'SignInSnapshotTests' passed at 2026-11-12 05:12:23.495.
+	 Executed 33 tests, with 0 failures (0 unexpected) in 19.622 (19.637) seconds
+Test Suite 'TabsSnapshotTests' started at 2026-11-12 05:12:23.495.
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testAFailureOffersRetryAndAClubThisBuildCantShowDoesnt]' started.
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testAFailureOffersRetryAndAClubThisBuildCantShowDoesnt]' passed (1.038 seconds).
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testAFailuresTitleAndLineAreOneSpokenGroup]' started.
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testAFailuresTitleAndLineAreOneSpokenGroup]' passed (0.525 seconds).
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testEachTitleIsAHeading]' started.
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testEachTitleIsAHeading]' passed (4.136 seconds).
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testF01ErrorNoClub]' started.
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testF01ErrorNoClub]' passed (0.694 seconds).
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testF01ErrorNoClubRefused]' started.
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testF01ErrorNoClubRefused]' passed (0.442 seconds).
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testF01LoadingNoClub]' started.
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testF01LoadingNoClub]' passed (0.404 seconds).
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testF01NoClub]' started.
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testF01NoClub]' passed (0.434 seconds).
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testG06NoClub]' started.
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testG06NoClub]' passed (0.476 seconds).
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testGlobalClubNotInBuild]' started.
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testGlobalClubNotInBuild]' passed (0.484 seconds).
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testGoToHomeIsAButton]' started.
+2026-11-12 05:12:32.170154+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca3400>.
+2026-11-12 05:12:32.170683+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff49c00>.
+2026-11-12 05:12:32.171633+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4a000>.
+2026-11-12 05:12:32.172034+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48000>.
+2026-11-12 05:12:32.172335+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x129727400>.
+2026-11-12 05:12:32.172611+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x129726000>.
+2026-11-12 05:12:32.172974+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x129726400>.
+2026-11-12 05:12:32.173348+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x129724000>.
+2026-11-12 05:12:32.173690+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1072d3400>.
+2026-11-12 05:12:32.173971+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1072d2400>.
+2026-11-12 05:12:32.174253+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1072d1000>.
+2026-11-12 05:12:32.174541+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x112d84000>.
+2026-11-12 05:12:32.174856+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x112d85400>.
+2026-11-12 05:12:32.175171+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x112d86c00>.
+2026-11-12 05:12:32.175451+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1072d3800>.
+2026-11-12 05:12:32.175793+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x136e28800>.
+2026-11-12 05:12:32.176138+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x136e29c00>.
+2026-11-12 05:12:32.176393+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x136e2b000>.
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testGoToHomeIsAButton]' passed (0.512 seconds).
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testH01ErrorNoClub]' started.
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testH01ErrorNoClub]' passed (0.481 seconds).
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testH01ErrorNoClubRefused]' started.
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testH01ErrorNoClubRefused]' passed (0.431 seconds).
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testH01LoadingNoClub]' started.
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testH01LoadingNoClub]' passed (0.446 seconds).
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testM01ErrorNoClub]' started.
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testM01ErrorNoClub]' passed (0.424 seconds).
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testM01ErrorNoClubRefused]' started.
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testM01ErrorNoClubRefused]' passed (0.436 seconds).
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testM01LoadingNoClub]' started.
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testM01LoadingNoClub]' passed (0.410 seconds).
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testM01NoClub]' started.
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testM01NoClub]' passed (0.446 seconds).
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testTheHeadersWordmarkAddAndAccount]' started.
+2026-11-12 05:12:35.767593+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x112d85400>.
+2026-11-12 05:12:35.767979+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x112d86000>.
+2026-11-12 05:12:35.768268+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1072d3800>.
+2026-11-12 05:12:35.768802+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1072d0800>.
+2026-11-12 05:12:35.769154+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1072d2c00>.
+2026-11-12 05:12:35.769440+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x112d86c00>.
+2026-11-12 05:12:35.769760+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x129726000>.
+2026-11-12 05:12:35.770063+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x129724800>.
+2026-11-12 05:12:35.770389+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x129726c00>.
+2026-11-12 05:12:35.770675+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1072d3c00>.
+2026-11-12 05:12:35.771093+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff48800>.
+2026-11-12 05:12:35.771425+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff49400>.
+2026-11-12 05:12:35.771754+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4a400>.
+2026-11-12 05:12:35.772055+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1072d2000>.
+2026-11-12 05:12:35.772387+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x310ca2800>.
+2026-11-12 05:12:35.772659+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x136e28800>.
+2026-11-12 05:12:35.772931+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x136e29c00>.
+2026-11-12 05:12:35.773252+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x136e2b000>.
+2026-11-12 05:12:35.773580+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x17ff4b400>.
+2026-11-12 05:12:35.773883+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1498e0000>.
+2026-11-12 05:12:35.774250+0000 Tadayo[19465:61973] Unbalanced calls to begin/end appearance transitions for <UIViewController: 0x1498e1400>.
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testTheHeadersWordmarkAddAndAccount]' passed (0.521 seconds).
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testTheNoClubActionsSayWhatTheyDo]' started.
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testTheNoClubActionsSayWhatTheyDo]' passed (0.514 seconds).
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testWhileLoadingOnlyTheLabelIsReadNotTheIndicator]' started.
+Test Case '-[TadayoSnapshotTests.TabsSnapshotTests testWhileLoadingOnlyTheLabelIsReadNotTheIndicator]' passed (1.561 seconds).
+Test Suite 'TabsSnapshotTests' passed at 2026-11-12 05:12:38.317.
+	 Executed 20 tests, with 0 failures (0 unexpected) in 14.814 (14.822) seconds
+Test Suite 'TadayoSnapshotTests.xctest' passed at 2026-11-12 05:12:38.317.
+	 Executed 71 tests, with 0 failures (0 unexpected) in 54.371 (54.406) seconds
+Test Suite 'All tests' passed at 2026-11-12 05:12:38.318.
+	 Executed 71 tests, with 0 failures (0 unexpected) in 54.371 (54.407) seconds
+2026-11-12 05:12:40.709918+0000 Tadayo[23294:70965] [General] Failed to send CA Event for app launch measurements for ca_event_type: 0 event_name: com.apple.app_launch_measurement.FirstFramePresentationMetric
+Test Suite 'All tests' started at 2026-11-12 05:12:41.208.
+Test Suite 'TadayoTests.xctest' started at 2026-11-12 05:12:41.208.
+Test Suite 'AppIconTests' started at 2026-11-12 05:12:41.208.
+Test Case '-[TadayoTests.AppIconTests testEachIconIs1024By1024PixelsWithAnAlphaChannelWhereTheTableSaysSo]' started.
+Test Case '-[TadayoTests.AppIconTests testEachIconIs1024By1024PixelsWithAnAlphaChannelWhereTheTableSaysSo]' passed (0.012 seconds).
+Test Case '-[TadayoTests.AppIconTests testEachIconIsTheBrandsMasterByteForByte]' started.
+Test Case '-[TadayoTests.AppIconTests testEachIconIsTheBrandsMasterByteForByte]' passed (0.002 seconds).
+Test Case '-[TadayoTests.AppIconTests testTheBuiltAppNamesItsIcon]' started.
+Test Case '-[TadayoTests.AppIconTests testTheBuiltAppNamesItsIcon]' passed (0.001 seconds).
+Test Case '-[TadayoTests.AppIconTests testTheCatalogHoldsOneUniversalIconWithADarkAndATintedAppearance]' started.
+Test Case '-[TadayoTests.AppIconTests testTheCatalogHoldsOneUniversalIconWithADarkAndATintedAppearance]' passed (0.006 seconds).
+Test Case '-[TadayoTests.AppIconTests testTheMastersAreThePinnedOnes]' started.
+Test Case '-[TadayoTests.AppIconTests testTheMastersAreThePinnedOnes]' passed (0.001 seconds).
+Test Suite 'AppIconTests' passed at 2026-11-12 05:12:41.235.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.023 (0.027) seconds
+Test Suite 'AppLaunchTests' started at 2026-11-12 05:12:41.235.
+Test Case '-[TadayoTests.AppLaunchTests testABuildWithNoEnvironmentBuildsNothing]' started.
+Test Case '-[TadayoTests.AppLaunchTests testABuildWithNoEnvironmentBuildsNothing]' passed (0.001 seconds).
+Test Case '-[TadayoTests.AppLaunchTests testALaterLaunchKeepsTheSession]' started.
+Test Case '-[TadayoTests.AppLaunchTests testALaterLaunchKeepsTheSession]' passed (0.074 seconds).
+Test Case '-[TadayoTests.AppLaunchTests testDebugBuildsCanNeverSendACode]' started.
+Test Case '-[TadayoTests.AppLaunchTests testDebugBuildsCanNeverSendACode]' passed (0.001 seconds).
+Test Case '-[TadayoTests.AppLaunchTests testEveryRequestGoesThroughASessionThatKeepsNothing]' started.
+Test Case '-[TadayoTests.AppLaunchTests testEveryRequestGoesThroughASessionThatKeepsNothing]' passed (0.010 seconds).
+Test Case '-[TadayoTests.AppLaunchTests testHostingTheseTestsTheAppBuildsNothing]' started.
+Test Case '-[TadayoTests.AppLaunchTests testHostingTheseTestsTheAppBuildsNothing]' passed (0.002 seconds).
+Test Case '-[TadayoTests.AppLaunchTests testLeavingRemakesTheConnections]' started.
+Test Case '-[TadayoTests.AppLaunchTests testLeavingRemakesTheConnections]' passed (0.023 seconds).
+Test Case '-[TadayoTests.AppLaunchTests testMissingOrWrongSettingsBuildNothing]' started.
+Test Case '-[TadayoTests.AppLaunchTests testMissingOrWrongSettingsBuildNothing]' passed (0.024 seconds).
+Test Case '-[TadayoTests.AppLaunchTests testTheFirstLaunchAfterAnInstallForgetsTheSessionBeforeReadingIt]' started.
+Test Case '-[TadayoTests.AppLaunchTests testTheFirstLaunchAfterAnInstallForgetsTheSessionBeforeReadingIt]' passed (0.038 seconds).
+Test Suite 'AppLaunchTests' passed at 2026-11-12 05:12:41.442.
+	 Executed 8 tests, with 0 failures (0 unexpected) in 0.174 (0.207) seconds
+Test Suite 'BusyButtonTests' started at 2026-11-12 05:12:41.442.
+Test Case '-[TadayoTests.BusyButtonTests testIdleAndBusyAreTheSameButton]' started.
+objc[23294]: Class UIAccessibilityLoaderWebShared is implemented in both /Library/Developer/CoreSimulator/Volumes/iOS_23F77/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x10cfb0310) and /Library/Developer/CoreSimulator/Volumes/iOS_23F77/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x10cfe4398). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+2026-11-12 05:12:41.679074+0000 Tadayo[23294:70966] [General] Failed to send CA Event for app launch measurements for ca_event_type: 1 event_name: com.apple.app_launch_measurement.ExtendedLaunchMetrics
+Test Case '-[TadayoTests.BusyButtonTests testIdleAndBusyAreTheSameButton]' passed (10.971 seconds).
+Test Case '-[TadayoTests.BusyButtonTests testTheIndicatorIs16PointsAtEveryTextSize]' started.
+Test Case '-[TadayoTests.BusyButtonTests testTheIndicatorIs16PointsAtEveryTextSize]' passed (2.588 seconds).
+Test Case '-[TadayoTests.BusyButtonTests testTheIndicatorSits8PointsBeforeTheLabelWhichStaysCentred]' started.
+Test Case '-[TadayoTests.BusyButtonTests testTheIndicatorSits8PointsBeforeTheLabelWhichStaysCentred]' passed (0.529 seconds).
+Test Case '-[TadayoTests.BusyButtonTests testTheIndicatorTakesARowOfItsOwnWhereTheLabelCantFit]' started.
+Test Case '-[TadayoTests.BusyButtonTests testTheIndicatorTakesARowOfItsOwnWhereTheLabelCantFit]' passed (1.038 seconds).
+Test Case '-[TadayoTests.BusyButtonTests testVoiceOverFindsTheLabelAndTheValueWhileBusy]' started.
+Test Case '-[TadayoTests.BusyButtonTests testVoiceOverFindsTheLabelAndTheValueWhileBusy]' passed (1.021 seconds).
+Test Suite 'BusyButtonTests' passed at 2026-11-12 05:12:57.591.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 16.147 (16.149) seconds
+Test Suite 'DayHeaderTests' started at 2026-11-12 05:12:57.592.
+Test Case '-[TadayoTests.DayHeaderTests testTheCollectingHeaderIsOneHeadingReadAsItsOpening]' started.
+Test Case '-[TadayoTests.DayHeaderTests testTheCollectingHeaderIsOneHeadingReadAsItsOpening]' passed (1.040 seconds).
+Test Case '-[TadayoTests.DayHeaderTests testTheCurrentYearsFormStillSpeaksTheYear]' started.
+Test Case '-[TadayoTests.DayHeaderTests testTheCurrentYearsFormStillSpeaksTheYear]' passed (1.014 seconds).
+Test Case '-[TadayoTests.DayHeaderTests testTheOpenDaysInputHoldsNothingElse]' started.
+Test Case '-[TadayoTests.DayHeaderTests testTheOpenDaysInputHoldsNothingElse]' passed (0.040 seconds).
+Test Case '-[TadayoTests.DayHeaderTests testTheOpenHeaderIsOneHeadingReadInOrder]' started.
+Test Case '-[TadayoTests.DayHeaderTests testTheOpenHeaderIsOneHeadingReadInOrder]' passed (1.034 seconds).
+Test Case '-[TadayoTests.DayHeaderTests testThePlaqueReadsItsFullDateWithTheYear]' started.
+Test Case '-[TadayoTests.DayHeaderTests testThePlaqueReadsItsFullDateWithTheYear]' passed (0.528 seconds).
+Test Case '-[TadayoTests.DayHeaderTests testTheStackedHeaderReadsTheSame]' started.
+Test Case '-[TadayoTests.DayHeaderTests testTheStackedHeaderReadsTheSame]' passed (0.507 seconds).
+Test Case '-[TadayoTests.DayHeaderTests testTheStarsOwnOpenDayIsYourDay]' started.
+Test Case '-[TadayoTests.DayHeaderTests testTheStarsOwnOpenDayIsYourDay]' passed (0.522 seconds).
+Test Suite 'DayHeaderTests' passed at 2026-11-12 05:13:02.281.
+	 Executed 7 tests, with 0 failures (0 unexpected) in 4.686 (4.689) seconds
+Test Suite 'DesignCatalogTests' started at 2026-11-12 05:13:02.281.
+Test Case '-[TadayoTests.DesignCatalogTests testEveryKeyResolvesInTheDesignBundleAndNotTheApps]' started.
+Test Case '-[TadayoTests.DesignCatalogTests testEveryKeyResolvesInTheDesignBundleAndNotTheApps]' passed (0.003 seconds).
+Test Case '-[TadayoTests.DesignCatalogTests testEveryLookupInTheComponentsNamesTheDesignBundle]' started.
+Test Case '-[TadayoTests.DesignCatalogTests testEveryLookupInTheComponentsNamesTheDesignBundle]' passed (0.014 seconds).
+Test Case '-[TadayoTests.DesignCatalogTests testEveryMiddleDotIsBoundToTheWordBeforeIt]' started.
+Test Case '-[TadayoTests.DesignCatalogTests testEveryMiddleDotIsBoundToTheWordBeforeIt]' passed (0.003 seconds).
+Test Suite 'DesignCatalogTests' passed at 2026-11-12 05:13:02.302.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.020 (0.021) seconds
+Test Suite 'DropCardTests' started at 2026-11-12 05:13:02.302.
+Test Case '-[TadayoTests.DropCardTests testAHiddenDropWithNoCaptionNamesTheStar]' started.
+Test Case '-[TadayoTests.DropCardTests testAHiddenDropWithNoCaptionNamesTheStar]' passed (0.516 seconds).
+Test Case '-[TadayoTests.DropCardTests testAnUploadSaysItIsNotAddedYetWithItsRealProgress]' started.
+Test Case '-[TadayoTests.DropCardTests testAnUploadSaysItIsNotAddedYetWithItsRealProgress]' passed (0.520 seconds).
+Test Case '-[TadayoTests.DropCardTests testAnUploadsProgressStaysWithinWhatTheTransferHasDone]' started.
+Test Case '-[TadayoTests.DropCardTests testAnUploadsProgressStaysWithinWhatTheTransferHasDone]' passed (3.107 seconds).
+Test Case '-[TadayoTests.DropCardTests testAPrivateDraftIsSharedWithNobody]' started.
+Test Case '-[TadayoTests.DropCardTests testAPrivateDraftIsSharedWithNobody]' passed (0.514 seconds).
+Test Case '-[TadayoTests.DropCardTests testARevealedDropIsItsSenderItsCaptionAndItsPhotoApart]' started.
+Test Case '-[TadayoTests.DropCardTests testARevealedDropIsItsSenderItsCaptionAndItsPhotoApart]' passed (1.031 seconds).
+Test Case '-[TadayoTests.DropCardTests testASpokenOpeningKeepsTheYearWhenTheLineDropsIt]' started.
+Test Case '-[TadayoTests.DropCardTests testASpokenOpeningKeepsTheYearWhenTheLineDropsIt]' passed (1.569 seconds).
+Test Case '-[TadayoTests.DropCardTests testCopyCaptionPutsTheCaptionOnThePasteboardWordForWord]' started.
+Test Case '-[TadayoTests.DropCardTests testCopyCaptionPutsTheCaptionOnThePasteboardWordForWord]' passed (0.565 seconds).
+Test Case '-[TadayoTests.DropCardTests testOnlyTheAuthorCaseCanCarryAHighlight]' started.
+Test Case '-[TadayoTests.DropCardTests testOnlyTheAuthorCaseCanCarryAHighlight]' passed (1.548 seconds).
+Test Case '-[TadayoTests.DropCardTests testOnlyTheAuthorsOwnHiddenDropCarriesItsHighlight]' started.
+Test Case '-[TadayoTests.DropCardTests testOnlyTheAuthorsOwnHiddenDropCarriesItsHighlight]' passed (1.019 seconds).
+Test Case '-[TadayoTests.DropCardTests testProcessingSaysItIsNotAddedYet]' started.
+Test Case '-[TadayoTests.DropCardTests testProcessingSaysItIsNotAddedYet]' passed (0.508 seconds).
+Test Case '-[TadayoTests.DropCardTests testSomeoneElsesHiddenDropIsItsSenderCaptionAndOpeningOnly]' started.
+Test Case '-[TadayoTests.DropCardTests testSomeoneElsesHiddenDropIsItsSenderCaptionAndOpeningOnly]' passed (0.518 seconds).
+Test Case '-[TadayoTests.DropCardTests testTheHiddenDropHoldsNothingFromTheMedia]' started.
+Test Case '-[TadayoTests.DropCardTests testTheHiddenDropHoldsNothingFromTheMedia]' passed (0.080 seconds).
+Test Case '-[TadayoTests.DropCardTests testThePhotoLabelIsOneWord]' started.
+Test Case '-[TadayoTests.DropCardTests testThePhotoLabelIsOneWord]' passed (0.510 seconds).
+Test Case '-[TadayoTests.DropCardTests testTheReceiptOffersMakeMyHighlightOnlyWhenItIsntOneAlready]' started.
+Test Case '-[TadayoTests.DropCardTests testTheReceiptOffersMakeMyHighlightOnlyWhenItIsntOneAlready]' passed (1.022 seconds).
+Test Case '-[TadayoTests.DropCardTests testTheRemovedPlaceholderSaysNothingOfTheDrop]' started.
+Test Case '-[TadayoTests.DropCardTests testTheRemovedPlaceholderSaysNothingOfTheDrop]' passed (0.526 seconds).
+Test Suite 'DropCardTests' passed at 2026-11-12 05:13:15.860.
+	 Executed 15 tests, with 0 failures (0 unexpected) in 13.553 (13.558) seconds
+Test Suite 'KeychainSessionStoreTests' started at 2026-11-12 05:13:15.861.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testAFailureCarriesItsStatusOnly]' started.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testAFailureCarriesItsStatusOnly]' passed (0.002 seconds).
+Test Case '-[TadayoTests.KeychainSessionStoreTests testAFirstLaunchAfterAnInstallForgetsEverySession]' started.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testAFirstLaunchAfterAnInstallForgetsEverySession]' passed (0.009 seconds).
+Test Case '-[TadayoTests.KeychainSessionStoreTests testASavedSessionComesBack]' started.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testASavedSessionComesBack]' passed (0.003 seconds).
+Test Case '-[TadayoTests.KeychainSessionStoreTests testDeletingNothingSucceeds]' started.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testDeletingNothingSucceeds]' passed (0.003 seconds).
+Test Case '-[TadayoTests.KeychainSessionStoreTests testEachEnvironmentKeepsItsOwn]' started.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testEachEnvironmentKeepsItsOwn]' passed (0.003 seconds).
+Test Case '-[TadayoTests.KeychainSessionStoreTests testSavingAgainWritesOverIt]' started.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testSavingAgainWritesOverIt]' passed (0.004 seconds).
+Test Case '-[TadayoTests.KeychainSessionStoreTests testTheAppGroupsContainerIsThere]' started.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testTheAppGroupsContainerIsThere]' passed (0.008 seconds).
+Test Case '-[TadayoTests.KeychainSessionStoreTests testTheItemHoldsTheTokensAndTheirExpiryOnly]' started.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testTheItemHoldsTheTokensAndTheirExpiryOnly]' passed (0.003 seconds).
+Test Case '-[TadayoTests.KeychainSessionStoreTests testTheItemIsTheSharedGroupsOnThisDeviceOnly]' started.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testTheItemIsTheSharedGroupsOnThisDeviceOnly]' passed (0.003 seconds).
+Test Case '-[TadayoTests.KeychainSessionStoreTests testTheStoreIsTheBuildsEnvironments]' started.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testTheStoreIsTheBuildsEnvironments]' passed (0.001 seconds).
+Test Case '-[TadayoTests.KeychainSessionStoreTests testWithNoContainerNoSessionIsKept]' started.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testWithNoContainerNoSessionIsKept]' passed (0.043 seconds).
+Test Suite 'KeychainSessionStoreTests' passed at 2026-11-12 05:13:15.980.
+	 Executed 11 tests, with 0 failures (0 unexpected) in 0.083 (0.120) seconds
+Test Suite 'LaunchScreenTests' started at 2026-11-12 05:13:15.980.
+Test Case '-[TadayoTests.LaunchScreenTests testTheLaunchScreenIsTheCanvasInLightAndDark]' started.
+Test Case '-[TadayoTests.LaunchScreenTests testTheLaunchScreenIsTheCanvasInLightAndDark]' passed (0.001 seconds).
+Test Suite 'LaunchScreenTests' passed at 2026-11-12 05:13:15.982.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'ModelTextTests' started at 2026-11-12 05:13:15.982.
+Test Case '-[TadayoTests.ModelTextTests testAChangeTheModelMakesReachesTheFieldOnScreen]' started.
+Test Case '-[TadayoTests.ModelTextTests testAChangeTheModelMakesReachesTheFieldOnScreen]' passed (0.827 seconds).
+Test Suite 'ModelTextTests' passed at 2026-11-12 05:13:16.810.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.827 (0.828) seconds
+Test Suite 'PersonRowTests' started at 2026-11-12 05:13:16.810.
+Test Case '-[TadayoTests.PersonRowTests testAMemberWithNoDayIsTheirNameAlone]' started.
+Test Case '-[TadayoTests.PersonRowTests testAMemberWithNoDayIsTheirNameAlone]' passed (1.018 seconds).
+Test Case '-[TadayoTests.PersonRowTests testAnotherMembersRowNamesThem]' started.
+Test Case '-[TadayoTests.PersonRowTests testAnotherMembersRowNamesThem]' passed (0.510 seconds).
+Test Case '-[TadayoTests.PersonRowTests testItsInputHoldsNothingElse]' started.
+Test Case '-[TadayoTests.PersonRowTests testItsInputHoldsNothingElse]' passed (0.023 seconds).
+Test Case '-[TadayoTests.PersonRowTests testNextUpIsReadBeforeTheDate]' started.
+Test Case '-[TadayoTests.PersonRowTests testNextUpIsReadBeforeTheDate]' passed (0.507 seconds).
+Test Case '-[TadayoTests.PersonRowTests testNextUpIsShownOnlyWithADay]' started.
+Test Case '-[TadayoTests.PersonRowTests testNextUpIsShownOnlyWithADay]' passed (0.506 seconds).
+Test Case '-[TadayoTests.PersonRowTests testTheStandingAloneRowReadsTheSame]' started.
+Test Case '-[TadayoTests.PersonRowTests testTheStandingAloneRowReadsTheSame]' passed (0.520 seconds).
+Test Case '-[TadayoTests.PersonRowTests testTheViewersRowSaysYouAndHintsTheirOwnDay]' started.
+Test Case '-[TadayoTests.PersonRowTests testTheViewersRowSaysYouAndHintsTheirOwnDay]' passed (0.505 seconds).
+Test Case '-[TadayoTests.PersonRowTests testTravellingReadsThePhonesZoneThenTheClubs]' started.
+Test Case '-[TadayoTests.PersonRowTests testTravellingReadsThePhonesZoneThenTheClubs]' passed (1.031 seconds).
+Test Suite 'PersonRowTests' passed at 2026-11-12 05:13:21.432.
+	 Executed 8 tests, with 0 failures (0 unexpected) in 4.619 (4.622) seconds
+Test Suite 'RootFailureTests' started at 2026-11-12 05:13:21.432.
+Test Case '-[TadayoTests.RootFailureTests testEachFailureNamesWhatFailedAsAHeadingWithRetry]' started.
+Test Case '-[TadayoTests.RootFailureTests testEachFailureNamesWhatFailedAsAHeadingWithRetry]' passed (2.068 seconds).
+Test Case '-[TadayoTests.RootFailureTests testRetryIs44PointsAboveTheSafeAreaAndTheLineIs16UnderTheTitle]' started.
+Test Case '-[TadayoTests.RootFailureTests testRetryIs44PointsAboveTheSafeAreaAndTheLineIs16UnderTheTitle]' passed (0.515 seconds).
+Test Case '-[TadayoTests.RootFailureTests testTheFailureTitleSitsWhereTheSignInTitlesSit]' started.
+Test Case '-[TadayoTests.RootFailureTests testTheFailureTitleSitsWhereTheSignInTitlesSit]' passed (1.033 seconds).
+Test Suite 'RootFailureTests' passed at 2026-11-12 05:13:25.050.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 3.616 (3.618) seconds
+Test Suite 'RootWaitTests' started at 2026-11-12 05:13:25.050.
+Test Case '-[TadayoTests.RootWaitTests testEachWaitSaysItsVisibleWordsPolitely]' started.
+Test Case '-[TadayoTests.RootWaitTests testEachWaitSaysItsVisibleWordsPolitely]' passed (0.001 seconds).
+Test Suite 'RootWaitTests' passed at 2026-11-12 05:13:25.051.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'SignInAnnouncementTests' started at 2026-11-12 05:13:25.052.
+Test Case '-[TadayoTests.SignInAnnouncementTests testANewCodeBeingAvailableIsSaidWhenTheMinuteHasPassed]' started.
+Test Case '-[TadayoTests.SignInAnnouncementTests testANewCodeBeingAvailableIsSaidWhenTheMinuteHasPassed]' passed (0.000 seconds).
+Test Case '-[TadayoTests.SignInAnnouncementTests testANewCodeOnItsWayIsSaidOnceAsTheRequestBegins]' started.
+Test Case '-[TadayoTests.SignInAnnouncementTests testANewCodeOnItsWayIsSaidOnceAsTheRequestBegins]' passed (0.000 seconds).
+Test Case '-[TadayoTests.SignInAnnouncementTests testANewCodeThatWentSaysWhereAndThatTheMinuteBeganAgain]' started.
+Test Case '-[TadayoTests.SignInAnnouncementTests testANewCodeThatWentSaysWhereAndThatTheMinuteBeganAgain]' passed (0.006 seconds).
+Test Case '-[TadayoTests.SignInAnnouncementTests testNothingIsSaidWhenTheRequestEndsGoesOnOrTheScreenRedraws]' started.
+Test Case '-[TadayoTests.SignInAnnouncementTests testNothingIsSaidWhenTheRequestEndsGoesOnOrTheScreenRedraws]' passed (0.000 seconds).
+Test Case '-[TadayoTests.SignInAnnouncementTests testSavingTheAgeIsSaidOnceAsTheRequestBegins]' started.
+Test Case '-[TadayoTests.SignInAnnouncementTests testSavingTheAgeIsSaidOnceAsTheRequestBegins]' passed (0.000 seconds).
+Test Case '-[TadayoTests.SignInAnnouncementTests testSendingIsSaidOnceAsTheRequestBegins]' started.
+Test Case '-[TadayoTests.SignInAnnouncementTests testSendingIsSaidOnceAsTheRequestBegins]' passed (0.001 seconds).
+Test Case '-[TadayoTests.SignInAnnouncementTests testTheSignedOutNoticeIsOnlyForASignInTheServerEnded]' started.
+Test Case '-[TadayoTests.SignInAnnouncementTests testTheSignedOutNoticeIsOnlyForASignInTheServerEnded]' passed (0.060 seconds).
+Test Case '-[TadayoTests.SignInAnnouncementTests testVerifyingIsSaidOnceAsTheRequestBegins]' started.
+Test Case '-[TadayoTests.SignInAnnouncementTests testVerifyingIsSaidOnceAsTheRequestBegins]' passed (0.001 seconds).
+Test Suite 'SignInAnnouncementTests' passed at 2026-11-12 05:13:25.123.
+	 Executed 8 tests, with 0 failures (0 unexpected) in 0.069 (0.072) seconds
+Test Suite 'SignInReadingTests' started at 2026-11-12 05:13:25.123.
+Test Case '-[TadayoTests.SignInReadingTests testA02AgesLeaveSignInIsOneButtonInactiveWhileTheAgeIsSaved]' started.
+Test Case '-[TadayoTests.SignInReadingTests testA02AgesLeaveSignInIsOneButtonInactiveWhileTheAgeIsSaved]' passed (1.602 seconds).
+Test Case '-[TadayoTests.SignInReadingTests testANewCodesFailureIsItsOwnLineUnderTheRow]' started.
+Test Case '-[TadayoTests.SignInReadingTests testANewCodesFailureIsItsOwnLineUnderTheRow]' passed (0.585 seconds).
+Test Case '-[TadayoTests.SignInReadingTests testASignInTheServerEndedIsSaidInAPlainLineAboveTheField]' started.
+Test Case '-[TadayoTests.SignInReadingTests testASignInTheServerEndedIsSaidInAPlainLineAboveTheField]' passed (1.574 seconds).
+Test Case '-[TadayoTests.SignInReadingTests testChangeEmailIsRightUnderTheRow]' started.
+Test Case '-[TadayoTests.SignInReadingTests testChangeEmailIsRightUnderTheRow]' passed (1.626 seconds).
+Test Case '-[TadayoTests.SignInReadingTests testIdleSendACodeHasNoValue]' started.
+Test Case '-[TadayoTests.SignInReadingTests testIdleSendACodeHasNoValue]' passed (1.029 seconds).
+Test Case '-[TadayoTests.SignInReadingTests testTheEmptyAddressFieldIsReadOnce]' started.
+Test Case '-[TadayoTests.SignInReadingTests testTheEmptyAddressFieldIsReadOnce]' passed (0.524 seconds).
+Test Case '-[TadayoTests.SignInReadingTests testTheNewCodesIndicatorIs16PointsAndLeadsItsWords]' started.
+Test Case '-[TadayoTests.SignInReadingTests testTheNewCodesIndicatorIs16PointsAndLeadsItsWords]' passed (1.118 seconds).
+Test Case '-[TadayoTests.SignInReadingTests testWhileACodeIsOnItsWayTheButtonIsBusyAndTheFieldOnlyReadOnly]' started.
+Test Case '-[TadayoTests.SignInReadingTests testWhileACodeIsOnItsWayTheButtonIsBusyAndTheFieldOnlyReadOnly]' passed (0.531 seconds).
+Test Case '-[TadayoTests.SignInReadingTests testWhileANewCodeIsOnItsWayTheRowSaysSoAndTheRestWaits]' started.
+Test Case '-[TadayoTests.SignInReadingTests testWhileANewCodeIsOnItsWayTheRowSaysSoAndTheRestWaits]' passed (0.549 seconds).
+Test Case '-[TadayoTests.SignInReadingTests testWhileTheCodeIsCheckedVerifyCodeIsBusyAndChangeEmailWaits]' started.
+Test Case '-[TadayoTests.SignInReadingTests testWhileTheCodeIsCheckedVerifyCodeIsBusyAndChangeEmailWaits]' passed (0.541 seconds).
+Test Suite 'SignInReadingTests' passed at 2026-11-12 05:13:34.808.
+	 Executed 10 tests, with 0 failures (0 unexpected) in 9.680 (9.684) seconds
+Test Suite 'TabsAnnouncementTests' started at 2026-11-12 05:13:34.808.
+Test Case '-[TadayoTests.TabsAnnouncementTests testAFailureIsSaidAtOnceWithItsLine]' started.
+Test Case '-[TadayoTests.TabsAnnouncementTests testAFailureIsSaidAtOnceWithItsLine]' passed (0.001 seconds).
+Test Case '-[TadayoTests.TabsAnnouncementTests testHomeUpdatedIsSaidOnlyOnHomeWhenTheListComesBack]' started.
+Test Case '-[TadayoTests.TabsAnnouncementTests testHomeUpdatedIsSaidOnlyOnHomeWhenTheListComesBack]' passed (0.000 seconds).
+Test Case '-[TadayoTests.TabsAnnouncementTests testRetrySaysTheLoadingLabelAgain]' started.
+Test Case '-[TadayoTests.TabsAnnouncementTests testRetrySaysTheLoadingLabelAgain]' passed (0.019 seconds).
+Test Case '-[TadayoTests.TabsAnnouncementTests testTheLabSaysNothing]' started.
+Test Case '-[TadayoTests.TabsAnnouncementTests testTheLabSaysNothing]' passed (0.000 seconds).
+Test Case '-[TadayoTests.TabsAnnouncementTests testTheLoadingLabelIsSaidPolitelyWhenTheTabsShow]' started.
+Test Case '-[TadayoTests.TabsAnnouncementTests testTheLoadingLabelIsSaidPolitelyWhenTheTabsShow]' passed (0.001 seconds).
+Test Suite 'TabsAnnouncementTests' passed at 2026-11-12 05:13:34.831.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.022 (0.023) seconds
+Test Suite 'TargetBlockTests' started at 2026-11-12 05:13:34.831.
+Test Case '-[TadayoTests.TargetBlockTests testAnInitialIsNotRead]' started.
+Test Case '-[TadayoTests.TargetBlockTests testAnInitialIsNotRead]' passed (0.512 seconds).
+Test Case '-[TadayoTests.TargetBlockTests testItsInputHoldsNothingElse]' started.
+Test Case '-[TadayoTests.TargetBlockTests testItsInputHoldsNothingElse]' passed (0.002 seconds).
+Test Case '-[TadayoTests.TargetBlockTests testTheBlockIsOneButtonNamingThePersonTheClubAndTheOpening]' started.
+Test Case '-[TadayoTests.TargetBlockTests testTheBlockIsOneButtonNamingThePersonTheClubAndTheOpening]' passed (0.515 seconds).
+Test Case '-[TadayoTests.TargetBlockTests testTheCurrentYearsFormStillSpeaksTheYear]' started.
+Test Case '-[TadayoTests.TargetBlockTests testTheCurrentYearsFormStillSpeaksTheYear]' passed (0.511 seconds).
+Test Suite 'TargetBlockTests' passed at 2026-11-12 05:13:36.373.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 1.541 (1.542) seconds
+Test Suite 'TadayoTests.xctest' passed at 2026-11-12 05:13:36.373.
+	 Executed 95 tests, with 0 failures (0 unexpected) in 55.061 (55.165) seconds
+Test Suite 'All tests' passed at 2026-11-12 05:13:36.374.
+	 Executed 95 tests, with 0 failures (0 unexpected) in 55.061 (55.166) seconds
+2026-11-12 05:13:41.240316+0000 TadayoUITests-Runner[26105:77877] [Default] Running tests...
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'All tests' started at 2026-11-12 05:13:41.646.
+Test Suite 'TadayoUITests.xctest' started at 2026-11-12 05:13:41.647.
+Test Suite 'SignInUITests' started at 2026-11-12 05:13:41.647.
+Test Case '-[TadayoUITests.SignInUITests testLeavingSignInFromTheAgeScreenStartsAgain]' started.
+    t =     0.00s Start Test at 2026-11-12 05:13:41.648
+    t =     0.51s Set Up
+    t =     0.51s Open app.tadayo
+    t =     0.51s     Launch app.tadayo
+objc[26105]: Class UIAccessibilityLoaderWebShared is implemented in both /Library/Developer/CoreSimulator/Volumes/iOS_23F77/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x108a08310) and /Library/Developer/CoreSimulator/Volumes/iOS_23F77/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x108a9c398). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+2026-11-12 05:13:43.935 xcodebuild[18055:57845] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-11-12 05:13:43.935 xcodebuild[18055:57845] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =     4.04s         Setting up automation session
+    t =     5.02s         Wait for app.tadayo to idle
+    t =     8.18s Waiting 10.0s for "Email address" TextField to exist
+    t =     9.21s     Checking `Expect predicate `existsNoRetry == 1` for object "Email address" TextField`
+    t =     9.21s         Checking existence of `"Email address" TextField`
+    t =     9.47s Type 'ben@example.com' into Target Application 'app.tadayo'
+    t =     9.47s     Wait for app.tadayo to idle
+    t =     9.47s     Find the Target Application 'app.tadayo'
+    t =     9.55s     Check for interrupting elements affecting "Tadayo" Application
+    t =     9.63s     Synthesize event
+    t =     9.64s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =    10.26s     Wait for app.tadayo to idle
+    t =    10.27s Tap "Send a code" Button
+    t =    10.27s     Wait for app.tadayo to idle
+    t =    10.28s     Find the "Send a code" Button
+    t =    10.66s     Check for interrupting elements affecting "Send a code" Button
+    t =    10.81s     Synthesize event
+    t =    11.16s     Wait for app.tadayo to idle
+    t =    12.37s Waiting 5.0s for "Six-digit code" TextField to exist
+    t =    13.45s     Checking `Expect predicate `existsNoRetry == 1` for object "Six-digit code" TextField`
+    t =    13.45s         Checking existence of `"Six-digit code" TextField`
+    t =    14.75s Type '123456' into Target Application 'app.tadayo'
+    t =    14.75s     Wait for app.tadayo to idle
+    t =    14.75s     Find the Target Application 'app.tadayo'
+    t =    14.99s     Check for interrupting elements affecting "Tadayo" Application
+    t =    15.28s     Synthesize event
+    t =    15.54s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =    16.49s     Wait for app.tadayo to idle
+    t =    16.49s Tap "Verify code" Button
+    t =    16.49s     Wait for app.tadayo to idle
+    t =    16.51s     Find the "Verify code" Button
+    t =    16.96s     Check for interrupting elements affecting "Verify code" Button
+    t =    17.34s     Synthesize event
+    t =    17.87s     Wait for app.tadayo to idle
+    t =    17.91s Waiting 5.0s for "I’m 18 or older" Button to exist
+    t =    18.95s     Checking `Expect predicate `existsNoRetry == 1` for object "I’m 18 or older" Button`
+    t =    18.95s         Checking existence of `"I’m 18 or older" Button`
+    t =    19.32s Get number of matches for: Descendants matching type Button
+    t =    19.60s Tap "Leave sign-in" Button
+    t =    19.60s     Wait for app.tadayo to idle
+    t =    19.60s     Find the "Leave sign-in" Button
+    t =    19.95s     Check for interrupting elements affecting "Leave sign-in" Button
+    t =    20.29s     Synthesize event
+    t =    20.94s     Wait for app.tadayo to idle
+    t =    21.61s Waiting 5.0s for "Email address" TextField to exist
+    t =    22.65s     Checking `Expect predicate `existsNoRetry == 1` for object "Email address" TextField`
+    t =    22.65s         Checking existence of `"Email address" TextField`
+    t =    22.81s Checking existence of `"What’s your email?" StaticText`
+    t =    22.97s Find the "Email address" TextField
+    t =    23.13s Checking existence of `"Your sign-in ended. Enter your email to sign in again." StaticText`
+    t =    23.25s Tear Down
+Test Case '-[TadayoUITests.SignInUITests testLeavingSignInFromTheAgeScreenStartsAgain]' passed (23.536 seconds).
+Test Case '-[TadayoUITests.SignInUITests testSendingFromTheReturnKeyKeepsTheFocus]' started.
+    t =     0.00s Start Test at 2026-11-12 05:14:05.184
+    t =     0.03s Set Up
+    t =     0.03s Open app.tadayo
+    t =     0.03s     Launch app.tadayo
+    t =     0.03s         Terminate app.tadayo:26238
+2026-11-12 05:14:06.276 xcodebuild[18055:57845] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-11-12 05:14:06.276 xcodebuild[18055:57845] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =     1.75s         Setting up automation session
+    t =     2.64s         Wait for app.tadayo to idle
+    t =     4.64s Waiting 10.0s for "Email address" TextField to exist
+    t =     5.68s     Checking `Expect predicate `existsNoRetry == 1` for object "Email address" TextField`
+    t =     5.68s         Checking existence of `"Email address" TextField`
+    t =     5.87s Type 'ben@example.com
+' into Target Application 'app.tadayo'
+    t =     5.87s     Wait for app.tadayo to idle
+    t =     5.87s     Find the Target Application 'app.tadayo'
+    t =     5.95s     Check for interrupting elements affecting "Tadayo" Application
+    t =     6.06s     Synthesize event
+    t =     6.06s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =     6.64s     Wait for app.tadayo to idle
+    t =     8.07s Checking `Expect predicate `value == "In progress"` for object "Send a code" Button`
+    t =     8.07s     Find the "Send a code" Button
+    t =     8.12s Waiting 5.0s for Keyboard (First Match) to exist
+    t =     9.17s     Checking `Expect predicate `existsNoRetry == 1` for object Keyboard (First Match)`
+    t =     9.18s         Checking existence of `Keyboard (First Match)`
+    t =     9.25s Type 'x' into Target Application 'app.tadayo'
+    t =     9.25s     Wait for app.tadayo to idle
+    t =     9.25s     Find the Target Application 'app.tadayo'
+    t =     9.31s     Check for interrupting elements affecting "Tadayo" Application
+    t =     9.35s     Synthesize event
+    t =     9.36s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =     9.60s     Wait for app.tadayo to idle
+    t =     9.60s Find the "Email address" TextField
+    t =     9.66s Tear Down
+Test Case '-[TadayoUITests.SignInUITests testSendingFromTheReturnKeyKeepsTheFocus]' passed (9.923 seconds).
+Test Case '-[TadayoUITests.SignInUITests testSignInGoesToTheEndOnStandInServices]' started.
+    t =     0.00s Start Test at 2026-11-12 05:14:15.108
+    t =     0.02s Set Up
+    t =     0.02s Open app.tadayo
+    t =     0.02s     Launch app.tadayo
+    t =     0.02s         Terminate app.tadayo:26873
+2026-11-12 05:14:16.136 xcodebuild[18055:57845] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-11-12 05:14:16.136 xcodebuild[18055:57845] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =     1.50s         Setting up automation session
+    t =     2.34s         Wait for app.tadayo to idle
+    t =     3.54s Waiting 10.0s for "Email address" TextField to exist
+    t =     4.56s     Checking `Expect predicate `existsNoRetry == 1` for object "Email address" TextField`
+    t =     4.56s         Checking existence of `"Email address" TextField`
+    t =     4.66s Type 'ben@example.com' into Target Application 'app.tadayo'
+    t =     4.66s     Wait for app.tadayo to idle
+    t =     4.66s     Find the Target Application 'app.tadayo'
+    t =     4.69s     Check for interrupting elements affecting "Tadayo" Application
+    t =     4.74s     Synthesize event
+    t =     4.76s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =     5.25s     Wait for app.tadayo to idle
+    t =     5.26s Tap "Send a code" Button
+    t =     5.26s     Wait for app.tadayo to idle
+    t =     5.27s     Find the "Send a code" Button
+    t =     5.33s     Check for interrupting elements affecting "Send a code" Button
+    t =     5.39s     Synthesize event
+    t =     5.73s     Wait for app.tadayo to idle
+    t =     6.65s Waiting 5.0s for "Six-digit code" TextField to exist
+    t =     7.70s     Checking `Expect predicate `existsNoRetry == 1` for object "Six-digit code" TextField`
+    t =     7.70s         Checking existence of `"Six-digit code" TextField`
+    t =     7.74s Tap Button (Element at index 0)
+    t =     7.74s     Wait for app.tadayo to idle
+    t =     7.74s     Find the Button (Element at index 0)
+    t =     7.82s     Check for interrupting elements affecting "BackButton" Button
+    t =     7.87s     Synthesize event
+    t =     8.20s     Wait for app.tadayo to idle
+    t =     8.67s Waiting 5.0s for "What’s your email?" StaticText to exist
+    t =     9.70s     Checking `Expect predicate `existsNoRetry == 1` for object "What’s your email?" StaticText`
+    t =     9.70s         Checking existence of `"What’s your email?" StaticText`
+    t =     9.78s Find the "Email address" TextField
+    t =     9.82s Tap "Send a code" Button
+    t =     9.82s     Wait for app.tadayo to idle
+    t =     9.84s     Find the "Send a code" Button
+    t =     9.94s     Check for interrupting elements affecting "Send a code" Button
+    t =     9.99s     Synthesize event
+    t =    10.30s     Wait for app.tadayo to idle
+    t =    11.12s Waiting 5.0s for "Six-digit code" TextField to exist
+    t =    12.17s     Checking `Expect predicate `existsNoRetry == 1` for object "Six-digit code" TextField`
+    t =    12.17s         Checking existence of `"Six-digit code" TextField`
+    t =    12.22s Tap "Change email address" Button
+    t =    12.22s     Wait for app.tadayo to idle
+    t =    12.24s     Find the "Change email address" Button
+    t =    12.32s     Check for interrupting elements affecting "Change email address" Button
+    t =    12.36s     Synthesize event
+    t =    12.67s     Wait for app.tadayo to idle
+    t =    13.11s Waiting 5.0s for "What’s your email?" StaticText to exist
+    t =    14.13s     Checking `Expect predicate `existsNoRetry == 1` for object "What’s your email?" StaticText`
+    t =    14.13s         Checking existence of `"What’s your email?" StaticText`
+    t =    14.24s Find the "Email address" TextField
+    t =    14.30s Tap "Send a code" Button
+    t =    14.30s     Wait for app.tadayo to idle
+    t =    14.33s     Find the "Send a code" Button
+    t =    14.39s     Check for interrupting elements affecting "Send a code" Button
+    t =    14.46s     Synthesize event
+    t =    14.77s     Wait for app.tadayo to idle
+    t =    15.59s Waiting 5.0s for "Enter your code" StaticText to exist
+    t =    16.63s     Checking `Expect predicate `existsNoRetry == 1` for object "Enter your code" StaticText`
+    t =    16.64s         Checking existence of `"Enter your code" StaticText`
+    t =    16.69s Checking existence of `"Sent to ben@example.com" StaticText`
+    t =    16.75s Checking existence of `"You can send a new code after one minute." StaticText`
+    t =    16.86s Find the "Change email address" Button
+    t =    16.95s Checking existence of `"Six-digit code" TextField`
+    t =    17.02s Find the "Verify code" Button
+    t =    17.10s Type '529614' into Target Application 'app.tadayo'
+    t =    17.10s     Wait for app.tadayo to idle
+    t =    17.11s     Find the Target Application 'app.tadayo'
+    t =    17.13s     Check for interrupting elements affecting "Tadayo" Application
+    t =    17.21s     Synthesize event
+    t =    17.21s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =    17.55s     Wait for app.tadayo to idle
+    t =    17.57s Find the "Six-digit code" TextField
+    t =    17.68s Type '7' into Target Application 'app.tadayo'
+    t =    17.68s     Wait for app.tadayo to idle
+    t =    17.68s     Find the Target Application 'app.tadayo'
+    t =    17.74s     Check for interrupting elements affecting "Tadayo" Application
+    t =    17.83s     Synthesize event
+    t =    17.84s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =    18.10s     Wait for app.tadayo to idle
+    t =    18.11s Find the "Enter code" TextField
+    t =    18.15s Find the "Verify code" Button
+    t =    18.23s Tap "Verify code" Button
+    t =    18.23s     Wait for app.tadayo to idle
+    t =    18.24s     Find the "Verify code" Button
+    t =    18.30s     Check for interrupting elements affecting "Verify code" Button
+    t =    18.41s     Synthesize event
+    t =    18.79s     Wait for app.tadayo to idle
+    t =    18.79s Waiting 5.0s for "This code couldn’t be verified. Try again or send a new one." StaticText to exist
+    t =    19.85s     Checking `Expect predicate `existsNoRetry == 1` for object "This code couldn’t be verified. Try again or send a new one." StaticText`
+    t =    19.85s         Checking existence of `"This code couldn’t be verified. Try again or send a new one." StaticText`
+    t =    19.92s Find the "Enter code" TextField
+    t =    20.01s Find the "Verify code" Button
+    t =    20.07s Tap "Enter code" TextField
+    t =    20.07s     Wait for app.tadayo to idle
+    t =    20.07s     Find the "Enter code" TextField
+    t =    20.13s     Check for interrupting elements affecting "Enter code" TextField
+    t =    20.21s     Synthesize event
+    t =    20.52s     Wait for app.tadayo to idle
+    t =    20.52s Type '' into "Enter code" TextField
+    t =    20.52s     Wait for app.tadayo to idle
+    t =    20.53s     Find the "Enter code" TextField
+    t =    20.85s     Check for interrupting elements affecting "Enter code" TextField
+    t =    21.00s     Synthesize event
+    t =    21.34s     Wait for app.tadayo to idle
+    t =    21.54s Checking existence of `"This code couldn’t be verified. Try again or send a new one." StaticText`
+    t =    21.65s Type '123456' into "Enter code" TextField
+    t =    21.65s     Wait for app.tadayo to idle
+    t =    21.65s     Find the "Enter code" TextField
+    t =    21.70s     Check for interrupting elements affecting "Enter code" TextField
+    t =    21.74s     Synthesize event
+    t =    22.04s     Wait for app.tadayo to idle
+    t =    22.05s Tap "Verify code" Button
+    t =    22.05s     Wait for app.tadayo to idle
+    t =    22.05s     Find the "Verify code" Button
+    t =    22.10s     Check for interrupting elements affecting "Verify code" Button
+    t =    22.17s     Synthesize event
+    t =    22.52s     Wait for app.tadayo to idle
+    t =    22.53s Waiting 5.0s for "I’m 18 or older" Button to exist
+    t =    23.57s     Checking `Expect predicate `existsNoRetry == 1` for object "I’m 18 or older" Button`
+    t =    23.57s         Checking existence of `"I’m 18 or older" Button`
+    t =    23.63s Checking existence of `"Before you continue" StaticText`
+    t =    23.66s Checking existence of `"Tadayo is for people aged 18 and older." StaticText`
+    t =    23.69s Get all elements bound by index for: Elements matching predicate 'label == "Leave sign-in"'
+    t =    23.74s Tap "I’m 18 or older" Button
+    t =    23.74s     Wait for app.tadayo to idle
+    t =    23.74s     Find the "I’m 18 or older" Button
+    t =    23.79s     Check for interrupting elements affecting "I’m 18 or older" Button
+    t =    23.85s     Synthesize event
+    t =    24.17s     Wait for app.tadayo to idle
+    t =    24.18s Waiting 5.0s for "Your name" TextField to exist
+    t =    25.24s     Checking `Expect predicate `existsNoRetry == 1` for object "Your name" TextField`
+    t =    25.24s         Checking existence of `"Your name" TextField`
+    t =    25.26s Checking existence of `"What should we call you?" StaticText`
+    t =    25.28s Checking existence of `"Add photo" Button`
+    t =    25.30s Find the "Continue" Button
+    t =    25.32s Tap "Your name" TextField
+    t =    25.32s     Wait for app.tadayo to idle
+    t =    25.33s     Find the "Your name" TextField
+    t =    25.34s     Check for interrupting elements affecting "Your name" TextField
+    t =    25.37s     Synthesize event
+    t =    25.66s     Wait for app.tadayo to idle
+    t =    26.00s Type 'Ben' into "Your name" TextField
+    t =    26.00s     Wait for app.tadayo to idle
+    t =    26.00s     Find the "Your name" TextField
+    t =    26.08s     Check for interrupting elements affecting "Your name" TextField
+    t =    26.14s     Synthesize event
+    t =    26.41s     Wait for app.tadayo to idle
+    t =    26.60s Find the "Continue" Button
+    t =    26.66s Tap "Continue" Button
+    t =    26.66s     Wait for app.tadayo to idle
+    t =    26.67s     Find the "Continue" Button
+    t =    26.73s     Check for interrupting elements affecting "Continue" Button
+    t =    26.78s     Synthesize event
+    t =    27.09s     Wait for app.tadayo to idle
+    t =    27.16s Waiting 5.0s for "Start your club." StaticText to exist
+    t =    28.18s     Checking `Expect predicate `existsNoRetry == 1` for object "Start your club." StaticText`
+    t =    28.18s         Checking existence of `"Start your club." StaticText`
+    t =    28.23s Find the "Home" Button
+    t =    28.26s Tear Down
+Test Case '-[TadayoUITests.SignInUITests testSignInGoesToTheEndOnStandInServices]' passed (28.515 seconds).
+Test Case '-[TadayoUITests.SignInUITests testTheAddressIsReadOnlyWhileACodeIsOnItsWay]' started.
+    t =     0.00s Start Test at 2026-11-12 05:14:43.624
+    t =     0.02s Set Up
+    t =     0.02s Open app.tadayo
+    t =     0.02s     Launch app.tadayo
+    t =     0.02s         Terminate app.tadayo:27248
+2026-11-12 05:14:44.693 xcodebuild[18055:57845] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-11-12 05:14:44.693 xcodebuild[18055:57845] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =     1.32s         Setting up automation session
+    t =     2.54s         Wait for app.tadayo to idle
+    t =     4.57s Waiting 10.0s for "Email address" TextField to exist
+    t =     5.59s     Checking `Expect predicate `existsNoRetry == 1` for object "Email address" TextField`
+    t =     5.59s         Checking existence of `"Email address" TextField`
+    t =     5.67s Type 'ben@example.com' into Target Application 'app.tadayo'
+    t =     5.67s     Wait for app.tadayo to idle
+    t =     5.67s     Find the Target Application 'app.tadayo'
+    t =     5.70s     Check for interrupting elements affecting "Tadayo" Application
+    t =     5.72s     Synthesize event
+    t =     5.73s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =     6.20s     Wait for app.tadayo to idle
+    t =     6.20s Find the "Send a code" Button
+    t =     6.23s Find the "Send a code" Button
+    t =     6.26s Tap "Send a code" Button
+    t =     6.26s     Wait for app.tadayo to idle
+    t =     6.26s     Find the "Send a code" Button
+    t =     6.30s     Check for interrupting elements affecting "Send a code" Button
+    t =     6.33s     Synthesize event
+    t =     6.64s     Wait for app.tadayo to idle
+    t =     7.69s Checking `Expect predicate `value == "In progress"` for object "Send a code" Button`
+    t =     7.69s     Find the "Send a code" Button
+    t =     7.73s Find the "Send a code" Button
+    t =     7.77s Find the "Send a code" Button
+    t =     7.81s Type 'x' into Target Application 'app.tadayo'
+    t =     7.81s     Wait for app.tadayo to idle
+    t =     7.81s     Find the Target Application 'app.tadayo'
+    t =     7.84s     Check for interrupting elements affecting "Tadayo" Application
+    t =     7.87s     Synthesize event
+    t =     7.87s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =     8.12s     Wait for app.tadayo to idle
+    t =     8.13s Find the "Email address" TextField
+    t =     8.16s Checking existence of `"What’s your email?" StaticText`
+    t =     8.19s Tear Down
+Test Case '-[TadayoUITests.SignInUITests testTheAddressIsReadOnlyWhileACodeIsOnItsWay]' passed (8.414 seconds).
+Test Case '-[TadayoUITests.SignInUITests testTheLabsLogOutReturnsToSignIn]' started.
+    t =     0.00s Start Test at 2026-11-12 05:14:52.038
+    t =     0.02s Set Up
+    t =     0.02s Open app.tadayo
+    t =     0.02s     Launch app.tadayo
+    t =     0.02s         Terminate app.tadayo:28072
+2026-11-12 05:14:53.127 xcodebuild[18055:57845] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-11-12 05:14:53.127 xcodebuild[18055:57845] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =     1.31s         Setting up automation session
+    t =     2.37s         Wait for app.tadayo to idle
+    t =     4.06s Waiting 10.0s for "Email address" TextField to exist
+    t =     5.12s     Checking `Expect predicate `existsNoRetry == 1` for object "Email address" TextField`
+    t =     5.12s         Checking existence of `"Email address" TextField`
+    t =     5.20s Type 'ben@example.com' into Target Application 'app.tadayo'
+    t =     5.20s     Wait for app.tadayo to idle
+    t =     5.21s     Find the Target Application 'app.tadayo'
+    t =     5.23s     Check for interrupting elements affecting "Tadayo" Application
+    t =     5.26s     Synthesize event
+    t =     5.27s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =     5.74s     Wait for app.tadayo to idle
+    t =     5.74s Tap "Send a code" Button
+    t =     5.74s     Wait for app.tadayo to idle
+    t =     5.75s     Find the "Send a code" Button
+    t =     5.78s     Check for interrupting elements affecting "Send a code" Button
+    t =     5.81s     Synthesize event
+    t =     6.11s     Wait for app.tadayo to idle
+    t =     7.04s Waiting 5.0s for "Six-digit code" TextField to exist
+    t =     8.08s     Checking `Expect predicate `existsNoRetry == 1` for object "Six-digit code" TextField`
+    t =     8.08s         Checking existence of `"Six-digit code" TextField`
+    t =     8.14s Type '123456' into Target Application 'app.tadayo'
+    t =     8.14s     Wait for app.tadayo to idle
+    t =     8.15s     Find the Target Application 'app.tadayo'
+    t =     8.19s     Check for interrupting elements affecting "Tadayo" Application
+    t =     8.22s     Synthesize event
+    t =     8.22s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =     8.54s     Wait for app.tadayo to idle
+    t =     8.54s Tap "Verify code" Button
+    t =     8.54s     Wait for app.tadayo to idle
+    t =     8.55s     Find the "Verify code" Button
+    t =     8.58s     Check for interrupting elements affecting "Verify code" Button
+    t =     8.61s     Synthesize event
+    t =     8.90s     Wait for app.tadayo to idle
+    t =     8.91s Waiting 5.0s for "I’m 18 or older" Button to exist
+    t =     9.92s     Checking `Expect predicate `existsNoRetry == 1` for object "I’m 18 or older" Button`
+    t =     9.92s         Checking existence of `"I’m 18 or older" Button`
+    t =     9.96s Tap "I’m 18 or older" Button
+    t =     9.96s     Wait for app.tadayo to idle
+    t =     9.96s     Find the "I’m 18 or older" Button
+    t =     9.98s     Check for interrupting elements affecting "I’m 18 or older" Button
+    t =    10.01s     Synthesize event
+    t =    10.31s     Wait for app.tadayo to idle
+    t =    10.31s Waiting 5.0s for "Your name" TextField to exist
+    t =    11.33s     Checking `Expect predicate `existsNoRetry == 1` for object "Your name" TextField`
+    t =    11.33s         Checking existence of `"Your name" TextField`
+    t =    11.37s Tap "Your name" TextField
+    t =    11.37s     Wait for app.tadayo to idle
+    t =    11.37s     Find the "Your name" TextField
+    t =    11.39s     Check for interrupting elements affecting "Your name" TextField
+    t =    11.41s     Synthesize event
+    t =    11.70s     Wait for app.tadayo to idle
+    t =    12.00s Type 'Ben' into "Your name" TextField
+    t =    12.00s     Wait for app.tadayo to idle
+    t =    12.00s     Find the "Your name" TextField
+    t =    12.04s     Check for interrupting elements affecting "Your name" TextField
+    t =    12.08s     Synthesize event
+    t =    12.33s     Wait for app.tadayo to idle
+    t =    12.59s Tap "Continue" Button
+    t =    12.59s     Wait for app.tadayo to idle
+    t =    12.59s     Find the "Continue" Button
+    t =    12.63s     Check for interrupting elements affecting "Continue" Button
+    t =    12.66s     Synthesize event
+    t =    12.96s     Wait for app.tadayo to idle
+    t =    12.96s Waiting 5.0s for "Start your club." StaticText to exist
+    t =    13.99s     Checking `Expect predicate `existsNoRetry == 1` for object "Start your club." StaticText`
+    t =    13.99s         Checking existence of `"Start your club." StaticText`
+    t =    14.05s Tap "Lab" Button
+    t =    14.05s     Wait for app.tadayo to idle
+    t =    14.05s     Find the "Lab" Button
+    t =    14.08s     Check for interrupting elements affecting "wrench.and.screwdriver" Button
+    t =    14.10s     Synthesize event
+    t =    14.39s     Wait for app.tadayo to idle
+    t =    16.37s Waiting 5.0s for "Log out" Button to exist
+    t =    17.43s     Checking `Expect predicate `existsNoRetry == 1` for object "Log out" Button`
+    t =    17.43s         Checking existence of `"Log out" Button`
+    t =    17.73s Tap "Log out" Button
+    t =    17.73s     Wait for app.tadayo to idle
+    t =    17.74s     Find the "Log out" Button
+    t =    17.95s     Check for interrupting elements affecting "Log out" Button
+    t =    18.15s     Synthesize event
+    t =    18.46s     Wait for app.tadayo to idle
+    t =    19.12s Waiting 5.0s for "Email address" TextField to exist
+    t =    20.14s     Checking `Expect predicate `existsNoRetry == 1` for object "Email address" TextField`
+    t =    20.14s         Checking existence of `"Email address" TextField`
+    t =    20.19s Checking existence of `"What’s your email?" StaticText`
+    t =    20.22s Find the "Email address" TextField
+    t =    20.25s Checking existence of `"Your sign-in ended. Enter your email to sign in again." StaticText`
+    t =    20.28s Tear Down
+Test Case '-[TadayoUITests.SignInUITests testTheLabsLogOutReturnsToSignIn]' passed (20.542 seconds).
+Test Case '-[TadayoUITests.SignInUITests testTheTabsWithNoClub]' started.
+    t =     0.00s Start Test at 2026-11-12 05:15:12.581
+    t =     0.02s Set Up
+    t =     0.02s Open app.tadayo
+    t =     0.02s     Launch app.tadayo
+    t =     0.02s         Terminate app.tadayo:28828
+2026-11-12 05:15:13.633 xcodebuild[18055:57845] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-11-12 05:15:13.633 xcodebuild[18055:57845] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =     1.27s         Setting up automation session
+    t =     2.34s         Wait for app.tadayo to idle
+    t =     3.55s Waiting 10.0s for "Email address" TextField to exist
+    t =     4.55s     Checking `Expect predicate `existsNoRetry == 1` for object "Email address" TextField`
+    t =     4.55s         Checking existence of `"Email address" TextField`
+    t =     4.63s Type 'ben@example.com' into Target Application 'app.tadayo'
+    t =     4.63s     Wait for app.tadayo to idle
+    t =     4.63s     Find the Target Application 'app.tadayo'
+    t =     4.65s     Check for interrupting elements affecting "Tadayo" Application
+    t =     4.68s     Synthesize event
+    t =     4.68s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =     5.14s     Wait for app.tadayo to idle
+    t =     5.14s Tap "Send a code" Button
+    t =     5.14s     Wait for app.tadayo to idle
+    t =     5.14s     Find the "Send a code" Button
+    t =     5.18s     Check for interrupting elements affecting "Send a code" Button
+    t =     5.21s     Synthesize event
+    t =     5.49s     Wait for app.tadayo to idle
+    t =     6.41s Waiting 5.0s for "Six-digit code" TextField to exist
+    t =     7.46s     Checking `Expect predicate `existsNoRetry == 1` for object "Six-digit code" TextField`
+    t =     7.46s         Checking existence of `"Six-digit code" TextField`
+    t =     7.52s Type '123456' into Target Application 'app.tadayo'
+    t =     7.52s     Wait for app.tadayo to idle
+    t =     7.53s     Find the Target Application 'app.tadayo'
+    t =     7.55s     Check for interrupting elements affecting "Tadayo" Application
+    t =     7.58s     Synthesize event
+    t =     7.58s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =     7.91s     Wait for app.tadayo to idle
+    t =     7.91s Tap "Verify code" Button
+    t =     7.91s     Wait for app.tadayo to idle
+    t =     7.92s     Find the "Verify code" Button
+    t =     7.95s     Check for interrupting elements affecting "Verify code" Button
+    t =     7.97s     Synthesize event
+    t =     8.27s     Wait for app.tadayo to idle
+    t =     8.28s Waiting 5.0s for "I’m 18 or older" Button to exist
+    t =     9.32s     Checking `Expect predicate `existsNoRetry == 1` for object "I’m 18 or older" Button`
+    t =     9.32s         Checking existence of `"I’m 18 or older" Button`
+    t =     9.36s Tap "I’m 18 or older" Button
+    t =     9.36s     Wait for app.tadayo to idle
+    t =     9.37s     Find the "I’m 18 or older" Button
+    t =     9.39s     Check for interrupting elements affecting "I’m 18 or older" Button
+    t =     9.41s     Synthesize event
+    t =     9.72s     Wait for app.tadayo to idle
+    t =     9.73s Waiting 5.0s for "Your name" TextField to exist
+    t =    10.79s     Checking `Expect predicate `existsNoRetry == 1` for object "Your name" TextField`
+    t =    10.79s         Checking existence of `"Your name" TextField`
+    t =    10.83s Tap "Your name" TextField
+    t =    10.83s     Wait for app.tadayo to idle
+    t =    10.83s     Find the "Your name" TextField
+    t =    10.85s     Check for interrupting elements affecting "Your name" TextField
+    t =    10.87s     Synthesize event
+    t =    11.16s     Wait for app.tadayo to idle
+    t =    11.46s Type 'Ben' into "Your name" TextField
+    t =    11.46s     Wait for app.tadayo to idle
+    t =    11.46s     Find the "Your name" TextField
+    t =    11.51s     Check for interrupting elements affecting "Your name" TextField
+    t =    11.55s     Synthesize event
+    t =    11.80s     Wait for app.tadayo to idle
+    t =    12.06s Tap "Continue" Button
+    t =    12.06s     Wait for app.tadayo to idle
+    t =    12.06s     Find the "Continue" Button
+    t =    12.11s     Check for interrupting elements affecting "Continue" Button
+    t =    12.14s     Synthesize event
+    t =    12.43s     Wait for app.tadayo to idle
+    t =    12.46s Waiting 5.0s for "Start your club." StaticText to exist
+    t =    13.47s     Checking `Expect predicate `existsNoRetry == 1` for object "Start your club." StaticText`
+    t =    13.47s         Checking existence of `"Start your club." StaticText`
+    t =    13.50s Checking existence of `"Create a club." Button`
+    t =    13.52s Checking existence of `"I have an invite" Button`
+    t =    13.54s Checking existence of `"Private drafts" Button`
+    t =    13.56s Tap "Friends" Button
+    t =    13.56s     Wait for app.tadayo to idle
+    t =    13.56s     Find the "Friends" Button
+    t =    13.59s     Check for interrupting elements affecting "person.2" Button
+    t =    13.61s     Synthesize event
+    t =    13.90s     Wait for app.tadayo to idle
+    t =    15.37s Waiting 5.0s for "Your friends will appear here." StaticText to exist
+    t =    16.39s     Checking `Expect predicate `existsNoRetry == 1` for object "Your friends will appear here." StaticText`
+    t =    16.39s         Checking existence of `"Your friends will appear here." StaticText`
+    t =    16.43s Find the "Friends" Button
+    t =    16.45s Tap "Memories" Button
+    t =    16.45s     Wait for app.tadayo to idle
+    t =    16.45s     Find the "Memories" Button
+    t =    16.48s     Check for interrupting elements affecting "photo.on.rectangle" Button
+    t =    16.50s     Synthesize event
+    t =    16.80s     Wait for app.tadayo to idle
+    t =    18.23s Waiting 5.0s for "Your shared days, kept together." StaticText to exist
+    t =    19.26s     Checking `Expect predicate `existsNoRetry == 1` for object "Your shared days, kept together." StaticText`
+    t =    19.26s         Checking existence of `"Your shared days, kept together." StaticText`
+    t =    19.30s Tap "Go to Home" Button
+    t =    19.30s     Wait for app.tadayo to idle
+    t =    19.30s     Find the "Go to Home" Button
+    t =    19.32s     Check for interrupting elements affecting "Go to Home" Button
+    t =    19.34s     Synthesize event
+    t =    19.65s     Wait for app.tadayo to idle
+    t =    20.46s Waiting 5.0s for "Start your club." StaticText to exist
+    t =    21.49s     Checking `Expect predicate `existsNoRetry == 1` for object "Start your club." StaticText`
+    t =    21.49s         Checking existence of `"Start your club." StaticText`
+    t =    21.53s Find the "Home" Button
+    t =    21.55s Tear Down
+Test Case '-[TadayoUITests.SignInUITests testTheTabsWithNoClub]' passed (21.787 seconds).
+Test Case '-[TadayoUITests.SignInUITests testWithNoSessionItOpensOnTheEmailScreen]' started.
+    t =     0.00s Start Test at 2026-11-12 05:15:34.369
+    t =     0.03s Set Up
+    t =     0.03s Open app.tadayo
+    t =     0.03s     Launch app.tadayo
+    t =     0.03s         Terminate app.tadayo:30364
+2026-11-12 05:15:35.443 xcodebuild[18055:57845] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-11-12 05:15:35.444 xcodebuild[18055:57845] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =     1.29s         Setting up automation session
+    t =     2.19s         Wait for app.tadayo to idle
+    t =     3.76s Waiting 10.0s for "Sign in" NavigationBar to exist
+    t =     4.81s     Checking `Expect predicate `existsNoRetry == 1` for object "Sign in" NavigationBar`
+    t =     4.81s         Checking existence of `"Sign in" NavigationBar`
+    t =     4.88s Checking existence of `"What’s your email?" StaticText`
+    t =     4.91s Checking existence of `"We’ll send a six-digit code to sign in." StaticText`
+    t =     4.94s Checking existence of `"Use the same email whenever you sign in." StaticText`
+    t =     4.97s Checking existence of `"Your sign-in ended. Enter your email to sign in again." StaticText`
+    t =     4.99s Checking existence of `"Email address" TextField`
+    t =     5.02s Checking existence of `"Send a code" Button`
+    t =     5.05s Find the "Send a code" Button
+    t =     5.08s Type 'ben@example' into Target Application 'app.tadayo'
+    t =     5.08s     Wait for app.tadayo to idle
+    t =     5.08s     Find the Target Application 'app.tadayo'
+    t =     5.10s     Check for interrupting elements affecting "Tadayo" Application
+    t =     5.13s     Synthesize event
+    t =     5.13s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =     5.53s     Wait for app.tadayo to idle
+    t =     5.53s Find the "Email address" TextField
+    t =     5.56s Find the "Send a code" Button
+    t =     5.59s Type '.com' into Target Application 'app.tadayo'
+    t =     5.59s     Wait for app.tadayo to idle
+    t =     5.59s     Find the Target Application 'app.tadayo'
+    t =     5.62s     Check for interrupting elements affecting "Tadayo" Application
+    t =     5.64s     Synthesize event
+    t =     5.65s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =     5.94s     Wait for app.tadayo to idle
+    t =     5.95s Find the "Send a code" Button
+    t =     5.98s Checking existence of `Button (First Match)`
+    t =     6.05s Tear Down
+Test Case '-[TadayoUITests.SignInUITests testWithNoSessionItOpensOnTheEmailScreen]' passed (6.258 seconds).
+Test Suite 'SignInUITests' passed at 2026-11-12 05:15:40.627.
+	 Executed 7 tests, with 0 failures (0 unexpected) in 118.975 (118.980) seconds
+Test Suite 'TadayoUITests.xctest' passed at 2026-11-12 05:15:40.627.
+	 Executed 7 tests, with 0 failures (0 unexpected) in 118.975 (118.981) seconds
+Test Suite 'All tests' passed at 2026-11-12 05:15:40.627.
+	 Executed 7 tests, with 0 failures (0 unexpected) in 118.975 (118.982) seconds
+2026-11-12 05:15:41.115 xcodebuild[18055:57845] [MT] IDETestOperationsObserverDebug: 250.278 elapsed -- Testing started completed.
+2026-11-12 05:15:41.115 xcodebuild[18055:57845] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-12 05:15:41.115 xcodebuild[18055:57845] [MT] IDETestOperationsObserverDebug: 250.278 sec, +250.278 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/_temp/ios-out/Tests.xcresult
+
+** TEST EXECUTE SUCCEEDED **
+
+Testing started
