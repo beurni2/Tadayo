@@ -11,12 +11,19 @@ export function graphemes(text: string): number {
   return [...segmenter.segment(text)].length;
 }
 
-/** Text of at most `max` grapheme clusters, and no more than 16 code units per cluster on the wire. */
+/**
+ * Text of `min` to `max` grapheme clusters, well formed, and no more than 16 code points a cluster on the
+ * wire: zod's `.max` counts code points, as the document's `maxLength` does, not UTF-16 units. A string
+ * past that guard, or holding a lone surrogate (which Postgres would keep as U+FFFD), is refused with one
+ * issue and nothing after it runs, so the grapheme count costs what the field allows, never what a body
+ * holds (T13).
+ */
 export function text(min: number, max: number): z.ZodString {
   return z
     .string()
     .min(min)
-    .max(max * 16)
+    .max(max * 16, { abort: true })
+    .refine((value) => value.isWellFormed(), { error: "well formed, with no lone surrogate", abort: true })
     .refine(
       (value) => {
         const count = graphemes(value);
@@ -144,17 +151,18 @@ export const Reaction = named(
 
 export const DisplayName = named(
   "DisplayName",
-  "A person's name as they gave it, the same in every club (spec 23): 1 to 40 grapheme clusters, with no " +
-    "space at either end, no control, bidirectional-control or line-separator character, and at least one " +
-    "visible character (FQ70's default). The app trims before sending; the API refuses a name rather than changing it. Names " +
-    "aren't unique.",
+  "A person's name as they gave it, the same in every club (spec 23): 1 to 40 grapheme clusters, well " +
+    "formed (no lone surrogate), with no space at either end, no control, bidirectional-control or " +
+    "line-separator character, and at least one visible character (FQ70's default). The app trims before " +
+    "sending; the API refuses a name rather than changing it. Names aren't unique.",
   name(40),
 );
 
 export const ClubName = named(
   "ClubName",
-  "A club's name: 1 to 40 grapheme clusters, with no space at either end, no control, " +
-    "bidirectional-control or line-separator character, and at least one visible character (FQ70's default).",
+  "A club's name: 1 to 40 grapheme clusters, well formed (no lone surrogate), with no space at either " +
+    "end, no control, bidirectional-control or line-separator character, and at least one visible character " +
+    "(FQ70's default).",
   name(40),
 );
 
@@ -173,12 +181,17 @@ export const ContentVersion = named(
 
 export const Caption = named(
   "Caption",
-  "A caption: at most 140 grapheme clusters, counted as the app counts them (T13, D09). It can't " +
+  "A caption: at most 140 grapheme clusters, counted as the app counts them, and well formed (no lone " +
+    "surrogate) (T13, D09). It can't " +
     "contain the drop's own source URL (CAPTION_CONTAINS_SOURCE).",
   text(0, 140),
 );
 
-export const CommentText = named("CommentText", "A comment: 1 to 500 grapheme clusters (T13, D09).", text(1, 500));
+export const CommentText = named(
+  "CommentText",
+  "A comment: 1 to 500 grapheme clusters, well formed (no lone surrogate) (T13, D09).",
+  text(1, 500),
+);
 
 export const Person = named(
   "Person",

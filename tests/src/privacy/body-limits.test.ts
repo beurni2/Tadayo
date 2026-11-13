@@ -1,8 +1,11 @@
 // What the API's request-body limits (services/api/src/app.ts: BODY_LIMIT, bodyLimitOf) leave out: nothing a valid
 // request holds. For each operation with a body the contract (packages/contracts/openapi.yaml) bounds the longest
-// request a client can send, written the way that takes the most bytes (every code unit of a string, a key's
-// among them, an escape of six bytes, as JSON allows), and the route's limit must be at least that. A contract
-// change that grows a body past its route's limit fails here, before a valid request is refused. No database.
+// request a client can send, written the way that takes the most bytes, as JSON allows: a string's `maxLength`
+// counts code points (JSON Schema's definition, and zod's `.max`, docs/LIMITATIONS.md), and a code point outside
+// the Basic Multilingual Plane is written as two escapes of six bytes, so each code point of a string may take
+// twelve bytes, unless its pattern holds it to ASCII, where each takes one escape of six; a key and an enum
+// value are ASCII. The route's limit must be at least that. A contract change that grows a body past its
+// route's limit fails here, before a valid request is refused. No database.
 
 import { bodyLimitOf } from "@tadayo/api";
 import { describe, expect, it } from "vitest";
@@ -35,8 +38,22 @@ const MEASURED = new Set([
 const FIXED: Readonly<Record<string, number>> = { uuid: 36, date: 10, "date-time": 20 };
 const INSTANT = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$";
 
-/** A string of `length` code units as the longest JSON text for it: its quotes and an escape for each unit. */
+/** A string of `length` ASCII characters as the longest JSON text for it: its quotes and an escape for each. */
 const escaped = (length: number): number => 2 + 6 * length;
+
+/**
+ * The patterns, as openapi.yaml writes them, that hold a string to ASCII: an id or a version, a hex string, a
+ * time zone. Any other pattern, or none, lets a string hold any code point.
+ */
+const ASCII_ONLY: ReadonlySet<string> = new Set([
+  "^[A-Za-z0-9_-]+$",
+  "^[0-9a-fA-F]+$",
+  "^[A-Za-z][A-Za-z0-9_+-]*(?:\\/[A-Za-z0-9_+-]+)*$",
+]);
+
+/** A string of at most `maxLength` code points as the longest JSON text for it: two escapes a code point, or one if ASCII. */
+const bounded = (maxLength: number, pattern: unknown): number =>
+  typeof pattern === "string" && ASCII_ONLY.has(pattern) ? escaped(maxLength) : 2 + 12 * maxLength;
 
 /** The most bytes a valid JSON value for `node` can take, or a throw naming what the contract leaves unbounded. */
 function longest(node: Json, where: string): number {
@@ -62,7 +79,7 @@ function longest(node: Json, where: string): number {
       return Math.max(String(top).length, String(bottom).length);
     }
     case "string": {
-      if (typeof schema.maxLength === "number") return escaped(schema.maxLength);
+      if (typeof schema.maxLength === "number") return bounded(schema.maxLength, schema.pattern);
       // With no maxLength a string is bounded by its form: a UUID, a date, or the contract's Instant.
       const format = typeof schema.format === "string" ? schema.format : "";
       const form = FIXED[format];
@@ -120,11 +137,15 @@ describe("the longest request a client can send, by the contract, and each route
       },
     };
     // {"id":…,"n":99,"ok":false,"tags":[…,…]}: two braces, three commas between the four members, and for each
-    // member its key (quotes and an escape for each unit) and a colon, then its value.
+    // member its key (quotes and an escape for each character) and a colon, then its value, a string's code
+    // points at two escapes each.
     const keys = escaped(2) + escaped(1) + escaped(2) + escaped(4) + 4;
-    const values = escaped(3) + "99".length + "false".length + (2 + 2 * escaped(1) + 1);
+    const values = 2 + 12 * 3 + "99".length + "false".length + (2 + 2 * (2 + 12 * 1) + 1);
     expect(longest(small, "small")).toBe(2 + 3 + keys + values);
-    expect(longest({ oneOf: [{ type: "boolean" }, { type: "string", maxLength: 10 }] }, "either")).toBe(escaped(10));
+    expect(longest({ oneOf: [{ type: "boolean" }, { type: "string", maxLength: 10 }] }, "either")).toBe(2 + 12 * 10);
+    // A pattern that holds a string to ASCII takes one escape a character; any other takes two a code point.
+    expect(longest({ type: "string", maxLength: 3, pattern: "^[A-Za-z0-9_-]+$" }, "id")).toBe(escaped(3));
+    expect(longest({ type: "string", maxLength: 3, pattern: "^[a-z]+$" }, "other")).toBe(2 + 12 * 3);
     expect(longest({ type: "string", enum: ["ab", "abcd"] }, "choice")).toBe(escaped(4));
     expect(() => longest({ type: "string" }, "open")).toThrow("a string with no maxLength");
     expect(() => longest({ type: "array", items: { type: "boolean" } }, "open")).toThrow("an array with no maxItems");
@@ -132,6 +153,28 @@ describe("the longest request a client can send, by the contract, and each route
     expect(() => longest({ type: "string", maxLength: 1, nullable: true }, "new")).toThrow(
       "the keyword nullable isn't measured",
     );
+  });
+
+  it("knows a pattern holds a string to ASCII only when it does: none of them takes an accent, an emoji or a lone surrogate", () => {
+    // Each read as JSON Schema reads it, an ECMA-262 regular expression, here with the u flag that makes a
+    // code point one character.
+    for (const pattern of ASCII_ONLY) {
+      const regex = new RegExp(pattern, "u");
+      for (const value of ["\u00E9", "a\u00E9", "\u{1F600}", "a\u{E0067}", "\uD800", "\u0660"]) {
+        expect(regex.test(value), `${pattern} ${JSON.stringify(value)}`).toBe(false);
+      }
+    }
+    // Each is a pattern the contract uses, so none is dead.
+    const used = new Set<string>();
+    const visit = (node: Json): void => {
+      if (Array.isArray(node)) node.forEach(visit);
+      else if (isObject(node)) {
+        if (typeof node.pattern === "string") used.add(node.pattern);
+        Object.values(node).forEach(visit);
+      }
+    };
+    visit(document);
+    for (const pattern of ASCII_ONLY) expect(used.has(pattern), pattern).toBe(true);
   });
 
   it("holds the longest body of every operation that takes one to its route's limit", () => {
@@ -145,10 +188,13 @@ describe("the longest request a client can send, by the contract, and each route
         `${operation.id}: its longest body against its limit of ${String(bodyLimitOf(operation.id))}`,
       ).toBeLessThanOrEqual(bodyLimitOf(operation.id));
     }
-    // The largest are reports and comments, some 48 kilobytes of escapes; `updateMe`'s is a few, in its 8 KiB.
+    // The largest are reports and comments, some 96 kilobytes of escapes; `updateMe`'s is some 8, in its 17 KiB;
+    // `sendEvents`', all ASCII, is 48,442 bytes.
     const [largest] = [...sizes.entries()].sort((a, b) => b[1] - a[1]);
     expect(largest?.[0]).toBe("createReport");
-    expect(largest?.[1]).toBeGreaterThan(40_000);
-    expect(sizes.get("updateMe")).toBeLessThan(5_000);
+    expect(largest?.[1]).toBeGreaterThan(90_000);
+    expect(sizes.get("updateMe")).toBeGreaterThan(8 * 1024);
+    expect(sizes.get("updateMe")).toBeLessThan(9_000);
+    expect(sizes.get("sendEvents")).toBe(48_442);
   });
 });

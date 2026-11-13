@@ -298,10 +298,10 @@ describe("the table of updateMe bodies each session sends (updateMeCases)", () =
     expect(body("active", "a new name", 7)).toEqual({ expected_version: 7, display_name: "Renamed" });
     // A lone surrogate, as JSON.parse gives it back from its escape.
     expect(body("active", "a name that isn't well formed")).toEqual({ expected_version: 4, display_name: "A\ud800B" });
-    // The route's limit is 8 KiB: a body past it, by a little, so every cell that sends one stays cheap.
+    // The route's limit is 17 KiB: a body past it, by a little, so every cell that sends one stays cheap.
     const long = asked("active", "a body past the route's limit").body;
-    expect(Buffer.byteLength(long)).toBeGreaterThan(8 * 1024);
-    expect(Buffer.byteLength(long)).toBeLessThan(9 * 1024);
+    expect(Buffer.byteLength(long)).toBeGreaterThan(17 * 1024);
+    expect(Buffer.byteLength(long)).toBeLessThan(18 * 1024);
     expect(body("active", "another account's avatar")).toEqual({
       expected_version: 4,
       avatar_upload_id: "upl_foreign",
