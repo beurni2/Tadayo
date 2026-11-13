@@ -13,6 +13,7 @@ import { join } from "node:path";
 import { parseArgs } from "node:util";
 import type postgres from "postgres";
 import { runBootstrap } from "./bootstrap.ts";
+import { certificateRefusal } from "./database.ts";
 import { deployBranch } from "./deploy-branch.ts";
 import { devClock } from "./dev-clock.ts";
 import {
@@ -95,6 +96,9 @@ async function withDatabase<T>(
     try {
       await db`SELECT 1`;
     } catch (error) {
+      const refusal = certificateRefusal(error);
+      if (refusal !== undefined)
+        throw new OpsError(`${site.script}: couldn't connect with ${site.variable}: ${refusal}.`);
       const reason = error instanceof Error && error.message !== "" ? error.message : "no reason was given";
       throw new OpsError(
         `${site.script}: couldn't connect with ${site.variable}: ${reason}. Has ops bootstrap run, and does ${site.variable} hold the password it set?`,

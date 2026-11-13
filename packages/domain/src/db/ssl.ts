@@ -87,19 +87,23 @@ export function poolerTls(): PinnedTls {
 const LOOPBACK_HOSTS: readonly string[] = ["localhost", "127.0.0.1", "[::1]"];
 
 /**
- * True only for a connection string whose host, as `new URL` reads it, is exactly one of the
- * loopback names, and which has at most one `@`. postgres.js takes the host after the FIRST `@` and
- * decodes it (so `%2C` becomes a comma and a second host), while `new URL` takes it after the LAST:
- * with two `@` the two could read different hosts, so such a string is never plain, and gets TLS.
- * With one `@` they read the same segment, and a host with a `%` or a `,` in it is no loopback
- * name, so it gets TLS too.
+ * True only for a connection string whose host is exactly one of the loopback names as both
+ * postgres.js and `new URL` read it. postgres.js 3.4.9 (`src/index.js`, `parseUrl`) takes the text
+ * after `://` up to the first `?` or `/` (past a `#`, where `new URL` stops), drops it up to the FIRST
+ * `@`, decodes the rest, and reads a comma in it as a list of hosts, which it dials in turn; with no
+ * comma, it dials the host `new URL` reads. So a string is plain only when that decoded text holds no
+ * comma and `new URL`'s host is a loopback name: `localhost:1#,elsewhere` and `localhost%2Celsewhere`
+ * get TLS. A string with two `@` in its authority is never plain either, as a second guard: the two
+ * parsers start the host at different ones.
  */
 function isPlainLoopback(url: string): boolean {
   const authority = /^[a-z][a-z0-9+.-]*:\/\/([^/?#]*)/i.exec(url)?.[1];
   if (authority === undefined) return false;
-  const at = authority.indexOf("@");
-  if (at !== authority.lastIndexOf("@")) return false;
+  if (authority.indexOf("@") !== authority.lastIndexOf("@")) return false;
+  // postgres.js's own reading of the hosts, written as its parseUrl writes it.
+  const hosts = url.slice(url.indexOf("://") + 3).split(/[?/]/)[0] ?? "";
   try {
+    if (decodeURIComponent(hosts.slice(hosts.indexOf("@") + 1)).includes(",")) return false;
     return LOOPBACK_HOSTS.includes(new URL(url).hostname.toLowerCase());
   } catch {
     return false;

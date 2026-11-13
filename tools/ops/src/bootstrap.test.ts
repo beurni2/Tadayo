@@ -8,7 +8,12 @@ import type { Spawn, SpawnOptions } from "./spawn.ts";
 
 const PASSWORD = "a-random-password-of-more-than-32-characters";
 const FILE = "/repo/db/bootstrap.sql";
-const PG_ENV = { PGHOST: "db.example", PGUSER: "postgres.x", PGPASSWORD: "the-admin-password", PGSSLMODE: "require" };
+const PG_ENV = {
+  PGHOST: "db.example",
+  PGUSER: "postgres.x",
+  PGPASSWORD: "the-admin-password",
+  PGSSLMODE: "verify-full",
+};
 
 interface Call {
   command: string;

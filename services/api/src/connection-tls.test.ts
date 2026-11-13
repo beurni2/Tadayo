@@ -3,8 +3,9 @@
 // SSLRequest as Supabase's pooler does and records whether a StartupMessage (the user name, then
 // the password) ever reached it. No network and no database: the certificates are made by openssl
 // in a temporary folder when the file starts, shaped like the pooler's (a root, an intermediate
-// without Key Usage, as supabase/supabase issue #50862 reports of Supabase's, and a leaf), and the
-// test's root stands in for Supabase's (docs/plans/api-b0-pooler-ca.md, section 4).
+// without Key Usage, as supabase/supabase issue #50862 reports of Supabase's, and a leaf), with
+// impostors beside them, and the test's root stands in for Supabase's (docs/plans/api-b0-pooler-ca.md,
+// section 4).
 
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -52,6 +53,18 @@ function make(name: string, subject: string, extensions: readonly string[], issu
   );
 }
 
+/** A certificate's Subject Key Identifier, as openssl prints it (`AB:CD:…`). */
+function keyIdOf(name: string): string {
+  const text = execFileSync(
+    "openssl",
+    ["x509", "-in", join(dir, `${name}.crt`), "-noout", "-ext", "subjectKeyIdentifier"],
+    { encoding: "utf8" },
+  );
+  const id = /[0-9A-F]{2}(?::[0-9A-F]{2})+/.exec(text)?.[0];
+  if (id === undefined) throw new Error(`${name}.crt has no subject key identifier`);
+  return id;
+}
+
 beforeAll(() => {
   dir = mkdtempSync(join(tmpdir(), "tadayo-tls-"));
   // No configuration's own extensions: each certificate has only the ones named here.
@@ -62,8 +75,13 @@ beforeAll(() => {
   make("intermediate", "Test Intermediate", ["basicConstraints=critical,CA:TRUE"], "root");
   make("leaf", "localhost", leaf("localhost"), "intermediate");
   make("elsewhere", "aws-0-us-east-1.pooler.supabase.com", leaf("aws-0-us-east-1.pooler.supabase.com"), "intermediate");
+  // Another key under the trusted root's name, as Supabase's 2025 root is (docs/LIMITATIONS.md).
   make("other-root", "Test Root", ca);
   make("impostor", "localhost", leaf("localhost"), "other-root");
+  // Another key under the trusted root's name and its key identifier too, so the client takes the
+  // trusted root for the issuer and only the signature tells them apart.
+  make("twin-root", "Test Root", [...ca, `subjectKeyIdentifier=${keyIdOf("root")}`]);
+  make("twin", "localhost", leaf("localhost"), "twin-root");
 });
 
 afterAll(() => {
@@ -190,9 +208,10 @@ describe("a link pinned to a root, made through postgres.js", { timeout: 30_000 
   });
 
   for (const [what, chain, refusal] of [
-    ["a chain from another root of the same name", ["impostor"], /UNABLE_TO_VERIFY_LEAF_SIGNATURE|SELF_SIGNED/],
-    ["the right root, and a name that isn't the host", ["elsewhere", "intermediate"], /ERR_TLS_CERT_ALTNAME_INVALID/],
-    ["the leaf alone, without the intermediate it hangs from", ["leaf"], /UNABLE_TO_VERIFY_LEAF_SIGNATURE/],
+    ["a chain from another root of the same name", ["impostor"], /^UNABLE_TO_VERIFY_LEAF_SIGNATURE$/],
+    ["a chain from another root with the same name and key identifier", ["twin"], /^CERT_SIGNATURE_FAILURE$/],
+    ["the right root, and a name that isn't the host", ["elsewhere", "intermediate"], /^ERR_TLS_CERT_ALTNAME_INVALID$/],
+    ["the leaf alone, without the intermediate it hangs from", ["leaf"], /^UNABLE_TO_VERIFY_LEAF_SIGNATURE$/],
   ] as const) {
     it(`refuses ${what}, before any user name or password leaves`, async () => {
       for (const loosened of [false, true]) {
@@ -214,12 +233,18 @@ describe("a link pinned to a root, made through postgres.js", { timeout: 30_000 
   }
 
   it("never falls back to the clear when the server offers no TLS", async () => {
-    const server = await frontEnd();
-    try {
-      expect(await connectTo(server, file("root.crt"))).not.toMatch(/answered|started/);
-      expect(server.heard.startup).toBeUndefined();
-    } finally {
-      server.close();
+    for (const loosened of [false, true]) {
+      if (loosened) vi.stubEnv("NODE_TLS_REJECT_UNAUTHORIZED", "0");
+      const server = await frontEnd();
+      try {
+        expect(
+          await connectTo(server, file("root.crt")),
+          `NODE_TLS_REJECT_UNAUTHORIZED=0: ${String(loosened)}`,
+        ).not.toMatch(/answered|started/);
+        expect(server.heard.startup).toBeUndefined();
+      } finally {
+        server.close();
+      }
     }
   });
 });

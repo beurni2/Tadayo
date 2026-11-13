@@ -4,6 +4,7 @@
 
 import { join } from "node:path";
 import type postgres from "postgres";
+import { SUPABASE_ROOT_CA_PATH } from "@tadayo/domain";
 import { describe, expect, it } from "vitest";
 import { OpsError } from "./ops-error.ts";
 import { runScript, SCRIPTS, type OpsContext } from "./run.ts";
@@ -168,6 +169,33 @@ describe("a connection that the database refuses", () => {
     }
   });
 
+  it("says that the pin refused the server's certificate, and not that bootstrap or the password may be wrong", async () => {
+    for (const code of [
+      "SELF_SIGNED_CERT_IN_CHAIN",
+      "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+      "ERR_TLS_CERT_ALTNAME_INVALID",
+    ]) {
+      const { ctx } = harness();
+      const refused = Object.assign(new Error("self-signed certificate; try running Node.js with --use-system-ca"), {
+        code,
+      });
+      const refusing: OpsContext = {
+        ...ctx,
+        connect: (url) => {
+          const sql = ctx.connect(url);
+          return Object.assign(() => Promise.reject(refused), {
+            end: (options?: { timeout?: number }) => sql.end(options),
+          }) as unknown as postgres.Sql;
+        },
+      };
+      await expect(runScript("migrate", refusing), code).rejects.toThrow(
+        new OpsError(
+          `migrate: couldn't connect with DATABASE_URL: the server's certificate didn't check out against Supabase's root (${code}), so no user name or password was sent. docs/LIMITATIONS.md's row on what would break the pin says what to do.`,
+        ),
+      );
+    }
+  });
+
   it("says that no reason was given when the driver's error has no words, or isn't an Error", async () => {
     for (const thrown of [new Error(""), "refused"]) {
       const { ctx } = harness();
@@ -248,6 +276,9 @@ describe("bootstrap", () => {
     expect(call?.command).toBe("psql");
     expect(call?.options.env?.["PGUSER"]).toBe(`postgres.${REF}`);
     expect(call?.options.env?.["PGPASSWORD"]).toBe(ADMIN_PASSWORD);
+    // libpq checks the pooler's chain against Supabase's root, and its name (environment.ts, pgEnvOf).
+    expect(call?.options.env?.["PGSSLMODE"]).toBe("verify-full");
+    expect(call?.options.env?.["PGSSLROOTCERT"]).toBe(SUPABASE_ROOT_CA_PATH);
     expect(call?.options.input).toContain("/repo/db/bootstrap.sql");
     // Then the application's connection, which closes.
     expect(connected).toEqual([appUrl()]);

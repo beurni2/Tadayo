@@ -75,5 +75,41 @@ describe("connect", () => {
     const tricky = await optionsOf("postgres://tadayo_app:x@evil.example%2C@localhost:5432/postgres");
     expect(tricky.host).toEqual(["evil.example", "@localhost"]);
     expect(tricky.ssl).toEqual(PINNED);
+    // postgres.js reads the hosts past a `#`, where `new URL` stops: it dials localhost:1, then evil.example.
+    const fragment = await optionsOf("postgresql://tadayo_app:x@localhost:1#,evil.example:5432/postgres");
+    expect(fragment.host).toEqual(["localhost", "evil.example"]);
+    expect(fragment.ssl).toEqual(PINNED);
+  });
+
+  it("asks for no TLS only when every host the driver would dial is a loopback one", async () => {
+    // Strings written to make the two readings differ: whatever the driver makes of each, a link
+    // without TLS goes nowhere but the machine itself.
+    // (`[::1]` is left out: postgres.js 3.4.9 cuts a host at its first `:`, so it reads `[`.)
+    const loopback = new Set(["localhost", "127.0.0.1"]);
+    for (const url of [
+      "postgres://tadayo_app:x@localhost:5432/postgres",
+      "postgres://tadayo_app:x@localhost:5432/postgres#,evil.example",
+      "postgres://tadayo_app:x@localhost#x/postgres",
+      "postgres://tadayo_app:x@localhost:1#,evil.example:5432/postgres",
+      "postgres://tadayo_app:x@localhost#%2Cevil.example/postgres",
+      "postgres://tadayo_app:x@localhost%2Cevil.example/postgres",
+      "postgres://tadayo_app:x@evil.example%2C@localhost:5432/postgres",
+      "postgres://tadayo_app:x@evil.example@localhost:5432/postgres",
+      "postgres://tadayo_app:x@localhost@evil.example:5432/postgres",
+      "postgres://tadayo_app:x@localhost:5432,evil.example:5432/postgres",
+      "postgres://tadayo_app:x%2C@localhost:5432/postgres",
+      "postgres://tadayo_app:x@localhost:5432/postgres?host=evil.example",
+      "postgres://tadayo_app:x@127.0.0.1:5432/postgres?sslmode=disable",
+    ]) {
+      const { ssl, host } = await optionsOf(url);
+      if (ssl === false) {
+        expect(
+          host.every((name) => loopback.has(name)),
+          url,
+        ).toBe(true);
+      } else {
+        expect(ssl, url).toEqual(PINNED);
+      }
+    }
   });
 });

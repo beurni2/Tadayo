@@ -1,6 +1,6 @@
 # api/b0-pooler-ca: check the session pooler's certificate
 
-The api lane's plan for the PR that closes `docs/LIMITATIONS.md`'s row of 2026-11-11 on the database links being encrypted but not authenticated (`docs/JOURNAL.md` block 1.2, step 3). Written 2026-11-13, from `main` at `6912728`.
+The api lane's plan for the PR that closes `docs/LIMITATIONS.md`'s row of 2026-11-11 on the database links being encrypted but not authenticated (`docs/JOURNAL.md` block 1.2, step 3). Written 2026-11-13, from `main` at `6912728`; sections 3 to 6 amended the same day after the first review round (PR #46; `docs/JOURNAL.md`, section 3.2).
 
 ## 1. Why
 
@@ -24,9 +24,10 @@ Every link to the database (the API's, the worker's, the `ops` scripts' and `boo
   - `tlsPinnedTo(root)`, `{ ca: [root], rejectUnauthorized: true }`, frozen, with no `servername`, `socket` or `checkServerIdentity` of its own, so postgres.js's servername (the host) is the name checked;
   - `poolerTls()`, `tlsPinnedTo(supabaseRootCa())`;
   - `transportOptions(url)`, `{ ssl: poolerTls() }` for every host but a plainly written loopback one, which keeps `{}` as now.
-- `tools/ops/src/database.ts` `connectionOptions`: `ssl: poolerTls()`.
+- `tools/ops/src/database.ts` `connectionOptions`: `ssl: poolerTls()`; `connectToDev`, the client `tools/ops/src/main.ts` gives every script, built from it; and `certificateRefusal`, so that an `ops` script whose link the pin refused says so, and that nothing was sent, instead of asking whether `bootstrap` ran and the password is right (`tools/ops/src/run.ts` `withDatabase`).
 - `tools/ops/src/environment.ts` `pgEnvOf`: `PGSSLMODE=verify-full` and `PGSSLROOTCERT` set to the checked file's path, so `bootstrap`'s `psql` checks the chain and the name too (libpq takes a file, not a string).
 - Root only, not the intermediate (which has no published copy and is the one likely to be reissued, #50862) nor the leaf. No public CA is added beside it, and no environment variable can loosen it, as `ssl.ts` already keeps TLS out of a pasted secret's hands.
+- A string is plainly loopback only when postgres.js and `new URL` both read a loopback host there. postgres.js 3.4.9 (`src/index.js` `parseUrl`) reads the hosts up to the first `?` or `/`, past a `#` where `new URL` stops, and a comma there as a list it dials in turn: so `…@localhost:1#,elsewhere:5432/…` gets TLS, where it got none before (review round 1). `tools/ops/src/migrate-cli.ts`, the by-hand entry for a local Postgres, opens a fifth client and refuses any string `transportOptions` gives TLS, so it never reaches the pooler.
 - A link to a host given as an IP address is checked against `localhost` by Node (postgres.js sends no servername then), so it fails: every connection string Tadayo uses names the pooler's host (`tools/ops/src/environment.ts` `devDatabaseUrl` for `ops`; Fly's `DATABASE_URL` for the API and the worker).
 
 ## 4. Tests, written first
@@ -38,24 +39,30 @@ Every link to the database (the API's, the worker's, the `ops` scripts' and `boo
   - `tlsPinnedTo` gives a frozen object and array.
 - `services/api/src/connection-tls.test.ts`, with no network: a front end on loopback that answers postgres.js's SSLRequest and records whether a StartupMessage came, with certificates made by `openssl` in a temporary folder when the test starts (a root, an intermediate without Key Usage as the pooler's, leaves). Through postgres.js and `tlsPinnedTo(<the test's root>)`, dialling `localhost`:
   - the leaf and intermediate sent, the name right: the StartupMessage arrives inside TLS;
-  - refused, with no StartupMessage: a leaf from another root with the same name; the right root and a wrong name; the leaf sent without its intermediate; a server that answers `N` (no plaintext); and each of those again with `NODE_TLS_REJECT_UNAUTHORIZED=0` set.
+  - refused, with no StartupMessage: a leaf from another root with the same name; a leaf from another root with the same name and the same key identifier, which only the signature tells apart; the right root and a wrong name; the leaf sent without its intermediate; a server that answers `N` (no plaintext); and each of those again with `NODE_TLS_REJECT_UNAUTHORIZED=0` set.
 - `services/api/src/connection.test.ts` and `services/worker/src/connection.test.ts`: the client's `ssl` option is the pinned object for the pooler's string, as they now check `"require"`.
-- `tools/ops/src/database.test.ts` and `environment.test.ts`: `ssl` is the pinned object; `pgEnvOf` gives `verify-full` and the checked file's path.
+- `tools/ops/src/database.test.ts` and `environment.test.ts`: `ssl` is the pinned object, in `connectionOptions` and in the client `connectToDev` builds; `pgEnvOf` gives `verify-full` and the checked file's path; `certificateRefusal` names Node's codes for a refused certificate and nothing else. `run.test.ts`: `bootstrap` gives psql `verify-full` and the file, and a refused certificate is said as one. `main.test.ts`: `main.ts` gives the scripts `connectToDev` and makes no client of its own.
+- `ssl.test.ts`, and the API's and the worker's `connection.test.ts` through postgres.js: a string with `#,` or `#%2C` after a loopback host gets TLS; and, for strings written to make the two readings differ, no TLS only when every host the driver would dial is a loopback one.
 - `tools/ops/src/deploy-files.test.ts`: the root reaches the image (`packages/domain/src` is copied and not excluded by `.dockerignore`).
 
-## 5. After the merge, on `dev` (each run on the founder's yes, `dev` claimed through the coordinator first and released after)
+## 5. On `dev`, before and after the merge (each run on the founder's yes, asked once with the PR's approval; `dev` claimed through the coordinator first and released after)
 
-In order of reach, each from `main`:
-1. `migrate` (it applies nothing new): the runner's link through `connectionOptions` under the pin.
-2. `bootstrap` (it can run again): `psql` with `verify-full`.
-3. `deploy-branch` with `main`: the API and the worker on Fly under the pin; the API listens only once its database answers.
-4. `supabase-probe`: the Machine's own link under the pin, and the probe passing as before.
+Before the merge, each started from `main` with the branch as `deploy-branch`'s input, so that `main` takes the pin only once the deployed links have met it (review round 1, d-1):
+1. `deploy-branch` with `api/b0-pooler-ca`: the API on Fly under the pin. The API listens only once its database answers, and the run fails when no API Machine is started on the image (`tools/ops/src/deploy-branch.ts`). The worker connects as it starts too: if its Machine is started before the run (it was after run 43160591767), a crash under the pin fails flyctl's smoke check and so the run, and the run's last line, "the API and the worker run" the image, shows its link; if that line says the worker's Machine is stopped, the run doesn't show the worker's link, which is then the API's code (`transportOptions`) with the same Fly secret, `DATABASE_URL`, until `worker-scale` starts it.
+2. `supabase-probe`: its Machine half runs the deployed image's `ops` code, so the Machine's own link under the pin, and the probe passing as before.
 
-A failure is closed: no user name or password leaves. Rolling back is reverting the PR and running `deploy-branch` again. If the chain doesn't verify, the run's error names the TLS failure, and the next step is a run that reads the chain the pooler sends, before anything is widened. Then the founder's step, asked once with this PR's approval: "Enforce SSL on incoming connections" on `tadayo-dev` (Database settings), which refuses clients that ask for no TLS, on both legs through the pooler, and restarts the database for a few minutes; then `migrate` once more.
+If either fails, nothing is merged. `deploy-branch` with `main` puts `main`'s image back. A Machine that crashed is restarted a few times and then left stopped, and a deploy leaves a stopped Machine stopped (`tools/ops/src/on-machine.ts` `onMachine`; `docs/plans/api-b0-deploy.md`, section 2), so if that run says no API Machine is started, the founder starts the API's Machine in Fly's dashboard (the app `tadayo-api-dev`, Machines, the one in the `api` group, Start), and `deploy-branch` with `main` runs once more to show the API started, before `dev` is released. Fly's log of the app shows Node's certificate error; its hint to try the system's store doesn't apply, since the pin replaces Node's whole store. The next step is then a run that reads the chain the pooler sends, before anything is widened.
+
+After the merge, squash-merged only when both passed, from `main`:
+3. `migrate` (it applies nothing new): the runner's postgres.js under the pin.
+4. `bootstrap` (it can run again): `psql` with `verify-full`.
+5. `deploy-branch` with `main`: `dev` back on `main`'s image, which holds the same code as the branch's.
+
+If step 3 or 4 fails, the deployed API isn't touched (it met the pin in step 1), but no runner script reaches the database until the PR is reverted: the revert is a PR of its own, opened at once, and the coordinator is told. A failure is closed: no user name or password leaves. Then the founder's step: "Enforce SSL on incoming connections" on `tadayo-dev` (Database settings), which refuses clients that ask for no TLS, on both legs through the pooler, and restarts the database for a few minutes; then `migrate` once more.
 
 ## 6. Records
 
-`docs/LIMITATIONS.md`: the row on authenticating the database link closed in code and then by the runs; a new row on what would make the pin fail (the root's expiry, the same-named 2025 root, Supavisor's certificates by SNI and by key type) and what to do then (add the successor beside the old root, never a public CA, once Supabase publishes it). `docs/JOURNAL.md`: blocks 1.1 and 1.2, section 0's line on `packages/domain/`, the audit map's T56 row, the log and table 4.1. `docs/PROGRESS.md`.
+`docs/LIMITATIONS.md`: the row on authenticating the database link closed in code and then by the runs; a new row on what would make the pin fail (the root's expiry, the same-named 2025 root, Supavisor's certificates by SNI and by key type) and what to do then: once Supabase publishes a successor, a PR of its own that widens the pin on purpose, reviewed as such, since the check takes exactly one certificate with one fingerprint (`checkPinnedRoot`, `ONE_CERTIFICATE`, `SUPABASE_ROOT_CA_SHA256`): a fixed set of pinned fingerprints, or a second pinned file checked the same way, with `ca` holding both and `ssl.test.ts`'s refusals of a second certificate changed with it; never a public CA, and no setting that loosens it. `docs/JOURNAL.md`: blocks 1.1 and 1.2, section 0's line on `packages/domain/`, the audit map's T56 row, the log and table 4.1. `docs/PROGRESS.md`.
 
 ## 7. Review
 

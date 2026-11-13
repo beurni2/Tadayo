@@ -8,7 +8,7 @@ import { SUPABASE_ROOT_CA_PATH } from "@tadayo/domain";
 import postgres from "postgres";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FAKE_FLY_TOKEN } from "../test/fake-fly.ts";
-import { connectionOptions } from "./database.ts";
+import { certificateRefusal, connectionOptions, connectToDev } from "./database.ts";
 import { devDatabaseUrl, pgEnvOf, type DevDatabaseUrl } from "./environment.ts";
 import { REDACTED, redactor } from "./output.ts";
 
@@ -97,5 +97,51 @@ describe("connectionOptions", () => {
     onnotice({ severity: "LOG", message: "a routine line" });
     onnotice({ severity: "DEBUG", message: "another" });
     expect(written).toEqual([`ops: WARNING: the setting ${REDACTED} isn't allowed`]);
+  });
+});
+
+describe("connectToDev", () => {
+  it("builds the client every script is given from connectionOptions, with TLS checked against Supabase's root", async () => {
+    // main.ts gives the scripts this client: read without connecting.
+    vi.stubEnv("PGSSLMODE", "disable");
+    const sql = connectToDev(dev(), (line) => line, nowhere);
+    const { host, port, user, database, ssl, max } = sql.options;
+    await sql.end();
+    expect({ host, port, user, database, ssl, max }).toEqual({
+      host: [POOLER],
+      port: [5432],
+      user: `tadayo_app.${DEV}`,
+      database: "postgres",
+      ssl: PINNED,
+      max: 1,
+    });
+  });
+});
+
+describe("certificateRefusal", () => {
+  it("names the pin's refusal of a certificate by Node's code, and says nothing was sent", () => {
+    for (const code of [
+      "SELF_SIGNED_CERT_IN_CHAIN",
+      "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+      "CERT_HAS_EXPIRED",
+      "ERR_TLS_CERT_ALTNAME_INVALID",
+    ]) {
+      expect(certificateRefusal(Object.assign(new Error("Node's words"), { code })), code).toBe(
+        `the server's certificate didn't check out against Supabase's root (${code}), so no user name or password was sent. docs/LIMITATIONS.md's row on what would break the pin says what to do`,
+      );
+    }
+  });
+
+  it("leaves any other failure to the driver's own words", () => {
+    for (const thrown of [
+      Object.assign(new Error("connect ECONNREFUSED"), { code: "ECONNREFUSED" }),
+      Object.assign(new Error("password authentication failed"), { code: "28P01" }),
+      new Error("no code"),
+      { code: 42 },
+      "SELF_SIGNED_CERT_IN_CHAIN",
+      undefined,
+    ]) {
+      expect(certificateRefusal(thrown), typeof thrown).toBeUndefined();
+    }
   });
 });

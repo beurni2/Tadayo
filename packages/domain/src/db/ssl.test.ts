@@ -175,8 +175,9 @@ describe("transportOptions", () => {
   });
 
   it("treats a string that postgres.js and `new URL` could read differently as remote", () => {
-    // postgres.js takes the host after the first `@` and decodes it, `new URL` after the last: the
-    // first of these dials `evil.example`, though `new URL` says `localhost`.
+    // postgres.js takes the hosts after the first `@`, up to the first `?` or `/`, and decodes them;
+    // `new URL` takes the host after the last `@` and stops at a `#`: the first of these dials
+    // `evil.example`, though `new URL` says `localhost`.
     for (const url of [
       "postgres://tadayo_app:x@evil.example%2C@localhost:5432/postgres",
       "postgres://tadayo_app:x@localhost%2Cevil.example/postgres",
@@ -186,6 +187,11 @@ describe("transportOptions", () => {
       "postgres://tadayo_app:x@localhost@evil.example:5432/postgres",
       "postgres://localhost%2Cevil.example/postgres",
       "postgres://localhost%2C/postgres",
+      // postgres.js reads the hosts past a `#`, where `new URL` stops: these dial `evil.example` second.
+      "postgresql://tadayo_app:x@localhost:1#,evil.example:5432/postgres",
+      "postgres://tadayo_app:x@localhost#,evil.example/postgres",
+      "postgres://tadayo_app:x@localhost#%2Cevil.example/postgres",
+      "postgres://tadayo_app:x@localhost:1#x,evil.example?sslmode=disable",
     ]) {
       expect(transportOptions(url), url).toEqual(TLS);
     }

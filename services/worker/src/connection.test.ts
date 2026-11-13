@@ -32,5 +32,6 @@ describe("connect", () => {
   it("asks for no TLS of a plainly written loopback host, and requires it of one the driver reads differently", async () => {
     expect((await optionsOf("postgres://tadayo_app:a-password@127.0.0.1:5432/postgres")).ssl).toBe(false);
     expect((await optionsOf("postgres://tadayo_app:x@evil.example%2C@localhost:5432/postgres")).ssl).toEqual(PINNED);
+    expect((await optionsOf("postgres://tadayo_app:x@localhost:1#,evil.example:5432/postgres")).ssl).toEqual(PINNED);
   });
 });
