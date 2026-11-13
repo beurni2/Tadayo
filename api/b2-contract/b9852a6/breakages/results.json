@@ -1,0 +1,406 @@
+[
+ {
+  "name": "drop abort on text()'s guard",
+  "verdict": "CAUGHT",
+  "expected": "never counts a string past its guard",
+  "named": [
+   "packages/contracts: \u00d7 DisplayName never counts a string past its guard of 640 code points 10ms",
+   "packages/contracts: \u00d7 ClubName never counts a string past its guard of 640 code points 1ms",
+   "packages/contracts: \u00d7 CandidateLabel never counts a string past its guard of 640 code points 1ms",
+   "packages/contracts: \u00d7 Caption never counts a string past its guard of 2240 code points 1ms",
+   "packages/contracts: \u00d7 CommentText never counts a string past its guard of 8000 code points 1ms",
+   "packages/contracts: \u00d7 ReportNote never counts a string past its guard of 8000 code points 1ms",
+   "packages/contracts: \u00d7 SearchText never counts a string past its guard of 1600 code points 1ms"
+  ],
+  "all": [
+   "packages/contracts: \u00d7 DisplayName never counts a string past its guard of 640 code points 10ms",
+   "packages/contracts: \u00d7 ClubName never counts a string past its guard of 640 code points 1ms",
+   "packages/contracts: \u00d7 CandidateLabel never counts a string past its guard of 640 code points 1ms",
+   "packages/contracts: \u00d7 Caption never counts a string past its guard of 2240 code points 1ms",
+   "packages/contracts: \u00d7 CommentText never counts a string past its guard of 8000 code points 1ms",
+   "packages/contracts: \u00d7 ReportNote never counts a string past its guard of 8000 code points 1ms",
+   "packages/contracts: \u00d7 SearchText never counts a string past its guard of 1600 code points 1ms"
+  ]
+ },
+ {
+  "name": "drop the isWellFormed refine",
+  "verdict": "CAUGHT",
+  "expected": "refuses a lone surrogate",
+  "named": [
+   "packages/contracts: \u00d7 DisplayName refuses a lone surrogate and keeps a surrogate pair 8ms",
+   "packages/contracts: \u00d7 ClubName refuses a lone surrogate and keeps a surrogate pair 1ms",
+   "packages/contracts: \u00d7 CandidateLabel refuses a lone surrogate and keeps a surrogate pair 1ms",
+   "packages/contracts: \u00d7 Caption refuses a lone surrogate and keeps a surrogate pair 1ms",
+   "packages/contracts: \u00d7 CommentText refuses a lone surrogate and keeps a surrogate pair 1ms",
+   "packages/contracts: \u00d7 ReportNote refuses a lone surrogate and keeps a surrogate pair 0ms",
+   "packages/contracts: \u00d7 SearchText refuses a lone surrogate and keeps a surrogate pair 0ms"
+  ],
+  "all": [
+   "packages/contracts: \u00d7 DisplayName refuses a lone surrogate and keeps a surrogate pair 8ms",
+   "packages/contracts: \u00d7 ClubName refuses a lone surrogate and keeps a surrogate pair 1ms",
+   "packages/contracts: \u00d7 CandidateLabel refuses a lone surrogate and keeps a surrogate pair 1ms",
+   "packages/contracts: \u00d7 Caption refuses a lone surrogate and keeps a surrogate pair 1ms",
+   "packages/contracts: \u00d7 CommentText refuses a lone surrogate and keeps a surrogate pair 1ms",
+   "packages/contracts: \u00d7 ReportNote refuses a lone surrogate and keeps a surrogate pair 0ms",
+   "packages/contracts: \u00d7 SearchText refuses a lone surrogate and keeps a surrogate pair 0ms",
+   "services/api: \u00d7 names the first bad field in the contract's order, and never a value 38ms",
+   "services/api: \u00d7 refuses a name that isn't well formed before any transaction, whatever the version: the API refuses a name rather than changing it 6ms"
+  ]
+ },
+ {
+  "name": "the old six-byte measure",
+  "verdict": "CAUGHT",
+  "expected": "measures what a schema allows, by hand",
+  "named": [
+   "tests: \u00d7 measures what a schema allows, by hand: a name, a number, a flag, a list and a choice of shapes 14ms"
+  ],
+  "all": [
+   "tests: \u00d7 measures what a schema allows, by hand: a name, a number, a flag, a list and a choice of shapes 14ms",
+   "tests: \u00d7 holds the longest body of every operation that takes one to its route's limit 6ms"
+  ]
+ },
+ {
+  "name": "the corrected measure at the old limits",
+  "verdict": "CAUGHT",
+  "expected": "holds the longest body of every operation",
+  "named": [
+   "tests: \u00d7 holds the longest body of every operation that takes one to its route's limit 7ms"
+  ],
+  "all": [
+   "tests: \u00d7 holds the longest body of every operation that takes one to its route's limit 7ms"
+  ]
+ },
+ {
+  "name": "updateMe at 16 KiB, under twice its largest body",
+  "verdict": "CAUGHT",
+  "expected": "takes the largest body the contract allows",
+  "named": [
+   "services/api: \u00d7 takes the largest body the contract allows, every key and code unit written as an escape: the limit shuts nothing valid out 6ms"
+  ],
+  "all": [
+   "services/api: \u00d7 takes the largest body the contract allows, every key and code unit written as an escape: the limit shuts nothing valid out 6ms",
+   "services/api: \u00d7 reads a body up to its limit and refuses one past it unread, with INVALID_REQUEST alone, whatever the route 18ms"
+  ]
+ },
+ {
+  "name": "holders without the viewer",
+  "verdict": "CAUGHT",
+  "expected": "say on each day only what its state allows",
+  "named": [
+   "packages/contracts: \u00d7 say on each day only what its state allows, and name nobody on a day the viewer doesn't hold with others (book p11, FQ46, FQ48, FQ78) 4ms"
+  ],
+  "all": [
+   "packages/contracts: \u00d7 is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`) 150ms",
+   "packages/contracts: \u00d7 getSchedule: confirm_refused matches its schema, with no key it doesn't name 2ms",
+   "packages/contracts: \u00d7 say on each day only what its state allows, and name nobody on a day the viewer doesn't hold with others (book p11, FQ46, FQ48, FQ78) 4ms",
+   "packages/contracts: \u00d7 give each first-days day exactly the state and names its holders call for, as each viewer sees it (FQ46, FQ48, FQ55, FQ78) 3ms"
+  ]
+ },
+ {
+  "name": "holders out of join order",
+  "verdict": "CAUGHT",
+  "expected": "say on each day only what its state allows",
+  "named": [
+   "packages/contracts: \u00d7 say on each day only what its state allows, and name nobody on a day the viewer doesn't hold with others (book p11, FQ46, FQ48, FQ78) 5ms"
+  ],
+  "all": [
+   "packages/contracts: \u00d7 is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`) 208ms",
+   "packages/contracts: \u00d7 say on each day only what its state allows, and name nobody on a day the viewer doesn't hold with others (book p11, FQ46, FQ48, FQ78) 5ms",
+   "packages/contracts: \u00d7 give each first-days day exactly the state and names its holders call for, as each viewer sees it (FQ46, FQ48, FQ55, FQ78) 2ms"
+  ]
+ },
+ {
+  "name": "held_by for a confirmed viewer in the first days",
+  "verdict": "CAUGHT",
+  "expected": "say on each day only what its state allows",
+  "named": [
+   "packages/contracts: \u00d7 say on each day only what its state allows, and name nobody on a day the viewer doesn't hold with others (book p11, FQ46, FQ48, FQ78) 5ms"
+  ],
+  "all": [
+   "packages/contracts: \u00d7 is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`) 191ms",
+   "packages/contracts: \u00d7 say on each day only what its state allows, and name nobody on a day the viewer doesn't hold with others (book p11, FQ46, FQ48, FQ78) 5ms",
+   "packages/contracts: \u00d7 give each first-days day exactly the state and names its holders call for, as each viewer sees it (FQ46, FQ48, FQ55, FQ78) 3ms"
+  ]
+ },
+ {
+  "name": "held_by dropped from a change's day",
+  "verdict": "CAUGHT",
+  "expected": "say on each day only what its state allows",
+  "named": [
+   "packages/contracts: \u00d7 say on each day only what its state allows, and name nobody on a day the viewer doesn't hold with others (book p11, FQ46, FQ48, FQ78) 3ms"
+  ],
+  "all": [
+   "packages/contracts: \u00d7 is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`) 150ms",
+   "packages/contracts: \u00d7 say on each day only what its state allows, and name nobody on a day the viewer doesn't hold with others (book p11, FQ46, FQ48, FQ78) 3ms"
+  ]
+ },
+ {
+  "name": "a name on a no_reveal day",
+  "verdict": "CAUGHT",
+  "expected": "say on each day only what its state allows",
+  "named": [
+   "packages/contracts: \u00d7 say on each day only what its state allows, and name nobody on a day the viewer doesn't hold with others (book p11, FQ46, FQ48, FQ78) 8ms"
+  ],
+  "all": [
+   "packages/contracts: \u00d7 is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`) 188ms",
+   "packages/contracts: \u00d7 say on each day only what its state allows, and name nobody on a day the viewer doesn't hold with others (book p11, FQ46, FQ48, FQ78) 8ms",
+   "packages/contracts: \u00d7 give each first-days day exactly the state and names its holders call for, as each viewer sees it (FQ46, FQ48, FQ55, FQ78) 10ms"
+  ]
+ },
+ {
+  "name": "held_by naming the viewer",
+  "verdict": "CAUGHT",
+  "expected": "say on each day only what its state allows",
+  "named": [
+   "packages/contracts: \u00d7 say on each day only what its state allows, and name nobody on a day the viewer doesn't hold with others (book p11, FQ46, FQ48, FQ78) 4ms"
+  ],
+  "all": [
+   "packages/contracts: \u00d7 is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`) 193ms",
+   "packages/contracts: \u00d7 say on each day only what its state allows, and name nobody on a day the viewer doesn't hold with others (book p11, FQ46, FQ48, FQ78) 4ms",
+   "packages/contracts: \u00d7 give each first-days day exactly the state and names its holders call for, as each viewer sees it (FQ46, FQ48, FQ55, FQ78) 3ms"
+  ]
+ },
+ {
+  "name": "a first_date on an unconfirmed day",
+  "verdict": "CAUGHT",
+  "expected": "date only a day confirmed in the first days",
+  "named": [
+   "packages/contracts: \u00d7 date only a day confirmed in the first days, on its own weekday (T49, FQ79) 3ms"
+  ],
+  "all": [
+   "packages/contracts: \u00d7 is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`) 191ms",
+   "packages/contracts: \u00d7 date only a day confirmed in the first days, on its own weekday (T49, FQ79) 3ms"
+  ]
+ },
+ {
+  "name": "a first_date on another weekday",
+  "verdict": "CAUGHT",
+  "expected": "date only a day confirmed in the first days",
+  "named": [
+   "packages/contracts: \u00d7 date only a day confirmed in the first days, on its own weekday (T49, FQ79) 4ms"
+  ],
+  "all": [
+   "packages/contracts: \u00d7 is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`) 234ms",
+   "packages/contracts: \u00d7 date only a day confirmed in the first days, on its own weekday (T49, FQ79) 4ms"
+  ]
+ },
+ {
+  "name": "a version moved by a choice",
+  "verdict": "CAUGHT",
+  "expected": "agree on one state, version and start for each proposal",
+  "named": [
+   "packages/contracts: \u00d7 agree on one state, version and start for each proposal, whoever reads it and whatever anyone has chosen or confirmed, but the first days' answer that applies them, one version on (T33) 2ms"
+  ],
+  "all": [
+   "packages/contracts: \u00d7 is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`) 232ms",
+   "packages/contracts: \u00d7 agree on one state, version and start for each proposal, whoever reads it and whatever anyone has chosen or confirmed, but the first days' answer that applies them, one version on (T33) 2ms"
+  ]
+ },
+ {
+  "name": "a change applied before its start for one viewer",
+  "verdict": "CAUGHT",
+  "expected": "show a membership change the same before and after",
+  "named": [
+   "packages/contracts: \u00d7 show a membership change the same before and after the viewer confirms it, as the confirmation answers (FQ81) 9ms"
+  ],
+  "all": [
+   "packages/contracts: \u00d7 is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`) 172ms",
+   "packages/contracts: \u00d7 agree on one state, version and start for each proposal, whoever reads it and whatever anyone has chosen or confirmed, but the first days' answer that applies them, one version on (T33) 5ms",
+   "packages/contracts: \u00d7 show a membership change the same before and after the viewer confirms it, as the confirmation answers (FQ81) 9ms"
+  ]
+ },
+ {
+  "name": "change_confirmed differing from change beyond my_state",
+  "verdict": "CAUGHT",
+  "expected": "show a membership change the same before and after",
+  "named": [
+   "packages/contracts: \u00d7 show a membership change the same before and after the viewer confirms it, as the confirmation answers (FQ81) 11ms"
+  ],
+  "all": [
+   "packages/contracts: \u00d7 is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`) 241ms",
+   "packages/contracts: \u00d7 show a membership change the same before and after the viewer confirms it, as the confirmation answers (FQ81) 11ms"
+  ]
+ },
+ {
+  "name": "an announced day on or after the start",
+  "verdict": "CAUGHT",
+  "expected": "list a change's announced days in date order",
+  "named": [
+   "packages/contracts: \u00d7 list a change's announced days in date order, every one before it starts, and nowhere else (spec 05, FQ61) 2ms"
+  ],
+  "all": [
+   "packages/contracts: \u00d7 is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`) 223ms",
+   "packages/contracts: \u00d7 list a change's announced days in date order, every one before it starts, and nowhere else (spec 05, FQ61) 2ms"
+  ]
+ },
+ {
+  "name": "Ben's position after a member with a day",
+  "verdict": "CAUGHT",
+  "expected": "place every member once",
+  "named": [
+   "packages/contracts: \u00d7 place every member once, and in the first days by the order they joined (spec 09, FQ98) 3ms"
+  ],
+  "all": [
+   "packages/contracts: \u00d7 is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`) 224ms",
+   "packages/contracts: \u00d7 place every member once, and in the first days by the order they joined (spec 09, FQ98) 3ms"
+  ]
+ },
+ {
+  "name": "a suggested day off the viewer's join place",
+  "verdict": "CAUGHT",
+  "expected": "propose each member's first day by the order they joined",
+  "named": [
+   "packages/contracts: \u00d7 propose each member's first day by the order they joined, as the frames draw it (spec 05, FQ98) 4ms"
+  ],
+  "all": [
+   "packages/contracts: \u00d7 is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`) 190ms",
+   "packages/contracts: \u00d7 propose each member's first day by the order they joined, as the frames draw it (spec 05, FQ98) 4ms"
+  ]
+ },
+ {
+  "name": "a choice of none refused",
+  "verdict": "CAUGHT",
+  "expected": "takes each weekday only once in a choice",
+  "named": [
+   "packages/contracts: \u00d7 takes each weekday only once in a choice, and a choice of none to two; a confirmation names one or two (T6) 3ms"
+  ],
+  "all": [
+   "packages/contracts: \u00d7 is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`) 207ms",
+   "packages/contracts: \u00d7 takes each weekday only once in a choice, and a choice of none to two; a confirmation names one or two (T6) 3ms"
+  ]
+ },
+ {
+  "name": "a confirmation of none accepted",
+  "verdict": "CAUGHT",
+  "expected": "takes each weekday only once in a choice",
+  "named": [
+   "packages/contracts: \u00d7 takes each weekday only once in a choice, and a choice of none to two; a confirmation names one or two (T6) 3ms"
+  ],
+  "all": [
+   "packages/contracts: \u00d7 is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`) 174ms",
+   "packages/contracts: \u00d7 takes each weekday only once in a choice, and a choice of none to two; a confirmation names one or two (T6) 3ms"
+  ]
+ },
+ {
+  "name": "the schedule in force needing two",
+  "verdict": "CAUGHT",
+  "expected": "holds one confirmed day as the schedule in force",
+  "named": [
+   "packages/contracts: \u00d7 holds one confirmed day as the schedule in force, while others still choose (FQ55) 4ms"
+  ],
+  "all": [
+   "packages/contracts: \u00d7 is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`) 221ms",
+   "packages/contracts: \u00d7 holds one confirmed day as the schedule in force, while others still choose (FQ55) 4ms"
+  ]
+ },
+ {
+  "name": "chooseScheduleDays without NOT_ALLOWED",
+  "verdict": "CAUGHT",
+  "expected": "gives each operation exactly its own errors",
+  "named": [
+   "packages/contracts: \u00d7 gives each operation exactly its own errors, beyond those of its kind 8ms"
+  ],
+  "all": [
+   "packages/contracts: \u00d7 is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`) 223ms",
+   "packages/contracts: \u00d7 gives each operation exactly its own errors, beyond those of its kind 8ms"
+  ]
+ },
+ {
+  "name": "first-days held_by dropped from every example",
+  "verdict": "CAUGHT",
+  "expected": "give each first-days day exactly the state",
+  "named": [
+   "packages/contracts: \u00d7 give each first-days day exactly the state and names its holders call for, as each viewer sees it (FQ46, FQ48, FQ55, FQ78) 4ms"
+  ],
+  "all": [
+   "packages/contracts: \u00d7 is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`) 157ms",
+   "packages/contracts: \u00d7 give each first-days day exactly the state and names its holders call for, as each viewer sees it (FQ46, FQ48, FQ55, FQ78) 4ms"
+  ]
+ },
+ {
+  "name": "a day set aside naming its old holder",
+  "verdict": "CAUGHT",
+  "expected": "give each first-days day exactly the state",
+  "named": [
+   "packages/contracts: \u00d7 give each first-days day exactly the state and names its holders call for, as each viewer sees it (FQ46, FQ48, FQ55, FQ78) 4ms"
+  ],
+  "all": [
+   "packages/contracts: \u00d7 is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`) 223ms",
+   "packages/contracts: \u00d7 say on each day only what its state allows, and name nobody on a day the viewer doesn't hold with others (book p11, FQ46, FQ48, FQ78) 3ms",
+   "packages/contracts: \u00d7 give each first-days day exactly the state and names its holders call for, as each viewer sees it (FQ46, FQ48, FQ55, FQ78) 4ms"
+  ]
+ },
+ {
+  "name": "drop the isWellFormed refine's abort",
+  "verdict": "CAUGHT",
+  "expected": "refuses a lone surrogate",
+  "named": [
+   "packages/contracts: \u00d7 DisplayName refuses a lone surrogate and keeps a surrogate pair 12ms",
+   "packages/contracts: \u00d7 ClubName refuses a lone surrogate and keeps a surrogate pair 2ms",
+   "packages/contracts: \u00d7 CandidateLabel refuses a lone surrogate and keeps a surrogate pair 1ms",
+   "packages/contracts: \u00d7 Caption refuses a lone surrogate and keeps a surrogate pair 5ms",
+   "packages/contracts: \u00d7 CommentText refuses a lone surrogate and keeps a surrogate pair 1ms",
+   "packages/contracts: \u00d7 ReportNote refuses a lone surrogate and keeps a surrogate pair 1ms",
+   "packages/contracts: \u00d7 SearchText refuses a lone surrogate and keeps a surrogate pair 1ms"
+  ],
+  "all": [
+   "packages/contracts: \u00d7 DisplayName refuses a lone surrogate and keeps a surrogate pair 12ms",
+   "packages/contracts: \u00d7 ClubName refuses a lone surrogate and keeps a surrogate pair 2ms",
+   "packages/contracts: \u00d7 CandidateLabel refuses a lone surrogate and keeps a surrogate pair 1ms",
+   "packages/contracts: \u00d7 Caption refuses a lone surrogate and keeps a surrogate pair 5ms",
+   "packages/contracts: \u00d7 CommentText refuses a lone surrogate and keeps a surrogate pair 1ms",
+   "packages/contracts: \u00d7 ReportNote refuses a lone surrogate and keeps a surrogate pair 1ms",
+   "packages/contracts: \u00d7 SearchText refuses a lone surrogate and keeps a surrogate pair 1ms"
+  ]
+ },
+ {
+  "name": "a choice answering applied at the next version",
+  "verdict": "CAUGHT",
+  "expected": "give each first-days day exactly the state",
+  "named": [
+   "packages/contracts: \u00d7 give each first-days day exactly the state and names its holders call for, as each viewer sees it (FQ46, FQ48, FQ55, FQ78) 5ms"
+  ],
+  "all": [
+   "packages/contracts: \u00d7 is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`) 154ms",
+   "packages/contracts: \u00d7 give each first-days day exactly the state and names its holders call for, as each viewer sees it (FQ46, FQ48, FQ55, FQ78) 5ms"
+  ]
+ },
+ {
+  "name": "a confirmation that isn't the last answering applied at the same version",
+  "verdict": "CAUGHT",
+  "expected": "agree on one state, version and start for each proposal",
+  "named": [
+   "packages/contracts: \u00d7 agree on one state, version and start for each proposal, whoever reads it and whatever anyone has chosen or confirmed, but the first days' answer that applies them, one version on (T33) 2ms"
+  ],
+  "all": [
+   "packages/contracts: \u00d7 is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`) 192ms",
+   "packages/contracts: \u00d7 give each first-days day exactly the state and names its holders call for, as each viewer sees it (FQ46, FQ48, FQ55, FQ78) 4ms",
+   "packages/contracts: \u00d7 agree on one state, version and start for each proposal, whoever reads it and whatever anyone has chosen or confirmed, but the first days' answer that applies them, one version on (T33) 2ms"
+  ]
+ },
+ {
+  "name": "a confirmation that isn't the last answering applied at the next version",
+  "verdict": "CAUGHT",
+  "expected": "give each first-days day exactly the state",
+  "named": [
+   "packages/contracts: \u00d7 give each first-days day exactly the state and names its holders call for, as each viewer sees it (FQ46, FQ48, FQ55, FQ78) 4ms"
+  ],
+  "all": [
+   "packages/contracts: \u00d7 is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`) 197ms",
+   "packages/contracts: \u00d7 give each first-days day exactly the state and names its holders call for, as each viewer sees it (FQ46, FQ48, FQ55, FQ78) 4ms"
+  ]
+ },
+ {
+  "name": "a first-days read shown superseded at another version",
+  "verdict": "CAUGHT",
+  "expected": "agree on one state, version and start for each proposal",
+  "named": [
+   "packages/contracts: \u00d7 agree on one state, version and start for each proposal, whoever reads it and whatever anyone has chosen or confirmed, but the first days' answer that applies them, one version on (T33) 1ms"
+  ],
+  "all": [
+   "packages/contracts: \u00d7 is what the zod schemas generate (run `pnpm --filter @tadayo/contracts openapi:write`) 162ms",
+   "packages/contracts: \u00d7 give each first-days day exactly the state and names its holders call for, as each viewer sees it (FQ46, FQ48, FQ55, FQ78) 3ms",
+   "packages/contracts: \u00d7 agree on one state, version and start for each proposal, whoever reads it and whatever anyone has chosen or confirmed, but the first days' answer that applies them, one version on (T33) 1ms"
+  ]
+ }
+]

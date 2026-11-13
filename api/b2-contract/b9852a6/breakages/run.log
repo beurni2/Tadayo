@@ -1,0 +1,30 @@
+CAUGHT  drop abort on text()'s guard :: 7 failing; named: packages/contracts: × DisplayName never counts a string past its guard of 640 code points 10ms
+CAUGHT  drop the isWellFormed refine :: 9 failing; named: packages/contracts: × DisplayName refuses a lone surrogate and keeps a surrogate pair 8ms
+CAUGHT  the old six-byte measure :: 2 failing; named: tests: × measures what a schema allows, by hand: a name, a number, a flag, a list and a choice of shapes 14ms
+CAUGHT  the corrected measure at the old limits :: 1 failing; named: tests: × holds the longest body of every operation that takes one to its route's limit 7ms
+CAUGHT  updateMe at 16 KiB, under twice its largest body :: 2 failing; named: services/api: × takes the largest body the contract allows, every key and code unit written as an escape: the limit shuts nothing valid out 6ms
+CAUGHT  holders without the viewer :: 4 failing; named: packages/contracts: × say on each day only what its state allows, and name nobody on a day the viewer doesn't hold with others (book p11, FQ46, FQ48, 
+CAUGHT  holders out of join order :: 3 failing; named: packages/contracts: × say on each day only what its state allows, and name nobody on a day the viewer doesn't hold with others (book p11, FQ46, FQ48, 
+CAUGHT  held_by for a confirmed viewer in the first days :: 3 failing; named: packages/contracts: × say on each day only what its state allows, and name nobody on a day the viewer doesn't hold with others (book p11, FQ46, FQ48, 
+CAUGHT  held_by dropped from a change's day :: 2 failing; named: packages/contracts: × say on each day only what its state allows, and name nobody on a day the viewer doesn't hold with others (book p11, FQ46, FQ48, 
+CAUGHT  a name on a no_reveal day :: 3 failing; named: packages/contracts: × say on each day only what its state allows, and name nobody on a day the viewer doesn't hold with others (book p11, FQ46, FQ48, 
+CAUGHT  held_by naming the viewer :: 3 failing; named: packages/contracts: × say on each day only what its state allows, and name nobody on a day the viewer doesn't hold with others (book p11, FQ46, FQ48, 
+CAUGHT  a first_date on an unconfirmed day :: 2 failing; named: packages/contracts: × date only a day confirmed in the first days, on its own weekday (T49, FQ79) 3ms
+CAUGHT  a first_date on another weekday :: 2 failing; named: packages/contracts: × date only a day confirmed in the first days, on its own weekday (T49, FQ79) 4ms
+CAUGHT  a version moved by a choice :: 2 failing; named: packages/contracts: × agree on one state, version and start for each proposal, whoever reads it and whatever anyone has chosen or confirmed, but the f
+CAUGHT  a change applied before its start for one viewer :: 3 failing; named: packages/contracts: × show a membership change the same before and after the viewer confirms it, as the confirmation answers (FQ81) 9ms
+CAUGHT  change_confirmed differing from change beyond my_state :: 2 failing; named: packages/contracts: × show a membership change the same before and after the viewer confirms it, as the confirmation answers (FQ81) 11ms
+CAUGHT  an announced day on or after the start :: 2 failing; named: packages/contracts: × list a change's announced days in date order, every one before it starts, and nowhere else (spec 05, FQ61) 2ms
+CAUGHT  Ben's position after a member with a day :: 2 failing; named: packages/contracts: × place every member once, and in the first days by the order they joined (spec 09, FQ98) 3ms
+CAUGHT  a suggested day off the viewer's join place :: 2 failing; named: packages/contracts: × propose each member's first day by the order they joined, as the frames draw it (spec 05, FQ98) 4ms
+CAUGHT  a choice of none refused :: 2 failing; named: packages/contracts: × takes each weekday only once in a choice, and a choice of none to two; a confirmation names one or two (T6) 3ms
+CAUGHT  a confirmation of none accepted :: 2 failing; named: packages/contracts: × takes each weekday only once in a choice, and a choice of none to two; a confirmation names one or two (T6) 3ms
+CAUGHT  the schedule in force needing two :: 2 failing; named: packages/contracts: × holds one confirmed day as the schedule in force, while others still choose (FQ55) 4ms
+CAUGHT  chooseScheduleDays without NOT_ALLOWED :: 2 failing; named: packages/contracts: × gives each operation exactly its own errors, beyond those of its kind 8ms
+CAUGHT  first-days held_by dropped from every example :: 2 failing; named: packages/contracts: × give each first-days day exactly the state and names its holders call for, as each viewer sees it (FQ46, FQ48, FQ55, FQ78) 4ms
+CAUGHT  a day set aside naming its old holder :: 3 failing; named: packages/contracts: × give each first-days day exactly the state and names its holders call for, as each viewer sees it (FQ46, FQ48, FQ55, FQ78) 4ms
+CAUGHT  drop the isWellFormed refine's abort :: 7 failing; named: packages/contracts: × DisplayName refuses a lone surrogate and keeps a surrogate pair 12ms
+CAUGHT  a choice answering applied at the next version :: 2 failing; named: packages/contracts: × give each first-days day exactly the state and names its holders call for, as each viewer sees it (FQ46, FQ48, FQ55, FQ78) 5ms
+CAUGHT  a confirmation that isn't the last answering applied at the same version :: 3 failing; named: packages/contracts: × agree on one state, version and start for each proposal, whoever reads it and whatever anyone has chosen or confirmed, but the f
+CAUGHT  a confirmation that isn't the last answering applied at the next version :: 2 failing; named: packages/contracts: × give each first-days day exactly the state and names its holders call for, as each viewer sees it (FQ46, FQ48, FQ55, FQ78) 4ms
+CAUGHT  a first-days read shown superseded at another version :: 3 failing; named: packages/contracts: × agree on one state, version and start for each proposal, whoever reads it and whatever anyone has chosen or confirmed, but the f
