@@ -1,0 +1,22 @@
+breakage: check-takes-no-block
+patch: [
+ [
+  "packages/domain/src/db/ssl.ts",
+  "blocks.length !== 1 ||",
+  "blocks.length > 1 ||",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/packages/domain && npx vitest run src/db/ssl.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/services/api && npx vitest run src/connection.test.ts src/connection-tls.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/services/worker && npx vitest run src/connection.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/tools/ops && npx vitest run src/database.test.ts src/environment.test.ts src/deploy-files.test.ts
+exit: 0
+expected words: refuses anything but exactly that one certificate
+caught: False
+
+ Test Files  1 passed (1)
+      Tests  9 passed (9)
+ Test Files  2 passed (2)
+      Tests  11 passed (11)
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+ Test Files  3 passed (3)
+      Tests  45 passed (45)

@@ -1,0 +1,29 @@
+breakage: psql-system-roots
+patch: [
+ [
+  "tools/ops/src/environment.ts",
+  "PGSSLROOTCERT: rootFile(),",
+  "PGSSLROOTCERT: \"system\",",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/packages/domain && npx vitest run src/db/ssl.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/services/api && npx vitest run src/connection.test.ts src/connection-tls.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/services/worker && npx vitest run src/connection.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/tools/ops && npx vitest run src/database.test.ts src/environment.test.ts src/deploy-files.test.ts
+exit: 1
+expected words: decodes the user and the password, and asks for TLS that checks the pooler's chain
+caught: True
+
+ Test Files  1 passed (1)
+      Tests  10 passed (10)
+ Test Files  2 passed (2)
+      Tests  11 passed (11)
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+     × decodes the user and the password, and asks for TLS that checks the pooler's chain against Supabase's root and its name 13ms
+     × checks the root before psql is given its path, so an empty or other file reaches no link 12ms
+ Test Files  1 failed | 2 passed (3)
+      Tests  2 failed | 44 passed (46)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/environment.test.ts > pgEnvOf: the connection as the environment variables psql reads, so no password is on a command line > decodes the user and the password, and asks for TLS that checks the pooler's chain against Supabase's root and its name
+AssertionError: expected { …(8) } to deeply equal { …(8) }
+ FAIL  src/environment.test.ts > pgEnvOf: the connection as the environment variables psql reads, so no password is on a command line > checks the root before psql is given its path, so an empty or other file reaches no link
+AssertionError: expected [Function] to throw an error

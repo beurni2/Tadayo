@@ -1,0 +1,55 @@
+breakage: transport-loose
+patch: [
+ [
+  "packages/domain/src/db/ssl.ts",
+  "return isPlainLoopback(url) ? {} : { ssl: poolerTls() };",
+  "return isPlainLoopback(url) ? {} : { ssl: { ...poolerTls(), rejectUnauthorized: false as true } };",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/packages/domain && npx vitest run src/db/ssl.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/services/api && npx vitest run src/connection.test.ts src/connection-tls.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/services/worker && npx vitest run src/connection.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/tools/ops && npx vitest run src/database.test.ts src/environment.test.ts src/deploy-files.test.ts src/run.test.ts src/main.test.ts src/bootstrap.test.ts
+exit: 1
+expected words: asks for TLS checked against Supabase's root for the pooler
+caught: True
+
+     × asks for TLS checked against Supabase's root for the pooler, and for any other host that isn't loopback 7ms
+     × treats a string that postgres.js and `new URL` could read differently as remote 1ms
+     × treats a string it can't read, or with no host, as remote 1ms
+ Test Files  1 failed (1)
+      Tests  3 failed | 7 passed (10)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/ssl.test.ts > transportOptions > asks for TLS checked against Supabase's root for the pooler, and for any other host that isn't loopback
+AssertionError: postgresql://tadayo_app.abcdefghijklmnopqrst:a-password@aws-0-us-east-1.pooler.supabase.com:5432/postgres: expected { ssl: { …(2) } } to deeply equal { ssl: { …(2) } }
+ FAIL  src/db/ssl.test.ts > transportOptions > treats a string that postgres.js and `new URL` could read differently as remote
+AssertionError: postgres://tadayo_app:x@evil.example%2C@localhost:5432/postgres: expected { ssl: { …(2) } } to deeply equal { ssl: { …(2) } }
+ FAIL  src/db/ssl.test.ts > transportOptions > treats a string it can't read, or with no host, as remote
+AssertionError: expected { ssl: { …(2) } } to deeply equal { ssl: { …(2) } }
+     × requires TLS checked against Supabase's root for the pooler, though the string says nothing of it 19ms
+     × requires TLS for any other host that isn't loopback, and the string can't switch it off 2ms
+     × requires TLS whatever the environment says, which postgres.js reads for the options it isn't given 2ms
+     × requires TLS of a string whose host postgres.js and `new URL` read differently, which dials the first host 1ms
+     × asks for no TLS only when every host the driver would dial is a loopback one 3ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  5 failed | 8 passed (13)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/connection.test.ts > connect > requires TLS checked against Supabase's root for the pooler, though the string says nothing of it
+AssertionError: expected { ssl: { …(2) }, …(2) } to deeply equal { ssl: { …(2) }, …(2) }
+ FAIL  src/connection.test.ts > connect > requires TLS for any other host that isn't loopback, and the string can't switch it off
+AssertionError: postgres://someone:a-password@db.example.test:5432/postgres: expected { …(2) } to deeply equal { …(2) }
+ FAIL  src/connection.test.ts > connect > requires TLS whatever the environment says, which postgres.js reads for the options it isn't given
+AssertionError: expected { …(2) } to deeply equal { …(2) }
+ FAIL  src/connection.test.ts > connect > requires TLS of a string whose host postgres.js and `new URL` read differently, which dials the first host
+AssertionError: expected { …(2) } to deeply equal { …(2) }
+ FAIL  src/connection.test.ts > connect > asks for no TLS only when every host the driver would dial is a loopback one
+AssertionError: postgres://tadayo_app:x@localhost:1#,evil.example:5432/postgres: expected { …(2) } to deeply equal { …(2) }
+     × requires TLS checked against Supabase's root for the pooler, though the string says nothing of it, and the string can't switch it off 15ms
+     × asks for no TLS of a plainly written loopback host, and requires it of one the driver reads differently 4ms
+ Test Files  1 failed (1)
+      Tests  2 failed (2)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/connection.test.ts > connect > requires TLS checked against Supabase's root for the pooler, though the string says nothing of it, and the string can't switch it off
+AssertionError: expected { ssl: { …(2) }, …(2) } to deeply equal { ssl: { …(2) }, …(2) }
+ FAIL  src/connection.test.ts > connect > asks for no TLS of a plainly written loopback host, and requires it of one the driver reads differently
+AssertionError: expected { …(2) } to deeply equal { …(2) }
+ Test Files  6 passed (6)
+      Tests  80 passed (80)

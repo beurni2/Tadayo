@@ -1,0 +1,71 @@
+breakage: pin-widened-by-the-system-store
+patch: [
+ [
+  "packages/domain/src/db/ssl.ts",
+  "import { readFileSync } from \"node:fs\";",
+  "import { readFileSync } from \"node:fs\";\nimport { rootCertificates } from \"node:tls\";",
+  1
+ ],
+ [
+  "packages/domain/src/db/ssl.ts",
+  "return Object.freeze({ ca: Object.freeze([pem]), rejectUnauthorized: true });",
+  "return Object.freeze({ ca: Object.freeze([pem, ...rootCertificates]), rejectUnauthorized: true });",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/packages/domain && npx vitest run src/db/ssl.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/services/api && npx vitest run src/connection.test.ts src/connection-tls.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/services/worker && npx vitest run src/connection.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/tools/ops && npx vitest run src/database.test.ts src/environment.test.ts src/deploy-files.test.ts
+exit: 1
+expected words: trusts only the root given, insists on the check, and leaves the name to the driver
+caught: True
+
+     × trusts only the root given, insists on the check, and leaves the name to the driver 10ms
+     × pins Supabase's root for the pooler 4ms
+     × asks for TLS checked against Supabase's root for the pooler, and for any other host that isn't loopback 3ms
+     × treats a string that postgres.js and `new URL` could read differently as remote 3ms
+     × treats a string it can't read, or with no host, as remote 4ms
+ Test Files  1 failed (1)
+      Tests  5 failed | 4 passed (9)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/ssl.test.ts > tlsPinnedTo and poolerTls > trusts only the root given, insists on the check, and leaves the name to the driver
+AssertionError: expected { ca: [ …(119) ], …(1) } to deeply equal { …(2) }
+ FAIL  src/db/ssl.test.ts > tlsPinnedTo and poolerTls > pins Supabase's root for the pooler
+AssertionError: expected { ca: [ …(119) ], …(1) } to deeply equal { …(2) }
+ FAIL  src/db/ssl.test.ts > transportOptions > asks for TLS checked against Supabase's root for the pooler, and for any other host that isn't loopback
+AssertionError: postgresql://tadayo_app.abcdefghijklmnopqrst:a-password@aws-0-us-east-1.pooler.supabase.com:5432/postgres: expected { ssl: { ca: [ …(119) ], …(1) } } to deeply equal { ssl: { …(2) } }
+ FAIL  src/db/ssl.test.ts > transportOptions > treats a string that postgres.js and `new URL` could read differently as remote
+AssertionError: postgres://tadayo_app:x@evil.example%2C@localhost:5432/postgres: expected { ssl: { ca: [ …(119) ], …(1) } } to deeply equal { ssl: { …(2) } }
+ FAIL  src/db/ssl.test.ts > transportOptions > treats a string it can't read, or with no host, as remote
+AssertionError: expected { ssl: { ca: [ …(119) ], …(1) } } to deeply equal { ssl: { …(2) } }
+     × requires TLS checked against Supabase's root for the pooler, though the string says nothing of it 19ms
+     × requires TLS for any other host that isn't loopback, and the string can't switch it off 5ms
+     × requires TLS whatever the environment says, which postgres.js reads for the options it isn't given 5ms
+     × requires TLS of a string whose host postgres.js and `new URL` read differently, which dials the first host 5ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  4 failed | 7 passed (11)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/connection.test.ts > connect > requires TLS checked against Supabase's root for the pooler, though the string says nothing of it
+AssertionError: expected { ssl: { ca: [ …(119) ], …(1) }, …(2) } to deeply equal { ssl: { …(2) }, …(2) }
+ FAIL  src/connection.test.ts > connect > requires TLS for any other host that isn't loopback, and the string can't switch it off
+AssertionError: postgres://someone:a-password@db.example.test:5432/postgres: expected { ca: [ …(119) ], …(1) } to deeply equal { …(2) }
+ FAIL  src/connection.test.ts > connect > requires TLS whatever the environment says, which postgres.js reads for the options it isn't given
+AssertionError: expected { ca: [ …(119) ], …(1) } to deeply equal { …(2) }
+ FAIL  src/connection.test.ts > connect > requires TLS of a string whose host postgres.js and `new URL` read differently, which dials the first host
+AssertionError: expected { ca: [ …(119) ], …(1) } to deeply equal { …(2) }
+     × requires TLS checked against Supabase's root for the pooler, though the string says nothing of it, and the string can't switch it off 15ms
+     × asks for no TLS of a plainly written loopback host, and requires it of one the driver reads differently 5ms
+ Test Files  1 failed (1)
+      Tests  2 failed (2)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/connection.test.ts > connect > requires TLS checked against Supabase's root for the pooler, though the string says nothing of it, and the string can't switch it off
+AssertionError: expected { ssl: { ca: [ …(119) ], …(1) }, …(2) } to deeply equal { ssl: { …(2) }, …(2) }
+ FAIL  src/connection.test.ts > connect > asks for no TLS of a plainly written loopback host, and requires it of one the driver reads differently
+AssertionError: expected { ca: [ …(119) ], …(1) } to deeply equal { …(2) }
+     × names every part of the connection, decoded, with TLS checked against Supabase's root, one connection and a time limit 17ms
+     × makes a port-less string the session pooler's port, 5432, and the driver reads no variable for it 7ms
+ Test Files  1 failed | 2 passed (3)
+      Tests  2 failed | 43 passed (45)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/database.test.ts > connectionOptions > names every part of the connection, decoded, with TLS checked against Supabase's root, one connection and a time limit
+AssertionError: expected { …(9) } to match object { …(8) }
+ FAIL  src/database.test.ts > connectionOptions > makes a port-less string the session pooler's port, 5432, and the driver reads no variable for it
+AssertionError: expected { …(5) } to deeply equal { …(5) }

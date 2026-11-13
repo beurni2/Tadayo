@@ -1,0 +1,113 @@
+breakage: pin-another-fingerprint
+patch: [
+ [
+  "packages/domain/src/db/ssl.ts",
+  "\"80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FA\"",
+  "\"80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FB\"",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/packages/domain && npx vitest run src/db/ssl.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/services/api && npx vitest run src/connection.test.ts src/connection-tls.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/services/worker && npx vitest run src/connection.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/tools/ops && npx vitest run src/database.test.ts src/environment.test.ts src/deploy-files.test.ts
+exit: 1
+expected words: is the root Supabase's dashboard gives every project
+caught: True
+
+     × is the root Supabase's dashboard gives every project, one certificate, a CA, and the file the pin names 7ms
+     × is read once and checked: supabaseRootCa gives the file's text 2ms
+     × refuses anything but exactly that one certificate, so no empty, doubled, widened or other root reaches `ca` 3ms
+     × pins Supabase's root for the pooler 1ms
+     × asks for TLS checked against Supabase's root for the pooler, and for any other host that isn't loopback 1ms
+     × treats a string that postgres.js and `new URL` could read differently as remote 1ms
+     × treats a string it can't read, or with no host, as remote 1ms
+ Test Files  1 failed (1)
+      Tests  7 failed | 2 passed (9)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/ssl.test.ts > the pinned root > is the root Supabase's dashboard gives every project, one certificate, a CA, and the file the pin names
+AssertionError: expected '80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:2…' to be '80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:2…' // Object.is equality
+ FAIL  src/db/ssl.test.ts > the pinned root > is read once and checked: supabaseRootCa gives the file's text
+Error: supabase-root-2021.crt isn't Supabase's root: its SHA-256 is 80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FA
+     38|   const refused = (why: string) => new Error(`supabase-root-2021.crt i…
+ FAIL  src/db/ssl.test.ts > the pinned root > refuses anything but exactly that one certificate, so no empty, doubled, widened or other root reaches `ca`
+AssertionError: expected [Function] to not throw an error but 'Error: supabase-root-2021.crt isn\'t …' was thrown
+"Error: supabase-root-2021.crt isn't Supabase's root: its SHA-256 is 80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FA"
+ FAIL  src/db/ssl.test.ts > tlsPinnedTo and poolerTls > pins Supabase's root for the pooler
+Error: supabase-root-2021.crt isn't Supabase's root: its SHA-256 is 80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FA
+     38|   const refused = (why: string) => new Error(`supabase-root-2021.crt i…
+ FAIL  src/db/ssl.test.ts > transportOptions > asks for TLS checked against Supabase's root for the pooler, and for any other host that isn't loopback
+Error: supabase-root-2021.crt isn't Supabase's root: its SHA-256 is 80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FA
+     38|   const refused = (why: string) => new Error(`supabase-root-2021.crt i…
+ FAIL  src/db/ssl.test.ts > transportOptions > treats a string that postgres.js and `new URL` could read differently as remote
+Error: supabase-root-2021.crt isn't Supabase's root: its SHA-256 is 80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FA
+     38|   const refused = (why: string) => new Error(`supabase-root-2021.crt i…
+ FAIL  src/db/ssl.test.ts > transportOptions > treats a string it can't read, or with no host, as remote
+Error: supabase-root-2021.crt isn't Supabase's root: its SHA-256 is 80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FA
+     38|   const refused = (why: string) => new Error(`supabase-root-2021.crt i…
+     × requires TLS checked against Supabase's root for the pooler, though the string says nothing of it 11ms
+     × requires TLS for any other host that isn't loopback, and the string can't switch it off 1ms
+     × requires TLS whatever the environment says, which postgres.js reads for the options it isn't given 1ms
+     × requires TLS of a string whose host postgres.js and `new URL` read differently, which dials the first host 1ms
+ Test Files  1 failed | 1 passed (2)
+      Tests  4 failed | 7 passed (11)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/connection.test.ts > connect > requires TLS checked against Supabase's root for the pooler, though the string says nothing of it
+Error: supabase-root-2021.crt isn't Supabase's root: its SHA-256 is 80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FA
+     38|   const refused = (why: string) => new Error(`supabase-root-2021.crt i…
+ FAIL  src/connection.test.ts > connect > requires TLS for any other host that isn't loopback, and the string can't switch it off
+Error: supabase-root-2021.crt isn't Supabase's root: its SHA-256 is 80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FA
+     38|   const refused = (why: string) => new Error(`supabase-root-2021.crt i…
+ FAIL  src/connection.test.ts > connect > requires TLS whatever the environment says, which postgres.js reads for the options it isn't given
+Error: supabase-root-2021.crt isn't Supabase's root: its SHA-256 is 80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FA
+     38|   const refused = (why: string) => new Error(`supabase-root-2021.crt i…
+ FAIL  src/connection.test.ts > connect > requires TLS of a string whose host postgres.js and `new URL` read differently, which dials the first host
+Error: supabase-root-2021.crt isn't Supabase's root: its SHA-256 is 80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FA
+     38|   const refused = (why: string) => new Error(`supabase-root-2021.crt i…
+     × requires TLS checked against Supabase's root for the pooler, though the string says nothing of it, and the string can't switch it off 6ms
+     × asks for no TLS of a plainly written loopback host, and requires it of one the driver reads differently 3ms
+ Test Files  1 failed (1)
+      Tests  2 failed (2)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/connection.test.ts > connect > requires TLS checked against Supabase's root for the pooler, though the string says nothing of it, and the string can't switch it off
+Error: supabase-root-2021.crt isn't Supabase's root: its SHA-256 is 80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FA
+     38|   const refused = (why: string) => new Error(`supabase-root-2021.crt i…
+ FAIL  src/connection.test.ts > connect > asks for no TLS of a plainly written loopback host, and requires it of one the driver reads differently
+Error: supabase-root-2021.crt isn't Supabase's root: its SHA-256 is 80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FA
+     38|   const refused = (why: string) => new Error(`supabase-root-2021.crt i…
+     × names every part of the connection, decoded, with TLS checked against Supabase's root, one connection and a time limit 8ms
+     × gives the driver the same host, port, user, password and database as psql is given 1ms
+     × makes a port-less string the session pooler's port, 5432, and the driver reads no variable for it 1ms
+     × is given a string whose password holds an `@` and a comma, and still dials the pooler and nowhere else 1ms
+     × says Postgres's warnings through the redactor, and its routine notices not at all 1ms
+     × decodes the user and the password, and asks for TLS that checks the pooler's chain against Supabase's root and its name 14ms
+     × decodes a user that is written with escapes, as the password is 1ms
+     × gives port 5432 when the string has none 1ms
+     × gives the host in lower case, as the guard read it, whatever case the string wrote it in 6ms
+ Test Files  2 failed | 1 passed (3)
+      Tests  9 failed | 36 passed (45)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 9 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/database.test.ts > connectionOptions > names every part of the connection, decoded, with TLS checked against Supabase's root, one connection and a time limit
+Error: supabase-root-2021.crt isn't Supabase's root: its SHA-256 is 80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FA
+     38|   const refused = (why: string) => new Error(`supabase-root-2021.crt i…
+ FAIL  src/database.test.ts > connectionOptions > gives the driver the same host, port, user, password and database as psql is given
+Error: supabase-root-2021.crt isn't Supabase's root: its SHA-256 is 80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FA
+     38|   const refused = (why: string) => new Error(`supabase-root-2021.crt i…
+ FAIL  src/database.test.ts > connectionOptions > makes a port-less string the session pooler's port, 5432, and the driver reads no variable for it
+Error: supabase-root-2021.crt isn't Supabase's root: its SHA-256 is 80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FA
+     38|   const refused = (why: string) => new Error(`supabase-root-2021.crt i…
+ FAIL  src/database.test.ts > connectionOptions > is given a string whose password holds an `@` and a comma, and still dials the pooler and nowhere else
+Error: supabase-root-2021.crt isn't Supabase's root: its SHA-256 is 80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FA
+     38|   const refused = (why: string) => new Error(`supabase-root-2021.crt i…
+ FAIL  src/database.test.ts > connectionOptions > says Postgres's warnings through the redactor, and its routine notices not at all
+Error: supabase-root-2021.crt isn't Supabase's root: its SHA-256 is 80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FA
+     38|   const refused = (why: string) => new Error(`supabase-root-2021.crt i…
+ FAIL  src/environment.test.ts > pgEnvOf: the connection as the environment variables psql reads, so no password is on a command line > decodes the user and the password, and asks for TLS that checks the pooler's chain against Supabase's root and its name
+Error: supabase-root-2021.crt isn't Supabase's root: its SHA-256 is 80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FA
+     38|   const refused = (why: string) => new Error(`supabase-root-2021.crt i…
+ FAIL  src/environment.test.ts > pgEnvOf: the connection as the environment variables psql reads, so no password is on a command line > decodes a user that is written with escapes, as the password is
+Error: supabase-root-2021.crt isn't Supabase's root: its SHA-256 is 80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FA
+     38|   const refused = (why: string) => new Error(`supabase-root-2021.crt i…
+ FAIL  src/environment.test.ts > pgEnvOf: the connection as the environment variables psql reads, so no password is on a command line > gives port 5432 when the string has none
+Error: supabase-root-2021.crt isn't Supabase's root: its SHA-256 is 80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FA
+     38|   const refused = (why: string) => new Error(`supabase-root-2021.crt i…
+ FAIL  src/environment.test.ts > pgEnvOf: the connection as the environment variables psql reads, so no password is on a command line > gives the host in lower case, as the guard read it, whatever case the string wrote it in
+Error: supabase-root-2021.crt isn't Supabase's root: its SHA-256 is 80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FA
+     38|   const refused = (why: string) => new Error(`supabase-root-2021.crt i…

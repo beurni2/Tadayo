@@ -1,0 +1,29 @@
+breakage: ops-no-tls
+patch: [
+ [
+  "tools/ops/src/database.ts",
+  "    ssl: poolerTls(),\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/packages/domain && npx vitest run src/db/ssl.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/services/api && npx vitest run src/connection.test.ts src/connection-tls.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/services/worker && npx vitest run src/connection.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/tools/ops && npx vitest run src/database.test.ts src/environment.test.ts src/deploy-files.test.ts
+exit: 1
+expected words: names every part of the connection, decoded, with TLS checked against Supabase's root
+caught: True
+
+ Test Files  1 passed (1)
+      Tests  9 passed (9)
+ Test Files  2 passed (2)
+      Tests  11 passed (11)
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+     × names every part of the connection, decoded, with TLS checked against Supabase's root, one connection and a time limit 10ms
+     × makes a port-less string the session pooler's port, 5432, and the driver reads no variable for it 4ms
+ Test Files  1 failed | 2 passed (3)
+      Tests  2 failed | 43 passed (45)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/database.test.ts > connectionOptions > names every part of the connection, decoded, with TLS checked against Supabase's root, one connection and a time limit
+AssertionError: expected { …(8) } to match object { …(8) }
+ FAIL  src/database.test.ts > connectionOptions > makes a port-less string the session pooler's port, 5432, and the driver reads no variable for it
+AssertionError: expected { …(5) } to deeply equal { …(5) }
