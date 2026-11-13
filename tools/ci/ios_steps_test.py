@@ -522,6 +522,23 @@ class SimulatorTest(StepsTest):
         self.assertEqual(code, 0, out)
         self.assertEqual((self.read_record()["snapshots"], self.read_record()["snapshots-source"]), ("27.2", "file"))
 
+    def test_records_the_versions_simctl_gives_not_the_pins(self):
+        # Patch releases under the pins: the record says what simctl gave.
+        before = {"runtimes": [dict(r, version="27.2.1") if r is IOS_27_2 else r for r in RUNTIMES["runtimes"]]}
+        after = {"runtimes": before["runtimes"] + [dict(IOS_26_5, version="26.5.1")]}
+        code, out = self.step("simulator", self.shell(runtimes=before, after_download=after))
+        self.assertEqual(code, 0, out)
+        record = self.read_record()
+        self.assertEqual((record["ios-27.2"], record["ios-26.5"]), ("27.2.1", "26.5.1"))
+
+    def test_a_26_5_the_runner_has_is_used_without_a_download(self):
+        shell = self.shell(runtimes=WITH_26_5)
+        code, out = self.step("simulator", shell)
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.downloads(shell), [])
+        self.assertEqual([c for c in shell.commands if "dyld_shared_cache" in c], [])
+        self.assertEqual(self.read_record()["runtime-26.5"], IOS_26_5["identifier"])
+
     def test_boots_only_the_first_runtime_s_device(self):
         shell = self.shell(after_download=WITH_26_5)
         self.assertEqual(self.step("simulator", shell)[0], 0)
@@ -776,6 +793,11 @@ class PickTest(unittest.TestCase):
         for runtimes in ([a, c], [c, a]):
             with self.subTest(order=[r["buildversion"] for r in runtimes]):
                 self.assertEqual(self.pick(runtimes), c)  # C9 is after B335
+        # By build_key, not as text, where "24C9" would come after "24C55".
+        c55 = dict(IOS_27_2, identifier="com.apple.CoreSimulator.SimRuntime.iOS-27-2-d", buildversion="24C55")
+        for runtimes in ([c, c55], [c55, c]):
+            with self.subTest(order=[r["buildversion"] for r in runtimes]):
+                self.assertEqual(self.pick(runtimes), c55)
         self.assertGreater(ios_steps.build_key("24C55"), ios_steps.build_key("24C9"))
         self.assertGreater(ios_steps.build_key("24D5020n"), ios_steps.build_key("24C55"))
 
@@ -803,6 +825,7 @@ class PickTest(unittest.TestCase):
         # Runtimes of other versions, or none with the device, aren't this one's business.
         self.assertEqual(self.pick([IOS_27_2, dict(TWIN, version="27.1", identifier=IOS_27_2["identifier"])]),
                          IOS_27_2)
+        self.assertEqual(self.pick([TWIN, dict(TWIN, buildversion="24C61"), IOS_27_2]), IOS_27_2)
 
     def test_pick_device_type(self):
         self.assertEqual(ios_steps.pick_device_type(IOS_27_2, "iPhone 17")["identifier"], IPHONE_17)
@@ -986,7 +1009,7 @@ class BuildAndTestSteps(StepsTest):
         # The interim (no ios-version file) is 26.5, the second pass; with the file, 27.2. Only
         # that pass has the artifacts directory.
         self.write_scheme(scheme(("TadayoTests", False), ("TadayoSnapshotTests", False),
-                                 ("TadayoUITests", False)))
+                                 ("TadayoShareSnapshotTests", False), ("TadayoUITests", False)))
         artifacts = os.path.join(self.repo.out, "artifacts")
         for content, snapshots in ((None, "26.5"), (b"27.2\n", "27.2")):
             with self.subTest(snapshots=snapshots):
@@ -1004,7 +1027,8 @@ class BuildAndTestSteps(StepsTest):
                         self.assertEqual(skipped, [], version)
                         self.assertEqual(env["TEST_RUNNER_SNAPSHOT_ARTIFACTS"], artifacts)
                     else:
-                        self.assertEqual(skipped, ["TadayoSnapshotTests"], version)
+                        self.assertEqual(sorted(skipped), ["TadayoShareSnapshotTests", "TadayoSnapshotTests"],
+                                         version)
                         self.assertNotIn("TEST_RUNNER_SNAPSHOT_ARTIFACTS", env)
 
     def test_a_failed_pass_still_runs_the_next_and_fails_the_step(self):
@@ -1019,6 +1043,17 @@ class BuildAndTestSteps(StepsTest):
                 self.assertEqual(len(self.passes(shell)), 2)
                 self.assertEqual(self.results(), results)
                 self.assertIn("the evidence job still publishes what they drew", out)
+
+    def test_each_pass_is_recorded_as_it_ends(self):
+        # A step stopped by its timeout during the second pass keeps the first pass's result.
+        class Stopped(Exception):
+            pass
+
+        def stop(cmd):
+            raise Stopped
+        with self.assertRaises(Stopped):
+            self.step("test", FakeShell(codes=[(on(UDID_26), stop)]))
+        self.assertEqual(self.results(), {"tests-27.2": "passed"})
 
     def test_between_passes_the_device_is_shut_down_and_the_next_booted(self):
         shell = FakeShell()

@@ -100,8 +100,9 @@ The snapshot runtime (snapshot_runtime): the snapshot tests run on one pinned ru
 the committed references are for. It is toolchain.SNAPSHOT_RUNTIME when the app has the file
 SNAPSHOT_RUNTIME_FILE holding exactly that version, and toolchain.SNAPSHOT_RUNTIME_INTERIM while
 the app has no such file. Anything else there fails `simulator` and `test` before any command,
-and `ci` on Linux, where ios_steps_test.py reads the real file. So a PR outside CI configuration
-can move the snapshots to the founder's runtime, never back (T58).
+and `ci` on Linux, where ios_steps_test.py reads the real file. So the file can name only the
+founder's runtime (T58). Until a CI-configuration PR removes the interim, deleting the file moves
+the snapshots back to it; the CI PR after the app's PR that adds the file removes that path.
 
 Files pass between the macOS job's steps in OUT ($IOS_OUT, else $RUNNER_TEMP/ios-out), which the
 job uploads as the artifact `ios-results` and the evidence job downloads to the same place:
@@ -363,8 +364,9 @@ def snapshot_runtime(root):
     exactly that version, with at most one line break after it; (toolchain.SNAPSHOT_RUNTIME_INTERIM,
     "interim") when there is no such file. ValueError for anything else: another version (the
     interim's among them), a second line, a space, CRLF, a byte outside ASCII, an empty file, a
-    link, a folder or anything else that isn't a regular file. So a PR outside CI configuration
-    can move the snapshots to the founder's runtime, never back (T58)."""
+    link, a folder or anything else that isn't a regular file. So the file can name only the
+    founder's runtime (T58); until the interim is removed, deleting it moves the snapshots back to
+    the interim's runtime."""
     path = os.path.join(root, *SNAPSHOT_RUNTIME_FILE.split("/"))
     try:
         info = os.lstat(path)
@@ -1054,6 +1056,12 @@ class Steps:
         os.makedirs(artifacts, exist_ok=True)
         # The simulator step booted the first runtime's device; each later pass boots its own.
         results, failure, booted = {}, 0, udids[pinned[0]]
+
+        def record(version, result):
+            # Each pass is recorded as it ends, so a step stopped by its timeout during a later
+            # pass still shows the earlier passes' results.
+            results[version] = result
+            self.update_run_record(**{f"tests-{version}": result})
         for version in pinned:
             udid, log = udids[version], self.log(f"test-{version}.log")
             snapshot_pass = version == snapshots
@@ -1064,7 +1072,7 @@ class Steps:
                       f"iOS {snapshots}: skipping {', '.join(skipped)}")
             if not [t for t in targets if t not in skipped]:
                 print(f"ios: test: no test target is left to run on iOS {version}")
-                results[version] = "none"
+                record(version, "none")
                 continue
             if udid != booted:
                 # One simulator at a time on the runner. A failed shutdown is logged, not fatal;
@@ -1076,7 +1084,8 @@ class Steps:
                                   env=self.xcode_env(), log=log) != 0:
                     print(f"ios: test: the iOS {version} simulator {udid} didn't boot "
                           f"(logs/test-{version}.log)")
-                    results[version], failure = "failed", failure or 1
+                    record(version, "failed")
+                    failure = failure or 1
                     continue
             bundle = self.out_path(f"Tests-{version}.xcresult")
             shutil.rmtree(bundle, ignore_errors=True)
@@ -1094,7 +1103,7 @@ class Steps:
                 ["xcrun", "xcresulttool", "get", "test-results", "summary", "--path", bundle,
                  "--compact"], env=self.xcode_env())
             self.write_log(f"test-summary-{version}.json", summary or err)
-            results[version] = "passed" if code == 0 else "failed"
+            record(version, "passed" if code == 0 else "failed")
             if code != 0:
                 failure = failure or code
                 print(f"ios: test: tests failed on iOS {version} (logs/test-{version}.log, "

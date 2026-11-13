@@ -46,8 +46,9 @@ one `ios` run builds once on Xcode 27 and tests on iOS 27.2, with the snapshot t
   the `macos-26` image, which the snapshot tests use only while the app has no file
   apps/ios/TadayoSnapshotTests/__Snapshots__/ios-version. The app's PR that takes the
   references on SNAPSHOT_RUNTIME adds that file, holding exactly SNAPSHOT_RUNTIME; nothing else
-  may be in it (ios_steps.snapshot_runtime), so a PR outside CI configuration can move the
-  snapshots to the founder's runtime and never back (T58).
+  may be in it (ios_steps.snapshot_runtime), so the file can name only the founder's runtime
+  (T58). Until a CI-configuration PR removes SNAPSHOT_RUNTIME_INTERIM, deleting the file moves
+  the snapshots back to it; the CI PR after the app's PR removes that path.
 - SIMULATOR_DEVICE: the `xcode-27` image's README lists the iPhone 17 simulator on iOS 27.0 and on
   the iPhones' iOS 27.2 runtime, and the `macos-26` image's README lists it on iOS 26.5, so every
   run uses that device on each runtime (docs/TECH-DESIGN.md section 8). There is no fallback: a

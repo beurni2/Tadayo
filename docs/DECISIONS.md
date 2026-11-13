@@ -335,7 +335,7 @@ Decision:
   - iOS 27.2, once the app's references are drawn there, which the app says with `apps/ios/TadayoSnapshotTests/__Snapshots__/ios-version` holding exactly `27.2`;
   - iOS 26.5, where today's references were drawn (`SNAPSHOT_RUNTIME_INTERIM`), until that file exists.
 
-  Any other content in the file fails the run, and a `ci` tools test reads the real file. So a PR outside CI configuration can move the snapshot tests to the founder's runtime and nowhere else (T58). The interim goes in the next CI-configuration PR after the app's PR merges.
+  Any other content in the file fails the run, and a `ci` tools test reads the real file. So the file can name only the founder's runtime (T58). While the interim exists, deleting the file moves the snapshot tests back to iOS 26.5; the next CI-configuration PR after the app's PR merges removes the interim, and with it that path.
 - **Runs by hand.** The `ios_version` input and its runs end: every run tests both versions. A run by hand is the full set, in `<branch>/<short-sha>/ios-full/`.
 - **Lint.** `.github/actionlint.yaml` names the label `xcode-27`, which actionlint 1.7.12's list of GitHub's labels predates. It names nothing else, and every rule still runs.
 Alternatives:
@@ -344,12 +344,12 @@ Alternatives:
 - Build twice, once per image, to test iOS 26.5 with Xcode 26.6.
 - Put the snapshot tests on iOS 27.2 in this PR. That leaves `main` red until the references are taken again, because T58 keeps them out of a CI PR. Carrying the references here instead is what T58 forbids.
 Consequences:
-- **Time.** A run takes about 20 minutes, against about 10: on the check branch `ios/b0-xcode27-check` (run 43385098775), the simulator step took 4 minutes, the build 5 and the tests 11. The UI tests run twice, so an intermittent test has two chances to fail a run. At `8b85775` two of four runs failed once each on iOS 26.5, on tests that had failed now and then on `macos-26` before. They are fixed in app code, never skipped or loosened (`docs/LIMITATIONS.md`, 2026-11-13).
+- **Time.** A run takes about 20 minutes, against about 10: on the check branch `ios/b0-xcode27-check` (run 43385098775), the simulator step took 4 minutes, the build 5 and the tests 11. The UI tests run twice, so an intermittent test has two chances to fail a run. At `8b85775` two of four runs failed on iOS 26.5: one on A02-code's pin test, the other on `A02-age-dark` by a few pixels and on `SignInUITests.testTheTabsWithNoClub`, whose app never went idle after Send a code. The first two had failed now and then on `macos-26` before; the third had not. They are fixed in app code, never skipped or loosened (`docs/LIMITATIONS.md`, 2026-11-13).
 - **Download.** Every run downloads iOS 26.5 from Apple, 8.5 GB.
 - **Image.** The `xcode-27` image is still badged "preview" in runner-images' README. A later image without Xcode 27.2 or the iOS 27.2 runtime fails `toolchain` or `simulator` by name, and a CI PR follows.
 - **iPhones.** From the app's PR on, a build installs only on iOS 26 or later. The iPhone XS and XR stop at iOS 18.
-- **Sessions.** Sessions move to Swift 6.4.2 through the environment's setup script.
-- **Documents.** A later PR updates `docs/TECH-DESIGN.md` sections 1, 2, 8 and 9 and `docs/GITHUB.md`'s line that starts `ios` by hand. That line's `ios_version` input is refused after this merge.
+- **Sessions.** The environment has no setup script, so a session installs Swift by hand from swift.org's signed release; the ios session moved to 6.4.2 on 13 November 2026. `ci` runs only the package tests, never `swift format lint`, which needs a key added to the two `.swift-format` files on 6.4.2, in the app's PR (`docs/LIMITATIONS.md`, 2026-11-13).
+- **Documents.** A later PR updates `docs/TECH-DESIGN.md` sections 1, 2, 8 and 9 and `docs/GITHUB.md`'s line that starts `ios` by hand. That line's `ios_version` input is refused after this merge. The same PR makes `docs/GITHUB.md`'s check of a workflow file written outside the repository pass `-config-file <the repository>/.github/actionlint.yaml` to `actionlint`, which otherwise doesn't know `xcode-27`. The ios lane's next PR outside CI configuration drops the iOS 18.6 and 17.5 runs from `docs/plans/ios-b0-adopt-handoff-7.md` (its common Done and its schedule), and the app's PR the comment on them in `apps/ios/project.yml`.
 - **Supersedes.** This supersedes ADR-018, and ADR-001's "iOS 17 as the minimum" and `macos-26` parts (the form ADR-022 used).
 Links: FQ4; ADR-001, ADR-018, ADR-022, ADR-028; T58; `docs/TECH-DESIGN.md` sections 1, 2, 8 and 9; `docs/LIMITATIONS.md`'s rows of 2026-11-13; the check branch `ios/b0-xcode27-check` (`ios` runs 43385098775, 43387877105 and 43394260160).
 
