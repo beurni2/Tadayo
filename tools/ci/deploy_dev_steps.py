@@ -3,18 +3,23 @@
 
 deploy-dev runs on every push to main. Its first job waits for that commit's ci run (wait-ci);
 its second migrates dev, deploys main to Fly and runs storage-setup and the Supabase probe, all
-through ops_steps.py, then asks the API for its neutral 401 (check-api); its third, on a runner of
-its own that never held a Fly or Supabase secret, publishes apps/web's build to Cloudflare Pages:
-setup-wrangler installs the pinned wrangler, pages-project makes the Pages project when it's
-missing (wrangler without a terminal won't), pages-deploy deploys, and check-association checks
-that the production deployment is this commit's and serves the association file as Apple fetches
-it (docs/plans/B0.md, slice 10c and the workflow table).
+through ops_steps.py, then asks the API for its neutral 401 (check-api). Its third builds apps/web
+with no secret at all and hands the site on as an artifact, once check-site has found nothing in
+it but plain files and folders. Its fourth publishes that site to Cloudflare Pages on a runner of
+its own, which runs nothing but this script, GitHub's pinned actions and the pinned wrangler:
+check-head stops a run whose commit is no longer main's head, check-site looks at the site again,
+setup-wrangler installs wrangler outside the checkout, pages-project makes the Pages project when
+it's missing (wrangler without a terminal won't), pages-deploy deploys, and check-association
+checks that the production deployment is this commit's and serves the association file as Apple
+fetches it (docs/plans/B0.md, slice 10c and the workflow table).
 
 Every request goes through Http, which never follows a redirect and has a timeout; the tests
 replace it, the sleep and the process runner with fakes, so nothing here needs the network to be
 tested. Nothing this script prints holds a token or a request header; it prints the status and the
 headers of the answers it judges. wrangler's own output in pages-deploy, and Cloudflare's error
-messages, can name the account id, which is a repository variable, not a secret.
+messages, can name the account id, a repository variable, not a secret; and on an authentication
+error wrangler also lists the token's accounts by name and id (an account's name holds its
+owner's email unless it was renamed), and that email when the token may read it.
 
 Tests: python3 tools/ci/deploy_dev_steps_test.py
 CI configuration: change this file only in its own PR (docs/INVARIANTS.md T58).
@@ -24,6 +29,8 @@ import http.client
 import json
 import os
 import re
+import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -40,7 +47,11 @@ PAGES_PROJECT = "tadayo"
 # release at least two weeks old when it was chosen (4.153.0, published 2026-10-26).
 WRANGLER_VERSION = "4.153.0"
 PAGES_DIR = os.path.join("tools", "ci", "pages")
-WRANGLER = os.path.join(PAGES_DIR, "node_modules", "wrangler", "bin", "wrangler.js")
+# Where setup-wrangler installs it: a folder of its own under the runner's RUNNER_TEMP, outside the
+# checkout, so neither npm (looking upward for a workspace) nor Node (looking upward for a module)
+# reaches a file in the repository.
+WRANGLER_HOME = "deploy-dev-wrangler"
+WRANGLER = os.path.join("node_modules", "wrangler", "bin", "wrangler.js")
 SITE = os.path.join("apps", "web", "dist")
 ASSOCIATION = "/.well-known/apple-app-site-association"
 # A file Pages runs as a Worker in front of the site ("advanced mode"); the site is static.
@@ -242,20 +253,129 @@ class Steps:
               "UNAUTHENTICATED, private and not stored")
         return 0
 
+    # check-head
+
+    def check_head(self):
+        """Passes only while this run's commit is main's head: a re-run of an older commit's pages
+        job would otherwise put its older site back over a newer one."""
+        token = self.value("GITHUB_TOKEN")
+        if not token:
+            print("deploy-dev: check-head has no GITHUB_TOKEN: its step gives it the job's token")
+            return 1
+        sha = self.sha("check-head")
+        if sha is None:
+            return 1
+        headers = {"accept": "application/vnd.github+json", "authorization": f"Bearer {token}",
+                   "x-github-api-version": "2022-11-28", "user-agent": USER_AGENT}
+        for attempt in range(1, API_TRIES + 1):
+            try:
+                answer = self.http.request("GET", GITHUB_API, f"/repos/{REPOSITORY}/branches/{BRANCH}", headers)
+            except (OSError, http.client.HTTPException) as error:
+                problem = f"couldn't ask GitHub for {BRANCH}'s head ({error})"
+            else:
+                if answer.status == 200:
+                    return self.judge_head(sha, json_of(answer))
+                problem = f"GitHub answered HTTP {answer.status} to the request for {BRANCH}'s head"
+                if answer.status < 500:
+                    print(f"deploy-dev: check-head: {problem}")
+                    return 1
+            if attempt < API_TRIES:
+                print(f"deploy-dev: check-head: {problem}; asking again in {API_RETRY_SECONDS} seconds")
+                self.sleep(API_RETRY_SECONDS)
+            else:
+                print(f"deploy-dev: check-head: {problem}, {API_TRIES} times")
+        return 1
+
+    def judge_head(self, sha, document):
+        commit = document.get("commit") if isinstance(document, dict) else None
+        head = commit.get("sha") if isinstance(commit, dict) else None
+        if not isinstance(head, str) or not SHA.fullmatch(head):
+            print(f"deploy-dev: check-head: GitHub's answer about {BRANCH} names no commit")
+            return 1
+        if head != sha:
+            print(f"deploy-dev: check-head: {BRANCH} is at {head[:12]} now, not {sha[:12]}; that commit's run "
+                  "publishes its own site, so this one publishes nothing (if that run's pages job ended "
+                  "cancelled, run it again)")
+            return 1
+        print(f"deploy-dev: check-head: {sha[:12]} is {BRANCH}'s head")
+        return 0
+
+    # check-site
+
+    def site_problem(self):
+        """Why apps/web/dist can't be published as it stands, or None. wrangler follows a link and
+        publishes what it points to, and Pages runs a _worker.js as code, so the site may hold
+        nothing but plain files and folders, and no _worker.js."""
+        site = self.path(SITE)
+        if os.path.islink(site) or not os.path.isdir(site):
+            return f"{SITE} isn't a folder: build it first (ci_steps.py web)"
+
+        def refuse(error):
+            raise error
+        try:
+            for folder, folders, files in os.walk(site, onerror=refuse, followlinks=False):
+                for name in folders + files:
+                    mode = os.lstat(os.path.join(folder, name)).st_mode
+                    where = os.path.relpath(os.path.join(folder, name), site)
+                    if stat.S_ISLNK(mode):
+                        return f"{SITE}/{where} is a link, which wrangler would follow and publish what it points to"
+                    if not (stat.S_ISREG(mode) or stat.S_ISDIR(mode)):
+                        return f"{SITE}/{where} is neither a file nor a folder"
+        except OSError as error:
+            return f"{SITE} can't be read whole ({error})"
+        if not os.path.isfile(self.path(SITE, ASSOCIATION.lstrip("/"))):
+            return f"{SITE} has no {ASSOCIATION}: build it first (ci_steps.py web)"
+        if os.path.lexists(self.path(SITE, WORKER)):
+            return f"{SITE} holds {WORKER}, which Pages would run as code on the site; the site is static"
+        return None
+
+    def check_site(self):
+        problem = self.site_problem()
+        if problem:
+            print(f"deploy-dev: check-site: {problem}")
+            return 1
+        print(f"deploy-dev: check-site: {SITE} holds plain files and folders only, with {ASSOCIATION}")
+        return 0
+
     # setup-wrangler
+
+    def wrangler_home(self, step):
+        """setup-wrangler's folder under RUNNER_TEMP, or None when there is no such place outside
+        the checkout."""
+        temp = self.value("RUNNER_TEMP")
+        if not temp or not os.path.isabs(temp):
+            print(f"deploy-dev: {step}: RUNNER_TEMP isn't an absolute path (GitHub's runner sets it)")
+            return None
+        home = os.path.join(os.path.realpath(temp), WRANGLER_HOME)
+        root = os.path.realpath(self.root)
+        if os.path.commonpath([home, root]) == root:
+            print(f"deploy-dev: {step}: RUNNER_TEMP is inside the checkout")
+            return None
+        return home
 
     def setup_wrangler(self):
         problem = self.lockfile_problem()
         if problem:
             print(f"deploy-dev: setup-wrangler: {problem}, so nothing is installed")
             return 1
-        cmd = ["npm", "ci", "--ignore-scripts", "--no-audit", "--no-fund"]
-        code = self.run_process(cmd, self.path(PAGES_DIR), dict(self.environ))
+        home = self.wrangler_home("setup-wrangler")
+        if home is None:
+            return 1
+        try:
+            os.makedirs(home)
+            for name in ("package.json", "package-lock.json"):
+                shutil.copyfile(self.path(PAGES_DIR, name), os.path.join(home, name))
+        except OSError as error:
+            print(f"deploy-dev: setup-wrangler: couldn't make {home} with {PAGES_DIR}'s two files ({error})")
+            return 1
+        # --workspaces=false: npm takes this folder as the project, never a package.json above it.
+        cmd = ["npm", "ci", "--ignore-scripts", "--no-audit", "--no-fund", "--workspaces=false"]
+        code = self.run_process(cmd, home, dict(self.environ))
         if code != 0:
             print(f"deploy-dev: setup-wrangler: npm ci failed (exit {code})")
             return 1
         try:
-            with open(self.path(PAGES_DIR, "node_modules", "wrangler", "package.json"), encoding="utf-8") as f:
+            with open(os.path.join(home, "node_modules", "wrangler", "package.json"), encoding="utf-8") as f:
                 installed = json.load(f).get("version")
         except (OSError, ValueError, AttributeError):
             installed = None
@@ -380,21 +500,25 @@ class Steps:
         if given is None or sha is None:
             return 1
         token, account = given
-        if not os.path.isfile(self.path(SITE, ASSOCIATION.lstrip("/"))):
-            print(f"deploy-dev: pages-deploy: {SITE} has no {ASSOCIATION}: build it first (ci_steps.py web)")
+        problem = self.site_problem()
+        if problem:
+            print(f"deploy-dev: pages-deploy: {problem}, so nothing is deployed")
             return 1
-        if os.path.lexists(self.path(SITE, WORKER)):
-            print(f"deploy-dev: pages-deploy: {SITE} holds {WORKER}, which Pages would run as code on the "
-                  "site; the site is static, so nothing is deployed")
+        home = self.wrangler_home("pages-deploy")
+        if home is None:
             return 1
-        cmd = ["node", self.path(WRANGLER), "pages", "deploy", self.path(SITE), f"--project-name={PAGES_PROJECT}",
+        wrangler = os.path.join(home, WRANGLER)
+        if not os.path.isfile(wrangler):
+            print(f"deploy-dev: pages-deploy: there is no {wrangler}: setup-wrangler installs it")
+            return 1
+        cmd = ["node", wrangler, "pages", "deploy", self.path(SITE), f"--project-name={PAGES_PROJECT}",
                f"--branch={BRANCH}", f"--commit-hash={sha}", f"--commit-message=main at {sha[:12]}",
                "--commit-dirty=false"]
         # wrangler reads .env and .env.local, a functions/ folder and a wrangler configuration from
-        # its working directory (the configuration from every folder above it too), and writes under
-        # HOME: an empty folder of its own is both, so no file in the repository changes what it
-        # does. Only these variables reach it; its usage data and error reports stay off
-        # (DO_NOT_TRACK outranks every other setting).
+        # its working directory (the configuration from every folder above it too, up to /), and
+        # writes under HOME: an empty folder of its own is both, so no file in the repository
+        # changes what it does. Only these variables reach it; its usage data and error reports
+        # stay off (DO_NOT_TRACK outranks every other setting).
         with tempfile.TemporaryDirectory(prefix="deploy-dev-wrangler-") as home:
             env = {"PATH": self.value("PATH"), "HOME": home, "CI": "true", "DO_NOT_TRACK": "1",
                    "WRANGLER_SEND_METRICS": "false", "WRANGLER_SEND_ERROR_REPORTS": "false",
@@ -441,6 +565,8 @@ class Steps:
                 # other wait here; a 4xx still fails at once.
                 seen = str(failure)
                 project = {}
+            else:
+                seen = "no production deployment"
             if project is None:
                 raise StepFailed(f"the Pages project {PAGES_PROJECT} doesn't exist")
             deployment = project.get("canonical_deployment")
@@ -506,7 +632,8 @@ def host_of(url):
 
 
 STEPS = {
-    "wait-ci": Steps.wait_ci, "check-api": Steps.check_api, "setup-wrangler": Steps.setup_wrangler,
+    "wait-ci": Steps.wait_ci, "check-api": Steps.check_api, "check-head": Steps.check_head,
+    "check-site": Steps.check_site, "setup-wrangler": Steps.setup_wrangler,
     "pages-project": Steps.pages_project, "pages-deploy": Steps.pages_deploy,
     "check-association": Steps.check_association,
 }

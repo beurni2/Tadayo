@@ -1,7 +1,8 @@
 # deploy-dev: on every merge to main, once that commit's ci run has passed, migrates dev, deploys
 # main to Fly, runs storage-setup and the Supabase probe on a Fly machine, asks the API for a
-# neutral 401, and then, on a runner of its own, publishes apps/web to Cloudflare Pages
-# (docs/TECH-DESIGN.md section 9; the B0 plan's slice 10c and its workflow table).
+# neutral 401; builds apps/web in a job that holds no secret; and then, on a runner of its own,
+# publishes that build to Cloudflare Pages (docs/TECH-DESIGN.md section 9; the B0 plan's slice 10c
+# and its workflow table).
 # Thin on purpose: every step calls tools/ci/deploy_dev_steps.py, ops_steps.py or ci_steps.py,
 # where the logic and its tests live (deploy_dev_steps_test.py reads this file). The ops steps
 # are ops.yml's own, so a deploy passes the same checks as a run by hand.
@@ -45,7 +46,10 @@ jobs:
     name: deploy
     needs: ci
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    # Above the steps' own limits added up (about 75 minutes: deploy-branch's 20-minute deploy, two
+    # SSH sessions of up to 22 minutes each, check-api's 4, the installs), so each script's limit,
+    # and the clean-up after it, comes before GitHub's.
+    timeout-minutes: 80
     permissions:
       contents: read
       actions: read  # the commit's ci runs, read again by deploy-branch
@@ -100,19 +104,18 @@ jobs:
         run: python3 tools/ci/ops_steps.py run
       - run: python3 tools/ci/deploy_dev_steps.py check-api
 
-  # A fresh runner, holding the Cloudflare token and nothing else: flyctl's agent, still running on
-  # the deploy job's runner with Fly's token, and the database's and Supabase's secrets never meet
-  # wrangler and the packages under it. Its own group keeps two commits' sites from deploying at
-  # once; the newer one waiting replaces an older one.
-  pages:
-    name: pages
-    needs: deploy
+  # Builds the site with no secret at all, beside the deploy job, and hands it on as an artifact
+  # once check-site has found nothing in it but plain files and folders; in a group of its own
+  # commit's, like the wait.
+  web:
+    name: web
+    needs: ci
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 20
     permissions:
       contents: read
     concurrency:
-      group: deploy-dev-pages
+      group: deploy-dev-web-${{ github.sha }}
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -125,6 +128,51 @@ jobs:
       - run: python3 tools/ci/ci_steps.py setup-pnpm
       - run: python3 tools/ci/ci_steps.py install
       - run: python3 tools/ci/ci_steps.py web
+      - run: python3 tools/ci/deploy_dev_steps.py check-site
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: site
+          path: apps/web/dist/
+          if-no-files-found: error
+          include-hidden-files: true  # the association file is under .well-known
+          retention-days: 1
+
+  # A fresh runner, holding the Cloudflare token and nothing else, that runs nothing but
+  # deploy_dev_steps.py, these pinned actions and the pinned wrangler: flyctl's agent, still running
+  # on the deploy job's runner with Fly's token, the database's and Supabase's secrets, and the
+  # repository's own build code and packages never meet the token. check-head stops a run whose
+  # commit is no longer main's head, so a re-run never puts an older site back. Its own group keeps
+  # two commits' sites from deploying at once; a newer job waiting replaces an older one, and a
+  # re-run joining the group can replace the head's waiting job, which is then run again.
+  pages:
+    name: pages
+    needs:
+      - deploy
+      - web
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    concurrency:
+      group: deploy-dev-pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: check-head
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 tools/ci/deploy_dev_steps.py check-head
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with:
+          name: site
+          path: apps/web/dist
+      - run: python3 tools/ci/deploy_dev_steps.py check-site
       - run: python3 tools/ci/deploy_dev_steps.py setup-wrangler
       - name: pages-project
         env:

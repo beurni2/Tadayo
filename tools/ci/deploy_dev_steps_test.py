@@ -254,11 +254,14 @@ class CheckApiTest(unittest.TestCase):
 
 
 class Repository:
-    """A scratch copy of the files the Pages steps read: tools/ci/pages and apps/web/dist."""
+    """A scratch copy of the files the Pages steps read: tools/ci/pages and apps/web/dist; and,
+    beside it, a folder that stands for the runner's RUNNER_TEMP."""
 
     def __init__(self, test):
         self.root = tempfile.mkdtemp()
         test.addCleanup(shutil.rmtree, self.root)
+        self.temp = tempfile.mkdtemp()
+        test.addCleanup(shutil.rmtree, self.temp)
         pages = os.path.join(self.root, "tools", "ci", "pages")
         os.makedirs(pages)
         for name in ("package.json", "package-lock.json"):
@@ -278,13 +281,22 @@ class Repository:
         with open(self.path("tools", "ci", "pages", "package-lock.json"), "w", encoding="utf-8") as f:
             json.dump(lock, f)
 
+    def wrangler_home(self):
+        return os.path.join(os.path.realpath(self.temp), "deploy-dev-wrangler")
+
     def installer(self, version=steps_module.WRANGLER_VERSION):
         def install():
-            folder = self.path("tools", "ci", "pages", "node_modules", "wrangler")
-            os.makedirs(folder, exist_ok=True)
+            folder = os.path.join(self.wrangler_home(), "node_modules", "wrangler")
+            os.makedirs(os.path.join(folder, "bin"), exist_ok=True)
             with open(os.path.join(folder, "package.json"), "w", encoding="utf-8") as f:
                 json.dump({"name": "wrangler", "version": version}, f)
+            open(os.path.join(folder, "bin", "wrangler.js"), "w").close()
         return install
+
+    def wrangler(self):
+        """Installs a stand-in wrangler where setup-wrangler would; returns its path."""
+        self.installer()()
+        return os.path.join(self.wrangler_home(), "node_modules", "wrangler", "bin", "wrangler.js")
 
 
 class SetupWranglerTest(unittest.TestCase):
@@ -295,15 +307,41 @@ class SetupWranglerTest(unittest.TestCase):
             lock = json.load(f)
         self.assertEqual(lock["packages"]["node_modules/wrangler"]["version"], "4.153.0")
 
-    def test_it_runs_npm_ci_without_install_scripts_in_tools_ci_pages(self):
+    def test_it_runs_npm_ci_without_install_scripts_outside_the_checkout(self):
+        # npm looks upward for a workspace whose lockfile it would use instead, and Node looks upward
+        # for modules, so wrangler is installed from a copy of the two files in a folder of its own
+        # under RUNNER_TEMP (PR #52's review, round 2).
         repo = Repository(self)
         run = FakeRun(install=repo.installer())
-        code, out, http, _ = call("setup_wrangler", {"PATH": "/bin"}, run=run, root=repo.root)
+        code, out, http, _ = call("setup_wrangler", {"PATH": "/bin", "RUNNER_TEMP": repo.temp}, run=run,
+                                  root=repo.root)
         self.assertEqual(code, 0, out)
         [done] = run.calls
-        self.assertEqual(done["cmd"], ["npm", "ci", "--ignore-scripts", "--no-audit", "--no-fund"])
-        self.assertEqual(done["cwd"], repo.path("tools", "ci", "pages"))
+        self.assertEqual(done["cmd"], ["npm", "ci", "--ignore-scripts", "--no-audit", "--no-fund", "--workspaces=false"])
+        self.assertEqual(done["cwd"], repo.wrangler_home())
+        for name in ("package.json", "package-lock.json"):
+            with open(repo.path("tools", "ci", "pages", name), "rb") as ours, \
+                    open(os.path.join(repo.wrangler_home(), name), "rb") as copied:
+                self.assertEqual(copied.read(), ours.read())
+        self.assertEqual(sorted(os.listdir(repo.path("tools", "ci", "pages"))), ["package-lock.json", "package.json"])
         self.assertEqual(http.requests, [])
+
+    def test_it_needs_a_runner_temp_outside_the_checkout_and_a_folder_of_its_own(self):
+        repo = Repository(self)
+        for temp in (None, "relative/temp", repo.root, repo.path("tools")):
+            with self.subTest(temp=temp):
+                run = FakeRun()
+                code, out, _, _ = call("setup_wrangler", {} if temp is None else {"RUNNER_TEMP": temp}, run=run,
+                                       root=repo.root)
+                self.assertEqual(code, 1, out)
+                self.assertEqual(run.calls, [])
+                self.assertIn("RUNNER_TEMP", out)
+        os.makedirs(repo.wrangler_home())
+        run = FakeRun()
+        code, out, _, _ = call("setup_wrangler", {"RUNNER_TEMP": repo.temp}, run=run, root=repo.root)
+        self.assertEqual(code, 1, out)
+        self.assertEqual(run.calls, [])
+        self.assertIn("couldn't make", out)
 
     def test_it_refuses_a_lockfile_it_can_t_trust_before_installing(self):
         def drop(key):
@@ -368,11 +406,13 @@ class SetupWranglerTest(unittest.TestCase):
 
     def test_a_failed_install_or_another_version_installed_fails(self):
         repo = Repository(self)
-        code, out, _, _ = call("setup_wrangler", {}, run=FakeRun(code=1, install=repo.installer()), root=repo.root)
+        code, out, _, _ = call("setup_wrangler", {"RUNNER_TEMP": repo.temp}, run=FakeRun(code=1, install=repo.installer()),
+                               root=repo.root)
         self.assertEqual(code, 1, out)
         self.assertIn("npm ci failed (exit 1)", out)
         repo = Repository(self)
-        code, out, _, _ = call("setup_wrangler", {}, run=FakeRun(install=repo.installer("4.161.0")), root=repo.root)
+        code, out, _, _ = call("setup_wrangler", {"RUNNER_TEMP": repo.temp},
+                               run=FakeRun(install=repo.installer("4.161.0")), root=repo.root)
         self.assertEqual(code, 1, out)
         self.assertIn("npm installed wrangler 4.161.0", out)
 
@@ -487,14 +527,16 @@ class WranglerRun(FakeRun):
 class PagesDeployTest(unittest.TestCase):
     def test_it_runs_the_pinned_wrangler_with_only_what_it_needs(self):
         repo = Repository(self)
+        wrangler = repo.wrangler()
         run = WranglerRun()
         environ = {**CLOUDFLARE, "PATH": "/usr/bin", "HOME": "/home/runner", "FLY_API_TOKEN": "fly",
-                   "GITHUB_TOKEN": "gh", "DATABASE_URL": "postgres://x", "NODE_OPTIONS": "--require /tmp/x.js"}
+                   "GITHUB_TOKEN": "gh", "DATABASE_URL": "postgres://x", "NODE_OPTIONS": "--require /tmp/x.js",
+                   "RUNNER_TEMP": repo.temp}
         code, out, http, _ = call("pages_deploy", environ, run=run, root=repo.root)
         self.assertEqual(code, 0, out)
         [done] = run.calls
         self.assertEqual(done["cmd"], [
-            "node", repo.path("tools", "ci", "pages", "node_modules", "wrangler", "bin", "wrangler.js"),
+            "node", wrangler,
             "pages", "deploy", repo.path("apps", "web", "dist"), "--project-name=tadayo", "--branch=main",
             f"--commit-hash={SHA}", f"--commit-message=main at {SHA[:12]}", "--commit-dirty=false"])
         self.assertEqual(done["env"], {"PATH": "/usr/bin", "HOME": done["cwd"], "CI": "true",
@@ -512,11 +554,14 @@ class PagesDeployTest(unittest.TestCase):
                 with open(repo.path(*folder, name), "w", encoding="utf-8") as f:
                     f.write("CLOUDFLARE_API_BASE_URL=http://127.0.0.1:1/client/v4\n")
         os.makedirs(repo.path("functions"))
+        repo.wrangler()
         run = WranglerRun()
-        code, out, _, _ = call("pages_deploy", {**CLOUDFLARE, "PATH": "/usr/bin", "HOME": repo.root}, run=run,
-                               root=repo.root)
+        code, out, _, _ = call("pages_deploy", {**CLOUDFLARE, "PATH": "/usr/bin", "HOME": repo.root,
+                                                "RUNNER_TEMP": repo.temp}, run=run, root=repo.root)
         self.assertEqual(code, 0, out)
         [done] = run.calls
+        self.assertNotEqual(os.path.commonpath([done["cmd"][1], os.path.realpath(repo.root)]), os.path.realpath(repo.root),
+                            "wrangler is run from inside the repository")
         cwd = done["cwd"]
         self.assertEqual(run.held, [], "wrangler's working folder isn't empty as it starts")
         self.assertEqual(done["env"]["HOME"], cwd)
@@ -536,21 +581,174 @@ class PagesDeployTest(unittest.TestCase):
                 self.assertEqual(run.calls, [])
                 self.assertIn("_worker.js", out)
 
+    def test_a_link_in_the_site_is_refused(self):
+        repo = Repository(self)
+        repo.wrangler()
+        os.symlink("/nonexistent/../proc/self/environ", repo.path("apps", "web", "dist", "leak.txt"))
+        run = FakeRun()
+        code, out, _, _ = call("pages_deploy", {**CLOUDFLARE, "RUNNER_TEMP": repo.temp}, run=run, root=repo.root)
+        self.assertEqual(code, 1, out)
+        self.assertEqual(run.calls, [])
+        self.assertIn("leak.txt is a link", out)
+
     def test_wrangler_s_failure_is_the_step_s(self):
         repo = Repository(self)
-        code, out, _, _ = call("pages_deploy", CLOUDFLARE, run=FakeRun(code=1), root=repo.root)
+        repo.wrangler()
+        code, out, _, _ = call("pages_deploy", {**CLOUDFLARE, "RUNNER_TEMP": repo.temp}, run=FakeRun(code=1),
+                               root=repo.root)
         self.assertEqual(code, 1, out)
+        self.assertIn("wrangler failed (exit 1)", out)
 
-    def test_nothing_runs_without_the_build_the_secrets_or_the_commit(self):
+    def test_nothing_runs_without_the_build_the_secrets_the_commit_or_the_install(self):
         repo = Repository(self)
+        repo.wrangler()
+        built = Repository(self)
         os.remove(repo.path("apps", "web", "dist", ".well-known", "apple-app-site-association"))
+        code, out, _, _ = call("pages_deploy", {**CLOUDFLARE, "RUNNER_TEMP": repo.temp}, run=FakeRun(), root=repo.root)
+        self.assertEqual(code, 1, out)
+        self.assertIn("has no /.well-known/apple-app-site-association", out)
         for environ, root in ((CLOUDFLARE, repo.root), ({**CLOUDFLARE, "GITHUB_SHA": ""}, ROOT),
-                              ({"CLOUDFLARE_ACCOUNT_ID": ACCOUNT, "GITHUB_SHA": SHA}, ROOT)):
-            with self.subTest(environ=environ):
+                              ({"CLOUDFLARE_ACCOUNT_ID": ACCOUNT, "GITHUB_SHA": SHA}, ROOT),
+                              (CLOUDFLARE, built.root), ({**CLOUDFLARE, "RUNNER_TEMP": built.temp}, built.root)):
+            with self.subTest(environ=environ, root=root):
                 run = FakeRun()
                 code, out, _, _ = call("pages_deploy", environ, run=run, root=root)
                 self.assertEqual(code, 1, out)
                 self.assertEqual(run.calls, [])
+        code, out, _, _ = call("pages_deploy", {**CLOUDFLARE, "RUNNER_TEMP": built.temp}, root=built.root)
+        self.assertIn("setup-wrangler installs it", out)
+
+
+class CheckSiteTest(unittest.TestCase):
+    """wrangler follows a link and publishes what it points to (a link to /proc/self/environ would
+    publish its own environment, the Cloudflare token in it), so the site holds plain files and
+    folders only (PR #52's review, round 2)."""
+
+    def site(self):
+        repo = Repository(self)
+        dist = repo.path("apps", "web", "dist")
+        os.makedirs(os.path.join(dist, "privacy"))
+        for name in ("index.html", "_headers", "404.html", os.path.join("privacy", "index.html")):
+            with open(os.path.join(dist, name), "w", encoding="utf-8") as f:
+                f.write("x")
+        return repo, dist
+
+    def test_a_site_of_plain_files_and_folders_passes(self):
+        repo, _ = self.site()
+        code, out, http, _ = call("check_site", {}, root=repo.root)
+        self.assertEqual(code, 0, out)
+        self.assertEqual(http.requests, [])
+
+    def test_a_link_anywhere_in_the_site_is_refused(self):
+        outside = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, outside)
+        cases = {
+            "leak.txt": "/nonexistent/../proc/self/environ",
+            os.path.join(".well-known", "x.json"): "/etc/hostname",
+            "docs": outside,
+            os.path.join("privacy", "dangling"): "/nonexistent",
+        }
+        for where, target in cases.items():
+            with self.subTest(where=where):
+                repo, dist = self.site()
+                os.symlink(target, os.path.join(dist, where))
+                code, out, _, _ = call("check_site", {}, root=repo.root)
+                self.assertEqual(code, 1, out)
+                self.assertIn(f"{where} is a link", out)
+        repo, dist = self.site()
+        association = os.path.join(dist, ".well-known", "apple-app-site-association")
+        os.rename(association, os.path.join(outside, "aasa"))
+        os.symlink(os.path.join(outside, "aasa"), association)
+        code, out, _, _ = call("check_site", {}, root=repo.root)
+        self.assertEqual(code, 1, out)
+        self.assertIn("apple-app-site-association is a link", out)
+
+    def test_a_special_file_is_refused(self):
+        repo, dist = self.site()
+        os.mkfifo(os.path.join(dist, "pipe"))
+        code, out, _, _ = call("check_site", {}, root=repo.root)
+        self.assertEqual(code, 1, out)
+        self.assertIn("pipe is neither a file nor a folder", out)
+
+    def test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused(self):
+        repo, dist = self.site()
+        shutil.rmtree(dist)
+        code, out, _, _ = call("check_site", {}, root=repo.root)
+        self.assertEqual((code, "isn't a folder" in out), (1, True), out)
+        repo, dist = self.site()
+        os.rename(dist, dist + "-real")
+        os.symlink(dist + "-real", dist)
+        code, out, _, _ = call("check_site", {}, root=repo.root)
+        self.assertEqual((code, "isn't a folder" in out), (1, True), out)
+        repo, dist = self.site()
+        os.remove(os.path.join(dist, ".well-known", "apple-app-site-association"))
+        code, out, _, _ = call("check_site", {}, root=repo.root)
+        self.assertEqual((code, "has no /.well-known/apple-app-site-association" in out), (1, True), out)
+        for make in (lambda p: open(p, "w").close(), os.makedirs):
+            with self.subTest(make=make):
+                repo, dist = self.site()
+                make(os.path.join(dist, "_worker.js"))
+                code, out, _, _ = call("check_site", {}, root=repo.root)
+                self.assertEqual((code, "_worker.js" in out), (1, True), out)
+
+
+BRANCH_PATH = "/repos/beurni2/tadayo/branches/main"
+
+
+def head(sha=SHA):
+    return answer(200, {"name": "main", "commit": {"sha": sha, "url": "https://api.github.com/x"}, "protected": True})
+
+
+class CheckHeadTest(unittest.TestCase):
+    """Since the Pages steps run in a job of their own, re-running it doesn't run deploy-branch's
+    check of main's head again; check-head does it, so an older commit's re-run publishes nothing
+    (PR #52's review, round 2)."""
+
+    environ = {"GITHUB_TOKEN": "gh-token", "GITHUB_SHA": SHA}
+
+    def test_it_passes_while_this_commit_is_main_s_head(self):
+        code, out, http, sleeps = call("check_head", self.environ, sequence(head()))
+        self.assertEqual(code, 0, out)
+        [request] = http.requests
+        self.assertEqual((request["method"], request["host"], request["path"]), ("GET", "api.github.com", BRANCH_PATH))
+        self.assertEqual(request["headers"]["authorization"], "Bearer gh-token")
+        self.assertEqual(sleeps.calls, [])
+        self.assertNotIn("gh-token", out)
+
+    def test_another_head_fails_at_once_and_says_to_run_the_head_s_job_again(self):
+        code, out, http, sleeps = call("check_head", self.environ, sequence(head(OTHER_SHA)))
+        self.assertEqual(code, 1, out)
+        self.assertEqual((len(http.requests), sleeps.calls), (1, []))
+        self.assertIn(f"main is at {OTHER_SHA[:12]} now, not {SHA[:12]}", out)
+        self.assertIn("run it again", out)
+
+    def test_a_server_error_or_a_lost_connection_is_asked_again_and_a_refusal_is_not(self):
+        code, out, http, sleeps = call("check_head", self.environ, sequence(OSError("reset"), answer(502), head()))
+        self.assertEqual(code, 0, out)
+        self.assertEqual(sleeps.calls, [10, 10])
+        code, out, http, sleeps = call("check_head", self.environ, sequence(*[answer(503)] * 6))
+        self.assertEqual(code, 1, out)
+        self.assertEqual(sleeps.calls, [10] * 5)
+        for status in (401, 403, 404):
+            with self.subTest(status=status):
+                code, out, http, sleeps = call("check_head", self.environ, sequence(answer(status)))
+                self.assertEqual(code, 1, out)
+                self.assertEqual((len(http.requests), sleeps.calls), (1, []))
+                self.assertIn(f"HTTP {status}", out)
+
+    def test_an_answer_that_names_no_commit_fails(self):
+        for body in ({}, {"commit": None}, {"commit": {"sha": "abc"}}, {"commit": {"sha": SHA.upper()}}, b"<html>", []):
+            with self.subTest(body=body):
+                code, out, _, _ = call("check_head", self.environ, sequence(answer(200, body)))
+                self.assertEqual(code, 1, out)
+                self.assertIn("names no commit", out)
+
+    def test_a_missing_token_or_commit_fails_before_any_request(self):
+        for environ in ({"GITHUB_SHA": SHA}, {"GITHUB_TOKEN": "gh-token"}, {"GITHUB_TOKEN": "gh-token", "GITHUB_SHA": "main"}):
+            with self.subTest(environ=environ):
+                code, out, http, _ = call("check_head", environ)
+                self.assertEqual(code, 1, out)
+                self.assertEqual(http.requests, [])
 
 
 def served(body=ASSOCIATION_BYTES, content_type="application/json", status=200):
@@ -628,6 +826,13 @@ class CheckAssociationTest(unittest.TestCase):
         self.assertEqual(code, 1, out)
         self.assertEqual(sleeps.calls, [15] * 19)
         self.assertIn("HTTP 500", out)
+
+    def test_after_a_lost_connection_it_reports_what_cloudflare_answered_last(self):
+        code, out, _, sleeps = self.check([OSError("reset"), found(project(deployment=None))], {})
+        self.assertEqual(code, 1, out)
+        self.assertEqual(sleeps.calls, [15] * 19)
+        self.assertIn("after 20 looks, 15 seconds apart: no production deployment", out)
+        self.assertNotIn("reset", out)
 
     def test_a_refusal_while_waiting_fails_at_once(self):
         for given in (answer(403, {"success": False, "errors": [{"code": 10000, "message": "Authentication error"}]}),
@@ -782,16 +987,27 @@ CLOUDFLARE_ENV = {"CLOUDFLARE_API_TOKEN": "${{ secrets.CLOUDFLARE_API_TOKEN }}",
                   "CLOUDFLARE_ACCOUNT_ID": "${{ vars.CLOUDFLARE_ACCOUNT_ID }}"}
 
 
-def expected_jobs():
+def all_pins():
+    """ci.yml's pins, and ios.yml's for the two artifact actions, which ci.yml doesn't use."""
     pinned = pins()
+    with open(os.path.join(ROOT, ".github", "workflows", "ios.yml"), encoding="utf-8") as f:
+        found = dict(re.findall(r"uses: ([a-z-]+/[a-z-]+)@([0-9a-f]{40})", f.read()))
+    for name in ("actions/upload-artifact", "actions/download-artifact"):
+        pinned[name] = f"{name}@{found[name]}"
+    return pinned
+
+
+def expected_jobs():
+    pinned = all_pins()
     checkout = {"uses": pinned["actions/checkout"], "with": {"persist-credentials": "false"}}
+    node = {"uses": pinned["actions/setup-node"], "with": {"node-version-file": ".nvmrc", "package-manager-cache": "false"}}
     return {
         "ci": {"name": "wait for ci", "runs-on": "ubuntu-24.04", "timeout-minutes": "45",
                "permissions": {"contents": "read", "actions": "read"},
                "concurrency": {"group": "deploy-dev-ci-${{ github.sha }}", "cancel-in-progress": "false"},
                "steps": [checkout, {"name": "wait-ci", "env": {"GITHUB_TOKEN": "${{ github.token }}"},
                                     "run": "python3 tools/ci/deploy_dev_steps.py wait-ci"}]},
-        "deploy": {"name": "deploy", "needs": "ci", "runs-on": "ubuntu-24.04", "timeout-minutes": "60",
+        "deploy": {"name": "deploy", "needs": "ci", "runs-on": "ubuntu-24.04", "timeout-minutes": "80",
                    "permissions": {"contents": "read", "actions": "read"},
                    "concurrency": {"group": "ops-dev", "cancel-in-progress": "false"},
                    "steps": [
@@ -808,16 +1024,29 @@ def expected_jobs():
                        ops_step("supabase-probe", "supabase-probe"),
                        {"run": "python3 tools/ci/deploy_dev_steps.py check-api"},
                    ]},
-        "pages": {"name": "pages", "needs": "deploy", "runs-on": "ubuntu-24.04", "timeout-minutes": "30",
+        "web": {"name": "web", "needs": "ci", "runs-on": "ubuntu-24.04", "timeout-minutes": "20",
+                "permissions": {"contents": "read"},
+                "concurrency": {"group": "deploy-dev-web-${{ github.sha }}", "cancel-in-progress": "false"},
+                "steps": [
+                    checkout, node,
+                    {"run": "python3 tools/ci/ci_steps.py setup-pnpm"},
+                    {"run": "python3 tools/ci/ci_steps.py install"},
+                    {"run": "python3 tools/ci/ci_steps.py web"},
+                    {"run": "python3 tools/ci/deploy_dev_steps.py check-site"},
+                    {"uses": pinned["actions/upload-artifact"],
+                     "with": {"name": "site", "path": "apps/web/dist/", "if-no-files-found": "error",
+                              "include-hidden-files": "true", "retention-days": "1"}},
+                ]},
+        "pages": {"name": "pages", "needs": ["deploy", "web"], "runs-on": "ubuntu-24.04", "timeout-minutes": "30",
                   "permissions": {"contents": "read"},
                   "concurrency": {"group": "deploy-dev-pages", "cancel-in-progress": "false"},
                   "steps": [
                        checkout,
-                       {"uses": pinned["actions/setup-node"],
-                        "with": {"node-version-file": ".nvmrc", "package-manager-cache": "false"}},
-                       {"run": "python3 tools/ci/ci_steps.py setup-pnpm"},
-                       {"run": "python3 tools/ci/ci_steps.py install"},
-                       {"run": "python3 tools/ci/ci_steps.py web"},
+                       {"name": "check-head", "env": {"GITHUB_TOKEN": "${{ github.token }}"},
+                        "run": "python3 tools/ci/deploy_dev_steps.py check-head"},
+                       node,
+                       {"uses": pinned["actions/download-artifact"], "with": {"name": "site", "path": "apps/web/dist"}},
+                       {"run": "python3 tools/ci/deploy_dev_steps.py check-site"},
                        {"run": "python3 tools/ci/deploy_dev_steps.py setup-wrangler"},
                        {"name": "pages-project", "env": CLOUDFLARE_ENV,
                         "run": "python3 tools/ci/deploy_dev_steps.py pages-project"},
@@ -876,6 +1105,8 @@ class WorkflowFileTest(unittest.TestCase):
         self.assertEqual(self.document["jobs"]["ci"]["concurrency"],
                          {"group": "deploy-dev-ci-${{ github.sha }}", "cancel-in-progress": "false"})
         self.assertEqual(self.document["jobs"]["deploy"]["concurrency"], {"group": "ops-dev", "cancel-in-progress": "false"})
+        self.assertEqual(self.document["jobs"]["web"]["concurrency"],
+                         {"group": "deploy-dev-web-${{ github.sha }}", "cancel-in-progress": "false"})
         self.assertEqual(self.document["jobs"]["pages"]["concurrency"],
                          {"group": "deploy-dev-pages", "cancel-in-progress": "false"})
         with open(os.path.join(ROOT, ".github", "workflows", "ops.yml"), encoding="utf-8") as f:
@@ -884,8 +1115,8 @@ class WorkflowFileTest(unittest.TestCase):
     def test_every_expression_in_the_file_is_one_this_test_knows(self):
         found = sorted(re.findall(r"\$\{\{.*?\}\}", self.text))
         self.assertEqual(self.text.count("${{"), len(found))
-        wanted = ["${{ github.sha }}"]  # the wait's group
-        wanted += ["${{ github.token }}"] * 2  # wait-ci's and deploy-branch's
+        wanted = ["${{ github.sha }}"] * 2  # the wait's group and the build's
+        wanted += ["${{ github.token }}"] * 3  # wait-ci's, deploy-branch's and check-head's
         wanted += ["${{ secrets.DEV_DATABASE_URL }}", "${{ secrets.FLY_API_TOKEN }}", "${{ secrets.FLY_API_TOKEN }}",
                    "${{ secrets.FLY_API_TOKEN }}", "${{ secrets.SUPABASE_ACCESS_TOKEN }}"]
         wanted += ["${{ secrets.SUPABASE_DEV_PROJECT_REF }}"] * 3
@@ -903,22 +1134,37 @@ class WorkflowFileTest(unittest.TestCase):
 
     def test_the_cloudflare_secret_is_on_a_runner_that_holds_no_other(self):
         # The deploy job's runner keeps flyctl's agent, with Fly's token, running after the probe,
-        # so wrangler and its packages run in a job of their own (PR #52's review, security-1).
+        # so wrangler and its packages run in a job of their own (PR #52's review, security-1); and
+        # that job runs nothing of the repository's but deploy_dev_steps.py, so the site is built
+        # in a job that holds no secret (round 2).
         jobs = self.document["jobs"]
 
         def named(job):
             return {v for step in jobs[job]["steps"] for v in step.get("env", {}).values() if "${{" in v}
-        self.assertEqual(named("pages"), {"${{ secrets.CLOUDFLARE_API_TOKEN }}", "${{ vars.CLOUDFLARE_ACCOUNT_ID }}"})
-        self.assertEqual(jobs["pages"]["needs"], "deploy")
+        self.assertEqual(named("pages"), {"${{ secrets.CLOUDFLARE_API_TOKEN }}", "${{ vars.CLOUDFLARE_ACCOUNT_ID }}",
+                                          "${{ github.token }}"})
+        self.assertEqual([s["name"] for s in jobs["pages"]["steps"] if "${{ github.token }}" in s.get("env", {}).values()],
+                         ["check-head"])
+        self.assertEqual(named("web"), set())
+        self.assertEqual(jobs["pages"]["needs"], ["deploy", "web"])
         self.assertEqual(jobs["pages"]["permissions"], {"contents": "read"})
-        self.assertNotIn("${{ secrets.CLOUDFLARE_API_TOKEN }}", named("deploy") | named("ci"))
+        self.assertEqual(jobs["web"]["permissions"], {"contents": "read"})
+        self.assertNotIn("${{ secrets.CLOUDFLARE_API_TOKEN }}", named("deploy") | named("ci") | named("web"))
+        pinned = all_pins()
+        for step in jobs["pages"]["steps"]:
+            with self.subTest(step=step):
+                if "uses" in step:
+                    self.assertIn(step["uses"], [pinned[a] for a in ("actions/checkout", "actions/setup-node",
+                                                                    "actions/download-artifact")])
+                else:
+                    self.assertTrue(step["run"].startswith("python3 tools/ci/deploy_dev_steps.py "), step)
         self.assertEqual([s.get("run") for s in jobs["deploy"]["steps"]][-1],
                          "python3 tools/ci/deploy_dev_steps.py check-api")
 
-    def test_the_pins_are_ci_yml_s(self):
-        pinned = pins()
+    def test_the_pins_are_ci_yml_s_and_ios_yml_s(self):
+        pinned = all_pins()
         uses = re.findall(r"uses: (\S+)", self.text)
-        self.assertEqual(len(uses), 5)
+        self.assertEqual(len(uses), 9)
         self.assertTrue(set(uses) <= set(pinned.values()))
 
 
@@ -929,7 +1175,7 @@ class UsageTest(unittest.TestCase):
                 out = io.StringIO()
                 with contextlib.redirect_stdout(out):
                     self.assertEqual(steps_module.main(argv), 2)
-                self.assertIn("steps: wait-ci, check-api, setup-wrangler, pages-project, pages-deploy, "
+                self.assertIn("steps: wait-ci, check-api, check-head, check-site, setup-wrangler, pages-project, pages-deploy, "
                               "check-association", out.getvalue())
 
 
