@@ -5,8 +5,9 @@
 /// Handoff 7's frames at the usual size draw Verify code in the column, well clear of the
 /// keyboard, and frame 19, the largest size, pins it 12 above the keyboard; the check's ruling
 /// (V-02, X-04) is to pin it only where it would otherwise sit under the keyboard
-/// (`docs/plans/ios-b0-adopt-handoff-7/signin.md` F1). A03's Continue, always pinned, is
-/// `ios/b0-adopt-profile`'s.
+/// (`docs/plans/ios-b0-adopt-handoff-7/signin.md` F1). A03's Continue is always pinned, 12 above
+/// the keyboard and 44 above the safe area with none, so it has no choice to make here: the
+/// screen picks the gap (`ProfileForm`), and a hosted test reads where it lands.
 public enum KeyboardFooter {
     /// Whether the action is pinned `gap` points above the keyboard, rather than left in the
     /// column: only while the keyboard shows, and only where the action, in the column scrolled

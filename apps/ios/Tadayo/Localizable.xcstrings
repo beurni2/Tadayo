@@ -38,7 +38,7 @@
       }
     },
     "auth.age.leave" : {
-      "comment" : "handoff 1 screen-copy, A02-age; handoff 7's ageExit: the navigation bar's leading text action (LeaveSignInButton)",
+      "comment" : "handoff 1 screen-copy, A02-age; handoff 7's ageExit: the navigation bar's leading text action (LeaveSignInButton), on A02-age and A03-profile",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -386,7 +386,7 @@
       }
     },
     "auth.profile.addPhoto" : {
-      "comment" : "handoff 1 screen-copy, A03-profile; inert in B0 (FQ85)",
+      "comment" : "handoff 1 screen-copy, A03-profile; handoff 7's auth.profile.photo; inert in B0 (FQ85)",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -397,8 +397,20 @@
         }
       }
     },
+    "auth.profile.busy.vo" : {
+      "comment" : "handoff 7 copy-contracts, handoff7.vo.profile.busy: said once, at the default priority, when Continue's request begins on A03-profile (SignInAnnouncement); the button's own value is In progress (TadayoDesign's busy.value.vo)",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saving your profile."
+          }
+        }
+      }
+    },
     "auth.profile.continue" : {
-      "comment" : "handoff 1 screen-copy, A03-profile",
+      "comment" : "handoff 1 screen-copy, A03-profile; handoff 7's auth.profile.primary",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -410,7 +422,7 @@
       }
     },
     "auth.profile.nameLabel" : {
-      "comment" : "handoff 1 screen-copy, A03-profile",
+      "comment" : "handoff 1 screen-copy, A03-profile; also the field's placeholder (handoff 7's auth.profile.label and auth.profile.placeholder, W-14)",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -422,7 +434,7 @@
       }
     },
     "auth.profile.navTitle" : {
-      "comment" : "handoff 1 screen-copy, A03-profile",
+      "comment" : "handoff 1 screen-copy, A03-profile; handoff 7's auth.profile.nav",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -434,7 +446,7 @@
       }
     },
     "auth.profile.networkFailure" : {
-      "comment" : "handoff 4 auth.profile.networkFailure",
+      "comment" : "handoff 4 auth.profile.networkFailure; handoff 7's auth.profile.network",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -458,7 +470,7 @@
       }
     },
     "auth.profile.saveFailed" : {
-      "comment" : "handoff 4 failureStates, Save profile: A03-profile's line (A02-age has its own since handoff 7: auth.age.refused)",
+      "comment" : "handoff 4 failureStates, Save profile: A03-profile's line, handoff 7's auth.profile.refused (A02-age has its own since handoff 7: auth.age.refused)",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -470,7 +482,7 @@
       }
     },
     "auth.profile.subtitle" : {
-      "comment" : "handoff 1 screen-copy, A03-profile",
+      "comment" : "handoff 1 screen-copy, A03-profile; handoff 7's auth.profile.body",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -489,6 +501,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "What should we call you?"
+          }
+        }
+      }
+    },
+    "auth.profile.tooLong" : {
+      "comment" : "handoff 7 copy-contracts, auth.profile.tooLong: A03-profile's line under the name while it is longer than 40 characters (FQ70), the name kept as typed",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use 40 characters or fewer for your name."
           }
         }
       }

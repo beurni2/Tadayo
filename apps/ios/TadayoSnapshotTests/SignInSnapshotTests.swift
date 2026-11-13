@@ -174,6 +174,15 @@ final class SignInSnapshotTests: XCTestCase {
         snapProfile(profile(ageConfirmed: true), named: "A03-profile-empty")
     }
 
+    /// Frame 20's state at the largest text on a 320-point screen, the width of a 375-point
+    /// iPhone with Display Zoom on (docs/TECH-DESIGN.md section 2: the representative `-xl`
+    /// states at 320 points).
+    func testA03ProfileEmptyAt320Points() {
+        ScreenSnapshot.assert(
+            ProfileScreen(model: profile(ageConfirmed: true), leave: {}, focus: true),
+            named: "A03-profile-empty-320", variants: [.xl], width: 320)
+    }
+
     func testA03ProfileSaving() {
         let model = profile(ageConfirmed: true, updates: [.hang])
         model.name = "Ben"
@@ -212,7 +221,7 @@ final class SignInSnapshotTests: XCTestCase {
             "Before you continue", in: AgeScreen(model: profile(ageConfirmed: false), leave: {}))
         heading(
             "What should we call you?",
-            in: ProfileScreen(model: profile(ageConfirmed: true), focus: false))
+            in: ProfileScreen(model: profile(ageConfirmed: true), leave: {}, focus: true))
     }
 
     func testTheAddressIsReadAsItIs() {
@@ -251,14 +260,16 @@ final class SignInSnapshotTests: XCTestCase {
         // Its initial repeats the name in the field below it.
         let model = profile(ageConfirmed: true)
         model.name = "Ben"
-        let elements = AccessibilityElements.of(ProfileScreen(model: model, focus: false))
+        let elements = AccessibilityElements.of(
+            ProfileScreen(model: model, leave: {}, focus: true))
         XCTAssertTrue(elements.contains { $0.label == "Your name" }, "\(elements)")
         XCTAssertFalse(elements.contains { $0.label == "B" }, "\(elements)")
         // With no initial, nothing typed or an emoji, its person symbol isn't read either
         // (handoff 7's `avatarWithoutInitial`; the check's WM-04).
         for name in ["", "\u{1F600}"] {
             model.name = name
-            let read = AccessibilityElements.of(ProfileScreen(model: model, focus: false))
+            let read = AccessibilityElements.of(
+                ProfileScreen(model: model, leave: {}, focus: true))
             XCTAssertEqual(read.map(\.label), elements.map(\.label), "\(read)")
             XCTAssertFalse(
                 read.contains { $0.label.lowercased().contains("person") }, "\(read)")
@@ -344,7 +355,7 @@ final class SignInSnapshotTests: XCTestCase {
         line: UInt = #line
     ) {
         ScreenSnapshot.assert(
-            ProfileScreen(model: model, focus: false), named: state, busy: model.isSaving,
-            testName: testName, line: line)
+            ProfileScreen(model: model, leave: {}, focus: true), named: state,
+            busy: model.isSaving, testName: testName, line: line)
     }
 }

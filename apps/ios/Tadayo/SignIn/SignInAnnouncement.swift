@@ -20,6 +20,12 @@ enum SignInAnnouncement {
         begins(from: was, to: now) ? String(localized: "auth.age.busy.vo") : nil
     }
 
+    /// "Saving your profile.", once, as Continue's request begins on A03-profile (`isSaving`
+    /// turns true), as `sending` says its words (handoff 7's `vo.profile.busy`).
+    static func savingProfile(from was: Bool, to now: Bool) -> String? {
+        begins(from: was, to: now) ? String(localized: "auth.profile.busy.vo") : nil
+    }
+
     /// "Verifying code.", once, as Verify code's request begins (`isVerifying` turns true), as
     /// `sending` says its words (handoff 7's `vo.code.busy`).
     static func verifying(from was: Bool, to now: Bool) -> String? {
