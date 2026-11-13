@@ -26,7 +26,7 @@ import { ReportNote, SearchText } from "./schemas/after.ts";
 import { DropCaption } from "./schemas/days.ts";
 import { unknownKeys } from "./strict.ts";
 import { allSuccessExamples, errorExample } from "./fixtures/examples.ts";
-import { member, rosters } from "./fixtures/world.ts";
+import { member, rosters, type Who } from "./fixtures/world.ts";
 
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 type JsonObject = { [key: string]: Json };
@@ -578,12 +578,30 @@ describe("text's guard and its well-formedness (T13, FQ70)", () => {
     });
 
     it(`${nameOf(schema)} refuses a lone surrogate and keeps a surrogate pair`, () => {
-      for (const value of ["A\uD800B", "\uDC00", "Ana\uD83D", "\uDE00Ana", "\uD83D\uD83D", "\uDE00\uD83D"]) {
-        const result = schema.safeParse(value);
-        expect(result.success, JSON.stringify(value)).toBe(false);
-        expect(result.success ? [] : result.error.issues.map((issue) => issue.path), JSON.stringify(value)).toEqual([
-          [],
-        ]);
+      // Refused with the one issue, and nothing after it runs: the grapheme count never starts, and a name's
+      // later rules (a space at either end, here) add nothing.
+      const segment = vi.spyOn(Intl.Segmenter.prototype, "segment");
+      try {
+        for (const value of [
+          "A\uD800B",
+          "\uDC00",
+          "Ana\uD83D",
+          "\uDE00Ana",
+          "\uD83D\uD83D",
+          "\uDE00\uD83D",
+          " \uD800",
+          "\uD800 ",
+        ]) {
+          const result = schema.safeParse(value);
+          expect(result.success, JSON.stringify(value)).toBe(false);
+          expect(
+            result.success ? [] : result.error.issues.map((issue) => [issue.path, issue.message]),
+            JSON.stringify(value),
+          ).toEqual([[[], "well formed, with no lone surrogate"]]);
+        }
+        expect(segment).not.toHaveBeenCalled();
+      } finally {
+        segment.mockRestore();
       }
       expect(schema.safeParse("Ana \u{1F600}").success).toBe(true);
     });
@@ -861,6 +879,19 @@ describe("the examples", () => {
     for (const { where, viewer, proposal } of reads()) {
       const change = proposal.reason === "membership_change";
       if (change) seen.change += 1;
+      // Nobody holds more days than the proposal gives each member, the viewer included, so no view names
+      // anyone on a day they set aside (choiceRules.abandonedProposal).
+      const named = new Map<string, number>();
+      const count = (id: string) => named.set(id, (named.get(id) ?? 0) + 1);
+      for (const slot of slotsOf(proposal)) {
+        if ("owner" in slot) count(idOf(slot.owner));
+        if ("held_by" in slot) count(idOf(slot.held_by));
+        for (const holder of (slot.holders ?? []) as Json[]) count(idOf(holder));
+        if (slot.state === "yours") count(viewer);
+      }
+      for (const [id, days] of named) {
+        expect(days, `${where}: ${id}`).toBeLessThanOrEqual(Number(proposal.days_per_member));
+      }
       for (const slot of slotsOf(proposal)) {
         const at = `${where}: ${asText(slot.weekday)}`;
         const state = asText(slot.state);
@@ -898,6 +929,86 @@ describe("the examples", () => {
     }
     // Each view the questions define has a scene, so none of these checks is empty.
     for (const [view, count] of Object.entries(seen)) expect(count, view).toBeGreaterThan(0);
+  });
+
+  // Who holds what in each first-days scene, written out on its own, and who has confirmed which day. A
+  // member holds their proposed day until they first choose, then what they last chose (FQ48).
+  type WeekdayName = "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday";
+  type FirstDaysWorld = {
+    holds: Partial<Record<Who, readonly WeekdayName[]>>;
+    confirmed: Partial<Record<Who, WeekdayName>>;
+  };
+  const tuesdayThree: FirstDaysWorld = {
+    holds: {
+      ben: ["friday"],
+      maya: ["tuesday"],
+      alex: ["friday"],
+      sam: ["thursday"],
+      debby: ["friday"],
+      nina: ["saturday"],
+    },
+    confirmed: {},
+  };
+  const thursdayFive: FirstDaysWorld = {
+    holds: { ben: ["monday"], debby: ["friday"] },
+    confirmed: { maya: "tuesday", alex: "wednesday", sam: "thursday", nina: "saturday" },
+  };
+  const FIRST_DAYS_WORLDS: Record<string, FirstDaysWorld> = {
+    "getSchedule.conflict_three": tuesdayThree,
+    "getSchedule.contested_other": tuesdayThree,
+    "getSchedule.confirm_refused": { ...tuesdayThree, holds: { ...tuesdayThree.holds, alex: ["wednesday"] } },
+    "getSchedule.first_days": thursdayFive,
+    "getSchedule.first_days_confirmed": thursdayFive,
+    "chooseScheduleDays.chosen": { ...tuesdayThree, holds: { ...tuesdayThree.holds, ben: ["monday"] } },
+    "chooseScheduleDays.joined_contest": { ...tuesdayThree, holds: { ...tuesdayThree.holds, sam: ["friday"] } },
+    "confirmScheduleDays.first_day_confirmed": {
+      holds: { debby: ["friday"] },
+      confirmed: { ...thursdayFive.confirmed, ben: "monday" },
+    },
+  };
+
+  it("give each first-days day exactly the state and names its holders call for, as each viewer sees it (FQ46, FQ48, FQ55, FQ78)", () => {
+    const idFor = (who: Who) => member("sundayPeople", who).membership_id;
+    let checked = 0;
+    for (const { where, viewer, proposal } of reads()) {
+      if (proposal.reason !== "activation") continue;
+      const world = FIRST_DAYS_WORLDS[where];
+      expect(world, `${where} has its holds in FIRST_DAYS_WORLDS`).toBeDefined();
+      if (world === undefined) continue;
+      const choosing = proposal.my_state === "choosing";
+      expect(choosing, where).toBe(!Object.keys(world.confirmed).some((who) => idFor(who as Who) === viewer));
+      for (const slot of slotsOf(proposal)) {
+        const weekday = asText(slot.weekday) as WeekdayName;
+        const at = `${where}: ${weekday}`;
+        const owner = (Object.keys(world.confirmed) as Who[]).find((who) => world.confirmed[who] === weekday);
+        const holders = (Object.keys(world.holds) as Who[])
+          .filter((who) => world.holds[who]?.includes(weekday))
+          .map(idFor)
+          .sort((a, b) => (joined.get(a) ?? 0) - (joined.get(b) ?? 0));
+        const mine = holders.includes(viewer);
+        let expected: JsonObject;
+        if (owner !== undefined) {
+          expected = idFor(owner) === viewer ? { state: "yours" } : { state: "taken", owner: idFor(owner) };
+        } else if (mine && holders.length === 1) {
+          expected = { state: "yours" };
+        } else if (mine) {
+          expected = { state: "clash", holders };
+        } else if (holders.length >= 2) {
+          expected = { state: "no_reveal" };
+        } else if (holders.length === 1 && choosing) {
+          expected = { state: "available", held_by: asText(holders[0]) };
+        } else {
+          expected = { state: "available" };
+        }
+        const actual: JsonObject = { state: asText(slot.state) };
+        if ("owner" in slot) actual.owner = idOf(slot.owner);
+        if ("holders" in slot) actual.holders = (slot.holders as Json[]).map(idOf);
+        if ("held_by" in slot) actual.held_by = idOf(slot.held_by);
+        expect(actual, at).toEqual(expected);
+      }
+      checked += 1;
+    }
+    expect(checked).toBe(Object.keys(FIRST_DAYS_WORLDS).length);
   });
 
   it("propose each member's first day by the order they joined, as the frames draw it (spec 05, FQ98)", () => {
@@ -952,18 +1063,21 @@ describe("the examples", () => {
     expect(listed).toBeGreaterThan(0);
   });
 
-  it("agree on one version and one start for each proposal, whoever reads it and whatever anyone has chosen or confirmed (T33)", () => {
+  it("agree on one version for each proposal in each state, and one start, whoever reads it and whatever anyone has chosen or confirmed (T33)", () => {
     // A proposal's version moves only with its state or a new revision of its week, so it never tells a
-    // member that someone else has chosen or confirmed; its start moves only with a new proposal (FQ49).
-    const facts = new Map<string, string>();
+    // member that someone else has chosen or confirmed (the first days' last confirmation applies them,
+    // which moves both); its start moves only with a new proposal (FQ49).
+    const versions = new Map<string, Json | undefined>();
+    const starts = new Map<string, Json | undefined>();
     for (const { where, proposal } of reads()) {
       const id = asText(proposal.id);
-      const these = JSON.stringify([proposal.version, proposal.effective_from, proposal.state]);
-      const earlier = facts.get(id);
-      if (earlier === undefined) facts.set(id, these);
-      else expect(these, `${id} in ${where}`).toBe(earlier);
+      const inState = `${id} ${asText(proposal.state)}`;
+      if (!versions.has(inState)) versions.set(inState, proposal.version);
+      else expect(proposal.version, `${inState} in ${where}`).toBe(versions.get(inState));
+      if (!starts.has(id)) starts.set(id, proposal.effective_from);
+      else expect(proposal.effective_from, `${id} in ${where}`).toBe(starts.get(id));
     }
-    expect(facts.size).toBeGreaterThan(1);
+    expect(starts.size).toBeGreaterThan(1);
   });
 
   it("show a membership change the same before and after the viewer confirms it, as the confirmation answers (FQ81)", () => {

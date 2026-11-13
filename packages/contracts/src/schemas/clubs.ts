@@ -469,22 +469,30 @@ export const ScheduleSlot = named(
 export const ScheduleProposal = named(
   "ScheduleProposal",
   "A proposed schedule each member confirms (spec 05; G04). The club's first days (`activation`): a member " +
-    "holds the days proposed for them until they first choose, then exactly what they last chose (FQ48); " +
-    "each day goes ahead as its member confirms it, while others still choose; a day two or more members " +
-    "hold has no reveal until all but one have chosen another, and every confirmed day goes ahead meanwhile " +
-    "(FQ55). The proposal applies when its last day is confirmed, and no date passing replaces it; its " +
+    "holds the days proposed for them until they first choose, then exactly what they last chose (FQ48), " +
+    "and a revision of the first days (a join, or a leave, before any day is confirmed) proposes the week " +
+    "again for the new roster and its `days_per_member`, every member then holding the days it proposes " +
+    "for them until they choose again (FQ102); each day goes ahead as its member confirms it, while others " +
+    "still choose; a day two or more members hold has no reveal until all but one have chosen another, and " +
+    "every confirmed day goes ahead meanwhile (FQ55). A member whose membership ends holds nothing; once a " +
+    "day is confirmed a leave revises nothing: a day the leaver confirmed stays confirmed, its announced " +
+    "days held (FQ63), and the week for the club's new size comes as a membership change once the first " +
+    "days have applied (FQ102), as a join's does (FQ100). The proposal applies when the last active " +
+    "member's days are confirmed, and no date passing replaces it; its " +
     "`effective_from` is the club's first local date, never an opening date. A membership change " +
     "(`membership_change`): one proposed week every active member confirms as a whole, the new member " +
     "included, with no choosing (FQ56; G04-change). It starts from the first week after every day already " +
     "generated, so no announced day changes, whether or not anything was added to it (spec 05, FQ61), and " +
     "drops can still be added to the current days meanwhile (FQ62); `announced` lists those days not yet " +
     "closed, in date order, for every member but the new one (G04-change). It stays open, with the same " +
-    "`version` and the same answer for everyone, whoever has confirmed, until `effective_from` (FQ81): it " +
+    "`version` and the same answer to each member, whoever has confirmed, until `effective_from` (FQ81): it " +
     "applies then if everyone confirmed, the current days continuing until then, and otherwise a new " +
     "proposal from a later date replaces it, which everyone confirms again (FQ49). A day it adds is made at " +
     "its start, and first opens at least 24 elapsed hours after both the last confirmation and the start " +
     "(FQ79, FQ101). `version` moves only with `state` or a new revision of the proposed week (a join or a " +
-    "leave in the first days before any day is confirmed), never on a choice or a confirmation (T33). A " +
+    "leave in the first days before any day is confirmed, FQ102), never on a choice, and never on a " +
+    "confirmation that leaves `state` as it was: the first days' last confirmation applies them, which " +
+    "moves `state` and `version` and tells nobody anything, since every day then has a date (T33). A " +
     "taken day names its owner (book p11), and the day picker names who holds a day nobody has confirmed " +
     "(FQ48); nothing counts anyone or waits on them (T33). `my_days` are the weekdays the caller holds: in " +
     "the first days none to `days_per_member` (spec 05's table: one in clubs of four to six, two in clubs " +
@@ -514,8 +522,8 @@ export const Schedule = named(
     "with `held_by` on every day it proposes for another member, `announced` unless they are its new " +
     "member, and the same state and version until its start, whoever has confirmed (FQ81); a member the " +
     "open proposal doesn't include, one who joined after the first days' first confirmation and gets a day " +
-    "only once they have applied (FQ100), `current` alone; anyone without an active membership, NOT_FOUND " +
-    "(T14). One gap stays, for B2's schedule slice: how the worker's rolling generation meets a pending " +
+    "only once they have applied (FQ100), `current` alone, so a contested day shows to them as an unused " +
+    "one, not as Contested (FQ46, FQ100); anyone without an active membership, NOT_FOUND (T14). One gap stays, for B2's schedule slice: how the worker's rolling generation meets a pending " +
     "change's start (it holds off generating from `effective_from`, or the change is replaced once " +
     "generation reaches it: FQ49, FQ61, FQ62), without showing before the start whether everyone has " +
     "confirmed (FQ81, FQ101).",

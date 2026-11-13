@@ -53,15 +53,27 @@
 // - for a route that changes the world (a commit, a reservation, a leave, a block), the facts each
 //   answer is scanned against, read from the world after it (scanner.ts, its header);
 // - for the schedule's routes (getSchedule, chooseScheduleDays, confirmScheduleDays and listMembers, B2's
-//   schedule slice), the per-viewer fields the contract gives them (B2's contract PR; `Schedule`'s
-//   description, T55): `held_by` only to a member still choosing in the club's first days and to every
-//   member of a membership change; `holders` only to the members who hold the day; no name on a
-//   `no_reveal` day; `first_date` only on a day confirmed in the first days; one Members list, in one
-//   order, for every member; nothing in a membership change's answers that changes before its start, so
-//   nobody learns that everyone has confirmed (FQ81, FQ101); a proposal's `version` moved by nobody's
-//   choice or confirmation (T33); and the neutral not-found before any other code to anyone a proposal
-//   doesn't include (T14, FQ100). The leak scanner can't judge these: it accepts any person of a club
-//   the viewer is in (scanner.ts), so each row judges them.
+//   schedule slice; getHome and the composer's targets where a schedule's day shows), what the contract
+//   gives each viewer (B2's contract PR; `Schedule`'s description, T55), each as a check a row can run:
+//   - `held_by` only to a member still choosing in the club's first days and to every member of a
+//     membership change; `holders` only to the members who hold the day; no name on a `no_reveal` day;
+//     `first_date` only on a day confirmed in the first days; `announced` only in a membership change,
+//     never to its new member, and never in the first days;
+//   - a membership change's answers to a viewer the same before and after any other member's
+//     confirmation at the same server time: only `my_state` changes, on the viewer's own, and `announced`
+//     only as its days close; and before its start no day it adds in getHome, the composer's targets or
+//     listMembers' `next_day`, so nobody learns that everyone has confirmed (FQ81, FQ101);
+//   - listMembers' `members` the same for every member, and in the first days their `position`,
+//     `next_day` and `next_up` unchanged by any choice or confirmation but the confirmer's own `next_day`
+//     once their day is dated (FQ98, FQ79);
+//   - a proposal's `version` unchanged by a choice, or by a confirmation that leaves its `state` as it was
+//     (T33);
+//   - the neutral not-found before any other code to a caller without an active membership in the
+//     proposal's club, a former member listed in a replaced proposal among them, and to an active member
+//     whose current membership the proposal doesn't include, one who left and rejoined among them (T9,
+//     T14; spec 07; FQ100).
+//   The leak scanner can't judge these: it accepts any person of a club the viewer is in (scanner.ts), so
+//   each row judges them.
 
 import { JUDGED } from "./account.ts";
 
