@@ -5,14 +5,17 @@
 // from its source instead), and the first real run is after slice 10b.
 //
 // `flyctl` is given the Fly token and `HOME`, and nothing else of the environment, and is never
-// given a shell. `run` makes no call whose argument list doesn't name the app (`DEV_APP`) with `-a`
-// or `--app`, and has no other app flag in any spelling (`--app=x`, `-ax`); the calls that name
+// given a shell; a call with an agent of its own (`ownAgent`, the SSH session's) is given that
+// agent's folder and the word that runs it, too. `run` makes no call whose argument list doesn't
+// name the app (`DEV_APP`) with `-a` or `--app`, and has no other app flag in any spelling
+// (`--app=x`, `-ax`); the calls that name
 // none are the token's list of organizations, the making of the app itself, which takes its name
 // as an argument, and the listing and removing of the organization's WireGuard peers, which
 // on-machine.ts does for the peer its own SSH session made (`forDevApp`; ADR-034). `flyctl` prints
 // some failures with exit code 0 (`certs check` does, for a host whose DNS isn't ready), so a
 // script says what it asks for and checks the answer it gets.
 
+import { isAbsolute } from "node:path";
 import { DEV_APP, readVariables } from "./environment.ts";
 import { OpsError } from "./ops-error.ts";
 import type { Spawn, Spawned } from "./spawn.ts";
@@ -20,6 +23,17 @@ import type { Spawn, Spawned } from "./spawn.ts";
 export interface FlyCallOptions {
   readonly cwd?: string;
   readonly timeoutMs?: number;
+  /**
+   * An empty folder of the call's own, by its absolute path, where flyctl keeps its configuration
+   * (`FLY_CONFIG_DIR`), the WireGuard state among it; and flyctl is told to run an agent of its own
+   * for the call (`FLY_AGENT_ISOLATED=1`), which stops at the end of its input, when flyctl exits
+   * (one still making the peer finishes that first: on-machine.ts), instead of the one agent every
+   * call on the runner shares (flyctl 0.5.8's `helpers/config.go`,
+   * `agent/agent.go` and `internal/command/agent/run.go`). That agent keeps a tunnel for the
+   * organization in its own memory and gives it to the next session (`agent/server/server.go`,
+   * `buildTunnel`), though the peer under it has since been removed (on-machine.ts).
+   */
+  readonly ownAgent?: string;
 }
 
 export interface Fly {
@@ -82,7 +96,13 @@ export function flyOf(spawn: Spawn, env: Readonly<Record<string, string | undefi
           new OpsError(`flyctl: a call that doesn't name ${DEV_APP}, and no other app, isn't made`),
         );
       }
-      return spawn("flyctl", args, { env: childEnv, timeoutMs: QUICK_MS, ...options });
+      const { ownAgent, ...rest } = options;
+      if (ownAgent !== undefined && !isAbsolute(ownAgent)) {
+        return Promise.reject(new OpsError("flyctl: an agent's own folder is given by its absolute path"));
+      }
+      const env =
+        ownAgent === undefined ? childEnv : { ...childEnv, FLY_CONFIG_DIR: ownAgent, FLY_AGENT_ISOLATED: "1" };
+      return spawn("flyctl", args, { env, timeoutMs: QUICK_MS, ...rest });
     },
   };
 }

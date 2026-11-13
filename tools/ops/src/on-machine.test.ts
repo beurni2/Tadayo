@@ -5,6 +5,18 @@
 // whatever the command did, the WireGuard peer the session made is removed, and no other: the
 // organization's peers are listed before and after it, and only a new one named for this runner goes.
 
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { isAbsolute, join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   FAKE_FLY_TOKEN,
@@ -20,8 +32,18 @@ import {
   type Route,
 } from "../test/fake-fly.ts";
 import { flyOf } from "./fly.ts";
-import { COMMAND_SECONDS, SESSION_MS, TUNNEL_SECONDS, hostSlug, onMachine, sessionPeerOf } from "./on-machine.ts";
+import {
+  AGENT_FOLDER,
+  COMMAND_SECONDS,
+  SESSION_MS,
+  TUNNEL_SECONDS,
+  hostSlug,
+  onMachine,
+  sessionPeerOf,
+  type AgentFolder,
+} from "./on-machine.ts";
 import { OpsError } from "./ops-error.ts";
+import type { Spawn } from "./spawn.ts";
 
 const LIST = "flyctl machine list -a tadayo-api-dev --json";
 const COMMAND = ["node", "/app/tools/ops/src/main.ts", "storage-setup", "--here", "--ref", "abcdefghijklmnopqrst"];
@@ -60,7 +82,7 @@ const routes = (session: Reply, after: readonly string[] = [OURS], before: reado
   [REMOVE, { stdout: 'Removing WireGuard peer "…" for organization tadayo-org\nRemoved peer.\n' }],
 ];
 
-async function run(list: readonly Route[], command: readonly string[] = COMMAND) {
+async function run(list: readonly Route[], command: readonly string[] = COMMAND, agentFolder?: AgentFolder) {
   const { spawn, calls } = fakeSpawn(list);
   const said: string[] = [];
   const outcome = await onMachine({
@@ -70,6 +92,7 @@ async function run(list: readonly Route[], command: readonly string[] = COMMAND)
     say: (line) => said.push(`machine: ${line}`),
     note: (line) => said.push(line),
     host: HOST,
+    ...(agentFolder === undefined ? {} : { agentFolder }),
   }).then(
     () => undefined,
     (caught: unknown) => caught,
@@ -110,12 +133,15 @@ describe("onMachine: the command, over SSH", () => {
     expect(result.said).toEqual([MAKING, "machine: first", "machine: second", "machine: a warning", REMOVED]);
   });
 
-  it("gives the session the tunnel's bound, the connection and the command's time, and flyctl the token and HOME only", async () => {
+  it("gives the session the tunnel's bound, the connection and the command's time, and flyctl the token and HOME only, with the session's own agent", async () => {
     const result = await run(routes({}));
     expect(SESSION_MS).toBe((TUNNEL_SECONDS + 60 + COMMAND_SECONDS) * 1000);
     expect(SESSION_MS).toBe(600_000);
     expect(result.raw[3]?.options.timeoutMs).toBe(600_000);
-    for (const call of result.raw) expect(call.options.env).toEqual(ENV);
+    const folder = result.raw[3]?.options.env?.["FLY_CONFIG_DIR"] ?? "";
+    expect(folder.startsWith(join(tmpdir(), "tadayo-flyctl-"))).toBe(true);
+    expect(result.raw[3]?.options.env).toEqual({ ...ENV, FLY_CONFIG_DIR: folder, FLY_AGENT_ISOLATED: "1" });
+    for (const call of result.raw.filter((_call, index) => index !== 3)) expect(call.options.env).toEqual(ENV);
     // The organization, the listings and the removal are quick calls.
     expect([1, 2, 4, 5].map((index) => result.raw[index]?.options.timeoutMs)).toEqual([
       120_000, 120_000, 120_000, 120_000,
@@ -614,6 +640,330 @@ describe("onMachine: the run's WireGuard peer, and no other", () => {
       "storage-setup: flyctl's removal of a WireGuard peer this run made ended with exit code 1",
       `storage-setup: 1 of the WireGuard peers this run made is still there: ${BY_HAND}`,
     ]);
+  });
+});
+
+/**
+ * A made-up flyctl that keeps the WireGuard state as flyctl 0.5.8 does, as far as these tests need it
+ * (its source: `agent/agent.go`, `agent/client.go` `Establish`, `agent/server/server.go`,
+ * `internal/wireguard/wg.go` and `flyctl/flyctl.go`):
+ * - the organization's peers live at Fly (`atFly`);
+ * - a call's configuration folder is `FLY_CONFIG_DIR`, or `$HOME/.fly`; flyctl makes it when it is
+ *   missing, and keeps the peer its agent made in a file there, so a folder removed and made again
+ *   holds none;
+ * - without `FLY_AGENT_ISOLATED`, the calls that use one folder share one agent, which reads the
+ *   folder's peer once, as it starts, keeps it and its tunnel in its own memory, and gives that tunnel
+ *   to every later session, whatever has become of the peer at Fly or of the file (its own check, two
+ *   minutes after it starts, is beyond these tests); with it, each call starts an agent of its own;
+ * - before an agent starts, flyctl drops from the folder's file a peer Fly no longer has
+ *   (`PruneInvalidPeers` in `Establish`), unless Fly's validation hasn't caught up (`lagging`);
+ * - an agent with no peer for the organization makes one, at Fly and in the folder's file.
+ * A session works only when the peer under its tunnel is still at Fly; otherwise flyctl's one check of
+ * the tunnel fails, before anything runs on the Machine.
+ */
+function agentFly(options: { readonly lagging?: boolean } = {}) {
+  const atFly = new Set<string>();
+  const sharedAgents = new Map<string, { readonly peer: string }>();
+  let made = 0;
+  const calls: { line: string; env: Readonly<Record<string, string>> | undefined }[] = [];
+  const peerFile = (folder: string) => join(folder, "made-up-peer");
+  const savedPeer = (folder: string) =>
+    existsSync(peerFile(folder)) ? readFileSync(peerFile(folder), "utf8") : undefined;
+  const spawn: Spawn = (command, args, spawnOptions = {}) => {
+    const line = [command, ...args].join(" ");
+    calls.push({ line, env: spawnOptions.env });
+    const reply = (part: Partial<{ code: number; stdout: string; stderr: string }>) =>
+      Promise.resolve({ code: 0, timedOut: false, stdout: "", stderr: "", ...part });
+    if (line === LIST) return reply({ stdout: JSON.stringify([machine("a1", "api", "started")]) });
+    if (line === ORGS) return reply({ stdout: JSON.stringify({ "tadayo-org": "Tadayo" }) });
+    if (line === PEERS) return reply({ stdout: peerList([...atFly]).stdout ?? "" });
+    if (line.startsWith(REMOVE)) {
+      atFly.delete(args.at(-1) ?? "");
+      return reply({});
+    }
+    if (line.startsWith("flyctl ssh console")) {
+      const env = spawnOptions.env ?? {};
+      const folder = env["FLY_CONFIG_DIR"] ?? join(env["HOME"] ?? "", ".fly");
+      mkdirSync(folder, { recursive: true, mode: 0o700 });
+      const own = env["FLY_AGENT_ISOLATED"] === "1";
+      let agent = own ? undefined : sharedAgents.get(folder);
+      if (agent === undefined) {
+        const saved = savedPeer(folder);
+        if (saved !== undefined && !atFly.has(saved) && options.lagging !== true) rmSync(peerFile(folder));
+        let peer = savedPeer(folder);
+        if (peer === undefined) {
+          made += 1;
+          peer = sessionPeer(HOST, MADE + made);
+          atFly.add(peer);
+          writeFileSync(peerFile(folder), peer);
+        }
+        agent = { peer };
+        if (!own) sharedAgents.set(folder, agent);
+      }
+      if (!atFly.has(agent.peer)) {
+        return reply({
+          code: 1,
+          stderr: `Error: tunnel unavailable: Error contacting Fly.io API when probing "tadayo-org": timed out (context deadline exceeded)\n`,
+        });
+      }
+      return reply({ stdout: "done\n" });
+    }
+    return Promise.reject(new Error(`agentFly has no answer for: ${line}`));
+  };
+  return { spawn, calls, atFly };
+}
+
+/** A folder maker that hands out the same folder every time, and never removes it. */
+const sameFolder = (path: string): AgentFolder => ({
+  make: () => Promise.resolve(path),
+  remove: () => Promise.resolve(),
+});
+
+/** A HOME of the test's own, so that a call with no folder of its own never reaches the real one. */
+function withHome<T>(use: (home: string) => Promise<T>): Promise<T> {
+  const home = mkdtempSync(join(tmpdir(), "tadayo-test-home-"));
+  return use(home).finally(() => {
+    rmSync(home, { recursive: true, force: true });
+  });
+}
+
+/** Two sessions on one runner, as `deploy-dev`'s job runs them. */
+function twoSessions(agentFolder?: AgentFolder, fakeOptions: { readonly lagging?: boolean } = {}) {
+  return withHome(async (home) => {
+    const fake = agentFly(fakeOptions);
+    const fly = flyOf(fake.spawn, { ...ENV, HOME: home });
+    const said: string[] = [];
+    const outcomes: unknown[] = [];
+    for (const label of ["storage-setup", "supabase-probe"]) {
+      outcomes.push(
+        await onMachine({
+          fly,
+          label,
+          command: ["node", "/app/tools/ops/src/main.ts", label, "--here"],
+          say: (line) => said.push(`machine: ${line}`),
+          note: (line) => said.push(line),
+          host: HOST,
+          ...(agentFolder === undefined ? {} : { agentFolder }),
+        }).then(
+          () => undefined,
+          (caught: unknown) => caught,
+        ),
+      );
+    }
+    return { ...fake, said, outcomes };
+  });
+}
+
+const PROBE_NONE_LISTED =
+  "supabase-probe: no new WireGuard peer named for this runner is listed, so none was removed; if the session made one, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-";
+
+describe("onMachine: an agent of the session's own", () => {
+  it("makes a new empty folder only the runner's user may read (mode 0700), gives it and FLY_AGENT_ISOLATED=1 to the SSH session alone, and removes it after", async () => {
+    let during: { exists: boolean; empty: boolean; mode: number } | undefined;
+    const result = await run([
+      [LIST, machines],
+      [
+        SSH,
+        (call) => {
+          const folder = call.options.env?.["FLY_CONFIG_DIR"] ?? "";
+          during = {
+            exists: existsSync(folder),
+            empty: readdirSync(folder).length === 0,
+            mode: statSync(folder).mode & 0o777,
+          };
+          // What flyctl's agent leaves there: its configuration, the peer's private key in it.
+          writeFileSync(join(folder, "config.yml"), "wire_guard_state: {}\n");
+          return {};
+        },
+      ],
+      [ORGS, orgs],
+      [PEERS, peersOf(peerList([]), peerList([OURS]))],
+      [REMOVE, {}],
+    ]);
+    expect(result.outcome).toBeUndefined();
+    expect(during).toEqual({ exists: true, empty: true, mode: 0o700 });
+    const folder = result.raw[3]?.options.env?.["FLY_CONFIG_DIR"] ?? "";
+    expect(isAbsolute(folder)).toBe(true);
+    expect(existsSync(folder)).toBe(false);
+    expect(result.said).toEqual([MAKING, REMOVED]);
+  });
+
+  it("removes the folder only once the session's call has ended, whatever it did: it worked, the command failed, the tunnel's check failed, it ran out of time", async () => {
+    const sessions: Reply[] = [
+      { stdout: "ok\n" },
+      { code: 1, stderr: exited(3) },
+      { code: 1, stderr: "Error: tunnel unavailable: context deadline exceeded\n" },
+      { code: null, timedOut: true },
+    ];
+    for (const session of sessions) {
+      const { spawn, calls } = fakeSpawn(routes(session));
+      let ended = false;
+      let started = (): void => undefined;
+      let release = (): void => undefined;
+      const sshStarted = new Promise<void>((resolve) => {
+        started = resolve;
+      });
+      const held = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      // The made-up session's answer is held back until the test releases it, so the session runs
+      // as long as the test says: the folder must still be there, and nothing have removed it.
+      const watched: Spawn = (command, args, options) => {
+        const call = spawn(command, args, options);
+        if (args[0] !== "ssh") return call;
+        started();
+        return call.then(async (answer) => {
+          await held;
+          ended = true;
+          return answer;
+        });
+      };
+      const removals: { path: string; ended: boolean }[] = [];
+      const running = onMachine({
+        fly: flyOf(watched, ENV),
+        label: "storage-setup",
+        command: COMMAND,
+        say: () => undefined,
+        note: () => undefined,
+        host: HOST,
+        agentFolder: {
+          make: AGENT_FOLDER.make,
+          remove: async (path) => {
+            removals.push({ path, ended });
+            await AGENT_FOLDER.remove(path);
+          },
+        },
+      }).then(
+        () => undefined,
+        () => undefined,
+      );
+      await Promise.race([sshStarted, running]);
+      const folder = calls.find((call) => call.args[0] === "ssh")?.options.env?.["FLY_CONFIG_DIR"] ?? "";
+      // While the session runs (held for 25 ms, many turns of the event loop), its folder stays.
+      await new Promise((resolve) => setTimeout(resolve, 25));
+      expect(existsSync(folder)).toBe(true);
+      expect(removals).toEqual([]);
+      release();
+      await running;
+      expect(folder.startsWith(join(tmpdir(), "tadayo-flyctl-"))).toBe(true);
+      expect(removals).toEqual([{ path: folder, ended: true }]);
+      expect(existsSync(folder)).toBe(false);
+    }
+  });
+
+  it("removes the folder when the SSH call is refused or can't be started, and lets that failure through", async () => {
+    // A folder Fly.run refuses, since it isn't an absolute path: no flyctl is started.
+    const removed: string[] = [];
+    const refused = await run(routes({}), COMMAND, {
+      make: () => Promise.resolve("tadayo-flyctl-relative"),
+      remove: (path) => {
+        removed.push(path);
+        return Promise.resolve();
+      },
+    });
+    expect(message(refused.outcome)).toBe("flyctl: an agent's own folder is given by its absolute path");
+    expect(refused.calls).toEqual([LIST, ORGS, PEERS]);
+    expect(removed).toEqual(["tadayo-flyctl-relative"]);
+    // A spawn that fails (the made-up one has no answer for the session).
+    const made: string[] = [];
+    const failed = await run(
+      routes({}).filter(([match]) => match !== SSH),
+      COMMAND,
+      {
+        make: async () => {
+          const folder = await AGENT_FOLDER.make();
+          made.push(folder);
+          return folder;
+        },
+        remove: AGENT_FOLDER.remove,
+      },
+    );
+    expect(failed.outcome).toEqual(new Error(`the fake has no route for: ${SSH}`));
+    expect(failed.calls).toEqual([LIST, ORGS, PEERS, SSH]);
+    expect(made).toHaveLength(1);
+    expect(made.every((folder) => !existsSync(folder))).toBe(true);
+  });
+
+  it("gives a second session on the same runner a new folder and agent, so it never takes the first one's tunnel, whose peer is gone", async () => {
+    const result = await twoSessions();
+    const folders = result.calls
+      .filter((call) => call.line.startsWith("flyctl ssh console"))
+      .map((call) => call.env?.["FLY_CONFIG_DIR"]);
+    expect(folders).toHaveLength(2);
+    expect(new Set(folders).size).toBe(2);
+    expect(result.outcomes).toEqual([undefined, undefined]);
+    for (const folder of folders) expect(existsSync(folder ?? "")).toBe(false);
+    expect(result.said.filter((line) => line.endsWith("removed the WireGuard peer this run made"))).toHaveLength(2);
+    expect([...result.atFly]).toEqual([]);
+  });
+
+  it("fails as run 43467951472 did when the sessions share flyctl's agent; with one folder for both, only while Fly's validation lags (the made-up flyctl)", async () => {
+    // Calls with no folder of their own, as before this change, share their HOME's agent and its tunnel.
+    await withHome(async (home) => {
+      const shared = agentFly();
+      const fly = flyOf(shared.spawn, { ...ENV, HOME: home });
+      const ssh = ["ssh", "console", "-a", "tadayo-api-dev", "--machine", "a1", "-q", "-C", "true"];
+      expect((await fly.run(ssh)).code).toBe(0);
+      await fly.run(["wireguard", "remove", "tadayo-org", [...shared.atFly][0] ?? ""]);
+      expect((await fly.run(ssh)).stderr).toMatch(/^Error: tunnel unavailable: /);
+    });
+    // One folder for both sessions, each with an agent of its own: flyctl drops the removed peer
+    // before the second agent starts, unless Fly still calls it valid.
+    for (const lagging of [false, true]) {
+      const folder = mkdtempSync(join(tmpdir(), "tadayo-flyctl-same-"));
+      try {
+        const reused = await twoSessions(sameFolder(folder), { lagging });
+        expect(reused.outcomes[0]).toBeUndefined();
+        if (lagging) {
+          expect(message(reused.outcomes[1])).toMatch(
+            /^supabase-probe: flyctl couldn't run it on the Machine: exit code 1: Error: tunnel unavailable: /,
+          );
+          expect(reused.said).toContain(PROBE_NONE_LISTED);
+        } else {
+          expect(reused.outcomes[1]).toBeUndefined();
+        }
+      } finally {
+        rmSync(folder, { recursive: true, force: true });
+      }
+    }
+  });
+
+  it("starts no session when the folder can't be made, and says why", async () => {
+    const result = await run(routes({}), COMMAND, {
+      make: () => Promise.reject(new Error("ENOSPC: no space left on device")),
+      remove: () => Promise.resolve(),
+    });
+    expect(message(result.outcome)).toBe(
+      "storage-setup: couldn't make a folder for flyctl's agent (ENOSPC: no space left on device), so no SSH session is started",
+    );
+    expect(result.calls).toEqual([LIST, ORGS, PEERS]);
+    expect(result.said).toEqual([]);
+  });
+
+  it("says a folder it couldn't remove, and goes on to remove the peer, without failing a session that worked", async () => {
+    const made: string[] = [];
+    const result = await run(routes({ stdout: "ok\n" }), COMMAND, {
+      make: async () => {
+        const folder = await AGENT_FOLDER.make();
+        made.push(folder);
+        return folder;
+      },
+      remove: async (path) => {
+        await AGENT_FOLDER.remove(path);
+        throw new Error("EBUSY: resource busy or locked");
+      },
+    });
+    expect(result.outcome).toBeUndefined();
+    // The folder's note comes as its removal fails, when the session has ended and before what the
+    // machine printed is said.
+    expect(result.said).toEqual([
+      MAKING,
+      "storage-setup: the folder of flyctl's agent couldn't be removed: EBUSY: resource busy or locked",
+      "machine: ok",
+      REMOVED,
+    ]);
+    expect(made).toHaveLength(1);
+    expect(made.every((folder) => !existsSync(folder))).toBe(true);
   });
 });
 
