@@ -1,0 +1,90 @@
+tools/ci/deploy_dev_steps.py
+--- old
+r"https://([a-z0-9.-]+)/?"
+--- new
+r"https?://([^/]+)/?.*"
+--- expected: test_a_deployment_address_that_isn_t_an_https_host_fails
+--- exit 1
+......EEE............................................................s........
+======================================================================
+ERROR: test_a_deployment_address_that_isn_t_an_https_host_fails (__main__.CheckAssociationTest.test_a_deployment_address_that_isn_t_an_https_host_fails) (url='http://abc.pages.dev')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpoh48cwel/tools/ci/deploy_dev_steps_test.py", line 997, in test_a_deployment_address_that_isn_t_an_https_host_fails
+    code, out, _, _ = self.check([found(project(deployment=deployment(url=url)))],
+                      ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                 {"tadayo-x1y.pages.dev": [served()]})
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpoh48cwel/tools/ci/deploy_dev_steps_test.py", line 877, in check
+    return call("check_association", {**CLOUDFLARE, "RUNNER_TEMP": self.repo.temp, **(environ or {})},
+                self.respond(projects, files), root=self.repo.root)
+  File "/tmp/tmpoh48cwel/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpoh48cwel/tools/ci/deploy_dev_steps.py", line 598, in check_association
+    self.served(host, built)
+    ~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/tmp/tmpoh48cwel/tools/ci/deploy_dev_steps.py", line 649, in served
+    answer = self.http.request("GET", host, ASSOCIATION, {"user-agent": USER_AGENT})
+  File "/tmp/tmpoh48cwel/tools/ci/deploy_dev_steps_test.py", line 54, in request
+    result = self.respond(method, host, path, body)
+  File "/tmp/tmpoh48cwel/tools/ci/deploy_dev_steps_test.py", line 862, in respond
+    given = files[host]
+            ~~~~~^^^^^^
+KeyError: 'abc.pages.dev'
+
+======================================================================
+ERROR: test_a_deployment_address_that_isn_t_an_https_host_fails (__main__.CheckAssociationTest.test_a_deployment_address_that_isn_t_an_https_host_fails) (url='https://abc.pages.dev/path')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpoh48cwel/tools/ci/deploy_dev_steps_test.py", line 997, in test_a_deployment_address_that_isn_t_an_https_host_fails
+    code, out, _, _ = self.check([found(project(deployment=deployment(url=url)))],
+                      ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                 {"tadayo-x1y.pages.dev": [served()]})
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpoh48cwel/tools/ci/deploy_dev_steps_test.py", line 877, in check
+    return call("check_association", {**CLOUDFLARE, "RUNNER_TEMP": self.repo.temp, **(environ or {})},
+                self.respond(projects, files), root=self.repo.root)
+  File "/tmp/tmpoh48cwel/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpoh48cwel/tools/ci/deploy_dev_steps.py", line 598, in check_association
+    self.served(host, built)
+    ~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/tmp/tmpoh48cwel/tools/ci/deploy_dev_steps.py", line 649, in served
+    answer = self.http.request("GET", host, ASSOCIATION, {"user-agent": USER_AGENT})
+  File "/tmp/tmpoh48cwel/tools/ci/deploy_dev_steps_test.py", line 54, in request
+    result = self.respond(method, host, path, body)
+  File "/tmp/tmpoh48cwel/tools/ci/deploy_dev_steps_test.py", line 862, in respond
+    given = files[host]
+            ~~~~~^^^^^^
+KeyError: 'abc.pages.dev'
+
+======================================================================
+ERROR: test_a_deployment_address_that_isn_t_an_https_host_fails (__main__.CheckAssociationTest.test_a_deployment_address_that_isn_t_an_https_host_fails) (url='https://user@abc.pages.dev')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpoh48cwel/tools/ci/deploy_dev_steps_test.py", line 997, in test_a_deployment_address_that_isn_t_an_https_host_fails
+    code, out, _, _ = self.check([found(project(deployment=deployment(url=url)))],
+                      ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                 {"tadayo-x1y.pages.dev": [served()]})
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpoh48cwel/tools/ci/deploy_dev_steps_test.py", line 877, in check
+    return call("check_association", {**CLOUDFLARE, "RUNNER_TEMP": self.repo.temp, **(environ or {})},
+                self.respond(projects, files), root=self.repo.root)
+  File "/tmp/tmpoh48cwel/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpoh48cwel/tools/ci/deploy_dev_steps.py", line 598, in check_association
+    self.served(host, built)
+    ~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/tmp/tmpoh48cwel/tools/ci/deploy_dev_steps.py", line 649, in served
+    answer = self.http.request("GET", host, ASSOCIATION, {"user-agent": USER_AGENT})
+  File "/tmp/tmpoh48cwel/tools/ci/deploy_dev_steps_test.py", line 54, in request
+    result = self.respond(method, host, path, body)
+  File "/tmp/tmpoh48cwel/tools/ci/deploy_dev_steps_test.py", line 862, in respond
+    given = files[host]
+            ~~~~~^^^^^^
+KeyError: 'user@abc.pages.dev'
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.921s
+
+FAILED (errors=3, skipped=1)

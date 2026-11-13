@@ -1,0 +1,58 @@
+tools/ci/deploy_dev_steps.py
+--- old
+            code = self.run_process(cmd, home, env)
+--- new
+            code = self.run_process(cmd, self.root, env)
+--- expected: test_nothing_in_the_repository_reaches_wrangler_s_working_folder_or_home
+--- exit 1
+.......................................FF...................................
+======================================================================
+FAIL: test_it_runs_the_pinned_wrangler_with_only_what_it_needs (__main__.PagesDeployTest.test_it_runs_the_pinned_wrangler_with_only_what_it_needs)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmppn5ytrv_/tools/ci/deploy_dev_steps_test.py", line 566, in test_it_runs_the_pinned_wrangler_with_only_what_it_needs
+    self.assertEqual(done["env"], {"PATH": "/usr/bin", "HOME": done["cwd"], "CI": "true",
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                   "DO_NOT_TRACK": "1", "WRANGLER_SEND_METRICS": "false",
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                   "WRANGLER_SEND_ERROR_REPORTS": "false", "CLOUDFLARE_API_TOKEN": TOKEN,
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                   "CLOUDFLARE_ACCOUNT_ID": ACCOUNT})
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'PAT[25 chars]/tmp/deploy-dev-wrangler-c5pgfkwc', 'CI': 'tru[200 chars]def'} != {'PAT[25 chars]/tmp/tmpbgsv1_j9', 'CI': 'true', 'DO_NOT_TRACK[183 chars]def'}
+  {'CI': 'true',
+   'CLOUDFLARE_ACCOUNT_ID': '0123456789abcdef0123456789abcdef',
+   'CLOUDFLARE_API_TOKEN': 'secret-token-value',
+   'DO_NOT_TRACK': '1',
+-  'HOME': '/tmp/deploy-dev-wrangler-c5pgfkwc',
++  'HOME': '/tmp/tmpbgsv1_j9',
+   'PATH': '/usr/bin',
+   'WRANGLER_SEND_ERROR_REPORTS': 'false',
+   'WRANGLER_SEND_METRICS': 'false'}
+
+======================================================================
+FAIL: test_nothing_in_the_repository_reaches_wrangler_s_working_folder_or_home (__main__.PagesDeployTest.test_nothing_in_the_repository_reaches_wrangler_s_working_folder_or_home)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmppn5ytrv_/tools/ci/deploy_dev_steps_test.py", line 590, in test_nothing_in_the_repository_reaches_wrangler_s_working_folder_or_home
+    self.assertEqual(run.held, [], "wrangler's working folder isn't empty as it starts")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['.env', '.env.local', 'apps', 'functions'[39 chars]oml'] != []
+
+First list contains 7 additional elements.
+First extra element 0:
+'.env'
+
++ []
+- ['.env',
+-  '.env.local',
+-  'apps',
+-  'functions',
+-  'tools',
+-  'wrangler.json',
+-  'wrangler.toml'] : wrangler's working folder isn't empty as it starts
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.832s
+
+FAILED (failures=2)

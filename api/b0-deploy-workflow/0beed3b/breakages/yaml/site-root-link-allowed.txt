@@ -1,0 +1,46 @@
+tools/ci/deploy_dev_steps.py
+--- old
+if os.path.islink(site) or not os.path.isdir(site):
+--- new
+if not os.path.isdir(site):
+--- expected: test_a_missing_or_linked_site
+--- exit 1
+...........................FF................................................
+======================================================================
+FAIL: test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused (__main__.CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused) (step='check_build', case='linked')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp8wcn6vrn/tools/ci/deploy_dev_steps_test.py", line 775, in test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused
+    self.assertEqual((code, "isn't a folder" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (0, False) != (1, True)
+
+First differing element 0:
+0
+1
+
+- (0, False)
++ (1, True) : deploy-dev: check-build: apps/web/dist holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused (__main__.CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused) (step='check_site', case='linked')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp8wcn6vrn/tools/ci/deploy_dev_steps_test.py", line 775, in test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused
+    self.assertEqual((code, "isn't a folder" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (0, False) != (1, True)
+
+First differing element 0:
+0
+1
+
+- (0, False)
++ (1, True) : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.474s
+
+FAILED (failures=2)

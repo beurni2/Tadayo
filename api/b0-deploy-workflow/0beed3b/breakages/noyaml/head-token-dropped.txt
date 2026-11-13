@@ -1,0 +1,29 @@
+tools/ci/deploy_dev_steps.py
+--- old
+sha = self.sha("check-head")
+        if sha is None:
+            return 1
+        headers = {"accept": "application/vnd.github+json", "authorization": f"Bearer {token}",
+
+--- new
+sha = self.sha("check-head")
+        if sha is None:
+            return 1
+        headers = {"accept": "application/vnd.github+json",
+
+--- expected: test_it_passes_while_this_commit_is_main_s_head
+--- exit 1
+.........................E.........................................s........
+======================================================================
+ERROR: test_it_passes_while_this_commit_is_main_s_head (__main__.CheckHeadTest.test_it_passes_while_this_commit_is_main_s_head)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpa978i4cs/tools/ci/deploy_dev_steps_test.py", line 808, in test_it_passes_while_this_commit_is_main_s_head
+    self.assertEqual(request["headers"]["authorization"], "Bearer gh-token")
+                     ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+KeyError: 'authorization'
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.690s
+
+FAILED (errors=1, skipped=1)

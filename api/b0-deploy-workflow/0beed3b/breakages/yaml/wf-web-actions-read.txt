@@ -1,0 +1,40 @@
+.github/workflows/deploy-dev.yml
+--- old
+    timeout-minutes: 20
+    permissions:
+      contents: read
+
+--- new
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+
+--- expected: test_its_jobs_and_steps_are_these_exactly
+--- exit 1
+.....................................................................F.F....
+======================================================================
+FAIL: test_its_jobs_and_steps_are_these_exactly (__main__.WorkflowFileTest.test_its_jobs_and_steps_are_these_exactly) (job='web')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpn9o68ou6/tools/ci/deploy_dev_steps_test.py", line 1230, in test_its_jobs_and_steps_are_these_exactly
+    self.assertEqual(self.document["jobs"][name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'nam[107 chars]read', 'actions': 'read'}, 'concurrency': {'gr[762 chars]'}}]} != {'nam[107 chars]read'}, 'concurrency': {'group': 'deploy-dev-w[743 chars]'}}]}
+Diff is 1280 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_the_cloudflare_secret_is_on_a_runner_that_holds_no_other (__main__.WorkflowFileTest.test_the_cloudflare_secret_is_on_a_runner_that_holds_no_other)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpn9o68ou6/tools/ci/deploy_dev_steps_test.py", line 1281, in test_the_cloudflare_secret_is_on_a_runner_that_holds_no_other
+    self.assertEqual(jobs["web"]["permissions"], {"contents": "read"})
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'contents': 'read', 'actions': 'read'} != {'contents': 'read'}
+- {'actions': 'read', 'contents': 'read'}
++ {'contents': 'read'}
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.345s
+
+FAILED (failures=2)

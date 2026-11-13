@@ -1,0 +1,200 @@
+tools/ci/deploy_dev_steps.py
+--- old
+print(f"deploy-dev: check-site: {problem}")
+            return 1
+--- new
+print(f"deploy-dev: check-site: {problem}")
+            return 0
+--- expected: test_a_link_anywhere_in_the_site_is_refused
+--- exit 1
+..........................FFFFFFFFFF.FF.............................................
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_site', where='leak.txt')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpqgi70dy9/tools/ci/deploy_dev_steps_test.py", line 743, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site/leak.txt is a link, which wrangler would follow and publish what it points to
+
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_site', where='.well-known/x.json')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpqgi70dy9/tools/ci/deploy_dev_steps_test.py", line 743, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site/.well-known/x.json is a link, which wrangler would follow and publish what it points to
+
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_site', where='docs')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpqgi70dy9/tools/ci/deploy_dev_steps_test.py", line 743, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site/docs is a link, which wrangler would follow and publish what it points to
+
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_site', where='privacy/dangling')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpqgi70dy9/tools/ci/deploy_dev_steps_test.py", line 743, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site/privacy/dangling is a link, which wrangler would follow and publish what it points to
+
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_site', where='the association file')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpqgi70dy9/tools/ci/deploy_dev_steps_test.py", line 751, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site/.well-known/apple-app-site-association is a link, which wrangler would follow and publish what it points to
+
+
+======================================================================
+FAIL: test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused (__main__.CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused) (step='check_site', case='missing')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpqgi70dy9/tools/ci/deploy_dev_steps_test.py", line 769, in test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused
+    self.assertEqual((code, "isn't a folder" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (0, True) != (1, True)
+
+First differing element 0:
+0
+1
+
+- (0, True)
+?  ^
+
++ (1, True)
+?  ^
+ : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site isn't a folder (download-artifact puts the artifact site there)
+
+
+======================================================================
+FAIL: test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused (__main__.CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused) (step='check_site', case='linked')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpqgi70dy9/tools/ci/deploy_dev_steps_test.py", line 775, in test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused
+    self.assertEqual((code, "isn't a folder" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (0, True) != (1, True)
+
+First differing element 0:
+0
+1
+
+- (0, True)
+?  ^
+
++ (1, True)
+?  ^
+ : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site isn't a folder (download-artifact puts the artifact site there)
+
+
+======================================================================
+FAIL: test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused (__main__.CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused) (step='check_site', case='no association file')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpqgi70dy9/tools/ci/deploy_dev_steps_test.py", line 780, in test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused
+    self.assertEqual((code, "has no /.well-known/apple-app-site-association" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (0, True) != (1, True)
+
+First differing element 0:
+0
+1
+
+- (0, True)
+?  ^
+
++ (1, True)
+?  ^
+ : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site has no /.well-known/apple-app-site-association (download-artifact puts the artifact site there)
+
+
+======================================================================
+FAIL: test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused (__main__.CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused) (step='check_site', make=<function CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused.<locals>.<lambda> at 0x7f54603d0f40>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpqgi70dy9/tools/ci/deploy_dev_steps_test.py", line 786, in test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused
+    self.assertEqual((code, "_worker.js" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (0, True) != (1, True)
+
+First differing element 0:
+0
+1
+
+- (0, True)
+?  ^
+
++ (1, True)
+?  ^
+ : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds _worker.js, which Pages would run as code on the site; the site is static
+
+
+======================================================================
+FAIL: test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused (__main__.CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused) (step='check_site', make=<function makedirs at 0x7f5460e24fe0>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpqgi70dy9/tools/ci/deploy_dev_steps_test.py", line 786, in test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused
+    self.assertEqual((code, "_worker.js" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (0, True) != (1, True)
+
+First differing element 0:
+0
+1
+
+- (0, True)
+?  ^
+
++ (1, True)
+?  ^
+ : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds _worker.js, which Pages would run as code on the site; the site is static
+
+
+======================================================================
+FAIL: test_a_special_file_is_refused (__main__.CheckSiteTest.test_a_special_file_is_refused) (step='check_site')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpqgi70dy9/tools/ci/deploy_dev_steps_test.py", line 760, in test_a_special_file_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site/pipe is neither a file nor a folder
+
+
+======================================================================
+FAIL: test_each_step_checks_its_own_folder (__main__.CheckSiteTest.test_each_step_checks_its_own_folder)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpqgi70dy9/tools/ci/deploy_dev_steps_test.py", line 709, in test_each_step_checks_its_own_folder
+    self.assertEqual((code, "RUNNER_TEMP/deploy-dev-site isn't a folder" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (0, True) != (1, True)
+
+First differing element 0:
+0
+1
+
+- (0, True)
+?  ^
+
++ (1, True)
+?  ^
+ : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site isn't a folder (download-artifact puts the artifact site there)
+
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.368s
+
+FAILED (failures=12)

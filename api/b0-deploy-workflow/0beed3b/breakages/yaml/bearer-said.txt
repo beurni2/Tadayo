@@ -1,0 +1,48 @@
+tools/ci/deploy_dev_steps.py
+--- old
+"bearer token can't (a space or a line break, perhaps from pasting it): set it again")
+--- new
+f"bearer token can't ({token!r}): set it again")
+--- expected: test_a_token_that_isn_t_a_bearer_token
+--- exit 1
+.............................................FFFF..............................
+======================================================================
+FAIL: test_a_token_that_isn_t_a_bearer_token_is_refused_and_never_said (__main__.PagesProjectTest.test_a_token_that_isn_t_a_bearer_token_is_refused_and_never_said) (token='pasted-token\n')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp0jn03s_9/tools/ci/deploy_dev_steps_test.py", line 536, in test_a_token_that_isn_t_a_bearer_token_is_refused_and_never_said
+    self.assertNotIn(token.strip(), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'pasted-token' unexpectedly found in "deploy-dev: pages-project: the repository secret CLOUDFLARE_API_TOKEN holds a character a bearer token can't ('pasted-token\\n'): set it again\n"
+
+======================================================================
+FAIL: test_a_token_that_isn_t_a_bearer_token_is_refused_and_never_said (__main__.PagesProjectTest.test_a_token_that_isn_t_a_bearer_token_is_refused_and_never_said) (token='pasted token')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp0jn03s_9/tools/ci/deploy_dev_steps_test.py", line 536, in test_a_token_that_isn_t_a_bearer_token_is_refused_and_never_said
+    self.assertNotIn(token.strip(), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'pasted token' unexpectedly found in "deploy-dev: pages-project: the repository secret CLOUDFLARE_API_TOKEN holds a character a bearer token can't ('pasted token'): set it again\n"
+
+======================================================================
+FAIL: test_a_token_that_isn_t_a_bearer_token_is_refused_and_never_said (__main__.PagesProjectTest.test_a_token_that_isn_t_a_bearer_token_is_refused_and_never_said) (token='töken')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp0jn03s_9/tools/ci/deploy_dev_steps_test.py", line 536, in test_a_token_that_isn_t_a_bearer_token_is_refused_and_never_said
+    self.assertNotIn(token.strip(), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'töken' unexpectedly found in "deploy-dev: pages-project: the repository secret CLOUDFLARE_API_TOKEN holds a character a bearer token can't ('töken'): set it again\n"
+
+======================================================================
+FAIL: test_a_token_that_isn_t_a_bearer_token_is_refused_and_never_said (__main__.PagesProjectTest.test_a_token_that_isn_t_a_bearer_token_is_refused_and_never_said) (token='=token')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp0jn03s_9/tools/ci/deploy_dev_steps_test.py", line 536, in test_a_token_that_isn_t_a_bearer_token_is_refused_and_never_said
+    self.assertNotIn(token.strip(), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+AssertionError: '=token' unexpectedly found in "deploy-dev: pages-project: the repository secret CLOUDFLARE_API_TOKEN holds a character a bearer token can't ('=token'): set it again\n"
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.847s
+
+FAILED (failures=4)

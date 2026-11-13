@@ -1,0 +1,40 @@
+tools/ci/deploy_dev_steps.py
+--- old
+        site = self.temp_folder("check-association", DOWNLOAD)
+        if site is None:
+            return 1
+
+--- new
+        site = self.temp_folder("check-association", DOWNLOAD) or self.path(SITE)
+
+--- expected: test_nothing_is_asked_without_the_token
+--- exit 1
+.................E.................................................s........
+======================================================================
+ERROR: test_nothing_is_asked_without_the_token_the_account_the_commit_or_runner_temp (__main__.CheckAssociationTest.test_nothing_is_asked_without_the_token_the_account_the_commit_or_runner_temp) (said="RUNNER_TEMP isn't an absolute path")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpxcmstdo_/tools/ci/deploy_dev_steps_test.py", line 1019, in test_nothing_is_asked_without_the_token_the_account_the_commit_or_runner_temp
+    code, out, http, _ = self.check([found(project(deployment=deployment()))], {}, environ)
+                         ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpxcmstdo_/tools/ci/deploy_dev_steps_test.py", line 877, in check
+    return call("check_association", {**CLOUDFLARE, "RUNNER_TEMP": self.repo.temp, **(environ or {})},
+                self.respond(projects, files), root=self.repo.root)
+  File "/tmp/tmpxcmstdo_/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpxcmstdo_/tools/ci/deploy_dev_steps.py", line 596, in check_association
+    self.served(host, built)
+    ~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/tmp/tmpxcmstdo_/tools/ci/deploy_dev_steps.py", line 647, in served
+    answer = self.http.request("GET", host, ASSOCIATION, {"user-agent": USER_AGENT})
+  File "/tmp/tmpxcmstdo_/tools/ci/deploy_dev_steps_test.py", line 54, in request
+    result = self.respond(method, host, path, body)
+  File "/tmp/tmpxcmstdo_/tools/ci/deploy_dev_steps_test.py", line 862, in respond
+    given = files[host]
+            ~~~~~^^^^^^
+KeyError: 'tadayo-x1y.pages.dev'
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.954s
+
+FAILED (errors=1, skipped=1)

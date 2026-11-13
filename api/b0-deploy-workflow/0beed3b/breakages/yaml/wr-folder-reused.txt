@@ -1,0 +1,37 @@
+tools/ci/deploy_dev_steps.py
+--- old
+            os.makedirs(home)
+
+--- new
+            os.makedirs(home, exist_ok=True)
+
+--- expected: test_it_needs_a_runner_temp_outside_the_checkout
+--- exit 1
+...................................................F........................
+======================================================================
+FAIL: test_it_needs_a_runner_temp_outside_the_checkout_and_a_folder_of_its_own (__main__.SetupWranglerTest.test_it_needs_a_runner_temp_outside_the_checkout_and_a_folder_of_its_own)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpnz7eb5k2/tools/ci/deploy_dev_steps_test.py", line 352, in test_it_needs_a_runner_temp_outside_the_checkout_and_a_folder_of_its_own
+    self.assertEqual(run.calls, [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [{'cmd': ['npm', 'ci', '--ignore-scripts',[137 chars]l'}}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'cmd': ['npm', 'ci', '--ignore-scripts', '--no-audit', '--no-fund', '--workspaces=false'], 'cwd': '/tmp/tmp_3_07dpl/deploy-dev-wrangler', 'env': {'RUNNER_TEMP': '/tmp/tmp_3_07dpl'}}
+
++ []
+- [{'cmd': ['npm',
+-           'ci',
+-           '--ignore-scripts',
+-           '--no-audit',
+-           '--no-fund',
+-           '--workspaces=false'],
+-   'cwd': '/tmp/tmp_3_07dpl/deploy-dev-wrangler',
+-   'env': {'RUNNER_TEMP': '/tmp/tmp_3_07dpl'}}]
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.894s
+
+FAILED (failures=1)

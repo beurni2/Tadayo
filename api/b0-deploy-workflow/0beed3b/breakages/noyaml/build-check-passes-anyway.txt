@@ -1,0 +1,200 @@
+tools/ci/deploy_dev_steps.py
+--- old
+print(f"deploy-dev: check-build: {problem}")
+            return 1
+--- new
+print(f"deploy-dev: check-build: {problem}")
+            return 0
+--- expected: test_a_link_anywhere_in_the_site_is_refused
+--- exit 1
+..........................FFFFFFFFFF.FF....................................s........
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_build', where='leak.txt')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpmqyfqtzc/tools/ci/deploy_dev_steps_test.py", line 743, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-build: apps/web/dist/leak.txt is a link, which wrangler would follow and publish what it points to
+
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_build', where='.well-known/x.json')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpmqyfqtzc/tools/ci/deploy_dev_steps_test.py", line 743, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-build: apps/web/dist/.well-known/x.json is a link, which wrangler would follow and publish what it points to
+
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_build', where='docs')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpmqyfqtzc/tools/ci/deploy_dev_steps_test.py", line 743, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-build: apps/web/dist/docs is a link, which wrangler would follow and publish what it points to
+
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_build', where='privacy/dangling')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpmqyfqtzc/tools/ci/deploy_dev_steps_test.py", line 743, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-build: apps/web/dist/privacy/dangling is a link, which wrangler would follow and publish what it points to
+
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_build', where='the association file')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpmqyfqtzc/tools/ci/deploy_dev_steps_test.py", line 751, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-build: apps/web/dist/.well-known/apple-app-site-association is a link, which wrangler would follow and publish what it points to
+
+
+======================================================================
+FAIL: test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused (__main__.CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused) (step='check_build', case='missing')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpmqyfqtzc/tools/ci/deploy_dev_steps_test.py", line 769, in test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused
+    self.assertEqual((code, "isn't a folder" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (0, True) != (1, True)
+
+First differing element 0:
+0
+1
+
+- (0, True)
+?  ^
+
++ (1, True)
+?  ^
+ : deploy-dev: check-build: apps/web/dist isn't a folder (ci_steps.py web builds it)
+
+
+======================================================================
+FAIL: test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused (__main__.CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused) (step='check_build', case='linked')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpmqyfqtzc/tools/ci/deploy_dev_steps_test.py", line 775, in test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused
+    self.assertEqual((code, "isn't a folder" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (0, True) != (1, True)
+
+First differing element 0:
+0
+1
+
+- (0, True)
+?  ^
+
++ (1, True)
+?  ^
+ : deploy-dev: check-build: apps/web/dist isn't a folder (ci_steps.py web builds it)
+
+
+======================================================================
+FAIL: test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused (__main__.CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused) (step='check_build', case='no association file')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpmqyfqtzc/tools/ci/deploy_dev_steps_test.py", line 780, in test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused
+    self.assertEqual((code, "has no /.well-known/apple-app-site-association" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (0, True) != (1, True)
+
+First differing element 0:
+0
+1
+
+- (0, True)
+?  ^
+
++ (1, True)
+?  ^
+ : deploy-dev: check-build: apps/web/dist has no /.well-known/apple-app-site-association (ci_steps.py web builds it)
+
+
+======================================================================
+FAIL: test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused (__main__.CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused) (step='check_build', make=<function CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused.<locals>.<lambda> at 0x7f1f1c201b20>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpmqyfqtzc/tools/ci/deploy_dev_steps_test.py", line 786, in test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused
+    self.assertEqual((code, "_worker.js" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (0, True) != (1, True)
+
+First differing element 0:
+0
+1
+
+- (0, True)
+?  ^
+
++ (1, True)
+?  ^
+ : deploy-dev: check-build: apps/web/dist holds _worker.js, which Pages would run as code on the site; the site is static
+
+
+======================================================================
+FAIL: test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused (__main__.CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused) (step='check_build', make=<function makedirs at 0x7f1f1cab6d40>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpmqyfqtzc/tools/ci/deploy_dev_steps_test.py", line 786, in test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused
+    self.assertEqual((code, "_worker.js" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (0, True) != (1, True)
+
+First differing element 0:
+0
+1
+
+- (0, True)
+?  ^
+
++ (1, True)
+?  ^
+ : deploy-dev: check-build: apps/web/dist holds _worker.js, which Pages would run as code on the site; the site is static
+
+
+======================================================================
+FAIL: test_a_special_file_is_refused (__main__.CheckSiteTest.test_a_special_file_is_refused) (step='check_build')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpmqyfqtzc/tools/ci/deploy_dev_steps_test.py", line 760, in test_a_special_file_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-build: apps/web/dist/pipe is neither a file nor a folder
+
+
+======================================================================
+FAIL: test_each_step_checks_its_own_folder (__main__.CheckSiteTest.test_each_step_checks_its_own_folder)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpmqyfqtzc/tools/ci/deploy_dev_steps_test.py", line 716, in test_each_step_checks_its_own_folder
+    self.assertEqual((code, "apps/web/dist isn't a folder" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (0, True) != (1, True)
+
+First differing element 0:
+0
+1
+
+- (0, True)
+?  ^
+
++ (1, True)
+?  ^
+ : deploy-dev: check-build: apps/web/dist isn't a folder (ci_steps.py web builds it)
+
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.957s
+
+FAILED (failures=12, skipped=1)

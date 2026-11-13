@@ -1,0 +1,31 @@
+.github/workflows/deploy-dev.yml
+--- old
+    branches:
+      - main
+
+--- new
+    branches:
+      - '**'
+
+--- expected: test_it_runs_only_on_a_push_to_main
+--- exit 1
+...................................................................sF.......
+======================================================================
+FAIL: test_it_runs_only_on_a_push_to_main (__main__.WorkflowFileTest.test_it_runs_only_on_a_push_to_main)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpg22ogxbe/tools/ci/deploy_dev_steps_test.py", line 1223, in test_it_runs_only_on_a_push_to_main
+    self.assertEqual(self.document["on"], {"push": {"branches": ["main"]}})
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'push': {'branches': ['**']}} != {'push': {'branches': ['main']}}
+- {'push': {'branches': ['**']}}
+?                         ^^
+
++ {'push': {'branches': ['main']}}
+?                         ^^^^
+
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.780s
+
+FAILED (failures=1, skipped=1)

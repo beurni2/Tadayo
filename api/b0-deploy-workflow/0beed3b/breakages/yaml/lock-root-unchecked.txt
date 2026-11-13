@@ -1,0 +1,21 @@
+tools/ci/deploy_dev_steps.py
+--- old
+ or packages[""].get("dependencies") != wanted:
+--- new
+:
+--- expected: test_it_refuses_a_lockfile_it_can_t_trust
+--- exit 1
+....................................................F.......................
+======================================================================
+FAIL: test_it_refuses_a_lockfile_it_can_t_trust_before_installing (__main__.SetupWranglerTest.test_it_refuses_a_lockfile_it_can_t_trust_before_installing) (change='another root')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpfhyae6ea/tools/ci/deploy_dev_steps_test.py", line 385, in test_it_refuses_a_lockfile_it_can_t_trust_before_installing
+    self.assertIn("nothing is installed", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'nothing is installed' not found in "deploy-dev: setup-wrangler: RUNNER_TEMP isn't an absolute path (GitHub's runner sets it)\n"
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.555s
+
+FAILED (failures=1)

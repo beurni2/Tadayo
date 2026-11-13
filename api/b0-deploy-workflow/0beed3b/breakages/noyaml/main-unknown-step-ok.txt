@@ -1,0 +1,45 @@
+tools/ci/deploy_dev_steps.py
+--- old
+STEPS = {
+--- new
+STEPS = {"x": lambda s: 0, 
+--- expected: test_unknown_step
+--- exit 1
+........................................................FFF..........s........
+======================================================================
+FAIL: test_unknown_step (__main__.UsageTest.test_unknown_step) (argv=['deploy_dev_steps.py'])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmplhfzj8g2/tools/ci/deploy_dev_steps_test.py", line 1317, in test_unknown_step
+    self.assertIn("steps: wait-ci, check-api, check-build, check-head, check-site, setup-wrangler, "
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                  "pages-project, pages-deploy, check-association", out.getvalue())
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'steps: wait-ci, check-api, check-build, check-head, check-site, setup-wrangler, pages-project, pages-deploy, check-association' not found in 'usage: python3 tools/ci/deploy_dev_steps.py <step>\nsteps: x, wait-ci, check-api, check-build, check-head, check-site, setup-wrangler, pages-project, pages-deploy, check-association\n'
+
+======================================================================
+FAIL: test_unknown_step (__main__.UsageTest.test_unknown_step) (argv=['deploy_dev_steps.py', 'deploy'])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmplhfzj8g2/tools/ci/deploy_dev_steps_test.py", line 1317, in test_unknown_step
+    self.assertIn("steps: wait-ci, check-api, check-build, check-head, check-site, setup-wrangler, "
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                  "pages-project, pages-deploy, check-association", out.getvalue())
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'steps: wait-ci, check-api, check-build, check-head, check-site, setup-wrangler, pages-project, pages-deploy, check-association' not found in 'usage: python3 tools/ci/deploy_dev_steps.py <step>\nsteps: x, wait-ci, check-api, check-build, check-head, check-site, setup-wrangler, pages-project, pages-deploy, check-association\n'
+
+======================================================================
+FAIL: test_unknown_step (__main__.UsageTest.test_unknown_step) (argv=['deploy_dev_steps.py', 'wait-ci', 'x'])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmplhfzj8g2/tools/ci/deploy_dev_steps_test.py", line 1317, in test_unknown_step
+    self.assertIn("steps: wait-ci, check-api, check-build, check-head, check-site, setup-wrangler, "
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                  "pages-project, pages-deploy, check-association", out.getvalue())
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'steps: wait-ci, check-api, check-build, check-head, check-site, setup-wrangler, pages-project, pages-deploy, check-association' not found in 'usage: python3 tools/ci/deploy_dev_steps.py <step>\nsteps: x, wait-ci, check-api, check-build, check-head, check-site, setup-wrangler, pages-project, pages-deploy, check-association\n'
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.694s
+
+FAILED (failures=3, skipped=1)

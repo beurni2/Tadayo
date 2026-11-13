@@ -1,0 +1,29 @@
+tools/ci/deploy_dev_steps.py
+--- old
+ or \
+                            (stage.get("name"), stage.get("status")) == ("deploy", "skipped"):
+--- new
+:
+--- expected: test_a_failed_deployment_fails_at_once
+--- exit 1
+.......F....................................................................
+======================================================================
+FAIL: test_a_failed_deployment_fails_at_once (__main__.CheckAssociationTest.test_a_failed_deployment_fails_at_once) (stage='deploy', status='skipped')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp51t6fgks/tools/ci/deploy_dev_steps_test.py", line 916, in test_a_failed_deployment_fails_at_once
+    self.assertEqual(sleeps.calls, [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15] != []
+
+First list contains 19 additional elements.
+First extra element 0:
+15
+
+- [15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]
++ []
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.916s
+
+FAILED (failures=1)

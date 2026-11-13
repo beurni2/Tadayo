@@ -1,0 +1,68 @@
+tools/ci/deploy_dev_steps.py
+--- old
+        site, problem = self.downloaded_site("check-site")
+        if site is None:
+            return 1
+
+--- new
+        site, problem = self.downloaded_site("check-site")
+        if site is None:
+            return 0
+
+--- expected: test_the_download_needs_a_runner_temp_outside_the_checkout
+--- exit 1
+...............................FFFFF...................................s........
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (temp=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmprcxmq2or/tools/ci/deploy_dev_steps_test.py", line 725, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP isn't an absolute path (GitHub's runner sets it)
+
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (temp='')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmprcxmq2or/tools/ci/deploy_dev_steps_test.py", line 725, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP isn't an absolute path (GitHub's runner sets it)
+
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (temp='relative/tmp')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmprcxmq2or/tools/ci/deploy_dev_steps_test.py", line 725, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP isn't an absolute path (GitHub's runner sets it)
+
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (temp='/tmp/tmpub5pq6x6/tmp')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmprcxmq2or/tools/ci/deploy_dev_steps_test.py", line 725, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP is inside the checkout
+
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (temp='/tmp/tmpub5pq6x6')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmprcxmq2or/tools/ci/deploy_dev_steps_test.py", line 725, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP is inside the checkout
+
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.898s
+
+FAILED (failures=5, skipped=1)

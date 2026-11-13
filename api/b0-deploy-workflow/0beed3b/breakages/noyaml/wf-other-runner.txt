@@ -1,0 +1,28 @@
+.github/workflows/deploy-dev.yml
+--- old
+    name: deploy
+    needs: ci
+    runs-on: ubuntu-24.04
+
+--- new
+    name: deploy
+    needs: ci
+    runs-on: ubuntu-latest
+
+--- expected: test_its_jobs_and_steps_are_these_exactly
+--- exit 1
+...................................................................s.F......
+======================================================================
+FAIL: test_its_jobs_and_steps_are_these_exactly (__main__.WorkflowFileTest.test_its_jobs_and_steps_are_these_exactly) (job='deploy')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpa7uxbxs6/tools/ci/deploy_dev_steps_test.py", line 1230, in test_its_jobs_and_steps_are_these_exactly
+    self.assertEqual(self.document["jobs"][name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'nam[43 chars]untu-latest', 'timeout-minutes': '80', 'permis[1633 chars]i'}]} != {'nam[43 chars]untu-24.04', 'timeout-minutes': '80', 'permiss[1632 chars]i'}]}
+Diff is 2738 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.717s
+
+FAILED (failures=1, skipped=1)

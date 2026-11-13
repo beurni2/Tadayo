@@ -1,0 +1,37 @@
+.github/workflows/deploy-dev.yml
+--- old
+          path: ${{ runner.temp }}/deploy-dev-site
+
+--- new
+          path: ${{ runner.temp }}/site
+
+--- expected: test_the_pages_job_downloads_the_site_under_runner_temp
+--- exit 1
+...................................................................s.F...F..
+======================================================================
+FAIL: test_its_jobs_and_steps_are_these_exactly (__main__.WorkflowFileTest.test_its_jobs_and_steps_are_these_exactly) (job='pages')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpihceypv4/tools/ci/deploy_dev_steps_test.py", line 1230, in test_its_jobs_and_steps_are_these_exactly
+    self.assertEqual(self.document["jobs"][name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'nam[735 chars]p }}/site'}}, {'run': 'python3 tools/ci/deploy[759 chars]n'}]} != {'nam[735 chars]p }}/deploy-dev-site'}}, {'run': 'python3 tool[770 chars]n'}]}
+Diff is 2325 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_the_pages_job_downloads_the_site_under_runner_temp_where_its_steps_read_it (__main__.WorkflowFileTest.test_the_pages_job_downloads_the_site_under_runner_temp_where_its_steps_read_it)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpihceypv4/tools/ci/deploy_dev_steps_test.py", line 1299, in test_the_pages_job_downloads_the_site_under_runner_temp_where_its_steps_read_it
+    self.assertEqual(download["with"]["path"], "${{ runner.temp }}/" + steps_module.DOWNLOAD)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '${{ runner.temp }}/site' != '${{ runner.temp }}/deploy-dev-site'
+- ${{ runner.temp }}/site
++ ${{ runner.temp }}/deploy-dev-site
+?                    +++++++++++
+
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.754s
+
+FAILED (failures=2, skipped=1)

@@ -1,0 +1,46 @@
+tools/ci/deploy_dev_steps.py
+--- old
+    "status": 401,
+--- new
+    "status": 200,
+--- expected: test_the_neutral_401_passes
+--- exit 1
+FF...F.............................................................s........
+======================================================================
+FAIL: test_any_other_answer_fails_at_once (__main__.CheckApiTest.test_any_other_answer_fails_at_once) (case='200')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmplmhrb33z/tools/ci/deploy_dev_steps_test.py", line 224, in test_any_other_answer_fails_at_once
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-api: GET https://api-dev.tadayo.app/v1/me with no token answered 401 UNAUTHENTICATED, private and not stored
+
+
+======================================================================
+FAIL: test_fly_s_proxy_errors_and_a_lost_connection_are_asked_again (__main__.CheckApiTest.test_fly_s_proxy_errors_and_a_lost_connection_are_asked_again)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmplmhrb33z/tools/ci/deploy_dev_steps_test.py", line 231, in test_fly_s_proxy_errors_and_a_lost_connection_are_asked_again
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: check-api: https://api-dev.tadayo.app/v1/me answered HTTP 502; asking again in 10 seconds
+deploy-dev: check-api: https://api-dev.tadayo.app/v1/me answered HTTP 503; asking again in 10 seconds
+deploy-dev: check-api: https://api-dev.tadayo.app/v1/me answered HTTP 504; asking again in 10 seconds
+deploy-dev: check-api: couldn't reach https://api-dev.tadayo.app/v1/me (refused); asking again in 10 seconds
+deploy-dev: check-api: GET https://api-dev.tadayo.app/v1/me with no token answered HTTP 401, not 200
+
+
+======================================================================
+FAIL: test_the_neutral_401_passes (__main__.CheckApiTest.test_the_neutral_401_passes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmplmhrb33z/tools/ci/deploy_dev_steps_test.py", line 202, in test_the_neutral_401_passes
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: check-api: GET https://api-dev.tadayo.app/v1/me with no token answered HTTP 401, not 200
+
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.489s
+
+FAILED (failures=3, skipped=1)

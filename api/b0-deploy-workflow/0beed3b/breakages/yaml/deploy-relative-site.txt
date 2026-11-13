@@ -1,0 +1,79 @@
+tools/ci/deploy_dev_steps.py
+--- old
+"deploy", site, f"--project-name
+--- new
+"deploy", DOWNLOAD, f"--project-name
+--- expected: test_it_runs_the_pinned_wrangler_with_only_what_it_needs
+--- exit 1
+......................................FFFF....................................
+======================================================================
+FAIL: test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist (__main__.PagesDeployTest.test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist) (make=<function PagesDeployTest.test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist.<locals>.<lambda> at 0x7f73c69b1d00>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp2jfto6st/tools/ci/deploy_dev_steps_test.py", line 668, in test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist
+    self.assertEqual(run.calls[0]["cmd"][4], repo.site())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'deploy-dev-site' != '/tmp/tmp0fu1i_vw/deploy-dev-site'
+- deploy-dev-site
++ /tmp/tmp0fu1i_vw/deploy-dev-site
+
+
+======================================================================
+FAIL: test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist (__main__.PagesDeployTest.test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist) (make=<function PagesDeployTest.test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist.<locals>.<lambda> at 0x7f73c69b2200>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp2jfto6st/tools/ci/deploy_dev_steps_test.py", line 668, in test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist
+    self.assertEqual(run.calls[0]["cmd"][4], repo.site())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'deploy-dev-site' != '/tmp/tmp6h0y7qut/deploy-dev-site'
+- deploy-dev-site
++ /tmp/tmp6h0y7qut/deploy-dev-site
+
+
+======================================================================
+FAIL: test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist (__main__.PagesDeployTest.test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist) (make=<function PagesDeployTest.test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist.<locals>.<lambda> at 0x7f73c69b2160>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp2jfto6st/tools/ci/deploy_dev_steps_test.py", line 668, in test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist
+    self.assertEqual(run.calls[0]["cmd"][4], repo.site())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'deploy-dev-site' != '/tmp/tmpdz1snzoj/deploy-dev-site'
+- deploy-dev-site
++ /tmp/tmpdz1snzoj/deploy-dev-site
+
+
+======================================================================
+FAIL: test_it_runs_the_pinned_wrangler_with_only_what_it_needs (__main__.PagesDeployTest.test_it_runs_the_pinned_wrangler_with_only_what_it_needs)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp2jfto6st/tools/ci/deploy_dev_steps_test.py", line 562, in test_it_runs_the_pinned_wrangler_with_only_what_it_needs
+    self.assertEqual(done["cmd"], [
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+        "node", wrangler,
+        ^^^^^^^^^^^^^^^^^
+        "pages", "deploy", repo.site(), "--project-name=tadayo", "--branch=main",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        f"--commit-hash={SHA}", f"--commit-message=main at {SHA[:12]}", "--commit-dirty=false"])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['nod[97 chars]y', 'deploy-dev-site', '--project-name=tadayo'[136 chars]lse'] != ['nod[97 chars]y', '/tmp/tmpu_ywxaj6/deploy-dev-site', '--pro[153 chars]lse']
+
+First differing element 4:
+'deploy-dev-site'
+'/tmp/tmpu_ywxaj6/deploy-dev-site'
+
+  ['node',
+   '/tmp/tmpu_ywxaj6/deploy-dev-wrangler/node_modules/wrangler/bin/wrangler.js',
+   'pages',
+   'deploy',
+-  'deploy-dev-site',
++  '/tmp/tmpu_ywxaj6/deploy-dev-site',
+   '--project-name=tadayo',
+   '--branch=main',
+   '--commit-hash=0123456789abcdef0123456789abcdef01234567',
+   '--commit-message=main at 0123456789ab',
+   '--commit-dirty=false']
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.730s
+
+FAILED (failures=4)

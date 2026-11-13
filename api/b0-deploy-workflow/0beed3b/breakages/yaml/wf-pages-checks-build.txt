@@ -1,0 +1,41 @@
+.github/workflows/deploy-dev.yml
+--- old
+          path: ${{ runner.temp }}/deploy-dev-site
+      - run: python3 tools/ci/deploy_dev_steps.py check-site
+
+--- new
+          path: ${{ runner.temp }}/deploy-dev-site
+      - run: python3 tools/ci/deploy_dev_steps.py check-build
+
+--- expected: test_the_pages_job_downloads_the_site_under_runner_temp
+--- exit 1
+.....................................................................F...F..
+======================================================================
+FAIL: test_its_jobs_and_steps_are_these_exactly (__main__.WorkflowFileTest.test_its_jobs_and_steps_are_these_exactly) (job='pages')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpoxlu_pzm/tools/ci/deploy_dev_steps_test.py", line 1230, in test_its_jobs_and_steps_are_these_exactly
+    self.assertEqual(self.document["jobs"][name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'nam[807 chars]heck-build'}, {'run': 'python3 tools/ci/deploy[699 chars]n'}]} != {'nam[807 chars]heck-site'}, {'run': 'python3 tools/ci/deploy_[698 chars]n'}]}
+Diff is 2466 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_the_pages_job_downloads_the_site_under_runner_temp_where_its_steps_read_it (__main__.WorkflowFileTest.test_the_pages_job_downloads_the_site_under_runner_temp_where_its_steps_read_it)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpoxlu_pzm/tools/ci/deploy_dev_steps_test.py", line 1300, in test_the_pages_job_downloads_the_site_under_runner_temp_where_its_steps_read_it
+    self.assertEqual(steps[steps.index(download) + 1], {"run": "python3 tools/ci/deploy_dev_steps.py check-site"})
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'run': 'python3 tools/ci/deploy_dev_steps.py check-build'} != {'run': 'python3 tools/ci/deploy_dev_steps.py check-site'}
+- {'run': 'python3 tools/ci/deploy_dev_steps.py check-build'}
+?                                                     ^^ ^^
+
++ {'run': 'python3 tools/ci/deploy_dev_steps.py check-site'}
+?                                                     ^ ^^
+
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.799s
+
+FAILED (failures=2)

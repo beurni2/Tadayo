@@ -1,0 +1,51 @@
+.github/workflows/deploy-dev.yml
+--- old
+
+permissions: {}
+
+--- new
+
+concurrency:
+  group: ops-dev
+  cancel-in-progress: false
+
+permissions: {}
+
+--- expected: test_the_file_holds_these_keys
+--- exit 1
+...................................................................s..F.F...
+======================================================================
+FAIL: test_only_the_deploy_job_holds_ops_dev_and_it_is_never_cancelled (__main__.WorkflowFileTest.test_only_the_deploy_job_holds_ops_dev_and_it_is_never_cancelled)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp4yct1ml0/tools/ci/deploy_dev_steps_test.py", line 1233, in test_only_the_deploy_job_holds_ops_dev_and_it_is_never_cancelled
+    self.assertNotIn("concurrency", self.document)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'concurrency' unexpectedly found in {'name': 'deploy-dev', 'on': {'push': {'branches': ['main']}}, 'concurrency': {'group': 'ops-dev', 'cancel-in-progress': 'false'}, 'permissions': {}, 'defaults': {'run': {'shell': 'bash'}}, 'jobs': {'ci': {'name': 'wait for ci', 'runs-on': 'ubuntu-24.04', 'timeout-minutes': '45', 'permissions': {'contents': 'read', 'actions': 'read'}, 'concurrency': {'group': 'deploy-dev-ci-${{ github.sha }}', 'cancel-in-progress': 'false'}, 'steps': [{'uses': 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1', 'with': {'persist-credentials': 'false'}}, {'name': 'wait-ci', 'env': {'GITHUB_TOKEN': '${{ github.token }}'}, 'run': 'python3 tools/ci/deploy_dev_steps.py wait-ci'}]}, 'deploy': {'name': 'deploy', 'needs': 'ci', 'runs-on': 'ubuntu-24.04', 'timeout-minutes': '80', 'permissions': {'contents': 'read', 'actions': 'read'}, 'concurrency': {'group': 'ops-dev', 'cancel-in-progress': 'false'}, 'steps': [{'uses': 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1', 'with': {'persist-credentials': 'false'}}, {'uses': 'actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1', 'with': {'node-version-file': '.nvmrc', 'package-manager-cache': 'false'}}, {'run': 'python3 tools/ci/ci_steps.py setup-pnpm'}, {'run': 'python3 tools/ci/ci_steps.py install'}, {'name': 'setup-flyctl', 'env': {'OPS_SCRIPT': 'deploy-branch'}, 'run': 'python3 tools/ci/ops_steps.py setup-flyctl'}, {'name': 'migrate', 'env': {'OPS_SCRIPT': 'migrate', 'DATABASE_URL': '${{ secrets.DEV_DATABASE_URL }}', 'SUPABASE_DEV_PROJECT_REF': '${{ secrets.SUPABASE_DEV_PROJECT_REF }}'}, 'run': 'python3 tools/ci/ops_steps.py run'}, {'name': 'deploy-branch', 'env': {'OPS_SCRIPT': 'deploy-branch', 'OPS_BRANCH': 'main', 'FLY_API_TOKEN': '${{ secrets.FLY_API_TOKEN }}', 'GITHUB_TOKEN': '${{ github.token }}'}, 'run': 'python3 tools/ci/ops_steps.py run'}, {'name': 'storage-setup', 'env': {'OPS_SCRIPT': 'storage-setup', 'FLY_API_TOKEN': '${{ secrets.FLY_API_TOKEN }}', 'SUPABASE_DEV_PROJECT_REF': '${{ secrets.SUPABASE_DEV_PROJECT_REF }}'}, 'run': 'python3 tools/ci/ops_steps.py run'}, {'name': 'supabase-probe', 'env': {'OPS_SCRIPT': 'supabase-probe', 'FLY_API_TOKEN': '${{ secrets.FLY_API_TOKEN }}', 'SUPABASE_DEV_PROJECT_REF': '${{ secrets.SUPABASE_DEV_PROJECT_REF }}', 'SUPABASE_ACCESS_TOKEN': '${{ secrets.SUPABASE_ACCESS_TOKEN }}'}, 'run': 'python3 tools/ci/ops_steps.py run'}, {'run': 'python3 tools/ci/deploy_dev_steps.py check-api'}]}, 'web': {'name': 'web', 'needs': 'ci', 'runs-on': 'ubuntu-24.04', 'timeout-minutes': '20', 'permissions': {'contents': 'read'}, 'concurrency': {'group': 'deploy-dev-web-${{ github.sha }}', 'cancel-in-progress': 'false'}, 'steps': [{'uses': 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1', 'with': {'persist-credentials': 'false'}}, {'uses': 'actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1', 'with': {'node-version-file': '.nvmrc', 'package-manager-cache': 'false'}}, {'run': 'python3 tools/ci/ci_steps.py setup-pnpm'}, {'run': 'python3 tools/ci/ci_steps.py install'}, {'run': 'python3 tools/ci/ci_steps.py web'}, {'run': 'python3 tools/ci/deploy_dev_steps.py check-build'}, {'uses': 'actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9', 'with': {'name': 'site', 'path': 'apps/web/dist/', 'if-no-files-found': 'error', 'include-hidden-files': 'true', 'retention-days': '1'}}]}, 'pages': {'name': 'pages', 'needs': ['deploy', 'web'], 'runs-on': 'ubuntu-24.04', 'timeout-minutes': '30', 'permissions': {'contents': 'read'}, 'concurrency': {'group': 'deploy-dev-pages', 'cancel-in-progress': 'false'}, 'steps': [{'uses': 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1', 'with': {'persist-credentials': 'false'}}, {'name': 'check-head', 'env': {'GITHUB_TOKEN': '${{ github.token }}'}, 'run': 'python3 tools/ci/deploy_dev_steps.py check-head'}, {'uses': 'actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1', 'with': {'node-version-file': '.nvmrc', 'package-manager-cache': 'false'}}, {'uses': 'actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333', 'with': {'name': 'site', 'path': '${{ runner.temp }}/deploy-dev-site'}}, {'run': 'python3 tools/ci/deploy_dev_steps.py check-site'}, {'run': 'python3 tools/ci/deploy_dev_steps.py setup-wrangler'}, {'name': 'pages-project', 'env': {'CLOUDFLARE_API_TOKEN': '${{ secrets.CLOUDFLARE_API_TOKEN }}', 'CLOUDFLARE_ACCOUNT_ID': '${{ vars.CLOUDFLARE_ACCOUNT_ID }}'}, 'run': 'python3 tools/ci/deploy_dev_steps.py pages-project'}, {'name': 'pages-deploy', 'env': {'CLOUDFLARE_API_TOKEN': '${{ secrets.CLOUDFLARE_API_TOKEN }}', 'CLOUDFLARE_ACCOUNT_ID': '${{ vars.CLOUDFLARE_ACCOUNT_ID }}'}, 'run': 'python3 tools/ci/deploy_dev_steps.py pages-deploy'}, {'name': 'check-association', 'env': {'CLOUDFLARE_API_TOKEN': '${{ secrets.CLOUDFLARE_API_TOKEN }}', 'CLOUDFLARE_ACCOUNT_ID': '${{ vars.CLOUDFLARE_ACCOUNT_ID }}'}, 'run': 'python3 tools/ci/deploy_dev_steps.py check-association'}]}}}
+
+======================================================================
+FAIL: test_the_file_holds_these_keys_and_no_other (__main__.WorkflowFileTest.test_the_file_holds_these_keys_and_no_other)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp4yct1ml0/tools/ci/deploy_dev_steps_test.py", line 1217, in test_the_file_holds_these_keys_and_no_other
+    self.assertEqual(list(self.document), ["name", "on", "permissions", "defaults", "jobs"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['name', 'on', 'concurrency', 'permissions', 'defaults', 'jobs'] != ['name', 'on', 'permissions', 'defaults', 'jobs']
+
+First differing element 2:
+'concurrency'
+'permissions'
+
+First list contains 1 additional elements.
+First extra element 5:
+'jobs'
+
+- ['name', 'on', 'concurrency', 'permissions', 'defaults', 'jobs']
+?               ---------------
+
++ ['name', 'on', 'permissions', 'defaults', 'jobs']
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.764s
+
+FAILED (failures=2, skipped=1)

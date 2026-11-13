@@ -1,0 +1,55 @@
+.github/workflows/deploy-dev.yml
+--- old
+      - run: python3 tools/ci/ci_steps.py web
+
+--- new
+      - env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: python3 tools/ci/ci_steps.py web
+
+--- expected: test_its_jobs_and_steps_are_these_exactly
+--- exit 1
+..................................................................Fs.F.F....
+======================================================================
+FAIL: test_every_expression_in_the_file_is_one_this_test_knows (__main__.WorkflowFileTest.test_every_expression_in_the_file_is_one_this_test_knows)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpyquwk23u/tools/ci/deploy_dev_steps_test.py", line 1254, in test_every_expression_in_the_file_is_one_this_test_knows
+    self.assertEqual(found, sorted(wanted))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['${{[254 chars]rets.CLOUDFLARE_API_TOKEN }}', '${{ secrets.DE[390 chars] }}'] != ['${{[254 chars]rets.DEV_DATABASE_URL }}', '${{ secrets.FLY_AP[351 chars] }}']
+
+First differing element 9:
+'${{ secrets.CLOUDFLARE_API_TOKEN }}'
+'${{ secrets.DEV_DATABASE_URL }}'
+
+First list contains 1 additional elements.
+First extra element 20:
+'${{ vars.CLOUDFLARE_ACCOUNT_ID }}'
+
+Diff is 763 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_its_jobs_and_steps_are_these_exactly (__main__.WorkflowFileTest.test_its_jobs_and_steps_are_these_exactly) (job='web')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpyquwk23u/tools/ci/deploy_dev_steps_test.py", line 1230, in test_its_jobs_and_steps_are_these_exactly
+    self.assertEqual(self.document["jobs"][name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'nam[577 chars]}, {'env': {'CLOUDFLARE_API_TOKEN': '${{ secre[345 chars]'}}]} != {'nam[577 chars]}, {'run': 'python3 tools/ci/ci_steps.py web'}[273 chars]'}}]}
+Diff is 1406 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_the_cloudflare_secret_is_on_a_runner_that_holds_no_other (__main__.WorkflowFileTest.test_the_cloudflare_secret_is_on_a_runner_that_holds_no_other)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpyquwk23u/tools/ci/deploy_dev_steps_test.py", line 1278, in test_the_cloudflare_secret_is_on_a_runner_that_holds_no_other
+    self.assertEqual(named("web"), set())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Items in the first set but not the second:
+'${{ secrets.CLOUDFLARE_API_TOKEN }}'
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.719s
+
+FAILED (failures=3, skipped=1)

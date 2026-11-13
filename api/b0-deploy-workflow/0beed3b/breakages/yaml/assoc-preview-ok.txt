@@ -1,0 +1,38 @@
+tools/ci/deploy_dev_steps.py
+--- old
+                if commit == sha and deployment.get("environment") == "production":
+--- new
+                if commit == sha:
+--- expected: test_a_preview_deployment_of_this_commit
+--- exit 1
+...........E................................................................
+======================================================================
+ERROR: test_a_preview_deployment_of_this_commit_is_not_the_production_one (__main__.CheckAssociationTest.test_a_preview_deployment_of_this_commit_is_not_the_production_one)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpvrtu60dh/tools/ci/deploy_dev_steps_test.py", line 949, in test_a_preview_deployment_of_this_commit_is_not_the_production_one
+    code, out, http, sleeps = self.check(
+                              ~~~~~~~~~~^
+        [found(project(deployment=deployment(environment="preview")))], {})
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpvrtu60dh/tools/ci/deploy_dev_steps_test.py", line 877, in check
+    return call("check_association", {**CLOUDFLARE, "RUNNER_TEMP": self.repo.temp, **(environ or {})},
+                self.respond(projects, files), root=self.repo.root)
+  File "/tmp/tmpvrtu60dh/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpvrtu60dh/tools/ci/deploy_dev_steps.py", line 598, in check_association
+    self.served(host, built)
+    ~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/tmp/tmpvrtu60dh/tools/ci/deploy_dev_steps.py", line 649, in served
+    answer = self.http.request("GET", host, ASSOCIATION, {"user-agent": USER_AGENT})
+  File "/tmp/tmpvrtu60dh/tools/ci/deploy_dev_steps_test.py", line 54, in request
+    result = self.respond(method, host, path, body)
+  File "/tmp/tmpvrtu60dh/tools/ci/deploy_dev_steps_test.py", line 862, in respond
+    given = files[host]
+            ~~~~~^^^^^^
+KeyError: 'tadayo-x1y.pages.dev'
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.508s
+
+FAILED (errors=1)

@@ -1,0 +1,60 @@
+.github/workflows/deploy-dev.yml
+--- old
+      - name: pages-project
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+--- new
+      - name: pages-project
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+--- expected: test_the_cloudflare_secret_is_on_a_runner
+--- exit 1
+..................................................................F..F.F....
+======================================================================
+FAIL: test_every_expression_in_the_file_is_one_this_test_knows (__main__.WorkflowFileTest.test_every_expression_in_the_file_is_one_this_test_knows)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp7muaq757/tools/ci/deploy_dev_steps_test.py", line 1254, in test_every_expression_in_the_file_is_one_this_test_knows
+    self.assertEqual(found, sorted(wanted))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['${{[385 chars]rets.FLY_API_TOKEN }}', '${{ secrets.SUPABASE_[252 chars] }}'] != ['${{[385 chars]rets.SUPABASE_ACCESS_TOKEN }}', '${{ secrets.S[220 chars] }}']
+
+First differing element 13:
+'${{ secrets.FLY_API_TOKEN }}'
+'${{ secrets.SUPABASE_ACCESS_TOKEN }}'
+
+First list contains 1 additional elements.
+First extra element 20:
+'${{ vars.CLOUDFLARE_ACCOUNT_ID }}'
+
+Diff is 756 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_its_jobs_and_steps_are_these_exactly (__main__.WorkflowFileTest.test_its_jobs_and_steps_are_these_exactly) (job='pages')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp7muaq757/tools/ci/deploy_dev_steps_test.py", line 1230, in test_its_jobs_and_steps_are_these_exactly
+    self.assertEqual(self.document["jobs"][name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'nam[914 chars]': {'FLY_API_TOKEN': '${{ secrets.FLY_API_TOKE[640 chars]n'}]} != {'nam[914 chars]': {'CLOUDFLARE_API_TOKEN': '${{ secrets.CLOUD[591 chars]n'}]}
+Diff is 2426 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_the_cloudflare_secret_is_on_a_runner_that_holds_no_other (__main__.WorkflowFileTest.test_the_cloudflare_secret_is_on_a_runner_that_holds_no_other)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp7muaq757/tools/ci/deploy_dev_steps_test.py", line 1274, in test_the_cloudflare_secret_is_on_a_runner_that_holds_no_other
+    self.assertEqual(named("pages"), {"${{ secrets.CLOUDFLARE_API_TOKEN }}", "${{ vars.CLOUDFLARE_ACCOUNT_ID }}",
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                      "${{ github.token }}"})
+                                      ^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Items in the first set but not the second:
+'${{ secrets.FLY_API_TOKEN }}'
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.734s
+
+FAILED (failures=3)

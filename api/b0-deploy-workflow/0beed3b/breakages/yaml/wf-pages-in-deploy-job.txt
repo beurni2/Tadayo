@@ -1,0 +1,43 @@
+.github/workflows/deploy-dev.yml
+--- old
+      - run: python3 tools/ci/deploy_dev_steps.py check-api
+
+
+--- new
+      - run: python3 tools/ci/deploy_dev_steps.py check-api
+      - run: python3 tools/ci/deploy_dev_steps.py setup-wrangler
+
+
+--- expected: test_the_cloudflare_secret_is_on_a_runner
+--- exit 1
+.....................................................................F.F....
+======================================================================
+FAIL: test_its_jobs_and_steps_are_these_exactly (__main__.WorkflowFileTest.test_its_jobs_and_steps_are_these_exactly) (job='deploy')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpyjn31o4k/tools/ci/deploy_dev_steps_test.py", line 1230, in test_its_jobs_and_steps_are_these_exactly
+    self.assertEqual(self.document["jobs"][name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'nam[1719 chars]api'}, {'run': 'python3 tools/ci/deploy_dev_st[20 chars]r'}]} != {'nam[1719 chars]api'}]}
+Diff is 2871 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_the_cloudflare_secret_is_on_a_runner_that_holds_no_other (__main__.WorkflowFileTest.test_the_cloudflare_secret_is_on_a_runner_that_holds_no_other)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpyjn31o4k/tools/ci/deploy_dev_steps_test.py", line 1291, in test_the_cloudflare_secret_is_on_a_runner_that_holds_no_other
+    self.assertEqual([s.get("run") for s in jobs["deploy"]["steps"]][-1],
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     "python3 tools/ci/deploy_dev_steps.py check-api")
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'python3 tools/ci/deploy_dev_steps.py setup-wrangler' != 'python3 tools/ci/deploy_dev_steps.py check-api'
+- python3 tools/ci/deploy_dev_steps.py setup-wrangler
+?                                      ^ ^^ ^^^^^^^^^
++ python3 tools/ci/deploy_dev_steps.py check-api
+?                                      ^^ ^^^^ ^
+
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.827s
+
+FAILED (failures=2)

@@ -1,0 +1,124 @@
+tools/ci/deploy_dev_steps.py
+--- old
+                if commit == sha and deployment.get("environment") == "production":
+--- new
+                if deployment.get("environment") == "production":
+--- expected: test_another_commit_s_deployment_fails_after_the_last_look
+--- exit 1
+............EEE.EF...................................................s........
+======================================================================
+ERROR: test_a_refusal_while_waiting_fails_at_once (__main__.CheckAssociationTest.test_a_refusal_while_waiting_fails_at_once) (given=403)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpocodcnkf/tools/ci/deploy_dev_steps_test.py", line 943, in test_a_refusal_while_waiting_fails_at_once
+    code, out, http, sleeps = self.check([found(project(deployment=deployment(sha=OTHER_SHA))), given], {})
+                              ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpocodcnkf/tools/ci/deploy_dev_steps_test.py", line 877, in check
+    return call("check_association", {**CLOUDFLARE, "RUNNER_TEMP": self.repo.temp, **(environ or {})},
+                self.respond(projects, files), root=self.repo.root)
+  File "/tmp/tmpocodcnkf/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpocodcnkf/tools/ci/deploy_dev_steps.py", line 598, in check_association
+    self.served(host, built)
+    ~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/tmp/tmpocodcnkf/tools/ci/deploy_dev_steps.py", line 649, in served
+    answer = self.http.request("GET", host, ASSOCIATION, {"user-agent": USER_AGENT})
+  File "/tmp/tmpocodcnkf/tools/ci/deploy_dev_steps_test.py", line 54, in request
+    result = self.respond(method, host, path, body)
+  File "/tmp/tmpocodcnkf/tools/ci/deploy_dev_steps_test.py", line 862, in respond
+    given = files[host]
+            ~~~~~^^^^^^
+KeyError: 'tadayo-x1y.pages.dev'
+
+======================================================================
+ERROR: test_a_refusal_while_waiting_fails_at_once (__main__.CheckAssociationTest.test_a_refusal_while_waiting_fails_at_once) (given=429)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpocodcnkf/tools/ci/deploy_dev_steps_test.py", line 943, in test_a_refusal_while_waiting_fails_at_once
+    code, out, http, sleeps = self.check([found(project(deployment=deployment(sha=OTHER_SHA))), given], {})
+                              ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpocodcnkf/tools/ci/deploy_dev_steps_test.py", line 877, in check
+    return call("check_association", {**CLOUDFLARE, "RUNNER_TEMP": self.repo.temp, **(environ or {})},
+                self.respond(projects, files), root=self.repo.root)
+  File "/tmp/tmpocodcnkf/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpocodcnkf/tools/ci/deploy_dev_steps.py", line 598, in check_association
+    self.served(host, built)
+    ~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/tmp/tmpocodcnkf/tools/ci/deploy_dev_steps.py", line 649, in served
+    answer = self.http.request("GET", host, ASSOCIATION, {"user-agent": USER_AGENT})
+  File "/tmp/tmpocodcnkf/tools/ci/deploy_dev_steps_test.py", line 54, in request
+    result = self.respond(method, host, path, body)
+  File "/tmp/tmpocodcnkf/tools/ci/deploy_dev_steps_test.py", line 862, in respond
+    given = files[host]
+            ~~~~~^^^^^^
+KeyError: 'tadayo-x1y.pages.dev'
+
+======================================================================
+ERROR: test_a_refusal_while_waiting_fails_at_once (__main__.CheckAssociationTest.test_a_refusal_while_waiting_fails_at_once) (given=404)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpocodcnkf/tools/ci/deploy_dev_steps_test.py", line 943, in test_a_refusal_while_waiting_fails_at_once
+    code, out, http, sleeps = self.check([found(project(deployment=deployment(sha=OTHER_SHA))), given], {})
+                              ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpocodcnkf/tools/ci/deploy_dev_steps_test.py", line 877, in check
+    return call("check_association", {**CLOUDFLARE, "RUNNER_TEMP": self.repo.temp, **(environ or {})},
+                self.respond(projects, files), root=self.repo.root)
+  File "/tmp/tmpocodcnkf/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpocodcnkf/tools/ci/deploy_dev_steps.py", line 598, in check_association
+    self.served(host, built)
+    ~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/tmp/tmpocodcnkf/tools/ci/deploy_dev_steps.py", line 649, in served
+    answer = self.http.request("GET", host, ASSOCIATION, {"user-agent": USER_AGENT})
+  File "/tmp/tmpocodcnkf/tools/ci/deploy_dev_steps_test.py", line 54, in request
+    result = self.respond(method, host, path, body)
+  File "/tmp/tmpocodcnkf/tools/ci/deploy_dev_steps_test.py", line 862, in respond
+    given = files[host]
+            ~~~~~^^^^^^
+KeyError: 'tadayo-x1y.pages.dev'
+
+======================================================================
+ERROR: test_another_commit_s_deployment_fails_after_the_last_look (__main__.CheckAssociationTest.test_another_commit_s_deployment_fails_after_the_last_look)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpocodcnkf/tools/ci/deploy_dev_steps_test.py", line 956, in test_another_commit_s_deployment_fails_after_the_last_look
+    code, out, http, sleeps = self.check([found(project(deployment=deployment(sha=OTHER_SHA)))], {})
+                              ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpocodcnkf/tools/ci/deploy_dev_steps_test.py", line 877, in check
+    return call("check_association", {**CLOUDFLARE, "RUNNER_TEMP": self.repo.temp, **(environ or {})},
+                self.respond(projects, files), root=self.repo.root)
+  File "/tmp/tmpocodcnkf/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpocodcnkf/tools/ci/deploy_dev_steps.py", line 598, in check_association
+    self.served(host, built)
+    ~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/tmp/tmpocodcnkf/tools/ci/deploy_dev_steps.py", line 649, in served
+    answer = self.http.request("GET", host, ASSOCIATION, {"user-agent": USER_AGENT})
+  File "/tmp/tmpocodcnkf/tools/ci/deploy_dev_steps_test.py", line 54, in request
+    result = self.respond(method, host, path, body)
+  File "/tmp/tmpocodcnkf/tools/ci/deploy_dev_steps_test.py", line 862, in respond
+    given = files[host]
+            ~~~~~^^^^^^
+KeyError: 'tadayo-x1y.pages.dev'
+
+======================================================================
+FAIL: test_it_waits_for_this_commit_s_deployment_and_its_success (__main__.CheckAssociationTest.test_it_waits_for_this_commit_s_deployment_and_its_success)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpocodcnkf/tools/ci/deploy_dev_steps_test.py", line 896, in test_it_waits_for_this_commit_s_deployment_and_its_success
+    self.assertEqual(sleeps.calls, [15, 15, 15])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [15] != [15, 15, 15]
+
+Second list contains 2 additional elements.
+First extra element 1:
+15
+
+- [15]
++ [15, 15, 15]
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.762s
+
+FAILED (failures=1, errors=4, skipped=1)

@@ -1,0 +1,62 @@
+.github/workflows/deploy-dev.yml
+--- old
+      - name: supabase-probe
+        env:
+          OPS_SCRIPT: supabase-probe
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          SUPABASE_DEV_PROJECT_REF: ${{ secrets.SUPABASE_DEV_PROJECT_REF }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: python3 tools/ci/ops_steps.py run
+
+--- new
+
+--- expected: test_its_jobs_and_steps_are_these_exactly
+--- exit 1
+..................................................................Fs.F.....F
+======================================================================
+FAIL: test_every_expression_in_the_file_is_one_this_test_knows (__main__.WorkflowFileTest.test_every_expression_in_the_file_is_one_this_test_knows)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp141hh0g0/tools/ci/deploy_dev_steps_test.py", line 1254, in test_every_expression_in_the_file_is_one_this_test_knows
+    self.assertEqual(found, sorted(wanted))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['${{[353 chars]rets.SUPABASE_DEV_PROJECT_REF }}', '${{ secret[137 chars] }}'] != ['${{[353 chars]rets.FLY_API_TOKEN }}', '${{ secrets.SUPABASE_[252 chars] }}']
+
+First differing element 12:
+'${{ secrets.SUPABASE_DEV_PROJECT_REF }}'
+'${{ secrets.FLY_API_TOKEN }}'
+
+Second list contains 3 additional elements.
+First extra element 17:
+'${{ vars.CLOUDFLARE_ACCOUNT_ID }}'
+
+Diff is 721 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_its_jobs_and_steps_are_these_exactly (__main__.WorkflowFileTest.test_its_jobs_and_steps_are_these_exactly) (job='deploy')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp141hh0g0/tools/ci/deploy_dev_steps_test.py", line 1230, in test_its_jobs_and_steps_are_these_exactly
+    self.assertEqual(self.document["jobs"][name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'nam[1366 chars]}, {'run': 'python3 tools/ci/deploy_dev_steps.py check-api'}]} != {'nam[1366 chars]}, {'name': 'supabase-probe', 'env': {'OPS_SCR[309 chars]i'}]}
+Diff is 2648 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_the_secrets_are_the_b0_plan_s (__main__.WorkflowFileTest.test_the_secrets_are_the_b0_plan_s)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp141hh0g0/tools/ci/deploy_dev_steps_test.py", line 1260, in test_the_secrets_are_the_b0_plan_s
+    self.assertEqual(set(re.findall(r"secrets\.([A-Z_]+)", self.text)),
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     {"FLY_API_TOKEN", "DEV_DATABASE_URL", "SUPABASE_DEV_PROJECT_REF", "SUPABASE_ACCESS_TOKEN",
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                      "CLOUDFLARE_API_TOKEN"})
+                      ^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Items in the second set but not the first:
+'SUPABASE_ACCESS_TOKEN'
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.595s
+
+FAILED (failures=3, skipped=1)

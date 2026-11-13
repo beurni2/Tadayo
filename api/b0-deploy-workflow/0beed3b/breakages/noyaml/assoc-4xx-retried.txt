@@ -1,0 +1,46 @@
+tools/ci/deploy_dev_steps.py
+--- old
+        failed = Transient if answer.status >= 500 else StepFailed
+
+--- new
+        failed = Transient
+
+--- expected: test_a_refusal_while_waiting_fails_at_once
+--- exit 1
+............FF......................................................s........
+======================================================================
+FAIL: test_a_refusal_while_waiting_fails_at_once (__main__.CheckAssociationTest.test_a_refusal_while_waiting_fails_at_once) (given=403)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpbh12ddkp/tools/ci/deploy_dev_steps_test.py", line 945, in test_a_refusal_while_waiting_fails_at_once
+    self.assertEqual(sleeps.calls, [15])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15] != [15]
+
+First list contains 18 additional elements.
+First extra element 1:
+15
+
+- [15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]
++ [15]
+
+======================================================================
+FAIL: test_a_refusal_while_waiting_fails_at_once (__main__.CheckAssociationTest.test_a_refusal_while_waiting_fails_at_once) (given=429)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpbh12ddkp/tools/ci/deploy_dev_steps_test.py", line 945, in test_a_refusal_while_waiting_fails_at_once
+    self.assertEqual(sleeps.calls, [15])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15] != [15]
+
+First list contains 18 additional elements.
+First extra element 1:
+15
+
+- [15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]
++ [15]
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.994s
+
+FAILED (failures=2, skipped=1)

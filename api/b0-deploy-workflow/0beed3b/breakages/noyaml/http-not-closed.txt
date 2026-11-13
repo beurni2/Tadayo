@@ -1,0 +1,32 @@
+tools/ci/deploy_dev_steps.py
+--- old
+        finally:
+            connection.close()
+--- new
+        finally:
+            pass
+--- expected: test_a_lost_connection_still_closes_it
+--- exit 1
+.................................FF................................s........
+======================================================================
+FAIL: test_a_lost_connection_still_closes_it (__main__.HttpTest.test_a_lost_connection_still_closes_it)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpnoee_u6u/tools/ci/deploy_dev_steps_test.py", line 1083, in test_a_lost_connection_still_closes_it
+    self.assertTrue(made.closed)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_it_asks_once_over_https_with_a_timeout_and_closes (__main__.HttpTest.test_it_asks_once_over_https_with_a_timeout_and_closes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpnoee_u6u/tools/ci/deploy_dev_steps_test.py", line 1070, in test_it_asks_once_over_https_with_a_timeout_and_closes
+    self.assertTrue(made.closed)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.905s
+
+FAILED (failures=2, skipped=1)

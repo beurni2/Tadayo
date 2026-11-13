@@ -1,0 +1,22 @@
+.github/workflows/deploy-dev.yml
+--- old
+retention-days: 1
+--- new
+retention-days: 90
+--- expected: test_its_jobs_and_steps_are_these_exactly
+--- exit 1
+.....................................................................F......
+======================================================================
+FAIL: test_its_jobs_and_steps_are_these_exactly (__main__.WorkflowFileTest.test_its_jobs_and_steps_are_these_exactly) (job='web')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpp9sxz80e/tools/ci/deploy_dev_steps_test.py", line 1230, in test_its_jobs_and_steps_are_these_exactly
+    self.assertEqual(self.document["jobs"][name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'nam[839 chars]or', 'include-hidden-files': 'true', 'retention-days': '90'}}]} != {'nam[839 chars]or', 'include-hidden-files': 'true', 'retention-days': '1'}}]}
+Diff is 1322 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.823s
+
+FAILED (failures=1)

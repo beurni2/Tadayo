@@ -1,0 +1,32 @@
+tools/ci/deploy_dev_steps.py
+--- old
+answer = self.http.request("GET", GITHUB_API, f"/repos/{REPOSITORY}/branches/{BRANCH}", headers)
+--- new
+answer = self.http.request("GET", DEV_HOST, f"/repos/{REPOSITORY}/branches/{BRANCH}", headers)
+--- expected: test_it_passes_while_this_commit_is_main_s_head
+--- exit 1
+.........................F..................................................
+======================================================================
+FAIL: test_it_passes_while_this_commit_is_main_s_head (__main__.CheckHeadTest.test_it_passes_while_this_commit_is_main_s_head)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp07zn_4uy/tools/ci/deploy_dev_steps_test.py", line 807, in test_it_passes_while_this_commit_is_main_s_head
+    self.assertEqual((request["method"], request["host"], request["path"]), ("GET", "api.github.com", BRANCH_PATH))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: ('GET', 'api-dev.tadayo.app', '/repos/beurni2/tadayo/branches/main') != ('GET', 'api.github.com', '/repos/beurni2/tadayo/branches/main')
+
+First differing element 1:
+'api-dev.tadayo.app'
+'api.github.com'
+
+- ('GET', 'api-dev.tadayo.app', '/repos/beurni2/tadayo/branches/main')
+?             ----  ^^^^ ^^^^
+
++ ('GET', 'api.github.com', '/repos/beurni2/tadayo/branches/main')
+?              ++ ^^^^^ ^
+
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.781s
+
+FAILED (failures=1)

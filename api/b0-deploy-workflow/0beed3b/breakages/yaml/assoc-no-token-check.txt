@@ -1,0 +1,125 @@
+tools/ci/deploy_dev_steps.py
+--- old
+        given = self.cloudflare("check-association")
+
+--- new
+        given = self.cloudflare("check-association") or ("", "")
+
+--- expected: test_nothing_is_asked_without_the_token
+--- exit 1
+.................FFF..........................................................
+======================================================================
+FAIL: test_nothing_is_asked_without_the_token_the_account_the_commit_or_runner_temp (__main__.CheckAssociationTest.test_nothing_is_asked_without_the_token_the_account_the_commit_or_runner_temp) (said='has no CLOUDFLARE_API_TOKEN')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp25adlkqb/tools/ci/deploy_dev_steps_test.py", line 1019, in test_nothing_is_asked_without_the_token_the_account_the_commit_or_runner_temp
+    code, out, http, _ = self.check([found(project(deployment=deployment()))], {}, environ)
+                         ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp25adlkqb/tools/ci/deploy_dev_steps_test.py", line 877, in check
+    return call("check_association", {**CLOUDFLARE, "RUNNER_TEMP": self.repo.temp, **(environ or {})},
+                self.respond(projects, files), root=self.repo.root)
+  File "/tmp/tmp25adlkqb/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmp25adlkqb/tools/ci/deploy_dev_steps.py", line 595, in check_association
+    project, deployment = self.this_deployment(token, account, sha)
+                          ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp25adlkqb/tools/ci/deploy_dev_steps.py", line 612, in this_deployment
+    project = self.project(token, account)
+  File "/tmp/tmp25adlkqb/tools/ci/deploy_dev_steps.py", line 491, in project
+    answer = self.cloudflare_request(token, "GET", f"/accounts/{account}/pages/projects/{PAGES_PROJECT}")
+  File "/tmp/tmp25adlkqb/tools/ci/deploy_dev_steps.py", line 486, in cloudflare_request
+    return self.http.request(method, CLOUDFLARE_API, f"/client/v4{path}", headers, body)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp25adlkqb/tools/ci/deploy_dev_steps_test.py", line 54, in request
+    result = self.respond(method, host, path, body)
+  File "/tmp/tmp25adlkqb/tools/ci/deploy_dev_steps_test.py", line 859, in respond
+    self.assertEqual((method, path), ("GET", PROJECT_PATH))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: ('GET[17 chars]counts//pages/projects/tadayo') != ('GET[17 chars]counts/0123456789abcdef0123456789abcdef/pages/projects/tadayo')
+
+First differing element 1:
+'/client/v4/accounts//pages/projects/tadayo'
+'/client/v4/accounts/0123456789abcdef0123456789abcdef/pages/projects/tadayo'
+
+- ('GET', '/client/v4/accounts//pages/projects/tadayo')
++ ('GET',
++  '/client/v4/accounts/0123456789abcdef0123456789abcdef/pages/projects/tadayo')
+
+======================================================================
+FAIL: test_nothing_is_asked_without_the_token_the_account_the_commit_or_runner_temp (__main__.CheckAssociationTest.test_nothing_is_asked_without_the_token_the_account_the_commit_or_runner_temp) (said="holds a character a bearer token can't")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp25adlkqb/tools/ci/deploy_dev_steps_test.py", line 1019, in test_nothing_is_asked_without_the_token_the_account_the_commit_or_runner_temp
+    code, out, http, _ = self.check([found(project(deployment=deployment()))], {}, environ)
+                         ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp25adlkqb/tools/ci/deploy_dev_steps_test.py", line 877, in check
+    return call("check_association", {**CLOUDFLARE, "RUNNER_TEMP": self.repo.temp, **(environ or {})},
+                self.respond(projects, files), root=self.repo.root)
+  File "/tmp/tmp25adlkqb/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmp25adlkqb/tools/ci/deploy_dev_steps.py", line 595, in check_association
+    project, deployment = self.this_deployment(token, account, sha)
+                          ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp25adlkqb/tools/ci/deploy_dev_steps.py", line 612, in this_deployment
+    project = self.project(token, account)
+  File "/tmp/tmp25adlkqb/tools/ci/deploy_dev_steps.py", line 491, in project
+    answer = self.cloudflare_request(token, "GET", f"/accounts/{account}/pages/projects/{PAGES_PROJECT}")
+  File "/tmp/tmp25adlkqb/tools/ci/deploy_dev_steps.py", line 486, in cloudflare_request
+    return self.http.request(method, CLOUDFLARE_API, f"/client/v4{path}", headers, body)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp25adlkqb/tools/ci/deploy_dev_steps_test.py", line 54, in request
+    result = self.respond(method, host, path, body)
+  File "/tmp/tmp25adlkqb/tools/ci/deploy_dev_steps_test.py", line 859, in respond
+    self.assertEqual((method, path), ("GET", PROJECT_PATH))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: ('GET[17 chars]counts//pages/projects/tadayo') != ('GET[17 chars]counts/0123456789abcdef0123456789abcdef/pages/projects/tadayo')
+
+First differing element 1:
+'/client/v4/accounts//pages/projects/tadayo'
+'/client/v4/accounts/0123456789abcdef0123456789abcdef/pages/projects/tadayo'
+
+- ('GET', '/client/v4/accounts//pages/projects/tadayo')
++ ('GET',
++  '/client/v4/accounts/0123456789abcdef0123456789abcdef/pages/projects/tadayo')
+
+======================================================================
+FAIL: test_nothing_is_asked_without_the_token_the_account_the_commit_or_runner_temp (__main__.CheckAssociationTest.test_nothing_is_asked_without_the_token_the_account_the_commit_or_runner_temp) (said="isn't an account id")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp25adlkqb/tools/ci/deploy_dev_steps_test.py", line 1019, in test_nothing_is_asked_without_the_token_the_account_the_commit_or_runner_temp
+    code, out, http, _ = self.check([found(project(deployment=deployment()))], {}, environ)
+                         ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp25adlkqb/tools/ci/deploy_dev_steps_test.py", line 877, in check
+    return call("check_association", {**CLOUDFLARE, "RUNNER_TEMP": self.repo.temp, **(environ or {})},
+                self.respond(projects, files), root=self.repo.root)
+  File "/tmp/tmp25adlkqb/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmp25adlkqb/tools/ci/deploy_dev_steps.py", line 595, in check_association
+    project, deployment = self.this_deployment(token, account, sha)
+                          ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp25adlkqb/tools/ci/deploy_dev_steps.py", line 612, in this_deployment
+    project = self.project(token, account)
+  File "/tmp/tmp25adlkqb/tools/ci/deploy_dev_steps.py", line 491, in project
+    answer = self.cloudflare_request(token, "GET", f"/accounts/{account}/pages/projects/{PAGES_PROJECT}")
+  File "/tmp/tmp25adlkqb/tools/ci/deploy_dev_steps.py", line 486, in cloudflare_request
+    return self.http.request(method, CLOUDFLARE_API, f"/client/v4{path}", headers, body)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp25adlkqb/tools/ci/deploy_dev_steps_test.py", line 54, in request
+    result = self.respond(method, host, path, body)
+  File "/tmp/tmp25adlkqb/tools/ci/deploy_dev_steps_test.py", line 859, in respond
+    self.assertEqual((method, path), ("GET", PROJECT_PATH))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: ('GET[17 chars]counts//pages/projects/tadayo') != ('GET[17 chars]counts/0123456789abcdef0123456789abcdef/pages/projects/tadayo')
+
+First differing element 1:
+'/client/v4/accounts//pages/projects/tadayo'
+'/client/v4/accounts/0123456789abcdef0123456789abcdef/pages/projects/tadayo'
+
+- ('GET', '/client/v4/accounts//pages/projects/tadayo')
++ ('GET',
++  '/client/v4/accounts/0123456789abcdef0123456789abcdef/pages/projects/tadayo')
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.889s
+
+FAILED (failures=3)

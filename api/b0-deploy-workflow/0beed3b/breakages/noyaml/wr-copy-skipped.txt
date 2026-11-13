@@ -1,0 +1,23 @@
+tools/ci/deploy_dev_steps.py
+--- old
+            for name in ("package.json", "package-lock.json"):
+                shutil.copyfile(self.path(PAGES_DIR, name), os.path.join(home, name))
+
+--- new
+
+--- expected: test_it_runs_npm_ci_without_install_scripts_outside_the_checkout
+--- exit 1
+......................................................E............s........
+======================================================================
+ERROR: test_it_runs_npm_ci_without_install_scripts_outside_the_checkout (__main__.SetupWranglerTest.test_it_runs_npm_ci_without_install_scripts_outside_the_checkout)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpfo77xfqz/tools/ci/deploy_dev_steps_test.py", line 333, in test_it_runs_npm_ci_without_install_scripts_outside_the_checkout
+    open(os.path.join(repo.wrangler_home(), name), "rb") as copied:
+    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/tmpehazbngm/deploy-dev-wrangler/package.json'
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.734s
+
+FAILED (errors=1, skipped=1)

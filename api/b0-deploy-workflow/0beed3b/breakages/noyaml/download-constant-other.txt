@@ -1,0 +1,456 @@
+tools/ci/deploy_dev_steps.py
+--- old
+DOWNLOAD = "deploy-dev-site"
+--- new
+DOWNLOAD = "site"
+--- expected: test_the_pages_job_downloads_the_site_under_runner_temp
+--- exit 1
+.......FFFFFFFFFFFFFFFF.FFF.....FFFFFFFFFFF.....FFFFFFFFFF........................s.....F..
+======================================================================
+FAIL: test_a_failed_deployment_fails_at_once (__main__.CheckAssociationTest.test_a_failed_deployment_fails_at_once) (stage='deploy', status='failure')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 917, in test_a_failed_deployment_fails_at_once
+    self.assertIn(f"ended {status} at its {stage} stage", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'ended failure at its deploy stage' not found in "deploy-dev: check-association: RUNNER_TEMP/site/.well-known/apple-app-site-association can't be read ([Errno 2] No such file or directory: '/tmp/tmpzl61t4e6/site/.well-known/apple-app-site-association')\n"
+
+======================================================================
+FAIL: test_a_failed_deployment_fails_at_once (__main__.CheckAssociationTest.test_a_failed_deployment_fails_at_once) (stage='deploy', status='canceled')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 917, in test_a_failed_deployment_fails_at_once
+    self.assertIn(f"ended {status} at its {stage} stage", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'ended canceled at its deploy stage' not found in "deploy-dev: check-association: RUNNER_TEMP/site/.well-known/apple-app-site-association can't be read ([Errno 2] No such file or directory: '/tmp/tmpzl61t4e6/site/.well-known/apple-app-site-association')\n"
+
+======================================================================
+FAIL: test_a_failed_deployment_fails_at_once (__main__.CheckAssociationTest.test_a_failed_deployment_fails_at_once) (stage='build', status='failure')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 917, in test_a_failed_deployment_fails_at_once
+    self.assertIn(f"ended {status} at its {stage} stage", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'ended failure at its build stage' not found in "deploy-dev: check-association: RUNNER_TEMP/site/.well-known/apple-app-site-association can't be read ([Errno 2] No such file or directory: '/tmp/tmpzl61t4e6/site/.well-known/apple-app-site-association')\n"
+
+======================================================================
+FAIL: test_a_failed_deployment_fails_at_once (__main__.CheckAssociationTest.test_a_failed_deployment_fails_at_once) (stage='initialize', status='canceled')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 917, in test_a_failed_deployment_fails_at_once
+    self.assertIn(f"ended {status} at its {stage} stage", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'ended canceled at its initialize stage' not found in "deploy-dev: check-association: RUNNER_TEMP/site/.well-known/apple-app-site-association can't be read ([Errno 2] No such file or directory: '/tmp/tmpzl61t4e6/site/.well-known/apple-app-site-association')\n"
+
+======================================================================
+FAIL: test_a_failed_deployment_fails_at_once (__main__.CheckAssociationTest.test_a_failed_deployment_fails_at_once) (stage='deploy', status='skipped')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 917, in test_a_failed_deployment_fails_at_once
+    self.assertIn(f"ended {status} at its {stage} stage", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'ended skipped at its deploy stage' not found in "deploy-dev: check-association: RUNNER_TEMP/site/.well-known/apple-app-site-association can't be read ([Errno 2] No such file or directory: '/tmp/tmpzl61t4e6/site/.well-known/apple-app-site-association')\n"
+
+======================================================================
+FAIL: test_a_lost_connection_or_a_server_error_while_waiting_is_asked_again (__main__.CheckAssociationTest.test_a_lost_connection_or_a_server_error_while_waiting_is_asked_again)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 925, in test_a_lost_connection_or_a_server_error_while_waiting_is_asked_again
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: check-association: RUNNER_TEMP/site/.well-known/apple-app-site-association can't be read ([Errno 2] No such file or directory: '/tmp/tmpl3m1omxh/site/.well-known/apple-app-site-association')
+
+
+======================================================================
+FAIL: test_a_missing_project_or_site_fails (__main__.CheckAssociationTest.test_a_missing_project_or_site_fails)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 1007, in test_a_missing_project_or_site_fails
+    self.assertIn("RUNNER_TEMP/deploy-dev-site/.well-known/apple-app-site-association can't be read", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: "RUNNER_TEMP/deploy-dev-site/.well-known/apple-app-site-association can't be read" not found in "deploy-dev: check-association: RUNNER_TEMP/site/.well-known/apple-app-site-association can't be read ([Errno 2] No such file or directory: '/tmp/tmpkzb22h98/site/.well-known/apple-app-site-association')\n"
+
+======================================================================
+FAIL: test_a_new_name_is_given_time_to_answer (__main__.CheckAssociationTest.test_a_new_name_is_given_time_to_answer)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 966, in test_a_new_name_is_given_time_to_answer
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: check-association: RUNNER_TEMP/site/.well-known/apple-app-site-association can't be read ([Errno 2] No such file or directory: '/tmp/tmp8_9xzeu5/site/.well-known/apple-app-site-association')
+
+
+======================================================================
+FAIL: test_a_preview_deployment_of_this_commit_is_not_the_production_one (__main__.CheckAssociationTest.test_a_preview_deployment_of_this_commit_is_not_the_production_one)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 952, in test_a_preview_deployment_of_this_commit_is_not_the_production_one
+    self.assertEqual(len(sleeps.calls), 19)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 19
+
+======================================================================
+FAIL: test_a_refusal_while_waiting_fails_at_once (__main__.CheckAssociationTest.test_a_refusal_while_waiting_fails_at_once) (given=403)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 945, in test_a_refusal_while_waiting_fails_at_once
+    self.assertEqual(sleeps.calls, [15])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [] != [15]
+
+Second list contains 1 additional elements.
+First extra element 0:
+15
+
+- []
++ [15]
+
+======================================================================
+FAIL: test_a_refusal_while_waiting_fails_at_once (__main__.CheckAssociationTest.test_a_refusal_while_waiting_fails_at_once) (given=429)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 945, in test_a_refusal_while_waiting_fails_at_once
+    self.assertEqual(sleeps.calls, [15])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [] != [15]
+
+Second list contains 1 additional elements.
+First extra element 0:
+15
+
+- []
++ [15]
+
+======================================================================
+FAIL: test_a_refusal_while_waiting_fails_at_once (__main__.CheckAssociationTest.test_a_refusal_while_waiting_fails_at_once) (given=404)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 945, in test_a_refusal_while_waiting_fails_at_once
+    self.assertEqual(sleeps.calls, [15])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [] != [15]
+
+Second list contains 1 additional elements.
+First extra element 0:
+15
+
+- []
++ [15]
+
+======================================================================
+FAIL: test_after_a_lost_connection_it_reports_what_cloudflare_answered_last (__main__.CheckAssociationTest.test_after_a_lost_connection_it_reports_what_cloudflare_answered_last)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 935, in test_after_a_lost_connection_it_reports_what_cloudflare_answered_last
+    self.assertEqual(sleeps.calls, [15] * 19)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [] != [15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]
+
+Second list contains 19 additional elements.
+First extra element 0:
+15
+
+- []
++ [15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]
+
+======================================================================
+FAIL: test_another_commit_s_deployment_fails_after_the_last_look (__main__.CheckAssociationTest.test_another_commit_s_deployment_fails_after_the_last_look)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 958, in test_another_commit_s_deployment_fails_after_the_last_look
+    self.assertEqual(len(http.requests), 20)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 20
+
+======================================================================
+FAIL: test_it_waits_for_this_commit_s_deployment_and_its_success (__main__.CheckAssociationTest.test_it_waits_for_this_commit_s_deployment_and_its_success)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 895, in test_it_waits_for_this_commit_s_deployment_and_its_success
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: check-association: RUNNER_TEMP/site/.well-known/apple-app-site-association can't be read ([Errno 2] No such file or directory: '/tmp/tmp_q50b0oo/site/.well-known/apple-app-site-association')
+
+
+======================================================================
+FAIL: test_it_waits_through_the_stages_before_deploy_even_skipped_ones (__main__.CheckAssociationTest.test_it_waits_through_the_stages_before_deploy_even_skipped_ones)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 906, in test_it_waits_through_the_stages_before_deploy_even_skipped_ones
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: check-association: RUNNER_TEMP/site/.well-known/apple-app-site-association can't be read ([Errno 2] No such file or directory: '/tmp/tmpxpwt_ugj/site/.well-known/apple-app-site-association')
+
+
+======================================================================
+FAIL: test_the_deployment_s_own_address_is_checked_too (__main__.CheckAssociationTest.test_the_deployment_s_own_address_is_checked_too)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 992, in test_the_deployment_s_own_address_is_checked_too
+    self.assertIn("abc123.tadayo-x1y.pages.dev", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'abc123.tadayo-x1y.pages.dev' not found in "deploy-dev: check-association: RUNNER_TEMP/site/.well-known/apple-app-site-association can't be read ([Errno 2] No such file or directory: '/tmp/tmpep0hm_3l/site/.well-known/apple-app-site-association')\n"
+
+======================================================================
+FAIL: test_the_file_served_otherwise_fails (__main__.CheckAssociationTest.test_the_file_served_otherwise_fails)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 986, in test_the_file_served_otherwise_fails
+    self.assertEqual(len(sleeps.calls), 19)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 19
+
+======================================================================
+FAIL: test_this_commit_s_deployment_served_as_built_on_both_addresses_passes (__main__.CheckAssociationTest.test_this_commit_s_deployment_served_as_built_on_both_addresses_passes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 883, in test_this_commit_s_deployment_served_as_built_on_both_addresses_passes
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: check-association: RUNNER_TEMP/site/.well-known/apple-app-site-association can't be read ([Errno 2] No such file or directory: '/tmp/tmp442yazne/site/.well-known/apple-app-site-association')
+
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_site', where='leak.txt')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 744, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertIn(f"{where} is a link", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'leak.txt is a link' not found in "deploy-dev: check-site: RUNNER_TEMP/site isn't a folder (download-artifact puts the artifact site there)\n"
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_site', where='.well-known/x.json')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 744, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertIn(f"{where} is a link", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '.well-known/x.json is a link' not found in "deploy-dev: check-site: RUNNER_TEMP/site isn't a folder (download-artifact puts the artifact site there)\n"
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_site', where='docs')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 744, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertIn(f"{where} is a link", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'docs is a link' not found in "deploy-dev: check-site: RUNNER_TEMP/site isn't a folder (download-artifact puts the artifact site there)\n"
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_site', where='privacy/dangling')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 744, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertIn(f"{where} is a link", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'privacy/dangling is a link' not found in "deploy-dev: check-site: RUNNER_TEMP/site isn't a folder (download-artifact puts the artifact site there)\n"
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_site', where='the association file')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 752, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertIn("apple-app-site-association is a link", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'apple-app-site-association is a link' not found in "deploy-dev: check-site: RUNNER_TEMP/site isn't a folder (download-artifact puts the artifact site there)\n"
+
+======================================================================
+FAIL: test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused (__main__.CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused) (step='check_site', case='no association file')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 780, in test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused
+    self.assertEqual((code, "has no /.well-known/apple-app-site-association" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (1, False) != (1, True)
+
+First differing element 1:
+False
+True
+
+- (1, False)
++ (1, True) : deploy-dev: check-site: RUNNER_TEMP/site isn't a folder (download-artifact puts the artifact site there)
+
+
+======================================================================
+FAIL: test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused (__main__.CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused) (step='check_site', make=<function CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused.<locals>.<lambda> at 0x7f282da356c0>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 786, in test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused
+    self.assertEqual((code, "_worker.js" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (1, False) != (1, True)
+
+First differing element 1:
+False
+True
+
+- (1, False)
++ (1, True) : deploy-dev: check-site: RUNNER_TEMP/site isn't a folder (download-artifact puts the artifact site there)
+
+
+======================================================================
+FAIL: test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused (__main__.CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused) (step='check_site', make=<function makedirs at 0x7f282e2b6d40>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 786, in test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused
+    self.assertEqual((code, "_worker.js" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (1, False) != (1, True)
+
+First differing element 1:
+False
+True
+
+- (1, False)
++ (1, True) : deploy-dev: check-site: RUNNER_TEMP/site isn't a folder (download-artifact puts the artifact site there)
+
+
+======================================================================
+FAIL: test_a_site_of_plain_files_and_folders_passes (__main__.CheckSiteTest.test_a_site_of_plain_files_and_folders_passes) (step='check_site')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 699, in test_a_site_of_plain_files_and_folders_passes
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: check-site: RUNNER_TEMP/site isn't a folder (download-artifact puts the artifact site there)
+
+
+======================================================================
+FAIL: test_a_special_file_is_refused (__main__.CheckSiteTest.test_a_special_file_is_refused) (step='check_site')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 761, in test_a_special_file_is_refused
+    self.assertIn("pipe is neither a file nor a folder", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'pipe is neither a file nor a folder' not found in "deploy-dev: check-site: RUNNER_TEMP/site isn't a folder (download-artifact puts the artifact site there)\n"
+
+======================================================================
+FAIL: test_each_step_checks_its_own_folder (__main__.CheckSiteTest.test_each_step_checks_its_own_folder)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 709, in test_each_step_checks_its_own_folder
+    self.assertEqual((code, "RUNNER_TEMP/deploy-dev-site isn't a folder" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (1, False) != (1, True)
+
+First differing element 1:
+False
+True
+
+- (1, False)
++ (1, True) : deploy-dev: check-site: RUNNER_TEMP/site isn't a folder (download-artifact puts the artifact site there)
+
+
+======================================================================
+FAIL: test_a_link_in_the_site_is_refused (__main__.PagesDeployTest.test_a_link_in_the_site_is_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 617, in test_a_link_in_the_site_is_refused
+    self.assertIn("leak.txt is a link", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'leak.txt is a link' not found in "deploy-dev: pages-deploy: RUNNER_TEMP/site isn't a folder (download-artifact puts the artifact site there), so nothing is deployed\n"
+
+======================================================================
+FAIL: test_a_worker_in_the_site_is_refused (__main__.PagesDeployTest.test_a_worker_in_the_site_is_refused) (make=<function PagesDeployTest.test_a_worker_in_the_site_is_refused.<locals>.<lambda> at 0x7f282da36340>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 607, in test_a_worker_in_the_site_is_refused
+    self.assertIn("_worker.js", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+AssertionError: '_worker.js' not found in "deploy-dev: pages-deploy: RUNNER_TEMP/site isn't a folder (download-artifact puts the artifact site there), so nothing is deployed\n"
+
+======================================================================
+FAIL: test_a_worker_in_the_site_is_refused (__main__.PagesDeployTest.test_a_worker_in_the_site_is_refused) (make=<function makedirs at 0x7f282e2b6d40>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 607, in test_a_worker_in_the_site_is_refused
+    self.assertIn("_worker.js", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+AssertionError: '_worker.js' not found in "deploy-dev: pages-deploy: RUNNER_TEMP/site isn't a folder (download-artifact puts the artifact site there), so nothing is deployed\n"
+
+======================================================================
+FAIL: test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist (__main__.PagesDeployTest.test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist) (make=<function PagesDeployTest.test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist.<locals>.<lambda> at 0x7f282da36b60>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 664, in test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: check-site: RUNNER_TEMP/site isn't a folder (download-artifact puts the artifact site there)
+
+
+======================================================================
+FAIL: test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist (__main__.PagesDeployTest.test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist) (make=<function PagesDeployTest.test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist.<locals>.<lambda> at 0x7f282da36200>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 664, in test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: check-site: RUNNER_TEMP/site isn't a folder (download-artifact puts the artifact site there)
+
+
+======================================================================
+FAIL: test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist (__main__.PagesDeployTest.test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist) (make=<function PagesDeployTest.test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist.<locals>.<lambda> at 0x7f282da36a20>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 664, in test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: check-site: RUNNER_TEMP/site isn't a folder (download-artifact puts the artifact site there)
+
+
+======================================================================
+FAIL: test_it_runs_the_pinned_wrangler_with_only_what_it_needs (__main__.PagesDeployTest.test_it_runs_the_pinned_wrangler_with_only_what_it_needs)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 560, in test_it_runs_the_pinned_wrangler_with_only_what_it_needs
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: pages-deploy: RUNNER_TEMP/site isn't a folder (download-artifact puts the artifact site there), so nothing is deployed
+
+
+======================================================================
+FAIL: test_nothing_in_the_repository_reaches_wrangler_s_working_folder_or_home (__main__.PagesDeployTest.test_nothing_in_the_repository_reaches_wrangler_s_working_folder_or_home)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 585, in test_nothing_in_the_repository_reaches_wrangler_s_working_folder_or_home
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: pages-deploy: RUNNER_TEMP/site isn't a folder (download-artifact puts the artifact site there), so nothing is deployed
+
+
+======================================================================
+FAIL: test_nothing_runs_without_the_site_the_secrets_the_commit_or_the_install (__main__.PagesDeployTest.test_nothing_runs_without_the_site_the_secrets_the_commit_or_the_install)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 633, in test_nothing_runs_without_the_site_the_secrets_the_commit_or_the_install
+    self.assertIn("has no /.well-known/apple-app-site-association", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'has no /.well-known/apple-app-site-association' not found in "deploy-dev: pages-deploy: RUNNER_TEMP/site isn't a folder (download-artifact puts the artifact site there), so nothing is deployed\n"
+
+======================================================================
+FAIL: test_wrangler_s_failure_is_the_step_s (__main__.PagesDeployTest.test_wrangler_s_failure_is_the_step_s)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 625, in test_wrangler_s_failure_is_the_step_s
+    self.assertIn("wrangler failed (exit 1)", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'wrangler failed (exit 1)' not found in "deploy-dev: pages-deploy: RUNNER_TEMP/site isn't a folder (download-artifact puts the artifact site there), so nothing is deployed\n"
+
+======================================================================
+FAIL: test_the_pages_job_downloads_the_site_under_runner_temp_where_its_steps_read_it (__main__.WorkflowFileTest.test_the_pages_job_downloads_the_site_under_runner_temp_where_its_steps_read_it)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptw41ltfg/tools/ci/deploy_dev_steps_test.py", line 1299, in test_the_pages_job_downloads_the_site_under_runner_temp_where_its_steps_read_it
+    self.assertEqual(download["with"]["path"], "${{ runner.temp }}/" + steps_module.DOWNLOAD)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '${{ runner.temp }}/deploy-dev-site' != '${{ runner.temp }}/site'
+- ${{ runner.temp }}/deploy-dev-site
+?                    -----------
++ ${{ runner.temp }}/site
+
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.831s
+
+FAILED (failures=41, skipped=1)

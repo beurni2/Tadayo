@@ -1,0 +1,24 @@
+tools/ci/deploy_dev_steps.py
+--- old
+            print(f"deploy-dev: setup-wrangler: npm ci failed (exit {code})")
+            return 1
+--- new
+            print(f"deploy-dev: setup-wrangler: npm ci failed (exit {code})")
+--- expected: test_a_failed_install_or_another_version_installed_fails
+--- exit 1
+..................................................F.........................
+======================================================================
+FAIL: test_a_failed_install_or_another_version_installed_fails (__main__.SetupWranglerTest.test_a_failed_install_or_another_version_installed_fails)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpinu8dt2q/tools/ci/deploy_dev_steps_test.py", line 420, in test_a_failed_install_or_another_version_installed_fails
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: setup-wrangler: npm ci failed (exit 1)
+deploy-dev: setup-wrangler: wrangler 4.153.0, every package checked against the lockfile's SHA-512, no install script run
+
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.682s
+
+FAILED (failures=1)

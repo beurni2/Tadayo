@@ -1,0 +1,55 @@
+.github/workflows/deploy-dev.yml
+--- old
+          path: ${{ runner.temp }}/deploy-dev-site
+
+--- new
+          path: apps/web/dist
+
+--- expected: test_the_pages_job_downloads_the_site_under_runner_temp
+--- exit 1
+..................................................................F..F...F..
+======================================================================
+FAIL: test_every_expression_in_the_file_is_one_this_test_knows (__main__.WorkflowFileTest.test_every_expression_in_the_file_is_one_this_test_knows)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmplkooekqi/tools/ci/deploy_dev_steps_test.py", line 1254, in test_every_expression_in_the_file_is_one_this_test_knows
+    self.assertEqual(found, sorted(wanted))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['${{[107 chars]'${{ secrets.CLOUDFLARE_API_TOKEN }}', '${{ se[476 chars] }}'] != ['${{[107 chars]'${{ runner.temp }}', '${{ secrets.CLOUDFLARE_[498 chars] }}']
+
+First differing element 5:
+'${{ secrets.CLOUDFLARE_API_TOKEN }}'
+'${{ runner.temp }}'
+
+Second list contains 1 additional elements.
+First extra element 19:
+'${{ vars.CLOUDFLARE_ACCOUNT_ID }}'
+
+Diff is 721 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_its_jobs_and_steps_are_these_exactly (__main__.WorkflowFileTest.test_its_jobs_and_steps_are_these_exactly) (job='pages')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmplkooekqi/tools/ci/deploy_dev_steps_test.py", line 1230, in test_its_jobs_and_steps_are_these_exactly
+    self.assertEqual(self.document["jobs"][name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'nam[716 chars]h': 'apps/web/dist'}}, {'run': 'python3 tools/[768 chars]n'}]} != {'nam[716 chars]h': '${{ runner.temp }}/deploy-dev-site'}}, {'[789 chars]n'}]}
+Diff is 2315 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_the_pages_job_downloads_the_site_under_runner_temp_where_its_steps_read_it (__main__.WorkflowFileTest.test_the_pages_job_downloads_the_site_under_runner_temp_where_its_steps_read_it)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmplkooekqi/tools/ci/deploy_dev_steps_test.py", line 1299, in test_the_pages_job_downloads_the_site_under_runner_temp_where_its_steps_read_it
+    self.assertEqual(download["with"]["path"], "${{ runner.temp }}/" + steps_module.DOWNLOAD)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'apps/web/dist' != '${{ runner.temp }}/deploy-dev-site'
+- apps/web/dist
++ ${{ runner.temp }}/deploy-dev-site
+
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.349s
+
+FAILED (failures=3)

@@ -1,0 +1,118 @@
+tools/ci/deploy_dev_steps.py
+--- old
+        if not BEARER.fullmatch(token):
+
+--- new
+        if not BEARER.match(token):
+
+--- expected: test_a_token_that_isn_t_a_bearer_token
+--- exit 1
+.................E...........................FFFF..............................
+======================================================================
+ERROR: test_nothing_is_asked_without_the_token_the_account_the_commit_or_runner_temp (__main__.CheckAssociationTest.test_nothing_is_asked_without_the_token_the_account_the_commit_or_runner_temp) (said="holds a character a bearer token can't")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps_test.py", line 1019, in test_nothing_is_asked_without_the_token_the_account_the_commit_or_runner_temp
+    code, out, http, _ = self.check([found(project(deployment=deployment()))], {}, environ)
+                         ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps_test.py", line 877, in check
+    return call("check_association", {**CLOUDFLARE, "RUNNER_TEMP": self.repo.temp, **(environ or {})},
+                self.respond(projects, files), root=self.repo.root)
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps.py", line 598, in check_association
+    self.served(host, built)
+    ~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps.py", line 649, in served
+    answer = self.http.request("GET", host, ASSOCIATION, {"user-agent": USER_AGENT})
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps_test.py", line 54, in request
+    result = self.respond(method, host, path, body)
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps_test.py", line 862, in respond
+    given = files[host]
+            ~~~~~^^^^^^
+KeyError: 'tadayo-x1y.pages.dev'
+
+======================================================================
+FAIL: test_a_token_that_isn_t_a_bearer_token_is_refused_and_never_said (__main__.PagesProjectTest.test_a_token_that_isn_t_a_bearer_token_is_refused_and_never_said) (token='pasted-token\n')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps_test.py", line 532, in test_a_token_that_isn_t_a_bearer_token_is_refused_and_never_said
+    code, out, http, _ = call("pages_project", {**CLOUDFLARE, "CLOUDFLARE_API_TOKEN": token})
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps.py", line 514, in pages_project
+    project = self.project(token, account)
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps.py", line 491, in project
+    answer = self.cloudflare_request(token, "GET", f"/accounts/{account}/pages/projects/{PAGES_PROJECT}")
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps.py", line 486, in cloudflare_request
+    return self.http.request(method, CLOUDFLARE_API, f"/client/v4{path}", headers, body)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps_test.py", line 56, in request
+    raise result
+AssertionError: no request expected
+
+======================================================================
+FAIL: test_a_token_that_isn_t_a_bearer_token_is_refused_and_never_said (__main__.PagesProjectTest.test_a_token_that_isn_t_a_bearer_token_is_refused_and_never_said) (token='pasted token')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps_test.py", line 532, in test_a_token_that_isn_t_a_bearer_token_is_refused_and_never_said
+    code, out, http, _ = call("pages_project", {**CLOUDFLARE, "CLOUDFLARE_API_TOKEN": token})
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps.py", line 514, in pages_project
+    project = self.project(token, account)
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps.py", line 491, in project
+    answer = self.cloudflare_request(token, "GET", f"/accounts/{account}/pages/projects/{PAGES_PROJECT}")
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps.py", line 486, in cloudflare_request
+    return self.http.request(method, CLOUDFLARE_API, f"/client/v4{path}", headers, body)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps_test.py", line 56, in request
+    raise result
+AssertionError: no request expected
+
+======================================================================
+FAIL: test_a_token_that_isn_t_a_bearer_token_is_refused_and_never_said (__main__.PagesProjectTest.test_a_token_that_isn_t_a_bearer_token_is_refused_and_never_said) (token='pasted-token\r\nx-other: 1')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps_test.py", line 532, in test_a_token_that_isn_t_a_bearer_token_is_refused_and_never_said
+    code, out, http, _ = call("pages_project", {**CLOUDFLARE, "CLOUDFLARE_API_TOKEN": token})
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps.py", line 514, in pages_project
+    project = self.project(token, account)
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps.py", line 491, in project
+    answer = self.cloudflare_request(token, "GET", f"/accounts/{account}/pages/projects/{PAGES_PROJECT}")
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps.py", line 486, in cloudflare_request
+    return self.http.request(method, CLOUDFLARE_API, f"/client/v4{path}", headers, body)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps_test.py", line 56, in request
+    raise result
+AssertionError: no request expected
+
+======================================================================
+FAIL: test_a_token_that_isn_t_a_bearer_token_is_refused_and_never_said (__main__.PagesProjectTest.test_a_token_that_isn_t_a_bearer_token_is_refused_and_never_said) (token='töken')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps_test.py", line 532, in test_a_token_that_isn_t_a_bearer_token_is_refused_and_never_said
+    code, out, http, _ = call("pages_project", {**CLOUDFLARE, "CLOUDFLARE_API_TOKEN": token})
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps.py", line 514, in pages_project
+    project = self.project(token, account)
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps.py", line 491, in project
+    answer = self.cloudflare_request(token, "GET", f"/accounts/{account}/pages/projects/{PAGES_PROJECT}")
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps.py", line 486, in cloudflare_request
+    return self.http.request(method, CLOUDFLARE_API, f"/client/v4{path}", headers, body)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpfyeugr68/tools/ci/deploy_dev_steps_test.py", line 56, in request
+    raise result
+AssertionError: no request expected
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.773s
+
+FAILED (failures=4, errors=1)

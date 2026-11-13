@@ -1,0 +1,25 @@
+tools/ci/deploy_dev_steps.py
+--- old
+                if answer.status < 500:
+                    print(f"deploy-dev: check-head: {problem}")
+--- new
+                if answer.status < 600:
+                    print(f"deploy-dev: check-head: {problem}")
+--- expected: test_a_server_error_or_a_lost_connection_is_asked_again_and_a_refusal_is_not
+--- exit 1
+......................F............................................s........
+======================================================================
+FAIL: test_a_server_error_or_a_lost_connection_is_asked_again_and_a_refusal_is_not (__main__.CheckHeadTest.test_a_server_error_or_a_lost_connection_is_asked_again_and_a_refusal_is_not)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpn7ez8ol0/tools/ci/deploy_dev_steps_test.py", line 821, in test_a_server_error_or_a_lost_connection_is_asked_again_and_a_refusal_is_not
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: check-head: couldn't ask GitHub for main's head (reset); asking again in 10 seconds
+deploy-dev: check-head: GitHub answered HTTP 502 to the request for main's head
+
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.681s
+
+FAILED (failures=1, skipped=1)

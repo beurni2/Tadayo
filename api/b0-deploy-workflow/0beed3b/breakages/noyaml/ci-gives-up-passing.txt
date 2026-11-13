@@ -1,0 +1,144 @@
+tools/ci/deploy_dev_steps.py
+--- old
+              f"{CI_POLL_SECONDS} seconds apart; nothing was deployed")
+        return 1
+--- new
+              f"{CI_POLL_SECONDS} seconds apart; nothing was deployed")
+        return 0
+--- expected: test_it_gives_up_after_its_last_look
+--- exit 1
+..............................................................F....s........
+======================================================================
+FAIL: test_it_gives_up_after_its_last_look (__main__.WaitCiTest.test_it_gives_up_after_its_last_look)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmphumw4cu3/tools/ci/deploy_dev_steps_test.py", line 163, in test_it_gives_up_after_its_last_look
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run 7 is in_progress
+deploy-dev: wait-ci: 0123456789ab's ci run hadn't finished after 120 looks, 20 seconds apart; nothing was deployed
+
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.542s
+
+FAILED (failures=1, skipped=1)

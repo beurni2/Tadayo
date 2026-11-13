@@ -1,0 +1,30 @@
+tools/ci/deploy_dev_steps.py
+--- old
+HTTP doesn't allow") from None
+--- new
+HTTP doesn't allow")
+--- expected: test_a_header_value_http_refuses
+--- exit 1
+................................FF..................................s........
+======================================================================
+FAIL: test_a_header_value_http_refuses_is_an_error_that_never_quotes_it (__main__.HttpTest.test_a_header_value_http_refuses_is_an_error_that_never_quotes_it) (value='Bearer pasted-token\n')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpfdv2bh30/tools/ci/deploy_dev_steps_test.py", line 1094, in test_a_header_value_http_refuses_is_an_error_that_never_quotes_it
+    self.assertTrue(raised.exception.__suppress_context__)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_a_header_value_http_refuses_is_an_error_that_never_quotes_it (__main__.HttpTest.test_a_header_value_http_refuses_is_an_error_that_never_quotes_it) (value='Bearer pasted-token\r\nx-other: 1')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpfdv2bh30/tools/ci/deploy_dev_steps_test.py", line 1094, in test_a_header_value_http_refuses_is_an_error_that_never_quotes_it
+    self.assertTrue(raised.exception.__suppress_context__)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.708s
+
+FAILED (failures=2, skipped=1)

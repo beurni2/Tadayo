@@ -1,0 +1,23 @@
+tools/ci/deploy_dev_steps.py
+--- old
+            else:
+                seen = "no production deployment"
+
+--- new
+
+--- expected: test_after_a_lost_connection_it_reports_what_cloudflare_answered_last
+--- exit 1
+.............F.....................................................s........
+======================================================================
+FAIL: test_after_a_lost_connection_it_reports_what_cloudflare_answered_last (__main__.CheckAssociationTest.test_after_a_lost_connection_it_reports_what_cloudflare_answered_last)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpi7xnwf6v/tools/ci/deploy_dev_steps_test.py", line 936, in test_after_a_lost_connection_it_reports_what_cloudflare_answered_last
+    self.assertIn("after 20 looks, 15 seconds apart: no production deployment", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'after 20 looks, 15 seconds apart: no production deployment' not found in "deploy-dev: check-association: 0123456789ab's deployment hadn't succeeded after 20 looks, 15 seconds apart: couldn't ask Cloudflare for the Pages project tadayo (reset)\n"
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.744s
+
+FAILED (failures=1, skipped=1)

@@ -1,0 +1,117 @@
+tools/ci/deploy_dev_steps.py
+--- old
+mode = os.lstat(os.path.join(folder, name)).st_mode
+--- new
+mode = os.stat(os.path.join(folder, name)).st_mode
+--- expected: test_a_link_anywhere_in_the_site_is_refused
+--- exit 1
+..........................FFFFFFFFFF.........F..............................s........
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_build', where='leak.txt')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpl8mfmvbj/tools/ci/deploy_dev_steps_test.py", line 744, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertIn(f"{where} is a link", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'leak.txt is a link' not found in "deploy-dev: check-build: apps/web/dist can't be read whole ([Errno 2] No such file or directory: '/tmp/tmpyi3tlbv4/apps/web/dist/leak.txt')\n"
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_build', where='.well-known/x.json')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpl8mfmvbj/tools/ci/deploy_dev_steps_test.py", line 743, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-build: apps/web/dist holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_build', where='docs')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpl8mfmvbj/tools/ci/deploy_dev_steps_test.py", line 743, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-build: apps/web/dist holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_build', where='privacy/dangling')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpl8mfmvbj/tools/ci/deploy_dev_steps_test.py", line 744, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertIn(f"{where} is a link", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'privacy/dangling is a link' not found in "deploy-dev: check-build: apps/web/dist can't be read whole ([Errno 2] No such file or directory: '/tmp/tmpsfee_kls/apps/web/dist/privacy/dangling')\n"
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_build', where='the association file')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpl8mfmvbj/tools/ci/deploy_dev_steps_test.py", line 751, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-build: apps/web/dist holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_site', where='leak.txt')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpl8mfmvbj/tools/ci/deploy_dev_steps_test.py", line 744, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertIn(f"{where} is a link", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'leak.txt is a link' not found in "deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site can't be read whole ([Errno 2] No such file or directory: '/tmp/tmp8wom1b5v/deploy-dev-site/leak.txt')\n"
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_site', where='.well-known/x.json')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpl8mfmvbj/tools/ci/deploy_dev_steps_test.py", line 743, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_site', where='docs')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpl8mfmvbj/tools/ci/deploy_dev_steps_test.py", line 743, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_site', where='privacy/dangling')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpl8mfmvbj/tools/ci/deploy_dev_steps_test.py", line 744, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertIn(f"{where} is a link", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'privacy/dangling is a link' not found in "deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site can't be read whole ([Errno 2] No such file or directory: '/tmp/tmpwc6k6fba/deploy-dev-site/privacy/dangling')\n"
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_site', where='the association file')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpl8mfmvbj/tools/ci/deploy_dev_steps_test.py", line 751, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_a_link_in_the_site_is_refused (__main__.PagesDeployTest.test_a_link_in_the_site_is_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpl8mfmvbj/tools/ci/deploy_dev_steps_test.py", line 617, in test_a_link_in_the_site_is_refused
+    self.assertIn("leak.txt is a link", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'leak.txt is a link' not found in "deploy-dev: pages-deploy: RUNNER_TEMP/deploy-dev-site can't be read whole ([Errno 2] No such file or directory: '/tmp/tmpt0j1ijip/deploy-dev-site/leak.txt'), so nothing is deployed\n"
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.347s
+
+FAILED (failures=11, skipped=1)

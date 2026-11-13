@@ -1,0 +1,60 @@
+tools/ci/deploy_dev_steps.py
+--- old
+                if answer.status < 500:
+                    print(f"deploy-dev: check-head: {problem}")
+                    return 1
+
+--- new
+
+--- expected: test_a_server_error_or_a_lost_connection_is_asked_again_and_a_refusal_is_not
+--- exit 1
+......................FFF............................................s........
+======================================================================
+FAIL: test_a_server_error_or_a_lost_connection_is_asked_again_and_a_refusal_is_not (__main__.CheckHeadTest.test_a_server_error_or_a_lost_connection_is_asked_again_and_a_refusal_is_not) (status=401)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpjokl_u3y/tools/ci/deploy_dev_steps_test.py", line 828, in test_a_server_error_or_a_lost_connection_is_asked_again_and_a_refusal_is_not
+    code, out, http, sleeps = call("check_head", self.environ, sequence(answer(status)))
+                              ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpjokl_u3y/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpjokl_u3y/tools/ci/deploy_dev_steps.py", line 288, in check_head
+    answer = self.http.request("GET", GITHUB_API, f"/repos/{REPOSITORY}/branches/{BRANCH}", headers)
+  File "/tmp/tmpjokl_u3y/tools/ci/deploy_dev_steps_test.py", line 56, in request
+    raise result
+AssertionError: an unexpected request: GET api.github.com/repos/beurni2/tadayo/branches/main
+
+======================================================================
+FAIL: test_a_server_error_or_a_lost_connection_is_asked_again_and_a_refusal_is_not (__main__.CheckHeadTest.test_a_server_error_or_a_lost_connection_is_asked_again_and_a_refusal_is_not) (status=403)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpjokl_u3y/tools/ci/deploy_dev_steps_test.py", line 828, in test_a_server_error_or_a_lost_connection_is_asked_again_and_a_refusal_is_not
+    code, out, http, sleeps = call("check_head", self.environ, sequence(answer(status)))
+                              ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpjokl_u3y/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpjokl_u3y/tools/ci/deploy_dev_steps.py", line 288, in check_head
+    answer = self.http.request("GET", GITHUB_API, f"/repos/{REPOSITORY}/branches/{BRANCH}", headers)
+  File "/tmp/tmpjokl_u3y/tools/ci/deploy_dev_steps_test.py", line 56, in request
+    raise result
+AssertionError: an unexpected request: GET api.github.com/repos/beurni2/tadayo/branches/main
+
+======================================================================
+FAIL: test_a_server_error_or_a_lost_connection_is_asked_again_and_a_refusal_is_not (__main__.CheckHeadTest.test_a_server_error_or_a_lost_connection_is_asked_again_and_a_refusal_is_not) (status=404)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpjokl_u3y/tools/ci/deploy_dev_steps_test.py", line 828, in test_a_server_error_or_a_lost_connection_is_asked_again_and_a_refusal_is_not
+    code, out, http, sleeps = call("check_head", self.environ, sequence(answer(status)))
+                              ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpjokl_u3y/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpjokl_u3y/tools/ci/deploy_dev_steps.py", line 288, in check_head
+    answer = self.http.request("GET", GITHUB_API, f"/repos/{REPOSITORY}/branches/{BRANCH}", headers)
+  File "/tmp/tmpjokl_u3y/tools/ci/deploy_dev_steps_test.py", line 56, in request
+    raise result
+AssertionError: an unexpected request: GET api.github.com/repos/beurni2/tadayo/branches/main
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.589s
+
+FAILED (failures=3, skipped=1)

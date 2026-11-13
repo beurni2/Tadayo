@@ -1,0 +1,34 @@
+tools/ci/deploy_dev_steps.py
+--- old
+        given = self.cloudflare("pages-deploy")
+
+--- new
+        given = self.cloudflare("pages-deploy") or ("", "")
+
+--- expected: test_nothing_runs_without_the_site
+--- exit 1
+.........................................FF.........................s........
+======================================================================
+FAIL: test_nothing_runs_without_the_site_the_secrets_the_commit_or_the_install (__main__.PagesDeployTest.test_nothing_runs_without_the_site_the_secrets_the_commit_or_the_install) (said='has no CLOUDFLARE_API_TOKEN')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpnq93i4ra/tools/ci/deploy_dev_steps_test.py", line 647, in test_nothing_runs_without_the_site_the_secrets_the_commit_or_the_install
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: pages-deploy has no CLOUDFLARE_API_TOKEN: the repository secret CLOUDFLARE_API_TOKEN is empty in this run (is it set? Settings, Secrets and variables, Actions)
+
+
+======================================================================
+FAIL: test_nothing_runs_without_the_site_the_secrets_the_commit_or_the_install (__main__.PagesDeployTest.test_nothing_runs_without_the_site_the_secrets_the_commit_or_the_install) (said="isn't an account id")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpnq93i4ra/tools/ci/deploy_dev_steps_test.py", line 647, in test_nothing_runs_without_the_site_the_secrets_the_commit_or_the_install
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: pages-deploy: the repository variable CLOUDFLARE_ACCOUNT_ID isn't an account id of 32 hexadecimal digits (is it set? Settings, Secrets and variables, Actions)
+
+
+----------------------------------------------------------------------
+Ran 76 tests in 0.859s
+
+FAILED (failures=2, skipped=1)
