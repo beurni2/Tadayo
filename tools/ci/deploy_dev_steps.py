@@ -3,16 +3,18 @@
 
 deploy-dev runs on every push to main. Its first job waits for that commit's ci run (wait-ci);
 its second migrates dev, deploys main to Fly and runs storage-setup and the Supabase probe, all
-through ops_steps.py, then asks the API for its neutral 401 (check-api), and publishes apps/web's
-build to Cloudflare Pages: setup-wrangler installs the pinned wrangler, pages-project makes the
-Pages project when it's missing (wrangler without a terminal won't), pages-deploy deploys, and
-check-association checks that the production deployment is this commit's and serves the
-association file as Apple fetches it (docs/plans/B0.md, slice 10c and the workflow table).
+through ops_steps.py, then asks the API for its neutral 401 (check-api); its third, on a runner of
+its own that never held a Fly or Supabase secret, publishes apps/web's build to Cloudflare Pages:
+setup-wrangler installs the pinned wrangler, pages-project makes the Pages project when it's
+missing (wrangler without a terminal won't), pages-deploy deploys, and check-association checks
+that the production deployment is this commit's and serves the association file as Apple fetches
+it (docs/plans/B0.md, slice 10c and the workflow table).
 
 Every request goes through Http, which never follows a redirect and has a timeout; the tests
 replace it, the sleep and the process runner with fakes, so nothing here needs the network to be
-tested. Nothing a step prints holds a header or a value of its environment: a token never, and
-not the Cloudflare account's id either.
+tested. Nothing this script prints holds a token or a request header; it prints the status and the
+headers of the answers it judges. wrangler's own output in pages-deploy, and Cloudflare's error
+messages, can name the account id, which is a repository variable, not a secret.
 
 Tests: python3 tools/ci/deploy_dev_steps_test.py
 CI configuration: change this file only in its own PR (docs/INVARIANTS.md T58).
@@ -24,6 +26,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import time
 from dataclasses import dataclass
 
@@ -40,6 +43,8 @@ PAGES_DIR = os.path.join("tools", "ci", "pages")
 WRANGLER = os.path.join(PAGES_DIR, "node_modules", "wrangler", "bin", "wrangler.js")
 SITE = os.path.join("apps", "web", "dist")
 ASSOCIATION = "/.well-known/apple-app-site-association"
+# A file Pages runs as a Worker in front of the site ("advanced mode"); the site is static.
+WORKER = "_worker.js"
 REGISTRY = "https://registry.npmjs.org/"
 
 GITHUB_API = "api.github.com"
@@ -320,7 +325,7 @@ class Steps:
         try:
             answer = self.cloudflare_request(token, "GET", f"/accounts/{account}/pages/projects/{PAGES_PROJECT}")
         except (OSError, http.client.HTTPException) as error:
-            raise StepFailed(f"couldn't ask Cloudflare for the Pages project {PAGES_PROJECT} ({error})") from error
+            raise Transient(f"couldn't ask Cloudflare for the Pages project {PAGES_PROJECT} ({error})") from error
         document = json_of(answer)
         if answer.status == 200 and isinstance(document, dict) and document.get("success") is True \
                 and isinstance(document.get("result"), dict):
@@ -331,8 +336,9 @@ class Steps:
                 and any(isinstance(e, dict) and e.get("code") == PROJECT_NOT_FOUND
                         for e in document.get("errors") or []):
             return None
-        raise StepFailed(f"Cloudflare answered HTTP {answer.status} to the request for the Pages project "
-                         f"{PAGES_PROJECT}: {cloudflare_errors(document)}")
+        failed = Transient if answer.status >= 500 else StepFailed
+        raise failed(f"Cloudflare answered HTTP {answer.status} to the request for the Pages project "
+                     f"{PAGES_PROJECT}: {cloudflare_errors(document)}")
 
     def pages_project(self):
         given = self.cloudflare("pages-project")
@@ -377,15 +383,23 @@ class Steps:
         if not os.path.isfile(self.path(SITE, ASSOCIATION.lstrip("/"))):
             print(f"deploy-dev: pages-deploy: {SITE} has no {ASSOCIATION}: build it first (ci_steps.py web)")
             return 1
-        cmd = ["node", WRANGLER, "pages", "deploy", SITE, f"--project-name={PAGES_PROJECT}",
+        if os.path.lexists(self.path(SITE, WORKER)):
+            print(f"deploy-dev: pages-deploy: {SITE} holds {WORKER}, which Pages would run as code on the "
+                  "site; the site is static, so nothing is deployed")
+            return 1
+        cmd = ["node", self.path(WRANGLER), "pages", "deploy", self.path(SITE), f"--project-name={PAGES_PROJECT}",
                f"--branch={BRANCH}", f"--commit-hash={sha}", f"--commit-message=main at {sha[:12]}",
                "--commit-dirty=false"]
-        # Only what wrangler needs: no other secret or setting of the runner reaches it.
-        # Its usage data and error reports stay off (DO_NOT_TRACK outranks every other setting).
-        env = {"PATH": self.value("PATH"), "HOME": self.value("HOME"), "CI": "true", "DO_NOT_TRACK": "1",
-               "WRANGLER_SEND_METRICS": "false", "WRANGLER_SEND_ERROR_REPORTS": "false",
-               "CLOUDFLARE_API_TOKEN": token, "CLOUDFLARE_ACCOUNT_ID": account}
-        code = self.run_process(cmd, self.root, env)
+        # wrangler reads .env and .env.local, a functions/ folder and a wrangler configuration from
+        # its working directory (the configuration from every folder above it too), and writes under
+        # HOME: an empty folder of its own is both, so no file in the repository changes what it
+        # does. Only these variables reach it; its usage data and error reports stay off
+        # (DO_NOT_TRACK outranks every other setting).
+        with tempfile.TemporaryDirectory(prefix="deploy-dev-wrangler-") as home:
+            env = {"PATH": self.value("PATH"), "HOME": home, "CI": "true", "DO_NOT_TRACK": "1",
+                   "WRANGLER_SEND_METRICS": "false", "WRANGLER_SEND_ERROR_REPORTS": "false",
+                   "CLOUDFLARE_API_TOKEN": token, "CLOUDFLARE_ACCOUNT_ID": account}
+            code = self.run_process(cmd, home, env)
         if code != 0:
             print(f"deploy-dev: pages-deploy: wrangler failed (exit {code})")
             return 1
@@ -420,7 +434,13 @@ class Steps:
         succeeded; raises StepFailed when it fails or doesn't come."""
         seen = "no production deployment"
         for poll in range(1, PAGES_POLLS + 1):
-            project = self.project(token, account)
+            try:
+                project = self.project(token, account)
+            except Transient as failure:
+                # Fly and Pages are live by now: a lost connection or a 5xx is "not yet", as in every
+                # other wait here; a 4xx still fails at once.
+                seen = str(failure)
+                project = {}
             if project is None:
                 raise StepFailed(f"the Pages project {PAGES_PROJECT} doesn't exist")
             deployment = project.get("canonical_deployment")
@@ -472,6 +492,10 @@ class Steps:
 
 class StepFailed(Exception):
     pass
+
+
+class Transient(StepFailed):
+    """A failure that a wait may ask again about: a lost connection or a server error."""
 
 
 def host_of(url):

@@ -1,7 +1,7 @@
 # deploy-dev: on every merge to main, once that commit's ci run has passed, migrates dev, deploys
 # main to Fly, runs storage-setup and the Supabase probe on a Fly machine, asks the API for a
-# neutral 401, and publishes apps/web to Cloudflare Pages (docs/TECH-DESIGN.md section 9; the B0
-# plan's slice 10c and its workflow table).
+# neutral 401, and then, on a runner of its own, publishes apps/web to Cloudflare Pages
+# (docs/TECH-DESIGN.md section 9; the B0 plan's slice 10c and its workflow table).
 # Thin on purpose: every step calls tools/ci/deploy_dev_steps.py, ops_steps.py or ci_steps.py,
 # where the logic and its tests live (deploy_dev_steps_test.py reads this file). The ops steps
 # are ops.yml's own, so a deploy passes the same checks as a run by hand.
@@ -45,7 +45,7 @@ jobs:
     name: deploy
     needs: ci
     runs-on: ubuntu-24.04
-    timeout-minutes: 75
+    timeout-minutes: 60
     permissions:
       contents: read
       actions: read  # the commit's ci runs, read again by deploy-branch
@@ -53,7 +53,8 @@ jobs:
     # GitHub keeps one pending job or run per group and a newer one cancels it, so `queue: max`
     # goes here and in ops.yml once actionlint accepts the key (docs/LIMITATIONS.md); until then,
     # an ops run is started only when no deploy-dev job is running or waiting, and a deploy job
-    # that ended cancelled is run again once the group is free.
+    # that ended cancelled is run again once the group is free, if its commit is still main's
+    # head (an older commit's fails at migrate or deploy-branch: a newer run has replaced it).
     concurrency:
       group: ops-dev
       cancel-in-progress: false
@@ -98,6 +99,31 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: python3 tools/ci/ops_steps.py run
       - run: python3 tools/ci/deploy_dev_steps.py check-api
+
+  # A fresh runner, holding the Cloudflare token and nothing else: flyctl's agent, still running on
+  # the deploy job's runner with Fly's token, and the database's and Supabase's secrets never meet
+  # wrangler and the packages under it. Its own group keeps two commits' sites from deploying at
+  # once; the newer one waiting replaces an older one.
+  pages:
+    name: pages
+    needs: deploy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    concurrency:
+      group: deploy-dev-pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - run: python3 tools/ci/ci_steps.py setup-pnpm
+      - run: python3 tools/ci/ci_steps.py install
       - run: python3 tools/ci/ci_steps.py web
       - run: python3 tools/ci/deploy_dev_steps.py setup-wrangler
       - name: pages-project

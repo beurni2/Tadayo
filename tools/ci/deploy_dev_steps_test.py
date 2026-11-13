@@ -476,25 +476,65 @@ class PagesProjectTest(unittest.TestCase):
                 self.assertEqual(http.requests, [])
 
 
+class WranglerRun(FakeRun):
+    """Records, as wrangler starts, what its working folder holds and whether it exists."""
+
+    def __call__(self, cmd, cwd, env):
+        self.held = sorted(os.listdir(cwd)) if os.path.isdir(cwd) else None
+        return super().__call__(cmd, cwd, env)
+
+
 class PagesDeployTest(unittest.TestCase):
     def test_it_runs_the_pinned_wrangler_with_only_what_it_needs(self):
         repo = Repository(self)
-        run = FakeRun()
+        run = WranglerRun()
         environ = {**CLOUDFLARE, "PATH": "/usr/bin", "HOME": "/home/runner", "FLY_API_TOKEN": "fly",
                    "GITHUB_TOKEN": "gh", "DATABASE_URL": "postgres://x", "NODE_OPTIONS": "--require /tmp/x.js"}
         code, out, http, _ = call("pages_deploy", environ, run=run, root=repo.root)
         self.assertEqual(code, 0, out)
         [done] = run.calls
         self.assertEqual(done["cmd"], [
-            "node", os.path.join("tools", "ci", "pages", "node_modules", "wrangler", "bin", "wrangler.js"),
-            "pages", "deploy", os.path.join("apps", "web", "dist"), "--project-name=tadayo", "--branch=main",
+            "node", repo.path("tools", "ci", "pages", "node_modules", "wrangler", "bin", "wrangler.js"),
+            "pages", "deploy", repo.path("apps", "web", "dist"), "--project-name=tadayo", "--branch=main",
             f"--commit-hash={SHA}", f"--commit-message=main at {SHA[:12]}", "--commit-dirty=false"])
-        self.assertEqual(done["cwd"], repo.root)
-        self.assertEqual(done["env"], {"PATH": "/usr/bin", "HOME": "/home/runner", "CI": "true",
+        self.assertEqual(done["env"], {"PATH": "/usr/bin", "HOME": done["cwd"], "CI": "true",
                                        "DO_NOT_TRACK": "1", "WRANGLER_SEND_METRICS": "false",
                                        "WRANGLER_SEND_ERROR_REPORTS": "false", "CLOUDFLARE_API_TOKEN": TOKEN,
                                        "CLOUDFLARE_ACCOUNT_ID": ACCOUNT})
         self.assertEqual(http.requests, [])
+
+    def test_nothing_in_the_repository_reaches_wrangler_s_working_folder_or_home(self):
+        # wrangler reads .env, .env.local, functions/ and a wrangler configuration from its working
+        # folder (the configuration from every folder above it too), and writes under HOME.
+        repo = Repository(self)
+        for name in (".env", ".env.local", "wrangler.toml", "wrangler.json"):
+            for folder in ((), ("tools", "ci", "pages")):
+                with open(repo.path(*folder, name), "w", encoding="utf-8") as f:
+                    f.write("CLOUDFLARE_API_BASE_URL=http://127.0.0.1:1/client/v4\n")
+        os.makedirs(repo.path("functions"))
+        run = WranglerRun()
+        code, out, _, _ = call("pages_deploy", {**CLOUDFLARE, "PATH": "/usr/bin", "HOME": repo.root}, run=run,
+                               root=repo.root)
+        self.assertEqual(code, 0, out)
+        [done] = run.calls
+        cwd = done["cwd"]
+        self.assertEqual(run.held, [], "wrangler's working folder isn't empty as it starts")
+        self.assertEqual(done["env"]["HOME"], cwd)
+        self.assertTrue(os.path.basename(cwd).startswith("deploy-dev-wrangler-"))
+        inside = os.path.commonpath([os.path.realpath(cwd), os.path.realpath(repo.root)])
+        self.assertNotEqual(inside, os.path.realpath(repo.root), "wrangler runs inside the repository")
+        self.assertFalse(os.path.exists(cwd), "wrangler's folder is left behind")
+
+    def test_a_worker_in_the_site_is_refused(self):
+        for make in (lambda p: open(p, "w").close(), os.makedirs):
+            with self.subTest(make=make):
+                repo = Repository(self)
+                make(repo.path("apps", "web", "dist", "_worker.js"))
+                run = FakeRun()
+                code, out, _, _ = call("pages_deploy", CLOUDFLARE, run=run, root=repo.root)
+                self.assertEqual(code, 1, out)
+                self.assertEqual(run.calls, [])
+                self.assertIn("_worker.js", out)
 
     def test_wrangler_s_failure_is_the_step_s(self):
         repo = Repository(self)
@@ -576,6 +616,28 @@ class CheckAssociationTest(unittest.TestCase):
                 self.assertEqual(sleeps.calls, [])
                 self.assertIn(f"ended {status} at its {stage} stage", out)
 
+    def test_a_lost_connection_or_a_server_error_while_waiting_is_asked_again(self):
+        code, out, http, sleeps = self.check(
+            [found(project(deployment=deployment(stage="queued", status="active"))), OSError("reset"),
+             answer(502, b"<html>"), answer(503, {"success": False, "errors": [{"code": 10000, "message": "x"}]}),
+             found(project(deployment=deployment()))],
+            {"tadayo-x1y.pages.dev": [served()], "abc123.tadayo-x1y.pages.dev": [served()]})
+        self.assertEqual(code, 0, out)
+        self.assertEqual(sleeps.calls, [15, 15, 15, 15])
+        code, out, http, sleeps = self.check([answer(500, b"")], {})
+        self.assertEqual(code, 1, out)
+        self.assertEqual(sleeps.calls, [15] * 19)
+        self.assertIn("HTTP 500", out)
+
+    def test_a_refusal_while_waiting_fails_at_once(self):
+        for given in (answer(403, {"success": False, "errors": [{"code": 10000, "message": "Authentication error"}]}),
+                      answer(429, b""), NOT_FOUND):
+            with self.subTest(given=given.status):
+                code, out, http, sleeps = self.check([found(project(deployment=deployment(sha=OTHER_SHA))), given], {})
+                self.assertEqual(code, 1, out)
+                self.assertEqual(sleeps.calls, [15])
+                self.assertEqual(len(http.requests), 2)
+
     def test_a_preview_deployment_of_this_commit_is_not_the_production_one(self):
         code, out, http, sleeps = self.check(
             [found(project(deployment=deployment(environment="preview")))], {})
@@ -638,6 +700,67 @@ class CheckAssociationTest(unittest.TestCase):
         self.assertEqual(http.requests, [])
 
 
+class RecordingConnection:
+    """Stands in for http.client.HTTPSConnection, recording how Http uses it."""
+    made = []
+
+    def __init__(self, host, timeout=None, **rest):
+        self.host, self.timeout, self.rest = host, timeout, rest
+        self.sent, self.closed = [], False
+        RecordingConnection.made.append(self)
+
+    def request(self, method, path, body=None, headers=None):
+        self.sent.append((method, path, body, dict(headers or {})))
+        if self.host == "lost.example":
+            raise OSError("reset")
+
+    def getresponse(self):
+        return RecordingResponse()
+
+    def close(self):
+        self.closed = True
+
+
+class RecordingResponse:
+    status = 301
+
+    def getheaders(self):
+        return [("Content-Type", "a"), ("Location", "https://elsewhere.example/"), ("content-type", "b")]
+
+    def read(self):
+        return b"moved"
+
+
+class HttpTest(unittest.TestCase):
+    """The real Http, which carries the GitHub and Cloudflare tokens, over a recording connection."""
+
+    def setUp(self):
+        RecordingConnection.made = []
+        self.real = steps_module.http.client.HTTPSConnection
+        steps_module.http.client.HTTPSConnection = RecordingConnection
+        self.addCleanup(setattr, steps_module.http.client, "HTTPSConnection", self.real)
+
+    def test_it_asks_once_over_https_with_a_timeout_and_closes(self):
+        got = steps_module.Http().request("POST", "api.example", "/x?y=1", {"authorization": "Bearer t"}, b"{}")
+        [made] = RecordingConnection.made
+        self.assertEqual((made.host, made.timeout, made.rest), ("api.example", 30, {}))
+        self.assertEqual(made.sent, [("POST", "/x?y=1", b"{}", {"authorization": "Bearer t"})])
+        self.assertTrue(made.closed)
+        # A redirect is an answer like any other: nothing follows it.
+        self.assertEqual((got.status, got.body), (301, b"moved"))
+
+    def test_it_keeps_every_value_of_a_header_under_its_lower_case_name(self):
+        got = steps_module.Http().request("GET", "api.example", "/", {})
+        self.assertEqual(got.headers, {"content-type": ["a", "b"], "location": ["https://elsewhere.example/"]})
+        self.assertIsNone(got.header("content-type"))
+
+    def test_a_lost_connection_still_closes_it(self):
+        with self.assertRaises(OSError):
+            steps_module.Http().request("GET", "lost.example", "/", {})
+        [made] = RecordingConnection.made
+        self.assertTrue(made.closed)
+
+
 def workflow():
     with open(os.path.join(ROOT, ".github", "workflows", "deploy-dev.yml"), encoding="utf-8") as f:
         return f.read()
@@ -668,7 +791,7 @@ def expected_jobs():
                "concurrency": {"group": "deploy-dev-ci-${{ github.sha }}", "cancel-in-progress": "false"},
                "steps": [checkout, {"name": "wait-ci", "env": {"GITHUB_TOKEN": "${{ github.token }}"},
                                     "run": "python3 tools/ci/deploy_dev_steps.py wait-ci"}]},
-        "deploy": {"name": "deploy", "needs": "ci", "runs-on": "ubuntu-24.04", "timeout-minutes": "75",
+        "deploy": {"name": "deploy", "needs": "ci", "runs-on": "ubuntu-24.04", "timeout-minutes": "60",
                    "permissions": {"contents": "read", "actions": "read"},
                    "concurrency": {"group": "ops-dev", "cancel-in-progress": "false"},
                    "steps": [
@@ -684,6 +807,16 @@ def expected_jobs():
                        ops_step("storage-setup", "storage-setup"),
                        ops_step("supabase-probe", "supabase-probe"),
                        {"run": "python3 tools/ci/deploy_dev_steps.py check-api"},
+                   ]},
+        "pages": {"name": "pages", "needs": "deploy", "runs-on": "ubuntu-24.04", "timeout-minutes": "30",
+                  "permissions": {"contents": "read"},
+                  "concurrency": {"group": "deploy-dev-pages", "cancel-in-progress": "false"},
+                  "steps": [
+                       checkout,
+                       {"uses": pinned["actions/setup-node"],
+                        "with": {"node-version-file": ".nvmrc", "package-manager-cache": "false"}},
+                       {"run": "python3 tools/ci/ci_steps.py setup-pnpm"},
+                       {"run": "python3 tools/ci/ci_steps.py install"},
                        {"run": "python3 tools/ci/ci_steps.py web"},
                        {"run": "python3 tools/ci/deploy_dev_steps.py setup-wrangler"},
                        {"name": "pages-project", "env": CLOUDFLARE_ENV,
@@ -743,6 +876,8 @@ class WorkflowFileTest(unittest.TestCase):
         self.assertEqual(self.document["jobs"]["ci"]["concurrency"],
                          {"group": "deploy-dev-ci-${{ github.sha }}", "cancel-in-progress": "false"})
         self.assertEqual(self.document["jobs"]["deploy"]["concurrency"], {"group": "ops-dev", "cancel-in-progress": "false"})
+        self.assertEqual(self.document["jobs"]["pages"]["concurrency"],
+                         {"group": "deploy-dev-pages", "cancel-in-progress": "false"})
         with open(os.path.join(ROOT, ".github", "workflows", "ops.yml"), encoding="utf-8") as f:
             self.assertEqual(parse_yaml(f.read())["concurrency"], {"group": "ops-dev", "cancel-in-progress": "false"})
 
@@ -766,10 +901,24 @@ class WorkflowFileTest(unittest.TestCase):
                           "CLOUDFLARE_API_TOKEN"})
         self.assertEqual(set(re.findall(r"vars\.([A-Z_]+)", self.text)), {"CLOUDFLARE_ACCOUNT_ID"})
 
+    def test_the_cloudflare_secret_is_on_a_runner_that_holds_no_other(self):
+        # The deploy job's runner keeps flyctl's agent, with Fly's token, running after the probe,
+        # so wrangler and its packages run in a job of their own (PR #52's review, security-1).
+        jobs = self.document["jobs"]
+
+        def named(job):
+            return {v for step in jobs[job]["steps"] for v in step.get("env", {}).values() if "${{" in v}
+        self.assertEqual(named("pages"), {"${{ secrets.CLOUDFLARE_API_TOKEN }}", "${{ vars.CLOUDFLARE_ACCOUNT_ID }}"})
+        self.assertEqual(jobs["pages"]["needs"], "deploy")
+        self.assertEqual(jobs["pages"]["permissions"], {"contents": "read"})
+        self.assertNotIn("${{ secrets.CLOUDFLARE_API_TOKEN }}", named("deploy") | named("ci"))
+        self.assertEqual([s.get("run") for s in jobs["deploy"]["steps"]][-1],
+                         "python3 tools/ci/deploy_dev_steps.py check-api")
+
     def test_the_pins_are_ci_yml_s(self):
         pinned = pins()
         uses = re.findall(r"uses: (\S+)", self.text)
-        self.assertEqual(len(uses), 3)
+        self.assertEqual(len(uses), 5)
         self.assertTrue(set(uses) <= set(pinned.values()))
 
 
