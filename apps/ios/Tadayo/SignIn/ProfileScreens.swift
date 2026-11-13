@@ -149,8 +149,12 @@ struct ProfileForm: View {
         // Focused on arrival, at every text size (IMPLEMENTATION.md: "A03-profile-empty is
         // focused on arrival"), except while VoiceOver runs, which says the screen first and
         // moves its own focus (`authForm.profileArrivalFocus`: "unless VoiceOver focus would be
-        // stolen"; the check's C-01). Nothing is said of Switch Control (needs item 58).
-        .onAppear { if focus == nil, !voiceOverEnabled { focused = true } }
+        // stolen"; the check's C-01). Nothing is said of Switch Control (needs item 58). Asked
+        // for from a task, which runs once the screen is up: the root shows A03 in a navigation
+        // stack of its own, in place of A02-age's, and a focus asked for as it appeared was
+        // dropped (`ios` run 43331873714: no field had the keyboard's focus in the UI tests;
+        // `ArrivalFocusTests`).
+        .task { if focus == nil, !voiceOverEnabled { focused = true } }
         // Return ends a field's editing; the focus is put back while the save goes, as on
         // A02-email, so the keyboard stays (`busyPrimary.field`).
         .onChange(of: focused) { _, now in
