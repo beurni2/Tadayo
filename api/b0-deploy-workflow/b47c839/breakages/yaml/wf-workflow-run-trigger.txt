@@ -1,0 +1,291 @@
+.github/workflows/deploy-dev.yml
+--- old
+on:
+  push:
+
+--- new
+on:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+  push:
+
+--- expected: test_it_runs_only_on_a_push_to_main
+--- exit 1
+.........................................EEEEEEEE
+======================================================================
+ERROR: test_every_expression_in_the_file_is_one_this_test_knows (__main__.WorkflowFileTest.test_every_expression_in_the_file_is_one_this_test_knows)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptm5kl06g/tools/ci/deploy_dev_steps_test.py", line 705, in setUp
+    self.document = parse_yaml(self.text)
+                    ~~~~~~~~~~^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 552, in parse_yaml
+    document = block(0)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 507, in value_after
+    return block(lines[position][1])
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 507, in value_after
+    return block(lines[position][1])
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 504, in value_after
+    return scalar(number, rest)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 470, in scalar
+    raise ValueError(f"line {number}: a value this reader doesn't take: {text!r}")
+ValueError: line 13: a value this reader doesn't take: '[ci]'
+
+======================================================================
+ERROR: test_it_reads_as_a_yaml_library_would (__main__.WorkflowFileTest.test_it_reads_as_a_yaml_library_would)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptm5kl06g/tools/ci/deploy_dev_steps_test.py", line 705, in setUp
+    self.document = parse_yaml(self.text)
+                    ~~~~~~~~~~^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 552, in parse_yaml
+    document = block(0)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 507, in value_after
+    return block(lines[position][1])
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 507, in value_after
+    return block(lines[position][1])
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 504, in value_after
+    return scalar(number, rest)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 470, in scalar
+    raise ValueError(f"line {number}: a value this reader doesn't take: {text!r}")
+ValueError: line 13: a value this reader doesn't take: '[ci]'
+
+======================================================================
+ERROR: test_it_runs_only_on_a_push_to_main (__main__.WorkflowFileTest.test_it_runs_only_on_a_push_to_main)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptm5kl06g/tools/ci/deploy_dev_steps_test.py", line 705, in setUp
+    self.document = parse_yaml(self.text)
+                    ~~~~~~~~~~^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 552, in parse_yaml
+    document = block(0)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 507, in value_after
+    return block(lines[position][1])
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 507, in value_after
+    return block(lines[position][1])
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 504, in value_after
+    return scalar(number, rest)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 470, in scalar
+    raise ValueError(f"line {number}: a value this reader doesn't take: {text!r}")
+ValueError: line 13: a value this reader doesn't take: '[ci]'
+
+======================================================================
+ERROR: test_its_jobs_and_steps_are_these_exactly (__main__.WorkflowFileTest.test_its_jobs_and_steps_are_these_exactly)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptm5kl06g/tools/ci/deploy_dev_steps_test.py", line 705, in setUp
+    self.document = parse_yaml(self.text)
+                    ~~~~~~~~~~^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 552, in parse_yaml
+    document = block(0)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 507, in value_after
+    return block(lines[position][1])
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 507, in value_after
+    return block(lines[position][1])
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 504, in value_after
+    return scalar(number, rest)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 470, in scalar
+    raise ValueError(f"line {number}: a value this reader doesn't take: {text!r}")
+ValueError: line 13: a value this reader doesn't take: '[ci]'
+
+======================================================================
+ERROR: test_only_the_deploy_job_holds_ops_dev_and_it_is_never_cancelled (__main__.WorkflowFileTest.test_only_the_deploy_job_holds_ops_dev_and_it_is_never_cancelled)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptm5kl06g/tools/ci/deploy_dev_steps_test.py", line 705, in setUp
+    self.document = parse_yaml(self.text)
+                    ~~~~~~~~~~^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 552, in parse_yaml
+    document = block(0)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 507, in value_after
+    return block(lines[position][1])
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 507, in value_after
+    return block(lines[position][1])
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 504, in value_after
+    return scalar(number, rest)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 470, in scalar
+    raise ValueError(f"line {number}: a value this reader doesn't take: {text!r}")
+ValueError: line 13: a value this reader doesn't take: '[ci]'
+
+======================================================================
+ERROR: test_the_file_holds_these_keys_and_no_other (__main__.WorkflowFileTest.test_the_file_holds_these_keys_and_no_other)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptm5kl06g/tools/ci/deploy_dev_steps_test.py", line 705, in setUp
+    self.document = parse_yaml(self.text)
+                    ~~~~~~~~~~^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 552, in parse_yaml
+    document = block(0)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 507, in value_after
+    return block(lines[position][1])
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 507, in value_after
+    return block(lines[position][1])
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 504, in value_after
+    return scalar(number, rest)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 470, in scalar
+    raise ValueError(f"line {number}: a value this reader doesn't take: {text!r}")
+ValueError: line 13: a value this reader doesn't take: '[ci]'
+
+======================================================================
+ERROR: test_the_pins_are_ci_yml_s (__main__.WorkflowFileTest.test_the_pins_are_ci_yml_s)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptm5kl06g/tools/ci/deploy_dev_steps_test.py", line 705, in setUp
+    self.document = parse_yaml(self.text)
+                    ~~~~~~~~~~^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 552, in parse_yaml
+    document = block(0)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 507, in value_after
+    return block(lines[position][1])
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 507, in value_after
+    return block(lines[position][1])
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 504, in value_after
+    return scalar(number, rest)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 470, in scalar
+    raise ValueError(f"line {number}: a value this reader doesn't take: {text!r}")
+ValueError: line 13: a value this reader doesn't take: '[ci]'
+
+======================================================================
+ERROR: test_the_secrets_are_the_b0_plan_s (__main__.WorkflowFileTest.test_the_secrets_are_the_b0_plan_s)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptm5kl06g/tools/ci/deploy_dev_steps_test.py", line 705, in setUp
+    self.document = parse_yaml(self.text)
+                    ~~~~~~~~~~^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 552, in parse_yaml
+    document = block(0)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 507, in value_after
+    return block(lines[position][1])
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 507, in value_after
+    return block(lines[position][1])
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 504, in value_after
+    return scalar(number, rest)
+  File "/tmp/tmptm5kl06g/tools/ci/ops_steps_test.py", line 470, in scalar
+    raise ValueError(f"line {number}: a value this reader doesn't take: {text!r}")
+ValueError: line 13: a value this reader doesn't take: '[ci]'
+
+----------------------------------------------------------------------
+Ran 49 tests in 0.152s
+
+FAILED (errors=8)

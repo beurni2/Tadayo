@@ -1,0 +1,47 @@
+tools/ci/deploy_dev_steps.py
+--- old
+f"--branch={BRANCH}", 
+--- new
+f"--branch=production", 
+--- expected: test_it_runs_the_pinned_wrangler_with_only_what_it_needs
+--- exit 1
+.................F...............................
+======================================================================
+FAIL: test_it_runs_the_pinned_wrangler_with_only_what_it_needs (__main__.PagesDeployTest.test_it_runs_the_pinned_wrangler_with_only_what_it_needs)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpnjudmj5v/tools/ci/deploy_dev_steps_test.py", line 488, in test_it_runs_the_pinned_wrangler_with_only_what_it_needs
+    self.assertEqual(done["cmd"], [
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+        "node", os.path.join("tools", "ci", "pages", "node_modules", "wrangler", "bin", "wrangler.js"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        "pages", "deploy", os.path.join("apps", "web", "dist"), "--project-name=tadayo", "--branch=main",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        f"--commit-hash={SHA}", f"--commit-message=main at {SHA[:12]}", "--commit-dirty=false"])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['nod[126 chars]anch=production', '--commit-hash=0123456789abc[89 chars]lse'] != ['nod[126 chars]anch=main', '--commit-hash=0123456789abcdef012[83 chars]lse']
+
+First differing element 6:
+'--branch=production'
+'--branch=main'
+
+  ['node',
+   'tools/ci/pages/node_modules/wrangler/bin/wrangler.js',
+   'pages',
+   'deploy',
+   'apps/web/dist',
+   '--project-name=tadayo',
+-  '--branch=production',
+?            ^^^^^^^ -
+
++  '--branch=main',
+?            ^^
+
+   '--commit-hash=0123456789abcdef0123456789abcdef01234567',
+   '--commit-message=main at 0123456789ab',
+   '--commit-dirty=false']
+
+----------------------------------------------------------------------
+Ran 49 tests in 0.144s
+
+FAILED (failures=1)

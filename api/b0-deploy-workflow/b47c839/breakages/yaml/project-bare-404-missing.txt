@@ -1,0 +1,110 @@
+tools/ci/deploy_dev_steps.py
+--- old
+ and document.get("success") is False \
+                and any(isinstance(e, dict) and e.get("code") == PROJECT_NOT_FOUND
+                        for e in document.get("errors") or []):
+--- new
+:
+--- expected: test_cloudflare_s_not_found_code_in_any_4xx
+--- exit 1
+......................FFFFFF.........................
+======================================================================
+FAIL: test_any_other_answer_fails_with_cloudflare_s_errors (__main__.PagesProjectTest.test_any_other_answer_fails_with_cloudflare_s_errors) (given=Answer(status=403, headers={}, body=b'{"success": false, "errors": [{"code": 10000, "message": "Authentication error"}]}'))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp247om2p2/tools/ci/deploy_dev_steps_test.py", line 454, in test_any_other_answer_fails_with_cloudflare_s_errors
+    code, out, http, _ = call("pages_project", CLOUDFLARE, sequence(given))
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp247om2p2/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmp247om2p2/tools/ci/deploy_dev_steps.py", line 343, in pages_project
+    project = self.create_project(token, account)
+  File "/tmp/tmp247om2p2/tools/ci/deploy_dev_steps.py", line 357, in create_project
+    answer = self.cloudflare_request(token, "POST", f"/accounts/{account}/pages/projects",
+                                     {"name": PAGES_PROJECT, "production_branch": BRANCH})
+  File "/tmp/tmp247om2p2/tools/ci/deploy_dev_steps.py", line 316, in cloudflare_request
+    return self.http.request(method, CLOUDFLARE_API, f"/client/v4{path}", headers, body)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp247om2p2/tools/ci/deploy_dev_steps_test.py", line 56, in request
+    raise result
+AssertionError: an unexpected request: POST api.cloudflare.com/client/v4/accounts/0123456789abcdef0123456789abcdef/pages/projects
+
+======================================================================
+FAIL: test_any_other_answer_fails_with_cloudflare_s_errors (__main__.PagesProjectTest.test_any_other_answer_fails_with_cloudflare_s_errors) (given=Answer(status=404, headers={}, body=b'{"success": false, "errors": [{"code": 7003, "message": "x"}]}'))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp247om2p2/tools/ci/deploy_dev_steps_test.py", line 454, in test_any_other_answer_fails_with_cloudflare_s_errors
+    code, out, http, _ = call("pages_project", CLOUDFLARE, sequence(given))
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp247om2p2/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmp247om2p2/tools/ci/deploy_dev_steps.py", line 343, in pages_project
+    project = self.create_project(token, account)
+  File "/tmp/tmp247om2p2/tools/ci/deploy_dev_steps.py", line 357, in create_project
+    answer = self.cloudflare_request(token, "POST", f"/accounts/{account}/pages/projects",
+                                     {"name": PAGES_PROJECT, "production_branch": BRANCH})
+  File "/tmp/tmp247om2p2/tools/ci/deploy_dev_steps.py", line 316, in cloudflare_request
+    return self.http.request(method, CLOUDFLARE_API, f"/client/v4{path}", headers, body)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp247om2p2/tools/ci/deploy_dev_steps_test.py", line 56, in request
+    raise result
+AssertionError: an unexpected request: POST api.cloudflare.com/client/v4/accounts/0123456789abcdef0123456789abcdef/pages/projects
+
+======================================================================
+FAIL: test_any_other_answer_fails_with_cloudflare_s_errors (__main__.PagesProjectTest.test_any_other_answer_fails_with_cloudflare_s_errors)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp247om2p2/tools/ci/deploy_dev_steps_test.py", line 458, in test_any_other_answer_fails_with_cloudflare_s_errors
+    code, out, _, _ = call("pages_project", CLOUDFLARE, sequence(refusal))
+                      ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp247om2p2/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmp247om2p2/tools/ci/deploy_dev_steps.py", line 343, in pages_project
+    project = self.create_project(token, account)
+  File "/tmp/tmp247om2p2/tools/ci/deploy_dev_steps.py", line 357, in create_project
+    answer = self.cloudflare_request(token, "POST", f"/accounts/{account}/pages/projects",
+                                     {"name": PAGES_PROJECT, "production_branch": BRANCH})
+  File "/tmp/tmp247om2p2/tools/ci/deploy_dev_steps.py", line 316, in cloudflare_request
+    return self.http.request(method, CLOUDFLARE_API, f"/client/v4{path}", headers, body)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp247om2p2/tools/ci/deploy_dev_steps_test.py", line 56, in request
+    raise result
+AssertionError: an unexpected request: POST api.cloudflare.com/client/v4/accounts/0123456789abcdef0123456789abcdef/pages/projects
+
+======================================================================
+FAIL: test_cloudflare_s_not_found_code_in_any_4xx_is_a_missing_project_and_nothing_else_is (__main__.PagesProjectTest.test_cloudflare_s_not_found_code_in_any_4xx_is_a_missing_project_and_nothing_else_is) (case='a bare 404')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp247om2p2/tools/ci/deploy_dev_steps_test.py", line 434, in test_cloudflare_s_not_found_code_in_any_4xx_is_a_missing_project_and_nothing_else_is
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: pages-project: made the Pages project tadayo
+deploy-dev: pages-project: tadayo serves main at tadayo-x1y.pages.dev
+
+
+======================================================================
+FAIL: test_cloudflare_s_not_found_code_in_any_4xx_is_a_missing_project_and_nothing_else_is (__main__.PagesProjectTest.test_cloudflare_s_not_found_code_in_any_4xx_is_a_missing_project_and_nothing_else_is) (case='the code under another success')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp247om2p2/tools/ci/deploy_dev_steps_test.py", line 434, in test_cloudflare_s_not_found_code_in_any_4xx_is_a_missing_project_and_nothing_else_is
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: pages-project: made the Pages project tadayo
+deploy-dev: pages-project: tadayo serves main at tadayo-x1y.pages.dev
+
+
+======================================================================
+FAIL: test_cloudflare_s_not_found_code_in_any_4xx_is_a_missing_project_and_nothing_else_is (__main__.PagesProjectTest.test_cloudflare_s_not_found_code_in_any_4xx_is_a_missing_project_and_nothing_else_is) (case='the code as text')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp247om2p2/tools/ci/deploy_dev_steps_test.py", line 434, in test_cloudflare_s_not_found_code_in_any_4xx_is_a_missing_project_and_nothing_else_is
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: pages-project: made the Pages project tadayo
+deploy-dev: pages-project: tadayo serves main at tadayo-x1y.pages.dev
+
+
+----------------------------------------------------------------------
+Ran 49 tests in 0.146s
+
+FAILED (failures=6)

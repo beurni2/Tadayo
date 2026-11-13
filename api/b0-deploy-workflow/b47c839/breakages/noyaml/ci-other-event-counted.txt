@@ -1,0 +1,24 @@
+tools/ci/deploy_dev_steps.py
+--- old
+ and r.get("event") == "push"
+
+--- new
+
+
+--- expected: test_runs_of_another_commit_branch_or_event
+--- exit 1
+........................................F.s......
+======================================================================
+FAIL: test_runs_of_another_commit_branch_or_event_are_not_this_commit_s (__main__.WaitCiTest.test_runs_of_another_commit_branch_or_event_are_not_this_commit_s)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpst0um3n2/tools/ci/deploy_dev_steps_test.py", line 149, in test_runs_of_another_commit_branch_or_event_are_not_this_commit_s
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: wait-ci: 0123456789ab's ci run 3 failed (failure); nothing is deployed
+
+
+----------------------------------------------------------------------
+Ran 49 tests in 0.179s
+
+FAILED (failures=1, skipped=1)

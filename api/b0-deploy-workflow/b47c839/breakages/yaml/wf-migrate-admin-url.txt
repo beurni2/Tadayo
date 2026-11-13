@@ -1,0 +1,55 @@
+.github/workflows/deploy-dev.yml
+--- old
+          DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
+
+--- new
+          DATABASE_URL: ${{ secrets.DEV_DATABASE_ADMIN_URL }}
+
+--- expected: test_its_jobs_and_steps_are_these_exactly
+--- exit 1
+.........................................F..F...F
+======================================================================
+FAIL: test_every_expression_in_the_file_is_one_this_test_knows (__main__.WorkflowFileTest.test_every_expression_in_the_file_is_one_this_test_knows)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp719edovc/tools/ci/deploy_dev_steps_test.py", line 758, in test_every_expression_in_the_file_is_one_this_test_knows
+    self.assertEqual(found, sorted(wanted))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['${{[201 chars]BASE_ADMIN_URL }}', '${{ secrets.FLY_API_TOKEN[344 chars] }}'] != ['${{[201 chars]BASE_URL }}', '${{ secrets.FLY_API_TOKEN }}', [338 chars] }}']
+
+First differing element 6:
+'${{ secrets.DEV_DATABASE_ADMIN_URL }}'
+'${{ secrets.DEV_DATABASE_URL }}'
+
+Diff is 727 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_its_jobs_and_steps_are_these_exactly (__main__.WorkflowFileTest.test_its_jobs_and_steps_are_these_exactly) (job='deploy')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp719edovc/tools/ci/deploy_dev_steps_test.py", line 739, in test_its_jobs_and_steps_are_these_exactly
+    self.assertEqual(self.document["jobs"][name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'nam[786 chars]BASE_ADMIN_URL }}', 'SUPABASE_DEV_PROJECT_REF'[1676 chars]n'}]} != {'nam[786 chars]BASE_URL }}', 'SUPABASE_DEV_PROJECT_REF': '${{[1670 chars]n'}]}
+Diff is 4092 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_the_secrets_are_the_b0_plan_s (__main__.WorkflowFileTest.test_the_secrets_are_the_b0_plan_s)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp719edovc/tools/ci/deploy_dev_steps_test.py", line 764, in test_the_secrets_are_the_b0_plan_s
+    self.assertEqual(set(re.findall(r"secrets\.([A-Z_]+)", self.text)),
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     {"FLY_API_TOKEN", "DEV_DATABASE_URL", "SUPABASE_DEV_PROJECT_REF", "SUPABASE_ACCESS_TOKEN",
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                      "CLOUDFLARE_API_TOKEN"})
+                      ^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Items in the first set but not the second:
+'DEV_DATABASE_ADMIN_URL'
+Items in the second set but not the first:
+'DEV_DATABASE_URL'
+
+----------------------------------------------------------------------
+Ran 49 tests in 0.150s
+
+FAILED (failures=3)

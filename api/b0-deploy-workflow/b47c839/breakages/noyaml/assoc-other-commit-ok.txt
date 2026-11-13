@@ -1,0 +1,51 @@
+tools/ci/deploy_dev_steps.py
+--- old
+                if commit == sha and deployment.get("environment") == "production":
+--- new
+                if deployment.get("environment") == "production":
+--- expected: test_another_commit_s_deployment_fails_after_the_last_look
+--- exit 1
+...........EF.............................s......
+======================================================================
+ERROR: test_another_commit_s_deployment_fails_after_the_last_look (__main__.CheckAssociationTest.test_another_commit_s_deployment_fails_after_the_last_look)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpk2x3b_76/tools/ci/deploy_dev_steps_test.py", line 587, in test_another_commit_s_deployment_fails_after_the_last_look
+    code, out, http, sleeps = self.check([found(project(deployment=deployment(sha=OTHER_SHA)))], {})
+                              ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpk2x3b_76/tools/ci/deploy_dev_steps_test.py", line 538, in check
+    return call("check_association", CLOUDFLARE, self.respond(projects, files), root=self.repo.root)
+  File "/tmp/tmpk2x3b_76/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpk2x3b_76/tools/ci/deploy_dev_steps.py", line 410, in check_association
+    self.served(host, built)
+    ~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/tmp/tmpk2x3b_76/tools/ci/deploy_dev_steps.py", line 453, in served
+    answer = self.http.request("GET", host, ASSOCIATION, {"user-agent": USER_AGENT})
+  File "/tmp/tmpk2x3b_76/tools/ci/deploy_dev_steps_test.py", line 54, in request
+    result = self.respond(method, host, path, body)
+  File "/tmp/tmpk2x3b_76/tools/ci/deploy_dev_steps_test.py", line 530, in respond
+    given = files[host]
+            ~~~~~^^^^^^
+KeyError: 'tadayo-x1y.pages.dev'
+
+======================================================================
+FAIL: test_it_waits_for_this_commit_s_deployment_and_its_success (__main__.CheckAssociationTest.test_it_waits_for_this_commit_s_deployment_and_its_success)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpk2x3b_76/tools/ci/deploy_dev_steps_test.py", line 556, in test_it_waits_for_this_commit_s_deployment_and_its_success
+    self.assertEqual(sleeps.calls, [15, 15, 15])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [15] != [15, 15, 15]
+
+Second list contains 2 additional elements.
+First extra element 1:
+15
+
+- [15]
++ [15, 15, 15]
+
+----------------------------------------------------------------------
+Ran 49 tests in 0.160s
+
+FAILED (failures=1, errors=1, skipped=1)

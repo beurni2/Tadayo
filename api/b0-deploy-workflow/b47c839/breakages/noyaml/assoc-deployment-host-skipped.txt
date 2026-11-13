@@ -1,0 +1,70 @@
+tools/ci/deploy_dev_steps.py
+--- old
+            hosts = [project["subdomain"], host_of(deployment["url"])]
+--- new
+            hosts = [project["subdomain"]]
+--- expected: test_the_deployment_s_own_address_is_checked_too
+--- exit 1
+......FFF.......F.F.........................s......
+======================================================================
+FAIL: test_a_deployment_address_that_isn_t_an_https_host_fails (__main__.CheckAssociationTest.test_a_deployment_address_that_isn_t_an_https_host_fails) (url='http://abc.pages.dev')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpg9rldlh4/tools/ci/deploy_dev_steps_test.py", line 630, in test_a_deployment_address_that_isn_t_an_https_host_fails
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-association: /.well-known/apple-app-site-association is served as application/json, as built, at tadayo-x1y.pages.dev
+
+
+======================================================================
+FAIL: test_a_deployment_address_that_isn_t_an_https_host_fails (__main__.CheckAssociationTest.test_a_deployment_address_that_isn_t_an_https_host_fails) (url='https://abc.pages.dev/path')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpg9rldlh4/tools/ci/deploy_dev_steps_test.py", line 630, in test_a_deployment_address_that_isn_t_an_https_host_fails
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-association: /.well-known/apple-app-site-association is served as application/json, as built, at tadayo-x1y.pages.dev
+
+
+======================================================================
+FAIL: test_a_deployment_address_that_isn_t_an_https_host_fails (__main__.CheckAssociationTest.test_a_deployment_address_that_isn_t_an_https_host_fails) (url='https://user@abc.pages.dev')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpg9rldlh4/tools/ci/deploy_dev_steps_test.py", line 630, in test_a_deployment_address_that_isn_t_an_https_host_fails
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-association: /.well-known/apple-app-site-association is served as application/json, as built, at tadayo-x1y.pages.dev
+
+
+======================================================================
+FAIL: test_the_deployment_s_own_address_is_checked_too (__main__.CheckAssociationTest.test_the_deployment_s_own_address_is_checked_too)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpg9rldlh4/tools/ci/deploy_dev_steps_test.py", line 622, in test_the_deployment_s_own_address_is_checked_too
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-association: /.well-known/apple-app-site-association is served as application/json, as built, at tadayo-x1y.pages.dev
+
+
+======================================================================
+FAIL: test_this_commit_s_deployment_served_as_built_on_both_addresses_passes (__main__.CheckAssociationTest.test_this_commit_s_deployment_served_as_built_on_both_addresses_passes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpg9rldlh4/tools/ci/deploy_dev_steps_test.py", line 544, in test_this_commit_s_deployment_served_as_built_on_both_addresses_passes
+    self.assertEqual([r["host"] for r in http.requests],
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     ["api.cloudflare.com", "tadayo-x1y.pages.dev", "abc123.tadayo-x1y.pages.dev"])
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['api.cloudflare.com', 'tadayo-x1y.pages.dev'] != ['api.cloudflare.com', 'tadayo-x1y.pages.dev', 'abc123.tadayo-x1y.pages.dev']
+
+Second list contains 1 additional elements.
+First extra element 2:
+'abc123.tadayo-x1y.pages.dev'
+
+- ['api.cloudflare.com', 'tadayo-x1y.pages.dev']
++ ['api.cloudflare.com', 'tadayo-x1y.pages.dev', 'abc123.tadayo-x1y.pages.dev']
+
+----------------------------------------------------------------------
+Ran 49 tests in 0.159s
+
+FAILED (failures=5, skipped=1)

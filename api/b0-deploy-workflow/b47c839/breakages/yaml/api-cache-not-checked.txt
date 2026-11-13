@@ -1,0 +1,32 @@
+tools/ci/deploy_dev_steps.py
+--- old
+for name in ("content-type", "cache-control"):
+--- new
+for name in ("content-type",):
+--- expected: test_any_other_answer_fails_at_once
+--- exit 1
+FF................................................
+======================================================================
+FAIL: test_any_other_answer_fails_at_once (__main__.CheckApiTest.test_any_other_answer_fails_at_once) (case='cached')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp7gf1h6y8/tools/ci/deploy_dev_steps_test.py", line 224, in test_any_other_answer_fails_at_once
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-api: GET https://api-dev.tadayo.app/v1/me with no token answered 401 UNAUTHENTICATED, private and not stored
+
+
+======================================================================
+FAIL: test_any_other_answer_fails_at_once (__main__.CheckApiTest.test_any_other_answer_fails_at_once) (case='no cache-control')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp7gf1h6y8/tools/ci/deploy_dev_steps_test.py", line 224, in test_any_other_answer_fails_at_once
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-api: GET https://api-dev.tadayo.app/v1/me with no token answered 401 UNAUTHENTICATED, private and not stored
+
+
+----------------------------------------------------------------------
+Ran 49 tests in 0.128s
+
+FAILED (failures=2)

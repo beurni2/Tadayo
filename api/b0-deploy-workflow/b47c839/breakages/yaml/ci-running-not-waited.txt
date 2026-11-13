@@ -1,0 +1,34 @@
+tools/ci/deploy_dev_steps.py
+--- old
+        if waiting:
+            print
+--- new
+        if False:
+            print
+--- expected: test_it_waits_while_there_is_no_run_or_one_is_still_running
+--- exit 1
+.....................................FF..........
+======================================================================
+FAIL: test_it_gives_up_after_its_last_look (__main__.WaitCiTest.test_it_gives_up_after_its_last_look)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpuojbphkj/tools/ci/deploy_dev_steps_test.py", line 164, in test_it_gives_up_after_its_last_look
+    self.assertEqual(len(http.requests), 120)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 120
+
+======================================================================
+FAIL: test_it_waits_while_there_is_no_run_or_one_is_still_running (__main__.WaitCiTest.test_it_waits_while_there_is_no_run_or_one_is_still_running)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpuojbphkj/tools/ci/deploy_dev_steps_test.py", line 131, in test_it_waits_while_there_is_no_run_or_one_is_still_running
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: wait-ci: no ci run for 0123456789ab on main yet
+deploy-dev: wait-ci: every ci run for 0123456789ab was cancelled or skipped; run ci again, then this workflow
+
+
+----------------------------------------------------------------------
+Ran 49 tests in 0.122s
+
+FAILED (failures=2)

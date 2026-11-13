@@ -1,0 +1,25 @@
+.github/workflows/deploy-dev.yml
+--- old
+      - name: check-association
+
+--- new
+      - name: check-association
+        continue-on-error: true
+
+--- expected: test_its_jobs_and_steps_are_these_exactly
+--- exit 1
+............................................F....
+======================================================================
+FAIL: test_its_jobs_and_steps_are_these_exactly (__main__.WorkflowFileTest.test_its_jobs_and_steps_are_these_exactly) (job='deploy')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpdry66v48/tools/ci/deploy_dev_steps_test.py", line 739, in test_its_jobs_and_steps_are_these_exactly
+    self.assertEqual(self.document["jobs"][name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'nam[2303 chars]n', 'continue-on-error': 'true', 'env': {'CLOU[182 chars]n'}]} != {'nam[2303 chars]n', 'env': {'CLOUDFLARE_API_TOKEN': '${{ secre[153 chars]n'}]}
+Diff is 4097 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 49 tests in 0.149s
+
+FAILED (failures=1)

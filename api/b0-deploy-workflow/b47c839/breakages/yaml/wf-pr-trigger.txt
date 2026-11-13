@@ -1,0 +1,221 @@
+.github/workflows/deploy-dev.yml
+--- old
+on:
+  push:
+    branches:
+      - main
+
+--- new
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+--- expected: test_it_runs_only_on_a_push_to_main
+--- exit 1
+.........................................EEEEEEEE
+======================================================================
+ERROR: test_every_expression_in_the_file_is_one_this_test_knows (__main__.WorkflowFileTest.test_every_expression_in_the_file_is_one_this_test_knows)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpb29yu8_a/tools/ci/deploy_dev_steps_test.py", line 705, in setUp
+    self.document = parse_yaml(self.text)
+                    ~~~~~~~~~~^^^^^^^^^^^
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 552, in parse_yaml
+    document = block(0)
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 507, in value_after
+    return block(lines[position][1])
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 506, in value_after
+    raise ValueError(f"line {number}: a key with no value")
+ValueError: line 12: a key with no value
+
+======================================================================
+ERROR: test_it_reads_as_a_yaml_library_would (__main__.WorkflowFileTest.test_it_reads_as_a_yaml_library_would)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpb29yu8_a/tools/ci/deploy_dev_steps_test.py", line 705, in setUp
+    self.document = parse_yaml(self.text)
+                    ~~~~~~~~~~^^^^^^^^^^^
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 552, in parse_yaml
+    document = block(0)
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 507, in value_after
+    return block(lines[position][1])
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 506, in value_after
+    raise ValueError(f"line {number}: a key with no value")
+ValueError: line 12: a key with no value
+
+======================================================================
+ERROR: test_it_runs_only_on_a_push_to_main (__main__.WorkflowFileTest.test_it_runs_only_on_a_push_to_main)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpb29yu8_a/tools/ci/deploy_dev_steps_test.py", line 705, in setUp
+    self.document = parse_yaml(self.text)
+                    ~~~~~~~~~~^^^^^^^^^^^
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 552, in parse_yaml
+    document = block(0)
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 507, in value_after
+    return block(lines[position][1])
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 506, in value_after
+    raise ValueError(f"line {number}: a key with no value")
+ValueError: line 12: a key with no value
+
+======================================================================
+ERROR: test_its_jobs_and_steps_are_these_exactly (__main__.WorkflowFileTest.test_its_jobs_and_steps_are_these_exactly)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpb29yu8_a/tools/ci/deploy_dev_steps_test.py", line 705, in setUp
+    self.document = parse_yaml(self.text)
+                    ~~~~~~~~~~^^^^^^^^^^^
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 552, in parse_yaml
+    document = block(0)
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 507, in value_after
+    return block(lines[position][1])
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 506, in value_after
+    raise ValueError(f"line {number}: a key with no value")
+ValueError: line 12: a key with no value
+
+======================================================================
+ERROR: test_only_the_deploy_job_holds_ops_dev_and_it_is_never_cancelled (__main__.WorkflowFileTest.test_only_the_deploy_job_holds_ops_dev_and_it_is_never_cancelled)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpb29yu8_a/tools/ci/deploy_dev_steps_test.py", line 705, in setUp
+    self.document = parse_yaml(self.text)
+                    ~~~~~~~~~~^^^^^^^^^^^
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 552, in parse_yaml
+    document = block(0)
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 507, in value_after
+    return block(lines[position][1])
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 506, in value_after
+    raise ValueError(f"line {number}: a key with no value")
+ValueError: line 12: a key with no value
+
+======================================================================
+ERROR: test_the_file_holds_these_keys_and_no_other (__main__.WorkflowFileTest.test_the_file_holds_these_keys_and_no_other)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpb29yu8_a/tools/ci/deploy_dev_steps_test.py", line 705, in setUp
+    self.document = parse_yaml(self.text)
+                    ~~~~~~~~~~^^^^^^^^^^^
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 552, in parse_yaml
+    document = block(0)
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 507, in value_after
+    return block(lines[position][1])
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 506, in value_after
+    raise ValueError(f"line {number}: a key with no value")
+ValueError: line 12: a key with no value
+
+======================================================================
+ERROR: test_the_pins_are_ci_yml_s (__main__.WorkflowFileTest.test_the_pins_are_ci_yml_s)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpb29yu8_a/tools/ci/deploy_dev_steps_test.py", line 705, in setUp
+    self.document = parse_yaml(self.text)
+                    ~~~~~~~~~~^^^^^^^^^^^
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 552, in parse_yaml
+    document = block(0)
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 507, in value_after
+    return block(lines[position][1])
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 506, in value_after
+    raise ValueError(f"line {number}: a key with no value")
+ValueError: line 12: a key with no value
+
+======================================================================
+ERROR: test_the_secrets_are_the_b0_plan_s (__main__.WorkflowFileTest.test_the_secrets_are_the_b0_plan_s)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpb29yu8_a/tools/ci/deploy_dev_steps_test.py", line 705, in setUp
+    self.document = parse_yaml(self.text)
+                    ~~~~~~~~~~^^^^^^^^^^^
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 552, in parse_yaml
+    document = block(0)
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 507, in value_after
+    return block(lines[position][1])
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 490, in block
+    return mapping(indent)
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 530, in mapping
+    found[key] = value_after(number, indent, rest.strip())
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpb29yu8_a/tools/ci/ops_steps_test.py", line 506, in value_after
+    raise ValueError(f"line {number}: a key with no value")
+ValueError: line 12: a key with no value
+
+----------------------------------------------------------------------
+Ran 49 tests in 0.136s
+
+FAILED (errors=8)

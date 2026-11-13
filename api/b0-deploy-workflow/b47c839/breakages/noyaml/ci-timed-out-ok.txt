@@ -1,0 +1,29 @@
+tools/ci/deploy_dev_steps.py
+--- old
+OK_CONCLUSIONS = {"success", "cancelled", "skipped"}
+--- new
+OK_CONCLUSIONS = {"success", "cancelled", "skipped", "timed_out"}
+--- expected: test_a_failed_run_fails_at_once
+--- exit 1
+................................F.........s......
+======================================================================
+FAIL: test_a_failed_run_fails_at_once_whatever_its_siblings (__main__.WaitCiTest.test_a_failed_run_fails_at_once_whatever_its_siblings) (conclusion='timed_out')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpw67vjzh7/tools/ci/deploy_dev_steps_test.py", line 138, in test_a_failed_run_fails_at_once_whatever_its_siblings
+    code, out, http, sleeps = call("wait_ci", self.environ, sequence(
+                              ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        runs_answer(ci_run(7, "in_progress", None), ci_run(8, "completed", conclusion), ci_run(9))))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpw67vjzh7/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpw67vjzh7/tools/ci/deploy_dev_steps.py", line 154, in wait_ci
+    answer = self.http.request("GET", GITHUB_API, path, headers)
+  File "/tmp/tmpw67vjzh7/tools/ci/deploy_dev_steps_test.py", line 56, in request
+    raise result
+AssertionError: an unexpected request: GET api.github.com/repos/beurni2/tadayo/actions/workflows/ci.yml/runs?head_sha=0123456789abcdef0123456789abcdef01234567&branch=main&event=push&per_page=100
+
+----------------------------------------------------------------------
+Ran 49 tests in 0.160s
+
+FAILED (failures=1, skipped=1)

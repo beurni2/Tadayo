@@ -1,0 +1,23 @@
+tools/ci/deploy_dev_steps.py
+--- old
+        if not os.path.isfile(self.path(SITE, ASSOCIATION.lstrip("/"))):
+            print(f"deploy-dev: pages-deploy:
+--- new
+        if False:
+            print(f"deploy-dev: pages-deploy:
+--- expected: test_nothing_runs_without_the_build
+--- exit 1
+..................F.......................s......
+======================================================================
+FAIL: test_nothing_runs_without_the_build_the_secrets_or_the_commit (__main__.PagesDeployTest.test_nothing_runs_without_the_build_the_secrets_or_the_commit) (environ={'CLOUDFLARE_API_TOKEN': 'secret-token-value', 'CLOUDFLARE_ACCOUNT_ID': '0123456789abcdef0123456789abcdef', 'GITHUB_SHA': '0123456789abcdef0123456789abcdef01234567'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpiwly53qp/tools/ci/deploy_dev_steps_test.py", line 512, in test_nothing_runs_without_the_build_the_secrets_or_the_commit
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : 
+
+----------------------------------------------------------------------
+Ran 49 tests in 0.150s
+
+FAILED (failures=1, skipped=1)

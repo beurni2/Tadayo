@@ -1,0 +1,26 @@
+.github/workflows/deploy-dev.yml
+--- old
+      - run: python3 tools/ci/deploy_dev_steps.py check-api
+      - run: python3 tools/ci/ci_steps.py web
+
+--- new
+      - run: python3 tools/ci/ci_steps.py web
+      - run: python3 tools/ci/deploy_dev_steps.py check-api
+
+--- expected: test_its_jobs_and_steps_are_these_exactly
+--- exit 1
+..........................................s.F....
+======================================================================
+FAIL: test_its_jobs_and_steps_are_these_exactly (__main__.WorkflowFileTest.test_its_jobs_and_steps_are_these_exactly) (job='deploy')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpfr4v8o44/tools/ci/deploy_dev_steps_test.py", line 739, in test_its_jobs_and_steps_are_these_exactly
+    self.assertEqual(self.document["jobs"][name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'nam[1688 chars]s/ci/ci_steps.py web'}, {'run': 'python3 tools[768 chars]n'}]} != {'nam[1688 chars]s/ci/deploy_dev_steps.py check-api'}, {'run': [768 chars]n'}]}
+Diff is 4013 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 49 tests in 0.162s
+
+FAILED (failures=1, skipped=1)

@@ -1,0 +1,28 @@
+.github/workflows/deploy-dev.yml
+--- old
+    timeout-minutes: 75
+    permissions:
+      contents: read
+
+--- new
+    timeout-minutes: 75
+    permissions:
+      contents: write
+
+--- expected: test_its_jobs_and_steps_are_these_exactly
+--- exit 1
+............................................F....
+======================================================================
+FAIL: test_its_jobs_and_steps_are_these_exactly (__main__.WorkflowFileTest.test_its_jobs_and_steps_are_these_exactly) (job='deploy')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpegfbha4d/tools/ci/deploy_dev_steps_test.py", line 739, in test_its_jobs_and_steps_are_these_exactly
+    self.assertEqual(self.document["jobs"][name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'nam[105 chars]s': 'write', 'actions': 'read'}, 'concurrency'[2352 chars]n'}]} != {'nam[105 chars]s': 'read', 'actions': 'read'}, 'concurrency':[2351 chars]n'}]}
+Diff is 4115 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 49 tests in 0.151s
+
+FAILED (failures=1)

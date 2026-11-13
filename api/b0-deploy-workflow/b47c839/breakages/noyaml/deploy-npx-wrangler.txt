@@ -1,0 +1,44 @@
+tools/ci/deploy_dev_steps.py
+--- old
+cmd = ["node", WRANGLER, "pages",
+--- new
+cmd = ["npx", "wrangler", "pages",
+--- expected: test_it_runs_the_pinned_wrangler_with_only_what_it_needs
+--- exit 1
+.................F........................s......
+======================================================================
+FAIL: test_it_runs_the_pinned_wrangler_with_only_what_it_needs (__main__.PagesDeployTest.test_it_runs_the_pinned_wrangler_with_only_what_it_needs)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpd9gv444q/tools/ci/deploy_dev_steps_test.py", line 488, in test_it_runs_the_pinned_wrangler_with_only_what_it_needs
+    self.assertEqual(done["cmd"], [
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+        "node", os.path.join("tools", "ci", "pages", "node_modules", "wrangler", "bin", "wrangler.js"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        "pages", "deploy", os.path.join("apps", "web", "dist"), "--project-name=tadayo", "--branch=main",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        f"--commit-hash={SHA}", f"--commit-message=main at {SHA[:12]}", "--commit-dirty=false"])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['npx', 'wrangler', 'pages', 'deploy', 'apps[171 chars]lse'] != ['node', 'tools/ci/pages/node_modules/wrangl[216 chars]lse']
+
+First differing element 0:
+'npx'
+'node'
+
+- ['npx',
+-  'wrangler',
++ ['node',
++  'tools/ci/pages/node_modules/wrangler/bin/wrangler.js',
+   'pages',
+   'deploy',
+   'apps/web/dist',
+   '--project-name=tadayo',
+   '--branch=main',
+   '--commit-hash=0123456789abcdef0123456789abcdef01234567',
+   '--commit-message=main at 0123456789ab',
+   '--commit-dirty=false']
+
+----------------------------------------------------------------------
+Ran 49 tests in 0.199s
+
+FAILED (failures=1, skipped=1)

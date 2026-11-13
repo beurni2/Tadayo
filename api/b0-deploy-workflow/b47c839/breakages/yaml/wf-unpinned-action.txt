@@ -1,0 +1,31 @@
+.github/workflows/deploy-dev.yml
+--- old
+actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+--- new
+actions/setup-node@v7
+--- expected: test_its_jobs_and_steps_are_these_exactly
+--- exit 1
+............................................F..F.
+======================================================================
+FAIL: test_its_jobs_and_steps_are_these_exactly (__main__.WorkflowFileTest.test_its_jobs_and_steps_are_these_exactly) (job='deploy')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpl1odw1b8/tools/ci/deploy_dev_steps_test.py", line 739, in test_its_jobs_and_steps_are_these_exactly
+    self.assertEqual(self.document["jobs"][name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'nam[352 chars]node@v7', 'with': {'node-version-file': '.nvmr[2066 chars]n'}]} != {'nam[352 chars]node@949feb2413d6458794dcd2491c4babbbce0c15c1'[2104 chars]n'}]}
+Diff is 3988 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_the_pins_are_ci_yml_s (__main__.WorkflowFileTest.test_the_pins_are_ci_yml_s)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpl1odw1b8/tools/ci/deploy_dev_steps_test.py", line 773, in test_the_pins_are_ci_yml_s
+    self.assertTrue(set(uses) <= set(pinned.values()))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 49 tests in 0.149s
+
+FAILED (failures=2)

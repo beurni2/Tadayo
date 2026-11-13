@@ -1,0 +1,23 @@
+tools/ci/deploy_dev_steps.py
+--- old
+            print(f"deploy-dev: wait-ci: no ci run for {sha[:12]} on {BRANCH} yet")
+            return None
+--- new
+            print(f"deploy-dev: wait-ci: no ci run for {sha[:12]} on {BRANCH} yet")
+            return 0
+--- expected: test_it_waits_while_there_is_no_run_or_one_is_still_running
+--- exit 1
+......................................F...s......
+======================================================================
+FAIL: test_it_waits_while_there_is_no_run_or_one_is_still_running (__main__.WaitCiTest.test_it_waits_while_there_is_no_run_or_one_is_still_running)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp6bs52lq8/tools/ci/deploy_dev_steps_test.py", line 132, in test_it_waits_while_there_is_no_run_or_one_is_still_running
+    self.assertEqual(len(http.requests), 4)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 4
+
+----------------------------------------------------------------------
+Ran 49 tests in 0.071s
+
+FAILED (failures=1, skipped=1)

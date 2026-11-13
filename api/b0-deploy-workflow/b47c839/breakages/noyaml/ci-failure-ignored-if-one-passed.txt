@@ -1,0 +1,133 @@
+tools/ci/deploy_dev_steps.py
+--- old
+            if run.get("status") == "completed" and run.get("conclusion") not in OK_CONCLUSIONS:
+
+--- new
+            if False:
+
+--- expected: test_a_failed_run_fails_at_once
+--- exit 1
+................................FFFFFFF.........s......
+======================================================================
+FAIL: test_a_failed_run_fails_at_once_whatever_its_siblings (__main__.WaitCiTest.test_a_failed_run_fails_at_once_whatever_its_siblings) (conclusion='failure')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmphi39i3i0/tools/ci/deploy_dev_steps_test.py", line 138, in test_a_failed_run_fails_at_once_whatever_its_siblings
+    code, out, http, sleeps = call("wait_ci", self.environ, sequence(
+                              ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        runs_answer(ci_run(7, "in_progress", None), ci_run(8, "completed", conclusion), ci_run(9))))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmphi39i3i0/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmphi39i3i0/tools/ci/deploy_dev_steps.py", line 154, in wait_ci
+    answer = self.http.request("GET", GITHUB_API, path, headers)
+  File "/tmp/tmphi39i3i0/tools/ci/deploy_dev_steps_test.py", line 56, in request
+    raise result
+AssertionError: an unexpected request: GET api.github.com/repos/beurni2/tadayo/actions/workflows/ci.yml/runs?head_sha=0123456789abcdef0123456789abcdef01234567&branch=main&event=push&per_page=100
+
+======================================================================
+FAIL: test_a_failed_run_fails_at_once_whatever_its_siblings (__main__.WaitCiTest.test_a_failed_run_fails_at_once_whatever_its_siblings) (conclusion='timed_out')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmphi39i3i0/tools/ci/deploy_dev_steps_test.py", line 138, in test_a_failed_run_fails_at_once_whatever_its_siblings
+    code, out, http, sleeps = call("wait_ci", self.environ, sequence(
+                              ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        runs_answer(ci_run(7, "in_progress", None), ci_run(8, "completed", conclusion), ci_run(9))))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmphi39i3i0/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmphi39i3i0/tools/ci/deploy_dev_steps.py", line 154, in wait_ci
+    answer = self.http.request("GET", GITHUB_API, path, headers)
+  File "/tmp/tmphi39i3i0/tools/ci/deploy_dev_steps_test.py", line 56, in request
+    raise result
+AssertionError: an unexpected request: GET api.github.com/repos/beurni2/tadayo/actions/workflows/ci.yml/runs?head_sha=0123456789abcdef0123456789abcdef01234567&branch=main&event=push&per_page=100
+
+======================================================================
+FAIL: test_a_failed_run_fails_at_once_whatever_its_siblings (__main__.WaitCiTest.test_a_failed_run_fails_at_once_whatever_its_siblings) (conclusion='action_required')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmphi39i3i0/tools/ci/deploy_dev_steps_test.py", line 138, in test_a_failed_run_fails_at_once_whatever_its_siblings
+    code, out, http, sleeps = call("wait_ci", self.environ, sequence(
+                              ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        runs_answer(ci_run(7, "in_progress", None), ci_run(8, "completed", conclusion), ci_run(9))))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmphi39i3i0/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmphi39i3i0/tools/ci/deploy_dev_steps.py", line 154, in wait_ci
+    answer = self.http.request("GET", GITHUB_API, path, headers)
+  File "/tmp/tmphi39i3i0/tools/ci/deploy_dev_steps_test.py", line 56, in request
+    raise result
+AssertionError: an unexpected request: GET api.github.com/repos/beurni2/tadayo/actions/workflows/ci.yml/runs?head_sha=0123456789abcdef0123456789abcdef01234567&branch=main&event=push&per_page=100
+
+======================================================================
+FAIL: test_a_failed_run_fails_at_once_whatever_its_siblings (__main__.WaitCiTest.test_a_failed_run_fails_at_once_whatever_its_siblings) (conclusion='startup_failure')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmphi39i3i0/tools/ci/deploy_dev_steps_test.py", line 138, in test_a_failed_run_fails_at_once_whatever_its_siblings
+    code, out, http, sleeps = call("wait_ci", self.environ, sequence(
+                              ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        runs_answer(ci_run(7, "in_progress", None), ci_run(8, "completed", conclusion), ci_run(9))))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmphi39i3i0/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmphi39i3i0/tools/ci/deploy_dev_steps.py", line 154, in wait_ci
+    answer = self.http.request("GET", GITHUB_API, path, headers)
+  File "/tmp/tmphi39i3i0/tools/ci/deploy_dev_steps_test.py", line 56, in request
+    raise result
+AssertionError: an unexpected request: GET api.github.com/repos/beurni2/tadayo/actions/workflows/ci.yml/runs?head_sha=0123456789abcdef0123456789abcdef01234567&branch=main&event=push&per_page=100
+
+======================================================================
+FAIL: test_a_failed_run_fails_at_once_whatever_its_siblings (__main__.WaitCiTest.test_a_failed_run_fails_at_once_whatever_its_siblings) (conclusion='stale')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmphi39i3i0/tools/ci/deploy_dev_steps_test.py", line 138, in test_a_failed_run_fails_at_once_whatever_its_siblings
+    code, out, http, sleeps = call("wait_ci", self.environ, sequence(
+                              ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        runs_answer(ci_run(7, "in_progress", None), ci_run(8, "completed", conclusion), ci_run(9))))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmphi39i3i0/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmphi39i3i0/tools/ci/deploy_dev_steps.py", line 154, in wait_ci
+    answer = self.http.request("GET", GITHUB_API, path, headers)
+  File "/tmp/tmphi39i3i0/tools/ci/deploy_dev_steps_test.py", line 56, in request
+    raise result
+AssertionError: an unexpected request: GET api.github.com/repos/beurni2/tadayo/actions/workflows/ci.yml/runs?head_sha=0123456789abcdef0123456789abcdef01234567&branch=main&event=push&per_page=100
+
+======================================================================
+FAIL: test_a_failed_run_fails_at_once_whatever_its_siblings (__main__.WaitCiTest.test_a_failed_run_fails_at_once_whatever_its_siblings) (conclusion='neutral')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmphi39i3i0/tools/ci/deploy_dev_steps_test.py", line 138, in test_a_failed_run_fails_at_once_whatever_its_siblings
+    code, out, http, sleeps = call("wait_ci", self.environ, sequence(
+                              ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        runs_answer(ci_run(7, "in_progress", None), ci_run(8, "completed", conclusion), ci_run(9))))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmphi39i3i0/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmphi39i3i0/tools/ci/deploy_dev_steps.py", line 154, in wait_ci
+    answer = self.http.request("GET", GITHUB_API, path, headers)
+  File "/tmp/tmphi39i3i0/tools/ci/deploy_dev_steps_test.py", line 56, in request
+    raise result
+AssertionError: an unexpected request: GET api.github.com/repos/beurni2/tadayo/actions/workflows/ci.yml/runs?head_sha=0123456789abcdef0123456789abcdef01234567&branch=main&event=push&per_page=100
+
+======================================================================
+FAIL: test_a_failed_run_fails_at_once_whatever_its_siblings (__main__.WaitCiTest.test_a_failed_run_fails_at_once_whatever_its_siblings) (conclusion=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmphi39i3i0/tools/ci/deploy_dev_steps_test.py", line 138, in test_a_failed_run_fails_at_once_whatever_its_siblings
+    code, out, http, sleeps = call("wait_ci", self.environ, sequence(
+                              ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        runs_answer(ci_run(7, "in_progress", None), ci_run(8, "completed", conclusion), ci_run(9))))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmphi39i3i0/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmphi39i3i0/tools/ci/deploy_dev_steps.py", line 154, in wait_ci
+    answer = self.http.request("GET", GITHUB_API, path, headers)
+  File "/tmp/tmphi39i3i0/tools/ci/deploy_dev_steps_test.py", line 56, in request
+    raise result
+AssertionError: an unexpected request: GET api.github.com/repos/beurni2/tadayo/actions/workflows/ci.yml/runs?head_sha=0123456789abcdef0123456789abcdef01234567&branch=main&event=push&per_page=100
+
+----------------------------------------------------------------------
+Ran 49 tests in 0.152s
+
+FAILED (failures=7, skipped=1)

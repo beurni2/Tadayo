@@ -1,0 +1,32 @@
+tools/ci/deploy_dev_steps.py
+--- old
+cmd = ["npm", "ci", "--ignore-scripts", "--no-audit", "--no-fund"]
+--- new
+cmd = ["npm", "install", "--ignore-scripts", "--no-audit", "--no-fund"]
+--- expected: test_it_runs_npm_ci_without_install_scripts
+--- exit 1
+.............................F............s......
+======================================================================
+FAIL: test_it_runs_npm_ci_without_install_scripts_in_tools_ci_pages (__main__.SetupWranglerTest.test_it_runs_npm_ci_without_install_scripts_in_tools_ci_pages)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmphkg8i3kz/tools/ci/deploy_dev_steps_test.py", line 304, in test_it_runs_npm_ci_without_install_scripts_in_tools_ci_pages
+    self.assertEqual(done["cmd"], ["npm", "ci", "--ignore-scripts", "--no-audit", "--no-fund"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['npm', 'install', '--ignore-scripts', '--no-audit', '--no-fund'] != ['npm', 'ci', '--ignore-scripts', '--no-audit', '--no-fund']
+
+First differing element 1:
+'install'
+'ci'
+
+- ['npm', 'install', '--ignore-scripts', '--no-audit', '--no-fund']
+?           ------
+
++ ['npm', 'ci', '--ignore-scripts', '--no-audit', '--no-fund']
+?          +
+
+
+----------------------------------------------------------------------
+Ran 49 tests in 0.144s
+
+FAILED (failures=1, skipped=1)

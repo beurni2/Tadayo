@@ -1,0 +1,30 @@
+tools/ci/deploy_dev_steps.py
+--- old
+ or lock.get("lockfileVersion") != 3:
+--- new
+:
+--- expected: test_it_refuses_a_lockfile_it_can_t_trust
+--- exit 1
+...........................F.....................
+======================================================================
+FAIL: test_it_refuses_a_lockfile_it_can_t_trust_before_installing (__main__.SetupWranglerTest.test_it_refuses_a_lockfile_it_can_t_trust_before_installing) (change='another lockfile version')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpt31bd0z_/tools/ci/deploy_dev_steps_test.py", line 337, in test_it_refuses_a_lockfile_it_can_t_trust_before_installing
+    self.assertEqual(run.calls, [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [{'cmd': ['npm', 'ci', '--ignore-scripts',[77 chars] {}}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'cmd': ['npm', 'ci', '--ignore-scripts', '--no-audit', '--no-fund'], 'cwd': '/tmp/tmpz6g6by8f/tools/ci/pages', 'env': {}}
+
++ []
+- [{'cmd': ['npm', 'ci', '--ignore-scripts', '--no-audit', '--no-fund'],
+-   'cwd': '/tmp/tmpz6g6by8f/tools/ci/pages',
+-   'env': {}}]
+
+----------------------------------------------------------------------
+Ran 49 tests in 0.137s
+
+FAILED (failures=1)
