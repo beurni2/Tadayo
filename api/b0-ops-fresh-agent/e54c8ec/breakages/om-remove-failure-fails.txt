@@ -1,0 +1,42 @@
+breakage: om-remove-failure-fails
+registered: says a folder it couldn't remove, and goes on to remove the peer
+exit: 1
+verdict: caught
+left: []
+
+
+ RUN  v5.0.5 /home/user/tadayo-10c/tools/ops
+
+ ❯ src/on-machine.test.ts (40 tests | 1 failed) 126ms
+   ❯ onMachine: an agent of the session's own (7)
+     × says a folder it couldn't remove, and goes on to remove the peer, without failing a session that worked 12ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 59 passed (60)
+   Start at  19:03:34
+   Duration  364ms (tests 49%, import 27%, transform 20%, worker 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > says a folder it couldn't remove, and goes on to remove the peer, without failing a session that worked
+AssertionError: expected Error: EBUSY: resource busy or locked to be undefined
+
+- Expected:
+undefined
+
++ Received:
+Error {
+  "message": "EBUSY: resource busy or locked",
+}
+
+ ❯ src/on-machine.test.ts:945:28
+    943|       },
+    944|     });
+    945|     expect(result.outcome).toBeUndefined();
+       |                            ^
+    946|     // The folder's note comes as its removal fails, when the session …
+    947|     // machine printed is said.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

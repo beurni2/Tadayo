@@ -1,0 +1,175 @@
+breakage: fly-isolated-for-every-call
+registered: gives flyctl the token and HOME, the call's own directory, and two minutes
+exit: 1
+verdict: caught
+left: []
+
+
+ RUN  v5.0.5 /home/user/tadayo-10c/tools/ops
+
+ ❯ src/fly.test.ts (20 tests | 4 failed) 39ms
+   ❯ flyOf: flyctl with the Fly token and HOME and nothing else (6)
+     × gives flyctl the token and HOME, the call's own directory, and two minutes 14ms
+     × lets a call set its own time limit, and no other option changes the environment 2ms
+     × gives flyctl no HOME when there is none, or it is empty, rather than an empty one 1ms
+     × gives a call with an agent of its own that agent's folder and the word that runs it, beside the token and HOME 7ms
+ ❯ src/on-machine.test.ts (40 tests | 2 failed) 102ms
+   ❯ onMachine: the command, over SSH (16)
+     × gives the session the tunnel's bound, the connection and the command's time, and flyctl the token and HOME only, with the session's own agent 14ms
+   ❯ onMachine: an agent of the session's own (7)
+     × fails as run 43467951472 did when the sessions share flyctl's agent; with one folder for both, only while Fly's validation lags (the made-up flyctl) 3ms
+
+ Test Files  2 failed (2)
+      Tests  6 failed | 54 passed (60)
+   Start at  19:03:19
+   Duration  327ms (tests 51%, import 29%, transform 17%, worker 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/fly.test.ts > flyOf: flyctl with the Fly token and HOME and nothing else > gives flyctl the token and HOME, the call's own directory, and two minutes
+AssertionError: expected [ { command: 'flyctl', …(2) } ] to deeply equal [ { command: 'flyctl', …(2) } ]
+
+- Expected
++ Received
+
+@@ -7,10 +7,11 @@
+      ],
+      "command": "flyctl",
+      "options": {
+        "cwd": "/work",
+        "env": {
++         "FLY_AGENT_ISOLATED": "1",
+          "FLY_API_TOKEN": "fm2_FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+          "HOME": "/home/runner",
+        },
+        "timeoutMs": 120000,
+      },
+
+ ❯ src/fly.test.ts:29:19
+     27|     });
+     28|     await fly.run(["status", "-a", "tadayo-api-dev"], { cwd: "/work" }…
+     29|     expect(calls).toEqual([
+       |                   ^
+     30|       {
+     31|         command: "flyctl",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  src/fly.test.ts > flyOf: flyctl with the Fly token and HOME and nothing else > lets a call set its own time limit, and no other option changes the environment
+AssertionError: expected { env: { …(3) }, timeoutMs: 1200000 } to deeply equal { env: { …(2) }, timeoutMs: 1200000 }
+
+- Expected
++ Received
+
+  {
+    "env": {
++     "FLY_AGENT_ISOLATED": "1",
+      "FLY_API_TOKEN": "fm2_FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+      "HOME": "/home/runner",
+    },
+    "timeoutMs": 1200000,
+  }
+
+ ❯ src/fly.test.ts:42:31
+     40|     const fly = flyOf(spawn, { FLY_API_TOKEN: FAKE_FLY_TOKEN, HOME: "/…
+     41|     await fly.run(["deploy", "--app", "tadayo-api-dev"], { timeoutMs: …
+     42|     expect(calls[0]?.options).toEqual({
+       |                               ^
+     43|       env: { FLY_API_TOKEN: FAKE_FLY_TOKEN, HOME: "/home/runner" },
+     44|       timeoutMs: 20 * 60 * 1000,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  src/fly.test.ts > flyOf: flyctl with the Fly token and HOME and nothing else > gives flyctl no HOME when there is none, or it is empty, rather than an empty one
+AssertionError: expected { …(2) } to deeply equal { Object (FLY_API_TOKEN) }
+
+- Expected
++ Received
+
+  {
++   "FLY_AGENT_ISOLATED": "1",
+    "FLY_API_TOKEN": "fm2_FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+  }
+
+ ❯ src/fly.test.ts:52:37
+     50|       const { spawn, calls } = fakeSpawn([["flyctl", {}]]);
+     51|       await flyOf(spawn, { FLY_API_TOKEN: FAKE_FLY_TOKEN, HOME: home }…
+     52|       expect(calls[0]?.options.env).toEqual({ FLY_API_TOKEN: FAKE_FLY_…
+       |                                     ^
+     53|     }
+     54|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  src/fly.test.ts > flyOf: flyctl with the Fly token and HOME and nothing else > gives a call with an agent of its own that agent's folder and the word that runs it, beside the token and HOME
+AssertionError: expected [ …(2) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+@@ -8,10 +8,11 @@
+      },
+      "timeoutMs": 1000,
+    },
+    {
+      "env": {
++       "FLY_AGENT_ISOLATED": "1",
+        "FLY_API_TOKEN": "fm2_FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+        "HOME": "/home/runner",
+      },
+      "timeoutMs": 120000,
+    },
+
+ ❯ src/fly.test.ts:64:47
+     62|     });
+     63|     await fly.run(["status", "-a", "tadayo-api-dev"]);
+     64|     expect(calls.map((call) => call.options)).toEqual([
+       |                                               ^
+     65|       {
+     66|         env: {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > gives the session the tunnel's bound, the connection and the command's time, and flyctl the token and HOME only, with the session's own agent
+AssertionError: expected { …(3) } to deeply equal { …(2) }
+
+- Expected
++ Received
+
+  {
++   "FLY_AGENT_ISOLATED": "1",
+    "FLY_API_TOKEN": "fm2_FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+    "HOME": "/home/runner",
+  }
+
+ ❯ src/on-machine.test.ts:144:99
+    142|     expect(folder.startsWith(join(tmpdir(), "tadayo-flyctl-"))).toBe(t…
+    143|     expect(result.raw[3]?.options.env).toEqual({ ...ENV, FLY_CONFIG_DI…
+    144|     for (const call of result.raw.filter((_call, index) => index !== 3…
+       |                                                                                                   ^
+    145|     // The organization, the listings and the removal are quick calls.
+    146|     expect([1, 2, 4, 5].map((index) => result.raw[index]?.options.time…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > fails as run 43467951472 did when the sessions share flyctl's agent; with one folder for both, only while Fly's validation lags (the made-up flyctl)
+AssertionError: expected '' to match /^Error: tunnel unavailable: /
+
+- Expected:
+/^Error: tunnel unavailable: /
+
++ Received:
+""
+
+ ❯ src/on-machine.test.ts:897:43
+    895|       expect((await fly.run(ssh)).code).toBe(0);
+    896|       await fly.run(["wireguard", "remove", "tadayo-org", [...shared.a…
+    897|       expect((await fly.run(ssh)).stderr).toMatch(/^Error: tunnel unav…
+       |                                           ^
+    898|     });
+    899|     // One folder for both sessions, each with an agent of its own: fl…
+ ❯ src/on-machine.test.ts:891:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+

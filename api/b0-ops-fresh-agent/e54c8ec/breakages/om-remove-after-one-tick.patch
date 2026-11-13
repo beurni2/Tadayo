@@ -1,0 +1,29 @@
+diff --git a/tools/ops/src/on-machine.ts b/tools/ops/src/on-machine.ts
+index adac63f..d2636c5 100644
+--- a/tools/ops/src/on-machine.ts
++++ b/tools/ops/src/on-machine.ts
+@@ -306,12 +306,14 @@ export async function onMachine(input: OnMachineInput): Promise<void> {
+     `${label}: the SSH session makes a WireGuard peer in ${org}, which this run removes after it; if the run is cancelled or cut off first, ${byHandFor(org, host)}`,
+   );
+ 
+-  let result: Spawned;
++  let pending: Promise<Spawned>;
+   try {
+-    result = await fly.run(
++    pending = fly.run(
+       ["ssh", "console", "-a", DEV_APP, "--machine", target.id, "-q", "-C", input.command.join(" ")],
+       { timeoutMs: SESSION_MS, ownAgent: folder },
+     );
++    pending.catch(() => undefined);
++    await Promise.resolve();
+   } finally {
+     // Only now that the call has ended. The session's agent stops at the end of its input, which
+     // flyctl holds, when flyctl exits (`internal/command/agent/run.go`); one cut off while it makes
+@@ -324,6 +326,7 @@ export async function onMachine(input: OnMachineInput): Promise<void> {
+       note(`${label}: the folder of flyctl's agent couldn't be removed: ${wordsOf(error)}`);
+     });
+   }
++  const result = await pending;
+ 
+   // Every line that came back is said, also from a session that failed or was cut short, except
+   // flyctl's own last line, which the outcome below says in its words.

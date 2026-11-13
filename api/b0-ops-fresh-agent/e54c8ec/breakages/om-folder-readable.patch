@@ -1,0 +1,22 @@
+diff --git a/tools/ops/src/on-machine.ts b/tools/ops/src/on-machine.ts
+index adac63f..f23cac4 100644
+--- a/tools/ops/src/on-machine.ts
++++ b/tools/ops/src/on-machine.ts
+@@ -65,7 +65,7 @@
+ // after flyctl's own failure or a timeout, which may have made one, the runner says what to look at
+ // by hand.
+ 
+-import { mkdtemp, rm } from "node:fs/promises";
++import { chmod, mkdtemp, rm } from "node:fs/promises";
+ import { hostname, tmpdir } from "node:os";
+ import { join } from "node:path";
+ import { DEV_APP } from "./environment.ts";
+@@ -98,7 +98,7 @@ export interface AgentFolder {
+ 
+ /** Under the system's temporary folder, made with mode 0700 (`mkdtemp`). */
+ export const AGENT_FOLDER: AgentFolder = {
+-  make: () => mkdtemp(join(tmpdir(), "tadayo-flyctl-")),
++  make: async () => { const path = await mkdtemp(join(tmpdir(), "tadayo-flyctl-")); await chmod(path, 0o755); return path; },
+   remove: (path) => rm(path, { recursive: true, force: true }),
+ };
+ 

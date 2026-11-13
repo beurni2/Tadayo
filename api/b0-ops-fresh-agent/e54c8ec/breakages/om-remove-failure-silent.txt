@@ -1,0 +1,44 @@
+breakage: om-remove-failure-silent
+registered: says a folder it couldn't remove, and goes on to remove the peer
+exit: 1
+verdict: caught
+left: []
+
+
+ RUN  v5.0.5 /home/user/tadayo-10c/tools/ops
+
+ ❯ src/on-machine.test.ts (40 tests | 1 failed) 125ms
+   ❯ onMachine: an agent of the session's own (7)
+     × says a folder it couldn't remove, and goes on to remove the peer, without failing a session that worked 14ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 59 passed (60)
+   Start at  19:03:35
+   Duration  348ms (tests 53%, import 26%, transform 18%, worker 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > says a folder it couldn't remove, and goes on to remove the peer, without failing a session that worked
+AssertionError: expected [ …(3) ] to deeply equal [ …(4) ]
+
+- Expected
++ Received
+
+  [
+    "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
+-   "storage-setup: the folder of flyctl's agent couldn't be removed: EBUSY: resource busy or locked",
+    "machine: ok",
+    "storage-setup: removed the WireGuard peer this run made",
+  ]
+
+ ❯ src/on-machine.test.ts:948:25
+    946|     // The folder's note comes as its removal fails, when the session …
+    947|     // machine printed is said.
+    948|     expect(result.said).toEqual([
+       |                         ^
+    949|       MAKING,
+    950|       "storage-setup: the folder of flyctl's agent couldn't be removed…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

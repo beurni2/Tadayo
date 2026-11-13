@@ -1,0 +1,65 @@
+breakage: fly-relative-taken
+registered: refuses an agent's folder that isn't an absolute path, before it runs anything
+exit: 1
+verdict: caught
+left: []
+
+
+ RUN  v5.0.5 /home/user/tadayo-10c/tools/ops
+
+ ❯ src/fly.test.ts (20 tests | 1 failed) 23ms
+   ❯ flyOf: flyctl with the Fly token and HOME and nothing else (6)
+     × refuses an agent's folder that isn't an absolute path, before it runs anything 9ms
+ ❯ src/on-machine.test.ts (40 tests | 1 failed) 118ms
+   ❯ onMachine: an agent of the session's own (7)
+     × removes the folder when the SSH call is refused or can't be started, and lets that failure through 14ms
+
+ Test Files  2 failed (2)
+      Tests  2 failed | 58 passed (60)
+   Start at  19:03:21
+   Duration  328ms (tests 52%, import 26%, transform 17%, worker 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/fly.test.ts > flyOf: flyctl with the Fly token and HOME and nothing else > refuses an agent's folder that isn't an absolute path, before it runs anything
+AssertionError: promise resolved "{ code: +0, timedOut: false, …(2) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "code": 0,
++   "stderr": "",
++   "stdout": "",
++   "timedOut": false,
+  }
+
+ ❯ src/fly.test.ts:83:25
+     81|     for (const ownAgent of ["", "tadayo-flyctl-abc123", "./tadayo-flyc…
+     82|       const call = fly.run(["status", "-a", "tadayo-api-dev"], { ownAg…
+     83|       await expect(call).rejects.toBeInstanceOf(OpsError);
+       |                         ^
+     84|       await expect(call).rejects.toThrow("flyctl: an agent's own folde…
+     85|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > removes the folder when the SSH call is refused or can't be started, and lets that failure through
+AssertionError: expected 'not an OpsError: undefined' to be 'flyctl: an agent\'s own folder is giv…' // Object.is equality
+
+Expected: "flyctl: an agent's own folder is given by its absolute path"
+Received: "not an OpsError: undefined"
+
+ ❯ src/on-machine.test.ts:853:38
+    851|       },
+    852|     });
+    853|     expect(message(refused.outcome)).toBe("flyctl: an agent's own fold…
+       |                                      ^
+    854|     expect(refused.calls).toEqual([LIST, ORGS, PEERS]);
+    855|     expect(removed).toEqual(["tadayo-flyctl-relative"]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
