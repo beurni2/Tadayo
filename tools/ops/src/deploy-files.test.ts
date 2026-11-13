@@ -8,7 +8,8 @@
 
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative } from "node:path";
+import { SUPABASE_ROOT_CA_PATH } from "@tadayo/domain";
 import { describe, expect, it } from "vitest";
 import { DEV_APP, DEV_HOST, MACHINE_MAIN } from "./environment.ts";
 import { projectUrl } from "./supabase.ts";
@@ -246,6 +247,23 @@ describe(".dockerignore", () => {
       ).toBe(false);
     }
     expect(rules().slice(-2)).toEqual(["**/*.test.ts", "**/node_modules"]);
+  });
+
+  it("lets Supabase's root in, which every database link the image opens is checked against (packages/domain/src/db/ssl.ts)", () => {
+    const root = relative(ROOT, SUPABASE_ROOT_CA_PATH);
+    expect(root).toBe("packages/domain/src/db/supabase-root-2021.crt");
+    expect(existsSync(SUPABASE_ROOT_CA_PATH)).toBe(true);
+    const inside = (folder: string) => root.startsWith(`${folder}/`);
+    const copied = copies("runtime")
+      .filter((copy) => copy.from === undefined)
+      .flatMap((copy) => copy.sources);
+    expect(copied.some(inside)).toBe(true);
+    const allowed = rules()
+      .filter((rule) => rule.startsWith("!"))
+      .map((rule) => rule.slice(1));
+    expect(allowed.some(inside)).toBe(true);
+    // The two exclusions after the allowlist (the test above) don't match it.
+    expect(root.endsWith(".test.ts") || root.split("/").includes("node_modules")).toBe(false);
   });
 });
 

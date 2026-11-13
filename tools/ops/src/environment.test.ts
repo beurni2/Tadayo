@@ -3,6 +3,7 @@
 // reference at Supabase's session pooler, and never by a name the caller gives. No test here
 // reaches a database.
 
+import { SUPABASE_ROOT_CA_PATH } from "@tadayo/domain";
 import { describe, expect, it } from "vitest";
 import { DEV_APP, databaseOf, devDatabaseUrl, devProjectRef, pgEnvOf, readVariables } from "./environment.ts";
 import { OpsError } from "./ops-error.ts";
@@ -214,14 +215,15 @@ describe("devProjectRef: a Supabase project's reference is twenty lowercase lett
 });
 
 describe("pgEnvOf: the connection as the environment variables psql reads, so no password is on a command line", () => {
-  it("decodes the user and the password, and asks for TLS", () => {
+  it("decodes the user and the password, and asks for TLS that checks the pooler's chain against Supabase's root and its name", () => {
     expect(pgEnvOf(devDatabaseUrl(url({ user: `postgres.${DEV}` }), DEV))).toEqual({
       PGHOST: POOLER,
       PGPORT: "5432",
       PGUSER: `postgres.${DEV}`,
       PGPASSWORD: "p@ss/word-with-32-characters-or-more",
       PGDATABASE: "postgres",
-      PGSSLMODE: "require",
+      PGSSLMODE: "verify-full",
+      PGSSLROOTCERT: SUPABASE_ROOT_CA_PATH,
       PGCONNECT_TIMEOUT: "20",
     });
   });

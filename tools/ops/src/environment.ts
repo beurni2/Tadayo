@@ -7,6 +7,7 @@
 // the reference is `SUPABASE_DEV_PROJECT_REF`. No script takes an environment's name from its
 // caller, so a name can't make it act on another. The Fly app is the one constant `DEV_APP`.
 
+import { SUPABASE_ROOT_CA_PATH, supabaseRootCa } from "@tadayo/domain";
 import { OpsError } from "./ops-error.ts";
 
 /** The one Fly app the scripts act on (TECH-DESIGN section 7). */
@@ -109,9 +110,17 @@ export function databaseOf(url: DevDatabaseUrl): DatabaseParts {
   };
 }
 
+/** Supabase's root as libpq takes it, a file's path, once supabaseRootCa has checked the file. */
+function rootFile(): string {
+  supabaseRootCa();
+  return SUPABASE_ROOT_CA_PATH;
+}
+
 /**
  * A connection as the environment variables `psql` reads, so that no password is ever on a command
- * line, where the process list shows it. TLS is required, as Supabase's pooler asks.
+ * line, where the process list shows it. TLS is required, as Supabase's pooler asks, and libpq checks
+ * the pooler's chain against Supabase's root, given as a file, and its name against the host
+ * (`verify-full`; packages/domain/src/db/ssl.ts). The file is checked before its path is given.
  */
 export function pgEnvOf(url: DevDatabaseUrl): Record<string, string> {
   const { host, port, user, password, database } = databaseOf(url);
@@ -121,7 +130,8 @@ export function pgEnvOf(url: DevDatabaseUrl): Record<string, string> {
     PGUSER: user,
     PGPASSWORD: password,
     PGDATABASE: database,
-    PGSSLMODE: "require",
+    PGSSLMODE: "verify-full",
+    PGSSLROOTCERT: rootFile(),
     PGCONNECT_TIMEOUT: "20",
   };
 }

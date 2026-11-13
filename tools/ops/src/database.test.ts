@@ -3,6 +3,8 @@
 // connected, and its parsed options are read, so what is checked is what postgres.js would do. No
 // test here reaches a database.
 
+import { readFileSync } from "node:fs";
+import { SUPABASE_ROOT_CA_PATH } from "@tadayo/domain";
 import postgres from "postgres";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FAKE_FLY_TOKEN } from "../test/fake-fly.ts";
@@ -20,12 +22,15 @@ const dev = (port = ":5432"): DevDatabaseUrl =>
 
 const nowhere = () => undefined;
 
+// What every link to the pooler gives the driver: Supabase's root alone, and the check insisted on.
+const PINNED = { ca: [readFileSync(SUPABASE_ROOT_CA_PATH, "utf8")], rejectUnauthorized: true };
+
 afterEach(() => {
   vi.unstubAllEnvs();
 });
 
 describe("connectionOptions", () => {
-  it("names every part of the connection, decoded, with TLS required, one connection and a time limit", () => {
+  it("names every part of the connection, decoded, with TLS checked against Supabase's root, one connection and a time limit", () => {
     const options = connectionOptions(dev(), (line) => line, nowhere);
     expect(options).toMatchObject({
       host: POOLER,
@@ -33,7 +38,7 @@ describe("connectionOptions", () => {
       username: `tadayo_app.${DEV}`,
       password: DECODED,
       database: "postgres",
-      ssl: "require",
+      ssl: PINNED,
       max: 1,
       connect_timeout: 20,
     });
@@ -68,7 +73,7 @@ describe("connectionOptions", () => {
       port: [5432],
       user: `tadayo_app.${DEV}`,
       database: "postgres",
-      ssl: "require",
+      ssl: PINNED,
     });
   });
 

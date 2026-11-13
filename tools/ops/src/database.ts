@@ -5,9 +5,11 @@
 // could still send the driver somewhere else. With every part named, nothing in the environment
 // or in the string picks a host or a port.
 //
-// TLS is required, as Supabase's session pooler asks. `require` means encrypted, not authenticated:
-// postgres.js then accepts any certificate (docs/LIMITATIONS.md says what checking it needs).
+// TLS is required, as Supabase's session pooler asks, and it checks the pooler: its chain must end at
+// Supabase's root and its name must be the host dialled (`poolerTls`, packages/domain/src/db/ssl.ts;
+// docs/plans/api-b0-pooler-ca.md).
 
+import { poolerTls } from "@tadayo/domain";
 import type postgres from "postgres";
 import { databaseOf, type DevDatabaseUrl } from "./environment.ts";
 import { noticeLine } from "./output.ts";
@@ -29,7 +31,7 @@ export function connectionOptions(
     password,
     database,
     max: 1,
-    ssl: "require",
+    ssl: poolerTls(),
     connect_timeout: 20,
     onnotice: (notice) => {
       const line = noticeLine(notice);

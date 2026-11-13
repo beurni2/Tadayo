@@ -1,7 +1,16 @@
 export { READS, type ReadWhat } from "./authorization/read.ts";
 export { mayReadDrop, readableDrops, type FragmentSql, type QuerySql } from "./authorization/read-sql.ts";
 export { listClubs, LIST_LIMIT, type ClubListing, type ClubRow, type InvitationRow } from "./clubs/club-list.ts";
-export { transportOptions } from "./db/ssl.ts";
+export {
+  checkPinnedRoot,
+  type PinnedTls,
+  poolerTls,
+  SUPABASE_ROOT_CA_PATH,
+  SUPABASE_ROOT_CA_SHA256,
+  supabaseRootCa,
+  tlsPinnedTo,
+  transportOptions,
+} from "./db/ssl.ts";
 export { clubState, type ClubFacts, type ClubState } from "./clubs/club-state.ts";
 export { invitationState, type InvitationFacts, type InvitationState } from "./clubs/invitation-state.ts";
 export { lintString, type CopyFinding, type CopyRule } from "./copy/rules.ts";
