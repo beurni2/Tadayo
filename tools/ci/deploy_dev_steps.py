@@ -116,8 +116,13 @@ class Http:
         try:
             try:
                 connection.request(method, path, body=body, headers=headers)
-            except ValueError:
-                # http.client refuses a header value holding a line break, quoting it whole.
+            except ValueError as error:
+                # http.client refuses a header value holding a line break with a ValueError whose
+                # words, "Invalid header value …", quote it whole. Any other error goes on as it
+                # came, a certificate's among them (an OSError and a ValueError at once, whose
+                # words begin "[SSL").
+                if not str(error).startswith("Invalid header"):
+                    raise
                 raise OSError("a request header holds a character HTTP doesn't allow") from None
             response = connection.getresponse()
             found = {}

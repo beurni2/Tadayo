@@ -16,9 +16,11 @@ import json
 import os
 import re
 import shutil
+import ssl
 import sys
 import tempfile
 import unittest
+import unittest.mock
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
@@ -337,7 +339,11 @@ class SetupWranglerTest(unittest.TestCase):
 
     def test_it_needs_a_runner_temp_outside_the_checkout_and_a_folder_of_its_own(self):
         repo = Repository(self)
-        for temp in (None, "relative/temp", repo.root, repo.path("tools")):
+        # A RUNNER_TEMP outside the checkout by its name that is a link to a folder inside it.
+        linked = os.path.join(tempfile.mkdtemp(), "temp")
+        self.addCleanup(shutil.rmtree, os.path.dirname(linked))
+        os.symlink(repo.path("tools"), linked)
+        for temp in (None, "relative/temp", repo.root, repo.path("tools"), linked):
             with self.subTest(temp=temp):
                 run = FakeRun()
                 code, out, _, _ = call("setup_wrangler", {} if temp is None else {"RUNNER_TEMP": temp}, run=run,
@@ -716,14 +722,30 @@ class CheckSiteTest(unittest.TestCase):
         self.assertEqual((code, "apps/web/dist isn't a folder" in out), (1, True), out)
 
     def test_the_download_needs_a_runner_temp_outside_the_checkout(self):
+        # Each refused RUNNER_TEMP holds a site that would pass, so only the check of RUNNER_TEMP
+        # itself can refuse it (PR #52's review, round 4).
         repo, _, _ = self.site("check_site")
         inside = repo.path("tmp")
-        os.makedirs(os.path.join(inside, "deploy-dev-site"))
-        for temp in (None, "", "relative/tmp", inside, repo.root):
-            with self.subTest(temp=temp):
-                code, out, _, _ = call("check_site", {} if temp is None else {"RUNNER_TEMP": temp}, root=repo.root)
-                self.assertEqual(code, 1, out)
-                self.assertIn("RUNNER_TEMP", out)
+        linked = os.path.join(tempfile.mkdtemp(), "temp")
+        self.addCleanup(shutil.rmtree, os.path.dirname(linked))
+        os.symlink(inside, linked)
+        for folder in (inside, repo.root):
+            shutil.copytree(repo.site(), os.path.join(folder, "deploy-dev-site"))
+        cases = ((None, "RUNNER_TEMP isn't an absolute path"), ("", "RUNNER_TEMP isn't an absolute path"),
+                 (os.path.relpath(repo.temp), "RUNNER_TEMP isn't an absolute path"),
+                 (inside, "RUNNER_TEMP is inside the checkout"), (repo.root, "RUNNER_TEMP is inside the checkout"),
+                 (linked, "RUNNER_TEMP is inside the checkout"))
+        for step in ("check_site", "pages_deploy", "check_association"):
+            for temp, said in cases:
+                with self.subTest(step=step, temp=temp):
+                    environ = {**CLOUDFLARE, **({} if temp is None else {"RUNNER_TEMP": temp})}
+                    run = FakeRun()
+                    code, out, http, _ = call(step, environ, run=run, root=repo.root)
+                    self.assertEqual(code, 1, out)
+                    self.assertIn(said, out)
+                    self.assertEqual((run.calls, http.requests), ([], []))
+        code, out, _, _ = call("check_site", {"RUNNER_TEMP": repo.temp}, root=repo.root)
+        self.assertEqual(code, 0, out)
 
     def test_a_link_anywhere_in_the_site_is_refused(self):
         outside = tempfile.mkdtemp()
@@ -1092,6 +1114,23 @@ class HttpTest(unittest.TestCase):
                     steps_module.Http().request("GET", "unused.invalid", "/", {"authorization": value})
                 self.assertNotIn("pasted-token", str(raised.exception))
                 self.assertTrue(raised.exception.__suppress_context__)
+                self.assertIsNone(raised.exception.__cause__)
+
+    def test_any_other_error_goes_on_as_it_came(self):
+        # A certificate's error is an OSError and a ValueError at once; it, and a ValueError that
+        # isn't http.client's refusal of a header, keep their own words (round 4).
+        for error in (ssl.SSLCertVerificationError("certificate verify failed: Hostname mismatch"),
+                      UnicodeError("label too long")):
+            with self.subTest(error=error):
+                def refuse(connection, method, path, body=None, headers=None, error=error):
+                    raise error
+                with unittest.mock.patch.object(RecordingConnection, "request", refuse):
+                    with self.assertRaises(type(error)) as raised:
+                        steps_module.Http().request("GET", "api.example", "/", {"authorization": "Bearer t"})
+                self.assertIs(raised.exception, error)
+                [made] = RecordingConnection.made
+                self.assertTrue(made.closed)
+                RecordingConnection.made = []
 
 
 def workflow():
