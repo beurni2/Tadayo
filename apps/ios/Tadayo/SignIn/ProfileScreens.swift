@@ -112,6 +112,8 @@ struct ProfileForm: View {
     /// A save made from the keyboard's return key is on its way.
     @State private var savingFromReturn = false
     @State private var room = KeyboardRoom()
+    /// The name field has had the focus since the screen last appeared.
+    @State private var tookFocus = false
     /// The name's line and the 8 points under it, to scroll to.
     private static let lineID = "profile.line"
 
@@ -150,14 +152,12 @@ struct ProfileForm: View {
         // focused on arrival"), except while VoiceOver runs, which says the screen first and
         // moves its own focus (`authForm.profileArrivalFocus`: "unless VoiceOver focus would be
         // stolen"; the check's C-01). Nothing is said of Switch Control (needs item 58). Asked
-        // for from a task, which runs once the screen is up: the root shows A03 in a navigation
-        // stack of its own, in place of A02-age's, and a focus asked for as it appeared was
-        // dropped (`ios` run 43331873714: no field had the keyboard's focus in the UI tests;
-        // `ArrivalFocusTests`).
-        .task { if focus == nil, !voiceOverEnabled { focused = true } }
+        // for until the field has it (`takeFocusOnArrival`).
+        .task { await takeFocusOnArrival() }
         // Return ends a field's editing; the focus is put back while the save goes, as on
         // A02-email, so the keyboard stays (`busyPrimary.field`).
         .onChange(of: focused) { _, now in
+            if now { tookFocus = true }
             if !now, savingFromReturn { focused = true }
         }
         // A save's failure is said as it shows, as on the other setup screens; the too-long
@@ -229,6 +229,30 @@ struct ProfileForm: View {
             }
         }
         .scrollDismissesKeyboard(.never)
+    }
+
+    /// Asks for the name field's focus every 50 milliseconds, for 2 seconds at most, until the
+    /// field has it, with no test override and VoiceOver off. The root shows A03 in a navigation
+    /// stack of its own in place of A02-age's, and while the old stack is still going a request is
+    /// dropped: `ios` run 43334901167's probe found a field shown that way took no focus asked for
+    /// as it appeared or from a task, and took it when asked 300 milliseconds later, while a
+    /// field shown in a fresh window, as A02-email is at launch, took it at once (the UI tests
+    /// found no field focused on A03 in runs 43331873714 and 43334901167;
+    /// `ArrivalFocusTests.testA03TakesTheFocusAsItReplacesA02Age`). A dropped request leaves the
+    /// focus state unchanged, so `onChange(of: focused)` says when one is taken; a request left
+    /// standing untaken is withdrawn before it is made again.
+    private func takeFocusOnArrival() async {
+        guard focus == nil, !voiceOverEnabled else { return }
+        tookFocus = false
+        let deadline = ContinuousClock.now + .seconds(2)
+        while !tookFocus, !Task.isCancelled, ContinuousClock.now < deadline {
+            if focused {
+                focused = false
+                try? await Task.sleep(for: .milliseconds(20))
+            }
+            focused = true
+            try? await Task.sleep(for: .milliseconds(50))
+        }
     }
 
     /// The name's one line: "Use 40 characters or fewer for your name." while the name is too
