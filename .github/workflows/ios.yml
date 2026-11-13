@@ -14,24 +14,17 @@ on:
       - 'packages/swift/**'
       - 'packages/contracts/**'
       - 'design/reference/**'
+  # By hand, with no inputs: the same tests as a push, with every snapshot on the evidence branch
+  # (a gate's full set, in ios-full/).
   workflow_dispatch:
-    inputs:
-      ios_version:
-        description: >-
-          Empty: the newest iOS simulator, with every snapshot on the evidence branch (a gate's
-          full set). Or a version such as 18.6 or 26.2: the UI and unit tests on that iOS,
-          without the snapshot tests, downloading its simulator if the runner hasn't got it.
-        type: string
-        required: false
-        default: ''
 
 permissions: {}
 
-# A branch keeps only its newest run of each kind: a push's (`push`), a run by hand's full set
-# (`full`) and each iOS version's, so none of them cancels another's evidence. Each commit on
-# main gets its own group, so a merge's run is never dropped while it waits behind another.
+# A branch keeps only its newest run of each kind: a push's (`push`) and a run by hand's full
+# set (`full`), so neither cancels the other's evidence. Each commit on main gets its own group,
+# so a merge's run is never dropped while it waits behind another.
 concurrency:
-  group: ios-${{ github.ref == 'refs/heads/main' && github.sha || github.ref }}-${{ inputs.ios_version || (github.event_name == 'workflow_dispatch' && 'full') || 'push' }}
+  group: ios-${{ github.ref == 'refs/heads/main' && github.sha || github.ref }}-${{ github.event_name == 'workflow_dispatch' && 'full' || 'push' }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 defaults:
@@ -62,14 +55,14 @@ jobs:
     name: build
     needs: gate
     if: needs.gate.outputs.build == 'true'
-    runs-on: macos-26
+    # GitHub's Xcode 27 image on its standard arm64 runner, never xcode-27-xlarge, a larger
+    # runner billed apart (tools/ci/toolchain.py; .github/actionlint.yaml).
+    runs-on: xcode-27
     # Each step that can hang has its own timeout, which fails the step and lets collect and the
     # upload run; the job's own, a backstop, cancels the job, and then nothing is published.
-    timeout-minutes: 115
+    timeout-minutes: 135
     permissions:
       contents: read
-    env:
-      IOS_VERSION: ${{ inputs.ios_version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -79,11 +72,11 @@ jobs:
       - run: python3 tools/ci/ios_steps.py xcodegen
         timeout-minutes: 5
       - run: python3 tools/ci/ios_steps.py simulator
-        timeout-minutes: 35  # an older iOS's download takes 10 to 15 minutes, and may take two
+        timeout-minutes: 35  # every run downloads iOS 26.5, which the image hasn't got
       - run: python3 tools/ci/ios_steps.py build
         timeout-minutes: 25
       - run: python3 tools/ci/ios_steps.py test
-        timeout-minutes: 30
+        timeout-minutes: 50  # a pass on each iOS, and a second boot
       - if: ${{ !cancelled() }}
         run: python3 tools/ci/ios_steps.py collect
         timeout-minutes: 5
@@ -110,8 +103,6 @@ jobs:
     concurrency:
       group: ios-evidence
       cancel-in-progress: false
-    env:
-      IOS_VERSION: ${{ inputs.ios_version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
