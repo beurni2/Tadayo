@@ -3,7 +3,7 @@
 import { readFileSync } from "node:fs";
 
 import * as z from "zod";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { parse } from "yaml";
 
 import { buildDocument } from "./document.ts";
@@ -16,13 +16,17 @@ import {
   CandidateLabel,
   CandidateLinkState,
   ChosenWeekdays,
+  ConfirmedWeekdays,
+  CurrentSchedule,
   InvitationAcceptance,
   RosterRevision,
 } from "./schemas/clubs.ts";
-import { ClubName, DisplayName, NAME_PATTERN, Person, Timezone } from "./common.ts";
+import { Caption, ClubName, CommentText, DisplayName, NAME_PATTERN, Person, Timezone } from "./common.ts";
+import { ReportNote, SearchText } from "./schemas/after.ts";
 import { DropCaption } from "./schemas/days.ts";
 import { unknownKeys } from "./strict.ts";
 import { allSuccessExamples, errorExample } from "./fixtures/examples.ts";
+import { member, rosters, type Who } from "./fixtures/world.ts";
 
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 type JsonObject = { [key: string]: Json };
@@ -304,7 +308,7 @@ describe("the document", () => {
       acceptInvitation: ["CLUB_FULL", "INVITATION_EXPIRED", "NOT_FOUND", "ROSTER_CHANGED", "VERSION_CONFLICT"],
       approveRoster: ["CLUB_FULL", "ROSTER_CHANGED", "VERSION_CONFLICT"],
       blockMember: ["MEMBERSHIP_CHANGED", "NOT_FOUND"],
-      chooseScheduleDays: ["MEMBERSHIP_CHANGED", "VERSION_CONFLICT"],
+      chooseScheduleDays: ["MEMBERSHIP_CHANGED", "NOT_ALLOWED", "VERSION_CONFLICT"],
       completeUpload: ["MEDIA_NOT_READY"],
       confirmScheduleDays: ["MEMBERSHIP_CHANGED", "NOT_ALLOWED", "VERSION_CONFLICT"],
       createInvitation: ["NOT_ALLOWED"],
@@ -348,20 +352,22 @@ describe("the document", () => {
 
   it("names, in a schema's description, every rule on a request the document can't carry", () => {
     // Each refined schema, with the words its description must use to say the rule.
-    const names = /grapheme clusters.*at least one visible character/s;
+    const names = /grapheme clusters, well formed \(no lone surrogate\).*at least one visible character/s;
+    const text = /grapheme clusters.*well formed \(no lone surrogate\)/s;
     const RULES: Record<string, RegExp> = {
       AgeConfirmation: /only `true`/,
       CandidateLabel: names,
-      Caption: /grapheme clusters/,
+      Caption: text,
       ChosenWeekdays: /each only once/,
       ClubName: names,
-      CommentText: /grapheme clusters/,
+      CommentText: text,
+      ConfirmedWeekdays: /each only once/,
       DisplayName: names,
-      ReportNote: /grapheme clusters/,
-      SearchText: /grapheme clusters/,
+      ReportNote: text,
+      SearchText: text,
       Timezone: /an IANA time zone the server can resolve/,
     };
-    // Grapheme counts and "only true" are zod refinements: the document can't say them, so Prism and
+    // Grapheme counts, well-formedness and "only true" are zod refinements: the document can't say them, so Prism and
     // the Swift client don't check them, and the API answers INVALID_REQUEST. Each sits in a named
     // schema whose description says the rule, for the app to keep.
     const refined: string[] = [];
@@ -540,6 +546,76 @@ describe("names (FQ70)", () => {
   }
 });
 
+describe("text's guard and its well-formedness (T13, FQ70)", () => {
+  // Every schema made by text() or name(), with its guard: 16 code points a cluster (zod's `.max` and the
+  // document's `maxLength` both count code points, not UTF-16 units).
+  const GUARDED: [z.ZodType, number][] = [
+    [DisplayName, 640],
+    [ClubName, 640],
+    [CandidateLabel, 640],
+    [Caption, 2240],
+    [CommentText, 8000],
+    [ReportNote, 8000],
+    [SearchText, 1600],
+  ];
+  const nameOf = (schema: z.ZodType): string => String(registry.get(schema)?.id);
+
+  for (const [schema, guard] of GUARDED) {
+    it(`${nameOf(schema)} never counts a string past its guard of ${String(guard)} code points`, () => {
+      expect((schemas[nameOf(schema)] as JsonObject).maxLength).toBe(guard);
+      const segment = vi.spyOn(Intl.Segmenter.prototype, "segment");
+      try {
+        for (const value of ["a".repeat(guard + 1), "a".repeat(1_000_000)]) {
+          const result = schema.safeParse(value);
+          expect(result.success ? [] : result.error.issues.map((issue) => issue.code)).toEqual(["too_big"]);
+        }
+        expect(segment).not.toHaveBeenCalled();
+        schema.safeParse("a".repeat(guard));
+        expect(segment).toHaveBeenCalledTimes(1);
+      } finally {
+        segment.mockRestore();
+      }
+    });
+
+    it(`${nameOf(schema)} refuses a lone surrogate and keeps a surrogate pair`, () => {
+      // Refused with the one issue, and nothing after it runs: the grapheme count never starts, and a name's
+      // later rules (a space at either end, here) add nothing.
+      const segment = vi.spyOn(Intl.Segmenter.prototype, "segment");
+      try {
+        for (const value of [
+          "A\uD800B",
+          "\uDC00",
+          "Ana\uD83D",
+          "\uDE00Ana",
+          "\uD83D\uD83D",
+          "\uDE00\uD83D",
+          " \uD800",
+          "\uD800 ",
+        ]) {
+          const result = schema.safeParse(value);
+          expect(result.success, JSON.stringify(value)).toBe(false);
+          expect(
+            result.success ? [] : result.error.issues.map((issue) => [issue.path, issue.message]),
+            JSON.stringify(value),
+          ).toEqual([[[], "well formed, with no lone surrogate"]]);
+        }
+        expect(segment).not.toHaveBeenCalled();
+      } finally {
+        segment.mockRestore();
+      }
+      expect(schema.safeParse("Ana \u{1F600}").success).toBe(true);
+    });
+  }
+
+  it("counts code points at the guard, not code units: a cluster of 640 code points is one name", () => {
+    // A black flag and 639 tag characters: one grapheme cluster, 640 code points, 1,280 code units.
+    const longest = `\u{1F3F4}${"\u{E0067}".repeat(639)}`;
+    expect(longest.length).toBe(1280);
+    expect(DisplayName.safeParse(longest).success).toBe(true);
+    expect(DisplayName.safeParse(`${longest}\u{E0067}`).success).toBe(false);
+  });
+});
+
 describe("other request rules", () => {
   it("takes only a time zone the server can resolve, since a club's is fixed (FQ19)", () => {
     for (const zone of ["America/New_York", "Europe/London", "Asia/Kolkata", "UTC", "Etc/GMT+5"]) {
@@ -585,9 +661,29 @@ describe("other request rules", () => {
     }
   });
 
-  it("takes each weekday only once in a choice (T6)", () => {
-    expect(ChosenWeekdays.safeParse(["monday", "thursday"]).success).toBe(true);
-    expect(ChosenWeekdays.safeParse(["monday", "monday"]).success).toBe(false);
+  it("takes each weekday only once in a choice, and a choice of none to two; a confirmation names one or two (T6)", () => {
+    // A two-day picker removes a choice on a tap, the last one too (handoff 6), so a choice may hold none.
+    for (const days of [[], ["monday"], ["monday", "thursday"]]) {
+      expect(ChosenWeekdays.safeParse(days).success, JSON.stringify(days)).toBe(true);
+    }
+    for (const days of [
+      ["monday", "monday"],
+      ["monday", "tuesday", "thursday"],
+    ]) {
+      expect(ChosenWeekdays.safeParse(days).success, JSON.stringify(days)).toBe(false);
+    }
+    for (const days of [["monday"], ["monday", "thursday"]]) {
+      expect(ConfirmedWeekdays.safeParse(days).success, JSON.stringify(days)).toBe(true);
+    }
+    for (const days of [[], ["monday", "monday"], ["monday", "tuesday", "thursday"]]) {
+      expect(ConfirmedWeekdays.safeParse(days).success, JSON.stringify(days)).toBe(false);
+    }
+  });
+
+  it("holds one confirmed day as the schedule in force, while others still choose (FQ55)", () => {
+    const one = { weekday: "tuesday", person: { membership_id: "mem_sp_maya", display_name: "Maya" } };
+    expect(CurrentSchedule.safeParse({ effective_from: "2026-11-02", assignments: [one] }).success).toBe(true);
+    expect(CurrentSchedule.safeParse({ effective_from: "2026-11-02", assignments: [] }).success).toBe(false);
   });
 
   it("puts no free text in a URL: every path and query parameter has a fixed shape (T52)", () => {
@@ -740,21 +836,284 @@ describe("the examples", () => {
     expect(own).toBeGreaterThan(0);
   });
 
-  it("name a taken day's owner and a clash's other member, and nobody on any other day (book p11, FQ46, FQ78)", () => {
-    const seen = { taken: 0, clash: 0, no_reveal: 0 };
-    for (const [id, set] of Object.entries(examples)) {
-      for (const [name, example] of Object.entries(set)) {
-        walk(example.value as Json, (node) => {
-          if (typeof node.weekday !== "string" || typeof node.suggested !== "boolean") return;
-          const where = `${id}.${name}: ${node.weekday}`;
-          if (node.state === "taken" || node.state === "clash" || node.state === "no_reveal") seen[node.state] += 1;
-          expect("owner" in node, where).toBe(node.state === "taken");
-          expect("clash_with" in node, where).toBe(node.state === "clash");
-        });
+  // The schedule's views (book p11; FQ46, FQ48, FQ55, FQ78, FQ79, FQ81, FQ98). A Schedule names its
+  // viewer (`club.my_membership_id`); a ScheduleProposal answer doesn't, so this table does.
+  const PROPOSAL_VIEWERS: Record<string, string> = {
+    "chooseScheduleDays.chosen": "mem_sp_ben",
+    "chooseScheduleDays.joined_contest": "mem_sp_sam",
+    "confirmScheduleDays.confirmed": "mem_kt_ben",
+    "confirmScheduleDays.first_day_confirmed": "mem_sp_ben",
+  };
+  // The order each club's members joined in: the fixture's rosters, then Leila in Kitchen table.
+  const joined = new Map<string, number>([
+    ...rosters.sundayPeople.map(([who], index) => [member("sundayPeople", who).membership_id, index] as const),
+    ...[...rosters.kitchenTable.map(([who]) => who), "leila" as const].map(
+      (who, index) => [member("kitchenTable", who).membership_id, index] as const,
+    ),
+  ]);
+  const asText = (value: Json | undefined): string => (typeof value === "string" ? value : JSON.stringify(value));
+  const idOf = (person: Json | undefined): string => asText((person as JsonObject).membership_id);
+  type Read = { where: string; viewer: string; proposal: JsonObject };
+  const reads = (): Read[] => {
+    const found: Read[] = [];
+    for (const [name, example] of Object.entries(examples.getSchedule ?? {})) {
+      const value = example.value as JsonObject;
+      if (value.proposal === undefined) continue;
+      const viewer = asText((value.club as JsonObject).my_membership_id);
+      found.push({ where: `getSchedule.${name}`, viewer, proposal: value.proposal as JsonObject });
+    }
+    for (const id of ["chooseScheduleDays", "confirmScheduleDays"]) {
+      for (const [name, example] of Object.entries(examples[id] ?? {})) {
+        const where = `${id}.${name}`;
+        const viewer = PROPOSAL_VIEWERS[where];
+        expect(viewer, `${where} has a viewer in PROPOSAL_VIEWERS`).toBeDefined();
+        found.push({ where, viewer: String(viewer), proposal: example.value as JsonObject });
       }
     }
-    // Each view FQ46 and FQ78 define has a scene, so none of these checks is empty.
-    for (const count of Object.values(seen)) expect(count).toBeGreaterThan(0);
+    return found;
+  };
+  const slotsOf = (proposal: JsonObject): JsonObject[] => proposal.slots as JsonObject[];
+
+  it("say on each day only what its state allows, and name nobody on a day the viewer doesn't hold with others (book p11, FQ46, FQ48, FQ78)", () => {
+    const seen = { taken: 0, clash: 0, no_reveal: 0, held_by: 0, three: 0, change: 0 };
+    for (const { where, viewer, proposal } of reads()) {
+      const change = proposal.reason === "membership_change";
+      if (change) seen.change += 1;
+      // Nobody is named on more days than the proposal gives each member, the viewer included (a day set
+      // aside, choiceRules.abandonedProposal, is the first-days oracle's to catch).
+      const named = new Map<string, number>();
+      const count = (id: string) => named.set(id, (named.get(id) ?? 0) + 1);
+      for (const slot of slotsOf(proposal)) {
+        if ("owner" in slot) count(idOf(slot.owner));
+        if ("held_by" in slot) count(idOf(slot.held_by));
+        for (const holder of (slot.holders ?? []) as Json[]) count(idOf(holder));
+        if (slot.state === "yours") count(viewer);
+      }
+      for (const [id, days] of named) {
+        expect(days, `${where}: ${id}`).toBeLessThanOrEqual(Number(proposal.days_per_member));
+      }
+      for (const slot of slotsOf(proposal)) {
+        const at = `${where}: ${asText(slot.weekday)}`;
+        const state = asText(slot.state);
+        if (state === "taken" || state === "clash" || state === "no_reveal") seen[state] += 1;
+        // A taken day names its owner; a contested day names its holders to them alone; a day one other
+        // member holds names them on the picker; nothing else names anyone, a no_reveal day least of all.
+        expect("owner" in slot, at).toBe(state === "taken");
+        expect("holders" in slot, at).toBe(state === "clash");
+        if ("held_by" in slot) {
+          seen.held_by += 1;
+          expect(state, at).toBe("available");
+          expect(idOf(slot.held_by), at).not.toBe(viewer);
+          // In the first days only a viewer still choosing is told; a confirmed one sees the club's week.
+          if (!change) expect(proposal.my_state, at).toBe("choosing");
+        }
+        if (state === "clash") {
+          const ids = (slot.holders as Json[]).map(idOf);
+          expect(ids.length, at).toBeGreaterThanOrEqual(2);
+          expect(new Set(ids).size, at).toBe(ids.length);
+          expect(
+            ids.filter((id) => id === viewer),
+            at,
+          ).toHaveLength(1);
+          const order = ids.map((id) => joined.get(id) ?? Number.NaN);
+          expect(order, at).toEqual([...order].sort((a, b) => a - b));
+          if (ids.length >= 3) seen.three += 1;
+        }
+        // A membership change is one week everyone confirms: no day is taken or contested on its own,
+        // and Kitchen table's gives every weekday to someone, so each of the others' days names them.
+        if (change) {
+          expect(["yours", "available"], at).toContain(state);
+          if (state === "available") expect("held_by" in slot, at).toBe(true);
+        }
+      }
+    }
+    // Each view the questions define has a scene, so none of these checks is empty.
+    for (const [view, count] of Object.entries(seen)) expect(count, view).toBeGreaterThan(0);
+  });
+
+  // Who holds what in each first-days scene, written out on its own, and who has confirmed which day. A
+  // member holds their proposed day until they first choose, then what they last chose (FQ48).
+  type WeekdayName = "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday";
+  type FirstDaysWorld = {
+    holds: Partial<Record<Who, readonly WeekdayName[]>>;
+    confirmed: Partial<Record<Who, WeekdayName>>;
+  };
+  const tuesdayThree: FirstDaysWorld = {
+    holds: {
+      ben: ["friday"],
+      maya: ["tuesday"],
+      alex: ["friday"],
+      sam: ["thursday"],
+      debby: ["friday"],
+      nina: ["saturday"],
+    },
+    confirmed: {},
+  };
+  const thursdayFive: FirstDaysWorld = {
+    holds: { ben: ["monday"], debby: ["friday"] },
+    confirmed: { maya: "tuesday", alex: "wednesday", sam: "thursday", nina: "saturday" },
+  };
+  const FIRST_DAYS_WORLDS: Record<string, FirstDaysWorld> = {
+    "getSchedule.conflict_three": tuesdayThree,
+    "getSchedule.contested_other": tuesdayThree,
+    "getSchedule.confirm_refused": { ...tuesdayThree, holds: { ...tuesdayThree.holds, alex: ["wednesday"] } },
+    "getSchedule.first_days": thursdayFive,
+    "getSchedule.first_days_confirmed": thursdayFive,
+    "chooseScheduleDays.chosen": { ...tuesdayThree, holds: { ...tuesdayThree.holds, ben: ["monday"] } },
+    "chooseScheduleDays.joined_contest": { ...tuesdayThree, holds: { ...tuesdayThree.holds, sam: ["friday"] } },
+    "confirmScheduleDays.first_day_confirmed": {
+      holds: { debby: ["friday"] },
+      confirmed: { ...thursdayFive.confirmed, ben: "monday" },
+    },
+  };
+
+  it("give each first-days day exactly the state and names its holders call for, as each viewer sees it (FQ46, FQ48, FQ55, FQ78)", () => {
+    const idFor = (who: Who) => member("sundayPeople", who).membership_id;
+    let checked = 0;
+    for (const { where, viewer, proposal } of reads()) {
+      if (proposal.reason !== "activation") continue;
+      const world = FIRST_DAYS_WORLDS[where];
+      expect(world, `${where} has its holds in FIRST_DAYS_WORLDS`).toBeDefined();
+      if (world === undefined) continue;
+      const choosing = proposal.my_state === "choosing";
+      expect(choosing, where).toBe(!Object.keys(world.confirmed).some((who) => idFor(who as Who) === viewer));
+      // The first days apply only once every member they include has confirmed (FQ100, FQ102).
+      const included = new Set([...Object.keys(world.holds), ...Object.keys(world.confirmed)]);
+      const everyone = [...included].every((who) => who in world.confirmed);
+      expect(proposal.state, where).toBe(everyone ? "applied" : "open");
+      for (const slot of slotsOf(proposal)) {
+        const weekday = asText(slot.weekday) as WeekdayName;
+        const at = `${where}: ${weekday}`;
+        const owner = (Object.keys(world.confirmed) as Who[]).find((who) => world.confirmed[who] === weekday);
+        const holders = (Object.keys(world.holds) as Who[])
+          .filter((who) => world.holds[who]?.includes(weekday))
+          .map(idFor)
+          .sort((a, b) => (joined.get(a) ?? 0) - (joined.get(b) ?? 0));
+        const mine = holders.includes(viewer);
+        let expected: JsonObject;
+        if (owner !== undefined) {
+          expected = idFor(owner) === viewer ? { state: "yours" } : { state: "taken", owner: idFor(owner) };
+        } else if (mine && holders.length === 1) {
+          expected = { state: "yours" };
+        } else if (mine) {
+          expected = { state: "clash", holders };
+        } else if (holders.length >= 2) {
+          expected = { state: "no_reveal" };
+        } else if (holders.length === 1 && choosing) {
+          expected = { state: "available", held_by: asText(holders[0]) };
+        } else {
+          expected = { state: "available" };
+        }
+        const actual: JsonObject = { state: asText(slot.state) };
+        if ("owner" in slot) actual.owner = idOf(slot.owner);
+        if ("holders" in slot) actual.holders = (slot.holders as Json[]).map(idOf);
+        if ("held_by" in slot) actual.held_by = idOf(slot.held_by);
+        expect(actual, at).toEqual(expected);
+      }
+      checked += 1;
+    }
+    expect(checked).toBe(Object.keys(FIRST_DAYS_WORLDS).length);
+  });
+
+  it("propose each member's first day by the order they joined, as the frames draw it (spec 05, FQ98)", () => {
+    // Friends lists the first days in join order (FQ98), and a contested day's holders are in that order
+    // too, while the frames draw both in the proposed week's order (F01-friends-first-days,
+    // G04-conflict-three). The two agree because the fixture's first days propose weekdays in join order,
+    // as spec 05's own examples do: this ties them.
+    let checked = 0;
+    for (const { where, viewer, proposal } of reads()) {
+      if (proposal.reason !== "activation") continue;
+      const index = joined.get(viewer) ?? -1;
+      const weekday = rosters.sundayPeople[index]?.[1];
+      const suggested = slotsOf(proposal)
+        .filter((slot) => slot.suggested === true)
+        .map((slot) => slot.weekday);
+      expect(suggested, where).toEqual([weekday]);
+      checked += 1;
+    }
+    expect(checked).toBeGreaterThan(0);
+  });
+
+  it("date only a day confirmed in the first days, on its own weekday (T49, FQ79)", () => {
+    const weekdays = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+    let dated = 0;
+    for (const { where, proposal } of reads()) {
+      const firstDays = proposal.reason === "activation";
+      for (const slot of slotsOf(proposal)) {
+        const at = `${where}: ${asText(slot.weekday)}`;
+        const confirmed = slot.state === "taken" || (slot.state === "yours" && proposal.my_state === "confirmed");
+        expect("first_date" in slot, at).toBe(firstDays && confirmed);
+        if (typeof slot.first_date === "string") {
+          dated += 1;
+          expect(weekdays[new Date(`${slot.first_date}T12:00:00Z`).getUTCDay()], at).toBe(slot.weekday);
+        }
+      }
+    }
+    expect(dated).toBeGreaterThan(0);
+  });
+
+  it("list a change's announced days in date order, every one before it starts, and nowhere else (spec 05, FQ61)", () => {
+    let listed = 0;
+    for (const { where, proposal } of reads()) {
+      if (proposal.reason !== "membership_change") {
+        expect("announced" in proposal, where).toBe(false);
+        continue;
+      }
+      const dates = ((proposal.announced ?? []) as JsonObject[]).map((day) => asText(day.local_date));
+      expect(dates, where).toEqual([...dates].sort());
+      for (const date of dates) expect(date < asText(proposal.effective_from), `${where}: ${date}`).toBe(true);
+      listed += dates.length;
+    }
+    expect(listed).toBeGreaterThan(0);
+  });
+
+  it("agree on one state, version and start for each proposal, whoever reads it and whatever anyone has chosen or confirmed, but the first days' answer that applies them, one version on (T33)", () => {
+    // A proposal's version moves only with its state or a new revision of its week, so it never tells a
+    // member that someone else has chosen or confirmed; its start moves only with a new proposal (FQ49).
+    // The one read that may differ is the answer that applies the first days: `applied`, at the open
+    // reads' version plus one, from the same start.
+    const facts = new Map<string, string>();
+    const applying: { where: string; id: string; version: Json | undefined; start: Json | undefined }[] = [];
+    for (const { where, proposal } of reads()) {
+      const id = asText(proposal.id);
+      if (proposal.reason === "activation" && proposal.state === "applied") {
+        applying.push({ where, id, version: proposal.version, start: proposal.effective_from });
+        continue;
+      }
+      const these = JSON.stringify([proposal.version, proposal.effective_from, proposal.state]);
+      const earlier = facts.get(id);
+      if (earlier === undefined) facts.set(id, these);
+      else expect(these, `${id} in ${where}`).toBe(earlier);
+    }
+    for (const { where, id, version, start } of applying) {
+      const open = JSON.parse(facts.get(id) ?? "null") as [number, string, string] | null;
+      expect(open, `${where}: ${id} is read open elsewhere`).not.toBeNull();
+      if (open !== null) expect([version, start, open[2]], where).toEqual([open[0] + 1, open[1], "open"]);
+    }
+    expect(facts.size).toBeGreaterThan(1);
+  });
+
+  it("show a membership change the same before and after the viewer confirms it, as the confirmation answers (FQ81)", () => {
+    const before = (examples.getSchedule?.change?.value as JsonObject).proposal as JsonObject;
+    const after = (examples.getSchedule?.change_confirmed?.value as JsonObject).proposal as JsonObject;
+    expect([before.my_state, after.my_state]).toEqual(["choosing", "confirmed"]);
+    expect({ ...after, my_state: "choosing" }).toEqual(before);
+    expect(examples.confirmScheduleDays?.confirmed?.value).toEqual(after);
+  });
+
+  it("place every member once, and in the first days by the order they joined (spec 09, FQ98)", () => {
+    for (const [name, example] of Object.entries(examples.listMembers ?? {})) {
+      const members = (example.value as JsonObject).members as JsonObject[];
+      expect(
+        members.map((row) => Number(row.position)).sort((a, b) => a - b),
+        name,
+      ).toEqual(members.map((_, index) => index + 1));
+    }
+    const firstDays = (examples.listMembers?.first_days?.value as JsonObject).members as JsonObject[];
+    const byPosition = [...firstDays].sort((a, b) => Number(a.position) - Number(b.position));
+    expect(byPosition.map((row) => joined.get(idOf(row.person)))).toEqual(byPosition.map((_, index) => index));
+    // Ben and Debby haven't confirmed, so they have no date, and keep their places (F01-friends-first-days).
+    expect(byPosition.filter((row) => !("next_day" in row)).map((row) => row.position)).toEqual([1, 5]);
   });
 
   it("show a candidate's link, and whether it was accepted, only to the member who proposed them (handoff 1)", () => {

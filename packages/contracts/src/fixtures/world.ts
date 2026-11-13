@@ -139,6 +139,8 @@ export const changeFrom = "2026-12-07";
 
 /** Times the book's scenes happen at (book p12, p29, p30). */
 export const at = {
+  tuesday3Morning: "2026-11-03T14:41:00Z", // Tuesday 3 November, 9:41 AM: Sunday people's first days, nobody confirmed
+  thursday5Morning: "2026-11-05T14:41:00Z", // Thursday 5 November, 9:41 AM: four confirmed on Wednesday at 9 AM
   friday6Morning: "2026-11-06T14:41:00Z", // Friday 6 November, 9:41 AM: Debby's Friday is open
   friday6Night: "2026-11-06T06:41:00Z", // Friday 6 November, 1:41 AM: Debby opens in 5h 19m
   saturday7Night: "2026-11-07T06:01:00Z", // Saturday 7 November, 1:01 AM: Nina opens in 5h 59m
