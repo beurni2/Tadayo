@@ -4,7 +4,7 @@
 // code 1. A made-up `flyctl` is first on the child's PATH, so that what `flyctl` prints, which can hold
 // a token, is what the entry has to hold back.
 
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { chmod, mkdtemp, writeFile } from "node:fs/promises";
 import { hostname, tmpdir } from "node:os";
 import { join } from "node:path";
@@ -38,6 +38,14 @@ describe("the ops entry", () => {
     expect(result.stdout).toBe("");
     expect(result.stderr).toMatch(/^ops: name a script; they are:\n {2}bootstrap: /);
     expect(result.stderr).toContain("\n  worker-scale: ");
+  });
+
+  it("gives the scripts the pinned client, connectToDev, and makes no client of its own", () => {
+    // What the client asks of the driver is database.test.ts's; here, that it is the one the scripts get.
+    const source = readFileSync(MAIN, "utf8");
+    expect(source).not.toMatch(/from "postgres"/);
+    expect(source.match(/connect:/g)).toHaveLength(1);
+    expect(source).toMatch(/connect: \(url\) =>\s*connectToDev\(url, redact, /);
   });
 
   it("names the scripts and fails when the one named isn't one", async () => {

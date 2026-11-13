@@ -3,7 +3,8 @@
 // reference at Supabase's session pooler, and never by a name the caller gives. No test here
 // reaches a database.
 
-import { describe, expect, it } from "vitest";
+import { SUPABASE_ROOT_CA_PATH } from "@tadayo/domain";
+import { describe, expect, it, vi } from "vitest";
 import { DEV_APP, databaseOf, devDatabaseUrl, devProjectRef, pgEnvOf, readVariables } from "./environment.ts";
 import { OpsError } from "./ops-error.ts";
 
@@ -214,16 +215,36 @@ describe("devProjectRef: a Supabase project's reference is twenty lowercase lett
 });
 
 describe("pgEnvOf: the connection as the environment variables psql reads, so no password is on a command line", () => {
-  it("decodes the user and the password, and asks for TLS", () => {
+  it("decodes the user and the password, and asks for TLS that checks the pooler's chain against Supabase's root and its name", () => {
     expect(pgEnvOf(devDatabaseUrl(url({ user: `postgres.${DEV}` }), DEV))).toEqual({
       PGHOST: POOLER,
       PGPORT: "5432",
       PGUSER: `postgres.${DEV}`,
       PGPASSWORD: "p@ss/word-with-32-characters-or-more",
       PGDATABASE: "postgres",
-      PGSSLMODE: "require",
+      PGSSLMODE: "verify-full",
+      PGSSLROOTCERT: SUPABASE_ROOT_CA_PATH,
       PGCONNECT_TIMEOUT: "20",
     });
+  });
+
+  it("checks the root before psql is given its path, so an empty or other file reaches no link", async () => {
+    // A fresh copy of the modules, which read an empty file where Supabase's root is: libpq would
+    // fail on it too, but `checkPinnedRoot` (packages/domain/src/db/ssl.ts) refuses it first.
+    vi.resetModules();
+    vi.doMock("node:fs", async (importOriginal) => {
+      const fs = await importOriginal<typeof import("node:fs")>();
+      const readFileSync = ((path: Parameters<typeof fs.readFileSync>[0], options: BufferEncoding) =>
+        path === SUPABASE_ROOT_CA_PATH ? "" : fs.readFileSync(path, options)) as typeof fs.readFileSync;
+      return { ...fs, default: { ...fs, readFileSync }, readFileSync };
+    });
+    try {
+      const fresh = await import("./environment.ts");
+      expect(() => fresh.pgEnvOf(fresh.devDatabaseUrl(url(), DEV))).toThrow(/Supabase's root/);
+    } finally {
+      vi.doUnmock("node:fs");
+      vi.resetModules();
+    }
   });
 
   it("decodes a user that is written with escapes, as the password is", () => {
