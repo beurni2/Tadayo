@@ -152,11 +152,31 @@ final class SignInUITests: XCTestCase {
         XCTAssertTrue(name.waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["What should we call you?"].exists)
         XCTAssertTrue(app.buttons["Add photo"].exists)
+        // Leave sign-in is one button, in the bar, as on A02-age (`ageExit`: "Same on A03.").
+        XCTAssertEqual(leaveButtons(in: app).count, 1)
         let next = app.buttons["Continue"]
         XCTAssertFalse(next.isEnabled)
-        name.tap()
-        name.typeText("Ben")
+        // Typed with no tap: the name field took the focus as the screen appeared (frame 10).
+        app.typeText("Ben")
+        XCTAssertEqual(name.value as? String, "Ben")
         XCTAssertTrue(next.isEnabled)
+        // Continue is pinned 12 above the keyboard's top as the screen draws it, read from under
+        // Continue, where only the footer's canvas is (frame 27; `authForm.keyboardFooter`), and
+        // the field ends above the footer, which starts 8 above Continue, so Continue covers
+        // none of it ("controls are never overlaid on form text").
+        XCTAssertTrue(app.keyboards.firstMatch.exists)
+        let typed = settle("the name field's foot over Continue's top") {
+            "\(Int(name.frame.maxY.rounded())) over \(Int(next.frame.minY.rounded()))"
+        } until: {
+            name.frame.maxY <= next.frame.minY - 8 + 0.5
+        }
+        XCTAssertLessThanOrEqual(
+            name.frame.maxY, next.frame.minY - 8 + 0.5,
+            "the field \(name.frame), Continue \(next.frame); read \(typed)")
+        let foot = drawnEdge(below: next.frame.maxY, on: app.screenshot(), in: app)
+        XCTAssertEqual(
+            (foot.top ?? 0) - next.frame.maxY, 12, accuracy: 1,
+            "Continue \(next.frame), \(foot.said)")
         next.tap()
 
         XCTAssertTrue(app.staticTexts["Start your club."].waitForExistence(timeout: 5))
@@ -217,6 +237,84 @@ final class SignInUITests: XCTestCase {
         XCTAssertNotEqual(email.value as? String, "ben@example.com")
         XCTAssertFalse(
             app.staticTexts["Your sign-in ended. Enter your email to sign in again."].exists)
+    }
+
+    /// Leave sign-in on A03-profile too, the bar's leading text action (handoff 7's `ageExit`:
+    /// "Same on A03."), ends the session and opens A02-email again, empty (FQ93's default), with
+    /// no notice that the sign-in ended; the bar holds nothing else, so going back can't undo the
+    /// age, which stays recorded on the server.
+    @MainActor func testLeavingSignInFromTheProfileStartsAgain() {
+        let app = launch("-TadayoUITestFakes")
+        signInToTheAge(app)
+        app.buttons["I’m 18 or older"].tap()
+        XCTAssertTrue(app.textFields["Your name"].waitForExistence(timeout: 5))
+        let bar = app.navigationBars["Your profile"]
+        XCTAssertEqual(bar.buttons.count, 1)
+        bar.buttons["Leave sign-in"].tap()
+        let email = app.textFields["Email address"]
+        XCTAssertTrue(email.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["What’s your email?"].exists)
+        XCTAssertNotEqual(email.value as? String, "ben@example.com")
+        XCTAssertFalse(
+            app.staticTexts["Your sign-in ended. Enter your email to sign in again."].exists)
+    }
+
+    /// A03's first save, from the keyboard's Return key, which ends the field's editing, gets no
+    /// answer (`-TadayoUITestNameFailsThenHangs`): its line shows under the field and the column
+    /// is scrolled so its frame ends at least 24 above Continue (its line box at least 16:
+    /// `errorToActionMinimum`), the field above it under the bar, with the keyboard still up and
+    /// the name still focused (IMPLEMENTATION.md: "On failure the name remains focused and the
+    /// keyboard stays up. The body scrolls to keep the field and error reachable above Continue";
+    /// frame 11), and editing is back. The next save, from Continue, never answers: the name is
+    /// then read-only, not disabled, so typing goes nowhere and `typeText` fails the test if the
+    /// field lost its focus, also after Return is pressed during that save, when no save starts
+    /// and only the save going puts the focus back (`busyPrimary.field`); Continue keeps its
+    /// label and says "In progress"; Add photo and Leave sign-in are inactive (`busyPrimary`).
+    @MainActor func testAProfileFailureStaysInViewAndTheNameIsReadOnlyWhileSaved() {
+        let app = launch("-TadayoUITestNameFailsThenHangs")
+        signInToTheAge(app)
+        app.buttons["I’m 18 or older"].tap()
+        let name = app.textFields["Your name"]
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        app.typeText("Ben")
+        let next = app.buttons["Continue"]
+        app.typeText("\n")
+
+        let line = app.staticTexts[
+            "Couldn’t save your profile. Check your connection and try again."]
+        XCTAssertTrue(line.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.keyboards.firstMatch.exists)
+        XCTAssertEqual(name.value as? String, "Ben")
+        let read = settle("the line's foot over Continue's top") {
+            "\(Int(line.frame.maxY.rounded())) over \(Int(next.frame.minY.rounded()))"
+        } until: {
+            line.frame.maxY <= next.frame.minY - 24 + 1
+        }
+        let bar = app.navigationBars["Your profile"]
+        XCTAssertLessThanOrEqual(
+            line.frame.maxY, next.frame.minY - 24 + 1,
+            "the line \(line.frame), Continue \(next.frame); read \(read)")
+        XCTAssertGreaterThanOrEqual(
+            name.frame.minY, bar.frame.maxY - 0.5, "the field \(name.frame), bar \(bar.frame)")
+        app.typeText("ji")
+        XCTAssertEqual(name.value as? String, "Benji")
+        XCTAssertTrue(next.isEnabled)
+        next.tap()
+
+        let busy = expectation(
+            for: NSPredicate(format: "value == %@", "In progress"), evaluatedWith: next)
+        wait(for: [busy], timeout: 5)
+        XCTAssertFalse(next.isEnabled)
+        XCTAssertEqual(next.label, "Continue")
+        XCTAssertFalse(bar.buttons["Leave sign-in"].isEnabled)
+        XCTAssertFalse(app.buttons["Add photo"].isEnabled)
+        app.typeText("x")
+        XCTAssertEqual(name.value as? String, "Benji")
+        XCTAssertTrue(app.keyboards.firstMatch.exists)
+        app.typeText("\n")
+        app.typeText("x")
+        XCTAssertEqual(name.value as? String, "Benji")
+        XCTAssertTrue(app.keyboards.firstMatch.exists)
     }
 
     /// At the largest text size, Verify code on A02-code would sit under the keyboard, so it is
@@ -302,6 +400,25 @@ final class SignInUITests: XCTestCase {
                 + "times: \(read.joined(separator: ", "))"
         ) { _ in }
         return read
+    }
+
+    /// Reads `what` every 0.2 seconds until `done`, for 2 seconds at most, and logs the reads as
+    /// an activity named for it, so a passing run's log shows whether it had to wait: an
+    /// element's accessibility frame can lag the screen after a scroll (`settle(_:above:)`).
+    @MainActor private func settle(
+        _ what: String, read: () -> String, until done: () -> Bool
+    ) -> [String] {
+        var reads: [String] = []
+        let until = Date(timeIntervalSinceNow: 2)
+        repeat {
+            reads.append(read())
+            if done() { break }
+            RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.2))
+        } while Date() < until
+        XCTContext.runActivity(
+            named: "\(what), read \(reads.count) times: \(reads.joined(separator: ", "))"
+        ) { _ in }
+        return reads
     }
 
     /// `shot`, attached as `state` for a failure's evidence: named as `tools/ci/ios_steps.py`
@@ -391,10 +508,9 @@ final class SignInUITests: XCTestCase {
     @MainActor private func signInToTheTabs(_ app: XCUIApplication) {
         signInToTheAge(app)
         app.buttons["I’m 18 or older"].tap()
-        let name = app.textFields["Your name"]
-        XCTAssertTrue(name.waitForExistence(timeout: 5))
-        name.tap()
-        name.typeText("Ben")
+        XCTAssertTrue(app.textFields["Your name"].waitForExistence(timeout: 5))
+        // The name field has the focus on arrival.
+        app.typeText("Ben")
         app.buttons["Continue"].tap()
         XCTAssertTrue(app.staticTexts["Start your club."].waitForExistence(timeout: 5))
     }

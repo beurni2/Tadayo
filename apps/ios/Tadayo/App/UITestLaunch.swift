@@ -15,11 +15,17 @@
         /// while its request is on its way: the address read-only with the keyboard still up,
         /// and Send a code saying "In progress". A test seam, not product.
         static let hangingSend = "-TadayoUITestHangingSend"
+        /// The stand-in services, except that the first name saved on A03 gets no answer and
+        /// every later one never answers, so a test can look at A03's failure with the keyboard
+        /// up, and then at the name read-only while it is saved. A test seam, not product.
+        static let nameFailsThenHangs = "-TadayoUITestNameFailsThenHangs"
         static let rightCode = "123456"
 
-        @MainActor static func fakeGraph(hangingSend: Bool = false) -> AppGraph {
+        @MainActor static func fakeGraph(
+            hangingSend: Bool = false, nameFailsThenHangs: Bool = false
+        ) -> AppGraph {
             let auth = FakeAuth(hangsOnSend: hangingSend)
-            let accounts = FakeAccounts()
+            let accounts = FakeAccounts(nameFailsThenHangs: nameFailsThenHangs)
             let session = SessionManager(auth: auth, store: InMemorySessionStore())
             let root = RootModel(session: session, auth: auth, accounts: accounts)
             return AppGraph(root: root, connections: Connections())
@@ -47,9 +53,15 @@
 
         final class FakeAccounts: AccountService, @unchecked Sendable {
             private let lock = NSLock()
+            private let nameFailsThenHangs: Bool
+            private var namesTried = 0
             private var account = Account(
                 id: "ui-test", displayName: nil, avatarVersion: nil, ageConfirmed: false,
                 version: 0)
+
+            init(nameFailsThenHangs: Bool = false) {
+                self.nameFailsThenHangs = nameFailsThenHangs
+            }
 
             func me() async throws(APIFailure) -> Account {
                 lock.withLock { account }
@@ -58,7 +70,15 @@
             func update(_ change: AccountChange, key: IdempotencyKey) async throws(APIFailure)
                 -> Account
             {
-                lock.withLock {
+                if nameFailsThenHangs, case .name = change {
+                    let tried = lock.withLock {
+                        namesTried += 1
+                        return namesTried
+                    }
+                    if tried == 1 { throw .network }
+                    try? await Task.sleep(for: .seconds(3600))
+                }
+                return lock.withLock {
                     switch change {
                     case .confirmAge:
                         account = Account(

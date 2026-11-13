@@ -40,8 +40,19 @@ import Observation
         self.signedOut = signedOut
     }
 
-    /// The name as typed.
-    public var name = ""
+    /// The name as typed. While a save runs the field is read-only, not disabled, so it keeps its
+    /// focus and its keyboard (handoff 7's `busyPrimary.field`: "read-only, keep first responder
+    /// and keyboard if already shown; restore editing after failure"; IMPLEMENTATION.md: "Saving
+    /// a profile makes the name read-only"): a write made then is ignored, and the name stays
+    /// what is being saved.
+    public var name: String {
+        get { typedName }
+        set {
+            guard !isSaving else { return }
+            typedName = newValue
+        }
+    }
+    private var typedName = ""
 
     /// The name, trimmed, is longer than FQ70's 40 characters: Continue waits for a shorter one.
     public var nameIsTooLong: Bool { trimmedName.count > Self.nameLimit }

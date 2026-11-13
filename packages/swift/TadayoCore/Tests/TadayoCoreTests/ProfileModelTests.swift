@@ -146,6 +146,37 @@ func account(name: String? = nil, age: Bool = false, version: Int = 0) -> Accoun
         #expect(model.canContinue)
     }
 
+    /// While the name is saved it can't be edited (handoff 7's `busyPrimary.field`; the plan's
+    /// TL-01 for A03): what is typed then is ignored, so the field, which shows what the model
+    /// kept (`ModelText`), keeps the name being sent; once the save fails, by no answer or a
+    /// refusal, it can be edited again, and the next tap sends what was typed then.
+    @Test func theNameCantBeEditedWhileItIsSaved() async {
+        for (answer, failure) in [
+            (APIFailure.network, ProfileModel.Failure.network), (.refused, .other),
+        ] {
+            let gate = Gate()
+            let accounts = FakeAccounts(update: [.failure(answer)])
+            accounts.duringUpdate = { await gate.wait() }
+            let model = model(accounts, account(age: true, version: 1))
+            model.name = "Ben"
+            let saving = Task { await model.saveName() }
+            await gate.reached()
+            #expect(model.isSaving)
+            model.name = "Benx"
+            #expect(model.name == "Ben")
+            model.name = ""
+            #expect(model.name == "Ben")
+            gate.open()
+            await saving.value
+            #expect(!model.isSaving)
+            #expect(model.failure == failure)
+            #expect(model.name == "Ben")
+            model.name = "Benji"
+            #expect(model.name == "Benji")
+            #expect(accounts.updates.map(\.change) == [.name("Ben", expectedVersion: 1)])
+        }
+    }
+
     @Test func aRetryAfterNoAnswerSendsTheSameKeyAndBody() async {
         let keys = NumberedKeys()
         let accounts = FakeAccounts(update: [
