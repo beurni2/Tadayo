@@ -63,9 +63,30 @@ describe("the pinned root", () => {
     expect(root.verify(root.publicKey)).toBe(true);
   });
 
-  it("is read once and checked: supabaseRootCa gives the file's text", () => {
+  it("is read once and checked: supabaseRootCa gives the file's text", async () => {
     expect(supabaseRootCa()).toBe(ROOT_PEM);
-    expect(supabaseRootCa()).toBe(supabaseRootCa());
+    // A fresh copy of the module, which counts its reads of the file.
+    let reads = 0;
+    vi.resetModules();
+    vi.doMock("node:fs", async (importOriginal) => {
+      const fs = await importOriginal<typeof import("node:fs")>();
+      const readFileSync = ((path: Parameters<typeof fs.readFileSync>[0], options: BufferEncoding) => {
+        if (path === SUPABASE_ROOT_CA_PATH) reads += 1;
+        return fs.readFileSync(path, options);
+      }) as typeof fs.readFileSync;
+      return { ...fs, default: { ...fs, readFileSync }, readFileSync };
+    });
+    try {
+      const fresh = await import("./ssl.ts");
+      expect(reads).toBe(0);
+      expect(fresh.supabaseRootCa()).toBe(ROOT_PEM);
+      expect(fresh.supabaseRootCa()).toBe(ROOT_PEM);
+      expect(fresh.poolerTls().ca).toEqual([ROOT_PEM]);
+      expect(reads).toBe(1);
+    } finally {
+      vi.doUnmock("node:fs");
+      vi.resetModules();
+    }
   });
 
   it("is checked when it is read, so a file that isn't the root reaches no link", async () => {

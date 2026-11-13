@@ -54,7 +54,9 @@ export function connectToDev(
 
 /**
  * Node's codes for a server certificate that the check refused: its TLS documentation's "X509
- * certificate error codes", and the name check's own. postgres.js passes Node's error on, code and all.
+ * certificate error codes"; `UNSPECIFIED`, which Node gives any other verify error OpenSSL reports
+ * (a weak signature or key, a Key Usage without certificate signing, an unknown critical extension);
+ * and the name check's own. postgres.js passes Node's error on, code and all.
  */
 const REFUSED_CERTIFICATE: ReadonlySet<string> = new Set([
   "UNABLE_TO_GET_ISSUER_CERT",
@@ -84,6 +86,7 @@ const REFUSED_CERTIFICATE: ReadonlySet<string> = new Set([
   "CERT_UNTRUSTED",
   "CERT_REJECTED",
   "HOSTNAME_MISMATCH",
+  "UNSPECIFIED",
   "ERR_TLS_CERT_ALTNAME_INVALID",
 ]);
 

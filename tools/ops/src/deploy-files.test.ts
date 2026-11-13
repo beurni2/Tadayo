@@ -223,6 +223,8 @@ describe(".dockerignore", () => {
       .flatMap((copy) => copy.sources);
     expect([...new Set(allowed)].sort()).toEqual([...new Set(copied)].sort());
     expect(allowed.length).toBe(new Set(allowed).size);
+    // And no exclusion but the last two, so nothing let in above is shut out again after it.
+    expect(rules()).toEqual(["*", ...allowed.map((path) => `!${path}`), "**/*.test.ts", "**/node_modules"]);
   });
 
   it("lets nothing of the repository's records, renders, history or secrets in, and keeps tests and node_modules out", () => {
@@ -262,7 +264,7 @@ describe(".dockerignore", () => {
       .filter((rule) => rule.startsWith("!"))
       .map((rule) => rule.slice(1));
     expect(allowed.some(inside)).toBe(true);
-    // The two exclusions after the allowlist (the test above) don't match it.
+    // The only exclusions after the allowlist, the last two (the first test pins it), don't match it.
     expect(root.endsWith(".test.ts") || root.split("/").includes("node_modules")).toBe(false);
   });
 });

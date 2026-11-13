@@ -120,7 +120,15 @@ describe("connectToDev", () => {
 
 describe("certificateRefusal", () => {
   it("names the pin's refusal of a certificate by Node's code, and says nothing was sent", () => {
+    // The codes a handshake through postgres.js gives: UNABLE_TO_GET_ISSUER_CERT_LOCALLY for a
+    // chain from another root, the intermediate sent (Supabase's 2025 root, a public CA);
+    // CERT_SIGNATURE_FAILURE for a root of the same name and key identifier
+    // (connection-tls.test.ts); UNSPECIFIED for a verify error outside Node's list, such as a weak
+    // signature or an intermediate whose Key Usage leaves out certificate signing.
     for (const code of [
+      "UNABLE_TO_GET_ISSUER_CERT_LOCALLY",
+      "CERT_SIGNATURE_FAILURE",
+      "UNSPECIFIED",
       "SELF_SIGNED_CERT_IN_CHAIN",
       "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
       "CERT_HAS_EXPIRED",

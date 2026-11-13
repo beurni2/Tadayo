@@ -171,6 +171,9 @@ describe("a connection that the database refuses", () => {
 
   it("says that the pin refused the server's certificate, and not that bootstrap or the password may be wrong", async () => {
     for (const code of [
+      "UNABLE_TO_GET_ISSUER_CERT_LOCALLY",
+      "CERT_SIGNATURE_FAILURE",
+      "UNSPECIFIED",
       "SELF_SIGNED_CERT_IN_CHAIN",
       "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
       "ERR_TLS_CERT_ALTNAME_INVALID",
