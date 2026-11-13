@@ -4,10 +4,10 @@ import XCTest
 @testable import Tadayo
 
 /// Where the root's failure sits, and what VoiceOver finds in it, measured in the test host's own
-/// window (`AccessibilityElements`), so that it is measured on the iOS 17.5 and 18.6
-/// compatibility runs as well as on the newest iOS: the snapshot tests run on the newest only, and
-/// the bar a failure sits under is the part of its layout that differs by iOS version (an empty
-/// inline bar has no height at all on iOS 26 unless it is kept visible: docs/LIMITATIONS.md).
+/// window (`AccessibilityElements`), so that it is measured on iOS 26.5 as well as on iOS 27.2:
+/// the snapshot tests run on iOS 27.2 only, and the bar a failure sits under is the part of its
+/// layout that differs by iOS version (an empty inline bar has no height at all on iOS 26 unless
+/// it is kept visible: docs/LIMITATIONS.md).
 @MainActor
 final class RootFailureTests: XCTestCase {
     func testTheFailureTitleSitsWhereTheSignInTitlesSit() {

@@ -10,8 +10,8 @@ import TadayoDesign
 /// Handoff 7's `global-launch-failed-network` draws the first failure with no bar and the title
 /// where the sign-in screens' titles sit under theirs. So the screen is held in the same
 /// container, an empty inline navigation bar, and the system supplies the offset on every iOS
-/// version, where a number of its own would suit one: `RootFailureTests` compares the two, on each
-/// iOS the compatibility runs use. An empty bar is kept visible
+/// version, where a number of its own would suit one: `RootFailureTests` compares the two, on both
+/// iOS versions each `ios` run tests, 27.2 and 26.5. An empty bar is kept visible
 /// (`.toolbar(.visible, for: .navigationBar)`): on iOS 26 SwiftUI gives a bar with nothing in it
 /// no height at all, and the title sat 54 points above the sign-in titles, which sit under a bar
 /// of 54 (a check on that iOS measured it); kept visible, the bar is the one the sign-in screens
