@@ -36,17 +36,18 @@
 // (`agent-logs/`: 0.5.8's `wg/state.go` swaps the JSON names of the two keys, so the agent's
 // `redact`, in `agent/server/session.go`, misses the private one); it is never printed, kept or
 // uploaded, and is removed once the session's call has ended. A run cancelled, cut off by the job's
-// time or lost before then leaves it, with the key and the peer, until the runner ends. Otherwise every call on a runner shares one agent, a flyctl left
-// running in the background, which keeps the organization's tunnel, and checks it against its own
-// copy of the WireGuard state: read from the configuration once, as it starts, and changed only by
-// its own writes (flyctl 0.5.8's `agent/server/server.go`, `buildTunnel` and
+// time or lost before then leaves it, with the key, until the runner ends, and its peer at Fly
+// until it is removed by hand (below). Otherwise every call on a runner shares one agent, a flyctl
+// left running in the background, which keeps the organization's tunnel, and checks it against its
+// own copy of the WireGuard state: read from the configuration once, as it starts, and changed only
+// by its own writes (flyctl 0.5.8's `agent/server/server.go`, `buildTunnel` and
 // `validateTunnelsUnlocked`; `flyctl/flyctl.go`). The clean-up below removes the peer at Fly from
 // another flyctl, which that copy never learns, so the agent gives the tunnel to the next session
-// until its own check, two minutes after it starts. In `deploy-dev`, which runs two scripts over SSH
-// in one job, the second session made no peer and failed its tunnel's one check (run 43467951472,
-// both attempts, and run 43478918447; docs/LIMITATIONS.md, 2026-11-13), as that source says a
-// shared agent would: the cause is inferred, since the shared agent's log was on runners now gone. A fresh
-// runner per script, as `ops` has, never met it.
+// until its own check, two minutes after it starts. In `deploy-dev`, which runs two scripts over
+// SSH in one job, the second session made no peer and failed its tunnel's one check (run
+// 43467951472, both attempts, and run 43478918447; docs/LIMITATIONS.md, 2026-11-13), as that source
+// says a shared agent would: the cause is inferred, since the shared agent's log was on runners now
+// gone. A fresh runner per script, as `ops` has, never met it.
 //
 // The peer reaches the organization's whole private network until it is removed, and flyctl never
 // removes one it made: on a fresh runner, every run would leave one more. So the runner lists the

@@ -798,24 +798,28 @@ describe("onMachine: an agent of the session's own", () => {
     for (const session of sessions) {
       const { spawn, calls } = fakeSpawn(routes(session));
       let ended = false;
-      // The made-up session ends only on a later turn of the event loop, after every pending
-      // microtask, so a removal that waits for anything short of the call itself sees `ended` false.
+      let started = (): void => undefined;
+      let release = (): void => undefined;
+      const sshStarted = new Promise<void>((resolve) => {
+        started = resolve;
+      });
+      const held = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      // The made-up session's answer is held back until the test releases it, so the session runs
+      // as long as the test says: the folder must still be there, and nothing have removed it.
       const watched: Spawn = (command, args, options) => {
         const call = spawn(command, args, options);
-        return args[0] === "ssh"
-          ? call.then(
-              (answer) =>
-                new Promise<typeof answer>((resolve) => {
-                  setImmediate(() => {
-                    ended = true;
-                    resolve(answer);
-                  });
-                }),
-            )
-          : call;
+        if (args[0] !== "ssh") return call;
+        started();
+        return call.then(async (answer) => {
+          await held;
+          ended = true;
+          return answer;
+        });
       };
       const removals: { path: string; ended: boolean }[] = [];
-      await onMachine({
+      const running = onMachine({
         fly: flyOf(watched, ENV),
         label: "storage-setup",
         command: COMMAND,
@@ -833,7 +837,14 @@ describe("onMachine: an agent of the session's own", () => {
         () => undefined,
         () => undefined,
       );
+      await Promise.race([sshStarted, running]);
       const folder = calls.find((call) => call.args[0] === "ssh")?.options.env?.["FLY_CONFIG_DIR"] ?? "";
+      // While the session runs (held for 25 ms, many turns of the event loop), its folder stays.
+      await new Promise((resolve) => setTimeout(resolve, 25));
+      expect(existsSync(folder)).toBe(true);
+      expect(removals).toEqual([]);
+      release();
+      await running;
       expect(folder.startsWith(join(tmpdir(), "tadayo-flyctl-"))).toBe(true);
       expect(removals).toEqual([{ path: folder, ended: true }]);
       expect(existsSync(folder)).toBe(false);
