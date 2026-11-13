@@ -1,6 +1,6 @@
 # api/b0-pooler-ca: check the session pooler's certificate
 
-The api lane's plan for the PR that closes `docs/LIMITATIONS.md`'s row of 2026-11-11 on the database links being encrypted but not authenticated (`docs/JOURNAL.md` block 1.2, step 3). Written 2026-11-13, from `main` at `6912728`; sections 3 to 6 amended the same day after the first review round, and sections 2 to 7 after the second (PR #46; `docs/JOURNAL.md`, section 3.2).
+The api lane's plan for the PR that closes `docs/LIMITATIONS.md`'s row of 2026-11-11 on the database links being encrypted but not authenticated (`docs/JOURNAL.md` block 1.2: step 3, and its runs in step (7)). Written 2026-11-13, from `main` at `6912728`; sections 3 to 6 amended the same day after the first review round, and sections 2 to 7 after the second (PR #46; `docs/JOURNAL.md`, section 3.2); section 5's outcome noted after the merge, in `api/b0-pooler-records`.
 
 ## 1. Why
 
@@ -46,6 +46,8 @@ Every link to the database (the API's, the worker's, the `ops` scripts' and `boo
 - `tools/ops/src/deploy-files.test.ts`: the root reaches the image. `packages/domain/src` is copied, and `.dockerignore` is exactly `*`, the allowlist, and the two exclusions for tests and `node_modules`, so nothing after the allowlist shuts the root out. It is a static check; no image is built in the PR.
 
 ## 5. On `dev`, before and after the merge (each run on the founder's yes, asked once with the PR's approval; `dev` claimed through the coordinator first and released after)
+
+**Ran on 2026-11-13, every step passing,** with the founder's "Enforce SSL" step done and `migrate` run after it; PR #46 merged as `888c0fb` between steps 2 and 3, and step 5's first run (43369135931) was refused, with nothing built, while `main`'s `ci` was still running, and passed when started again (43369589760) (`docs/JOURNAL.md` block 1.2, step (7); `docs/LIMITATIONS.md`, the row of 2026-11-11 on authenticating the link, closed).
 
 Before the merge, each started from `main` with the branch as `deploy-branch`'s input, so that `main` takes the pin only once the deployed links have met it (review round 1, d-1):
 1. `deploy-branch` with `api/b0-pooler-ca`: the API on Fly under the pin. The API listens only once its database answers, and the run fails when no API Machine is started on the image (`tools/ops/src/deploy-branch.ts`). The worker connects as it starts too. If its Machine is started before the run (it was after run 43160591767), a crash under the pin fails flyctl's smoke check and so the run. If it doesn't crash, the run says `deploy-branch: <sha> is deployed: the API and the worker run the image …`, which shows its link. If the run says `… the API runs the image …` and, on the next line, `deploy-branch: the worker Machine is stopped`, the run doesn't show the worker's link, which is then the API's code (`transportOptions`) with the same Fly secret, `DATABASE_URL`, until `worker-scale` starts it.
