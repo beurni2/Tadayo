@@ -7,8 +7,7 @@
 // a child process's words may hold what the redactor knows how to hold back (T56).
 
 import { join } from "node:path";
-import postgres from "postgres";
-import { connectionOptions } from "./database.ts";
+import { connectToDev } from "./database.ts";
 import { failureText, redactor } from "./output.ts";
 import { runScript } from "./run.ts";
 import { spawnProcess } from "./spawn.ts";
@@ -25,11 +24,9 @@ try {
     // Supabase's session pooler, which asks for TLS, by the parts the guard checked (database.ts).
     // Postgres's warnings are shown; its routine notices aren't.
     connect: (url) =>
-      postgres(
-        connectionOptions(url, redact, (line) => {
-          console.error(line);
-        }),
-      ),
+      connectToDev(url, redact, (line) => {
+        console.error(line);
+      }),
     sleep: (ms) =>
       new Promise((resolve) => {
         setTimeout(resolve, ms);
