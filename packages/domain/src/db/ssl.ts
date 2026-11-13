@@ -30,20 +30,19 @@ export const SUPABASE_ROOT_CA_SHA256 =
   "80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FA";
 
 /**
+ * One certificate in PEM and nothing else: its first line, base64, its last line. Base64 has no `-`,
+ * so a second block, a key, another label or a line of text anywhere doesn't match.
+ */
+const ONE_CERTIFICATE = /^-----BEGIN CERTIFICATE-----\r?\n[A-Za-z0-9+/=\r\n]+-----END CERTIFICATE-----(\r?\n)?$/;
+
+/**
  * Throws unless `pem` is exactly one certificate, and that certificate is the pinned root. So an
  * empty file (which Node would read as "no `ca`" and trust its whole store), a second certificate
  * beside the root, a key, or another root never reaches the driver.
  */
 export function checkPinnedRoot(pem: string): void {
   const refused = (why: string) => new Error(`supabase-root-2021.crt isn't Supabase's root: ${why}`);
-  const blocks = pem.match(/-----BEGIN [^-]*-----/g) ?? [];
-  if (
-    blocks.length !== 1 ||
-    blocks[0] !== "-----BEGIN CERTIFICATE-----" ||
-    !pem.includes("-----END CERTIFICATE-----")
-  ) {
-    throw refused(`it holds ${String(blocks.length)} PEM blocks, where it must hold one certificate`);
-  }
+  if (!ONE_CERTIFICATE.test(pem)) throw refused("it must be one certificate in PEM, and nothing else");
   let fingerprint: string;
   try {
     fingerprint = new X509Certificate(pem).fingerprint256;

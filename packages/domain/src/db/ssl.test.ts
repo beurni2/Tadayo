@@ -6,7 +6,7 @@
 
 import { X509Certificate } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   checkPinnedRoot,
   poolerTls,
@@ -68,6 +68,28 @@ describe("the pinned root", () => {
     expect(supabaseRootCa()).toBe(supabaseRootCa());
   });
 
+  it("is checked when it is read, so a file that isn't the root reaches no link", async () => {
+    // A fresh copy of the module, which reads another root where the file is.
+    vi.resetModules();
+    vi.doMock("node:fs", async (importOriginal) => {
+      const fs = await importOriginal<typeof import("node:fs")>();
+      const readFileSync = ((path: Parameters<typeof fs.readFileSync>[0], options: BufferEncoding) =>
+        path === SUPABASE_ROOT_CA_PATH ? OTHER_ROOT : fs.readFileSync(path, options)) as typeof fs.readFileSync;
+      return { ...fs, default: { ...fs, readFileSync }, readFileSync };
+    });
+    try {
+      const fresh = await import("./ssl.ts");
+      expect(() => fresh.supabaseRootCa()).toThrow(/Supabase's root/);
+      expect(() => fresh.poolerTls()).toThrow(/Supabase's root/);
+      expect(() => fresh.transportOptions(`postgresql://tadayo_app.${REF}:x@${POOLER}:5432/postgres`)).toThrow(
+        /Supabase's root/,
+      );
+    } finally {
+      vi.doUnmock("node:fs");
+      vi.resetModules();
+    }
+  });
+
   it("refuses anything but exactly that one certificate, so no empty, doubled, widened or other root reaches `ca`", () => {
     expect(() => {
       checkPinnedRoot(ROOT_PEM);
@@ -83,6 +105,15 @@ describe("the pinned root", () => {
       ["the root and a key", `${ROOT_PEM}-----BEGIN PRIVATE KEY-----\nAAAA\n-----END PRIVATE KEY-----\n`],
       ["the root cut short", ROOT_PEM.slice(0, 600)],
       ["the root with a letter changed", withOneLetterChanged(ROOT_PEM)],
+      ["a line of text before the root", `Supabase Root 2021 CA\n${ROOT_PEM}`],
+      [
+        "the root under another label, which OpenSSL reads as the same certificate",
+        ROOT_PEM.replace("BEGIN CERTIFICATE", "BEGIN TRUSTED CERTIFICATE").replace(
+          "END CERTIFICATE",
+          "END TRUSTED CERTIFICATE",
+        ),
+      ],
+      ["a certificate's lines around what isn't one", "-----BEGIN CERTIFICATE-----\nAAAA\n-----END CERTIFICATE-----\n"],
     ] as const) {
       expect(() => {
         checkPinnedRoot(pem);
