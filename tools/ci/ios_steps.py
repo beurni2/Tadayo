@@ -8,7 +8,7 @@ slice 9).
 its tests live (tools/ci/ios_steps_test.py). Its three jobs:
 
   gate      (Linux)     gate
-  build     (macos-26)  toolchain, xcodegen, simulator, build, test, collect
+  build     (xcode-27)  toolchain, xcodegen, simulator, build, test, collect
   evidence  (Linux)     imagemagick, sheets, publish
 
 The steps:
@@ -25,34 +25,50 @@ The steps:
   xcodegen     Downloads XcodeGen toolchain.XCODEGEN_VERSION's release zip, fails unless its
                SHA-256 is toolchain.XCODEGEN_SHA256 and it reports that version, and generates
                the project from PROJECT_SPEC, failing if XcodeGen says its presets didn't load.
-  simulator    Records the simulators the runner offers (logs/simulators.txt), then picks one:
-               with no $IOS_VERSION, the newest iOS runtime installed whose major is at most
-               the pinned Xcode's simulator SDK's (a newer Xcode's runtimes can sit on the same
-               image, and the snapshots' iOS mustn't change under them); with one ("18", "18.6",
-               "26.2"), the newest installed runtime of that version, downloaded first with
-               `xcodebuild -downloadPlatform iOS -buildVersion` when the runner hasn't got it
-               (docs/TECH-DESIGN.md section 8: the pre-gate runs on older iOS), and read back
-               from simctl, never assumed from the download's exit code. The device is
-               toolchain.SIMULATOR_DEVICE when that runtime supports it, else the newest plain
-               "iPhone <n>" it supports. It boots the device and writes it to run.json.
+  simulator    Checks the snapshot runtime first (below), then records the simulators the
+               runner offers (logs/simulators.txt) and the pinned Xcode's simulator SDK, and
+               fails unless the first of toolchain.IOS_RUNTIMES shares the SDK's major and none
+               is of a later major. Then, for each pinned runtime in order, it takes the available
+               iOS runtime of that version that supports toolchain.SIMULATOR_DEVICE (pick_runtime:
+               the `xcode-27` image has a second iOS 27.2 runtime, for iPhone Duo alone). One the
+               runner hasn't got is fetched only when toolchain.IOS_DOWNLOADS lists it (iOS
+               26.5, on every run): downloaded to a file with `xcodebuild -downloadPlatform iOS
+               -buildVersion <v> -exportPath`, imported with `xcodebuild -importPlatform`, and
+               the copy the download registers deleted, since the image moves a downloaded
+               runtime's mount mid-run (Steps.download); it is read back from simctl, never
+               assumed from an exit code, and only an imported image simctl says is Ready counts.
+               Any other missing runtime fails the step, naming it. There is no other device: on
+               each runtime it reuses or creates that device, and checks that simctl lists it on
+               that runtime. It boots only the first runtime's device, and writes each runtime's
+               identifier, build, device and UDID to run.json and logs/simulators.txt, with the
+               snapshot runtime and where it comes from.
   build        `xcodebuild build-for-testing` of SCHEME, or `xcodebuild build` while the
                scheme has no test target (xcodebuild refuses build-for-testing then), with
                `-skipPackagePluginValidation` (ADR-028). It fails when the build log shows a
                package plugin toolchain.PACKAGE_PLUGINS doesn't allow, from another package or on
                another target, then unless the app holds the share extension, so both targets
                were built.
-  test         `xcodebuild test-without-building` of the scheme's tests, when it has any, with
+  test         `xcodebuild test-without-building` of the scheme's tests, when it has any, once
+               on each of toolchain.IOS_RUNTIMES in order: each pass with its own destination,
+               result bundle (Tests-<v>.xcresult) and logs, and every pass run even when one
+               before it failed. Before each pass after the first, it shuts the device booted
+               last down and boots that pass's; the pass on a runtime toolchain.IOS_DOWNLOADS
+               lists writes where that runtime is (its bundle and its build's volumes) before
+               and after it to its log, and says so if that changed. Every pass has
                swift-snapshot-testing's record mode `never` (a snapshot with no committed
-               reference fails; TECH-DESIGN section 2) and its artifacts directory in OUT. It
-               fails first if a Swift file under apps/ios sets a record mode of its own, which
-               would override `never` (RECORDING), and after the tests if the run wrote a
-               reference under a __Snapshots__ folder all the same (a mode set some other way).
-               A run with $IOS_VERSION is a compatibility run: it skips the test targets named
-               *SnapshotTests (SNAPSHOT_TARGET_SUFFIX), since snapshots use the newest iOS
-               (TECH-DESIGN section 8).
+               reference fails; TECH-DESIGN section 2). The test
+               targets named *SnapshotTests (SNAPSHOT_TARGET_SUFFIX) run on the snapshot runtime
+               alone, and only its pass gets the artifacts directory in OUT.
+               It fails first if the snapshot runtime's file is bad, or a Swift file under
+               apps/ios sets a record mode of its own, which would override `never`
+               (RECORDING); after the passes, if the run wrote a reference under a __Snapshots__
+               folder all the same (a mode set some other way); and when any pass failed.
   collect      Lists every snapshot in snapshots.json, with its state and status (below), and
                copies the images this run drew into OUT/snapshots/, a reference the run wrote
-               itself included. Runs even when a step before it failed.
+               itself included. The new ones come from the snapshot runtime's result bundle:
+               run.json's `snapshots`, else snapshot_runtime(); when the file is bad and
+               run.json doesn't say, it says why and exports none. Runs even when a step before
+               it failed, and always passes.
   imagemagick  Installs ImageMagick on the Linux runner, which doesn't have it.
   sheets       Makes the contact sheets (docs/DESIGN-HANDOFF.md, "Snapshot comparison"): per
                state, the render on the left, from design/reference/screens/ if it is there,
@@ -63,8 +79,9 @@ The steps:
                has no inventory row of its own while its base state has one says it is judged
                against book p26's rules (design/reference/INVENTORY.md); anything else says it
                isn't an inventory state. JPEG (TECH-DESIGN section 3). A push carries only the
-               states the branch touches; a run by hand with no $IOS_VERSION carries the full
-               set, for gates; a compatibility run carries no sheets, only its logs. Every field
+               states the branch touches; a run by hand carries the full set, for gates. The
+               snapshots are the snapshot runtime's, and index.md has a line for each runtime
+               and says which runtime the references are for and why. Every field
                of snapshots.json and every value of run.json is checked again here, since this
                job can write: an entry with a field, or fields together, that collect can't
                have written fails its row and is neither copied nor drawn; run.json is staged
@@ -77,7 +94,7 @@ The steps:
   publish      Pushes what sheets staged (index.md, the sheets, the checked entries' snapshots,
                run.json's checked values and the steps' logs, as they are) to the
                `evidence` branch under <branch>/<short-sha>/ios/ (ios-full/ for a run by hand's
-               full set, ios-<version>/ for a compatibility run), with the job's GITHUB_TOKEN.
+               full set), with the job's GITHUB_TOKEN.
                The folder comes from the run's environment, as in sheets, never from a file;
                nothing goes up unless sheets finished for that folder. Never forces: when the
                push is refused because another run pushed first, it fetches the branch again,
@@ -85,14 +102,26 @@ The steps:
                a scratch repository; by hand, run it only with one, since only the workflow's
                evidence job pushes to the real branch.
 
+The snapshot runtime (snapshot_runtime): the snapshot tests run on one pinned runtime, the one
+the committed references are for. It is toolchain.SNAPSHOT_RUNTIME when the app has the file
+SNAPSHOT_RUNTIME_FILE holding exactly that version, and toolchain.SNAPSHOT_RUNTIME_INTERIM while
+the app has no such file. Anything else there fails `simulator` and `test` before any command,
+and `ci` on Linux, where ios_steps_test.py reads the real file. So the file can name only the
+founder's runtime (T58). Until a CI-configuration PR removes the interim, deleting the file moves
+the snapshots back to it; the CI PR after the app's PR that adds the file removes that path.
+
 Files pass between the macOS job's steps in OUT ($IOS_OUT, else $RUNNER_TEMP/ios-out), which the
 job uploads as the artifact `ios-results` and the evidence job downloads to the same place:
 
-  run.json        what the run used: the Xcode, the simulator, the tests' result
-  logs/           toolchain.txt, xcodegen.txt, simulators.txt, build.log, test.log,
-                  test-summary.json, attachments-manifest.json (LOG_NAMES)
-  artifacts/      swift-snapshot-testing's SNAPSHOT_ARTIFACTS: the images that differ from their
-                  committed reference
+  run.json        what the run used (RUN_KEYS): the Xcode, the Swift, the simulator SDK; for each
+                  pinned runtime <v>, the runtime simctl gave, its build, the device, its UDID and
+                  the pass's result; the snapshot runtime and where it comes from; the tests'
+                  overall result
+  logs/           toolchain.txt, xcodegen.txt, simulators.txt, build.log, attachments-manifest.json,
+                  and test-<v>.log and test-summary-<v>.json for each pinned runtime (LOG_NAMES)
+  Tests-<v>.xcresult  each pass's result bundle; collect reads the snapshot runtime's
+  artifacts/      swift-snapshot-testing's SNAPSHOT_ARTIFACTS on the snapshot runtime's pass: the
+                  images that differ from their committed reference
   snapshots/      the images this run drew that differ from, or have no, committed reference
   snapshots.json  every snapshot, each {state, test, file, status, image, reference}
 
@@ -109,7 +138,8 @@ library writes `<test name>.<named>.png`, so the state is the text after the fil
   new        this run drew it, and it has no committed reference; swift-snapshot-testing attaches
              it to the result bundle, and collect exports it with xcresulttool
   committed  its committed reference, which this run didn't report as different (whether its
-             test passed is in the run's result, run.json and logs/test.log)
+             test passed is in the run's result, run.json and the snapshot runtime's
+             logs/test-<v>.log)
 
 Exit 0 when the step passes or is skipped, 1 when it fails, 2 on bad usage.
 
@@ -123,6 +153,7 @@ import json
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import time
@@ -141,6 +172,10 @@ SCHEME = "Tadayo"
 APP_PRODUCT = "Tadayo.app"
 SHARE_EXTENSION = "TadayoShare.appex"
 SNAPSHOT_TARGET_SUFFIX = "SnapshotTests"
+# The runtime the committed references are for, when it isn't toolchain.SNAPSHOT_RUNTIME_INTERIM
+# (snapshot_runtime). collect reads only PNGs in folders under __Snapshots__, and XcodeGen
+# excludes **/__Snapshots__, so the file is neither a snapshot nor a source.
+SNAPSHOT_RUNTIME_FILE = "apps/ios/TadayoSnapshotTests/__Snapshots__/ios-version"
 XCODEGEN_URL = "https://github.com/yonaskolb/XcodeGen/releases/download/{version}/xcodegen.zip"
 INVENTORY = "design/reference/INVENTORY.md"
 RENDER_DIRS = ("design/reference/screens", "design/reference/2.1")
@@ -160,11 +195,27 @@ PLAIN = re.compile(r"[\w+-][\w.+-]*")
 # A value of run.json that reaches index.md or a label: a version, a device's name, a result.
 # index.md shows each in a code span, so GitHub never makes a link of one.
 FACT = re.compile(r"[\w.() -]{1,64}")
-# The keys the steps write in run.json: the only ones the evidence job reads or stages.
-RUN_KEYS = ("xcode", "swift", "ios", "runtime", "device", "udid", "requested", "sdk", "tests")
-# The files the steps write in OUT's logs/: the only ones the evidence job copies or links.
-LOG_NAMES = ("toolchain.txt", "xcodegen.txt", "simulators.txt", "build.log", "test.log",
-             "test-summary.json", "attachments-manifest.json")
+# The keys the steps write in run.json: the only ones the evidence job reads or stages. Each
+# pinned runtime <v> has its own: ios-<v> (the version simctl gave), runtime-<v> (its identifier),
+# runtime-build-<v>, device-<v>, udid-<v> and tests-<v> (that pass's result).
+RUNTIME_KEYS = ("ios", "runtime", "runtime-build", "device", "udid", "tests")
+RUN_KEYS = ("xcode", "swift", "sdk", "snapshots", "snapshots-source", "tests") + tuple(
+    f"{key}-{version}" for version in toolchain.IOS_RUNTIMES for key in RUNTIME_KEYS)
+# Where the snapshot runtime comes from (run.json's snapshots-source, snapshot_runtime), as
+# index.md and the labels say it.
+SNAPSHOT_SOURCES = {"file": "the ios-version file", "interim": "interim, no ios-version file"}
+# `xcrun simctl runtime list -j`: a runtime downloaded as a MobileAsset has its image under
+# ASSET_IMAGES; an imported one has its own (/Library/Developer/CoreSimulator/Cryptex/Images/ on
+# the `xcode-27` image). Only iOS simulator images are looked at.
+ASSET_IMAGES = "/System/Library/AssetsV2/"
+SIMULATOR_PLATFORM = "com.apple.platform.iphonesimulator"
+RUNNER_IMAGES_ISSUE = "actions/runner-images#14946"
+# The files the steps write in OUT's logs/: the only ones the evidence job copies or links. All
+# top-level files: a folder in logs/ is a stray.
+LOG_NAMES = ("toolchain.txt", "xcodegen.txt", "simulators.txt", "build.log",
+             "attachments-manifest.json") + tuple(
+    name for version in toolchain.IOS_RUNTIMES
+    for name in (f"test-{version}.log", f"test-summary-{version}.json"))
 # Xcode adds "_<n>_<UUID>" to an attachment's suggested name when it exports it: at the end of a
 # name without a dot ("Launch Screen_0_<UUID>.png", Xcode 26.2), and before the last dot of a
 # dotted one ("a.b_0_<UUID>.png", Xcode 27.1). It is stripped wherever it is.
@@ -180,6 +231,7 @@ RECORDING = re.compile(r"\brecord\s*:\s*(true\b|false\b|\.(all|missing|failed)\b
 SHOWN = re.compile(r"error:|warning:|\*\* [A-Z ]+ \*\*|Test Case .*(failed|passed)|"
                    r"Executed [0-9]+ test|Test Suite .*(failed|passed)|✘|Testing failed")
 FAILED_COMMANDS = "The following build commands failed:"
+UDID = re.compile(r"[0-9A-F]{8}(-[0-9A-F]{4}){3}-[0-9A-F]{12}")
 
 
 class LogFilter:
@@ -311,6 +363,47 @@ def version_key(version):
     return tuple(int(p) for p in re.findall(r"[0-9]+", version or ""))
 
 
+def build_key(build):
+    """A runtime's build ("24C55", "24C5057p") as something to compare: its runs of digits as
+    numbers and its runs of letters as text, so 24B9 is newer than 24A335."""
+    return tuple((0, int(p)) if p.isdigit() else (1, p)
+                 for p in re.findall(r"[0-9]+|[A-Za-z]+", str(build or "")))
+
+
+def snapshot_runtime(root):
+    """(version, source): the runtime the snapshot tests run on, and where that comes from.
+    (toolchain.SNAPSHOT_RUNTIME, "file") when SNAPSHOT_RUNTIME_FILE is a regular file holding
+    exactly that version, with at most one line break after it; (toolchain.SNAPSHOT_RUNTIME_INTERIM,
+    "interim") when there is no such file. ValueError for anything else: another version (the
+    interim's among them), a second line, a space, CRLF, a byte outside ASCII, an empty file, a
+    link, a folder or anything else that isn't a regular file. So the file can name only the
+    founder's runtime (T58); until the interim is removed, deleting it moves the snapshots back to
+    the interim's runtime."""
+    path = os.path.join(root, *SNAPSHOT_RUNTIME_FILE.split("/"))
+    try:
+        info = os.lstat(path)
+    except FileNotFoundError:
+        return toolchain.SNAPSHOT_RUNTIME_INTERIM, "interim"
+    except OSError as error:
+        raise ValueError(f"{SNAPSHOT_RUNTIME_FILE} can't be read ({error.strerror})") from None
+    if not stat.S_ISREG(info.st_mode):
+        raise ValueError(f"{SNAPSHOT_RUNTIME_FILE} isn't a regular file (a link, a folder or "
+                         "another kind of file), so it can't say which runtime the snapshot tests "
+                         "run on")
+    try:
+        with open(path, "rb") as f:
+            content = f.read(64)
+    except OSError as error:
+        raise ValueError(f"{SNAPSHOT_RUNTIME_FILE} can't be read ({error.strerror})") from None
+    expected = toolchain.SNAPSHOT_RUNTIME.encode("ascii")
+    if content not in (expected, expected + b"\n"):
+        raise ValueError(f"{SNAPSHOT_RUNTIME_FILE} holds {content[:24]!r}: it may hold only "
+                         f"{toolchain.SNAPSHOT_RUNTIME!r} (toolchain.SNAPSHOT_RUNTIME) and one line "
+                         "break, or be absent while the references are "
+                         f"iOS {toolchain.SNAPSHOT_RUNTIME_INTERIM}'s")
+    return toolchain.SNAPSHOT_RUNTIME, "file"
+
+
 def state_of(file_name):
     """The inventory state in a swift-snapshot-testing file name, or None when the snapshot has
     no `named:` (the library numbers it instead) or the name isn't a plain state name."""
@@ -364,37 +457,74 @@ def no_render_note(state, inventory):
     return "not a state in design/reference/INVENTORY.md"
 
 
-def pick_runtime(runtimes, requested, newest_major=None):
-    """The newest available iOS runtime, or the newest whose version is `requested` or starts
-    with it (18 matches 18.6; 18.6 matches 18.6 and 18.6.1). With no version requested and
-    newest_major given (the pinned Xcode's simulator SDK's major), a runtime of a later major is
-    passed over: a newer Xcode's runtimes can sit on the same image."""
-    found = []
+def runtimes_of(runtimes, version):
+    """The available iOS runtimes of `version`, whatever devices they list: each whose version is
+    `version` or a patch of it (same_version)."""
+    matching = []
     for runtime in runtimes:
         if not runtime.get("isAvailable", False):
             continue
         if runtime.get("platform") != "iOS" and \
                 not str(runtime.get("identifier", "")).startswith("com.apple.CoreSimulator.SimRuntime.iOS-"):
             continue
-        version = str(runtime.get("version", ""))
-        if requested and version != requested and not version.startswith(requested + "."):
+        if not same_version(runtime.get("version"), version):
             continue
-        if not requested and newest_major is not None and \
-                version_key(version)[:1] > (newest_major,):
-            continue
-        found.append(runtime)
-    return max(found, key=lambda r: version_key(r.get("version")), default=None)
+        matching.append(runtime)
+    return matching
+
+
+def same_version(found, version):
+    """Whether `found` is `version` or starts with it and a dot: 27.2 matches 27.2 and 27.2.1,
+    never 27.20 or 27.3."""
+    found = str(found or "")
+    return found == version or found.startswith(version + ".")
+
+
+def pick_runtime(runtimes, version, device):
+    """The available iOS runtime of `version` (runtimes_of) that supports the device type named
+    `device`, or None. One that doesn't list the device is passed over: the `xcode-27` image has
+    a second iOS 27.2 runtime, for iPhone Duo alone. Of those left, the newest by version, then by
+    build, then by identifier, so simctl's order never decides. ValueError when one of them shares
+    its identifier with another runtime of that version: simctl finds a runtime's devices and
+    creates one by its identifier, so the device couldn't be told to be on the runtime chosen."""
+    matching = runtimes_of(runtimes, version)
+    found = [r for r in matching if pick_device_type(r, device) is not None]
+    identifiers = [str(r.get("identifier", "")) for r in matching]
+    shared = sorted({str(r.get("identifier", "")) for r in found
+                     if identifiers.count(str(r.get("identifier", ""))) > 1})
+    if shared:
+        twins = [f"{r.get('identifier')} (iOS {r.get('version')}, build {r.get('buildversion')}, "
+                 f"{len(r.get('supportedDeviceTypes') or [])} device types)"
+                 for r in matching if str(r.get("identifier", "")) in shared]
+        raise ValueError(f"iOS {version}'s runtimes share an identifier, so simctl can't tell "
+                         "them apart: " + "; ".join(twins))
+    return max(found, key=lambda r: (version_key(r.get("version")), build_key(r.get("buildversion")),
+                                     str(r.get("identifier", ""))), default=None)
+
+
+def asset_copy(image):
+    """Whether `simctl runtime list -j`'s `image` is a MobileAsset's (under ASSET_IMAGES)."""
+    return str(image.get("path") or "").startswith(ASSET_IMAGES)
+
+
+def imported_image(image, state):
+    """Whether `simctl runtime list -j`'s `image` is an imported one, with a path outside
+    ASSET_IMAGES, in `state`."""
+    return bool(image.get("path")) and not asset_copy(image) and image.get("state") == state
+
+
+def image_line(image):
+    return (f"{image.get('identifier')} ({image.get('build')}): {image.get('state')} on "
+            f"{image.get('mountPath')}")
 
 
 def pick_device_type(runtime, preferred):
-    """The preferred device type when the runtime supports it, else the newest plain
-    "iPhone <n>" it supports; None when the runtime lists none."""
-    supported = [d for d in runtime.get("supportedDeviceTypes", []) if d.get("name")]
-    for device in supported:
-        if device["name"] == preferred:
+    """The device type named `preferred` when the runtime supports it, else None: there is no
+    other device, since another would change the snapshots' size and every test's layout."""
+    for device in runtime.get("supportedDeviceTypes") or []:
+        if isinstance(device, dict) and device.get("name") == preferred:
             return device
-    plain = [d for d in supported if re.fullmatch(r"iPhone [0-9]+", d["name"])]
-    return max(plain, key=lambda d: version_key(d["name"]), default=None)
+    return None
 
 
 def scheme_test_targets(scheme_path, container):
@@ -433,19 +563,15 @@ def snapshot_file_from_attachment(name):
     return stem + ".png"
 
 
-def evidence_path(branch, sha, requested, full=False):
+def evidence_path(branch, sha, full=False):
     """<branch>/<short-sha>/ios/ for a push; ios-full/ for a run by hand that carries every
-    snapshot (a gate's set), so neither replaces the other; ios-<version>/ for a compatibility
-    run."""
+    snapshot (a gate's set), so neither replaces the other. Each holds every runtime's logs."""
     parts = [p for p in branch.split("/")]
     if not branch or any(p in ("", ".", "..") for p in parts):
         raise ValueError(f"can't make an evidence path from the branch {branch!r}")
     if not re.fullmatch(r"[0-9a-f]{40}", sha or ""):
         raise ValueError(f"not a full commit SHA: {sha!r}")
-    if requested and not VERSION.match(requested):
-        raise ValueError(f"not an iOS version: {requested!r}")
-    return f"{branch}/{sha[:7]}/" + (f"ios-{requested}" if requested else
-                                     "ios-full" if full else "ios")
+    return f"{branch}/{sha[:7]}/" + ("ios-full" if full else "ios")
 
 
 def magick_text(text):
@@ -456,13 +582,10 @@ def magick_text(text):
 
 
 def select(entries, mode, changed_paths):
-    """The entries a run's evidence carries: all of them (`full`), none (`none`), or (`touched`)
-    those this run drew (changed, new) and those whose committed reference or render the branch
-    changed."""
+    """The entries a run's evidence carries: all of them (`full`), or (`touched`) those this run
+    drew (changed, new) and those whose committed reference or render the branch changed."""
     if mode == "full":
         return list(entries)
-    if mode == "none":
-        return []
     changed = set(changed_paths)
     chosen = []
     for entry in entries:
@@ -537,9 +660,12 @@ class Steps:
     def run_facts(self):
         """run.json's values for index.md, the sheets' labels and the stage's run.json: the build
         job wrote them, so only the keys the steps write (RUN_KEYS) with plain text (FACT) are
-        kept; anything else shows as unknown."""
+        kept, the snapshot runtime only when it is a pinned runtime and its source only when it
+        is one snapshot_runtime gives; anything else shows as unknown."""
+        allowed = {"snapshots": toolchain.IOS_RUNTIMES, "snapshots-source": tuple(SNAPSHOT_SOURCES)}
         return {k: v for k, v in self.run_record().items()
-                if k in RUN_KEYS and isinstance(v, str) and FACT.fullmatch(v)}
+                if k in RUN_KEYS and isinstance(v, str) and FACT.fullmatch(v)
+                and (k not in allowed or v in allowed[k])}
 
     def update_run_record(self, **values):
         record = self.run_record()
@@ -559,25 +685,13 @@ class Steps:
         env.update(extra or {})
         return env
 
-    def requested_version(self):
-        requested = (self.environ.get("IOS_VERSION") or "").strip()
-        if requested and not VERSION.match(requested):
-            raise ValueError(f"IOS_VERSION {requested!r} isn't an iOS version like 18, 18.6 or 26.2")
-        return requested
-
     def evidence_target(self):
-        """(path on the evidence branch, mode), from the run's own environment alone: a
-        compatibility run's (`none`), a run by hand's full set (`full`) or a push's touched set
-        (`touched`). sheets and publish both use it, so neither takes the folder from a file."""
-        requested = self.requested_version()
-        if requested:
-            mode = "none"
-        elif self.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch":
-            mode = "full"
-        else:
-            mode = "touched"
+        """(path on the evidence branch, mode), from the run's own environment alone: a run by
+        hand's full set (`full`) or a push's touched set (`touched`). sheets and publish both use
+        it, so neither takes the folder from a file."""
+        mode = "full" if self.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch" else "touched"
         path = evidence_path(self.environ.get("GITHUB_REF_NAME", ""),
-                             self.environ.get("GITHUB_SHA", ""), requested, full=mode == "full")
+                             self.environ.get("GITHUB_SHA", ""), full=mode == "full")
         return path, mode
 
     def project(self):
@@ -587,11 +701,16 @@ class Steps:
             raise ValueError(f"expected one .xcodeproj in {IOS_DIR} after XcodeGen, found {found}")
         return f"{IOS_DIR}/{found[0]}"
 
-    def destination(self):
-        udid = self.run_record().get("udid")
-        if not udid:
-            raise ValueError("no simulator in run.json: the simulator step didn't finish")
-        return f"platform=iOS Simulator,id={udid}"
+    def udid(self, version):
+        """The pinned runtime `version`'s device, from run.json."""
+        udid = self.run_record().get(f"udid-{version}")
+        if not isinstance(udid, str) or not udid:
+            raise ValueError(f"no iOS {version} simulator in run.json: the simulator step didn't "
+                             "finish")
+        return udid
+
+    def destination(self, version):
+        return f"platform=iOS Simulator,id={self.udid(version)}"
 
     def derived_data(self):
         return os.path.join(os.path.dirname(self.out.rstrip("/")) or self.out, "DerivedData")
@@ -696,8 +815,9 @@ class Steps:
         return 0
 
     def simulator(self):
+        # The snapshot runtime's file first, before any command: a bad one fails the step at once.
         try:
-            requested = self.requested_version()
+            snapshots, source = snapshot_runtime(self.root)
         except ValueError as error:
             print(f"ios: simulator: {error}")
             return 1
@@ -715,60 +835,243 @@ class Steps:
             print(f"ios: simulator: can't read Xcode {toolchain.XCODE_VERSION}'s simulator SDK: "
                   f"{(sdk + err).strip()[:200]!r}")
             return 1
+        # The first runtime is the build's destination, so it shares the SDK's major; none may be
+        # of a later major than the SDK's, which Xcode couldn't build for.
+        pinned, major = toolchain.IOS_RUNTIMES, version_key(sdk)[:1]
+        if version_key(pinned[0])[:1] != major or any(version_key(v)[:1] > major for v in pinned):
+            print(f"ios: simulator: Xcode {toolchain.XCODE_VERSION}'s simulator SDK is iOS {sdk}: "
+                  f"the first pinned runtime, iOS {pinned[0]}, must share its major, and none of "
+                  f"{', '.join(pinned)} may be of a later one (toolchain.IOS_RUNTIMES)")
+            return 1
         runtimes = self.runtimes()
         if runtimes is None:
             return 1
-        runtime = pick_runtime(runtimes, requested, newest_major=version_key(sdk)[0])
-        if runtime is None and requested:
-            runtime = self.download(requested)
-        if runtime is None:
-            print(f"ios: simulator: no available iOS {requested or ''} runtime".replace("  ", " "))
-            return 1
-        device_type = pick_device_type(runtime, toolchain.SIMULATOR_DEVICE)
-        if device_type is None:
-            print(f"ios: simulator: iOS {runtime.get('version')} lists no iPhone it supports")
-            return 1
-        udid = self.existing_device(runtime, device_type["name"])
-        if udid is None:
-            code, out, err = self.shell.capture(
-                ["xcrun", "simctl", "create", f"Tadayo {device_type['name']}",
-                 device_type["identifier"], runtime["identifier"]], env=env)
-            udid = out.strip()
-            if code != 0 or not re.fullmatch(r"[0-9A-F]{8}(-[0-9A-F]{4}){3}-[0-9A-F]{12}", udid):
-                print(f"ios: simulator: couldn't make a {device_type['name']}: {(out + err).strip()}")
+        device = toolchain.SIMULATOR_DEVICE
+        values = {"sdk": sdk, "snapshots": snapshots, "snapshots-source": source}
+        for version in pinned:
+            try:
+                runtime = pick_runtime(runtimes, version, device)
+                if runtime is None and version not in toolchain.IOS_DOWNLOADS:
+                    # The image keeps three runtimes per Xcode, so a later one may lack this one;
+                    # it is never downloaded unseen (toolchain.IOS_DOWNLOADS).
+                    print(f"ios: simulator: the runner has no iOS {version} runtime with the "
+                          f"{device}, and iOS {version} isn't one a run may download "
+                          "(toolchain.IOS_DOWNLOADS): the runner image has changed "
+                          "(logs/simulators.txt)")
+                    return 1
+                if runtime is None:
+                    runtime = self.download(version)
+            except ValueError as error:
+                print(f"ios: simulator: {error}")
                 return 1
-        if self.shell.run(["xcrun", "simctl", "bootstatus", udid, "-b"], env=env,
+            if runtime is None:
+                print(f"ios: simulator: no available iOS {version} runtime with the {device} "
+                      "(logs/simulators.txt)")
+                return 1
+            device_type = pick_device_type(runtime, device)
+            identifier = str(runtime.get("identifier") or "")
+            if device_type is None or not device_type.get("identifier") or not identifier:
+                print(f"ios: simulator: iOS {version}'s runtime doesn't list the {device} with "
+                      "its identifier (toolchain.SIMULATOR_DEVICE)")
+                return 1
+            udid = self.existing_device(runtime, device_type["name"])
+            if udid is None:
+                code, out, err = self.shell.capture(
+                    ["xcrun", "simctl", "create", f"Tadayo {device_type['name']}",
+                     device_type["identifier"], identifier], env=env)
+                udid = out.strip()
+                if code != 0 or not UDID.fullmatch(udid):
+                    print(f"ios: simulator: couldn't make a {device_type['name']} on iOS "
+                          f"{version}: {(out + err).strip()}")
+                    return 1
+            # simctl lists each device under its runtime's identifier: the one found or made must
+            # be on the runtime chosen.
+            on = self.device_runtime(udid)
+            if on != identifier:
+                print(f"ios: simulator: the {device_type['name']} {udid} is on "
+                      f"{on or 'no runtime simctl lists'}, not on iOS {version}'s {identifier}")
+                return 1
+            build = str(runtime.get("buildversion") or "")
+            self.write_log("simulators.txt", f"iOS {version}: runtime {identifier}, build "
+                                             f"{build or '?'}, version {runtime.get('version')}; "
+                                             f"{device_type['name']} {udid}")
+            values.update({f"ios-{version}": runtime.get("version"),
+                           f"runtime-{version}": identifier,
+                           f"runtime-build-{version}": build or None,
+                           f"device-{version}": device_type["name"], f"udid-{version}": udid})
+        # Only the first runtime's device is booted: the build's destination and the first pass.
+        # The test step boots each other one just before its pass.
+        first = values[f"udid-{pinned[0]}"]
+        if self.shell.run(["xcrun", "simctl", "bootstatus", first, "-b"], env=env,
                           log=self.log("simulators.txt")) != 0:
-            print(f"ios: simulator: {udid} didn't boot (logs/simulators.txt)")
+            print(f"ios: simulator: {first} didn't boot (logs/simulators.txt)")
             return 1
-        self.update_run_record(ios=runtime.get("version"), runtime=runtime.get("identifier"),
-                               device=device_type["name"], udid=udid, requested=requested or None,
-                               sdk=sdk)
-        print(f"ios: simulator: iOS {runtime.get('version')} on {device_type['name']} ({udid})")
+        self.update_run_record(**values)
+        self.write_log("simulators.txt", f"The snapshot tests run on iOS {snapshots} "
+                                         f"({SNAPSHOT_SOURCES[source]}).")
+        print("ios: simulator: " + "; ".join(
+            f"iOS {values[f'ios-{v}']} on {values[f'device-{v}']} ({values[f'udid-{v}']})"
+            for v in pinned) + f"; the snapshot tests on iOS {snapshots} "
+            f"({SNAPSHOT_SOURCES[source]})")
         return 0
 
-    def download(self, requested):
-        """Downloads and installs iOS `requested`, and returns its runtime, or None. Whether it
-        worked is read from simctl, not from xcodebuild's exit code: Xcode has been seen to fall
-        back to the newest runtime when a version isn't available, and to print "not available
-        for download" for a proxy failure. A plain download comes first, then the universal
-        variant, which some Xcode 26 releases need (GitHub's own image installer asks for it)."""
-        env = self.xcode_env()
+    def download(self, version):
+        """Downloads iOS `version` to a file, imports it, and returns its runtime that supports
+        toolchain.SIMULATOR_DEVICE, or None.
+
+        Why a file and an import: a plain `-downloadPlatform` installs the runtime as a
+        MobileAsset, and the `xcode-27` image moves a MobileAsset runtime's volume between two
+        mounts while it runs (RUNNER_IMAGES_ISSUE); a test process loaded from the first stalls
+        when it moves, and Xcode restarts the test runner a minute later. The download with
+        `-exportPath` registers and mounts the MobileAsset copy as well, and the import adds an
+        image of its own, on a second volume; the copy then turns unusable, and
+        drop_asset_copies deletes it, so simctl lists no MobileAsset image of iOS `version`
+        when the shared cache is updated and the devices are made. The copy's volume stays
+        mounted, and a pass has loaded the runtime from either volume. In the runs that
+        imported, neither volume moved and no pass stalled; why the import stops the moves isn't
+        shown (`docs/LIMITATIONS.md`, 2026-11-13). So the step logs where the runtime is
+        (runtime_place) once installed, and the test step before and after its pass. Only an
+        imported image of the runtime that simctl says is Ready counts as installed, which
+        proves the import ran: a MobileAsset one alone fails the step.
+
+        Whether each step worked is read from simctl, not from xcodebuild's exit code: Xcode has
+        been seen to fall back to the newest runtime when a version isn't available, and to
+        print "not available for download" for a proxy failure. A plain download comes first,
+        then the universal variant, which some Xcode 26 releases need (GitHub's own image
+        installer asks for it); not when simctl lists iOS `version` after the plain one but
+        without that device, which the universal variant wouldn't change. ValueError from
+        pick_runtime."""
+        env, device = self.xcode_env(), toolchain.SIMULATOR_DEVICE
+        export = self.work_path("runtime-export")
         for variant in ([], ["-architectureVariant", "universal"]):
-            print(f"ios: simulator: the runner has no iOS {requested} simulator; downloading it"
+            print(f"ios: simulator: the runner has no iOS {version} simulator; downloading it"
                   + (" (universal variant)" if variant else ""))
+            shutil.rmtree(export, ignore_errors=True)
+            os.makedirs(export, exist_ok=True)
             code = self.shell.run(["xcodebuild", "-downloadPlatform", "iOS", "-buildVersion",
-                                   requested] + variant, env=env, log=self.log("simulators.txt"))
+                                   version, "-exportPath", export] + variant, env=env,
+                                  log=self.log("simulators.txt"))
             self.write_log("simulators.txt", f"(exit {code})")
-            runtime = pick_runtime(self.runtimes() or [], requested)
+            bundles = sorted(n for n in os.listdir(export) if n.endswith(".exportedBundle"))
+            self.write_log("simulators.txt", "exported: " + (", ".join(bundles) or "nothing"))
+            if len(bundles) == 1:
+                code = self.shell.run(["xcodebuild", "-importPlatform",
+                                       os.path.join(export, bundles[0])], env=env,
+                                      log=self.log("simulators.txt"))
+                self.write_log("simulators.txt", f"(exit {code})")
+            images = self.drop_asset_copies(version)
+            if images is None:
+                return None
+            listed = self.runtimes() or []
+            runtime = pick_runtime(listed, version, device)
+            if runtime is None and runtimes_of(listed, version):
+                print(f"ios: simulator: simctl lists iOS {version} after the download, but no "
+                      f"runtime of it with the {device} (logs/simulators.txt)")
+                return None
             if runtime is not None:
-                # As GitHub's image installer does after adding a runtime, and as Apple's Xcode
-                # 26.1 notes advise before a first boot. A failure here is logged, not fatal.
-                self.shell.run(["xcrun", "simctl", "runtime", "dyld_shared_cache", "update",
-                                "--all"], env=env, log=self.log("simulators.txt"))
+                # One without an identifier fails the simulator step after this.
+                if runtime.get("identifier"):
+                    identifier = str(runtime["identifier"])
+                    imported = [i for i in images if imported_image(i, "Ready")
+                                and i.get("runtimeIdentifier") == identifier]
+                    if not imported:
+                        print(f"ios: simulator: simctl lists no imported image of iOS {version} "
+                              f"({identifier}) that is Ready, and a downloaded one alone would "
+                              f"move mid-run ({RUNNER_IMAGES_ISSUE}; logs/simulators.txt)")
+                        return None
+                    place = self.runtime_place(identifier, runtime.get("buildversion"))
+                    self.write_log("simulators.txt", f"iOS {version}: imported image "
+                                                     f"{image_line(imported[0])}; the runtime: "
+                                                     f"{place or 'unreadable'}")
+                    # As GitHub's image installer does after adding a runtime (there with
+                    # --all), and as Apple's Xcode 26.1 notes advise before a first boot; only
+                    # for this runtime, since the image's own already have theirs (`simctl help
+                    # runtime`: `dyld_shared_cache update (<runtime> || --all)`). A failure here
+                    # is logged and said, not fatal: the first boot then builds the cache, in the
+                    # test step's time.
+                    cache = self.shell.run(["xcrun", "simctl", "runtime", "dyld_shared_cache",
+                                            "update", identifier], env=env,
+                                           log=self.log("simulators.txt"))
+                    self.write_log("simulators.txt", f"(exit {cache})")
+                    if cache != 0:
+                        print(f"ios: simulator: updating iOS {version}'s shared cache exited "
+                              f"{cache}, so its first boot builds it (logs/simulators.txt)")
                 return runtime
-        print(f"ios: simulator: couldn't install iOS {requested} (logs/simulators.txt)")
+        print(f"ios: simulator: couldn't install iOS {version} (logs/simulators.txt)")
         return None
+
+    def runtime_images(self):
+        """`xcrun simctl runtime list -j`'s images of iOS simulator runtimes, as a list, written
+        to logs/simulators.txt; None when it can't be read."""
+        cmd = ["xcrun", "simctl", "runtime", "list", "-j"]
+        code, out, err = self.shell.capture(cmd, env=self.xcode_env())
+        self.write_log("simulators.txt", "+ " + " ".join(cmd) + "\n" + out + err)
+        try:
+            images = json.loads(out) if code == 0 else None
+        except ValueError:
+            images = None
+        if not isinstance(images, dict):
+            return None
+        return [i for i in images.values()
+                if isinstance(i, dict) and i.get("platformIdentifier") == SIMULATOR_PLATFORM]
+
+    def drop_asset_copies(self, version):
+        """Deletes the MobileAsset copies of iOS `version` once an imported image of it is Ready,
+        and returns simctl's images of iOS `version` after, or None (said) when they can't be
+        read. simctl has been seen to exit 30 on such a delete ("Removed the runtime, but did not
+        reclaim its MobileAsset") with the copy gone from its list, so the list decides. A copy
+        it still lists is said, not fatal: the one run that kept it listed (`-mount-c`) passed
+        all but one hosted test, slowly, and the copy left the list during its iOS 27.2 pass."""
+        images = self.runtime_images()
+        if images is None:
+            print("ios: simulator: can't read `xcrun simctl runtime list -j` "
+                  "(logs/simulators.txt)")
+            return None
+        mine = [i for i in images if same_version(i.get("version"), version)]
+        copies = [i for i in mine if asset_copy(i)]
+        if not copies or not [i for i in mine if imported_image(i, "Ready")]:
+            return mine
+        for copy in copies:
+            code = self.shell.run(["xcrun", "simctl", "runtime", "delete",
+                                   str(copy.get("identifier"))], env=self.xcode_env(),
+                                  log=self.log("simulators.txt"))
+            self.write_log("simulators.txt", f"(exit {code})")
+        images = self.runtime_images()
+        if images is None:
+            print("ios: simulator: can't read `xcrun simctl runtime list -j` "
+                  "(logs/simulators.txt)")
+            return None
+        mine = [i for i in images if same_version(i.get("version"), version)]
+        if [i for i in mine if asset_copy(i)]:
+            print(f"ios: simulator: simctl still lists the downloaded copy of iOS {version} "
+                  "beside the imported one, which the image may move mid-run "
+                  f"({RUNNER_IMAGES_ISSUE}; logs/simulators.txt)")
+        return mine
+
+    def runtime_place(self, identifier, build):
+        """Where the runtime `identifier` is, for the logs: the bundle `simctl list runtimes
+        --json` gives for it, and the volumes `mount` lists for its build (named iOS_<build> on
+        the `xcode-27` image), or None when either can't be read."""
+        code, out, _ = self.shell.capture(["xcrun", "simctl", "list", "runtimes", "--json"],
+                                          env=self.xcode_env())
+        try:
+            runtimes = json.loads(out)["runtimes"] if code == 0 else None
+        except (ValueError, KeyError, TypeError):
+            runtimes = None
+        mounted, table, _ = self.shell.capture(["mount"], env=self.xcode_env())
+        if not isinstance(runtimes, list) or mounted != 0:
+            return None
+        bundle = next((str(r.get("bundlePath") or "no bundle path") for r in runtimes
+                       if isinstance(r, dict) and r.get("identifier") == identifier),
+                      "not listed")
+        volumes = set()
+        for line in table.splitlines() if build else []:
+            if " on " in line:
+                point = line.split(" on ", 1)[1].split(" (", 1)[0]
+                name = point.rsplit("/", 1)[-1]
+                if name == f"iOS_{build}" or name.startswith(f"iOS_{build}_"):
+                    volumes.add(point)
+        return f"{bundle}; volumes: {', '.join(sorted(volumes)) or 'none'}"
 
     def runtimes(self):
         code, out, err = self.shell.capture(["xcrun", "simctl", "list", "runtimes", "--json"],
@@ -782,16 +1085,31 @@ class Steps:
             return None
         return runtimes
 
-    def existing_device(self, runtime, name):
+    def devices(self):
+        """`simctl list devices --json`'s devices, {runtime identifier: [device]}; {} when it
+        can't be read."""
         code, out, _ = self.shell.capture(["xcrun", "simctl", "list", "devices", "--json"],
                                           env=self.xcode_env())
         try:
-            devices = json.loads(out)["devices"].get(runtime["identifier"], []) if code == 0 else []
-        except (ValueError, KeyError, TypeError, AttributeError):
-            devices = []
-        for device in devices:
-            if device.get("name") == name and device.get("isAvailable", False):
+            devices = json.loads(out)["devices"] if code == 0 else {}
+        except (ValueError, KeyError, TypeError):
+            devices = {}
+        return devices if isinstance(devices, dict) else {}
+
+    def existing_device(self, runtime, name):
+        devices = self.devices().get(runtime["identifier"], [])
+        for device in devices if isinstance(devices, list) else []:
+            if isinstance(device, dict) and device.get("name") == name and \
+                    device.get("isAvailable", False):
                 return device.get("udid")
+        return None
+
+    def device_runtime(self, udid):
+        """The identifier of the runtime simctl lists the device `udid` under, or None."""
+        for identifier, devices in self.devices().items():
+            for device in devices if isinstance(devices, list) else []:
+                if isinstance(device, dict) and device.get("udid") == udid:
+                    return identifier
         return None
 
     def scheme_targets(self, project):
@@ -804,7 +1122,8 @@ class Steps:
 
     def build(self):
         try:
-            project, destination = self.project(), self.destination()
+            # Built once, for the first runtime's device; the test step runs it on each runtime.
+            project, destination = self.project(), self.destination(toolchain.IOS_RUNTIMES[0])
             targets = self.scheme_targets(project)
         except (OSError, ValueError, ElementTree.ParseError, KeyError) as error:
             print(f"ios: build: {error}")
@@ -853,12 +1172,25 @@ class Steps:
             return [f"logs/build.log can't be read ({error.strerror})"]
 
     def test(self):
+        # The snapshot runtime's file first, before any command, as in the simulator step.
         try:
-            project, destination = self.project(), self.destination()
-            requested = self.requested_version()
+            snapshots, source = snapshot_runtime(self.root)
+        except ValueError as error:
+            print(f"ios: test: {error}")
+            return 1
+        pinned = toolchain.IOS_RUNTIMES
+        try:
+            project = self.project()
+            udids = {version: self.udid(version) for version in pinned}
             targets = self.scheme_targets(project)
         except (OSError, ValueError, ElementTree.ParseError, KeyError) as error:
             print(f"ios: test: {error}")
+            return 1
+        if snapshots not in pinned:
+            # Never so with the pins ios_steps_test.py checks; else no pass would run them.
+            print(f"ios: test: the snapshot runtime, iOS {snapshots}, isn't one of "
+                  f"{', '.join(pinned)} (toolchain.IOS_RUNTIMES), so no pass would run the snapshot "
+                  "tests")
             return 1
         recording = self.recording_tests()
         if recording:
@@ -868,49 +1200,101 @@ class Steps:
             return 1
         if not targets:
             print(f"ios: test: the scheme {SCHEME} has no tests yet, so there is nothing to test")
-            self.update_run_record(tests="none")
+            self.update_run_record(tests="none", **{f"tests-{v}": "none" for v in pinned})
             return 0
-        skipped = [t for t in targets if requested and t.endswith(SNAPSHOT_TARGET_SUFFIX)]
-        if skipped:
-            print(f"ios: test: iOS {requested} is a compatibility run, so the snapshot targets "
-                  f"are skipped: {', '.join(skipped)}")
-        if not [t for t in targets if t not in skipped]:
-            print("ios: test: no test target is left to run")
-            self.update_run_record(tests="none")
-            return 0
-        bundle = self.out_path("Tests.xcresult")
-        shutil.rmtree(bundle, ignore_errors=True)
+        print(f"ios: test: the snapshot tests run on iOS {snapshots} ({SNAPSHOT_SOURCES[source]})")
         artifacts = self.out_path("artifacts")
         os.makedirs(artifacts, exist_ok=True)
-        cmd = ["xcodebuild", "test-without-building", "-project", project, "-scheme", SCHEME,
-               "-destination", destination, "-derivedDataPath", self.derived_data(),
-               "-resultBundlePath", bundle, "-skipPackagePluginValidation"]
-        for target in skipped:
-            cmd += ["-skip-testing", target]
-        code = self.shell.run(cmd, env=self.xcode_env({
-            "TEST_RUNNER_SNAPSHOT_TESTING_RECORD": "never",
-            "TEST_RUNNER_SNAPSHOT_ARTIFACTS": artifacts}), log=self.log("test.log"))
-        _, summary, err = self.shell.capture(
-            ["xcrun", "xcresulttool", "get", "test-results", "summary", "--path", bundle,
-             "--compact"], env=self.xcode_env())
-        self.write_log("test-summary.json", summary or err)
-        self.update_run_record(tests="passed" if code == 0 else "failed")
-        if code != 0:
-            print("ios: test: tests failed (logs/test.log, logs/test-summary.json); the evidence "
-                  "job still publishes what they drew")
-            return code
-        # The backstop for a record mode RECORDING can't see: under `never`, nothing is written
-        # under __Snapshots__.
+        # The simulator step booted the first runtime's device; each later pass boots its own.
+        results, failure, booted = {}, 0, udids[pinned[0]]
+
+        def record(version, result):
+            # Each pass is recorded as it ends, so a step stopped by its timeout during a later
+            # pass still shows the earlier passes' results.
+            results[version] = result
+            self.update_run_record(**{f"tests-{version}": result})
+        for version in pinned:
+            udid, log = udids[version], self.log(f"test-{version}.log")
+            snapshot_pass = version == snapshots
+            skipped = [] if snapshot_pass else \
+                [t for t in targets if t.endswith(SNAPSHOT_TARGET_SUFFIX)]
+            if skipped:
+                print(f"ios: test: iOS {version} runs without the snapshot tests, which run on "
+                      f"iOS {snapshots}: skipping {', '.join(skipped)}")
+            if not [t for t in targets if t not in skipped]:
+                print(f"ios: test: no test target is left to run on iOS {version}")
+                record(version, "none")
+                continue
+            if udid != booted:
+                # One simulator at a time on the runner. A failed shutdown is logged, not fatal;
+                # a device that doesn't boot fails its pass.
+                self.shell.run(["xcrun", "simctl", "shutdown", booted], env=self.xcode_env(),
+                               log=log)
+                booted = udid
+                if self.shell.run(["xcrun", "simctl", "bootstatus", udid, "-b"],
+                                  env=self.xcode_env(), log=log) != 0:
+                    print(f"ios: test: the iOS {version} simulator {udid} didn't boot "
+                          f"(logs/test-{version}.log)")
+                    record(version, "failed")
+                    failure = failure or 1
+                    continue
+            bundle = self.out_path(f"Tests-{version}.xcresult")
+            shutil.rmtree(bundle, ignore_errors=True)
+            cmd = ["xcodebuild", "test-without-building", "-project", project, "-scheme", SCHEME,
+                   "-destination", self.destination(version),
+                   "-derivedDataPath", self.derived_data(), "-resultBundlePath", bundle,
+                   "-skipPackagePluginValidation"]
+            for target in skipped:
+                cmd += ["-skip-testing", target]
+            env = {"TEST_RUNNER_SNAPSHOT_TESTING_RECORD": "never"}
+            if snapshot_pass:
+                env["TEST_RUNNER_SNAPSHOT_ARTIFACTS"] = artifacts
+            # The image moved a downloaded runtime mid-run before the import
+            # (RUNNER_IMAGES_ISSUE): its pass's log says where it is, before and after, and the
+            # step says so when that changed. Never what decides the pass.
+            place = None
+            if version in toolchain.IOS_DOWNLOADS:
+                facts = self.run_record()
+                where = (facts.get(f"runtime-{version}"), facts.get(f"runtime-build-{version}"))
+                place = self.runtime_place(*where)
+                self.write_log(f"test-{version}.log", f"iOS {version} before the pass: "
+                                                      f"{place or 'unreadable'}")
+            code = self.shell.run(cmd, env=self.xcode_env(env), log=log)
+            if version in toolchain.IOS_DOWNLOADS:
+                after = self.runtime_place(*where)
+                self.write_log(f"test-{version}.log", f"iOS {version} after the pass: "
+                                                      f"{after or 'unreadable'}")
+                if place is not None and after is not None and after != place:
+                    print(f"ios: test: iOS {version}'s runtime moved during its pass "
+                          f"({RUNNER_IMAGES_ISSUE}): {place} became {after} "
+                          f"(logs/test-{version}.log)")
+            _, summary, err = self.shell.capture(
+                ["xcrun", "xcresulttool", "get", "test-results", "summary", "--path", bundle,
+                 "--compact"], env=self.xcode_env())
+            self.write_log(f"test-summary-{version}.json", summary or err)
+            record(version, "passed" if code == 0 else "failed")
+            if code != 0:
+                failure = failure or code
+                print(f"ios: test: tests failed on iOS {version} (logs/test-{version}.log, "
+                      f"logs/test-summary-{version}.json)")
+        ran = [r for r in results.values() if r != "none"]
+        overall = "failed" if "failed" in ran else "passed" if ran else "none"
+        self.update_run_record(tests=overall, **{f"tests-{v}": r for v, r in results.items()})
+        # The backstop for a record mode RECORDING can't see, once, after every pass: under
+        # `never`, nothing is written under __Snapshots__.
         recorded = self.recorded_snapshots()
         if recorded is None:
             print("ios: test: git couldn't say whether the run wrote a reference")
-            return 1
+            return failure or 1
         if recorded:
             self.update_run_record(tests="failed")
             print("ios: test: the run wrote these references although CI never records (a "
                   "record mode set in code): " + "; ".join(sorted(recorded)[:10]))
-            return 1
-        return 0
+            return failure or 1
+        if failure:
+            print("ios: test: " + ", ".join(f"iOS {v} {r}" for v, r in results.items()) + "; the "
+                  "evidence job still publishes what they drew")
+        return failure
 
     def recorded_snapshots(self):
         """{path: "new" or "changed"} for each PNG under a __Snapshots__ folder in apps/ios that
@@ -987,7 +1371,7 @@ class Steps:
                              "reference": None}
                     entries.append(entry)
                 entry.update(status="changed", image=image)
-        for test, name, source in self.new_snapshots():
+        for test, name, source in self.new_snapshots(self.collected_runtime()):
             if any(e["file"] == name and e["status"] != "committed" for e in entries):
                 continue
             entries.append({"state": state_of(name), "test": test, "file": name,
@@ -1008,10 +1392,26 @@ class Steps:
         shutil.copyfile(source, self.out_path(*image.split("/")))
         return image
 
-    def new_snapshots(self):
-        """(test, file name, exported path) for each snapshot the result bundle holds because it
-        had no reference (swift-snapshot-testing attaches it under record mode `never`)."""
-        bundle = self.out_path("Tests.xcresult")
+    def collected_runtime(self):
+        """The runtime whose pass ran the snapshot tests: run.json's `snapshots`, written by the
+        simulator step, when it is a pinned runtime; else snapshot_runtime()'s (the simulator
+        step didn't finish). None, said, when the file is bad: collect then exports nothing."""
+        written = self.run_record().get("snapshots")
+        if isinstance(written, str) and written in toolchain.IOS_RUNTIMES:
+            return written
+        try:
+            return snapshot_runtime(self.root)[0]
+        except ValueError as error:
+            print(f"ios: collect: {error}; so no result bundle is read for new snapshots")
+            return None
+
+    def new_snapshots(self, version):
+        """(test, file name, exported path) for each snapshot the snapshot runtime's result
+        bundle, Tests-<version>.xcresult, holds because it had no reference (swift-snapshot-testing
+        attaches it under record mode `never`)."""
+        if version is None:
+            return []
+        bundle = self.out_path(f"Tests-{version}.xcresult")
         if not os.path.isdir(bundle):
             return []
         exported = self.out_path("attachments")
@@ -1108,6 +1508,11 @@ class Steps:
                 inventory = read_inventory(f.read())
         except OSError:
             inventory = set()
+        # The snapshots are the snapshot runtime's, so the labels name it, its device and why it
+        # is the references' runtime.
+        snapshots = record.get("snapshots")
+        drawn = (f"iOS {record.get(f'ios-{snapshots}', '?')} · {record.get(f'device-{snapshots}', '?')}"
+                 if snapshots else "iOS ? · ?")
         # A row: (entry, sheet name, sheet, kept snapshot, the no-render note, what failed).
         rows, failed, taken = [], 0, set()
         for entry, problems in checked:
@@ -1140,7 +1545,7 @@ class Steps:
                                self.path(*entry["reference"].split("/"))))
             # The title is the state alone, which fits a one-tile sheet at the title's double
             # size; the run's details go under the snapshot, a line each, at the label's size.
-            run = (f"iOS {record.get('ios', '?')} · {record.get('device', '?')}\n"
+            run = (f"{drawn}\nreferences: {self.references(record)}\n"
                    f"{self.environ.get('GITHUB_REF_NAME', '')} @ "
                    f"{self.environ.get('GITHUB_SHA', '')[:7]}")
             panels.append(("Snapshot", f"{self.status_words(entry, note)}\n{run}", snapshot))
@@ -1251,6 +1656,15 @@ class Steps:
         return self.path(*image.split("/"))
 
     @staticmethod
+    def references(record):
+        """Which runtime the committed references are for, and why, from run.json's checked
+        values (run_facts): "iOS 26.5 (interim, no ios-version file)"."""
+        if not record.get("snapshots"):
+            return "unknown: the simulator step didn't record their runtime"
+        return (f"iOS {record['snapshots']} "
+                f"({SNAPSHOT_SOURCES.get(record.get('snapshots-source'), 'its source unknown')})")
+
+    @staticmethod
     def status_words(entry, note):
         words = {"changed": "changed in this run", "new": "new: no committed reference",
                  "committed": "the committed reference"}[entry["status"]]
@@ -1263,16 +1677,27 @@ class Steps:
         run = (f"{server}/{repo}/actions/runs/{self.environ['GITHUB_RUN_ID']}"
                if self.environ.get("GITHUB_RUN_ID") else "this run")
         what = {"touched": "the states this branch touches", "full": "every snapshot (a run by "
-                "hand, for a gate)", "none": "no sheets: a compatibility run, which skips the "
-                "snapshot tests"}[mode]
+                "hand, for a gate)"}[mode]
+        snapshots = record.get("snapshots")
         lines = [f"# {path}", "",
                  f"The `ios` workflow's evidence for `{self.environ.get('GITHUB_SHA', '')}` "
                  f"({run}).", "",
-                 # Each value passed FACT, which has no backtick, and sits in a code span.
+                 # Each value passed FACT, which has no backtick, and sits in a code span; a
+                 # pinned version passed the pins' tests.
                  f"- Xcode `{record.get('xcode', '?')}`, Swift `{record.get('swift', '?')}`, "
-                 f"iOS `{record.get('ios', '?')}` on `{record.get('device', '?')}`",
-                 f"- Tests: `{record.get('tests', 'not run')}`",
-                 f"- Carries {what}; {left_out} snapshot(s) not carried", ""]
+                 f"simulator SDK `{record.get('sdk', '?')}`"]
+        for version in toolchain.IOS_RUNTIMES:
+            which = ("with the snapshot tests" if version == snapshots else
+                     "without the snapshot tests" if snapshots else "the snapshot tests unknown")
+            lines.append(f"- iOS `{record.get(f'ios-{version}', version)}` on "
+                         f"`{record.get(f'device-{version}', '?')}`: tests "
+                         f"`{record.get(f'tests-{version}', 'not run')}`, {which}")
+        references = (f"iOS `{snapshots}` ("
+                      f"{SNAPSHOT_SOURCES.get(record.get('snapshots-source'), 'its source unknown')})"
+                      if snapshots else "unknown: the simulator step didn't record their runtime")
+        lines += [f"- References: {references}",
+                  f"- Tests: `{record.get('tests', 'not run')}`",
+                  f"- Carries {what}; {left_out} snapshot(s) not carried", ""]
         lines += [f"{n}" for n in notes] + ([""] if notes else [])
         if rows:
             # File: where the image belongs in the repository, its committed reference's path
