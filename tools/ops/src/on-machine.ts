@@ -9,7 +9,7 @@
 // command to end, and Fly answers that request with HTTP 408 after about 60 seconds, whatever time
 // limit it carries (run 43160900116; docs/LIMITATIONS.md): the probe takes longer. An SSH session
 // lasts as long as its command. What flyctl 0.5.8 does (its source, read on 12 November 2026):
-//   - its agent, a flyctl left running in the background on the runner, makes a WireGuard peer in
+//   - its agent, a second flyctl that this call starts for itself (below), makes a WireGuard peer in
 //     the app's organization and brings up a tunnel to Fly's private network over a websocket (no
 //     root, no kernel module, no UDP), then checks the tunnel once, with a DNS lookup of at most five
 //     seconds (`agent/client.go`, `WaitForTunnel`); a check that fails ends the session with
@@ -30,13 +30,18 @@
 //
 // Each session gets a folder and an agent of its own (`Fly.run`'s `ownAgent`): flyctl keeps its
 // configuration, the peer's WireGuard state with it, in a new empty folder made for the session
-// (`FLY_CONFIG_DIR`), and runs an agent for that one call (`FLY_AGENT_ISOLATED=1`), which ends when
-// the call does; the folder, which holds the peer's private key, is removed after the session. The
-// agent every call on a runner otherwise shares keeps the organization's tunnel as long as it runs
-// and gives it to the next session (flyctl 0.5.8's `agent/server/server.go`, `buildTunnel`), whose
-// peer the clean-up below has removed by then: in `deploy-dev`, which runs two scripts over SSH in
-// one job, the second session made no peer and failed its tunnel's one check (run 43467951472, both
-// attempts; docs/LIMITATIONS.md, 2026-11-13). A fresh runner per script, as `ops` has, never met it.
+// (`FLY_CONFIG_DIR`), and runs an agent for that one call (`FLY_AGENT_ISOLATED=1`), which stops at
+// the end of its input, when flyctl exits; the folder, which holds the peer's private key, is
+// removed after the session. Otherwise every call on a runner shares one agent, a flyctl left
+// running in the background, which keeps the organization's tunnel, and checks it against its own
+// copy of the WireGuard state: read from the configuration once, as it starts, and changed only by
+// its own writes (flyctl 0.5.8's `agent/server/server.go`, `buildTunnel` and
+// `validateTunnelsUnlocked`; `flyctl/flyctl.go`). The clean-up below removes the peer at Fly from
+// another flyctl, which that copy never learns, so the agent gives the tunnel to the next session
+// until its own check, two minutes after it starts. In `deploy-dev`, which runs two scripts over SSH
+// in one job, the second session made no peer and failed its tunnel's one check (run 43467951472,
+// both attempts; docs/LIMITATIONS.md, 2026-11-13), as that source says a shared agent would. A fresh
+// runner per script, as `ops` has, never met it.
 //
 // The peer reaches the organization's whole private network until it is removed, and flyctl never
 // removes one it made: on a fresh runner, every run would leave one more. So the runner lists the
@@ -80,7 +85,7 @@ export interface OnMachineInput {
 }
 
 export interface AgentFolder {
-  /** A new empty folder, by its absolute path, that only this process may read. */
+  /** A new empty folder, by its absolute path, that only the runner's user may read (mode 0700). */
   readonly make: () => Promise<string>;
   /** Removes the folder and everything in it. */
   readonly remove: (path: string) => Promise<void>;
@@ -303,8 +308,10 @@ export async function onMachine(input: OnMachineInput): Promise<void> {
       { timeoutMs: SESSION_MS, ownAgent: folder },
     );
   } finally {
-    // The session's agent ends with the call: flyctl holds its standard input, and the agent stops at
-    // that input's end, when flyctl exits (`internal/command/agent/run.go`). Its folder holds the
+    // Only now that the call has ended. The session's agent stops at the end of its input, which
+    // flyctl holds, when flyctl exits (`internal/command/agent/run.go`); one cut off while it makes
+    // the peer (`Create`, which nothing bounds) finishes that call first, and can't save the peer
+    // into a folder that is gone, and GitHub ends any process left with the job. The folder holds the
     // peer's private key, of no use once the peer is removed below, on a runner that ends with the
     // job: a folder left is said, and the run goes on to its peer, which matters more.
     await folders.remove(folder).catch((error: unknown) => {
