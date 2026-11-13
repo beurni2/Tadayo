@@ -100,21 +100,12 @@ describe("confirming the age and naming the person (FQ13, FQ69)", () => {
     });
   });
 
-  it("refuses a name that isn't well formed before touching anything: Postgres would keep a lone surrogate as U+FFFD, and the API refuses a name rather than changing it", async () => {
+  // A name with a lone surrogate never reaches the command: the contract refuses it (`DisplayName`; the
+  // route's test, services/api/src/identity/me.test.ts, and the privacy matrix's "a name that isn't well
+  // formed"), so this file keeps the half only the database can show.
+  it("keeps a name with a surrogate pair as it came: an emoji is well formed, and nothing changes it", async () => {
     await rolledBack(db, async (tx) => {
       const ben = await account(tx);
-      for (const name of ["A\ud800B", "\udc00", "Ana\ud83d", "\ude00Ana", "\ud83d\ud83d", "\ude00\ud83d"]) {
-        // Before the version is read, too: a stale one is no reason to answer anything else.
-        for (const version of [0, 7]) {
-          expect(
-            await refusal(request(tx, ben, { expected_version: version, display_name: name })),
-            JSON.stringify(name),
-          ).toEqual({ code: "INVALID_REQUEST", facts: { field: "display_name" } });
-        }
-      }
-      expect(await rowOf(tx, ben)).toMatchObject({ version: 0, display_name: "Ben" });
-      expect(await receiptsOf(tx, ben)).toEqual([]);
-      // A surrogate pair is an emoji, which is well formed, and the name is kept as it came.
       expect(await request(tx, ben, { expected_version: 0, display_name: "Ana \u{1F600}" })).toMatchObject({
         display_name: "Ana \u{1F600}",
         version: 1,

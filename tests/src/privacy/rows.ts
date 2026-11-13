@@ -51,7 +51,17 @@
 //   club's name and the inviter's name, read from the world's invitations bound to that account (the
 //   scanner's `WorldInvitation`), and nothing else of that club (scanner.ts, its header);
 // - for a route that changes the world (a commit, a reservation, a leave, a block), the facts each
-//   answer is scanned against, read from the world after it (scanner.ts, its header).
+//   answer is scanned against, read from the world after it (scanner.ts, its header);
+// - for the schedule's routes (getSchedule, chooseScheduleDays, confirmScheduleDays and listMembers, B2's
+//   schedule slice), the per-viewer fields the contract gives them (B2's contract PR; `Schedule`'s
+//   description, T55): `held_by` only to a member still choosing in the club's first days and to every
+//   member of a membership change; `holders` only to the members who hold the day; no name on a
+//   `no_reveal` day; `first_date` only on a day confirmed in the first days; one Members list, in one
+//   order, for every member; nothing in a membership change's answers that changes before its start, so
+//   nobody learns that everyone has confirmed (FQ81, FQ101); a proposal's `version` moved by nobody's
+//   choice or confirmation (T33); and the neutral not-found before any other code to anyone a proposal
+//   doesn't include (T14, FQ100). The leak scanner can't judge these: it accepts any person of a club
+//   the viewer is in (scanner.ts), so each row judges them.
 
 import { JUDGED } from "./account.ts";
 

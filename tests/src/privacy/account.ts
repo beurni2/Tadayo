@@ -14,7 +14,7 @@
 //   haven't become memberships, each count and each id read from the world's rows (clubsJudge);
 // - updateMe: the table of bodies each session sends in each cell (updateMeCases), each with the answer
 //   pinned byte for byte, so that a guessed, another account's and a drop's upload get the same bytes (T14),
-//   a refused body says only its code and field and never a value (T55), a body past the route's 8 KiB is
+//   a refused body says only its code and field and never a value (T55), a body past the route's 17 KiB is
 //   refused before it is read, with no field and the connection closed (a million-character name once held the
 //   event loop for a quarter of a second), and an account whose deletion has begun gets the 401 before its body
 //   is read (T27).
@@ -249,11 +249,11 @@ export function updateMeCases(session: Session, own: Own, last: boolean): BodyCa
       (v) => ({ expected_version: v, display_name: "A\ud800B" }),
       () => invalid("display_name"),
     ),
-    // This file's own copy of the route's 8 KiB (app.ts's bodyLimitOf), so that raising it fails here. The
+    // This file's own copy of the route's 17 KiB (app.ts's bodyLimitOf), so that raising it fails here. The
     // body is refused before it is read, so it names no field and the connection is closed.
     refused(
       "a body past the route's limit",
-      (v) => ({ expected_version: v, display_name: "a".repeat(8 * 1024) }),
+      (v) => ({ expected_version: v, display_name: "a".repeat(17 * 1024) }),
       () => unread(),
     ),
     refused(

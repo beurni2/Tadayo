@@ -146,6 +146,9 @@ describe("PATCH /v1/me: what is refused before the command runs (the contract's 
       [{ expected_version: 0, display_name: "​" }, "display_name"],
       [{ expected_version: 0, display_name: "Ben‮X" }, "display_name"],
       [{ expected_version: 0, display_name: 7 }, "display_name"],
+      // A lone surrogate, which Postgres would keep as U+FFFD: the contract refuses it, ahead of a later bad field.
+      [{ expected_version: 0, display_name: "A\ud800B" }, "display_name"],
+      [{ expected_version: 0, display_name: "\udc00", age_confirmed: false }, "display_name"],
       [{ expected_version: 0, age_confirmed: false }, "age_confirmed"],
       [{ expected_version: 0, age_confirmed: "true" }, "age_confirmed"],
       [{ expected_version: 0, avatar_upload_id: "" }, "avatar_upload_id"],
@@ -171,6 +174,30 @@ describe("PATCH /v1/me: what is refused before the command runs (the contract's 
       // Whatever the caller sent, none of it comes back.
       expect(got.body).not.toMatch(/ana@example|admin|text|Ben/);
     }
+  });
+
+  it("refuses a name that isn't well formed before any transaction, whatever the version: the API refuses a name rather than changing it", async () => {
+    let begun = 0;
+    const answer = await appFor(account(), () => {
+      begun += 1;
+      return Promise.reject(new Error("no database"));
+    });
+    for (const name of ["A\ud800B", "\udc00", "Ana\ud83d", "\ude00Ana", "\ud83d\ud83d", "\ude00\ud83d"]) {
+      // Before the version is read, too: a stale one is no reason to answer anything else.
+      for (const version of [3, 7]) {
+        expect(
+          await send(answer, { expected_version: version, display_name: name }),
+          JSON.stringify(name),
+        ).toMatchObject(invalid("display_name"));
+      }
+    }
+    expect(begun).toBe(0);
+    // A surrogate pair is an emoji, which is well formed: the request reaches the command.
+    expect(await send(answer, { expected_version: 3, display_name: "Ana \u{1F600}" })).toMatchObject({
+      status: 500,
+      body: "",
+    });
+    expect(begun).toBe(1);
   });
 
   it("names only a path that is a field of the contract's, whatever issues the parser gives (a second lock)", () => {
@@ -231,8 +258,7 @@ describe("PATCH /v1/me: how much body it will read", () => {
       body: '{"code":"INVALID_REQUEST","field":"display_name"}',
     });
     // One byte more is never read: Fastify refuses it from its Content-Length, so the answer has no field,
-    // which a parse (the contract's `text()` counts a string's graphemes even after its length guard has
-    // failed, a quarter of a second for a million characters) would have given.
+    // which a parse would have given.
     for (const bytes of [limit + 1, 70_000, 1_000_000]) {
       expect(await send(answer, sized(bytes)), String(bytes)).toMatchObject({
         status: 400,
@@ -241,17 +267,20 @@ describe("PATCH /v1/me: how much body it will read", () => {
     }
   });
 
-  it("takes the largest name the contract keeps, every code unit written as an escape: the limit shuts nothing valid out", async () => {
-    // Forty clusters of sixteen code units (a letter and fifteen accents), the most `text()` allows: 640
-    // code units, which come to 3,840 bytes as escapes, beside the other two fields at their longest.
-    const name = `e${"\u0301".repeat(15)}`.repeat(40);
-    const escaped = Array.from(
-      { length: name.length },
-      (_, index) => `\\u${name.charCodeAt(index).toString(16).padStart(4, "0")}`,
-    ).join("");
-    expect(name).toHaveLength(640);
-    const payload = `{"expected_version":3,"display_name":"${escaped}","avatar_upload_id":"${"a".repeat(64)}","age_confirmed":true}`;
-    expect(Buffer.byteLength(payload)).toBeGreaterThan(3_900);
+  it("takes the largest body the contract allows, every key and code unit written as an escape: the limit shuts nothing valid out", async () => {
+    // Forty clusters of sixteen code points, the most `text()` allows: a black flag and fifteen tag characters
+    // each, all outside the Basic Multilingual Plane, so 640 code points are 1,280 code units, each written as
+    // a six-byte escape, beside the other fields at their longest, their keys escaped too.
+    const name = `\u{1F3F4}${"\u{E0067}".repeat(15)}`.repeat(40);
+    // Each surrogate pair as one character: the code points.
+    expect(name.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, "x")).toHaveLength(640);
+    expect(name).toHaveLength(1280);
+    const escape = (text: string): string =>
+      `"${Array.from({ length: text.length }, (_, index) => `\\u${text.charCodeAt(index).toString(16).padStart(4, "0")}`).join("")}"`;
+    const payload =
+      `{${escape("expected_version")}:2147483647,${escape("display_name")}:${escape(name)},` +
+      `${escape("avatar_upload_id")}:${escape("a".repeat(64))},${escape("age_confirmed")}:true}`;
+    expect(Buffer.byteLength(payload)).toBeGreaterThan(8 * 1024);
     expect(Buffer.byteLength(payload)).toBeLessThan(bodyLimitOf("updateMe") / 2);
     let reached = false;
     const answer = await appFor(account(), () => {

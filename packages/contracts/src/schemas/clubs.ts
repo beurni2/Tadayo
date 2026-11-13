@@ -97,10 +97,14 @@ export const ClubDetail = named(
 export const Member = named(
   "Member",
   "One active member in the Friends roster (F01) and Club information (G05-members). `position` is the " +
-    "server's stable order: the schedule's order from Monday, then members with no day yet in the order " +
-    "they joined (FQ26), never a ranking (spec 09). `cover` is the colour of this member's folded cards " +
-    "(FQ41). `next_day` is their next day to open, the one an Add for them targets (spec 05); `next_up` " +
-    "marks the member whose day opens first.",
+    "server's stable roster order, never a ranking (spec 09): in the club's first days, until the " +
+    "first-days proposal has applied, every member in the order they joined, so no row moves when a member " +
+    "chooses or confirms, and the order shows no proposed day (FQ98); afterwards, the schedule in force " +
+    "today from Monday, a member with two days by the earlier, then anyone with no day in force in the order " +
+    "they joined (FQ26). So rows move only when the first days end and when a membership change applies, at " +
+    "its start. `cover` is the colour of this member's folded cards (FQ41). `next_day` is their next day to " +
+    "open, the one an Add for them targets (spec 05), absent while they have none, as before their first " +
+    "day is confirmed (T49); `next_up` marks the member whose day opens first.",
   z.object({
     person: Person,
     position: z.int().min(1).max(6),
@@ -113,9 +117,9 @@ export const Member = named(
 export const CandidateLabel = named(
   "CandidateLabel",
   "The name a candidate goes by in a roster revision: the one the proposer types for them, or their own " +
-    "profile name in a revision the server made for it (FQ66). 1 to 40 grapheme clusters, with no space at " +
-    "either end, no control, bidirectional-control or line-separator character, and at least one visible " +
-    "character (FQ70's default).",
+    "profile name in a revision the server made for it (FQ66). 1 to 40 grapheme clusters, well formed (no " +
+    "lone surrogate), with no space at either end, no control, bidirectional-control or line-separator " +
+    "character, and at least one visible character (FQ70's default).",
   name(40),
 );
 
@@ -414,53 +418,77 @@ export const ScheduleAssignment = named(
 
 export const CurrentSchedule = named(
   "CurrentSchedule",
-  "The schedule in force: each member's weekday or two (spec 05's table), from a local date in the club's " +
-    "zone. Read-only in the trial: days change only through a membership change (FQ57).",
-  z.object({ effective_from: LocalDate, assignments: z.array(ScheduleAssignment).min(2).max(6) }),
+  "The schedule in force today: each member's weekday or two (spec 05's table), from a local date in the " +
+    "club's zone. In the club's first days it holds the days confirmed so far, from the club's first local " +
+    "date, and each first opens on its own date (`ScheduleSlot.first_date`; FQ55, FQ79). Members change it " +
+    "only by confirming their first days or a membership change (FQ57), which replaces it at its start, " +
+    "never before (FQ81).",
+  z.object({ effective_from: LocalDate, assignments: z.array(ScheduleAssignment).min(1).max(6) }),
 );
 
 export const ScheduleSlotState = named(
   "ScheduleSlotState",
-  "One weekday in an open proposal, as the caller sees it: yours (chosen by the caller), taken (confirmed " +
-    "by another member, its owner, book p11, FQ78; a day only proposed to someone isn't taken, FQ48), " +
-    "available, clash (the caller and one other member chose it, so neither can confirm it until one " +
-    "chooses again, FQ55), or no_reveal (two other members chose it: the caller sees only that it has no " +
-    "reveal scheduled, FQ46).",
+  "One weekday of an open proposal, as the caller sees it. In the club's first days: yours (the caller " +
+    "holds it and nobody else does, or the caller has confirmed it); taken (another member has confirmed " +
+    "it, its owner: book p11, FQ78; a day only proposed or chosen isn't taken, FQ48); available (nobody has " +
+    "confirmed it, and at most one other member holds it); clash (the caller and one or more other members " +
+    "hold it, so none of them can confirm it until all but one have chosen another day, FQ55); or no_reveal " +
+    "(two or more other members hold it and the caller doesn't: Contested and No reveal scheduled, with no " +
+    "names and no count, FQ46; a caller still choosing may choose it, and then holds it too, FQ48). In a " +
+    "membership change, one week everyone confirms as a whole, only yours (the change proposes it for the " +
+    "caller) and available (it doesn't).",
   z.enum(["yours", "taken", "available", "clash", "no_reveal"]),
 );
 
 export const ScheduleSlot = named(
   "ScheduleSlot",
-  'A weekday of the proposal. `owner` is the member who confirmed a taken day (book p11: "Occupied days ' +
-    'identify their owner"; FQ78). `clash_with` is the other member who chose it, shown only to the two of ' +
-    "them (FQ46). `first_date` is the first local date it would open. At activation an unconfirmed day's " +
-    "moves to its next date as time passes; after a membership change it's fixed for the proposal's life, " +
-    "and changes only with a new proposal (FQ49). `suggested` marks the spaced days proposed to the caller " +
-    "(spec 05). Never Sunday.",
+  "A weekday of the proposal; never Sunday. `owner` is the member who confirmed a taken day (book p11: " +
+    '"Occupied days identify their owner"; FQ78). `holders` are, on a clash only, every member who holds ' +
+    "the day, the caller included, in the club's roster order (`Member.position`), a member holding it only " +
+    "by proposal too; only they see any name on it (FQ46). `held_by` is, on an available day only and never " +
+    "the caller, the one other member who holds it: in the club's first days only for a caller still " +
+    "choosing, for the day picker (G04), since the club's week and a confirmed member's view name nobody on " +
+    "a day nobody has confirmed (FQ48); in a membership change, the member the change proposes it for, for " +
+    "every caller, whoever has confirmed (FQ81). It doesn't say whether that member chose the day or holds " +
+    "it by proposal. `first_date` is the first local date of a day confirmed in the first days: the first of " +
+    "its dates whose 7 AM in the club's zone is at least 24 elapsed hours after the confirmation (FQ79). It " +
+    "is absent on any other day, which has no date yet (T49), and in a membership change. `suggested` marks " +
+    "the days proposed for the caller (spec 05), and stays on one they set aside, which only they see so " +
+    "(FQ48).",
   z.object({
     weekday: Weekday,
     state: ScheduleSlotState,
     owner: Person.optional(),
-    clash_with: Person.optional(),
-    first_date: LocalDate,
+    holders: z.array(Person).min(2).max(6).optional(),
+    held_by: Person.optional(),
+    first_date: LocalDate.optional(),
     suggested: z.boolean(),
   }),
 );
 
 export const ScheduleProposal = named(
   "ScheduleProposal",
-  "A proposed schedule each member confirms (spec 05; G04). At activation, each day goes ahead once its " +
-    "member confirms it, while others are still choosing; a day two members chose has no reveal until one " +
-    "of them chooses again, and every confirmed day goes ahead meanwhile (FQ55). After a membership change, " +
-    "it starts from the first week after every occurrence already generated, so no announced day changes, " +
-    "whether or not anything was added to it (spec 05, FQ61), and drops can still be added to the current " +
-    "days meanwhile (FQ62). It applies once every active member has confirmed, the new one included, and " +
-    "the current days continue until then, through a clash too (FQ56); if its start date passes first, a " +
-    "new proposal from a later date replaces it, and everyone confirms again (FQ49). A taken day names its " +
-    "owner (book p11); nothing else says who hasn't confirmed, counts them or waits on anyone (T33). Named " +
-    "owners still tell each member, by elimination, who hasn't confirmed, and so who clashed when just two " +
-    "others haven't (FQ78, FQ46). `my_days` are the caller's chosen weekdays, one per member in clubs of " +
-    "four to six and two in clubs of two or three (spec 05's table).",
+  "A proposed schedule each member confirms (spec 05; G04). The club's first days (`activation`): a member " +
+    "holds the days proposed for them until they first choose, then exactly what they last chose (FQ48); " +
+    "each day goes ahead as its member confirms it, while others still choose; a day two or more members " +
+    "hold has no reveal until all but one have chosen another, and every confirmed day goes ahead meanwhile " +
+    "(FQ55). The proposal applies when its last day is confirmed, and no date passing replaces it; its " +
+    "`effective_from` is the club's first local date, never an opening date. A membership change " +
+    "(`membership_change`): one proposed week every active member confirms as a whole, the new member " +
+    "included, with no choosing (FQ56; G04-change). It starts from the first week after every day already " +
+    "generated, so no announced day changes, whether or not anything was added to it (spec 05, FQ61), and " +
+    "drops can still be added to the current days meanwhile (FQ62); `announced` lists those days not yet " +
+    "closed, in date order, for every member but the new one (G04-change). It stays open, with the same " +
+    "`version` and the same answer for everyone, whoever has confirmed, until `effective_from` (FQ81): it " +
+    "applies then if everyone confirmed, the current days continuing until then, and otherwise a new " +
+    "proposal from a later date replaces it, which everyone confirms again (FQ49). A day it adds is made at " +
+    "its start, and first opens at least 24 elapsed hours after both the last confirmation and the start " +
+    "(FQ79, FQ101). `version` moves only with `state` or a new revision of the proposed week (a join or a " +
+    "leave in the first days before any day is confirmed), never on a choice or a confirmation (T33). A " +
+    "taken day names its owner (book p11), and the day picker names who holds a day nobody has confirmed " +
+    "(FQ48); nothing counts anyone or waits on them (T33). `my_days` are the weekdays the caller holds: in " +
+    "the first days none to `days_per_member` (spec 05's table: one in clubs of four to six, two in clubs " +
+    "of two or three); in a membership change the days it proposes for them.",
   z.object({
     id: Id,
     version: Version,
@@ -471,23 +499,26 @@ export const ScheduleProposal = named(
     my_days: z.array(Weekday).max(2),
     my_state: z.enum(["choosing", "confirmed"]),
     state: z.enum(["open", "applied", "superseded"]),
+    announced: z.array(Occurrence).optional(),
   }),
 );
 
 export const Schedule = named(
   "Schedule",
-  "The club's week (G04, G05-schedule): the schedule in force, if any, and the open proposal, if any. The " +
-    "same for every active member, except each one's own slots (T55). The schedule-proposal shapes are " +
-    "settled in B2's contract PR, with these known gaps: the proposed week naming each member's suggested " +
-    'day (G04-one-day, G04-change); the owner a G04 error names ("{weekday} is now {ownerName}\'s day"), ' +
-    "which the app reads from the schedule it fetches again (FQ78); which answer refuses a day another member " +
-    "confirmed meanwhile, apart from a changed week, or a confirmation after the start date passed (G04's " +
-    "chooseTaken, confirmTaken, revision and pastStart; FQ49); how the days confirmed at activation are " +
-    "returned while others still choose, since `current` holds at least two (FQ55); how the worker's rolling " +
-    "generation meets a pending change's fixed start, whether it holds off generating from `effective_from` " +
-    "or a new proposal replaces the old once generation reaches it (FQ49, FQ61, FQ62); whether a member in a " +
-    "clash can confirm their other day in a club of two or three (FQ55); and what moves `version`, so that " +
-    "nobody learns from it how others are choosing (T33).",
+  "The club's week (G04, G05-schedule): the schedule in force today, if any, and the open proposal that " +
+    "includes the caller, if any. What each viewer gets (T55): a member choosing in the club's first days, " +
+    "`current` (the days confirmed so far) and every slot's state, with `owner` and `first_date` on a taken " +
+    "day, `holders` on a day they hold with others, and `held_by` on a day one other member holds; a member " +
+    "who has confirmed in the first days, the same with `first_date` on their own days and no `held_by`; a " +
+    "member of a membership change, confirmed or not, `current` and the change's yours and available slots, " +
+    "with `held_by` on every day it proposes for another member, `announced` unless they are its new " +
+    "member, and the same state and version until its start, whoever has confirmed (FQ81); a member the " +
+    "open proposal doesn't include, one who joined after the first days' first confirmation and gets a day " +
+    "only once they have applied (FQ100), `current` alone; anyone without an active membership, NOT_FOUND " +
+    "(T14). One gap stays, for B2's schedule slice: how the worker's rolling generation meets a pending " +
+    "change's start (it holds off generating from `effective_from`, or the change is replaced once " +
+    "generation reaches it: FQ49, FQ61, FQ62), without showing before the start whether everyone has " +
+    "confirmed (FQ81, FQ101).",
   z.object({
     server_now: Instant,
     club: ClubRef,
@@ -498,7 +529,17 @@ export const Schedule = named(
 
 export const ChosenWeekdays = named(
   "ChosenWeekdays",
-  "One or two weekdays, each only once: the API refuses the same weekday twice (T6).",
+  "None, one or two weekdays, each only once: the API refuses the same weekday twice (T6). A choice of " +
+    "none is kept, since a two-day picker removes a choice on a tap, the last one too (handoff 6).",
+  z
+    .array(Weekday)
+    .max(2)
+    .refine((days) => new Set(days).size === days.length, "each weekday only once"),
+);
+
+export const ConfirmedWeekdays = named(
+  "ConfirmedWeekdays",
+  "One or two weekdays, each only once (T6): the days the caller saw as theirs and confirms.",
   z
     .array(Weekday)
     .min(1)
@@ -508,17 +549,23 @@ export const ChosenWeekdays = named(
 
 export const ScheduleChoiceRequest = named(
   "ScheduleChoiceRequest",
-  "Choose the caller's own day or days in the proposal they saw, from slots that are yours, clash (their " +
-    "own clashed day, which they may keep, since nobody is asked to give way, FQ55) or available. Exactly " +
-    "`days_per_member` distinct weekdays; never Sunday (T6).",
+  "Choose the caller's days in the club's first days, before they confirm, in the proposal they saw: the " +
+    "weekdays they hold from now on, replacing what they held, none to `days_per_member`, from slots that " +
+    "are yours, clash (a contested day they may keep, since nobody is asked to give way, FQ55), no_reveal " +
+    "(joining a contested day, FQ46, FQ48) or available (which another member's hold makes contested); " +
+    "never a taken day, never Sunday (T6). A proposed day the caller sets aside is free (FQ48).",
   z.strictObject({ expected_version: Version, weekdays: ChosenWeekdays }),
 );
 
 export const ScheduleConfirmRequest = named(
   "ScheduleConfirmRequest",
-  'Confirm the caller\'s chosen days in the proposal they saw ("Confirm Monday"). Refused with NOT_ALLOWED ' +
-    "while a chosen day clashes (FQ55).",
-  z.strictObject({ expected_version: Version }),
+  'Confirm the caller\'s days in the proposal they saw ("Confirm Monday", "Confirm two days"), naming ' +
+    "them, so a confirmation never confirms days the caller didn't see. Refused with NOT_ALLOWED unless " +
+    "`weekdays` are exactly the days the caller holds, `days_per_member` of them (book p11), and none is " +
+    "held by another member too (FQ55): in a club of two or three, a member whose one day is contested " +
+    "confirms neither until the contest ends (FQ99). In a membership change they are the days it proposes " +
+    "for the caller, and the confirmation is of the whole week.",
+  z.strictObject({ expected_version: Version, weekdays: ConfirmedWeekdays }),
 );
 
 export const Contributions = named(

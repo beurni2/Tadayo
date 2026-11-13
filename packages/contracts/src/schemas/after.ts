@@ -106,7 +106,7 @@ export const MemoryPage = named(
 
 export const SearchText = named(
   "SearchText",
-  "What to search for: 1 to 100 grapheme clusters (spec 18).",
+  "What to search for: 1 to 100 grapheme clusters, well formed (no lone surrogate) (spec 18).",
   text(1, 100),
 );
 
@@ -170,7 +170,8 @@ export const ReportTarget = named(
 
 export const ReportNote = named(
   "ReportNote",
-  "A report's optional note: 1 to 500 grapheme clusters, never logged or sent to analytics (T51, T52).",
+  "A report's optional note: 1 to 500 grapheme clusters, well formed (no lone surrogate), never logged or " +
+    "sent to analytics (T51, T52).",
   text(1, 500),
 );
 

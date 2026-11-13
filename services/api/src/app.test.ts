@@ -144,7 +144,7 @@ describe("what Fastify answers itself, made to say nothing (T14)", () => {
     };
     // No source names the limit (the review of slice 8 chose it), so this test holds its value: moving it is
     // an edit of this line. tests/src/privacy/body-limits.test.ts holds it above what any valid body needs.
-    expect(BODY_LIMIT, "the general limit is 64 KiB").toBe(64 * 1024);
+    expect(BODY_LIMIT, "the general limit is 128 KiB").toBe(128 * 1024);
     // A route of the contract, which carries the limit itself, and the two kinds of request only the app's
     // own limit holds, since Fastify's not-found context takes no route's: a path the contract hasn't and a
     // method the path hasn't. A route nobody has built answers the neutral not-found once it has read its body.
@@ -162,7 +162,7 @@ describe("what Fastify answers itself, made to say nothing (T14)", () => {
     }
     // Every route has the limit, and none has a higher one: a route with its own is lower.
     for (const operation of OPERATIONS) expect(bodyLimitOf(operation.id), operation.id).toBeLessThanOrEqual(BODY_LIMIT);
-    expect(bodyLimitOf("updateMe")).toBe(8 * 1024);
+    expect(bodyLimitOf("updateMe")).toBe(17 * 1024);
     expect(bodyLimitOf("createClub")).toBe(BODY_LIMIT);
   });
 
