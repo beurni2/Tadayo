@@ -1,0 +1,13 @@
+diff --git a/tools/ops/src/fly.ts b/tools/ops/src/fly.ts
+index bfed77b..149764b 100644
+--- a/tools/ops/src/fly.ts
++++ b/tools/ops/src/fly.ts
+@@ -96,7 +96,7 @@ export function flyOf(spawn: Spawn, env: Readonly<Record<string, string | undefi
+         );
+       }
+       const { ownAgent, ...rest } = options;
+-      if (ownAgent !== undefined && !isAbsolute(ownAgent)) {
++      if (ownAgent === null) {
+         return Promise.reject(new OpsError("flyctl: an agent's own folder is given by its absolute path"));
+       }
+       const env =

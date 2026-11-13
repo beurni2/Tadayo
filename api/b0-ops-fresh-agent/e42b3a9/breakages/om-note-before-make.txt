@@ -1,0 +1,42 @@
+breakage: om-note-before-make
+registered: starts no session when the folder can't be made, and says why
+exit: 1
+verdict: caught
+left: []
+
+
+ RUN  v5.0.5 /home/user/tadayo-10c/tools/ops
+
+ ❯ src/on-machine.test.ts (40 tests | 1 failed) 101ms
+   ❯ onMachine: an agent of the session's own (7)
+     × starts no session when the folder can't be made, and says why 13ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 59 passed (60)
+   Start at  18:29:15
+   Duration  311ms (tests 44%, import 29%, transform 21%, worker 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > starts no session when the folder can't be made, and says why
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
++ ]
+
+ ❯ src/on-machine.test.ts:923:25
+    921|     );
+    922|     expect(result.calls).toEqual([LIST, ORGS, PEERS]);
+    923|     expect(result.said).toEqual([]);
+       |                         ^
+    924|   });
+    925|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

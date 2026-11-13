@@ -1,0 +1,13 @@
+diff --git a/tools/ops/src/on-machine.ts b/tools/ops/src/on-machine.ts
+index 3f7ef25..a95a74b 100644
+--- a/tools/ops/src/on-machine.ts
++++ b/tools/ops/src/on-machine.ts
+@@ -305,7 +305,7 @@ export async function onMachine(input: OnMachineInput): Promise<void> {
+   try {
+     result = await fly.run(
+       ["ssh", "console", "-a", DEV_APP, "--machine", target.id, "-q", "-C", input.command.join(" ")],
+-      { timeoutMs: SESSION_MS, ownAgent: folder },
++      { timeoutMs: SESSION_MS },
+     );
+   } finally {
+     // Only now that the call has ended. The session's agent stops at the end of its input, which

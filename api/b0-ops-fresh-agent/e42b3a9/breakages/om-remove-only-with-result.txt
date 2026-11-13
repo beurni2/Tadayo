@@ -1,0 +1,42 @@
+breakage: om-remove-only-with-result
+registered: removes the folder when the SSH call is refused or can't be started
+exit: 1
+verdict: caught
+left: []
+
+
+ RUN  v5.0.5 /home/user/tadayo-10c/tools/ops
+
+ ❯ src/on-machine.test.ts (40 tests | 1 failed) 84ms
+   ❯ onMachine: an agent of the session's own (7)
+     × removes the folder when the SSH call is refused or can't be started, and lets that failure through 10ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 59 passed (60)
+   Start at  18:29:09
+   Duration  282ms (tests 51%, import 32%, transform 12%, worker 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > removes the folder when the SSH call is refused or can't be started, and lets that failure through
+AssertionError: expected [] to deeply equal [ 'tadayo-flyctl-relative' ]
+
+- Expected
++ Received
+
+- [
+-   "tadayo-flyctl-relative",
+- ]
++ []
+
+ ❯ src/on-machine.test.ts:849:21
+    847|     expect(message(refused.outcome)).toBe("flyctl: an agent's own fold…
+    848|     expect(refused.calls).toEqual([LIST, ORGS, PEERS]);
+    849|     expect(removed).toEqual(["tadayo-flyctl-relative"]);
+       |                     ^
+    850|     // A spawn that fails (the made-up one has no answer for the sessi…
+    851|     const made: string[] = [];
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

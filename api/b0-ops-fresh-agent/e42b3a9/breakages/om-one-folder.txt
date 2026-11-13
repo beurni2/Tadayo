@@ -1,0 +1,40 @@
+breakage: om-one-folder
+registered: gives a second session on the same runner a new folder and agent
+exit: 1
+verdict: caught
+left: []
+
+
+ RUN  v5.0.5 /home/user/tadayo-10c/tools/ops
+
+ ❯ src/on-machine.test.ts (40 tests | 1 failed) 109ms
+   ❯ onMachine: an agent of the session's own (7)
+     × gives a second session on the same runner a new folder and agent, so it never takes the first one's tunnel, whose peer is gone 15ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 59 passed (60)
+   Start at  18:29:02
+   Duration  325ms (tests 50%, import 29%, transform 16%, worker 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > gives a second session on the same runner a new folder and agent, so it never takes the first one's tunnel, whose peer is gone
+AssertionError: expected 1 to be 2 // Object.is equality
+
+- Expected
++ Received
+
+- 2
++ 1
+
+ ❯ src/on-machine.test.ts:876:35
+    874|       .map((call) => call.env?.["FLY_CONFIG_DIR"]);
+    875|     expect(folders).toHaveLength(2);
+    876|     expect(new Set(folders).size).toBe(2);
+       |                                   ^
+    877|     expect(result.outcomes).toEqual([undefined, undefined]);
+    878|     for (const folder of folders) expect(existsSync(folder ?? "")).toB…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
