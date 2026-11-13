@@ -1,0 +1,13 @@
+diff --git a/tools/ops/src/on-machine.ts b/tools/ops/src/on-machine.ts
+index a0b8ce1..6d80ee3 100644
+--- a/tools/ops/src/on-machine.ts
++++ b/tools/ops/src/on-machine.ts
+@@ -99,7 +99,7 @@ export interface AgentFolder {
+ 
+ /** Under the system's temporary folder, made with mode 0700 (`mkdtemp`). */
+ export const AGENT_FOLDER: AgentFolder = {
+-  make: () => mkdtemp(join(tmpdir(), "tadayo-flyctl-")),
++  make: () => mkdtemp("tadayo-flyctl-"),
+   remove: (path) => rm(path, { recursive: true, force: true }),
+ };
+ 

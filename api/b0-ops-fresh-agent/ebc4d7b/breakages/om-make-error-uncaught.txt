@@ -1,0 +1,37 @@
+breakage: om-make-error-uncaught
+registered: starts no session when the folder can't be made, and says why
+exit: 1
+verdict: caught
+left: []
+
+
+ RUN  v5.0.5 /home/user/tadayo-10c/tools/ops
+
+ ❯ src/on-machine.test.ts (40 tests | 1 failed) 236ms
+   ❯ onMachine: an agent of the session's own (7)
+     × starts no session when the folder can't be made, and says why 10ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 59 passed (60)
+   Start at  19:20:30
+   Duration  507ms (tests 58%, transform 23%, import 16%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > starts no session when the folder can't be made, and says why
+AssertionError: expected 'not an OpsError: Error: ENOSPC: no sp…' to be 'storage-setup: couldn\'t make a folde…' // Object.is equality
+
+Expected: "storage-setup: couldn't make a folder for flyctl's agent (ENOSPC: no space left on device), so no SSH session is started"
+Received: "not an OpsError: Error: ENOSPC: no space left on device"
+
+ ❯ src/on-machine.test.ts:936:37
+    934|       remove: () => Promise.resolve(),
+    935|     });
+    936|     expect(message(result.outcome)).toBe(
+       |                                     ^
+    937|       "storage-setup: couldn't make a folder for flyctl's agent (ENOSP…
+    938|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

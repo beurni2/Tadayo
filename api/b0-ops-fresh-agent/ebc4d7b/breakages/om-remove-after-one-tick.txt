@@ -1,0 +1,40 @@
+breakage: om-remove-after-one-tick
+registered: removes the folder only once the session's call has ended, whatever it did
+exit: 1
+verdict: caught
+left: []
+
+
+ RUN  v5.0.5 /home/user/tadayo-10c/tools/ops
+
+ ❯ src/on-machine.test.ts (40 tests | 1 failed) 152ms
+   ❯ onMachine: an agent of the session's own (7)
+     × removes the folder only once the session's call has ended, whatever it did: it worked, the command failed, the tunnel's check failed, it ran out of time 37ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 59 passed (60)
+   Start at  19:20:22
+   Duration  455ms (tests 47%, transform 29%, import 21%, worker 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > removes the folder only once the session's call has ended, whatever it did: it worked, the command failed, the tunnel's check failed, it ran out of time
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/on-machine.test.ts:844:34
+    842|       // While the session runs (held for 25 ms, many turns of the eve…
+    843|       await new Promise((resolve) => setTimeout(resolve, 25));
+    844|       expect(existsSync(folder)).toBe(true);
+       |                                  ^
+    845|       expect(removals).toEqual([]);
+    846|       release();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,131 @@
+breakage: om-folder-kept
+registered: makes a new empty folder only the runner's user may read (mode 0700), gives it and FLY_AGENT_ISOLATED=1 to the SSH
+exit: 1
+verdict: caught
+left: ['/tmp/tadayo-flyctl-0ormJT', '/tmp/tadayo-flyctl-1FMuXo', '/tmp/tadayo-flyctl-1gB5Q9', '/tmp/tadayo-flyctl-2T7mIZ', '/tmp/tadayo-flyctl-30ZnfU', '/tmp/tadayo-flyctl-345UOt', '/tmp/tadayo-flyctl-3HVQ34', '/tmp/tadayo-flyctl-3gdTCx', '/tmp/tadayo-flyctl-3rq1L8', '/tmp/tadayo-flyctl-4hy7Y5', '/tmp/tadayo-flyctl-4oKuwG', '/tmp/tadayo-flyctl-4p6IDO', '/tmp/tadayo-flyctl-6aLVzc', '/tmp/tadayo-flyctl-7Oavb1', '/tmp/tadayo-flyctl-8Qd3oC', '/tmp/tadayo-flyctl-95cBuj', '/tmp/tadayo-flyctl-9eHkUa', '/tmp/tadayo-flyctl-FeQxYz', '/tmp/tadayo-flyctl-HG9iYk', '/tmp/tadayo-flyctl-Hr0bRR', '/tmp/tadayo-flyctl-HucqZM', '/tmp/tadayo-flyctl-Jnc0VQ', '/tmp/tadayo-flyctl-KOTs3g', '/tmp/tadayo-flyctl-LpQtbI', '/tmp/tadayo-flyctl-M8GhFX', '/tmp/tadayo-flyctl-Mqhllx', '/tmp/tadayo-flyctl-QHFtPB', '/tmp/tadayo-flyctl-S9nxNX', '/tmp/tadayo-flyctl-SKUqUe', '/tmp/tadayo-flyctl-SeuFzI', '/tmp/tadayo-flyctl-Ts4zw6', '/tmp/tadayo-flyctl-YfENWK', '/tmp/tadayo-flyctl-avhk7q', '/tmp/tadayo-flyctl-e3CSWV', '/tmp/tadayo-flyctl-ewhzlz', '/tmp/tadayo-flyctl-f2AVi8', '/tmp/tadayo-flyctl-fMV8x0', '/tmp/tadayo-flyctl-fREh6u', '/tmp/tadayo-flyctl-gBedYX', '/tmp/tadayo-flyctl-gneKNJ', '/tmp/tadayo-flyctl-hjgDpi', '/tmp/tadayo-flyctl-iSUZmZ', '/tmp/tadayo-flyctl-jPHUyv', '/tmp/tadayo-flyctl-jheW1k', '/tmp/tadayo-flyctl-mVQu6I', '/tmp/tadayo-flyctl-mfaLaK', '/tmp/tadayo-flyctl-mzCwBZ', '/tmp/tadayo-flyctl-oNkEZW', '/tmp/tadayo-flyctl-p2orhr', '/tmp/tadayo-flyctl-pJzAJH', '/tmp/tadayo-flyctl-sRhfAe', '/tmp/tadayo-flyctl-uGgWis', '/tmp/tadayo-flyctl-uTy1GY', '/tmp/tadayo-flyctl-vhdUV1', '/tmp/tadayo-flyctl-wXDsUN', '/tmp/tadayo-flyctl-xKH7An']
+
+
+ RUN  v5.0.5 /home/user/tadayo-10c/tools/ops
+
+ ❯ src/on-machine.test.ts (40 tests | 5 failed) 115ms
+   ❯ onMachine: an agent of the session's own (7)
+     × makes a new empty folder only the runner's user may read (mode 0700), gives it and FLY_AGENT_ISOLATED=1 to the SSH session alone, and removes it after 13ms
+     × removes the folder only once the session's call has ended, whatever it did: it worked, the command failed, the tunnel's check failed, it ran out of time 31ms
+     × removes the folder when the SSH call is refused or can't be started, and lets that failure through 2ms
+     × gives a second session on the same runner a new folder and agent, so it never takes the first one's tunnel, whose peer is gone 5ms
+     × says a folder it couldn't remove, and goes on to remove the peer, without failing a session that worked 2ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  5 failed | 55 passed (60)
+   Start at  19:20:18
+   Duration  407ms (tests 40%, transform 31%, import 25%, worker 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > makes a new empty folder only the runner's user may read (mode 0700), gives it and FLY_AGENT_ISOLATED=1 to the SSH session alone, and removes it after
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/on-machine.test.ts:787:32
+    785|     const folder = result.raw[3]?.options.env?.["FLY_CONFIG_DIR"] ?? "…
+    786|     expect(isAbsolute(folder)).toBe(true);
+    787|     expect(existsSync(folder)).toBe(false);
+       |                                ^
+    788|     expect(result.said).toEqual([MAKING, REMOVED]);
+    789|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > removes the folder only once the session's call has ended, whatever it did: it worked, the command failed, the tunnel's check failed, it ran out of time
+AssertionError: expected [] to deeply equal [ { …(2) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "ended": true,
+-     "path": "/tmp/tadayo-flyctl-mfaLaK",
+-   },
+- ]
++ []
+
+ ❯ src/on-machine.test.ts:849:24
+    847|       await running;
+    848|       expect(folder.startsWith(join(tmpdir(), "tadayo-flyctl-"))).toBe…
+    849|       expect(removals).toEqual([{ path: folder, ended: true }]);
+       |                        ^
+    850|       expect(existsSync(folder)).toBe(false);
+    851|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > removes the folder when the SSH call is refused or can't be started, and lets that failure through
+AssertionError: expected [] to deeply equal [ 'tadayo-flyctl-relative' ]
+
+- Expected
++ Received
+
+- [
+-   "tadayo-flyctl-relative",
+- ]
++ []
+
+ ❯ src/on-machine.test.ts:866:21
+    864|     expect(message(refused.outcome)).toBe("flyctl: an agent's own fold…
+    865|     expect(refused.calls).toEqual([LIST, ORGS, PEERS]);
+    866|     expect(removed).toEqual(["tadayo-flyctl-relative"]);
+       |                     ^
+    867|     // A spawn that fails (the made-up one has no answer for the sessi…
+    868|     const made: string[] = [];
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > gives a second session on the same runner a new folder and agent, so it never takes the first one's tunnel, whose peer is gone
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/on-machine.test.ts:895:68
+    893|     expect(new Set(folders).size).toBe(2);
+    894|     expect(result.outcomes).toEqual([undefined, undefined]);
+    895|     for (const folder of folders) expect(existsSync(folder ?? "")).toB…
+       |                                                                    ^
+    896|     expect(result.said.filter((line) => line.endsWith("removed the Wir…
+    897|     expect([...result.atFly]).toEqual([]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > says a folder it couldn't remove, and goes on to remove the peer, without failing a session that worked
+AssertionError: expected [ …(3) ] to deeply equal [ …(4) ]
+
+- Expected
++ Received
+
+  [
+    "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
+-   "storage-setup: the folder of flyctl's agent couldn't be removed: EBUSY: resource busy or locked",
+    "machine: ok",
+    "storage-setup: removed the WireGuard peer this run made",
+  ]
+
+ ❯ src/on-machine.test.ts:959:25
+    957|     // The folder's note comes as its removal fails, when the session …
+    958|     // machine printed is said.
+    959|     expect(result.said).toEqual([
+       |                         ^
+    960|       MAKING,
+    961|       "storage-setup: the folder of flyctl's agent couldn't be removed…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+

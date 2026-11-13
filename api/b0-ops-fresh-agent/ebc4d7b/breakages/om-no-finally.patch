@@ -1,0 +1,20 @@
+diff --git a/tools/ops/src/on-machine.ts b/tools/ops/src/on-machine.ts
+index a0b8ce1..ef862d4 100644
+--- a/tools/ops/src/on-machine.ts
++++ b/tools/ops/src/on-machine.ts
+@@ -308,12 +308,13 @@ export async function onMachine(input: OnMachineInput): Promise<void> {
+   );
+ 
+   let result: Spawned;
+-  try {
++  {
+     result = await fly.run(
+       ["ssh", "console", "-a", DEV_APP, "--machine", target.id, "-q", "-C", input.command.join(" ")],
+       { timeoutMs: SESSION_MS, ownAgent: folder },
+     );
+-  } finally {
++  }
++  {
+     // Only now that the call has ended. The session's agent stops at the end of its input, which
+     // flyctl holds, when flyctl exits (`internal/command/agent/run.go`); one cut off while it makes
+     // the peer (`Create`, which nothing bounds) finishes that call first, and can't save the peer

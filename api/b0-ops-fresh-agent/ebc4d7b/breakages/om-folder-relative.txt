@@ -1,0 +1,633 @@
+breakage: om-folder-relative
+registered: makes a new empty folder only the runner's user may read (mode 0700), gives it and FLY_AGENT_ISOLATED=1 to the SSH
+exit: 1
+verdict: caught
+left: []
+
+
+ RUN  v5.0.5 /home/user/tadayo-10c/tools/ops
+
+ ❯ src/on-machine.test.ts (40 tests | 31 failed) 124ms
+   ❯ onMachine: the command, over SSH (16)
+     × runs the command in the API's started Machine, as one string, says what it printed, then removes the run's peer 13ms
+     × gives the session the tunnel's bound, the connection and the command's time, and flyctl the token and HOME only, with the session's own agent 2ms
+     × fails with the command's exit code, after saying what it printed, when the command failed, and still removes the peer 5ms
+     × names the signal when one ended the command, with or without the reason x/crypto adds 2ms
+     × reads flyctl's line in colour, as a terminal would show it, the same way 2ms
+     × fails when the session ended without an exit status, which the Machine's end and a lost connection both give 3ms
+     × says every line of flyctl's failure to start its agent, which ends with its log, and words the failure from them 4ms
+     × removes the peer the agent made before its one check of the tunnel failed, and says running it again may work 2ms
+     × reads flyctl's failure as its own though it ends with an empty line, and says none of it as the Machine's 2ms
+     × reads any other exit code as flyctl's failure, never as the command's, even with a status line last 2ms
+     × fails after saying what came back when the session ran out of time, and still removes the peer 2ms
+     × says that the session makes a peer, and how to remove one by hand, before the session starts 3ms
+     × passes a session that exited 0 having printed nothing, which only the script's own last line can judge (run.ts) 2ms
+     × gives a line the Machine printed that looks like flyctl's no weight: only flyctl's exit code and last line count 1ms
+   ❯ onMachine: the run's WireGuard peer, and no other (15)
+     × removes every new peer named for this runner, and never one that was there before 1ms
+     × takes a new peer named for this runner whatever follows the host, an empty email part among them 1ms
+     × leaves a new peer not named for this runner, but fails the run, saying so without its name, whatever the session did 2ms
+     × fails a session that worked when a peer of this run's is still there, with the way to remove it by hand 2ms
+     × says a new peer not named for this runner too when one of this run's is still there, and fails with the one left 1ms
+     × goes on with the clean-up when a removal's flyctl can't be started, and counts its peer as left 1ms
+     × counts a peer as removed when flyctl failed after removing it, and as left when no list can tell 2ms
+     × fails when the session reached the Machine and no new peer of this run's is found, since one must have been made 3ms
+     × says no peer of this run's is listed after flyctl's own failure or a timeout, and what to look at by hand 1ms
+     × counts as left only a peer whose removal failed and a new list still shows, not one flyctl said it removed 3ms
+     × fails when the peers can't be listed after the session, or their list read, and says how to look by hand 2ms
+     × throws the command's failure, not the peer's, when both went wrong, and says the peer's first 1ms
+   ❯ onMachine: an agent of the session's own (7)
+     × makes a new empty folder only the runner's user may read (mode 0700), gives it and FLY_AGENT_ISOLATED=1 to the SSH session alone, and removes it after 1ms
+     × removes the folder only once the session's call has ended, whatever it did: it worked, the command failed, the tunnel's check failed, it ran out of time 28ms
+     × removes the folder when the SSH call is refused or can't be started, and lets that failure through 2ms
+     × gives a second session on the same runner a new folder and agent, so it never takes the first one's tunnel, whose peer is gone 5ms
+     × says a folder it couldn't remove, and goes on to remove the peer, without failing a session that worked 1ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  31 failed | 29 passed (60)
+   Start at  19:20:17
+   Duration  414ms (tests 44%, transform 28%, import 25%, worker 3%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 31 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > runs the command in the API's started Machine, as one string, says what it printed, then removes the run's peer
+AssertionError: expected OpsError: flyctl: an agent's own folder i… to be undefined
+
+- Expected:
+undefined
+
++ Received:
+OpsError {
+  "message": "flyctl: an agent's own folder is given by its absolute path",
+  "name": "OpsError",
+}
+
+ ❯ src/on-machine.test.ts:120:28
+    118|   it("runs the command in the API's started Machine, as one string, sa…
+    119|     const result = await run(routes({ stdout: "first\nsecond\n", stder…
+    120|     expect(result.outcome).toBeUndefined();
+       |                            ^
+    121|     expect(result.calls).toEqual([LIST, ORGS, PEERS, SSH, PEERS, `${RE…
+    122|     expect(result.raw[3]?.args).toEqual([
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/31]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > gives the session the tunnel's bound, the connection and the command's time, and flyctl the token and HOME only, with the session's own agent
+AssertionError: expected undefined to be 600000 // Object.is equality
+
+- Expected:
+600000
+
++ Received:
+undefined
+
+ ❯ src/on-machine.test.ts:140:46
+    138|     expect(SESSION_MS).toBe((TUNNEL_SECONDS + 60 + COMMAND_SECONDS) * …
+    139|     expect(SESSION_MS).toBe(600_000);
+    140|     expect(result.raw[3]?.options.timeoutMs).toBe(600_000);
+       |                                              ^
+    141|     const folder = result.raw[3]?.options.env?.["FLY_CONFIG_DIR"] ?? "…
+    142|     expect(folder.startsWith(join(tmpdir(), "tadayo-flyctl-"))).toBe(t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/31]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > fails with the command's exit code, after saying what it printed, when the command failed, and still removes the peer
+AssertionError: expected 'flyctl: an agent\'s own folder is giv…' to be 'storage-setup: it failed on the Machi…' // Object.is equality
+
+Expected: "storage-setup: it failed on the Machine, with exit code 1"
+Received: "flyctl: an agent's own folder is given by its absolute path"
+
+ ❯ src/on-machine.test.ts:155:37
+    153|       routes({ code: 1, stdout: "half of it\n", stderr: `set SUPABASE_…
+    154|     );
+    155|     expect(message(result.outcome)).toBe("storage-setup: it failed on …
+       |                                     ^
+    156|     // flyctl's own line isn't said as the Machine's: the failure says…
+    157|     expect(result.said).toEqual([MAKING, "machine: half of it", "machi…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/31]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > names the signal when one ended the command, with or without the reason x/crypto adds
+AssertionError: Error: ssh shell: Process exited with status 137 from signal KILL
+: expected 'flyctl: an agent\'s own folder is giv…' to be 'storage-setup: it failed on the Machi…' // Object.is equality
+
+Expected: "storage-setup: it failed on the Machine, with exit code 137, ended by signal KILL"
+Received: "flyctl: an agent's own folder is given by its absolute path"
+
+ ❯ src/on-machine.test.ts:168:45
+    166|     ] as const) {
+    167|       const result = await run(routes({ code: 1, stderr: line }));
+    168|       expect(message(result.outcome), line).toBe(`storage-setup: it fa…
+       |                                             ^
+    169|       expect(result.said, line).toEqual([MAKING, REMOVED]);
+    170|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/31]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > reads flyctl's line in colour, as a terminal would show it, the same way
+AssertionError: expected 'flyctl: an agent\'s own folder is giv…' to be 'storage-setup: it failed on the Machi…' // Object.is equality
+
+Expected: "storage-setup: it failed on the Machine, with exit code 3"
+Received: "flyctl: an agent's own folder is given by its absolute path"
+
+ ❯ src/on-machine.test.ts:177:37
+    175|       routes({ code: 1, stderr: "\u001b[31mError: \u001b[0mssh shell: …
+    176|     );
+    177|     expect(message(result.outcome)).toBe("storage-setup: it failed on …
+       |                                     ^
+    178|     expect(result.said).toEqual([MAKING, REMOVED]);
+    179|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/31]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > fails when the session ended without an exit status, which the Machine's end and a lost connection both give
+AssertionError: expected 'flyctl: an agent\'s own folder is giv…' to be 'storage-setup: the session ended with…' // Object.is equality
+
+Expected: "storage-setup: the session ended without saying how the command ended: the Machine closed it, or the connection to it was lost"
+Received: "flyctl: an agent's own folder is given by its absolute path"
+
+ ❯ src/on-machine.test.ts:189:37
+    187|       }),
+    188|     );
+    189|     expect(message(result.outcome)).toBe(
+       |                                     ^
+    190|       "storage-setup: the session ended without saying how the command…
+    191|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/31]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > says every line of flyctl's failure to start its agent, which ends with its log, and words the failure from them
+AssertionError: expected 'flyctl: an agent\'s own folder is giv…' to be 'storage-setup: flyctl couldn\'t run i…' // Object.is equality
+
+Expected: "storage-setup: flyctl couldn't run it on the Machine: exit code 1: Error: can't establish agent: agent: failed to start / The agent failed to start with the following error log: / 2026/11/12 08:00:00.000000 srv the log's line"
+Received: "flyctl: an agent's own folder is given by its absolute path"
+
+ ❯ src/on-machine.test.ts:205:37
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/31]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > removes the peer the agent made before its one check of the tunnel failed, and says running it again may work
+AssertionError: expected 'flyctl: an agent\'s own folder is giv…' to be 'storage-setup: flyctl couldn\'t run i…' // Object.is equality
+
+Expected: "storage-setup: flyctl couldn't run it on the Machine: exit code 1: Error: tunnel unavailable: context deadline exceeded; flyctl checks a new tunnel only once, for at most five seconds, so running the script again may work"
+Received: "flyctl: an agent's own folder is given by its absolute path"
+
+ ❯ src/on-machine.test.ts:224:37
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/31]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > reads flyctl's failure as its own though it ends with an empty line, and says none of it as the Machine's
+AssertionError: expected 'flyctl: an agent\'s own folder is giv…' to be 'storage-setup: flyctl couldn\'t run i…' // Object.is equality
+
+Expected: "storage-setup: flyctl couldn't run it on the Machine: exit code 1: Error: ssh: can't build tunnel for tadayo-org: websocket: bad handshake"
+Received: "flyctl: an agent's own folder is given by its absolute path"
+
+ ❯ src/on-machine.test.ts:234:37
+    232|       routes({ code: 1, stderr: "Error: ssh: can't build tunnel for ta…
+    233|     );
+    234|     expect(message(result.outcome)).toBe(
+       |                                     ^
+    235|       "storage-setup: flyctl couldn't run it on the Machine: exit code…
+    236|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/31]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > reads any other exit code as flyctl's failure, never as the command's, even with a status line last
+AssertionError: {"code":126,"stderr":"Error: context deadline exceeded\n"}: expected 'flyctl: an agent\'s own folder is giv…' to match /^storage-setup: flyctl couldn't run i…/
+
+- Expected:
+/^storage-setup: flyctl couldn't run it on the Machine: (exit code \d+)/
+
++ Received:
+"flyctl: an agent's own folder is given by its absolute path"
+
+ ❯ src/on-machine.test.ts:250:62
+    248|     ]) {
+    249|       const result = await run(routes(reply, []));
+    250|       expect(message(result.outcome), JSON.stringify(reply)).toMatch(
+       |                                                              ^
+    251|         /^storage-setup: flyctl couldn't run it on the Machine: (exit …
+    252|       );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/31]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > fails after saying what came back when the session ran out of time, and still removes the peer
+AssertionError: expected 'flyctl: an agent\'s own folder is giv…' to be 'storage-setup: the session ran out of…' // Object.is equality
+
+Expected: "storage-setup: the session ran out of time after 600 seconds, and the command may still be running on the Machine"
+Received: "flyctl: an agent's own folder is given by its absolute path"
+
+ ❯ src/on-machine.test.ts:261:37
+    259|       routes({ code: null, timedOut: true, stdout: "supabase-probe: ru…
+    260|     );
+    261|     expect(message(result.outcome)).toBe(
+       |                                     ^
+    262|       "storage-setup: the session ran out of time after 600 seconds, a…
+    263|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/31]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > says that the session makes a peer, and how to remove one by hand, before the session starts
+OpsError: flyctl: an agent's own folder is given by its absolute path
+ ❯ Object.run src/fly.ts:101:31
+     99|       const { ownAgent, ...rest } = options;
+    100|       if (ownAgent !== undefined && !isAbsolute(ownAgent)) {
+    101|         return Promise.reject(new OpsError("flyctl: an agent's own fol…
+       |                               ^
+    102|       }
+    103|       const env =
+ ❯ onMachine src/on-machine.ts:312:24
+ ❯ src/on-machine.test.ts:283:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/31]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > passes a session that exited 0 having printed nothing, which only the script's own last line can judge (run.ts)
+AssertionError: expected OpsError: flyctl: an agent's own folder i… to be undefined
+
+- Expected:
+undefined
+
++ Received:
+OpsError {
+  "message": "flyctl: an agent's own folder is given by its absolute path",
+  "name": "OpsError",
+}
+
+ ❯ src/on-machine.test.ts:298:28
+    296|   it("passes a session that exited 0 having printed nothing, which onl…
+    297|     const result = await run(routes({}));
+    298|     expect(result.outcome).toBeUndefined();
+       |                            ^
+    299|     expect(result.said).toEqual([MAKING, REMOVED]);
+    300|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/31]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > gives a line the Machine printed that looks like flyctl's no weight: only flyctl's exit code and last line count
+AssertionError: expected OpsError: flyctl: an agent's own folder i… to be undefined
+
+- Expected:
+undefined
+
++ Received:
+OpsError {
+  "message": "flyctl: an agent's own folder is given by its absolute path",
+  "name": "OpsError",
+}
+
+ ❯ src/on-machine.test.ts:304:28
+    302|   it("gives a line the Machine printed that looks like flyctl's no wei…
+    303|     const passed = await run(routes({ stderr: exited(1) }));
+    304|     expect(passed.outcome).toBeUndefined();
+       |                            ^
+    305|     expect(passed.said).toEqual([MAKING, "machine: Error: ssh shell: P…
+    306|     // Exit 1 with the Machine's imitation earlier and flyctl's real f…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/31]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > removes every new peer named for this runner, and never one that was there before
+AssertionError: expected OpsError: flyctl: an agent's own folder i… to be undefined
+
+- Expected:
+undefined
+
++ Received:
+OpsError {
+  "message": "flyctl: an agent's own folder is given by its absolute path",
+  "name": "OpsError",
+}
+
+ ❯ src/on-machine.test.ts:356:28
+    354|     const second = sessionPeer(HOST, MADE + 1_000, "another-example-in…
+    355|     const result = await run(routes({}, [earlier, LAPTOP, byHand, OURS…
+    356|     expect(result.outcome).toBeUndefined();
+       |                            ^
+    357|     expect(result.calls.slice(5)).toEqual([`${REMOVE} ${OURS}`, `${REM…
+    358|     expect(result.said).toEqual([MAKING, REMOVED]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/31]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > takes a new peer named for this runner whatever follows the host, an empty email part among them
+AssertionError: expected 'flyctl: an agent\'s own folder is giv…' to match /^storage-setup: flyctl couldn't run i…/
+
+- Expected:
+/^storage-setup: flyctl couldn't run it on the Machine: exit code 1: /
+
++ Received:
+"flyctl: an agent's own folder is given by its absolute path"
+
+ ❯ src/on-machine.test.ts:367:37
+    365|       routes({ code: 1, stderr: "Error: error connecting to SSH server…
+    366|     );
+    367|     expect(message(result.outcome)).toMatch(/^storage-setup: flyctl co…
+       |                                     ^
+    368|     expect(result.calls.at(-1)).toBe(`${REMOVE} ${noEmail}`);
+    369|     expect(result.said).toEqual([MAKING, REMOVED]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/31]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > leaves a new peer not named for this runner, but fails the run, saying so without its name, whatever the session did
+AssertionError: expected 'flyctl: an agent\'s own folder is giv…' to be 'storage-setup: 2 WireGuard peers that…' // Object.is equality
+
+Expected: "storage-setup: 2 WireGuard peers that aren't named for this runner appeared in the organization during the session and are left, though this run's may be among them: `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-"
+Received: "flyctl: an agent's own folder is given by its absolute path"
+
+ ❯ src/on-machine.test.ts:385:70
+    383|         JSON.stringify(session),
+    384|       ).toEqual([]);
+    385|       if (session.code === undefined) expect(message(alone.outcome)).t…
+       |                                                                      ^
+    386|       else expect(alone.said.at(-1), JSON.stringify(session)).toBe(str…
+    387|       expect([...alone.said, message(alone.outcome)].join("\n")).not.t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/31]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > fails a session that worked when a peer of this run's is still there, with the way to remove it by hand
+AssertionError: flyctl's removal of a WireGuard peer this run made ended with exit code 1: expected [ Array(1) ] to deeply equal [ …(3) ]
+
+- Expected
++ Received
+
+  [
+    "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
+-   "machine: done",
+-   "storage-setup: flyctl's removal of a WireGuard peer this run made ended with exit code 1",
+  ]
+
+ ❯ src/on-machine.test.ts:428:33
+    426|         [REMOVE, removal],
+    427|       ]);
+    428|       expect(result.said, said).toEqual([MAKING, "machine: done", `sto…
+       |                                 ^
+    429|       expect(message(result.outcome)).toBe(
+    430|         `storage-setup: 1 of the WireGuard peers this run made is stil…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/31]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > says a new peer not named for this runner too when one of this run's is still there, and fails with the one left
+AssertionError: expected [ Array(1) ] to deeply equal [ …(4) ]
+
+- Expected
++ Received
+
+  [
+    "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
+-   "machine: done",
+-   "storage-setup: flyctl's removal of a WireGuard peer this run made ended with exit code 1",
+-   "storage-setup: 1 WireGuard peer that isn't named for this runner appeared in the organization during the session and is left: `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
+  ]
+
+ ❯ src/on-machine.test.ts:445:25
+    443|       [REMOVE, { code: 1 }],
+    444|     ]);
+    445|     expect(result.said).toEqual([
+       |                         ^
+    446|       MAKING,
+    447|       "machine: done",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/31]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > goes on with the clean-up when a removal's flyctl can't be started, and counts its peer as left
+AssertionError: expected [ Array(1) ] to deeply equal [ …(3) ]
+
+- Expected
++ Received
+
+  [
+    "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
+-   "machine: done",
+-   "storage-setup: flyctl's removal of a WireGuard peer this run made couldn't be started",
+  ]
+
+ ❯ src/on-machine.test.ts:465:25
+    463|       [PEERS, peersOf(peerList([]), peerList([OURS]))],
+    464|     ]);
+    465|     expect(result.said).toEqual([
+       |                         ^
+    466|       MAKING,
+    467|       "machine: done",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/31]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > counts a peer as removed when flyctl failed after removing it, and as left when no list can tell
+AssertionError: expected OpsError: flyctl: an agent's own folder i… to be undefined
+
+- Expected:
+undefined
+
++ Received:
+OpsError {
+  "message": "flyctl: an agent's own folder is given by its absolute path",
+  "name": "OpsError",
+}
+
+ ❯ src/on-machine.test.ts:485:26
+    483|       [REMOVE, { code: 1, stdout: "Removed peer.\n", stderr: "Error: e…
+    484|     ]);
+    485|     expect(gone.outcome).toBeUndefined();
+       |                          ^
+    486|     expect(gone.said).toEqual([
+    487|       MAKING,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/31]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > fails when the session reached the Machine and no new peer of this run's is found, since one must have been made
+AssertionError: expected 'flyctl: an agent\'s own folder is giv…' to be 'storage-setup: none of the organizati…' // Object.is equality
+
+Expected: "storage-setup: none of the organization's WireGuard peers is one this run made, though its session reached the Machine, so it can't say it removed it: `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-"
+Received: "flyctl: an agent's own folder is given by its absolute path"
+
+ ❯ src/on-machine.test.ts:511:39
+    509|     ] as const) {
+    510|       const result = await run(routes({ stdout: "done\n" }, after, bef…
+    511|       expect(message(result.outcome)).toBe(NONE_FOUND);
+       |                                       ^
+    512|       expect(result.calls).toEqual([LIST, ORGS, PEERS, SSH, PEERS]);
+    513|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/31]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > says no peer of this run's is listed after flyctl's own failure or a timeout, and what to look at by hand
+AssertionError: {"code":1,"stderr":"Error: tunnel unavailable: context deadline exceeded\n"}: expected [ Array(1) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+    "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
+-   "storage-setup: no new WireGuard peer named for this runner is listed, so none was removed; if the session made one, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
+  ]
+
+ ❯ src/on-machine.test.ts:535:52
+    533|     ]) {
+    534|       const result = await run(routes(session, []));
+    535|       expect(result.said, JSON.stringify(session)).toEqual([MAKING, NO…
+       |                                                    ^
+    536|       expect(message(result.outcome), JSON.stringify(session)).not.toB…
+    537|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/31]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > counts as left only a peer whose removal failed and a new list still shows, not one flyctl said it removed
+AssertionError: expected [] to deeply equal [ …(3) ]
+
+- Expected
++ Received
+
+- [
+-   "flyctl wireguard remove tadayo-org interactive-runnervm0abc1-someone-example-invalid-01M772DANR0123456789ABCDEF",
+-   "flyctl wireguard remove tadayo-org interactive-runnervm0abc1-another-example-invalid-01M772DBN00123456789ABCDEF",
+-   "flyctl wireguard list tadayo-org --json",
+- ]
++ []
+
+ ❯ src/on-machine.test.ts:550:35
+    548|       [REMOVE, (call) => (call.args.at(-1) === OURS ? {} : { code: 1 }…
+    549|     ]);
+    550|     expect(result.calls.slice(5)).toEqual([`${REMOVE} ${OURS}`, `${REM…
+       |                                   ^
+    551|     expect(message(result.outcome)).toBe(
+    552|       `storage-setup: 1 of the WireGuard peers this run made is still …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/31]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > fails when the peers can't be listed after the session, or their list read, and says how to look by hand
+AssertionError: {"code":1,"stderr":"Error: unauthorized\n"}: expected 'flyctl: an agent\'s own folder is giv…' to be 'storage-setup: flyctl couldn\'t list …' // Object.is equality
+
+Expected: "storage-setup: flyctl couldn't list the organization's WireGuard peers (exit code 1: Error: unauthorized), so the one this run may have made can't be removed: `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-"
+Received: "flyctl: an agent's own folder is given by its absolute path"
+
+ ❯ src/on-machine.test.ts:571:62
+    569|         [PEERS, peersOf(peerList([]), reply)],
+    570|       ]);
+    571|       expect(message(result.outcome), JSON.stringify(reply)).toBe(
+       |                                                              ^
+    572|         `storage-setup: flyctl couldn't list the organization's WireGu…
+    573|       );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[25/31]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > throws the command's failure, not the peer's, when both went wrong, and says the peer's first
+AssertionError: expected 'flyctl: an agent\'s own folder is giv…' to be 'storage-setup: it failed on the Machi…' // Object.is equality
+
+Expected: "storage-setup: it failed on the Machine, with exit code 4"
+Received: "flyctl: an agent's own folder is given by its absolute path"
+
+ ❯ src/on-machine.test.ts:637:37
+    635|       [REMOVE, { code: 1 }],
+    636|     ]);
+    637|     expect(message(result.outcome)).toBe("storage-setup: it failed on …
+       |                                     ^
+    638|     expect(result.said).toEqual([
+    639|       MAKING,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[26/31]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > makes a new empty folder only the runner's user may read (mode 0700), gives it and FLY_AGENT_ISOLATED=1 to the SSH session alone, and removes it after
+AssertionError: expected OpsError: flyctl: an agent's own folder i… to be undefined
+
+- Expected:
+undefined
+
++ Received:
+OpsError {
+  "message": "flyctl: an agent's own folder is given by its absolute path",
+  "name": "OpsError",
+}
+
+ ❯ src/on-machine.test.ts:783:28
+    781|       [REMOVE, {}],
+    782|     ]);
+    783|     expect(result.outcome).toBeUndefined();
+       |                            ^
+    784|     expect(during).toEqual({ exists: true, empty: true, mode: 0o700 });
+    785|     const folder = result.raw[3]?.options.env?.["FLY_CONFIG_DIR"] ?? "…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[27/31]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > removes the folder only once the session's call has ended, whatever it did: it worked, the command failed, the tunnel's check failed, it ran out of time
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/on-machine.test.ts:844:34
+    842|       // While the session runs (held for 25 ms, many turns of the eve…
+    843|       await new Promise((resolve) => setTimeout(resolve, 25));
+    844|       expect(existsSync(folder)).toBe(true);
+       |                                  ^
+    845|       expect(removals).toEqual([]);
+    846|       release();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[28/31]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > removes the folder when the SSH call is refused or can't be started, and lets that failure through
+AssertionError: expected OpsError: flyctl: an agent's own folder i… to deeply equal Error: the fake has no route for: flyctl …
+
+- Expected
++ Received
+
+- Error {
+-   "message": "the fake has no route for: flyctl ssh console -a tadayo-api-dev --machine a1 -q -C node /app/tools/ops/src/main.ts storage-setup --here --ref abcdefghijklmnopqrst",
++ OpsError {
++   "message": "flyctl: an agent's own folder is given by its absolute path",
++   "name": "OpsError",
+  }
+
+ ❯ src/on-machine.test.ts:881:28
+    879|       },
+    880|     );
+    881|     expect(failed.outcome).toEqual(new Error(`the fake has no route fo…
+       |                            ^
+    882|     expect(failed.calls).toEqual([LIST, ORGS, PEERS, SSH]);
+    883|     expect(made).toHaveLength(1);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[29/31]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > gives a second session on the same runner a new folder and agent, so it never takes the first one's tunnel, whose peer is gone
+AssertionError: expected [] to have a length of 2 but got +0
+
+- Expected
++ Received
+
+- 2
++ 0
+
+ ❯ src/on-machine.test.ts:892:21
+    890|       .filter((call) => call.line.startsWith("flyctl ssh console"))
+    891|       .map((call) => call.env?.["FLY_CONFIG_DIR"]);
+    892|     expect(folders).toHaveLength(2);
+       |                     ^
+    893|     expect(new Set(folders).size).toBe(2);
+    894|     expect(result.outcomes).toEqual([undefined, undefined]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[30/31]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > says a folder it couldn't remove, and goes on to remove the peer, without failing a session that worked
+AssertionError: expected OpsError: flyctl: an agent's own folder i… to be undefined
+
+- Expected:
+undefined
+
++ Received:
+OpsError {
+  "message": "flyctl: an agent's own folder is given by its absolute path",
+  "name": "OpsError",
+}
+
+ ❯ src/on-machine.test.ts:956:28
+    954|       },
+    955|     });
+    956|     expect(result.outcome).toBeUndefined();
+       |                            ^
+    957|     // The folder's note comes as its removal fails, when the session …
+    958|     // machine printed is said.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[31/31]⎯
+

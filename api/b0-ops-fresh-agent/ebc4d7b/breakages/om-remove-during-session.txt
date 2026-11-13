@@ -1,0 +1,69 @@
+breakage: om-remove-during-session
+registered: removes the folder only once the session's call has ended, whatever it did
+exit: 1
+verdict: caught
+left: []
+
+
+ RUN  v5.0.5 /home/user/tadayo-10c/tools/ops
+
+ ❯ src/on-machine.test.ts (40 tests | 1 failed) 139ms
+   ❯ onMachine: an agent of the session's own (7)
+     × removes the folder only once the session's call has ended, whatever it did: it worked, the command failed, the tunnel's check failed, it ran out of time 38ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 59 passed (60)
+     Errors  1 error
+   Start at  19:20:20
+   Duration  414ms (tests 47%, transform 28%, import 22%, worker 3%)
+
+(node:28327) PromiseRejectionHandledWarning: Promise rejection was handled asynchronously (rejection id: 12)
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > removes the folder only once the session's call has ended, whatever it did: it worked, the command failed, the tunnel's check failed, it ran out of time
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/on-machine.test.ts:844:34
+    842|       // While the session runs (held for 25 ms, many turns of the eve…
+    843|       await new Promise((resolve) => setTimeout(resolve, 25));
+    844|       expect(existsSync(folder)).toBe(true);
+       |                                  ^
+    845|       expect(removals).toEqual([]);
+    846|       release();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+Error: the fake has no route for: flyctl ssh console -a tadayo-api-dev --machine a1 -q -C node /app/tools/ops/src/main.ts storage-setup --here --ref abcdefghijklmnopqrst
+ ❯ spawn test/fake-fly.ts:42:52
+     40|     );
+     41|     const route = routes[index];
+     42|     if (route === undefined) return Promise.reject(new Error(`the fake…
+       |                                                    ^
+     43|     const earlier = taken.get(index) ?? 0;
+     44|     taken.set(index, earlier + 1);
+ ❯ Object.run src/fly.ts:105:14
+ ❯ onMachine src/on-machine.ts:312:19
+ ❯ run src/on-machine.test.ts:88:19
+ ❯ src/on-machine.test.ts:869:20
+ ❯ ../../node_modules/.pnpm/vitest@5.0.5_@types+node@26.6.6_vite@8.3.5_@types+node@26.6.6_yaml@2.9.1_/node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+This error originated in "src/on-machine.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The last test to run before this error was "removes the folder when the SSH call is refused or can't be started, and lets that failure through". This means either:
+- the error was thrown while Vitest was running this test, or
+- the error was thrown after the test completed, and this was the most recent test at that point.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+

@@ -1,0 +1,20 @@
+diff --git a/tools/ops/src/on-machine.ts b/tools/ops/src/on-machine.ts
+index a0b8ce1..c93b9d1 100644
+--- a/tools/ops/src/on-machine.ts
++++ b/tools/ops/src/on-machine.ts
+@@ -295,14 +295,7 @@ export async function onMachine(input: OnMachineInput): Promise<void> {
+   }
+   const host = input.host ?? hostname();
+   const folders = input.agentFolder ?? AGENT_FOLDER;
+-  let folder: string;
+-  try {
+-    folder = await folders.make();
+-  } catch (error) {
+-    throw new OpsError(
+-      `${label}: couldn't make a folder for flyctl's agent (${wordsOf(error)}), so no SSH session is started`,
+-    );
+-  }
++  const folder = await folders.make();
+   note(
+     `${label}: the SSH session makes a WireGuard peer in ${org}, which this run removes after it; if the run is cancelled or cut off first, ${byHandFor(org, host)}`,
+   );

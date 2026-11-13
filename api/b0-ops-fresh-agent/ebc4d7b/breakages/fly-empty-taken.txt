@@ -1,0 +1,46 @@
+breakage: fly-empty-taken
+registered: refuses an agent's folder that isn't an absolute path, before it runs anything
+exit: 1
+verdict: caught
+left: []
+
+
+ RUN  v5.0.5 /home/user/tadayo-10c/tools/ops
+
+ ❯ src/fly.test.ts (20 tests | 1 failed) 29ms
+   ❯ flyOf: flyctl with the Fly token and HOME and nothing else (6)
+     × refuses an agent's folder that isn't an absolute path, before it runs anything 11ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 59 passed (60)
+   Start at  19:20:12
+   Duration  421ms (tests 63%, import 20%, transform 14%, worker 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/fly.test.ts > flyOf: flyctl with the Fly token and HOME and nothing else > refuses an agent's folder that isn't an absolute path, before it runs anything
+AssertionError: promise resolved "{ code: +0, timedOut: false, …(2) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "code": 0,
++   "stderr": "",
++   "stdout": "",
++   "timedOut": false,
+  }
+
+ ❯ src/fly.test.ts:83:25
+     81|     for (const ownAgent of ["", "tadayo-flyctl-abc123", "./tadayo-flyc…
+     82|       const call = fly.run(["status", "-a", "tadayo-api-dev"], { ownAg…
+     83|       await expect(call).rejects.toBeInstanceOf(OpsError);
+       |                         ^
+     84|       await expect(call).rejects.toThrow("flyctl: an agent's own folde…
+     85|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

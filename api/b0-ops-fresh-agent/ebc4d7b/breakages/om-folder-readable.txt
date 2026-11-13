@@ -1,0 +1,44 @@
+breakage: om-folder-readable
+registered: makes a new empty folder only the runner's user may read (mode 0700), gives it and FLY_AGENT_ISOLATED=1 to the SSH
+exit: 1
+verdict: caught
+left: []
+
+
+ RUN  v5.0.5 /home/user/tadayo-10c/tools/ops
+
+ ❯ src/on-machine.test.ts (40 tests | 1 failed) 235ms
+   ❯ onMachine: an agent of the session's own (7)
+     × makes a new empty folder only the runner's user may read (mode 0700), gives it and FLY_AGENT_ISOLATED=1 to the SSH session alone, and removes it after 15ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 59 passed (60)
+   Start at  19:20:16
+   Duration  471ms (tests 56%, transform 26%, import 16%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > makes a new empty folder only the runner's user may read (mode 0700), gives it and FLY_AGENT_ISOLATED=1 to the SSH session alone, and removes it after
+AssertionError: expected { Object (exists, empty, ...) } to deeply equal { Object (exists, empty, ...) }
+
+- Expected
++ Received
+
+  {
+    "empty": true,
+    "exists": true,
+-   "mode": 448,
++   "mode": 493,
+  }
+
+ ❯ src/on-machine.test.ts:784:20
+    782|     ]);
+    783|     expect(result.outcome).toBeUndefined();
+    784|     expect(during).toEqual({ exists: true, empty: true, mode: 0o700 });
+       |                    ^
+    785|     const folder = result.raw[3]?.options.env?.["FLY_CONFIG_DIR"] ?? "…
+    786|     expect(isAbsolute(folder)).toBe(true);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

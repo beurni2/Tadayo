@@ -1,0 +1,13 @@
+diff --git a/tools/ops/src/on-machine.ts b/tools/ops/src/on-machine.ts
+index a0b8ce1..815994c 100644
+--- a/tools/ops/src/on-machine.ts
++++ b/tools/ops/src/on-machine.ts
+@@ -322,7 +322,7 @@ export async function onMachine(input: OnMachineInput): Promise<void> {
+     // job: a folder left is said, and the run goes on to its peer, which matters more. A process
+     // ended from outside (a run cancelled, the job's time) never gets here, and leaves the folder.
+     await folders.remove(folder).catch((error: unknown) => {
+-      note(`${label}: the folder of flyctl's agent couldn't be removed: ${wordsOf(error)}`);
++      void error;
+     });
+   }
+ 
