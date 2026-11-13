@@ -1,0 +1,12 @@
+# actionlint's settings, which it reads from here when it runs in the repository (docs/GITHUB.md,
+# "Workflow files": every workflow passes it with no findings before it is pushed).
+# `xcode-27` is GitHub's own hosted runner label for its Xcode 27 image (actions/runner-images'
+# README: `xcode-27` and `xcode-27-xlarge`, arm64), which ios.yml's build job runs on; it is not a
+# self-hosted runner. actionlint 1.7.12's built-in list of GitHub's labels predates that image,
+# and this list is the only way actionlint takes a label it doesn't know. It names that one label
+# and nothing else, so every other label and every other rule are checked as before
+# (tools/ci/ios_steps_test.py, WorkflowFileTest; tools/ci/toolchain.py).
+# CI configuration: change it only in its own PR (docs/INVARIANTS.md T58).
+self-hosted-runner:
+  labels:
+    - xcode-27
