@@ -146,13 +146,16 @@ struct ProfileForm: View {
                 // between line boxes, as A02-age's is): as a line shows, and as the keyboard comes
                 // up, since the keyboard's own scrolling keeps the field clear of the keyboard,
                 // not of Continue over it (`ios` run 43336877808 drew Continue over the field's
-                // last 8 points, its focus ring's last 12, on an iPhone 17 at the default size).
-                // The column moves only as far as it must, and not at all where it is clear.
+                // last 8 points, its focus ring's last 12, on an iPhone 17 at the default size),
+                // and again each time a keyboard already up changes height (another keyboard,
+                // a hardware keyboard's bar giving way to the software one), since a column keeps
+                // its offset as the room under it shrinks. The column moves only as far as it
+                // must, and not at all where it is clear.
                 .onChange(of: line) { _, shown in
                     if shown != nil { scroll.scrollTo(Self.footID, anchor: .bottom) }
                 }
-                .onChange(of: keyboardShows, initial: true) { _, shows in
-                    if shows { scroll.scrollTo(Self.footID, anchor: .bottom) }
+                .onChange(of: keyboardRise, initial: true) { _, rise in
+                    if rise > 0 { scroll.scrollTo(Self.footID, anchor: .bottom) }
                 }
         }
         .navigationTitle(Text("auth.profile.navTitle"))
@@ -296,7 +299,13 @@ struct ProfileForm: View {
 
     /// Whether a keyboard, or a hardware keyboard's bar, shows.
     private var keyboardShows: Bool {
-        keyboard ?? (room.keyboard > 0)
+        keyboardRise > 0
+    }
+
+    /// How far a keyboard, or a hardware keyboard's bar, reaches up into the screen: 0 while none
+    /// shows, and 1 for a test's keyboard, which has no height.
+    private var keyboardRise: CGFloat {
+        keyboard.map { $0 ? 1 : 0 } ?? room.keyboard
     }
 }
 

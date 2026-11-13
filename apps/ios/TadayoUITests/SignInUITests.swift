@@ -259,16 +259,17 @@ final class SignInUITests: XCTestCase {
             app.staticTexts["Your sign-in ended. Enter your email to sign in again."].exists)
     }
 
-    /// A03's first save, from Continue, gets no answer (`-TadayoUITestNameFailsThenHangs`): its
-    /// line shows under the field and the column is scrolled so its frame ends at least 24 above
-    /// Continue (its line box at least 16: `errorToActionMinimum`), the field above it under the
-    /// bar, with the keyboard still up and the name still focused (IMPLEMENTATION.md: "On failure
-    /// the name remains focused and the keyboard stays up. The body scrolls to keep the field and
-    /// error reachable above Continue"; frame 11), and editing is back. The next save, from the
-    /// keyboard's Return key, which ends the field's editing, never answers: the name is then
-    /// read-only, not disabled, so typing goes nowhere and `typeText` fails the test if the field
-    /// lost its focus; Continue keeps its label and says "In progress"; Add photo and Leave
-    /// sign-in are inactive (`busyPrimary`).
+    /// A03's first save, from the keyboard's Return key, which ends the field's editing, gets no
+    /// answer (`-TadayoUITestNameFailsThenHangs`): its line shows under the field and the column
+    /// is scrolled so its frame ends at least 24 above Continue (its line box at least 16:
+    /// `errorToActionMinimum`), the field above it under the bar, with the keyboard still up and
+    /// the name still focused (IMPLEMENTATION.md: "On failure the name remains focused and the
+    /// keyboard stays up. The body scrolls to keep the field and error reachable above Continue";
+    /// frame 11), and editing is back. The next save, from Continue, never answers: the name is
+    /// then read-only, not disabled, so typing goes nowhere and `typeText` fails the test if the
+    /// field lost its focus, also after Return is pressed during that save, when no save starts
+    /// and only the save going puts the focus back (`busyPrimary.field`); Continue keeps its
+    /// label and says "In progress"; Add photo and Leave sign-in are inactive (`busyPrimary`).
     @MainActor func testAProfileFailureStaysInViewAndTheNameIsReadOnlyWhileSaved() {
         let app = launch("-TadayoUITestNameFailsThenHangs")
         signInToTheAge(app)
@@ -277,7 +278,7 @@ final class SignInUITests: XCTestCase {
         XCTAssertTrue(name.waitForExistence(timeout: 5))
         app.typeText("Ben")
         let next = app.buttons["Continue"]
-        next.tap()
+        app.typeText("\n")
 
         let line = app.staticTexts[
             "Couldn’t save your profile. Check your connection and try again."]
@@ -298,7 +299,7 @@ final class SignInUITests: XCTestCase {
         app.typeText("ji")
         XCTAssertEqual(name.value as? String, "Benji")
         XCTAssertTrue(next.isEnabled)
-        app.typeText("\n")
+        next.tap()
 
         let busy = expectation(
             for: NSPredicate(format: "value == %@", "In progress"), evaluatedWith: next)
@@ -307,6 +308,10 @@ final class SignInUITests: XCTestCase {
         XCTAssertEqual(next.label, "Continue")
         XCTAssertFalse(bar.buttons["Leave sign-in"].isEnabled)
         XCTAssertFalse(app.buttons["Add photo"].isEnabled)
+        app.typeText("x")
+        XCTAssertEqual(name.value as? String, "Benji")
+        XCTAssertTrue(app.keyboards.firstMatch.exists)
+        app.typeText("\n")
         app.typeText("x")
         XCTAssertEqual(name.value as? String, "Benji")
         XCTAssertTrue(app.keyboards.firstMatch.exists)
