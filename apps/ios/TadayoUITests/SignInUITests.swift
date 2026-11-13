@@ -259,14 +259,16 @@ final class SignInUITests: XCTestCase {
             app.staticTexts["Your sign-in ended. Enter your email to sign in again."].exists)
     }
 
-    /// A03's first save gets no answer (`-TadayoUITestNameFailsThenHangs`): its line shows under
-    /// the field and the column is scrolled so it ends at least 16 above Continue, the field
-    /// above it under the bar, with the keyboard still up and the name still focused
-    /// (IMPLEMENTATION.md: "On failure the name remains focused and the keyboard stays up. The
-    /// body scrolls to keep the field and error reachable above Continue"; frame 11), and editing
-    /// is back. The next save never answers: the name is then read-only, not disabled, so typing
-    /// goes nowhere and `typeText` fails the test if the field lost its focus; Continue keeps its
-    /// label and says "In progress"; Add photo and Leave sign-in are inactive (`busyPrimary`).
+    /// A03's first save, from Continue, gets no answer (`-TadayoUITestNameFailsThenHangs`): its
+    /// line shows under the field and the column is scrolled so its frame ends at least 24 above
+    /// Continue (its line box at least 16: `errorToActionMinimum`), the field above it under the
+    /// bar, with the keyboard still up and the name still focused (IMPLEMENTATION.md: "On failure
+    /// the name remains focused and the keyboard stays up. The body scrolls to keep the field and
+    /// error reachable above Continue"; frame 11), and editing is back. The next save, from the
+    /// keyboard's Return key, which ends the field's editing, never answers: the name is then
+    /// read-only, not disabled, so typing goes nowhere and `typeText` fails the test if the field
+    /// lost its focus; Continue keeps its label and says "In progress"; Add photo and Leave
+    /// sign-in are inactive (`busyPrimary`).
     @MainActor func testAProfileFailureStaysInViewAndTheNameIsReadOnlyWhileSaved() {
         let app = launch("-TadayoUITestNameFailsThenHangs")
         signInToTheAge(app)
@@ -285,18 +287,18 @@ final class SignInUITests: XCTestCase {
         let read = settle("the line's foot over Continue's top") {
             "\(Int(line.frame.maxY.rounded())) over \(Int(next.frame.minY.rounded()))"
         } until: {
-            line.frame.maxY <= next.frame.minY - 16 + 1
+            line.frame.maxY <= next.frame.minY - 24 + 1
         }
         let bar = app.navigationBars["Your profile"]
         XCTAssertLessThanOrEqual(
-            line.frame.maxY, next.frame.minY - 16 + 1,
+            line.frame.maxY, next.frame.minY - 24 + 1,
             "the line \(line.frame), Continue \(next.frame); read \(read)")
         XCTAssertGreaterThanOrEqual(
             name.frame.minY, bar.frame.maxY - 0.5, "the field \(name.frame), bar \(bar.frame)")
         app.typeText("ji")
         XCTAssertEqual(name.value as? String, "Benji")
         XCTAssertTrue(next.isEnabled)
-        next.tap()
+        app.typeText("\n")
 
         let busy = expectation(
             for: NSPredicate(format: "value == %@", "In progress"), evaluatedWith: next)

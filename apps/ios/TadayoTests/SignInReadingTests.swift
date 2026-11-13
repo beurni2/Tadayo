@@ -641,8 +641,9 @@ final class SignInReadingTests: XCTestCase {
     }
 
     /// A save that fails with the keyboard up (the stand-in again): the line shows 12 under the
-    /// field, and the column is scrolled so the line ends 16 above Continue
-    /// (`errorToActionMinimum`) with the field above it, below the bar (frame 11;
+    /// field, and the column is scrolled so the line's frame ends 24 above Continue, its line box,
+    /// which reaches past the last line's frame, at least 16 (`errorToActionMinimum`, measured
+    /// between line boxes, as on A02-age), with the field above it, below the bar (frame 11;
     /// IMPLEMENTATION.md: "The body scrolls to keep the field and error reachable above
     /// Continue"). At this size, with the column at its top, the field would be under
     /// Continue. The save starts a moment after the screen shows, so the line comes as it does
@@ -671,7 +672,7 @@ final class SignInReadingTests: XCTestCase {
         XCTAssertGreaterThan(line.height, 0, "\(elements)")
         XCTAssertGreaterThan(title.height, 0, "\(elements)")
         XCTAssertEqual(line.minY - field.maxY, Spacing.m, accuracy: 1, "\(elements)")
-        XCTAssertEqual(next.minY - line.maxY, Spacing.l, accuracy: 1, "\(elements)")
+        XCTAssertEqual(next.minY - line.maxY, Spacing.xxl, accuracy: 1, "\(elements)")
         XCTAssertGreaterThanOrEqual(field.minY, title.maxY, "\(elements)")
     }
 

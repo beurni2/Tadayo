@@ -71,10 +71,13 @@ struct ProfileScreen: View {
     /// As `SignInFlow.focus`. Nil in the app, where the field is focused on arrival unless
     /// VoiceOver runs (`ProfileForm`).
     var focus: Bool?
+    /// Whether VoiceOver runs, for a test, which can't turn it on: nil in the app, as
+    /// `CodeScreen.voiceOver`.
+    var voiceOver: Bool?
 
     var body: some View {
         NavigationStack {
-            ProfileForm(model: model, leave: leave, focus: focus)
+            ProfileForm(model: model, leave: leave, focus: focus, voiceOver: voiceOver)
         }
         .tint(Palette.action)
     }
@@ -107,6 +110,8 @@ struct ProfileForm: View {
     /// Whether a keyboard shows, for a test, which has none: nil in the app, where the screen
     /// reads it from its own frame (`readingKeyboardRoom`).
     var keyboard: Bool?
+    /// As `ProfileScreen.voiceOver`.
+    var voiceOver: Bool?
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
     @FocusState private var focused: Bool
     /// A save made from the keyboard's return key is on its way.
@@ -114,8 +119,8 @@ struct ProfileForm: View {
     @State private var room = KeyboardRoom()
     /// The name field has had the focus since the screen last appeared.
     @State private var tookFocus = false
-    /// The 8 clear points under the name's field, or under its line when one shows: the foot the
-    /// column is scrolled to.
+    /// The 8 clear points under the name's field, or 8 under its line's own 8 when one shows: the
+    /// foot the column is scrolled to.
     private static let footID = "profile.foot"
 
     var body: some View {
@@ -135,13 +140,14 @@ struct ProfileForm: View {
                     }
                 }
                 .readingKeyboardRoom($room)
-                // The foot at the column's visible bottom, so the field, or its line, ends
-                // 8 + 8 = 16 above Continue (`handoff7.spacing.errorToActionMinimum`), the line
-                // 12 under the field: as a line shows, and as the keyboard comes up, since the
-                // keyboard's own scrolling keeps the field clear of the keyboard, not of Continue
-                // over it (`ios` run 43336877808 drew Continue over the field's last 8 points, its
-                // focus ring's last 12, on an iPhone 17 at the default size). The column moves
-                // only as far as it must, and not at all where the field is already clear.
+                // The foot at the column's visible bottom, so the field ends 8 + 8 = 16 above
+                // Continue, or its line, 12 under it, 8 + 8 + 8 = 24 (the line box, which reaches
+                // past the last line's frame, at least 16 above: `errorToActionMinimum`, measured
+                // between line boxes, as A02-age's is): as a line shows, and as the keyboard comes
+                // up, since the keyboard's own scrolling keeps the field clear of the keyboard,
+                // not of Continue over it (`ios` run 43336877808 drew Continue over the field's
+                // last 8 points, its focus ring's last 12, on an iPhone 17 at the default size).
+                // The column moves only as far as it must, and not at all where it is clear.
                 .onChange(of: line) { _, shown in
                     if shown != nil { scroll.scrollTo(Self.footID, anchor: .bottom) }
                 }
@@ -158,20 +164,26 @@ struct ProfileForm: View {
             }
         }
         // Focused on arrival, at every text size (IMPLEMENTATION.md: "A03-profile-empty is
-        // focused on arrival"), except while VoiceOver runs, which says the screen first and
-        // moves its own focus (`authForm.profileArrivalFocus`: "unless VoiceOver focus would be
-        // stolen"; the check's C-01). Nothing is said of Switch Control (needs item 58). Asked
-        // for until the field has it (`takeFocusOnArrival`).
+        // focused on arrival"), except while VoiceOver runs, whose focus is left to the system,
+        // with no first responder asked for, so the screen can be announced first
+        // (`authForm.profileArrivalFocus`: "unless VoiceOver focus would be stolen"; the check's
+        // C-01; that VoiceOver says A03 as it replaces A02-age is a device check). Nothing is
+        // said of Switch Control (needs item 58). Asked for until the field has it
+        // (`takeFocusOnArrival`).
         .task { await takeFocusOnArrival() }
-        // Return ends a field's editing; the focus is put back while the save goes, as on
-        // A02-email, so the keyboard stays (`busyPrimary.field`).
+        // Return ends a field's editing; the focus is put back while a save goes, whether
+        // Return or Continue started it, so the keyboard stays (`busyPrimary.field`: "keep
+        // first responder and keyboard if already shown"). `savingFromReturn` covers the moment
+        // between Return and the save's start.
         .onChange(of: focused) { _, now in
             if now { tookFocus = true }
-            if !now, savingFromReturn { focused = true }
+            if !now, savingFromReturn || model.isSaving { focused = true }
         }
-        // A save's failure is said as it shows, as on the other setup screens; the too-long
-        // line politely, after the character VoiceOver echoes as it is typed (needs item 58).
-        .announcing(line, politely: model.nameIsTooLong)
+        // A save's failure is said once, as it comes (`announcementPolicy.failures`), not again
+        // when it shows once more after the too-long line; the too-long line politely, after
+        // the character VoiceOver echoes as it is typed (needs item 58), each time it shows.
+        .announcing(model.failure?.words)
+        .announcing(model.nameIsTooLong ? tooLong : nil, politely: true)
         // "Saving your profile.", once, as the request begins; the button says "In progress"
         // itself.
         .onChange(of: model.isSaving) { was, now in
@@ -211,6 +223,9 @@ struct ProfileForm: View {
                         .autocorrectionDisabled()
                         .submitLabel(.continue)
                         .onSubmit {
+                            // Only a Return that starts a save, so a second one, while the
+                            // first save goes, can't clear the first one's flag.
+                            guard model.canContinue else { return }
                             savingFromReturn = true
                             Task {
                                 await model.saveName()
@@ -233,6 +248,7 @@ struct ProfileForm: View {
             if let line {
                 InlineError(Text(verbatim: line))
                     .padding(.top, Spacing.m)
+                    .padding(.bottom, Spacing.s)
             }
             Color.clear
                 .frame(height: Spacing.s)
@@ -248,11 +264,15 @@ struct ProfileForm: View {
     /// as it appeared or from a task, and took it when asked 300 milliseconds later, while a
     /// field shown in a fresh window, as A02-email is at launch, took it at once (the UI tests
     /// found no field focused on A03 in runs 43331873714 and 43334901167;
-    /// `ArrivalFocusTests.testA03TakesTheFocusAsItReplacesA02Age`). A dropped request leaves the
-    /// focus state unchanged, so `onChange(of: focused)` says when one is taken; a request left
-    /// standing untaken is withdrawn before it is made again.
+    /// `ArrivalFocusTests.testA03TakesTheFocusAsItReplacesA02Age`). The probe read the focus state
+    /// as unchanged after each dropped request, and as true once a field shown in a fresh window
+    /// had held the focus for half a second; it read nothing yet the instant the swapped-in field
+    /// took a late request, within 20 milliseconds, so `onChange(of: focused)` is taken to say
+    /// when one is taken, and the hosted test holds that the field keeps the focus, unbroken,
+    /// for 2.5 seconds after it takes it. Should the state read true with no report, the request
+    /// is withdrawn and made again, as its getter would then hold a request not yet taken.
     private func takeFocusOnArrival() async {
-        guard focus == nil, !voiceOverEnabled else { return }
+        guard focus == nil, !(voiceOver ?? voiceOverEnabled) else { return }
         tookFocus = false
         let deadline = ContinuousClock.now + .seconds(2)
         while !tookFocus, !Task.isCancelled, ContinuousClock.now < deadline {
@@ -269,8 +289,10 @@ struct ProfileForm: View {
     /// long, in place of a save's failure if one is still shown (the plan's section 6.12), else
     /// the failure; nothing for a name that is fine, typed or not.
     private var line: String? {
-        model.nameIsTooLong ? String(localized: "auth.profile.tooLong") : model.failure?.words
+        model.nameIsTooLong ? tooLong : model.failure?.words
     }
+
+    private var tooLong: String { String(localized: "auth.profile.tooLong") }
 
     /// Whether a keyboard, or a hardware keyboard's bar, shows.
     private var keyboardShows: Bool {
