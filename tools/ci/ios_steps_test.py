@@ -35,33 +35,45 @@ HAS_MAGICK = bool(shutil.which("montage") and shutil.which("identify"))
 SHA = "0123456789abcdef0123456789abcdef01234567"
 RENDER = "design/reference/2.1/F02-upcoming.png"
 
+IPHONE_17 = "com.apple.CoreSimulator.SimDeviceType.iPhone-17"
+IPHONES = [{"name": "iPhone 17", "identifier": IPHONE_17},
+           {"name": "iPhone 17e", "identifier": "com.apple.CoreSimulator.SimDeviceType.iPhone-17e"},
+           {"name": "iPhone 18 Pro", "identifier": "com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro"}]
+DUO = [{"name": "iPhone Duo", "identifier": "com.apple.CoreSimulator.SimDeviceType.iPhone-Duo"}]
+
+
+def runtime(version, identifier, build, devices, platform="iOS", available=True):
+    return {"identifier": f"com.apple.CoreSimulator.SimRuntime.{identifier}", "version": version,
+            "buildversion": build, "platform": platform, "isAvailable": available,
+            "name": f"{platform} {version}", "supportedDeviceTypes": devices}
+
+
+# The `xcode-27` image's runtimes (its README, image 20261104.0337.1): iOS 27.0, 27.1 for iPhone
+# Duo alone, and two iOS 27.2 runtimes, one with the iPhones and one with iPhone Duo alone; no
+# iOS 26. The twin is listed first and has the later build, so only the device check passes it
+# over.
+IOS_27_2 = runtime("27.2", "iOS-27-2", "24C55", IPHONES)
+TWIN = runtime("27.2", "iOS-27-2-Duo", "24C60", DUO)
 RUNTIMES = {"runtimes": [
-    {"identifier": "com.apple.CoreSimulator.SimRuntime.iOS-26-2", "version": "26.2",
-     "platform": "iOS", "isAvailable": True, "name": "iOS 26.2",
-     "supportedDeviceTypes": [
-         {"name": "iPhone 16e", "identifier": "com.apple.CoreSimulator.SimDeviceType.iPhone-16e"},
-         {"name": "iPhone 17", "identifier": "com.apple.CoreSimulator.SimDeviceType.iPhone-17"}]},
-    {"identifier": "com.apple.CoreSimulator.SimRuntime.iOS-26-5", "version": "26.5",
-     "platform": "iOS", "isAvailable": True, "name": "iOS 26.5",
-     "supportedDeviceTypes": [
-         {"name": "iPhone 17", "identifier": "com.apple.CoreSimulator.SimDeviceType.iPhone-17"},
-         {"name": "iPhone 17 Pro", "identifier": "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro"}]},
-    {"identifier": "com.apple.CoreSimulator.SimRuntime.iOS-26-4", "version": "26.4.1",
-     "platform": "iOS", "isAvailable": True, "name": "iOS 26.4",
-     "supportedDeviceTypes": [
-         {"name": "iPhone 17", "identifier": "com.apple.CoreSimulator.SimDeviceType.iPhone-17"}]},
-    {"identifier": "com.apple.CoreSimulator.SimRuntime.tvOS-26-5", "version": "26.5",
-     "platform": "tvOS", "isAvailable": True, "name": "tvOS 26.5", "supportedDeviceTypes": []},
-    {"identifier": "com.apple.CoreSimulator.SimRuntime.iOS-27-0", "version": "27.0",
-     "platform": "iOS", "isAvailable": False, "name": "iOS 27.0", "supportedDeviceTypes": []},
+    runtime("27.0", "iOS-27-0", "24A335", IPHONES),
+    runtime("27.1", "iOS-27-1", "24B80", DUO),
+    TWIN,
+    IOS_27_2,
+    runtime("27.2", "tvOS-27-2", "24K55", [], platform="tvOS"),
 ]}
-IOS_18 = {"identifier": "com.apple.CoreSimulator.SimRuntime.iOS-18-6", "version": "18.6",
-          "platform": "iOS", "isAvailable": True, "name": "iOS 18.6",
-          "supportedDeviceTypes": [
-              {"name": "iPhone 15", "identifier": "com.apple.CoreSimulator.SimDeviceType.iPhone-15"},
-              {"name": "iPhone 16", "identifier": "com.apple.CoreSimulator.SimDeviceType.iPhone-16"},
-              {"name": "iPhone 16 Pro", "identifier": "com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro"}]}
-UDID = "A1B2C3D4-0000-1111-2222-333344445555"
+# What the download brings.
+IOS_26_5 = runtime("26.5", "iOS-26-5", "23F77", IPHONES[:1] + [
+    {"name": "iPhone 17 Pro", "identifier": "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro"}])
+WITH_26_5 = {"runtimes": RUNTIMES["runtimes"] + [IOS_26_5]}
+UDID = "A1B2C3D4-0000-1111-2222-333344445555"  # the iOS 27.2 device
+UDID_26 = "B1B2C3D4-0000-1111-2222-333344445555"  # the iOS 26.5 device
+UDIDS = {IOS_27_2["identifier"]: UDID, IOS_26_5["identifier"]: UDID_26}
+DEVELOPER_DIR = f"/Applications/Xcode_{toolchain.XCODE_VERSION}.app/Contents/Developer"
+# What ios-version may hold besides exactly 27.2 and one optional line break: each must fail.
+BAD_IOS_VERSIONS = [b"26.5", b"26.5\n", b"27.2\n\n", b"27.2 \n", b" 27.2\n", b"27.2\t", b"27.2\r\n",
+                    b"27.2\r", b"27.2\nx", b"27.2\n27.2\n", b"", b"\n", b"27.20\n", b"27\n", b"27.2.0\n",
+                    b"27.2\x00", b"\xef\xbb\xbf27.2\n", "\uff12\uff17.\uff12\n".encode(), b"27.2\xa0",
+                    b"27.2\n" + b"\n" * 100]
 
 SCHEME = """<?xml version="1.0" encoding="UTF-8"?>
 <Scheme LastUpgradeVersion = "2600" version = "1.7">
@@ -92,7 +104,7 @@ class FakeShell:
     from `codes` the same way, calling `effects` first so a test can make a command's files."""
 
     def __init__(self, answers=None, codes=None, effects=None):
-        self.commands, self.envs = [], []
+        self.commands, self.envs, self.logs = [], [], []
         self.answers = answers or []
         self.codes = codes or []
         self.effects = effects or []
@@ -100,6 +112,7 @@ class FakeShell:
     def run(self, cmd, env=None, log=None, cwd=None):
         self.commands.append(cmd)
         self.envs.append(env)
+        self.logs.append(log)
         for matches, effect in self.effects:
             if matches(cmd):
                 effect(cmd)
@@ -111,6 +124,7 @@ class FakeShell:
     def capture(self, cmd, env=None, cwd=None):
         self.commands.append(cmd)
         self.envs.append(env)
+        self.logs.append(None)
         for matches, result in self.answers:
             if matches(cmd):
                 return result(cmd) if callable(result) else result
@@ -172,7 +186,8 @@ class StepsTest(unittest.TestCase):
             code = getattr(steps, name)()
         return code, out.getvalue()
 
-    def record(self, **values):
+    def record(self, values=None, **more):
+        values = dict(values or {}, **more)
         os.makedirs(self.repo.out, exist_ok=True)
         with open(os.path.join(self.repo.out, "run.json"), "w") as f:
             json.dump(values, f)
@@ -221,9 +236,9 @@ class GateTest(StepsTest):
 
 
 class ToolchainTest(StepsTest):
-    def run_toolchain(self, xcode="Xcode 26.6\nBuild version 17F113\n",
-                      swift="swift-driver version: 1.127.14.1 Apple Swift version 6.3.3 "
-                            "(swiftlang-6.3.3.1.2 clang-1800.0.32.2)\nTarget: arm64-apple-macosx26.0\n",
+    def run_toolchain(self, xcode="Xcode 27.2\nBuild version 27B52\n",
+                      swift="swift-driver version: 1.148.6 Apple Swift version 6.4.2 "
+                            "(swiftlang-6.4.2.1.3 clang-1900.0.36.1)\nTarget: arm64-apple-macosx27.0\n",
                       installed=True):
         shell = FakeShell(answers=[(starts("xcodebuild", "-version"), (0, xcode, "")),
                                    (starts("xcrun", "swift", "--version"), (0, swift, ""))])
@@ -237,20 +252,20 @@ class ToolchainTest(StepsTest):
     def test_the_pinned_xcode_and_swift_pass(self):
         code, out, shell = self.run_toolchain()
         self.assertEqual(code, 0, out)
-        developer_dir = f"/Applications/Xcode_{toolchain.XCODE_VERSION}.app/Contents/Developer"
-        self.assertTrue(all(env == {"DEVELOPER_DIR": developer_dir} for env in shell.envs))
-        self.assertEqual(self.read_record()["swift"], toolchain.SWIFT_VERSION)
+        self.assertTrue(all(env == {"DEVELOPER_DIR": DEVELOPER_DIR} for env in shell.envs))
+        self.assertEqual((self.read_record()["xcode"], self.read_record()["swift"]), ("27.2", "6.4.2"))
         with open(os.path.join(self.repo.out, "logs", "toolchain.txt")) as f:
-            self.assertIn("Apple Swift version 6.3.3", f.read())
+            self.assertIn("Apple Swift version 6.4.2", f.read())
 
     def test_another_xcode_fails(self):
-        for xcode in ["Xcode 26.5\nBuild version 17E1\n", "Xcode 26.60\n", ""]:
+        # The image's default, 27.1, among them: Xcode is selected by its path, never by default.
+        for xcode in ["Xcode 27.1\nBuild version 27A9275\n", "Xcode 27.20\n", "Xcode 26.6\n", ""]:
             with self.subTest(xcode=xcode):
                 self.assertEqual(self.run_toolchain(xcode=xcode)[0], 1)
 
     def test_another_swift_fails(self):
-        for swift in ["Apple Swift version 6.3.2 (swiftlang-6.3.2)", "Apple Swift version 6.3 (x)",
-                      "Apple Swift version 6.3.31", "no version here"]:
+        for swift in ["Apple Swift version 6.4.1 (swiftlang-6.4.1)", "Apple Swift version 6.4 (x)",
+                      "Apple Swift version 6.4.21", "Apple Swift version 6.3.3", "no version here"]:
             with self.subTest(swift=swift):
                 code, out, _ = self.run_toolchain(swift=swift)
                 self.assertEqual(code, 1)
@@ -322,19 +337,126 @@ class XcodegenTest(StepsTest):
         self.assertRegex(toolchain.XCODEGEN_VERSION, r"^[0-9]+\.[0-9]+\.[0-9]+$")
 
 
+class PinsTest(unittest.TestCase):
+    """The founder's decision of 2026-11-13 in toolchain.py, and the pins agreeing with each
+    other and with the app."""
+
+    def test_the_founder_s_runtimes(self):
+        self.assertEqual((toolchain.XCODE_VERSION, toolchain.SWIFT_VERSION), ("27.2", "6.4.2"))
+        self.assertEqual(toolchain.IOS_RUNTIMES, ("27.2", "26.5"))
+        self.assertEqual(toolchain.IOS_DOWNLOADS, ("26.5",))
+        self.assertEqual((toolchain.SNAPSHOT_RUNTIME, toolchain.SNAPSHOT_RUNTIME_INTERIM), ("27.2", "26.5"))
+        self.assertEqual(toolchain.SIMULATOR_DEVICE, "iPhone 17")
+
+    def test_the_runtimes_are_versions_each_once_the_first_of_the_xcode_s_major(self):
+        runtimes = toolchain.IOS_RUNTIMES
+        self.assertTrue(runtimes)
+        self.assertEqual(len(set(runtimes)), len(runtimes))
+        for version in runtimes:
+            with self.subTest(version=version):
+                self.assertRegex(version, ios_steps.VERSION)
+        self.assertEqual(ios_steps.version_key(runtimes[0])[:1], ios_steps.version_key(toolchain.XCODE_VERSION)[:1])
+
+    def test_a_run_downloads_only_pinned_runtimes(self):
+        self.assertTrue(set(toolchain.IOS_DOWNLOADS) <= set(toolchain.IOS_RUNTIMES))
+
+    def test_the_snapshot_runtimes_are_pinned_runtimes(self):
+        # Else no pass would run the snapshot tests.
+        self.assertIn(toolchain.SNAPSHOT_RUNTIME, toolchain.IOS_RUNTIMES)
+        self.assertIn(toolchain.SNAPSHOT_RUNTIME_INTERIM, toolchain.IOS_RUNTIMES)
+
+    def test_every_runtime_is_at_or_above_the_app_s_minimum(self):
+        # apps/ios/project.yml's deploymentTarget, read from the file: 17.0 now, 26.0 once the
+        # app's PR raises it. A runtime below it couldn't install the app.
+        with open(os.path.join(ROOT, *ios_steps.PROJECT_SPEC.split("/")), encoding="utf-8") as f:
+            found = re.search(r'^  deploymentTarget:\n    iOS: "?([0-9.]+)"?\s*$', f.read(), flags=re.M)
+        self.assertIsNotNone(found, "apps/ios/project.yml's deploymentTarget")
+        for version in toolchain.IOS_RUNTIMES:
+            with self.subTest(version=version):
+                self.assertGreaterEqual(ios_steps.version_key(version), ios_steps.version_key(found.group(1)))
+
+
+class SnapshotRuntimeTest(StepsTest):
+    def write(self, content):
+        return self.repo.write(ios_steps.SNAPSHOT_RUNTIME_FILE, content)
+
+    def test_the_repository_s_own_file(self):
+        # The real tree, as test_the_inventory_s_states reads the real INVENTORY: a bad file
+        # fails here, so it fails `ci` on Linux, the required check, and not only `ios`. Until
+        # the app's PR adds the file, the interim; after it, the founder's runtime.
+        self.assertIn(ios_steps.snapshot_runtime(ROOT), [("26.5", "interim"), ("27.2", "file")])
+
+    def test_no_file_is_the_interim_and_exactly_27_2_is_the_file(self):
+        self.assertEqual(ios_steps.snapshot_runtime(self.repo.root), ("26.5", "interim"))
+        for content in (b"27.2", b"27.2\n"):
+            with self.subTest(content=content):
+                self.write(content)
+                self.assertEqual(ios_steps.snapshot_runtime(self.repo.root), ("27.2", "file"))
+
+    def test_anything_else_fails(self):
+        # 26.5 among them: the file can move the snapshots to the founder's runtime, never back.
+        for content in BAD_IOS_VERSIONS:
+            with self.subTest(content=content):
+                self.write(content)
+                with self.assertRaises(ValueError) as raised:
+                    ios_steps.snapshot_runtime(self.repo.root)
+                self.assertIn(ios_steps.SNAPSHOT_RUNTIME_FILE, str(raised.exception))
+
+    def test_only_a_regular_file_counts(self):
+        path = os.path.join(self.repo.root, *ios_steps.SNAPSHOT_RUNTIME_FILE.split("/"))
+        good = self.repo.write("elsewhere/ios-version", b"27.2\n")
+        os.makedirs(os.path.dirname(path))
+        for make in (lambda: os.symlink(good, path), lambda: os.mkdir(path), lambda: os.mkfifo(path),
+                     lambda: os.symlink(os.path.join(self.repo.root, "missing"), path)):
+            with self.subTest(make=make):
+                make()
+                with self.assertRaises(ValueError) as raised:
+                    ios_steps.snapshot_runtime(self.repo.root)
+                self.assertIn("isn't a regular file", str(raised.exception))
+                if os.path.isdir(path) and not os.path.islink(path):
+                    os.rmdir(path)
+                else:
+                    os.remove(path)
+
+    def test_a_snapshots_folder_that_is_a_file_fails(self):
+        # Only a missing file is the interim: here lstat fails with "not a directory".
+        self.repo.write(os.path.dirname(ios_steps.SNAPSHOT_RUNTIME_FILE), b"27.2\n")
+        with self.assertRaises(ValueError) as raised:
+            ios_steps.snapshot_runtime(self.repo.root)
+        self.assertIn(f"{ios_steps.SNAPSHOT_RUNTIME_FILE} can't be read", str(raised.exception))
+
+    def test_a_file_that_can_t_be_opened_fails(self):
+        # A good file that can't be read isn't the interim either. The session runs as root, so
+        # open() is made to refuse it rather than chmod.
+        path = self.write(b"27.2\n")
+        real_open = open
+
+        def refusing(file, *args, **kwargs):
+            if os.fspath(file) == path:
+                raise PermissionError(13, "Permission denied", file)
+            return real_open(file, *args, **kwargs)
+        with mock.patch("builtins.open", refusing), self.assertRaises(ValueError) as raised:
+            ios_steps.snapshot_runtime(self.repo.root)
+        self.assertIn(f"{ios_steps.SNAPSHOT_RUNTIME_FILE} can't be read (Permission denied)", str(raised.exception))
+
+
 class SimulatorTest(StepsTest):
     def assert_pinned(self, shell):
         # Every command, the SDK's read and a download among them, runs with the pinned Xcode,
-        # not the image's default, which could be a newer one whose SDK would let its runtimes in.
-        pinned = {"DEVELOPER_DIR": f"/Applications/Xcode_{toolchain.XCODE_VERSION}.app/Contents/Developer"}
+        # not the image's default, which could be another whose SDK would let its runtimes in.
+        pinned = {"DEVELOPER_DIR": DEVELOPER_DIR}
         self.assertTrue(shell.commands)
-        self.assertEqual([(c, e) for c, e in zip(shell.commands, shell.envs) if e != pinned], [])
+        self.assertEqual([(c, e) for c, e in zip(shell.commands, shell.envs, strict=True) if e != pinned], [])
 
-    def shell(self, runtimes=RUNTIMES, after_download=None, devices=None, create=(0, UDID + "\n", ""),
-              download_code=0, works_with=None, sdk=(0, "26.5\n", "")):
+    def shell(self, runtimes=RUNTIMES, after_download=None, devices=None, create=None,
+              download_code=0, works_with=None, sdk=(0, "27.2\n", ""), listed_under=None, boot_code=0,
+              cache_code=0):
         """after_download: the runtimes once a download that works has run; works_with: the
-        download only works with these extra arguments (by default, any download works)."""
-        state = {"downloaded": False}
+        download only works with these extra arguments (by default, any download works);
+        devices: what simctl lists before a device is made; create: what `simctl create`
+        answers, when not a new device, which is listed under the runtime it was made on (or
+        listed_under, when given)."""
+        state = {"downloaded": False, "devices": json.loads(json.dumps(devices or {}))}
 
         def list_runtimes(cmd):
             current = after_download if state["downloaded"] and after_download else runtimes
@@ -344,143 +466,357 @@ class SimulatorTest(StepsTest):
             if works_with is None or all(a in cmd for a in works_with):
                 state["downloaded"] = True
             return download_code
+
+        def make(cmd):
+            if create is not None:
+                return create
+            udid = UDIDS.get(cmd[5]) or "C0000000-0000-0000-0000-" + hashlib.sha256(cmd[5].encode()).hexdigest()[:12].upper()
+            state["devices"].setdefault(listed_under or cmd[5], []).append(
+                {"name": cmd[3], "udid": udid, "isAvailable": True, "state": "Shutdown"})
+            return 0, udid + "\n", ""
         return FakeShell(
             answers=[(starts("xcrun", "simctl", "list", "runtimes", "--json"), list_runtimes),
                      (starts("xcrun", "simctl", "list", "devices", "--json"),
-                      (0, json.dumps({"devices": devices or {}}), "")),
-                     (starts("xcrun", "simctl", "create"), create),
-                     (starts("xcrun", "simctl", "list"), (0, "== Runtimes ==\niOS 26.5\n", "")),
+                      lambda cmd: (0, json.dumps({"devices": state["devices"]}), "")),
+                     (starts("xcrun", "simctl", "create"), make),
+                     (starts("xcrun", "simctl", "list"), (0, "== Runtimes ==\niOS 27.2\n", "")),
                      (starts("xcrun", "--sdk", "iphonesimulator", "--show-sdk-version"), sdk)],
-            codes=[(has("-downloadPlatform"), download)])
+            codes=[(has("-downloadPlatform"), download), (has("bootstatus"), boot_code),
+                   (has("dyld_shared_cache"), cache_code)])
 
-    def test_with_no_version_the_newest_ios_on_the_pinned_iphone(self):
-        shell = self.shell()
+    def creates(self, shell):
+        return [c[3:] for c in shell.commands if c[:3] == ["xcrun", "simctl", "create"]]
+
+    def downloads(self, shell):
+        return [c for c in shell.commands if "-downloadPlatform" in c]
+
+    def runtime_keys(self):
+        return {k: v for k, v in self.read_record().items() if k not in ("xcode", "swift")}
+
+    def test_prepares_the_runtimes_in_order_and_downloads_only_26_5(self):
+        shell = self.shell(after_download=WITH_26_5)
         code, out = self.step("simulator", shell)
         self.assertEqual(code, 0, out)
-        create = next(c for c in shell.commands if c[:3] == ["xcrun", "simctl", "create"])
-        self.assertEqual(create[3:], ["Tadayo iPhone 17", "com.apple.CoreSimulator.SimDeviceType.iPhone-17",
-                                      "com.apple.CoreSimulator.SimRuntime.iOS-26-5"])
-        record = self.read_record()
-        self.assertEqual((record["ios"], record["device"], record["udid"], record["requested"], record["sdk"]),
-                         ("26.5", "iPhone 17", UDID, None, "26.5"))
-        self.assertIn(["xcrun", "simctl", "bootstatus", UDID, "-b"], shell.commands)
-        self.assertFalse(any("-downloadPlatform" in c for c in shell.commands))
+        self.assertEqual(self.creates(shell), [["Tadayo iPhone 17", IPHONE_17, IOS_27_2["identifier"]],
+                                               ["Tadayo iPhone 17", IPHONE_17, IOS_26_5["identifier"]]])
+        self.assertEqual(self.downloads(shell), [["xcodebuild", "-downloadPlatform", "iOS", "-buildVersion", "26.5"]])
+        # In order: 27.2's device is made before 26.5 is downloaded.
+        create_27 = shell.commands.index(["xcrun", "simctl", "create", "Tadayo iPhone 17", IPHONE_17,
+                                          IOS_27_2["identifier"]])
+        self.assertLess(create_27, shell.commands.index(self.downloads(shell)[0]))
+        # The new runtime's shared cache, never every runtime's (`--all`).
+        self.assertEqual([c for c in shell.commands if "dyld_shared_cache" in c],
+                         [["xcrun", "simctl", "runtime", "dyld_shared_cache", "update", IOS_26_5["identifier"]]])
+        self.assertEqual(self.runtime_keys(), {
+            "sdk": "27.2", "snapshots": "26.5", "snapshots-source": "interim",
+            "ios-27.2": "27.2", "runtime-27.2": IOS_27_2["identifier"], "runtime-build-27.2": "24C55",
+            "device-27.2": "iPhone 17", "udid-27.2": UDID,
+            "ios-26.5": "26.5", "runtime-26.5": IOS_26_5["identifier"], "runtime-build-26.5": "23F77",
+            "device-26.5": "iPhone 17", "udid-26.5": UDID_26})
         self.assertIn(["xcrun", "--sdk", "iphonesimulator", "--show-sdk-version"], shell.commands)
         self.assert_pinned(shell)
 
-    def test_a_newer_xcode_s_runtime_on_the_image_isn_t_taken(self):
-        # GitHub's images carry other Xcodes' runtimes (macos-15 has iOS 26 beside Xcode 16.4's
-        # SDK 18.5): with no version asked for, the newest of the pinned Xcode's major is taken.
-        newer = dict(RUNTIMES["runtimes"][1], identifier="com.apple.CoreSimulator.SimRuntime.iOS-27-0",
-                     version="27.0", name="iOS 27.0")
-        code, out = self.step("simulator", self.shell(runtimes={"runtimes": RUNTIMES["runtimes"] + [newer]}))
+    def test_with_the_file_the_snapshots_are_27_2_s(self):
+        self.repo.write(ios_steps.SNAPSHOT_RUNTIME_FILE, "27.2\n")
+        code, out = self.step("simulator", self.shell(after_download=WITH_26_5))
         self.assertEqual(code, 0, out)
-        self.assertEqual(self.read_record()["ios"], "26.5")
+        self.assertEqual((self.read_record()["snapshots"], self.read_record()["snapshots-source"]), ("27.2", "file"))
+
+    def test_boots_only_the_first_runtime_s_device(self):
+        shell = self.shell(after_download=WITH_26_5)
+        self.assertEqual(self.step("simulator", shell)[0], 0)
+        boots = [c for c in shell.commands if "bootstatus" in c or c[:3] == ["xcrun", "simctl", "boot"]]
+        self.assertEqual(boots, [["xcrun", "simctl", "bootstatus", UDID, "-b"]])
+        # After both devices are made.
+        last_create = max(i for i, c in enumerate(shell.commands) if c[:3] == ["xcrun", "simctl", "create"])
+        self.assertGreater(shell.commands.index(boots[0]), last_create)
+
+    def test_a_device_that_doesn_t_boot_fails(self):
+        code, out = self.step("simulator", self.shell(after_download=WITH_26_5, boot_code=1))
+        self.assertEqual(code, 1)
+        self.assertIn(f"{UDID} didn't boot", out)
+        self.assertFalse(os.path.isfile(os.path.join(self.repo.out, "run.json")))
+
+    def test_takes_the_27_2_runtime_that_supports_the_iphone_17(self):
+        # The twin is listed first and has the later build; it holds iPhone Duo alone.
+        self.assertEqual(self.step("simulator", self.shell(after_download=WITH_26_5))[0], 0)
+        record = self.read_record()
+        self.assertEqual((record["runtime-27.2"], record["runtime-build-27.2"]), (IOS_27_2["identifier"], "24C55"))
+
+    def test_a_newer_runtime_on_the_image_isn_t_taken(self):
+        # The cap it replaces kept a newer Xcode's runtime out: now each runtime is pinned, so
+        # iOS 27.3 (expected with Xcode 27.3 beta's image) and a 27.20 are never taken for 27.2.
+        newer = dict(IOS_27_2, identifier="com.apple.CoreSimulator.SimRuntime.iOS-27-3", version="27.3",
+                     buildversion="24D5020n")
+        decoy = dict(IOS_27_2, identifier="com.apple.CoreSimulator.SimRuntime.iOS-27-20", version="27.20",
+                     buildversion="24Z1")
+        runtimes = {"runtimes": [newer, decoy] + RUNTIMES["runtimes"]}
+        shell = self.shell(runtimes=runtimes, after_download={"runtimes": runtimes["runtimes"] + [IOS_26_5]})
+        code, out = self.step("simulator", shell)
+        self.assertEqual(code, 0, out)
+        self.assertEqual((self.read_record()["ios-27.2"], self.read_record()["runtime-27.2"]),
+                         ("27.2", IOS_27_2["identifier"]))
+
+    def test_a_missing_27_2_fails_without_a_download(self):
+        # The image keeps three runtimes per Xcode: a later one may drop 27.2's, and the run then
+        # fails, naming it, rather than download it unseen (toolchain.IOS_DOWNLOADS). Only the
+        # twin left, which lacks the iPhone 17, is the same.
+        others = [r for r in RUNTIMES["runtimes"] if r["version"] != "27.2" or r["platform"] != "iOS"]
+        for runtimes in (others, others + [TWIN]):
+            with self.subTest(runtimes=[r["identifier"] for r in runtimes]):
+                shell = self.shell(runtimes={"runtimes": runtimes}, after_download=WITH_26_5)
+                code, out = self.step("simulator", shell)
+                self.assertEqual(code, 1)
+                self.assertIn("no iOS 27.2 runtime with the iPhone 17", out)
+                self.assertIn("toolchain.IOS_DOWNLOADS", out)
+                self.assertEqual((self.downloads(shell), self.creates(shell)), ([], []))
+                self.assertFalse(any("bootstatus" in c for c in shell.commands))
+
+    def test_fails_naming_a_runtime_it_can_t_get(self):
+        # The download didn't work, or brought nothing simctl lists, whatever its exit code.
+        for kwargs in ({}, {"download_code": 1}, {"after_download": RUNTIMES, "download_code": 0}):
+            with self.subTest(**{k: str(v)[:20] for k, v in kwargs.items()}):
+                shell = self.shell(**kwargs)
+                code, out = self.step("simulator", shell)
+                self.assertEqual(code, 1)
+                self.assertIn("no available iOS 26.5 runtime with the iPhone 17", out)
+                self.assertEqual(len(self.downloads(shell)), 2)
+                self.assertFalse(any("bootstatus" in c for c in shell.commands))
+
+    def test_fails_when_a_runtime_lacks_the_device(self):
+        # No other iPhone stands in: it would change the snapshots' size and every layout.
+        without = dict(IOS_26_5, supportedDeviceTypes=[
+            {"name": "iPhone 16", "identifier": "com.apple.CoreSimulator.SimDeviceType.iPhone-16"},
+            {"name": "iPhone 17 Pro", "identifier": "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro"}])
+        shell = self.shell(after_download={"runtimes": RUNTIMES["runtimes"] + [without]})
+        code, out = self.step("simulator", shell)
+        self.assertEqual(code, 1)
+        self.assertIn("no available iOS 26.5 runtime with the iPhone 17", out)
+        self.assertEqual([c[-1] for c in self.creates(shell)], [IOS_27_2["identifier"]])
+        # The plain download installed iOS 26.5 without it: the universal variant, several
+        # gigabytes more, would list the same devices, so it isn't tried, and the step says why.
+        self.assertEqual(self.downloads(shell), [["xcodebuild", "-downloadPlatform", "iOS", "-buildVersion", "26.5"]])
+        self.assertIn("simctl lists iOS 26.5 after the download, but no runtime of it with the iPhone 17", out)
+        self.assertNotIn("couldn't install", out)
+        self.assertFalse(any("dyld_shared_cache" in c for c in shell.commands))
+        # Unavailable, it isn't one simctl lists as installed, so the universal variant is tried.
+        shell = self.shell(after_download={"runtimes": RUNTIMES["runtimes"] + [dict(without, isAvailable=False)]})
+        self.assertEqual(self.step("simulator", shell)[0], 1)
+        self.assertEqual(len(self.downloads(shell)), 2)
+
+    def test_fails_when_a_pinned_major_is_above_the_sdk_s(self):
+        # The first pinned runtime shares the SDK's major, and none is of a later one.
+        for sdk, pins in (("26.5", ("27.2", "26.5")), ("27.2", ("27.2", "28.0")), ("27.2", ("26.5", "27.2"))):
+            with self.subTest(sdk=sdk, pins=pins), mock.patch.object(toolchain, "IOS_RUNTIMES", pins):
+                shell = self.shell(sdk=(0, sdk + "\n", ""), after_download=WITH_26_5)
+                code, out = self.step("simulator", shell)
+                self.assertEqual(code, 1)
+                self.assertIn("toolchain.IOS_RUNTIMES", out)
+                self.assertNotIn(["xcrun", "simctl", "list", "runtimes", "--json"], shell.commands)
+                self.assertEqual((self.downloads(shell), self.creates(shell)), ([], []))
+
+    def test_a_twin_sharing_the_identifier_fails(self):
+        # simctl finds a runtime's devices and makes one by its identifier (critique 5).
+        twin = dict(TWIN, identifier=IOS_27_2["identifier"])
+        shell = self.shell(runtimes={"runtimes": [twin, IOS_27_2]}, after_download=WITH_26_5)
+        code, out = self.step("simulator", shell)
+        self.assertEqual(code, 1)
+        self.assertIn("share an identifier", out)
+        self.assertIn("24C60", out)
+        self.assertEqual(self.creates(shell), [])
+
+    def test_a_device_that_isn_t_on_its_runtime_fails(self):
+        # simctl lists the device it made under another runtime, or under none.
+        for shell in (self.shell(after_download=WITH_26_5, listed_under="com.apple.CoreSimulator.SimRuntime.iOS-27-0"),
+                      self.shell(after_download=WITH_26_5, create=(0, UDID + "\n", ""))):
+            with self.subTest(shell=len(self.creates(shell))):
+                code, out = self.step("simulator", shell)
+                self.assertEqual(code, 1)
+                self.assertIn(f"not on iOS 27.2's {IOS_27_2['identifier']}", out)
+                self.assertFalse(any("bootstatus" in c for c in shell.commands))
 
     def test_an_unreadable_sdk_fails(self):
         for sdk in [(1, "", "xcrun: error"), (0, "\n", ""), (0, "iphonesimulator\n", "")]:
             with self.subTest(sdk=sdk):
                 self.assertEqual(self.step("simulator", self.shell(sdk=sdk))[0], 1)
 
-    def test_the_simulators_the_runner_offers_are_recorded(self):
-        self.step("simulator", self.shell())
+    def test_the_simulators_the_runner_offers_and_the_ones_taken_are_recorded(self):
+        self.step("simulator", self.shell(after_download=WITH_26_5))
         with open(os.path.join(self.repo.out, "logs", "simulators.txt")) as f:
             text = f.read()
         self.assertIn("+ xcrun simctl list runtimes", text)
         self.assertIn("+ xcrun simctl list devices available", text)
-
-    def test_an_installed_version_by_prefix(self):
-        for requested, version in [("26.2", "26.2"), ("26.4", "26.4.1"), ("26", "26.5")]:
-            with self.subTest(requested=requested):
-                code, out = self.step("simulator", self.shell(), environ={"IOS_VERSION": requested})
-                self.assertEqual(code, 0, out)
-                self.assertEqual(self.read_record()["ios"], version)
-
-    def test_a_missing_version_is_downloaded_and_takes_an_iphone_it_supports(self):
-        after = {"runtimes": RUNTIMES["runtimes"] + [IOS_18]}
-        shell = self.shell(after_download=after)
-        code, out = self.step("simulator", shell, environ={"IOS_VERSION": "18.6"})
-        self.assertEqual(code, 0, out)
-        self.assertIn(["xcodebuild", "-downloadPlatform", "iOS", "-buildVersion", "18.6"], shell.commands)
-        self.assertIn(["xcrun", "simctl", "runtime", "dyld_shared_cache", "update", "--all"], shell.commands)
-        self.assertFalse(any("-architectureVariant" in c for c in shell.commands))
-        record = self.read_record()
-        self.assertEqual((record["ios"], record["device"], record["requested"]), ("18.6", "iPhone 16", "18.6"))
-        self.assert_pinned(shell)
+        self.assertIn(f"iOS 27.2: runtime {IOS_27_2['identifier']}, build 24C55, version 27.2; iPhone 17 {UDID}", text)
+        self.assertIn(f"iOS 26.5: runtime {IOS_26_5['identifier']}, build 23F77, version 26.5; iPhone 17 {UDID_26}", text)
+        self.assertIn("The snapshot tests run on iOS 26.5 (interim, no ios-version file).", text)
 
     def test_the_universal_variant_is_tried_when_the_plain_download_brings_nothing(self):
-        after = {"runtimes": RUNTIMES["runtimes"] + [IOS_18]}
-        shell = self.shell(after_download=after, works_with=["universal"])
-        code, out = self.step("simulator", shell, environ={"IOS_VERSION": "18.6"})
+        shell = self.shell(after_download=WITH_26_5, works_with=["universal"])
+        code, out = self.step("simulator", shell)
         self.assertEqual(code, 0, out)
-        downloads = [c for c in shell.commands if "-downloadPlatform" in c]
-        self.assertEqual(downloads[1][-2:], ["-architectureVariant", "universal"])
-        self.assertIn(["xcrun", "simctl", "runtime", "dyld_shared_cache", "update", "--all"], shell.commands)
+        self.assertEqual(self.downloads(shell)[1][-2:], ["-architectureVariant", "universal"])
+        self.assertIn(["xcrun", "simctl", "runtime", "dyld_shared_cache", "update", IOS_26_5["identifier"]],
+                      shell.commands)
         self.assert_pinned(shell)
+
+    def test_a_failed_shared_cache_update_is_logged_and_said_but_not_fatal(self):
+        # Nothing has shown that simctl takes the runtime's identifier there: when it doesn't, the
+        # run goes on, and the first boot of iOS 26.5 builds the cache, in the test step's time.
+        code, out = self.step("simulator", self.shell(after_download=WITH_26_5, cache_code=1))
+        self.assertEqual(code, 0, out)
+        self.assertIn("updating iOS 26.5's shared cache exited 1, so its first boot builds it", out)
+        with open(os.path.join(self.repo.out, "logs", "simulators.txt")) as f:
+            self.assertEqual(f.read().count("(exit 1)"), 1)
+        code, out = self.step("simulator", self.shell(after_download=WITH_26_5))
+        self.assertEqual(code, 0, out)
+        self.assertNotIn("shared cache", out)
 
     def test_the_download_s_exit_code_doesn_t_decide(self):
         # Xcode can fall back to another runtime and exit 0, or fail a proxy and say "not
         # available"; simctl is what's believed.
-        after = {"runtimes": RUNTIMES["runtimes"] + [IOS_18]}
-        code, out = self.step("simulator", self.shell(after_download=after, download_code=70),
-                              environ={"IOS_VERSION": "18.6"})
+        code, out = self.step("simulator", self.shell(after_download=WITH_26_5, download_code=70))
         self.assertEqual(code, 0, out)
-        for kwargs in [{"download_code": 0, "after_download": RUNTIMES}, {"download_code": 1}]:
-            with self.subTest(**{k: str(v)[:20] for k, v in kwargs.items()}):
-                shell = self.shell(**kwargs)
-                code, _ = self.step("simulator", shell, environ={"IOS_VERSION": "18.6"})
-                self.assertEqual(code, 1)
-                self.assertEqual(len([c for c in shell.commands if "-downloadPlatform" in c]), 2)
+        self.assertEqual(self.read_record()["ios-26.5"], "26.5")
 
-    def test_a_version_that_isn_t_one_is_refused_before_any_command(self):
-        for requested in ["18; rm -rf /", "eighteen", "18.6.1.1", "-h", "180"]:
-            with self.subTest(requested=requested):
-                shell = self.shell()
-                code, out = self.step("simulator", shell, environ={"IOS_VERSION": requested})
+    def test_a_bad_ios_version_fails_before_any_command(self):
+        for content in BAD_IOS_VERSIONS[:6]:
+            with self.subTest(content=content):
+                self.repo.write(ios_steps.SNAPSHOT_RUNTIME_FILE, content)
+                shell = self.shell(after_download=WITH_26_5)
+                code, out = self.step("simulator", shell)
                 self.assertEqual((code, shell.commands), (1, []))
+                self.assertIn(ios_steps.SNAPSHOT_RUNTIME_FILE, out)
+
+    def test_a_stray_ios_version_variable_is_ignored(self):
+        # The workflow's input is gone: a variable left in the environment changes nothing.
+        shell = self.shell(after_download=WITH_26_5)
+        code, out = self.step("simulator", shell, environ={"IOS_VERSION": "18.6"})
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.downloads(shell), [["xcodebuild", "-downloadPlatform", "iOS", "-buildVersion", "26.5"]])
+        self.assertNotIn("requested", self.read_record())
 
     def test_an_existing_device_is_reused(self):
-        devices = {"com.apple.CoreSimulator.SimRuntime.iOS-26-5": [
+        devices = {IOS_27_2["identifier"]: [
             {"name": "iPhone 17 Pro", "udid": "X", "isAvailable": True},
-            {"name": "iPhone 17", "udid": UDID, "isAvailable": True}]}
-        shell = self.shell(devices=devices, create=(1, "", "should not be called"))
+            {"name": "iPhone 17", "udid": UDID, "isAvailable": True}],
+            TWIN["identifier"]: [{"name": "iPhone 17", "udid": "D0000000-0000-0000-0000-000000000000",
+                                  "isAvailable": True}]}
+        shell = self.shell(devices=devices, after_download=WITH_26_5)
         code, out = self.step("simulator", shell)
         self.assertEqual(code, 0, out)
-        self.assertFalse(any(c[:3] == ["xcrun", "simctl", "create"] for c in shell.commands))
-        self.assertEqual(self.read_record()["udid"], UDID)
+        # 27.2's is reused; 26.5's, downloaded, is made.
+        self.assertEqual(self.creates(shell), [["Tadayo iPhone 17", IPHONE_17, IOS_26_5["identifier"]]])
+        self.assertEqual((self.read_record()["udid-27.2"], self.read_record()["udid-26.5"]), (UDID, UDID_26))
+
+    def test_an_unavailable_device_is_not_reused(self):
+        # simctl keeps a device whose runtime went away, unavailable; it couldn't boot.
+        stale = "E0000000-0000-0000-0000-000000000000"
+        devices = {IOS_27_2["identifier"]: [{"name": "iPhone 17", "udid": stale, "isAvailable": False}]}
+        shell = self.shell(devices=devices, after_download=WITH_26_5)
+        code, out = self.step("simulator", shell)
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.creates(shell)[0], ["Tadayo iPhone 17", IPHONE_17, IOS_27_2["identifier"]])
+        self.assertEqual(self.read_record()["udid-27.2"], UDID)
+        self.assertNotIn(stale, json.dumps(self.read_record()))
 
     def test_a_device_that_can_t_be_made_fails(self):
         for create in [(1, "", "Invalid device type"), (0, "not a udid\n", "")]:
             with self.subTest(create=create):
-                self.assertEqual(self.step("simulator", self.shell(create=create))[0], 1)
+                code, out = self.step("simulator", self.shell(create=create, after_download=WITH_26_5))
+                self.assertEqual(code, 1)
+                self.assertIn("on iOS 27.2", out)
 
     def test_unreadable_runtimes_fail(self):
         shell = FakeShell(answers=[(starts("xcrun", "simctl", "list", "runtimes", "--json"),
-                                    (0, "not json", ""))])
+                                    (0, "not json", "")),
+                                   (starts("xcrun", "--sdk"), (0, "27.2\n", ""))])
         self.assertEqual(self.step("simulator", shell)[0], 1)
 
 
 class PickTest(unittest.TestCase):
-    def test_pick_runtime(self):
+    def pick(self, runtimes, version="27.2", device="iPhone 17"):
+        return ios_steps.pick_runtime(runtimes, version, device)
+
+    def test_the_iphones_27_2_not_the_twin(self):
         runtimes = RUNTIMES["runtimes"]
-        self.assertEqual(ios_steps.pick_runtime(runtimes, "")["version"], "26.5")
-        self.assertEqual(ios_steps.pick_runtime(runtimes, "26.4.1")["version"], "26.4.1")
-        self.assertIsNone(ios_steps.pick_runtime(runtimes, "27"))  # not available
-        self.assertIsNone(ios_steps.pick_runtime(runtimes, "26.1"))
-        self.assertIsNone(ios_steps.pick_runtime(runtimes, "2"))  # 26.x isn't version 2
-        newer = dict(runtimes[1], version="27.0", isAvailable=True)
-        self.assertEqual(ios_steps.pick_runtime(runtimes + [newer], "", newest_major=26)["version"], "26.5")
-        self.assertEqual(ios_steps.pick_runtime(runtimes + [newer], "")["version"], "27.0")
-        # A newer minor of the pinned major stays: Xcode runs it (iOS 18.6 on Xcode 16.4's 18.5).
-        self.assertEqual(ios_steps.pick_runtime([IOS_18], "", newest_major=18)["version"], "18.6")
-        self.assertEqual(ios_steps.pick_runtime(runtimes, "", newest_major=26)["version"], "26.5")
-        # An asked-for version isn't bounded: it is what the run is for.
-        self.assertEqual(ios_steps.pick_runtime(runtimes + [newer], "27", newest_major=26)["version"], "27.0")
+        self.assertEqual(self.pick(runtimes), IOS_27_2)
+        self.assertEqual(self.pick(runtimes, device="iPhone Duo"), TWIN)
+        self.assertIsNone(self.pick([TWIN]))
+        self.assertIsNone(self.pick(runtimes, "27.1"))  # iPhone Duo alone
+        self.assertEqual(self.pick(runtimes, "27.0")["version"], "27.0")
+        self.assertIsNone(self.pick(runtimes, "26.5"))  # not on the image
+        self.assertEqual(self.pick(runtimes + [IOS_26_5], "26.5"), IOS_26_5)
+
+    def test_a_newer_runtime_on_the_image_is_never_taken_for_27_2(self):
+        # The cap's replacement (critique 6a): iOS 27.3, as the image with Xcode 27.3 beta may
+        # carry it, and a 27.20 decoy.
+        newer = dict(IOS_27_2, identifier="com.apple.CoreSimulator.SimRuntime.iOS-27-3", version="27.3",
+                     buildversion="24D5020n")
+        decoy = dict(IOS_27_2, identifier="com.apple.CoreSimulator.SimRuntime.iOS-27-20", version="27.20",
+                     buildversion="24Z1")
+        self.assertEqual(self.pick([newer, decoy] + RUNTIMES["runtimes"]), IOS_27_2)
+        self.assertIsNone(self.pick([newer, decoy, TWIN]))
+        self.assertIsNone(self.pick([IOS_27_2], "2"))  # 27.2 isn't version 2
+        # A patch release of 27.2 is 27.2's.
+        patch = dict(IOS_27_2, identifier="com.apple.CoreSimulator.SimRuntime.iOS-27-2-1", version="27.2.1",
+                     buildversion="24C70")
+        self.assertEqual(self.pick([newer, decoy, patch] + RUNTIMES["runtimes"]), patch)
+
+    def test_an_unavailable_or_another_platform_s_runtime_isn_t_taken(self):
+        self.assertIsNone(self.pick([dict(IOS_27_2, isAvailable=False)]))
+        self.assertIsNone(self.pick([dict(IOS_27_2, platform="tvOS",
+                                          identifier="com.apple.CoreSimulator.SimRuntime.tvOS-27-2")]))
+        # A simctl that gives no platform: the identifier says iOS.
+        unnamed = {k: v for k, v in IOS_27_2.items() if k != "platform"}
+        self.assertEqual(self.pick([unnamed]), unnamed)
+
+    def test_the_newest_by_version_then_by_build(self):
+        a = dict(IOS_27_2, identifier="com.apple.CoreSimulator.SimRuntime.iOS-27-2-a", buildversion="24B335")
+        c = dict(IOS_27_2, identifier="com.apple.CoreSimulator.SimRuntime.iOS-27-2-c", buildversion="24C9")
+        for runtimes in ([a, c], [c, a]):
+            with self.subTest(order=[r["buildversion"] for r in runtimes]):
+                self.assertEqual(self.pick(runtimes), c)  # C9 is after B335
+        self.assertGreater(ios_steps.build_key("24C55"), ios_steps.build_key("24C9"))
+        self.assertGreater(ios_steps.build_key("24D5020n"), ios_steps.build_key("24C55"))
+
+    def test_a_tie_goes_to_the_same_runtime_whatever_simctl_s_order(self):
+        # The same version and build under two identifiers: the identifier decides, never which
+        # simctl lists first, so the same image always gives the same runtime.
+        a = dict(IOS_27_2, identifier="com.apple.CoreSimulator.SimRuntime.iOS-27-2-a")
+        b = dict(IOS_27_2, identifier="com.apple.CoreSimulator.SimRuntime.iOS-27-2-b")
+        for runtimes in ([a, b], [b, a]):
+            with self.subTest(order=[r["identifier"][-1] for r in runtimes]):
+                self.assertEqual(self.pick(runtimes), b)
+
+    def test_a_shared_identifier_raises(self):
+        # The twin sharing the iPhones' identifier, or two runtimes with the iPhone 17 sharing
+        # one: simctl couldn't tell them apart (critique 5).
+        twin = dict(TWIN, identifier=IOS_27_2["identifier"])
+        again = dict(IOS_27_2, buildversion="24C61")
+        for runtimes in ([twin, IOS_27_2], [IOS_27_2, again]):
+            with self.subTest(runtimes=runtimes):
+                with self.assertRaises(ValueError) as raised:
+                    self.pick(runtimes)
+                for runtime in runtimes:
+                    self.assertIn(f"build {runtime['buildversion']}", str(raised.exception))
+                self.assertIn(IOS_27_2["identifier"], str(raised.exception))
+        # Runtimes of other versions, or none with the device, aren't this one's business.
+        self.assertEqual(self.pick([IOS_27_2, dict(TWIN, version="27.1", identifier=IOS_27_2["identifier"])]),
+                         IOS_27_2)
 
     def test_pick_device_type(self):
-        self.assertEqual(ios_steps.pick_device_type(IOS_18, "iPhone 17")["name"], "iPhone 16")
-        self.assertEqual(ios_steps.pick_device_type(RUNTIMES["runtimes"][0], "iPhone 17")["name"], "iPhone 17")
-        self.assertIsNone(ios_steps.pick_device_type({"supportedDeviceTypes": [{"name": "iPad (A16)"}]}, "iPhone 17"))
+        self.assertEqual(ios_steps.pick_device_type(IOS_27_2, "iPhone 17")["identifier"], IPHONE_17)
+        # No other iPhone stands in, however close.
+        self.assertIsNone(ios_steps.pick_device_type(
+            {"supportedDeviceTypes": [{"name": "iPhone 16"}, {"name": "iPhone 17 Pro"}]}, "iPhone 17"))
+        self.assertIsNone(ios_steps.pick_device_type(TWIN, "iPhone 17"))
+        self.assertIsNone(ios_steps.pick_device_type({}, "iPhone 17"))
+        self.assertIsNone(ios_steps.pick_device_type({"supportedDeviceTypes": ["iPhone 17", None]}, "iPhone 17"))
+
+
+def on(udid):
+    """A predicate for the test pass on the device `udid`."""
+    return lambda cmd: "test-without-building" in cmd and f"platform=iOS Simulator,id={udid}" in cmd
 
 
 class BuildAndTestSteps(StepsTest):
@@ -489,7 +825,9 @@ class BuildAndTestSteps(StepsTest):
         self.repo.write("apps/ios/project.yml", "name: Tadayo\n")
         self.repo.mkdir("apps/ios/Tadayo.xcodeproj/xcshareddata/xcschemes")
         self.write_scheme(scheme(("TadayoTests", False)))
-        self.record(udid=UDID, ios="26.5", device="iPhone 17")
+        self.record({"udid-27.2": UDID, "ios-27.2": "27.2", "device-27.2": "iPhone 17",
+                     "udid-26.5": UDID_26, "ios-26.5": "26.5", "device-26.5": "iPhone 17",
+                     "snapshots": "26.5", "snapshots-source": "interim"})
 
     def products(self, extension=True, log=("** TEST BUILD SUCCEEDED **\n",)):
         app = os.path.join(self.repo.root, "_runner_temp", "DerivedData", "Build", "Products",
@@ -499,7 +837,18 @@ class BuildAndTestSteps(StepsTest):
         with open(os.path.join(self.repo.out, "logs", "build.log"), "w", encoding="utf-8") as f:
             f.writelines(log)
 
-    def test_build_for_testing_on_the_simulator(self):
+    def passes(self, shell):
+        """Each test pass's (command, environment, log)."""
+        return [(c, e, log) for c, e, log in zip(shell.commands, shell.envs, shell.logs, strict=True)
+                if c[:2] == ["xcodebuild", "test-without-building"]]
+
+    def results(self):
+        return {k: v for k, v in self.read_record().items() if k == "tests" or k.startswith("tests-")}
+
+    def log(self, name):
+        return os.path.join(self.repo.out, "logs", name)
+
+    def test_build_for_testing_on_the_first_runtime_s_simulator(self):
         shell = FakeShell(effects=[(has("build-for-testing"), lambda cmd: self.products())])
         code, out = self.step("build", shell)
         self.assertEqual(code, 0, out)
@@ -509,6 +858,7 @@ class BuildAndTestSteps(StepsTest):
         self.assertEqual(cmd[cmd.index("-scheme") + 1], "Tadayo")
         self.assertEqual(cmd[cmd.index("-destination") + 1], f"platform=iOS Simulator,id={UDID}")
         self.assertIn("-skipPackagePluginValidation", cmd)
+        self.assertEqual(len(shell.commands), 1)  # built once
 
     def test_a_scheme_with_no_tests_still_lets_package_plugins_run(self):
         self.write_scheme(scheme())
@@ -523,7 +873,7 @@ class BuildAndTestSteps(StepsTest):
         self.assertEqual(code, 0, out)
 
     def test_a_plugin_outside_the_list_fails_the_build(self):
-        other = "Apply build tool plug-in \u201cLinter\u201d to target \u201cTadayoCore\u201d in package \u201ctadayocore\u201d\n"
+        other = "Apply build tool plug-in “Linter” to target “TadayoCore” in package “tadayocore”\n"
         shell = FakeShell(effects=[(has("build-for-testing"),
                                     lambda cmd: self.products(log=PackagePluginsTest.GENERATOR + [other]))])
         code, out = self.step("build", shell)
@@ -548,9 +898,17 @@ class BuildAndTestSteps(StepsTest):
         self.assertEqual(self.step("build", FakeShell(codes=[(has("build-for-testing"), 65)]))[0], 65)
 
     def test_no_simulator_no_build(self):
-        os.remove(os.path.join(self.repo.out, "run.json"))
-        shell = FakeShell()
-        self.assertEqual((self.step("build", shell)[0], shell.commands), (1, []))
+        # run.json's keys before the change (one `udid`) aren't read either.
+        for record in (None, {"udid": UDID, "ios": "26.5"}):
+            with self.subTest(record=record):
+                os.remove(os.path.join(self.repo.out, "run.json"))
+                if record:
+                    self.record(record)
+                shell = FakeShell()
+                code, out = self.step("build", shell)
+                self.assertEqual((code, shell.commands), (1, []))
+                self.assertIn("no iOS 27.2 simulator in run.json", out)
+                self.record({})
 
     def test_a_scheme_with_no_tests_is_built_without_testing(self):
         # xcodebuild refuses build-for-testing for a scheme with no test target, as the check
@@ -580,7 +938,7 @@ class BuildAndTestSteps(StepsTest):
         code, out = self.step("test", shell)
         self.assertEqual((code, shell.commands), (0, []))
         self.assertIn("no tests yet", out)
-        self.assertEqual(self.read_record()["tests"], "none")
+        self.assertEqual(self.results(), {"tests": "none", "tests-27.2": "none", "tests-26.5": "none"})
 
     def test_a_missing_scheme_fails(self):
         os.remove(os.path.join(self.repo.root, *"apps/ios/Tadayo.xcodeproj/xcshareddata/xcschemes/Tadayo.xcscheme".split("/")))
@@ -591,32 +949,170 @@ class BuildAndTestSteps(StepsTest):
                 self.assertEqual((code, shell.commands), (1, []))
                 self.assertIn("no shared scheme", out)
 
-    def test_tests_run_with_snapshot_recording_off(self):
+    def test_a_missing_runtime_s_simulator_fails_before_any_command(self):
+        record = self.read_record()
+        del record["udid-26.5"]
+        self.record(record)
+        shell = FakeShell()
+        code, out = self.step("test", shell)
+        self.assertEqual((code, shell.commands), (1, []))
+        self.assertIn("no iOS 26.5 simulator in run.json", out)
+
+    def test_a_pass_on_each_runtime_in_order(self):
+        # Distinct destinations, result bundles and logs; recording off on each.
         self.write_scheme(scheme(("TadayoTests", False), ("TadayoSnapshotTests", False),
                                  ("TadayoUITests", False), ("Disabled", True)))
         shell = FakeShell()
         code, out = self.step("test", shell)
         self.assertEqual(code, 0, out)
-        cmd, env = shell.commands[0], shell.envs[0]
-        self.assertEqual(cmd[:2], ["xcodebuild", "test-without-building"])
-        self.assertIn(["git", "status", "--porcelain", "-z", "--untracked-files=all", "--", "apps/ios"],
-                      shell.commands)
-        self.assertNotIn("-skip-testing", cmd)
-        self.assertIn("-skipPackagePluginValidation", cmd)
-        self.assertEqual(env["TEST_RUNNER_SNAPSHOT_TESTING_RECORD"], "never")
-        self.assertEqual(env["TEST_RUNNER_SNAPSHOT_ARTIFACTS"], os.path.join(self.repo.out, "artifacts"))
-        self.assertTrue(cmd[cmd.index("-resultBundlePath") + 1].endswith("Tests.xcresult"))
-        self.assertEqual(self.read_record()["tests"], "passed")
+        passes = self.passes(shell)
+        bundles = [os.path.join(self.repo.out, f"Tests-{v}.xcresult") for v in ("27.2", "26.5")]
+        self.assertEqual([c[c.index("-destination") + 1] for c, _, _ in passes],
+                         [f"platform=iOS Simulator,id={UDID}", f"platform=iOS Simulator,id={UDID_26}"])
+        self.assertEqual([c[c.index("-resultBundlePath") + 1] for c, _, _ in passes], bundles)
+        self.assertEqual([log for _, _, log in passes], [self.log("test-27.2.log"), self.log("test-26.5.log")])
+        for cmd, env, _ in passes:
+            self.assertIn("-skipPackagePluginValidation", cmd)
+            self.assertEqual(env["TEST_RUNNER_SNAPSHOT_TESTING_RECORD"], "never")
+            self.assertEqual(env["DEVELOPER_DIR"], DEVELOPER_DIR)
+        summaries = [c for c in shell.commands if c[:3] == ["xcrun", "xcresulttool", "get"]]
+        self.assertEqual([c[c.index("--path") + 1] for c in summaries], bundles)
+        for version in ("27.2", "26.5"):
+            self.assertTrue(os.path.isfile(self.log(f"test-summary-{version}.json")), version)
+        self.assertFalse(os.path.exists(self.log("test.log")))
+        self.assertEqual(self.results(), {"tests": "passed", "tests-27.2": "passed", "tests-26.5": "passed"})
 
-    def test_a_compatibility_run_skips_the_snapshot_targets(self):
+    def test_the_snapshot_targets_run_on_the_snapshot_runtime_alone(self):
+        # The interim (no ios-version file) is 26.5, the second pass; with the file, 27.2. Only
+        # that pass has the artifacts directory.
         self.write_scheme(scheme(("TadayoTests", False), ("TadayoSnapshotTests", False),
                                  ("TadayoUITests", False)))
+        artifacts = os.path.join(self.repo.out, "artifacts")
+        for content, snapshots in ((None, "26.5"), (b"27.2\n", "27.2")):
+            with self.subTest(snapshots=snapshots):
+                if content:
+                    self.repo.write(ios_steps.SNAPSHOT_RUNTIME_FILE, content)
+                shell = FakeShell()
+                code, out = self.step("test", shell)
+                self.assertEqual(code, 0, out)
+                self.assertIn(f"the snapshot tests run on iOS {snapshots}", out)
+                passes = self.passes(shell)
+                self.assertEqual(len(passes), 2)
+                for (cmd, env, _), version in zip(passes, ("27.2", "26.5"), strict=True):
+                    skipped = [cmd[i + 1] for i, c in enumerate(cmd) if c == "-skip-testing"]
+                    if version == snapshots:
+                        self.assertEqual(skipped, [], version)
+                        self.assertEqual(env["TEST_RUNNER_SNAPSHOT_ARTIFACTS"], artifacts)
+                    else:
+                        self.assertEqual(skipped, ["TadayoSnapshotTests"], version)
+                        self.assertNotIn("TEST_RUNNER_SNAPSHOT_ARTIFACTS", env)
+
+    def test_a_failed_pass_still_runs_the_next_and_fails_the_step(self):
+        for failing, code, results in (
+                ([UDID], 65, {"tests": "failed", "tests-27.2": "failed", "tests-26.5": "passed"}),
+                ([UDID_26], 70, {"tests": "failed", "tests-27.2": "passed", "tests-26.5": "failed"}),
+                ([UDID, UDID_26], 65, {"tests": "failed", "tests-27.2": "failed", "tests-26.5": "failed"})):
+            with self.subTest(failing=failing):
+                shell = FakeShell(codes=[(on(udid), 65 if udid == UDID else 70) for udid in failing])
+                found, out = self.step("test", shell)
+                self.assertEqual(found, code)
+                self.assertEqual(len(self.passes(shell)), 2)
+                self.assertEqual(self.results(), results)
+                self.assertIn("the evidence job still publishes what they drew", out)
+
+    def test_between_passes_the_device_is_shut_down_and_the_next_booted(self):
         shell = FakeShell()
-        code, out = self.step("test", shell, environ={"IOS_VERSION": "18.6"})
+        self.assertEqual(self.step("test", shell)[0], 0)
+        seen = [(c[:2] if c[0] == "xcodebuild" else c, log) for c, log in zip(shell.commands, shell.logs, strict=True)
+                if c[0] == "xcodebuild" or c[:2] == ["xcrun", "simctl"]]
+        self.assertEqual(seen, [
+            (["xcodebuild", "test-without-building"], self.log("test-27.2.log")),
+            (["xcrun", "simctl", "shutdown", UDID], self.log("test-26.5.log")),
+            (["xcrun", "simctl", "bootstatus", UDID_26, "-b"], self.log("test-26.5.log")),
+            (["xcodebuild", "test-without-building"], self.log("test-26.5.log"))])
+
+    def test_a_failed_shutdown_is_logged_and_a_failed_boot_fails_its_pass(self):
+        shell = FakeShell(codes=[(starts("xcrun", "simctl", "shutdown"), 1)])
+        self.assertEqual(self.step("test", shell)[0], 0)
+        self.assertEqual(len(self.passes(shell)), 2)
+        shell = FakeShell(codes=[(starts("xcrun", "simctl", "bootstatus"), 1)])
+        code, out = self.step("test", shell)
+        self.assertEqual(code, 1)
+        self.assertIn(f"the iOS 26.5 simulator {UDID_26} didn't boot", out)
+        self.assertEqual(len(self.passes(shell)), 1)
+        self.assertEqual(self.results(), {"tests": "failed", "tests-27.2": "passed", "tests-26.5": "failed"})
+
+    def test_a_pass_with_no_target_left_is_none_and_boots_nothing(self):
+        # A scheme of snapshot tests alone: the other runtime's pass has nothing to run.
+        self.write_scheme(scheme(("TadayoSnapshotTests", False)))
+        shell = FakeShell()
+        self.assertEqual(self.step("test", shell)[0], 0)
+        self.assertEqual([c[c.index("-destination") + 1] for c, _, _ in self.passes(shell)],
+                         [f"platform=iOS Simulator,id={UDID_26}"])
+        # 27.2's device, booted by the simulator step, is shut down for 26.5's.
+        self.assertIn(["xcrun", "simctl", "shutdown", UDID], shell.commands)
+        self.assertEqual(self.results(), {"tests": "passed", "tests-27.2": "none", "tests-26.5": "passed"})
+        self.repo.write(ios_steps.SNAPSHOT_RUNTIME_FILE, "27.2\n")
+        shell = FakeShell()
+        self.assertEqual(self.step("test", shell)[0], 0)
+        self.assertEqual(len(self.passes(shell)), 1)
+        self.assertFalse([c for c in shell.commands if c[:2] == ["xcrun", "simctl"]])
+        self.assertEqual(self.results(), {"tests": "passed", "tests-27.2": "passed", "tests-26.5": "none"})
+
+    def test_a_stale_bundle_is_removed_before_its_pass(self):
+        # xcodebuild refuses a -resultBundlePath that already exists.
+        for version in ("27.2", "26.5"):
+            self.repo.write(f"_runner_temp/ios-out/Tests-{version}.xcresult/Info.plist", "stale")
+        seen = []
+        shell = FakeShell(effects=[(has("test-without-building"), lambda cmd: seen.append(
+            (cmd[cmd.index("-resultBundlePath") + 1], os.path.exists(cmd[cmd.index("-resultBundlePath") + 1]))))])
+        code, out = self.step("test", shell)
         self.assertEqual(code, 0, out)
-        cmd = shell.commands[0]
-        self.assertEqual([cmd[i + 1] for i, c in enumerate(cmd) if c == "-skip-testing"],
-                         ["TadayoSnapshotTests"])
+        self.assertEqual(seen, [(os.path.join(self.repo.out, f"Tests-{v}.xcresult"), False) for v in ("27.2", "26.5")])
+
+    def test_an_unpinned_snapshot_runtime_fails_before_any_command(self):
+        # Never so with the pins PinsTest checks; were it so, no pass would run the snapshot tests.
+        for name, value, content in (("SNAPSHOT_RUNTIME_INTERIM", "26.4", None),
+                                     ("SNAPSHOT_RUNTIME", "27.3", b"27.3\n")):
+            with self.subTest(name=name), mock.patch.object(toolchain, name, value):
+                if content:
+                    self.repo.write(ios_steps.SNAPSHOT_RUNTIME_FILE, content)
+                shell = FakeShell()
+                code, out = self.step("test", shell)
+                self.assertEqual((code, shell.commands), (1, []))
+                self.assertIn(f"the snapshot runtime, iOS {value}, isn't one of 27.2, 26.5", out)
+
+    def test_the_backstop_runs_once_after_every_pass(self):
+        for codes in ([], [(has("test-without-building"), 65)]):
+            with self.subTest(failing=bool(codes)):
+                shell = FakeShell(codes=codes)
+                self.step("test", shell)
+                status = [i for i, c in enumerate(shell.commands) if c[:2] == ["git", "status"]]
+                last = max(i for i, c in enumerate(shell.commands) if c[:2] == ["xcodebuild", "test-without-building"])
+                self.assertEqual(len(status), 1)
+                self.assertGreater(status[0], last)
+                # Every untracked file by its own path: without --untracked-files=all, git shows a
+                # new __Snapshots__/<Test>/ folder as the folder, and a reference recorded into
+                # it would get past the backstop.
+                self.assertEqual(shell.commands[status[0]],
+                                 ["git", "status", "--porcelain", "-z", "--untracked-files=all", "--", "apps/ios"])
+
+    def test_a_bad_ios_version_fails_before_any_command(self):
+        for content in BAD_IOS_VERSIONS[:6]:
+            with self.subTest(content=content):
+                self.repo.write(ios_steps.SNAPSHOT_RUNTIME_FILE, content)
+                shell = FakeShell()
+                code, out = self.step("test", shell)
+                self.assertEqual((code, shell.commands), (1, []))
+                self.assertIn(ios_steps.SNAPSHOT_RUNTIME_FILE, out)
+
+    def test_a_stray_ios_version_variable_is_ignored(self):
+        self.write_scheme(scheme(("TadayoTests", False), ("TadayoSnapshotTests", False)))
+        expected = FakeShell()
+        self.step("test", expected)
+        shell = FakeShell()
+        self.assertEqual(self.step("test", shell, environ={"IOS_VERSION": "18.6"})[0], 0)
+        self.assertEqual(shell.commands, expected.commands)
 
     def test_a_test_that_sets_its_own_record_mode_is_refused(self):
         self.write_scheme(scheme(("TadayoSnapshotTests", False)))
@@ -664,11 +1160,11 @@ class BuildAndTestSteps(StepsTest):
         changed = " M apps/ios/T/__Snapshots__/HomeTests/testHome.H01-open.png\0"
         self.assertEqual(self.step("test", FakeShell(answers=[(starts("git", "status"), (0, changed, ""))]))[0], 1)
         self.assertEqual(self.step("test", FakeShell(answers=[(starts("git", "status"), (128, "", "fatal"))]))[0], 1)
-
-    def test_failing_tests_fail_the_step(self):
-        self.write_scheme(scheme(("TadayoTests", False)))
-        code, _ = self.step("test", FakeShell(codes=[(has("test-without-building"), 65)]))
+        # A failed pass that also wrote one: the backstop still says so, and the step fails.
+        code, out = self.step("test", FakeShell(answers=[(starts("git", "status"), (0, written, ""))],
+                                                codes=[(has("test-without-building"), 65)]))
         self.assertEqual(code, 65)
+        self.assertIn("testHome.H01-open.png", out)
         self.assertEqual(self.read_record()["tests"], "failed")
 
     def test_a_test_plan_s_targets(self):
@@ -862,14 +1358,14 @@ class StateTest(unittest.TestCase):
                 self.assertIsNone(ios_steps.snapshot_file_from_attachment(name))
 
     def test_evidence_path(self):
-        self.assertEqual(ios_steps.evidence_path("ios/b0-ios-check", SHA, ""), "ios/b0-ios-check/0123456/ios")
-        self.assertEqual(ios_steps.evidence_path("main", SHA, "18.6"), "main/0123456/ios-18.6")
-        self.assertEqual(ios_steps.evidence_path("main", SHA, "", full=True), "main/0123456/ios-full")
-        for branch, sha, requested in [("", SHA, ""), ("a/../b", SHA, ""), ("/a", SHA, ""),
-                                       ("a", "0123456", ""), ("a", SHA, "18;x")]:
-            with self.subTest(branch=branch, sha=sha, requested=requested):
+        # One folder a run, each runtime's logs in it: the ios-<version>/ folders have ended.
+        self.assertEqual(ios_steps.evidence_path("ios/b0-ios-check", SHA), "ios/b0-ios-check/0123456/ios")
+        self.assertEqual(ios_steps.evidence_path("main", SHA, full=True), "main/0123456/ios-full")
+        for branch, sha in [("", SHA), ("a/../b", SHA), ("/a", SHA), ("a/", SHA), ("a", "0123456"),
+                            ("a", SHA.upper()), ("a", None)]:
+            with self.subTest(branch=branch, sha=sha):
                 with self.assertRaises(ValueError):
-                    ios_steps.evidence_path(branch, sha, requested)
+                    ios_steps.evidence_path(branch, sha)
 
     def test_magick_text(self):
         self.assertEqual(ios_steps.magick_text("50% done"), "50%% done")
@@ -897,6 +1393,27 @@ class StateTest(unittest.TestCase):
         self.assertEqual(shell.capture(["tadayo-no-such-program"])[0], 127)
 
 
+class EvidenceTargetTest(StepsTest):
+    def target(self, **environ):
+        environ = dict({"GITHUB_REF_NAME": "ios/b0-xcode27-check", "GITHUB_SHA": SHA}, **environ)
+        return self.steps(environ=environ).evidence_target()
+
+    def test_a_push_s_folder_and_a_run_by_hand_s(self):
+        self.assertEqual(self.target(GITHUB_EVENT_NAME="push"), ("ios/b0-xcode27-check/0123456/ios", "touched"))
+        self.assertEqual(self.target(GITHUB_EVENT_NAME="workflow_dispatch"),
+                         ("ios/b0-xcode27-check/0123456/ios-full", "full"))
+
+    def test_a_stray_ios_version_is_ignored(self):
+        # The workflow's input is gone: a variable of that name left in a runner's environment
+        # neither makes an ios-<version>/ folder nor fails the step.
+        for value in ("18.6", "26.5", "18; rm -rf /", " "):
+            with self.subTest(value=value):
+                self.assertEqual(self.target(GITHUB_EVENT_NAME="push", IOS_VERSION=value),
+                                 ("ios/b0-xcode27-check/0123456/ios", "touched"))
+                self.assertEqual(self.target(GITHUB_EVENT_NAME="workflow_dispatch", IOS_VERSION=value),
+                                 ("ios/b0-xcode27-check/0123456/ios-full", "full"))
+
+
 class CollectTest(StepsTest):
     def png(self, path, color="#336699"):
         full = os.path.join(self.repo.root, *path.split("/")) if not os.path.isabs(path) else path
@@ -920,7 +1437,8 @@ class CollectTest(StepsTest):
         self.png(f"{snaps}/testUpcoming.F02-upcoming.png")
         self.png(f"{snaps}/testUpcoming.F02-upcoming-dark.png")
         self.png(os.path.join(self.repo.out, "artifacts", "Upcoming+Snapshots", "testUpcoming.F02-upcoming-dark.png"), "#000")
-        os.makedirs(os.path.join(self.repo.out, "Tests.xcresult"))
+        self.record(snapshots="26.5")
+        os.makedirs(os.path.join(self.repo.out, "Tests-26.5.xcresult"))
 
         def export(cmd):
             target = cmd[cmd.index("--output-path") + 1]
@@ -936,6 +1454,8 @@ class CollectTest(StepsTest):
         shell = FakeShell(answers=[(starts("xcrun", "xcresulttool", "export", "attachments"), export)])
         code, out = self.step("collect", shell)
         self.assertEqual(code, 0, out)
+        export_cmd = next(c for c in shell.commands if c[:4] == ["xcrun", "xcresulttool", "export", "attachments"])
+        self.assertEqual(export_cmd[export_cmd.index("--path") + 1], os.path.join(self.repo.out, "Tests-26.5.xcresult"))
         entries = self.entries()
         self.assertEqual(set(entries), {"testUpcoming.F02-upcoming.png", "testUpcoming.F02-upcoming-dark.png",
                                         "testFriends.F01-friends.png"})
@@ -977,6 +1497,59 @@ class CollectTest(StepsTest):
         self.assertEqual(code, 0)
         self.assertEqual([e["status"] for e in self.entries().values()], ["committed"])
 
+    def exported(self, shell):
+        return [c[c.index("--path") + 1] for c in shell.commands
+                if c[:4] == ["xcrun", "xcresulttool", "export", "attachments"]]
+
+    def test_new_snapshots_come_from_the_snapshot_runtime_s_bundle(self):
+        # run.json's `snapshots` when the simulator step wrote a pinned runtime there; else the
+        # ios-version file's, as snapshot_runtime() reads it.
+        for version in ("27.2", "26.5"):
+            os.makedirs(os.path.join(self.repo.out, f"Tests-{version}.xcresult"))
+        for written, content, expected in (("27.2", None, "27.2"), ("26.5", b"27.2\n", "26.5"),
+                                           (None, None, "26.5"), (None, b"27.2\n", "27.2"),
+                                           ("99.9", None, "26.5"), (["27.2"], b"27.2", "27.2")):
+            with self.subTest(written=written, content=content):
+                self.record({} if written is None else {"snapshots": written})
+                path = os.path.join(self.repo.root, *ios_steps.SNAPSHOT_RUNTIME_FILE.split("/"))
+                if content is None:
+                    if os.path.exists(path):
+                        os.remove(path)
+                else:
+                    self.repo.write(ios_steps.SNAPSHOT_RUNTIME_FILE, content)
+                shell = FakeShell()
+                code, out = self.step("collect", shell)
+                self.assertEqual(code, 0, out)
+                self.assertEqual(self.exported(shell), [os.path.join(self.repo.out, f"Tests-{expected}.xcresult")])
+
+    def test_a_bad_file_with_nothing_in_run_json_exports_nothing_and_passes(self):
+        # The simulator step failed on the file before it wrote `snapshots`: collect can't say
+        # which pass drew, so it reads no bundle, says why, and still lists the references.
+        self.png("apps/ios/T/__Snapshots__/HomeTests/testHome.H01-open.png")
+        for version in ("27.2", "26.5"):
+            os.makedirs(os.path.join(self.repo.out, f"Tests-{version}.xcresult"))
+        self.repo.write(ios_steps.SNAPSHOT_RUNTIME_FILE, "26.5\n")
+        shell = FakeShell()
+        code, out = self.step("collect", shell)
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.exported(shell), [])
+        self.assertIn(ios_steps.SNAPSHOT_RUNTIME_FILE, out)
+        self.assertIn("no result bundle is read", out)
+        self.assertEqual([e["status"] for e in self.entries().values()], ["committed"])
+
+
+# What the build job's steps write in run.json, but the overall `tests`.
+FACTS = {"xcode": "27.2", "swift": "6.4.2", "sdk": "27.2", "snapshots": "26.5", "snapshots-source": "interim",
+         "ios-27.2": "27.2", "runtime-27.2": IOS_27_2["identifier"], "runtime-build-27.2": "24C55",
+         "device-27.2": "iPhone 17", "udid-27.2": UDID, "tests-27.2": "passed",
+         "ios-26.5": "26.5", "runtime-26.5": IOS_26_5["identifier"], "runtime-build-26.5": "23F77",
+         "device-26.5": "iPhone 17", "udid-26.5": UDID_26, "tests-26.5": "failed"}
+# index.md's lines about the run, under its title and first sentence, for FACTS.
+RUN_LINES = ["- Xcode `27.2`, Swift `6.4.2`, simulator SDK `27.2`",
+             "- iOS `27.2` on `iPhone 17`: tests `passed`, without the snapshot tests",
+             "- iOS `26.5` on `iPhone 17`: tests `failed`, with the snapshot tests",
+             "- References: iOS `26.5` (interim, no ios-version file)"]
+
 
 class SheetsTest(StepsTest):
     """The B0 plan's slice 9 test, "the contact-sheet script on a 2.1 render and a sample PNG"."""
@@ -988,9 +1561,9 @@ class SheetsTest(StepsTest):
         self.environ.update({"GITHUB_REF_NAME": "ios/b0-ios-check", "GITHUB_SHA": SHA,
                              "GITHUB_EVENT_NAME": "push", "GITHUB_REPOSITORY": "beurni2/tadayo",
                              "GITHUB_SERVER_URL": "https://github.com", "GITHUB_RUN_ID": "42"})
-        self.record(ios="26.5", device="iPhone 17", xcode="26.6", swift="6.3.3", tests="failed")
+        self.record(FACTS, tests="failed")
         os.makedirs(os.path.join(self.repo.out, "logs"))
-        with open(os.path.join(self.repo.out, "logs", "test.log"), "w") as f:
+        with open(os.path.join(self.repo.out, "logs", "test-26.5.log"), "w") as f:
             f.write("** TEST FAILED **\n")
 
     def sample(self, path, size="1179x2556", color="#2b4a6f"):
@@ -1044,7 +1617,7 @@ class SheetsTest(StepsTest):
         self.assertEqual(width, 2 * (600 + 2 * 24))  # two tiles: the render and the snapshot
         self.assertGreater(height, 1300)
         self.assertTrue(os.path.isfile(os.path.join(self.stage(), "snapshots", "F02-upcoming.png")))
-        self.assertTrue(os.path.isfile(os.path.join(self.stage(), "logs", "test.log")))
+        self.assertTrue(os.path.isfile(os.path.join(self.stage(), "logs", "test-26.5.log")))
         with open(os.path.join(self.stage(), "index.md")) as f:
             index = f.read()
         self.assertIn("https://github.com/beurni2/tadayo/blob/evidence/ios/b0-ios-check/0123456/ios/sheets/F02-upcoming.jpg", index)
@@ -1075,7 +1648,9 @@ class SheetsTest(StepsTest):
         # A one-tile sheet is 648 pixels wide: the title, drawn at twice the labels' size, is the
         # state alone, and the run's details are lines of the snapshot's label.
         self.assertEqual(montage[montage.index("-title") + 1], "A02-email")
-        self.assertIn("iOS 26.5 · iPhone 17\nios/b0-ios-check @ 0123456", labels[0])
+        # The snapshot runtime's iOS and device, and which runtime the references are for.
+        self.assertIn("iOS 26.5 · iPhone 17\nreferences: iOS 26.5 (interim, no ios-version file)\n"
+                      "ios/b0-ios-check @ 0123456", labels[0])
 
     def test_a_changed_snapshot_s_sheet_has_three_panels(self):  # without ImageMagick, so in ci too
         reference = self.sample("apps/ios/S/__Snapshots__/XTests/testX.F02-upcoming.png", color="#888")
@@ -1272,64 +1847,140 @@ class SheetsTest(StepsTest):
 
     def test_run_json_s_values_are_checked_too(self):
         self.snapshots([self.entry("F02-upcoming", "new")])
-        facts = {"ios": "26.5", "device": "iPhone 17", "xcode": "26.6", "swift": "6.3.3", "sdk": "26.5",
-                 "requested": "26.5", "udid": UDID, "runtime": "com.apple.CoreSimulator.SimRuntime.iOS-26-5"}
+        facts = dict(FACTS)
         # Each fails FACT on one count only: line breaks, a tab, a trailing line break, length, a
         # backtick (which would end index.md's code span).
         for tests in ("failed\n# Gate passed\n[Open](https://example.invalid)",
                       "failed\n\nGate A passed\n---", "failed\n", "failed\t", "f" * 65,
                       "failed` www.phish.example `x"):
             with self.subTest(tests=tests):
-                # A key no step writes isn't kept either, whatever its value.
-                self.record(tests=tests, **facts, **{"Gate A passed": "yes", "notes": "plain"})
+                # A key no step writes isn't kept either, whatever its value: the keys from
+                # before two runtimes among them.
+                self.record(facts, tests=tests, **{"Gate A passed": "yes", "notes": "plain", "ios": "26.5",
+                                                   "device": "iPhone 17", "udid": UDID, "requested": "18.6"})
                 self.assertEqual(self.step("sheets", FakeShell())[0], 0)
                 index = self.index()
                 self.assertNotIn("example.invalid", index)
                 self.assertNotIn("Gate A passed", index)
                 self.assertNotIn("phish", index)
-                self.assertEqual(index.splitlines()[4:6],
-                                 ["- Xcode `26.6`, Swift `6.3.3`, iOS `26.5` on `iPhone 17`",
-                                  "- Tests: `not run`"])
+                self.assertEqual(index.splitlines()[4:10], RUN_LINES + ["- Tests: `not run`",
+                                                                        "- Carries the states this branch "
+                                                                        "touches; 0 snapshot(s) not carried"])
                 # The stage's run.json holds the checked values, never the file as written.
                 with open(os.path.join(self.stage(), "run.json")) as f:
                     self.assertEqual(json.load(f), facts)
         # A value FACT lets through is shown in a code span, so GitHub never makes it a link.
-        self.record(**dict(facts, device="www.phish.example", tests="www.phish.example"))
+        self.record(facts, **{"device-26.5": "www.phish.example", "tests": "www.phish.example"})
         self.assertEqual(self.step("sheets", FakeShell())[0], 0)
-        self.assertEqual(self.index().splitlines()[4:6],
-                         ["- Xcode `26.6`, Swift `6.3.3`, iOS `26.5` on `www.phish.example`",
-                          "- Tests: `www.phish.example`"])
+        self.assertEqual(self.index().splitlines()[6], "- iOS `26.5` on `www.phish.example`: tests `failed`, "
+                                                       "with the snapshot tests")
+        self.assertEqual(self.index().splitlines()[8], "- Tests: `www.phish.example`")
         with open(os.path.join(self.stage(), "run.json")) as f:  # every key the steps write
-            self.assertEqual(json.load(f), dict(facts, device="www.phish.example", tests="www.phish.example"))
+            self.assertEqual(json.load(f), dict(facts, **{"device-26.5": "www.phish.example",
+                                                          "tests": "www.phish.example"}))
         with open(os.path.join(self.repo.out, "run.json"), "w") as f:
             json.dump(["not", "an", "object"], f)
         code, out = self.step("sheets", FakeShell())
         self.assertEqual(code, 0, out)
-        self.assertIn("- Xcode `?`, Swift `?`, iOS `?` on `?`", self.index())
+        self.assertIn("- Xcode `?`, Swift `?`, simulator SDK `?`", self.index())
         with open(os.path.join(self.stage(), "run.json")) as f:
             self.assertEqual(json.load(f), {})
+
+    def test_the_snapshot_runtime_must_be_pinned_and_its_source_one_there_is(self):
+        # This job can write, so run.json's `snapshots` is kept only when it is a pinned runtime,
+        # and `snapshots-source` only when it is snapshot_runtime's (critique 6d); each passes
+        # FACT, so only this check keeps it out.
+        self.snapshots([self.entry("F02-upcoming", "new")])
+        for key, value in (("snapshots", "26.4"), ("snapshots", "27.20"), ("snapshots", "18.6"),
+                           ("snapshots-source", "manual"), ("snapshots-source", "File")):
+            with self.subTest(key=key, value=value):
+                self.record(FACTS, **{key: value})
+                self.assertEqual(self.step("sheets", FakeShell())[0], 0)
+                with open(os.path.join(self.stage(), "run.json")) as f:
+                    staged = json.load(f)
+                self.assertNotIn(key, staged)
+                self.assertNotIn(value, next(line for line in self.index().splitlines()
+                                             if line.startswith("- References: ")))
+                self.assertEqual(staged, {k: v for k, v in FACTS.items() if k != key})
+        self.record(FACTS, snapshots="26.4")
+        self.step("sheets", FakeShell())
+        self.assertEqual(self.index().splitlines()[5:8], [
+            "- iOS `27.2` on `iPhone 17`: tests `passed`, the snapshot tests unknown",
+            "- iOS `26.5` on `iPhone 17`: tests `failed`, the snapshot tests unknown",
+            "- References: unknown: the simulator step didn't record their runtime"])
+
+    def test_the_index_has_a_line_per_runtime_and_says_which_the_references_are_for(self):
+        self.snapshots([])
+        self.assertEqual(self.step("sheets", FakeShell())[0], 0)
+        self.assertEqual(self.index().splitlines()[4:9], RUN_LINES + ["- Tests: `failed`"])
+        self.record(FACTS, snapshots="27.2", tests="passed", **{"snapshots-source": "file", "tests-26.5": "passed"})
+        self.assertEqual(self.step("sheets", FakeShell())[0], 0)
+        self.assertEqual(self.index().splitlines()[5:9], [
+            "- iOS `27.2` on `iPhone 17`: tests `passed`, with the snapshot tests",
+            "- iOS `26.5` on `iPhone 17`: tests `passed`, without the snapshot tests",
+            "- References: iOS `27.2` (the ios-version file)",
+            "- Tests: `passed`"])
+        # The simulator step didn't finish: each pinned runtime still has its line.
+        self.record(xcode="27.2", swift="6.4.2")
+        self.assertEqual(self.step("sheets", FakeShell())[0], 0)
+        self.assertEqual(self.index().splitlines()[4:9], [
+            "- Xcode `27.2`, Swift `6.4.2`, simulator SDK `?`",
+            "- iOS `27.2` on `?`: tests `not run`, the snapshot tests unknown",
+            "- iOS `26.5` on `?`: tests `not run`, the snapshot tests unknown",
+            "- References: unknown: the simulator step didn't record their runtime",
+            "- Tests: `not run`"])
+
+    def test_the_index_and_the_label_show_the_versions_simctl_gave(self):
+        # pick_runtime takes a patch release for its pin, so the evidence says which one ran.
+        self.snapshots([self.entry("A02-email", "new")])
+        self.record(FACTS, **{"ios-27.2": "27.2.1", "ios-26.5": "26.5.1"})
+        shell = FakeShell()
+        self.assertEqual(self.step("sheets", shell)[0], 0)
+        self.assertEqual(self.index().splitlines()[5:7], [
+            "- iOS `27.2.1` on `iPhone 17`: tests `passed`, without the snapshot tests",
+            "- iOS `26.5.1` on `iPhone 17`: tests `failed`, with the snapshot tests"])
+        montage = next(c for c in shell.commands if c[0] == "montage")
+        self.assertIn("iOS 26.5.1 · iPhone 17\n", montage[montage.index("-label") + 1])
+
+    def test_the_label_names_the_snapshot_runtime_s_device(self):
+        # The other runtime's device has another name, so the label can't take it.
+        self.snapshots([self.entry("A02-email", "new")])
+        for facts, drawn in (({"device-27.2": "iPhone Air"},
+                              "iOS 26.5 · iPhone 17\nreferences: iOS 26.5 (interim, no ios-version file)\n"),
+                             ({"device-26.5": "iPhone Air", "snapshots": "27.2", "snapshots-source": "file"},
+                              "iOS 27.2 · iPhone 17\nreferences: iOS 27.2 (the ios-version file)\n")):
+            with self.subTest(facts=facts):
+                self.record(FACTS, **facts)
+                shell = FakeShell()
+                self.assertEqual(self.step("sheets", shell)[0], 0)
+                montage = next(c for c in shell.commands if c[0] == "montage")
+                label = montage[montage.index("-label") + 1]
+                self.assertIn(drawn, label)
+                self.assertNotIn("iPhone Air", label)
 
     def test_only_the_steps_logs_go_up_and_anything_else_fails_the_step(self):
         # logs/ comes from the build job too: a name of its own is the build job's text.
         self.snapshots([self.entry("F02-upcoming", "new")])
         logs = os.path.join(self.repo.out, "logs")
         outside = self.repo.write("secret.txt", "not evidence")
+        # test.log and test-summary.json were logs before two runtimes; now no step writes them.
         for name in ("a] __Every snapshot matches its render. Gate 0 passed__ [b.txt", "README.md",
-                     "toolchain.txt"):
+                     "test.log", "test-summary.json", "toolchain.txt"):
             with open(os.path.join(logs, name), "w") as f:
-                f.write("Gate 0 passed\n" if name != "toolchain.txt" else "Xcode 26.6\n")
+                f.write("Gate 0 passed\n" if name != "toolchain.txt" else "Xcode 27.2\n")
         os.makedirs(os.path.join(logs, "xcodegen.txt"))  # a step's name, but a folder
         os.symlink(outside, os.path.join(logs, "build.log"))  # a step's name, but not a file it wrote
         code, out = self.step("sheets", FakeShell())
         self.assertEqual(code, 1, out)
-        self.assertEqual(sorted(os.listdir(os.path.join(self.stage(), "logs"))), ["test.log", "toolchain.txt"])
+        self.assertEqual(sorted(os.listdir(os.path.join(self.stage(), "logs"))), ["test-26.5.log", "toolchain.txt"])
         index = self.index()
         self.assertNotIn("Gate 0 passed", index)
         self.assertNotIn("README", index)
-        self.assertIn("The build job's logs/ held 4 other entries, not a log its steps write, so they are "
+        self.assertIn("The build job's logs/ held 6 other entries, not a log its steps write, so they are "
                       "left out and this step fails.", index)
         base = "https://github.com/beurni2/tadayo/blob/evidence/ios/b0-ios-check/0123456/ios/logs"
-        self.assertIn(f"Logs: [test.log]({base}/test.log), [toolchain.txt]({base}/toolchain.txt)\n", index)
+        self.assertIn(f"Logs: [test-26.5.log]({base}/test-26.5.log), [toolchain.txt]({base}/toolchain.txt)\n",
+                      index)
         # The rest still goes up.
         self.assertTrue(os.path.isfile(os.path.join(self.stage(), "snapshots", "F02-upcoming.png")))
         self.assertEqual(self.finished(), {"path": "ios/b0-ios-check/0123456/ios"})
@@ -1339,7 +1990,7 @@ class SheetsTest(StepsTest):
         self.assertEqual(code, 1)
         with open(os.path.join(self.stage(), "index.md")) as f:
             self.assertIn("collect step didn't finish", f.read())
-        self.assertTrue(os.path.isfile(os.path.join(self.stage(), "logs", "test.log")))
+        self.assertTrue(os.path.isfile(os.path.join(self.stage(), "logs", "test-26.5.log")))
         self.assertEqual(self.finished(), {"path": "ios/b0-ios-check/0123456/ios"})
 
     def test_without_imagemagick_the_rest_still_goes_up(self):
@@ -1418,13 +2069,20 @@ class SheetsTest(StepsTest):
         # In its own folder, so a push's touched set of the same commit can't replace it.
         self.assertEqual(self.finished(), {"path": "ios/b0-ios-check/0123456/ios-full"})
 
-    def test_a_compatibility_run_carries_logs_and_no_sheets(self):
+    def test_every_runtime_s_logs_go_up_in_the_run_s_one_folder(self):
+        # A stray IOS_VERSION makes no ios-<version>/ folder and drops no sheet.
+        for name in ("test-27.2.log", "test-summary-27.2.json", "test-summary-26.5.json"):
+            with open(os.path.join(self.repo.out, "logs", name), "w") as f:
+                f.write("{}\n")
         code, out, montaged, _ = self.run_sheets([self.entry("A02-email", "new")],
                                                  environ={"IOS_VERSION": "18.6"}, shell=FakeShell())
-        self.assertEqual((code, montaged), (0, []))
-        stage = self.stage("ios-18.6")
-        self.assertTrue(os.path.isfile(os.path.join(stage, "logs", "test.log")))
-        self.assertTrue(os.path.isfile(os.path.join(stage, "index.md")))
+        self.assertEqual((code, montaged), (0, ["A02-email.jpg"]), out)
+        logs = ["test-26.5.log", "test-27.2.log", "test-summary-26.5.json", "test-summary-27.2.json"]
+        self.assertEqual(sorted(os.listdir(os.path.join(self.stage(), "logs"))), logs)
+        self.assertFalse(os.path.exists(self.stage("ios-18.6")))
+        base = "https://github.com/beurni2/tadayo/blob/evidence/ios/b0-ios-check/0123456/ios/logs"
+        self.assertIn("Logs: " + ", ".join(f"[{n}]({base}/{n})" for n in logs) + "\n", self.index())
+        self.assertTrue(set(logs) <= set(ios_steps.LOG_NAMES))
 
     def test_when_git_can_t_compare_only_drawn_snapshots_go_up_and_the_index_says_so(self):
         ref = "apps/ios/S/__Snapshots__/XTests/testX.F02-upcoming.png"
@@ -1648,7 +2306,9 @@ class WorkflowFileTest(unittest.TestCase):
         self.assertEqual(steps("gate"), ["gate"])
         self.assertEqual(steps("build"), ["toolchain", "xcodegen", "simulator", "build", "test", "collect"])
         self.assertEqual(steps("evidence"), ["imagemagick", "sheets", "publish"])
-        self.assertIn("    runs-on: macos-26", self.jobs["build"])
+        # GitHub's Xcode 27 image on its standard runner, never xcode-27-xlarge (toolchain.py).
+        self.assertEqual([line for line in self.jobs["build"] if line.startswith("    runs-on:")],
+                         ["    runs-on: xcode-27"])
 
     def test_it_runs_on_the_paths_technical_design_names(self):
         on = self.text.split("\non:\n", 1)[1].split("\npermissions:", 1)[0]
@@ -1730,21 +2390,35 @@ class WorkflowFileTest(unittest.TestCase):
             # publish, fit after them.
             self.assertLessEqual(total + 10, job, job_id)
 
-    def test_the_requested_ios_reaches_both_jobs(self):
-        # The simulator and test steps (build) and the evidence's folder, ios-<version>/ or
-        # ios-full/ (evidence), both read it; without it a run on an older iOS would land in
-        # ios-full/ and replace a gate's set.
-        for job in ("build", "evidence"):
-            with self.subTest(job=job):
-                self.assertIn("\n    env:\n      IOS_VERSION: ${{ inputs.ios_version }}\n",
-                              "\n" + "\n".join(self.jobs[job]) + "\n")
+    def test_each_step_has_its_timeout_and_the_job_its_backstop(self):
+        # The values the change set: the simulator step downloads iOS 26.5 on every run, and the
+        # test step runs a pass on each pinned runtime, so neither may be cut; the job's own is
+        # the steps' sum and 10 for the checkout and the upload, and no more, or it would stop
+        # being a backstop for a hang the steps' timeouts miss.
+        expected = {"toolchain": 5, "xcodegen": 5, "simulator": 35, "build": 25, "test": 50, "collect": 5}
+        for step, minutes in expected.items():
+            with self.subTest(step=step):
+                block = self.step_block(f"ios_steps.py {step}\n")
+                self.assertEqual(re.findall(r"timeout-minutes: ([0-9]+)", block), [str(minutes)])
+        self.assertEqual(re.findall(r"(?m)^    timeout-minutes: ([0-9]+)$", "\n".join(self.jobs["build"])),
+                         [str(sum(expected.values()) + 10)])
+
+    def test_no_ios_version_is_asked_for_or_read(self):
+        # Every run tests every pinned runtime: a run by hand takes no input, and no job has an
+        # IOS_VERSION that ios_steps.py would read.
+        for word in ("ios_version", "IOS_VERSION", "inputs."):
+            with self.subTest(word=word):
+                self.assertNotIn(word, self.text)
+        self.assertNotRegex(self.text, r"(?m)^\s+inputs:")
+        on = self.text.split("\non:\n", 1)[1].split("\npermissions:", 1)[0]
+        self.assertTrue(on.endswith("\n  workflow_dispatch:\n"), on)
 
     def test_each_kind_of_run_has_its_own_group(self):
-        # A push's, a run by hand's full set and each version's: none cancels another's evidence.
+        # A push's and a run by hand's full set: neither cancels the other's evidence.
         top = self.text.split("\njobs:\n", 1)[0]
         self.assertIn("\nconcurrency:\n  group: ios-${{ github.ref == 'refs/heads/main' && github.sha || "
-                      "github.ref }}-${{ inputs.ios_version || (github.event_name == 'workflow_dispatch' "
-                      "&& 'full') || 'push' }}\n  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}\n", top)
+                      "github.ref }}-${{ github.event_name == 'workflow_dispatch' && 'full' || 'push' }}\n"
+                      "  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}\n", top)
         # And one other, the evidence job's, which makes the pushes take turns, exactly so.
         self.assertEqual(len(re.findall(r"^ *concurrency:", self.text, flags=re.M)), 2)
         self.assertIn("\n    concurrency:\n      group: ios-evidence\n      cancel-in-progress: false\n",
@@ -1769,6 +2443,15 @@ class WorkflowFileTest(unittest.TestCase):
     def test_the_evidence_push_is_serialised(self):
         evidence = "\n".join(self.jobs["evidence"])
         self.assertRegex(evidence, r"concurrency:\n\s+group: [^\n]+\n\s+cancel-in-progress: false")
+
+    def test_actionlint_is_told_of_the_xcode_27_label_and_nothing_else(self):
+        # actionlint 1.7.12's list of GitHub's labels predates `xcode-27`, which only this file
+        # adds; no other label, and no other setting that could turn a rule off.
+        with open(os.path.join(ROOT, ".github", "actionlint.yaml"), encoding="utf-8") as f:
+            text = f.read()
+        lines = [line for line in text.splitlines() if line.strip() and not line.lstrip().startswith("#")]
+        self.assertEqual(lines, ["self-hosted-runner:", "  labels:", "    - xcode-27"])
+        self.assertIn("    runs-on: xcode-27", self.jobs["build"])
 
 
 class UsageTest(unittest.TestCase):
