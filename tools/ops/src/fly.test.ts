@@ -1,5 +1,6 @@
 // How the `ops` scripts run `flyctl` and read what it prints, against a made-up one (test/fake-fly.ts):
-// the token and HOME and nothing else go to it, a call that hangs is cut short, and a failure is said
+// the token and HOME and nothing else go to it (and, to a call with an agent of its own, that agent's
+// folder and the word that runs it), a call that hangs is cut short, and a failure is said
 // with `flyctl`'s own first words and never anything else (docs/plans/api-b0-deploy.md, section 6; T56).
 
 import { describe, expect, it } from "vitest";
@@ -50,6 +51,39 @@ describe("flyOf: flyctl with the Fly token and HOME and nothing else", () => {
       await flyOf(spawn, { FLY_API_TOKEN: FAKE_FLY_TOKEN, HOME: home }).run(["status", "-a", "tadayo-api-dev"]);
       expect(calls[0]?.options.env).toEqual({ FLY_API_TOKEN: FAKE_FLY_TOKEN });
     }
+  });
+
+  it("gives a call with an agent of its own that agent's folder and the word that runs it, beside the token and HOME", async () => {
+    const { spawn, calls } = fakeSpawn([["flyctl", {}]]);
+    const fly = flyOf(spawn, { FLY_API_TOKEN: FAKE_FLY_TOKEN, HOME: "/home/runner", PATH: "/bin" });
+    await fly.run(["ssh", "console", "-a", "tadayo-api-dev"], {
+      timeoutMs: 1000,
+      ownAgent: "/tmp/tadayo-flyctl-abc123",
+    });
+    await fly.run(["status", "-a", "tadayo-api-dev"]);
+    expect(calls.map((call) => call.options)).toEqual([
+      {
+        env: {
+          FLY_API_TOKEN: FAKE_FLY_TOKEN,
+          HOME: "/home/runner",
+          FLY_CONFIG_DIR: "/tmp/tadayo-flyctl-abc123",
+          FLY_AGENT_ISOLATED: "1",
+        },
+        timeoutMs: 1000,
+      },
+      { env: { FLY_API_TOKEN: FAKE_FLY_TOKEN, HOME: "/home/runner" }, timeoutMs: 120_000 },
+    ]);
+  });
+
+  it("refuses an agent's folder that isn't an absolute path, before it runs anything", async () => {
+    const { spawn, calls } = fakeSpawn([["flyctl", {}]]);
+    const fly = flyOf(spawn, { FLY_API_TOKEN: FAKE_FLY_TOKEN, HOME: "/home/runner" });
+    for (const ownAgent of ["", "tadayo-flyctl-abc123", "./tadayo-flyctl-abc123", "~/tadayo-flyctl-abc123"]) {
+      const call = fly.run(["status", "-a", "tadayo-api-dev"], { ownAgent });
+      await expect(call).rejects.toBeInstanceOf(OpsError);
+      await expect(call).rejects.toThrow("flyctl: an agent's own folder is given by its absolute path");
+    }
+    expect(calls).toEqual([]);
   });
 
   it("refuses a missing or empty token before it runs anything, by name", () => {

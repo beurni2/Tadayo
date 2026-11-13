@@ -9,7 +9,7 @@
 // command to end, and Fly answers that request with HTTP 408 after about 60 seconds, whatever time
 // limit it carries (run 43160900116; docs/LIMITATIONS.md): the probe takes longer. An SSH session
 // lasts as long as its command. What flyctl 0.5.8 does (its source, read on 12 November 2026):
-//   - its agent, a flyctl left running in the background on the runner, makes a WireGuard peer in
+//   - its agent, a second flyctl that this call starts for itself (below), makes a WireGuard peer in
 //     the app's organization and brings up a tunnel to Fly's private network over a websocket (no
 //     root, no kernel module, no UDP), then checks the tunnel once, with a DNS lookup of at most five
 //     seconds (`agent/client.go`, `WaitForTunnel`); a check that fails ends the session with
@@ -28,6 +28,27 @@
 // `ssh/io.go` turns that end of file into success). So what says a script finished is its own last
 // line, which run.ts asks for.
 //
+// Each session gets a folder and an agent of its own (`Fly.run`'s `ownAgent`): flyctl keeps its
+// configuration, the peer's WireGuard state with it, in a new empty folder made for the session
+// (`FLY_CONFIG_DIR`), and runs an agent for that one call (`FLY_AGENT_ISOLATED=1`), which stops at
+// the end of its input, when flyctl exits (one still making the peer finishes that first: below).
+// The folder holds the peer's private key, in the WireGuard state and, in clear, in the agent's log
+// (`agent-logs/`: 0.5.8's `wg/state.go` swaps the JSON names of the two keys, so the agent's
+// `redact`, in `agent/server/session.go`, misses the private one); it is never printed, kept or
+// uploaded, and is removed once the session's call has ended. A run cancelled, cut off by the job's
+// time or lost before then leaves it, with the key, until the runner ends, and its peer at Fly
+// until it is removed by hand (below). Otherwise every call on a runner shares one agent, a flyctl
+// left running in the background, which keeps the organization's tunnel, and checks it against its
+// own copy of the WireGuard state: read from the configuration once, as it starts, and changed only
+// by its own writes (flyctl 0.5.8's `agent/server/server.go`, `buildTunnel` and
+// `validateTunnelsUnlocked`; `flyctl/flyctl.go`). The clean-up below removes the peer at Fly from
+// another flyctl, which that copy never learns, so the agent gives the tunnel to the next session
+// until its own check, two minutes after it starts. In `deploy-dev`, which runs two scripts over
+// SSH in one job, the second session made no peer and failed its tunnel's one check (run
+// 43467951472, both attempts, and run 43478918447; docs/LIMITATIONS.md, 2026-11-13), as that source
+// says a shared agent would: the cause is inferred, since the shared agent's log was on runners now
+// gone. A fresh runner per script, as `ops` has, never met it.
+//
 // The peer reaches the organization's whole private network until it is removed, and flyctl never
 // removes one it made: on a fresh runner, every run would leave one more. So the runner lists the
 // organization's peers before the session and again after it, whatever the command did, and removes
@@ -45,7 +66,9 @@
 // after flyctl's own failure or a timeout, which may have made one, the runner says what to look at
 // by hand.
 
-import { hostname } from "node:os";
+import { mkdtemp, rm } from "node:fs/promises";
+import { hostname, tmpdir } from "node:os";
+import { join } from "node:path";
 import { DEV_APP } from "./environment.ts";
 import { jsonOf, machineList, machines, onlyOrganization, why, type Fly } from "./fly.ts";
 import { OpsError } from "./ops-error.ts";
@@ -63,7 +86,25 @@ export interface OnMachineInput {
   readonly note: (line: string) => void;
   /** The runner's host name, which flyctl's agent puts in its peer's name: the real one unless a test gives its own. */
   readonly host?: string;
+  /** Makes the session's own folder for flyctl's agent, and removes it after: the real ones unless a test gives its own. */
+  readonly agentFolder?: AgentFolder;
 }
+
+export interface AgentFolder {
+  /** A new empty folder, by its absolute path, that only the runner's user may read (mode 0700). */
+  readonly make: () => Promise<string>;
+  /** Removes the folder and everything in it. */
+  readonly remove: (path: string) => Promise<void>;
+}
+
+/** Under the system's temporary folder, made with mode 0700 (`mkdtemp`). */
+export const AGENT_FOLDER: AgentFolder = {
+  make: () => mkdtemp(join(tmpdir(), "tadayo-flyctl-")),
+  remove: (path) => rm(path, { recursive: true, force: true }),
+};
+
+/** An error's own words, for a message. */
+const wordsOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 /** What the command gets on the Machine, once it has started, before the runner gives up on it (supabase-probe.ts keeps its own deadline a minute inside it). */
 export const COMMAND_SECONDS = 300;
@@ -253,14 +294,37 @@ export async function onMachine(input: OnMachineInput): Promise<void> {
     );
   }
   const host = input.host ?? hostname();
+  const folders = input.agentFolder ?? AGENT_FOLDER;
+  let folder: string;
+  try {
+    folder = await folders.make();
+  } catch (error) {
+    throw new OpsError(
+      `${label}: couldn't make a folder for flyctl's agent (${wordsOf(error)}), so no SSH session is started`,
+    );
+  }
   note(
     `${label}: the SSH session makes a WireGuard peer in ${org}, which this run removes after it; if the run is cancelled or cut off first, ${byHandFor(org, host)}`,
   );
 
-  const result = await fly.run(
-    ["ssh", "console", "-a", DEV_APP, "--machine", target.id, "-q", "-C", input.command.join(" ")],
-    { timeoutMs: SESSION_MS },
-  );
+  let result: Spawned;
+  try {
+    result = await fly.run(
+      ["ssh", "console", "-a", DEV_APP, "--machine", target.id, "-q", "-C", input.command.join(" ")],
+      { timeoutMs: SESSION_MS, ownAgent: folder },
+    );
+  } finally {
+    // Only now that the call has ended. The session's agent stops at the end of its input, which
+    // flyctl holds, when flyctl exits (`internal/command/agent/run.go`); one cut off while it makes
+    // the peer (`Create`, which nothing bounds) finishes that call first, and can't save the peer
+    // into a folder that is gone, and GitHub ends any process left with the job. The folder holds the
+    // peer's private key, of no use once the peer is removed below, on a runner that ends with the
+    // job: a folder left is said, and the run goes on to its peer, which matters more. A process
+    // ended from outside (a run cancelled, the job's time) never gets here, and leaves the folder.
+    await folders.remove(folder).catch((error: unknown) => {
+      note(`${label}: the folder of flyctl's agent couldn't be removed: ${wordsOf(error)}`);
+    });
+  }
 
   // Every line that came back is said, also from a session that failed or was cut short, except
   // flyctl's own last line, which the outcome below says in its words.
