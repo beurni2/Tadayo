@@ -31,10 +31,13 @@ The steps:
                is of a later major. Then, for each pinned runtime in order, it takes the available
                iOS runtime of that version that supports toolchain.SIMULATOR_DEVICE (pick_runtime:
                the `xcode-27` image has a second iOS 27.2 runtime, for iPhone Duo alone). One the
-               runner hasn't got is downloaded with `xcodebuild -downloadPlatform iOS
-               -buildVersion` only when toolchain.IOS_DOWNLOADS lists it (iOS 26.5, on every
-               run), and read back from simctl, never assumed from the download's exit code; any
-               other missing runtime fails the step, naming it. There is no other device: on
+               runner hasn't got is fetched only when toolchain.IOS_DOWNLOADS lists it (iOS
+               26.5, on every run): downloaded to a file with `xcodebuild -downloadPlatform iOS
+               -buildVersion <v> -exportPath`, imported with `xcodebuild -importPlatform`, and
+               the copy the download registers deleted, since the image moves a downloaded
+               runtime's mount mid-run (Steps.download); it is read back from simctl, never
+               assumed from an exit code, and only an imported image simctl says is Ready counts.
+               Any other missing runtime fails the step, naming it. There is no other device: on
                each runtime it reuses or creates that device, and checks that simctl lists it on
                that runtime. It boots only the first runtime's device, and writes each runtime's
                identifier, build, device and UDID to run.json and logs/simulators.txt, with the
@@ -49,10 +52,12 @@ The steps:
                on each of toolchain.IOS_RUNTIMES in order: each pass with its own destination,
                result bundle (Tests-<v>.xcresult) and logs, and every pass run even when one
                before it failed. Before each pass after the first, it shuts the device booted
-               last down and boots that pass's. Every pass has swift-snapshot-testing's record
-               mode `never` (a snapshot with no committed reference fails; TECH-DESIGN section
-               2). The test targets named *SnapshotTests (SNAPSHOT_TARGET_SUFFIX) run on the
-               snapshot runtime alone, and only its pass gets the artifacts directory in OUT.
+               last down and boots that pass's; the pass on a runtime toolchain.IOS_DOWNLOADS
+               lists writes where its images are before and after it to its log, and says so if
+               that changed. Every pass has swift-snapshot-testing's record mode `never` (a
+               snapshot with no committed reference fails; TECH-DESIGN section 2). The test
+               targets named *SnapshotTests (SNAPSHOT_TARGET_SUFFIX) run on the snapshot runtime
+               alone, and only its pass gets the artifacts directory in OUT.
                It fails first if the snapshot runtime's file is bad, or a Swift file under
                apps/ios sets a record mode of its own, which would override `never`
                (RECORDING); after the passes, if the run wrote a reference under a __Snapshots__
@@ -198,6 +203,12 @@ RUN_KEYS = ("xcode", "swift", "sdk", "snapshots", "snapshots-source", "tests") +
 # Where the snapshot runtime comes from (run.json's snapshots-source, snapshot_runtime), as
 # index.md and the labels say it.
 SNAPSHOT_SOURCES = {"file": "the ios-version file", "interim": "interim, no ios-version file"}
+# `xcrun simctl runtime list -j`: a runtime downloaded as a MobileAsset has its image under
+# ASSET_IMAGES; an imported one has its own (/Library/Developer/CoreSimulator/Cryptex/Images/ on
+# the `xcode-27` image). Only iOS simulator images are looked at.
+ASSET_IMAGES = "/System/Library/AssetsV2/"
+SIMULATOR_PLATFORM = "com.apple.platform.iphonesimulator"
+RUNNER_IMAGES_ISSUE = "actions/runner-images#14946"
 # The files the steps write in OUT's logs/: the only ones the evidence job copies or links. All
 # top-level files: a folder in logs/ is a stray.
 LOG_NAMES = ("toolchain.txt", "xcodegen.txt", "simulators.txt", "build.log",
@@ -447,7 +458,7 @@ def no_render_note(state, inventory):
 
 def runtimes_of(runtimes, version):
     """The available iOS runtimes of `version`, whatever devices they list: each whose version is
-    `version` or starts with it and a dot (27.2 matches 27.2 and 27.2.1, never 27.20 or 27.3)."""
+    `version` or a patch of it (same_version)."""
     matching = []
     for runtime in runtimes:
         if not runtime.get("isAvailable", False):
@@ -455,11 +466,17 @@ def runtimes_of(runtimes, version):
         if runtime.get("platform") != "iOS" and \
                 not str(runtime.get("identifier", "")).startswith("com.apple.CoreSimulator.SimRuntime.iOS-"):
             continue
-        found = str(runtime.get("version", ""))
-        if found != version and not found.startswith(version + "."):
+        if not same_version(runtime.get("version"), version):
             continue
         matching.append(runtime)
     return matching
+
+
+def same_version(found, version):
+    """Whether `found` is `version` or starts with it and a dot: 27.2 matches 27.2 and 27.2.1,
+    never 27.20 or 27.3."""
+    found = str(found or "")
+    return found == version or found.startswith(version + ".")
 
 
 def pick_runtime(runtimes, version, device):
@@ -482,6 +499,22 @@ def pick_runtime(runtimes, version, device):
                          "them apart: " + "; ".join(twins))
     return max(found, key=lambda r: (version_key(r.get("version")), build_key(r.get("buildversion")),
                                      str(r.get("identifier", ""))), default=None)
+
+
+def asset_copy(image):
+    """Whether `simctl runtime list -j`'s `image` is a MobileAsset's (under ASSET_IMAGES)."""
+    return str(image.get("path") or "").startswith(ASSET_IMAGES)
+
+
+def imported_image(image, state):
+    """Whether `simctl runtime list -j`'s `image` is an imported one, with a path outside
+    ASSET_IMAGES, in `state`."""
+    return bool(image.get("path")) and not asset_copy(image) and image.get("state") == state
+
+
+def image_line(image):
+    return (f"{image.get('identifier')} ({image.get('build')}): {image.get('state')} on "
+            f"{image.get('mountPath')}")
 
 
 def pick_device_type(runtime, preferred):
@@ -882,21 +915,46 @@ class Steps:
         return 0
 
     def download(self, version):
-        """Downloads and installs iOS `version`, and returns its runtime that supports
-        toolchain.SIMULATOR_DEVICE, or None. Whether it worked is read from simctl, not from
-        xcodebuild's exit code: Xcode has been seen to fall back to the newest runtime when a
-        version isn't available, and to print "not available for download" for a proxy failure.
-        A plain download comes first, then the universal variant, which some Xcode 26 releases
-        need (GitHub's own image installer asks for it); not when simctl lists iOS `version`
-        after the plain one but without that device, which the universal variant wouldn't change.
-        ValueError from pick_runtime."""
+        """Downloads iOS `version` to a file, imports it, and returns its runtime that supports
+        toolchain.SIMULATOR_DEVICE, or None.
+
+        Why a file and an import: a plain `-downloadPlatform` installs the runtime as a
+        MobileAsset, and the `xcode-27` image moves a MobileAsset runtime between two mounts
+        while it runs (RUNNER_IMAGES_ISSUE); a test process loaded from the first stalls when it
+        moves, and Xcode restarts the test runner a minute later. An imported runtime has an
+        image of its own, which stays on its mount. The download registers the MobileAsset copy
+        as well, which the import leaves unusable; drop_asset_copies deletes it, so the shared
+        cache update and the first boot meet one image. Only an imported image of the runtime
+        that simctl says is Ready counts as installed: a MobileAsset one alone fails the step.
+
+        Whether each step worked is read from simctl, not from xcodebuild's exit code: Xcode has
+        been seen to fall back to the newest runtime when a version isn't available, and to
+        print "not available for download" for a proxy failure. A plain download comes first,
+        then the universal variant, which some Xcode 26 releases need (GitHub's own image
+        installer asks for it); not when simctl lists iOS `version` after the plain one but
+        without that device, which the universal variant wouldn't change. ValueError from
+        pick_runtime."""
         env, device = self.xcode_env(), toolchain.SIMULATOR_DEVICE
+        export = self.work_path("runtime-export")
         for variant in ([], ["-architectureVariant", "universal"]):
             print(f"ios: simulator: the runner has no iOS {version} simulator; downloading it"
                   + (" (universal variant)" if variant else ""))
+            shutil.rmtree(export, ignore_errors=True)
+            os.makedirs(export, exist_ok=True)
             code = self.shell.run(["xcodebuild", "-downloadPlatform", "iOS", "-buildVersion",
-                                   version] + variant, env=env, log=self.log("simulators.txt"))
+                                   version, "-exportPath", export] + variant, env=env,
+                                  log=self.log("simulators.txt"))
             self.write_log("simulators.txt", f"(exit {code})")
+            bundles = sorted(n for n in os.listdir(export) if n.endswith(".exportedBundle"))
+            self.write_log("simulators.txt", "exported: " + (", ".join(bundles) or "nothing"))
+            if len(bundles) == 1:
+                code = self.shell.run(["xcodebuild", "-importPlatform",
+                                       os.path.join(export, bundles[0])], env=env,
+                                      log=self.log("simulators.txt"))
+                self.write_log("simulators.txt", f"(exit {code})")
+            images = self.drop_asset_copies(version)
+            if images is None:
+                return None
             listed = self.runtimes() or []
             runtime = pick_runtime(listed, version, device)
             if runtime is None and runtimes_of(listed, version):
@@ -904,15 +962,26 @@ class Steps:
                       f"runtime of it with the {device} (logs/simulators.txt)")
                 return None
             if runtime is not None:
-                # As GitHub's image installer does after adding a runtime (there with --all), and
-                # as Apple's Xcode 26.1 notes advise before a first boot; only for this runtime,
-                # since the image's own already have theirs (`simctl help runtime`:
-                # `dyld_shared_cache update (<runtime> || --all)`). A failure here is logged and
-                # said, not fatal: the first boot then builds the cache, in the test step's time.
                 # One without an identifier fails the simulator step after this.
                 if runtime.get("identifier"):
+                    identifier = str(runtime["identifier"])
+                    imported = [i for i in images if imported_image(i, "Ready")
+                                and i.get("runtimeIdentifier") == identifier]
+                    if not imported:
+                        print(f"ios: simulator: simctl lists no imported image of iOS {version} "
+                              f"({identifier}) that is Ready, and a downloaded one alone would "
+                              f"move mid-run ({RUNNER_IMAGES_ISSUE}; logs/simulators.txt)")
+                        return None
+                    self.write_log("simulators.txt", f"iOS {version}: imported image "
+                                                     f"{image_line(imported[0])}")
+                    # As GitHub's image installer does after adding a runtime (there with
+                    # --all), and as Apple's Xcode 26.1 notes advise before a first boot; only
+                    # for this runtime, since the image's own already have theirs (`simctl help
+                    # runtime`: `dyld_shared_cache update (<runtime> || --all)`). A failure here
+                    # is logged and said, not fatal: the first boot then builds the cache, in the
+                    # test step's time.
                     cache = self.shell.run(["xcrun", "simctl", "runtime", "dyld_shared_cache",
-                                            "update", str(runtime["identifier"])], env=env,
+                                            "update", identifier], env=env,
                                            log=self.log("simulators.txt"))
                     self.write_log("simulators.txt", f"(exit {cache})")
                     if cache != 0:
@@ -921,6 +990,62 @@ class Steps:
                 return runtime
         print(f"ios: simulator: couldn't install iOS {version} (logs/simulators.txt)")
         return None
+
+    def runtime_images(self):
+        """`xcrun simctl runtime list -j`'s images of iOS simulator runtimes, as a list, written
+        to logs/simulators.txt; None when it can't be read."""
+        cmd = ["xcrun", "simctl", "runtime", "list", "-j"]
+        code, out, err = self.shell.capture(cmd, env=self.xcode_env())
+        self.write_log("simulators.txt", "+ " + " ".join(cmd) + "\n" + out + err)
+        try:
+            images = json.loads(out) if code == 0 else None
+        except ValueError:
+            images = None
+        if not isinstance(images, dict):
+            return None
+        return [i for i in images.values()
+                if isinstance(i, dict) and i.get("platformIdentifier") == SIMULATOR_PLATFORM]
+
+    def drop_asset_copies(self, version):
+        """Deletes the MobileAsset copies of iOS `version` once an imported image of it is Ready,
+        and returns simctl's images of iOS `version` after, or None (said) when they can't be
+        read. simctl has been seen to exit 30 on such a delete ("Removed the runtime, but did not
+        reclaim its MobileAsset") with the copy gone from its list, so the list decides; a copy
+        it still lists is said, not fatal: the import still holds the runtime, and only the boot
+        is slower."""
+        images = self.runtime_images()
+        if images is None:
+            print("ios: simulator: can't read `xcrun simctl runtime list -j` "
+                  "(logs/simulators.txt)")
+            return None
+        mine = [i for i in images if same_version(i.get("version"), version)]
+        copies = [i for i in mine if asset_copy(i)]
+        if not copies or not [i for i in mine if imported_image(i, "Ready")]:
+            return mine
+        for copy in copies:
+            code = self.shell.run(["xcrun", "simctl", "runtime", "delete",
+                                   str(copy.get("identifier"))], env=self.xcode_env(),
+                                  log=self.log("simulators.txt"))
+            self.write_log("simulators.txt", f"(exit {code})")
+        images = self.runtime_images()
+        if images is None:
+            print("ios: simulator: can't read `xcrun simctl runtime list -j` "
+                  "(logs/simulators.txt)")
+            return None
+        mine = [i for i in images if same_version(i.get("version"), version)]
+        if [i for i in mine if asset_copy(i)]:
+            print(f"ios: simulator: simctl still lists the downloaded copy of iOS {version} "
+                  "beside the imported one, so its first boot may be slower "
+                  "(logs/simulators.txt)")
+        return mine
+
+    def image_mounts(self, version):
+        """Where simctl says each image of iOS `version` is, for a pass's log."""
+        images = self.runtime_images()
+        if images is None:
+            return "unreadable"
+        return "; ".join(sorted(image_line(i) for i in images
+                                if same_version(i.get("version"), version))) or "none"
 
     def runtimes(self):
         code, out, err = self.shell.capture(["xcrun", "simctl", "list", "runtimes", "--json"],
@@ -1098,7 +1223,22 @@ class Steps:
             env = {"TEST_RUNNER_SNAPSHOT_TESTING_RECORD": "never"}
             if snapshot_pass:
                 env["TEST_RUNNER_SNAPSHOT_ARTIFACTS"] = artifacts
+            # The image moved a downloaded runtime mid-run before the import
+            # (RUNNER_IMAGES_ISSUE): its pass's log says where it is, before and after.
+            mounts = None
+            if version in toolchain.IOS_DOWNLOADS:
+                mounts = self.image_mounts(version)
+                self.write_log(f"test-{version}.log", f"iOS {version}'s images before the "
+                                                      f"pass: {mounts}")
             code = self.shell.run(cmd, env=self.xcode_env(env), log=log)
+            if mounts is not None:
+                after = self.image_mounts(version)
+                self.write_log(f"test-{version}.log", f"iOS {version}'s images after the "
+                                                      f"pass: {after}")
+                if after != mounts:
+                    print(f"ios: test: iOS {version}'s runtime image changed during its pass "
+                          f"({RUNNER_IMAGES_ISSUE}): {mounts} became {after} "
+                          f"(logs/test-{version}.log)")
             _, summary, err = self.shell.capture(
                 ["xcrun", "xcresulttool", "get", "test-results", "summary", "--path", bundle,
                  "--compact"], env=self.xcode_env())

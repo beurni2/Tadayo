@@ -68,6 +68,35 @@ WITH_26_5 = {"runtimes": RUNTIMES["runtimes"] + [IOS_26_5]}
 UDID = "A1B2C3D4-0000-1111-2222-333344445555"  # the iOS 27.2 device
 UDID_26 = "B1B2C3D4-0000-1111-2222-333344445555"  # the iOS 26.5 device
 UDIDS = {IOS_27_2["identifier"]: UDID, IOS_26_5["identifier"]: UDID_26}
+
+
+def image(identifier, version, build, path, runtime_identifier, state="Ready", mount=None,
+          platform="com.apple.platform.iphonesimulator"):
+    # One of `xcrun simctl runtime list -j`'s images, with the fields the `xcode-27` image gave
+    # (ios/b0-xcode27-mount-c2/afb0c09/ios-full/logs/simulators.txt on `evidence`).
+    return {"identifier": identifier, "version": version, "build": build, "path": path,
+            "runtimeIdentifier": runtime_identifier, "state": state, "platformIdentifier": platform,
+            "kind": "Patchable Cryptex Disk Image",
+            "mountPath": mount or f"/private/var/run/com.apple.security.cryptexd/mnt/iOS_{build}"}
+
+
+ASSETS = "/System/Library/AssetsV2/com_apple_MobileAsset_iOSSimulatorRuntime/"
+# The image's own: iOS 27.2 and its twin, and a watchOS one, all MobileAssets.
+IMAGES = {i["identifier"]: i for i in (
+    image("E1DD20F7-3587-45DF-BBC1-4A9AD795D88A", "27.2", "24C55", ASSETS + "7a06.asset/AssetData",
+          IOS_27_2["identifier"]),
+    image("D66DFD74-1994-4EEA-973E-6B92DE9ACC88", "27.2", "24C60", ASSETS + "246a.asset/AssetData",
+          TWIN["identifier"]),
+    image("AD96431F-C55F-40A3-A333-07491E62421A", "26.5", "23R118",
+          "/System/Library/AssetsV2/com_apple_MobileAsset_watchOSSimulatorRuntime/3aff.asset/AssetData",
+          "com.apple.CoreSimulator.SimRuntime.watchOS-26-5", platform="com.apple.platform.watchsimulator"))}
+# What the download registers (a MobileAsset), and what the import does (an image of its own).
+COPY_ID, IMPORTED_ID = "F8943C8B-7F78-4C8E-A9A7-223FD5FA573C", "9545C4C0-AD0A-411D-B966-829F99FF3189"
+COPY = image(COPY_ID, "26.5", "23F77", ASSETS + "8a13.asset/AssetData", IOS_26_5["identifier"],
+             mount="/Library/Developer/CoreSimulator/Volumes/iOS_23F77")
+IMPORTED = image(IMPORTED_ID, "26.5", "23F77", "/Library/Developer/CoreSimulator/Cryptex/Images/" + IMPORTED_ID,
+                 IOS_26_5["identifier"], mount="/private/var/run/com.apple.security.cryptexd/mnt/iOS_23F77_1")
+BUNDLE = "iphonesimulator_26.5_23F77.exportedBundle"
 DEVELOPER_DIR = f"/Applications/Xcode_{toolchain.XCODE_VERSION}.app/Contents/Developer"
 # What ios-version may hold besides exactly 27.2 and one optional line break: each must fail.
 BAD_IOS_VERSIONS = [b"26.5", b"26.5\n", b"27.2\n\n", b"27.2 \n", b" 27.2\n", b"27.2\t", b"27.2\r\n",
@@ -450,13 +479,20 @@ class SimulatorTest(StepsTest):
 
     def shell(self, runtimes=RUNTIMES, after_download=None, devices=None, create=None,
               download_code=0, works_with=None, sdk=(0, "27.2\n", ""), listed_under=None, boot_code=0,
-              cache_code=0):
+              cache_code=0, bundles=(BUNDLE,), imports=True, imported=None, import_code=0, deletes=True,
+              delete_code=30, images_code=0, images=None):
         """after_download: the runtimes once a download that works has run; works_with: the
         download only works with these extra arguments (by default, any download works);
         devices: what simctl lists before a device is made; create: what `simctl create`
         answers, when not a new device, which is listed under the runtime it was made on (or
-        listed_under, when given)."""
-        state = {"downloaded": False, "devices": json.loads(json.dumps(devices or {}))}
+        listed_under, when given). A download that works registers COPY and writes `bundles`
+        to its -exportPath; an import then registers `imported` (IMPORTED by default) unless
+        `imports` is false, and COPY becomes unusable, as on the runner; `simctl runtime delete`
+        takes an image off the list when `deletes`, exiting delete_code either way (30, as on
+        the runner); images_code is `simctl runtime list -j`'s exit code, and `images` the
+        image's own images (IMAGES by default)."""
+        state = {"downloaded": False, "imported": False, "deleted": [],
+                 "devices": json.loads(json.dumps(devices or {}))}
 
         def list_runtimes(cmd):
             current = after_download if state["downloaded"] and after_download else runtimes
@@ -465,7 +501,29 @@ class SimulatorTest(StepsTest):
         def download(cmd):
             if works_with is None or all(a in cmd for a in works_with):
                 state["downloaded"] = True
+                for name in bundles:
+                    os.makedirs(os.path.join(cmd[cmd.index("-exportPath") + 1], name))
             return download_code
+
+        def import_platform(cmd):
+            if imports and state["downloaded"]:
+                state["imported"] = True
+            return import_code
+
+        def list_images(cmd):
+            found = dict(IMAGES if images is None else images)
+            if state["downloaded"]:
+                found[COPY_ID] = dict(COPY, state="Unusable" if state["imported"] else "Ready")
+            if state["imported"]:
+                found[(imported or IMPORTED)["identifier"]] = imported or IMPORTED
+            for identifier in state["deleted"]:
+                found.pop(identifier, None)
+            return images_code, json.dumps(found), ""
+
+        def delete(cmd):
+            if deletes:
+                state["deleted"].append(cmd[-1])
+            return delete_code
 
         def make(cmd):
             if create is not None:
@@ -480,15 +538,34 @@ class SimulatorTest(StepsTest):
                       lambda cmd: (0, json.dumps({"devices": state["devices"]}), "")),
                      (starts("xcrun", "simctl", "create"), make),
                      (starts("xcrun", "simctl", "list"), (0, "== Runtimes ==\niOS 27.2\n", "")),
-                     (starts("xcrun", "--sdk", "iphonesimulator", "--show-sdk-version"), sdk)],
-            codes=[(has("-downloadPlatform"), download), (has("bootstatus"), boot_code),
-                   (has("dyld_shared_cache"), cache_code)])
+                     (starts("xcrun", "--sdk", "iphonesimulator", "--show-sdk-version"), sdk),
+                     (starts("xcrun", "simctl", "runtime", "list", "-j"), list_images)],
+            codes=[(has("-downloadPlatform"), download), (has("-importPlatform"), import_platform),
+                   (starts("xcrun", "simctl", "runtime", "delete"), delete),
+                   (has("bootstatus"), boot_code), (has("dyld_shared_cache"), cache_code)])
 
     def creates(self, shell):
         return [c[3:] for c in shell.commands if c[:3] == ["xcrun", "simctl", "create"]]
 
     def downloads(self, shell):
         return [c for c in shell.commands if "-downloadPlatform" in c]
+
+    def export(self):
+        return os.path.join(self.repo.work, "runtime-export")
+
+    def download(self, *variant):
+        return ["xcodebuild", "-downloadPlatform", "iOS", "-buildVersion", "26.5", "-exportPath",
+                self.export(), *variant]
+
+    def imports(self, shell):
+        return [c for c in shell.commands if "-importPlatform" in c]
+
+    def deletes(self, shell):
+        return [c for c in shell.commands if c[:4] == ["xcrun", "simctl", "runtime", "delete"]]
+
+    def simulators_log(self):
+        with open(os.path.join(self.repo.out, "logs", "simulators.txt")) as f:
+            return f.read()
 
     def runtime_keys(self):
         return {k: v for k, v in self.read_record().items() if k not in ("xcode", "swift")}
@@ -499,7 +576,7 @@ class SimulatorTest(StepsTest):
         self.assertEqual(code, 0, out)
         self.assertEqual(self.creates(shell), [["Tadayo iPhone 17", IPHONE_17, IOS_27_2["identifier"]],
                                                ["Tadayo iPhone 17", IPHONE_17, IOS_26_5["identifier"]]])
-        self.assertEqual(self.downloads(shell), [["xcodebuild", "-downloadPlatform", "iOS", "-buildVersion", "26.5"]])
+        self.assertEqual(self.downloads(shell), [self.download()])
         # In order: 27.2's device is made before 26.5 is downloaded.
         create_27 = shell.commands.index(["xcrun", "simctl", "create", "Tadayo iPhone 17", IPHONE_17,
                                           IOS_27_2["identifier"]])
@@ -515,6 +592,112 @@ class SimulatorTest(StepsTest):
             "device-26.5": "iPhone 17", "udid-26.5": UDID_26})
         self.assertIn(["xcrun", "--sdk", "iphonesimulator", "--show-sdk-version"], shell.commands)
         self.assert_pinned(shell)
+
+    def test_26_5_is_downloaded_to_a_file_imported_and_its_copy_deleted(self):
+        # The `xcode-27` image moves a runtime it downloaded as a MobileAsset between two mounts
+        # mid-run (actions/runner-images#14946); an imported image stays where it is mounted.
+        shell = self.shell(after_download=WITH_26_5)
+        code, out = self.step("simulator", shell)
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.downloads(shell), [self.download()])
+        self.assertEqual(self.imports(shell), [["xcodebuild", "-importPlatform", os.path.join(self.export(), BUNDLE)]])
+        # Only the copy the download registered: not the image's own MobileAssets, of iOS 27.2
+        # or of another platform (IMAGES), nor the imported image.
+        self.assertEqual(self.deletes(shell), [["xcrun", "simctl", "runtime", "delete", COPY_ID]])
+        # In order: the download, its import, the copy's delete, then the shared cache.
+        order = [shell.commands.index(c) for c in (
+            self.download(), self.imports(shell)[0], self.deletes(shell)[0],
+            ["xcrun", "simctl", "runtime", "dyld_shared_cache", "update", IOS_26_5["identifier"]])]
+        self.assertEqual(order, sorted(order))
+        # simctl exited 30 for the delete, as on the runner, but no longer lists the copy.
+        self.assertNotIn("still lists", out)
+        text = self.simulators_log()
+        self.assertIn(f"exported: {BUNDLE}", text)
+        self.assertIn(f"iOS 26.5: imported image {IMPORTED_ID} (23F77): Ready on "
+                      "/private/var/run/com.apple.security.cryptexd/mnt/iOS_23F77_1", text)
+        self.assertIn("+ xcrun simctl runtime list -j", text)
+        self.assert_pinned(shell)
+
+    def test_a_downloaded_copy_alone_fails(self):
+        # Nothing exported, or an import that didn't take: simctl lists iOS 26.5 from the
+        # MobileAsset alone, which would move mid-run. It fails, naming why, and the universal
+        # variant isn't tried: the download itself worked.
+        for kwargs in ({"bundles": ()}, {"imports": False}, {"bundles": (BUNDLE, "other.exportedBundle")}):
+            with self.subTest(**{k: str(v) for k, v in kwargs.items()}):
+                shell = self.shell(after_download=WITH_26_5, **kwargs)
+                code, out = self.step("simulator", shell)
+                self.assertEqual(code, 1)
+                self.assertIn(f"simctl lists no imported image of iOS 26.5 ({IOS_26_5['identifier']}) "
+                              "that is Ready", out)
+                self.assertIn("actions/runner-images#14946", out)
+                self.assertEqual(self.downloads(shell), [self.download()])
+                self.assertEqual(len(self.imports(shell)), 1 if kwargs.get("bundles") == (BUNDLE,) or "imports" in kwargs else 0)
+                # The copy is the only image of it, so it is kept.
+                self.assertEqual(self.deletes(shell), [])
+                self.assertFalse(any("dyld_shared_cache" in c or "bootstatus" in c for c in shell.commands))
+                self.assertFalse(os.path.isfile(os.path.join(self.repo.out, "run.json")))
+
+    def test_an_imported_image_that_isn_t_ready_or_isn_t_the_runtime_s_fails(self):
+        for imported in (dict(IMPORTED, state="Unusable"), dict(IMPORTED, state="Mounting"),
+                         dict(IMPORTED, runtimeIdentifier="com.apple.CoreSimulator.SimRuntime.iOS-26-4"),
+                         dict(IMPORTED, path=None)):
+            with self.subTest(imported={k: imported[k] for k in ("state", "runtimeIdentifier", "path")}):
+                shell = self.shell(after_download=WITH_26_5, imported=imported)
+                code, out = self.step("simulator", shell)
+                self.assertEqual(code, 1)
+                self.assertIn("simctl lists no imported image of iOS 26.5", out)
+                self.assertFalse(any("dyld_shared_cache" in c or "bootstatus" in c for c in shell.commands))
+        # Not Ready, the copy isn't deleted either: it is then the only image of iOS 26.5.
+        shell = self.shell(after_download=WITH_26_5, imported=dict(IMPORTED, state="Unusable"))
+        self.step("simulator", shell)
+        self.assertEqual(self.deletes(shell), [])
+
+    def test_a_copy_simctl_still_lists_is_said_but_not_fatal(self):
+        # The import holds the runtime; only the first boot may be slower (`-mount-c`'s run).
+        for delete_code in (30, 0):
+            with self.subTest(delete_code=delete_code):
+                shell = self.shell(after_download=WITH_26_5, deletes=False, delete_code=delete_code)
+                code, out = self.step("simulator", shell)
+                self.assertEqual(code, 0, out)
+                self.assertIn("simctl still lists the downloaded copy of iOS 26.5 beside the imported one", out)
+                self.assertEqual(self.deletes(shell), [["xcrun", "simctl", "runtime", "delete", COPY_ID]])
+        # Deleted with exit 0, nothing is said either.
+        code, out = self.step("simulator", self.shell(after_download=WITH_26_5, delete_code=0))
+        self.assertEqual(code, 0, out)
+        self.assertNotIn("still lists", out)
+
+    def test_unreadable_images_fail(self):
+        for images_code in (1, 64):
+            with self.subTest(images_code=images_code):
+                shell = self.shell(after_download=WITH_26_5, images_code=images_code)
+                code, out = self.step("simulator", shell)
+                self.assertEqual(code, 1)
+                self.assertIn("can't read `xcrun simctl runtime list -j`", out)
+                self.assertEqual(self.downloads(shell), [self.download()])
+                self.assertFalse(any("dyld_shared_cache" in c or "bootstatus" in c for c in shell.commands))
+        shell = FakeShell()
+        shell.answers = [(starts("xcrun", "simctl", "runtime", "list", "-j"), (0, "[]", ""))]
+        steps = self.steps(shell)
+        self.assertIsNone(steps.runtime_images())
+
+    def test_a_patch_release_s_images_count(self):
+        # simctl may name 26.5.1 for the pin 26.5, as it does for runtimes (same_version).
+        after = {"runtimes": RUNTIMES["runtimes"] + [dict(IOS_26_5, version="26.5.1")]}
+        shell = self.shell(after_download=after, imported=dict(IMPORTED, version="26.5.1"))
+        code, out = self.step("simulator", shell)
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.deletes(shell), [["xcrun", "simctl", "runtime", "delete", COPY_ID]])
+        # Never 26.50's.
+        shell = self.shell(after_download=WITH_26_5, imported=dict(IMPORTED, version="26.50"))
+        self.assertEqual(self.step("simulator", shell)[0], 1)
+
+    def test_a_bundle_left_in_the_export_folder_isn_t_imported(self):
+        # Each download starts from an empty folder, so only what it exported is imported.
+        os.makedirs(os.path.join(self.export(), "stale.exportedBundle"))
+        shell = self.shell(after_download=WITH_26_5, bundles=())
+        self.assertEqual(self.step("simulator", shell)[0], 1)
+        self.assertEqual(self.imports(shell), [])
+        self.assertFalse(os.path.exists(os.path.join(self.export(), "stale.exportedBundle")))
 
     def test_with_the_file_the_snapshots_are_27_2_s(self):
         self.repo.write(ios_steps.SNAPSHOT_RUNTIME_FILE, "27.2\n")
@@ -612,7 +795,7 @@ class SimulatorTest(StepsTest):
         self.assertEqual([c[-1] for c in self.creates(shell)], [IOS_27_2["identifier"]])
         # The plain download installed iOS 26.5 without it: the universal variant, several
         # gigabytes more, would list the same devices, so it isn't tried, and the step says why.
-        self.assertEqual(self.downloads(shell), [["xcodebuild", "-downloadPlatform", "iOS", "-buildVersion", "26.5"]])
+        self.assertEqual(self.downloads(shell), [self.download()])
         self.assertIn("simctl lists iOS 26.5 after the download, but no runtime of it with the iPhone 17", out)
         self.assertNotIn("couldn't install", out)
         self.assertFalse(any("dyld_shared_cache" in c for c in shell.commands))
@@ -671,7 +854,7 @@ class SimulatorTest(StepsTest):
         shell = self.shell(after_download=WITH_26_5, works_with=["universal"])
         code, out = self.step("simulator", shell)
         self.assertEqual(code, 0, out)
-        self.assertEqual(self.downloads(shell)[1][-2:], ["-architectureVariant", "universal"])
+        self.assertEqual(self.downloads(shell), [self.download(), self.download("-architectureVariant", "universal")])
         self.assertIn(["xcrun", "simctl", "runtime", "dyld_shared_cache", "update", IOS_26_5["identifier"]],
                       shell.commands)
         self.assert_pinned(shell)
@@ -709,7 +892,7 @@ class SimulatorTest(StepsTest):
         shell = self.shell(after_download=WITH_26_5)
         code, out = self.step("simulator", shell, environ={"IOS_VERSION": "18.6"})
         self.assertEqual(code, 0, out)
-        self.assertEqual(self.downloads(shell), [["xcodebuild", "-downloadPlatform", "iOS", "-buildVersion", "26.5"]])
+        self.assertEqual(self.downloads(shell), [self.download()])
         self.assertNotIn("requested", self.read_record())
 
     def test_an_existing_device_is_reused(self):
@@ -1067,11 +1250,47 @@ class BuildAndTestSteps(StepsTest):
         self.assertEqual(self.step("test", shell)[0], 0)
         seen = [(c[:2] if c[0] == "xcodebuild" else c, log) for c, log in zip(shell.commands, shell.logs, strict=True)
                 if c[0] == "xcodebuild" or c[:2] == ["xcrun", "simctl"]]
+        # iOS 26.5, downloaded (toolchain.IOS_DOWNLOADS), has its images read before and after
+        # its pass, once booted; iOS 27.2, the image's own, doesn't.
+        images = (["xcrun", "simctl", "runtime", "list", "-j"], None)
         self.assertEqual(seen, [
             (["xcodebuild", "test-without-building"], self.log("test-27.2.log")),
             (["xcrun", "simctl", "shutdown", UDID], self.log("test-26.5.log")),
             (["xcrun", "simctl", "bootstatus", UDID_26, "-b"], self.log("test-26.5.log")),
-            (["xcodebuild", "test-without-building"], self.log("test-26.5.log"))])
+            images,
+            (["xcodebuild", "test-without-building"], self.log("test-26.5.log")),
+            images])
+
+    def test_a_downloaded_runtime_s_pass_logs_where_its_image_is(self):
+        # actions/runner-images#14946: the pass's log says where iOS 26.5's images are before and
+        # after it, and the step says so when that changed. It never decides the pass's result.
+        before = {IMPORTED_ID: IMPORTED, COPY_ID: dict(COPY, state="Unusable")}
+        moved = {IMPORTED_ID: dict(IMPORTED, mountPath="/Library/Developer/CoreSimulator/Volumes/iOS_23F77")}
+        for answers, changed in (([before, before], False), ([before, moved], True)):
+            with self.subTest(changed=changed):
+                replies = iter(answers)
+                shell = FakeShell(answers=[(starts("xcrun", "simctl", "runtime", "list", "-j"),
+                                            lambda cmd: (0, json.dumps(next(replies)), ""))])
+                code, out = self.step("test", shell)
+                self.assertEqual(code, 0, out)
+                self.assertEqual(self.results(), {"tests": "passed", "tests-27.2": "passed", "tests-26.5": "passed"})
+                with open(self.log("test-26.5.log")) as f:
+                    text = f.read()
+                os.remove(self.log("test-26.5.log"))
+                cryptex = "/private/var/run/com.apple.security.cryptexd/mnt/iOS_23F77_1"
+                self.assertIn(f"iOS 26.5's images before the pass: {IMPORTED_ID} (23F77): Ready on {cryptex}; "
+                              f"{COPY_ID} (23F77): Unusable on /Library/Developer/CoreSimulator/Volumes/iOS_23F77", text)
+                self.assertIn("iOS 26.5's images after the pass: ", text)
+                self.assertEqual("runtime image changed during its pass (actions/runner-images#14946)" in out, changed)
+                if changed:
+                    self.assertIn(f"became {IMPORTED_ID} (23F77): Ready on /Library/Developer/CoreSimulator/Volumes/iOS_23F77", out)
+                self.assertFalse(os.path.isfile(self.log("test-27.2.log")) and "images before" in open(self.log("test-27.2.log")).read())
+        # Unreadable both times, it says so in the log and nothing else.
+        code, out = self.step("test", FakeShell())
+        self.assertEqual(code, 0, out)
+        with open(self.log("test-26.5.log")) as f:
+            self.assertIn("iOS 26.5's images before the pass: unreadable", f.read())
+        self.assertNotIn("changed during its pass", out)
 
     def test_a_failed_shutdown_is_logged_and_a_failed_boot_fails_its_pass(self):
         shell = FakeShell(codes=[(starts("xcrun", "simctl", "shutdown"), 1)])
