@@ -1,0 +1,26 @@
+breakage: loopback-two-at-allowed
+patch: [
+ [
+  "packages/domain/src/db/ssl.ts",
+  "  if (authority.indexOf(\"@\") !== authority.lastIndexOf(\"@\")) return false;\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/packages/domain && npx vitest run src/db/ssl.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/services/api && npx vitest run src/connection.test.ts src/connection-tls.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/services/worker && npx vitest run src/connection.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/tools/ops && npx vitest run src/database.test.ts src/environment.test.ts src/deploy-files.test.ts src/run.test.ts src/main.test.ts src/bootstrap.test.ts
+exit: 1
+expected words: treats a string that postgres.js and `new URL` could read differently as remote
+caught: True
+
+     × treats a string that postgres.js and `new URL` could read differently as remote 7ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/ssl.test.ts > transportOptions > treats a string that postgres.js and `new URL` could read differently as remote
+AssertionError: postgres://tadayo_app:x@evil.example@localhost:5432/postgres: expected {} to deeply equal { ssl: { …(2) } }
+ Test Files  2 passed (2)
+      Tests  13 passed (13)
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+ Test Files  6 passed (6)
+      Tests  80 passed (80)

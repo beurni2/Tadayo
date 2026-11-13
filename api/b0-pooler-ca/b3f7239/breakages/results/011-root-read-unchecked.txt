@@ -1,0 +1,30 @@
+breakage: root-read-unchecked
+patch: [
+ [
+  "packages/domain/src/db/ssl.ts",
+  "    checkPinnedRoot(pem);\n    root = pem;",
+  "    root = pem;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/packages/domain && npx vitest run src/db/ssl.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/services/api && npx vitest run src/connection.test.ts src/connection-tls.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/services/worker && npx vitest run src/connection.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/tools/ops && npx vitest run src/database.test.ts src/environment.test.ts src/deploy-files.test.ts src/run.test.ts src/main.test.ts src/bootstrap.test.ts
+exit: 1
+expected words: is checked when it is read, so a file that isn't the root reaches no link
+caught: True
+
+     × is checked when it is read, so a file that isn't the root reaches no link 10ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/ssl.test.ts > the pinned root > is checked when it is read, so a file that isn't the root reaches no link
+AssertionError: expected [Function] to throw an error
+ Test Files  2 passed (2)
+      Tests  13 passed (13)
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+     × checks the root before psql is given its path, so an empty or other file reaches no link 18ms
+ Test Files  1 failed | 5 passed (6)
+      Tests  1 failed | 79 passed (80)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/environment.test.ts > pgEnvOf: the connection as the environment variables psql reads, so no password is on a command line > checks the root before psql is given its path, so an empty or other file reaches no link
+AssertionError: expected [Function] to throw an error

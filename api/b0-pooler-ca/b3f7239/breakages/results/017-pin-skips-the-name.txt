@@ -1,0 +1,71 @@
+breakage: pin-skips-the-name
+patch: [
+ [
+  "packages/domain/src/db/ssl.ts",
+  "return Object.freeze({ ca: Object.freeze([pem]), rejectUnauthorized: true });",
+  "return Object.freeze({ ca: Object.freeze([pem]), rejectUnauthorized: true, checkServerIdentity: () => undefined }) as PinnedTls;",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/packages/domain && npx vitest run src/db/ssl.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/services/api && npx vitest run src/connection.test.ts src/connection-tls.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/services/worker && npx vitest run src/connection.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/tools/ops && npx vitest run src/database.test.ts src/environment.test.ts src/deploy-files.test.ts src/run.test.ts src/main.test.ts src/bootstrap.test.ts
+exit: 1
+expected words: trusts only the root given, insists on the check, and leaves the name to the driver
+caught: True
+
+     × trusts only the root given, insists on the check, and leaves the name to the driver 9ms
+     × pins Supabase's root for the pooler 2ms
+     × asks for TLS checked against Supabase's root for the pooler, and for any other host that isn't loopback 2ms
+     × treats a string that postgres.js and `new URL` could read differently as remote 1ms
+     × treats a string it can't read, or with no host, as remote 1ms
+ Test Files  1 failed (1)
+      Tests  5 failed | 5 passed (10)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/ssl.test.ts > tlsPinnedTo and poolerTls > trusts only the root given, insists on the check, and leaves the name to the driver
+AssertionError: expected { …(3) } to deeply equal { …(2) }
+ FAIL  src/db/ssl.test.ts > tlsPinnedTo and poolerTls > pins Supabase's root for the pooler
+AssertionError: expected { …(3) } to deeply equal { …(2) }
+ FAIL  src/db/ssl.test.ts > transportOptions > asks for TLS checked against Supabase's root for the pooler, and for any other host that isn't loopback
+AssertionError: postgresql://tadayo_app.abcdefghijklmnopqrst:a-password@aws-0-us-east-1.pooler.supabase.com:5432/postgres: expected { ssl: { …(3) } } to deeply equal { ssl: { …(2) } }
+ FAIL  src/db/ssl.test.ts > transportOptions > treats a string that postgres.js and `new URL` could read differently as remote
+AssertionError: postgres://tadayo_app:x@evil.example%2C@localhost:5432/postgres: expected { ssl: { …(3) } } to deeply equal { ssl: { …(2) } }
+ FAIL  src/db/ssl.test.ts > transportOptions > treats a string it can't read, or with no host, as remote
+AssertionError: expected { ssl: { …(3) } } to deeply equal { ssl: { …(2) } }
+     × requires TLS checked against Supabase's root for the pooler, though the string says nothing of it 18ms
+     × requires TLS for any other host that isn't loopback, and the string can't switch it off 2ms
+     × requires TLS whatever the environment says, which postgres.js reads for the options it isn't given 2ms
+     × requires TLS of a string whose host postgres.js and `new URL` read differently, which dials the first host 1ms
+     × asks for no TLS only when every host the driver would dial is a loopback one 2ms
+     × refuses the right root, and a name that isn't the host, before any user name or password leaves 10ms
+ Test Files  2 failed (2)
+      Tests  6 failed | 7 passed (13)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/connection-tls.test.ts > a link pinned to a root, made through postgres.js > refuses the right root, and a name that isn't the host, before any user name or password leaves
+AssertionError: NODE_TLS_REJECT_UNAUTHORIZED=0: false: expected 'started' to match /^ERR_TLS_CERT_ALTNAME_INVALID$/
+ FAIL  src/connection.test.ts > connect > requires TLS checked against Supabase's root for the pooler, though the string says nothing of it
+AssertionError: expected { ssl: { …(3) }, …(2) } to deeply equal { ssl: { …(2) }, …(2) }
+ FAIL  src/connection.test.ts > connect > requires TLS for any other host that isn't loopback, and the string can't switch it off
+AssertionError: postgres://someone:a-password@db.example.test:5432/postgres: expected { …(3) } to deeply equal { …(2) }
+ FAIL  src/connection.test.ts > connect > requires TLS whatever the environment says, which postgres.js reads for the options it isn't given
+AssertionError: expected { …(3) } to deeply equal { …(2) }
+ FAIL  src/connection.test.ts > connect > requires TLS of a string whose host postgres.js and `new URL` read differently, which dials the first host
+AssertionError: expected { …(3) } to deeply equal { …(2) }
+ FAIL  src/connection.test.ts > connect > asks for no TLS only when every host the driver would dial is a loopback one
+AssertionError: postgres://tadayo_app:x@localhost:1#,evil.example:5432/postgres: expected { …(3) } to deeply equal { …(2) }
+     × requires TLS checked against Supabase's root for the pooler, though the string says nothing of it, and the string can't switch it off 12ms
+     × asks for no TLS of a plainly written loopback host, and requires it of one the driver reads differently 3ms
+ Test Files  1 failed (1)
+      Tests  2 failed (2)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/connection.test.ts > connect > requires TLS checked against Supabase's root for the pooler, though the string says nothing of it, and the string can't switch it off
+AssertionError: expected { ssl: { …(3) }, …(2) } to deeply equal { ssl: { …(2) }, …(2) }
+ FAIL  src/connection.test.ts > connect > asks for no TLS of a plainly written loopback host, and requires it of one the driver reads differently
+AssertionError: expected { …(3) } to deeply equal { …(2) }
+     × makes a port-less string the session pooler's port, 5432, and the driver reads no variable for it 18ms
+     × builds the client every script is given from connectionOptions, with TLS checked against Supabase's root 2ms
+ Test Files  1 failed | 5 passed (6)
+      Tests  2 failed | 78 passed (80)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/database.test.ts > connectionOptions > makes a port-less string the session pooler's port, 5432, and the driver reads no variable for it
+AssertionError: expected { …(5) } to deeply equal { …(5) }
+ FAIL  src/database.test.ts > connectToDev > builds the client every script is given from connectionOptions, with TLS checked against Supabase's root
+AssertionError: expected { …(6) } to deeply equal { …(6) }
