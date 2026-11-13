@@ -1,0 +1,788 @@
+#!/usr/bin/env python3
+"""Tests for tools/ci/deploy_dev_steps.py and .github/workflows/deploy-dev.yml.
+Run: python3 tools/ci/deploy_dev_steps_test.py
+
+The steps run against a fake Http that answers from a script and records every request, a fake
+sleep that counts, and a fake process runner, so nothing here needs the network, GitHub,
+Cloudflare or Fly. WorkflowFileTest reads deploy-dev.yml whole with ops_steps_test's strict reader
+and holds every key and value to the ones built here, so each secret is named only in the steps
+that use it. The committed lockfile is checked by the same function setup-wrangler runs.
+CI configuration: change this file only in its own PR (docs/INVARIANTS.md T58).
+"""
+
+import contextlib
+import io
+import json
+import os
+import re
+import shutil
+import sys
+import tempfile
+import unittest
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(os.path.dirname(HERE))
+sys.path.insert(0, HERE)
+import deploy_dev_steps as steps_module  # noqa: E402
+import ops_steps  # noqa: E402
+from ops_steps_test import parse_yaml, pins  # noqa: E402
+
+Answer = steps_module.Answer
+SHA = "0123456789abcdef0123456789abcdef01234567"
+OTHER_SHA = "fedcba9876543210fedcba9876543210fedcba98"
+ACCOUNT = "0123456789abcdef0123456789abcdef"
+TOKEN = "secret-token-value"
+CLOUDFLARE = {"CLOUDFLARE_API_TOKEN": TOKEN, "CLOUDFLARE_ACCOUNT_ID": ACCOUNT, "GITHUB_SHA": SHA}
+ASSOCIATION_BYTES = b'{\n  "applinks": {\n    "details": []\n  }\n}\n'
+
+
+def answer(status, body=b"", headers=None):
+    if isinstance(body, (dict, list)):
+        body = json.dumps(body).encode()
+    return Answer(status, {k: (v if isinstance(v, list) else [v]) for k, v in (headers or {}).items()}, body)
+
+
+class FakeHttp:
+    """Answers each request from a function of (method, host, path, body); records them all."""
+
+    def __init__(self, respond):
+        self.respond = respond
+        self.requests = []
+
+    def request(self, method, host, path, headers, body=None):
+        self.requests.append({"method": method, "host": host, "path": path, "headers": dict(headers), "body": body})
+        result = self.respond(method, host, path, body)
+        if isinstance(result, BaseException):
+            raise result
+        return result
+
+
+class Sleeps:
+    def __init__(self):
+        self.calls = []
+
+    def __call__(self, seconds):
+        self.calls.append(seconds)
+
+
+class FakeRun:
+    def __init__(self, code=0, install=None):
+        self.code = code
+        self.install = install
+        self.calls = []
+
+    def __call__(self, cmd, cwd, env):
+        self.calls.append({"cmd": list(cmd), "cwd": cwd, "env": dict(env)})
+        if self.install:
+            self.install()
+        return self.code
+
+
+def call(step, environ, respond=None, run=None, root=ROOT):
+    """Runs one step; returns (exit code, what it printed, the http fake, the sleeps)."""
+    http = FakeHttp(respond or (lambda *a: AssertionError("no request expected")))
+    sleeps = Sleeps()
+    steps = steps_module.Steps(root, environ=environ, http=http, sleep=sleeps, run=run or FakeRun())
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        code = getattr(steps, step)()
+    return code, out.getvalue(), http, sleeps
+
+
+def ci_run(run_id, status="completed", conclusion="success", sha=SHA, branch="main", event="push"):
+    return {"id": run_id, "status": status, "conclusion": conclusion, "head_sha": sha,
+            "head_branch": branch, "event": event}
+
+
+def runs_answer(*runs):
+    return answer(200, {"total_count": len(runs), "workflow_runs": list(runs)})
+
+
+def sequence(*answers):
+    """A respond function that gives these answers in turn, then fails the test."""
+    given = list(answers)
+
+    def respond(method, host, path, body):
+        if not given:
+            return AssertionError(f"an unexpected request: {method} {host}{path}")
+        return given.pop(0)
+    return respond
+
+
+class WaitCiTest(unittest.TestCase):
+    environ = {"GITHUB_TOKEN": TOKEN, "GITHUB_SHA": SHA}
+
+    def test_it_asks_github_for_this_commit_s_push_runs_on_main_with_the_job_s_token(self):
+        code, out, http, sleeps = call("wait_ci", self.environ, sequence(runs_answer(ci_run(7))))
+        self.assertEqual(code, 0, out)
+        [request] = http.requests
+        self.assertEqual((request["method"], request["host"]), ("GET", "api.github.com"))
+        self.assertEqual(request["path"], f"/repos/beurni2/tadayo/actions/workflows/ci.yml/runs"
+                                          f"?head_sha={SHA}&branch=main&event=push&per_page=100")
+        self.assertEqual(request["headers"]["authorization"], f"Bearer {TOKEN}")
+        self.assertEqual(request["headers"]["x-github-api-version"], "2022-11-28")
+        self.assertIn("ci run 7 passed", out)
+        self.assertNotIn(TOKEN, out)
+
+    def test_it_waits_while_there_is_no_run_or_one_is_still_running(self):
+        code, out, http, sleeps = call("wait_ci", self.environ, sequence(
+            runs_answer(), runs_answer(ci_run(7, "queued", None)), runs_answer(ci_run(7, "in_progress", None)),
+            runs_answer(ci_run(7))))
+        self.assertEqual(code, 0, out)
+        self.assertEqual(len(http.requests), 4)
+        self.assertEqual(sleeps.calls, [20, 20, 20])
+
+    def test_a_failed_run_fails_at_once_whatever_its_siblings(self):
+        for conclusion in ("failure", "timed_out", "action_required", "startup_failure", "stale", "neutral", None):
+            with self.subTest(conclusion=conclusion):
+                code, out, http, sleeps = call("wait_ci", self.environ, sequence(
+                    runs_answer(ci_run(7, "in_progress", None), ci_run(8, "completed", conclusion), ci_run(9))))
+                self.assertEqual(code, 1, out)
+                self.assertIn(f"ci run 8 failed ({conclusion})", out)
+                self.assertEqual(sleeps.calls, [])
+
+    def test_runs_of_another_commit_branch_or_event_are_not_this_commit_s(self):
+        others = [ci_run(1, conclusion="failure", sha=OTHER_SHA), ci_run(2, conclusion="failure", branch="api/x"),
+                  ci_run(3, conclusion="failure", event="pull_request"), ci_run(4, "in_progress", None, sha=OTHER_SHA),
+                  {**ci_run(5), "id": "5"}, {**ci_run(6), "id": True}]
+        code, out, http, sleeps = call("wait_ci", self.environ, sequence(runs_answer(*others, ci_run(10))))
+        self.assertEqual(code, 0, out)
+        self.assertIn("ci run 10 passed", out)
+
+    def test_only_cancelled_or_skipped_runs_fail(self):
+        code, out, _, _ = call("wait_ci", self.environ, sequence(
+            runs_answer(ci_run(7, conclusion="cancelled"), ci_run(8, conclusion="skipped"))))
+        self.assertEqual(code, 1, out)
+        self.assertIn("cancelled or skipped", out)
+        code, out, _, _ = call("wait_ci", self.environ, sequence(
+            runs_answer(ci_run(7, conclusion="cancelled"), ci_run(8))))
+        self.assertEqual(code, 0, out)
+
+    def test_it_gives_up_after_its_last_look(self):
+        code, out, http, sleeps = call("wait_ci", self.environ, lambda *a: runs_answer(ci_run(7, "in_progress", None)))
+        self.assertEqual(code, 1, out)
+        self.assertEqual(len(http.requests), 120)
+        self.assertEqual(sleeps.calls, [20] * 119)
+        self.assertIn("hadn't finished after 120 looks, 20 seconds apart; nothing was deployed", out)
+
+    def test_a_server_error_or_a_lost_connection_is_asked_again_and_a_refusal_is_not(self):
+        code, out, http, _ = call("wait_ci", self.environ, sequence(
+            answer(502), OSError("connection reset"), runs_answer(ci_run(7))))
+        self.assertEqual(code, 0, out)
+        self.assertEqual(len(http.requests), 3)
+        for status in (401, 403, 404):
+            with self.subTest(status=status):
+                code, out, http, _ = call("wait_ci", self.environ, sequence(answer(status)))
+                self.assertEqual(code, 1, out)
+                self.assertIn(f"GitHub answered HTTP {status}", out)
+
+    def test_an_answer_without_a_list_of_runs_fails(self):
+        for body in (b"not json", {"message": "x"}, {"workflow_runs": "x"}, []):
+            with self.subTest(body=body):
+                code, out, _, _ = call("wait_ci", self.environ, sequence(answer(200, body)))
+                self.assertEqual(code, 1, out)
+
+    def test_a_missing_token_or_commit_fails_before_any_request(self):
+        for environ in ({"GITHUB_SHA": SHA}, {"GITHUB_TOKEN": TOKEN}, {"GITHUB_TOKEN": TOKEN, "GITHUB_SHA": "main"},
+                        {"GITHUB_TOKEN": TOKEN, "GITHUB_SHA": SHA.upper()}, {"GITHUB_TOKEN": TOKEN, "GITHUB_SHA": SHA + "\n"}):
+            with self.subTest(environ=environ):
+                code, out, http, _ = call("wait_ci", environ)
+                self.assertEqual(code, 1, out)
+                self.assertEqual(http.requests, [])
+
+
+GOOD_API = answer(401, b'{"code":"UNAUTHENTICATED"}', {
+    "content-type": "application/json; charset=utf-8", "cache-control": "private, no-store",
+    "content-length": "26", "server": "Fly/abc", "via": "1.1 fly.io"})
+
+
+class CheckApiTest(unittest.TestCase):
+    def test_the_neutral_401_passes(self):
+        code, out, http, sleeps = call("check_api", {}, sequence(GOOD_API))
+        self.assertEqual(code, 0, out)
+        [request] = http.requests
+        self.assertEqual((request["method"], request["host"], request["path"]), ("GET", "api-dev.tadayo.app", "/v1/me"))
+        self.assertNotIn("authorization", {k.lower() for k in request["headers"]})
+        self.assertEqual(sleeps.calls, [])
+
+    def test_any_other_answer_fails_at_once(self):
+        cases = {
+            "200": answer(200, b'{"code":"UNAUTHENTICATED"}', GOOD_API.headers),
+            "404": answer(404, b'{"code":"NOT_FOUND"}', GOOD_API.headers),
+            "500": answer(500, b"", GOOD_API.headers),
+            "a redirect": answer(301, b"", {"location": "https://example.com/"}),
+            "another body": answer(401, b'{"code":"UNAUTHENTICATED","x":1}', GOOD_API.headers),
+            "no charset": answer(401, GOOD_API.body, {**GOOD_API.headers, "content-type": ["application/json"]}),
+            "cached": answer(401, GOOD_API.body, {**GOOD_API.headers, "cache-control": ["public, max-age=60"]}),
+            "no cache-control": answer(401, GOOD_API.body, {"content-type": GOOD_API.headers["content-type"]}),
+            "two content-types": answer(401, GOOD_API.body, {**GOOD_API.headers,
+                                                             "content-type": ["application/json; charset=utf-8"] * 2}),
+        }
+        for name, given in cases.items():
+            with self.subTest(case=name):
+                code, out, http, sleeps = call("check_api", {}, sequence(given))
+                self.assertEqual(code, 1, out)
+                self.assertEqual(len(http.requests), 1)
+                self.assertEqual(sleeps.calls, [])
+
+    def test_fly_s_proxy_errors_and_a_lost_connection_are_asked_again(self):
+        code, out, http, sleeps = call("check_api", {}, sequence(
+            answer(502), answer(503), answer(504), ConnectionRefusedError("refused"), GOOD_API))
+        self.assertEqual(code, 0, out)
+        self.assertEqual(sleeps.calls, [10, 10, 10, 10])
+
+    def test_it_fails_after_its_last_try(self):
+        code, out, http, sleeps = call("check_api", {}, lambda *a: answer(503))
+        self.assertEqual(code, 1, out)
+        self.assertEqual(len(http.requests), 6)
+        self.assertEqual(sleeps.calls, [10] * 5)
+        self.assertIn("answered HTTP 503, 6 times", out)
+
+    def test_the_host_is_ops_dev_host(self):
+        with open(os.path.join(ROOT, "tools", "ops", "src", "environment.ts"), encoding="utf-8") as f:
+            found = re.findall(r'^export const DEV_HOST = "([^"]+)";$', f.read(), re.M)
+        self.assertEqual(found, [steps_module.DEV_HOST])
+
+    def test_the_expected_answer_is_the_api_s_pinned_one(self):
+        with open(os.path.join(ROOT, "services", "api", "src", "session.test.ts"), encoding="utf-8") as f:
+            text = f.read()
+        block = re.search(r"const UNAUTHENTICATED = \{(.*?)\n\};", text, re.S).group(1)
+        self.assertIn("status: 401,", block)
+        self.assertIn("body: '%s'," % steps_module.EXPECTED_API["body"].decode(), block)
+        for name in ("content-type", "cache-control"):
+            self.assertIn(f'"{name}": "{steps_module.EXPECTED_API[name]}"', block)
+
+
+class Repository:
+    """A scratch copy of the files the Pages steps read: tools/ci/pages and apps/web/dist."""
+
+    def __init__(self, test):
+        self.root = tempfile.mkdtemp()
+        test.addCleanup(shutil.rmtree, self.root)
+        pages = os.path.join(self.root, "tools", "ci", "pages")
+        os.makedirs(pages)
+        for name in ("package.json", "package-lock.json"):
+            shutil.copy(os.path.join(ROOT, "tools", "ci", "pages", name), pages)
+        site = os.path.join(self.root, "apps", "web", "dist", ".well-known")
+        os.makedirs(site)
+        with open(os.path.join(site, "apple-app-site-association"), "wb") as f:
+            f.write(ASSOCIATION_BYTES)
+
+    def path(self, *parts):
+        return os.path.join(self.root, *parts)
+
+    def edit_lock(self, change):
+        with open(self.path("tools", "ci", "pages", "package-lock.json"), encoding="utf-8") as f:
+            lock = json.load(f)
+        change(lock)
+        with open(self.path("tools", "ci", "pages", "package-lock.json"), "w", encoding="utf-8") as f:
+            json.dump(lock, f)
+
+    def installer(self, version=steps_module.WRANGLER_VERSION):
+        def install():
+            folder = self.path("tools", "ci", "pages", "node_modules", "wrangler")
+            os.makedirs(folder, exist_ok=True)
+            with open(os.path.join(folder, "package.json"), "w", encoding="utf-8") as f:
+                json.dump({"name": "wrangler", "version": version}, f)
+        return install
+
+
+class SetupWranglerTest(unittest.TestCase):
+    def test_the_committed_lockfile_passes_its_own_check_and_names_the_pin(self):
+        steps = steps_module.Steps(ROOT, environ={})
+        self.assertIsNone(steps.lockfile_problem())
+        with open(os.path.join(ROOT, "tools", "ci", "pages", "package-lock.json"), encoding="utf-8") as f:
+            lock = json.load(f)
+        self.assertEqual(lock["packages"]["node_modules/wrangler"]["version"], "4.153.0")
+
+    def test_it_runs_npm_ci_without_install_scripts_in_tools_ci_pages(self):
+        repo = Repository(self)
+        run = FakeRun(install=repo.installer())
+        code, out, http, _ = call("setup_wrangler", {"PATH": "/bin"}, run=run, root=repo.root)
+        self.assertEqual(code, 0, out)
+        [done] = run.calls
+        self.assertEqual(done["cmd"], ["npm", "ci", "--ignore-scripts", "--no-audit", "--no-fund"])
+        self.assertEqual(done["cwd"], repo.path("tools", "ci", "pages"))
+        self.assertEqual(http.requests, [])
+
+    def test_it_refuses_a_lockfile_it_can_t_trust_before_installing(self):
+        def drop(key):
+            return lambda lock: lock["packages"][next(k for k in lock["packages"] if k.startswith("node_modules/@"))].pop(key)
+
+        def move(lock):
+            name = next(k for k in lock["packages"] if k.startswith("node_modules/@"))
+            lock["packages"][name]["resolved"] = "https://example.com/x.tgz"
+
+        def sha1(lock):
+            name = next(k for k in lock["packages"] if k.startswith("node_modules/@"))
+            lock["packages"][name]["integrity"] = "sha1-abc"
+
+        def link(lock):
+            lock["packages"]["../elsewhere"] = {"resolved": "https://registry.npmjs.org/x", "integrity": "sha512-x"}
+
+        changes = {
+            "no integrity": drop("integrity"), "not resolved": drop("resolved"), "resolved elsewhere": move,
+            "a SHA-1 integrity": sha1, "an entry outside node_modules": link,
+            "another wrangler": lambda lock: lock["packages"]["node_modules/wrangler"].update(version="4.161.0"),
+            "another root": lambda lock: lock["packages"][""].update(dependencies={"wrangler": "^4.153.0"}),
+            "another lockfile version": lambda lock: lock.update(lockfileVersion=2),
+        }
+        for name, change in changes.items():
+            with self.subTest(change=name):
+                repo = Repository(self)
+                repo.edit_lock(change)
+                run = FakeRun()
+                code, out, _, _ = call("setup_wrangler", {}, run=run, root=repo.root)
+                self.assertEqual(code, 1, out)
+                self.assertEqual(run.calls, [])
+                self.assertIn("nothing is installed", out)
+
+    def test_it_refuses_another_manifest_or_a_missing_file(self):
+        manifests = [{"private": True, "dependencies": {"wrangler": "^4.153.0"}},
+                     {"dependencies": {"wrangler": "4.153.0"}},
+                     {"private": True, "dependencies": {"wrangler": "4.153.0", "left-pad": "1.3.0"}},
+                     {"private": True, "dependencies": {"wrangler": "4.153.0"}, "scripts": {"postinstall": "x"}}]
+        for manifest in manifests:
+            with self.subTest(manifest=manifest):
+                repo = Repository(self)
+                with open(repo.path("tools", "ci", "pages", "package.json"), "w", encoding="utf-8") as f:
+                    json.dump(manifest, f)
+                run = FakeRun()
+                code, out, _, _ = call("setup_wrangler", {}, run=run, root=repo.root)
+                self.assertEqual(code, 1, out)
+                self.assertEqual(run.calls, [])
+        for name, text in {"a missing lockfile": None, "a lockfile that is a list": "[]",
+                           "a lockfile that isn't JSON": "{", "a manifest that is a list": "[]"}.items():
+            with self.subTest(case=name):
+                repo = Repository(self)
+                file = "package.json" if "manifest" in name else "package-lock.json"
+                os.remove(repo.path("tools", "ci", "pages", file))
+                if text is not None:
+                    with open(repo.path("tools", "ci", "pages", file), "w", encoding="utf-8") as f:
+                        f.write(text)
+                run = FakeRun()
+                code, out, _, _ = call("setup_wrangler", {}, run=run, root=repo.root)
+                self.assertEqual(code, 1, out)
+                self.assertEqual(run.calls, [])
+                self.assertIn("nothing is installed", out)
+
+    def test_a_failed_install_or_another_version_installed_fails(self):
+        repo = Repository(self)
+        code, out, _, _ = call("setup_wrangler", {}, run=FakeRun(code=1, install=repo.installer()), root=repo.root)
+        self.assertEqual(code, 1, out)
+        self.assertIn("npm ci failed (exit 1)", out)
+        repo = Repository(self)
+        code, out, _, _ = call("setup_wrangler", {}, run=FakeRun(install=repo.installer("4.161.0")), root=repo.root)
+        self.assertEqual(code, 1, out)
+        self.assertIn("npm installed wrangler 4.161.0", out)
+
+
+PROJECT_PATH = f"/client/v4/accounts/{ACCOUNT}/pages/projects/tadayo"
+CREATE_PATH = f"/client/v4/accounts/{ACCOUNT}/pages/projects"
+NOT_FOUND = answer(404, {"success": False, "errors": [{"code": 8000007, "message": "Project not found."}],
+                         "messages": [], "result": None})
+
+
+def project(branch="main", deployment=None, subdomain="tadayo-x1y.pages.dev"):
+    return {"name": "tadayo", "subdomain": subdomain, "production_branch": branch,
+            "domains": [subdomain], "canonical_deployment": deployment}
+
+
+def deployment(sha=SHA, status="success", stage="deploy", url="https://abc123.tadayo-x1y.pages.dev",
+               environment="production"):
+    return {"id": "d1", "url": url, "environment": environment,
+            "deployment_trigger": {"type": "ad_hoc", "metadata": {"branch": "main", "commit_hash": sha}},
+            "latest_stage": {"name": stage, "status": status}}
+
+
+def found(result):
+    return answer(200, {"success": True, "errors": [], "messages": [], "result": result})
+
+
+class PagesProjectTest(unittest.TestCase):
+    def test_it_makes_a_missing_project_for_main(self):
+        code, out, http, _ = call("pages_project", CLOUDFLARE, sequence(NOT_FOUND, found(project())))
+        self.assertEqual(code, 0, out)
+        get, post = http.requests
+        self.assertEqual((get["method"], get["host"], get["path"]), ("GET", "api.cloudflare.com", PROJECT_PATH))
+        self.assertEqual((post["method"], post["path"]), ("POST", CREATE_PATH))
+        self.assertEqual(json.loads(post["body"]), {"name": "tadayo", "production_branch": "main"})
+        self.assertEqual(post["headers"]["content-type"], "application/json")
+        for request in http.requests:
+            self.assertEqual(request["headers"]["authorization"], f"Bearer {TOKEN}")
+        self.assertIn("made the Pages project tadayo", out)
+        self.assertIn("tadayo-x1y.pages.dev", out)
+        self.assertNotIn(TOKEN, out)
+        self.assertNotIn(ACCOUNT, out)
+
+    def test_cloudflare_s_not_found_code_in_any_4xx_is_a_missing_project_and_nothing_else_is(self):
+        for status in (400, 404, 422):
+            with self.subTest(status=status):
+                given = answer(status, {"success": False, "errors": [{"code": 8000007, "message": "Project not found."}]})
+                code, out, http, _ = call("pages_project", CLOUDFLARE, sequence(given, found(project())))
+                self.assertEqual(code, 0, out)
+                self.assertEqual([r["method"] for r in http.requests], ["GET", "POST"])
+        for name, given in {
+                "a bare 404": answer(404, {"success": False, "errors": []}),
+                "a 404 with no body": answer(404, b""),
+                "a server error with the code": answer(500, {"success": False, "errors": [{"code": 8000007}]}),
+                "a success with the code": answer(200, {"success": True, "errors": [{"code": 8000007}]}),
+                "the code under another success": answer(404, {"success": True, "errors": [{"code": 8000007}]}),
+                "the code as text": answer(404, {"success": False, "errors": [{"code": "8000007"}]})}.items():
+            with self.subTest(case=name):
+                code, out, http, _ = call("pages_project", CLOUDFLARE, sequence(given, found(project())))
+                self.assertEqual(code, 1, out)
+                self.assertEqual([r["method"] for r in http.requests], ["GET"])
+
+    def test_it_leaves_an_existing_project_as_it_is(self):
+        code, out, http, _ = call("pages_project", CLOUDFLARE, sequence(found(project())))
+        self.assertEqual(code, 0, out)
+        self.assertEqual([r["method"] for r in http.requests], ["GET"])
+
+    def test_a_project_on_another_production_branch_is_refused_and_not_changed(self):
+        code, out, http, _ = call("pages_project", CLOUDFLARE, sequence(found(project(branch="production"))))
+        self.assertEqual(code, 1, out)
+        self.assertEqual([r["method"] for r in http.requests], ["GET"])
+        self.assertIn("'production'", out)
+
+    def test_any_other_answer_fails_with_cloudflare_s_errors(self):
+        refusal = answer(403, {"success": False, "errors": [{"code": 10000, "message": "Authentication error"}]})
+        for given in (refusal, answer(404, {"success": False, "errors": [{"code": 7003, "message": "x"}]}),
+                      answer(500, b"<html>"), answer(200, {"success": False, "errors": []}),
+                      answer(200, {"success": False, "errors": [], "result": project()}), OSError("reset")):
+            with self.subTest(given=given):
+                code, out, http, _ = call("pages_project", CLOUDFLARE, sequence(given))
+                self.assertEqual(code, 1, out)
+                self.assertEqual(len(http.requests), 1)
+                self.assertNotIn(TOKEN, out)
+        code, out, _, _ = call("pages_project", CLOUDFLARE, sequence(refusal))
+        self.assertIn("HTTP 403", out)
+        self.assertIn("10000 Authentication error", out)
+        for given in (refusal, answer(200, {"success": False, "errors": [], "result": project()})):
+            with self.subTest(made=given):
+                code, out, http, _ = call("pages_project", CLOUDFLARE, sequence(NOT_FOUND, given))
+                self.assertEqual(code, 1, out)
+                self.assertIn("to making the Pages project tadayo", out)
+        code, out, http, _ = call("pages_project", CLOUDFLARE, sequence(NOT_FOUND, refusal))
+        self.assertIn("to making the Pages project tadayo: 10000 Authentication error", out)
+
+    def test_a_missing_token_or_account_fails_before_any_request(self):
+        for environ in ({"CLOUDFLARE_ACCOUNT_ID": ACCOUNT}, {"CLOUDFLARE_API_TOKEN": TOKEN},
+                        {"CLOUDFLARE_API_TOKEN": TOKEN, "CLOUDFLARE_ACCOUNT_ID": "acct"},
+                        {"CLOUDFLARE_API_TOKEN": TOKEN, "CLOUDFLARE_ACCOUNT_ID": ACCOUNT + "/x"}):
+            with self.subTest(environ=environ):
+                code, out, http, _ = call("pages_project", environ)
+                self.assertEqual(code, 1, out)
+                self.assertEqual(http.requests, [])
+
+
+class PagesDeployTest(unittest.TestCase):
+    def test_it_runs_the_pinned_wrangler_with_only_what_it_needs(self):
+        repo = Repository(self)
+        run = FakeRun()
+        environ = {**CLOUDFLARE, "PATH": "/usr/bin", "HOME": "/home/runner", "FLY_API_TOKEN": "fly",
+                   "GITHUB_TOKEN": "gh", "DATABASE_URL": "postgres://x", "NODE_OPTIONS": "--require /tmp/x.js"}
+        code, out, http, _ = call("pages_deploy", environ, run=run, root=repo.root)
+        self.assertEqual(code, 0, out)
+        [done] = run.calls
+        self.assertEqual(done["cmd"], [
+            "node", os.path.join("tools", "ci", "pages", "node_modules", "wrangler", "bin", "wrangler.js"),
+            "pages", "deploy", os.path.join("apps", "web", "dist"), "--project-name=tadayo", "--branch=main",
+            f"--commit-hash={SHA}", f"--commit-message=main at {SHA[:12]}", "--commit-dirty=false"])
+        self.assertEqual(done["cwd"], repo.root)
+        self.assertEqual(done["env"], {"PATH": "/usr/bin", "HOME": "/home/runner", "CI": "true",
+                                       "DO_NOT_TRACK": "1", "WRANGLER_SEND_METRICS": "false",
+                                       "WRANGLER_SEND_ERROR_REPORTS": "false", "CLOUDFLARE_API_TOKEN": TOKEN,
+                                       "CLOUDFLARE_ACCOUNT_ID": ACCOUNT})
+        self.assertEqual(http.requests, [])
+
+    def test_wrangler_s_failure_is_the_step_s(self):
+        repo = Repository(self)
+        code, out, _, _ = call("pages_deploy", CLOUDFLARE, run=FakeRun(code=1), root=repo.root)
+        self.assertEqual(code, 1, out)
+
+    def test_nothing_runs_without_the_build_the_secrets_or_the_commit(self):
+        repo = Repository(self)
+        os.remove(repo.path("apps", "web", "dist", ".well-known", "apple-app-site-association"))
+        for environ, root in ((CLOUDFLARE, repo.root), ({**CLOUDFLARE, "GITHUB_SHA": ""}, ROOT),
+                              ({"CLOUDFLARE_ACCOUNT_ID": ACCOUNT, "GITHUB_SHA": SHA}, ROOT)):
+            with self.subTest(environ=environ):
+                run = FakeRun()
+                code, out, _, _ = call("pages_deploy", environ, run=run, root=root)
+                self.assertEqual(code, 1, out)
+                self.assertEqual(run.calls, [])
+
+
+def served(body=ASSOCIATION_BYTES, content_type="application/json", status=200):
+    return answer(status, body, {"content-type": content_type} if content_type else {})
+
+
+class CheckAssociationTest(unittest.TestCase):
+    def respond(self, projects, files):
+        """Cloudflare's answers in turn for the project; the hosts' answers in turn for the file."""
+        projects, files = list(projects), {host: list(given) for host, given in files.items()}
+
+        def respond(method, host, path, body):
+            if host == "api.cloudflare.com":
+                self.assertEqual((method, path), ("GET", PROJECT_PATH))
+                return projects.pop(0) if len(projects) > 1 else projects[0]
+            self.assertEqual((method, path), ("GET", "/.well-known/apple-app-site-association"))
+            given = files[host]
+            return given.pop(0) if len(given) > 1 else given[0]
+        return respond
+
+    def setUp(self):
+        self.repo = Repository(self)
+
+    def check(self, projects, files):
+        return call("check_association", CLOUDFLARE, self.respond(projects, files), root=self.repo.root)
+
+    def test_this_commit_s_deployment_served_as_built_on_both_addresses_passes(self):
+        code, out, http, sleeps = self.check([found(project(deployment=deployment()))],
+                                             {"tadayo-x1y.pages.dev": [served()], "abc123.tadayo-x1y.pages.dev": [served()]})
+        self.assertEqual(code, 0, out)
+        self.assertEqual([r["host"] for r in http.requests],
+                         ["api.cloudflare.com", "tadayo-x1y.pages.dev", "abc123.tadayo-x1y.pages.dev"])
+        self.assertEqual(sleeps.calls, [])
+        self.assertNotIn(TOKEN, out)
+        self.assertNotIn(ACCOUNT, out)
+
+    def test_it_waits_for_this_commit_s_deployment_and_its_success(self):
+        code, out, http, sleeps = self.check(
+            [found(project(deployment=None)), found(project(deployment=deployment(sha=OTHER_SHA))),
+             found(project(deployment=deployment(status="active"))), found(project(deployment=deployment()))],
+            {"tadayo-x1y.pages.dev": [served()], "abc123.tadayo-x1y.pages.dev": [served()]})
+        self.assertEqual(code, 0, out)
+        self.assertEqual(sleeps.calls, [15, 15, 15])
+
+    def test_it_waits_through_the_stages_before_deploy_even_skipped_ones(self):
+        code, out, _, sleeps = self.check(
+            [found(project(deployment=deployment(stage="queued", status="active"))),
+             found(project(deployment=deployment(stage="initialize", status="success"))),
+             found(project(deployment=deployment(stage="build", status="skipped"))),
+             found(project(deployment=deployment(status="idle"))),
+             found(project(deployment=deployment()))],
+            {"tadayo-x1y.pages.dev": [served()], "abc123.tadayo-x1y.pages.dev": [served()]})
+        self.assertEqual(code, 0, out)
+        self.assertEqual(sleeps.calls, [15, 15, 15, 15])
+
+    def test_a_failed_deployment_fails_at_once(self):
+        for stage, status in (("deploy", "failure"), ("deploy", "canceled"), ("build", "failure"),
+                              ("initialize", "canceled"), ("deploy", "skipped")):
+            with self.subTest(stage=stage, status=status):
+                code, out, _, sleeps = self.check(
+                    [found(project(deployment=deployment(stage=stage, status=status)))], {})
+                self.assertEqual(code, 1, out)
+                self.assertEqual(sleeps.calls, [])
+                self.assertIn(f"ended {status} at its {stage} stage", out)
+
+    def test_a_preview_deployment_of_this_commit_is_not_the_production_one(self):
+        code, out, http, sleeps = self.check(
+            [found(project(deployment=deployment(environment="preview")))], {})
+        self.assertEqual(code, 1, out)
+        self.assertEqual(len(sleeps.calls), 19)
+        self.assertEqual({r["host"] for r in http.requests}, {"api.cloudflare.com"})
+
+    def test_another_commit_s_deployment_fails_after_the_last_look(self):
+        code, out, http, sleeps = self.check([found(project(deployment=deployment(sha=OTHER_SHA)))], {})
+        self.assertEqual(code, 1, out)
+        self.assertEqual(len(http.requests), 20)
+        self.assertEqual(sleeps.calls, [15] * 19)
+        self.assertIn(f"the production deployment is of {OTHER_SHA[:12]}", out)
+
+    def test_a_new_name_is_given_time_to_answer(self):
+        code, out, _, sleeps = self.check([found(project(deployment=deployment()))], {
+            "tadayo-x1y.pages.dev": [OSError("name not found"), served(status=404), served()],
+            "abc123.tadayo-x1y.pages.dev": [served()]})
+        self.assertEqual(code, 0, out)
+        self.assertEqual(sleeps.calls, [15, 15])
+
+    def test_the_file_served_otherwise_fails(self):
+        cases = {
+            "as octet-stream": served(content_type="application/octet-stream"),
+            "with a charset": served(content_type="application/json; charset=utf-8"),
+            "with no type": served(content_type=None),
+            "other bytes": served(body=b'{"applinks": {"details": [1]}}'),
+            "a redirect": answer(301, b"", {"location": "https://tadayo-x1y.pages.dev/x"}),
+        }
+        for name, given in cases.items():
+            with self.subTest(case=name):
+                code, out, _, sleeps = self.check([found(project(deployment=deployment()))],
+                                                  {"tadayo-x1y.pages.dev": [given]})
+                self.assertEqual(code, 1, out)
+                self.assertEqual(sleeps.calls, [])
+        code, out, _, sleeps = self.check([found(project(deployment=deployment()))],
+                                          {"tadayo-x1y.pages.dev": [served(status=404)]})
+        self.assertEqual(code, 1, out)
+        self.assertEqual(len(sleeps.calls), 19)
+
+    def test_the_deployment_s_own_address_is_checked_too(self):
+        code, out, _, _ = self.check([found(project(deployment=deployment()))], {
+            "tadayo-x1y.pages.dev": [served()], "abc123.tadayo-x1y.pages.dev": [served(content_type="text/plain")]})
+        self.assertEqual(code, 1, out)
+        self.assertIn("abc123.tadayo-x1y.pages.dev", out)
+
+    def test_a_deployment_address_that_isn_t_an_https_host_fails(self):
+        for url in ("http://abc.pages.dev", "https://abc.pages.dev/path", "https://user@abc.pages.dev", None):
+            with self.subTest(url=url):
+                code, out, _, _ = self.check([found(project(deployment=deployment(url=url)))],
+                                             {"tadayo-x1y.pages.dev": [served()]})
+                self.assertEqual(code, 1, out)
+
+    def test_a_missing_project_or_build_fails(self):
+        code, out, _, _ = self.check([NOT_FOUND], {})
+        self.assertEqual(code, 1, out)
+        os.remove(self.repo.path("apps", "web", "dist", ".well-known", "apple-app-site-association"))
+        code, out, http, _ = self.check([found(project(deployment=deployment()))], {})
+        self.assertEqual(code, 1, out)
+        self.assertEqual(http.requests, [])
+
+
+def workflow():
+    with open(os.path.join(ROOT, ".github", "workflows", "deploy-dev.yml"), encoding="utf-8") as f:
+        return f.read()
+
+
+def ops_step(name, script, branch=None):
+    """deploy-dev's step for an ops script: ops.yml's own command, with the script's variables
+    from the secrets ops_steps.SECRETS names, and the job's token for GITHUB_TOKEN."""
+    env = {"OPS_SCRIPT": script}
+    if branch:
+        env["OPS_BRANCH"] = branch
+    for variable in ops_steps.SCRIPTS[script].variables:
+        env[variable] = ("${{ github.token }}" if variable == ops_steps.JOB_TOKEN
+                         else "${{ secrets.%s }}" % ops_steps.SECRETS[variable])
+    return {"name": name, "env": env, "run": "python3 tools/ci/ops_steps.py run"}
+
+
+CLOUDFLARE_ENV = {"CLOUDFLARE_API_TOKEN": "${{ secrets.CLOUDFLARE_API_TOKEN }}",
+                  "CLOUDFLARE_ACCOUNT_ID": "${{ vars.CLOUDFLARE_ACCOUNT_ID }}"}
+
+
+def expected_jobs():
+    pinned = pins()
+    checkout = {"uses": pinned["actions/checkout"], "with": {"persist-credentials": "false"}}
+    return {
+        "ci": {"name": "wait for ci", "runs-on": "ubuntu-24.04", "timeout-minutes": "45",
+               "permissions": {"contents": "read", "actions": "read"},
+               "concurrency": {"group": "deploy-dev-ci-${{ github.sha }}", "cancel-in-progress": "false"},
+               "steps": [checkout, {"name": "wait-ci", "env": {"GITHUB_TOKEN": "${{ github.token }}"},
+                                    "run": "python3 tools/ci/deploy_dev_steps.py wait-ci"}]},
+        "deploy": {"name": "deploy", "needs": "ci", "runs-on": "ubuntu-24.04", "timeout-minutes": "75",
+                   "permissions": {"contents": "read", "actions": "read"},
+                   "concurrency": {"group": "ops-dev", "cancel-in-progress": "false"},
+                   "steps": [
+                       checkout,
+                       {"uses": pinned["actions/setup-node"],
+                        "with": {"node-version-file": ".nvmrc", "package-manager-cache": "false"}},
+                       {"run": "python3 tools/ci/ci_steps.py setup-pnpm"},
+                       {"run": "python3 tools/ci/ci_steps.py install"},
+                       {"name": "setup-flyctl", "env": {"OPS_SCRIPT": "deploy-branch"},
+                        "run": "python3 tools/ci/ops_steps.py setup-flyctl"},
+                       ops_step("migrate", "migrate"),
+                       ops_step("deploy-branch", "deploy-branch", branch="main"),
+                       ops_step("storage-setup", "storage-setup"),
+                       ops_step("supabase-probe", "supabase-probe"),
+                       {"run": "python3 tools/ci/deploy_dev_steps.py check-api"},
+                       {"run": "python3 tools/ci/ci_steps.py web"},
+                       {"run": "python3 tools/ci/deploy_dev_steps.py setup-wrangler"},
+                       {"name": "pages-project", "env": CLOUDFLARE_ENV,
+                        "run": "python3 tools/ci/deploy_dev_steps.py pages-project"},
+                       {"name": "pages-deploy", "env": CLOUDFLARE_ENV,
+                        "run": "python3 tools/ci/deploy_dev_steps.py pages-deploy"},
+                       {"name": "check-association", "env": CLOUDFLARE_ENV,
+                        "run": "python3 tools/ci/deploy_dev_steps.py check-association"},
+                   ]},
+    }
+
+
+class WorkflowFileTest(unittest.TestCase):
+    """deploy-dev.yml, read whole: every key and value is the one built here, so each secret is
+    named only in the steps that use it (docs/TECH-DESIGN.md section 9)."""
+
+    def setUp(self):
+        self.text = workflow()
+        self.document = parse_yaml(self.text)
+
+    def test_it_reads_as_a_yaml_library_would(self):
+        try:
+            import yaml
+        except ImportError:
+            if os.environ.get("GITHUB_ACTIONS") == "true":
+                self.fail("no yaml library on ci's runner (ops_steps_test.py says why it must be there)")
+            self.skipTest("no yaml library here")
+        theirs = yaml.safe_load(self.text)
+        theirs["on"] = theirs.pop(True)  # YAML 1.1 reads the key `on` as true
+
+        def text(value):
+            if isinstance(value, dict):
+                return {k: text(v) for k, v in value.items()}
+            if isinstance(value, list):
+                return [text(v) for v in value]
+            return str(value).lower() if isinstance(value, bool) else str(value)
+        self.assertEqual(text(theirs), self.document)
+
+    def test_the_file_holds_these_keys_and_no_other(self):
+        self.assertEqual(list(self.document), ["name", "on", "permissions", "defaults", "jobs"])
+        self.assertEqual(self.document["name"], "deploy-dev")
+        self.assertEqual(self.document["permissions"], {})
+        self.assertEqual(self.document["defaults"], {"run": {"shell": "bash"}})
+
+    def test_it_runs_only_on_a_push_to_main(self):
+        self.assertEqual(self.document["on"], {"push": {"branches": ["main"]}})
+
+    def test_its_jobs_and_steps_are_these_exactly(self):
+        expected = expected_jobs()
+        self.assertEqual(list(self.document["jobs"]), list(expected))
+        for name in expected:
+            with self.subTest(job=name):
+                self.assertEqual(self.document["jobs"][name], expected[name])
+
+    def test_only_the_deploy_job_holds_ops_dev_and_it_is_never_cancelled(self):
+        self.assertNotIn("concurrency", self.document)
+        self.assertEqual(self.document["jobs"]["ci"]["concurrency"],
+                         {"group": "deploy-dev-ci-${{ github.sha }}", "cancel-in-progress": "false"})
+        self.assertEqual(self.document["jobs"]["deploy"]["concurrency"], {"group": "ops-dev", "cancel-in-progress": "false"})
+        with open(os.path.join(ROOT, ".github", "workflows", "ops.yml"), encoding="utf-8") as f:
+            self.assertEqual(parse_yaml(f.read())["concurrency"], {"group": "ops-dev", "cancel-in-progress": "false"})
+
+    def test_every_expression_in_the_file_is_one_this_test_knows(self):
+        found = sorted(re.findall(r"\$\{\{.*?\}\}", self.text))
+        self.assertEqual(self.text.count("${{"), len(found))
+        wanted = ["${{ github.sha }}"]  # the wait's group
+        wanted += ["${{ github.token }}"] * 2  # wait-ci's and deploy-branch's
+        wanted += ["${{ secrets.DEV_DATABASE_URL }}", "${{ secrets.FLY_API_TOKEN }}", "${{ secrets.FLY_API_TOKEN }}",
+                   "${{ secrets.FLY_API_TOKEN }}", "${{ secrets.SUPABASE_ACCESS_TOKEN }}"]
+        wanted += ["${{ secrets.SUPABASE_DEV_PROJECT_REF }}"] * 3
+        wanted += ["${{ secrets.CLOUDFLARE_API_TOKEN }}", "${{ vars.CLOUDFLARE_ACCOUNT_ID }}"] * 3
+        self.assertEqual(found, sorted(wanted))
+
+    def test_the_secrets_are_the_b0_plan_s(self):
+        # docs/plans/B0.md's deploy-dev row: FLY_API_TOKEN, GITHUB_TOKEN, DEV_DATABASE_URL,
+        # SUPABASE_DEV_PROJECT_REF, SUPABASE_ACCESS_TOKEN, CLOUDFLARE_API_TOKEN, and the variable
+        # CLOUDFLARE_ACCOUNT_ID.
+        self.assertEqual(set(re.findall(r"secrets\.([A-Z_]+)", self.text)),
+                         {"FLY_API_TOKEN", "DEV_DATABASE_URL", "SUPABASE_DEV_PROJECT_REF", "SUPABASE_ACCESS_TOKEN",
+                          "CLOUDFLARE_API_TOKEN"})
+        self.assertEqual(set(re.findall(r"vars\.([A-Z_]+)", self.text)), {"CLOUDFLARE_ACCOUNT_ID"})
+
+    def test_the_pins_are_ci_yml_s(self):
+        pinned = pins()
+        uses = re.findall(r"uses: (\S+)", self.text)
+        self.assertEqual(len(uses), 3)
+        self.assertTrue(set(uses) <= set(pinned.values()))
+
+
+class UsageTest(unittest.TestCase):
+    def test_unknown_step(self):
+        for argv in (["deploy_dev_steps.py"], ["deploy_dev_steps.py", "deploy"], ["deploy_dev_steps.py", "wait-ci", "x"]):
+            with self.subTest(argv=argv):
+                out = io.StringIO()
+                with contextlib.redirect_stdout(out):
+                    self.assertEqual(steps_module.main(argv), 2)
+                self.assertIn("steps: wait-ci, check-api, setup-wrangler, pages-project, pages-deploy, "
+                              "check-association", out.getvalue())
+
+
+if __name__ == "__main__":
+    unittest.main()
