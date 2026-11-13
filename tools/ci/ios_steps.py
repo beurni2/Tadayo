@@ -158,6 +158,13 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import toolchain  # noqa: E402
 
+# EXPERIMENT on the check branches ios/b0-xcode27-mount-* (never merged): how the downloaded iOS
+# 26.5 runtime is mounted on the xcode-27 image (actions/runner-images#14946). "restart" restarts
+# CoreSimulatorService after the download and waits for the cryptexd mount; "import" installs
+# with -exportPath and -importPlatform, then watches the mount for three minutes.
+MOUNT_EXPERIMENT = "import"
+CRYPTEX_MOUNTS = "/private/var/run/com.apple.security.cryptexd/mnt/"
+
 REQUIRE_APP = False  # slice 12 turns this on (T58)
 
 PROJECT_SPEC = "apps/ios/project.yml"
@@ -894,9 +901,27 @@ class Steps:
         for variant in ([], ["-architectureVariant", "universal"]):
             print(f"ios: simulator: the runner has no iOS {version} simulator; downloading it"
                   + (" (universal variant)" if variant else ""))
-            code = self.shell.run(["xcodebuild", "-downloadPlatform", "iOS", "-buildVersion",
-                                   version] + variant, env=env, log=self.log("simulators.txt"))
-            self.write_log("simulators.txt", f"(exit {code})")
+            if MOUNT_EXPERIMENT == "import":
+                export = self.work_path("runtime-export")
+                shutil.rmtree(export, ignore_errors=True)
+                os.makedirs(export, exist_ok=True)
+                code = self.shell.run(["xcodebuild", "-downloadPlatform", "iOS", "-buildVersion",
+                                       version, "-exportPath", export] + variant, env=env,
+                                      log=self.log("simulators.txt"))
+                self.write_log("simulators.txt", f"(exit {code})")
+                found = sorted(os.listdir(export))
+                self.write_log("simulators.txt", "exported: " + ", ".join(found))
+                bundles = [n for n in found if n.endswith(".exportedBundle")] or found
+                for name in bundles[:1]:
+                    code = self.shell.run(["xcodebuild", "-importPlatform",
+                                           os.path.join(export, name)], env=env,
+                                          log=self.log("simulators.txt"))
+                    self.write_log("simulators.txt", f"(exit {code})")
+            else:
+                code = self.shell.run(["xcodebuild", "-downloadPlatform", "iOS", "-buildVersion",
+                                       version] + variant, env=env,
+                                      log=self.log("simulators.txt"))
+                self.write_log("simulators.txt", f"(exit {code})")
             listed = self.runtimes() or []
             runtime = pick_runtime(listed, version, device)
             if runtime is None and runtimes_of(listed, version):
@@ -918,9 +943,80 @@ class Steps:
                     if cache != 0:
                         print(f"ios: simulator: updating iOS {version}'s shared cache exited "
                               f"{cache}, so its first boot builds it (logs/simulators.txt)")
+                self.mount_experiment(version, str(runtime.get("buildversion") or ""))
                 return runtime
         print(f"ios: simulator: couldn't install iOS {version} (logs/simulators.txt)")
         return None
+
+    # EXPERIMENT: the mount checks (see MOUNT_EXPERIMENT).
+    def disk_images(self):
+        code, out, err = self.shell.capture(["xcrun", "simctl", "runtime", "list", "-j"],
+                                            env=self.xcode_env())
+        try:
+            images = json.loads(out) if code == 0 else None
+        except ValueError:
+            images = None
+        return (images if isinstance(images, dict) else None), out + err
+
+    def mount_lines(self):
+        _, out, _ = self.shell.capture(["mount"])
+        return [line for line in out.splitlines() if "CoreSimulator" in line or "cryptexd" in line]
+
+    @staticmethod
+    def image_states(images, build):
+        states = []
+        for image in (images or {}).values():
+            if isinstance(image, dict) and (not build or build in json.dumps(image)):
+                states.append(f"{image.get('version')} {image.get('build')} {image.get('state')} "
+                              f"{image.get('mountPath')}")
+        return sorted(states)
+
+    def diagnose(self, moment):
+        images, raw = self.disk_images()
+        stamp = time.strftime("%H:%M:%S", time.gmtime())
+        self.write_log("simulators.txt", f"--- mount check: {moment} ({stamp} UTC)\n"
+                       "+ xcrun simctl runtime list -j\n" + raw
+                       + "\n+ mount | grep -E 'CoreSimulator|cryptexd'\n"
+                       + "\n".join(self.mount_lines()))
+        print(f"ios: mount check ({stamp}): {moment}: "
+              + " | ".join(self.image_states(images, None)), flush=True)
+
+    def wait_for_cryptex(self, build, limit):
+        start, last = time.monotonic(), None
+        while True:
+            images, raw = self.disk_images()
+            states = self.image_states(images, build)
+            elapsed = int(time.monotonic() - start)
+            if states != last:
+                line = f"mount wait +{elapsed}s: " + (" | ".join(states) or f"none of {build}: {raw[:300]}")
+                self.write_log("simulators.txt", line)
+                print("ios: " + line, flush=True)
+                last = states
+            mounted = self.mount_lines()
+            for image in (images or {}).values():
+                path = str(image.get("mountPath") or "") if isinstance(image, dict) else ""
+                if (build in json.dumps(image) and image.get("state") == "Ready"
+                        and path.startswith(CRYPTEX_MOUNTS) and any(path in m for m in mounted)):
+                    return elapsed
+            if elapsed > limit:
+                return None
+            time.sleep(5)
+
+    def mount_experiment(self, version, build):
+        env = self.xcode_env()
+        self.diagnose(f"iOS {version} ({build}) installed")
+        if MOUNT_EXPERIMENT == "restart":
+            self.shell.run(["xcrun", "simctl", "shutdown", "all"], env=env,
+                           log=self.log("simulators.txt"))
+            self.shell.run(["killall", "-9", "com.apple.CoreSimulator.CoreSimulatorService"],
+                           log=self.log("simulators.txt"))
+            waited = self.wait_for_cryptex(build, 900)
+        else:
+            waited = self.wait_for_cryptex(build, 180)
+        said = f"after {waited} s" if waited is not None else "not reached"
+        self.write_log("simulators.txt", f"mount wait ({MOUNT_EXPERIMENT}): cryptexd mount {said}")
+        print(f"ios: mount wait ({MOUNT_EXPERIMENT}): cryptexd mount {said}", flush=True)
+        self.diagnose(f"iOS {version} after the mount wait")
 
     def runtimes(self):
         code, out, err = self.shell.capture(["xcrun", "simctl", "list", "runtimes", "--json"],
@@ -1074,6 +1170,7 @@ class Steps:
                 print(f"ios: test: no test target is left to run on iOS {version}")
                 record(version, "none")
                 continue
+            self.diagnose(f"before the iOS {version} pass")
             if udid != booted:
                 # One simulator at a time on the runner. A failed shutdown is logged, not fatal;
                 # a device that doesn't boot fails its pass.
@@ -1104,10 +1201,19 @@ class Steps:
                  "--compact"], env=self.xcode_env())
             self.write_log(f"test-summary-{version}.json", summary or err)
             record(version, "passed" if code == 0 else "failed")
+            self.diagnose(f"after the iOS {version} pass")
             if code != 0:
                 failure = failure or code
                 print(f"ios: test: tests failed on iOS {version} (logs/test-{version}.log, "
                       f"logs/test-summary-{version}.json)")
+        _, out, err = self.shell.capture(
+            ["log", "show", "--style", "compact", "--last", "80m", "--predicate",
+             'process == "simdiskimaged" OR process == "cryptexd" OR '
+             '(process == "CoreSimulatorService" AND eventMessage CONTAINS[c] "mount")'])
+        lines = out.splitlines()
+        self.write_log("simulators.txt", f"+ log show (simdiskimaged, cryptexd, CoreSimulatorService "
+                       f"mounts; last 80 minutes): {len(lines)} lines, the last 800:\n"
+                       + "\n".join(lines[-800:]) + "\n" + err[-500:])
         ran = [r for r in results.values() if r != "none"]
         overall = "failed" if "failed" in ran else "passed" if ran else "none"
         self.update_run_record(tests=overall, **{f"tests-{v}": r for v, r in results.items()})
