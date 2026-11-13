@@ -1,0 +1,1223 @@
++ xcodebuild test-without-building -project apps/ios/Tadayo.xcodeproj -scheme Tadayo -destination platform=iOS Simulator,id=3702087E-CDF4-4725-B785-4C23BB90D301 -derivedDataPath /Users/runner/work/_temp/DerivedData -resultBundlePath /Users/runner/work/_temp/ios-out/Tests.xcresult -skipPackagePluginValidation -skip-testing TadayoSnapshotTests
+Command line invocation:
+    /Applications/Xcode_26.6.app/Contents/Developer/usr/bin/xcodebuild test-without-building -project apps/ios/Tadayo.xcodeproj -scheme Tadayo -destination "platform=iOS Simulator,id=3702087E-CDF4-4725-B785-4C23BB90D301" -derivedDataPath /Users/runner/work/_temp/DerivedData -resultBundlePath /Users/runner/work/_temp/ios-out/Tests.xcresult -skipPackagePluginValidation -skip-testing TadayoSnapshotTests
+
+Resolve Package Graph
+
+
+Resolved source packages:
+  TadayoAPI: /Users/runner/work/Tadayo/Tadayo/packages/swift/TadayoAPI
+  swift-snapshot-testing: https://github.com/pointfreeco/swift-snapshot-testing @ 1.19.7
+  swift-argument-parser: https://github.com/apple/swift-argument-parser @ 1.8.2
+  swift-syntax: https://github.com/swiftlang/swift-syntax @ 604.0.0
+  swift-numerics: https://github.com/apple/swift-numerics.git @ 1.1.1
+  swift-http-types: https://github.com/apple/swift-http-types @ 1.8.0
+  TadayoDesign: /Users/runner/work/Tadayo/Tadayo/packages/swift/TadayoDesign
+  Yams: https://github.com/jpsim/Yams @ 6.2.2
+  TadayoCore: /Users/runner/work/Tadayo/Tadayo/packages/swift/TadayoCore
+  swift-custom-dump: https://github.com/pointfreeco/swift-custom-dump @ 1.7.3
+  swift-collections: https://github.com/apple/swift-collections @ 1.7.6
+  swift-algorithms: https://github.com/apple/swift-algorithms @ 1.2.1
+  OpenAPIKit: https://github.com/mattpolzin/OpenAPIKit @ 6.4.0
+  swift-openapi-runtime: https://github.com/apple/swift-openapi-runtime @ 1.13.4
+  swift-openapi-urlsession: https://github.com/apple/swift-openapi-urlsession @ 1.4.0
+  swift-openapi-generator: https://github.com/apple/swift-openapi-generator @ 1.14.3
+  xctest-dynamic-overlay: https://github.com/pointfreeco/xctest-dynamic-overlay @ 1.13.1
+
+Writing result bundle at path:
+	/Users/runner/work/_temp/ios-out/Tests.xcresult
+
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:iOS Simulator, arch:arm64, id:3702087E-CDF4-4725-B785-4C23BB90D301, OS:17.5, name:iPhone 15 }
+{ platform:iOS Simulator, arch:x86_64, id:3702087E-CDF4-4725-B785-4C23BB90D301, OS:17.5, name:iPhone 15 }
+Test Suite 'All tests' started at 2026-11-13 04:11:27.601.
+Test Suite 'TadayoTests.xctest' started at 2026-11-13 04:11:27.602.
+Test Suite 'AppIconTests' started at 2026-11-13 04:11:27.603.
+Test Case '-[TadayoTests.AppIconTests testEachIconIs1024By1024PixelsWithAnAlphaChannelWhereTheTableSaysSo]' started.
+Test Case '-[TadayoTests.AppIconTests testEachIconIs1024By1024PixelsWithAnAlphaChannelWhereTheTableSaysSo]' passed (0.004 seconds).
+Test Case '-[TadayoTests.AppIconTests testEachIconIsTheBrandsMasterByteForByte]' started.
+Test Case '-[TadayoTests.AppIconTests testEachIconIsTheBrandsMasterByteForByte]' passed (0.003 seconds).
+Test Case '-[TadayoTests.AppIconTests testTheBuiltAppNamesItsIcon]' started.
+Test Case '-[TadayoTests.AppIconTests testTheBuiltAppNamesItsIcon]' passed (0.001 seconds).
+Test Case '-[TadayoTests.AppIconTests testTheCatalogHoldsOneUniversalIconWithADarkAndATintedAppearance]' started.
+Test Case '-[TadayoTests.AppIconTests testTheCatalogHoldsOneUniversalIconWithADarkAndATintedAppearance]' passed (0.030 seconds).
+Test Case '-[TadayoTests.AppIconTests testTheMastersAreThePinnedOnes]' started.
+Test Case '-[TadayoTests.AppIconTests testTheMastersAreThePinnedOnes]' passed (0.001 seconds).
+Test Suite 'AppIconTests' passed at 2026-11-13 04:11:27.644.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.039 (0.042) seconds
+Test Suite 'AppLaunchTests' started at 2026-11-13 04:11:27.644.
+Test Case '-[TadayoTests.AppLaunchTests testABuildWithNoEnvironmentBuildsNothing]' started.
+Test Case '-[TadayoTests.AppLaunchTests testABuildWithNoEnvironmentBuildsNothing]' passed (0.001 seconds).
+Test Case '-[TadayoTests.AppLaunchTests testALaterLaunchKeepsTheSession]' started.
+Test Case '-[TadayoTests.AppLaunchTests testALaterLaunchKeepsTheSession]' passed (0.023 seconds).
+Test Case '-[TadayoTests.AppLaunchTests testDebugBuildsCanNeverSendACode]' started.
+Test Case '-[TadayoTests.AppLaunchTests testDebugBuildsCanNeverSendACode]' passed (0.001 seconds).
+Test Case '-[TadayoTests.AppLaunchTests testEveryRequestGoesThroughASessionThatKeepsNothing]' started.
+Test Case '-[TadayoTests.AppLaunchTests testEveryRequestGoesThroughASessionThatKeepsNothing]' passed (0.001 seconds).
+Test Case '-[TadayoTests.AppLaunchTests testHostingTheseTestsTheAppBuildsNothing]' started.
+Test Case '-[TadayoTests.AppLaunchTests testHostingTheseTestsTheAppBuildsNothing]' passed (0.002 seconds).
+Test Case '-[TadayoTests.AppLaunchTests testLeavingRemakesTheConnections]' started.
+Test Case '-[TadayoTests.AppLaunchTests testLeavingRemakesTheConnections]' passed (0.002 seconds).
+Test Case '-[TadayoTests.AppLaunchTests testMissingOrWrongSettingsBuildNothing]' started.
+Test Case '-[TadayoTests.AppLaunchTests testMissingOrWrongSettingsBuildNothing]' passed (0.003 seconds).
+Test Case '-[TadayoTests.AppLaunchTests testTheFirstLaunchAfterAnInstallForgetsTheSessionBeforeReadingIt]' started.
+Test Case '-[TadayoTests.AppLaunchTests testTheFirstLaunchAfterAnInstallForgetsTheSessionBeforeReadingIt]' passed (0.020 seconds).
+Test Suite 'AppLaunchTests' passed at 2026-11-13 04:11:27.730.
+	 Executed 8 tests, with 0 failures (0 unexpected) in 0.054 (0.086) seconds
+Test Suite 'ArrivalFocusTests' started at 2026-11-13 04:11:27.756.
+Test Case '-[TadayoTests.ArrivalFocusTests testA03AsksForNoFocusWhileVoiceOverRuns]' started.
+Test Case '-[TadayoTests.ArrivalFocusTests testA03AsksForNoFocusWhileVoiceOverRuns]' passed (5.631 seconds).
+Test Case '-[TadayoTests.ArrivalFocusTests testA03TakesTheFocusAsItReplacesA02Age]' started.
+2026-11-13 04:11:33.435531+0000 Tadayo[34859:97185] [RTILog] -[RTIInputSystemClient remoteTextInputSessionWithID:performInputOperation:]  perform input operation requires a valid sessionID. inputModality = Keyboard, inputOperation = <null selector>, customInfoType = UIEmojiSearchOperations
+2026-11-13 04:11:33.639527+0000 Tadayo[34859:97731] [plugin] AddInstanceForFactory: No factory registered for id <CFUUID 0x6000004a3660> F8BB1C28-BAE8-11D6-9C31-00039315CD46
+2026-11-13 04:11:34.001938+0000 Tadayo[34859:97185] [RTILog] -[RTIInputSystemClient remoteTextInputSessionWithID:performInputOperation:]  perform input operation requires a valid sessionID. inputModality = Keyboard, inputOperation = <null selector>, customInfoType = UIEmojiSearchOperations
+2026-11-13 04:11:36.657576+0000 Tadayo[34859:98843] [aqme]                AQMEIO.cpp:198   timed out after 0.011s (270 271); suspension count=0 (IOSuspensions: )
+Test Case '-[TadayoTests.ArrivalFocusTests testA03TakesTheFocusAsItReplacesA02Age]' passed (4.251 seconds).
+Test Suite 'ArrivalFocusTests' passed at 2026-11-13 04:11:37.639.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 9.882 (9.883) seconds
+Test Suite 'BusyButtonTests' started at 2026-11-13 04:11:37.639.
+Test Case '-[TadayoTests.BusyButtonTests testIdleAndBusyAreTheSameButton]' started.
+Test Case '-[TadayoTests.BusyButtonTests testIdleAndBusyAreTheSameButton]' passed (11.004 seconds).
+Test Case '-[TadayoTests.BusyButtonTests testTheIndicatorIs16PointsAtEveryTextSize]' started.
+Test Case '-[TadayoTests.BusyButtonTests testTheIndicatorIs16PointsAtEveryTextSize]' passed (2.651 seconds).
+Test Case '-[TadayoTests.BusyButtonTests testTheIndicatorSaysNothingWhoeverHoldsIt]' started.
+Test Case '-[TadayoTests.BusyButtonTests testTheIndicatorSaysNothingWhoeverHoldsIt]' passed (0.538 seconds).
+Test Case '-[TadayoTests.BusyButtonTests testTheIndicatorSits8PointsBeforeTheLabelWhichStaysCentred]' started.
+Test Case '-[TadayoTests.BusyButtonTests testTheIndicatorSits8PointsBeforeTheLabelWhichStaysCentred]' passed (0.531 seconds).
+Test Case '-[TadayoTests.BusyButtonTests testTheIndicatorTakesARowOfItsOwnWhereTheLabelCantFit]' started.
+Test Case '-[TadayoTests.BusyButtonTests testTheIndicatorTakesARowOfItsOwnWhereTheLabelCantFit]' passed (1.054 seconds).
+Test Case '-[TadayoTests.BusyButtonTests testVoiceOverFindsTheLabelAndTheValueWhileBusy]' started.
+Test Case '-[TadayoTests.BusyButtonTests testVoiceOverFindsTheLabelAndTheValueWhileBusy]' passed (1.044 seconds).
+Test Suite 'BusyButtonTests' passed at 2026-11-13 04:11:54.469.
+	 Executed 6 tests, with 0 failures (0 unexpected) in 16.823 (16.830) seconds
+Test Suite 'DayHeaderTests' started at 2026-11-13 04:11:54.471.
+Test Case '-[TadayoTests.DayHeaderTests testTheCollectingHeaderIsOneHeadingReadAsItsOpening]' started.
+Test Case '-[TadayoTests.DayHeaderTests testTheCollectingHeaderIsOneHeadingReadAsItsOpening]' passed (1.067 seconds).
+Test Case '-[TadayoTests.DayHeaderTests testTheCurrentYearsFormStillSpeaksTheYear]' started.
+Test Case '-[TadayoTests.DayHeaderTests testTheCurrentYearsFormStillSpeaksTheYear]' passed (1.059 seconds).
+Test Case '-[TadayoTests.DayHeaderTests testTheOpenDaysInputHoldsNothingElse]' started.
+Test Case '-[TadayoTests.DayHeaderTests testTheOpenDaysInputHoldsNothingElse]' passed (0.022 seconds).
+Test Case '-[TadayoTests.DayHeaderTests testTheOpenHeaderIsOneHeadingReadInOrder]' started.
+Test Case '-[TadayoTests.DayHeaderTests testTheOpenHeaderIsOneHeadingReadInOrder]' passed (1.069 seconds).
+Test Case '-[TadayoTests.DayHeaderTests testThePlaqueReadsItsFullDateWithTheYear]' started.
+Test Case '-[TadayoTests.DayHeaderTests testThePlaqueReadsItsFullDateWithTheYear]' passed (0.518 seconds).
+Test Case '-[TadayoTests.DayHeaderTests testTheStackedHeaderReadsTheSame]' started.
+Test Case '-[TadayoTests.DayHeaderTests testTheStackedHeaderReadsTheSame]' passed (0.517 seconds).
+Test Case '-[TadayoTests.DayHeaderTests testTheStarsOwnOpenDayIsYourDay]' started.
+Test Case '-[TadayoTests.DayHeaderTests testTheStarsOwnOpenDayIsYourDay]' passed (0.526 seconds).
+Test Suite 'DayHeaderTests' passed at 2026-11-13 04:11:59.254.
+	 Executed 7 tests, with 0 failures (0 unexpected) in 4.778 (4.784) seconds
+Test Suite 'DesignCatalogTests' started at 2026-11-13 04:11:59.255.
+Test Case '-[TadayoTests.DesignCatalogTests testEveryKeyResolvesInTheDesignBundleAndNotTheApps]' started.
+Test Case '-[TadayoTests.DesignCatalogTests testEveryKeyResolvesInTheDesignBundleAndNotTheApps]' passed (0.007 seconds).
+Test Case '-[TadayoTests.DesignCatalogTests testEveryLookupInTheComponentsNamesTheDesignBundle]' started.
+Test Case '-[TadayoTests.DesignCatalogTests testEveryLookupInTheComponentsNamesTheDesignBundle]' passed (0.013 seconds).
+Test Case '-[TadayoTests.DesignCatalogTests testEveryMiddleDotIsBoundToTheWordBeforeIt]' started.
+Test Case '-[TadayoTests.DesignCatalogTests testEveryMiddleDotIsBoundToTheWordBeforeIt]' passed (0.003 seconds).
+Test Suite 'DesignCatalogTests' passed at 2026-11-13 04:11:59.280.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.023 (0.025) seconds
+Test Suite 'DropCardTests' started at 2026-11-13 04:11:59.280.
+Test Case '-[TadayoTests.DropCardTests testAHiddenDropWithNoCaptionNamesTheStar]' started.
+Test Case '-[TadayoTests.DropCardTests testAHiddenDropWithNoCaptionNamesTheStar]' passed (0.538 seconds).
+Test Case '-[TadayoTests.DropCardTests testAnUploadSaysItIsNotAddedYetWithItsRealProgress]' started.
+Test Case '-[TadayoTests.DropCardTests testAnUploadSaysItIsNotAddedYetWithItsRealProgress]' passed (0.516 seconds).
+Test Case '-[TadayoTests.DropCardTests testAnUploadsProgressStaysWithinWhatTheTransferHasDone]' started.
+Test Case '-[TadayoTests.DropCardTests testAnUploadsProgressStaysWithinWhatTheTransferHasDone]' passed (3.200 seconds).
+Test Case '-[TadayoTests.DropCardTests testAPrivateDraftIsSharedWithNobody]' started.
+Test Case '-[TadayoTests.DropCardTests testAPrivateDraftIsSharedWithNobody]' passed (0.517 seconds).
+Test Case '-[TadayoTests.DropCardTests testARevealedDropIsItsSenderItsCaptionAndItsPhotoApart]' started.
+Test Case '-[TadayoTests.DropCardTests testARevealedDropIsItsSenderItsCaptionAndItsPhotoApart]' passed (1.037 seconds).
+Test Case '-[TadayoTests.DropCardTests testASpokenOpeningKeepsTheYearWhenTheLineDropsIt]' started.
+Test Case '-[TadayoTests.DropCardTests testASpokenOpeningKeepsTheYearWhenTheLineDropsIt]' passed (1.553 seconds).
+Test Case '-[TadayoTests.DropCardTests testCopyCaptionPutsTheCaptionOnThePasteboardWordForWord]' started.
+Test Case '-[TadayoTests.DropCardTests testCopyCaptionPutsTheCaptionOnThePasteboardWordForWord]' passed (0.571 seconds).
+Test Case '-[TadayoTests.DropCardTests testOnlyTheAuthorCaseCanCarryAHighlight]' started.
+Test Case '-[TadayoTests.DropCardTests testOnlyTheAuthorCaseCanCarryAHighlight]' passed (1.565 seconds).
+Test Case '-[TadayoTests.DropCardTests testOnlyTheAuthorsOwnHiddenDropCarriesItsHighlight]' started.
+Test Case '-[TadayoTests.DropCardTests testOnlyTheAuthorsOwnHiddenDropCarriesItsHighlight]' passed (1.053 seconds).
+Test Case '-[TadayoTests.DropCardTests testProcessingSaysItIsNotAddedYet]' started.
+Test Case '-[TadayoTests.DropCardTests testProcessingSaysItIsNotAddedYet]' passed (0.545 seconds).
+Test Case '-[TadayoTests.DropCardTests testSomeoneElsesHiddenDropIsItsSenderCaptionAndOpeningOnly]' started.
+Test Case '-[TadayoTests.DropCardTests testSomeoneElsesHiddenDropIsItsSenderCaptionAndOpeningOnly]' passed (0.535 seconds).
+Test Case '-[TadayoTests.DropCardTests testTheHiddenDropHoldsNothingFromTheMedia]' started.
+Test Case '-[TadayoTests.DropCardTests testTheHiddenDropHoldsNothingFromTheMedia]' passed (0.023 seconds).
+Test Case '-[TadayoTests.DropCardTests testThePhotoLabelIsOneWord]' started.
+Test Case '-[TadayoTests.DropCardTests testThePhotoLabelIsOneWord]' passed (0.535 seconds).
+Test Case '-[TadayoTests.DropCardTests testTheReceiptOffersMakeMyHighlightOnlyWhenItIsntOneAlready]' started.
+Test Case '-[TadayoTests.DropCardTests testTheReceiptOffersMakeMyHighlightOnlyWhenItIsntOneAlready]' passed (1.048 seconds).
+Test Case '-[TadayoTests.DropCardTests testTheRemovedPlaceholderSaysNothingOfTheDrop]' started.
+Test Case '-[TadayoTests.DropCardTests testTheRemovedPlaceholderSaysNothingOfTheDrop]' passed (0.520 seconds).
+Test Suite 'DropCardTests' passed at 2026-11-13 04:12:13.051.
+	 Executed 15 tests, with 0 failures (0 unexpected) in 13.757 (13.770) seconds
+Test Suite 'KeyboardScrollProbeTests' started at 2026-11-13 04:12:13.051.
+Test Case '-[TadayoTests.KeyboardScrollProbeTests testProbeA03WithARealKeyboard]' started.
+2026-11-13 04:12:13.115821+0000 Tadayo[34859:97185] [RTILog] -[RTIInputSystemClient remoteTextInputSessionWithID:performInputOperation:]  perform input operation requires a valid sessionID. inputModality = Keyboard, inputOperation = <null selector>, customInfoType = UIEmojiSearchOperations
+PROBE P0-screen arrived: focused true keyboard shown true
+PROBE P0-screen arrived: keyboard (0.0, 516.0, 393.0, 336.0) | scroll HostingScrollView frame (0.0, 0.0, 393.0, 852.0) size (393.0, 426.3333333333333) offset -58.666666666666664 inset UIEdgeInsets(top: 0.0, left: 0.0, bottom: 0.0, right: 0.0) adjusted UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) safe UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) | field (36.0, 421.6666666666667, 321.0, 24.666666666666686) first true
+PROBE P0-screen failed +0.05s: keyboard (0.0, 516.0, 393.0, 336.0) | scroll HostingScrollView frame (0.0, 0.0, 393.0, 852.0) size (393.0, 426.3333333333333) offset -58.666666666666664 inset UIEdgeInsets(top: 0.0, left: 0.0, bottom: 0.0, right: 0.0) adjusted UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) safe UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) | field (36.0, 423.0, 321.0, 22.0) first true
+PROBE P0-screen failed +0.25s: keyboard (0.0, 516.0, 393.0, 336.0) | scroll HostingScrollView frame (0.0, 0.0, 393.0, 852.0) size (393.0, 480.0) offset 34.0 inset UIEdgeInsets(top: 0.0, left: 0.0, bottom: 0.0, right: 0.0) adjusted UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) safe UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) | field (36.0, 330.3333333333333, 321.0, 22.0) first true
+PROBE P0-screen failed +0.6s: keyboard (0.0, 516.0, 393.0, 336.0) | scroll HostingScrollView frame (0.0, 0.0, 393.0, 852.0) size (393.0, 480.0) offset 34.0 inset UIEdgeInsets(top: 0.0, left: 0.0, bottom: 0.0, right: 0.0) adjusted UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) safe UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) | field (36.0, 330.3333333333333, 321.0, 22.0) first true
+PROBE P0-screen failed +1.2s: keyboard (0.0, 516.0, 393.0, 336.0) | scroll HostingScrollView frame (0.0, 0.0, 393.0, 852.0) size (393.0, 480.0) offset 34.0 inset UIEdgeInsets(top: 0.0, left: 0.0, bottom: 0.0, right: 0.0) adjusted UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) safe UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) | field (36.0, 330.3333333333333, 321.0, 22.0) first true
+2026-11-13 04:12:17.039049+0000 Tadayo[34859:97185] [RTILog] -[RTIInputSystemClient remoteTextInputSessionWithID:performInputOperation:]  perform input operation requires a valid sessionID. inputModality = Keyboard, inputOperation = <null selector>, customInfoType = UIEmojiSearchOperations
+PROBE p1BottomFoot arrived: focused true keyboard shown true
+PROBE p1BottomFoot arrived: keyboard (0.0, 516.0, 393.0, 336.0) | scroll HostingScrollView frame (0.0, 0.0, 393.0, 852.0) size (393.0, 445.66666666666663) offset -40.666666666666664 inset UIEdgeInsets(top: 0.0, left: 0.0, bottom: 0.0, right: 0.0) adjusted UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) safe UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) | field (36.0, 424.3333333333333, 321.0, 22.0) first true | room 418.33333333333337 kb 301.9999999999999 footer 446.0 h 70.0 foot 470.33333333333326 boxFoot 462.33333333333326
+PROBE p1BottomFoot line +0.05s: keyboard (0.0, 516.0, 393.0, 336.0) | scroll HostingScrollView frame (0.0, 0.0, 393.0, 852.0) size (393.0, 481.3333333333333) offset 19.333333333333332 inset UIEdgeInsets(top: 0.0, left: 0.0, bottom: 0.0, right: 0.0) adjusted UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) safe UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) | field (36.0, 364.3333333333333, 321.0, 22.0) first true | room 418.33333333333337 kb 301.9999999999999 footer 446.0 h 70.0 foot 446.0 boxFoot 402.33333333333326
+PROBE p1BottomFoot line +0.25s: keyboard (0.0, 516.0, 393.0, 336.0) | scroll HostingScrollView frame (0.0, 0.0, 393.0, 852.0) size (393.0, 481.3333333333333) offset 19.333333333333332 inset UIEdgeInsets(top: 0.0, left: 0.0, bottom: 0.0, right: 0.0) adjusted UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) safe UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) | field (36.0, 364.3333333333333, 321.0, 22.0) first true | room 418.33333333333337 kb 301.9999999999999 footer 446.0 h 70.0 foot 446.0 boxFoot 402.33333333333326
+PROBE p1BottomFoot line +0.6s: keyboard (0.0, 516.0, 393.0, 336.0) | scroll HostingScrollView frame (0.0, 0.0, 393.0, 852.0) size (393.0, 481.3333333333333) offset 19.333333333333332 inset UIEdgeInsets(top: 0.0, left: 0.0, bottom: 0.0, right: 0.0) adjusted UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) safe UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) | field (36.0, 364.3333333333333, 321.0, 22.0) first true | room 418.33333333333337 kb 301.9999999999999 footer 446.0 h 70.0 foot 446.0 boxFoot 402.33333333333326
+PROBE p1BottomFoot line +1.2s: keyboard (0.0, 516.0, 393.0, 336.0) | scroll HostingScrollView frame (0.0, 0.0, 393.0, 852.0) size (393.0, 481.3333333333333) offset 19.333333333333332 inset UIEdgeInsets(top: 0.0, left: 0.0, bottom: 0.0, right: 0.0) adjusted UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) safe UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) | field (36.0, 364.3333333333333, 321.0, 22.0) first true | room 418.33333333333337 kb 301.9999999999999 footer 446.0 h 70.0 foot 446.0 boxFoot 402.33333333333326
+PROBE p1BottomFoot offset set to 169.33333333333334: keyboard (0.0, 516.0, 393.0, 336.0) | scroll HostingScrollView frame (0.0, 0.0, 393.0, 852.0) size (393.0, 481.3333333333333) offset 169.33333333333334 inset UIEdgeInsets(top: 0.0, left: 0.0, bottom: 0.0, right: 0.0) adjusted UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) safe UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) | field (36.0, 214.3333333333333, 321.0, 22.0) first true | room 418.33333333333337 kb 301.9999999999999 footer 446.0 h 70.0 foot 296.0 boxFoot 252.3333333333333
+2026-11-13 04:12:21.435339+0000 Tadayo[34859:97185] [RTILog] -[RTIInputSystemClient remoteTextInputSessionWithID:performInputOperation:]  perform input operation requires a valid sessionID. inputModality = Keyboard, inputOperation = <null selector>, customInfoType = UIEmojiSearchOperations
+PROBE p2TopMark arrived: focused true keyboard shown true
+PROBE p2TopMark arrived: keyboard (0.0, 516.0, 393.0, 336.0) | scroll HostingScrollView frame (0.0, 0.0, 393.0, 852.0) size (393.0, 445.66666666666663) offset -40.666666666666664 inset UIEdgeInsets(top: 0.0, left: 0.0, bottom: 0.0, right: 0.0) adjusted UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) safe UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) | field (36.0, 424.3333333333333, 321.0, 22.0) first true | room 418.33333333333337 kb 301.9999999999999 footer 446.0 h 70.0 foot 470.33333333333326 boxFoot 462.33333333333326
+PROBE p2TopMark line +0.05s: keyboard (0.0, 516.0, 393.0, 336.0) | scroll HostingScrollView frame (0.0, 0.0, 393.0, 852.0) size (393.0, 481.3333333333333) offset 35.333333333333336 inset UIEdgeInsets(top: 0.0, left: 0.0, bottom: 0.0, right: 0.0) adjusted UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) safe UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) | field (36.0, 348.3333333333333, 321.0, 22.0) first true | room 418.33333333333337 kb 301.9999999999999 footer 446.0 h 70.0 foot 430.0 boxFoot 386.33333333333326
+PROBE p2TopMark line +0.25s: keyboard (0.0, 516.0, 393.0, 336.0) | scroll HostingScrollView frame (0.0, 0.0, 393.0, 852.0) size (393.0, 481.3333333333333) offset 35.333333333333336 inset UIEdgeInsets(top: 0.0, left: 0.0, bottom: 0.0, right: 0.0) adjusted UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) safe UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) | field (36.0, 348.3333333333333, 321.0, 22.0) first true | room 418.33333333333337 kb 301.9999999999999 footer 446.0 h 70.0 foot 430.0 boxFoot 386.33333333333326
+PROBE p2TopMark line +0.6s: keyboard (0.0, 516.0, 393.0, 336.0) | scroll HostingScrollView frame (0.0, 0.0, 393.0, 852.0) size (393.0, 481.3333333333333) offset 35.333333333333336 inset UIEdgeInsets(top: 0.0, left: 0.0, bottom: 0.0, right: 0.0) adjusted UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) safe UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) | field (36.0, 348.3333333333333, 321.0, 22.0) first true | room 418.33333333333337 kb 301.9999999999999 footer 446.0 h 70.0 foot 430.0 boxFoot 386.33333333333326
+PROBE p2TopMark line +1.2s: keyboard (0.0, 516.0, 393.0, 336.0) | scroll HostingScrollView frame (0.0, 0.0, 393.0, 852.0) size (393.0, 481.3333333333333) offset 35.333333333333336 inset UIEdgeInsets(top: 0.0, left: 0.0, bottom: 0.0, right: 0.0) adjusted UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) safe UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) | field (36.0, 348.3333333333333, 321.0, 22.0) first true | room 418.33333333333337 kb 301.9999999999999 footer 446.0 h 70.0 foot 430.0 boxFoot 386.33333333333326
+PROBE p2TopMark offset set to 185.33333333333334: keyboard (0.0, 516.0, 393.0, 336.0) | scroll HostingScrollView frame (0.0, 0.0, 393.0, 851.9999999999999) size (393.0, 481.3333333333333) offset 185.33333333333334 inset UIEdgeInsets(top: 0.0, left: 0.0, bottom: 0.0, right: 0.0) adjusted UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) safe UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 406.0, right: 0.0) | field (36.0, 198.3333333333333, 321.0, 22.0) first true | room 418.33333333333337 kb 301.9999999999999 footer 446.0 h 70.0 foot 280.0 boxFoot 236.3333333333333
+2026-11-13 04:12:25.818930+0000 Tadayo[34859:97185] [RTILog] -[RTIInputSystemClient remoteTextInputSessionWithID:performInputOperation:]  perform input operation requires a valid sessionID. inputModality = Keyboard, inputOperation = <null selector>, customInfoType = UIEmojiSearchOperations
+PROBE p3IgnoreKeyboard arrived: focused true keyboard shown true
+PROBE p3IgnoreKeyboard arrived: keyboard (0.0, 516.0, 393.0, 336.0) | scroll HostingScrollView frame (0.0, 0.0, 393.0, 852.0) size (393.0, 445.66666666666663) offset -16.333333333333332 inset UIEdgeInsets(top: 0.0, left: 0.0, bottom: 0.0, right: 0.0) adjusted UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 405.9999999999999, right: 0.0) safe UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 405.9999999999999, right: 0.0) | field (36.0, 399.99999999999994, 321.0, 22.0) first true | room 418.33333333333337 kb 301.9999999999999 footer 446.00000000000006 h 371.99999999999994 foot 446.0 boxFoot 438.0
+PROBE p3IgnoreKeyboard line +0.05s: keyboard (0.0, 516.0, 393.0, 336.0) | scroll HostingScrollView frame (0.0, 0.0, 393.0, 852.0) size (393.0, 481.3333333333333) offset 19.333333333333332 inset UIEdgeInsets(top: 0.0, left: 0.0, bottom: 0.0, right: 0.0) adjusted UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 405.9999999999999, right: 0.0) safe UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 405.9999999999999, right: 0.0) | field (36.0, 364.3333333333333, 321.0, 22.0) first true | room 418.33333333333337 kb 301.9999999999999 footer 446.00000000000006 h 371.99999999999994 foot 446.0 boxFoot 402.33333333333326
+PROBE p3IgnoreKeyboard line +0.25s: keyboard (0.0, 516.0, 393.0, 336.0) | scroll HostingScrollView frame (0.0, 0.0, 393.0, 852.0) size (393.0, 481.3333333333333) offset 19.333333333333332 inset UIEdgeInsets(top: 0.0, left: 0.0, bottom: 0.0, right: 0.0) adjusted UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 405.9999999999999, right: 0.0) safe UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 405.9999999999999, right: 0.0) | field (36.0, 364.3333333333333, 321.0, 22.0) first true | room 418.33333333333337 kb 301.9999999999999 footer 446.00000000000006 h 371.99999999999994 foot 446.0 boxFoot 402.33333333333326
+PROBE p3IgnoreKeyboard line +0.6s: keyboard (0.0, 516.0, 393.0, 336.0) | scroll HostingScrollView frame (0.0, 0.0, 393.0, 852.0) size (393.0, 481.3333333333333) offset 19.333333333333332 inset UIEdgeInsets(top: 0.0, left: 0.0, bottom: 0.0, right: 0.0) adjusted UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 405.9999999999999, right: 0.0) safe UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 405.9999999999999, right: 0.0) | field (36.0, 364.3333333333333, 321.0, 22.0) first true | room 418.33333333333337 kb 301.9999999999999 footer 446.00000000000006 h 371.99999999999994 foot 446.0 boxFoot 402.33333333333326
+PROBE p3IgnoreKeyboard line +1.2s: keyboard (0.0, 516.0, 393.0, 336.0) | scroll HostingScrollView frame (0.0, 0.0, 393.0, 852.0) size (393.0, 481.3333333333333) offset 19.333333333333332 inset UIEdgeInsets(top: 0.0, left: 0.0, bottom: 0.0, right: 0.0) adjusted UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 405.9999999999999, right: 0.0) safe UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 405.9999999999999, right: 0.0) | field (36.0, 364.3333333333333, 321.0, 22.0) first true | room 418.33333333333337 kb 301.9999999999999 footer 446.00000000000006 h 371.99999999999994 foot 446.0 boxFoot 402.33333333333326
+PROBE p3IgnoreKeyboard offset set to 169.33333333333334: keyboard (0.0, 516.0, 393.0, 336.0) | scroll HostingScrollView frame (0.0, 0.0, 393.0, 852.0) size (393.0, 481.3333333333333) offset 169.33333333333334 inset UIEdgeInsets(top: 0.0, left: 0.0, bottom: 0.0, right: 0.0) adjusted UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 405.9999999999999, right: 0.0) safe UIEdgeInsets(top: 97.66666666666666, left: 0.0, bottom: 405.9999999999999, right: 0.0) | field (36.0, 214.3333333333333, 321.0, 22.0) first true | room 418.33333333333337 kb 301.9999999999999 footer 446.00000000000006 h 371.99999999999994 foot 296.0 boxFoot 252.3333333333333
+Test Case '-[TadayoTests.KeyboardScrollProbeTests testProbeA03WithARealKeyboard]' passed (17.080 seconds).
+Test Suite 'KeyboardScrollProbeTests' passed at 2026-11-13 04:12:30.132.
+	 Executed 1 test, with 0 failures (0 unexpected) in 17.080 (17.081) seconds
+Test Suite 'KeychainSessionStoreTests' started at 2026-11-13 04:12:30.132.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testAFailureCarriesItsStatusOnly]' started.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testAFailureCarriesItsStatusOnly]' passed (0.002 seconds).
+Test Case '-[TadayoTests.KeychainSessionStoreTests testAFirstLaunchAfterAnInstallForgetsEverySession]' started.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testAFirstLaunchAfterAnInstallForgetsEverySession]' passed (0.009 seconds).
+Test Case '-[TadayoTests.KeychainSessionStoreTests testASavedSessionComesBack]' started.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testASavedSessionComesBack]' passed (0.004 seconds).
+Test Case '-[TadayoTests.KeychainSessionStoreTests testDeletingNothingSucceeds]' started.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testDeletingNothingSucceeds]' passed (0.004 seconds).
+Test Case '-[TadayoTests.KeychainSessionStoreTests testEachEnvironmentKeepsItsOwn]' started.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testEachEnvironmentKeepsItsOwn]' passed (0.004 seconds).
+Test Case '-[TadayoTests.KeychainSessionStoreTests testSavingAgainWritesOverIt]' started.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testSavingAgainWritesOverIt]' passed (0.005 seconds).
+Test Case '-[TadayoTests.KeychainSessionStoreTests testTheAppGroupsContainerIsThere]' started.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testTheAppGroupsContainerIsThere]' passed (0.004 seconds).
+Test Case '-[TadayoTests.KeychainSessionStoreTests testTheItemHoldsTheTokensAndTheirExpiryOnly]' started.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testTheItemHoldsTheTokensAndTheirExpiryOnly]' passed (0.003 seconds).
+Test Case '-[TadayoTests.KeychainSessionStoreTests testTheItemIsTheSharedGroupsOnThisDeviceOnly]' started.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testTheItemIsTheSharedGroupsOnThisDeviceOnly]' passed (0.003 seconds).
+Test Case '-[TadayoTests.KeychainSessionStoreTests testTheStoreIsTheBuildsEnvironments]' started.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testTheStoreIsTheBuildsEnvironments]' passed (0.001 seconds).
+Test Case '-[TadayoTests.KeychainSessionStoreTests testWithNoContainerNoSessionIsKept]' started.
+Test Case '-[TadayoTests.KeychainSessionStoreTests testWithNoContainerNoSessionIsKept]' passed (0.004 seconds).
+Test Suite 'KeychainSessionStoreTests' passed at 2026-11-13 04:12:30.180.
+	 Executed 11 tests, with 0 failures (0 unexpected) in 0.043 (0.048) seconds
+Test Suite 'LaunchScreenTests' started at 2026-11-13 04:12:30.180.
+Test Case '-[TadayoTests.LaunchScreenTests testTheLaunchScreenIsTheCanvasInLightAndDark]' started.
+Test Case '-[TadayoTests.LaunchScreenTests testTheLaunchScreenIsTheCanvasInLightAndDark]' passed (0.001 seconds).
+Test Suite 'LaunchScreenTests' passed at 2026-11-13 04:12:30.182.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.002) seconds
+Test Suite 'ModelTextTests' started at 2026-11-13 04:12:30.182.
+Test Case '-[TadayoTests.ModelTextTests testAChangeTheModelMakesReachesTheFieldOnScreen]' started.
+Test Case '-[TadayoTests.ModelTextTests testAChangeTheModelMakesReachesTheFieldOnScreen]' passed (0.824 seconds).
+Test Suite 'ModelTextTests' passed at 2026-11-13 04:12:31.007.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.824 (0.825) seconds
+Test Suite 'PersonRowTests' started at 2026-11-13 04:12:31.008.
+Test Case '-[TadayoTests.PersonRowTests testAMemberWithNoDayIsTheirNameAlone]' started.
+Test Case '-[TadayoTests.PersonRowTests testAMemberWithNoDayIsTheirNameAlone]' passed (1.058 seconds).
+Test Case '-[TadayoTests.PersonRowTests testAnotherMembersRowNamesThem]' started.
+Test Case '-[TadayoTests.PersonRowTests testAnotherMembersRowNamesThem]' passed (0.535 seconds).
+Test Case '-[TadayoTests.PersonRowTests testItsInputHoldsNothingElse]' started.
+Test Case '-[TadayoTests.PersonRowTests testItsInputHoldsNothingElse]' passed (0.018 seconds).
+Test Case '-[TadayoTests.PersonRowTests testNextUpIsReadBeforeTheDate]' started.
+Test Case '-[TadayoTests.PersonRowTests testNextUpIsReadBeforeTheDate]' passed (0.535 seconds).
+Test Case '-[TadayoTests.PersonRowTests testNextUpIsShownOnlyWithADay]' started.
+Test Case '-[TadayoTests.PersonRowTests testNextUpIsShownOnlyWithADay]' passed (0.529 seconds).
+Test Case '-[TadayoTests.PersonRowTests testTheStandingAloneRowReadsTheSame]' started.
+Test Case '-[TadayoTests.PersonRowTests testTheStandingAloneRowReadsTheSame]' passed (0.526 seconds).
+Test Case '-[TadayoTests.PersonRowTests testTheViewersRowSaysYouAndHintsTheirOwnDay]' started.
+Test Case '-[TadayoTests.PersonRowTests testTheViewersRowSaysYouAndHintsTheirOwnDay]' passed (0.520 seconds).
+Test Case '-[TadayoTests.PersonRowTests testTravellingReadsThePhonesZoneThenTheClubs]' started.
+Test Case '-[TadayoTests.PersonRowTests testTravellingReadsThePhonesZoneThenTheClubs]' passed (1.045 seconds).
+Test Suite 'PersonRowTests' passed at 2026-11-13 04:12:35.781.
+	 Executed 8 tests, with 0 failures (0 unexpected) in 4.765 (4.773) seconds
+Test Suite 'RootFailureTests' started at 2026-11-13 04:12:35.782.
+Test Case '-[TadayoTests.RootFailureTests testEachFailureNamesWhatFailedAsAHeadingWithRetry]' started.
+Test Case '-[TadayoTests.RootFailureTests testEachFailureNamesWhatFailedAsAHeadingWithRetry]' passed (2.129 seconds).
+Test Case '-[TadayoTests.RootFailureTests testRetryIs44PointsAboveTheSafeAreaAndTheLineIs16UnderTheTitle]' started.
+Test Case '-[TadayoTests.RootFailureTests testRetryIs44PointsAboveTheSafeAreaAndTheLineIs16UnderTheTitle]' passed (0.525 seconds).
+Test Case '-[TadayoTests.RootFailureTests testTheFailureTitleSitsWhereTheSignInTitlesSit]' started.
+Test Case '-[TadayoTests.RootFailureTests testTheFailureTitleSitsWhereTheSignInTitlesSit]' passed (1.050 seconds).
+Test Suite 'RootFailureTests' passed at 2026-11-13 04:12:39.488.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 3.704 (3.706) seconds
+Test Suite 'RootWaitTests' started at 2026-11-13 04:12:39.488.
+Test Case '-[TadayoTests.RootWaitTests testEachWaitSaysItsVisibleWordsPolitely]' started.
+Test Case '-[TadayoTests.RootWaitTests testEachWaitSaysItsVisibleWordsPolitely]' passed (0.002 seconds).
+Test Suite 'RootWaitTests' passed at 2026-11-13 04:12:39.490.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.002 (0.002) seconds
+Test Suite 'SignInAnnouncementTests' started at 2026-11-13 04:12:39.490.
+Test Case '-[TadayoTests.SignInAnnouncementTests testAMinuteThatPassesWhileTheCodeIsCheckedIsSaidOnlyOnceTheCheckFails]' started.
+Test Case '-[TadayoTests.SignInAnnouncementTests testAMinuteThatPassesWhileTheCodeIsCheckedIsSaidOnlyOnceTheCheckFails]' passed (0.001 seconds).
+Test Case '-[TadayoTests.SignInAnnouncementTests testANewCodeBeingAvailableIsSaidOnceWhenTheMinuteHasPassed]' started.
+Test Case '-[TadayoTests.SignInAnnouncementTests testANewCodeBeingAvailableIsSaidOnceWhenTheMinuteHasPassed]' passed (0.001 seconds).
+Test Case '-[TadayoTests.SignInAnnouncementTests testANewCodeOnItsWayIsSaidOnceAsTheRequestBegins]' started.
+Test Case '-[TadayoTests.SignInAnnouncementTests testANewCodeOnItsWayIsSaidOnceAsTheRequestBegins]' passed (0.002 seconds).
+Test Case '-[TadayoTests.SignInAnnouncementTests testANewCodeThatWentSaysWhereAndThatTheMinuteBeganAgain]' started.
+Test Case '-[TadayoTests.SignInAnnouncementTests testANewCodeThatWentSaysWhereAndThatTheMinuteBeganAgain]' passed (0.002 seconds).
+Test Case '-[TadayoTests.SignInAnnouncementTests testNothingIsSaidWhenTheRequestEndsGoesOnOrTheScreenRedraws]' started.
+Test Case '-[TadayoTests.SignInAnnouncementTests testNothingIsSaidWhenTheRequestEndsGoesOnOrTheScreenRedraws]' passed (0.002 seconds).
+Test Case '-[TadayoTests.SignInAnnouncementTests testSavingTheAgeIsSaidOnceAsTheRequestBegins]' started.
+Test Case '-[TadayoTests.SignInAnnouncementTests testSavingTheAgeIsSaidOnceAsTheRequestBegins]' passed (0.001 seconds).
+Test Case '-[TadayoTests.SignInAnnouncementTests testSavingTheProfileIsSaidOnceAsTheRequestBegins]' started.
+Test Case '-[TadayoTests.SignInAnnouncementTests testSavingTheProfileIsSaidOnceAsTheRequestBegins]' passed (0.001 seconds).
+Test Case '-[TadayoTests.SignInAnnouncementTests testSendingIsSaidOnceAsTheRequestBegins]' started.
+Test Case '-[TadayoTests.SignInAnnouncementTests testSendingIsSaidOnceAsTheRequestBegins]' passed (0.001 seconds).
+Test Case '-[TadayoTests.SignInAnnouncementTests testTheSignedOutNoticeIsOnlyForASignInTheServerEnded]' started.
+Test Case '-[TadayoTests.SignInAnnouncementTests testTheSignedOutNoticeIsOnlyForASignInTheServerEnded]' passed (0.001 seconds).
+Test Case '-[TadayoTests.SignInAnnouncementTests testTheWordsComeOnceAMinute]' started.
+Test Case '-[TadayoTests.SignInAnnouncementTests testTheWordsComeOnceAMinute]' passed (0.001 seconds).
+Test Case '-[TadayoTests.SignInAnnouncementTests testVerifyingIsSaidOnceAsTheRequestBegins]' started.
+Test Case '-[TadayoTests.SignInAnnouncementTests testVerifyingIsSaidOnceAsTheRequestBegins]' passed (0.002 seconds).
+Test Suite 'SignInAnnouncementTests' passed at 2026-11-13 04:12:39.532.
+	 Executed 11 tests, with 0 failures (0 unexpected) in 0.014 (0.042) seconds
+Test Suite 'SignInReadingTests' started at 2026-11-13 04:12:39.537.
+Test Case '-[TadayoTests.SignInReadingTests testA02AgesLeaveSignInIsOneButtonInactiveWhileTheAgeIsSaved]' started.
+Test Case '-[TadayoTests.SignInReadingTests testA02AgesLeaveSignInIsOneButtonInactiveWhileTheAgeIsSaved]' passed (1.601 seconds).
+Test Case '-[TadayoTests.SignInReadingTests testA03IsReadInOrderWithTheNamesOneLineUnderTheField]' started.
+Test Case '-[TadayoTests.SignInReadingTests testA03IsReadInOrderWithTheNamesOneLineUnderTheField]' passed (2.196 seconds).
+Test Case '-[TadayoTests.SignInReadingTests testAFailureWithTheKeyboardUpIsScrolledIntoViewAboveContinue]' started.
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoTests/SignInReadingTests.swift:675: error: -[TadayoTests.SignInReadingTests testAFailureWithTheKeyboardUpIsScrolledIntoViewAboveContinue] : XCTAssertEqualWithAccuracy failed: ("40.0") is not equal to ("24.0") +/- ("1.0") - ["What should we call you?" value "" hint "" traits 65600 at (20.0, -13.0, 245.5, 76.5), "A name your friends know." value "" hint "" traits 64 at (20.0, 79.5, 201.0, 20.5), "Add photo" value "" hint "" traits 1 at (20.0, 208.0, 353.0, 44.0), "Optional" value "" hint "" traits 64 at (20.0, 252.0, 51.5, 16.0), "Your name" value "Ben" hint "" traits 262144 at (20.0, 316.0, 353.0, 54.0), "Couldn’t save your profile. Check your connection and try again." value "" hint "" traits 64 at (43.0, 382.0, 330.0, 34.0), "Continue" value "" hint "" traits 1 at (20.0, 456.0, 353.0, 50.0), "Leave sign-in" value "" hint "" traits 1 at (16.0, 61.66666666666666, 109.5, 28.5), "Your profile" value "" hint "" traits 65536 at (151.0, 65.66666666666666, 91.5, 20.5)]
+Test Case '-[TadayoTests.SignInReadingTests testAFailureWithTheKeyboardUpIsScrolledIntoViewAboveContinue]' failed (0.633 seconds).
+Test Case '-[TadayoTests.SignInReadingTests testANewCodesFailureIsItsOwnLineUnderTheRow]' started.
+Test Case '-[TadayoTests.SignInReadingTests testANewCodesFailureIsItsOwnLineUnderTheRow]' passed (0.587 seconds).
+Test Case '-[TadayoTests.SignInReadingTests testASignInTheServerEndedIsSaidInAPlainLineAboveTheField]' started.
+Test Case '-[TadayoTests.SignInReadingTests testASignInTheServerEndedIsSaidInAPlainLineAboveTheField]' passed (1.597 seconds).
+Test Case '-[TadayoTests.SignInReadingTests testChangeEmailIsRightUnderTheRow]' started.
+Test Case '-[TadayoTests.SignInReadingTests testChangeEmailIsRightUnderTheRow]' passed (1.668 seconds).
+Test Case '-[TadayoTests.SignInReadingTests testContinueSits12AboveTheKeyboardOr44AboveTheSafeArea]' started.
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoTests/SignInReadingTests.swift:629: error: -[TadayoTests.SignInReadingTests testContinueSits12AboveTheKeyboardOr44AboveTheSafeArea] : XCTAssertEqualWithAccuracy failed: ("32.0") is not equal to ("16.0") +/- ("1.0") - large, keyboard true: ["What should we call you?" value "" hint "" traits 65600 at (20.0, 41.0, 245.5, 76.5), "A name your friends know." value "" hint "" traits 64 at (20.0, 133.5, 201.0, 20.5), "Add photo" value "" hint "" traits 1 at (20.0, 262.0, 353.0, 44.0), "Optional" value "" hint "" traits 64 at (20.0, 306.0, 51.5, 16.0), "Your name" value "Ben" hint "" traits 262144 at (20.0, 370.0, 353.0, 54.0), "Continue" value "" hint "" traits 1 at (20.0, 456.0, 353.0, 50.0), "Leave sign-in" value "" hint "" traits 1 at (16.0, 61.66666666666666, 109.5, 28.5), "Your profile" value "" hint "" traits 65536 at (151.0, 65.66666666666666, 91.5, 20.5)]
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoTests/SignInReadingTests.swift:629: error: -[TadayoTests.SignInReadingTests testContinueSits12AboveTheKeyboardOr44AboveTheSafeArea] : XCTAssertEqualWithAccuracy failed: ("32.0") is not equal to ("16.0") +/- ("1.0") - accessibility5, keyboard true: ["What should we call you?" value "" hint "" traits 65600 at (20.0, -232.0, 327.0, 130.5), "A name your friends know." value "" hint "" traits 64 at (20.0, -85.5, 268.5, 122.5), "Add photo" value "" hint "" traits 1 at (20.0, 145.0, 353.0, 54.0), "Optional" value "" hint "" traits 64 at (20.0, 199.0, 136.5, 45.0), "Your name" value "Ben" hint "" traits 262144 at (20.0, 321.0, 353.0, 75.0), "Continue" value "" hint "" traits 1 at (20.0, 428.0, 353.0, 78.0), "Leave sign-in" value "" hint "" traits 1 at (16.0, 59.16666666666666, 130.0, 33.5), "Your profile" value "" hint "" traits 65536 at (152.0, 61.66666666666666, 109.5, 25.5)]
+Test Case '-[TadayoTests.SignInReadingTests testContinueSits12AboveTheKeyboardOr44AboveTheSafeArea]' failed (2.133 seconds).
+Test Case '-[TadayoTests.SignInReadingTests testIdleSendACodeHasNoValue]' started.
+Test Case '-[TadayoTests.SignInReadingTests testIdleSendACodeHasNoValue]' passed (1.037 seconds).
+Test Case '-[TadayoTests.SignInReadingTests testSendANewCodeWaitsWhileTheCodeIsChecked]' started.
+Test Case '-[TadayoTests.SignInReadingTests testSendANewCodeWaitsWhileTheCodeIsChecked]' passed (0.553 seconds).
+Test Case '-[TadayoTests.SignInReadingTests testTheAvatarsPersonSymbolIsntRead]' started.
+Test Case '-[TadayoTests.SignInReadingTests testTheAvatarsPersonSymbolIsntRead]' passed (1.569 seconds).
+Test Case '-[TadayoTests.SignInReadingTests testTheEmptyAddressFieldIsReadOnce]' started.
+Test Case '-[TadayoTests.SignInReadingTests testTheEmptyAddressFieldIsReadOnce]' passed (0.533 seconds).
+Test Case '-[TadayoTests.SignInReadingTests testTheNewCodesIndicatorIs16PointsAndLeadsItsWords]' started.
+Test Case '-[TadayoTests.SignInReadingTests testTheNewCodesIndicatorIs16PointsAndLeadsItsWords]' passed (1.153 seconds).
+Test Case '-[TadayoTests.SignInReadingTests testVerifyCodeIsPinnedOnlyWhereTheColumnLeavesItNearerThan12]' started.
+Test Case '-[TadayoTests.SignInReadingTests testVerifyCodeIsPinnedOnlyWhereTheColumnLeavesItNearerThan12]' passed (2.750 seconds).
+Test Case '-[TadayoTests.SignInReadingTests testWhileACodeIsOnItsWayTheButtonIsBusyAndTheFieldOnlyReadOnly]' started.
+Test Case '-[TadayoTests.SignInReadingTests testWhileACodeIsOnItsWayTheButtonIsBusyAndTheFieldOnlyReadOnly]' passed (0.558 seconds).
+Test Case '-[TadayoTests.SignInReadingTests testWhileANewCodeIsOnItsWayTheRowSaysSoAndTheRestWaits]' started.
+Test Case '-[TadayoTests.SignInReadingTests testWhileANewCodeIsOnItsWayTheRowSaysSoAndTheRestWaits]' passed (0.570 seconds).
+Test Case '-[TadayoTests.SignInReadingTests testWhileTheCodeIsCheckedVerifyCodeIsBusyAndChangeEmailWaits]' started.
+Test Case '-[TadayoTests.SignInReadingTests testWhileTheCodeIsCheckedVerifyCodeIsBusyAndChangeEmailWaits]' passed (0.563 seconds).
+Test Case '-[TadayoTests.SignInReadingTests testWhileTheNameIsSavedContinueIsBusyAndTheRestWaits]' started.
+Test Case '-[TadayoTests.SignInReadingTests testWhileTheNameIsSavedContinueIsBusyAndTheRestWaits]' passed (1.112 seconds).
+Test Case '-[TadayoTests.SignInReadingTests testWithTheKeyboardUpVerifyCodeIsPinnedOnlyWhereItWouldBeHidden]' started.
+Test Case '-[TadayoTests.SignInReadingTests testWithTheKeyboardUpVerifyCodeIsPinnedOnlyWhereItWouldBeHidden]' passed (2.249 seconds).
+Test Suite 'SignInReadingTests' failed at 2026-11-13 04:13:02.610.
+	 Executed 18 tests, with 3 failures (0 unexpected) in 23.061 (23.072) seconds
+Test Suite 'TabsAnnouncementTests' started at 2026-11-13 04:13:02.610.
+Test Case '-[TadayoTests.TabsAnnouncementTests testAFailureIsSaidAtOnceWithItsLine]' started.
+Test Case '-[TadayoTests.TabsAnnouncementTests testAFailureIsSaidAtOnceWithItsLine]' passed (0.002 seconds).
+Test Case '-[TadayoTests.TabsAnnouncementTests testHomeUpdatedIsSaidOnlyOnHomeWhenTheListComesBack]' started.
+Test Case '-[TadayoTests.TabsAnnouncementTests testHomeUpdatedIsSaidOnlyOnHomeWhenTheListComesBack]' passed (0.001 seconds).
+Test Case '-[TadayoTests.TabsAnnouncementTests testRetrySaysTheLoadingLabelAgain]' started.
+Test Case '-[TadayoTests.TabsAnnouncementTests testRetrySaysTheLoadingLabelAgain]' passed (0.001 seconds).
+Test Case '-[TadayoTests.TabsAnnouncementTests testTheLabSaysNothing]' started.
+Test Case '-[TadayoTests.TabsAnnouncementTests testTheLabSaysNothing]' passed (0.001 seconds).
+Test Case '-[TadayoTests.TabsAnnouncementTests testTheLoadingLabelIsSaidPolitelyWhenTheTabsShow]' started.
+Test Case '-[TadayoTests.TabsAnnouncementTests testTheLoadingLabelIsSaidPolitelyWhenTheTabsShow]' passed (0.001 seconds).
+Test Suite 'TabsAnnouncementTests' passed at 2026-11-13 04:13:02.618.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.006 (0.008) seconds
+Test Suite 'TargetBlockTests' started at 2026-11-13 04:13:02.619.
+Test Case '-[TadayoTests.TargetBlockTests testAnInitialIsNotRead]' started.
+Test Case '-[TadayoTests.TargetBlockTests testAnInitialIsNotRead]' passed (0.512 seconds).
+Test Case '-[TadayoTests.TargetBlockTests testItsInputHoldsNothingElse]' started.
+Test Case '-[TadayoTests.TargetBlockTests testItsInputHoldsNothingElse]' passed (0.002 seconds).
+Test Case '-[TadayoTests.TargetBlockTests testTheBlockIsOneButtonNamingThePersonTheClubAndTheOpening]' started.
+Test Case '-[TadayoTests.TargetBlockTests testTheBlockIsOneButtonNamingThePersonTheClubAndTheOpening]' passed (0.528 seconds).
+Test Case '-[TadayoTests.TargetBlockTests testTheCurrentYearsFormStillSpeaksTheYear]' started.
+Test Case '-[TadayoTests.TargetBlockTests testTheCurrentYearsFormStillSpeaksTheYear]' passed (0.529 seconds).
+Test Suite 'TargetBlockTests' passed at 2026-11-13 04:13:04.192.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 1.571 (1.573) seconds
+Test Suite 'TadayoTests.xctest' failed at 2026-11-13 04:13:04.193.
+	 Executed 110 tests, with 3 failures (0 unexpected) in 96.426 (96.590) seconds
+Test Suite 'All tests' failed at 2026-11-13 04:13:04.193.
+	 Executed 110 tests, with 3 failures (0 unexpected) in 96.426 (96.592) seconds
+2026-11-13 04:13:05.994454+0000 TadayoUITests-Runner[41937:113318] [Default] Running tests...
+    t =      nans Interface orientation changed to Portrait
+Test Suite 'All tests' started at 2026-11-13 04:13:06.300.
+Test Suite 'TadayoUITests.xctest' started at 2026-11-13 04:13:06.300.
+Test Suite 'SignInUITests' started at 2026-11-13 04:13:06.301.
+Test Case '-[TadayoUITests.SignInUITests testAProfileFailureStaysInViewAndTheNameIsReadOnlyWhileSaved]' started.
+    t =     0.00s Start Test at 2026-11-13 04:13:06.302
+    t =     0.48s Set Up
+    t =     0.49s Open app.tadayo
+    t =     0.49s     Launch app.tadayo
+2026-11-13 04:13:07.724 xcodebuild[33927:94481] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-11-13 04:13:07.724 xcodebuild[33927:94481] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =     1.64s         Setting up automation session
+    t =     2.37s         Wait for app.tadayo to idle
+    t =     3.50s Waiting 10.0s for "Email address" TextField to exist
+    t =     4.51s     Checking `Expect predicate `existsNoRetry == 1` for object "Email address" TextField`
+    t =     4.51s         Checking existence of `"Email address" TextField`
+    t =     4.58s Type 'ben@example.com' into Target Application 'app.tadayo'
+    t =     4.58s     Wait for app.tadayo to idle
+    t =     4.59s     Find the Target Application 'app.tadayo'
+    t =     4.61s     Check for interrupting elements affecting "Tadayo" Application
+    t =     4.64s     Synthesize event
+    t =     4.64s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =     5.23s     Wait for app.tadayo to idle
+    t =     5.24s Tap "Send a code" Button
+    t =     5.24s     Wait for app.tadayo to idle
+    t =     5.24s     Find the "Send a code" Button
+    t =     5.27s     Check for interrupting elements affecting "Send a code" Button
+    t =     5.30s     Synthesize event
+    t =     5.59s     Wait for app.tadayo to idle
+    t =     5.99s Waiting 5.0s for "Six-digit code" TextField to exist
+    t =     7.04s     Checking `Expect predicate `existsNoRetry == 1` for object "Six-digit code" TextField`
+    t =     7.04s         Checking existence of `"Six-digit code" TextField`
+    t =     7.08s Type '123456' into Target Application 'app.tadayo'
+    t =     7.08s     Wait for app.tadayo to idle
+    t =     7.08s     Find the Target Application 'app.tadayo'
+    t =     7.10s     Check for interrupting elements affecting "Tadayo" Application
+    t =     7.12s     Synthesize event
+    t =     7.13s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =     7.44s     Wait for app.tadayo to idle
+    t =     7.45s Tap "Verify code" Button
+    t =     7.45s     Wait for app.tadayo to idle
+    t =     7.45s     Find the "Verify code" Button
+    t =     7.48s     Check for interrupting elements affecting "Verify code" Button
+    t =     7.51s     Synthesize event
+    t =     7.81s     Wait for app.tadayo to idle
+    t =     7.81s Waiting 5.0s for "I’m 18 or older" Button to exist
+    t =     8.84s     Checking `Expect predicate `existsNoRetry == 1` for object "I’m 18 or older" Button`
+    t =     8.84s         Checking existence of `"I’m 18 or older" Button`
+    t =     8.87s Tap "I’m 18 or older" Button
+    t =     8.87s     Wait for app.tadayo to idle
+    t =     8.87s     Find the "I’m 18 or older" Button
+    t =     8.89s     Check for interrupting elements affecting "I’m 18 or older" Button
+    t =     8.91s     Synthesize event
+    t =     9.21s     Wait for app.tadayo to idle
+    t =     9.66s Waiting 5.0s for "Your name" TextField to exist
+    t =    10.66s     Checking `Expect predicate `existsNoRetry == 1` for object "Your name" TextField`
+    t =    10.66s         Checking existence of `"Your name" TextField`
+    t =    10.70s Type 'Ben' into Target Application 'app.tadayo'
+    t =    10.70s     Wait for app.tadayo to idle
+    t =    10.70s     Find the Target Application 'app.tadayo'
+    t =    10.73s     Check for interrupting elements affecting "Tadayo" Application
+    t =    10.76s     Synthesize event
+    t =    10.76s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =    11.03s     Wait for app.tadayo to idle
+    t =    11.03s Type '
+' into Target Application 'app.tadayo'
+    t =    11.03s     Wait for app.tadayo to idle
+    t =    11.03s     Find the Target Application 'app.tadayo'
+    t =    11.06s     Check for interrupting elements affecting "Tadayo" Application
+    t =    11.09s     Synthesize event
+    t =    11.09s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =    11.33s     Wait for app.tadayo to idle
+    t =    11.75s Waiting 5.0s for "Couldn’t save your profile. Check your connection and try again." StaticText to exist
+    t =    12.78s     Checking `Expect predicate `existsNoRetry == 1` for object "Couldn’t save your profile. Check your connection and try again." StaticText`
+    t =    12.78s         Checking existence of `"Couldn’t save your profile. Check your connection and try again." StaticText`
+    t =    12.82s Checking existence of `Keyboard (First Match)`
+    t =    12.84s Find the "Your name" TextField
+    t =    12.87s Find the "Couldn’t save your profile. Check your connection and try again." StaticText
+    t =    12.90s Find the "Continue" Button
+    t =    12.94s Find the "Couldn’t save your profile. Check your connection and try again." StaticText
+    t =    12.97s Find the "Continue" Button
+    t =    13.22s Find the "Couldn’t save your profile. Check your connection and try again." StaticText
+    t =    13.26s Find the "Continue" Button
+    t =    13.30s Find the "Couldn’t save your profile. Check your connection and try again." StaticText
+    t =    13.33s Find the "Continue" Button
+    t =    13.59s Find the "Couldn’t save your profile. Check your connection and try again." StaticText
+    t =    13.63s Find the "Continue" Button
+    t =    13.67s Find the "Couldn’t save your profile. Check your connection and try again." StaticText
+    t =    13.71s Find the "Continue" Button
+    t =    13.97s Find the "Couldn’t save your profile. Check your connection and try again." StaticText
+    t =    14.01s Find the "Continue" Button
+    t =    14.05s Find the "Couldn’t save your profile. Check your connection and try again." StaticText
+    t =    14.08s Find the "Continue" Button
+    t =    14.34s Find the "Couldn’t save your profile. Check your connection and try again." StaticText
+    t =    14.37s Find the "Continue" Button
+    t =    14.41s Find the "Couldn’t save your profile. Check your connection and try again." StaticText
+    t =    14.44s Find the "Continue" Button
+    t =    14.70s Find the "Couldn’t save your profile. Check your connection and try again." StaticText
+    t =    14.75s Find the "Continue" Button
+    t =    14.78s Find the "Couldn’t save your profile. Check your connection and try again." StaticText
+    t =    14.82s Find the "Continue" Button
+    t =    15.06s the line's foot over Continue's top, read 6 times: 451 over 454, 451 over 454, 451 over 454, 451 over 454, 451 over 454, 451 over 454
+    t =    15.06s Find the "Couldn’t save your profile. Check your connection and try again." StaticText
+    t =    15.10s Find the "Continue" Button
+    t =    15.14s Find the "Couldn’t save your profile. Check your connection and try again." StaticText
+    t =    15.18s Find the "Continue" Button
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoUITests/SignInUITests.swift:294: error: -[TadayoUITests.SignInUITests testAProfileFailureStaysInViewAndTheNameIsReadOnlyWhileSaved] : XCTAssertLessThanOrEqual failed: ("451.33333333333326") is greater than ("431.0") - the line (43.0, 417.6666666666667, 330.0, 33.66666666666657), Continue (20.0, 454.0, 353.0, 50.0); read ["451 over 454", "451 over 454", "451 over 454", "451 over 454", "451 over 454", "451 over 454"]
+    t =    15.24s Tear Down
+Test Case '-[TadayoUITests.SignInUITests testAProfileFailureStaysInViewAndTheNameIsReadOnlyWhileSaved]' failed (15.513 seconds).
+Test Case '-[TadayoUITests.SignInUITests testLeavingSignInFromTheAgeScreenStartsAgain]' started.
+    t =     0.00s Start Test at 2026-11-13 04:13:21.816
+    t =     0.03s Set Up
+    t =     0.03s Open app.tadayo
+    t =     0.04s     Launch app.tadayo
+    t =     0.04s         Terminate app.tadayo:42077
+2026-11-13 04:13:22.889 xcodebuild[33927:94481] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-11-13 04:13:22.889 xcodebuild[33927:94481] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =     1.29s         Setting up automation session
+    t =     1.70s         Wait for app.tadayo to idle
+    t =     2.79s Waiting 10.0s for "Email address" TextField to exist
+    t =     3.80s     Checking `Expect predicate `existsNoRetry == 1` for object "Email address" TextField`
+    t =     3.80s         Checking existence of `"Email address" TextField`
+    t =     3.88s Type 'ben@example.com' into Target Application 'app.tadayo'
+    t =     3.88s     Wait for app.tadayo to idle
+    t =     3.88s     Find the Target Application 'app.tadayo'
+    t =     3.90s     Check for interrupting elements affecting "Tadayo" Application
+    t =     3.93s     Synthesize event
+    t =     3.93s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =     4.40s     Wait for app.tadayo to idle
+    t =     4.41s Tap "Send a code" Button
+    t =     4.41s     Wait for app.tadayo to idle
+    t =     4.41s     Find the "Send a code" Button
+    t =     4.44s     Check for interrupting elements affecting "Send a code" Button
+    t =     4.47s     Synthesize event
+    t =     4.77s     Wait for app.tadayo to idle
+    t =     5.16s Waiting 5.0s for "Six-digit code" TextField to exist
+    t =     6.20s     Checking `Expect predicate `existsNoRetry == 1` for object "Six-digit code" TextField`
+    t =     6.20s         Checking existence of `"Six-digit code" TextField`
+    t =     6.25s Type '123456' into Target Application 'app.tadayo'
+    t =     6.25s     Wait for app.tadayo to idle
+    t =     6.25s     Find the Target Application 'app.tadayo'
+    t =     6.27s     Check for interrupting elements affecting "Tadayo" Application
+    t =     6.29s     Synthesize event
+    t =     6.29s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =     6.60s     Wait for app.tadayo to idle
+    t =     6.61s Tap "Verify code" Button
+    t =     6.61s     Wait for app.tadayo to idle
+    t =     6.61s     Find the "Verify code" Button
+    t =     6.63s     Check for interrupting elements affecting "Verify code" Button
+    t =     6.67s     Synthesize event
+    t =     6.97s     Wait for app.tadayo to idle
+    t =     6.97s Waiting 5.0s for "I’m 18 or older" Button to exist
+    t =     8.00s     Checking `Expect predicate `existsNoRetry == 1` for object "I’m 18 or older" Button`
+    t =     8.00s         Checking existence of `"I’m 18 or older" Button`
+    t =     8.02s Get number of matches for: Descendants matching type Button
+    t =     8.03s Tap "Leave sign-in" Button
+    t =     8.03s     Wait for app.tadayo to idle
+    t =     8.03s     Find the "Leave sign-in" Button
+    t =     8.05s     Check for interrupting elements affecting "Leave sign-in" Button
+    t =     8.07s     Synthesize event
+    t =     8.37s     Wait for app.tadayo to idle
+    t =     8.78s Waiting 5.0s for "Email address" TextField to exist
+    t =     9.85s     Checking `Expect predicate `existsNoRetry == 1` for object "Email address" TextField`
+    t =     9.85s         Checking existence of `"Email address" TextField`
+    t =     9.87s Checking existence of `"What’s your email?" StaticText`
+    t =     9.90s Find the "Email address" TextField
+    t =     9.92s Checking existence of `"Your sign-in ended. Enter your email to sign in again." StaticText`
+    t =     9.94s Tear Down
+Test Case '-[TadayoUITests.SignInUITests testLeavingSignInFromTheAgeScreenStartsAgain]' passed (10.203 seconds).
+Test Case '-[TadayoUITests.SignInUITests testLeavingSignInFromTheProfileStartsAgain]' started.
+    t =     0.00s Start Test at 2026-11-13 04:13:32.021
+    t =     0.04s Set Up
+    t =     0.04s Open app.tadayo
+    t =     0.04s     Launch app.tadayo
+    t =     0.04s         Terminate app.tadayo:42810
+2026-11-13 04:13:33.144 xcodebuild[33927:94481] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-11-13 04:13:33.144 xcodebuild[33927:94481] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =     1.34s         Setting up automation session
+    t =     1.74s         Wait for app.tadayo to idle
+    t =     2.83s Waiting 10.0s for "Email address" TextField to exist
+    t =     3.84s     Checking `Expect predicate `existsNoRetry == 1` for object "Email address" TextField`
+    t =     3.84s         Checking existence of `"Email address" TextField`
+    t =     3.90s Type 'ben@example.com' into Target Application 'app.tadayo'
+    t =     3.90s     Wait for app.tadayo to idle
+    t =     3.91s     Find the Target Application 'app.tadayo'
+    t =     3.93s     Check for interrupting elements affecting "Tadayo" Application
+    t =     3.95s     Synthesize event
+    t =     3.96s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =     4.43s     Wait for app.tadayo to idle
+    t =     4.44s Tap "Send a code" Button
+    t =     4.44s     Wait for app.tadayo to idle
+    t =     4.44s     Find the "Send a code" Button
+    t =     4.47s     Check for interrupting elements affecting "Send a code" Button
+    t =     4.49s     Synthesize event
+    t =     4.80s     Wait for app.tadayo to idle
+    t =     5.18s Waiting 5.0s for "Six-digit code" TextField to exist
+    t =     6.27s     Checking `Expect predicate `existsNoRetry == 1` for object "Six-digit code" TextField`
+    t =     6.27s         Checking existence of `"Six-digit code" TextField`
+    t =     6.32s Type '123456' into Target Application 'app.tadayo'
+    t =     6.32s     Wait for app.tadayo to idle
+    t =     6.32s     Find the Target Application 'app.tadayo'
+    t =     6.34s     Check for interrupting elements affecting "Tadayo" Application
+    t =     6.36s     Synthesize event
+    t =     6.36s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =     6.69s     Wait for app.tadayo to idle
+    t =     6.69s Tap "Verify code" Button
+    t =     6.69s     Wait for app.tadayo to idle
+    t =     6.70s     Find the "Verify code" Button
+    t =     6.72s     Check for interrupting elements affecting "Verify code" Button
+    t =     6.75s     Synthesize event
+    t =     7.04s     Wait for app.tadayo to idle
+    t =     7.04s Waiting 5.0s for "I’m 18 or older" Button to exist
+    t =     8.07s     Checking `Expect predicate `existsNoRetry == 1` for object "I’m 18 or older" Button`
+    t =     8.07s         Checking existence of `"I’m 18 or older" Button`
+    t =     8.11s Tap "I’m 18 or older" Button
+    t =     8.11s     Wait for app.tadayo to idle
+    t =     8.11s     Find the "I’m 18 or older" Button
+    t =     8.12s     Check for interrupting elements affecting "I’m 18 or older" Button
+    t =     8.14s     Synthesize event
+    t =     8.44s     Wait for app.tadayo to idle
+    t =     8.88s Waiting 5.0s for "Your name" TextField to exist
+    t =     9.90s     Checking `Expect predicate `existsNoRetry == 1` for object "Your name" TextField`
+    t =     9.90s         Checking existence of `"Your name" TextField`
+    t =     9.94s Get number of matches for: Descendants matching type Button
+    t =     9.97s Tap "Leave sign-in" Button
+    t =     9.97s     Wait for app.tadayo to idle
+    t =     9.97s     Find the "Leave sign-in" Button
+    t =    10.01s     Check for interrupting elements affecting "Leave sign-in" Button
+    t =    10.04s     Synthesize event
+    t =    10.34s     Wait for app.tadayo to idle
+    t =    10.78s Waiting 5.0s for "Email address" TextField to exist
+    t =    11.81s     Checking `Expect predicate `existsNoRetry == 1` for object "Email address" TextField`
+    t =    11.81s         Checking existence of `"Email address" TextField`
+    t =    11.86s Checking existence of `"What’s your email?" StaticText`
+    t =    11.88s Find the "Email address" TextField
+    t =    11.91s Checking existence of `"Your sign-in ended. Enter your email to sign in again." StaticText`
+    t =    11.93s Tear Down
+Test Case '-[TadayoUITests.SignInUITests testLeavingSignInFromTheProfileStartsAgain]' passed (12.195 seconds).
+Test Case '-[TadayoUITests.SignInUITests testSendingFromTheReturnKeyKeepsTheFocus]' started.
+    t =     0.00s Start Test at 2026-11-13 04:13:44.216
+    t =     0.02s Set Up
+    t =     0.02s Open app.tadayo
+    t =     0.02s     Launch app.tadayo
+    t =     0.02s         Terminate app.tadayo:43512
+2026-11-13 04:13:45.267 xcodebuild[33927:94481] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-11-13 04:13:45.268 xcodebuild[33927:94481] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =     1.26s         Setting up automation session
+    t =     1.66s         Wait for app.tadayo to idle
+    t =     2.76s Waiting 10.0s for "Email address" TextField to exist
+    t =     3.81s     Checking `Expect predicate `existsNoRetry == 1` for object "Email address" TextField`
+    t =     3.81s         Checking existence of `"Email address" TextField`
+    t =     3.89s Type 'ben@example.com
+' into Target Application 'app.tadayo'
+    t =     3.89s     Wait for app.tadayo to idle
+    t =     3.89s     Find the Target Application 'app.tadayo'
+    t =     3.91s     Check for interrupting elements affecting "Tadayo" Application
+    t =     3.93s     Synthesize event
+    t =     3.94s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =     4.41s     Wait for app.tadayo to idle
+    t =     5.88s Checking `Expect predicate `value == "In progress"` for object "Send a code" Button`
+    t =     5.88s     Find the "Send a code" Button
+    t =     5.93s Waiting 5.0s for Keyboard (First Match) to exist
+    t =     6.95s     Checking `Expect predicate `existsNoRetry == 1` for object Keyboard (First Match)`
+    t =     6.95s         Checking existence of `Keyboard (First Match)`
+    t =     6.99s Type 'x' into Target Application 'app.tadayo'
+    t =     6.99s     Wait for app.tadayo to idle
+    t =     6.99s     Find the Target Application 'app.tadayo'
+    t =     7.02s     Check for interrupting elements affecting "Tadayo" Application
+    t =     7.04s     Synthesize event
+    t =     7.04s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =     7.28s     Wait for app.tadayo to idle
+    t =     7.29s Find the "Email address" TextField
+    t =     7.31s Tear Down
+Test Case '-[TadayoUITests.SignInUITests testSendingFromTheReturnKeyKeepsTheFocus]' passed (7.579 seconds).
+Test Case '-[TadayoUITests.SignInUITests testSignInGoesToTheEndOnStandInServices]' started.
+    t =     0.00s Start Test at 2026-11-13 04:13:51.796
+    t =     0.03s Set Up
+    t =     0.03s Open app.tadayo
+    t =     0.03s     Launch app.tadayo
+    t =     0.03s         Terminate app.tadayo:44226
+2026-11-13 04:13:52.834 xcodebuild[33927:94481] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-11-13 04:13:52.834 xcodebuild[33927:94481] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =     1.26s         Setting up automation session
+    t =     1.73s         Wait for app.tadayo to idle
+    t =     2.82s Waiting 10.0s for "Email address" TextField to exist
+    t =     3.85s     Checking `Expect predicate `existsNoRetry == 1` for object "Email address" TextField`
+    t =     3.85s         Checking existence of `"Email address" TextField`
+    t =     3.92s Type 'ben@example.com' into Target Application 'app.tadayo'
+    t =     3.92s     Wait for app.tadayo to idle
+    t =     3.92s     Find the Target Application 'app.tadayo'
+    t =     3.94s     Check for interrupting elements affecting "Tadayo" Application
+    t =     3.97s     Synthesize event
+    t =     3.97s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =     4.44s     Wait for app.tadayo to idle
+    t =     4.45s Tap "Send a code" Button
+    t =     4.45s     Wait for app.tadayo to idle
+    t =     4.45s     Find the "Send a code" Button
+    t =     4.48s     Check for interrupting elements affecting "Send a code" Button
+    t =     4.51s     Synthesize event
+    t =     4.81s     Wait for app.tadayo to idle
+    t =     5.20s Waiting 5.0s for "Six-digit code" TextField to exist
+    t =     6.24s     Checking `Expect predicate `existsNoRetry == 1` for object "Six-digit code" TextField`
+    t =     6.24s         Checking existence of `"Six-digit code" TextField`
+    t =     6.28s Tap Button (Element at index 0)
+    t =     6.28s     Wait for app.tadayo to idle
+    t =     6.28s     Find the Button (Element at index 0)
+    t =     6.31s     Check for interrupting elements affecting "Sign in" Button
+    t =     6.33s     Synthesize event
+    t =     6.62s     Wait for app.tadayo to idle
+    t =     6.97s Waiting 5.0s for "What’s your email?" StaticText to exist
+    t =     7.97s     Checking `Expect predicate `existsNoRetry == 1` for object "What’s your email?" StaticText`
+    t =     7.97s         Checking existence of `"What’s your email?" StaticText`
+    t =     8.02s Find the "Email address" TextField
+    t =     8.05s Tap "Send a code" Button
+    t =     8.05s     Wait for app.tadayo to idle
+    t =     8.05s     Find the "Send a code" Button
+    t =     8.08s     Check for interrupting elements affecting "Send a code" Button
+    t =     8.10s     Synthesize event
+    t =     8.40s     Wait for app.tadayo to idle
+    t =     8.78s Waiting 5.0s for "Six-digit code" TextField to exist
+    t =     9.84s     Checking `Expect predicate `existsNoRetry == 1` for object "Six-digit code" TextField`
+    t =     9.84s         Checking existence of `"Six-digit code" TextField`
+    t =     9.86s Tap "Change email address" Button
+    t =     9.86s     Wait for app.tadayo to idle
+    t =     9.87s     Find the "Change email address" Button
+    t =     9.89s     Check for interrupting elements affecting "Change email address" Button
+    t =     9.91s     Synthesize event
+    t =    10.21s     Wait for app.tadayo to idle
+    t =    10.55s Waiting 5.0s for "What’s your email?" StaticText to exist
+    t =    11.58s     Checking `Expect predicate `existsNoRetry == 1` for object "What’s your email?" StaticText`
+    t =    11.58s         Checking existence of `"What’s your email?" StaticText`
+    t =    11.60s Find the "Email address" TextField
+    t =    11.63s Tap "Send a code" Button
+    t =    11.63s     Wait for app.tadayo to idle
+    t =    11.63s     Find the "Send a code" Button
+    t =    11.66s     Check for interrupting elements affecting "Send a code" Button
+    t =    11.68s     Synthesize event
+    t =    11.98s     Wait for app.tadayo to idle
+    t =    12.35s Waiting 5.0s for "Enter your code" StaticText to exist
+    t =    13.38s     Checking `Expect predicate `existsNoRetry == 1` for object "Enter your code" StaticText`
+    t =    13.38s         Checking existence of `"Enter your code" StaticText`
+    t =    13.41s Checking existence of `"Sent to ben@example.com" StaticText`
+    t =    13.43s Checking existence of `"You can send a new code after one minute." StaticText`
+    t =    13.45s Find the "Change email address" Button
+    t =    13.48s Checking existence of `"Six-digit code" TextField`
+    t =    13.50s Find the "Verify code" Button
+    t =    13.52s Type '529614' into Target Application 'app.tadayo'
+    t =    13.52s     Wait for app.tadayo to idle
+    t =    13.52s     Find the Target Application 'app.tadayo'
+    t =    13.54s     Check for interrupting elements affecting "Tadayo" Application
+    t =    13.57s     Synthesize event
+    t =    13.57s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =    13.88s     Wait for app.tadayo to idle
+    t =    13.89s Find the "Six-digit code" TextField
+    t =    13.91s Type '7' into Target Application 'app.tadayo'
+    t =    13.91s     Wait for app.tadayo to idle
+    t =    13.91s     Find the Target Application 'app.tadayo'
+    t =    13.93s     Check for interrupting elements affecting "Tadayo" Application
+    t =    13.95s     Synthesize event
+    t =    13.96s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =    14.19s     Wait for app.tadayo to idle
+    t =    14.20s Find the "Enter code" TextField
+    t =    14.22s Find the "Verify code" Button
+    t =    14.24s Checking existence of `Keyboard (First Match)`
+    t =    14.26s Find the "Change email address" Button
+    t =    14.28s Find the "Verify code" Button
+    t =    14.31s Find the "Change email address" Button
+    t =    14.33s Find the Target Application 'app.tadayo'
+    t =    14.44s Find the Target Application 'app.tadayo'
+    t =    14.45s Find the Target Application 'app.tadayo'
+    t =    14.51s Find the "Verify code" Button
+    t =    14.53s Find the "Verify code" Button
+    t =    14.57s Tap "Verify code" Button
+    t =    14.57s     Wait for app.tadayo to idle
+    t =    14.57s     Find the "Verify code" Button
+    t =    14.59s     Check for interrupting elements affecting "Verify code" Button
+    t =    14.62s     Synthesize event
+    t =    14.91s     Wait for app.tadayo to idle
+    t =    14.91s Waiting 5.0s for "This code couldn’t be verified. Try again or send a new one." StaticText to exist
+    t =    15.94s     Checking `Expect predicate `existsNoRetry == 1` for object "This code couldn’t be verified. Try again or send a new one." StaticText`
+    t =    15.94s         Checking existence of `"This code couldn’t be verified. Try again or send a new one." StaticText`
+    t =    15.96s Find the "Enter code" TextField
+    t =    15.99s Find the "Verify code" Button
+    t =    16.01s Tap "Enter code" TextField
+    t =    16.01s     Wait for app.tadayo to idle
+    t =    16.01s     Find the "Enter code" TextField
+    t =    16.03s     Check for interrupting elements affecting "Enter code" TextField
+    t =    16.05s     Synthesize event
+    t =    16.36s     Wait for app.tadayo to idle
+    t =    16.45s Type '' into "Enter code" TextField
+    t =    16.45s     Wait for app.tadayo to idle
+    t =    16.83s     Find the "Enter code" TextField
+    t =    16.87s     Check for interrupting elements affecting "Enter code" TextField
+    t =    16.91s     Synthesize event
+    t =    17.21s     Wait for app.tadayo to idle
+    t =    17.43s Checking existence of `"This code couldn’t be verified. Try again or send a new one." StaticText`
+    t =    17.46s Type '123456' into "Enter code" TextField
+    t =    17.46s     Wait for app.tadayo to idle
+    t =    17.46s     Find the "Enter code" TextField
+    t =    17.48s     Check for interrupting elements affecting "Enter code" TextField
+    t =    17.50s     Synthesize event
+    t =    17.81s     Wait for app.tadayo to idle
+    t =    17.82s Tap "Verify code" Button
+    t =    17.82s     Wait for app.tadayo to idle
+    t =    17.83s     Find the "Verify code" Button
+    t =    17.85s     Check for interrupting elements affecting "Verify code" Button
+    t =    17.87s     Synthesize event
+    t =    18.18s     Wait for app.tadayo to idle
+    t =    18.18s Waiting 5.0s for "I’m 18 or older" Button to exist
+    t =    19.24s     Checking `Expect predicate `existsNoRetry == 1` for object "I’m 18 or older" Button`
+    t =    19.24s         Checking existence of `"I’m 18 or older" Button`
+    t =    19.26s Checking existence of `"Before you continue" StaticText`
+    t =    19.28s Checking existence of `"Tadayo is for people aged 18 and older." StaticText`
+    t =    19.29s Get all elements bound by index for: Elements matching predicate 'label == "Leave sign-in"'
+    t =    19.31s Tap "I’m 18 or older" Button
+    t =    19.31s     Wait for app.tadayo to idle
+    t =    19.31s     Find the "I’m 18 or older" Button
+    t =    19.33s     Check for interrupting elements affecting "I’m 18 or older" Button
+    t =    19.35s     Synthesize event
+    t =    19.66s     Wait for app.tadayo to idle
+    t =    20.11s Waiting 5.0s for "Your name" TextField to exist
+    t =    21.11s     Checking `Expect predicate `existsNoRetry == 1` for object "Your name" TextField`
+    t =    21.11s         Checking existence of `"Your name" TextField`
+    t =    21.18s Checking existence of `"What should we call you?" StaticText`
+    t =    21.20s Checking existence of `"Add photo" Button`
+    t =    21.23s Get all elements bound by index for: Elements matching predicate 'label == "Leave sign-in"'
+    t =    21.26s Find the "Continue" Button
+    t =    21.29s Type 'Ben' into Target Application 'app.tadayo'
+    t =    21.29s     Wait for app.tadayo to idle
+    t =    21.30s     Find the Target Application 'app.tadayo'
+    t =    21.33s     Check for interrupting elements affecting "Tadayo" Application
+    t =    21.35s     Synthesize event
+    t =    21.35s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =    21.63s     Wait for app.tadayo to idle
+    t =    21.63s Find the "Your name" TextField
+    t =    21.67s Find the "Continue" Button
+    t =    21.69s Checking existence of `Keyboard (First Match)`
+    t =    21.71s Find the "Your name" TextField
+    t =    21.75s Find the "Continue" Button
+    t =    21.78s Find the "Your name" TextField
+    t =    21.81s Find the "Continue" Button
+    t =    22.04s Find the "Your name" TextField
+    t =    22.09s Find the "Continue" Button
+    t =    22.12s Find the "Your name" TextField
+    t =    22.16s Find the "Continue" Button
+    t =    22.40s Find the "Your name" TextField
+    t =    22.45s Find the "Continue" Button
+    t =    22.48s Find the "Your name" TextField
+    t =    22.52s Find the "Continue" Button
+    t =    22.76s Find the "Your name" TextField
+    t =    22.82s Find the "Continue" Button
+    t =    22.86s Find the "Your name" TextField
+    t =    22.89s Find the "Continue" Button
+    t =    23.14s Find the "Your name" TextField
+    t =    23.18s Find the "Continue" Button
+    t =    23.22s Find the "Your name" TextField
+    t =    23.25s Find the "Continue" Button
+    t =    23.50s Find the "Your name" TextField
+    t =    23.54s Find the "Continue" Button
+    t =    23.57s Find the "Your name" TextField
+    t =    23.61s Find the "Continue" Button
+    t =    23.86s the name field's foot over Continue's top, read 6 times: 465 over 454, 465 over 454, 465 over 454, 465 over 454, 465 over 454, 465 over 454
+    t =    23.86s Find the "Your name" TextField
+    t =    23.92s Find the "Continue" Button
+    t =    23.95s Find the "Your name" TextField
+    t =    23.99s Find the "Continue" Button
+/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoUITests/SignInUITests.swift:173: error: -[TadayoUITests.SignInUITests testSignInGoesToTheEndOnStandInServices] : XCTAssertLessThanOrEqual failed: ("464.6666666666667") is greater than ("446.5") - the field (16.0, 402.6666666666667, 361.0, 62.0), Continue (20.0, 454.0, 353.0, 50.0); read ["465 over 454", "465 over 454", "465 over 454", "465 over 454", "465 over 454", "465 over 454"]
+    t =    24.03s Tear Down
+Test Case '-[TadayoUITests.SignInUITests testSignInGoesToTheEndOnStandInServices]' failed (24.288 seconds).
+Test Case '-[TadayoUITests.SignInUITests testTheAddressIsReadOnlyWhileACodeIsOnItsWay]' started.
+    t =     0.00s Start Test at 2026-11-13 04:14:16.084
+    t =     0.02s Set Up
+    t =     0.03s Open app.tadayo
+    t =     0.03s     Launch app.tadayo
+    t =     0.03s         Terminate app.tadayo:44329
+2026-11-13 04:14:17.133 xcodebuild[33927:94481] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-11-13 04:14:17.133 xcodebuild[33927:94481] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =     1.26s         Setting up automation session
+    t =     1.78s         Wait for app.tadayo to idle
+    t =     2.87s Waiting 10.0s for "Email address" TextField to exist
+    t =     3.90s     Checking `Expect predicate `existsNoRetry == 1` for object "Email address" TextField`
+    t =     3.90s         Checking existence of `"Email address" TextField`
+    t =     3.96s Type 'ben@example.com' into Target Application 'app.tadayo'
+    t =     3.96s     Wait for app.tadayo to idle
+    t =     3.96s     Find the Target Application 'app.tadayo'
+    t =     3.98s     Check for interrupting elements affecting "Tadayo" Application
+    t =     4.01s     Synthesize event
+    t =     4.01s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =     4.49s     Wait for app.tadayo to idle
+    t =     4.50s Find the "Send a code" Button
+    t =     4.53s Find the "Send a code" Button
+    t =     4.56s Tap "Send a code" Button
+    t =     4.56s     Wait for app.tadayo to idle
+    t =     4.56s     Find the "Send a code" Button
+    t =     4.58s     Check for interrupting elements affecting "Send a code" Button
+    t =     4.61s     Synthesize event
+    t =     4.91s     Wait for app.tadayo to idle
+    t =     5.96s Checking `Expect predicate `value == "In progress"` for object "Send a code" Button`
+    t =     5.96s     Find the "Send a code" Button
+    t =     6.00s Find the "Send a code" Button
+    t =     6.03s Find the "Send a code" Button
+    t =     6.05s Type 'x' into Target Application 'app.tadayo'
+    t =     6.05s     Wait for app.tadayo to idle
+    t =     6.05s     Find the Target Application 'app.tadayo'
+    t =     6.08s     Check for interrupting elements affecting "Tadayo" Application
+    t =     6.10s     Synthesize event
+    t =     6.10s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =     6.35s     Wait for app.tadayo to idle
+    t =     6.35s Find the "Email address" TextField
+    t =     6.38s Checking existence of `"What’s your email?" StaticText`
+    t =     6.41s Tear Down
+Test Case '-[TadayoUITests.SignInUITests testTheAddressIsReadOnlyWhileACodeIsOnItsWay]' passed (6.634 seconds).
+Test Case '-[TadayoUITests.SignInUITests testTheLabsLogOutReturnsToSignIn]' started.
+    t =     0.00s Start Test at 2026-11-13 04:14:22.720
+    t =     0.03s Set Up
+    t =     0.03s Open app.tadayo
+    t =     0.03s     Launch app.tadayo
+    t =     0.03s         Terminate app.tadayo:46139
+2026-11-13 04:14:23.816 xcodebuild[33927:94481] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-11-13 04:14:23.816 xcodebuild[33927:94481] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =     1.31s         Setting up automation session
+    t =     1.72s         Wait for app.tadayo to idle
+    t =     2.83s Waiting 10.0s for "Email address" TextField to exist
+    t =     3.86s     Checking `Expect predicate `existsNoRetry == 1` for object "Email address" TextField`
+    t =     3.86s         Checking existence of `"Email address" TextField`
+    t =     3.94s Type 'ben@example.com' into Target Application 'app.tadayo'
+    t =     3.94s     Wait for app.tadayo to idle
+    t =     3.95s     Find the Target Application 'app.tadayo'
+    t =     3.97s     Check for interrupting elements affecting "Tadayo" Application
+    t =     4.00s     Synthesize event
+    t =     4.00s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =     4.47s     Wait for app.tadayo to idle
+    t =     4.47s Tap "Send a code" Button
+    t =     4.47s     Wait for app.tadayo to idle
+    t =     4.48s     Find the "Send a code" Button
+    t =     4.51s     Check for interrupting elements affecting "Send a code" Button
+    t =     4.54s     Synthesize event
+    t =     4.85s     Wait for app.tadayo to idle
+    t =     5.24s Waiting 5.0s for "Six-digit code" TextField to exist
+    t =     6.28s     Checking `Expect predicate `existsNoRetry == 1` for object "Six-digit code" TextField`
+    t =     6.28s         Checking existence of `"Six-digit code" TextField`
+    t =     6.33s Type '123456' into Target Application 'app.tadayo'
+    t =     6.33s     Wait for app.tadayo to idle
+    t =     6.33s     Find the Target Application 'app.tadayo'
+    t =     6.35s     Check for interrupting elements affecting "Tadayo" Application
+    t =     6.37s     Synthesize event
+    t =     6.37s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =     6.70s     Wait for app.tadayo to idle
+    t =     6.71s Tap "Verify code" Button
+    t =     6.71s     Wait for app.tadayo to idle
+    t =     6.71s     Find the "Verify code" Button
+    t =     6.74s     Check for interrupting elements affecting "Verify code" Button
+    t =     6.77s     Synthesize event
+    t =     7.07s     Wait for app.tadayo to idle
+    t =     7.07s Waiting 5.0s for "I’m 18 or older" Button to exist
+    t =     8.08s     Checking `Expect predicate `existsNoRetry == 1` for object "I’m 18 or older" Button`
+    t =     8.08s         Checking existence of `"I’m 18 or older" Button`
+    t =     8.10s Tap "I’m 18 or older" Button
+    t =     8.10s     Wait for app.tadayo to idle
+    t =     8.10s     Find the "I’m 18 or older" Button
+    t =     8.12s     Check for interrupting elements affecting "I’m 18 or older" Button
+    t =     8.15s     Synthesize event
+    t =     8.45s     Wait for app.tadayo to idle
+    t =     8.91s Waiting 5.0s for "Your name" TextField to exist
+    t =     9.96s     Checking `Expect predicate `existsNoRetry == 1` for object "Your name" TextField`
+    t =     9.97s         Checking existence of `"Your name" TextField`
+    t =    10.02s Type 'Ben' into Target Application 'app.tadayo'
+    t =    10.02s     Wait for app.tadayo to idle
+    t =    10.03s     Find the Target Application 'app.tadayo'
+    t =    10.05s     Check for interrupting elements affecting "Tadayo" Application
+    t =    10.07s     Synthesize event
+    t =    10.08s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =    10.35s     Wait for app.tadayo to idle
+    t =    10.36s Tap "Continue" Button
+    t =    10.36s     Wait for app.tadayo to idle
+    t =    10.36s     Find the "Continue" Button
+    t =    10.39s     Check for interrupting elements affecting "Continue" Button
+    t =    10.42s     Synthesize event
+    t =    10.72s     Wait for app.tadayo to idle
+    t =    10.72s Waiting 5.0s for "Start your club." StaticText to exist
+    t =    11.73s     Checking `Expect predicate `existsNoRetry == 1` for object "Start your club." StaticText`
+    t =    11.73s         Checking existence of `"Start your club." StaticText`
+    t =    11.78s Tap "Lab" Button
+    t =    11.78s     Wait for app.tadayo to idle
+    t =    11.78s     Find the "Lab" Button
+    t =    11.80s     Check for interrupting elements affecting "Lab" Button
+    t =    11.82s     Synthesize event
+    t =    12.12s     Wait for app.tadayo to idle
+    t =    12.43s Waiting 5.0s for "Log out" Button to exist
+    t =    13.47s     Checking `Expect predicate `existsNoRetry == 1` for object "Log out" Button`
+    t =    13.48s         Checking existence of `"Log out" Button`
+    t =    13.69s Tap "Log out" Button
+    t =    13.69s     Wait for app.tadayo to idle
+    t =    13.69s     Find the "Log out" Button
+    t =    13.86s     Check for interrupting elements affecting "Log out" Button
+    t =    14.03s     Synthesize event
+    t =    14.33s     Wait for app.tadayo to idle
+    t =    14.35s Waiting 5.0s for "Email address" TextField to exist
+    t =    15.40s     Checking `Expect predicate `existsNoRetry == 1` for object "Email address" TextField`
+    t =    15.40s         Checking existence of `"Email address" TextField`
+    t =    15.45s Checking existence of `"What’s your email?" StaticText`
+    t =    15.48s Find the "Email address" TextField
+    t =    15.51s Checking existence of `"Your sign-in ended. Enter your email to sign in again." StaticText`
+    t =    15.53s Tear Down
+Test Case '-[TadayoUITests.SignInUITests testTheLabsLogOutReturnsToSignIn]' passed (15.805 seconds).
+Test Case '-[TadayoUITests.SignInUITests testTheTabsWithNoClub]' started.
+    t =     0.00s Start Test at 2026-11-13 04:14:38.525
+    t =     0.03s Set Up
+    t =     0.03s Open app.tadayo
+    t =     0.03s     Launch app.tadayo
+    t =     0.03s         Terminate app.tadayo:46823
+2026-11-13 04:14:39.632 xcodebuild[33927:94481] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-11-13 04:14:39.632 xcodebuild[33927:94481] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =     1.32s         Setting up automation session
+    t =     1.74s         Wait for app.tadayo to idle
+    t =     2.83s Waiting 10.0s for "Email address" TextField to exist
+    t =     3.87s     Checking `Expect predicate `existsNoRetry == 1` for object "Email address" TextField`
+    t =     3.87s         Checking existence of `"Email address" TextField`
+    t =     3.93s Type 'ben@example.com' into Target Application 'app.tadayo'
+    t =     3.93s     Wait for app.tadayo to idle
+    t =     3.93s     Find the Target Application 'app.tadayo'
+    t =     3.95s     Check for interrupting elements affecting "Tadayo" Application
+    t =     3.97s     Synthesize event
+    t =     3.98s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =     4.44s     Wait for app.tadayo to idle
+    t =     4.44s Tap "Send a code" Button
+    t =     4.44s     Wait for app.tadayo to idle
+    t =     4.45s     Find the "Send a code" Button
+    t =     4.47s     Check for interrupting elements affecting "Send a code" Button
+    t =     4.50s     Synthesize event
+    t =     4.80s     Wait for app.tadayo to idle
+    t =     5.21s Waiting 5.0s for "Six-digit code" TextField to exist
+    t =     6.25s     Checking `Expect predicate `existsNoRetry == 1` for object "Six-digit code" TextField`
+    t =     6.25s         Checking existence of `"Six-digit code" TextField`
+    t =     6.30s Type '123456' into Target Application 'app.tadayo'
+    t =     6.30s     Wait for app.tadayo to idle
+    t =     6.30s     Find the Target Application 'app.tadayo'
+    t =     6.32s     Check for interrupting elements affecting "Tadayo" Application
+    t =     6.34s     Synthesize event
+    t =     6.34s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =     6.66s     Wait for app.tadayo to idle
+    t =     6.67s Tap "Verify code" Button
+    t =     6.67s     Wait for app.tadayo to idle
+    t =     6.67s     Find the "Verify code" Button
+    t =     6.70s     Check for interrupting elements affecting "Verify code" Button
+    t =     6.72s     Synthesize event
+    t =     7.02s     Wait for app.tadayo to idle
+    t =     7.03s Waiting 5.0s for "I’m 18 or older" Button to exist
+    t =     8.07s     Checking `Expect predicate `existsNoRetry == 1` for object "I’m 18 or older" Button`
+    t =     8.07s         Checking existence of `"I’m 18 or older" Button`
+    t =     8.11s Tap "I’m 18 or older" Button
+    t =     8.11s     Wait for app.tadayo to idle
+    t =     8.11s     Find the "I’m 18 or older" Button
+    t =     8.13s     Check for interrupting elements affecting "I’m 18 or older" Button
+    t =     8.15s     Synthesize event
+    t =     8.45s     Wait for app.tadayo to idle
+    t =     8.89s Waiting 5.0s for "Your name" TextField to exist
+    t =     9.94s     Checking `Expect predicate `existsNoRetry == 1` for object "Your name" TextField`
+    t =     9.94s         Checking existence of `"Your name" TextField`
+    t =     9.99s Type 'Ben' into Target Application 'app.tadayo'
+    t =     9.99s     Wait for app.tadayo to idle
+    t =    10.00s     Find the Target Application 'app.tadayo'
+    t =    10.02s     Check for interrupting elements affecting "Tadayo" Application
+    t =    10.05s     Synthesize event
+    t =    10.05s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =    10.32s     Wait for app.tadayo to idle
+    t =    10.32s Tap "Continue" Button
+    t =    10.32s     Wait for app.tadayo to idle
+    t =    10.32s     Find the "Continue" Button
+    t =    10.36s     Check for interrupting elements affecting "Continue" Button
+    t =    10.39s     Synthesize event
+    t =    10.70s     Wait for app.tadayo to idle
+    t =    10.70s Waiting 5.0s for "Start your club." StaticText to exist
+    t =    11.74s     Checking `Expect predicate `existsNoRetry == 1` for object "Start your club." StaticText`
+    t =    11.74s         Checking existence of `"Start your club." StaticText`
+    t =    11.78s Checking existence of `"Create a club." Button`
+    t =    11.80s Checking existence of `"I have an invite" Button`
+    t =    11.82s Checking existence of `"Private drafts" Button`
+    t =    11.83s Tap "Friends" Button
+    t =    11.83s     Wait for app.tadayo to idle
+    t =    11.83s     Find the "Friends" Button
+    t =    11.85s     Check for interrupting elements affecting "Friends" Button
+    t =    11.86s     Synthesize event
+    t =    12.18s     Wait for app.tadayo to idle
+    t =    12.18s Waiting 5.0s for "Your friends will appear here." StaticText to exist
+    t =    13.19s     Checking `Expect predicate `existsNoRetry == 1` for object "Your friends will appear here." StaticText`
+    t =    13.19s         Checking existence of `"Your friends will appear here." StaticText`
+    t =    13.22s Find the "Friends" Button
+    t =    13.23s Tap "Memories" Button
+    t =    13.23s     Wait for app.tadayo to idle
+    t =    13.24s     Find the "Memories" Button
+    t =    13.25s     Check for interrupting elements affecting "Memories" Button
+    t =    13.27s     Synthesize event
+    t =    13.58s     Wait for app.tadayo to idle
+    t =    13.58s Waiting 5.0s for "Your shared days, kept together." StaticText to exist
+    t =    14.60s     Checking `Expect predicate `existsNoRetry == 1` for object "Your shared days, kept together." StaticText`
+    t =    14.60s         Checking existence of `"Your shared days, kept together." StaticText`
+    t =    14.63s Tap "Go to Home" Button
+    t =    14.63s     Wait for app.tadayo to idle
+    t =    14.63s     Find the "Go to Home" Button
+    t =    14.65s     Check for interrupting elements affecting "Go to Home" Button
+    t =    14.67s     Synthesize event
+    t =    14.99s     Wait for app.tadayo to idle
+    t =    14.99s Waiting 5.0s for "Start your club." StaticText to exist
+    t =    16.00s     Checking `Expect predicate `existsNoRetry == 1` for object "Start your club." StaticText`
+    t =    16.00s         Checking existence of `"Start your club." StaticText`
+    t =    16.01s Find the "Home" Button
+    t =    16.03s Tear Down
+Test Case '-[TadayoUITests.SignInUITests testTheTabsWithNoClub]' passed (16.254 seconds).
+Test Case '-[TadayoUITests.SignInUITests testVerifyCodeIsPinnedAboveTheKeyboardAtTheLargestText]' started.
+    t =     0.00s Start Test at 2026-11-13 04:14:54.779
+    t =     0.02s Set Up
+    t =     0.02s Open app.tadayo
+    t =     0.02s     Launch app.tadayo
+    t =     0.02s         Terminate app.tadayo:47554
+2026-11-13 04:14:55.828 xcodebuild[33927:94481] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-11-13 04:14:55.828 xcodebuild[33927:94481] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =     1.26s         Setting up automation session
+    t =     1.65s         Wait for app.tadayo to idle
+    t =     2.73s Waiting 10.0s for "Email address" TextField to exist
+    t =     3.74s     Checking `Expect predicate `existsNoRetry == 1` for object "Email address" TextField`
+    t =     3.74s         Checking existence of `"Email address" TextField`
+    t =     3.80s Type 'ben@example.com
+' into Target Application 'app.tadayo'
+    t =     3.80s     Wait for app.tadayo to idle
+    t =     3.81s     Find the Target Application 'app.tadayo'
+    t =     3.83s     Check for interrupting elements affecting "Tadayo" Application
+    t =     3.86s     Synthesize event
+    t =     3.86s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =     4.34s     Wait for app.tadayo to idle
+    t =     4.75s Waiting 5.0s for "Six-digit code" TextField to exist
+    t =     5.76s     Checking `Expect predicate `existsNoRetry == 1` for object "Six-digit code" TextField`
+    t =     5.76s         Checking existence of `"Six-digit code" TextField`
+    t =     5.79s Type '529614' into Target Application 'app.tadayo'
+    t =     5.79s     Wait for app.tadayo to idle
+    t =     5.79s     Find the Target Application 'app.tadayo'
+    t =     5.82s     Check for interrupting elements affecting "Tadayo" Application
+    t =     5.84s     Synthesize event
+    t =     5.85s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =     6.17s     Wait for app.tadayo to idle
+    t =     6.18s Waiting 5.0s for Keyboard (First Match) to exist
+    t =     7.22s     Checking `Expect predicate `existsNoRetry == 1` for object Keyboard (First Match)`
+    t =     7.22s         Checking existence of `Keyboard (First Match)`
+    t =     7.26s Find the "Verify code" Button
+    t =     7.28s Find the "Six-digit code" TextField
+    t =     7.31s Find the "Verify code" Button
+    t =     7.33s The code field's foot over Verify code's top, read 1 times: 310 over 471
+    t =     7.34s Find the Target Application 'app.tadayo'
+    t =     7.43s Added attachment named 'testVerifyCodeIsPinnedAboveTheKeyboardAtTheLargestText.A02-code-typed-xl.png'
+    t =     7.43s Find the "Enter code" TextField
+    t =     7.46s Find the "Verify code" Button
+    t =     7.49s Find the "Verify code" Button
+    t =     7.51s Find the Target Application 'app.tadayo'
+    t =     7.53s Find the Target Application 'app.tadayo'
+    t =     7.58s Find the "Verify code" Button
+    t =     7.62s Tap "Verify code" Button
+    t =     7.62s     Wait for app.tadayo to idle
+    t =     7.62s     Find the "Verify code" Button
+    t =     7.64s     Check for interrupting elements affecting "Verify code" Button
+    t =     7.67s     Synthesize event
+    t =     7.97s     Wait for app.tadayo to idle
+    t =     7.98s Waiting 5.0s for "This code couldn’t be verified. Try again or send a new one." StaticText to exist
+    t =     9.02s     Checking `Expect predicate `existsNoRetry == 1` for object "This code couldn’t be verified. Try again or send a new one." StaticText`
+    t =     9.02s         Checking existence of `"This code couldn’t be verified. Try again or send a new one." StaticText`
+    t =     9.05s Find the "Enter code" TextField
+    t =     9.07s Checking existence of `Keyboard (First Match)`
+    t =     9.09s Find the "Enter code" TextField
+    t =     9.12s Find the "Verify code" Button
+    t =     9.14s The code field's foot over Verify code's top, read 1 times: 310 over 471
+    t =     9.15s Find the Target Application 'app.tadayo'
+    t =     9.24s Added attachment named 'testVerifyCodeIsPinnedAboveTheKeyboardAtTheLargestText.A02-code-error-xl.png'
+    t =     9.24s Find the "Enter code" TextField
+    t =     9.27s Find the "Verify code" Button
+    t =     9.30s Find the "Verify code" Button
+    t =     9.32s Find the Target Application 'app.tadayo'
+    t =     9.34s Find the Target Application 'app.tadayo'
+    t =     9.39s Find the "Verify code" Button
+    t =     9.42s Find the "Change email address" Button
+    t =     9.46s Find the "Change email address" Button
+    t =     9.50s Press Target Application 'app.tadayo'[0.50, 0.45] for 0.1 seconds, then drag to Target Application 'app.tadayo'[0.50, 0.15] with velocity of 500.00 pixels per second, and then hold for 0.0 seconds 
+    t =     9.50s     Wait for app.tadayo to idle
+    t =     9.50s     Find the Target Application 'app.tadayo'
+    t =     9.52s     Check for interrupting elements affecting "Tadayo" Application
+    t =     9.54s     Synthesize event
+    t =     9.54s         Find the Target Application 'app.tadayo'
+    t =     9.56s         Find the Target Application 'app.tadayo'
+    t =     9.58s         Find the Target Application 'app.tadayo'
+    t =     9.59s         Find the Target Application 'app.tadayo'
+    t =     9.61s         Find the Target Application 'app.tadayo'
+    t =    10.49s     Wait for app.tadayo to idle
+    t =    11.30s Find the "Change email address" Button
+    t =    11.34s Find the "Change email address" Button
+    t =    11.39s Find the "Change email address" Button
+    t =    11.44s Find the "Change email address" Button
+    t =    11.48s Find the "Enter code" TextField
+    t =    11.51s Find the "Verify code" Button
+    t =    11.55s The code field's foot over Verify code's top, read 1 times: -51 over 471
+    t =    11.55s Find the Target Application 'app.tadayo'
+    t =    11.68s Added attachment named 'testVerifyCodeIsPinnedAboveTheKeyboardAtTheLargestText.A02-code-error-xl-scrolled.png'
+    t =    11.68s Find the "Change email address" Button
+    t =    11.73s Checking existence of `Keyboard (First Match)`
+    t =    11.75s Find the "Enter code" TextField
+    t =    11.78s Find the "Verify code" Button
+    t =    11.81s Find the "Verify code" Button
+    t =    11.85s Find the Target Application 'app.tadayo'
+    t =    11.87s Find the Target Application 'app.tadayo'
+    t =    11.92s Find the "Verify code" Button
+    t =    11.96s Tear Down
+Test Case '-[TadayoUITests.SignInUITests testVerifyCodeIsPinnedAboveTheKeyboardAtTheLargestText]' passed (12.191 seconds).
+Test Case '-[TadayoUITests.SignInUITests testWithNoSessionItOpensOnTheEmailScreen]' started.
+    t =     0.00s Start Test at 2026-11-13 04:15:06.971
+    t =     0.03s Set Up
+    t =     0.03s Open app.tadayo
+    t =     0.03s     Launch app.tadayo
+    t =     0.03s         Terminate app.tadayo:48850
+2026-11-13 04:15:08.033 xcodebuild[33927:94481] [MT] IDELaunchParametersSnapshot: The operation couldn’t be completed. (DebuggerLLDB.DebuggerVersionStore.StoreError error 0.)
+2026-11-13 04:15:08.033 xcodebuild[33927:94481] [MT] IDELaunchParametersSnapshot: no debugger version
+    t =     1.28s         Setting up automation session
+    t =     1.70s         Wait for app.tadayo to idle
+    t =     2.81s Waiting 10.0s for "Sign in" NavigationBar to exist
+    t =     3.82s     Checking `Expect predicate `existsNoRetry == 1` for object "Sign in" NavigationBar`
+    t =     3.82s         Checking existence of `"Sign in" NavigationBar`
+    t =     3.90s Checking existence of `"What’s your email?" StaticText`
+    t =     3.93s Checking existence of `"We’ll send a six-digit code to sign in." StaticText`
+    t =     3.96s Checking existence of `"Use the same email whenever you sign in." StaticText`
+    t =     3.99s Checking existence of `"Your sign-in ended. Enter your email to sign in again." StaticText`
+    t =     4.02s Checking existence of `"Email address" TextField`
+    t =     4.04s Checking existence of `"Send a code" Button`
+    t =     4.07s Find the "Send a code" Button
+    t =     4.09s Type 'ben@example' into Target Application 'app.tadayo'
+    t =     4.10s     Wait for app.tadayo to idle
+    t =     4.10s     Find the Target Application 'app.tadayo'
+    t =     4.12s     Check for interrupting elements affecting "Tadayo" Application
+    t =     4.15s     Synthesize event
+    t =     4.15s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =     4.56s     Wait for app.tadayo to idle
+    t =     4.56s Find the "Email address" TextField
+    t =     4.59s Find the "Send a code" Button
+    t =     4.62s Type '.com' into Target Application 'app.tadayo'
+    t =     4.62s     Wait for app.tadayo to idle
+    t =     4.62s     Find the Target Application 'app.tadayo'
+    t =     4.65s     Check for interrupting elements affecting "Tadayo" Application
+    t =     4.67s     Synthesize event
+    t =     4.68s         Get number of matches for: Elements containing elements matching predicate 'hasKeyboardFocus == 1'
+    t =     4.97s     Wait for app.tadayo to idle
+    t =     4.97s Find the "Send a code" Button
+    t =     5.00s Checking existence of `Button (First Match)`
+    t =     5.07s Tear Down
+Test Case '-[TadayoUITests.SignInUITests testWithNoSessionItOpensOnTheEmailScreen]' passed (5.323 seconds).
+Test Suite 'SignInUITests' failed at 2026-11-13 04:15:12.294.
+	 Executed 10 tests, with 2 failures (0 unexpected) in 125.986 (125.994) seconds
+Test Suite 'TadayoUITests.xctest' failed at 2026-11-13 04:15:12.294.
+	 Executed 10 tests, with 2 failures (0 unexpected) in 125.986 (125.994) seconds
+Test Suite 'All tests' failed at 2026-11-13 04:15:12.295.
+	 Executed 10 tests, with 2 failures (0 unexpected) in 125.986 (125.995) seconds
+2026-11-13 04:15:25.276 xcodebuild[33927:94481] [MT] IDETestOperationsObserverDebug: 243.920 elapsed -- Testing started completed.
+2026-11-13 04:15:25.277 xcodebuild[33927:94481] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-11-13 04:15:25.277 xcodebuild[33927:94481] [MT] IDETestOperationsObserverDebug: 243.921 sec, +243.921 sec -- end
+
+Test session results, code coverage, and logs:
+	/Users/runner/work/_temp/ios-out/Tests.xcresult
+
+Failing tests:
+	SignInReadingTests.testAFailureWithTheKeyboardUpIsScrolledIntoViewAboveContinue()
+	SignInReadingTests.testContinueSits12AboveTheKeyboardOr44AboveTheSafeArea()
+	SignInReadingTests.testContinueSits12AboveTheKeyboardOr44AboveTheSafeArea()
+	SignInUITests.testAProfileFailureStaysInViewAndTheNameIsReadOnlyWhileSaved()
+	SignInUITests.testSignInGoesToTheEndOnStandInServices()
+
+** TEST EXECUTE FAILED **
+
+Testing started
