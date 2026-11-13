@@ -1,0 +1,45 @@
+.github/workflows/deploy-dev.yml
+--- old
+actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - run: python3 tools/ci/ci_steps.py setup-pnpm
+      - run: python3 tools/ci/ci_steps.py install
+      - run: python3 tools/ci/ci_steps.py web
+
+--- new
+actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - run: python3 tools/ci/ci_steps.py setup-pnpm
+      - run: python3 tools/ci/ci_steps.py install
+      - run: python3 tools/ci/ci_steps.py web
+
+--- expected: test_its_jobs_and_steps_are_these_exactly
+--- exit 1
+.............................................................s.F...F.
+======================================================================
+FAIL: test_its_jobs_and_steps_are_these_exactly (__main__.WorkflowFileTest.test_its_jobs_and_steps_are_these_exactly) (job='web')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpvb4ib2jm/tools/ci/deploy_dev_steps_test.py", line 1101, in test_its_jobs_and_steps_are_these_exactly
+    self.assertEqual(self.document["jobs"][name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'nam[355 chars]node@v7', 'with': {'node-version-file': '.nvmr[456 chars]'}}]} != {'nam[355 chars]node@949feb2413d6458794dcd2491c4babbbce0c15c1'[494 chars]'}}]}
+Diff is 1227 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_the_pins_are_ci_yml_s_and_ios_yml_s (__main__.WorkflowFileTest.test_the_pins_are_ci_yml_s_and_ios_yml_s)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpvb4ib2jm/tools/ci/deploy_dev_steps_test.py", line 1168, in test_the_pins_are_ci_yml_s_and_ios_yml_s
+    self.assertTrue(set(uses) <= set(pinned.values()))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 69 tests in 0.200s
+
+FAILED (failures=2, skipped=1)

@@ -1,0 +1,24 @@
+tools/ci/deploy_dev_steps.py
+--- old
+        if head != sha:
+
+--- new
+        if False:
+
+--- expected: test_another_head_fails_at_once
+--- exit 1
+.......................F.............................................
+======================================================================
+FAIL: test_another_head_fails_at_once_and_says_to_run_the_head_s_job_again (__main__.CheckHeadTest.test_another_head_fails_at_once_and_says_to_run_the_head_s_job_again)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp6ff17vn2/tools/ci/deploy_dev_steps_test.py", line 720, in test_another_head_fails_at_once_and_says_to_run_the_head_s_job_again
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-head: 0123456789ab is main's head
+
+
+----------------------------------------------------------------------
+Ran 69 tests in 0.450s
+
+FAILED (failures=1)

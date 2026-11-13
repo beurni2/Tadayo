@@ -1,0 +1,24 @@
+.github/workflows/deploy-dev.yml
+--- old
+    timeout-minutes: 80
+
+--- new
+    timeout-minutes: 60
+
+--- expected: test_its_jobs_and_steps_are_these_exactly
+--- exit 1
+...............................................................F.....
+======================================================================
+FAIL: test_its_jobs_and_steps_are_these_exactly (__main__.WorkflowFileTest.test_its_jobs_and_steps_are_these_exactly) (job='deploy')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpwt2g3evd/tools/ci/deploy_dev_steps_test.py", line 1101, in test_its_jobs_and_steps_are_these_exactly
+    self.assertEqual(self.document["jobs"][name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'nam[71 chars]s': '60', 'permissions': {'contents': 'read', [1604 chars]i'}]} != {'nam[71 chars]s': '80', 'permissions': {'contents': 'read', [1604 chars]i'}]}
+Diff is 2728 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 69 tests in 0.454s
+
+FAILED (failures=1)

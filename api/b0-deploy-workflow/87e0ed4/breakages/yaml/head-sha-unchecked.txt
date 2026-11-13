@@ -1,0 +1,30 @@
+tools/ci/deploy_dev_steps.py
+--- old
+if not isinstance(head, str) or not SHA.fullmatch(head):
+--- new
+if not isinstance(head, str):
+--- expected: test_an_answer_that_names_no_commit_fails
+--- exit 1
+......................FF..............................................
+======================================================================
+FAIL: test_an_answer_that_names_no_commit_fails (__main__.CheckHeadTest.test_an_answer_that_names_no_commit_fails) (body={'commit': {'sha': 'abc'}})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpjb3crw36/tools/ci/deploy_dev_steps_test.py", line 744, in test_an_answer_that_names_no_commit_fails
+    self.assertIn("names no commit", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'names no commit' not found in "deploy-dev: check-head: main is at abc now, not 0123456789ab; that commit's run publishes its own site, so this one publishes nothing (if that run's pages job ended cancelled, run it again)\n"
+
+======================================================================
+FAIL: test_an_answer_that_names_no_commit_fails (__main__.CheckHeadTest.test_an_answer_that_names_no_commit_fails) (body={'commit': {'sha': '0123456789ABCDEF0123456789ABCDEF01234567'}})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpjb3crw36/tools/ci/deploy_dev_steps_test.py", line 744, in test_an_answer_that_names_no_commit_fails
+    self.assertIn("names no commit", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'names no commit' not found in "deploy-dev: check-head: main is at 0123456789AB now, not 0123456789ab; that commit's run publishes its own site, so this one publishes nothing (if that run's pages job ended cancelled, run it again)\n"
+
+----------------------------------------------------------------------
+Ran 69 tests in 0.231s
+
+FAILED (failures=2)

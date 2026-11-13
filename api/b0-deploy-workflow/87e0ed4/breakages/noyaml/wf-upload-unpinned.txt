@@ -1,0 +1,31 @@
+.github/workflows/deploy-dev.yml
+--- old
+actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+--- new
+actions/upload-artifact@v7
+--- expected: test_the_pins_are_ci_yml_s
+--- exit 1
+.............................................................s.F...F.
+======================================================================
+FAIL: test_its_jobs_and_steps_are_these_exactly (__main__.WorkflowFileTest.test_its_jobs_and_steps_are_these_exactly) (job='web')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpej8lmyos/tools/ci/deploy_dev_steps_test.py", line 1101, in test_its_jobs_and_steps_are_these_exactly
+    self.assertEqual(self.document["jobs"][name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'nam[714 chars]fact@v7', 'with': {'name': 'site', 'path': 'ap[97 chars]'}}]} != {'nam[714 chars]fact@cf430e030ddbb5b0abf93d22962f4752f3646cd9'[135 chars]'}}]}
+Diff is 1232 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_the_pins_are_ci_yml_s_and_ios_yml_s (__main__.WorkflowFileTest.test_the_pins_are_ci_yml_s_and_ios_yml_s)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpej8lmyos/tools/ci/deploy_dev_steps_test.py", line 1168, in test_the_pins_are_ci_yml_s_and_ios_yml_s
+    self.assertTrue(set(uses) <= set(pinned.values()))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 69 tests in 0.308s
+
+FAILED (failures=2, skipped=1)

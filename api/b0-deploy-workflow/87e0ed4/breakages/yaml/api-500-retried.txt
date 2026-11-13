@@ -1,0 +1,27 @@
+tools/ci/deploy_dev_steps.py
+--- old
+if answer.status not in (502, 503, 504):
+--- new
+if answer.status not in (500, 502, 503, 504):
+--- expected: test_any_other_answer_fails_at_once
+--- exit 1
+F....................................................................
+======================================================================
+FAIL: test_any_other_answer_fails_at_once (__main__.CheckApiTest.test_any_other_answer_fails_at_once) (case='500')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpgsn6lhbw/tools/ci/deploy_dev_steps_test.py", line 223, in test_any_other_answer_fails_at_once
+    code, out, http, sleeps = call("check_api", {}, sequence(given))
+                              ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpgsn6lhbw/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpgsn6lhbw/tools/ci/deploy_dev_steps.py", line 225, in check_api
+    answer = self.http.request("GET", DEV_HOST, "/v1/me", headers)
+  File "/tmp/tmpgsn6lhbw/tools/ci/deploy_dev_steps_test.py", line 56, in request
+    raise result
+AssertionError: an unexpected request: GET api-dev.tadayo.app/v1/me
+
+----------------------------------------------------------------------
+Ran 69 tests in 0.230s
+
+FAILED (failures=1)

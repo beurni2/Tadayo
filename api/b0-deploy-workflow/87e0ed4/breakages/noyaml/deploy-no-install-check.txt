@@ -1,0 +1,32 @@
+tools/ci/deploy_dev_steps.py
+--- old
+        if not os.path.isfile(wrangler):
+
+--- new
+        if False:
+
+--- expected: test_nothing_runs_without_the_build
+--- exit 1
+....................................FF........................s.......
+======================================================================
+FAIL: test_nothing_runs_without_the_build_the_secrets_the_commit_or_the_install (__main__.PagesDeployTest.test_nothing_runs_without_the_build_the_secrets_the_commit_or_the_install) (environ={'CLOUDFLARE_API_TOKEN': 'secret-token-value', 'CLOUDFLARE_ACCOUNT_ID': '0123456789abcdef0123456789abcdef', 'GITHUB_SHA': '0123456789abcdef0123456789abcdef01234567', 'RUNNER_TEMP': '/tmp/tmpnhw7xp_i'}, root='/tmp/tmp6bdycy35')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmphpwbwhw3/tools/ci/deploy_dev_steps_test.py", line 616, in test_nothing_runs_without_the_build_the_secrets_the_commit_or_the_install
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : 
+
+======================================================================
+FAIL: test_nothing_runs_without_the_build_the_secrets_the_commit_or_the_install (__main__.PagesDeployTest.test_nothing_runs_without_the_build_the_secrets_the_commit_or_the_install)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmphpwbwhw3/tools/ci/deploy_dev_steps_test.py", line 619, in test_nothing_runs_without_the_build_the_secrets_the_commit_or_the_install
+    self.assertIn("setup-wrangler installs it", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'setup-wrangler installs it' not found in ''
+
+----------------------------------------------------------------------
+Ran 69 tests in 0.291s
+
+FAILED (failures=2, skipped=1)

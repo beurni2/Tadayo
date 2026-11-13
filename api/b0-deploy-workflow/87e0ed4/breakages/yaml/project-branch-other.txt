@@ -1,0 +1,27 @@
+tools/ci/deploy_dev_steps.py
+--- old
+{"name": PAGES_PROJECT, "production_branch": BRANCH}
+--- new
+{"name": PAGES_PROJECT, "production_branch": "production"}
+--- expected: test_it_makes_a_missing_project_for_main
+--- exit 1
+...........................................F.........................
+======================================================================
+FAIL: test_it_makes_a_missing_project_for_main (__main__.PagesProjectTest.test_it_makes_a_missing_project_for_main)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpjsylk21c/tools/ci/deploy_dev_steps_test.py", line 449, in test_it_makes_a_missing_project_for_main
+    self.assertEqual(json.loads(post["body"]), {"name": "tadayo", "production_branch": "main"})
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'name': 'tadayo', 'production_branch': 'production'} != {'name': 'tadayo', 'production_branch': 'main'}
+- {'name': 'tadayo', 'production_branch': 'production'}
+?                                          ^^^^^^^ -
+
++ {'name': 'tadayo', 'production_branch': 'main'}
+?                                          ^^
+
+
+----------------------------------------------------------------------
+Ran 69 tests in 0.432s
+
+FAILED (failures=1)

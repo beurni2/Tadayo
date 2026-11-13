@@ -1,0 +1,22 @@
+tools/ci/deploy_dev_steps.py
+--- old
+for name in folders + files:
+--- new
+for name in files:
+--- expected: test_a_link_anywhere_in_the_site_is_refused
+--- exit 1
+.........................F...................................s.......
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (where='docs')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpj91qan0u/tools/ci/deploy_dev_steps_test.py", line 656, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: apps/web/dist holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+----------------------------------------------------------------------
+Ran 69 tests in 0.235s
+
+FAILED (failures=1, skipped=1)

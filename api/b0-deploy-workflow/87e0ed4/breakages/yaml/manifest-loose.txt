@@ -1,0 +1,30 @@
+tools/ci/deploy_dev_steps.py
+--- old
+        if manifest != {"private": True, "dependencies": wanted}:
+
+--- new
+        if manifest.get("dependencies", {}).get("wrangler") is None:
+
+--- expected: test_it_refuses_another_manifest
+--- exit 1
+...............................................E.....................
+======================================================================
+ERROR: test_it_refuses_another_manifest_or_a_missing_file (__main__.SetupWranglerTest.test_it_refuses_another_manifest_or_a_missing_file) (case='a manifest that is a list')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpy944dm76/tools/ci/deploy_dev_steps_test.py", line 402, in test_it_refuses_another_manifest_or_a_missing_file
+    code, out, _, _ = call("setup_wrangler", {}, run=run, root=repo.root)
+                      ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpy944dm76/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpy944dm76/tools/ci/deploy_dev_steps.py", line 357, in setup_wrangler
+    problem = self.lockfile_problem()
+  File "/tmp/tmpy944dm76/tools/ci/deploy_dev_steps.py", line 399, in lockfile_problem
+    if manifest.get("dependencies", {}).get("wrangler") is None:
+       ^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'get'
+
+----------------------------------------------------------------------
+Ran 69 tests in 0.437s
+
+FAILED (errors=1)

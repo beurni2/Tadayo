@@ -1,0 +1,22 @@
+tools/ci/deploy_dev_steps.py
+--- old
+if not (stat.S_ISREG(mode) or stat.S_ISDIR(mode)):
+--- new
+if False:
+--- expected: test_a_special_file_is_refused
+--- exit 1
+............................F........................................
+======================================================================
+FAIL: test_a_special_file_is_refused (__main__.CheckSiteTest.test_a_special_file_is_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpzh0hys28/tools/ci/deploy_dev_steps_test.py", line 670, in test_a_special_file_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: apps/web/dist holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+----------------------------------------------------------------------
+Ran 69 tests in 0.465s
+
+FAILED (failures=1)

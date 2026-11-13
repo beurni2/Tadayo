@@ -1,0 +1,41 @@
+tools/ci/deploy_dev_steps.py
+--- old
+wrangler = os.path.join(home, WRANGLER)
+--- new
+wrangler = self.path(PAGES_DIR, "node_modules", "wrangler", "bin", "wrangler.js")
+--- expected: test_it_runs_the_pinned_wrangler_with_only_what_it_needs
+--- exit 1
+..................................FF.F.......................s.......
+======================================================================
+FAIL: test_it_runs_the_pinned_wrangler_with_only_what_it_needs (__main__.PagesDeployTest.test_it_runs_the_pinned_wrangler_with_only_what_it_needs)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp6uzelh9h/tools/ci/deploy_dev_steps_test.py", line 536, in test_it_runs_the_pinned_wrangler_with_only_what_it_needs
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: pages-deploy: there is no /tmp/tmp0_weg4po/tools/ci/pages/node_modules/wrangler/bin/wrangler.js: setup-wrangler installs it
+
+
+======================================================================
+FAIL: test_nothing_in_the_repository_reaches_wrangler_s_working_folder_or_home (__main__.PagesDeployTest.test_nothing_in_the_repository_reaches_wrangler_s_working_folder_or_home)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp6uzelh9h/tools/ci/deploy_dev_steps_test.py", line 561, in test_nothing_in_the_repository_reaches_wrangler_s_working_folder_or_home
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: pages-deploy: there is no /tmp/tmpsom_h8l9/tools/ci/pages/node_modules/wrangler/bin/wrangler.js: setup-wrangler installs it
+
+
+======================================================================
+FAIL: test_wrangler_s_failure_is_the_step_s (__main__.PagesDeployTest.test_wrangler_s_failure_is_the_step_s)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp6uzelh9h/tools/ci/deploy_dev_steps_test.py", line 600, in test_wrangler_s_failure_is_the_step_s
+    self.assertIn("wrangler failed (exit 1)", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'wrangler failed (exit 1)' not found in 'deploy-dev: pages-deploy: there is no /tmp/tmp0v1b0841/tools/ci/pages/node_modules/wrangler/bin/wrangler.js: setup-wrangler installs it\n'
+
+----------------------------------------------------------------------
+Ran 69 tests in 0.335s
+
+FAILED (failures=3, skipped=1)

@@ -1,0 +1,39 @@
+tools/ci/deploy_dev_steps.py
+--- old
+                    if answer.body != built:
+
+--- new
+                    if False:
+
+--- expected: test_the_file_served_otherwise_fails
+--- exit 1
+..................E..........................................s.......
+======================================================================
+ERROR: test_the_file_served_otherwise_fails (__main__.CheckAssociationTest.test_the_file_served_otherwise_fails) (case='other bytes')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp9r8_pdke/tools/ci/deploy_dev_steps_test.py", line 877, in test_the_file_served_otherwise_fails
+    code, out, _, sleeps = self.check([found(project(deployment=deployment()))],
+                           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                      {"tadayo-x1y.pages.dev": [given]})
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp9r8_pdke/tools/ci/deploy_dev_steps_test.py", line 776, in check
+    return call("check_association", CLOUDFLARE, self.respond(projects, files), root=self.repo.root)
+  File "/tmp/tmp9r8_pdke/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmp9r8_pdke/tools/ci/deploy_dev_steps.py", line 548, in check_association
+    self.served(host, built)
+    ~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/tmp/tmp9r8_pdke/tools/ci/deploy_dev_steps.py", line 599, in served
+    answer = self.http.request("GET", host, ASSOCIATION, {"user-agent": USER_AGENT})
+  File "/tmp/tmp9r8_pdke/tools/ci/deploy_dev_steps_test.py", line 54, in request
+    result = self.respond(method, host, path, body)
+  File "/tmp/tmp9r8_pdke/tools/ci/deploy_dev_steps_test.py", line 768, in respond
+    given = files[host]
+            ~~~~~^^^^^^
+KeyError: 'abc123.tadayo-x1y.pages.dev'
+
+----------------------------------------------------------------------
+Ran 69 tests in 0.242s
+
+FAILED (errors=1, skipped=1)

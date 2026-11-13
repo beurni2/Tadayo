@@ -10,3 +10,5 @@ Run in the api thread's session on 2026-11-13, on the tree committed as `e0573ca
     NO_YAML=1 python3 -S -I breakages.py /home/user/tadayo-10c noyaml > noyaml.txt  # tests run with -S, no YAML library
 
 Both end `114/114 caught`. `yaml/` and `noyaml/` hold each breakage's test output; `yaml.txt` and `noyaml.txt` list each breakage, its verdict and the test run's exit status.
+
+Correction (round 2 of PR #52's review, r2rec-4; recorded with commit `87e0ed4`): of the first commit's 91 breakages, 90 are kept here, 6 of them with their text moved; `wf-pages-before-check-api` was replaced by `wf-pages-in-deploy-job`, registered to `test_the_cloudflare_secret_is_on_a_runner_that_holds_no_other`; so 24 are new, not 23. The totals, 91 and 114, stand.

@@ -1,0 +1,71 @@
+tools/ci/deploy_dev_steps.py
+--- old
+PAGES_POLLS, PAGES_POLL_SECONDS = 20, 15
+--- new
+PAGES_POLLS, PAGES_POLL_SECONDS = 5, 15
+--- expected: test_another_commit_s_deployment_fails_after_the_last_look
+--- exit 1
+........F..F.FF...F..........................................s.......
+======================================================================
+FAIL: test_a_lost_connection_or_a_server_error_while_waiting_is_asked_again (__main__.CheckAssociationTest.test_a_lost_connection_or_a_server_error_while_waiting_is_asked_again)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpvnfxwm71/tools/ci/deploy_dev_steps_test.py", line 827, in test_a_lost_connection_or_a_server_error_while_waiting_is_asked_again
+    self.assertEqual(sleeps.calls, [15] * 19)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [15, 15, 15, 15] != [15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]
+
+Second list contains 15 additional elements.
+First extra element 4:
+15
+
+- [15, 15, 15, 15]
++ [15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]
+
+======================================================================
+FAIL: test_a_preview_deployment_of_this_commit_is_not_the_production_one (__main__.CheckAssociationTest.test_a_preview_deployment_of_this_commit_is_not_the_production_one)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpvnfxwm71/tools/ci/deploy_dev_steps_test.py", line 850, in test_a_preview_deployment_of_this_commit_is_not_the_production_one
+    self.assertEqual(len(sleeps.calls), 19)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 4 != 19
+
+======================================================================
+FAIL: test_after_a_lost_connection_it_reports_what_cloudflare_answered_last (__main__.CheckAssociationTest.test_after_a_lost_connection_it_reports_what_cloudflare_answered_last)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpvnfxwm71/tools/ci/deploy_dev_steps_test.py", line 833, in test_after_a_lost_connection_it_reports_what_cloudflare_answered_last
+    self.assertEqual(sleeps.calls, [15] * 19)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [15, 15, 15, 15] != [15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]
+
+Second list contains 15 additional elements.
+First extra element 4:
+15
+
+- [15, 15, 15, 15]
++ [15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]
+
+======================================================================
+FAIL: test_another_commit_s_deployment_fails_after_the_last_look (__main__.CheckAssociationTest.test_another_commit_s_deployment_fails_after_the_last_look)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpvnfxwm71/tools/ci/deploy_dev_steps_test.py", line 856, in test_another_commit_s_deployment_fails_after_the_last_look
+    self.assertEqual(len(http.requests), 20)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 5 != 20
+
+======================================================================
+FAIL: test_the_file_served_otherwise_fails (__main__.CheckAssociationTest.test_the_file_served_otherwise_fails)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpvnfxwm71/tools/ci/deploy_dev_steps_test.py", line 884, in test_the_file_served_otherwise_fails
+    self.assertEqual(len(sleeps.calls), 19)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 4 != 19
+
+----------------------------------------------------------------------
+Ran 69 tests in 0.207s
+
+FAILED (failures=5, skipped=1)

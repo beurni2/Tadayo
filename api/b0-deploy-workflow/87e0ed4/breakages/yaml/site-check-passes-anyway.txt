@@ -1,0 +1,95 @@
+tools/ci/deploy_dev_steps.py
+--- old
+print(f"deploy-dev: check-site: {problem}")
+            return 1
+--- new
+print(f"deploy-dev: check-site: {problem}")
+            return 0
+--- expected: test_a_link_anywhere_in_the_site_is_refused
+--- exit 1
+.........................FFFFFF.F........................................
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (where='leak.txt')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptm3w5rto/tools/ci/deploy_dev_steps_test.py", line 656, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: apps/web/dist/leak.txt is a link, which wrangler would follow and publish what it points to
+
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (where='.well-known/x.json')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptm3w5rto/tools/ci/deploy_dev_steps_test.py", line 656, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: apps/web/dist/.well-known/x.json is a link, which wrangler would follow and publish what it points to
+
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (where='docs')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptm3w5rto/tools/ci/deploy_dev_steps_test.py", line 656, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: apps/web/dist/docs is a link, which wrangler would follow and publish what it points to
+
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (where='privacy/dangling')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptm3w5rto/tools/ci/deploy_dev_steps_test.py", line 656, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: apps/web/dist/privacy/dangling is a link, which wrangler would follow and publish what it points to
+
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptm3w5rto/tools/ci/deploy_dev_steps_test.py", line 663, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: apps/web/dist/.well-known/apple-app-site-association is a link, which wrangler would follow and publish what it points to
+
+
+======================================================================
+FAIL: test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused (__main__.CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptm3w5rto/tools/ci/deploy_dev_steps_test.py", line 677, in test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused
+    self.assertEqual((code, "isn't a folder" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (0, True) != (1, True)
+
+First differing element 0:
+0
+1
+
+- (0, True)
+?  ^
+
++ (1, True)
+?  ^
+ : deploy-dev: check-site: apps/web/dist isn't a folder: build it first (ci_steps.py web)
+
+
+======================================================================
+FAIL: test_a_special_file_is_refused (__main__.CheckSiteTest.test_a_special_file_is_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptm3w5rto/tools/ci/deploy_dev_steps_test.py", line 670, in test_a_special_file_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: apps/web/dist/pipe is neither a file nor a folder
+
+
+----------------------------------------------------------------------
+Ran 69 tests in 0.493s
+
+FAILED (failures=7)

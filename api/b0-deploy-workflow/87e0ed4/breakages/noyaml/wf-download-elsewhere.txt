@@ -1,0 +1,24 @@
+.github/workflows/deploy-dev.yml
+--- old
+          path: apps/web/dist
+
+--- new
+          path: site
+
+--- expected: test_its_jobs_and_steps_are_these_exactly
+--- exit 1
+.............................................................s.F.....
+======================================================================
+FAIL: test_its_jobs_and_steps_are_these_exactly (__main__.WorkflowFileTest.test_its_jobs_and_steps_are_these_exactly) (job='pages')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp48re2zt7/tools/ci/deploy_dev_steps_test.py", line 1101, in test_its_jobs_and_steps_are_these_exactly
+    self.assertEqual(self.document["jobs"][name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'nam[716 chars]h': 'site'}}, {'run': 'python3 tools/ci/deploy[759 chars]n'}]} != {'nam[716 chars]h': 'apps/web/dist'}}, {'run': 'python3 tools/[768 chars]n'}]}
+Diff is 2378 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 69 tests in 0.282s
+
+FAILED (failures=1, skipped=1)

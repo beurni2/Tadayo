@@ -1,0 +1,38 @@
+tools/ci/deploy_dev_steps.py
+--- old
+os.path.lexists(self.path(SITE, WORKER))
+--- new
+os.path.isfile(self.path(SITE, WORKER))
+--- expected: test_a_worker_in_the_site_is_refused
+--- exit 1
+..........................F......F...................................
+======================================================================
+FAIL: test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused (__main__.CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused) (make=<function makedirs at 0x7f39d2c44fe0>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmprtzpv9s8/tools/ci/deploy_dev_steps_test.py", line 692, in test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused
+    self.assertEqual((code, "_worker.js" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (0, False) != (1, True)
+
+First differing element 0:
+0
+1
+
+- (0, False)
++ (1, True) : deploy-dev: check-site: apps/web/dist holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_a_worker_in_the_site_is_refused (__main__.PagesDeployTest.test_a_worker_in_the_site_is_refused) (make=<function makedirs at 0x7f39d2c44fe0>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmprtzpv9s8/tools/ci/deploy_dev_steps_test.py", line 582, in test_a_worker_in_the_site_is_refused
+    self.assertIn("_worker.js", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+AssertionError: '_worker.js' not found in "deploy-dev: pages-deploy: RUNNER_TEMP isn't an absolute path (GitHub's runner sets it)\n"
+
+----------------------------------------------------------------------
+Ran 69 tests in 0.201s
+
+FAILED (failures=2)

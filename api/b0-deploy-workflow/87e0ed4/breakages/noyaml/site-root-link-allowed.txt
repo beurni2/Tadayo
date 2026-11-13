@@ -1,0 +1,29 @@
+tools/ci/deploy_dev_steps.py
+--- old
+if os.path.islink(site) or not os.path.isdir(site):
+--- new
+if not os.path.isdir(site):
+--- expected: test_a_missing_or_linked_site
+--- exit 1
+..........................F..................................s.......
+======================================================================
+FAIL: test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused (__main__.CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmparxmvati/tools/ci/deploy_dev_steps_test.py", line 682, in test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused
+    self.assertEqual((code, "isn't a folder" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (0, False) != (1, True)
+
+First differing element 0:
+0
+1
+
+- (0, False)
++ (1, True) : deploy-dev: check-site: apps/web/dist holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+----------------------------------------------------------------------
+Ran 69 tests in 0.204s
+
+FAILED (failures=1, skipped=1)

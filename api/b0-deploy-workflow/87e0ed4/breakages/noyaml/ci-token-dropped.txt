@@ -1,0 +1,25 @@
+tools/ci/deploy_dev_steps.py
+--- old
+f"?head_sha={sha}&branch={BRANCH}&event=push&per_page=100")
+        headers = {"accept": "application/vnd.github+json", "authorization": f"Bearer {token}",
+
+--- new
+f"?head_sha={sha}&branch={BRANCH}&event=push&per_page=100")
+        headers = {"accept": "application/vnd.github+json",
+
+--- expected: test_it_asks_github_for_this_commit_s_push_runs
+--- exit 1
+.......................................................E.....s.......
+======================================================================
+ERROR: test_it_asks_github_for_this_commit_s_push_runs_on_main_with_the_job_s_token (__main__.WaitCiTest.test_it_asks_github_for_this_commit_s_push_runs_on_main_with_the_job_s_token)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpxb8c2hkb/tools/ci/deploy_dev_steps_test.py", line 122, in test_it_asks_github_for_this_commit_s_push_runs_on_main_with_the_job_s_token
+    self.assertEqual(request["headers"]["authorization"], f"Bearer {TOKEN}")
+                     ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+KeyError: 'authorization'
+
+----------------------------------------------------------------------
+Ran 69 tests in 0.458s
+
+FAILED (errors=1, skipped=1)

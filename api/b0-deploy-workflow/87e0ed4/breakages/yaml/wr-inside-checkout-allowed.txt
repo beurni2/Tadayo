@@ -1,0 +1,58 @@
+tools/ci/deploy_dev_steps.py
+--- old
+if os.path.commonpath([home, root]) == root:
+--- new
+if False:
+--- expected: test_it_needs_a_runner_temp_outside_the_checkout
+--- exit 1
+.............................................FF.......................
+======================================================================
+FAIL: test_it_needs_a_runner_temp_outside_the_checkout_and_a_folder_of_its_own (__main__.SetupWranglerTest.test_it_needs_a_runner_temp_outside_the_checkout_and_a_folder_of_its_own) (temp='/tmp/tmpsilq1z95')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp__4csr9n/tools/ci/deploy_dev_steps_test.py", line 337, in test_it_needs_a_runner_temp_outside_the_checkout_and_a_folder_of_its_own
+    self.assertEqual(run.calls, [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [{'cmd': ['npm', 'ci', '--ignore-scripts',[137 chars]5'}}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'cmd': ['npm', 'ci', '--ignore-scripts', '--no-audit', '--no-fund', '--workspaces=false'], 'cwd': '/tmp/tmpsilq1z95/deploy-dev-wrangler', 'env': {'RUNNER_TEMP': '/tmp/tmpsilq1z95'}}
+
++ []
+- [{'cmd': ['npm',
+-           'ci',
+-           '--ignore-scripts',
+-           '--no-audit',
+-           '--no-fund',
+-           '--workspaces=false'],
+-   'cwd': '/tmp/tmpsilq1z95/deploy-dev-wrangler',
+-   'env': {'RUNNER_TEMP': '/tmp/tmpsilq1z95'}}]
+
+======================================================================
+FAIL: test_it_needs_a_runner_temp_outside_the_checkout_and_a_folder_of_its_own (__main__.SetupWranglerTest.test_it_needs_a_runner_temp_outside_the_checkout_and_a_folder_of_its_own) (temp='/tmp/tmpsilq1z95/tools')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp__4csr9n/tools/ci/deploy_dev_steps_test.py", line 337, in test_it_needs_a_runner_temp_outside_the_checkout_and_a_folder_of_its_own
+    self.assertEqual(run.calls, [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [{'cmd': ['npm', 'ci', '--ignore-scripts',[149 chars]s'}}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'cmd': ['npm', 'ci', '--ignore-scripts', '--no-audit', '--no-fund', '--workspaces=false'], 'cwd': '/tmp/tmpsilq1z95/tools/deploy-dev-wrangler', 'env': {'RUNNER_TEMP': '/tmp/tmpsilq1z95/tools'}}
+
++ []
+- [{'cmd': ['npm',
+-           'ci',
+-           '--ignore-scripts',
+-           '--no-audit',
+-           '--no-fund',
+-           '--workspaces=false'],
+-   'cwd': '/tmp/tmpsilq1z95/tools/deploy-dev-wrangler',
+-   'env': {'RUNNER_TEMP': '/tmp/tmpsilq1z95/tools'}}]
+
+----------------------------------------------------------------------
+Ran 69 tests in 0.213s
+
+FAILED (failures=2)

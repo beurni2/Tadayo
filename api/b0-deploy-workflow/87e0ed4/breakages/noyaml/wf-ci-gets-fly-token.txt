@@ -1,0 +1,48 @@
+.github/workflows/deploy-dev.yml
+--- old
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 tools/ci/deploy_dev_steps.py wait-ci
+
+--- new
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: python3 tools/ci/deploy_dev_steps.py wait-ci
+
+--- expected: test_its_jobs_and_steps_are_these_exactly
+--- exit 1
+............................................................Fs.F.....
+======================================================================
+FAIL: test_every_expression_in_the_file_is_one_this_test_knows (__main__.WorkflowFileTest.test_every_expression_in_the_file_is_one_this_test_knows)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpdlbi0asz/tools/ci/deploy_dev_steps_test.py", line 1124, in test_every_expression_in_the_file_is_one_this_test_knows
+    self.assertEqual(found, sorted(wanted))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['${{[363 chars]rets.FLY_API_TOKEN }}', '${{ secrets.SUPABASE_[252 chars] }}'] != ['${{[363 chars]rets.SUPABASE_ACCESS_TOKEN }}', '${{ secrets.S[220 chars] }}']
+
+First differing element 12:
+'${{ secrets.FLY_API_TOKEN }}'
+'${{ secrets.SUPABASE_ACCESS_TOKEN }}'
+
+First list contains 1 additional elements.
+First extra element 19:
+'${{ vars.CLOUDFLARE_ACCOUNT_ID }}'
+
+Diff is 731 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_its_jobs_and_steps_are_these_exactly (__main__.WorkflowFileTest.test_its_jobs_and_steps_are_these_exactly) (job='ci')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpdlbi0asz/tools/ci/deploy_dev_steps_test.py", line 1101, in test_its_jobs_and_steps_are_these_exactly
+    self.assertEqual(self.document["jobs"][name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'nam[402 chars]n }}', 'FLY_API_TOKEN': '${{ secrets.FLY_API_T[62 chars]i'}]} != {'nam[402 chars]n }}'}, 'run': 'python3 tools/ci/deploy_dev_st[13 chars]i'}]}
+Diff is 744 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 69 tests in 0.235s
+
+FAILED (failures=2, skipped=1)

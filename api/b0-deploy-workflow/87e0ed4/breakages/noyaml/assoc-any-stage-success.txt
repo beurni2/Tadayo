@@ -1,0 +1,28 @@
+tools/ci/deploy_dev_steps.py
+--- old
+                    if stage.get("name") == "deploy" and stage.get("status") == "success" \
+--- new
+                    if stage.get("status") == "success" \
+--- expected: test_it_waits_through_the_stages_before_deploy
+--- exit 1
+................F............................................s.......
+======================================================================
+FAIL: test_it_waits_through_the_stages_before_deploy_even_skipped_ones (__main__.CheckAssociationTest.test_it_waits_through_the_stages_before_deploy_even_skipped_ones)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpfe1osfel/tools/ci/deploy_dev_steps_test.py", line 805, in test_it_waits_through_the_stages_before_deploy_even_skipped_ones
+    self.assertEqual(sleeps.calls, [15, 15, 15, 15])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [15] != [15, 15, 15, 15]
+
+Second list contains 3 additional elements.
+First extra element 1:
+15
+
+- [15]
++ [15, 15, 15, 15]
+
+----------------------------------------------------------------------
+Ran 69 tests in 0.217s
+
+FAILED (failures=1, skipped=1)

@@ -1,0 +1,40 @@
+tools/ci/deploy_dev_steps.py
+--- old
+        if not os.path.isfile(self.path(SITE, ASSOCIATION.lstrip("/"))):
+            return f"{SITE} has no
+--- new
+        if False:
+            return f"{SITE} has no
+--- expected: test_nothing_runs_without_the_build
+--- exit 1
+..........................F.........F........................s.......
+======================================================================
+FAIL: test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused (__main__.CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpyl5hx6hw/tools/ci/deploy_dev_steps_test.py", line 686, in test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused
+    self.assertEqual((code, "has no /.well-known/apple-app-site-association" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (0, False) != (1, True)
+
+First differing element 0:
+0
+1
+
+- (0, False)
++ (1, True) : deploy-dev: check-site: apps/web/dist holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_nothing_runs_without_the_build_the_secrets_the_commit_or_the_install (__main__.PagesDeployTest.test_nothing_runs_without_the_build_the_secrets_the_commit_or_the_install)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpyl5hx6hw/tools/ci/deploy_dev_steps_test.py", line 608, in test_nothing_runs_without_the_build_the_secrets_the_commit_or_the_install
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : 
+
+----------------------------------------------------------------------
+Ran 69 tests in 0.189s
+
+FAILED (failures=2, skipped=1)

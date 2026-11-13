@@ -1,0 +1,54 @@
+tools/ci/deploy_dev_steps.py
+--- old
+        if not ACCOUNT.fullmatch(account):
+
+--- new
+        if not account:
+
+--- expected: test_a_missing_token_or_account_fails_before_any_request
+--- exit 1
+......................................FF..............................
+======================================================================
+FAIL: test_a_missing_token_or_account_fails_before_any_request (__main__.PagesProjectTest.test_a_missing_token_or_account_fails_before_any_request) (environ={'CLOUDFLARE_API_TOKEN': 'secret-token-value', 'CLOUDFLARE_ACCOUNT_ID': 'acct'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpew9au90t/tools/ci/deploy_dev_steps_test.py", line 514, in test_a_missing_token_or_account_fails_before_any_request
+    code, out, http, _ = call("pages_project", environ)
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpew9au90t/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpew9au90t/tools/ci/deploy_dev_steps.py", line 469, in pages_project
+    project = self.project(token, account)
+  File "/tmp/tmpew9au90t/tools/ci/deploy_dev_steps.py", line 446, in project
+    answer = self.cloudflare_request(token, "GET", f"/accounts/{account}/pages/projects/{PAGES_PROJECT}")
+  File "/tmp/tmpew9au90t/tools/ci/deploy_dev_steps.py", line 441, in cloudflare_request
+    return self.http.request(method, CLOUDFLARE_API, f"/client/v4{path}", headers, body)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpew9au90t/tools/ci/deploy_dev_steps_test.py", line 56, in request
+    raise result
+AssertionError: no request expected
+
+======================================================================
+FAIL: test_a_missing_token_or_account_fails_before_any_request (__main__.PagesProjectTest.test_a_missing_token_or_account_fails_before_any_request) (environ={'CLOUDFLARE_API_TOKEN': 'secret-token-value', 'CLOUDFLARE_ACCOUNT_ID': '0123456789abcdef0123456789abcdef/x'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpew9au90t/tools/ci/deploy_dev_steps_test.py", line 514, in test_a_missing_token_or_account_fails_before_any_request
+    code, out, http, _ = call("pages_project", environ)
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpew9au90t/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpew9au90t/tools/ci/deploy_dev_steps.py", line 469, in pages_project
+    project = self.project(token, account)
+  File "/tmp/tmpew9au90t/tools/ci/deploy_dev_steps.py", line 446, in project
+    answer = self.cloudflare_request(token, "GET", f"/accounts/{account}/pages/projects/{PAGES_PROJECT}")
+  File "/tmp/tmpew9au90t/tools/ci/deploy_dev_steps.py", line 441, in cloudflare_request
+    return self.http.request(method, CLOUDFLARE_API, f"/client/v4{path}", headers, body)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpew9au90t/tools/ci/deploy_dev_steps_test.py", line 56, in request
+    raise result
+AssertionError: no request expected
+
+----------------------------------------------------------------------
+Ran 69 tests in 0.455s
+
+FAILED (failures=2)

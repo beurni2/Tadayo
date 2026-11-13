@@ -1,0 +1,22 @@
+.github/workflows/deploy-dev.yml
+--- old
+if-no-files-found: error
+--- new
+if-no-files-found: warn
+--- expected: test_its_jobs_and_steps_are_these_exactly
+--- exit 1
+.............................................................s.F.....
+======================================================================
+FAIL: test_its_jobs_and_steps_are_these_exactly (__main__.WorkflowFileTest.test_its_jobs_and_steps_are_these_exactly) (job='web')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpdm25ki_0/tools/ci/deploy_dev_steps_test.py", line 1101, in test_its_jobs_and_steps_are_these_exactly
+    self.assertEqual(self.document["jobs"][name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'nam[830 chars]d': 'warn', 'include-hidden-files': 'true', 'r[18 chars]'}}]} != {'nam[830 chars]d': 'error', 'include-hidden-files': 'true', '[19 chars]'}}]}
+Diff is 1335 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 69 tests in 0.216s
+
+FAILED (failures=1, skipped=1)

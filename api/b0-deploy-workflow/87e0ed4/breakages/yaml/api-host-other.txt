@@ -1,0 +1,48 @@
+tools/ci/deploy_dev_steps.py
+--- old
+DEV_HOST = "api-dev.tadayo.app"
+--- new
+DEV_HOST = "tadayo-api-dev.fly.dev"
+--- expected: test_the_host_is_ops_dev_host
+--- exit 1
+....FF...............................................................
+======================================================================
+FAIL: test_the_host_is_ops_dev_host (__main__.CheckApiTest.test_the_host_is_ops_dev_host)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpah8_d_tf/tools/ci/deploy_dev_steps_test.py", line 244, in test_the_host_is_ops_dev_host
+    self.assertEqual(found, [steps_module.DEV_HOST])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['api-dev.tadayo.app'] != ['tadayo-api-dev.fly.dev']
+
+First differing element 0:
+'api-dev.tadayo.app'
+'tadayo-api-dev.fly.dev'
+
+- ['api-dev.tadayo.app']
++ ['tadayo-api-dev.fly.dev']
+
+======================================================================
+FAIL: test_the_neutral_401_passes (__main__.CheckApiTest.test_the_neutral_401_passes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpah8_d_tf/tools/ci/deploy_dev_steps_test.py", line 204, in test_the_neutral_401_passes
+    self.assertEqual((request["method"], request["host"], request["path"]), ("GET", "api-dev.tadayo.app", "/v1/me"))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: ('GET', 'tadayo-api-dev.fly.dev', '/v1/me') != ('GET', 'api-dev.tadayo.app', '/v1/me')
+
+First differing element 1:
+'tadayo-api-dev.fly.dev'
+'api-dev.tadayo.app'
+
+- ('GET', 'tadayo-api-dev.fly.dev', '/v1/me')
+?          -------        ^^  ^^^
+
++ ('GET', 'api-dev.tadayo.app', '/v1/me')
+?                  ^^^^ + ^^^
+
+
+----------------------------------------------------------------------
+Ran 69 tests in 0.204s
+
+FAILED (failures=2)

@@ -1,0 +1,78 @@
+tools/ci/deploy_dev_steps.py
+--- old
+home = os.path.join(os.path.realpath(temp), WRANGLER_HOME)
+--- new
+home = os.path.join(self.root, PAGES_DIR, WRANGLER_HOME)
+--- expected: test_it_needs_a_runner_temp_outside_the_checkout
+--- exit 1
+..................................FFFF......FF..F............s.......
+======================================================================
+FAIL: test_it_runs_the_pinned_wrangler_with_only_what_it_needs (__main__.PagesDeployTest.test_it_runs_the_pinned_wrangler_with_only_what_it_needs)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpfwz9u752/tools/ci/deploy_dev_steps_test.py", line 536, in test_it_runs_the_pinned_wrangler_with_only_what_it_needs
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: pages-deploy: RUNNER_TEMP is inside the checkout
+
+
+======================================================================
+FAIL: test_nothing_in_the_repository_reaches_wrangler_s_working_folder_or_home (__main__.PagesDeployTest.test_nothing_in_the_repository_reaches_wrangler_s_working_folder_or_home)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpfwz9u752/tools/ci/deploy_dev_steps_test.py", line 561, in test_nothing_in_the_repository_reaches_wrangler_s_working_folder_or_home
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: pages-deploy: RUNNER_TEMP is inside the checkout
+
+
+======================================================================
+FAIL: test_nothing_runs_without_the_build_the_secrets_the_commit_or_the_install (__main__.PagesDeployTest.test_nothing_runs_without_the_build_the_secrets_the_commit_or_the_install)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpfwz9u752/tools/ci/deploy_dev_steps_test.py", line 619, in test_nothing_runs_without_the_build_the_secrets_the_commit_or_the_install
+    self.assertIn("setup-wrangler installs it", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'setup-wrangler installs it' not found in 'deploy-dev: pages-deploy: RUNNER_TEMP is inside the checkout\n'
+
+======================================================================
+FAIL: test_wrangler_s_failure_is_the_step_s (__main__.PagesDeployTest.test_wrangler_s_failure_is_the_step_s)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpfwz9u752/tools/ci/deploy_dev_steps_test.py", line 600, in test_wrangler_s_failure_is_the_step_s
+    self.assertIn("wrangler failed (exit 1)", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'wrangler failed (exit 1)' not found in 'deploy-dev: pages-deploy: RUNNER_TEMP is inside the checkout\n'
+
+======================================================================
+FAIL: test_a_failed_install_or_another_version_installed_fails (__main__.SetupWranglerTest.test_a_failed_install_or_another_version_installed_fails)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpfwz9u752/tools/ci/deploy_dev_steps_test.py", line 412, in test_a_failed_install_or_another_version_installed_fails
+    self.assertIn("npm ci failed (exit 1)", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'npm ci failed (exit 1)' not found in 'deploy-dev: setup-wrangler: RUNNER_TEMP is inside the checkout\n'
+
+======================================================================
+FAIL: test_it_needs_a_runner_temp_outside_the_checkout_and_a_folder_of_its_own (__main__.SetupWranglerTest.test_it_needs_a_runner_temp_outside_the_checkout_and_a_folder_of_its_own)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpfwz9u752/tools/ci/deploy_dev_steps_test.py", line 344, in test_it_needs_a_runner_temp_outside_the_checkout_and_a_folder_of_its_own
+    self.assertIn("couldn't make", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: "couldn't make" not found in 'deploy-dev: setup-wrangler: RUNNER_TEMP is inside the checkout\n'
+
+======================================================================
+FAIL: test_it_runs_npm_ci_without_install_scripts_outside_the_checkout (__main__.SetupWranglerTest.test_it_runs_npm_ci_without_install_scripts_outside_the_checkout)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpfwz9u752/tools/ci/deploy_dev_steps_test.py", line 318, in test_it_runs_npm_ci_without_install_scripts_outside_the_checkout
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: setup-wrangler: RUNNER_TEMP is inside the checkout
+
+
+----------------------------------------------------------------------
+Ran 69 tests in 0.212s
+
+FAILED (failures=7, skipped=1)
