@@ -603,7 +603,10 @@ final class SignInReadingTests: XCTestCase {
     /// Continue is pinned 12 above the keyboard, here a 300-point stand-in since a hosted test
     /// has none, and 44 above the safe area's bottom with none (`authForm.keyboardFooter`;
     /// `formFooterToSafeAreaBottom`), 20 in from each edge, at the default and the largest text.
-    /// The stand-in is inside the navigation stack, where the screen meets it (`ProfileForm`).
+    /// With the keyboard up the column is scrolled so the field ends 16 above Continue, where at
+    /// both sizes it would otherwise be under it ("controls are never overlaid on form text";
+    /// `ios` run 43336877808). The stand-in is inside the navigation stack, where the screen
+    /// meets it (`ProfileForm`).
     func testContinueSits12AboveTheKeyboardOr44AboveTheSafeArea() {
         let stand: CGFloat = 300
         for size in [DynamicTypeSize.large, .accessibility5] {
@@ -620,6 +623,11 @@ final class SignInReadingTests: XCTestCase {
                     .environment(\.dynamicTypeSize, size))
                 let named = "\(size), keyboard \(keyboard): \(layout.elements)"
                 let next = layout.elements.first { $0.label == "Continue" }?.frame ?? .zero
+                let field = layout.elements.first { $0.label == "Your name" }?.frame ?? .zero
+                if keyboard {
+                    XCTAssertGreaterThan(field.height, 0, named)
+                    XCTAssertEqual(next.minY - field.maxY, Spacing.l, accuracy: 1, named)
+                }
                 let foot = layout.size.height - layout.safeArea.bottom - (keyboard ? stand : 0)
                 XCTAssertEqual(
                     foot - next.maxY,

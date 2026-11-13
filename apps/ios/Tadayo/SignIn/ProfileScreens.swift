@@ -91,10 +91,10 @@ struct ProfileScreen: View {
 /// as typed and never cut. Continue is pinned under the column, 12 above the keyboard
 /// (`authForm.keyboardFooter`: "Continue and Verify code pinned above keyboard with 12-point
 /// clear gap"), or, with none, 44 above the safe area's bottom (`formFooterToSafeAreaBottom`).
-/// As a line shows, the column is scrolled to it, so it and the field above it stay in view
-/// above Continue, and the keyboard stays up (IMPLEMENTATION.md: "The body scrolls to keep the
-/// field and error reachable above Continue; it does not dismiss the keyboard"); scrolling the
-/// column doesn't dismiss it either.
+/// As the keyboard comes up, and as a line shows, the column is scrolled so the field, and its
+/// line, stay in view above Continue, and the keyboard stays up (IMPLEMENTATION.md: "The body
+/// scrolls to keep the field and error reachable above Continue; it does not dismiss the
+/// keyboard"); scrolling the column doesn't dismiss it either.
 ///
 /// While the name is saved it is read-only, not disabled, so it keeps its focus and its keyboard;
 /// Add photo and Leave sign-in are inactive; Continue is busy and says "In progress"; and
@@ -114,8 +114,9 @@ struct ProfileForm: View {
     @State private var room = KeyboardRoom()
     /// The name field has had the focus since the screen last appeared.
     @State private var tookFocus = false
-    /// The name's line and the 8 points under it, to scroll to.
-    private static let lineID = "profile.line"
+    /// The 8 clear points under the name's field, or under its line when one shows: the foot the
+    /// column is scrolled to.
+    private static let footID = "profile.foot"
 
     var body: some View {
         ScrollViewReader { scroll in
@@ -134,10 +135,18 @@ struct ProfileForm: View {
                     }
                 }
                 .readingKeyboardRoom($room)
-                // Its bottom at the column's visible foot: the line ends 8 + 8 = 16 above
-                // Continue (`handoff7.spacing.errorToActionMinimum`), the field 12 above it.
+                // The foot at the column's visible bottom, so the field, or its line, ends
+                // 8 + 8 = 16 above Continue (`handoff7.spacing.errorToActionMinimum`), the line
+                // 12 under the field: as a line shows, and as the keyboard comes up, since the
+                // keyboard's own scrolling keeps the field clear of the keyboard, not of Continue
+                // over it (`ios` run 43336877808 drew Continue over the field's last 8 points, its
+                // focus ring's last 12, on an iPhone 17 at the default size). The column moves
+                // only as far as it must, and not at all where the field is already clear.
                 .onChange(of: line) { _, shown in
-                    if shown != nil { scroll.scrollTo(Self.lineID, anchor: .bottom) }
+                    if shown != nil { scroll.scrollTo(Self.footID, anchor: .bottom) }
+                }
+                .onChange(of: keyboardShows, initial: true) { _, shows in
+                    if shows { scroll.scrollTo(Self.footID, anchor: .bottom) }
                 }
         }
         .navigationTitle(Text("auth.profile.navTitle"))
@@ -224,9 +233,10 @@ struct ProfileForm: View {
             if let line {
                 InlineError(Text(verbatim: line))
                     .padding(.top, Spacing.m)
-                    .padding(.bottom, Spacing.s)
-                    .id(Self.lineID)
             }
+            Color.clear
+                .frame(height: Spacing.s)
+                .id(Self.footID)
         }
         .scrollDismissesKeyboard(.never)
     }
