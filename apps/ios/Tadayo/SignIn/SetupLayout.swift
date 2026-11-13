@@ -105,7 +105,8 @@ extension View {
     /// top inset is 116 all the same; taking them off pinned Verify code at the usual size, `ios`
     /// run 43192475721). It is read from the view's own frame rather than from the keyboard's
     /// notifications, so a screen that appears with the keyboard already up knows it at once.
-    /// A02-code's pin reads it, and A03's footer, for its gap above the keyboard (`ProfileForm`).
+    /// A02-code's pin reads it, and A03's footer, for its gap above the keyboard and the keyboard's
+    /// height under it (`ProfileForm`, which reads it around a column that ignores the keyboard).
     func readingKeyboardRoom(_ room: Binding<KeyboardRoom>) -> some View {
         background {
             GeometryReader { avoiding in

@@ -118,23 +118,17 @@ struct ProfileForm: View {
     /// (`onSubmit`).
     @State private var returnSaves = 0
     @State private var room = KeyboardRoom()
-    /// Continue's footer's height, as drawn: the room the column has above it is `room`'s height
-    /// less this.
-    @State private var footerHeight: CGFloat = 0
     /// The name field has had the focus since the screen last appeared.
     @State private var tookFocus = false
-    /// A clear stand-in as tall as the column's room above Continue, its bottom on the bottom of
-    /// the 8 clear points under the name's field, or 8 under its line's own 8 when one shows:
-    /// scrolled to the top, it puts that foot at Continue's footer (`body`).
-    private static let footMarkID = "profile.footMark"
+    /// The 8 clear points under the name's field, or 8 under its line's own 8 when one shows: the
+    /// foot the column is scrolled to.
+    private static let footID = "profile.foot"
 
     var body: some View {
         ScrollViewReader { scroll in
             column
                 .safeAreaInset(edge: .bottom, spacing: 0) {
-                    SetupFooter(
-                        bottom: keyboardShows ? Spacing.m : SetupGap.formFooterToSafeAreaBottom
-                    ) {
+                    SetupFooter(bottom: footerBottom) {
                         Button {
                             Task { await model.saveName() }
                         } label: {
@@ -143,15 +137,21 @@ struct ProfileForm: View {
                         .buttonStyle(.tadayoPrimary(isBusy: model.isSaving))
                         .disabled(!model.canContinue)
                     }
-                    .background {
-                        GeometryReader { footer in
-                            Color.clear.onChange(of: footer.size.height, initial: true) { _, now in
-                                footerHeight = now
-                            }
-                        }
-                    }
                 }
-                .readingKeyboardRoom($room)
+                // The keyboard is the footer's own padding, not a safe area the column and the
+                // footer give way to, so the column's room ends at the footer, with the keyboard
+                // under it, in the same update as the column is scrolled: on iOS 17.5 and 18.6
+                // the room the keyboard took from the column reached the scroll view only as the
+                // keyboard rose, after the scroll below, which then moved nothing, and the
+                // keyboard's own scrolling left the bare text field at Continue's footer and the
+                // rest of the field behind it (a one-run probe, `ios` runs 43362003842,
+                // 43362011553 and 43362014173: a copy of this column with the keyboard as a safe
+                // area left its foot 24 under the footer's top as the keyboard came up on 17.5
+                // and 18.6 and none on 26.5; with the keyboard as the footer's padding, none on
+                // all three; the UI tests found the field under Continue on 17.5 and 18.6 in
+                // runs 43358826308 and 43357265573). The same column scrolled once the keyboard
+                // was up reached the footer on all three either way.
+                .ignoresSafeArea(.keyboard, edges: .bottom)
                 // The foot at the column's visible bottom, so the field ends 8 + 8 = 16 above
                 // Continue, or its line, 12 under it, 8 + 8 + 8 = 24 (the line box, which reaches
                 // past the last line's frame, at least 16 above: `errorToActionMinimum`, measured
@@ -159,28 +159,19 @@ struct ProfileForm: View {
                 // up, since the keyboard's own scrolling keeps the field clear of the keyboard,
                 // not of Continue over it (`ios` run 43336877808 drew Continue over the field's
                 // last 8 points, its focus ring's last 12, on an iPhone 17 at the default size),
-                // and again each time the room above Continue changes while the keyboard is up or
-                // a line shows (another keyboard, a hardware keyboard's bar giving way to the
-                // software one, Continue's footer coming down to 12 above the keyboard), since a
-                // column keeps its offset as the room under it shrinks. The marker as tall as
-                // that room is scrolled to the top, where the foot itself scrolled to the bottom
-                // was left behind Continue with the keyboard up on iOS 17.5 and 18.6 (`ios` runs
-                // 43358826308 and 43357265573: the column didn't move, though it did as a hosted
-                // test's stand-in keyboard came up); scrolled to the top, A02-code's field reaches
-                // the bar on all three. The column moves only as far as it must, and not at all
-                // where it is clear.
+                // and again each time a keyboard already up changes height (another keyboard,
+                // a hardware keyboard's bar giving way to the software one), since a column keeps
+                // its offset as the room under it shrinks. The column moves only as far as it
+                // must, and not at all where it is clear.
                 .onChange(of: line) { _, shown in
-                    if shown != nil { scroll.scrollTo(Self.footMarkID, anchor: .top) }
+                    if shown != nil { scroll.scrollTo(Self.footID, anchor: .bottom) }
                 }
                 .onChange(of: keyboardRise, initial: true) { _, rise in
-                    if rise > 0 { scroll.scrollTo(Self.footMarkID, anchor: .top) }
-                }
-                .onChange(of: roomAboveContinue) {
-                    if keyboardShows || line != nil {
-                        scroll.scrollTo(Self.footMarkID, anchor: .top)
-                    }
+                    if rise > 0 { scroll.scrollTo(Self.footID, anchor: .bottom) }
                 }
         }
+        // Read around the column, which ignores the keyboard, so the room is the screen's own.
+        .readingKeyboardRoom($room)
         .navigationTitle(Text("auth.profile.navTitle"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -282,13 +273,7 @@ struct ProfileForm: View {
             }
             Color.clear
                 .frame(height: Spacing.s)
-            // Reaching up from the foot's bottom, taking no room of its own in the column.
-            Color.clear
-                .frame(height: roomAboveContinue)
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
-                .id(Self.footMarkID)
-                .padding(.top, -roomAboveContinue)
+                .id(Self.footID)
         }
         .scrollDismissesKeyboard(.never)
     }
@@ -330,9 +315,11 @@ struct ProfileForm: View {
 
     private var tooLong: String { String(localized: "auth.profile.tooLong") }
 
-    /// The column's room from under the bar down to Continue's footer.
-    private var roomAboveContinue: CGFloat {
-        max(0, room.height - footerHeight)
+    /// Continue 12 above the keyboard, which reaches `room.keyboard` above the safe area's
+    /// bottom (`authForm.keyboardFooter`), or 44 above the safe area's bottom with none
+    /// (`formFooterToSafeAreaBottom`); a test's keyboard, which has no height, takes the 12.
+    private var footerBottom: CGFloat {
+        keyboardShows ? Spacing.m + room.keyboard : SetupGap.formFooterToSafeAreaBottom
     }
 
     /// Whether a keyboard, or a hardware keyboard's bar, shows.
