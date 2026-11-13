@@ -1,0 +1,22 @@
+tools/ci/deploy_dev_steps.py
+--- old
+BEARER = re.compile(r"[A-Za-z0-9._~+/-]+=*")
+--- new
+BEARER = re.compile(r"[A-Za-z0-9_-]+")
+--- expected: test_a_token_that_isn_t_a_bearer_token
+--- exit 1
+..............................................F..............................
+======================================================================
+FAIL: test_a_token_that_isn_t_a_bearer_token_is_refused_and_never_said (__main__.PagesProjectTest.test_a_token_that_isn_t_a_bearer_token_is_refused_and_never_said)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpmraiv476/tools/ci/deploy_dev_steps_test.py", line 545, in test_a_token_that_isn_t_a_bearer_token_is_refused_and_never_said
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: pages-project: the repository secret CLOUDFLARE_API_TOKEN holds a character a bearer token can't (a space or a line break, perhaps from pasting it): set it again
+
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.779s
+
+FAILED (failures=1)

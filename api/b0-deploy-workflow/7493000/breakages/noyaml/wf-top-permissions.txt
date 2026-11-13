@@ -1,0 +1,25 @@
+.github/workflows/deploy-dev.yml
+--- old
+
+permissions: {}
+
+--- new
+
+permissions: read-all
+
+--- expected: test_the_file_holds_these_keys
+--- exit 1
+....................................................................s....F...
+======================================================================
+FAIL: test_the_file_holds_these_keys_and_no_other (__main__.WorkflowFileTest.test_the_file_holds_these_keys_and_no_other)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpqrn1jw1l/tools/ci/deploy_dev_steps_test.py", line 1258, in test_the_file_holds_these_keys_and_no_other
+    self.assertEqual(self.document["permissions"], {})
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'read-all' != {}
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.786s
+
+FAILED (failures=1, skipped=1)

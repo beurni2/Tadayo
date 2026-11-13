@@ -1,0 +1,29 @@
+tools/ci/deploy_dev_steps.py
+--- old
+        sha = self.sha("check-association")
+
+--- new
+        sha = self.sha("check-association") or "0" * 40
+
+--- expected: test_nothing_is_asked_without_the_token
+--- exit 1
+.................F..................................................s........
+======================================================================
+FAIL: test_nothing_is_asked_without_the_token_the_account_the_commit_or_runner_temp (__main__.CheckAssociationTest.test_nothing_is_asked_without_the_token_the_account_the_commit_or_runner_temp) (said="GITHUB_SHA isn't")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpjf8dkmlz/tools/ci/deploy_dev_steps_test.py", line 1043, in test_nothing_is_asked_without_the_token_the_account_the_commit_or_runner_temp
+    self.assertEqual(http.requests, [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [{'method': 'GET', 'host': 'api.cloudflare[5273 chars]one}] != []
+
+First list contains 20 additional elements.
+First extra element 0:
+{'method': 'GET', 'host': 'api.cloudflare.com', 'path': '/client/v4/accounts/0123456789abcdef0123456789abcdef/pages/projects/tadayo', 'headers': {'authorization': 'Bearer secret-token-value', 'accept': 'application/json', 'user-agent': 'deploy-dev'}, 'body': None}
+
+Diff is 6345 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.593s
+
+FAILED (failures=1, skipped=1)

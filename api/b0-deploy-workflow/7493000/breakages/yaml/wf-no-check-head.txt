@@ -1,0 +1,57 @@
+.github/workflows/deploy-dev.yml
+--- old
+      - name: check-head
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 tools/ci/deploy_dev_steps.py check-head
+
+--- new
+
+--- expected: test_its_jobs_and_steps_are_these_exactly
+--- exit 1
+...................................................................F..F.F....
+======================================================================
+FAIL: test_every_expression_in_the_file_is_one_this_test_knows (__main__.WorkflowFileTest.test_every_expression_in_the_file_is_one_this_test_knows)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmprfwq77rb/tools/ci/deploy_dev_steps_test.py", line 1293, in test_every_expression_in_the_file_is_one_this_test_knows
+    self.assertEqual(found, sorted(wanted))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['${{[84 chars]'${{ runner.temp }}', '${{ secrets.CLOUDFLARE_[498 chars] }}'] != ['${{[84 chars]'${{ github.token }}', '${{ runner.temp }}', '[521 chars] }}']
+
+First differing element 4:
+'${{ runner.temp }}'
+'${{ github.token }}'
+
+Second list contains 1 additional elements.
+First extra element 19:
+'${{ vars.CLOUDFLARE_ACCOUNT_ID }}'
+
+Diff is 721 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_its_jobs_and_steps_are_these_exactly (__main__.WorkflowFileTest.test_its_jobs_and_steps_are_these_exactly) (job='pages')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmprfwq77rb/tools/ci/deploy_dev_steps_test.py", line 1269, in test_its_jobs_and_steps_are_these_exactly
+    self.assertEqual(self.document["jobs"][name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'nam[327 chars]}, {'uses': 'actions/setup-node@949feb2413d645[1048 chars]n'}]} != {'nam[327 chars]}, {'name': 'check-head', 'env': {'GITHUB_TOKE[1178 chars]n'}]}
+Diff is 2249 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_the_cloudflare_secret_is_on_a_runner_that_holds_no_other (__main__.WorkflowFileTest.test_the_cloudflare_secret_is_on_a_runner_that_holds_no_other)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmprfwq77rb/tools/ci/deploy_dev_steps_test.py", line 1313, in test_the_cloudflare_secret_is_on_a_runner_that_holds_no_other
+    self.assertEqual(named("pages"), {"${{ secrets.CLOUDFLARE_API_TOKEN }}", "${{ vars.CLOUDFLARE_ACCOUNT_ID }}",
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                      "${{ github.token }}"})
+                                      ^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Items in the second set but not the first:
+'${{ github.token }}'
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.867s
+
+FAILED (failures=3)

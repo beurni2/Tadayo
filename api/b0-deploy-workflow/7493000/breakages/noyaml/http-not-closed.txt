@@ -1,0 +1,50 @@
+tools/ci/deploy_dev_steps.py
+--- old
+        finally:
+            connection.close()
+--- new
+        finally:
+            pass
+--- expected: test_a_lost_connection_still_closes_it
+--- exit 1
+.................................FFEF................................s........
+======================================================================
+ERROR: test_any_other_error_goes_on_as_it_came (__main__.HttpTest.test_any_other_error_goes_on_as_it_came) (error=UnicodeError('label too long'))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpnh6app6y/tools/ci/deploy_dev_steps_test.py", line 1131, in test_any_other_error_goes_on_as_it_came
+    [made] = RecordingConnection.made
+    ^^^^^^
+ValueError: too many values to unpack (expected 1)
+
+======================================================================
+FAIL: test_a_lost_connection_still_closes_it (__main__.HttpTest.test_a_lost_connection_still_closes_it)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpnh6app6y/tools/ci/deploy_dev_steps_test.py", line 1105, in test_a_lost_connection_still_closes_it
+    self.assertTrue(made.closed)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_any_other_error_goes_on_as_it_came (__main__.HttpTest.test_any_other_error_goes_on_as_it_came) (error=SSLCertVerificationError('certificate verify failed: Hostname mismatch'))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpnh6app6y/tools/ci/deploy_dev_steps_test.py", line 1132, in test_any_other_error_goes_on_as_it_came
+    self.assertTrue(made.closed)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_it_asks_once_over_https_with_a_timeout_and_closes (__main__.HttpTest.test_it_asks_once_over_https_with_a_timeout_and_closes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpnh6app6y/tools/ci/deploy_dev_steps_test.py", line 1092, in test_it_asks_once_over_https_with_a_timeout_and_closes
+    self.assertTrue(made.closed)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.858s
+
+FAILED (failures=3, errors=1, skipped=1)

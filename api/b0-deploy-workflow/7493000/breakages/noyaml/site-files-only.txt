@@ -1,0 +1,32 @@
+tools/ci/deploy_dev_steps.py
+--- old
+for name in folders + files:
+--- new
+for name in files:
+--- expected: test_a_link_anywhere_in_the_site_is_refused
+--- exit 1
+..........................FF.........................................s........
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_build', where='docs')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpv985ui47/tools/ci/deploy_dev_steps_test.py", line 765, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-build: apps/web/dist holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_site', where='docs')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpv985ui47/tools/ci/deploy_dev_steps_test.py", line 765, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.743s
+
+FAILED (failures=2, skipped=1)

@@ -1,0 +1,23 @@
+tools/ci/deploy_dev_steps.py
+--- old
+        if not os.path.isfile(wrangler):
+
+--- new
+        if False:
+
+--- expected: test_nothing_runs_without_the_site
+--- exit 1
+..........................................F.........................s........
+======================================================================
+FAIL: test_nothing_runs_without_the_site_the_secrets_the_commit_or_the_install (__main__.PagesDeployTest.test_nothing_runs_without_the_site_the_secrets_the_commit_or_the_install) (said='setup-wrangler installs it')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpcl5xburk/tools/ci/deploy_dev_steps_test.py", line 653, in test_nothing_runs_without_the_site_the_secrets_the_commit_or_the_install
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : 
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.433s
+
+FAILED (failures=1, skipped=1)

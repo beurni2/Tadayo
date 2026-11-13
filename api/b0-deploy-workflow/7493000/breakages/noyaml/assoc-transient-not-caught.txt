@@ -1,0 +1,38 @@
+tools/ci/deploy_dev_steps.py
+--- old
+            except Transient as failure:
+--- new
+            except ZeroDivisionError as failure:
+--- expected: test_a_lost_connection_or_a_server_error_while_waiting_is_asked_again
+--- exit 1
+........F....F......................................................s........
+======================================================================
+FAIL: test_a_lost_connection_or_a_server_error_while_waiting_is_asked_again (__main__.CheckAssociationTest.test_a_lost_connection_or_a_server_error_while_waiting_is_asked_again)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp0kyye5uw/tools/ci/deploy_dev_steps_test.py", line 947, in test_a_lost_connection_or_a_server_error_while_waiting_is_asked_again
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: check-association: couldn't ask Cloudflare for the Pages project tadayo (reset)
+
+
+======================================================================
+FAIL: test_after_a_lost_connection_it_reports_what_cloudflare_answered_last (__main__.CheckAssociationTest.test_after_a_lost_connection_it_reports_what_cloudflare_answered_last)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp0kyye5uw/tools/ci/deploy_dev_steps_test.py", line 957, in test_after_a_lost_connection_it_reports_what_cloudflare_answered_last
+    self.assertEqual(sleeps.calls, [15] * 19)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [] != [15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]
+
+Second list contains 19 additional elements.
+First extra element 0:
+15
+
+- []
++ [15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.825s
+
+FAILED (failures=2, skipped=1)

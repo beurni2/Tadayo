@@ -1,0 +1,99 @@
+tools/ci/deploy_dev_steps.py
+--- old
+        site = self.temp_folder(step, DOWNLOAD)
+
+--- new
+        site = os.path.join(os.path.realpath(self.value("RUNNER_TEMP") or "."), DOWNLOAD)
+
+--- expected: test_the_download_needs_a_runner_temp_outside_the_checkout
+--- exit 1
+...............................FFFFFFFF..........F..................................
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (step='check_site', temp=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp4a9ykxw5/tools/ci/deploy_dev_steps_test.py", line 745, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    self.assertIn(said, out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^
+AssertionError: "RUNNER_TEMP isn't an absolute path" not found in "deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site isn't a folder (download-artifact puts the artifact site there)\n"
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (step='check_site', temp='')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp4a9ykxw5/tools/ci/deploy_dev_steps_test.py", line 745, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    self.assertIn(said, out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^
+AssertionError: "RUNNER_TEMP isn't an absolute path" not found in "deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site isn't a folder (download-artifact puts the artifact site there)\n"
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (step='check_site', temp='../tmps3bicwad')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp4a9ykxw5/tools/ci/deploy_dev_steps_test.py", line 744, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (step='check_site', temp='/tmp/tmpbne3f8xv/tmp')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp4a9ykxw5/tools/ci/deploy_dev_steps_test.py", line 744, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (step='check_site', temp='/tmp/tmpbne3f8xv')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp4a9ykxw5/tools/ci/deploy_dev_steps_test.py", line 744, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (step='check_site', temp='/tmp/tmpfi04rwe5/temp')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp4a9ykxw5/tools/ci/deploy_dev_steps_test.py", line 744, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (step='pages_deploy', temp=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp4a9ykxw5/tools/ci/deploy_dev_steps_test.py", line 745, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    self.assertIn(said, out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^
+AssertionError: "RUNNER_TEMP isn't an absolute path" not found in "deploy-dev: pages-deploy: RUNNER_TEMP/deploy-dev-site isn't a folder (download-artifact puts the artifact site there), so nothing is deployed\n"
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (step='pages_deploy', temp='')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp4a9ykxw5/tools/ci/deploy_dev_steps_test.py", line 745, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    self.assertIn(said, out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^
+AssertionError: "RUNNER_TEMP isn't an absolute path" not found in "deploy-dev: pages-deploy: RUNNER_TEMP/deploy-dev-site isn't a folder (download-artifact puts the artifact site there), so nothing is deployed\n"
+
+======================================================================
+FAIL: test_nothing_runs_without_the_site_the_secrets_the_commit_or_the_install (__main__.PagesDeployTest.test_nothing_runs_without_the_site_the_secrets_the_commit_or_the_install) (said="RUNNER_TEMP isn't an absolute path")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp4a9ykxw5/tools/ci/deploy_dev_steps_test.py", line 655, in test_nothing_runs_without_the_site_the_secrets_the_commit_or_the_install
+    self.assertIn(said, out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^
+AssertionError: "RUNNER_TEMP isn't an absolute path" not found in "deploy-dev: pages-deploy: RUNNER_TEMP/deploy-dev-site isn't a folder (download-artifact puts the artifact site there), so nothing is deployed\n"
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.452s
+
+FAILED (failures=9)

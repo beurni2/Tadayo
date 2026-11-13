@@ -1,0 +1,74 @@
+tools/ci/deploy_dev_steps.py
+--- old
+        if not SHA.fullmatch(sha):
+
+--- new
+        if not sha:
+
+--- expected: test_a_missing_token_or_commit_fails_before_any_request
+--- exit 1
+.....................F.....................................FFF........s........
+======================================================================
+FAIL: test_a_missing_token_or_commit_fails_before_any_request (__main__.CheckHeadTest.test_a_missing_token_or_commit_fails_before_any_request) (environ={'GITHUB_TOKEN': 'gh-token', 'GITHUB_SHA': 'main'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpekmva1ek/tools/ci/deploy_dev_steps_test.py", line 865, in test_a_missing_token_or_commit_fails_before_any_request
+    code, out, http, _ = call("check_head", environ)
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpekmva1ek/tools/ci/deploy_dev_steps_test.py", line 90, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpekmva1ek/tools/ci/deploy_dev_steps.py", line 293, in check_head
+    answer = self.http.request("GET", GITHUB_API, f"/repos/{REPOSITORY}/branches/{BRANCH}", headers)
+  File "/tmp/tmpekmva1ek/tools/ci/deploy_dev_steps_test.py", line 58, in request
+    raise result
+AssertionError: no request expected
+
+======================================================================
+FAIL: test_a_missing_token_or_commit_fails_before_any_request (__main__.WaitCiTest.test_a_missing_token_or_commit_fails_before_any_request) (environ={'GITHUB_TOKEN': 'secret-token-value', 'GITHUB_SHA': 'main'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpekmva1ek/tools/ci/deploy_dev_steps_test.py", line 191, in test_a_missing_token_or_commit_fails_before_any_request
+    code, out, http, _ = call("wait_ci", environ)
+                         ~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpekmva1ek/tools/ci/deploy_dev_steps_test.py", line 90, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpekmva1ek/tools/ci/deploy_dev_steps.py", line 191, in wait_ci
+    answer = self.http.request("GET", GITHUB_API, path, headers)
+  File "/tmp/tmpekmva1ek/tools/ci/deploy_dev_steps_test.py", line 58, in request
+    raise result
+AssertionError: no request expected
+
+======================================================================
+FAIL: test_a_missing_token_or_commit_fails_before_any_request (__main__.WaitCiTest.test_a_missing_token_or_commit_fails_before_any_request) (environ={'GITHUB_TOKEN': 'secret-token-value', 'GITHUB_SHA': '0123456789ABCDEF0123456789ABCDEF01234567'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpekmva1ek/tools/ci/deploy_dev_steps_test.py", line 191, in test_a_missing_token_or_commit_fails_before_any_request
+    code, out, http, _ = call("wait_ci", environ)
+                         ~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpekmva1ek/tools/ci/deploy_dev_steps_test.py", line 90, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpekmva1ek/tools/ci/deploy_dev_steps.py", line 191, in wait_ci
+    answer = self.http.request("GET", GITHUB_API, path, headers)
+  File "/tmp/tmpekmva1ek/tools/ci/deploy_dev_steps_test.py", line 58, in request
+    raise result
+AssertionError: no request expected
+
+======================================================================
+FAIL: test_a_missing_token_or_commit_fails_before_any_request (__main__.WaitCiTest.test_a_missing_token_or_commit_fails_before_any_request) (environ={'GITHUB_TOKEN': 'secret-token-value', 'GITHUB_SHA': '0123456789abcdef0123456789abcdef01234567\n'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpekmva1ek/tools/ci/deploy_dev_steps_test.py", line 191, in test_a_missing_token_or_commit_fails_before_any_request
+    code, out, http, _ = call("wait_ci", environ)
+                         ~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpekmva1ek/tools/ci/deploy_dev_steps_test.py", line 90, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpekmva1ek/tools/ci/deploy_dev_steps.py", line 191, in wait_ci
+    answer = self.http.request("GET", GITHUB_API, path, headers)
+  File "/tmp/tmpekmva1ek/tools/ci/deploy_dev_steps_test.py", line 58, in request
+    raise result
+AssertionError: no request expected
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.618s
+
+FAILED (failures=4, skipped=1)

@@ -1,0 +1,43 @@
+.github/workflows/deploy-dev.yml
+--- old
+    needs:
+      - deploy
+      - web
+
+--- new
+    needs:
+      - deploy
+
+--- expected: test_the_cloudflare_secret_is_on_a_runner
+--- exit 1
+....................................................................s.F.F....
+======================================================================
+FAIL: test_its_jobs_and_steps_are_these_exactly (__main__.WorkflowFileTest.test_its_jobs_and_steps_are_these_exactly) (job='pages')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpadcd3bix/tools/ci/deploy_dev_steps_test.py", line 1269, in test_its_jobs_and_steps_are_these_exactly
+    self.assertEqual(self.document["jobs"][name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'nam[26 chars]ploy'], 'runs-on': 'ubuntu-24.04', 'timeout-mi[1472 chars]n'}]} != {'nam[26 chars]ploy', 'web'], 'runs-on': 'ubuntu-24.04', 'tim[1479 chars]n'}]}
+Diff is 2303 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_the_cloudflare_secret_is_on_a_runner_that_holds_no_other (__main__.WorkflowFileTest.test_the_cloudflare_secret_is_on_a_runner_that_holds_no_other)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpadcd3bix/tools/ci/deploy_dev_steps_test.py", line 1318, in test_the_cloudflare_secret_is_on_a_runner_that_holds_no_other
+    self.assertEqual(jobs["pages"]["needs"], ["deploy", "web"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['deploy'] != ['deploy', 'web']
+
+Second list contains 1 additional elements.
+First extra element 1:
+'web'
+
+- ['deploy']
++ ['deploy', 'web']
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.756s
+
+FAILED (failures=2, skipped=1)

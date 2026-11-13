@@ -1,0 +1,38 @@
+tools/ci/deploy_dev_steps.py
+--- old
+                    if answer.header("content-type") != "application/json":
+--- new
+                    if not (answer.header("content-type") or "").startswith("application/json"):
+--- expected: test_the_file_served_otherwise_fails
+--- exit 1
+...................E.........................................................
+======================================================================
+ERROR: test_the_file_served_otherwise_fails (__main__.CheckAssociationTest.test_the_file_served_otherwise_fails) (case='with a charset')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp91vm92wy/tools/ci/deploy_dev_steps_test.py", line 1001, in test_the_file_served_otherwise_fails
+    code, out, _, sleeps = self.check([found(project(deployment=deployment()))],
+                           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                      {"tadayo-x1y.pages.dev": [given]})
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmp91vm92wy/tools/ci/deploy_dev_steps_test.py", line 899, in check
+    return call("check_association", {**CLOUDFLARE, "RUNNER_TEMP": self.repo.temp, **(environ or {})},
+                self.respond(projects, files), root=self.repo.root)
+  File "/tmp/tmp91vm92wy/tools/ci/deploy_dev_steps_test.py", line 90, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmp91vm92wy/tools/ci/deploy_dev_steps.py", line 603, in check_association
+    self.served(host, built)
+    ~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/tmp/tmp91vm92wy/tools/ci/deploy_dev_steps.py", line 654, in served
+    answer = self.http.request("GET", host, ASSOCIATION, {"user-agent": USER_AGENT})
+  File "/tmp/tmp91vm92wy/tools/ci/deploy_dev_steps_test.py", line 56, in request
+    result = self.respond(method, host, path, body)
+  File "/tmp/tmp91vm92wy/tools/ci/deploy_dev_steps_test.py", line 884, in respond
+    given = files[host]
+            ~~~~~^^^^^^
+KeyError: 'abc123.tadayo-x1y.pages.dev'
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.505s
+
+FAILED (errors=1)

@@ -1,0 +1,40 @@
+.github/workflows/deploy-dev.yml
+--- old
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+--- new
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+
+--- expected: test_the_cloudflare_secret_is_on_a_runner
+--- exit 1
+....................................................................s.F.F....
+======================================================================
+FAIL: test_its_jobs_and_steps_are_these_exactly (__main__.WorkflowFileTest.test_its_jobs_and_steps_are_these_exactly) (job='pages')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpqjee80c2/tools/ci/deploy_dev_steps_test.py", line 1269, in test_its_jobs_and_steps_are_these_exactly
+    self.assertEqual(self.document["jobs"][name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'nam[122 chars]read', 'actions': 'read'}, 'concurrency': {'gr[1402 chars]n'}]} != {'nam[122 chars]read'}, 'concurrency': {'group': 'deploy-dev-p[1383 chars]n'}]}
+Diff is 2348 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_the_cloudflare_secret_is_on_a_runner_that_holds_no_other (__main__.WorkflowFileTest.test_the_cloudflare_secret_is_on_a_runner_that_holds_no_other)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpqjee80c2/tools/ci/deploy_dev_steps_test.py", line 1319, in test_the_cloudflare_secret_is_on_a_runner_that_holds_no_other
+    self.assertEqual(jobs["pages"]["permissions"], {"contents": "read"})
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'contents': 'read', 'actions': 'read'} != {'contents': 'read'}
+- {'actions': 'read', 'contents': 'read'}
++ {'contents': 'read'}
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.278s
+
+FAILED (failures=2, skipped=1)

@@ -1,0 +1,100 @@
+tools/ci/deploy_dev_steps.py
+--- old
+        if os.path.lexists(os.path.join(site, WORKER)):
+
+--- new
+        if False:
+
+--- expected: test_a_worker_in_the_site_is_refused
+--- exit 1
+...........................FFFF..........FF......................................
+======================================================================
+FAIL: test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused (__main__.CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused) (step='check_build', make=<function CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused.<locals>.<lambda> at 0x7f9f61cbdc60>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpxyet8pfq/tools/ci/deploy_dev_steps_test.py", line 808, in test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused
+    self.assertEqual((code, "_worker.js" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (0, False) != (1, True)
+
+First differing element 0:
+0
+1
+
+- (0, False)
++ (1, True) : deploy-dev: check-build: apps/web/dist holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused (__main__.CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused) (step='check_build', make=<function makedirs at 0x7f9f62544fe0>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpxyet8pfq/tools/ci/deploy_dev_steps_test.py", line 808, in test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused
+    self.assertEqual((code, "_worker.js" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (0, False) != (1, True)
+
+First differing element 0:
+0
+1
+
+- (0, False)
++ (1, True) : deploy-dev: check-build: apps/web/dist holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused (__main__.CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused) (step='check_site', make=<function CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused.<locals>.<lambda> at 0x7f9f61ae5120>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpxyet8pfq/tools/ci/deploy_dev_steps_test.py", line 808, in test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused
+    self.assertEqual((code, "_worker.js" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (0, False) != (1, True)
+
+First differing element 0:
+0
+1
+
+- (0, False)
++ (1, True) : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused (__main__.CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused) (step='check_site', make=<function makedirs at 0x7f9f62544fe0>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpxyet8pfq/tools/ci/deploy_dev_steps_test.py", line 808, in test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused
+    self.assertEqual((code, "_worker.js" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (0, False) != (1, True)
+
+First differing element 0:
+0
+1
+
+- (0, False)
++ (1, True) : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_a_worker_in_the_site_is_refused (__main__.PagesDeployTest.test_a_worker_in_the_site_is_refused) (make=<function PagesDeployTest.test_a_worker_in_the_site_is_refused.<locals>.<lambda> at 0x7f9f61ae5440>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpxyet8pfq/tools/ci/deploy_dev_steps_test.py", line 611, in test_a_worker_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : 
+
+======================================================================
+FAIL: test_a_worker_in_the_site_is_refused (__main__.PagesDeployTest.test_a_worker_in_the_site_is_refused) (make=<function makedirs at 0x7f9f62544fe0>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpxyet8pfq/tools/ci/deploy_dev_steps_test.py", line 611, in test_a_worker_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : 
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.721s
+
+FAILED (failures=6)

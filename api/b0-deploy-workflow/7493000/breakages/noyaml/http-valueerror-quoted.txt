@@ -1,0 +1,30 @@
+tools/ci/deploy_dev_steps.py
+--- old
+raise OSError("a request header holds a character HTTP doesn't allow") from None
+--- new
+raise OSError(f"a request header holds a character HTTP doesn't allow ({headers})") from None
+--- expected: test_a_header_value_http_refuses
+--- exit 1
+................................FF...................................s........
+======================================================================
+FAIL: test_a_header_value_http_refuses_is_an_error_that_never_quotes_it (__main__.HttpTest.test_a_header_value_http_refuses_is_an_error_that_never_quotes_it) (value='Bearer pasted-token\n')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptos8mbpn/tools/ci/deploy_dev_steps_test.py", line 1115, in test_a_header_value_http_refuses_is_an_error_that_never_quotes_it
+    self.assertNotIn("pasted-token", str(raised.exception))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'pasted-token' unexpectedly found in "a request header holds a character HTTP doesn't allow ({'authorization': 'Bearer pasted-token\\n'})"
+
+======================================================================
+FAIL: test_a_header_value_http_refuses_is_an_error_that_never_quotes_it (__main__.HttpTest.test_a_header_value_http_refuses_is_an_error_that_never_quotes_it) (value='Bearer pasted-token\r\nx-other: 1')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptos8mbpn/tools/ci/deploy_dev_steps_test.py", line 1115, in test_a_header_value_http_refuses_is_an_error_that_never_quotes_it
+    self.assertNotIn("pasted-token", str(raised.exception))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'pasted-token' unexpectedly found in "a request header holds a character HTTP doesn't allow ({'authorization': 'Bearer pasted-token\\r\\nx-other: 1'})"
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.579s
+
+FAILED (failures=2, skipped=1)

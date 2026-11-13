@@ -1,0 +1,193 @@
+tools/ci/deploy_dev_steps.py
+--- old
+if os.path.commonpath([folder, root]) == root:
+--- new
+if False:
+--- expected: test_it_needs_a_runner_temp_outside_the_checkout
+--- exit 1
+...............................FFFFFFFFF....................FFF........................
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (step='check_site', temp='/tmp/tmpt530lzv3/tmp')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpymvys93i/tools/ci/deploy_dev_steps_test.py", line 744, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (step='check_site', temp='/tmp/tmpt530lzv3')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpymvys93i/tools/ci/deploy_dev_steps_test.py", line 744, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (step='check_site', temp='/tmp/tmpuu47v_ca/temp')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpymvys93i/tools/ci/deploy_dev_steps_test.py", line 744, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (step='pages_deploy', temp='/tmp/tmpt530lzv3/tmp')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpymvys93i/tools/ci/deploy_dev_steps_test.py", line 745, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    self.assertIn(said, out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^
+AssertionError: 'RUNNER_TEMP is inside the checkout' not found in 'deploy-dev: pages-deploy: there is no /tmp/tmpt530lzv3/tmp/deploy-dev-wrangler/node_modules/wrangler/bin/wrangler.js: setup-wrangler installs it\n'
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (step='pages_deploy', temp='/tmp/tmpt530lzv3')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpymvys93i/tools/ci/deploy_dev_steps_test.py", line 745, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    self.assertIn(said, out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^
+AssertionError: 'RUNNER_TEMP is inside the checkout' not found in 'deploy-dev: pages-deploy: there is no /tmp/tmpt530lzv3/deploy-dev-wrangler/node_modules/wrangler/bin/wrangler.js: setup-wrangler installs it\n'
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (step='pages_deploy', temp='/tmp/tmpuu47v_ca/temp')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpymvys93i/tools/ci/deploy_dev_steps_test.py", line 745, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    self.assertIn(said, out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^
+AssertionError: 'RUNNER_TEMP is inside the checkout' not found in 'deploy-dev: pages-deploy: there is no /tmp/tmpt530lzv3/tmp/deploy-dev-wrangler/node_modules/wrangler/bin/wrangler.js: setup-wrangler installs it\n'
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (step='check_association', temp='/tmp/tmpt530lzv3/tmp')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpymvys93i/tools/ci/deploy_dev_steps_test.py", line 743, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    code, out, http, _ = call(step, environ, run=run, root=repo.root)
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpymvys93i/tools/ci/deploy_dev_steps_test.py", line 90, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpymvys93i/tools/ci/deploy_dev_steps.py", line 600, in check_association
+    project, deployment = self.this_deployment(token, account, sha)
+                          ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpymvys93i/tools/ci/deploy_dev_steps.py", line 617, in this_deployment
+    project = self.project(token, account)
+  File "/tmp/tmpymvys93i/tools/ci/deploy_dev_steps.py", line 496, in project
+    answer = self.cloudflare_request(token, "GET", f"/accounts/{account}/pages/projects/{PAGES_PROJECT}")
+  File "/tmp/tmpymvys93i/tools/ci/deploy_dev_steps.py", line 491, in cloudflare_request
+    return self.http.request(method, CLOUDFLARE_API, f"/client/v4{path}", headers, body)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpymvys93i/tools/ci/deploy_dev_steps_test.py", line 58, in request
+    raise result
+AssertionError: no request expected
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (step='check_association', temp='/tmp/tmpt530lzv3')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpymvys93i/tools/ci/deploy_dev_steps_test.py", line 743, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    code, out, http, _ = call(step, environ, run=run, root=repo.root)
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpymvys93i/tools/ci/deploy_dev_steps_test.py", line 90, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpymvys93i/tools/ci/deploy_dev_steps.py", line 600, in check_association
+    project, deployment = self.this_deployment(token, account, sha)
+                          ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpymvys93i/tools/ci/deploy_dev_steps.py", line 617, in this_deployment
+    project = self.project(token, account)
+  File "/tmp/tmpymvys93i/tools/ci/deploy_dev_steps.py", line 496, in project
+    answer = self.cloudflare_request(token, "GET", f"/accounts/{account}/pages/projects/{PAGES_PROJECT}")
+  File "/tmp/tmpymvys93i/tools/ci/deploy_dev_steps.py", line 491, in cloudflare_request
+    return self.http.request(method, CLOUDFLARE_API, f"/client/v4{path}", headers, body)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpymvys93i/tools/ci/deploy_dev_steps_test.py", line 58, in request
+    raise result
+AssertionError: no request expected
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (step='check_association', temp='/tmp/tmpuu47v_ca/temp')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpymvys93i/tools/ci/deploy_dev_steps_test.py", line 743, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    code, out, http, _ = call(step, environ, run=run, root=repo.root)
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpymvys93i/tools/ci/deploy_dev_steps_test.py", line 90, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpymvys93i/tools/ci/deploy_dev_steps.py", line 600, in check_association
+    project, deployment = self.this_deployment(token, account, sha)
+                          ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpymvys93i/tools/ci/deploy_dev_steps.py", line 617, in this_deployment
+    project = self.project(token, account)
+  File "/tmp/tmpymvys93i/tools/ci/deploy_dev_steps.py", line 496, in project
+    answer = self.cloudflare_request(token, "GET", f"/accounts/{account}/pages/projects/{PAGES_PROJECT}")
+  File "/tmp/tmpymvys93i/tools/ci/deploy_dev_steps.py", line 491, in cloudflare_request
+    return self.http.request(method, CLOUDFLARE_API, f"/client/v4{path}", headers, body)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpymvys93i/tools/ci/deploy_dev_steps_test.py", line 58, in request
+    raise result
+AssertionError: no request expected
+
+======================================================================
+FAIL: test_it_needs_a_runner_temp_outside_the_checkout_and_a_folder_of_its_own (__main__.SetupWranglerTest.test_it_needs_a_runner_temp_outside_the_checkout_and_a_folder_of_its_own) (temp='/tmp/tmpppq5q5jw')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpymvys93i/tools/ci/deploy_dev_steps_test.py", line 352, in test_it_needs_a_runner_temp_outside_the_checkout_and_a_folder_of_its_own
+    self.assertEqual(run.calls, [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [{'cmd': ['npm', 'ci', '--ignore-scripts',[137 chars]w'}}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'cmd': ['npm', 'ci', '--ignore-scripts', '--no-audit', '--no-fund', '--workspaces=false'], 'cwd': '/tmp/tmpppq5q5jw/deploy-dev-wrangler', 'env': {'RUNNER_TEMP': '/tmp/tmpppq5q5jw'}}
+
++ []
+- [{'cmd': ['npm',
+-           'ci',
+-           '--ignore-scripts',
+-           '--no-audit',
+-           '--no-fund',
+-           '--workspaces=false'],
+-   'cwd': '/tmp/tmpppq5q5jw/deploy-dev-wrangler',
+-   'env': {'RUNNER_TEMP': '/tmp/tmpppq5q5jw'}}]
+
+======================================================================
+FAIL: test_it_needs_a_runner_temp_outside_the_checkout_and_a_folder_of_its_own (__main__.SetupWranglerTest.test_it_needs_a_runner_temp_outside_the_checkout_and_a_folder_of_its_own) (temp='/tmp/tmpppq5q5jw/tools')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpymvys93i/tools/ci/deploy_dev_steps_test.py", line 352, in test_it_needs_a_runner_temp_outside_the_checkout_and_a_folder_of_its_own
+    self.assertEqual(run.calls, [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [{'cmd': ['npm', 'ci', '--ignore-scripts',[149 chars]s'}}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'cmd': ['npm', 'ci', '--ignore-scripts', '--no-audit', '--no-fund', '--workspaces=false'], 'cwd': '/tmp/tmpppq5q5jw/tools/deploy-dev-wrangler', 'env': {'RUNNER_TEMP': '/tmp/tmpppq5q5jw/tools'}}
+
++ []
+- [{'cmd': ['npm',
+-           'ci',
+-           '--ignore-scripts',
+-           '--no-audit',
+-           '--no-fund',
+-           '--workspaces=false'],
+-   'cwd': '/tmp/tmpppq5q5jw/tools/deploy-dev-wrangler',
+-   'env': {'RUNNER_TEMP': '/tmp/tmpppq5q5jw/tools'}}]
+
+======================================================================
+FAIL: test_it_needs_a_runner_temp_outside_the_checkout_and_a_folder_of_its_own (__main__.SetupWranglerTest.test_it_needs_a_runner_temp_outside_the_checkout_and_a_folder_of_its_own) (temp='/tmp/tmp0ytckaw0/temp')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpymvys93i/tools/ci/deploy_dev_steps_test.py", line 353, in test_it_needs_a_runner_temp_outside_the_checkout_and_a_folder_of_its_own
+    self.assertIn("RUNNER_TEMP", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'RUNNER_TEMP' not found in "deploy-dev: setup-wrangler: couldn't make /tmp/tmpppq5q5jw/tools/deploy-dev-wrangler with tools/ci/pages's two files ([Errno 17] File exists: '/tmp/tmpppq5q5jw/tools/deploy-dev-wrangler')\n"
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.815s
+
+FAILED (failures=12)

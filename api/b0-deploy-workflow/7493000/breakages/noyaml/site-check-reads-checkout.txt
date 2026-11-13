@@ -1,0 +1,333 @@
+tools/ci/deploy_dev_steps.py
+--- old
+        site = self.temp_folder(step, DOWNLOAD)
+
+--- new
+        site = self.path(SITE)
+
+--- expected: test_it_deploys_the_download_and_never_the_checkout_s
+--- exit 1
+..........................FFFFFFFFFF.FFFFFFFF.....FFFFFFF.F.........................s........
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_site', where='leak.txt')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp56q91hqt/tools/ci/deploy_dev_steps_test.py", line 765, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_site', where='.well-known/x.json')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp56q91hqt/tools/ci/deploy_dev_steps_test.py", line 765, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_site', where='docs')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp56q91hqt/tools/ci/deploy_dev_steps_test.py", line 765, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_site', where='privacy/dangling')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp56q91hqt/tools/ci/deploy_dev_steps_test.py", line 765, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_a_link_anywhere_in_the_site_is_refused (__main__.CheckSiteTest.test_a_link_anywhere_in_the_site_is_refused) (step='check_site', where='the association file')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp56q91hqt/tools/ci/deploy_dev_steps_test.py", line 773, in test_a_link_anywhere_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused (__main__.CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused) (step='check_site', case='missing')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp56q91hqt/tools/ci/deploy_dev_steps_test.py", line 791, in test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused
+    self.assertEqual((code, "isn't a folder" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (0, False) != (1, True)
+
+First differing element 0:
+0
+1
+
+- (0, False)
++ (1, True) : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused (__main__.CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused) (step='check_site', case='linked')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp56q91hqt/tools/ci/deploy_dev_steps_test.py", line 797, in test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused
+    self.assertEqual((code, "isn't a folder" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (0, False) != (1, True)
+
+First differing element 0:
+0
+1
+
+- (0, False)
++ (1, True) : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused (__main__.CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused) (step='check_site', case='no association file')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp56q91hqt/tools/ci/deploy_dev_steps_test.py", line 802, in test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused
+    self.assertEqual((code, "has no /.well-known/apple-app-site-association" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (0, False) != (1, True)
+
+First differing element 0:
+0
+1
+
+- (0, False)
++ (1, True) : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused (__main__.CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused) (step='check_site', make=<function CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused.<locals>.<lambda> at 0x7f887c895800>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp56q91hqt/tools/ci/deploy_dev_steps_test.py", line 808, in test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused
+    self.assertEqual((code, "_worker.js" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (0, False) != (1, True)
+
+First differing element 0:
+0
+1
+
+- (0, False)
++ (1, True) : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused (__main__.CheckSiteTest.test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused) (step='check_site', make=<function makedirs at 0x7f887d1b6d40>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp56q91hqt/tools/ci/deploy_dev_steps_test.py", line 808, in test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused
+    self.assertEqual((code, "_worker.js" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (0, False) != (1, True)
+
+First differing element 0:
+0
+1
+
+- (0, False)
++ (1, True) : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_a_special_file_is_refused (__main__.CheckSiteTest.test_a_special_file_is_refused) (step='check_site')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp56q91hqt/tools/ci/deploy_dev_steps_test.py", line 782, in test_a_special_file_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_each_step_checks_its_own_folder (__main__.CheckSiteTest.test_each_step_checks_its_own_folder)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp56q91hqt/tools/ci/deploy_dev_steps_test.py", line 715, in test_each_step_checks_its_own_folder
+    self.assertEqual((code, "RUNNER_TEMP/deploy-dev-site isn't a folder" in out), (1, True), out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (0, False) != (1, True)
+
+First differing element 0:
+0
+1
+
+- (0, False)
++ (1, True) : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (step='check_site', temp=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp56q91hqt/tools/ci/deploy_dev_steps_test.py", line 744, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (step='check_site', temp='')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp56q91hqt/tools/ci/deploy_dev_steps_test.py", line 744, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (step='check_site', temp='../tmpxu7m7ajj')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp56q91hqt/tools/ci/deploy_dev_steps_test.py", line 744, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (step='check_site', temp='/tmp/tmpg6u2tyvg/tmp')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp56q91hqt/tools/ci/deploy_dev_steps_test.py", line 744, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (step='check_site', temp='/tmp/tmpg6u2tyvg')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp56q91hqt/tools/ci/deploy_dev_steps_test.py", line 744, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (step='check_site', temp='/tmp/tmptwj5rlhi/temp')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp56q91hqt/tools/ci/deploy_dev_steps_test.py", line 744, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds plain files and folders only, with /.well-known/apple-app-site-association
+
+
+======================================================================
+FAIL: test_a_link_in_the_site_is_refused (__main__.PagesDeployTest.test_a_link_in_the_site_is_refused)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp56q91hqt/tools/ci/deploy_dev_steps_test.py", line 621, in test_a_link_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : 
+
+======================================================================
+FAIL: test_a_worker_in_the_site_is_refused (__main__.PagesDeployTest.test_a_worker_in_the_site_is_refused) (make=<function PagesDeployTest.test_a_worker_in_the_site_is_refused.<locals>.<lambda> at 0x7f887c8968e0>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp56q91hqt/tools/ci/deploy_dev_steps_test.py", line 611, in test_a_worker_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : 
+
+======================================================================
+FAIL: test_a_worker_in_the_site_is_refused (__main__.PagesDeployTest.test_a_worker_in_the_site_is_refused) (make=<function makedirs at 0x7f887d1b6d40>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp56q91hqt/tools/ci/deploy_dev_steps_test.py", line 611, in test_a_worker_in_the_site_is_refused
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : 
+
+======================================================================
+FAIL: test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist (__main__.PagesDeployTest.test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist) (make=<function PagesDeployTest.test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist.<locals>.<lambda> at 0x7f887c896de0>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp56q91hqt/tools/ci/deploy_dev_steps_test.py", line 670, in test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site isn't a folder (download-artifact puts the artifact site there)
+
+
+======================================================================
+FAIL: test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist (__main__.PagesDeployTest.test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist) (make=<function PagesDeployTest.test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist.<locals>.<lambda> at 0x7f887c8971a0>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp56q91hqt/tools/ci/deploy_dev_steps_test.py", line 670, in test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site isn't a folder (download-artifact puts the artifact site there)
+
+
+======================================================================
+FAIL: test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist (__main__.PagesDeployTest.test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist) (make=<function PagesDeployTest.test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist.<locals>.<lambda> at 0x7f887c896fc0>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp56q91hqt/tools/ci/deploy_dev_steps_test.py", line 670, in test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: check-site: RUNNER_TEMP/deploy-dev-site holds _worker.js, which Pages would run as code on the site; the site is static
+
+
+======================================================================
+FAIL: test_it_runs_the_pinned_wrangler_with_only_what_it_needs (__main__.PagesDeployTest.test_it_runs_the_pinned_wrangler_with_only_what_it_needs)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp56q91hqt/tools/ci/deploy_dev_steps_test.py", line 568, in test_it_runs_the_pinned_wrangler_with_only_what_it_needs
+    self.assertEqual(done["cmd"], [
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+        "node", wrangler,
+        ^^^^^^^^^^^^^^^^^
+        "pages", "deploy", repo.site(), "--project-name=tadayo", "--branch=main",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        f"--commit-hash={SHA}", f"--commit-message=main at {SHA[:12]}", "--commit-dirty=false"])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['nod[105 chars]p/tmpjii7iwrn/apps/web/dist', '--project-name=[143 chars]lse'] != ['nod[105 chars]p/tmpavi1azqm/deploy-dev-site', '--project-nam[145 chars]lse']
+
+First differing element 4:
+'/tmp/tmpjii7iwrn/apps/web/dist'
+'/tmp/tmpavi1azqm/deploy-dev-site'
+
+  ['node',
+   '/tmp/tmpavi1azqm/deploy-dev-wrangler/node_modules/wrangler/bin/wrangler.js',
+   'pages',
+   'deploy',
+-  '/tmp/tmpjii7iwrn/apps/web/dist',
++  '/tmp/tmpavi1azqm/deploy-dev-site',
+   '--project-name=tadayo',
+   '--branch=main',
+   '--commit-hash=0123456789abcdef0123456789abcdef01234567',
+   '--commit-message=main at 0123456789ab',
+   '--commit-dirty=false']
+
+======================================================================
+FAIL: test_nothing_runs_without_the_site_the_secrets_the_commit_or_the_install (__main__.PagesDeployTest.test_nothing_runs_without_the_site_the_secrets_the_commit_or_the_install)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp56q91hqt/tools/ci/deploy_dev_steps_test.py", line 638, in test_nothing_runs_without_the_site_the_secrets_the_commit_or_the_install
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : 
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.655s
+
+FAILED (failures=26, skipped=1)

@@ -1,0 +1,178 @@
+tools/ci/deploy_dev_steps.py
+--- old
+        site = self.temp_folder("check-association", DOWNLOAD)
+        if site is None:
+            return 1
+
+--- new
+        site = self.temp_folder("check-association", DOWNLOAD) or self.path(SITE)
+
+--- expected: test_nothing_is_asked_without_the_token
+--- exit 1
+.................E.............FFFFFF....................................s........
+======================================================================
+ERROR: test_nothing_is_asked_without_the_token_the_account_the_commit_or_runner_temp (__main__.CheckAssociationTest.test_nothing_is_asked_without_the_token_the_account_the_commit_or_runner_temp) (said="RUNNER_TEMP isn't an absolute path")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps_test.py", line 1041, in test_nothing_is_asked_without_the_token_the_account_the_commit_or_runner_temp
+    code, out, http, _ = self.check([found(project(deployment=deployment()))], {}, environ)
+                         ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps_test.py", line 899, in check
+    return call("check_association", {**CLOUDFLARE, "RUNNER_TEMP": self.repo.temp, **(environ or {})},
+                self.respond(projects, files), root=self.repo.root)
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps_test.py", line 90, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps.py", line 601, in check_association
+    self.served(host, built)
+    ~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps.py", line 652, in served
+    answer = self.http.request("GET", host, ASSOCIATION, {"user-agent": USER_AGENT})
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps_test.py", line 56, in request
+    result = self.respond(method, host, path, body)
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps_test.py", line 884, in respond
+    given = files[host]
+            ~~~~~^^^^^^
+KeyError: 'tadayo-x1y.pages.dev'
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (step='check_association', temp=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps_test.py", line 743, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    code, out, http, _ = call(step, environ, run=run, root=repo.root)
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps_test.py", line 90, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps.py", line 598, in check_association
+    project, deployment = self.this_deployment(token, account, sha)
+                          ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps.py", line 615, in this_deployment
+    project = self.project(token, account)
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps.py", line 496, in project
+    answer = self.cloudflare_request(token, "GET", f"/accounts/{account}/pages/projects/{PAGES_PROJECT}")
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps.py", line 491, in cloudflare_request
+    return self.http.request(method, CLOUDFLARE_API, f"/client/v4{path}", headers, body)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps_test.py", line 58, in request
+    raise result
+AssertionError: no request expected
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (step='check_association', temp='')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps_test.py", line 743, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    code, out, http, _ = call(step, environ, run=run, root=repo.root)
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps_test.py", line 90, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps.py", line 598, in check_association
+    project, deployment = self.this_deployment(token, account, sha)
+                          ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps.py", line 615, in this_deployment
+    project = self.project(token, account)
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps.py", line 496, in project
+    answer = self.cloudflare_request(token, "GET", f"/accounts/{account}/pages/projects/{PAGES_PROJECT}")
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps.py", line 491, in cloudflare_request
+    return self.http.request(method, CLOUDFLARE_API, f"/client/v4{path}", headers, body)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps_test.py", line 58, in request
+    raise result
+AssertionError: no request expected
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (step='check_association', temp='../tmp43zxhqrp')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps_test.py", line 743, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    code, out, http, _ = call(step, environ, run=run, root=repo.root)
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps_test.py", line 90, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps.py", line 598, in check_association
+    project, deployment = self.this_deployment(token, account, sha)
+                          ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps.py", line 615, in this_deployment
+    project = self.project(token, account)
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps.py", line 496, in project
+    answer = self.cloudflare_request(token, "GET", f"/accounts/{account}/pages/projects/{PAGES_PROJECT}")
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps.py", line 491, in cloudflare_request
+    return self.http.request(method, CLOUDFLARE_API, f"/client/v4{path}", headers, body)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps_test.py", line 58, in request
+    raise result
+AssertionError: no request expected
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (step='check_association', temp='/tmp/tmpmwbaw_fr/tmp')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps_test.py", line 743, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    code, out, http, _ = call(step, environ, run=run, root=repo.root)
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps_test.py", line 90, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps.py", line 598, in check_association
+    project, deployment = self.this_deployment(token, account, sha)
+                          ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps.py", line 615, in this_deployment
+    project = self.project(token, account)
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps.py", line 496, in project
+    answer = self.cloudflare_request(token, "GET", f"/accounts/{account}/pages/projects/{PAGES_PROJECT}")
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps.py", line 491, in cloudflare_request
+    return self.http.request(method, CLOUDFLARE_API, f"/client/v4{path}", headers, body)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps_test.py", line 58, in request
+    raise result
+AssertionError: no request expected
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (step='check_association', temp='/tmp/tmpmwbaw_fr')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps_test.py", line 743, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    code, out, http, _ = call(step, environ, run=run, root=repo.root)
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps_test.py", line 90, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps.py", line 598, in check_association
+    project, deployment = self.this_deployment(token, account, sha)
+                          ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps.py", line 615, in this_deployment
+    project = self.project(token, account)
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps.py", line 496, in project
+    answer = self.cloudflare_request(token, "GET", f"/accounts/{account}/pages/projects/{PAGES_PROJECT}")
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps.py", line 491, in cloudflare_request
+    return self.http.request(method, CLOUDFLARE_API, f"/client/v4{path}", headers, body)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps_test.py", line 58, in request
+    raise result
+AssertionError: no request expected
+
+======================================================================
+FAIL: test_the_download_needs_a_runner_temp_outside_the_checkout (__main__.CheckSiteTest.test_the_download_needs_a_runner_temp_outside_the_checkout) (step='check_association', temp='/tmp/tmp59cg9vax/temp')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps_test.py", line 743, in test_the_download_needs_a_runner_temp_outside_the_checkout
+    code, out, http, _ = call(step, environ, run=run, root=repo.root)
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps_test.py", line 90, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps.py", line 598, in check_association
+    project, deployment = self.this_deployment(token, account, sha)
+                          ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps.py", line 615, in this_deployment
+    project = self.project(token, account)
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps.py", line 496, in project
+    answer = self.cloudflare_request(token, "GET", f"/accounts/{account}/pages/projects/{PAGES_PROJECT}")
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps.py", line 491, in cloudflare_request
+    return self.http.request(method, CLOUDFLARE_API, f"/client/v4{path}", headers, body)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpgwwwhf8k/tools/ci/deploy_dev_steps_test.py", line 58, in request
+    raise result
+AssertionError: no request expected
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.583s
+
+FAILED (failures=6, errors=1, skipped=1)

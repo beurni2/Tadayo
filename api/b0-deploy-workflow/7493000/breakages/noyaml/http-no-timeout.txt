@@ -1,0 +1,32 @@
+tools/ci/deploy_dev_steps.py
+--- old
+HTTPSConnection(host, timeout=REQUEST_SECONDS)
+--- new
+HTTPSConnection(host)
+--- expected: test_it_asks_once_over_https_with_a_timeout_and_closes
+--- exit 1
+...................................F................................s........
+======================================================================
+FAIL: test_it_asks_once_over_https_with_a_timeout_and_closes (__main__.HttpTest.test_it_asks_once_over_https_with_a_timeout_and_closes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpin2ghw78/tools/ci/deploy_dev_steps_test.py", line 1090, in test_it_asks_once_over_https_with_a_timeout_and_closes
+    self.assertEqual((made.host, made.timeout, made.rest), ("api.example", 30, {}))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: ('api.example', None, {}) != ('api.example', 30, {})
+
+First differing element 1:
+None
+30
+
+- ('api.example', None, {})
+?                 ^^^^
+
++ ('api.example', 30, {})
+?                 ^^
+
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.845s
+
+FAILED (failures=1, skipped=1)

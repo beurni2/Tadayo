@@ -1,0 +1,71 @@
+tools/ci/deploy_dev_steps.py
+--- old
+wrangler = os.path.join(home, WRANGLER)
+--- new
+wrangler = self.path(PAGES_DIR, "node_modules", "wrangler", "bin", "wrangler.js")
+--- expected: test_it_runs_the_pinned_wrangler_with_only_what_it_needs
+--- exit 1
+.......................................FFFFF.F.................................
+======================================================================
+FAIL: test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist (__main__.PagesDeployTest.test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist) (make=<function PagesDeployTest.test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist.<locals>.<lambda> at 0x7f3cef5e5a80>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpsn11grn8/tools/ci/deploy_dev_steps_test.py", line 673, in test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: pages-deploy: there is no /tmp/tmpxaa_icop/tools/ci/pages/node_modules/wrangler/bin/wrangler.js: setup-wrangler installs it
+
+
+======================================================================
+FAIL: test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist (__main__.PagesDeployTest.test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist) (make=<function PagesDeployTest.test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist.<locals>.<lambda> at 0x7f3cef5e6200>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpsn11grn8/tools/ci/deploy_dev_steps_test.py", line 673, in test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: pages-deploy: there is no /tmp/tmpmracid57/tools/ci/pages/node_modules/wrangler/bin/wrangler.js: setup-wrangler installs it
+
+
+======================================================================
+FAIL: test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist (__main__.PagesDeployTest.test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist) (make=<function PagesDeployTest.test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist.<locals>.<lambda> at 0x7f3cef5e6160>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpsn11grn8/tools/ci/deploy_dev_steps_test.py", line 673, in test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: pages-deploy: there is no /tmp/tmp_4hmtf7f/tools/ci/pages/node_modules/wrangler/bin/wrangler.js: setup-wrangler installs it
+
+
+======================================================================
+FAIL: test_it_runs_the_pinned_wrangler_with_only_what_it_needs (__main__.PagesDeployTest.test_it_runs_the_pinned_wrangler_with_only_what_it_needs)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpsn11grn8/tools/ci/deploy_dev_steps_test.py", line 566, in test_it_runs_the_pinned_wrangler_with_only_what_it_needs
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: pages-deploy: there is no /tmp/tmpiysd3o_c/tools/ci/pages/node_modules/wrangler/bin/wrangler.js: setup-wrangler installs it
+
+
+======================================================================
+FAIL: test_nothing_in_the_repository_reaches_wrangler_s_working_folder_or_home (__main__.PagesDeployTest.test_nothing_in_the_repository_reaches_wrangler_s_working_folder_or_home)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpsn11grn8/tools/ci/deploy_dev_steps_test.py", line 591, in test_nothing_in_the_repository_reaches_wrangler_s_working_folder_or_home
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: pages-deploy: there is no /tmp/tmpo237trlq/tools/ci/pages/node_modules/wrangler/bin/wrangler.js: setup-wrangler installs it
+
+
+======================================================================
+FAIL: test_wrangler_s_failure_is_the_step_s (__main__.PagesDeployTest.test_wrangler_s_failure_is_the_step_s)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpsn11grn8/tools/ci/deploy_dev_steps_test.py", line 631, in test_wrangler_s_failure_is_the_step_s
+    self.assertIn("wrangler failed (exit 1)", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'wrangler failed (exit 1)' not found in 'deploy-dev: pages-deploy: there is no /tmp/tmpdwzufc54/tools/ci/pages/node_modules/wrangler/bin/wrangler.js: setup-wrangler installs it\n'
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.755s
+
+FAILED (failures=6)

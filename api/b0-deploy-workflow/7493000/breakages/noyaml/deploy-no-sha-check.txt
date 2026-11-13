@@ -1,0 +1,24 @@
+tools/ci/deploy_dev_steps.py
+--- old
+        sha = self.sha("pages-deploy")
+
+--- new
+        sha = self.sha("pages-deploy") or "0" * 40
+
+--- expected: test_nothing_runs_without_the_site
+--- exit 1
+..........................................F.........................s........
+======================================================================
+FAIL: test_nothing_runs_without_the_site_the_secrets_the_commit_or_the_install (__main__.PagesDeployTest.test_nothing_runs_without_the_site_the_secrets_the_commit_or_the_install) (said="GITHUB_SHA isn't")
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpnb006j86/tools/ci/deploy_dev_steps_test.py", line 653, in test_nothing_runs_without_the_site_the_secrets_the_commit_or_the_install
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: pages-deploy: GITHUB_SHA isn't a commit's 40 hexadecimal digits
+
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.711s
+
+FAILED (failures=1, skipped=1)

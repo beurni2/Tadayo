@@ -1,0 +1,48 @@
+tools/ci/deploy_dev_steps.py
+--- old
+"HOME": home,
+--- new
+"HOME": self.value("HOME"),
+--- expected: test_nothing_in_the_repository_reaches_wrangler_s_working_folder_or_home
+--- exit 1
+........................................FF..........................s........
+======================================================================
+FAIL: test_it_runs_the_pinned_wrangler_with_only_what_it_needs (__main__.PagesDeployTest.test_it_runs_the_pinned_wrangler_with_only_what_it_needs)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp4k41kn86/tools/ci/deploy_dev_steps_test.py", line 572, in test_it_runs_the_pinned_wrangler_with_only_what_it_needs
+    self.assertEqual(done["env"], {"PATH": "/usr/bin", "HOME": done["cwd"], "CI": "true",
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                   "DO_NOT_TRACK": "1", "WRANGLER_SEND_METRICS": "false",
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                   "WRANGLER_SEND_ERROR_REPORTS": "false", "CLOUDFLARE_API_TOKEN": TOKEN,
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                   "CLOUDFLARE_ACCOUNT_ID": ACCOUNT})
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'PAT[21 chars]': '/home/runner', 'CI': 'true', 'DO_NOT_TRACK[183 chars]def'} != {'PAT[21 chars]': '/tmp/deploy-dev-wrangler-611rbl9u', 'CI': [204 chars]def'}
+  {'CI': 'true',
+   'CLOUDFLARE_ACCOUNT_ID': '0123456789abcdef0123456789abcdef',
+   'CLOUDFLARE_API_TOKEN': 'secret-token-value',
+   'DO_NOT_TRACK': '1',
+-  'HOME': '/home/runner',
++  'HOME': '/tmp/deploy-dev-wrangler-611rbl9u',
+   'PATH': '/usr/bin',
+   'WRANGLER_SEND_ERROR_REPORTS': 'false',
+   'WRANGLER_SEND_METRICS': 'false'}
+
+======================================================================
+FAIL: test_nothing_in_the_repository_reaches_wrangler_s_working_folder_or_home (__main__.PagesDeployTest.test_nothing_in_the_repository_reaches_wrangler_s_working_folder_or_home)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp4k41kn86/tools/ci/deploy_dev_steps_test.py", line 597, in test_nothing_in_the_repository_reaches_wrangler_s_working_folder_or_home
+    self.assertEqual(done["env"]["HOME"], cwd)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '/tmp/tmpirz0bvqq' != '/tmp/deploy-dev-wrangler-r7oeypej'
+- /tmp/tmpirz0bvqq
++ /tmp/deploy-dev-wrangler-r7oeypej
+
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.444s
+
+FAILED (failures=2, skipped=1)

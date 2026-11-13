@@ -1,0 +1,54 @@
+tools/ci/deploy_dev_steps.py
+--- old
+cmd = ["node", wrangler, "pages",
+--- new
+cmd = ["npx", "wrangler", "pages",
+--- expected: test_it_runs_the_pinned_wrangler_with_only_what_it_needs
+--- exit 1
+........................................FE..........................s........
+======================================================================
+ERROR: test_nothing_in_the_repository_reaches_wrangler_s_working_folder_or_home (__main__.PagesDeployTest.test_nothing_in_the_repository_reaches_wrangler_s_working_folder_or_home)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp0l6f8c2w/tools/ci/deploy_dev_steps_test.py", line 593, in test_nothing_in_the_repository_reaches_wrangler_s_working_folder_or_home
+    self.assertNotEqual(os.path.commonpath([done["cmd"][1], os.path.realpath(repo.root)]), os.path.realpath(repo.root),
+                        ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen posixpath>", line 563, in commonpath
+ValueError: Can't mix absolute and relative paths
+
+======================================================================
+FAIL: test_it_runs_the_pinned_wrangler_with_only_what_it_needs (__main__.PagesDeployTest.test_it_runs_the_pinned_wrangler_with_only_what_it_needs)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp0l6f8c2w/tools/ci/deploy_dev_steps_test.py", line 568, in test_it_runs_the_pinned_wrangler_with_only_what_it_needs
+    self.assertEqual(done["cmd"], [
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+        "node", wrangler,
+        ^^^^^^^^^^^^^^^^^
+        "pages", "deploy", repo.site(), "--project-name=tadayo", "--branch=main",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        f"--commit-hash={SHA}", f"--commit-message=main at {SHA[:12]}", "--commit-dirty=false"])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['npx', 'wrangler', 'pages', 'deploy', '/tmp[190 chars]lse'] != ['node', '/tmp/tmpyd8avhen/deploy-dev-wrangl[257 chars]lse']
+
+First differing element 0:
+'npx'
+'node'
+
+- ['npx',
+-  'wrangler',
++ ['node',
++  '/tmp/tmpyd8avhen/deploy-dev-wrangler/node_modules/wrangler/bin/wrangler.js',
+   'pages',
+   'deploy',
+   '/tmp/tmpyd8avhen/deploy-dev-site',
+   '--project-name=tadayo',
+   '--branch=main',
+   '--commit-hash=0123456789abcdef0123456789abcdef01234567',
+   '--commit-message=main at 0123456789ab',
+   '--commit-dirty=false']
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.818s
+
+FAILED (failures=1, errors=1, skipped=1)

@@ -1,0 +1,24 @@
+tools/ci/deploy_dev_steps.py
+--- old
+print("deploy-dev: check-head has no GITHUB_TOKEN: its step gives it the job's token")
+            return 1
+--- new
+print("deploy-dev: check-head has no GITHUB_TOKEN: its step gives it the job's token")
+            return 0
+--- expected: test_a_missing_token_or_commit_fails_before_any_request
+--- exit 1
+.....................F..............................................s........
+======================================================================
+FAIL: test_a_missing_token_or_commit_fails_before_any_request (__main__.CheckHeadTest.test_a_missing_token_or_commit_fails_before_any_request) (environ={'GITHUB_SHA': '0123456789abcdef0123456789abcdef01234567'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpcwi14kpf/tools/ci/deploy_dev_steps_test.py", line 866, in test_a_missing_token_or_commit_fails_before_any_request
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-head has no GITHUB_TOKEN: its step gives it the job's token
+
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.377s
+
+FAILED (failures=1, skipped=1)

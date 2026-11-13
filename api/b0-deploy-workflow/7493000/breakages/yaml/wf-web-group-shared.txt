@@ -1,0 +1,60 @@
+.github/workflows/deploy-dev.yml
+--- old
+      group: deploy-dev-web-${{ github.sha }}
+
+--- new
+      group: deploy-dev-pages
+
+--- expected: test_only_the_deploy_job_holds_ops_dev
+--- exit 1
+...................................................................F..FF.....
+======================================================================
+FAIL: test_every_expression_in_the_file_is_one_this_test_knows (__main__.WorkflowFileTest.test_every_expression_in_the_file_is_one_this_test_knows)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpli85atsg/tools/ci/deploy_dev_steps_test.py", line 1293, in test_every_expression_in_the_file_is_one_this_test_knows
+    self.assertEqual(found, sorted(wanted))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['${{[24 chars]thub.token }}', '${{ github.token }}', '${{ gi[560 chars] }}'] != ['${{[24 chars]thub.sha }}', '${{ github.token }}', '${{ gith[581 chars] }}']
+
+First differing element 1:
+'${{ github.token }}'
+'${{ github.sha }}'
+
+Second list contains 1 additional elements.
+First extra element 19:
+'${{ vars.CLOUDFLARE_ACCOUNT_ID }}'
+
+Diff is 721 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_its_jobs_and_steps_are_these_exactly (__main__.WorkflowFileTest.test_its_jobs_and_steps_are_these_exactly) (job='web')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpli85atsg/tools/ci/deploy_dev_steps_test.py", line 1269, in test_its_jobs_and_steps_are_these_exactly
+    self.assertEqual(self.document["jobs"][name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'nam[147 chars]-dev-pages', 'cancel-in-progress': 'false'}, '[687 chars]'}}]} != {'nam[147 chars]-dev-web-${{ github.sha }}', 'cancel-in-progre[703 chars]'}}]}
+Diff is 1342 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_only_the_deploy_job_holds_ops_dev_and_it_is_never_cancelled (__main__.WorkflowFileTest.test_only_the_deploy_job_holds_ops_dev_and_it_is_never_cancelled)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpli85atsg/tools/ci/deploy_dev_steps_test.py", line 1276, in test_only_the_deploy_job_holds_ops_dev_and_it_is_never_cancelled
+    self.assertEqual(self.document["jobs"]["web"]["concurrency"],
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     {"group": "deploy-dev-web-${{ github.sha }}", "cancel-in-progress": "false"})
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'group': 'deploy-dev-pages', 'cancel-in-progress': 'false'} != {'group': 'deploy-dev-web-${{ github.sha }}', 'cancel-in-progress': 'false'}
+- {'cancel-in-progress': 'false', 'group': 'deploy-dev-pages'}
+?                                                      ^ ^^^
+
++ {'cancel-in-progress': 'false', 'group': 'deploy-dev-web-${{ github.sha }}'}
+?                                                      ^^^^^^^^^^^^^^^^^ ^^^
+
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.692s
+
+FAILED (failures=3)

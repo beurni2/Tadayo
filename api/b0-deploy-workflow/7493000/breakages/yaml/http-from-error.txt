@@ -1,0 +1,30 @@
+tools/ci/deploy_dev_steps.py
+--- old
+raise OSError("a request header holds a character HTTP doesn't allow") from None
+--- new
+raise OSError("a request header holds a character HTTP doesn't allow") from error
+--- expected: test_a_header_value_http_refuses
+--- exit 1
+................................FF............................................
+======================================================================
+FAIL: test_a_header_value_http_refuses_is_an_error_that_never_quotes_it (__main__.HttpTest.test_a_header_value_http_refuses_is_an_error_that_never_quotes_it) (value='Bearer pasted-token\n')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpfpww1f_h/tools/ci/deploy_dev_steps_test.py", line 1117, in test_a_header_value_http_refuses_is_an_error_that_never_quotes_it
+    self.assertIsNone(raised.exception.__cause__)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError("Invalid header value b'Bearer pasted-token\\n'") is not None
+
+======================================================================
+FAIL: test_a_header_value_http_refuses_is_an_error_that_never_quotes_it (__main__.HttpTest.test_a_header_value_http_refuses_is_an_error_that_never_quotes_it) (value='Bearer pasted-token\r\nx-other: 1')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpfpww1f_h/tools/ci/deploy_dev_steps_test.py", line 1117, in test_a_header_value_http_refuses_is_an_error_that_never_quotes_it
+    self.assertIsNone(raised.exception.__cause__)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError("Invalid header value b'Bearer pasted-token\\r\\nx-other: 1'") is not None
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.567s
+
+FAILED (failures=2)

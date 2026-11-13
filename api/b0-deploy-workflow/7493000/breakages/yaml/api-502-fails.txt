@@ -1,0 +1,22 @@
+tools/ci/deploy_dev_steps.py
+--- old
+if answer.status not in (502, 503, 504):
+--- new
+if answer.status not in (503, 504):
+--- expected: test_fly_s_proxy_errors
+--- exit 1
+.F...........................................................................
+======================================================================
+FAIL: test_fly_s_proxy_errors_and_a_lost_connection_are_asked_again (__main__.CheckApiTest.test_fly_s_proxy_errors_and_a_lost_connection_are_asked_again)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp8kex_v9z/tools/ci/deploy_dev_steps_test.py", line 233, in test_fly_s_proxy_errors_and_a_lost_connection_are_asked_again
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: check-api: GET https://api-dev.tadayo.app/v1/me with no token answered HTTP 502, not 401; the body b'', not b'{"code":"UNAUTHENTICATED"}'; content-type None, not 'application/json; charset=utf-8'; cache-control None, not 'private, no-store'
+
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.529s
+
+FAILED (failures=1)

@@ -1,0 +1,36 @@
+tools/ci/deploy_dev_steps.py
+--- old
+                if not str(error).startswith("Invalid header"):
+                    raise
+
+--- new
+
+--- expected: test_any_other_error_goes_on_as_it_came
+--- exit 1
+..................................EE.................................s........
+======================================================================
+ERROR: test_any_other_error_goes_on_as_it_came (__main__.HttpTest.test_any_other_error_goes_on_as_it_came) (error=SSLCertVerificationError('certificate verify failed: Hostname mismatch'))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpq859oa4_/tools/ci/deploy_dev_steps_test.py", line 1129, in test_any_other_error_goes_on_as_it_came
+    steps_module.Http().request("GET", "api.example", "/", {"authorization": "Bearer t"})
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpq859oa4_/tools/ci/deploy_dev_steps.py", line 124, in request
+    raise OSError("a request header holds a character HTTP doesn't allow") from None
+OSError: a request header holds a character HTTP doesn't allow
+
+======================================================================
+ERROR: test_any_other_error_goes_on_as_it_came (__main__.HttpTest.test_any_other_error_goes_on_as_it_came) (error=UnicodeError('label too long'))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpq859oa4_/tools/ci/deploy_dev_steps_test.py", line 1129, in test_any_other_error_goes_on_as_it_came
+    steps_module.Http().request("GET", "api.example", "/", {"authorization": "Bearer t"})
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpq859oa4_/tools/ci/deploy_dev_steps.py", line 124, in request
+    raise OSError("a request header holds a character HTTP doesn't allow") from None
+OSError: a request header holds a character HTTP doesn't allow
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.314s
+
+FAILED (errors=2, skipped=1)

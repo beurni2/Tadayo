@@ -1,0 +1,23 @@
+tools/ci/deploy_dev_steps.py
+--- old
+            if not isinstance(integrity, str) or not integrity.startswith("sha512-"):
+
+--- new
+            if not isinstance(integrity, str):
+
+--- expected: test_it_refuses_a_lockfile_it_can_t_trust
+--- exit 1
+.....................................................F.......................
+======================================================================
+FAIL: test_it_refuses_a_lockfile_it_can_t_trust_before_installing (__main__.SetupWranglerTest.test_it_refuses_a_lockfile_it_can_t_trust_before_installing) (change='a SHA-1 integrity')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp0hgdwv8z/tools/ci/deploy_dev_steps_test.py", line 391, in test_it_refuses_a_lockfile_it_can_t_trust_before_installing
+    self.assertIn("nothing is installed", out)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'nothing is installed' not found in "deploy-dev: setup-wrangler: RUNNER_TEMP isn't an absolute path (GitHub's runner sets it)\n"
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.604s
+
+FAILED (failures=1)

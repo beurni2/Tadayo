@@ -1,0 +1,23 @@
+tools/ci/deploy_dev_steps.py
+--- old
+            print(f"deploy-dev: pages-deploy: wrangler failed (exit {code})")
+            return 1
+--- new
+            print(f"deploy-dev: pages-deploy: wrangler failed (exit {code})")
+--- expected: test_wrangler_s_failure_is_the_step_s
+--- exit 1
+...........................................F........................s........
+======================================================================
+FAIL: test_wrangler_s_failure_is_the_step_s (__main__.PagesDeployTest.test_wrangler_s_failure_is_the_step_s)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp5v24gryl/tools/ci/deploy_dev_steps_test.py", line 630, in test_wrangler_s_failure_is_the_step_s
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: pages-deploy: wrangler failed (exit 1)
+
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.859s
+
+FAILED (failures=1, skipped=1)

@@ -1,0 +1,23 @@
+tools/ci/deploy_dev_steps.py
+--- old
+        if 400 <= answer.status < 500 and isinstance(document, dict)
+--- new
+        if 400 <= answer.status < 600 and isinstance(document, dict)
+--- expected: test_cloudflare_s_not_found_code_in_any_4xx
+--- exit 1
+................................................F............................
+======================================================================
+FAIL: test_cloudflare_s_not_found_code_in_any_4xx_is_a_missing_project_and_nothing_else_is (__main__.PagesProjectTest.test_cloudflare_s_not_found_code_in_any_4xx_is_a_missing_project_and_nothing_else_is) (case='a server error with the code')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpqlzr4otj/tools/ci/deploy_dev_steps_test.py", line 489, in test_cloudflare_s_not_found_code_in_any_4xx_is_a_missing_project_and_nothing_else_is
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: pages-project: made the Pages project tadayo
+deploy-dev: pages-project: tadayo serves main at tadayo-x1y.pages.dev
+
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.685s
+
+FAILED (failures=1)

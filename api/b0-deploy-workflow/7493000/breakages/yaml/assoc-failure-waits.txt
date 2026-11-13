@@ -1,0 +1,44 @@
+tools/ci/deploy_dev_steps.py
+--- old
+if stage.get("status") in ("failure", "canceled") or
+--- new
+if stage.get("status") in ("canceled",) or
+--- expected: test_a_failed_deployment_fails_at_once
+--- exit 1
+.......FF.....................................................................
+======================================================================
+FAIL: test_a_failed_deployment_fails_at_once (__main__.CheckAssociationTest.test_a_failed_deployment_fails_at_once) (stage='deploy', status='failure')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpgklgbn5c/tools/ci/deploy_dev_steps_test.py", line 938, in test_a_failed_deployment_fails_at_once
+    self.assertEqual(sleeps.calls, [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15] != []
+
+First list contains 19 additional elements.
+First extra element 0:
+15
+
+- [15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]
++ []
+
+======================================================================
+FAIL: test_a_failed_deployment_fails_at_once (__main__.CheckAssociationTest.test_a_failed_deployment_fails_at_once) (stage='build', status='failure')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpgklgbn5c/tools/ci/deploy_dev_steps_test.py", line 938, in test_a_failed_deployment_fails_at_once
+    self.assertEqual(sleeps.calls, [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15] != []
+
+First list contains 19 additional elements.
+First extra element 0:
+15
+
+- [15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]
++ []
+
+----------------------------------------------------------------------
+Ran 77 tests in 0.495s
+
+FAILED (failures=2)
