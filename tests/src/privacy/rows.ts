@@ -51,7 +51,37 @@
 //   club's name and the inviter's name, read from the world's invitations bound to that account (the
 //   scanner's `WorldInvitation`), and nothing else of that club (scanner.ts, its header);
 // - for a route that changes the world (a commit, a reservation, a leave, a block), the facts each
-//   answer is scanned against, read from the world after it (scanner.ts, its header).
+//   answer is scanned against, read from the world after it (scanner.ts, its header);
+// - for the schedule's routes (getSchedule, chooseScheduleDays, confirmScheduleDays and listMembers, B2's
+//   schedule slice; getHome, listClubs' `next_day` and a revealed day's `add_target` where a schedule's
+//   day shows), what the contract gives each viewer (B2's contract PR; `Schedule`'s description, T55),
+//   each as a check a row can run:
+//   - `held_by` only to a member still choosing in the club's first days and to every member of a
+//     membership change; `holders` only to the members who hold the day; no name on a `no_reveal` day;
+//     `first_date` only on a day confirmed in the first days whose owner is still a member; `announced`
+//     only in a membership change, never to its new member, and never in the first days;
+//   - getSchedule to an active member the open proposal doesn't include (one who joined after the first
+//     days' first confirmation, FQ100) with `current` alone and no `proposal`;
+//   - a membership change's answers to a viewer the same before and after any other member's
+//     confirmation at the same server time: only `my_state` changes, on the viewer's own, and `announced`
+//     only as its days close; and before its start no member's `position`, `next_day` or `next_up` in
+//     listMembers changes, and no day it adds shows in getHome, listClubs' `next_day` or a revealed day's
+//     `add_target`, so nobody learns that everyone has confirmed (FQ81, FQ101);
+//   - listMembers' `members` the same for every member; in the first days a choice changes none of them,
+//     and a confirmation that leaves the first days open changes only the confirmer's `next_day` (once
+//     their day is dated, FQ79) and `next_up`, which marks whoever's next day opens first; `position`
+//     moves only when the first days apply, on their last confirmation or on a leave that leaves only
+//     confirmed members, to the schedule's order (FQ98, FQ102);
+//   - after a leave, the leaver in no `held_by` or `holders`, and still the `owner` of a day they
+//     confirmed, with no `first_date` (FQ63, FQ102);
+//   - a proposal's `version` unchanged by a choice, or by a confirmation or a leave that leaves its `state`
+//     as it was; moved by a revision of the first days, and with `state` when they apply (T33, FQ102);
+//   - the neutral not-found before any other code to a caller without an active membership in the
+//     proposal's club, a former member listed in a replaced proposal among them, and to an active member
+//     whose current membership the proposal doesn't include, one who left and rejoined among them (T9,
+//     T14; spec 07; FQ100).
+//   The leak scanner can't judge these: it accepts any person of a club the viewer is in (scanner.ts), so
+//   each row judges them.
 
 import { JUDGED } from "./account.ts";
 

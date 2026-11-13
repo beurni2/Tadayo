@@ -31,25 +31,26 @@ export type { Deps } from "./deps.ts";
 const INVALID_BODY = '{"code":"INVALID_REQUEST"}';
 
 /**
- * The most a request body may hold, for every route (Fastify's own limit is 1 MiB). What a body costs
- * to read and check grows with its size: the contract's `text()` still counts a string's graphemes after
- * its length guard has failed, so a name of a million characters held the event loop for a quarter of a
- * second, and any account with a token could send one (the review of slice 8). The largest body the
- * contract lets any operation take is under 48,600 bytes (a report, a comment or a batch of 50 events, every
- * code unit and key written as a six-byte escape), so 64 KiB shuts no valid request out:
- * `tests/src/privacy/body-limits.test.ts` measures each operation's longest body from `openapi.yaml`
- * and holds it to its route's limit. Past the limit Fastify answers from the Content-Length it was sent,
- * before it reads a byte (and closes the connection), and `failed` makes that the contract's
- * INVALID_REQUEST.
+ * The most a request body may hold, for every route (Fastify's own limit is 1 MiB). The largest body the
+ * contract lets any operation take is under 96,600 bytes (a report or a comment: a string's `maxLength`
+ * counts code points, and a code point outside the Basic Multilingual Plane is written as two six-byte
+ * escapes, docs/LIMITATIONS.md), so 128 KiB shuts no valid request out:
+ * `tests/src/privacy/body-limits.test.ts` measures each operation's longest body from `openapi.yaml` and
+ * holds it to its route's limit. What a body costs to check no longer grows with its size past each field's
+ * own guard, since the contract's `text()` stops at it (a name of a million characters is refused before its
+ * graphemes are counted); parsing 128 KiB of JSON takes well under a millisecond. Past the limit Fastify
+ * answers from the Content-Length it was sent, before it reads a byte (and closes the connection), and
+ * `failed` makes that the contract's INVALID_REQUEST.
  */
-export const BODY_LIMIT = 64 * 1024;
+export const BODY_LIMIT = 128 * 1024;
 
 /**
- * A route that takes little is given less: `updateMe`'s largest valid body is under 4,700 bytes (a name
- * of 640 code units, the most the contract keeps, each written as an escape, and an avatar's id and the
- * rest), so its limit is 8 KiB, which holds the count of a name to a couple of milliseconds.
+ * A route that takes little is given less: `updateMe`'s largest valid body is under 8,500 bytes (a name of
+ * 640 code points, the most the contract keeps, each outside the Basic Multilingual Plane and written as
+ * two escapes, every key escaped too, and an avatar's id and the rest), so its limit is 17 KiB, the least
+ * whole number of KiB that keeps that body under half of it, as `me.test.ts` asks.
  */
-const ROUTE_BODY_LIMITS: Readonly<Record<string, number>> = { updateMe: 8 * 1024 };
+const ROUTE_BODY_LIMITS: Readonly<Record<string, number>> = { updateMe: 17 * 1024 };
 
 /** The most `operation`'s request body may hold, in bytes. */
 export function bodyLimitOf(operation: string): number {

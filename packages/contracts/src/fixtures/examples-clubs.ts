@@ -1,7 +1,7 @@
 // The club examples: Sunday people (six members) and Kitchen table (five, with Leila proposed by Ben,
 // book p30). Each is a scene of its own (book p12).
 import type { Examples } from "./examples.ts";
-import { at, changeFrom, club, clubs, day, member, people, rosters } from "./world.ts";
+import { at, changeFrom, club, clubs, day, member, people, rosters, type Who } from "./world.ts";
 
 const sp = clubs.sundayPeople;
 const kt = clubs.kitchenTable;
@@ -99,44 +99,44 @@ const invitationRoster = (state: "open" | "changed" | "waiting") => ({
   ],
 });
 
-// Kitchen table's proposal after Leila joins, from Monday 7 December, the first week after the days
-// already announced (FQ61): Alex, Sam and Maya have confirmed Tuesday, Wednesday and Saturday, each named
-// as the day's owner (book p11, FQ78). `others` is the rest of the week as Ben sees it, over those owners:
-// by default Ben has chosen Monday. In a clash, Ben's other member is Leila (FQ46).
 type WeekdayKey = "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday";
-const ktOwners: Partial<Record<WeekdayKey, "alex" | "sam" | "maya">> = {
+const WEEK: readonly WeekdayKey[] = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+
+// Kitchen table's membership change after Leila joins, from Monday 7 December, the first week after the
+// days already announced (FQ61), built on G04-change's rules: one week every member confirms as a whole,
+// with no choosing, each day naming the member it's proposed for, whoever has confirmed (FQ81). G04-change
+// itself draws a pair change from 16 November (world.ts). `announced` is every Kitchen table day from
+// Saturday 7 November to Saturday 5 December, the days kept as they were.
+const ktChange: Record<WeekdayKey, Who> = {
+  monday: "ben",
   tuesday: "alex",
   wednesday: "sam",
+  thursday: "nina",
+  friday: "leila",
   saturday: "maya",
 };
-const changeDate = (index: number) =>
-  new Date(Date.parse(`${changeFrom}T12:00:00Z`) + index * 86_400_000).toISOString().slice(0, 10);
-const ktSlots = (
-  others: Partial<Record<WeekdayKey, "yours" | "clash" | "no_reveal" | "available">> = { monday: "yours" },
-) =>
-  (["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"] as const).map((weekday, index) => {
-    const owner = others[weekday] ? undefined : ktOwners[weekday];
-    const state = owner ? "taken" : (others[weekday] ?? "available");
-    return {
-      weekday,
-      state,
-      ...(owner ? { owner: member("kitchenTable", owner) } : {}),
-      ...(state === "clash" ? { clash_with: member("kitchenTable", "leila") } : {}),
-      first_date: changeDate(index),
-      suggested: weekday === "monday",
-    };
-  });
-const ktProposal = (version: number, others?: Parameters<typeof ktSlots>[0], extra: Record<string, unknown> = {}) => ({
+const ktAnnounced = Array.from({ length: 29 }, (_, index) =>
+  new Date(Date.parse("2026-11-07T12:00:00Z") + index * 86_400_000).toISOString().slice(0, 10),
+).flatMap((date) => {
+  const weekday = WEEK[new Date(`${date}T12:00:00Z`).getUTCDay() - 1];
+  const holder = rosters.kitchenTable.find(([, day]) => day === weekday);
+  return holder ? [day("kitchenTable", holder[0], date, "collecting")] : [];
+});
+const ktChangeProposal = (myState: "choosing" | "confirmed") => ({
   id: "spr_kt_2",
-  version,
+  version: 1,
   reason: "membership_change",
   effective_from: changeFrom,
   days_per_member: 1,
-  slots: ktSlots(others),
+  slots: WEEK.map((weekday) =>
+    ktChange[weekday] === "ben"
+      ? { weekday, state: "yours", suggested: true }
+      : { weekday, state: "available", held_by: member("kitchenTable", ktChange[weekday]), suggested: false },
+  ),
   my_days: ["monday"],
-  my_state: "choosing",
+  my_state: myState,
   state: "open",
-  ...extra,
+  announced: ktAnnounced,
 });
 const ktSchedule = (proposal: Record<string, unknown>) => ({
   server_now: at.friday6Morning,
@@ -147,6 +147,83 @@ const ktSchedule = (proposal: Record<string, unknown>) => ({
   },
   proposal,
 });
+
+// Sunday people's first days, as an independent scene from Monday 2 November: the proposal gave each member
+// the weekday of their place in the order they joined (Ben Monday to Nina Saturday, as spec 05's examples
+// do). A slot is written as its state, a member (the owner of a taken day, or who a day is held by), the
+// holders of a contested day, and the November date a confirmed day first opens on (FQ79).
+type SlotSpec = readonly [
+  state: "yours" | "taken" | "available" | "clash" | "no_reveal",
+  who?: Who | readonly Who[] | undefined,
+  date?: number,
+];
+const proposedFor = Object.fromEntries(rosters.sundayPeople.map(([who, weekday]) => [weekday, who])) as Record<
+  WeekdayKey,
+  Who
+>;
+const spFirstDays = (
+  viewer: Who,
+  week: Record<WeekdayKey, SlotSpec>,
+  myState: "choosing" | "confirmed" = "choosing",
+) => ({
+  id: "spr_sp_1",
+  version: 1,
+  reason: "activation",
+  effective_from: "2026-11-02",
+  days_per_member: 1,
+  slots: WEEK.map((weekday) => {
+    const [state, who, date] = week[weekday];
+    const person = (name: Who) => member("sundayPeople", name);
+    return {
+      weekday,
+      state,
+      ...(state === "taken" && typeof who === "string" ? { owner: person(who) } : {}),
+      ...(state === "clash" && Array.isArray(who) ? { holders: who.map(person) } : {}),
+      ...(state === "available" && typeof who === "string" ? { held_by: person(who) } : {}),
+      ...(date === undefined ? {} : { first_date: `2026-11-${String(date).padStart(2, "0")}` }),
+      suggested: proposedFor[weekday] === viewer,
+    };
+  }),
+  my_days: WEEK.filter((weekday) => {
+    const [state] = week[weekday];
+    return state === "yours" || state === "clash";
+  }),
+  my_state: myState,
+  state: "open",
+});
+const spFirstDaysSchedule = (
+  viewer: Who,
+  serverNow: string,
+  proposal: Record<string, unknown>,
+  confirmed: readonly (readonly [Who, WeekdayKey])[] = [],
+) => ({
+  server_now: serverNow,
+  club: club("sundayPeople", viewer),
+  ...(confirmed.length > 0
+    ? {
+        current: {
+          effective_from: "2026-11-02",
+          assignments: confirmed.map(([who, weekday]) => ({ weekday, person: member("sundayPeople", who) })),
+        },
+      }
+    : {}),
+  proposal,
+});
+// Thursday 5 November: Maya, Alex, Sam and Nina confirmed on Wednesday at 9 AM, so their first dates are
+// Tuesday 10, Wednesday 11, Thursday 12 (Thursday 5's 7 AM was only 22 hours later) and Saturday 7.
+const spConfirmedFour = [
+  ["maya", "tuesday"],
+  ["alex", "wednesday"],
+  ["sam", "thursday"],
+  ["nina", "saturday"],
+] as const;
+const spFirstDates: Partial<Record<Who, number>> = { maya: 10, alex: 11, sam: 12, nina: 7 };
+const spTakenFour = {
+  tuesday: ["taken", "maya", 10],
+  wednesday: ["taken", "alex", 11],
+  thursday: ["taken", "sam", 12],
+  saturday: ["taken", "nina", 7],
+} as const;
 
 const spSchedule = rosters.sundayPeople.map(([who, weekday]) => ({ weekday, person: member("sundayPeople", who) }));
 
@@ -267,6 +344,24 @@ export const CLUB_EXAMPLES: { home: Examples; operations: Record<string, Example
             next_up: who === "maya",
           })),
           open_revision: leilaRevision("ben", "approved"),
+        },
+      },
+      first_days: {
+        summary:
+          "Thursday 5 November, Sunday people's first days: every member in the order they joined, and Ben and Debby, not yet confirmed, with no date (F01-friends-first-days, FQ98)",
+        value: {
+          server_now: at.thursday5Morning,
+          club: sp,
+          members: rosters.sundayPeople.map(([who], index) => {
+            const first = spFirstDates[who];
+            return {
+              person: people[who],
+              position: index + 1,
+              cover: index + 1,
+              ...(first === undefined ? {} : { next_day: day("sundayPeople", who, first, "collecting") }),
+              next_up: who === "nina",
+            };
+          }),
         },
       },
     },
@@ -407,27 +502,129 @@ export const CLUB_EXAMPLES: { home: Examples; operations: Record<string, Example
           current: { effective_from: "2026-10-05", assignments: spSchedule },
         },
       },
-      confirm_one_day: {
+      change: {
         summary:
-          "Kitchen table's proposal after Leila joins: Ben chooses Monday; the days others confirmed name their owners (G04, FQ78)",
-        value: ktSchedule(ktProposal(1)),
+          "Kitchen table's membership change after Leila joins, from Monday 7 December: one week everyone confirms, each day naming the member it's proposed for, with the days announced until then kept (G04-change's rules, FQ61)",
+        value: ktSchedule(ktChangeProposal("choosing")),
       },
-      clash: {
+      change_confirmed: {
         summary:
-          "Ben and Leila both chose Friday: neither can confirm it until one chooses again, and only the two of them see each other's name (FQ46, FQ55)",
-        value: ktSchedule(ktProposal(1, { friday: "clash" }, { my_days: ["friday"] })),
+          "The same change once Ben has confirmed it: the same week and version, and nothing about anyone else's confirmation before it starts (FQ81)",
+        value: ktSchedule(ktChangeProposal("confirmed")),
       },
-      no_reveal: {
+      conflict_three: {
         summary:
-          "Two of Maya, Nina and Leila chose Friday, and Maya hasn't confirmed Saturday: Ben sees only that Friday has no reveal scheduled, and can't tell which two (G04-contested-other, FQ46, FQ78)",
-        value: ktSchedule(ktProposal(1, { monday: "yours", friday: "no_reveal", saturday: "available" })),
+          "Sunday people's first days, Tuesday 3 November: Ben, Alex and Debby hold Friday, so none of them can confirm it, and only they see each other's names (G04-conflict-three, FQ46, FQ55)",
+        value: spFirstDaysSchedule(
+          "ben",
+          at.tuesday3Morning,
+          spFirstDays("ben", {
+            monday: ["available"],
+            tuesday: ["available", "maya"],
+            wednesday: ["available"],
+            thursday: ["available", "sam"],
+            friday: ["clash", ["ben", "alex", "debby"]],
+            saturday: ["available", "nina"],
+          }),
+        ),
+      },
+      contested_other: {
+        summary:
+          "Sam, still choosing, sees Friday contested with no names and no count, and may choose it too (G04-contested-other, FQ46, FQ48)",
+        value: spFirstDaysSchedule(
+          "sam",
+          at.tuesday3Morning,
+          spFirstDays("sam", {
+            monday: ["available"],
+            tuesday: ["available", "maya"],
+            wednesday: ["available"],
+            thursday: ["yours"],
+            friday: ["no_reveal"],
+            saturday: ["available", "nina"],
+          }),
+        ),
+      },
+      confirm_refused: {
+        summary:
+          "Alex went back to Wednesday, and Debby can't confirm Friday while Ben holds it too (G04-confirm-refused, FQ55)",
+        value: spFirstDaysSchedule(
+          "debby",
+          at.tuesday3Morning,
+          spFirstDays("debby", {
+            monday: ["available"],
+            tuesday: ["available", "maya"],
+            wednesday: ["available", "alex"],
+            thursday: ["available", "sam"],
+            friday: ["clash", ["ben", "debby"]],
+            saturday: ["available", "nina"],
+          }),
+        ),
+      },
+      first_days: {
+        summary:
+          "Thursday 5 November: the days Maya, Alex, Sam and Nina confirmed go ahead from their first dates (FQ79), while Ben and Debby still choose. Friday names Debby for the day picker only: the club's week shows it with no name (G05-schedule-choose-own, FQ48)",
+        value: spFirstDaysSchedule(
+          "ben",
+          at.thursday5Morning,
+          spFirstDays("ben", { ...spTakenFour, monday: ["yours"], friday: ["available", "debby"] }),
+          spConfirmedFour,
+        ),
+      },
+      first_days_confirmed: {
+        summary:
+          "The same Thursday as Maya sees it, having confirmed: a day nobody has confirmed names nobody (weekRows, FQ48)",
+        value: spFirstDaysSchedule(
+          "maya",
+          at.thursday5Morning,
+          spFirstDays(
+            "maya",
+            { ...spTakenFour, tuesday: ["yours", undefined, 10], monday: ["available"], friday: ["available"] },
+            "confirmed",
+          ),
+          spConfirmedFour,
+        ),
       },
     },
     chooseScheduleDays: {
-      chosen: { summary: "Ben chose Monday", value: ktProposal(2) },
+      chosen: {
+        summary:
+          "Ben, in conflict_three, chooses Monday: Friday, which Alex and Debby still hold, now has no reveal scheduled and no names for Ben, and the version stays (FQ46, T33)",
+        value: spFirstDays("ben", {
+          monday: ["yours"],
+          tuesday: ["available", "maya"],
+          wednesday: ["available"],
+          thursday: ["available", "sam"],
+          friday: ["no_reveal"],
+          saturday: ["available", "nina"],
+        }),
+      },
+      joined_contest: {
+        summary:
+          "Sam, in contested_other, chooses Friday, joins its holders and sees their names; Thursday is free (FQ46, FQ48)",
+        value: spFirstDays("sam", {
+          monday: ["available"],
+          tuesday: ["available", "maya"],
+          wednesday: ["available"],
+          thursday: ["available"],
+          friday: ["clash", ["ben", "alex", "sam", "debby"]],
+          saturday: ["available", "nina"],
+        }),
+      },
     },
     confirmScheduleDays: {
-      confirmed: { summary: "Ben confirmed Monday", value: ktProposal(3, undefined, { my_state: "confirmed" }) },
+      confirmed: {
+        summary: "Ben confirms Kitchen table's change: the same week and version as before (FQ81)",
+        value: ktChangeProposal("confirmed"),
+      },
+      first_day_confirmed: {
+        summary:
+          "Ben confirms Monday in the first days: it first opens on Monday 9 November, at least 24 hours away (FQ79), and Friday, which Debby holds, now names nobody for Ben (FQ48)",
+        value: spFirstDays(
+          "ben",
+          { ...spTakenFour, monday: ["yours", undefined, 9], friday: ["available"] },
+          "confirmed",
+        ),
+      },
     },
     leaveClub: {
       kept: {
