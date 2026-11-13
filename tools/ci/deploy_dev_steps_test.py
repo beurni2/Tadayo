@@ -254,8 +254,9 @@ class CheckApiTest(unittest.TestCase):
 
 
 class Repository:
-    """A scratch copy of the files the Pages steps read: tools/ci/pages and apps/web/dist; and,
-    beside it, a folder that stands for the runner's RUNNER_TEMP."""
+    """A scratch copy of the files the Pages steps read: tools/ci/pages and the web job's build in
+    apps/web/dist; and, beside it, a folder that stands for the runner's RUNNER_TEMP, holding the
+    site as the pages job downloads it."""
 
     def __init__(self, test):
         self.root = tempfile.mkdtemp()
@@ -266,13 +267,21 @@ class Repository:
         os.makedirs(pages)
         for name in ("package.json", "package-lock.json"):
             shutil.copy(os.path.join(ROOT, "tools", "ci", "pages", name), pages)
-        site = os.path.join(self.root, "apps", "web", "dist", ".well-known")
-        os.makedirs(site)
-        with open(os.path.join(site, "apple-app-site-association"), "wb") as f:
-            f.write(ASSOCIATION_BYTES)
+        for site in (self.build(), self.site()):
+            os.makedirs(os.path.join(site, ".well-known"))
+            with open(os.path.join(site, ".well-known", "apple-app-site-association"), "wb") as f:
+                f.write(ASSOCIATION_BYTES)
 
     def path(self, *parts):
         return os.path.join(self.root, *parts)
+
+    def build(self, *parts):
+        """The web job's build, in the checkout."""
+        return self.path("apps", "web", "dist", *parts)
+
+    def site(self, *parts):
+        """The pages job's download, under RUNNER_TEMP."""
+        return os.path.join(os.path.realpath(self.temp), "deploy-dev-site", *parts)
 
     def edit_lock(self, change):
         with open(self.path("tools", "ci", "pages", "package-lock.json"), encoding="utf-8") as f:
@@ -515,6 +524,21 @@ class PagesProjectTest(unittest.TestCase):
                 self.assertEqual(code, 1, out)
                 self.assertEqual(http.requests, [])
 
+    def test_a_token_that_isn_t_a_bearer_token_is_refused_and_never_said(self):
+        # http.client refuses a header value with a line break by quoting it whole (PR #52's
+        # review, round 3), so such a token is never sent.
+        for token in ("pasted-token\n", "pasted token", "pasted-token\r\nx-other: 1", "t\u00f6ken", "=token"):
+            with self.subTest(token=token):
+                code, out, http, _ = call("pages_project", {**CLOUDFLARE, "CLOUDFLARE_API_TOKEN": token})
+                self.assertEqual(code, 1, out)
+                self.assertEqual(http.requests, [])
+                self.assertIn("holds a character a bearer token can't", out)
+                self.assertNotIn(token.strip(), out)
+        token = "Az09._~+/-token=="
+        code, out, http, _ = call("pages_project", {**CLOUDFLARE, "CLOUDFLARE_API_TOKEN": token}, sequence(found(project())))
+        self.assertEqual(code, 0, out)
+        self.assertEqual(http.requests[0]["headers"]["authorization"], f"Bearer {token}")
+
 
 class WranglerRun(FakeRun):
     """Records, as wrangler starts, what its working folder holds and whether it exists."""
@@ -537,7 +561,7 @@ class PagesDeployTest(unittest.TestCase):
         [done] = run.calls
         self.assertEqual(done["cmd"], [
             "node", wrangler,
-            "pages", "deploy", repo.path("apps", "web", "dist"), "--project-name=tadayo", "--branch=main",
+            "pages", "deploy", repo.site(), "--project-name=tadayo", "--branch=main",
             f"--commit-hash={SHA}", f"--commit-message=main at {SHA[:12]}", "--commit-dirty=false"])
         self.assertEqual(done["env"], {"PATH": "/usr/bin", "HOME": done["cwd"], "CI": "true",
                                        "DO_NOT_TRACK": "1", "WRANGLER_SEND_METRICS": "false",
@@ -574,9 +598,10 @@ class PagesDeployTest(unittest.TestCase):
         for make in (lambda p: open(p, "w").close(), os.makedirs):
             with self.subTest(make=make):
                 repo = Repository(self)
-                make(repo.path("apps", "web", "dist", "_worker.js"))
+                repo.wrangler()
+                make(repo.site("_worker.js"))
                 run = FakeRun()
-                code, out, _, _ = call("pages_deploy", CLOUDFLARE, run=run, root=repo.root)
+                code, out, _, _ = call("pages_deploy", {**CLOUDFLARE, "RUNNER_TEMP": repo.temp}, run=run, root=repo.root)
                 self.assertEqual(code, 1, out)
                 self.assertEqual(run.calls, [])
                 self.assertIn("_worker.js", out)
@@ -584,7 +609,7 @@ class PagesDeployTest(unittest.TestCase):
     def test_a_link_in_the_site_is_refused(self):
         repo = Repository(self)
         repo.wrangler()
-        os.symlink("/nonexistent/../proc/self/environ", repo.path("apps", "web", "dist", "leak.txt"))
+        os.symlink("/nonexistent/../proc/self/environ", repo.site("leak.txt"))
         run = FakeRun()
         code, out, _, _ = call("pages_deploy", {**CLOUDFLARE, "RUNNER_TEMP": repo.temp}, run=run, root=repo.root)
         self.assertEqual(code, 1, out)
@@ -599,45 +624,106 @@ class PagesDeployTest(unittest.TestCase):
         self.assertEqual(code, 1, out)
         self.assertIn("wrangler failed (exit 1)", out)
 
-    def test_nothing_runs_without_the_build_the_secrets_the_commit_or_the_install(self):
+    def test_nothing_runs_without_the_site_the_secrets_the_commit_or_the_install(self):
         repo = Repository(self)
         repo.wrangler()
-        built = Repository(self)
-        os.remove(repo.path("apps", "web", "dist", ".well-known", "apple-app-site-association"))
+        os.remove(repo.site(".well-known", "apple-app-site-association"))
         code, out, _, _ = call("pages_deploy", {**CLOUDFLARE, "RUNNER_TEMP": repo.temp}, run=FakeRun(), root=repo.root)
         self.assertEqual(code, 1, out)
         self.assertIn("has no /.well-known/apple-app-site-association", out)
-        for environ, root in ((CLOUDFLARE, repo.root), ({**CLOUDFLARE, "GITHUB_SHA": ""}, ROOT),
-                              ({"CLOUDFLARE_ACCOUNT_ID": ACCOUNT, "GITHUB_SHA": SHA}, ROOT),
-                              (CLOUDFLARE, built.root), ({**CLOUDFLARE, "RUNNER_TEMP": built.temp}, built.root)):
-            with self.subTest(environ=environ, root=root):
+        # Each case lacks one thing alone, so only its own check can stop it (round 3).
+        ready = Repository(self)
+        ready.wrangler()
+        bare = Repository(self)
+        cases = (({**CLOUDFLARE, "CLOUDFLARE_API_TOKEN": ""}, ready, "has no CLOUDFLARE_API_TOKEN"),
+                 ({**CLOUDFLARE, "CLOUDFLARE_ACCOUNT_ID": ""}, ready, "isn't an account id"),
+                 ({**CLOUDFLARE, "GITHUB_SHA": ""}, ready, "GITHUB_SHA isn't"),
+                 ({**CLOUDFLARE, "RUNNER_TEMP": ""}, ready, "RUNNER_TEMP isn't an absolute path"),
+                 (CLOUDFLARE, bare, "setup-wrangler installs it"))
+        for environ, where, said in cases:
+            with self.subTest(said=said):
                 run = FakeRun()
-                code, out, _, _ = call("pages_deploy", environ, run=run, root=root)
+                code, out, _, _ = call("pages_deploy", {"RUNNER_TEMP": where.temp, **environ}, run=run, root=where.root)
                 self.assertEqual(code, 1, out)
                 self.assertEqual(run.calls, [])
-        code, out, _, _ = call("pages_deploy", {**CLOUDFLARE, "RUNNER_TEMP": built.temp}, root=built.root)
-        self.assertIn("setup-wrangler installs it", out)
+                self.assertIn(said, out)
+
+    def test_it_deploys_the_download_and_never_the_checkout_s_apps_web_dist(self):
+        # download-artifact writes through a link already on its path: a link the repository held
+        # at apps/web/dist would take the site's files into tools/ci/ (round 3), so the site is
+        # downloaded under RUNNER_TEMP and nothing here reads apps/web/dist.
+        for make in (lambda p: shutil.rmtree(p),
+                     lambda p: (shutil.rmtree(p), os.symlink(os.path.join("..", "..", "tools", "ci"), p)),
+                     lambda p: open(os.path.join(p, "_worker.js"), "w").close()):
+            with self.subTest(make=make):
+                repo = Repository(self)
+                repo.wrangler()
+                make(repo.build())
+                environ = {**CLOUDFLARE, "RUNNER_TEMP": repo.temp}
+                code, out, _, _ = call("check_site", environ, root=repo.root)
+                self.assertEqual(code, 0, out)
+                run = FakeRun()
+                code, out, _, _ = call("pages_deploy", environ, run=run, root=repo.root)
+                self.assertEqual(code, 0, out)
+                self.assertEqual(run.calls[0]["cmd"][4], repo.site())
+                code, out, _, _ = call("check_association", environ, CheckAssociationTest.both_served(), root=repo.root)
+                self.assertEqual(code, 0, out)
 
 
 class CheckSiteTest(unittest.TestCase):
     """wrangler follows a link and publishes what it points to (a link to /proc/self/environ would
     publish its own environment, the Cloudflare token in it), so the site holds plain files and
-    folders only (PR #52's review, round 2)."""
+    folders only (PR #52's review, round 2): the web job's build, checked by check-build before the
+    upload, and the pages job's download under RUNNER_TEMP, checked by check-site (round 3)."""
 
-    def site(self):
+    STEPS = ("check_build", "check_site")
+
+    def site(self, step):
+        """A scratch repository, the folder `step` checks, and the environment it runs with."""
         repo = Repository(self)
-        dist = repo.path("apps", "web", "dist")
+        dist = repo.build() if step == "check_build" else repo.site()
         os.makedirs(os.path.join(dist, "privacy"))
         for name in ("index.html", "_headers", "404.html", os.path.join("privacy", "index.html")):
             with open(os.path.join(dist, name), "w", encoding="utf-8") as f:
                 f.write("x")
-        return repo, dist
+        return repo, dist, ({} if step == "check_build" else {"RUNNER_TEMP": repo.temp})
+
+    def check(self, step, repo, environ):
+        return call(step, environ, root=repo.root)
 
     def test_a_site_of_plain_files_and_folders_passes(self):
-        repo, _ = self.site()
-        code, out, http, _ = call("check_site", {}, root=repo.root)
+        for step in self.STEPS:
+            with self.subTest(step=step):
+                repo, _, environ = self.site(step)
+                code, out, http, _ = self.check(step, repo, environ)
+                self.assertEqual(code, 0, out)
+                self.assertEqual(http.requests, [])
+
+    def test_each_step_checks_its_own_folder(self):
+        repo, _, _ = self.site("check_build")
+        shutil.rmtree(repo.site())
+        code, out, _, _ = call("check_build", {}, root=repo.root)
         self.assertEqual(code, 0, out)
-        self.assertEqual(http.requests, [])
+        self.assertIn("apps/web/dist holds plain files", out)
+        code, out, _, _ = call("check_site", {"RUNNER_TEMP": repo.temp}, root=repo.root)
+        self.assertEqual((code, "RUNNER_TEMP/deploy-dev-site isn't a folder" in out), (1, True), out)
+        repo, _, _ = self.site("check_site")
+        shutil.rmtree(repo.build())
+        code, out, _, _ = call("check_site", {"RUNNER_TEMP": repo.temp}, root=repo.root)
+        self.assertEqual(code, 0, out)
+        self.assertIn("RUNNER_TEMP/deploy-dev-site holds plain files", out)
+        code, out, _, _ = call("check_build", {}, root=repo.root)
+        self.assertEqual((code, "apps/web/dist isn't a folder" in out), (1, True), out)
+
+    def test_the_download_needs_a_runner_temp_outside_the_checkout(self):
+        repo, _, _ = self.site("check_site")
+        inside = repo.path("tmp")
+        os.makedirs(os.path.join(inside, "deploy-dev-site"))
+        for temp in (None, "", "relative/tmp", inside, repo.root):
+            with self.subTest(temp=temp):
+                code, out, _, _ = call("check_site", {} if temp is None else {"RUNNER_TEMP": temp}, root=repo.root)
+                self.assertEqual(code, 1, out)
+                self.assertIn("RUNNER_TEMP", out)
 
     def test_a_link_anywhere_in_the_site_is_refused(self):
         outside = tempfile.mkdtemp()
@@ -648,48 +734,56 @@ class CheckSiteTest(unittest.TestCase):
             "docs": outside,
             os.path.join("privacy", "dangling"): "/nonexistent",
         }
-        for where, target in cases.items():
-            with self.subTest(where=where):
-                repo, dist = self.site()
-                os.symlink(target, os.path.join(dist, where))
-                code, out, _, _ = call("check_site", {}, root=repo.root)
+        for step in self.STEPS:
+            for where, target in cases.items():
+                with self.subTest(step=step, where=where):
+                    repo, dist, environ = self.site(step)
+                    os.symlink(target, os.path.join(dist, where))
+                    code, out, _, _ = self.check(step, repo, environ)
+                    self.assertEqual(code, 1, out)
+                    self.assertIn(f"{where} is a link", out)
+            with self.subTest(step=step, where="the association file"):
+                repo, dist, environ = self.site(step)
+                association = os.path.join(dist, ".well-known", "apple-app-site-association")
+                os.rename(association, os.path.join(outside, f"aasa-{step}"))
+                os.symlink(os.path.join(outside, f"aasa-{step}"), association)
+                code, out, _, _ = self.check(step, repo, environ)
                 self.assertEqual(code, 1, out)
-                self.assertIn(f"{where} is a link", out)
-        repo, dist = self.site()
-        association = os.path.join(dist, ".well-known", "apple-app-site-association")
-        os.rename(association, os.path.join(outside, "aasa"))
-        os.symlink(os.path.join(outside, "aasa"), association)
-        code, out, _, _ = call("check_site", {}, root=repo.root)
-        self.assertEqual(code, 1, out)
-        self.assertIn("apple-app-site-association is a link", out)
+                self.assertIn("apple-app-site-association is a link", out)
 
     def test_a_special_file_is_refused(self):
-        repo, dist = self.site()
-        os.mkfifo(os.path.join(dist, "pipe"))
-        code, out, _, _ = call("check_site", {}, root=repo.root)
-        self.assertEqual(code, 1, out)
-        self.assertIn("pipe is neither a file nor a folder", out)
+        for step in self.STEPS:
+            with self.subTest(step=step):
+                repo, dist, environ = self.site(step)
+                os.mkfifo(os.path.join(dist, "pipe"))
+                code, out, _, _ = self.check(step, repo, environ)
+                self.assertEqual(code, 1, out)
+                self.assertIn("pipe is neither a file nor a folder", out)
 
     def test_a_missing_or_linked_site_a_missing_association_file_or_a_worker_is_refused(self):
-        repo, dist = self.site()
-        shutil.rmtree(dist)
-        code, out, _, _ = call("check_site", {}, root=repo.root)
-        self.assertEqual((code, "isn't a folder" in out), (1, True), out)
-        repo, dist = self.site()
-        os.rename(dist, dist + "-real")
-        os.symlink(dist + "-real", dist)
-        code, out, _, _ = call("check_site", {}, root=repo.root)
-        self.assertEqual((code, "isn't a folder" in out), (1, True), out)
-        repo, dist = self.site()
-        os.remove(os.path.join(dist, ".well-known", "apple-app-site-association"))
-        code, out, _, _ = call("check_site", {}, root=repo.root)
-        self.assertEqual((code, "has no /.well-known/apple-app-site-association" in out), (1, True), out)
-        for make in (lambda p: open(p, "w").close(), os.makedirs):
-            with self.subTest(make=make):
-                repo, dist = self.site()
-                make(os.path.join(dist, "_worker.js"))
-                code, out, _, _ = call("check_site", {}, root=repo.root)
-                self.assertEqual((code, "_worker.js" in out), (1, True), out)
+        for step in self.STEPS:
+            with self.subTest(step=step, case="missing"):
+                repo, dist, environ = self.site(step)
+                shutil.rmtree(dist)
+                code, out, _, _ = self.check(step, repo, environ)
+                self.assertEqual((code, "isn't a folder" in out), (1, True), out)
+            with self.subTest(step=step, case="linked"):
+                repo, dist, environ = self.site(step)
+                os.rename(dist, dist + "-real")
+                os.symlink(dist + "-real", dist)
+                code, out, _, _ = self.check(step, repo, environ)
+                self.assertEqual((code, "isn't a folder" in out), (1, True), out)
+            with self.subTest(step=step, case="no association file"):
+                repo, dist, environ = self.site(step)
+                os.remove(os.path.join(dist, ".well-known", "apple-app-site-association"))
+                code, out, _, _ = self.check(step, repo, environ)
+                self.assertEqual((code, "has no /.well-known/apple-app-site-association" in out), (1, True), out)
+            for make in (lambda p: open(p, "w").close(), os.makedirs):
+                with self.subTest(step=step, make=make):
+                    repo, dist, environ = self.site(step)
+                    make(os.path.join(dist, "_worker.js"))
+                    code, out, _, _ = self.check(step, repo, environ)
+                    self.assertEqual((code, "_worker.js" in out), (1, True), out)
 
 
 BRANCH_PATH = "/repos/beurni2/tadayo/branches/main"
@@ -769,11 +863,19 @@ class CheckAssociationTest(unittest.TestCase):
             return given.pop(0) if len(given) > 1 else given[0]
         return respond
 
+    @staticmethod
+    def both_served():
+        """Cloudflare and both addresses answering as they should, for a test that needs a pass."""
+        def respond(method, host, path, body):
+            return found(project(deployment=deployment())) if host == "api.cloudflare.com" else served()
+        return respond
+
     def setUp(self):
         self.repo = Repository(self)
 
-    def check(self, projects, files):
-        return call("check_association", CLOUDFLARE, self.respond(projects, files), root=self.repo.root)
+    def check(self, projects, files, environ=None):
+        return call("check_association", {**CLOUDFLARE, "RUNNER_TEMP": self.repo.temp, **(environ or {})},
+                    self.respond(projects, files), root=self.repo.root)
 
     def test_this_commit_s_deployment_served_as_built_on_both_addresses_passes(self):
         code, out, http, sleeps = self.check([found(project(deployment=deployment()))],
@@ -896,13 +998,28 @@ class CheckAssociationTest(unittest.TestCase):
                                              {"tadayo-x1y.pages.dev": [served()]})
                 self.assertEqual(code, 1, out)
 
-    def test_a_missing_project_or_build_fails(self):
+    def test_a_missing_project_or_site_fails(self):
         code, out, _, _ = self.check([NOT_FOUND], {})
         self.assertEqual(code, 1, out)
-        os.remove(self.repo.path("apps", "web", "dist", ".well-known", "apple-app-site-association"))
+        os.remove(self.repo.site(".well-known", "apple-app-site-association"))
         code, out, http, _ = self.check([found(project(deployment=deployment()))], {})
         self.assertEqual(code, 1, out)
+        self.assertIn("RUNNER_TEMP/deploy-dev-site/.well-known/apple-app-site-association can't be read", out)
         self.assertEqual(http.requests, [])
+
+    def test_nothing_is_asked_without_the_token_the_account_the_commit_or_runner_temp(self):
+        # Each case lacks one thing alone, so only its own check can stop it (round 3).
+        cases = (({"CLOUDFLARE_API_TOKEN": ""}, "has no CLOUDFLARE_API_TOKEN"),
+                 ({"CLOUDFLARE_API_TOKEN": "pasted-token\n"}, "holds a character a bearer token can't"),
+                 ({"CLOUDFLARE_ACCOUNT_ID": ""}, "isn't an account id"),
+                 ({"GITHUB_SHA": ""}, "GITHUB_SHA isn't"),
+                 ({"RUNNER_TEMP": ""}, "RUNNER_TEMP isn't an absolute path"))
+        for environ, said in cases:
+            with self.subTest(said=said):
+                code, out, http, _ = self.check([found(project(deployment=deployment()))], {}, environ)
+                self.assertEqual(code, 1, out)
+                self.assertEqual(http.requests, [])
+                self.assertIn(said, out)
 
 
 class RecordingConnection:
@@ -964,6 +1081,17 @@ class HttpTest(unittest.TestCase):
             steps_module.Http().request("GET", "lost.example", "/", {})
         [made] = RecordingConnection.made
         self.assertTrue(made.closed)
+
+    def test_a_header_value_http_refuses_is_an_error_that_never_quotes_it(self):
+        # The real connection: http.client checks each header as it is put, before it connects,
+        # and its ValueError quotes the value whole (round 3).
+        steps_module.http.client.HTTPSConnection = self.real
+        for value in ("Bearer pasted-token\n", "Bearer pasted-token\r\nx-other: 1"):
+            with self.subTest(value=value):
+                with self.assertRaises(OSError) as raised:
+                    steps_module.Http().request("GET", "unused.invalid", "/", {"authorization": value})
+                self.assertNotIn("pasted-token", str(raised.exception))
+                self.assertTrue(raised.exception.__suppress_context__)
 
 
 def workflow():
@@ -1032,7 +1160,7 @@ def expected_jobs():
                     {"run": "python3 tools/ci/ci_steps.py setup-pnpm"},
                     {"run": "python3 tools/ci/ci_steps.py install"},
                     {"run": "python3 tools/ci/ci_steps.py web"},
-                    {"run": "python3 tools/ci/deploy_dev_steps.py check-site"},
+                    {"run": "python3 tools/ci/deploy_dev_steps.py check-build"},
                     {"uses": pinned["actions/upload-artifact"],
                      "with": {"name": "site", "path": "apps/web/dist/", "if-no-files-found": "error",
                               "include-hidden-files": "true", "retention-days": "1"}},
@@ -1045,7 +1173,8 @@ def expected_jobs():
                        {"name": "check-head", "env": {"GITHUB_TOKEN": "${{ github.token }}"},
                         "run": "python3 tools/ci/deploy_dev_steps.py check-head"},
                        node,
-                       {"uses": pinned["actions/download-artifact"], "with": {"name": "site", "path": "apps/web/dist"}},
+                       {"uses": pinned["actions/download-artifact"],
+                        "with": {"name": "site", "path": "${{ runner.temp }}/deploy-dev-site"}},
                        {"run": "python3 tools/ci/deploy_dev_steps.py check-site"},
                        {"run": "python3 tools/ci/deploy_dev_steps.py setup-wrangler"},
                        {"name": "pages-project", "env": CLOUDFLARE_ENV,
@@ -1116,6 +1245,7 @@ class WorkflowFileTest(unittest.TestCase):
         found = sorted(re.findall(r"\$\{\{.*?\}\}", self.text))
         self.assertEqual(self.text.count("${{"), len(found))
         wanted = ["${{ github.sha }}"] * 2  # the wait's group and the build's
+        wanted += ["${{ runner.temp }}"]  # where the pages job downloads the site
         wanted += ["${{ github.token }}"] * 3  # wait-ci's, deploy-branch's and check-head's
         wanted += ["${{ secrets.DEV_DATABASE_URL }}", "${{ secrets.FLY_API_TOKEN }}", "${{ secrets.FLY_API_TOKEN }}",
                    "${{ secrets.FLY_API_TOKEN }}", "${{ secrets.SUPABASE_ACCESS_TOKEN }}"]
@@ -1135,8 +1265,8 @@ class WorkflowFileTest(unittest.TestCase):
     def test_the_cloudflare_secret_is_on_a_runner_that_holds_no_other(self):
         # The deploy job's runner keeps flyctl's agent, with Fly's token, running after the probe,
         # so wrangler and its packages run in a job of their own (PR #52's review, security-1); and
-        # that job runs nothing of the repository's but deploy_dev_steps.py, so the site is built
-        # in a job that holds no secret (round 2).
+        # that job runs no file of the checkout but deploy_dev_steps.py, so the site is built in a
+        # job that holds no secret (round 2) and downloaded outside the checkout (round 3).
         jobs = self.document["jobs"]
 
         def named(job):
@@ -1161,6 +1291,15 @@ class WorkflowFileTest(unittest.TestCase):
         self.assertEqual([s.get("run") for s in jobs["deploy"]["steps"]][-1],
                          "python3 tools/ci/deploy_dev_steps.py check-api")
 
+    def test_the_pages_job_downloads_the_site_under_runner_temp_where_its_steps_read_it(self):
+        # A path in the checkout could already be a link the repository holds, which the download
+        # would write through (PR #52's review, round 3).
+        steps = self.document["jobs"]["pages"]["steps"]
+        [download] = [s for s in steps if s.get("uses", "").startswith("actions/download-artifact@")]
+        self.assertEqual(download["with"]["path"], "${{ runner.temp }}/" + steps_module.DOWNLOAD)
+        self.assertEqual(steps[steps.index(download) + 1], {"run": "python3 tools/ci/deploy_dev_steps.py check-site"})
+        self.assertNotIn("dist", json.dumps(steps))
+
     def test_the_pins_are_ci_yml_s_and_ios_yml_s(self):
         pinned = all_pins()
         uses = re.findall(r"uses: (\S+)", self.text)
@@ -1175,8 +1314,8 @@ class UsageTest(unittest.TestCase):
                 out = io.StringIO()
                 with contextlib.redirect_stdout(out):
                     self.assertEqual(steps_module.main(argv), 2)
-                self.assertIn("steps: wait-ci, check-api, check-head, check-site, setup-wrangler, pages-project, pages-deploy, "
-                              "check-association", out.getvalue())
+                self.assertIn("steps: wait-ci, check-api, check-build, check-head, check-site, setup-wrangler, "
+                              "pages-project, pages-deploy, check-association", out.getvalue())
 
 
 if __name__ == "__main__":

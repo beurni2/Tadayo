@@ -46,9 +46,9 @@ jobs:
     name: deploy
     needs: ci
     runs-on: ubuntu-24.04
-    # Above the steps' own limits added up (about 75 minutes: deploy-branch's 20-minute deploy, two
-    # SSH sessions of up to 22 minutes each, check-api's 4, the installs), so each script's limit,
-    # and the clean-up after it, comes before GitHub's.
+    # Above the steps' own limits added up (about 74 minutes: setup-flyctl's 2, deploy-branch's 24,
+    # two SSH sessions of up to 22 minutes each, check-api's 4; the installs and migrate, which have
+    # none, take about 2), so each script's limit, and the clean-up after it, comes before GitHub's.
     timeout-minutes: 80
     permissions:
       contents: read
@@ -58,7 +58,8 @@ jobs:
     # goes here and in ops.yml once actionlint accepts the key (docs/LIMITATIONS.md); until then,
     # an ops run is started only when no deploy-dev job is running or waiting, and a deploy job
     # that ended cancelled is run again once the group is free, if its commit is still main's
-    # head (an older commit's fails at migrate or deploy-branch: a newer run has replaced it).
+    # head (an older commit's fails at migrate or deploy-branch: a newer run has replaced it); if
+    # the pages job that re-run brings can't find the site, Re-run all jobs (docs/LIMITATIONS.md).
     concurrency:
       group: ops-dev
       cancel-in-progress: false
@@ -105,7 +106,7 @@ jobs:
       - run: python3 tools/ci/deploy_dev_steps.py check-api
 
   # Builds the site with no secret at all, beside the deploy job, and hands it on as an artifact
-  # once check-site has found nothing in it but plain files and folders; in a group of its own
+  # once check-build has found nothing in it but plain files and folders; in a group of its own
   # commit's, like the wait.
   web:
     name: web
@@ -128,7 +129,7 @@ jobs:
       - run: python3 tools/ci/ci_steps.py setup-pnpm
       - run: python3 tools/ci/ci_steps.py install
       - run: python3 tools/ci/ci_steps.py web
-      - run: python3 tools/ci/deploy_dev_steps.py check-site
+      - run: python3 tools/ci/deploy_dev_steps.py check-build
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: site
@@ -137,10 +138,13 @@ jobs:
           include-hidden-files: true  # the association file is under .well-known
           retention-days: 1
 
-  # A fresh runner, holding the Cloudflare token and nothing else, that runs nothing but
-  # deploy_dev_steps.py, these pinned actions and the pinned wrangler: flyctl's agent, still running
-  # on the deploy job's runner with Fly's token, the database's and Supabase's secrets, and the
-  # repository's own build code and packages never meet the token. check-head stops a run whose
+  # A fresh runner, holding the Cloudflare token and the job's read-only token (check-head's) and
+  # no other, that runs no file of the checkout but deploy_dev_steps.py, besides these pinned
+  # actions and the pinned wrangler: flyctl's agent, still running on the deploy job's runner with
+  # Fly's token, the database's and Supabase's secrets, and the repository's own build code and
+  # packages never meet the Cloudflare token. The site is downloaded under RUNNER_TEMP, outside
+  # the checkout: download-artifact writes through a link on its path, so a link the repository
+  # held at apps/web/dist would put the site's files into tools/ci/. check-head stops a run whose
   # commit is no longer main's head, so a re-run never puts an older site back. Its own group keeps
   # two commits' sites from deploying at once; a newer job waiting replaces an older one, and a
   # re-run joining the group can replace the head's waiting job, which is then run again.
@@ -171,7 +175,7 @@ jobs:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
         with:
           name: site
-          path: apps/web/dist
+          path: ${{ runner.temp }}/deploy-dev-site
       - run: python3 tools/ci/deploy_dev_steps.py check-site
       - run: python3 tools/ci/deploy_dev_steps.py setup-wrangler
       - name: pages-project

@@ -4,19 +4,23 @@
 deploy-dev runs on every push to main. Its first job waits for that commit's ci run (wait-ci);
 its second migrates dev, deploys main to Fly and runs storage-setup and the Supabase probe, all
 through ops_steps.py, then asks the API for its neutral 401 (check-api). Its third builds apps/web
-with no secret at all and hands the site on as an artifact, once check-site has found nothing in
+with no secret at all and hands the site on as an artifact, once check-build has found nothing in
 it but plain files and folders. Its fourth publishes that site to Cloudflare Pages on a runner of
-its own, which runs nothing but this script, GitHub's pinned actions and the pinned wrangler:
-check-head stops a run whose commit is no longer main's head, check-site looks at the site again,
-setup-wrangler installs wrangler outside the checkout, pages-project makes the Pages project when
-it's missing (wrangler without a terminal won't), pages-deploy deploys, and check-association
-checks that the production deployment is this commit's and serves the association file as Apple
-fetches it (docs/plans/B0.md, slice 10c and the workflow table).
+its own, which runs no file of the checkout but this script (guard 1's tools/ci/), besides
+GitHub's pinned actions and the pinned wrangler: check-head stops a run whose commit is no longer
+main's head; the site is downloaded under RUNNER_TEMP, outside the checkout, so no folder or link
+the repository holds lies on the download's path; check-site looks at it again; setup-wrangler
+installs wrangler outside the checkout; pages-project makes the Pages project when it's missing
+(wrangler without a terminal won't); pages-deploy deploys; and check-association checks that the
+production deployment is this commit's and serves the association file as Apple fetches it
+(docs/plans/B0.md, slice 10c and the workflow table).
 
 Every request goes through Http, which never follows a redirect and has a timeout; the tests
 replace it, the sleep and the process runner with fakes, so nothing here needs the network to be
-tested. Nothing this script prints holds a token or a request header; it prints the status and the
-headers of the answers it judges. wrangler's own output in pages-deploy, and Cloudflare's error
+tested. Nothing this script prints holds a token or a request header (a Cloudflare token holding a
+character a bearer token can't is refused without being sent or said, and Http never lets out
+http.client's refusal of a header value, which quotes it); it prints the status and the headers
+of the answers it judges. wrangler's own output in pages-deploy, and Cloudflare's error
 messages, can name the account id, a repository variable, not a secret; and on an authentication
 error wrangler also lists the token's accounts by name and id (an account's name holds its
 owner's email unless it was renamed), and that email when the token may read it.
@@ -52,7 +56,13 @@ PAGES_DIR = os.path.join("tools", "ci", "pages")
 # reaches a file in the repository.
 WRANGLER_HOME = "deploy-dev-wrangler"
 WRANGLER = os.path.join("node_modules", "wrangler", "bin", "wrangler.js")
+# The web job's build, which it checks and uploads as the artifact `site`.
 SITE = os.path.join("apps", "web", "dist")
+# Where the pages job downloads that artifact: a folder of its own under RUNNER_TEMP, outside the
+# checkout. download-artifact writes through a link already on its path, so a folder or link the
+# repository holds at apps/web/dist would otherwise take the site's files wherever it pointed,
+# tools/ci/ among them, before check-site could look (PR #52's review, round 3).
+DOWNLOAD = "deploy-dev-site"
 ASSOCIATION = "/.well-known/apple-app-site-association"
 # A file Pages runs as a Worker in front of the site ("advanced mode"); the site is static.
 WORKER = "_worker.js"
@@ -73,6 +83,8 @@ PROJECT_NOT_FOUND = 8000007
 
 SHA = re.compile(r"[0-9a-f]{40}")
 ACCOUNT = re.compile(r"[0-9a-f]{32}")
+# RFC 6750's b64token: the characters a bearer token may hold.
+BEARER = re.compile(r"[A-Za-z0-9._~+/-]+=*")
 OK_CONCLUSIONS = {"success", "cancelled", "skipped"}
 
 EXPECTED_API = {
@@ -102,7 +114,11 @@ class Http:
     def request(self, method, host, path, headers, body=None):
         connection = http.client.HTTPSConnection(host, timeout=REQUEST_SECONDS)
         try:
-            connection.request(method, path, body=body, headers=headers)
+            try:
+                connection.request(method, path, body=body, headers=headers)
+            except ValueError:
+                # http.client refuses a header value holding a line break, quoting it whole.
+                raise OSError("a request header holds a character HTTP doesn't allow") from None
             response = connection.getresponse()
             found = {}
             for name, value in response.getheaders():
@@ -300,15 +316,15 @@ class Steps:
         print(f"deploy-dev: check-head: {sha[:12]} is {BRANCH}'s head")
         return 0
 
-    # check-site
+    # check-build and check-site
 
-    def site_problem(self):
-        """Why apps/web/dist can't be published as it stands, or None. wrangler follows a link and
-        publishes what it points to, and Pages runs a _worker.js as code, so the site may hold
-        nothing but plain files and folders, and no _worker.js."""
-        site = self.path(SITE)
+    def site_problem(self, site, shown, source):
+        """Why the site at `site` (named `shown`, and made as `source` says) can't be published as
+        it stands, or None. wrangler follows a link and publishes what it points to, and Pages runs
+        a _worker.js as code, so the site may hold nothing but plain files and folders, and no
+        _worker.js."""
         if os.path.islink(site) or not os.path.isdir(site):
-            return f"{SITE} isn't a folder: build it first (ci_steps.py web)"
+            return f"{shown} isn't a folder ({source})"
 
         def refuse(error):
             raise error
@@ -318,40 +334,64 @@ class Steps:
                     mode = os.lstat(os.path.join(folder, name)).st_mode
                     where = os.path.relpath(os.path.join(folder, name), site)
                     if stat.S_ISLNK(mode):
-                        return f"{SITE}/{where} is a link, which wrangler would follow and publish what it points to"
+                        return f"{shown}/{where} is a link, which wrangler would follow and publish what it points to"
                     if not (stat.S_ISREG(mode) or stat.S_ISDIR(mode)):
-                        return f"{SITE}/{where} is neither a file nor a folder"
+                        return f"{shown}/{where} is neither a file nor a folder"
         except OSError as error:
-            return f"{SITE} can't be read whole ({error})"
-        if not os.path.isfile(self.path(SITE, ASSOCIATION.lstrip("/"))):
-            return f"{SITE} has no {ASSOCIATION}: build it first (ci_steps.py web)"
-        if os.path.lexists(self.path(SITE, WORKER)):
-            return f"{SITE} holds {WORKER}, which Pages would run as code on the site; the site is static"
+            return f"{shown} can't be read whole ({error})"
+        if not os.path.isfile(os.path.join(site, ASSOCIATION.lstrip("/"))):
+            return f"{shown} has no {ASSOCIATION} ({source})"
+        if os.path.lexists(os.path.join(site, WORKER)):
+            return f"{shown} holds {WORKER}, which Pages would run as code on the site; the site is static"
         return None
 
+    def check_build(self):
+        """The web job's build, before it is uploaded."""
+        problem = self.site_problem(self.path(SITE), SITE, "ci_steps.py web builds it")
+        if problem:
+            print(f"deploy-dev: check-build: {problem}")
+            return 1
+        print(f"deploy-dev: check-build: {SITE} holds plain files and folders only, with {ASSOCIATION}")
+        return 0
+
+    def downloaded_site(self, step):
+        """The pages job's download of the site, as (folder, the problem with it or None); the
+        folder is None when there is no place for it outside the checkout."""
+        site = self.temp_folder(step, DOWNLOAD)
+        if site is None:
+            return None, None
+        return site, self.site_problem(site, f"RUNNER_TEMP/{DOWNLOAD}", "download-artifact puts the artifact site there")
+
     def check_site(self):
-        problem = self.site_problem()
+        """The site the pages job downloaded, before anything publishes it."""
+        site, problem = self.downloaded_site("check-site")
+        if site is None:
+            return 1
         if problem:
             print(f"deploy-dev: check-site: {problem}")
             return 1
-        print(f"deploy-dev: check-site: {SITE} holds plain files and folders only, with {ASSOCIATION}")
+        print(f"deploy-dev: check-site: RUNNER_TEMP/{DOWNLOAD} holds plain files and folders only, with {ASSOCIATION}")
         return 0
 
     # setup-wrangler
 
-    def wrangler_home(self, step):
-        """setup-wrangler's folder under RUNNER_TEMP, or None when there is no such place outside
-        the checkout."""
+    def temp_folder(self, step, name):
+        """The folder `name` under RUNNER_TEMP, or None when there is no such place outside the
+        checkout."""
         temp = self.value("RUNNER_TEMP")
         if not temp or not os.path.isabs(temp):
             print(f"deploy-dev: {step}: RUNNER_TEMP isn't an absolute path (GitHub's runner sets it)")
             return None
-        home = os.path.join(os.path.realpath(temp), WRANGLER_HOME)
+        folder = os.path.join(os.path.realpath(temp), name)
         root = os.path.realpath(self.root)
-        if os.path.commonpath([home, root]) == root:
+        if os.path.commonpath([folder, root]) == root:
             print(f"deploy-dev: {step}: RUNNER_TEMP is inside the checkout")
             return None
-        return home
+        return folder
+
+    def wrangler_home(self, step):
+        """setup-wrangler's folder under RUNNER_TEMP, or None."""
+        return self.temp_folder(step, WRANGLER_HOME)
 
     def setup_wrangler(self):
         problem = self.lockfile_problem()
@@ -425,6 +465,11 @@ class Steps:
         if not token:
             print(f"deploy-dev: {step} has no CLOUDFLARE_API_TOKEN: the repository secret "
                   "CLOUDFLARE_API_TOKEN is empty in this run (is it set? Settings, Secrets and variables, Actions)")
+            return None
+        if not BEARER.fullmatch(token):
+            # Never said: a token pasted with a line break or a space would be sent, and quoted, whole.
+            print(f"deploy-dev: {step}: the repository secret CLOUDFLARE_API_TOKEN holds a character a "
+                  "bearer token can't (a space or a line break, perhaps from pasting it): set it again")
             return None
         if not ACCOUNT.fullmatch(account):
             print(f"deploy-dev: {step}: the repository variable CLOUDFLARE_ACCOUNT_ID isn't an "
@@ -500,7 +545,9 @@ class Steps:
         if given is None or sha is None:
             return 1
         token, account = given
-        problem = self.site_problem()
+        site, problem = self.downloaded_site("pages-deploy")
+        if site is None:
+            return 1
         if problem:
             print(f"deploy-dev: pages-deploy: {problem}, so nothing is deployed")
             return 1
@@ -511,7 +558,7 @@ class Steps:
         if not os.path.isfile(wrangler):
             print(f"deploy-dev: pages-deploy: there is no {wrangler}: setup-wrangler installs it")
             return 1
-        cmd = ["node", wrangler, "pages", "deploy", self.path(SITE), f"--project-name={PAGES_PROJECT}",
+        cmd = ["node", wrangler, "pages", "deploy", site, f"--project-name={PAGES_PROJECT}",
                f"--branch={BRANCH}", f"--commit-hash={sha}", f"--commit-message=main at {sha[:12]}",
                "--commit-dirty=false"]
         # wrangler reads .env and .env.local, a functions/ folder and a wrangler configuration from
@@ -535,11 +582,14 @@ class Steps:
         if given is None or sha is None:
             return 1
         token, account = given
+        site = self.temp_folder("check-association", DOWNLOAD)
+        if site is None:
+            return 1
         try:
-            with open(self.path(SITE, ASSOCIATION.lstrip("/")), "rb") as f:
+            with open(os.path.join(site, ASSOCIATION.lstrip("/")), "rb") as f:
                 built = f.read()
         except OSError as error:
-            print(f"deploy-dev: check-association: {SITE}{ASSOCIATION} can't be read ({error})")
+            print(f"deploy-dev: check-association: RUNNER_TEMP/{DOWNLOAD}{ASSOCIATION} can't be read ({error})")
             return 1
         try:
             project, deployment = self.this_deployment(token, account, sha)
@@ -632,8 +682,8 @@ def host_of(url):
 
 
 STEPS = {
-    "wait-ci": Steps.wait_ci, "check-api": Steps.check_api, "check-head": Steps.check_head,
-    "check-site": Steps.check_site, "setup-wrangler": Steps.setup_wrangler,
+    "wait-ci": Steps.wait_ci, "check-api": Steps.check_api, "check-build": Steps.check_build,
+    "check-head": Steps.check_head, "check-site": Steps.check_site, "setup-wrangler": Steps.setup_wrangler,
     "pages-project": Steps.pages_project, "pages-deploy": Steps.pages_deploy,
     "check-association": Steps.check_association,
 }
