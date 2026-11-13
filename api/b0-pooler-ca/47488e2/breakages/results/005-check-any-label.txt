@@ -1,0 +1,26 @@
+breakage: check-any-label
+patch: [
+ [
+  "packages/domain/src/db/ssl.ts",
+  "/^-----BEGIN CERTIFICATE-----\\r?\\n[A-Za-z0-9+/=\\r\\n]+-----END CERTIFICATE-----(\\r?\\n)?$/",
+  "/^-----BEGIN [A-Z ]*CERTIFICATE-----\\r?\\n[A-Za-z0-9+/=\\r\\n]+-----END [A-Z ]*CERTIFICATE-----(\\r?\\n)?$/",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/packages/domain && npx vitest run src/db/ssl.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/services/api && npx vitest run src/connection.test.ts src/connection-tls.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/services/worker && npx vitest run src/connection.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/tools/ops && npx vitest run src/database.test.ts src/environment.test.ts src/deploy-files.test.ts src/run.test.ts src/main.test.ts src/bootstrap.test.ts
+exit: 1
+expected words: refuses anything but exactly that one certificate
+caught: True
+
+     × refuses anything but exactly that one certificate, so no empty, doubled, widened or other root reaches `ca` 11ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 9 passed (10)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/db/ssl.test.ts > the pinned root > refuses anything but exactly that one certificate, so no empty, doubled, widened or other root reaches `ca`
+AssertionError: the root under another label, which OpenSSL reads as the same certificate: expected [Function] to throw an error
+ Test Files  2 passed (2)
+      Tests  13 passed (13)
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+ Test Files  6 passed (6)
+      Tests  80 passed (80)

@@ -1,0 +1,32 @@
+breakage: refusal-misses-another-root
+patch: [
+ [
+  "tools/ops/src/database.ts",
+  "  \"UNABLE_TO_GET_ISSUER_CERT_LOCALLY\",\n",
+  "",
+  1
+ ]
+]
+command: export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/packages/domain && npx vitest run src/db/ssl.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/services/api && npx vitest run src/connection.test.ts src/connection-tls.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/services/worker && npx vitest run src/connection.test.ts ; export PATH=/opt/nvm/versions/node/v26.13.0/bin:$PATH; cd /home/user/tadayo-ca-breakages/tools/ops && npx vitest run src/database.test.ts src/environment.test.ts src/deploy-files.test.ts src/run.test.ts src/main.test.ts src/bootstrap.test.ts
+exit: 1
+expected words: names the pin's refusal of a certificate by Node's code
+caught: True
+
+ Test Files  1 passed (1)
+      Tests  10 passed (10)
+ Test Files  2 passed (2)
+      Tests  13 passed (13)
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+     × says that the pin refused the server's certificate, and not that bootstrap or the password may be wrong 13ms
+     × names the pin's refusal of a certificate by Node's code, and says nothing was sent 5ms
+ Test Files  2 failed | 4 passed (6)
+      Tests  2 failed | 78 passed (80)
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/database.test.ts > certificateRefusal > names the pin's refusal of a certificate by Node's code, and says nothing was sent
+AssertionError: UNABLE_TO_GET_ISSUER_CERT_LOCALLY: expected undefined to be 'the server\'s certificate didn\'t che…' // Object.is equality
+    137|       expect(certificateRefusal(Object.assign(new Error("Node's words"…
+ FAIL  src/run.test.ts > a connection that the database refuses > says that the pin refused the server's certificate, and not that bootstrap or the password may be wrong
+AssertionError: UNABLE_TO_GET_ISSUER_CERT_LOCALLY: expected a thrown error to be OpsError: migrate: couldn't connect with …
+  OpsError {
+    "name": "OpsError",
