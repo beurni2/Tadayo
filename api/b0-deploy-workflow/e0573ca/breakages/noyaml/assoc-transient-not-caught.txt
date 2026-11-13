@@ -1,0 +1,22 @@
+tools/ci/deploy_dev_steps.py
+--- old
+            except Transient as failure:
+--- new
+            except ZeroDivisionError as failure:
+--- expected: test_a_lost_connection_or_a_server_error_while_waiting_is_asked_again
+--- exit 1
+........F........................................s.......
+======================================================================
+FAIL: test_a_lost_connection_or_a_server_error_while_waiting_is_asked_again (__main__.CheckAssociationTest.test_a_lost_connection_or_a_server_error_while_waiting_is_asked_again)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpham0_nwd/tools/ci/deploy_dev_steps_test.py", line 625, in test_a_lost_connection_or_a_server_error_while_waiting_is_asked_again
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: check-association: couldn't ask Cloudflare for the Pages project tadayo (reset)
+
+
+----------------------------------------------------------------------
+Ran 57 tests in 0.125s
+
+FAILED (failures=1, skipped=1)

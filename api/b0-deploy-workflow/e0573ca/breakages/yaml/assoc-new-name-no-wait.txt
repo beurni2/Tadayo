@@ -1,0 +1,31 @@
+tools/ci/deploy_dev_steps.py
+--- old
+                problem = f"https://{host}{ASSOCIATION} answered HTTP {answer.status}"
+--- new
+                raise StepFailed(f"https://{host}{ASSOCIATION} answered HTTP {answer.status}")
+--- expected: test_a_new_name_is_given_time_to_answer
+--- exit 1
+..........F......F.......................................
+======================================================================
+FAIL: test_a_new_name_is_given_time_to_answer (__main__.CheckAssociationTest.test_a_new_name_is_given_time_to_answer)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpm8ygpep5/tools/ci/deploy_dev_steps_test.py", line 659, in test_a_new_name_is_given_time_to_answer
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: check-association: https://tadayo-x1y.pages.dev/.well-known/apple-app-site-association answered HTTP 404
+
+
+======================================================================
+FAIL: test_the_file_served_otherwise_fails (__main__.CheckAssociationTest.test_the_file_served_otherwise_fails)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpm8ygpep5/tools/ci/deploy_dev_steps_test.py", line 679, in test_the_file_served_otherwise_fails
+    self.assertEqual(len(sleeps.calls), 19)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 19
+
+----------------------------------------------------------------------
+Ran 57 tests in 0.111s
+
+FAILED (failures=2)

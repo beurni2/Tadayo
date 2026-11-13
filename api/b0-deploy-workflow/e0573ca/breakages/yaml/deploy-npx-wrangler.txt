@@ -1,0 +1,44 @@
+tools/ci/deploy_dev_steps.py
+--- old
+cmd = ["node", self.path(WRANGLER), "pages",
+--- new
+cmd = ["npx", "wrangler", "pages",
+--- expected: test_it_runs_the_pinned_wrangler_with_only_what_it_needs
+--- exit 1
+.......................F.................................
+======================================================================
+FAIL: test_it_runs_the_pinned_wrangler_with_only_what_it_needs (__main__.PagesDeployTest.test_it_runs_the_pinned_wrangler_with_only_what_it_needs)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp0h8r93rb/tools/ci/deploy_dev_steps_test.py", line 496, in test_it_runs_the_pinned_wrangler_with_only_what_it_needs
+    self.assertEqual(done["cmd"], [
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+        "node", repo.path("tools", "ci", "pages", "node_modules", "wrangler", "bin", "wrangler.js"),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        "pages", "deploy", repo.path("apps", "web", "dist"), "--project-name=tadayo", "--branch=main",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        f"--commit-hash={SHA}", f"--commit-message=main at {SHA[:12]}", "--commit-dirty=false"])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['npx', 'wrangler', 'pages', 'deploy', '/tmp[188 chars]lse'] != ['node', '/tmp/tmppd_pspf4/tools/ci/pages/no[250 chars]lse']
+
+First differing element 0:
+'npx'
+'node'
+
+- ['npx',
+-  'wrangler',
++ ['node',
++  '/tmp/tmppd_pspf4/tools/ci/pages/node_modules/wrangler/bin/wrangler.js',
+   'pages',
+   'deploy',
+   '/tmp/tmppd_pspf4/apps/web/dist',
+   '--project-name=tadayo',
+   '--branch=main',
+   '--commit-hash=0123456789abcdef0123456789abcdef01234567',
+   '--commit-message=main at 0123456789ab',
+   '--commit-dirty=false']
+
+----------------------------------------------------------------------
+Ran 57 tests in 0.116s
+
+FAILED (failures=1)

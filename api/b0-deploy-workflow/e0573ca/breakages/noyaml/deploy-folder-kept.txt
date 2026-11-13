@@ -1,0 +1,22 @@
+tools/ci/deploy_dev_steps.py
+--- old
+        with tempfile.TemporaryDirectory(prefix="deploy-dev-wrangler-") as home:
+--- new
+        home = tempfile.mkdtemp(prefix="deploy-dev-wrangler-")
+        if True:
+--- expected: test_nothing_in_the_repository_reaches_wrangler_s_working_folder_or_home
+--- exit 1
+........................F........................s.......
+======================================================================
+FAIL: test_nothing_in_the_repository_reaches_wrangler_s_working_folder_or_home (__main__.PagesDeployTest.test_nothing_in_the_repository_reaches_wrangler_s_working_folder_or_home)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmptn9r0whn/tools/ci/deploy_dev_steps_test.py", line 526, in test_nothing_in_the_repository_reaches_wrangler_s_working_folder_or_home
+    self.assertFalse(os.path.exists(cwd), "wrangler's folder is left behind")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not false : wrangler's folder is left behind
+
+----------------------------------------------------------------------
+Ran 57 tests in 0.199s
+
+FAILED (failures=1, skipped=1)

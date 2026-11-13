@@ -1,0 +1,74 @@
+tools/ci/deploy_dev_steps.py
+--- old
+            print("deploy-dev: wait-ci: GitHub's answer has no list of runs")
+            return 1
+--- new
+            print("deploy-dev: wait-ci: GitHub's answer has no list of runs")
+            return None
+--- expected: test_an_answer_without_a_list_of_runs_fails
+--- exit 1
+..........................................FFFF..............
+======================================================================
+FAIL: test_an_answer_without_a_list_of_runs_fails (__main__.WaitCiTest.test_an_answer_without_a_list_of_runs_fails) (body=b'not json')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpljfsxxjt/tools/ci/deploy_dev_steps_test.py", line 182, in test_an_answer_without_a_list_of_runs_fails
+    code, out, _, _ = call("wait_ci", self.environ, sequence(answer(200, body)))
+                      ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpljfsxxjt/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpljfsxxjt/tools/ci/deploy_dev_steps.py", line 159, in wait_ci
+    answer = self.http.request("GET", GITHUB_API, path, headers)
+  File "/tmp/tmpljfsxxjt/tools/ci/deploy_dev_steps_test.py", line 56, in request
+    raise result
+AssertionError: an unexpected request: GET api.github.com/repos/beurni2/tadayo/actions/workflows/ci.yml/runs?head_sha=0123456789abcdef0123456789abcdef01234567&branch=main&event=push&per_page=100
+
+======================================================================
+FAIL: test_an_answer_without_a_list_of_runs_fails (__main__.WaitCiTest.test_an_answer_without_a_list_of_runs_fails) (body={'message': 'x'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpljfsxxjt/tools/ci/deploy_dev_steps_test.py", line 182, in test_an_answer_without_a_list_of_runs_fails
+    code, out, _, _ = call("wait_ci", self.environ, sequence(answer(200, body)))
+                      ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpljfsxxjt/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpljfsxxjt/tools/ci/deploy_dev_steps.py", line 159, in wait_ci
+    answer = self.http.request("GET", GITHUB_API, path, headers)
+  File "/tmp/tmpljfsxxjt/tools/ci/deploy_dev_steps_test.py", line 56, in request
+    raise result
+AssertionError: an unexpected request: GET api.github.com/repos/beurni2/tadayo/actions/workflows/ci.yml/runs?head_sha=0123456789abcdef0123456789abcdef01234567&branch=main&event=push&per_page=100
+
+======================================================================
+FAIL: test_an_answer_without_a_list_of_runs_fails (__main__.WaitCiTest.test_an_answer_without_a_list_of_runs_fails) (body={'workflow_runs': 'x'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpljfsxxjt/tools/ci/deploy_dev_steps_test.py", line 182, in test_an_answer_without_a_list_of_runs_fails
+    code, out, _, _ = call("wait_ci", self.environ, sequence(answer(200, body)))
+                      ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpljfsxxjt/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpljfsxxjt/tools/ci/deploy_dev_steps.py", line 159, in wait_ci
+    answer = self.http.request("GET", GITHUB_API, path, headers)
+  File "/tmp/tmpljfsxxjt/tools/ci/deploy_dev_steps_test.py", line 56, in request
+    raise result
+AssertionError: an unexpected request: GET api.github.com/repos/beurni2/tadayo/actions/workflows/ci.yml/runs?head_sha=0123456789abcdef0123456789abcdef01234567&branch=main&event=push&per_page=100
+
+======================================================================
+FAIL: test_an_answer_without_a_list_of_runs_fails (__main__.WaitCiTest.test_an_answer_without_a_list_of_runs_fails) (body=[])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpljfsxxjt/tools/ci/deploy_dev_steps_test.py", line 182, in test_an_answer_without_a_list_of_runs_fails
+    code, out, _, _ = call("wait_ci", self.environ, sequence(answer(200, body)))
+                      ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpljfsxxjt/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpljfsxxjt/tools/ci/deploy_dev_steps.py", line 159, in wait_ci
+    answer = self.http.request("GET", GITHUB_API, path, headers)
+  File "/tmp/tmpljfsxxjt/tools/ci/deploy_dev_steps_test.py", line 56, in request
+    raise result
+AssertionError: an unexpected request: GET api.github.com/repos/beurni2/tadayo/actions/workflows/ci.yml/runs?head_sha=0123456789abcdef0123456789abcdef01234567&branch=main&event=push&per_page=100
+
+----------------------------------------------------------------------
+Ran 57 tests in 0.111s
+
+FAILED (failures=4)

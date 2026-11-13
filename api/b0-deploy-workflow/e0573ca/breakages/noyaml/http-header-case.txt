@@ -1,0 +1,25 @@
+tools/ci/deploy_dev_steps.py
+--- old
+found.setdefault(name.lower(), [])
+--- new
+found.setdefault(name, [])
+--- expected: test_it_keeps_every_value_of_a_header_under_its_lower_case_name
+--- exit 1
+.....................F...........................s.......
+======================================================================
+FAIL: test_it_keeps_every_value_of_a_header_under_its_lower_case_name (__main__.HttpTest.test_it_keeps_every_value_of_a_header_under_its_lower_case_name)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpijske8pc/tools/ci/deploy_dev_steps_test.py", line 754, in test_it_keeps_every_value_of_a_header_under_its_lower_case_name
+    self.assertEqual(got.headers, {"content-type": ["a", "b"], "location": ["https://elsewhere.example/"]})
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'Content-Type': ['a'], 'Location': ['https[42 chars]'b']} != {'content-type': ['a', 'b'], 'location': ['[24 chars]e/']}
++ {'content-type': ['a', 'b'], 'location': ['https://elsewhere.example/']}
+- {'Content-Type': ['a'],
+-  'Location': ['https://elsewhere.example/'],
+-  'content-type': ['b']}
+
+----------------------------------------------------------------------
+Ran 57 tests in 0.151s
+
+FAILED (failures=1, skipped=1)

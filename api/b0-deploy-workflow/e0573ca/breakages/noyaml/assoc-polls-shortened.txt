@@ -1,0 +1,55 @@
+tools/ci/deploy_dev_steps.py
+--- old
+PAGES_POLLS, PAGES_POLL_SECONDS = 20, 15
+--- new
+PAGES_POLLS, PAGES_POLL_SECONDS = 5, 15
+--- expected: test_another_commit_s_deployment_fails_after_the_last_look
+--- exit 1
+........F..F.F...F...............................s.......
+======================================================================
+FAIL: test_a_lost_connection_or_a_server_error_while_waiting_is_asked_again (__main__.CheckAssociationTest.test_a_lost_connection_or_a_server_error_while_waiting_is_asked_again)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpwc8jff5_/tools/ci/deploy_dev_steps_test.py", line 629, in test_a_lost_connection_or_a_server_error_while_waiting_is_asked_again
+    self.assertEqual(sleeps.calls, [15] * 19)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [15, 15, 15, 15] != [15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]
+
+Second list contains 15 additional elements.
+First extra element 4:
+15
+
+- [15, 15, 15, 15]
++ [15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]
+
+======================================================================
+FAIL: test_a_preview_deployment_of_this_commit_is_not_the_production_one (__main__.CheckAssociationTest.test_a_preview_deployment_of_this_commit_is_not_the_production_one)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpwc8jff5_/tools/ci/deploy_dev_steps_test.py", line 645, in test_a_preview_deployment_of_this_commit_is_not_the_production_one
+    self.assertEqual(len(sleeps.calls), 19)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 4 != 19
+
+======================================================================
+FAIL: test_another_commit_s_deployment_fails_after_the_last_look (__main__.CheckAssociationTest.test_another_commit_s_deployment_fails_after_the_last_look)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpwc8jff5_/tools/ci/deploy_dev_steps_test.py", line 651, in test_another_commit_s_deployment_fails_after_the_last_look
+    self.assertEqual(len(http.requests), 20)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 5 != 20
+
+======================================================================
+FAIL: test_the_file_served_otherwise_fails (__main__.CheckAssociationTest.test_the_file_served_otherwise_fails)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpwc8jff5_/tools/ci/deploy_dev_steps_test.py", line 679, in test_the_file_served_otherwise_fails
+    self.assertEqual(len(sleeps.calls), 19)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 4 != 19
+
+----------------------------------------------------------------------
+Ran 57 tests in 0.203s
+
+FAILED (failures=4, skipped=1)

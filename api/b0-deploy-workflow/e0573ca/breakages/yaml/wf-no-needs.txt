@@ -1,0 +1,23 @@
+.github/workflows/deploy-dev.yml
+--- old
+    needs: ci
+
+--- new
+
+--- expected: test_its_jobs_and_steps_are_these_exactly
+--- exit 1
+...................................................F.....
+======================================================================
+FAIL: test_its_jobs_and_steps_are_these_exactly (__main__.WorkflowFileTest.test_its_jobs_and_steps_are_these_exactly) (job='deploy')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp26bvj2fu/tools/ci/deploy_dev_steps_test.py", line 872, in test_its_jobs_and_steps_are_these_exactly
+    self.assertEqual(self.document["jobs"][name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'name': 'deploy', 'runs-on': 'ubuntu-24.04', 'timeout-minute[1650 chars]i'}]} != {'name': 'deploy', 'needs': 'ci', 'runs-on': 'ubuntu-24.04', [1665 chars]i'}]}
+Diff is 2648 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 57 tests in 0.145s
+
+FAILED (failures=1)

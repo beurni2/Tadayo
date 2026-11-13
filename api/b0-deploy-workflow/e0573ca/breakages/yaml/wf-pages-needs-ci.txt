@@ -1,0 +1,36 @@
+.github/workflows/deploy-dev.yml
+--- old
+    needs: deploy
+
+--- new
+    needs: ci
+
+--- expected: test_the_cloudflare_secret_is_on_a_runner
+--- exit 1
+...................................................F.F...
+======================================================================
+FAIL: test_its_jobs_and_steps_are_these_exactly (__main__.WorkflowFileTest.test_its_jobs_and_steps_are_these_exactly) (job='pages')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpfkmcxu3r/tools/ci/deploy_dev_steps_test.py", line 872, in test_its_jobs_and_steps_are_these_exactly
+    self.assertEqual(self.document["jobs"][name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'nam[18 chars]s': 'ci', 'runs-on': 'ubuntu-24.04', 'timeout-[1278 chars]n'}]} != {'nam[18 chars]s': 'deploy', 'runs-on': 'ubuntu-24.04', 'time[1282 chars]n'}]}
+Diff is 2035 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_the_cloudflare_secret_is_on_a_runner_that_holds_no_other (__main__.WorkflowFileTest.test_the_cloudflare_secret_is_on_a_runner_that_holds_no_other)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpfkmcxu3r/tools/ci/deploy_dev_steps_test.py", line 912, in test_the_cloudflare_secret_is_on_a_runner_that_holds_no_other
+    self.assertEqual(jobs["pages"]["needs"], "deploy")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'ci' != 'deploy'
+- ci
++ deploy
+
+
+----------------------------------------------------------------------
+Ran 57 tests in 0.149s
+
+FAILED (failures=2)

@@ -1,0 +1,32 @@
+tools/ci/deploy_dev_steps.py
+--- old
+        if 400 <= answer.status < 500 and isinstance(document, dict)
+--- new
+        if answer.status == 404 and isinstance(document, dict)
+--- expected: test_cloudflare_s_not_found_code_in_any_4xx
+--- exit 1
+..............................FF..........................
+======================================================================
+FAIL: test_cloudflare_s_not_found_code_in_any_4xx_is_a_missing_project_and_nothing_else_is (__main__.PagesProjectTest.test_cloudflare_s_not_found_code_in_any_4xx_is_a_missing_project_and_nothing_else_is) (status=400)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpf2i854xz/tools/ci/deploy_dev_steps_test.py", line 423, in test_cloudflare_s_not_found_code_in_any_4xx_is_a_missing_project_and_nothing_else_is
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: pages-project: Cloudflare answered HTTP 400 to the request for the Pages project tadayo: 8000007 Project not found.
+
+
+======================================================================
+FAIL: test_cloudflare_s_not_found_code_in_any_4xx_is_a_missing_project_and_nothing_else_is (__main__.PagesProjectTest.test_cloudflare_s_not_found_code_in_any_4xx_is_a_missing_project_and_nothing_else_is) (status=422)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpf2i854xz/tools/ci/deploy_dev_steps_test.py", line 423, in test_cloudflare_s_not_found_code_in_any_4xx_is_a_missing_project_and_nothing_else_is
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: pages-project: Cloudflare answered HTTP 422 to the request for the Pages project tadayo: 8000007 Project not found.
+
+
+----------------------------------------------------------------------
+Ran 57 tests in 0.114s
+
+FAILED (failures=2)

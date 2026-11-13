@@ -1,0 +1,32 @@
+tools/ci/deploy_dev_steps.py
+--- old
+            if not name.startswith("node_modules/") or not isinstance(entry, dict):
+
+--- new
+            if not isinstance(entry, dict):
+
+--- expected: test_it_refuses_a_lockfile_it_can_t_trust
+--- exit 1
+..................................F..............s.......
+======================================================================
+FAIL: test_it_refuses_a_lockfile_it_can_t_trust_before_installing (__main__.SetupWranglerTest.test_it_refuses_a_lockfile_it_can_t_trust_before_installing) (change='an entry outside node_modules')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmp3gagpkhk/tools/ci/deploy_dev_steps_test.py", line 337, in test_it_refuses_a_lockfile_it_can_t_trust_before_installing
+    self.assertEqual(run.calls, [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [{'cmd': ['npm', 'ci', '--ignore-scripts',[77 chars] {}}] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+{'cmd': ['npm', 'ci', '--ignore-scripts', '--no-audit', '--no-fund'], 'cwd': '/tmp/tmp3uaheklk/tools/ci/pages', 'env': {}}
+
++ []
+- [{'cmd': ['npm', 'ci', '--ignore-scripts', '--no-audit', '--no-fund'],
+-   'cwd': '/tmp/tmp3uaheklk/tools/ci/pages',
+-   'env': {}}]
+
+----------------------------------------------------------------------
+Ran 57 tests in 0.169s
+
+FAILED (failures=1, skipped=1)

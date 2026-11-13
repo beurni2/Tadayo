@@ -1,0 +1,35 @@
+tools/ci/deploy_dev_steps.py
+--- old
+"CI": "true", "DO_NOT_TRACK": "1",
+--- new
+"CI": "true",
+--- expected: test_it_runs_the_pinned_wrangler_with_only_what_it_needs
+--- exit 1
+.......................F.................................
+======================================================================
+FAIL: test_it_runs_the_pinned_wrangler_with_only_what_it_needs (__main__.PagesDeployTest.test_it_runs_the_pinned_wrangler_with_only_what_it_needs)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpho2pzm3j/tools/ci/deploy_dev_steps_test.py", line 500, in test_it_runs_the_pinned_wrangler_with_only_what_it_needs
+    self.assertEqual(done["env"], {"PATH": "/usr/bin", "HOME": done["cwd"], "CI": "true",
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                   "DO_NOT_TRACK": "1", "WRANGLER_SEND_METRICS": "false",
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                   "WRANGLER_SEND_ERROR_REPORTS": "false", "CLOUDFLARE_API_TOKEN": TOKEN,
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                   "CLOUDFLARE_ACCOUNT_ID": ACCOUNT})
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'PAT[71 chars]e', 'WRANGLER_SEND_METRICS': 'false', 'WRANGLE[133 chars]def'} != {'PAT[71 chars]e', 'DO_NOT_TRACK': '1', 'WRANGLER_SEND_METRIC[154 chars]def'}
+  {'CI': 'true',
+   'CLOUDFLARE_ACCOUNT_ID': '0123456789abcdef0123456789abcdef',
+   'CLOUDFLARE_API_TOKEN': 'secret-token-value',
++  'DO_NOT_TRACK': '1',
+   'HOME': '/tmp/deploy-dev-wrangler-wd5dgo7s',
+   'PATH': '/usr/bin',
+   'WRANGLER_SEND_ERROR_REPORTS': 'false',
+   'WRANGLER_SEND_METRICS': 'false'}
+
+----------------------------------------------------------------------
+Ran 57 tests in 0.119s
+
+FAILED (failures=1)

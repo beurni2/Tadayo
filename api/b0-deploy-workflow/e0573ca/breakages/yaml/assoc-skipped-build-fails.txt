@@ -1,0 +1,23 @@
+tools/ci/deploy_dev_steps.py
+--- old
+                    if stage.get("status") in ("failure", "canceled") or \
+                            (stage.get("name"), stage.get("status")) == ("deploy", "skipped"):
+--- new
+                    if stage.get("status") in ("failure", "canceled", "skipped"):
+--- expected: test_it_waits_through_the_stages_before_deploy
+--- exit 1
+...............F.........................................
+======================================================================
+FAIL: test_it_waits_through_the_stages_before_deploy_even_skipped_ones (__main__.CheckAssociationTest.test_it_waits_through_the_stages_before_deploy_even_skipped_ones)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpjxtvha2b/tools/ci/deploy_dev_steps_test.py", line 606, in test_it_waits_through_the_stages_before_deploy_even_skipped_ones
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: check-association: the deployment of 0123456789ab ended skipped at its build stage
+
+
+----------------------------------------------------------------------
+Ran 57 tests in 0.110s
+
+FAILED (failures=1)

@@ -1,0 +1,27 @@
+tools/ci/deploy_dev_steps.py
+--- old
+        if answer.status == 200 and isinstance(document, dict) and document.get("success") is True \
+                and isinstance(document.get("result"), dict):
+            print(f"deploy-dev: pages-project: made
+--- new
+        if answer.status == 200 and isinstance(document, dict) \
+                and isinstance(document.get("result"), dict):
+            print(f"deploy-dev: pages-project: made
+--- expected: test_any_other_answer_fails_with_cloudflare_s_errors
+--- exit 1
+.............................F...........................
+======================================================================
+FAIL: test_any_other_answer_fails_with_cloudflare_s_errors (__main__.PagesProjectTest.test_any_other_answer_fails_with_cloudflare_s_errors) (made=Answer(status=200, headers={}, body=b'{"success": false, "errors": [], "result": {"name": "tadayo", "subdomain": "tadayo-x1y.pages.dev", "production_branch": "main", "domains": ["tadayo-x1y.pages.dev"], "canonical_deployment": null}}'))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpynfkm8h9/tools/ci/deploy_dev_steps_test.py", line 464, in test_any_other_answer_fails_with_cloudflare_s_errors
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: pages-project: made the Pages project tadayo
+deploy-dev: pages-project: tadayo serves main at tadayo-x1y.pages.dev
+
+
+----------------------------------------------------------------------
+Ran 57 tests in 0.138s
+
+FAILED (failures=1)

@@ -1,0 +1,59 @@
+tools/ci/deploy_dev_steps.py
+--- old
+                    if answer.status < 500:
+                        return 1
+
+--- new
+
+--- expected: test_a_server_error_or_a_lost_connection_is_asked_again_and_a_refusal_is_not
+--- exit 1
+.........................................FFF.......s.......
+======================================================================
+FAIL: test_a_server_error_or_a_lost_connection_is_asked_again_and_a_refusal_is_not (__main__.WaitCiTest.test_a_server_error_or_a_lost_connection_is_asked_again_and_a_refusal_is_not) (status=401)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpuos7qjz0/tools/ci/deploy_dev_steps_test.py", line 175, in test_a_server_error_or_a_lost_connection_is_asked_again_and_a_refusal_is_not
+    code, out, http, _ = call("wait_ci", self.environ, sequence(answer(status)))
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpuos7qjz0/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpuos7qjz0/tools/ci/deploy_dev_steps.py", line 159, in wait_ci
+    answer = self.http.request("GET", GITHUB_API, path, headers)
+  File "/tmp/tmpuos7qjz0/tools/ci/deploy_dev_steps_test.py", line 56, in request
+    raise result
+AssertionError: an unexpected request: GET api.github.com/repos/beurni2/tadayo/actions/workflows/ci.yml/runs?head_sha=0123456789abcdef0123456789abcdef01234567&branch=main&event=push&per_page=100
+
+======================================================================
+FAIL: test_a_server_error_or_a_lost_connection_is_asked_again_and_a_refusal_is_not (__main__.WaitCiTest.test_a_server_error_or_a_lost_connection_is_asked_again_and_a_refusal_is_not) (status=403)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpuos7qjz0/tools/ci/deploy_dev_steps_test.py", line 175, in test_a_server_error_or_a_lost_connection_is_asked_again_and_a_refusal_is_not
+    code, out, http, _ = call("wait_ci", self.environ, sequence(answer(status)))
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpuos7qjz0/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpuos7qjz0/tools/ci/deploy_dev_steps.py", line 159, in wait_ci
+    answer = self.http.request("GET", GITHUB_API, path, headers)
+  File "/tmp/tmpuos7qjz0/tools/ci/deploy_dev_steps_test.py", line 56, in request
+    raise result
+AssertionError: an unexpected request: GET api.github.com/repos/beurni2/tadayo/actions/workflows/ci.yml/runs?head_sha=0123456789abcdef0123456789abcdef01234567&branch=main&event=push&per_page=100
+
+======================================================================
+FAIL: test_a_server_error_or_a_lost_connection_is_asked_again_and_a_refusal_is_not (__main__.WaitCiTest.test_a_server_error_or_a_lost_connection_is_asked_again_and_a_refusal_is_not) (status=404)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpuos7qjz0/tools/ci/deploy_dev_steps_test.py", line 175, in test_a_server_error_or_a_lost_connection_is_asked_again_and_a_refusal_is_not
+    code, out, http, _ = call("wait_ci", self.environ, sequence(answer(status)))
+                         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmpuos7qjz0/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmpuos7qjz0/tools/ci/deploy_dev_steps.py", line 159, in wait_ci
+    answer = self.http.request("GET", GITHUB_API, path, headers)
+  File "/tmp/tmpuos7qjz0/tools/ci/deploy_dev_steps_test.py", line 56, in request
+    raise result
+AssertionError: an unexpected request: GET api.github.com/repos/beurni2/tadayo/actions/workflows/ci.yml/runs?head_sha=0123456789abcdef0123456789abcdef01234567&branch=main&event=push&per_page=100
+
+----------------------------------------------------------------------
+Ran 57 tests in 0.167s
+
+FAILED (failures=3, skipped=1)

@@ -1,0 +1,32 @@
+tools/ci/deploy_dev_steps.py
+--- old
+        if not passed:
+
+--- new
+        if False:
+
+--- expected: test_only_cancelled_or_skipped_runs_fail
+--- exit 1
+..............................................E..........
+======================================================================
+ERROR: test_only_cancelled_or_skipped_runs_fail (__main__.WaitCiTest.test_only_cancelled_or_skipped_runs_fail)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmps8qiiwow/tools/ci/deploy_dev_steps_test.py", line 153, in test_only_cancelled_or_skipped_runs_fail
+    code, out, _, _ = call("wait_ci", self.environ, sequence(
+                      ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        runs_answer(ci_run(7, conclusion="cancelled"), ci_run(8, conclusion="skipped"))))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/tmps8qiiwow/tools/ci/deploy_dev_steps_test.py", line 88, in call
+    code = getattr(steps, step)()
+  File "/tmp/tmps8qiiwow/tools/ci/deploy_dev_steps.py", line 169, in wait_ci
+    verdict = self.judge_runs(sha, json_of(answer))
+  File "/tmp/tmps8qiiwow/tools/ci/deploy_dev_steps.py", line 205, in judge_runs
+    print(f"deploy-dev: wait-ci: {sha[:12]}'s ci run {passed[0]['id']} passed")
+                                                      ~~~~~~^^^
+IndexError: list index out of range
+
+----------------------------------------------------------------------
+Ran 57 tests in 0.117s
+
+FAILED (errors=1)

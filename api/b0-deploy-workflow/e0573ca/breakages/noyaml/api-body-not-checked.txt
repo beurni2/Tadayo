@@ -1,0 +1,24 @@
+tools/ci/deploy_dev_steps.py
+--- old
+        if answer.body != EXPECTED_API["body"]:
+
+--- new
+        if False:
+
+--- expected: test_any_other_answer_fails_at_once
+--- exit 1
+F................................................s.......
+======================================================================
+FAIL: test_any_other_answer_fails_at_once (__main__.CheckApiTest.test_any_other_answer_fails_at_once) (case='another body')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpoqv1e1t8/tools/ci/deploy_dev_steps_test.py", line 224, in test_any_other_answer_fails_at_once
+    self.assertEqual(code, 1, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 0 != 1 : deploy-dev: check-api: GET https://api-dev.tadayo.app/v1/me with no token answered 401 UNAUTHENTICATED, private and not stored
+
+
+----------------------------------------------------------------------
+Ran 57 tests in 0.140s
+
+FAILED (failures=1, skipped=1)

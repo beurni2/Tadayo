@@ -1,0 +1,41 @@
+.github/workflows/deploy-dev.yml
+--- old
+      group: ops-dev
+      cancel-in-progress: false
+
+--- new
+      group: ops-dev
+      cancel-in-progress: true
+
+--- expected: test_only_the_deploy_job_holds_ops_dev
+--- exit 1
+.................................................s.FF....
+======================================================================
+FAIL: test_its_jobs_and_steps_are_these_exactly (__main__.WorkflowFileTest.test_its_jobs_and_steps_are_these_exactly) (job='deploy')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpf5dezg65/tools/ci/deploy_dev_steps_test.py", line 872, in test_its_jobs_and_steps_are_these_exactly
+    self.assertEqual(self.document["jobs"][name], expected[name])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'nam[191 chars]s': 'true'}, 'steps': [{'uses': 'actions/check[1483 chars]i'}]} != {'nam[191 chars]s': 'false'}, 'steps': [{'uses': 'actions/chec[1484 chars]i'}]}
+Diff is 2813 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_only_the_deploy_job_holds_ops_dev_and_it_is_never_cancelled (__main__.WorkflowFileTest.test_only_the_deploy_job_holds_ops_dev_and_it_is_never_cancelled)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpf5dezg65/tools/ci/deploy_dev_steps_test.py", line 878, in test_only_the_deploy_job_holds_ops_dev_and_it_is_never_cancelled
+    self.assertEqual(self.document["jobs"]["deploy"]["concurrency"], {"group": "ops-dev", "cancel-in-progress": "false"})
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'group': 'ops-dev', 'cancel-in-progress': 'true'} != {'group': 'ops-dev', 'cancel-in-progress': 'false'}
+- {'cancel-in-progress': 'true', 'group': 'ops-dev'}
+?                         ^^^
+
++ {'cancel-in-progress': 'false', 'group': 'ops-dev'}
+?                         ^^^^
+
+
+----------------------------------------------------------------------
+Ran 57 tests in 0.170s
+
+FAILED (failures=2, skipped=1)

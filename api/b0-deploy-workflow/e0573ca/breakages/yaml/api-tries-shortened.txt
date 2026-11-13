@@ -1,0 +1,32 @@
+tools/ci/deploy_dev_steps.py
+--- old
+API_TRIES, API_RETRY_SECONDS = 6, 10
+--- new
+API_TRIES, API_RETRY_SECONDS = 2, 10
+--- expected: test_it_fails_after_its_last_try
+--- exit 1
+.FF......................................................
+======================================================================
+FAIL: test_fly_s_proxy_errors_and_a_lost_connection_are_asked_again (__main__.CheckApiTest.test_fly_s_proxy_errors_and_a_lost_connection_are_asked_again)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpl1hu9nrn/tools/ci/deploy_dev_steps_test.py", line 231, in test_fly_s_proxy_errors_and_a_lost_connection_are_asked_again
+    self.assertEqual(code, 0, out)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : deploy-dev: check-api: https://api-dev.tadayo.app/v1/me answered HTTP 502; asking again in 10 seconds
+deploy-dev: check-api: https://api-dev.tadayo.app/v1/me answered HTTP 503, 2 times
+
+
+======================================================================
+FAIL: test_it_fails_after_its_last_try (__main__.CheckApiTest.test_it_fails_after_its_last_try)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/tmp/tmpl1hu9nrn/tools/ci/deploy_dev_steps_test.py", line 237, in test_it_fails_after_its_last_try
+    self.assertEqual(len(http.requests), 6)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 2 != 6
+
+----------------------------------------------------------------------
+Ran 57 tests in 0.102s
+
+FAILED (failures=2)
