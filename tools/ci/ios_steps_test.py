@@ -394,7 +394,7 @@ class SnapshotRuntimeTest(StepsTest):
                 self.assertEqual(ios_steps.snapshot_runtime(self.repo.root), ("27.2", "file"))
 
     def test_anything_else_fails(self):
-        # 26.5 among them: the file can move the snapshots to the founder's runtime, never back.
+        # 26.5 among them: the file can name only the founder's runtime.
         for content in BAD_IOS_VERSIONS:
             with self.subTest(content=content):
                 self.write(content)
@@ -794,7 +794,8 @@ class PickTest(unittest.TestCase):
             with self.subTest(order=[r["buildversion"] for r in runtimes]):
                 self.assertEqual(self.pick(runtimes), c)  # C9 is after B335
         # By build_key, not as text, where "24C9" would come after "24C55".
-        c55 = dict(IOS_27_2, identifier="com.apple.CoreSimulator.SimRuntime.iOS-27-2-d", buildversion="24C55")
+        # Its identifier sorts before c's, so the identifier tie-break can't stand in for the build.
+        c55 = dict(IOS_27_2, identifier="com.apple.CoreSimulator.SimRuntime.iOS-27-2-b", buildversion="24C55")
         for runtimes in ([c, c55], [c55, c]):
             with self.subTest(order=[r["buildversion"] for r in runtimes]):
                 self.assertEqual(self.pick(runtimes), c55)
@@ -1054,6 +1055,12 @@ class BuildAndTestSteps(StepsTest):
         with self.assertRaises(Stopped):
             self.step("test", FakeShell(codes=[(on(UDID_26), stop)]))
         self.assertEqual(self.results(), {"tests-27.2": "passed"})
+        # A pass with nothing to run is recorded as it ends too.
+        self.record({k: v for k, v in self.read_record().items() if k != "tests" and not k.startswith("tests-")})
+        self.write_scheme(scheme(("TadayoSnapshotTests", False)))
+        with self.assertRaises(Stopped):
+            self.step("test", FakeShell(codes=[(on(UDID_26), stop)]))
+        self.assertEqual(self.results(), {"tests-27.2": "none"})
 
     def test_between_passes_the_device_is_shut_down_and_the_next_booted(self):
         shell = FakeShell()
