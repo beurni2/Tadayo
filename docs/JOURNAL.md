@@ -434,7 +434,7 @@ PR #46 as merged (`888c0fb`), run in the session with Node 26.13.0 before its me
 
 ### 1.3 ios lane
 
-**Updated:** 2026-11-13 22:43 UTC, ios/b0-ios26
+**Updated:** 2026-11-13 22:44 UTC, ios/b0-ios26-check
 
 - **Started:** 2026-11-03 at 11:03 UTC, by the coordinator (ADR-025). Environment: Swift from swift.org's signed release tarball, installed by hand, since the environment has no setup script (6.3.3 from 2026-11-03, 6.4.2 since 2026-11-13 09:58 UTC); the journal hook isn't confirmed to fire in this session, so it runs by hand before each commit (`docs/LIMITATIONS.md`'s row of 2026-11-03 for the ios thread).
 - **This branch:** `ios/b0-ios26` from `main` at `beb2435` (#50, merged at 18:03:49 UTC on 2026-11-13): the app's half of ADR-033, planned in `docs/plans/ios-b0-ios26.md` (the draft, then a fresh reader's 20 corrections, each checked against the repository and applied). Pushed: commit A (`7d5c6c6`), then `66b5a94`, `main` at `91955b4` merged in (the api lane's #53 and #54: `tools/ops/` and `docs/` only, no path `ios.yml` runs on). This commit is commit B (the plan's section 4.1, step 3), not pushed yet, so run B hasn't run:
@@ -2774,6 +2774,14 @@ A new `docs/LIMITATIONS.md` row too: two database-backed runs at once on the ses
 **Next:** Push, check `ci`, then PR #11's description and the founder (block 1.2's Next steps 1 and 2).
 
 ### 3.3 ios lane
+
+#### 2026-11-13 22:44 UTC · ios · ios/b0-ios26-check · PR none
+**Did:** The iOS 26.5 check branch `ios/b0-ios26-check` (never merges; `docs/plans/ios-b0-ios26.md` section 4.4), from `ios/b0-ios26`'s commit B (`cee1d26`): `git rm apps/ios/TadayoSnapshotTests/__Snapshots__/ios-version` and `git checkout beb2435 -- apps/ios/TadayoSnapshotTests/__Snapshots__`, so all 222 references are `main`'s iOS 26.5 ones (each checked byte-identical to `beb2435`'s) and, with the file gone, the snapshot tests run on iOS 26.5 under the interim.
+**Why:** Once `ios/b0-ios26` merges, no run draws iOS 26.5's snapshots. This push's `ios` run compares iOS 26.5's drawing at the new head, with the deployment target at 26.0, against `main`'s 26.5 references with the test's own precision, so it shows whether the target raise changed anything iOS 26.5 draws.
+**Verified:** The 222 files under `__Snapshots__` are byte-identical to `beb2435`'s, and `ios-version` is gone. Nothing else differs from commit B but this journal.
+**Not verified:** This push's `ios` run: done when `run.json`'s `tests-27.2` passes 119 of 119 (without the snapshot tests) and `tests-26.5` 191 of 191 (with them), and `index.md` has no `changed` or `new` row.
+**Decisions and questions:** None.
+**Next:** Read this push's `ios` run: `ios/b0-ios26-check/<short-sha>/ios/index.md` and `logs/run.json` on `evidence`. A failure is read and named; any `changed` image is read against its 26.5 reference as the plan's section 4.3 says.
 
 #### 2026-11-13 22:43 UTC · ios · ios/b0-ios26 · PR none
 **Did:** Commit B of `ios/b0-ios26` (the plan's section 4.1, step 3). Took run A's 222 iOS 27.2 images in as the snapshot references, each only where its SHA-256 equals the image read (the plan's section 4.2; none is byte-identical to its 26.5 reference). Recorded the reading: INVENTORY's "The snapshots' phone" names what iOS 27.2 draws differently (S1 to S4 and three kinds measured: Leave sign-in heavier and wider with the bar's title pushed right 2.5 points, 3.5 at the largest text; the tab items left by up to 1 point; `star.fill` set higher on the word's baseline, so the folded card with the author's own Highlight is 0.67 points taller, 1.67 at the largest size, and the photograph's Highlight label 1 to 2 points taller at the largest sizes), and the rows of `A02-age`, `A03-profile`, `global-launch-failed-network` and "The title's height" name the snapshots' bar, iOS 27.2's since this branch, with their measurements, which hold. The tab symbols are a Known difference: `docs/LIMITATIONS.md` gets a row (2026-11-13, the tab symbols), the needs list a section 11 with item 60, and INVENTORY's "The tab bar", `TabsView.swift`'s comment (no code change) and the T44 and T45 audit rows say what each iOS draws. `docs/LIMITATIONS.md`'s interim row and its two-simulator row say the references are now drawn on iOS 27.2; T47 gains the references' clause; section 4.4 gains the reading's row; block 1.3 and `docs/PROGRESS.md`'s ios section are rewritten.
