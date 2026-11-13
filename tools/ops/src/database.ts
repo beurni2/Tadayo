@@ -54,7 +54,8 @@ export function connectToDev(
 
 /**
  * Node's codes for a server certificate that the check refused: its TLS documentation's "X509
- * certificate error codes"; `UNSPECIFIED`, which Node gives any other verify error OpenSSL reports
+ * certificate error codes" but `OUT_OF_MEM`, a failed allocation and not a refused certificate, which
+ * keeps the driver's own words; `UNSPECIFIED`, which Node gives any other verify error OpenSSL reports
  * (a weak signature or key, a Key Usage without certificate signing, an unknown critical extension);
  * and the name check's own. postgres.js passes Node's error on, code and all.
  */
