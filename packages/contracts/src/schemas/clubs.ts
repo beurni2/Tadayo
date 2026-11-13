@@ -452,7 +452,8 @@ export const ScheduleSlot = named(
     "every caller, whoever has confirmed (FQ81). It doesn't say whether that member chose the day or holds " +
     "it by proposal. `first_date` is the first local date of a day confirmed in the first days: the first of " +
     "its dates whose 7 AM in the club's zone is at least 24 elapsed hours after the confirmation (FQ79). It " +
-    "is absent on any other day, which has no date yet (T49), and in a membership change. `suggested` marks " +
+    "is absent on any other day, which has no date yet (T49), on a day whose owner has left, which won't " +
+    "open (FQ63, FQ102), and in a membership change. `suggested` marks " +
     "the days proposed for the caller (spec 05), and stays on one they set aside, which only they see so " +
     "(FQ48).",
   z.object({
@@ -469,17 +470,21 @@ export const ScheduleSlot = named(
 export const ScheduleProposal = named(
   "ScheduleProposal",
   "A proposed schedule each member confirms (spec 05; G04). The club's first days (`activation`): a member " +
-    "holds the days proposed for them until they first choose, then exactly what they last chose (FQ48), " +
-    "and a revision of the first days (a join, or a leave, before any day is confirmed) proposes the week " +
-    "again for the new roster and its `days_per_member`, every member then holding the days it proposes " +
-    "for them until they choose again (FQ102); each day goes ahead as its member confirms it, while others " +
-    "still choose; a day two or more members hold has no reveal until all but one have chosen another, and " +
-    "every confirmed day goes ahead meanwhile (FQ55). A member whose membership ends holds nothing; once a " +
-    "day is confirmed a leave revises nothing: a day the leaver confirmed stays confirmed, its announced " +
-    "days held (FQ63), and the week for the club's new size comes as a membership change once the first " +
-    "days have applied (FQ102), as a join's does (FQ100). The proposal applies when the last active " +
-    "member's days are confirmed, and no date passing replaces it; its " +
-    "`effective_from` is the club's first local date, never an opening date. A membership change " +
+    "holds the days proposed for them until they first choose, then exactly what they last chose (FQ48). " +
+    "A revision of the first days (a join, or a leave, before any day is confirmed) proposes the week again " +
+    "for the new roster: where `days_per_member` stays, every member keeps what they hold, a leaver's days " +
+    "are freed and a new member holds the days it proposes for them, which nobody holds, so nobody is " +
+    "moved (FQ55); where it changes (between three and four members), every member holds the days it " +
+    "proposes for them until they choose again (FQ102). Each day goes ahead as its member confirms it, " +
+    "while others still choose; a day two or more members hold has no reveal until all but one have chosen " +
+    "another, and every confirmed day goes ahead meanwhile (FQ55). A member whose membership ends holds " +
+    "nothing; once a day is confirmed a leave revises nothing: a day the leaver confirmed stays taken by " +
+    "them, with no `first_date` and its announced days held (FQ63), and the week for the club's new size " +
+    "comes as a membership change once the first days have applied (FQ102), as a join's does (FQ100). The " +
+    "proposal applies when every member it includes who is still active has confirmed their days, on the " +
+    "last confirmation or on a leave that leaves only such members, and no date passing replaces it; a " +
+    "leave that leaves one member who hasn't confirmed supersedes it with no successor, the club paused " +
+    "(FQ16, FQ102). Its `effective_from` is the club's first local date, never an opening date. A membership change " +
     "(`membership_change`): one proposed week every active member confirms as a whole, the new member " +
     "included, with no choosing (FQ56; G04-change). It starts from the first week after every day already " +
     "generated, so no announced day changes, whether or not anything was added to it (spec 05, FQ61), and " +
@@ -491,12 +496,14 @@ export const ScheduleProposal = named(
     "its start, and first opens at least 24 elapsed hours after both the last confirmation and the start " +
     "(FQ79, FQ101). `version` moves only with `state` or a new revision of the proposed week (a join or a " +
     "leave in the first days before any day is confirmed, FQ102), never on a choice, and never on a " +
-    "confirmation that leaves `state` as it was: the first days' last confirmation applies them, which " +
-    "moves `state` and `version` and tells nobody anything, since every day then has a date (T33). A " +
+    "confirmation or a leave that leaves `state` as it was: the first days' last confirmation, or a leave " +
+    "that leaves only confirmed members, applies them, which moves `state` and `version` and tells nobody " +
+    "anything, since every day then has a date (T33). A " +
     "taken day names its owner (book p11), and the day picker names who holds a day nobody has confirmed " +
     "(FQ48); nothing counts anyone or waits on them (T33). `my_days` are the weekdays the caller holds: in " +
-    "the first days none to `days_per_member` (spec 05's table: one in clubs of four to six, two in clubs " +
-    "of two or three); in a membership change the days it proposes for them.",
+    "the first days none to `days_per_member` (spec 05's table for the roster the first days were last " +
+    "proposed for: one for four to six members, two for two or three; it stays through a leave or a late " +
+    "join once a day is confirmed, FQ100, FQ102); in a membership change the days it proposes for them.",
   z.object({
     id: Id,
     version: Version,

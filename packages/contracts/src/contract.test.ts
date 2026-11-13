@@ -879,8 +879,8 @@ describe("the examples", () => {
     for (const { where, viewer, proposal } of reads()) {
       const change = proposal.reason === "membership_change";
       if (change) seen.change += 1;
-      // Nobody holds more days than the proposal gives each member, the viewer included, so no view names
-      // anyone on a day they set aside (choiceRules.abandonedProposal).
+      // Nobody is named on more days than the proposal gives each member, the viewer included (a day set
+      // aside, choiceRules.abandonedProposal, is the first-days oracle's to catch).
       const named = new Map<string, number>();
       const count = (id: string) => named.set(id, (named.get(id) ?? 0) + 1);
       for (const slot of slotsOf(proposal)) {
@@ -977,6 +977,10 @@ describe("the examples", () => {
       if (world === undefined) continue;
       const choosing = proposal.my_state === "choosing";
       expect(choosing, where).toBe(!Object.keys(world.confirmed).some((who) => idFor(who as Who) === viewer));
+      // The first days apply only once every member they include has confirmed (FQ100, FQ102).
+      const included = new Set([...Object.keys(world.holds), ...Object.keys(world.confirmed)]);
+      const everyone = [...included].every((who) => who in world.confirmed);
+      expect(proposal.state, where).toBe(everyone ? "applied" : "open");
       for (const slot of slotsOf(proposal)) {
         const weekday = asText(slot.weekday) as WeekdayName;
         const at = `${where}: ${weekday}`;
@@ -1063,21 +1067,30 @@ describe("the examples", () => {
     expect(listed).toBeGreaterThan(0);
   });
 
-  it("agree on one version for each proposal in each state, and one start, whoever reads it and whatever anyone has chosen or confirmed (T33)", () => {
+  it("agree on one state, version and start for each proposal, whoever reads it and whatever anyone has chosen or confirmed, but the first days' answer that applies them, one version on (T33)", () => {
     // A proposal's version moves only with its state or a new revision of its week, so it never tells a
-    // member that someone else has chosen or confirmed (the first days' last confirmation applies them,
-    // which moves both); its start moves only with a new proposal (FQ49).
-    const versions = new Map<string, Json | undefined>();
-    const starts = new Map<string, Json | undefined>();
+    // member that someone else has chosen or confirmed; its start moves only with a new proposal (FQ49).
+    // The one read that may differ is the answer that applies the first days: `applied`, at the open
+    // reads' version plus one, from the same start.
+    const facts = new Map<string, string>();
+    const applying: { where: string; id: string; version: Json | undefined; start: Json | undefined }[] = [];
     for (const { where, proposal } of reads()) {
       const id = asText(proposal.id);
-      const inState = `${id} ${asText(proposal.state)}`;
-      if (!versions.has(inState)) versions.set(inState, proposal.version);
-      else expect(proposal.version, `${inState} in ${where}`).toBe(versions.get(inState));
-      if (!starts.has(id)) starts.set(id, proposal.effective_from);
-      else expect(proposal.effective_from, `${id} in ${where}`).toBe(starts.get(id));
+      if (proposal.reason === "activation" && proposal.state === "applied") {
+        applying.push({ where, id, version: proposal.version, start: proposal.effective_from });
+        continue;
+      }
+      const these = JSON.stringify([proposal.version, proposal.effective_from, proposal.state]);
+      const earlier = facts.get(id);
+      if (earlier === undefined) facts.set(id, these);
+      else expect(these, `${id} in ${where}`).toBe(earlier);
     }
-    expect(starts.size).toBeGreaterThan(1);
+    for (const { where, id, version, start } of applying) {
+      const open = JSON.parse(facts.get(id) ?? "null") as [number, string, string] | null;
+      expect(open, `${where}: ${id} is read open elsewhere`).not.toBeNull();
+      if (open !== null) expect([version, start, open[2]], where).toEqual([open[0] + 1, open[1], "open"]);
+    }
+    expect(facts.size).toBeGreaterThan(1);
   });
 
   it("show a membership change the same before and after the viewer confirms it, as the confirmation answers (FQ81)", () => {
