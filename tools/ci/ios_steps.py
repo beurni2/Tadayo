@@ -917,6 +917,7 @@ class Steps:
                                            os.path.join(export, name)], env=env,
                                           log=self.log("simulators.txt"))
                     self.write_log("simulators.txt", f"(exit {code})")
+                self.drop_duplicates(version)
             else:
                 code = self.shell.run(["xcodebuild", "-downloadPlatform", "iOS", "-buildVersion",
                                        version] + variant, env=env,
@@ -1001,6 +1002,25 @@ class Steps:
             if elapsed > limit:
                 return None
             time.sleep(5)
+
+    def drop_duplicates(self, version):
+        """EXPERIMENT: deletes the MobileAsset copy of iOS `version` that the import leaves as
+        Unusable, so the shared cache update and the boot meet one image."""
+        env = self.xcode_env()
+        for cmd in (["xcrun", "simctl", "help", "runtime"],
+                    ["xcrun", "simctl", "runtime", "dyld_shared_cache"]):
+            _, out, err = self.shell.capture(cmd, env=env)
+            self.write_log("simulators.txt", "+ " + " ".join(cmd) + "\n" + out + err)
+        images, _ = self.disk_images()
+        for key, image in (images or {}).items():
+            if (isinstance(image, dict) and image.get("version") == version
+                    and str(image.get("state") or "").startswith("Unusable")):
+                code = self.shell.run(["xcrun", "simctl", "runtime", "delete", key], env=env,
+                                      log=self.log("simulators.txt"))
+                self.write_log("simulators.txt", f"(exit {code})")
+                print(f"ios: mount: deleted the unusable iOS {version} image {key} (exit {code})",
+                      flush=True)
+        self.diagnose(f"iOS {version} after dropping duplicates")
 
     def mount_experiment(self, version, build):
         env = self.xcode_env()
