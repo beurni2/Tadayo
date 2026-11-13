@@ -62,13 +62,12 @@ struct TabsView: View {
             tab(.memories, label: "tabs.memories", symbol: "photo.on.rectangle")
             #if LAB
                 if showsLab {
-                    LabView(logOut: logOut)
-                        .tabItem {
-                            Label("Lab", systemImage: "wrench.and.screwdriver")
-                                .environment(
-                                    \.symbolVariants, selection == .lab ? .fill : .none)
-                        }
-                        .tag(Selection.lab)
+                    Tab(value: Selection.lab) {
+                        LabView(logOut: logOut)
+                    } label: {
+                        Label("Lab", systemImage: "wrench.and.screwdriver")
+                            .environment(\.symbolVariants, selection == .lab ? .fill : .none)
+                    }
                 }
             #endif
         }
@@ -83,15 +82,27 @@ struct TabsView: View {
         }
     }
 
-    private func tab(_ tab: ClubTab, label: LocalizedStringKey, symbol: String) -> some View {
-        TabContent(
-            tab: tab, clubs: clubs, name: name, retry: retry, goHome: { selection = .home }
-        )
-        .tabItem {
-            Label(label, systemImage: symbol)
-                .environment(\.symbolVariants, selection == Selection(tab) ? .fill : .none)
+    /// PROBE (never merges): each tab is a `Tab(value:content:label:)`. Home and Memories set
+    /// `\.symbolVariants` on the `Label`; Friends sets it on the icon's `Image` alone. The 27.2
+    /// snapshots show which, if either, keeps an unselected symbol outlined.
+    private func tab(
+        _ tab: ClubTab, label: LocalizedStringKey, symbol: String
+    ) -> some SwiftUI.TabContent<Selection> {
+        let variants: SymbolVariants = selection == Selection(tab) ? .fill : .none
+        return Tab(value: Selection(tab)) {
+            TabContent(
+                tab: tab, clubs: clubs, name: name, retry: retry, goHome: { selection = .home })
+        } label: {
+            if tab == .friends {
+                Label {
+                    Text(label)
+                } icon: {
+                    Image(systemName: symbol).environment(\.symbolVariants, variants)
+                }
+            } else {
+                Label(label, systemImage: symbol).environment(\.symbolVariants, variants)
+            }
         }
-        .tag(Selection(tab))
     }
 
     /// What VoiceOver says when the club list becomes `new`, from `old` (nil when the tabs first
