@@ -31,8 +31,12 @@
 // Each session gets a folder and an agent of its own (`Fly.run`'s `ownAgent`): flyctl keeps its
 // configuration, the peer's WireGuard state with it, in a new empty folder made for the session
 // (`FLY_CONFIG_DIR`), and runs an agent for that one call (`FLY_AGENT_ISOLATED=1`), which stops at
-// the end of its input, when flyctl exits; the folder, which holds the peer's private key, is
-// removed after the session. Otherwise every call on a runner shares one agent, a flyctl left
+// the end of its input, when flyctl exits (one still making the peer finishes that first: below).
+// The folder holds the peer's private key, in the WireGuard state and, in clear, in the agent's log
+// (`agent-logs/`: 0.5.8's `wg/state.go` swaps the JSON names of the two keys, so the agent's
+// `redact`, in `agent/server/session.go`, misses the private one); it is never printed, kept or
+// uploaded, and is removed once the session's call has ended. A run cancelled, cut off by the job's
+// time or lost before then leaves it, with the key and the peer, until the runner ends. Otherwise every call on a runner shares one agent, a flyctl left
 // running in the background, which keeps the organization's tunnel, and checks it against its own
 // copy of the WireGuard state: read from the configuration once, as it starts, and changed only by
 // its own writes (flyctl 0.5.8's `agent/server/server.go`, `buildTunnel` and
@@ -40,7 +44,8 @@
 // another flyctl, which that copy never learns, so the agent gives the tunnel to the next session
 // until its own check, two minutes after it starts. In `deploy-dev`, which runs two scripts over SSH
 // in one job, the second session made no peer and failed its tunnel's one check (run 43467951472,
-// both attempts; docs/LIMITATIONS.md, 2026-11-13), as that source says a shared agent would. A fresh
+// both attempts, and run 43478918447; docs/LIMITATIONS.md, 2026-11-13), as that source says a
+// shared agent would: the cause is inferred, since the shared agent's log was on runners now gone. A fresh
 // runner per script, as `ops` has, never met it.
 //
 // The peer reaches the organization's whole private network until it is removed, and flyctl never
@@ -313,7 +318,8 @@ export async function onMachine(input: OnMachineInput): Promise<void> {
     // the peer (`Create`, which nothing bounds) finishes that call first, and can't save the peer
     // into a folder that is gone, and GitHub ends any process left with the job. The folder holds the
     // peer's private key, of no use once the peer is removed below, on a runner that ends with the
-    // job: a folder left is said, and the run goes on to its peer, which matters more.
+    // job: a folder left is said, and the run goes on to its peer, which matters more. A process
+    // ended from outside (a run cancelled, the job's time) never gets here, and leaves the folder.
     await folders.remove(folder).catch((error: unknown) => {
       note(`${label}: the folder of flyctl's agent couldn't be removed: ${wordsOf(error)}`);
     });

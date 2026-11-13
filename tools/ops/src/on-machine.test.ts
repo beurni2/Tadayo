@@ -798,14 +798,20 @@ describe("onMachine: an agent of the session's own", () => {
     for (const session of sessions) {
       const { spawn, calls } = fakeSpawn(routes(session));
       let ended = false;
-      // The session's call settles only after its answer is read, so a removal made before then sees `ended` false.
+      // The made-up session ends only on a later turn of the event loop, after every pending
+      // microtask, so a removal that waits for anything short of the call itself sees `ended` false.
       const watched: Spawn = (command, args, options) => {
         const call = spawn(command, args, options);
         return args[0] === "ssh"
-          ? call.then((answer) => {
-              ended = true;
-              return answer;
-            })
+          ? call.then(
+              (answer) =>
+                new Promise<typeof answer>((resolve) => {
+                  setImmediate(() => {
+                    ended = true;
+                    resolve(answer);
+                  });
+                }),
+            )
           : call;
       };
       const removals: { path: string; ended: boolean }[] = [];

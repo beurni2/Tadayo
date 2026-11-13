@@ -26,8 +26,9 @@ export interface FlyCallOptions {
   /**
    * An empty folder of the call's own, by its absolute path, where flyctl keeps its configuration
    * (`FLY_CONFIG_DIR`), the WireGuard state among it; and flyctl is told to run an agent of its own
-   * for the call (`FLY_AGENT_ISOLATED=1`), which stops at the end of its input, when flyctl exits,
-   * instead of the one agent every call on the runner shares (flyctl 0.5.8's `helpers/config.go`,
+   * for the call (`FLY_AGENT_ISOLATED=1`), which stops at the end of its input, when flyctl exits
+   * (one still making the peer finishes that first: on-machine.ts), instead of the one agent every
+   * call on the runner shares (flyctl 0.5.8's `helpers/config.go`,
    * `agent/agent.go` and `internal/command/agent/run.go`). That agent keeps a tunnel for the
    * organization in its own memory and gives it to the next session (`agent/server/server.go`,
    * `buildTunnel`), though the peer under it has since been removed (on-machine.ts).
