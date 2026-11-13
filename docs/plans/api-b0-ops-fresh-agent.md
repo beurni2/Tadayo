@@ -55,6 +55,8 @@ Each change to `fly.ts` or `on-machine.ts` is run against the two test files in 
 - `pages`: the first run of `pages-project`, `pages-deploy` and `check-association` (they were skipped in run 43467951472). Once it passes, the founder attaches `tadayo.app` to the Pages project `tadayo`, as `docs/JOURNAL.md` block 1.2 says.
 - If `storage-setup` fails where it passed before, the isolated agent is what changed: the run says flyctl's words, nothing ran on the Machine, and the peer listing says whether one was left. Then a PR that reverts this one is opened at once, since `ops`'s two SSH scripts would fail too, and the founder is told. If only `supabase-probe` fails, the run's words say whether it is the tunnel check of 2026-11-12 (a new peer was made and removed), which running the job again may pass, or something else, which I'd look into before anything is run again.
 
+Result: `deploy-dev` run 43494221370, on the merge (`5912645`, 2026-11-13), passed every step of its four jobs: each SSH session made its own peer and removed it, the probe's 129 checks passed, `check-api` got its 401, and the `pages` job made the project `tadayo` and found the association file served at `tadayo.pages.dev` (`docs/JOURNAL.md` block 1.2, step (11)). The founder was asked to attach `tadayo.app` at 19:55 UTC.
+
 ## 7. Records
 
 - `docs/LIMITATIONS.md`: a new row for the shared agent's tunnel, seen on run 43467951472, worked around here; the row of 2026-11-12 on the tunnel's one check says that run's failure wasn't that check.
