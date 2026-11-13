@@ -114,14 +114,19 @@ struct ProfileForm: View {
     var voiceOver: Bool?
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
     @FocusState private var focused: Bool
-    /// A save made from the keyboard's return key is on its way.
-    @State private var savingFromReturn = false
+    /// Saves made from the keyboard's return key that are on their way, or just ended
+    /// (`onSubmit`).
+    @State private var returnSaves = 0
     @State private var room = KeyboardRoom()
+    /// Continue's footer's height, as drawn: the room the column has above it is `room`'s height
+    /// less this.
+    @State private var footerHeight: CGFloat = 0
     /// The name field has had the focus since the screen last appeared.
     @State private var tookFocus = false
-    /// The 8 clear points under the name's field, or 8 under its line's own 8 when one shows: the
-    /// foot the column is scrolled to.
-    private static let footID = "profile.foot"
+    /// A clear stand-in as tall as the column's room above Continue, its bottom on the bottom of
+    /// the 8 clear points under the name's field, or 8 under its line's own 8 when one shows:
+    /// scrolled to the top, it puts that foot at Continue's footer (`body`).
+    private static let footMarkID = "profile.footMark"
 
     var body: some View {
         ScrollViewReader { scroll in
@@ -138,6 +143,13 @@ struct ProfileForm: View {
                         .buttonStyle(.tadayoPrimary(isBusy: model.isSaving))
                         .disabled(!model.canContinue)
                     }
+                    .background {
+                        GeometryReader { footer in
+                            Color.clear.onChange(of: footer.size.height, initial: true) { _, now in
+                                footerHeight = now
+                            }
+                        }
+                    }
                 }
                 .readingKeyboardRoom($room)
                 // The foot at the column's visible bottom, so the field ends 8 + 8 = 16 above
@@ -147,15 +159,26 @@ struct ProfileForm: View {
                 // up, since the keyboard's own scrolling keeps the field clear of the keyboard,
                 // not of Continue over it (`ios` run 43336877808 drew Continue over the field's
                 // last 8 points, its focus ring's last 12, on an iPhone 17 at the default size),
-                // and again each time a keyboard already up changes height (another keyboard,
-                // a hardware keyboard's bar giving way to the software one), since a column keeps
-                // its offset as the room under it shrinks. The column moves only as far as it
-                // must, and not at all where it is clear.
+                // and again each time the room above Continue changes while the keyboard is up or
+                // a line shows (another keyboard, a hardware keyboard's bar giving way to the
+                // software one, Continue's footer coming down to 12 above the keyboard), since a
+                // column keeps its offset as the room under it shrinks. The marker as tall as
+                // that room is scrolled to the top, where the foot itself scrolled to the bottom
+                // was left behind Continue with the keyboard up on iOS 17.5 and 18.6 (`ios` runs
+                // 43358826308 and 43357265573: the column didn't move, though it did as a hosted
+                // test's stand-in keyboard came up); scrolled to the top, A02-code's field reaches
+                // the bar on all three. The column moves only as far as it must, and not at all
+                // where it is clear.
                 .onChange(of: line) { _, shown in
-                    if shown != nil { scroll.scrollTo(Self.footID, anchor: .bottom) }
+                    if shown != nil { scroll.scrollTo(Self.footMarkID, anchor: .top) }
                 }
                 .onChange(of: keyboardRise, initial: true) { _, rise in
-                    if rise > 0 { scroll.scrollTo(Self.footID, anchor: .bottom) }
+                    if rise > 0 { scroll.scrollTo(Self.footMarkID, anchor: .top) }
+                }
+                .onChange(of: roomAboveContinue) {
+                    if keyboardShows || line != nil {
+                        scroll.scrollTo(Self.footMarkID, anchor: .top)
+                    }
                 }
         }
         .navigationTitle(Text("auth.profile.navTitle"))
@@ -176,11 +199,11 @@ struct ProfileForm: View {
         .task { await takeFocusOnArrival() }
         // Return ends a field's editing; the focus is put back while a save goes, whether
         // Return or Continue started it, so the keyboard stays (`busyPrimary.field`: "keep
-        // first responder and keyboard if already shown"). `savingFromReturn` covers the moment
-        // between Return and the save's start.
+        // first responder and keyboard if already shown"). `returnSaves` covers the moments
+        // between Return and the save's start, and after a save that ends at once.
         .onChange(of: focused) { _, now in
             if now { tookFocus = true }
-            if !now, savingFromReturn || model.isSaving { focused = true }
+            if !now, returnSaves > 0 || model.isSaving { focused = true }
         }
         // A save's failure is said once, as it comes (`announcementPolicy.failures`), not again
         // when it shows once more after the too-long line; the too-long line politely, after
@@ -226,13 +249,17 @@ struct ProfileForm: View {
                         .autocorrectionDisabled()
                         .submitLabel(.continue)
                         .onSubmit {
-                            // Only a Return that starts a save, so a second one, while the
-                            // first save goes, can't clear the first one's flag.
+                            // Only a Return that starts a save, counted, so one made as the
+                            // last ends can't end its cover. The count is held a moment past
+                            // the save's end: a save that fails at once ends before the field's
+                            // lost focus reaches `onChange(of: focused)`, which then put nothing
+                            // back and the keyboard went (`ios` run 43358826308, iOS 17.5).
                             guard model.canContinue else { return }
-                            savingFromReturn = true
+                            returnSaves += 1
                             Task {
                                 await model.saveName()
-                                savingFromReturn = false
+                                try? await Task.sleep(for: .milliseconds(100))
+                                returnSaves -= 1
                             }
                         }
                         .focused($focused)
@@ -255,7 +282,13 @@ struct ProfileForm: View {
             }
             Color.clear
                 .frame(height: Spacing.s)
-                .id(Self.footID)
+            // Reaching up from the foot's bottom, taking no room of its own in the column.
+            Color.clear
+                .frame(height: roomAboveContinue)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+                .id(Self.footMarkID)
+                .padding(.top, -roomAboveContinue)
         }
         .scrollDismissesKeyboard(.never)
     }
@@ -296,6 +329,11 @@ struct ProfileForm: View {
     }
 
     private var tooLong: String { String(localized: "auth.profile.tooLong") }
+
+    /// The column's room from under the bar down to Continue's footer.
+    private var roomAboveContinue: CGFloat {
+        max(0, room.height - footerHeight)
+    }
 
     /// Whether a keyboard, or a hardware keyboard's bar, shows.
     private var keyboardShows: Bool {
