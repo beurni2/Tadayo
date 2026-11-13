@@ -1,0 +1,39 @@
+breakage: om-folder-removed-only-after-success
+registered: removes the folder whatever the session did
+exit: 1
+verdict: caught
+
+
+ RUN  v5.0.5 /home/user/tadayo-10c/tools/ops
+
+ ❯ src/on-machine.test.ts (39 tests | 1 failed) 74ms
+   ❯ onMachine: an agent of the session's own (6)
+     × removes the folder whatever the session did: the command failed, the tunnel's check failed, the session ran out of time 9ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 58 passed (59)
+   Start at  17:33:21
+   Duration  297ms (tests 43%, import 33%, transform 18%, worker 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > removes the folder whatever the session did: the command failed, the tunnel's check failed, the session ran out of time
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/on-machine.test.ts:765:34
+    763|       const folder = result.raw[3]?.options.env?.["FLY_CONFIG_DIR"] ??…
+    764|       expect(folder.startsWith(join(tmpdir(), "tadayo-flyctl-"))).toBe…
+    765|       expect(existsSync(folder)).toBe(false);
+       |                                  ^
+    766|     }
+    767|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

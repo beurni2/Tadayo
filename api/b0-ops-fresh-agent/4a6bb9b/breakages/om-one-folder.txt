@@ -1,0 +1,45 @@
+breakage: om-one-folder
+registered: gives a second session on the same runner a new folder and agent
+exit: 1
+verdict: caught
+
+
+ RUN  v5.0.5 /home/user/tadayo-10c/tools/ops
+
+ ❯ src/on-machine.test.ts (39 tests | 1 failed) 91ms
+   ❯ onMachine: an agent of the session's own (6)
+     × gives a second session on the same runner a new folder and agent, so it never takes the first one's tunnel, whose peer is gone 13ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 58 passed (59)
+   Start at  17:33:17
+   Duration  294ms (tests 49%, import 29%, transform 19%, worker 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > gives a second session on the same runner a new folder and agent, so it never takes the first one's tunnel, whose peer is gone
+AssertionError: expected [ undefined, …(1) ] to deeply equal [ undefined, undefined ]
+
+- Expected
++ Received
+
+  [
+    undefined,
+-   undefined,
++   OpsError {
++     "message": "supabase-probe: flyctl couldn't run it on the Machine: exit code 1: Error: tunnel unavailable: Error contacting Fly.io API when probing \"tadayo-org\": timed out (context deadline exceeded); flyctl checks a new tunnel only once, for at most five seconds, so running the script again may work",
++     "name": "OpsError",
++   },
+  ]
+
+ ❯ src/on-machine.test.ts:771:29
+    769|   it("gives a second session on the same runner a new folder and agent…
+    770|     const result = await twoSessions();
+    771|     expect(result.outcomes).toEqual([undefined, undefined]);
+       |                             ^
+    772|     const folders = result.calls
+    773|       .filter((call) => call.line.startsWith("flyctl ssh console"))
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

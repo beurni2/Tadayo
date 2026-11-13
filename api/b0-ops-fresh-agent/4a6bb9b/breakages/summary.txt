@@ -1,0 +1,21 @@
+caught	fly-config-dir-dropped	tools/ops/src/fly.ts	exit 1	gives a call with an agent of its own that agent's folder and the word that runs it
+caught	fly-isolated-dropped	tools/ops/src/fly.ts	exit 1	gives a call with an agent of its own that agent's folder and the word that runs it
+caught	fly-isolated-true	tools/ops/src/fly.ts	exit 1	gives a call with an agent of its own that agent's folder and the word that runs it
+caught	fly-own-agent-ignored	tools/ops/src/fly.ts	exit 1	gives a call with an agent of its own that agent's folder and the word that runs it
+caught	fly-isolated-for-every-call	tools/ops/src/fly.ts	exit 1	gives flyctl the token and HOME, the call's own directory, and two minutes
+caught	fly-option-spawned	tools/ops/src/fly.ts	exit 1	gives a call with an agent of its own that agent's folder and the word that runs it
+caught	fly-relative-taken	tools/ops/src/fly.ts	exit 1	refuses an agent's folder that isn't an absolute path, before it runs anything
+caught	fly-empty-taken	tools/ops/src/fly.ts	exit 1	refuses an agent's folder that isn't an absolute path, before it runs anything
+caught	om-folder-not-given	tools/ops/src/on-machine.ts	exit 1	gives a second session on the same runner a new folder and agent
+caught	om-folder-not-given-env	tools/ops/src/on-machine.ts	exit 1	gives the session the tunnel's bound, the connection and the command's time, and flyctl the token
+caught	om-one-folder	tools/ops/src/on-machine.ts	exit 1	gives a second session on the same runner a new folder and agent
+caught	om-folder-readable	tools/ops/src/on-machine.ts	exit 1	makes a new empty folder only this process may read, gives it and FLY_AGENT_ISOLATED=1 to the SSH
+caught	om-folder-relative	tools/ops/src/on-machine.ts	exit 1	makes a new empty folder only this process may read, gives it and FLY_AGENT_ISOLATED=1 to the SSH
+caught	om-folder-kept	tools/ops/src/on-machine.ts	exit 1	makes a new empty folder only this process may read, gives it and FLY_AGENT_ISOLATED=1 to the SSH
+caught	om-folder-removed-only-after-success	tools/ops/src/on-machine.ts	exit 1	removes the folder whatever the session did
+caught	om-rm-not-recursive	tools/ops/src/on-machine.ts	exit 1	makes a new empty folder only this process may read, gives it and FLY_AGENT_ISOLATED=1 to the SSH
+caught	om-remove-failure-fails	tools/ops/src/on-machine.ts	exit 1	says a folder it couldn't remove, and goes on to remove the peer
+caught	om-remove-failure-silent	tools/ops/src/on-machine.ts	exit 1	says a folder it couldn't remove, and goes on to remove the peer
+caught	om-make-error-uncaught	tools/ops/src/on-machine.ts	exit 1	starts no session when the folder can't be made, and says why
+caught	om-note-before-make	tools/ops/src/on-machine.ts	exit 1	starts no session when the folder can't be made, and says why
+20 caught, 0 missed, of 20

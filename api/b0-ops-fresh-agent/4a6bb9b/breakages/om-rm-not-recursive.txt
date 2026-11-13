@@ -1,0 +1,625 @@
+breakage: om-rm-not-recursive
+registered: makes a new empty folder only this process may read, gives it and FLY_AGENT_ISOLATED=1 to the SSH
+exit: 1
+verdict: caught
+
+
+ RUN  v5.0.5 /home/user/tadayo-10c/tools/ops
+
+ ❯ src/on-machine.test.ts (39 tests | 26 failed) 81ms
+   ❯ onMachine: the command, over SSH (16)
+     × runs the command in the API's started Machine, as one string, says what it printed, then removes the run's peer 19ms
+     × fails with the command's exit code, after saying what it printed, when the command failed, and still removes the peer 2ms
+     × names the signal when one ended the command, with or without the reason x/crypto adds 2ms
+     × reads flyctl's line in colour, as a terminal would show it, the same way 1ms
+     × fails when the session ended without an exit status, which the Machine's end and a lost connection both give 2ms
+     × says every line of flyctl's failure to start its agent, which ends with its log, and words the failure from them 2ms
+     × removes the peer the agent made before its one check of the tunnel failed, and says running it again may work 1ms
+     × reads flyctl's failure as its own though it ends with an empty line, and says none of it as the Machine's 1ms
+     × fails after saying what came back when the session ran out of time, and still removes the peer 1ms
+     × says that the session makes a peer, and how to remove one by hand, before the session starts 1ms
+     × passes a session that exited 0 having printed nothing, which only the script's own last line can judge (run.ts) 1ms
+     × gives a line the Machine printed that looks like flyctl's no weight: only flyctl's exit code and last line count 1ms
+   ❯ onMachine: the run's WireGuard peer, and no other (15)
+     × removes every new peer named for this runner, and never one that was there before 1ms
+     × takes a new peer named for this runner whatever follows the host, an empty email part among them 1ms
+     × leaves a new peer not named for this runner, but fails the run, saying so without its name, whatever the session did 3ms
+     × fails a session that worked when a peer of this run's is still there, with the way to remove it by hand 1ms
+     × says a new peer not named for this runner too when one of this run's is still there, and fails with the one left 1ms
+     × goes on with the clean-up when a removal's flyctl can't be started, and counts its peer as left 1ms
+     × counts a peer as removed when flyctl failed after removing it, and as left when no list can tell 1ms
+     × fails when the session reached the Machine and no new peer of this run's is found, since one must have been made 2ms
+     × says no peer of this run's is listed after flyctl's own failure or a timeout, and what to look at by hand 1ms
+     × throws the command's failure, not the peer's, when both went wrong, and says the peer's first 1ms
+   ❯ onMachine: an agent of the session's own (6)
+     × makes a new empty folder only this process may read, gives it and FLY_AGENT_ISOLATED=1 to the SSH session alone, and removes it after 2ms
+     × removes the folder whatever the session did: the command failed, the tunnel's check failed, the session ran out of time 1ms
+     × gives a second session on the same runner a new folder and agent, so it never takes the first one's tunnel, whose peer is gone 3ms
+     × says a folder it couldn't remove, and goes on to remove the peer, without failing a session that worked 3ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  26 failed | 33 passed (59)
+   Start at  17:33:22
+   Duration  313ms (tests 42%, import 31%, transform 23%, worker 4%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 26 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > runs the command in the API's started Machine, as one string, says what it printed, then removes the run's peer
+AssertionError: expected [ …(6) ] to deeply equal [ …(5) ]
+
+- Expected
++ Received
+
+  [
+    "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
++   "storage-setup: the folder of flyctl's agent couldn't be removed: Path is a directory: rm returned EISDIR (is a directory) /tmp/tadayo-flyctl-HHboRu",
+    "machine: first",
+    "machine: second",
+    "machine: a warning",
+    "storage-setup: removed the WireGuard peer this run made",
+  ]
+
+ ❯ src/on-machine.test.ts:123:25
+    121|       COMMAND.join(" "),
+    122|     ]);
+    123|     expect(result.said).toEqual([MAKING, "machine: first", "machine: s…
+       |                         ^
+    124|   });
+    125|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/26]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > fails with the command's exit code, after saying what it printed, when the command failed, and still removes the peer
+AssertionError: expected [ …(5) ] to deeply equal [ …(4) ]
+
+- Expected
++ Received
+
+  [
+    "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
++   "storage-setup: the folder of flyctl's agent couldn't be removed: Path is a directory: rm returned EISDIR (is a directory) /tmp/tadayo-flyctl-BBECWx",
+    "machine: half of it",
+    "machine: set SUPABASE_SERVICE_KEY",
+    "storage-setup: removed the WireGuard peer this run made",
+  ]
+
+ ❯ src/on-machine.test.ts:147:25
+    145|     expect(message(result.outcome)).toBe("storage-setup: it failed on …
+    146|     // flyctl's own line isn't said as the Machine's: the failure says…
+    147|     expect(result.said).toEqual([MAKING, "machine: half of it", "machi…
+       |                         ^
+    148|     expect(result.calls.at(-1)).toBe(`${REMOVE} ${OURS}`);
+    149|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/26]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > names the signal when one ended the command, with or without the reason x/crypto adds
+AssertionError: Error: ssh shell: Process exited with status 137 from signal KILL
+: expected [ …(3) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+    "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
++   "storage-setup: the folder of flyctl's agent couldn't be removed: Path is a directory: rm returned EISDIR (is a directory) /tmp/tadayo-flyctl-hY6lUb",
+    "storage-setup: removed the WireGuard peer this run made",
+  ]
+
+ ❯ src/on-machine.test.ts:159:33
+    157|       const result = await run(routes({ code: 1, stderr: line }));
+    158|       expect(message(result.outcome), line).toBe(`storage-setup: it fa…
+    159|       expect(result.said, line).toEqual([MAKING, REMOVED]);
+       |                                 ^
+    160|     }
+    161|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/26]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > reads flyctl's line in colour, as a terminal would show it, the same way
+AssertionError: expected [ …(3) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+    "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
++   "storage-setup: the folder of flyctl's agent couldn't be removed: Path is a directory: rm returned EISDIR (is a directory) /tmp/tadayo-flyctl-YJIQPk",
+    "storage-setup: removed the WireGuard peer this run made",
+  ]
+
+ ❯ src/on-machine.test.ts:168:25
+    166|     );
+    167|     expect(message(result.outcome)).toBe("storage-setup: it failed on …
+    168|     expect(result.said).toEqual([MAKING, REMOVED]);
+       |                         ^
+    169|   });
+    170|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/26]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > fails when the session ended without an exit status, which the Machine's end and a lost connection both give
+AssertionError: expected [ …(4) ] to deeply equal [ …(3) ]
+
+- Expected
++ Received
+
+  [
+    "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
++   "storage-setup: the folder of flyctl's agent couldn't be removed: Path is a directory: rm returned EISDIR (is a directory) /tmp/tadayo-flyctl-ldrVVY",
+    "machine: supabase-probe: run 1",
+    "storage-setup: removed the WireGuard peer this run made",
+  ]
+
+ ❯ src/on-machine.test.ts:182:25
+    180|       "storage-setup: the session ended without saying how the command…
+    181|     );
+    182|     expect(result.said).toEqual([MAKING, "machine: supabase-probe: run…
+       |                         ^
+    183|   });
+    184|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/26]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > says every line of flyctl's failure to start its agent, which ends with its log, and words the failure from them
+AssertionError: expected [ …(10) ] to deeply equal [ …(9) ]
+
+- Expected
++ Received
+
+@@ -1,7 +1,8 @@
+  [
+    "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
++   "storage-setup: the folder of flyctl's agent couldn't be removed: Path is a directory: rm returned EISDIR (is a directory) /tmp/tadayo-flyctl-EYAfDD",
+    "machine: Error: can't establish agent: agent: failed to start",
+    "machine: The agent failed to start with the following error log:",
+    "machine: ",
+    "machine: 2026/11/12 08:00:00.000000 srv the log's line",
+    "machine: ",
+
+ ❯ src/on-machine.test.ts:198:25
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/26]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > removes the peer the agent made before its one check of the tunnel failed, and says running it again may work
+AssertionError: expected [ …(3) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+    "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
++   "storage-setup: the folder of flyctl's agent couldn't be removed: Path is a directory: rm returned EISDIR (is a directory) /tmp/tadayo-flyctl-UyIDEs",
+    "storage-setup: removed the WireGuard peer this run made",
+  ]
+
+ ❯ src/on-machine.test.ts:217:25
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/26]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > reads flyctl's failure as its own though it ends with an empty line, and says none of it as the Machine's
+AssertionError: expected [ …(3) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+    "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
++   "storage-setup: the folder of flyctl's agent couldn't be removed: Path is a directory: rm returned EISDIR (is a directory) /tmp/tadayo-flyctl-s1rnZ6",
+    "storage-setup: removed the WireGuard peer this run made",
+  ]
+
+ ❯ src/on-machine.test.ts:227:25
+    225|       "storage-setup: flyctl couldn't run it on the Machine: exit code…
+    226|     );
+    227|     expect(result.said).toEqual([MAKING, REMOVED]);
+       |                         ^
+    228|   });
+    229|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/26]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > fails after saying what came back when the session ran out of time, and still removes the peer
+AssertionError: expected [ …(5) ] to deeply equal [ …(4) ]
+
+- Expected
++ Received
+
+  [
+    "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
++   "storage-setup: the folder of flyctl's agent couldn't be removed: Path is a directory: rm returned EISDIR (is a directory) /tmp/tadayo-flyctl-Trszdy",
+    "machine: supabase-probe: run 1",
+    "machine: Error: still waiting",
+    "storage-setup: removed the WireGuard peer this run made",
+  ]
+
+ ❯ src/on-machine.test.ts:254:25
+    252|       "storage-setup: the session ran out of time after 600 seconds, a…
+    253|     );
+    254|     expect(result.said).toEqual([MAKING, "machine: supabase-probe: run…
+       |                         ^
+    255|   });
+    256|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/26]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > says that the session makes a peer, and how to remove one by hand, before the session starts
+AssertionError: expected [ …(4) ] to deeply equal [ …(3) ]
+
+- Expected
++ Received
+
+  [
+    "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
++   "storage-setup: the folder of flyctl's agent couldn't be removed: Path is a directory: rm returned EISDIR (is a directory) /tmp/tadayo-flyctl-DxMnIW",
+    "machine: done",
+    "storage-setup: removed the WireGuard peer this run made",
+  ]
+
+ ❯ src/on-machine.test.ts:283:18
+    281|     // A run cancelled during its session has the line in its log alre…
+    282|     expect(beforeTheSession).toEqual([MAKING]);
+    283|     expect(said).toEqual([MAKING, "machine: done", REMOVED]);
+       |                  ^
+    284|   });
+    285|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/26]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > passes a session that exited 0 having printed nothing, which only the script's own last line can judge (run.ts)
+AssertionError: expected [ …(3) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+    "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
++   "storage-setup: the folder of flyctl's agent couldn't be removed: Path is a directory: rm returned EISDIR (is a directory) /tmp/tadayo-flyctl-PuGiKB",
+    "storage-setup: removed the WireGuard peer this run made",
+  ]
+
+ ❯ src/on-machine.test.ts:289:25
+    287|     const result = await run(routes({}));
+    288|     expect(result.outcome).toBeUndefined();
+    289|     expect(result.said).toEqual([MAKING, REMOVED]);
+       |                         ^
+    290|   });
+    291|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/26]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > gives a line the Machine printed that looks like flyctl's no weight: only flyctl's exit code and last line count
+AssertionError: expected [ …(4) ] to deeply equal [ …(3) ]
+
+- Expected
++ Received
+
+  [
+    "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
++   "storage-setup: the folder of flyctl's agent couldn't be removed: Path is a directory: rm returned EISDIR (is a directory) /tmp/tadayo-flyctl-DNtQSt",
+    "machine: Error: ssh shell: Process exited with status 1",
+    "storage-setup: removed the WireGuard peer this run made",
+  ]
+
+ ❯ src/on-machine.test.ts:295:25
+    293|     const passed = await run(routes({ stderr: exited(1) }));
+    294|     expect(passed.outcome).toBeUndefined();
+    295|     expect(passed.said).toEqual([MAKING, "machine: Error: ssh shell: P…
+       |                         ^
+    296|     // Exit 1 with the Machine's imitation earlier and flyctl's real f…
+    297|     const failed = await run(routes({ code: 1, stderr: `${exited(0)}Er…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/26]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > removes every new peer named for this runner, and never one that was there before
+AssertionError: expected [ …(3) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+    "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
++   "storage-setup: the folder of flyctl's agent couldn't be removed: Path is a directory: rm returned EISDIR (is a directory) /tmp/tadayo-flyctl-vCv84O",
+    "storage-setup: removed the WireGuard peer this run made",
+  ]
+
+ ❯ src/on-machine.test.ts:348:25
+    346|     expect(result.outcome).toBeUndefined();
+    347|     expect(result.calls.slice(5)).toEqual([`${REMOVE} ${OURS}`, `${REM…
+    348|     expect(result.said).toEqual([MAKING, REMOVED]);
+       |                         ^
+    349|   });
+    350|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/26]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > takes a new peer named for this runner whatever follows the host, an empty email part among them
+AssertionError: expected [ …(3) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+    "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
++   "storage-setup: the folder of flyctl's agent couldn't be removed: Path is a directory: rm returned EISDIR (is a directory) /tmp/tadayo-flyctl-uEnAZO",
+    "storage-setup: removed the WireGuard peer this run made",
+  ]
+
+ ❯ src/on-machine.test.ts:359:25
+    357|     expect(message(result.outcome)).toMatch(/^storage-setup: flyctl co…
+    358|     expect(result.calls.at(-1)).toBe(`${REMOVE} ${noEmail}`);
+    359|     expect(result.said).toEqual([MAKING, REMOVED]);
+       |                         ^
+    360|   });
+    361|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/26]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > leaves a new peer not named for this runner, but fails the run, saying so without its name, whatever the session did
+AssertionError: expected [ …(4) ] to deeply equal [ …(3) ]
+
+- Expected
++ Received
+
+  [
+    "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
++   "storage-setup: the folder of flyctl's agent couldn't be removed: Path is a directory: rm returned EISDIR (is a directory) /tmp/tadayo-flyctl-vkkJp2",
+    "machine: done",
+    "storage-setup: removed the WireGuard peer this run made",
+  ]
+
+ ❯ src/on-machine.test.ts:382:25
+    380|     const beside = await run(routes({ stdout: "done\n" }, [OURS, LAPTO…
+    381|     expect(beside.calls.at(-1)).toBe(`${REMOVE} ${OURS}`);
+    382|     expect(beside.said).toEqual([MAKING, "machine: done", REMOVED]);
+       |                         ^
+    383|     expect(message(beside.outcome)).toBe(strangers(1, true));
+    384|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/26]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > fails a session that worked when a peer of this run's is still there, with the way to remove it by hand
+AssertionError: flyctl's removal of a WireGuard peer this run made ended with exit code 1: expected [ …(4) ] to deeply equal [ …(3) ]
+
+- Expected
++ Received
+
+  [
+    "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
++   "storage-setup: the folder of flyctl's agent couldn't be removed: Path is a directory: rm returned EISDIR (is a directory) /tmp/tadayo-flyctl-sJGA0K",
+    "machine: done",
+    "storage-setup: flyctl's removal of a WireGuard peer this run made ended with exit code 1",
+  ]
+
+ ❯ src/on-machine.test.ts:418:33
+    416|         [REMOVE, removal],
+    417|       ]);
+    418|       expect(result.said, said).toEqual([MAKING, "machine: done", `sto…
+       |                                 ^
+    419|       expect(message(result.outcome)).toBe(
+    420|         `storage-setup: 1 of the WireGuard peers this run made is stil…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/26]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > says a new peer not named for this runner too when one of this run's is still there, and fails with the one left
+AssertionError: expected [ …(5) ] to deeply equal [ …(4) ]
+
+- Expected
++ Received
+
+  [
+    "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
++   "storage-setup: the folder of flyctl's agent couldn't be removed: Path is a directory: rm returned EISDIR (is a directory) /tmp/tadayo-flyctl-sCOVvW",
+    "machine: done",
+    "storage-setup: flyctl's removal of a WireGuard peer this run made ended with exit code 1",
+    "storage-setup: 1 WireGuard peer that isn't named for this runner appeared in the organization during the session and is left: `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
+  ]
+
+ ❯ src/on-machine.test.ts:435:25
+    433|       [REMOVE, { code: 1 }],
+    434|     ]);
+    435|     expect(result.said).toEqual([
+       |                         ^
+    436|       MAKING,
+    437|       "machine: done",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/26]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > goes on with the clean-up when a removal's flyctl can't be started, and counts its peer as left
+AssertionError: expected [ …(4) ] to deeply equal [ …(3) ]
+
+- Expected
++ Received
+
+  [
+    "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
++   "storage-setup: the folder of flyctl's agent couldn't be removed: Path is a directory: rm returned EISDIR (is a directory) /tmp/tadayo-flyctl-Nz7QWZ",
+    "machine: done",
+    "storage-setup: flyctl's removal of a WireGuard peer this run made couldn't be started",
+  ]
+
+ ❯ src/on-machine.test.ts:455:25
+    453|       [PEERS, peersOf(peerList([]), peerList([OURS]))],
+    454|     ]);
+    455|     expect(result.said).toEqual([
+       |                         ^
+    456|       MAKING,
+    457|       "machine: done",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/26]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > counts a peer as removed when flyctl failed after removing it, and as left when no list can tell
+AssertionError: expected [ …(5) ] to deeply equal [ …(4) ]
+
+- Expected
++ Received
+
+  [
+    "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
++   "storage-setup: the folder of flyctl's agent couldn't be removed: Path is a directory: rm returned EISDIR (is a directory) /tmp/tadayo-flyctl-UvOJXI",
+    "machine: done",
+    "storage-setup: flyctl's removal of a WireGuard peer this run made ended with exit code 1",
+    "storage-setup: removed the WireGuard peer this run made",
+  ]
+
+ ❯ src/on-machine.test.ts:476:23
+    474|     ]);
+    475|     expect(gone.outcome).toBeUndefined();
+    476|     expect(gone.said).toEqual([
+       |                       ^
+    477|       MAKING,
+    478|       "machine: done",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/26]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > fails when the session reached the Machine and no new peer of this run's is found, since one must have been made
+AssertionError: storage-setup: it failed on the Machine, with exit code 3: expected [ …(3) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+    "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
++   "storage-setup: the folder of flyctl's agent couldn't be removed: Path is a directory: rm returned EISDIR (is a directory) /tmp/tadayo-flyctl-MJGpZN",
+    "storage-setup: none of the organization's WireGuard peers is one this run made, though its session reached the Machine, so it can't say it removed it: `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
+  ]
+
+ ❯ src/on-machine.test.ts:513:36
+    511|     ] as const) {
+    512|       const result = await run(routes(session, []));
+    513|       expect(result.said, failure).toEqual([MAKING, NONE_FOUND]);
+       |                                    ^
+    514|       expect(message(result.outcome)).toBe(failure);
+    515|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/26]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > says no peer of this run's is listed after flyctl's own failure or a timeout, and what to look at by hand
+AssertionError: {"code":1,"stderr":"Error: tunnel unavailable: context deadline exceeded\n"}: expected [ …(3) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+    "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
++   "storage-setup: the folder of flyctl's agent couldn't be removed: Path is a directory: rm returned EISDIR (is a directory) /tmp/tadayo-flyctl-HSnDog",
+    "storage-setup: no new WireGuard peer named for this runner is listed, so none was removed; if the session made one, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
+  ]
+
+ ❯ src/on-machine.test.ts:525:52
+    523|     ]) {
+    524|       const result = await run(routes(session, []));
+    525|       expect(result.said, JSON.stringify(session)).toEqual([MAKING, NO…
+       |                                                    ^
+    526|       expect(message(result.outcome), JSON.stringify(session)).not.toB…
+    527|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/26]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the run's WireGuard peer, and no other > throws the command's failure, not the peer's, when both went wrong, and says the peer's first
+AssertionError: expected [ …(4) ] to deeply equal [ …(3) ]
+
+- Expected
++ Received
+
+  [
+    "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
++   "storage-setup: the folder of flyctl's agent couldn't be removed: Path is a directory: rm returned EISDIR (is a directory) /tmp/tadayo-flyctl-xGN0e3",
+    "storage-setup: flyctl's removal of a WireGuard peer this run made ended with exit code 1",
+    "storage-setup: 1 of the WireGuard peers this run made is still there: `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
+  ]
+
+ ❯ src/on-machine.test.ts:628:25
+    626|     ]);
+    627|     expect(message(result.outcome)).toBe("storage-setup: it failed on …
+    628|     expect(result.said).toEqual([
+       |                         ^
+    629|       MAKING,
+    630|       "storage-setup: flyctl's removal of a WireGuard peer this run ma…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/26]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > makes a new empty folder only this process may read, gives it and FLY_AGENT_ISOLATED=1 to the SSH session alone, and removes it after
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/on-machine.test.ts:750:32
+    748|     const folder = result.raw[3]?.options.env?.["FLY_CONFIG_DIR"] ?? "…
+    749|     expect(isAbsolute(folder)).toBe(true);
+    750|     expect(existsSync(folder)).toBe(false);
+       |                                ^
+    751|     expect(result.said).toEqual([MAKING, REMOVED]);
+    752|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/26]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > removes the folder whatever the session did: the command failed, the tunnel's check failed, the session ran out of time
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/on-machine.test.ts:765:34
+    763|       const folder = result.raw[3]?.options.env?.["FLY_CONFIG_DIR"] ??…
+    764|       expect(folder.startsWith(join(tmpdir(), "tadayo-flyctl-"))).toBe…
+    765|       expect(existsSync(folder)).toBe(false);
+       |                                  ^
+    766|     }
+    767|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/26]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > gives a second session on the same runner a new folder and agent, so it never takes the first one's tunnel, whose peer is gone
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/on-machine.test.ts:777:68
+    775|     expect(folders).toHaveLength(2);
+    776|     expect(new Set(folders).size).toBe(2);
+    777|     for (const folder of folders) expect(existsSync(folder ?? "")).toB…
+       |                                                                    ^
+    778|     expect(result.said.filter((line) => line.endsWith("removed the Wir…
+    779|     expect([...result.atFly]).toEqual([]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[25/26]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > says a folder it couldn't remove, and goes on to remove the peer, without failing a session that worked
+AssertionError: expected [ …(4) ] to deeply equal [ …(4) ]
+
+- Expected
++ Received
+
+  [
+    "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
+-   "storage-setup: the folder of flyctl's agent couldn't be removed: EBUSY: resource busy or locked",
++   "storage-setup: the folder of flyctl's agent couldn't be removed: Path is a directory: rm returned EISDIR (is a directory) /tmp/tadayo-flyctl-RGBj6m",
+    "machine: ok",
+    "storage-setup: removed the WireGuard peer this run made",
+  ]
+
+ ❯ src/on-machine.test.ts:828:25
+    826|     // The folder's note comes as its removal fails, when the session …
+    827|     // machine printed is said.
+    828|     expect(result.said).toEqual([
+       |                         ^
+    829|       MAKING,
+    830|       "storage-setup: the folder of flyctl's agent couldn't be removed…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[26/26]⎯
+

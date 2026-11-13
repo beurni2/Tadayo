@@ -1,0 +1,103 @@
+breakage: om-folder-kept
+registered: makes a new empty folder only this process may read, gives it and FLY_AGENT_ISOLATED=1 to the SSH
+exit: 1
+verdict: caught
+
+
+ RUN  v5.0.5 /home/user/tadayo-10c/tools/ops
+
+ ❯ src/on-machine.test.ts (39 tests | 4 failed) 78ms
+   ❯ onMachine: an agent of the session's own (6)
+     × makes a new empty folder only this process may read, gives it and FLY_AGENT_ISOLATED=1 to the SSH session alone, and removes it after 13ms
+     × removes the folder whatever the session did: the command failed, the tunnel's check failed, the session ran out of time 2ms
+     × gives a second session on the same runner a new folder and agent, so it never takes the first one's tunnel, whose peer is gone 3ms
+     × says a folder it couldn't remove, and goes on to remove the peer, without failing a session that worked 3ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  4 failed | 55 passed (59)
+   Start at  17:33:20
+   Duration  307ms (tests 40%, import 33%, transform 22%, worker 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > makes a new empty folder only this process may read, gives it and FLY_AGENT_ISOLATED=1 to the SSH session alone, and removes it after
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/on-machine.test.ts:750:32
+    748|     const folder = result.raw[3]?.options.env?.["FLY_CONFIG_DIR"] ?? "…
+    749|     expect(isAbsolute(folder)).toBe(true);
+    750|     expect(existsSync(folder)).toBe(false);
+       |                                ^
+    751|     expect(result.said).toEqual([MAKING, REMOVED]);
+    752|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > removes the folder whatever the session did: the command failed, the tunnel's check failed, the session ran out of time
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/on-machine.test.ts:765:34
+    763|       const folder = result.raw[3]?.options.env?.["FLY_CONFIG_DIR"] ??…
+    764|       expect(folder.startsWith(join(tmpdir(), "tadayo-flyctl-"))).toBe…
+    765|       expect(existsSync(folder)).toBe(false);
+       |                                  ^
+    766|     }
+    767|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > gives a second session on the same runner a new folder and agent, so it never takes the first one's tunnel, whose peer is gone
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/on-machine.test.ts:777:68
+    775|     expect(folders).toHaveLength(2);
+    776|     expect(new Set(folders).size).toBe(2);
+    777|     for (const folder of folders) expect(existsSync(folder ?? "")).toB…
+       |                                                                    ^
+    778|     expect(result.said.filter((line) => line.endsWith("removed the Wir…
+    779|     expect([...result.atFly]).toEqual([]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > says a folder it couldn't remove, and goes on to remove the peer, without failing a session that worked
+AssertionError: expected [ …(3) ] to deeply equal [ …(4) ]
+
+- Expected
++ Received
+
+  [
+    "storage-setup: the SSH session makes a WireGuard peer in tadayo-org, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list tadayo-org` lists the organization's peers, and `flyctl wireguard remove tadayo-org <name>` removes one; this run's names start with interactive-runnervm0abc1-",
+-   "storage-setup: the folder of flyctl's agent couldn't be removed: EBUSY: resource busy or locked",
+    "machine: ok",
+    "storage-setup: removed the WireGuard peer this run made",
+  ]
+
+ ❯ src/on-machine.test.ts:828:25
+    826|     // The folder's note comes as its removal fails, when the session …
+    827|     // machine printed is said.
+    828|     expect(result.said).toEqual([
+       |                         ^
+    829|       MAKING,
+    830|       "storage-setup: the folder of flyctl's agent couldn't be removed…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+

@@ -1,0 +1,13 @@
+diff --git a/tools/ops/src/on-machine.ts b/tools/ops/src/on-machine.ts
+index 924b20e..7bd48aa 100644
+--- a/tools/ops/src/on-machine.ts
++++ b/tools/ops/src/on-machine.ts
+@@ -300,7 +300,7 @@ export async function onMachine(input: OnMachineInput): Promise<void> {
+   try {
+     result = await fly.run(
+       ["ssh", "console", "-a", DEV_APP, "--machine", target.id, "-q", "-C", input.command.join(" ")],
+-      { timeoutMs: SESSION_MS, ownAgent: folder },
++      { timeoutMs: SESSION_MS },
+     );
+   } finally {
+     // The session's agent ends with the call: flyctl holds its standard input, and the agent stops at

@@ -1,0 +1,112 @@
+breakage: om-folder-not-given-env
+registered: gives the session the tunnel's bound, the connection and the command's time, and flyctl the token
+exit: 1
+verdict: caught
+
+
+ RUN  v5.0.5 /home/user/tadayo-10c/tools/ops
+
+ ❯ src/on-machine.test.ts (39 tests | 4 failed) 105ms
+   ❯ onMachine: the command, over SSH (16)
+     × gives the session the tunnel's bound, the connection and the command's time, and flyctl the token and HOME only, with the session's own agent 13ms
+   ❯ onMachine: an agent of the session's own (6)
+     × makes a new empty folder only this process may read, gives it and FLY_AGENT_ISOLATED=1 to the SSH session alone, and removes it after 3ms
+     × removes the folder whatever the session did: the command failed, the tunnel's check failed, the session ran out of time 2ms
+     × gives a second session on the same runner a new folder and agent, so it never takes the first one's tunnel, whose peer is gone 5ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  4 failed | 55 passed (59)
+   Start at  17:33:16
+   Duration  357ms (tests 43%, import 29%, transform 24%, worker 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: the command, over SSH > gives the session the tunnel's bound, the connection and the command's time, and flyctl the token and HOME only, with the session's own agent
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/on-machine.test.ts:132:65
+    130|     expect(result.raw[3]?.options.timeoutMs).toBe(600_000);
+    131|     const folder = result.raw[3]?.options.env?.["FLY_CONFIG_DIR"] ?? "…
+    132|     expect(folder.startsWith(join(tmpdir(), "tadayo-flyctl-"))).toBe(t…
+       |                                                                 ^
+    133|     expect(result.raw[3]?.options.env).toEqual({ ...ENV, FLY_CONFIG_DI…
+    134|     for (const call of result.raw.filter((_call, index) => index !== 3…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > makes a new empty folder only this process may read, gives it and FLY_AGENT_ISOLATED=1 to the SSH session alone, and removes it after
+AssertionError: expected Error: ENOENT: no such file or directory,… { …(4) } to be undefined
+
+- Expected:
+undefined
+
++ Received:
+Error {
+  "message": "ENOENT: no such file or directory, scandir ''",
+  "errno": -2,
+  "code": "ENOENT",
+  "syscall": "scandir",
+  "path": "",
+}
+
+ ❯ src/on-machine.test.ts:746:28
+    744|       [REMOVE, {}],
+    745|     ]);
+    746|     expect(result.outcome).toBeUndefined();
+       |                            ^
+    747|     expect(during).toEqual({ exists: true, empty: true, mode: 0o700 });
+    748|     const folder = result.raw[3]?.options.env?.["FLY_CONFIG_DIR"] ?? "…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > removes the folder whatever the session did: the command failed, the tunnel's check failed, the session ran out of time
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/on-machine.test.ts:764:67
+    762|       expect(result.outcome).toBeInstanceOf(OpsError);
+    763|       const folder = result.raw[3]?.options.env?.["FLY_CONFIG_DIR"] ??…
+    764|       expect(folder.startsWith(join(tmpdir(), "tadayo-flyctl-"))).toBe…
+       |                                                                   ^
+    765|       expect(existsSync(folder)).toBe(false);
+    766|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/on-machine.test.ts > onMachine: an agent of the session's own > gives a second session on the same runner a new folder and agent, so it never takes the first one's tunnel, whose peer is gone
+AssertionError: expected [ undefined, …(1) ] to deeply equal [ undefined, undefined ]
+
+- Expected
++ Received
+
+  [
+    undefined,
+-   undefined,
++   OpsError {
++     "message": "supabase-probe: flyctl couldn't run it on the Machine: exit code 1: Error: tunnel unavailable: Error contacting Fly.io API when probing \"tadayo-org\": timed out (context deadline exceeded); flyctl checks a new tunnel only once, for at most five seconds, so running the script again may work",
++     "name": "OpsError",
++   },
+  ]
+
+ ❯ src/on-machine.test.ts:771:29
+    769|   it("gives a second session on the same runner a new folder and agent…
+    770|     const result = await twoSessions();
+    771|     expect(result.outcomes).toEqual([undefined, undefined]);
+       |                             ^
+    772|     const folders = result.calls
+    773|       .filter((call) => call.line.startsWith("flyctl ssh console"))
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
