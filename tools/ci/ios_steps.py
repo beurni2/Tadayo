@@ -41,7 +41,7 @@ The steps:
                each runtime it reuses or creates that device, and checks that simctl lists it on
                that runtime. It boots only the first runtime's device, and writes each runtime's
                identifier, build, device and UDID to run.json and logs/simulators.txt, with the
-               snapshot runtime and where it comes from.
+               snapshot runtime (and, in simulators.txt, where it comes from).
   build        `xcodebuild build-for-testing` of SCHEME, or `xcodebuild build` while the
                scheme has no test target (xcodebuild refuses build-for-testing then), with
                `-skipPackagePluginValidation` (ADR-028). It fails when the build log shows a
@@ -84,22 +84,25 @@ The steps:
                and says which runtime the references are for and why. index.md lists, and
                run.json's `odd-draws` holds, each line of the snapshot runtime's test log that
                reads whole as the warning ScreenSnapshot.settled logs when a screen's drawing
-               took a third draw or more (ODD_DRAW): the glass on iOS 27.2 now and then draws a
-               little different (docs/LIMITATIONS.md, 2026-11-14), and a re-run's evidence
-               replaces the log. Any other line that names the warning, such as a failing
-               test's message that quotes one, is counted (`odd-draws-unread`), never copied.
+               took a third draw or more (ODD_DRAW, odd_draw_holds), so the page beside the
+               images shows it, not only the raw log: the glass on iOS 27.2 now and then draws a
+               little different (docs/LIMITATIONS.md, 2026-11-14). A re-run still replaces the
+               whole folder, and an earlier attempt's stay in the `evidence` branch's history.
+               Any other line that names the warning, such as a failing test's message that
+               quotes one or a line cut short, is counted (`odd-draws-unread`), never copied.
                Neither fails the step. Every field
                of snapshots.json and every value of run.json is checked again here, since this
                job can write: an entry with a field, or fields together, that collect can't
                have written fails its row and is neither copied nor drawn; run.json is staged
-               with only its checked values; only the logs the steps write are copied, and any
-               other entry in logs/ is counted, never named. Stages everything in the evidence
+               with only its checked values and the odd draws this job read; only the logs the
+               steps write are copied, and any other entry in logs/ is counted, never named.
+               Stages everything in the evidence
                job's own folder, beside OUT (WORK below). Writes index.md, which links every
                file and says which file each image belongs to. Fails, after staging the rest,
                when an entry fails its checks, an image is missing, a sheet couldn't be made,
                snapshots.json is missing or logs/ holds anything else.
   publish      Pushes what sheets staged (index.md, the sheets, the checked entries' snapshots,
-               run.json's checked values and the steps' logs, as they are) to the
+               run.json's checked values and odd draws, and the steps' logs, as they are) to the
                `evidence` branch under <branch>/<short-sha>/ios/ (ios-full/ for a run by hand's
                full set), with the job's GITHUB_TOKEN.
                The folder comes from the run's environment, as in sheets, never from a file;
@@ -211,17 +214,23 @@ SNAPSHOT_SOURCE = "the ios-version file"
 # The line ScreenSnapshot.settled logs (apps/ios/TadayoSnapshotTests/ScreenSnapshots.swift) when a
 # screen's drawing took a third draw or more, or didn't settle: its name, the draws' count, the
 # start of each draw's SHA-256 and, for each draw that differs from the last, how. The sheets step
-# copies each line that matches whole into index.md, in a code span, and run.json: every part is
-# bounded, and none can hold a backtick.
+# copies each line that matches whole, in ASCII, and holds together (odd_draw_holds) into
+# index.md, in a code span, and run.json: every part is bounded, and none can hold a backtick. A
+# line with either mark that doesn't is counted: a quote of one, or a line cut or run into another.
 ODD_DRAW_MARK = "warning: ScreenSnapshot "
+ODD_DRAW_TAIL = "; against the last draw, "
 _DIFFERENCE = ("(?:[0-9]{1,8} pixels in x [0-9]{1,5} to [0-9]{1,5}, y [0-9]{1,5} to [0-9]{1,5}, "
                "by at most [0-9]{1,3}/255|sizes differ, [0-9]{1,5} by [0-9]{1,5} and [0-9]{1,5} "
                "by [0-9]{1,5}|no pixel differs|not readable)")
 ODD_DRAW = re.compile(
-    r"warning: ScreenSnapshot [\w+-][\w.+-]{0,127}: (?:settled after|didn't settle in) "
-    r"[0-9]{1,2} draws, SHA-256 [0-9a-f]{8}(?: [0-9a-f]{8}){1,15}; against the last draw, "
-    r"draw [0-9]{1,2}: " + _DIFFERENCE + r"(?:; draw [0-9]{1,2}: " + _DIFFERENCE + r"){0,15}")
-# index.md shows at most this many odd draws; run.json holds them all.
+    r"warning: ScreenSnapshot [\w+-][\w.+-]{0,127}: (settled after|didn't settle in) "
+    r"([0-9]{1,2}) draws, SHA-256 ([0-9a-f]{8}(?: [0-9a-f]{8}){1,15}); against the last draw, "
+    r"(draw [0-9]{1,2}: " + _DIFFERENCE + r"(?:; draw [0-9]{1,2}: " + _DIFFERENCE + r"){0,15})",
+    re.ASCII)
+ODD_DRAW_NUMBER = re.compile(r"(?:^|; )draw ([0-9]{1,2}): ", re.ASCII)
+ODD_DRAW_LARGEST = re.compile(r"by at most ([0-9]{1,3})/255", re.ASCII)
+# index.md shows at most this many odd draws; run.json holds them all, each no longer than its
+# line in the staged log.
 ODD_DRAWS_SHOWN = 100
 # `xcrun simctl runtime list -j`: a runtime downloaded as a MobileAsset has its image under
 # ASSET_IMAGES; an imported one has its own (/Library/Developer/CoreSimulator/Cryptex/Images/ on
@@ -422,16 +431,38 @@ def snapshot_runtime(root):
     return toolchain.SNAPSHOT_RUNTIME
 
 
+def odd_draw_holds(line):
+    """Whether a line ODD_DRAW matches whole also holds together as `settled` writes one: a
+    digest for each draw; the last two draws the same when it settled and different when it
+    didn't; each draw it measures numbered in order, before the last; every draw whose digest
+    isn't the last's measured (a draw whose digest prefix happens to be the last's may be
+    measured too); and no difference by more than 255 or by nothing. So a line cut at a
+    difference's boundary, which the pattern alone would read, is counted instead."""
+    found = ODD_DRAW.fullmatch(line)
+    if not found:
+        return False
+    what, count, digests, measured = found.groups()
+    count, digests = int(count), digests.split(" ")
+    numbers = [int(n) for n in ODD_DRAW_NUMBER.findall(measured)]
+    differing = {k + 1 for k in range(count) if digests[k] != digests[-1]}
+    return (len(digests) == count
+            and (digests[-1] == digests[-2]) == (what == "settled after")
+            and numbers == sorted(set(numbers)) and all(1 <= n < count for n in numbers)
+            and differing <= set(numbers)
+            and all(1 <= int(m) <= 255 for m in ODD_DRAW_LARGEST.findall(measured)))
+
+
 def odd_draws(lines):
-    """(the lines ODD_DRAW matches whole, how many other lines name ODD_DRAW_MARK) of a test
-    log. A line that names the warning but isn't one, such as a failing test's message that quotes
-    one, or a line cut short or run into another, is counted, never copied."""
+    """(the lines that read whole as `settled`'s warning, how many other lines hold
+    ODD_DRAW_MARK or ODD_DRAW_TAIL) of a test log. A line that names the warning but isn't one,
+    such as a failing test's message that quotes one, or a line cut short or run into another,
+    is counted, never copied."""
     found, unread = [], 0
     for line in lines:
         line = line.rstrip("\r\n")
-        if ODD_DRAW_MARK not in line:
+        if ODD_DRAW_MARK not in line and ODD_DRAW_TAIL not in line:
             continue
-        if ODD_DRAW.fullmatch(line):
+        if odd_draw_holds(line):
             found.append(line)
         else:
             unread += 1
@@ -1765,7 +1796,7 @@ class Steps:
         if odd:
             # Each line matched ODD_DRAW whole, so none holds a backtick.
             lines += ["Odd draws: each a screen whose drawing took a third draw or more "
-                      "(`ScreenSnapshot.settled`; the glass on iOS 27.2, `docs/LIMITATIONS.md`, "
+                      "(`ScreenSnapshot.settled`; the system's glass, `docs/LIMITATIONS.md`, "
                       "2026-11-14). One odd draw passes; a second, or no two draws alike, fails "
                       "the test.", ""]
             lines += [f"- `{line}`" for line in odd[:ODD_DRAWS_SHOWN]]
