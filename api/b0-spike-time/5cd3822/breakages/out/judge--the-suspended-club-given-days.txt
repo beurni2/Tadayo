@@ -1,0 +1,62 @@
+$ (cd tests && npx vitest run --config vitest.privacy.config.ts src/privacy/account.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tests
+
+ ❯ src/privacy/account.test.ts (23 tests | 1 failed) 29ms
+   ❯ each club's open day and next day, from the rows and the time alone (daysOf; T1, T5; FQ50, FQ63, FQ75) (5)
+     × gives none in a suspended club or a club it doesn't know, and never a suspended or cancelled day 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  00:25:19
+   Duration  494ms (import 57%, transform 30%, tests 12%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/account.test.ts > each club's open day and next day, from the rows and the time alone (daysOf; T1, T5; FQ50, FQ63, FQ75) > gives none in a suspended club or a club it doesn't know, and never a suspended or cancelled day
+AssertionError: expected { open: { id: 'occ_sat', …(6) }, …(1) } to deeply equal {}
+
+- Expected
++ Received
+
+- {}
++ {
++   "next": {
++     "close_at": "2026-11-10T01:00:00Z",
++     "club_id": "clb_one",
++     "id": "occ_mon",
++     "local_date": "2026-11-09",
++     "phase": "collecting",
++     "reveal_at": "2026-11-09T07:00:00Z",
++     "star": {
++       "avatar_version": "v_ana",
++       "display_name": "Ana",
++       "membership_id": "itv_ana",
++     },
++   },
++   "open": {
++     "close_at": "2026-11-08T01:00:00Z",
++     "club_id": "clb_one",
++     "id": "occ_sat",
++     "local_date": "2026-11-07",
++     "phase": "open",
++     "reveal_at": "2026-11-07T07:00:00Z",
++     "star": {
++       "avatar_version": "v_ana",
++       "display_name": "Ana",
++       "membership_id": "itv_ana",
++     },
++   },
++ }
+
+ ❯ src/privacy/account.test.ts:340:71
+    338|
+    339|   it("gives none in a suspended club or a club it doesn't know, and ne…
+    340|     expect(daysOf(worldWith({ suspended: true }), "clb_one", REVEAL)).…
+       |                                                                       ^
+    341|     expect(daysOf(worldWith(), "clb_nowhere", REVEAL)).toEqual({});
+    342|     for (const status of ["suspended", "cancelled"] as const)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

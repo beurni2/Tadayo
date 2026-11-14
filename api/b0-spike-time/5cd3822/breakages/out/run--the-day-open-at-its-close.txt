@@ -1,0 +1,115 @@
+$ (cd tools/ops && npx vitest run src/spike-time.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tools/ops
+
+ ❯ src/spike-time.test.ts (17 tests | 3 failed) 2541ms
+   ❯ spike-time against an API that switches at the instant (2)
+     × signs in, makes the account the app's way, writes the club, watches both instants from 20 seconds before, and deletes the user 100ms
+   ❯ spike-time against an API that doesn't (3)
+     × fails a switch a second early or a second late, at each instant, naming the first answer that was wrong 66ms
+   ❯ what the run expects of each answer (3)
+     × is T5 at the answer's server_now: a day open from its reveal, not a second before, until its close, not at it 2ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 14 passed (17)
+   Start at  00:25:29
+   Duration  2.78s (tests 95%, transform 3%, import 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/spike-time.test.ts > spike-time against an API that switches at the instant > signs in, makes the account the app's way, writes the club, watches both instants from 20 seconds before, and deletes the user
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "close: every answer is the club's days as T5 has them at its server_now: 4 wrong; the first: at server_now 2026-11-17T06:00:00Z it showed open none, next Ben's 2026-11-17 (collecting), where T5 has open Ana's 2026-11-16 (open), next Ben's 2026-11-17 (collecting); it differs at clubs[0].open_day",
++ ]
+
+ ❯ src/spike-time.test.ts:261:28
+    259|     const w = world();
+    260|     const checks = await spikeTime(w.input);
+    261|     expect(failed(checks)).toEqual([]);
+       |                            ^
+    262|     expect(names(checks)).toEqual(ALL);
+    263|     // The run's user is gone, and the account it wrote the club for i…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/spike-time.test.ts > spike-time against an API that doesn't > fails a switch a second early or a second late, at each instant, naming the first answer that was wrong
+AssertionError: 1: expected [ Array(1) ] to have a length of 2 but got 1
+
+- Expected
++ Received
+
+- 2
++ 1
+
+ ❯ src/spike-time.test.ts:314:35
+    312|       const checks = await spikeTime(w.input);
+    313|       const wrong = failed(checks);
+    314|       expect(wrong, String(skew)).toHaveLength(2);
+       |                                   ^
+    315|       expect(wrong[0], String(skew)).toMatch(
+    316|         /^reveal: every answer is the club's days as T5 has them at it…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/spike-time.test.ts > what the run expects of each answer > is T5 at the answer's server_now: a day open from its reveal, not a second before, until its close, not at it
+AssertionError: 2026-11-17T06:00:00Z: expected 'occ_mon occ_tue' to be '- occ_tue' // Object.is equality
+
+Expected: "- occ_tue"
+Received: "occ_mon occ_tue"
+
+ ❯ src/spike-time.test.ts:491:98
+    489|         clubs: { open_day?: { id: string }; next_day?: { id: string } …
+    490|       };
+    491|       expect(`${list.clubs[0]?.open_day?.id ?? "-"} ${list.clubs[0]?.n…
+       |                                                                                                  ^
+    492|         `${open} ${next}`,
+    493|       );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+
+$ (cd tests && npx vitest run --config vitest.db.config.ts src/db/ops-spike-time.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tests
+
+ ❯ src/db/ops-spike-time.test.ts (5 tests | 1 failed) 182ms
+   ❯ what spike-time expects, against the API's own day choice and serializer on its rows (1)
+     × is the club list GET /v1/clubs gives Ana at every instant round both of the day's edges 76ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+   Start at  00:25:32
+   Duration  751ms (import 41%, tests 38%, transform 21%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/ops-spike-time.test.ts > what spike-time expects, against the API's own day choice and serializer on its rows > is the club list GET /v1/clubs gives Ana at every instant round both of the day's edges
+AssertionError: at 2026-11-17T06:00:00Z: expected '{"clubs":[{"id":"club_NJ4F0u_q3JIox2Q…' to be '{"clubs":[{"id":"club_NJ4F0u_q3JIox2Q…' // Object.is equality
+
+Expected: "{"clubs":[{"id":"club_NJ4F0u_q3JIox2Qnb-jtAw","member_count":2,"my_membership_id":"mem_hVVYIpN4RosDHjtAZAePcQ","name":"S5 1a2b3c4d","next_day":{"close_at":"2026-11-18T06:00:00Z","club_id":"club_NJ4F0u_q3JIox2Qnb-jtAw","id":"occ_IbBmYOdyqV6ILFI0WayjXw","local_date":"2026-11-17","phase":"collecting","reveal_at":"2026-11-17T12:00:00Z","star":{"display_name":"Ben","membership_id":"mem_HOca7LvqG88iOQz-BY7ElQ"}},"open_day":{"close_at":"2026-11-17T06:00:00Z","club_id":"club_NJ4F0u_q3JIox2Qnb-jtAw","id":"occ_1pgRA5pZEfcs_dilfpP-DA","local_date":"2026-11-16","phase":"open","reveal_at":"2026-11-16T12:00:00Z","star":{"display_name":"Ana","membership_id":"mem_hVVYIpN4RosDHjtAZAePcQ"}},"state":"active","timezone":"America/New_York"}],"invitations":[],"server_now":"2026-11-17T06:00:00Z"}"
+Received: "{"clubs":[{"id":"club_NJ4F0u_q3JIox2Qnb-jtAw","member_count":2,"my_membership_id":"mem_hVVYIpN4RosDHjtAZAePcQ","name":"S5 1a2b3c4d","next_day":{"close_at":"2026-11-18T06:00:00Z","club_id":"club_NJ4F0u_q3JIox2Qnb-jtAw","id":"occ_IbBmYOdyqV6ILFI0WayjXw","local_date":"2026-11-17","phase":"collecting","reveal_at":"2026-11-17T12:00:00Z","star":{"display_name":"Ben","membership_id":"mem_HOca7LvqG88iOQz-BY7ElQ"}},"state":"active","timezone":"America/New_York"}],"invitations":[],"server_now":"2026-11-17T06:00:00Z"}"
+
+ ❯ src/db/ops-spike-time.test.ts:174:57
+    172|         // The answer's server_now is the sample cut to the second, wh…
+    173|         const expected = expectedClubList(club, Temporal.Instant.from(…
+    174|         expect(canonical(body), `at ${now.toString()}`).toBe(canonical…
+       |                                                         ^
+    175|         const [summary] = (body as { clubs: Record<string, { id: strin…
+    176|         seen.add(`${summary?.["open_day"]?.id ?? "-"}/${summary?.["nex…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/ops-spike-time.test.ts:160:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

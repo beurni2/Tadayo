@@ -1,0 +1,32 @@
+$ (cd tools/ops && npx vitest run src/spike-time.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tools/ops
+
+ ❯ src/spike-time.test.ts (17 tests | 1 failed) 2502ms
+   ❯ the first day's date (1)
+     × is the earliest Monday to Friday in New York whose 07:00 is at least three minutes ahead, so the next date is never Sunday 7ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+   Start at  00:25:43
+   Duration  2.77s (tests 95%, transform 3%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/spike-time.test.ts > the first day's date > is the earliest Monday to Friday in New York whose 07:00 is at least three minutes ahead, so the next date is never Sunday
+AssertionError: 2026-11-20T13:00:00Z: expected '2026-11-21' to be '2026-11-23' // Object.is equality
+
+Expected: "2026-11-23"
+Received: "2026-11-21"
+
+ ❯ src/spike-time.test.ts:541:37
+    539|     for (const [now, date] of cases) {
+    540|       const first = firstDate(at(now));
+    541|       expect(first.toString(), now).toBe(date);
+       |                                     ^
+    542|       expect(first.dayOfWeek, now).toBeLessThanOrEqual(5);
+    543|       expect(first.add({ days: 1 }).dayOfWeek, now).not.toBe(7);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

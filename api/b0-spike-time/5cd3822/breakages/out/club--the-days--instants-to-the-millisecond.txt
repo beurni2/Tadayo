@@ -1,0 +1,81 @@
+$ (cd tests && npx vitest run --config vitest.db.config.ts src/db/ops-spike-time.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tests
+
+ ❯ src/db/ops-spike-time.test.ts (5 tests | 2 failed) 226ms
+   ❯ spike-time's club, written as tadayo_app (3)
+     × goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond 79ms
+   ❯ what spike-time expects, against the API's own day choice and serializer on its rows (1)
+     × is the club list GET /v1/clubs gives Ana at every instant round both of the day's edges 84ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 3 passed (5)
+   Start at  00:25:57
+   Duration  848ms (tests 42%, import 36%, transform 21%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/ops-spike-time.test.ts > spike-time's club, written as tadayo_app > goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond
+AssertionError: expected [ { …(6) }, { …(6) } ] to deeply equal [ { …(6) }, { …(6) } ]
+
+- Expected
++ Received
+
+@@ -2,17 +2,17 @@
+    {
+      "close": "1794895200000000",
+      "date": "2026-11-16",
+      "from": "1794829800123456",
+      "id": "occ_K6qt9RhBVmecm-s_ipPw3A",
+-     "reveal": "1794830400000000",
++     "reveal": "1794830400000001",
+      "star": "mem_-ueQlPjVwMM0ZR1IRX-PzA",
+    },
+    {
+      "close": "1794981600000000",
+      "date": "2026-11-17",
+      "from": "1794829800123456",
+      "id": "occ_62IvR05vVXG48GJg-_8z4w",
+-     "reveal": "1794916800000000",
++     "reveal": "1794916800000001",
+      "star": "mem_CbjlO8kJXpD-4C64kntxPg",
+    },
+  ]
+
+ ❯ src/db/ops-spike-time.test.ts:128:20
+    126|                (extract(epoch FROM o.collecting_from) OPERATOR(pg_cata…
+    127|           FROM app.occurrences o WHERE o.club_id = ${club.id} AND o.st…
+    128|       expect(days).toEqual(
+       |                    ^
+    129|         [club.first, club.second].map((day) => ({
+    130|           id: day.id,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/ops-spike-time.test.ts:73:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/ops-spike-time.test.ts > what spike-time expects, against the API's own day choice and serializer on its rows > is the club list GET /v1/clubs gives Ana at every instant round both of the day's edges
+AssertionError: at 2026-11-16T12:00:00Z: expected '{"clubs":[{"id":"club_yWrmkoFc4x2-Yff…' to be '{"clubs":[{"id":"club_yWrmkoFc4x2-Yff…' // Object.is equality
+
+Expected: "{"clubs":[{"id":"club_yWrmkoFc4x2-YffkkPP8NA","member_count":2,"my_membership_id":"mem_V74YJNh0Vp7soZjBXCpTbA","name":"S5 1a2b3c4d","next_day":{"close_at":"2026-11-18T06:00:00Z","club_id":"club_yWrmkoFc4x2-YffkkPP8NA","id":"occ_T5NGdD-WJR2DCvR_k6ZtkQ","local_date":"2026-11-17","phase":"collecting","reveal_at":"2026-11-17T12:00:00Z","star":{"display_name":"Ben","membership_id":"mem_d-pJxFEK7uEVWHZf9uc4tw"}},"open_day":{"close_at":"2026-11-17T06:00:00Z","club_id":"club_yWrmkoFc4x2-YffkkPP8NA","id":"occ_3khajqIDd8N2n8vrPgp-lQ","local_date":"2026-11-16","phase":"open","reveal_at":"2026-11-16T12:00:00Z","star":{"display_name":"Ana","membership_id":"mem_V74YJNh0Vp7soZjBXCpTbA"}},"state":"active","timezone":"America/New_York"}],"invitations":[],"server_now":"2026-11-16T12:00:00Z"}"
+Received: "{"clubs":[{"id":"club_yWrmkoFc4x2-YffkkPP8NA","member_count":2,"my_membership_id":"mem_V74YJNh0Vp7soZjBXCpTbA","name":"S5 1a2b3c4d","next_day":{"close_at":"2026-11-17T06:00:00Z","club_id":"club_yWrmkoFc4x2-YffkkPP8NA","id":"occ_3khajqIDd8N2n8vrPgp-lQ","local_date":"2026-11-16","phase":"collecting","reveal_at":"2026-11-16T12:00:00Z","star":{"display_name":"Ana","membership_id":"mem_V74YJNh0Vp7soZjBXCpTbA"}},"state":"active","timezone":"America/New_York"}],"invitations":[],"server_now":"2026-11-16T12:00:00Z"}"
+
+ ❯ src/db/ops-spike-time.test.ts:174:57
+    172|         // The answer's server_now is the sample cut to the second, wh…
+    173|         const expected = expectedClubList(club, Temporal.Instant.from(…
+    174|         expect(canonical(body), `at ${now.toString()}`).toBe(canonical…
+       |                                                         ^
+    175|         const [summary] = (body as { clubs: Record<string, { id: strin…
+    176|         seen.add(`${summary?.["open_day"]?.id ?? "-"}/${summary?.["nex…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/ops-spike-time.test.ts:160:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

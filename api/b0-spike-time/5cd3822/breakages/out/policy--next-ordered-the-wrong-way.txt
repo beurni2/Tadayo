@@ -1,0 +1,61 @@
+$ (cd packages/domain && npx vitest run src/authorization/days.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/packages/domain
+
+ ❯ src/authorization/days.test.ts (17 tests | 2 failed) 17ms
+   ❯ which day is open and which is next, by the server's time alone (T1, T5; spec 06) (4)
+     × opens the day at reveal_at exactly, not a microsecond before, and keeps it open until a microsecond before close_at 7ms
+     × gives the earliest day to open as next: the day itself while it collects, the one after while it is open and after it closes 1ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 15 passed (17)
+   Start at  00:25:00
+   Duration  196ms (transform 48%, tests 24%, import 20%, worker 6%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/authorization/days.test.ts > which day is open and which is next, by the server's time alone (T1, T5; spec 06) > opens the day at reveal_at exactly, not a microsecond before, and keeps it open until a microsecond before close_at
+AssertionError: expected { open: null, next: 'occ_mon' } to deeply equal { open: null, next: 'occ_sat' }
+
+- Expected
++ Received
+
+  {
+-   "next": "occ_sat",
++   "next": "occ_mon",
+    "open": null,
+  }
+
+ ❯ src/authorization/days.test.ts:62:51
+     60| describe("which day is open and which is next, by the server's time al…
+     61|   it("opens the day at reveal_at exactly, not a microsecond before, an…
+     62|     expect(ids(choose(CLUB, µs(SAT.reveal, -1)))).toEqual({ open: null…
+       |                                                   ^
+     63|     expect(ids(choose(CLUB, SAT.reveal))).toEqual({ open: "occ_sat", n…
+     64|     expect(ids(choose(CLUB, µs(SAT.close, -1)))).toEqual({ open: "occ_…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/authorization/days.test.ts > which day is open and which is next, by the server's time alone (T1, T5; spec 06) > gives the earliest day to open as next: the day itself while it collects, the one after while it is open and after it closes
+AssertionError: expected { open: null, next: 'occ_mon' } to deeply equal { open: null, next: 'occ_sat' }
+
+- Expected
++ Received
+
+  {
+-   "next": "occ_sat",
++   "next": "occ_mon",
+    "open": null,
+  }
+
+ ❯ src/authorization/days.test.ts:69:59
+     67|
+     68|   it("gives the earliest day to open as next: the day itself while it …
+     69|     expect(ids(choose(CLUB, at("2026-11-02T08:00:00Z")))).toEqual({ op…
+       |                                                           ^
+     70|     expect(ids(choose(CLUB, at("2026-11-07T12:00:00Z")))).toEqual({ op…
+     71|     expect(ids(choose(CLUB, at("2026-11-08T12:00:00Z")))).toEqual({ op…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

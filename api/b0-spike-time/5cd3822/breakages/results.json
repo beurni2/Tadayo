@@ -1,0 +1,1384 @@
+[
+ {
+  "name": "sql: open from after reveal_at (< for <=)",
+  "slug": "sql--open-from-after-reveal-at----for",
+  "verdict": "CAUGHT",
+  "expected": "opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order",
+  "named": [
+   "tests: \u00d7 in Europe/London, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 91ms",
+   "tests: \u00d7 in America/Santiago, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 31ms",
+   "tests: \u00d7 in Australia/Lord_Howe, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 26ms",
+   "tests: \u00d7 in Antarctica/Troll, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 20ms",
+   "tests: \u00d7 in Africa/Ouagadougou, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 21ms",
+   "tests: \u00d7 in America/New_York, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 28ms"
+  ],
+  "all": [
+   "tests: \u00d7 in Europe/London, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 91ms",
+   "tests: \u00d7 in America/Santiago, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 31ms",
+   "tests: \u00d7 in Australia/Lord_Howe, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 26ms",
+   "tests: \u00d7 in Antarctica/Troll, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 20ms",
+   "tests: \u00d7 in Africa/Ouagadougou, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 21ms",
+   "tests: \u00d7 in America/New_York, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 28ms",
+   "tests: \u00d7 closes London's Saturdays at the jump over the missing 01:00 and at the first of the two 01:00s, and Santiago's after 19 and 17 hours 15ms",
+   "tests: \u00d7 gives a stranger, a former member, an account being deleted, an account with no club and an unknown account nothing 32ms",
+   "tests: \u00d7 gives a rejoined member the club's days on the new interval 24ms",
+   "tests: \u00d7 gives nothing in a suspended club, and a paused club's days as its rows hold them (FQ50) 13ms",
+   "tests: \u00d7 never chooses a suspended or cancelled day, and moves next on to the day after it 9ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": "? bound(sql)`o.reveal_at <= ${now}",
+    "new": "? bound(sql)`o.reveal_at < ${now}"
+   }
+  ]
+ },
+ {
+  "name": "sql: open at close_at too (<= for <)",
+  "slug": "sql--open-at-close-at-too-----for",
+  "verdict": "CAUGHT",
+  "expected": "opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order",
+  "named": [
+   "tests: \u00d7 in Europe/London, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 85ms",
+   "tests: \u00d7 in America/Santiago, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 29ms",
+   "tests: \u00d7 in Australia/Lord_Howe, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 21ms",
+   "tests: \u00d7 in Antarctica/Troll, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 19ms",
+   "tests: \u00d7 in Africa/Ouagadougou, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 29ms",
+   "tests: \u00d7 in America/New_York, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 13ms"
+  ],
+  "all": [
+   "tests: \u00d7 in Europe/London, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 85ms",
+   "tests: \u00d7 in America/Santiago, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 29ms",
+   "tests: \u00d7 in Australia/Lord_Howe, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 21ms",
+   "tests: \u00d7 in Antarctica/Troll, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 19ms",
+   "tests: \u00d7 in Africa/Ouagadougou, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 29ms",
+   "tests: \u00d7 in America/New_York, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 13ms",
+   "tests: \u00d7 closes London's Saturdays at the jump over the missing 01:00 and at the first of the two 01:00s, and Santiago's after 19 and 17 hours 17ms",
+   "tests: \u00d7 gives a stranger, a former member, an account being deleted, an account with no club and an unknown account nothing 34ms",
+   "tests: \u00d7 keeps a day open to its close when its star leaves or asks to delete at its reveal or a microsecond after 10ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": "${now}::pg_catalog.timestamptz < o.close_at",
+    "new": "${now}::pg_catalog.timestamptz <= o.close_at"
+   }
+  ]
+ },
+ {
+  "name": "sql: next from reveal_at itself (>= for >)",
+  "slug": "sql--next-from-reveal-at-itself-----for",
+  "verdict": "CAUGHT",
+  "expected": "opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order",
+  "named": [
+   "tests: \u00d7 in Europe/London, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 68ms",
+   "tests: \u00d7 in America/Santiago, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 22ms",
+   "tests: \u00d7 in Australia/Lord_Howe, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 23ms",
+   "tests: \u00d7 in Antarctica/Troll, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 18ms",
+   "tests: \u00d7 in Africa/Ouagadougou, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 20ms",
+   "tests: \u00d7 in America/New_York, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 36ms"
+  ],
+  "all": [
+   "tests: \u00d7 in Europe/London, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 68ms",
+   "tests: \u00d7 in America/Santiago, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 22ms",
+   "tests: \u00d7 in Australia/Lord_Howe, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 23ms",
+   "tests: \u00d7 in Antarctica/Troll, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 18ms",
+   "tests: \u00d7 in Africa/Ouagadougou, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 20ms",
+   "tests: \u00d7 in America/New_York, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 36ms",
+   "tests: \u00d7 closes London's Saturdays at the jump over the missing 01:00 and at the first of the two 01:00s, and Santiago's after 19 and 17 hours 15ms",
+   "tests: \u00d7 gives a stranger, a former member, an account being deleted, an account with no club and an unknown account nothing 36ms",
+   "tests: \u00d7 gives a rejoined member the club's days on the new interval 22ms",
+   "tests: \u00d7 gives nothing in a suspended club, and a paused club's days as its rows hold them (FQ50) 16ms",
+   "tests: \u00d7 never chooses a suspended or cancelled day, and moves next on to the day after it 11ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": ": bound(sql)`o.reveal_at > ${now}",
+    "new": ": bound(sql)`o.reveal_at >= ${now}"
+   }
+  ]
+ },
+ {
+  "name": "sql: next ordered the wrong way",
+  "slug": "sql--next-ordered-the-wrong-way",
+  "verdict": "CAUGHT",
+  "expected": "opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order",
+  "named": [
+   "tests: \u00d7 in Europe/London, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 70ms",
+   "tests: \u00d7 in America/Santiago, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 19ms",
+   "tests: \u00d7 in Australia/Lord_Howe, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 16ms",
+   "tests: \u00d7 in Antarctica/Troll, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 18ms",
+   "tests: \u00d7 in Africa/Ouagadougou, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 15ms",
+   "tests: \u00d7 in America/New_York, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 13ms"
+  ],
+  "all": [
+   "tests: \u00d7 in Europe/London, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 70ms",
+   "tests: \u00d7 in America/Santiago, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 19ms",
+   "tests: \u00d7 in Australia/Lord_Howe, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 16ms",
+   "tests: \u00d7 in Antarctica/Troll, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 18ms",
+   "tests: \u00d7 in Africa/Ouagadougou, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 15ms",
+   "tests: \u00d7 in America/New_York, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 13ms",
+   "tests: \u00d7 closes London's Saturdays at the jump over the missing 01:00 and at the first of the two 01:00s, and Santiago's after 19 and 17 hours 23ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": "     ORDER BY o.reveal_at, o.id\n",
+    "new": "     ORDER BY o.reveal_at DESC, o.id\n"
+   }
+  ]
+ },
+ {
+  "name": "sql: local_date from close_at",
+  "slug": "sql--local-date-from-close-at",
+  "verdict": "CAUGHT",
+  "expected": "opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order",
+  "named": [
+   "tests: \u00d7 in Europe/London, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 83ms",
+   "tests: \u00d7 in America/Santiago, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 25ms",
+   "tests: \u00d7 in Australia/Lord_Howe, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 19ms",
+   "tests: \u00d7 in Antarctica/Troll, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 19ms",
+   "tests: \u00d7 in Africa/Ouagadougou, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 18ms",
+   "tests: \u00d7 in America/New_York, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 19ms"
+  ],
+  "all": [
+   "tests: \u00d7 in Europe/London, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 83ms",
+   "tests: \u00d7 in America/Santiago, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 25ms",
+   "tests: \u00d7 in Australia/Lord_Howe, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 19ms",
+   "tests: \u00d7 in Antarctica/Troll, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 19ms",
+   "tests: \u00d7 in Africa/Ouagadougou, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 18ms",
+   "tests: \u00d7 in America/New_York, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 19ms",
+   "tests: \u00d7 closes London's Saturdays at the jump over the missing 01:00 and at the first of the two 01:00s, and Santiago's after 19 and 17 hours 21ms",
+   "tests: \u00d7 gives a stranger, a former member, an account being deleted, an account with no club and an unknown account nothing 24ms",
+   "tests: \u00d7 gives a rejoined member the club's days on the new interval 22ms",
+   "tests: \u00d7 gives nothing in a suspended club, and a paused club's days as its rows hold them (FQ50) 13ms",
+   "tests: \u00d7 never chooses a suspended or cancelled day, and moves next on to the day after it 9ms",
+   "tests: \u00d7 holds a day whose star left a microsecond before its reveal, by leaving, a block or a deletion: never open, never next (FQ63) 9ms",
+   "tests: \u00d7 holds a day whose star asked to delete their account a microsecond before its reveal, whether the interval has ended or not (T27) 9ms",
+   "tests: \u00d7 keeps a day open to its close when its star leaves or asks to delete at its reveal or a microsecond after 7ms",
+   "tests: \u00d7 names an active star by their account's name now, with their ready avatar's version while the account is active 8ms",
+   "tests: \u00d7 keeps the name and drops the avatar while a deletion asked for during the open day hasn't ended the interval; then the name it ended with 14ms",
+   "tests: \u00d7 names a star who left during the open day by the name it ended with, whatever the account is called now 11ms",
+   "tests: \u00d7 leaves out an open day whose star has no name to show, and still gives the next day (B6, docs/LIMITATIONS.md) 8ms",
+   "tests: \u00d7 never mixes them: each club's days carry its own id, star and date, whatever the other's hold 16ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": "'local_date', o.local_date,",
+    "new": "'local_date', (o.close_at AT TIME ZONE c.timezone)::pg_catalog.date,"
+   }
+  ]
+ },
+ {
+  "name": "sql: the status condition dropped",
+  "slug": "sql--the-status-condition-dropped",
+  "verdict": "CAUGHT",
+  "expected": "never chooses a suspended or cancelled day, and moves next on",
+  "named": [
+   "tests: \u00d7 never chooses a suspended or cancelled day, and moves next on to the day after it 19ms"
+  ],
+  "all": [
+   "tests: \u00d7 never chooses a suspended or cancelled day, and moves next on to the day after it 19ms",
+   "tests: \u00d7 never mixes them: each club's days carry its own id, star and date, whatever the other's hold 24ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": "       AND o.status = 'scheduled'\n",
+    "new": ""
+   }
+  ]
+ },
+ {
+  "name": "sql: the suspended club condition dropped",
+  "slug": "sql--the-suspended-club-condition-dropped",
+  "verdict": "CAUGHT",
+  "expected": "gives nothing in a suspended club, and a paused club's days",
+  "named": [
+   "tests: \u00d7 gives nothing in a suspended club, and a paused club's days as its rows hold them (FQ50) 25ms"
+  ],
+  "all": [
+   "tests: \u00d7 gives nothing in a suspended club, and a paused club's days as its rows hold them (FQ50) 25ms",
+   "tests: \u00d7 never mixes them: each club's days carry its own id, star and date, whatever the other's hold 26ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": "     WHERE c.suspended_at IS NULL\n       AND EXISTS",
+    "new": "     WHERE EXISTS"
+   }
+  ]
+ },
+ {
+  "name": "sql: the viewer's interval state dropped",
+  "slug": "sql--the-viewer-s-interval-state-dropped",
+  "verdict": "CAUGHT",
+  "expected": "gives a stranger, a former member, an account being deleted",
+  "named": [
+   "tests: \u00d7 gives a stranger, a former member, an account being deleted, an account with no club and an unknown account nothing 29ms"
+  ],
+  "all": [
+   "tests: \u00d7 gives a stranger, a former member, an account being deleted, an account with no club and an unknown account nothing 29ms",
+   "tests: \u00d7 gives a rejoined member the club's days on the new interval 11ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": "AND m.state = 'active' AND u.state = 'active')`;",
+    "new": "AND u.state = 'active')`;"
+   }
+  ]
+ },
+ {
+  "name": "sql: the viewer's account state dropped",
+  "slug": "sql--the-viewer-s-account-state-dropped",
+  "verdict": "CAUGHT",
+  "expected": "gives a stranger, a former member, an account being deleted",
+  "named": [
+   "tests: \u00d7 gives a stranger, a former member, an account being deleted, an account with no club and an unknown account nothing 34ms"
+  ],
+  "all": [
+   "tests: \u00d7 gives a stranger, a former member, an account being deleted, an account with no club and an unknown account nothing 34ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": "AND m.state = 'active' AND u.state = 'active')`;",
+    "new": "AND m.state = 'active')`;"
+   }
+  ]
+ },
+ {
+  "name": "sql: the viewer's membership dropped",
+  "slug": "sql--the-viewer-s-membership-dropped",
+  "verdict": "CAUGHT",
+  "expected": "gives a stranger, a former member, an account being deleted",
+  "named": [
+   "tests: \u00d7 gives a stranger, a former member, an account being deleted, an account with no club and an unknown account nothing 39ms"
+  ],
+  "all": [
+   "tests: \u00d7 gives a stranger, a former member, an account being deleted, an account with no club and an unknown account nothing 39ms",
+   "tests: \u00d7 gives a rejoined member the club's days on the new interval 19ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": "     WHERE c.suspended_at IS NULL\n       AND EXISTS (SELECT FROM app.memberships m JOIN app.users u ON u.id = m.user_id\n                    WHERE m.club_id = c.id AND m.user_id = ${viewer}::pg_catalog.text\n                      AND m.state = 'active' AND u.state = 'active')`;",
+    "new": "     WHERE c.suspended_at IS NULL AND ${viewer}::pg_catalog.text IS NOT NULL`;"
+   }
+  ]
+ },
+ {
+  "name": "sql: a day taken across the viewer's clubs",
+  "slug": "sql--a-day-taken-across-the-viewer-s-clubs",
+  "verdict": "CAUGHT",
+  "expected": "never mixes them: each club's days carry its own id, star and date",
+  "named": [
+   "tests: \u00d7 never mixes them: each club's days carry its own id, star and date, whatever the other's hold 23ms"
+  ],
+  "all": [
+   "tests: \u00d7 never mixes them: each club's days carry its own id, star and date, whatever the other's hold 23ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": "     WHERE o.club_id = c.id\n",
+    "new": "     WHERE o.club_id IN (SELECT m2.club_id FROM app.memberships m2 WHERE m2.state = 'active' AND m2.user_id IN (SELECT m3.user_id FROM app.memberships m3 WHERE m3.club_id = c.id AND m3.state = 'active'))\n"
+   }
+  ]
+ },
+ {
+  "name": "sql: the star's name from the viewer's row",
+  "slug": "sql--the-star-s-name-from-the-viewer-s-row",
+  "verdict": "CAUGHT",
+  "expected": "names an active star by their account's name now",
+  "named": [
+   "tests: \u00d7 names an active star by their account's name now, with their ready avatar's version while the account is active 12ms"
+  ],
+  "all": [
+   "tests: \u00d7 in Europe/London, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 73ms",
+   "tests: \u00d7 in America/Santiago, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 29ms",
+   "tests: \u00d7 in Australia/Lord_Howe, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 27ms",
+   "tests: \u00d7 in Antarctica/Troll, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 23ms",
+   "tests: \u00d7 in Africa/Ouagadougou, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 19ms",
+   "tests: \u00d7 in America/New_York, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 19ms",
+   "tests: \u00d7 gives a rejoined member the club's days on the new interval 14ms",
+   "tests: \u00d7 never chooses a suspended or cancelled day, and moves next on to the day after it 11ms",
+   "tests: \u00d7 keeps a day open to its close when its star leaves or asks to delete at its reveal or a microsecond after 7ms",
+   "tests: \u00d7 names an active star by their account's name now, with their ready avatar's version while the account is active 12ms",
+   "tests: \u00d7 keeps the name and drops the avatar while a deletion asked for during the open day hasn't ended the interval; then the name it ended with 18ms",
+   "tests: \u00d7 names a star who left during the open day by the name it ended with, whatever the account is called now 10ms",
+   "tests: \u00d7 never mixes them: each club's days carry its own id, star and date, whatever the other's hold 18ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": "function oneDay<F>(sql: FragmentSql<F>, now: ServerNow, phase: ChosenPhase): F {",
+    "new": "function oneDay<F>(sql: FragmentSql<F>, now: ServerNow, phase: ChosenPhase, viewer = \"\"): F {"
+   },
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": "'star_name', CASE WHEN s.state = 'active' THEN su.display_name ELSE s.ended_display_name END,",
+    "new": "'star_name', (SELECT vu.display_name FROM app.users vu WHERE vu.id = ${viewer}::pg_catalog.text),"
+   },
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": "(${oneDay(sql, now, \"open\")}) AS open_day",
+    "new": "(${oneDay(sql, now, \"open\", viewer)}) AS open_day"
+   },
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": "(${oneDay(sql, now, \"collecting\")}) AS next_day",
+    "new": "(${oneDay(sql, now, \"collecting\", viewer)}) AS next_day"
+   }
+  ]
+ },
+ {
+  "name": "sql: the star's name always the account's (FQ75)",
+  "slug": "sql--the-star-s-name-always-the-account-s--fq75",
+  "verdict": "CAUGHT",
+  "expected": "names a star who left during the open day by the name it ended with",
+  "named": [
+   "tests: \u00d7 names a star who left during the open day by the name it ended with, whatever the account is called now 15ms"
+  ],
+  "all": [
+   "tests: \u00d7 keeps a day open to its close when its star leaves or asks to delete at its reveal or a microsecond after 19ms",
+   "tests: \u00d7 keeps the name and drops the avatar while a deletion asked for during the open day hasn't ended the interval; then the name it ended with 21ms",
+   "tests: \u00d7 names a star who left during the open day by the name it ended with, whatever the account is called now 15ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": "'star_name', CASE WHEN s.state = 'active' THEN su.display_name ELSE s.ended_display_name END,",
+    "new": "'star_name', su.display_name,"
+   }
+  ]
+ },
+ {
+  "name": "sql: the avatar while the account is being deleted",
+  "slug": "sql--the-avatar-while-the-account-is-being-deleted",
+  "verdict": "CAUGHT",
+  "expected": "keeps the name and drops the avatar while a deletion asked for during the open day",
+  "named": [
+   "tests: \u00d7 keeps the name and drops the avatar while a deletion asked for during the open day hasn't ended the interval; then the name it ended with 19ms"
+  ],
+  "all": [
+   "tests: \u00d7 keeps the name and drops the avatar while a deletion asked for during the open day hasn't ended the interval; then the name it ended with 19ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": "CASE WHEN s.state = 'active' AND su.state = 'active'",
+    "new": "CASE WHEN s.state = 'active'"
+   }
+  ]
+ },
+ {
+  "name": "sql: the nameless star's day kept",
+  "slug": "sql--the-nameless-star-s-day-kept",
+  "verdict": "CAUGHT",
+  "expected": "leaves out an open day whose star has no name to show",
+  "named": [
+   "tests: \u00d7 leaves out an open day whose star has no name to show, and still gives the next day (B6, docs/LIMITATIONS.md) 10ms"
+  ],
+  "all": [
+   "tests: \u00d7 leaves out an open day whose star has no name to show, and still gives the next day (B6, docs/LIMITATIONS.md) 10ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": "       AND (CASE WHEN s.state = 'active' THEN su.display_name ELSE s.ended_display_name END) IS NOT NULL\n",
+    "new": ""
+   }
+  ]
+ },
+ {
+  "name": "sql: the star's leaving condition dropped",
+  "slug": "sql--the-star-s-leaving-condition-dropped",
+  "verdict": "CAUGHT",
+  "expected": "holds a day whose star left a microsecond before its reveal",
+  "named": [
+   "tests: \u00d7 holds a day whose star left a microsecond before its reveal, by leaving, a block or a deletion: never open, never next (FQ63) 16ms"
+  ],
+  "all": [
+   "tests: \u00d7 holds a day whose star left a microsecond before its reveal, by leaving, a block or a deletion: never open, never next (FQ63) 16ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/read-sql.ts",
+    "old": "`(s.left_at IS NULL OR s.left_at >= o.reveal_at)\n       AND (su.deletion_requested_at",
+    "new": "`(su.deletion_requested_at"
+   }
+  ]
+ },
+ {
+  "name": "sql: the star's leaving at the reveal holds the day (> for >=)",
+  "slug": "sql--the-star-s-leaving-at-the-reveal-holds-the-day----for",
+  "verdict": "CAUGHT",
+  "expected": "keeps a day open to its close when its star leaves or asks to delete at its reveal",
+  "named": [
+   "tests: \u00d7 keeps a day open to its close when its star leaves or asks to delete at its reveal or a microsecond after 18ms"
+  ],
+  "all": [
+   "tests: \u00d7 keeps a day open to its close when its star leaves or asks to delete at its reveal or a microsecond after 18ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/read-sql.ts",
+    "old": "s.left_at >= o.reveal_at)\n       AND (su.deletion_requested_at",
+    "new": "s.left_at > o.reveal_at)\n       AND (su.deletion_requested_at"
+   }
+  ]
+ },
+ {
+  "name": "sql: the star's deletion condition dropped",
+  "slug": "sql--the-star-s-deletion-condition-dropped",
+  "verdict": "CAUGHT",
+  "expected": "holds a day whose star asked to delete their account a microsecond before its reveal",
+  "named": [
+   "tests: \u00d7 holds a day whose star asked to delete their account a microsecond before its reveal, whether the interval has ended or not (T27) 19ms"
+  ],
+  "all": [
+   "tests: \u00d7 holds a day whose star asked to delete their account a microsecond before its reveal, whether the interval has ended or not (T27) 19ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/read-sql.ts",
+    "old": "s.left_at >= o.reveal_at)\n       AND (su.deletion_requested_at IS NULL OR su.deletion_requested_at >= o.reveal_at)`;",
+    "new": "s.left_at >= o.reveal_at)`;"
+   }
+  ]
+ },
+ {
+  "name": "sql: the star's deletion at the reveal holds the day (> for >=)",
+  "slug": "sql--the-star-s-deletion-at-the-reveal-holds-the-day----for",
+  "verdict": "CAUGHT",
+  "expected": "keeps a day open to its close when its star leaves or asks to delete at its reveal",
+  "named": [
+   "tests: \u00d7 keeps a day open to its close when its star leaves or asks to delete at its reveal or a microsecond after 19ms"
+  ],
+  "all": [
+   "tests: \u00d7 keeps a day open to its close when its star leaves or asks to delete at its reveal or a microsecond after 19ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/read-sql.ts",
+    "old": "su.deletion_requested_at >= o.reveal_at)`;",
+    "new": "su.deletion_requested_at > o.reveal_at)`;"
+   }
+  ]
+ },
+ {
+  "name": "policy: open from after reveal_at",
+  "slug": "policy--open-from-after-reveal-at",
+  "verdict": "CAUGHT",
+  "expected": "opens the day at reveal_at exactly, not a microsecond before",
+  "named": [
+   "packages/domain: \u00d7 opens the day at reveal_at exactly, not a microsecond before, and keeps it open until a microsecond before close_at 13ms"
+  ],
+  "all": [
+   "packages/domain: \u00d7 opens the day at reveal_at exactly, not a microsecond before, and keeps it open until a microsecond before close_at 13ms",
+   "packages/domain: \u00d7 gives the earliest day to open as next: the day itself while it collects, the one after while it is open and after it closes 2ms",
+   "packages/domain: \u00d7 says each chosen day's phase from its slot, and carries the day's own date, instants and club 1ms",
+   "packages/domain: \u00d7 names an active star by their account's name now, with their avatar's version while their account is active 1ms",
+   "packages/domain: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": "days.find((day) => !before(now, day.revealAt) && before(now, day.closeAt))",
+    "new": "days.find((day) => before(day.revealAt, now) && before(now, day.closeAt))"
+   }
+  ]
+ },
+ {
+  "name": "policy: open at close_at too",
+  "slug": "policy--open-at-close-at-too",
+  "verdict": "CAUGHT",
+  "expected": "opens the day at reveal_at exactly, not a microsecond before",
+  "named": [
+   "packages/domain: \u00d7 opens the day at reveal_at exactly, not a microsecond before, and keeps it open until a microsecond before close_at 8ms"
+  ],
+  "all": [
+   "packages/domain: \u00d7 opens the day at reveal_at exactly, not a microsecond before, and keeps it open until a microsecond before close_at 8ms",
+   "packages/domain: \u00d7 gives the earliest day to open as next: the day itself while it collects, the one after while it is open and after it closes 1ms",
+   "packages/domain: \u00d7 keeps a day open to its close when its star leaves or asks to delete at its reveal or after 1ms",
+   "packages/domain: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": "days.find((day) => !before(now, day.revealAt) && before(now, day.closeAt))",
+    "new": "days.find((day) => !before(now, day.revealAt) && !before(day.closeAt, now))"
+   }
+  ]
+ },
+ {
+  "name": "policy: next from reveal_at itself",
+  "slug": "policy--next-from-reveal-at-itself",
+  "verdict": "CAUGHT",
+  "expected": "gives the earliest day to open as next",
+  "named": [
+   "packages/domain: \u00d7 gives the earliest day to open as next: the day itself while it collects, the one after while it is open and after it closes 1ms"
+  ],
+  "all": [
+   "packages/domain: \u00d7 opens the day at reveal_at exactly, not a microsecond before, and keeps it open until a microsecond before close_at 9ms",
+   "packages/domain: \u00d7 gives the earliest day to open as next: the day itself while it collects, the one after while it is open and after it closes 1ms",
+   "packages/domain: \u00d7 says each chosen day's phase from its slot, and carries the day's own date, instants and club 2ms",
+   "packages/domain: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": "const next = days.find((day) => before(now, day.revealAt));",
+    "new": "const next = days.find((day) => !before(day.revealAt, now));"
+   }
+  ]
+ },
+ {
+  "name": "policy: next ordered the wrong way",
+  "slug": "policy--next-ordered-the-wrong-way",
+  "verdict": "CAUGHT",
+  "expected": "gives the earliest day to open as next",
+  "named": [
+   "packages/domain: \u00d7 gives the earliest day to open as next: the day itself while it collects, the one after while it is open and after it closes 1ms"
+  ],
+  "all": [
+   "packages/domain: \u00d7 opens the day at reveal_at exactly, not a microsecond before, and keeps it open until a microsecond before close_at 7ms",
+   "packages/domain: \u00d7 gives the earliest day to open as next: the day itself while it collects, the one after while it is open and after it closes 1ms",
+   "packages/domain: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": "Temporal.Instant.compare(a.revealAt, b.revealAt) ||",
+    "new": "Temporal.Instant.compare(b.revealAt, a.revealAt) ||"
+   }
+  ]
+ },
+ {
+  "name": "policy: the open day's phase collecting",
+  "slug": "policy--the-open-day-s-phase-collecting",
+  "verdict": "CAUGHT",
+  "expected": "says each chosen day's phase from its slot",
+  "named": [
+   "packages/domain: \u00d7 says each chosen day's phase from its slot, and carries the day's own date, instants and club 7ms"
+  ],
+  "all": [
+   "packages/domain: \u00d7 says each chosen day's phase from its slot, and carries the day's own date, instants and club 7ms",
+   "packages/domain: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": "open: open === undefined ? null : chosen(open, \"open\"),",
+    "new": "open: open === undefined ? null : chosen(open, \"collecting\"),"
+   }
+  ]
+ },
+ {
+  "name": "policy: the status condition dropped",
+  "slug": "policy--the-status-condition-dropped",
+  "verdict": "CAUGHT",
+  "expected": "never chooses a suspended or cancelled day, open or next",
+  "named": [
+   "packages/domain: \u00d7 never chooses a suspended or cancelled day, open or next, and moves next on to the day after it 8ms"
+  ],
+  "all": [
+   "packages/domain: \u00d7 never chooses a suspended or cancelled day, open or next, and moves next on to the day after it 8ms",
+   "packages/domain: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": "    day.status === \"scheduled\" &&\n",
+    "new": ""
+   }
+  ]
+ },
+ {
+  "name": "policy: the suspended club condition dropped",
+  "slug": "policy--the-suspended-club-condition-dropped",
+  "verdict": "CAUGHT",
+  "expected": "gives nothing in a suspended club",
+  "named": [
+   "packages/domain: \u00d7 gives nothing in a suspended club, and keeps a club that isn't suspended to the days its rows hold (FQ50) 11ms"
+  ],
+  "all": [
+   "packages/domain: \u00d7 gives nothing in a suspended club, and keeps a club that isn't suspended to the days its rows hold (FQ50) 11ms",
+   "packages/domain: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": " && facts.clubSuspendedAt === null))",
+    "new": "))"
+   }
+  ]
+ },
+ {
+  "name": "policy: the viewer's account condition dropped",
+  "slug": "policy--the-viewer-s-account-condition-dropped",
+  "verdict": "CAUGHT",
+  "expected": "gives nothing to a stranger, a former member, an account that isn't active",
+  "named": [
+   "packages/domain: \u00d7 gives nothing to a stranger, a former member, an account that isn't active, or for no club at all 8ms"
+  ],
+  "all": [
+   "packages/domain: \u00d7 gives nothing to a stranger, a former member, an account that isn't active, or for no club at all 8ms",
+   "packages/domain: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": "if (!(facts.viewerAccount === \"active\" && facts.viewerInterval",
+    "new": "if (!(facts.viewerInterval"
+   }
+  ]
+ },
+ {
+  "name": "policy: the viewer's interval condition dropped",
+  "slug": "policy--the-viewer-s-interval-condition-dropped",
+  "verdict": "CAUGHT",
+  "expected": "gives nothing to a stranger, a former member, an account that isn't active",
+  "named": [
+   "packages/domain: \u00d7 gives nothing to a stranger, a former member, an account that isn't active, or for no club at all 8ms"
+  ],
+  "all": [
+   "packages/domain: \u00d7 gives nothing to a stranger, a former member, an account that isn't active, or for no club at all 8ms",
+   "packages/domain: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": "facts.viewerAccount === \"active\" && facts.viewerInterval === \"active\" && ",
+    "new": "facts.viewerAccount === \"active\" && "
+   }
+  ]
+ },
+ {
+  "name": "policy: the star's leaving condition dropped",
+  "slug": "policy--the-star-s-leaving-condition-dropped",
+  "verdict": "CAUGHT",
+  "expected": "holds a day whose star left before its reveal",
+  "named": [
+   "packages/domain: \u00d7 holds a day whose star left before its reveal, by any ending: never open, never next (FQ63) 8ms"
+  ],
+  "all": [
+   "packages/domain: \u00d7 holds a day whose star left before its reveal, by any ending: never open, never next (FQ63) 8ms",
+   "packages/domain: \u00d7 refuses a held day's facts it can't read: a leaving that isn't an instant denies 1ms",
+   "packages/domain: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": "    notBeforeReveal(day.starLeftAt, day.revealAt) &&\n",
+    "new": ""
+   }
+  ]
+ },
+ {
+  "name": "policy: the star's deletion condition dropped",
+  "slug": "policy--the-star-s-deletion-condition-dropped",
+  "verdict": "CAUGHT",
+  "expected": "holds a day whose star asked to delete their account a microsecond before its reveal",
+  "named": [
+   "packages/domain: \u00d7 holds a day whose star asked to delete their account a microsecond before its reveal, whether the interval has ended yet or not (T27) 8ms"
+  ],
+  "all": [
+   "packages/domain: \u00d7 holds a day whose star asked to delete their account a microsecond before its reveal, whether the interval has ended yet or not (T27) 8ms",
+   "packages/domain: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": "    notBeforeReveal(day.starDeletionRequestedAt, day.revealAt) &&\n",
+    "new": ""
+   }
+  ]
+ },
+ {
+  "name": "policy: leaving at the reveal holds the day (> for >=)",
+  "slug": "policy--leaving-at-the-reveal-holds-the-day----for",
+  "verdict": "CAUGHT",
+  "expected": "keeps a day open to its close when its star leaves or asks to delete at its reveal or after",
+  "named": [
+   "packages/domain: \u00d7 keeps a day open to its close when its star leaves or asks to delete at its reveal or after 7ms"
+  ],
+  "all": [
+   "packages/domain: \u00d7 keeps a day open to its close when its star leaves or asks to delete at its reveal or after 7ms",
+   "packages/domain: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/read.ts",
+    "old": "Temporal.Instant.compare(at, revealAt) >= 0)",
+    "new": "Temporal.Instant.compare(at, revealAt) > 0)"
+   }
+  ]
+ },
+ {
+  "name": "policy: the star's name always the account's (FQ75)",
+  "slug": "policy--the-star-s-name-always-the-account-s--fq75",
+  "verdict": "CAUGHT",
+  "expected": "names a star whose interval ended during the open day by the name it ended with",
+  "named": [
+   "packages/domain: \u00d7 names a star whose interval ended during the open day by the name it ended with, with no avatar 9ms"
+  ],
+  "all": [
+   "packages/domain: \u00d7 names a star whose interval ended during the open day by the name it ended with, with no avatar 9ms",
+   "packages/domain: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": "return day.starIntervalState === \"active\" ? day.starName : day.starEndedName;",
+    "new": "return day.starName;"
+   }
+  ]
+ },
+ {
+  "name": "policy: the avatar while the account is being deleted",
+  "slug": "policy--the-avatar-while-the-account-is-being-deleted",
+  "verdict": "CAUGHT",
+  "expected": "keeps the name and drops the avatar while a deletion asked for",
+  "named": [
+   "packages/domain: \u00d7 keeps the name and drops the avatar while a deletion asked for during the open day hasn't ended the interval 8ms"
+  ],
+  "all": [
+   "packages/domain: \u00d7 keeps the name and drops the avatar while a deletion asked for during the open day hasn't ended the interval 8ms",
+   "packages/domain: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": "day.starIntervalState === \"active\" && day.starAccount === \"active\" ? day.starAvatarVersion",
+    "new": "day.starIntervalState === \"active\" ? day.starAvatarVersion"
+   }
+  ]
+ },
+ {
+  "name": "policy: the nameless star's day kept",
+  "slug": "policy--the-nameless-star-s-day-kept",
+  "verdict": "CAUGHT",
+  "expected": "leaves out an open day whose star has no name to show",
+  "named": [
+   "packages/domain: \u00d7 leaves out an open day whose star has no name to show, and still gives the next day (B6, docs/LIMITATIONS.md) 4ms"
+  ],
+  "all": [
+   "packages/domain: \u00d7 leaves out an open day whose star has no name to show, and still gives the next day (B6, docs/LIMITATIONS.md) 4ms",
+   "packages/domain: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": " &&\n    typeof starNameOf(day) === \"string\"\n",
+    "new": "\n"
+   }
+  ]
+ },
+ {
+  "name": "chosenDay: a day that closes before it opens read",
+  "slug": "chosenday--a-day-that-closes-before-it-opens-read",
+  "verdict": "CAUGHT",
+  "expected": "refuses anything outside the shape rather than show it",
+  "named": [
+   "packages/domain: \u00d7 refuses anything outside the shape rather than show it 8ms"
+  ],
+  "all": [
+   "packages/domain: \u00d7 refuses anything outside the shape rather than show it 8ms",
+   "packages/domain: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/authorization/days.ts",
+    "old": "  if (!before(revealAt, closeAt)) throw shape();\n",
+    "new": ""
+   }
+  ]
+ },
+ {
+  "name": "listClubs: the days read in a second statement",
+  "slug": "listclubs--the-days-read-in-a-second-statement",
+  "verdict": "CAUGHT",
+  "expected": "reads both lists and the clubs' days in one statement",
+  "named": [
+   "tests: \u00d7 reads both lists and the clubs' days in one statement, so they are one snapshot 16ms"
+  ],
+  "all": [
+   "tests: \u00d7 reads both lists and the clubs' days in one statement, so they are one snapshot 16ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/clubs/club-list.ts",
+    "old": "  const days = daysByClub(sql, userId, now);\n",
+    "new": "  const days = daysByClub(sql, userId, now);\n  await bound(sql)`SELECT FROM (${days}) d`;\n"
+   }
+  ]
+ },
+ {
+  "name": "listClubs: the open day read as collecting",
+  "slug": "listclubs--the-open-day-read-as-collecting",
+  "verdict": "CAUGHT",
+  "expected": "lists a member's club with their own membership",
+  "named": [
+   "tests: \u00d7 lists a member's club with their own membership, the active members and the state, and nobody else's (T14) 47ms"
+  ],
+  "all": [
+   "tests: \u00d7 lists a member's club with their own membership, the active members and the state, and nobody else's (T14) 47ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "packages/domain/src/clubs/club-list.ts",
+    "old": "openDay: dayOf(row[\"open_day\"], \"open\", id),",
+    "new": "openDay: dayOf(row[\"open_day\"], \"collecting\", id),"
+   }
+  ]
+ },
+ {
+  "name": "serializer: instants not cut to the second",
+  "slug": "serializer--instants-not-cut-to-the-second",
+  "verdict": "MISSED",
+  "expected": "gives each day as the contract's Occurrence and nothing else of it",
+  "named": [],
+  "all": [
+   "services/api: \u00d7 cuts an instant to whole seconds downwards, never up: a day isn't announced as opening before it does 5ms",
+   "services/api: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "services/api/src/clubs/list.ts",
+    "old": "    reveal_at: contractInstant(day.revealAt),\n",
+    "new": "    reveal_at: day.revealAt.toString(),\n"
+   }
+  ]
+ },
+ {
+  "name": "serializer: the avatar key always sent",
+  "slug": "serializer--the-avatar-key-always-sent",
+  "verdict": "CAUGHT",
+  "expected": "gives each day as the contract's Occurrence and nothing else of it",
+  "named": [
+   "services/api: \u00d7 gives each day as the contract's Occurrence and nothing else of it: instants in whole seconds, the avatar only when there is one (T5, T15, T33) 8ms"
+  ],
+  "all": [
+   "services/api: \u00d7 gives each day as the contract's Occurrence and nothing else of it: instants in whole seconds, the avatar only when there is one (T5, T15, T33) 8ms",
+   "services/api: \u00d7 chooses the days at the instant it answers with, read first in the same read-only transaction 74ms",
+   "services/api: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "services/api/src/clubs/list.ts",
+    "old": "      ...(day.star.avatarVersion === null ? {} : { avatar_version: day.star.avatarVersion }),\n",
+    "new": "      avatar_version: day.star.avatarVersion,\n"
+   }
+  ]
+ },
+ {
+  "name": "serializer: the day object spread in",
+  "slug": "serializer--the-day-object-spread-in",
+  "verdict": "CAUGHT",
+  "expected": "is an explicit field list",
+  "named": [
+   "services/api: \u00d7 is an explicit field list: whatever else a day object carries never reaches the answer (T55) 2ms"
+  ],
+  "all": [
+   "services/api: \u00d7 gives each day as the contract's Occurrence and nothing else of it: instants in whole seconds, the avatar only when there is one (T5, T15, T33) 8ms",
+   "services/api: \u00d7 is an explicit field list: whatever else a day object carries never reaches the answer (T55) 2ms",
+   "services/api: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "services/api/src/clubs/list.ts",
+    "old": "  return {\n    id: day.id,\n    club_id: day.clubId,",
+    "new": "  return {\n    ...(day as unknown as Record<string, Json>),\n    id: day.id,\n    club_id: day.clubId,"
+   }
+  ]
+ },
+ {
+  "name": "route: the days chosen a second after the instant",
+  "slug": "route--the-days-chosen-a-second-after-the-instant",
+  "verdict": "CAUGHT",
+  "expected": "chooses the days at the instant it answers with",
+  "named": [
+   "services/api: \u00d7 chooses the days at the instant it answers with, read first in the same read-only transaction 68ms"
+  ],
+  "all": [
+   "services/api: \u00d7 chooses the days at the instant it answers with, read first in the same read-only transaction 68ms",
+   "services/api: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "services/api/src/clubs/list.ts",
+    "old": "await listClubs(tx, account.id, now)",
+    "new": "await listClubs(tx, account.id, now.add({ seconds: 1 }))"
+   }
+  ]
+ },
+ {
+  "name": "judge: expectation read from the answer",
+  "slug": "judge--expectation-read-from-the-answer",
+  "verdict": "CAUGHT",
+  "expected": "makes clubsJudge refuse a missing day",
+  "named": [
+   "tests: \u00d7 makes clubsJudge refuse a missing day, a day where there is none, another phase, another instant and an extra key 7ms"
+  ],
+  "all": [
+   "tests: \u00d7 makes clubsJudge refuse a missing day, a day where there is none, another phase, another instant and an extra key 7ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "tests/src/privacy/account.ts",
+    "old": "      const expected = daysOf(world, club.id, now);\n",
+    "new": "      const expected = { open: club[\"open_day\"], next: club[\"next_day\"] };\n"
+   }
+  ]
+ },
+ {
+  "name": "judge: open from after reveal_at",
+  "slug": "judge--open-from-after-reveal-at",
+  "verdict": "CAUGHT",
+  "expected": "opens the day at its reveal exactly and closes it at its close exactly",
+  "named": [
+   "tests: \u00d7 opens the day at its reveal exactly and closes it at its close exactly, the next being the earliest still to open 8ms"
+  ],
+  "all": [
+   "tests: \u00d7 opens the day at its reveal exactly and closes it at its close exactly, the next being the earliest still to open 8ms",
+   "tests: \u00d7 makes clubsJudge refuse a missing day, a day where there is none, another phase, another instant and an extra key 1ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "tests/src/privacy/account.ts",
+    "old": "days.find(({ day }) => !before(now, day.revealAt) && before(now, day.closeAt)),",
+    "new": "days.find(({ day }) => before(day.revealAt, now) && before(now, day.closeAt)),"
+   }
+  ]
+ },
+ {
+  "name": "judge: the suspended club given days",
+  "slug": "judge--the-suspended-club-given-days",
+  "verdict": "CAUGHT",
+  "expected": "gives none in a suspended club or a club it doesn't know",
+  "named": [
+   "tests: \u00d7 gives none in a suspended club or a club it doesn't know, and never a suspended or cancelled day 8ms"
+  ],
+  "all": [
+   "tests: \u00d7 gives none in a suspended club or a club it doesn't know, and never a suspended or cancelled day 8ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "tests/src/privacy/account.ts",
+    "old": "  if (world.clubs.get(club)?.suspendedAt !== null) return {};\n",
+    "new": "  if (world.clubs.get(club) === undefined) return {};\n"
+   }
+  ]
+ },
+ {
+  "name": "judge: a held day given",
+  "slug": "judge--a-held-day-given",
+  "verdict": "CAUGHT",
+  "expected": "holds a day whose star left or asked to delete their account before its reveal",
+  "named": [
+   "tests: \u00d7 holds a day whose star left or asked to delete their account before its reveal, and keeps one they left at it 8ms"
+  ],
+  "all": [
+   "tests: \u00d7 holds a day whose star left or asked to delete their account before its reveal, and keeps one they left at it 8ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "tests/src/privacy/account.ts",
+    "old": "      return !left && !deleting;\n",
+    "new": "      return !deleting;\n"
+   }
+  ]
+ },
+ {
+  "name": "run: expectation read from the answer",
+  "slug": "run--expectation-read-from-the-answer",
+  "verdict": "CAUGHT",
+  "expected": "fails a switch a second early or a second late",
+  "named": [
+   "tools/ops: \u00d7 fails a switch a second early or a second late, at each instant, naming the first answer that was wrong 47ms"
+  ],
+  "all": [
+   "tools/ops: \u00d7 fails a switch a second early or a second late, at each instant, naming the first answer that was wrong 47ms",
+   "tools/ops: \u00d7 fails an answer with another cache header, another status, no server_now, or anything more than the club list 127ms",
+   "tools/ops: \u00d7 judges an answer whole: one a second early, a second late, or with a key more or less is wrong 1ms",
+   "tools/ops: \u00d7 never prints a value of the answer's in where it differs, only the keys' path 1ms",
+   "tools/ops: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "tools/ops/src/spike-time.ts",
+    "old": "  const expected = expectedClubList(club, serverNow);\n",
+    "new": "  const expected = answer.json as Json;\n"
+   }
+  ]
+ },
+ {
+  "name": "run: the day open from after its reveal",
+  "slug": "run--the-day-open-from-after-its-reveal",
+  "verdict": "CAUGHT",
+  "expected": "is T5 at the answer's server_now",
+  "named": [
+   "tools/ops: \u00d7 is T5 at the answer's server_now: a day open from its reveal, not a second before, until its close, not at it 1ms"
+  ],
+  "all": [
+   "tools/ops: \u00d7 signs in, makes the account the app's way, writes the club, watches both instants from 20 seconds before, and deletes the user 82ms",
+   "tools/ops: \u00d7 fails a switch a second early or a second late, at each instant, naming the first answer that was wrong 66ms",
+   "tools/ops: \u00d7 is T5 at the answer's server_now: a day open from its reveal, not a second before, until its close, not at it 1ms",
+   "tools/ops: \u00d7 judges an answer whole: one a second early, a second late, or with a key more or less is wrong 2ms",
+   "tools/ops: \u00d7 never prints a value of the answer's in where it differs, only the keys' path 1ms",
+   "tools/ops: exit 1, no test named",
+   "tests: \u00d7 is the club list GET /v1/clubs gives Ana at every instant round both of the day's edges 79ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "tools/ops/src/spike-time.ts",
+    "old": "      Temporal.Instant.compare(day.revealAt, serverNow) <= 0 && Temporal.Instant.compare(serverNow, day.closeAt) < 0,",
+    "new": "      Temporal.Instant.compare(day.revealAt, serverNow) < 0 && Temporal.Instant.compare(serverNow, day.closeAt) < 0,"
+   }
+  ]
+ },
+ {
+  "name": "run: the day open at its close",
+  "slug": "run--the-day-open-at-its-close",
+  "verdict": "CAUGHT",
+  "expected": "is T5 at the answer's server_now",
+  "named": [
+   "tools/ops: \u00d7 is T5 at the answer's server_now: a day open from its reveal, not a second before, until its close, not at it 2ms"
+  ],
+  "all": [
+   "tools/ops: \u00d7 signs in, makes the account the app's way, writes the club, watches both instants from 20 seconds before, and deletes the user 100ms",
+   "tools/ops: \u00d7 fails a switch a second early or a second late, at each instant, naming the first answer that was wrong 66ms",
+   "tools/ops: \u00d7 is T5 at the answer's server_now: a day open from its reveal, not a second before, until its close, not at it 2ms",
+   "tools/ops: exit 1, no test named",
+   "tests: \u00d7 is the club list GET /v1/clubs gives Ana at every instant round both of the day's edges 76ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "tools/ops/src/spike-time.ts",
+    "old": "      Temporal.Instant.compare(day.revealAt, serverNow) <= 0 && Temporal.Instant.compare(serverNow, day.closeAt) < 0,",
+    "new": "      Temporal.Instant.compare(day.revealAt, serverNow) <= 0 && Temporal.Instant.compare(serverNow, day.closeAt) <= 0,"
+   }
+  ]
+ },
+ {
+  "name": "run: an answer at the instant counted before it",
+  "slug": "run--an-answer-at-the-instant-counted-before-it",
+  "verdict": "CAUGHT",
+  "expected": "signs in, makes the account the app's way",
+  "named": [
+   "tools/ops: \u00d7 signs in, makes the account the app's way, writes the club, watches both instants from 20 seconds before, and deletes the user 109ms"
+  ],
+  "all": [
+   "tools/ops: \u00d7 signs in, makes the account the app's way, writes the club, watches both instants from 20 seconds before, and deletes the user 109ms",
+   "tools/ops: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "tools/ops/src/spike-time.ts",
+    "old": "if (Temporal.Instant.compare(verdict.serverNow, at) < 0) {",
+    "new": "if (Temporal.Instant.compare(verdict.serverNow, at) <= 0) {"
+   }
+  ]
+ },
+ {
+  "name": "run: the cache header not checked",
+  "slug": "run--the-cache-header-not-checked",
+  "verdict": "CAUGHT",
+  "expected": "fails an answer with another cache header",
+  "named": [
+   "tools/ops: \u00d7 fails an answer with another cache header, another status, no server_now, or anything more than the club list 25ms"
+  ],
+  "all": [
+   "tools/ops: \u00d7 fails an answer with another cache header, another status, no server_now, or anything more than the club list 25ms",
+   "tools/ops: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "tools/ops/src/spike-time.ts",
+    "old": "  if (answer.cacheControl !== \"private, no-store\") {",
+    "new": "  if (answer.cacheControl === \"never\") {"
+   }
+  ]
+ },
+ {
+  "name": "run: the user not deleted",
+  "slug": "run--the-user-not-deleted",
+  "verdict": "CAUGHT",
+  "expected": "signs in, makes the account the app's way",
+  "named": [
+   "tools/ops: \u00d7 signs in, makes the account the app's way, writes the club, watches both instants from 20 seconds before, and deletes the user 77ms"
+  ],
+  "all": [
+   "tools/ops: \u00d7 signs in, makes the account the app's way, writes the club, watches both instants from 20 seconds before, and deletes the user 77ms",
+   "tools/ops: \u00d7 fails a switch a second early or a second late, at each instant, naming the first answer that was wrong 38ms",
+   "tools/ops: \u00d7 fails an answer with another cache header, another status, no server_now, or anything more than the club list 21ms",
+   "tools/ops: \u00d7 fails when its answers never reach the instant, when the window runs out, and still deletes the user 102ms",
+   "tools/ops: \u00d7 stops at an API that doesn't answer, and deletes the user 2003ms",
+   "tools/ops: \u00d7 stops when the budget is spent during a call to Auth that hangs, and still deletes the user before the deadline 22ms",
+   "tools/ops: \u00d7 starts no new work once the budget is spent, and still deletes the user 1ms",
+   "tools/ops: \u00d7 fails, naming the user it leaves, when the deadline cuts the clean-up 2ms",
+   "tools/ops: \u00d7 fails, naming the user it leaves, when Auth won't delete it 38ms",
+   "tools/ops: \u00d7 stops at a club the database refuses, or a move of the clock it refuses, saying why, and deletes the user 2ms",
+   "tools/ops: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "tools/ops/src/spike-time.ts",
+    "old": "    if (user !== undefined) {\n      const reply = await auth(",
+    "new": "    if (user !== undefined && !cleaning) {\n      const reply = await auth("
+   }
+  ]
+ },
+ {
+  "name": "run: a Saturday as the first day",
+  "slug": "run--a-saturday-as-the-first-day",
+  "verdict": "CAUGHT",
+  "expected": "is the earliest Monday to Friday in New York",
+  "named": [
+   "tools/ops: \u00d7 is the earliest Monday to Friday in New York whose 07:00 is at least three minutes ahead, so the next date is never Sunday 7ms"
+  ],
+  "all": [
+   "tools/ops: \u00d7 is the earliest Monday to Friday in New York whose 07:00 is at least three minutes ahead, so the next date is never Sunday 7ms",
+   "tools/ops: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "tools/ops/src/spike-time.ts",
+    "old": "if (date.dayOfWeek <= 5 && ",
+    "new": "if (date.dayOfWeek <= 6 && "
+   }
+  ]
+ },
+ {
+  "name": "club: the account's subject not checked",
+  "slug": "club--the-account-s-subject-not-checked",
+  "verdict": "CAUGHT",
+  "expected": "refuses an account that isn't the run's own",
+  "named": [
+   "tests: \u00d7 refuses an account that isn't the run's own, finished as the API finishes it, and writes nothing 36ms"
+  ],
+  "all": [
+   "tests: \u00d7 refuses an account that isn't the run's own, finished as the API finishes it, and writes nothing 36ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "tools/ops/src/spike-time.ts",
+    "old": " AND auth_subject = ${account.subject}::pg_catalog.uuid",
+    "new": ""
+   }
+  ]
+ },
+ {
+  "name": "club: the account's name not checked",
+  "slug": "club--the-account-s-name-not-checked",
+  "verdict": "CAUGHT",
+  "expected": "refuses an account that isn't the run's own",
+  "named": [
+   "tests: \u00d7 refuses an account that isn't the run's own, finished as the API finishes it, and writes nothing 26ms"
+  ],
+  "all": [
+   "tests: \u00d7 refuses an account that isn't the run's own, finished as the API finishes it, and writes nothing 26ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "tools/ops/src/spike-time.ts",
+    "old": "AND state = 'active' AND display_name = 'Ana' AND age_confirmed_at",
+    "new": "AND state = 'active' AND age_confirmed_at"
+   }
+  ]
+ },
+ {
+  "name": "club: the roster's seal dropped",
+  "slug": "club--the-roster-s-seal-dropped",
+  "verdict": "CAUGHT",
+  "expected": "goes in whole through the schema's guards",
+  "named": [
+   "tests: \u00d7 goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond 41ms"
+  ],
+  "all": [
+   "tests: \u00d7 goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond 41ms",
+   "tests: \u00d7 is the club list GET /v1/clubs gives Ana at every instant round both of the day's edges 28ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "tools/ops/src/spike-time.ts",
+    "old": "  await tx`\n    UPDATE app.roster_revisions SET roster_sealed_at = ${at}::pg_catalog.text::pg_catalog.timestamptz\n     WHERE id = ${revision}`;\n",
+    "new": ""
+   }
+  ]
+ },
+ {
+  "name": "club: the roster's approval dropped",
+  "slug": "club--the-roster-s-approval-dropped",
+  "verdict": "CAUGHT",
+  "expected": "goes in whole through the schema's guards",
+  "named": [
+   "tests: \u00d7 goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond 46ms"
+  ],
+  "all": [
+   "tests: \u00d7 goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond 46ms",
+   "tests: \u00d7 is the club list GET /v1/clubs gives Ana at every instant round both of the day's edges 35ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "tools/ops/src/spike-time.ts",
+    "old": "  await tx`\n    INSERT INTO app.roster_approvals (revision_id, interval_id, decision, implicit, decided_at)\n    VALUES (${revision}, ${ana}, 'approved', true, ${at}::pg_catalog.text::pg_catalog.timestamptz)`;\n",
+    "new": ""
+   }
+  ]
+ },
+ {
+  "name": "club: Ben's acceptance dropped",
+  "slug": "club--ben-s-acceptance-dropped",
+  "verdict": "CAUGHT",
+  "expected": "goes in whole through the schema's guards",
+  "named": [
+   "tests: \u00d7 goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond 57ms"
+  ],
+  "all": [
+   "tests: \u00d7 goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond 57ms",
+   "tests: \u00d7 is the club list GET /v1/clubs gives Ana at every instant round both of the day's edges 38ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "tools/ops/src/spike-time.ts",
+    "old": "  await tx`\n    UPDATE app.roster_revision_candidates\n       SET accepted_at",
+    "new": "  if (Math.abs(1) === 2) await tx`\n    UPDATE app.roster_revision_candidates\n       SET accepted_at"
+   }
+  ]
+ },
+ {
+  "name": "club: the candidate left unjoined",
+  "slug": "club--the-candidate-left-unjoined",
+  "verdict": "MISSED",
+  "expected": "goes in whole through the schema's guards",
+  "named": [],
+  "all": [],
+  "edits": [
+   {
+    "path": "tools/ops/src/spike-time.ts",
+    "old": "  await tx`\n    UPDATE app.candidates SET state = 'joined'",
+    "new": "  if (Math.abs(1) === 2) await tx`\n    UPDATE app.candidates SET state = 'joined'"
+   }
+  ]
+ },
+ {
+  "name": "club: Ana left off the revision's members",
+  "slug": "club--ana-left-off-the-revision-s-members",
+  "verdict": "CAUGHT",
+  "expected": "goes in whole through the schema's guards",
+  "named": [
+   "tests: \u00d7 goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond 41ms"
+  ],
+  "all": [
+   "tests: \u00d7 goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond 41ms",
+   "tests: \u00d7 is the club list GET /v1/clubs gives Ana at every instant round both of the day's edges 44ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "tools/ops/src/spike-time.ts",
+    "old": "  await tx`\n    INSERT INTO app.roster_revision_members (revision_id, club_id, interval_id) VALUES",
+    "new": "  if (Math.abs(1) === 2) await tx`\n    INSERT INTO app.roster_revision_members (revision_id, club_id, interval_id) VALUES"
+   }
+  ]
+ },
+ {
+  "name": "club: the first day's collecting_from a day early",
+  "slug": "club--the-first-day-s-collecting-from-a-day-early",
+  "verdict": "CAUGHT",
+  "expected": "goes in whole through the schema's guards",
+  "named": [
+   "tests: \u00d7 goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond 82ms"
+  ],
+  "all": [
+   "tests: \u00d7 goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond 82ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "tools/ops/src/spike-time.ts",
+    "old": "              ${at}::pg_catalog.text::pg_catalog.timestamptz)`;\n    days.push({",
+    "new": "              ${now.subtract({ hours: 24 }).toString()}::pg_catalog.text::pg_catalog.timestamptz)`;\n    days.push({"
+   }
+  ]
+ },
+ {
+  "name": "club: the days' instants to the millisecond",
+  "slug": "club--the-days--instants-to-the-millisecond",
+  "verdict": "CAUGHT",
+  "expected": "goes in whole through the schema's guards",
+  "named": [
+   "tests: \u00d7 goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond 79ms"
+  ],
+  "all": [
+   "tests: \u00d7 goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond 79ms",
+   "tests: \u00d7 is the club list GET /v1/clubs gives Ana at every instant round both of the day's edges 84ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "tools/ops/src/spike-time.ts",
+    "old": "              ${instants.revealAt.toString()}::pg_catalog.text::pg_catalog.timestamptz,",
+    "new": "              ${instants.revealAt.add({ microseconds: 1 }).toString()}::pg_catalog.text::pg_catalog.timestamptz,"
+   }
+  ]
+ },
+ {
+  "name": "dev-clock: a missing table made without the file",
+  "slug": "dev-clock--a-missing-table-made-without-the-file",
+  "verdict": "CAUGHT",
+  "expected": "without the file, moves a table that's there",
+  "named": [
+   "tests: \u00d7 without the file, moves a table that's there and says the offset it found, and refuses a missing one, making nothing 10ms"
+  ],
+  "all": [
+   "tests: \u00d7 without the file, moves a table that's there and says the offset it found, and refuses a missing one, making nothing 10ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "tools/ops/src/dev-clock.ts",
+    "old": "  if (made && options.makeSql === undefined) {\n",
+    "new": "  if (made && options.makeSql === \"never\") {\n"
+   }
+  ]
+ }
+]

@@ -1,0 +1,35 @@
+$ (cd services/api && npx vitest run src/clubs/list.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/services/api
+
+ ❯ src/clubs/list.test.ts (6 tests | 1 failed) 81ms
+   ❯ GET /v1/clubs: one sample of the clock for the instant and the days (T1) (1)
+     × chooses the days at the instant it answers with, read first in the same read-only transaction 68ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 passed (6)
+   Start at  00:25:16
+   Duration  463ms (import 51%, transform 24%, tests 23%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/clubs/list.test.ts > GET /v1/clubs: one sample of the clock for the instant and the days (T1) > chooses the days at the instant it answers with, read first in the same read-only transaction
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/clubs/list.test.ts:207:65
+    205|     const instants = bound.filter((value) => value instanceof Temporal…
+    206|     expect(instants.length).toBeGreaterThan(0);
+    207|     for (const instant of instants) expect(instant.equals(now)).toBe(t…
+       |                                                                 ^
+    208|     const body = response.json<{ server_now: string; clubs: { open_day…
+    209|     expect(body.server_now).toBe("2026-11-07T07:00:00Z");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

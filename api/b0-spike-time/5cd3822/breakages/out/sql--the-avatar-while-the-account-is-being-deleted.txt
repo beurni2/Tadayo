@@ -1,0 +1,52 @@
+$ (cd tests && npx vitest run --config vitest.db.config.ts src/db/home-days.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tests
+
+ ❯ src/db/home-days.test.ts (20 tests | 1 failed) 779ms
+   ❯ the star as the club sees them, on Postgres (FQ75) (4)
+     × keeps the name and drops the avatar while a deletion asked for during the open day hasn't ended the interval; then the name it ended with 19ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  00:24:48
+   Duration  1.14s (tests 90%, import 5%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/home-days.test.ts > the star as the club sees them, on Postgres (FQ75) > keeps the name and drops the avatar while a deletion asked for during the open day hasn't ended the interval; then the name it ended with
+AssertionError: the SQL and the policy at 2026-11-07T10:00:00Z: expected { open: { …(7) }, next: null } to deeply equal { open: { …(7) }, next: null }
+
+- Expected
++ Received
+
+@@ -6,11 +6,11 @@
+      "id": "occ_wsschdDtj1mXXOPKJmlKUw",
+      "localDate": "2026-11-07",
+      "phase": "open",
+      "revealAt": "2026-11-07T07:00:00Z",
+      "star": {
+-       "avatarVersion": null,
++       "avatarVersion": "v_fWTke4AT5rFUMqEhIWWZ6w",
+        "displayName": "Ana",
+        "membershipId": "mem_rdYfyez92VJHRWm0YkaWQA",
+      },
+    },
+  }
+
+ ❯ both src/db/home-days.test.ts:203:66
+    201|   const sql = await bySql(tx, viewer, club, now);
+    202|   const policy = chooseDays(await factsOf(tx, viewer, club), now);
+    203|   expect(sql, `the SQL and the policy at ${instant.toString()}`).toEqu…
+       |                                                                  ^
+    204|   return sql;
+    205| }
+ ❯ src/db/home-days.test.ts:456:15
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:451:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

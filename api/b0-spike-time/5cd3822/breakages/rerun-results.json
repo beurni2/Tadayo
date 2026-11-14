@@ -1,0 +1,40 @@
+[
+ {
+  "name": "serializer: instants not cut to the second",
+  "slug": "serializer--instants-not-cut-to-the-second",
+  "verdict": "MISSED",
+  "expected": "gives each day as the contract's Occurrence and nothing else of it",
+  "named": [],
+  "all": [
+   "services/api: \u00d7 cuts an instant to whole seconds downwards, never up: a day isn't announced as opening before it does 6ms",
+   "services/api: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "services/api/src/clubs/list.ts",
+    "old": "    reveal_at: contractInstant(day.revealAt),\n",
+    "new": "    reveal_at: day.revealAt.toString(),\n"
+   }
+  ]
+ },
+ {
+  "name": "club: the candidate left unjoined",
+  "slug": "club--the-candidate-left-unjoined",
+  "verdict": "CAUGHT",
+  "expected": "goes in whole through the schema's guards",
+  "named": [
+   "tests: \u00d7 goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond 64ms"
+  ],
+  "all": [
+   "tests: \u00d7 goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond 64ms",
+   "tests: exit 1, no test named"
+  ],
+  "edits": [
+   {
+    "path": "tools/ops/src/spike-time.ts",
+    "old": "  await tx`\n    UPDATE app.candidates SET state = 'joined'",
+    "new": "  if (Math.abs(1) === 2) await tx`\n    UPDATE app.candidates SET state = 'joined'"
+   }
+  ]
+ }
+]

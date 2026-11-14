@@ -1,0 +1,28 @@
+$ (cd tools/ops && npx vitest run src/spike-time.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tools/ops
+
+ ❯ src/spike-time.test.ts (17 tests | 1 failed) 2401ms
+   ❯ spike-time against an API that doesn't (3)
+     × fails an answer with another cache header, another status, no server_now, or anything more than the club list 25ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+   Start at  00:25:37
+   Duration  2.63s (tests 95%, transform 3%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/spike-time.test.ts > spike-time against an API that doesn't > fails an answer with another cache header, another status, no server_now, or anything more than the club list
+TypeError: .toMatch() expects to receive a string, but got undefined
+ ❯ src/spike-time.test.ts:353:30
+    351|       const checks = await spikeTime(world(options).input);
+    352|       const wrong = failed(checks);
+    353|       expect(wrong[0], note).toMatch(
+       |                              ^
+    354|         /^reveal: every answer is the club's days as T5 has them at it…
+    355|       );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
