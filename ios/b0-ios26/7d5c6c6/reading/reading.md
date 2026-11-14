@@ -45,6 +45,17 @@ On iOS 27.2 the unselected tabs' symbols are drawn filled, in all 39 tab states,
 
 **The one bounded attempt.** Apple documents no way to choose an unselected tab symbol's variant: setting `\.symbolVariants` to `.none`, the documented opt-out, is what `TabsView` already does. A probe branch, `ios/b0-ios26-tabprobe` at `751f12d` (never merges), built the tabs with `Tab(value:content:label:)`, the documented replacement for `tabItem(_:)`, setting the variant on the `Label` for Home and Memories and on the icon's `Image` alone for Friends. Its `ios` run 43514132404 compiled, passed on iOS 26.5 (119 of 119 tests), and drew 221 of the 222 images byte-identical to run A's; the other, `H01-error-no-club`, differs by at most 17/255 in 17 pixels of the tab bar's glass. Every unselected symbol is still filled. So the tab symbols are a Known difference, and their 27.2 references are taken as drawn: a `docs/LIMITATIONS.md` row and the needs list's item 60 record it, and INVENTORY's tab-bar bullet, `TabsView`'s docstring and the T45 audit row say what each iOS draws.
 
+> **Correction (2026-11-14, PR #57's review):** 17 is the count of pixels that differ by more than 8/255. The whole difference is 9,038 pixels of the tab bar's glass, at most 17/255: the second way iOS 27.2 draws that glass (`docs/LIMITATIONS.md`, the row of 2026-11-14).
+
+## Corrections (2026-11-14, PR #57's review)
+
+Found by the PR's independent review; the first and the last measured again in the session, the other two as the review measured them against the rows below. No verdict changes, and the rows stay as written.
+
+- **Leave sign-in at the largest text (kind 1):** the label is 3 to 3.5 pt wider, by where its edge is counted (the `A02-age-failed-network-xl` row says up to +3 pt), not 3.5 pt; the title's 3.5-pt move stands.
+- **The word beside `star.fill` (kind 3):** at the largest size in the folded card (`Lab-cards-xl`, `Lab-cards-320-xl`) the word also sits 1 px (0.33 pt) further left, as those rows say; "the word ... unchanged" holds for its raster and its baseline's height.
+- **The class column:** the review found S4 noted unevenly in a few Lab rows. `Lab-revealed-large`, `-xl` and `-320-xl` have glyph-edge bands too, so are S3 S4 by the rule above; the chevron's edge is S3 S4 on `Lab-drops-320-xl` but S3 on `Lab-drops-xl`; a system symbol's edge is S3 S4 on `Lab-avatars*` but S3 on `Lab-header*` and `Lab-fields-xl`. The counts above follow the column as written.
+- **The selected tab's colour (S4):** iOS 27.2 draws the selected tab's symbol and label about (34, 69, 210) in light and (187, 207, 255) in dark, where iOS 26.5 drew (30, 66, 207) and (203, 225, 255); `action` is #284CDB and #AFBEFF, which the system draws through the glass on both. In dark the selected tab is about 1.56 to 1 against the unselected tabs' white. INVENTORY's S4 and the needs list's item 60 carry the figures.
+
 ## Every state
 
 Bands are rows, in points, where a channel differs by more than 8/255; Max is the largest channel difference. The note is the reader's, written before the decisions above: where a note weighs D1 or D2, the Class column gives the class those decisions settle.
