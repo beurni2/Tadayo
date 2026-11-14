@@ -8,7 +8,7 @@ import XCTest
 /// The app's icon (slice 11b): the brand's three 1024-point masters (`design/reference/brand/`,
 /// brand revision 1.1; ADR-027), kept in `Tadayo/Assets.xcassets/AppIcon.appiconset` as one
 /// universal icon with a dark and a tinted appearance, which are the catalog's Any, Dark and
-/// Tinted wells. iOS 18's Home Screen draws the one the person has chosen. These read the
+/// Tinted wells. The Home Screen draws the one the person has chosen. These read the
 /// catalog's source beside this file, as `DesignCatalogTests` reads the package's, and check the
 /// app as built.
 final class AppIconTests: XCTestCase {

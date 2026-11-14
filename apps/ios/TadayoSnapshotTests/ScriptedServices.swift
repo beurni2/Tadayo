@@ -4,8 +4,8 @@ import XCTest
 /// The scripted services the sign-in tests drive their models with, and the helper that drives
 /// them, in a file both test targets compile (`project.yml`: `TadayoSnapshotTests` has the whole
 /// folder, `TadayoTests` names this file), so a reading of what VoiceOver finds on a screen can
-/// run in the hosted tests, which the iOS 17.5 and 18.6 compatibility runs also run, and not
-/// only in the snapshot tests, which they skip (`tools/ci/ios_steps.py`).
+/// run in the hosted tests, which run on iOS 26.5 as well as on 27.2, and not only in the
+/// snapshot tests, which run on iOS 27.2 alone (`tools/ci/ios_steps.py`).
 
 /// Runs `action` and turns the main run loop until `condition` holds, so a screen can be
 /// snapshotted, or read, in the middle of a request that never answers.

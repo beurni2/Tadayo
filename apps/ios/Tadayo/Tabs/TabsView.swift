@@ -3,11 +3,15 @@ import TadayoCore
 import TadayoDesign
 
 /// The tabs (spec 03, D04: Home, Friends and Memories; book p7): the system's tab bar (T45), with
-/// handoff 0's SF Symbols `house`, `person.2` and `photo.on.rectangle`, the selected one filled
-/// and the others outlined, as handoff 0 names them and every frame draws them, so the symbol
-/// and not only its colour shows which is selected (T44), and the selected tab in `action`. Builds
-/// with the Lab (LAB: Debug and Dev, which point at `dev`) add a fourth tab holding it, with Log
-/// out (TECH-DESIGN section 4); the snapshots leave it out.
+/// handoff 0's SF Symbols `house`, `person.2` and `photo.on.rectangle`, and the selected tab in
+/// `action`. Each tab asks for its symbol filled when selected and outlined otherwise, as handoff 0
+/// names them and every frame draws them, so the symbol and not only its colour shows which is
+/// selected (T44). iOS 26.5 draws that; iOS 27.2's tab bar fills every symbol, whether `.fill` or
+/// `.none` is asked, so there the glass selection and the selected tab's tint, `action` as the
+/// system draws it through the glass, show which is selected (`docs/LIMITATIONS.md`, 2026-11-13,
+/// the tab symbols; `docs/design/handoff-7/ios-lane-needs.md`, item 60).
+/// Builds with the Lab (LAB: Debug and Dev, which point at `dev`) add a fourth tab holding it,
+/// with Log out (TECH-DESIGN section 4); the snapshots leave it out.
 ///
 /// Each tab shows the club list's state under the no-club header with the account's initial
 /// (`TabContent`). It takes values, not the root model, so the snapshot tests can draw it in any

@@ -6,8 +6,8 @@ import XCTest
 @testable import Tadayo
 
 /// What VoiceOver finds on A02-email, A02-code, A02-age and A03, read in the hosted tests so it is read
-/// on iOS 17.5 and 18.6 too (the snapshot tests, which hold the sign-in readings from before
-/// handoff 7, are skipped there): the busy button's value and the field that is read-only, not
+/// on iOS 26.5 too (the snapshot tests, which hold the sign-in readings from before handoff 7,
+/// run on iOS 27.2 alone): the busy button's value and the field that is read-only, not
 /// disabled (handoff 7's `busyPrimary`), the empty field's one reading of its label, and
 /// A02-code's resend row and its failure's own block. A hosted test can't speak, so what the
 /// person hears is a device check in the TestFlight notes.
@@ -680,8 +680,8 @@ final class SignInReadingTests: XCTestCase {
     /// either, neither as the symbol's name nor as "No profile photo", which no contract gives an
     /// element yet (handoff 7's `avatarWithoutInitial`; the check's WM-04). So a name that gives no
     /// initial, nothing typed or an emoji, leaves A03 with the same elements in the same order as
-    /// "Ben" does, whose "B" isn't read (the plan's TV-06, read here so that iOS 17.5 and 18.6
-    /// read it too; `SignInSnapshotTests.testTheAvatarIsntRead` holds the same cases). The field's
+    /// "Ben" does, whose "B" isn't read (the plan's TV-06, read here so that iOS 26.5 reads it
+    /// too; `SignInSnapshotTests.testTheAvatarIsntRead` holds the same cases). The field's
     /// value, the name, is left out, as it differs.
     func testTheAvatarsPersonSymbolIsntRead() {
         func labels(_ name: String) -> [String] {

@@ -10,8 +10,8 @@ import XCTest
 /// the launch screen canvas alone: no logo, wordmark, spinner or text.
 ///
 /// The canvas is resolved as SwiftUI draws it, through `Color.resolve(in:)` with the appearance's
-/// colour scheme (iOS 17): on iOS 17, `UIColor(Palette.canvas)` doesn't keep the colour's dark
-/// value, so it resolved light in dark (`docs/LIMITATIONS.md`, 2026-11-07).
+/// colour scheme, never bridged through `UIColor(_:)`, which on iOS 17, no longer supported,
+/// resolved it light in dark (`docs/LIMITATIONS.md`, 2026-11-07).
 final class LaunchScreenTests: XCTestCase {
     func testTheLaunchScreenIsTheCanvasInLightAndDark() throws {
         let info = try XCTUnwrap(Bundle.main.infoDictionary)

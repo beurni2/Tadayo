@@ -15,7 +15,7 @@ import XCTest
 /// read twice, an avatar's initial, a stray value or a tap nobody built fails it. These are the
 /// component's half of
 /// T16 and Q07: B4's check as a non-author on F02 is the other. They are hosted unit tests, not
-/// snapshot tests, so the iOS 17 and 18 compatibility runs read the labels too.
+/// snapshot tests, so they read the labels on iOS 26.5 as well as on iOS 27.2.
 @MainActor
 final class DropCardTests: XCTestCase {
     private var opens: String {

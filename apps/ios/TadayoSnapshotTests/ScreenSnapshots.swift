@@ -1,3 +1,4 @@
+import CryptoKit
 import ObjectiveC
 import SnapshotTesting
 import SwiftUI
@@ -19,6 +20,20 @@ import XCTest
 /// since at AX5 the content scrolls: what would scroll is laid out down the image, with the
 /// pinned action at its foot (a known difference in INVENTORY.md). No taller: a window 2,800
 /// points tall came out empty, the render server returning an error (`docs/LIMITATIONS.md`).
+///
+/// Each image is drawn until two draws in a row come out the same, byte for byte, and that image is
+/// compared with its reference once, at the same precision as ever. Each draw is a fresh host's
+/// first, as before, so no screen is given longer to draw; the reference plays no part in when the
+/// drawing stops. On iOS 27.2 a draw of the system's glass, a bar's button or the tab bar, now and
+/// then comes out a little different, and the next draw as usual; what decides it isn't known, and
+/// `docs/LIMITATIONS.md` (2026-11-14) keeps the most it has differed by in a run. So one draw that
+/// differs from the image the drawing settles on passes, wherever in the screen it differs, and is
+/// logged by name with where and by how much, to be read; a second such draw fails the test, and so
+/// does a screen that hasn't drawn the same twice in a row in `maximumDraws` draws. The hosts are
+/// fresh, but the view and its models are the same objects in every draw, so a screen that changes
+/// them as it appears would log its first draw as the odd one. An element that moves, or a model
+/// that changes as it's drawn, has to be made still, as the spinner is (`Spinners`), not left to
+/// the drawing.
 @MainActor
 enum ScreenSnapshot {
     enum Variant: CaseIterable {
@@ -65,23 +80,178 @@ enum ScreenSnapshot {
         file: StaticString = #filePath, testName: String = #function, line: UInt = #line
     ) {
         for variant in variants {
+            let name = state + variant.suffix
             let shown =
                 view
                 .environment(\.colorScheme, variant == .dark ? .dark : .light)
                 .environment(\.dynamicTypeSize, variant == .xl ? .accessibility5 : .large)
                 .environment(\.locale, Locale(identifier: "en_US"))
-            let host = FramedHost(rootView: shown)
+            let (drawn, problem) = settled(
+                { FramedHost(rootView: shown) }, variant: variant, width: width, name: name)
+            if let problem { XCTFail("\(name): \(problem)", file: file, line: line) }
+            guard let drawn else { continue }
             assertSnapshot(
-                of: host as UIViewController,
+                of: drawn.image,
                 as: .image(
-                    on: variant.config(width: width),
-                    drawHierarchyInKeyWindow: true,
-                    perceptualPrecision: 0.98,
-                    traits: variant.traits),
-                named: state + variant.suffix, file: file, testName: testName, line: line)
-            Spinners.check(
-                host.view, busy: busy, "\(state)\(variant.suffix)", file: file, line: line)
+                    precision: 1, perceptualPrecision: 0.98, scale: variant.traits.displayScale),
+                named: name, file: file, testName: testName, line: line)
+            Spinners.check(drawn.host.view, busy: busy, name, file: file, line: line)
         }
+    }
+
+    /// The most draws made for one image. With at most one odd draw (above), four is enough for
+    /// the worst case, an odd second draw: the first, the odd one, then two the same.
+    static let maximumDraws = 4
+
+    /// How long one draw may take, SnapshotTesting's own `assertSnapshot` timeout.
+    static let drawTimeout: TimeInterval = 5
+
+    /// An image to compare with its reference, and the host that drew it.
+    struct Drawn {
+        let image: UIImage
+        let host: UIViewController
+    }
+
+    /// Draws a fresh host from `make` again and again, each as SnapshotTesting draws a view
+    /// controller in the key window, until two draws in a row are the same, byte for byte as
+    /// PNGs, or `maximumDraws` have been made, and gives the last draw. The problem, if any, is
+    /// for the test to fail with: no two draws in a row the same; more than one draw that differs
+    /// from the image it settled on; or a draw that gave no image or no PNG, which ends the
+    /// drawing there. When it takes more than two draws, or doesn't settle, it logs, through
+    /// `log`, one `warning:` line naming the image, with the start of each draw's SHA-256 in
+    /// order and, for each draw that differs from the last, how (`difference`). `drawing` stands
+    /// in for `draw` in `ScreenSnapshotSettleTests`, to make a draw give no image or no PNG.
+    static func settled(
+        _ make: () -> UIViewController, variant: Variant, width: CGFloat, name: String,
+        log: (String) -> Void = { print($0) }, drawing: ((UIViewController) -> UIImage?)? = nil
+    ) -> (drawn: Drawn?, problem: String?) {
+        var draws: [Data] = []
+        for number in 1...maximumDraws {
+            let host = make()
+            let drawn: UIImage?
+            if let drawing {
+                drawn = drawing(host)
+            } else {
+                drawn = draw(host, variant: variant, width: width)
+            }
+            guard let image = drawn else {
+                return (nil, "draw \(number) gave no image within \(drawTimeout) seconds")
+            }
+            guard let data = image.pngData() else {
+                return (nil, "draw \(number) couldn't be made a PNG")
+            }
+            let same = data == draws.last
+            draws.append(data)
+            guard same || number == maximumDraws else { continue }
+            let odd = draws.indices.filter { draws[$0] != data }
+            if number > 2 || !same {
+                log(warning(name, draws: draws, odd: odd, settled: same))
+            }
+            var problem: String?
+            if !same {
+                problem = "no two draws in a row were the same in \(maximumDraws) draws"
+            } else if odd.count > 1 {
+                problem = "\(odd.count) draws differed from the image it settled on, where one may"
+            }
+            return (Drawn(image: image, host: host), problem)
+        }
+        return (nil, "no draw was made")
+    }
+
+    /// The line `settled` logs: "warning: ScreenSnapshot <image>: settled after 3 draws, SHA-256
+    /// <each draw's first 4 bytes>; against the last draw, draw 1: <its difference>".
+    private static func warning(
+        _ name: String, draws: [Data], odd: [Int], settled: Bool
+    ) -> String {
+        let digests = draws.map { data in
+            SHA256.hash(data: data).prefix(4).map { String(format: "%02x", $0) }.joined()
+        }
+        let what = settled ? "settled after" : "didn't settle in"
+        let last = draws[draws.count - 1]
+        let differences = odd.map { "draw \($0 + 1): " + difference(draws[$0], last) }
+        return "warning: ScreenSnapshot \(name): \(what) \(draws.count) draws, SHA-256 "
+            + digests.joined(separator: " ") + "; against the last draw, "
+            + differences.joined(separator: "; ")
+    }
+
+    /// How two PNGs differ, decoded in sRGB: how many pixels differ, the rectangle that holds
+    /// them, in pixels of the image from its top left, and the largest difference in any channel,
+    /// out of 255. Enough to tell the glass, a bar's button or the tab bar, from the app's own
+    /// content.
+    static func difference(_ first: Data, _ second: Data) -> String {
+        guard let a = raster(first), let b = raster(second) else { return "not readable" }
+        guard a.width == b.width, a.height == b.height else {
+            return "sizes differ, \(a.width) by \(a.height) and \(b.width) by \(b.height)"
+        }
+        var pixels = 0
+        var largest = 0
+        var left = a.width
+        var top = a.height
+        var right = -1
+        var bottom = -1
+        a.bytes.withUnsafeBufferPointer { a8 in
+            b.bytes.withUnsafeBufferPointer { b8 in
+                for y in 0..<a.height {
+                    for x in 0..<a.width {
+                        let start = (y * a.width + x) * 4
+                        var gap = 0
+                        for channel in start..<start + 4 {
+                            gap = max(gap, abs(Int(a8[channel]) - Int(b8[channel])))
+                        }
+                        guard gap > 0 else { continue }
+                        pixels += 1
+                        largest = max(largest, gap)
+                        left = min(left, x)
+                        right = max(right, x)
+                        top = min(top, y)
+                        bottom = max(bottom, y)
+                    }
+                }
+            }
+        }
+        guard pixels > 0 else { return "no pixel differs" }
+        return "\(pixels) pixels in x \(left) to \(right), y \(top) to \(bottom), "
+            + "by at most \(largest)/255"
+    }
+
+    /// A PNG's pixels as 8-bit RGBA in sRGB, row by row from the top.
+    private static func raster(_ png: Data) -> (bytes: [UInt8], width: Int, height: Int)? {
+        guard let image = UIImage(data: png)?.cgImage,
+            let space = CGColorSpace(name: CGColorSpace.sRGB)
+        else { return nil }
+        let width = image.width
+        let height = image.height
+        var bytes = [UInt8](repeating: 0, count: width * height * 4)
+        let drawn = bytes.withUnsafeMutableBytes { buffer -> Bool in
+            guard
+                let context = CGContext(
+                    data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8,
+                    bytesPerRow: width * 4, space: space,
+                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+            else { return false }
+            context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+            return true
+        }
+        return drawn ? (bytes: bytes, width: width, height: height) : nil
+    }
+
+    /// One draw, as `assertSnapshot(of:as: .image(on:drawHierarchyInKeyWindow:…))` makes it:
+    /// nil if it gave no image in `drawTimeout`. It only draws; the comparison is
+    /// `assertSnapshot`'s, after `settled`.
+    private static func draw(
+        _ host: UIViewController, variant: Variant, width: CGFloat
+    ) -> UIImage? {
+        let strategy = Snapshotting<UIViewController, UIImage>.image(
+            on: variant.config(width: width), drawHierarchyInKeyWindow: true,
+            traits: variant.traits)
+        var image: UIImage?
+        let drawn = XCTestExpectation(description: "drawn")
+        strategy.snapshot(host).run {
+            image = $0
+            drawn.fulfill()
+        }
+        guard XCTWaiter.wait(for: [drawn], timeout: drawTimeout) == .completed else { return nil }
+        return image
     }
 }
 

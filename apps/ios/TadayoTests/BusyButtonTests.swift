@@ -4,8 +4,8 @@ import XCTest
 
 /// The busy primary button's size, place and reading (handoff 7's `busyPrimary`; frames 2 and 4;
 /// the sheet's "Primary action · busy"). A hosted test reads where the system's indicator is
-/// drawn and what VoiceOver finds, on every iOS the compatibility runs cover, so what the
-/// snapshots show on the newest is held on the others too. A snapshot judges how the button
+/// drawn and what VoiceOver finds, on both iOS versions each run tests, so what the snapshots
+/// show on iOS 27.2 is held on iOS 26.5 too. A snapshot judges how the button
 /// looks; these hold what it must be: 16 points at every text size, 8 before the label, the
 /// label and the button's height unmoved, a row of its own where the label can't fit, and
 /// the label unchanged with the value "In progress".

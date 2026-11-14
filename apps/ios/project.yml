@@ -16,7 +16,7 @@ name: Tadayo
 options:
   bundleIdPrefix: app.tadayo
   deploymentTarget:
-    iOS: "17.0"
+    iOS: "26.0"
   createIntermediateGroups: true
 configs:
   Debug: debug
@@ -166,8 +166,9 @@ targets:
   # Hosted unit tests (the keychain store, the launch and its screen's colour, the connections,
   # what the tabs announce, the root's waits and where its failure sits, the drop card's spoken
   # labels, the busy button's size and place and what VoiceOver finds on the sign-in screens, and
-  # TadayoDesign's string catalog), which also run on the iOS 17 and 18 compatibility runs: only
-  # targets ending in SnapshotTests are skipped there. The in-process accessibility reader and
+  # TadayoDesign's string catalog), which run on both iOS versions each `ios` run tests, 27.2 and
+  # 26.5; the targets ending in SnapshotTests run on iOS 27.2 alone (ADR-033;
+  # TadayoSnapshotTests/__Snapshots__/ios-version). The in-process accessibility reader and
   # the scripted services that put a screen mid-request are the snapshot tests' own files,
   # compiled here too.
   TadayoTests:

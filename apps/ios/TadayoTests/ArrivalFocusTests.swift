@@ -8,7 +8,7 @@ import XCTest
 /// Where the keyboard's focus goes as one of the root's screens arrives, read in a key window of
 /// the host's scene, as the app's own window is: through `RoutedView` over the UI tests' stand-in
 /// services (`UITestLaunch.fakeGraph`), so the screens come and go as they do in the app, or a
-/// screen alone in a fresh window. Hosted, so the iOS 17.5 and 18.6 runs read it too.
+/// screen alone in a fresh window. A hosted test, not a snapshot test, so iOS 26.5 reads it too.
 @MainActor
 final class ArrivalFocusTests: XCTestCase {
     /// A03 takes the focus as it replaces A02-age (IMPLEMENTATION.md: "A03-profile-empty is

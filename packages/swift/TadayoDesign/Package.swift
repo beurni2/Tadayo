@@ -1,4 +1,4 @@
-// swift-tools-version: 6.0
+// swift-tools-version: 6.2
 // TadayoDesign: the design system's tokens and the book's components (docs/TECH-DESIGN.md
 // section 4, "Design system"; book p34, p35). It imports SwiftUI, so it compiles only on macOS:
 // the `ios` workflow builds it with the app. Screens compose these; nothing defines its own colour
@@ -10,7 +10,7 @@ import PackageDescription
 let package = Package(
     name: "TadayoDesign",
     defaultLocalization: "en",
-    platforms: [.iOS(.v17)],
+    platforms: [.iOS(.v26)],
     products: [
         .library(name: "TadayoDesign", targets: ["TadayoDesign"])
     ],

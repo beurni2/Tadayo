@@ -1,4 +1,4 @@
-// swift-tools-version: 6.0
+// swift-tools-version: 6.2
 // TadayoAPI: the client of the Tadayo API, generated from packages/contracts/openapi.yaml on every
 // build by the Swift OpenAPI Generator's build plugin (docs/TECH-DESIGN.md section 4; ADR-005), so
 // the client and the server can't drift. Foundation and the OpenAPI runtime only: it runs and is
@@ -7,7 +7,7 @@ import PackageDescription
 
 let package = Package(
     name: "TadayoAPI",
-    platforms: [.iOS(.v17), .macOS(.v14)],
+    platforms: [.iOS(.v26), .macOS(.v14)],
     products: [
         .library(name: "TadayoAPI", targets: ["TadayoAPI"])
     ],

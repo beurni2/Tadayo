@@ -150,7 +150,10 @@ struct ProfileForm: View {
                 // and 18.6 and none on 26.5; with the keyboard as the footer's padding, none on
                 // all three; the UI tests found the field under Continue on 17.5 and 18.6 in
                 // runs 43358826308 and 43357265573). The same column scrolled once the keyboard
-                // was up reached the footer on all three either way.
+                // was up reached the footer on all three either way. iOS 17 and 18 are no longer
+                // supported (ADR-033); the padding stays, since it held on every version measured
+                // and the UI tests check it on iOS 27.2 and 26.5 (`docs/plans/ios-b0-ios26.md`,
+                // section 3).
                 .ignoresSafeArea(.keyboard, edges: .bottom)
                 // The foot at the column's visible bottom, so the field ends 8 + 8 = 16 above
                 // Continue, or its line, 12 under it, 8 + 8 + 8 = 24 (the line box, which reaches
