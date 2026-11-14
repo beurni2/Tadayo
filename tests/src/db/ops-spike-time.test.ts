@@ -84,20 +84,28 @@ describe("spike-time's club, written as tadayo_app", () => {
       expect(club.first.closeAt.equals(Temporal.Instant.from("2026-11-17T06:00:00Z"))).toBe(true);
       expect(club.first.revealAt.equals(monday.revealAt)).toBe(true);
 
-      const [row] = await tx<{ name: string; zone: string; activated: string; members: string; roster: string }[]>`
+      const [row] = await tx<
+        { name: string; zone: string; activated: string; members: string; roster: string; candidates: string }[]
+      >`
         SELECT c.name, c.timezone AS zone,
                (extract(epoch FROM c.activated_at) OPERATOR(pg_catalog.*) 1000000)::pg_catalog.int8::pg_catalog.text AS activated,
                (SELECT pg_catalog.string_agg(u.display_name || ':' || m.origin || ':' || m.state, ',' ORDER BY m.origin)
                   FROM app.memberships m JOIN app.users u ON u.id = m.user_id WHERE m.club_id = c.id) AS members,
                (SELECT pg_catalog.string_agg(r.state || ':' || r.version::pg_catalog.text, ',')
-                  FROM app.roster_revisions r WHERE r.club_id = c.id) AS roster
+                  FROM app.roster_revisions r WHERE r.club_id = c.id) AS roster,
+               (SELECT pg_catalog.string_agg(cd.state || ':' ||
+                         (extract(epoch FROM cd.ended_at) OPERATOR(pg_catalog.*) 1000000)::pg_catalog.int8::pg_catalog.text, ',')
+                  FROM app.candidates cd WHERE cd.club_id = c.id) AS candidates
           FROM app.clubs c WHERE c.id = ${club.id}`;
+      // Ben's candidate has joined, so Ben's club list holds the club and no invitation still open (listClubs
+      // leaves out an invitation once its candidate has joined), as joinByRoster leaves a world.
       expect(row).toEqual({
         name: "S5 1a2b3c4d",
         zone: ZONE,
         activated: microseconds(SAMPLE),
         members: "Ana:creator:active,Ben:roster:active",
         roster: "applied:2",
+        candidates: `joined:${microseconds(SAMPLE)}`,
       });
       const creator = await tx<{ user_id: string; interval_id: string }[]>`
         SELECT user_id, interval_id FROM app.memberships WHERE club_id = ${club.id} AND origin = 'creator'`;

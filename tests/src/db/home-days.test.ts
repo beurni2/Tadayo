@@ -303,7 +303,7 @@ describe("only the viewer's clubs, and only a scheduled day that isn't held, on 
       await leave(plain(tx), w.ben, named(w, "Ben"), new Date("2026-11-06T20:10:00Z"));
       await tx`
         UPDATE app.users SET state = 'deleting', deletion_requested_at = '2026-11-06T20:10:00Z' WHERE id = ${w.cleo.user}`;
-      // Ana, the star and a member, sees her one day at each edge; nobody else sees anything.
+      // Ana, the star and a member, sees Ana's one day at each edge; nobody else sees anything.
       const ana = [
         { open: null, next: w.day },
         { open: w.day, next: null },

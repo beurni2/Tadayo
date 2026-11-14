@@ -178,7 +178,7 @@ export async function writeClub(tx: postgres.TransactionSql, input: ClubInput): 
     INSERT INTO app.memberships (interval_id, club_id, user_id, origin, joined_at)
     VALUES (${ana}, ${club}, ${account.id}, 'creator', ${at}::pg_catalog.text::pg_catalog.timestamptz)`;
 
-  // Ben joins by one exact roster: Ana proposes it, Ben accepts it with his own link, Ana approves it
+  // Ben joins by one exact roster: Ana proposes it, Ben accepts it with Ben's own link, Ana approves it
   // (implicitly, as its proposer), and it's applied (T7).
   const revision = newId("rev");
   const candidate = newId("cand");
