@@ -25,14 +25,15 @@ import XCTest
 /// compared with its reference once, at the same precision as ever. Each draw is a fresh host's
 /// first, as before, so no screen is given longer to draw; the reference plays no part in when the
 /// drawing stops. On iOS 27.2 a draw of the system's glass, a bar's button or the tab bar, now and
-/// then comes out a little different, within 18 of 255 so far, and the next draw as usual; what
-/// decides it isn't known (`docs/LIMITATIONS.md`, 2026-11-14). So one draw that differs from the
-/// image the drawing settles on passes, wherever in the screen it differs, and is logged by name
-/// with where and by how much, to be read; a second such draw fails the test, and so does a screen
-/// that hasn't drawn the same twice in a row in `maximumDraws` draws. The hosts are fresh, but the
-/// view and its models are the same objects in every draw, so a screen that changes them as it
-/// appears would log its first draw as the odd one. An element that moves, or a model that changes
-/// as it's drawn, has to be made still, as the spinner is (`Spinners`), not left to the drawing.
+/// then comes out a little different, and the next draw as usual; what decides it isn't known, and
+/// `docs/LIMITATIONS.md` (2026-11-14) keeps the most it has differed by in a run. So one draw that
+/// differs from the image the drawing settles on passes, wherever in the screen it differs, and is
+/// logged by name with where and by how much, to be read; a second such draw fails the test, and so
+/// does a screen that hasn't drawn the same twice in a row in `maximumDraws` draws. The hosts are
+/// fresh, but the view and its models are the same objects in every draw, so a screen that changes
+/// them as it appears would log its first draw as the odd one. An element that moves, or a model
+/// that changes as it's drawn, has to be made still, as the spinner is (`Spinners`), not left to
+/// the drawing.
 @MainActor
 enum ScreenSnapshot {
     enum Variant: CaseIterable {
