@@ -24,6 +24,6 @@ The two misses:
   candidate left open, Ben's own club list would still show Ben's invitation (listClubs leaves one out only
   once its candidate has joined). The next commit makes the test read the candidate's state and end, and
   `rerun.log` is that breakage run again at `5cd3822` with the fixed test file copied in: caught
-  (`rerun-results.json`; its `out/` file is that re-run's, replacing the first run's, which had no failure).
+  (`rerun-results.json`). The re-run ran the serializer's breakage again too, with the same result, so both breakages' `out/` files are the re-run's, replacing the first run's (the candidate's first run had no failure, as `results.json` records).
 
 The breakages run again, all of them, at the PR's last head.
