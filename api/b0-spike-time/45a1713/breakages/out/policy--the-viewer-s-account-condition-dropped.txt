@@ -1,0 +1,50 @@
+$ (cd packages/domain && npx vitest run src/authorization/days.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/packages/domain
+
+ ❯ src/authorization/days.test.ts (17 tests | 1 failed) 16ms
+   ❯ only the viewer's clubs, and only a scheduled day that isn't held (T9, T14, T27; FQ50, FQ63; spec 22) (7)
+     × gives nothing to a stranger, a former member, an account that isn't active, or for no club at all 6ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+   Start at  01:40:51
+   Duration  152ms (tests 36%, import 33%, transform 23%, worker 8%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/authorization/days.test.ts > only the viewer's clubs, and only a scheduled day that isn't held (T9, T14, T27; FQ50, FQ63; spec 22) > gives nothing to a stranger, a former member, an account that isn't active, or for no club at all
+AssertionError: deleting: expected { open: null, next: { …(7) } } to deeply equal { open: null, next: null }
+
+- Expected
++ Received
+
+  {
+-   "next": null,
++   "next": {
++     "closeAt": "2026-11-08T01:00:00Z",
++     "clubId": "club_1",
++     "id": "occ_sat",
++     "localDate": "2026-11-07",
++     "phase": "collecting",
++     "revealAt": "2026-11-07T07:00:00Z",
++     "star": {
++       "avatarVersion": "v_ana",
++       "displayName": "Ana",
++       "membershipId": "mem_ana",
++     },
++   },
+    "open": null,
+  }
+
+ ❯ src/authorization/days.test.ts:117:87
+    115|         expect(choose({ ...CLUB, viewerInterval: ended }, instant), en…
+    116|       for (const account of ["deleting", "deleted", null] as const)
+    117|         expect(choose({ ...CLUB, viewerAccount: account }, instant), S…
+       |                                                                                       ^
+    118|           open: null,
+    119|           next: null,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

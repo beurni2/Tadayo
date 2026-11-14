@@ -1,0 +1,762 @@
+$ (cd tests && npx vitest run --config vitest.db.config.ts src/db/home-days.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tests
+
+ ❯ src/db/home-days.test.ts (20 tests | 19 failed) 403ms
+   ❯ which day is open and which is next, on Postgres, in every zone (T1, T2, T5; spec 05, 06; Q03, Q18) (7)
+     × in Europe/London, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 69ms
+     × in America/Santiago, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 21ms
+     × in Australia/Lord_Howe, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 19ms
+     × in Antarctica/Troll, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 21ms
+     × in Africa/Ouagadougou, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 20ms
+     × in America/New_York, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 21ms
+     × closes London's Saturdays at the jump over the missing 01:00 and at the first of the two 01:00s, and Santiago's after 19 and 17 hours 23ms
+   ❯ only the viewer's clubs, and only a scheduled day that isn't held, on Postgres (T9, T14, T27; FQ50, FQ63; spec 22) (7)
+     × gives a stranger, a former member, an account being deleted, an account with no club and an unknown account nothing 21ms
+     × gives a rejoined member the club's days on the new interval 23ms
+     × gives nothing in a suspended club, and a paused club's days as its rows hold them (FQ50) 17ms
+     × never chooses a suspended or cancelled day, and moves next on to the day after it 13ms
+     × holds a day whose star left a microsecond before its reveal, by leaving, a block or a deletion: never open, never next (FQ63) 12ms
+     × holds a day whose star asked to delete their account a microsecond before its reveal, whether the interval has ended or not (T27) 16ms
+     × keeps a day open to its close when its star leaves or asks to delete at its reveal or a microsecond after 13ms
+   ❯ the star as the club sees them, on Postgres (FQ75) (4)
+     × names an active star by their account's name now, with their ready avatar's version while the account is active 13ms
+     × keeps the name and drops the avatar while a deletion asked for during the open day hasn't ended the interval; then the name it ended with 15ms
+     × names a star who left during the open day by the name it ended with, whatever the account is called now 10ms
+     × leaves out an open day whose star has no name to show, and still gives the next day (B6, docs/LIMITATIONS.md) 7ms
+   ❯ a viewer of two clubs in two zones gets each club's own days (T14) (1)
+     × never mixes them: each club's days carry its own id, star and date, whatever the other's hold 17ms
+
+ Test Files  1 failed (1)
+      Tests  19 failed | 1 passed (20)
+   Start at  01:40:23
+   Duration  708ms (tests 88%, import 7%, transform 4%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 19 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/home-days.test.ts > which day is open and which is next, on Postgres, in every zone (T1, T2, T5; spec 05, 06; Q03, Q18) > in Europe/London, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order
+AssertionError: the SQL and the policy at 2026-03-27T06:59:59.999999Z: expected { open: null, next: { …(7) } } to deeply equal { open: null, next: { …(7) } }
+
+- Expected
++ Received
+
+@@ -1,11 +1,11 @@
+  {
+    "next": {
+      "closeAt": "2026-03-28T01:00:00Z",
+      "clubId": "club_3u1Um3_13pTqdnoHucFkIA",
+      "id": "occ_wa-s-tKv2PdzV1w55YwU3A",
+-     "localDate": "2026-03-27",
++     "localDate": "2026-03-28",
+      "phase": "collecting",
+      "revealAt": "2026-03-27T07:00:00Z",
+      "star": {
+        "avatarVersion": null,
+        "displayName": "Ben 2syORg",
+
+ ❯ both src/db/home-days.test.ts:203:66
+    201|   const sql = await bySql(tx, viewer, club, now);
+    202|   const policy = chooseDays(await factsOf(tx, viewer, club), now);
+    203|   expect(sql, `the SQL and the policy at ${instant.toString()}`).toEqu…
+       |                                                                  ^
+    204|   return sql;
+    205| }
+ ❯ ids src/db/home-days.test.ts:209:18
+ ❯ src/db/home-days.test.ts:241:20
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:232:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/19]⎯
+
+ FAIL  src/db/home-days.test.ts > which day is open and which is next, on Postgres, in every zone (T1, T2, T5; spec 05, 06; Q03, Q18) > in America/Santiago, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order
+AssertionError: the SQL and the policy at 2026-04-04T09:59:59.999999Z: expected { open: null, next: { …(7) } } to deeply equal { open: null, next: { …(7) } }
+
+- Expected
++ Received
+
+@@ -1,11 +1,11 @@
+  {
+    "next": {
+      "closeAt": "2026-04-05T05:00:00Z",
+      "clubId": "club_bhLf5i6A6mHqXGTQVQU0PQ",
+      "id": "occ_7YIKRNVHyFRMXKrGwiy-Jg",
+-     "localDate": "2026-04-04",
++     "localDate": "2026-04-05",
+      "phase": "collecting",
+      "revealAt": "2026-04-04T10:00:00Z",
+      "star": {
+        "avatarVersion": null,
+        "displayName": "Ana 9GBCSw",
+
+ ❯ both src/db/home-days.test.ts:203:66
+    201|   const sql = await bySql(tx, viewer, club, now);
+    202|   const policy = chooseDays(await factsOf(tx, viewer, club), now);
+    203|   expect(sql, `the SQL and the policy at ${instant.toString()}`).toEqu…
+       |                                                                  ^
+    204|   return sql;
+    205| }
+ ❯ ids src/db/home-days.test.ts:209:18
+ ❯ src/db/home-days.test.ts:241:20
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:232:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/19]⎯
+
+ FAIL  src/db/home-days.test.ts > which day is open and which is next, on Postgres, in every zone (T1, T2, T5; spec 05, 06; Q03, Q18) > in Australia/Lord_Howe, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order
+AssertionError: the SQL and the policy at 2026-04-03T19:59:59.999999Z: expected { open: null, next: { …(7) } } to deeply equal { open: null, next: { …(7) } }
+
+- Expected
++ Received
+
+@@ -1,11 +1,11 @@
+  {
+    "next": {
+      "closeAt": "2026-04-04T14:00:00Z",
+      "clubId": "club_0EefQ6hzkcAOJrxpb0Ak_Q",
+      "id": "occ_R5eBBWEqGsob--TPNpku9w",
+-     "localDate": "2026-04-04",
++     "localDate": "2026-04-05",
+      "phase": "collecting",
+      "revealAt": "2026-04-03T20:00:00Z",
+      "star": {
+        "avatarVersion": null,
+        "displayName": "Ana F6d5ew",
+
+ ❯ both src/db/home-days.test.ts:203:66
+    201|   const sql = await bySql(tx, viewer, club, now);
+    202|   const policy = chooseDays(await factsOf(tx, viewer, club), now);
+    203|   expect(sql, `the SQL and the policy at ${instant.toString()}`).toEqu…
+       |                                                                  ^
+    204|   return sql;
+    205| }
+ ❯ ids src/db/home-days.test.ts:209:18
+ ❯ src/db/home-days.test.ts:241:20
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:232:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/19]⎯
+
+ FAIL  src/db/home-days.test.ts > which day is open and which is next, on Postgres, in every zone (T1, T2, T5; spec 05, 06; Q03, Q18) > in Antarctica/Troll, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order
+AssertionError: the SQL and the policy at 2026-03-28T06:59:59.999999Z: expected { open: null, next: { …(7) } } to deeply equal { open: null, next: { …(7) } }
+
+- Expected
++ Received
+
+@@ -1,11 +1,11 @@
+  {
+    "next": {
+      "closeAt": "2026-03-29T01:00:00Z",
+      "clubId": "club_a4GyKP20bOSJ_V82COiwbg",
+      "id": "occ_pVyW0i8NdzacpPEibVsU6w",
+-     "localDate": "2026-03-28",
++     "localDate": "2026-03-29",
+      "phase": "collecting",
+      "revealAt": "2026-03-28T07:00:00Z",
+      "star": {
+        "avatarVersion": null,
+        "displayName": "Ana aJ95FQ",
+
+ ❯ both src/db/home-days.test.ts:203:66
+    201|   const sql = await bySql(tx, viewer, club, now);
+    202|   const policy = chooseDays(await factsOf(tx, viewer, club), now);
+    203|   expect(sql, `the SQL and the policy at ${instant.toString()}`).toEqu…
+       |                                                                  ^
+    204|   return sql;
+    205| }
+ ❯ ids src/db/home-days.test.ts:209:18
+ ❯ src/db/home-days.test.ts:241:20
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:232:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/19]⎯
+
+ FAIL  src/db/home-days.test.ts > which day is open and which is next, on Postgres, in every zone (T1, T2, T5; spec 05, 06; Q03, Q18) > in Africa/Ouagadougou, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order
+AssertionError: the SQL and the policy at 2026-03-28T06:59:59.999999Z: expected { open: null, next: { …(7) } } to deeply equal { open: null, next: { …(7) } }
+
+- Expected
++ Received
+
+@@ -1,11 +1,11 @@
+  {
+    "next": {
+      "closeAt": "2026-03-29T01:00:00Z",
+      "clubId": "club_T5Msa0Km-4doSf7kRd2LNQ",
+      "id": "occ_3yasvUzqm2Df-yoNWy5a4Q",
+-     "localDate": "2026-03-28",
++     "localDate": "2026-03-29",
+      "phase": "collecting",
+      "revealAt": "2026-03-28T07:00:00Z",
+      "star": {
+        "avatarVersion": null,
+        "displayName": "Ana CEjZlg",
+
+ ❯ both src/db/home-days.test.ts:203:66
+    201|   const sql = await bySql(tx, viewer, club, now);
+    202|   const policy = chooseDays(await factsOf(tx, viewer, club), now);
+    203|   expect(sql, `the SQL and the policy at ${instant.toString()}`).toEqu…
+       |                                                                  ^
+    204|   return sql;
+    205| }
+ ❯ ids src/db/home-days.test.ts:209:18
+ ❯ src/db/home-days.test.ts:241:20
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:232:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/19]⎯
+
+ FAIL  src/db/home-days.test.ts > which day is open and which is next, on Postgres, in every zone (T1, T2, T5; spec 05, 06; Q03, Q18) > in America/New_York, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order
+AssertionError: the SQL and the policy at 2026-11-09T11:59:59.999999Z: expected { open: null, next: { …(7) } } to deeply equal { open: null, next: { …(7) } }
+
+- Expected
++ Received
+
+@@ -1,11 +1,11 @@
+  {
+    "next": {
+      "closeAt": "2026-11-10T06:00:00Z",
+      "clubId": "club_avS3HXrpFpGxGiMutO75BQ",
+      "id": "occ_r2L0e0XEXrrlnSQNUY1FOg",
+-     "localDate": "2026-11-09",
++     "localDate": "2026-11-10",
+      "phase": "collecting",
+      "revealAt": "2026-11-09T12:00:00Z",
+      "star": {
+        "avatarVersion": null,
+        "displayName": "Ben STBftw",
+
+ ❯ both src/db/home-days.test.ts:203:66
+    201|   const sql = await bySql(tx, viewer, club, now);
+    202|   const policy = chooseDays(await factsOf(tx, viewer, club), now);
+    203|   expect(sql, `the SQL and the policy at ${instant.toString()}`).toEqu…
+       |                                                                  ^
+    204|   return sql;
+    205| }
+ ❯ ids src/db/home-days.test.ts:209:18
+ ❯ src/db/home-days.test.ts:241:20
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:232:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/19]⎯
+
+ FAIL  src/db/home-days.test.ts > which day is open and which is next, on Postgres, in every zone (T1, T2, T5; spec 05, 06; Q03, Q18) > closes London's Saturdays at the jump over the missing 01:00 and at the first of the two 01:00s, and Santiago's after 19 and 17 hours
+AssertionError: the SQL and the policy at 2026-03-28T07:00:00Z: expected { open: { …(7) }, next: { …(7) } } to deeply equal { open: { …(7) }, next: { …(7) } }
+
+- Expected
++ Received
+
+@@ -1,11 +1,11 @@
+  {
+    "next": {
+      "closeAt": "2026-10-25T00:00:00Z",
+      "clubId": "club_Si-n3vDtu7wzUaIRvNgYUA",
+      "id": "occ_J6-2eKlBZjZc-sySaH0COQ",
+-     "localDate": "2026-10-24",
++     "localDate": "2026-10-25",
+      "phase": "collecting",
+      "revealAt": "2026-10-24T06:00:00Z",
+      "star": {
+        "avatarVersion": null,
+        "displayName": "Ana qA-ScA",
+@@ -14,11 +14,11 @@
+    },
+    "open": {
+      "closeAt": "2026-03-29T01:00:00Z",
+      "clubId": "club_Si-n3vDtu7wzUaIRvNgYUA",
+      "id": "occ_JkjaKMthaIUQgsyaBGyXDQ",
+-     "localDate": "2026-03-28",
++     "localDate": "2026-03-29",
+      "phase": "open",
+      "revealAt": "2026-03-28T07:00:00Z",
+      "star": {
+        "avatarVersion": null,
+        "displayName": "Ana qA-ScA",
+
+ ❯ both src/db/home-days.test.ts:203:66
+    201|   const sql = await bySql(tx, viewer, club, now);
+    202|   const policy = chooseDays(await factsOf(tx, viewer, club), now);
+    203|   expect(sql, `the SQL and the policy at ${instant.toString()}`).toEqu…
+       |                                                                  ^
+    204|   return sql;
+    205| }
+ ❯ src/db/home-days.test.ts:284:17
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:273:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/19]⎯
+
+ FAIL  src/db/home-days.test.ts > only the viewer's clubs, and only a scheduled day that isn't held, on Postgres (T9, T14, T27; FQ50, FQ63; spec 22) > gives a stranger, a former member, an account being deleted, an account with no club and an unknown account nothing
+AssertionError: the SQL and the policy at 2026-11-07T06:59:59.999999Z: expected { open: null, next: { …(7) } } to deeply equal { open: null, next: { …(7) } }
+
+- Expected
++ Received
+
+@@ -1,11 +1,11 @@
+  {
+    "next": {
+      "closeAt": "2026-11-08T01:00:00Z",
+      "clubId": "club_sq_oDuF5ydSDSLFsFiewmA",
+      "id": "occ_eWkBhHyhHvT0a8ZzIyTkbA",
+-     "localDate": "2026-11-07",
++     "localDate": "2026-11-08",
+      "phase": "collecting",
+      "revealAt": "2026-11-07T07:00:00Z",
+      "star": {
+        "avatarVersion": null,
+        "displayName": "Ana",
+
+ ❯ both src/db/home-days.test.ts:203:66
+    201|   const sql = await bySql(tx, viewer, club, now);
+    202|   const policy = chooseDays(await factsOf(tx, viewer, club), now);
+    203|   expect(sql, `the SQL and the policy at ${instant.toString()}`).toEqu…
+       |                                                                  ^
+    204|   return sql;
+    205| }
+ ❯ ids src/db/home-days.test.ts:209:18
+ ❯ src/db/home-days.test.ts:314:16
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:300:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/19]⎯
+
+ FAIL  src/db/home-days.test.ts > only the viewer's clubs, and only a scheduled day that isn't held, on Postgres (T9, T14, T27; FQ50, FQ63; spec 22) > gives a rejoined member the club's days on the new interval
+AssertionError: the SQL and the policy at 2026-11-07T06:59:59.999999Z: expected { open: null, next: { …(7) } } to deeply equal { open: null, next: { …(7) } }
+
+- Expected
++ Received
+
+@@ -1,11 +1,11 @@
+  {
+    "next": {
+      "closeAt": "2026-11-08T01:00:00Z",
+      "clubId": "club_5b397HdV4DGXqiCTHZy_Ww",
+      "id": "occ_wtbPPZCQoUac_G2_n9p-qQ",
+-     "localDate": "2026-11-07",
++     "localDate": "2026-11-08",
+      "phase": "collecting",
+      "revealAt": "2026-11-07T07:00:00Z",
+      "star": {
+        "avatarVersion": null,
+        "displayName": "Ana",
+
+ ❯ both src/db/home-days.test.ts:203:66
+    201|   const sql = await bySql(tx, viewer, club, now);
+    202|   const policy = chooseDays(await factsOf(tx, viewer, club), now);
+    203|   expect(sql, `the SQL and the policy at ${instant.toString()}`).toEqu…
+       |                                                                  ^
+    204|   return sql;
+    205| }
+ ❯ ids src/db/home-days.test.ts:209:18
+ ❯ src/db/home-days.test.ts:335:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:324:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/19]⎯
+
+ FAIL  src/db/home-days.test.ts > only the viewer's clubs, and only a scheduled day that isn't held, on Postgres (T9, T14, T27; FQ50, FQ63; spec 22) > gives nothing in a suspended club, and a paused club's days as its rows hold them (FQ50)
+AssertionError: the SQL and the policy at 2026-11-07T06:59:59.999999Z: expected { open: null, next: { …(7) } } to deeply equal { open: null, next: { …(7) } }
+
+- Expected
++ Received
+
+@@ -1,11 +1,11 @@
+  {
+    "next": {
+      "closeAt": "2026-11-08T01:00:00Z",
+      "clubId": "club_twIESQGZAP7LYtA--a4G8A",
+      "id": "occ_n9T8mO8LNRKz-66pDzxvDA",
+-     "localDate": "2026-11-07",
++     "localDate": "2026-11-08",
+      "phase": "collecting",
+      "revealAt": "2026-11-07T07:00:00Z",
+      "star": {
+        "avatarVersion": null,
+        "displayName": "Ana",
+
+ ❯ both src/db/home-days.test.ts:203:66
+    201|   const sql = await bySql(tx, viewer, club, now);
+    202|   const policy = chooseDays(await factsOf(tx, viewer, club), now);
+    203|   expect(sql, `the SQL and the policy at ${instant.toString()}`).toEqu…
+       |                                                                  ^
+    204|   return sql;
+    205| }
+ ❯ ids src/db/home-days.test.ts:209:18
+ ❯ src/db/home-days.test.ts:345:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:341:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/19]⎯
+
+ FAIL  src/db/home-days.test.ts > only the viewer's clubs, and only a scheduled day that isn't held, on Postgres (T9, T14, T27; FQ50, FQ63; spec 22) > never chooses a suspended or cancelled day, and moves next on to the day after it
+AssertionError: the SQL and the policy at 2026-11-07T07:00:00Z: expected { open: { …(7) }, next: { …(7) } } to deeply equal { open: { …(7) }, next: { …(7) } }
+
+- Expected
++ Received
+
+@@ -1,11 +1,11 @@
+  {
+    "next": {
+      "closeAt": "2026-11-10T01:00:00Z",
+      "clubId": "club_M8x6k_WL1xZkaYpg4jjcjg",
+      "id": "occ_rFQnt1lOkIeOFaC-47BsOg",
+-     "localDate": "2026-11-09",
++     "localDate": "2026-11-10",
+      "phase": "collecting",
+      "revealAt": "2026-11-09T07:00:00Z",
+      "star": {
+        "avatarVersion": null,
+        "displayName": "Ben P5749A",
+@@ -14,11 +14,11 @@
+    },
+    "open": {
+      "closeAt": "2026-11-08T01:00:00Z",
+      "clubId": "club_M8x6k_WL1xZkaYpg4jjcjg",
+      "id": "occ_vWl0LXBoUtwluYJxWd8s6w",
+-     "localDate": "2026-11-07",
++     "localDate": "2026-11-08",
+      "phase": "open",
+      "revealAt": "2026-11-07T07:00:00Z",
+      "star": {
+        "avatarVersion": null,
+        "displayName": "Ana P5749A",
+
+ ❯ both src/db/home-days.test.ts:203:66
+    201|   const sql = await bySql(tx, viewer, club, now);
+    202|   const policy = chooseDays(await factsOf(tx, viewer, club), now);
+    203|   expect(sql, `the SQL and the policy at ${instant.toString()}`).toEqu…
+       |                                                                  ^
+    204|   return sql;
+    205| }
+ ❯ ids src/db/home-days.test.ts:209:18
+ ❯ src/db/home-days.test.ts:357:16
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:354:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/19]⎯
+
+ FAIL  src/db/home-days.test.ts > only the viewer's clubs, and only a scheduled day that isn't held, on Postgres (T9, T14, T27; FQ50, FQ63; spec 22) > holds a day whose star left a microsecond before its reveal, by leaving, a block or a deletion: never open, never next (FQ63)
+AssertionError: the SQL and the policy at 2026-11-07T06:59:59.999999Z: expected { open: null, next: { …(7) } } to deeply equal { open: null, next: { …(7) } }
+
+- Expected
++ Received
+
+@@ -1,11 +1,11 @@
+  {
+    "next": {
+      "closeAt": "2026-11-10T01:00:00Z",
+      "clubId": "club_x5mCvNEk39nIpDb0vBkokA",
+      "id": "occ_rDsfm8J6ZUhlhLyF-TpIYg",
+-     "localDate": "2026-11-09",
++     "localDate": "2026-11-10",
+      "phase": "collecting",
+      "revealAt": "2026-11-09T07:00:00Z",
+      "star": {
+        "avatarVersion": null,
+        "displayName": "Ben ZAPaeg",
+
+ ❯ both src/db/home-days.test.ts:203:66
+    201|   const sql = await bySql(tx, viewer, club, now);
+    202|   const policy = chooseDays(await factsOf(tx, viewer, club), now);
+    203|   expect(sql, `the SQL and the policy at ${instant.toString()}`).toEqu…
+       |                                                                  ^
+    204|   return sql;
+    205| }
+ ❯ ids src/db/home-days.test.ts:209:18
+ ❯ src/db/home-days.test.ts:375:18
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:367:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/19]⎯
+
+ FAIL  src/db/home-days.test.ts > only the viewer's clubs, and only a scheduled day that isn't held, on Postgres (T9, T14, T27; FQ50, FQ63; spec 22) > holds a day whose star asked to delete their account a microsecond before its reveal, whether the interval has ended or not (T27)
+AssertionError: the SQL and the policy at 2026-11-07T06:59:59.999999Z: expected { open: null, next: { …(7) } } to deeply equal { open: null, next: { …(7) } }
+
+- Expected
++ Received
+
+@@ -1,11 +1,11 @@
+  {
+    "next": {
+      "closeAt": "2026-11-10T01:00:00Z",
+      "clubId": "club_ch8uvT76NXR1dPQjgdkSzA",
+      "id": "occ_fMrPSOrg2XnNQFa-oYmGxw",
+-     "localDate": "2026-11-09",
++     "localDate": "2026-11-10",
+      "phase": "collecting",
+      "revealAt": "2026-11-09T07:00:00Z",
+      "star": {
+        "avatarVersion": null,
+        "displayName": "Ben iaGNwQ",
+
+ ❯ both src/db/home-days.test.ts:203:66
+    201|   const sql = await bySql(tx, viewer, club, now);
+    202|   const policy = chooseDays(await factsOf(tx, viewer, club), now);
+    203|   expect(sql, `the SQL and the policy at ${instant.toString()}`).toEqu…
+       |                                                                  ^
+    204|   return sql;
+    205| }
+ ❯ ids src/db/home-days.test.ts:209:18
+ ❯ src/db/home-days.test.ts:399:18
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:391:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/19]⎯
+
+ FAIL  src/db/home-days.test.ts > only the viewer's clubs, and only a scheduled day that isn't held, on Postgres (T9, T14, T27; FQ50, FQ63; spec 22) > keeps a day open to its close when its star leaves or asks to delete at its reveal or a microsecond after
+AssertionError: the SQL and the policy at 2026-11-08T00:59:59.999999Z: expected { open: { …(7) }, next: null } to deeply equal { open: { …(7) }, next: null }
+
+- Expected
++ Received
+
+@@ -2,11 +2,11 @@
+    "next": null,
+    "open": {
+      "closeAt": "2026-11-08T01:00:00Z",
+      "clubId": "club_dz3-UvMHSC305mzpNDvQ0w",
+      "id": "occ_G_UzqsAGcp3X8skScZQf4A",
+-     "localDate": "2026-11-07",
++     "localDate": "2026-11-08",
+      "phase": "open",
+      "revealAt": "2026-11-07T07:00:00Z",
+      "star": {
+        "avatarVersion": null,
+        "displayName": "Ana",
+
+ ❯ both src/db/home-days.test.ts:203:66
+    201|   const sql = await bySql(tx, viewer, club, now);
+    202|   const policy = chooseDays(await factsOf(tx, viewer, club), now);
+    203|   expect(sql, `the SQL and the policy at ${instant.toString()}`).toEqu…
+       |                                                                  ^
+    204|   return sql;
+    205| }
+ ❯ ids src/db/home-days.test.ts:209:18
+ ❯ src/db/home-days.test.ts:420:18
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:410:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/19]⎯
+
+ FAIL  src/db/home-days.test.ts > the star as the club sees them, on Postgres (FQ75) > names an active star by their account's name now, with their ready avatar's version while the account is active
+AssertionError: the SQL and the policy at 2026-11-07T10:00:00Z: expected { open: { …(7) }, next: null } to deeply equal { open: { …(7) }, next: null }
+
+- Expected
++ Received
+
+@@ -2,11 +2,11 @@
+    "next": null,
+    "open": {
+      "closeAt": "2026-11-08T01:00:00Z",
+      "clubId": "club_kwwVHKAWZ4ryR_wWStiHYw",
+      "id": "occ_NcaDxlXr4QsqpeLJQ-YJNQ",
+-     "localDate": "2026-11-07",
++     "localDate": "2026-11-08",
+      "phase": "open",
+      "revealAt": "2026-11-07T07:00:00Z",
+      "star": {
+        "avatarVersion": null,
+        "displayName": "Ana",
+
+ ❯ both src/db/home-days.test.ts:203:66
+    201|   const sql = await bySql(tx, viewer, club, now);
+    202|   const policy = chooseDays(await factsOf(tx, viewer, club), now);
+    203|   expect(sql, `the SQL and the policy at ${instant.toString()}`).toEqu…
+       |                                                                  ^
+    204|   return sql;
+    205| }
+ ❯ src/db/home-days.test.ts:435:15
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:433:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/19]⎯
+
+ FAIL  src/db/home-days.test.ts > the star as the club sees them, on Postgres (FQ75) > keeps the name and drops the avatar while a deletion asked for during the open day hasn't ended the interval; then the name it ended with
+AssertionError: the SQL and the policy at 2026-11-07T10:00:00Z: expected { open: { …(7) }, next: null } to deeply equal { open: { …(7) }, next: null }
+
+- Expected
++ Received
+
+@@ -2,11 +2,11 @@
+    "next": null,
+    "open": {
+      "closeAt": "2026-11-08T01:00:00Z",
+      "clubId": "club_5_1tRfRFyFjkEgwKc_srBA",
+      "id": "occ_6919_eh-qJD-hVRUIfgWAw",
+-     "localDate": "2026-11-07",
++     "localDate": "2026-11-08",
+      "phase": "open",
+      "revealAt": "2026-11-07T07:00:00Z",
+      "star": {
+        "avatarVersion": null,
+        "displayName": "Ana",
+
+ ❯ both src/db/home-days.test.ts:203:66
+    201|   const sql = await bySql(tx, viewer, club, now);
+    202|   const policy = chooseDays(await factsOf(tx, viewer, club), now);
+    203|   expect(sql, `the SQL and the policy at ${instant.toString()}`).toEqu…
+       |                                                                  ^
+    204|   return sql;
+    205| }
+ ❯ src/db/home-days.test.ts:456:15
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:451:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/19]⎯
+
+ FAIL  src/db/home-days.test.ts > the star as the club sees them, on Postgres (FQ75) > names a star who left during the open day by the name it ended with, whatever the account is called now
+AssertionError: the SQL and the policy at 2026-11-07T10:00:00Z: expected { open: { …(7) }, next: null } to deeply equal { open: { …(7) }, next: null }
+
+- Expected
++ Received
+
+@@ -2,11 +2,11 @@
+    "next": null,
+    "open": {
+      "closeAt": "2026-11-08T01:00:00Z",
+      "clubId": "club_mq0Pn5X61OjPK-zRLzk-yA",
+      "id": "occ_2l_cDBvARsa-JUVOaxNvZg",
+-     "localDate": "2026-11-07",
++     "localDate": "2026-11-08",
+      "phase": "open",
+      "revealAt": "2026-11-07T07:00:00Z",
+      "star": {
+        "avatarVersion": null,
+        "displayName": "Ana L",
+
+ ❯ both src/db/home-days.test.ts:203:66
+    201|   const sql = await bySql(tx, viewer, club, now);
+    202|   const policy = chooseDays(await factsOf(tx, viewer, club), now);
+    203|   expect(sql, `the SQL and the policy at ${instant.toString()}`).toEqu…
+       |                                                                  ^
+    204|   return sql;
+    205| }
+ ❯ src/db/home-days.test.ts:477:15
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:473:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/19]⎯
+
+ FAIL  src/db/home-days.test.ts > the star as the club sees them, on Postgres (FQ75) > leaves out an open day whose star has no name to show, and still gives the next day (B6, docs/LIMITATIONS.md)
+AssertionError: the SQL and the policy at 2026-11-07T10:00:00Z: expected { open: null, next: { …(7) } } to deeply equal { open: null, next: { …(7) } }
+
+- Expected
++ Received
+
+@@ -1,11 +1,11 @@
+  {
+    "next": {
+      "closeAt": "2026-11-10T01:00:00Z",
+      "clubId": "club_oDR7O0ld2HX6N6S2oThkFQ",
+      "id": "occ_nk9VUd0IYpeMP9HcTcYPvg",
+-     "localDate": "2026-11-09",
++     "localDate": "2026-11-10",
+      "phase": "collecting",
+      "revealAt": "2026-11-09T07:00:00Z",
+      "star": {
+        "avatarVersion": null,
+        "displayName": "Ben ImsTuQ",
+
+ ❯ both src/db/home-days.test.ts:203:66
+    201|   const sql = await bySql(tx, viewer, club, now);
+    202|   const policy = chooseDays(await factsOf(tx, viewer, club), now);
+    203|   expect(sql, `the SQL and the policy at ${instant.toString()}`).toEqu…
+       |                                                                  ^
+    204|   return sql;
+    205| }
+ ❯ ids src/db/home-days.test.ts:209:18
+ ❯ src/db/home-days.test.ts:491:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:486:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/19]⎯
+
+ FAIL  src/db/home-days.test.ts > a viewer of two clubs in two zones gets each club's own days (T14) > never mixes them: each club's days carry its own id, star and date, whatever the other's hold
+AssertionError: the SQL and the policy at 2026-11-07T08:00:00Z: expected { open: { …(7) }, next: null } to deeply equal { open: { …(7) }, next: null }
+
+- Expected
++ Received
+
+@@ -2,11 +2,11 @@
+    "next": null,
+    "open": {
+      "closeAt": "2026-11-08T01:00:00Z",
+      "clubId": "club_hi5ARgGX801tGBN3Y2bYpQ",
+      "id": "occ_7zz9a6UlXK_3L8hKlMyHIw",
+-     "localDate": "2026-11-07",
++     "localDate": "2026-11-08",
+      "phase": "open",
+      "revealAt": "2026-11-07T07:00:00Z",
+      "star": {
+        "avatarVersion": null,
+        "displayName": "Ana",
+
+ ❯ both src/db/home-days.test.ts:203:66
+    201|   const sql = await bySql(tx, viewer, club, now);
+    202|   const policy = chooseDays(await factsOf(tx, viewer, club), now);
+    203|   expect(sql, `the SQL and the policy at ${instant.toString()}`).toEqu…
+       |                                                                  ^
+    204|   return sql;
+    205| }
+ ❯ both2 src/db/home-days.test.ts:512:17
+ ❯ src/db/home-days.test.ts:515:19
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:498:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/19]⎯
+

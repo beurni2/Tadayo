@@ -1,0 +1,37 @@
+$ (cd tests && npx vitest run --config vitest.privacy.config.ts src/privacy/account.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tests
+
+ ❯ src/privacy/account.test.ts (23 tests | 1 failed) 29ms
+   ❯ each club's open day and next day, from the rows and the time alone (daysOf; T1, T5; FQ50, FQ63, FQ75) (5)
+     × makes clubsJudge refuse a missing day, a day where there is none, another phase, another instant and an extra key 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  01:41:04
+   Duration  470ms (import 67%, transform 16%, tests 14%, worker 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/account.test.ts > each club's open day and next day, from the rows and the time alone (daysOf; T1, T5; FQ50, FQ63, FQ75) > makes clubsJudge refuse a missing day, a day where there is none, another phase, another instant and an extra key
+AssertionError: expected [] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+- [
+-   "a club's open_day is nothing, not {\"id\":\"occ_sat\",\"club_id\":\"clb_one\",\"star\":{\"membership_id\":\"itv_ana\",\"display_name\":\"Ana\",\"avatar_version\":\"v_ana\"},\"local_date\":\"2026-11-07\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"close_at\":\"2026-11-08T01:00:00Z\",\"phase\":\"open\"}",
+- ]
++ []
+
+ ❯ src/privacy/account.test.ts:386:47
+    384|     // Keys in another order are the same answer.
+    385|     expect(judge(listed({ next_day: next, open_day: Object.fromEntries…
+    386|     expect(judge(listed({ next_day: next }))).toEqual([`a club's open_…
+       |                                               ^
+    387|     expect(judge(listed({ open_day: open, next_day: next, extra: 1 }))…
+    388|     const wrong = [
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,109 @@
+$ (cd packages/domain && npx vitest run src/authorization/days.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/packages/domain
+
+ ❯ src/authorization/days.test.ts (17 tests | 4 failed) 22ms
+   ❯ which day is open and which is next, by the server's time alone (T1, T5; spec 06) (4)
+     × opens the day at reveal_at exactly, not a microsecond before, and keeps it open until a microsecond before close_at 8ms
+     × gives the earliest day to open as next: the day itself while it collects, the one after while it is open and after it closes 1ms
+   ❯ only the viewer's clubs, and only a scheduled day that isn't held (T9, T14, T27; FQ50, FQ63; spec 22) (7)
+     × gives nothing in a suspended club, and keeps a club that isn't suspended to the days its rows hold (FQ50) 1ms
+     × keeps a day open to its close when its star leaves or asks to delete at its reveal or after 1ms
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 13 passed (17)
+   Start at  01:40:46
+   Duration  183ms (tests 44%, import 30%, transform 19%, worker 8%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/authorization/days.test.ts > which day is open and which is next, by the server's time alone (T1, T5; spec 06) > opens the day at reveal_at exactly, not a microsecond before, and keeps it open until a microsecond before close_at
+AssertionError: expected { open: 'occ_sat', next: 'occ_mon' } to deeply equal { open: null, next: 'occ_mon' }
+
+- Expected
++ Received
+
+  {
+    "next": "occ_mon",
+-   "open": null,
++   "open": "occ_sat",
+  }
+
+ ❯ src/authorization/days.test.ts:65:42
+     63|     expect(ids(choose(CLUB, SAT.reveal))).toEqual({ open: "occ_sat", n…
+     64|     expect(ids(choose(CLUB, µs(SAT.close, -1)))).toEqual({ open: "occ_…
+     65|     expect(ids(choose(CLUB, SAT.close))).toEqual({ open: null, next: "…
+       |                                          ^
+     66|   });
+     67|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/authorization/days.test.ts > which day is open and which is next, by the server's time alone (T1, T5; spec 06) > gives the earliest day to open as next: the day itself while it collects, the one after while it is open and after it closes
+AssertionError: expected { open: 'occ_mon', next: null } to deeply equal { open: null, next: null }
+
+- Expected
++ Received
+
+  {
+    "next": null,
+-   "open": null,
++   "open": "occ_mon",
+  }
+
+ ❯ src/authorization/days.test.ts:74:42
+     72|     expect(ids(choose(CLUB, MON.reveal))).toEqual({ open: "occ_mon", n…
+     73|     // After the last day there is no next: nothing is invented (T49).
+     74|     expect(ids(choose(CLUB, MON.close))).toEqual({ open: null, next: n…
+       |                                          ^
+     75|     expect(ids(choose({ ...CLUB, days: [] }, SAT.reveal))).toEqual({ o…
+     76|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/authorization/days.test.ts > only the viewer's clubs, and only a scheduled day that isn't held (T9, T14, T27; FQ50, FQ63; spec 22) > gives nothing in a suspended club, and keeps a club that isn't suspended to the days its rows hold (FQ50)
+AssertionError: 2026-11-08T01:00:00Z: expected { open: 'occ_sat', next: 'occ_mon' } to deeply equal { open: null, next: 'occ_mon' }
+
+- Expected
++ Received
+
+  {
+    "next": "occ_mon",
+-   "open": null,
++   "open": "occ_sat",
+  }
+
+ ❯ src/authorization/days.test.ts:136:92
+    134|         next: null,
+    135|       });
+    136|       expect(ids(choose({ ...CLUB, clubSuspendedAt: null }, instant)),…
+       |                                                                                            ^
+    137|     });
+    138|   });
+ ❯ src/authorization/days.test.ts:131:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/authorization/days.test.ts > only the viewer's clubs, and only a scheduled day that isn't held (T9, T14, T27; FQ50, FQ63; spec 22) > keeps a day open to its close when its star leaves or asks to delete at its reveal or after
+AssertionError: expected { open: 'occ_sat', next: null } to deeply equal { open: null, next: null }
+
+- Expected
++ Received
+
+  {
+    "next": null,
+-   "open": null,
++   "open": "occ_sat",
+  }
+
+ ❯ src/authorization/days.test.ts:180:66
+    178|       for (const day of [left, deleting]) {
+    179|         expect(ids(choose({ ...CLUB, days: [day] }, µs(SAT.close, -1))…
+    180|         expect(ids(choose({ ...CLUB, days: [day] }, SAT.close))).toEqu…
+       |                                                                  ^
+    181|       }
+    182|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+

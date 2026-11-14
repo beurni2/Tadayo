@@ -1,0 +1,125 @@
+$ (cd tests && npx vitest run --config vitest.db.config.ts src/db/home-days.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tests
+
+ ❯ src/db/home-days.test.ts (20 tests | 3 failed) 699ms
+   ❯ only the viewer's clubs, and only a scheduled day that isn't held, on Postgres (T9, T14, T27; FQ50, FQ63; spec 22) (7)
+     × keeps a day open to its close when its star leaves or asks to delete at its reveal or a microsecond after 18ms
+   ❯ the star as the club sees them, on Postgres (FQ75) (4)
+     × keeps the name and drops the avatar while a deletion asked for during the open day hasn't ended the interval; then the name it ended with 13ms
+     × names a star who left during the open day by the name it ended with, whatever the account is called now 14ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 17 passed (20)
+   Start at  01:40:35
+   Duration  1.01s (tests 90%, import 6%, transform 3%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/home-days.test.ts > only the viewer's clubs, and only a scheduled day that isn't held, on Postgres (T9, T14, T27; FQ50, FQ63; spec 22) > keeps a day open to its close when its star leaves or asks to delete at its reveal or a microsecond after
+AssertionError: the SQL and the policy at 2026-11-08T00:59:59.999999Z: expected { open: { …(7) }, next: null } to deeply equal { open: { …(7) }, next: null }
+
+- Expected
++ Received
+
+@@ -7,10 +7,10 @@
+      "localDate": "2026-11-07",
+      "phase": "open",
+      "revealAt": "2026-11-07T07:00:00Z",
+      "star": {
+        "avatarVersion": null,
+-       "displayName": "Ana",
++       "displayName": "Ana IS_44Q",
+        "membershipId": "mem_TwA63v_F986_wfS2Zbc-FA",
+      },
+    },
+  }
+
+ ❯ both src/db/home-days.test.ts:203:66
+    201|   const sql = await bySql(tx, viewer, club, now);
+    202|   const policy = chooseDays(await factsOf(tx, viewer, club), now);
+    203|   expect(sql, `the SQL and the policy at ${instant.toString()}`).toEqu…
+       |                                                                  ^
+    204|   return sql;
+    205| }
+ ❯ ids src/db/home-days.test.ts:209:18
+ ❯ src/db/home-days.test.ts:420:18
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:410:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/db/home-days.test.ts > the star as the club sees them, on Postgres (FQ75) > keeps the name and drops the avatar while a deletion asked for during the open day hasn't ended the interval; then the name it ended with
+AssertionError: the SQL and the policy at 2026-11-07T10:00:00Z: expected { open: { …(7) }, next: null } to deeply equal { open: { …(7) }, next: null }
+
+- Expected
++ Received
+
+@@ -7,10 +7,10 @@
+      "localDate": "2026-11-07",
+      "phase": "open",
+      "revealAt": "2026-11-07T07:00:00Z",
+      "star": {
+        "avatarVersion": null,
+-       "displayName": "Ana B",
++       "displayName": "Ana",
+        "membershipId": "mem__HmmgL8RJYJysizNDxOTYw",
+      },
+    },
+  }
+
+ ❯ both src/db/home-days.test.ts:203:66
+    201|   const sql = await bySql(tx, viewer, club, now);
+    202|   const policy = chooseDays(await factsOf(tx, viewer, club), now);
+    203|   expect(sql, `the SQL and the policy at ${instant.toString()}`).toEqu…
+       |                                                                  ^
+    204|   return sql;
+    205| }
+ ❯ src/db/home-days.test.ts:464:15
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:451:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/db/home-days.test.ts > the star as the club sees them, on Postgres (FQ75) > names a star who left during the open day by the name it ended with, whatever the account is called now
+AssertionError: the SQL and the policy at 2026-11-07T10:00:00Z: expected { open: { …(7) }, next: null } to deeply equal { open: { …(7) }, next: null }
+
+- Expected
++ Received
+
+@@ -7,10 +7,10 @@
+      "localDate": "2026-11-07",
+      "phase": "open",
+      "revealAt": "2026-11-07T07:00:00Z",
+      "star": {
+        "avatarVersion": null,
+-       "displayName": "Ana L",
++       "displayName": "Someone",
+        "membershipId": "mem_C8DjSbvwVLDAEo7ZIdE2XQ",
+      },
+    },
+  }
+
+ ❯ both src/db/home-days.test.ts:203:66
+    201|   const sql = await bySql(tx, viewer, club, now);
+    202|   const policy = chooseDays(await factsOf(tx, viewer, club), now);
+    203|   expect(sql, `the SQL and the policy at ${instant.toString()}`).toEqu…
+       |                                                                  ^
+    204|   return sql;
+    205| }
+ ❯ src/db/home-days.test.ts:477:15
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:473:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

@@ -1,0 +1,62 @@
+$ (cd tests && npx vitest run --config vitest.db.config.ts src/db/home-days.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tests
+
+ ❯ src/db/home-days.test.ts (20 tests | 1 failed) 626ms
+   ❯ only the viewer's clubs, and only a scheduled day that isn't held, on Postgres (T9, T14, T27; FQ50, FQ63; spec 22) (7)
+     × holds a day whose star left a microsecond before its reveal, by leaving, a block or a deletion: never open, never next (FQ63) 15ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  01:40:40
+   Duration  918ms (tests 90%, import 6%, transform 4%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/home-days.test.ts > only the viewer's clubs, and only a scheduled day that isn't held, on Postgres (T9, T14, T27; FQ50, FQ63; spec 22) > holds a day whose star left a microsecond before its reveal, by leaving, a block or a deletion: never open, never next (FQ63)
+AssertionError: the SQL and the policy at 2026-11-07T06:59:59.999999Z: expected { open: null, next: { …(7) } } to deeply equal { open: null, next: { …(7) } }
+
+- Expected
++ Received
+
+  {
+    "next": {
+-     "closeAt": "2026-11-10T01:00:00Z",
++     "closeAt": "2026-11-08T01:00:00Z",
+      "clubId": "club_X036hKMc4-k9V9EsvKzbPQ",
+-     "id": "occ_dVZlxrnP8Q17ziJpM6lcSA",
+-     "localDate": "2026-11-09",
++     "id": "occ_WNYZBpJQPFEvpoXZU6X82w",
++     "localDate": "2026-11-07",
+      "phase": "collecting",
+-     "revealAt": "2026-11-09T07:00:00Z",
++     "revealAt": "2026-11-07T07:00:00Z",
+      "star": {
+        "avatarVersion": null,
+-       "displayName": "Ben Kjqf3Q",
+-       "membershipId": "mem_Q5MVxfuSkC7M3KnDFT4N_Q",
++       "displayName": "Ana",
++       "membershipId": "mem_XXfoFWa80Qh7BPzS3E1BwQ",
+      },
+    },
+    "open": null,
+  }
+
+ ❯ both src/db/home-days.test.ts:203:66
+    201|   const sql = await bySql(tx, viewer, club, now);
+    202|   const policy = chooseDays(await factsOf(tx, viewer, club), now);
+    203|   expect(sql, `the SQL and the policy at ${instant.toString()}`).toEqu…
+       |                                                                  ^
+    204|   return sql;
+    205| }
+ ❯ ids src/db/home-days.test.ts:209:18
+ ❯ src/db/home-days.test.ts:375:18
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:367:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

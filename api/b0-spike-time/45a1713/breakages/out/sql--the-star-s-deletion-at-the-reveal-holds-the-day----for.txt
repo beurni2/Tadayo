@@ -1,0 +1,57 @@
+$ (cd tests && npx vitest run --config vitest.db.config.ts src/db/home-days.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tests
+
+ ❯ src/db/home-days.test.ts (20 tests | 1 failed) 650ms
+   ❯ only the viewer's clubs, and only a scheduled day that isn't held, on Postgres (T9, T14, T27; FQ50, FQ63; spec 22) (7)
+     × keeps a day open to its close when its star leaves or asks to delete at its reveal or a microsecond after 23ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  01:40:44
+   Duration  967ms (tests 90%, import 6%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/home-days.test.ts > only the viewer's clubs, and only a scheduled day that isn't held, on Postgres (T9, T14, T27; FQ50, FQ63; spec 22) > keeps a day open to its close when its star leaves or asks to delete at its reveal or a microsecond after
+AssertionError: the SQL and the policy at 2026-11-08T00:59:59.999999Z: expected { open: null, next: null } to deeply equal { open: { …(7) }, next: null }
+
+- Expected
++ Received
+
+  {
+    "next": null,
+-   "open": {
+-     "closeAt": "2026-11-08T01:00:00Z",
+-     "clubId": "club_MXwSXrtWPF5dpNENm3o5UQ",
+-     "id": "occ_WisKbOC8YYsum9iYRQIMLg",
+-     "localDate": "2026-11-07",
+-     "phase": "open",
+-     "revealAt": "2026-11-07T07:00:00Z",
+-     "star": {
+-       "avatarVersion": null,
+-       "displayName": "Ana bR7Maw",
+-       "membershipId": "mem_8Una9j10fglSPmied6bUnA",
+-     },
+-   },
++   "open": null,
+  }
+
+ ❯ both src/db/home-days.test.ts:203:66
+    201|   const sql = await bySql(tx, viewer, club, now);
+    202|   const policy = chooseDays(await factsOf(tx, viewer, club), now);
+    203|   expect(sql, `the SQL and the policy at ${instant.toString()}`).toEqu…
+       |                                                                  ^
+    204|   return sql;
+    205| }
+ ❯ ids src/db/home-days.test.ts:209:18
+ ❯ src/db/home-days.test.ts:420:18
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:410:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,46 @@
+$ (cd packages/domain && npx vitest run src/authorization/days.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/packages/domain
+
+ ❯ src/authorization/days.test.ts (17 tests | 1 failed) 27ms
+   ❯ which day is open and which is next, by the server's time alone (T1, T5; spec 06) (4)
+     × says each chosen day's phase from its slot, and carries the day's own date, instants and club 13ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+   Start at  01:40:49
+   Duration  170ms (tests 45%, import 23%, transform 19%, worker 12%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/authorization/days.test.ts > which day is open and which is next, by the server's time alone (T1, T5; spec 06) > says each chosen day's phase from its slot, and carries the day's own date, instants and club
+AssertionError: expected { id: 'occ_sat', …(6) } to deeply equal { id: 'occ_sat', …(6) }
+
+- Expected
++ Received
+
+@@ -1,11 +1,11 @@
+  {
+    "closeAt": "2026-11-08T01:00:00Z",
+    "clubId": "club_1",
+    "id": "occ_sat",
+    "localDate": "2026-11-07",
+-   "phase": "open",
++   "phase": "collecting",
+    "revealAt": "2026-11-07T07:00:00Z",
+    "star": {
+      "avatarVersion": "v_ana",
+      "displayName": "Ana",
+      "membershipId": "mem_ana",
+
+ ❯ src/authorization/days.test.ts:80:25
+     78|   it("says each chosen day's phase from its slot, and carries the day'…
+     79|     const choice = choose(CLUB, SAT.reveal);
+     80|     expect(choice.open).toEqual({
+       |                         ^
+     81|       id: "occ_sat",
+     82|       clubId: "club_1",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

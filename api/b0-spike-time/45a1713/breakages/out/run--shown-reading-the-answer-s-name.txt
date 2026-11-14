@@ -1,0 +1,32 @@
+$ (cd tools/ops && npx vitest run src/spike-time.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tools/ops
+
+ ❯ src/spike-time.test.ts (22 tests | 1 failed) 2675ms
+   ❯ what the run expects of each answer (4)
+     × says which of the run's own days an answer showed, named from what the run wrote, never a name, date or phase of the answer's 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 21 passed (22)
+   Start at  01:42:03
+   Duration  2.92s (tests 96%, transform 3%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/spike-time.test.ts > what the run expects of each answer > says which of the run's own days an answer showed, named from what the run wrote, never a name, date or phase of the answer's
+AssertionError: it showed open Ana's 2026-11-16 (another phase), next Ben's 2026-11-17 (collecting): expected 'at server_now 2026-11-16T12:00:00Z it…' to contain 'it showed open Ana\'s 2026-11-16 (ano…'
+
+Expected: "it showed open Ana's 2026-11-16 (another phase), next Ben's 2026-11-17 (collecting)"
+Received: "at server_now 2026-11-16T12:00:00Z it showed open Someone Else's 2026-11-16 (another phase), next Ben's 2026-11-17 (collecting), where T5 has open Ana's 2026-11-16 (open), next Ben's 2026-11-17 (collecting); it differs at clubs[0].open_day.local_date, clubs[0].open_day.phase, clubs[0].open_day.star.display_name"
+
+ ❯ src/spike-time.test.ts:654:30
+    652|     for (const [body, words] of cases) {
+    653|       const problem = judge(answer(body), CLUB).problem ?? "";
+    654|       expect(problem, words).toContain(words);
+       |                              ^
+    655|       for (const value of [...Object.values(foreign), "occ_someone", "…
+    656|         expect(problem, words).not.toContain(value);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

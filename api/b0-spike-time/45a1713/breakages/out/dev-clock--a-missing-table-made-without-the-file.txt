@@ -1,0 +1,39 @@
+$ (cd tests && npx vitest run --config vitest.db.config.ts src/db/ops-dev-clock.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tests
+
+ ❯ src/db/ops-dev-clock.test.ts (14 tests | 1 failed) 339ms
+   ❯ dev-clock, through the schema's own owner (14)
+     × without the file, moves a table that's there and says the offset it found, and refuses a missing one, making nothing 13ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 passed (14)
+   Start at  01:41:50
+   Duration  740ms (tests 75%, import 13%, transform 12%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/ops-dev-clock.test.ts > dev-clock, through the schema's own owner > without the file, moves a table that's there and says the offset it found, and refuses a missing one, making nothing
+AssertionError: expected [Function] to throw error matching /missing, and only `ops dev-clock` mak…/ but got 'dev-clock: time: dev\'s clock reads a…'
+
+- Expected:
+/missing, and only `ops dev-clock` makes it/
+
++ Received:
+"dev-clock: time: dev's clock reads app.dev_clock, which tools/ops/sql/dev_clock.sql makes (ADR-013)"
+
+ ❯ src/db/ops-dev-clock.test.ts:169:54
+    167|   it("without the file, moves a table that's there and says the offset…
+    168|     await rolledBack(app, async (tx) => {
+    169|       await expect(devClock(tx, { to: inHours(24) })).rejects.toThrow(…
+       |                                                      ^
+    170|       expect(await present(tx)).toBe(false);
+    171|       await expect(devClock(tx, {})).rejects.toThrow(/missing/);
+ ❯ src/db/harness.ts:82:31
+ ❯ result ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:261:21
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:24
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:244:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

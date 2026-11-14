@@ -1,0 +1,50 @@
+$ (cd packages/domain && npx vitest run src/authorization/days.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/packages/domain
+
+ ❯ src/authorization/days.test.ts (17 tests | 1 failed) 18ms
+   ❯ only the viewer's clubs, and only a scheduled day that isn't held (T9, T14, T27; FQ50, FQ63; spec 22) (7)
+     × gives nothing to a stranger, a former member, an account that isn't active, or for no club at all 7ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+   Start at  01:40:51
+   Duration  170ms (tests 36%, import 29%, transform 25%, worker 10%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/authorization/days.test.ts > only the viewer's clubs, and only a scheduled day that isn't held (T9, T14, T27; FQ50, FQ63; spec 22) > gives nothing to a stranger, a former member, an account that isn't active, or for no club at all
+AssertionError: expected { open: null, next: { …(7) } } to deeply equal { open: null, next: null }
+
+- Expected
++ Received
+
+  {
+-   "next": null,
++   "next": {
++     "closeAt": "2026-11-08T01:00:00Z",
++     "clubId": "club_1",
++     "id": "occ_sat",
++     "localDate": "2026-11-07",
++     "phase": "collecting",
++     "revealAt": "2026-11-07T07:00:00Z",
++     "star": {
++       "avatarVersion": "v_ana",
++       "displayName": "Ana",
++       "membershipId": "mem_ana",
++     },
++   },
+    "open": null,
+  }
+
+ ❯ src/authorization/days.test.ts:113:66
+    111|     for (const instant of PHASES) {
+    112|       expect(choose(null, instant)).toEqual({ open: null, next: null }…
+    113|       expect(choose({ ...CLUB, viewerInterval: null }, instant)).toEqu…
+       |                                                                  ^
+    114|       for (const ended of ["left", "left_by_block", "account_deleted"]…
+    115|         expect(choose({ ...CLUB, viewerInterval: ended }, instant), en…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

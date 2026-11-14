@@ -1,0 +1,35 @@
+$ (cd packages/domain && npx vitest run src/authorization/days.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/packages/domain
+
+ ❯ src/authorization/days.test.ts (17 tests | 1 failed) 16ms
+   ❯ reading a day the SQL chose (chosenDay) (2)
+     × refuses anything outside the shape rather than show it 6ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+   Start at  01:40:57
+   Duration  164ms (tests 36%, import 31%, transform 24%, worker 9%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/authorization/days.test.ts > reading a day the SQL chose (chosenDay) > refuses anything outside the shape rather than show it
+AssertionError: {"id":"occ_sat","club_id":"club_1","local_date":"2026-11-07","reveal_at":"2026-11-07T07:00:00+00:00","close_at":"2026-11-07T07:00:00+00:00","star_membership_id":"mem_ana","star_name":"Ana","star_avatar_version":null}: expected [Function] to throw an error
+
+- Expected:
+null
+
++ Received:
+undefined
+
+ ❯ src/authorization/days.test.ts:290:94
+    288|       { ...row, star_membership_id: undefined },
+    289|     ];
+    290|     for (const value of wrong) expect(() => chosenDay(value, "open"), …
+       |                                                                                              ^
+    291|   });
+    292| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

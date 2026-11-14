@@ -1,0 +1,80 @@
+baseline:
+  packages/domain exit 0
+  services/api exit 0
+  tools/ops exit 0
+  tests exit 0
+  tests exit 0
+CAUGHT  sql: open from after reveal_at (< for <=) :: 12 failing; named: tests: × in Europe/London, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 83ms
+CAUGHT  sql: open at close_at too (<= for <) :: 10 failing; named: tests: × in Europe/London, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 87ms
+CAUGHT  sql: next from reveal_at itself (>= for >) :: 12 failing; named: tests: × in Europe/London, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 85ms
+CAUGHT  sql: next ordered the wrong way :: 8 failing; named: tests: × in Europe/London, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 83ms
+CAUGHT  sql: local_date from close_at :: 20 failing; named: tests: × in Europe/London, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 69ms
+CAUGHT  sql: the status condition dropped :: 3 failing; named: tests: × never chooses a suspended or cancelled day, and moves next on to the day after it 16ms
+CAUGHT  sql: the suspended club condition dropped :: 3 failing; named: tests: × gives nothing in a suspended club, and a paused club's days as its rows hold them (FQ50) 19ms
+CAUGHT  sql: the viewer's interval state dropped :: 3 failing; named: tests: × gives a stranger, a former member, an account being deleted, an account with no club and an unknown account nothing 26ms
+CAUGHT  sql: the viewer's account state dropped :: 2 failing; named: tests: × gives a stranger, a former member, an account being deleted, an account with no club and an unknown account nothing 38ms
+CAUGHT  sql: the viewer's membership dropped :: 3 failing; named: tests: × gives a stranger, a former member, an account being deleted, an account with no club and an unknown account nothing 23ms
+CAUGHT  sql: a day taken across the viewer's clubs :: 2 failing; named: tests: × never mixes them: each club's days carry its own id, star and date, whatever the other's hold 22ms
+CAUGHT  sql: the star's name from the viewer's row :: 14 failing; named: tests: × names an active star by their account's name now, with their ready avatar's version while the account is active 9ms
+CAUGHT  sql: the star's name always the account's (FQ75) :: 4 failing; named: tests: × names a star who left during the open day by the name it ended with, whatever the account is called now 14ms
+CAUGHT  sql: the avatar while the account is being deleted :: 2 failing; named: tests: × keeps the name and drops the avatar while a deletion asked for during the open day hasn't ended the interval; then the name it ende
+CAUGHT  sql: the nameless star's day kept :: 2 failing; named: tests: × leaves out an open day whose star has no name to show, and still gives the next day (B6, docs/LIMITATIONS.md) 10ms
+CAUGHT  sql: the star's leaving condition dropped :: 2 failing; named: tests: × holds a day whose star left a microsecond before its reveal, by leaving, a block or a deletion: never open, never next (FQ63) 15ms
+CAUGHT  sql: the star's leaving at the reveal holds the day (> for >=) :: 2 failing; named: tests: × keeps a day open to its close when its star leaves or asks to delete at its reveal or a microsecond after 25ms
+CAUGHT  sql: the star's deletion condition dropped :: 2 failing; named: tests: × holds a day whose star asked to delete their account a microsecond before its reveal, whether the interval has ended or not (T27) 2
+CAUGHT  sql: the star's deletion at the reveal holds the day (> for >=) :: 2 failing; named: tests: × keeps a day open to its close when its star leaves or asks to delete at its reveal or a microsecond after 23ms
+CAUGHT  policy: open from after reveal_at :: 6 failing; named: packages/domain: × opens the day at reveal_at exactly, not a microsecond before, and keeps it open until a microsecond before close_at 8ms
+CAUGHT  policy: open at close_at too :: 5 failing; named: packages/domain: × opens the day at reveal_at exactly, not a microsecond before, and keeps it open until a microsecond before close_at 8ms
+CAUGHT  policy: next from reveal_at itself :: 5 failing; named: packages/domain: × gives the earliest day to open as next: the day itself while it collects, the one after while it is open and after it clo
+CAUGHT  policy: next ordered the wrong way :: 4 failing; named: packages/domain: × gives the earliest day to open as next: the day itself while it collects, the one after while it is open and after it clo
+CAUGHT  policy: the open day's phase collecting :: 2 failing; named: packages/domain: × says each chosen day's phase from its slot, and carries the day's own date, instants and club 13ms
+CAUGHT  policy: the status condition dropped :: 2 failing; named: packages/domain: × never chooses a suspended or cancelled day, open or next, and moves next on to the day after it 10ms
+CAUGHT  policy: the suspended club condition dropped :: 2 failing; named: packages/domain: × gives nothing in a suspended club, and keeps a club that isn't suspended to the days its rows hold (FQ50) 9ms
+CAUGHT  policy: the viewer's account condition dropped :: 2 failing; named: packages/domain: × gives nothing to a stranger, a former member, an account that isn't active, or for no club at all 6ms
+CAUGHT  policy: the viewer's interval condition dropped :: 2 failing; named: packages/domain: × gives nothing to a stranger, a former member, an account that isn't active, or for no club at all 7ms
+CAUGHT  policy: the star's leaving condition dropped :: 3 failing; named: packages/domain: × holds a day whose star left before its reveal, by any ending: never open, never next (FQ63) 8ms
+CAUGHT  policy: the star's deletion condition dropped :: 2 failing; named: packages/domain: × holds a day whose star asked to delete their account a microsecond before its reveal, whether the interval has ended yet 
+CAUGHT  policy: leaving at the reveal holds the day (> for >=) :: 2 failing; named: packages/domain: × keeps a day open to its close when its star leaves or asks to delete at its reveal or after 13ms
+CAUGHT  policy: the star's name always the account's (FQ75) :: 2 failing; named: packages/domain: × names a star whose interval ended during the open day by the name it ended with, with no avatar 7ms
+CAUGHT  policy: the avatar while the account is being deleted :: 2 failing; named: packages/domain: × keeps the name and drops the avatar while a deletion asked for during the open day hasn't ended the interval 8ms
+CAUGHT  policy: the nameless star's day kept :: 2 failing; named: packages/domain: × leaves out an open day whose star has no name to show, and still gives the next day (B6, docs/LIMITATIONS.md) 4ms
+CAUGHT  chosenDay: a day that closes before it opens read :: 2 failing; named: packages/domain: × refuses anything outside the shape rather than show it 6ms
+CAUGHT  listClubs: the days read in a second statement :: 2 failing; named: tests: × reads both lists and the clubs' days in one statement, so they are one snapshot 24ms
+CAUGHT  listClubs: the open day read as collecting :: 2 failing; named: tests: × lists a member's club with their own membership, the active members and the state, and nobody else's (T14) 50ms
+CAUGHT  serializer: instants not cut to the second :: 2 failing; named: services/api: × gives a day's instants in the contract's whole seconds, rounded down as server_now is (a real day's instants are whole secon
+CAUGHT  serializer: the avatar key always sent :: 3 failing; named: services/api: × gives each day as the contract's Occurrence and nothing else of it: instants in whole seconds, the avatar only when there is
+CAUGHT  serializer: the day object spread in :: 3 failing; named: services/api: × is an explicit field list: whatever else a day object carries never reaches the answer (T55) 2ms
+CAUGHT  route: the days chosen a second after the instant :: 2 failing; named: services/api: × chooses the days at the instant it answers with, read first in the same read-only transaction 75ms
+CAUGHT  judge: expectation read from the answer :: 2 failing; named: tests: × makes clubsJudge refuse a missing day, a day where there is none, another phase, another instant and an extra key 8ms
+CAUGHT  judge: open from after reveal_at :: 3 failing; named: tests: × opens the day at its reveal exactly and closes it at its close exactly, the next being the earliest still to open 10ms
+CAUGHT  judge: the suspended club given days :: 3 failing; named: tests: × gives none in a suspended club or a club it doesn't know, and never a suspended or cancelled day 12ms
+CAUGHT  judge: a held day given :: 2 failing; named: tests: × holds a day whose star left or asked to delete their account before its reveal, and keeps one they left at it 12ms
+CAUGHT  run: expectation read from the answer :: 6 failing; named: tools/ops: × fails a switch a second early or a second late, at each instant, naming the first answer that was wrong 48ms
+CAUGHT  run: the day open from after its reveal :: 9 failing; named: tools/ops: × is T5 at the answer's server_now: a day open from its reveal, not a second before, until its close, not at it 1ms
+CAUGHT  run: the day open at its close :: 7 failing; named: tools/ops: × is T5 at the answer's server_now: a day open from its reveal, not a second before, until its close, not at it 2ms
+CAUGHT  run: an answer at the instant counted before it :: 3 failing; named: tools/ops: × signs in, makes the account the app's way, writes the club, watches both instants from 20 seconds before, and deletes the user 
+CAUGHT  run: the cache header not checked :: 2 failing; named: tools/ops: × fails an answer with another cache header, another status, no server_now, or anything more than the club list 26ms
+CAUGHT  run: the user not deleted :: 14 failing; named: tools/ops: × signs in, makes the account the app's way, writes the club, watches both instants from 20 seconds before, and deletes the user 
+CAUGHT  run: a Saturday as the first day :: 2 failing; named: tools/ops: × is the earliest Monday to Friday in New York whose 07:00 is at least three minutes ahead, so the next date is never Sunday 9ms
+CAUGHT  club: the account's subject not checked :: 2 failing; named: tests: × refuses an account that isn't the run's own, finished as the API finishes it and active, and writes nothing 29ms
+CAUGHT  club: the account's name not checked :: 2 failing; named: tests: × refuses an account that isn't the run's own, finished as the API finishes it and active, and writes nothing 35ms
+CAUGHT  club: the roster's seal dropped :: 3 failing; named: tests: × goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond 50ms
+CAUGHT  club: the roster's approval dropped :: 3 failing; named: tests: × goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond 61ms
+CAUGHT  club: Ben's acceptance dropped :: 3 failing; named: tests: × goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond 50ms
+CAUGHT  club: the candidate left unjoined :: 2 failing; named: tests: × goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond 72ms
+CAUGHT  club: Ana left off the revision's members :: 3 failing; named: tests: × goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond 48ms
+CAUGHT  club: the first day's collecting_from a day early :: 2 failing; named: tests: × goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond 71ms
+CAUGHT  club: the days' instants to the millisecond :: 3 failing; named: tests: × goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond 75ms
+CAUGHT  dev-clock: a missing table made without the file :: 2 failing; named: tests: × without the file, moves a table that's there and says the offset it found, and refuses a missing one, making nothing 13ms
+CAUGHT  judge: an absent expectation skipped :: 2 failing; named: tests: × makes clubsJudge refuse a missing day, a day where there is none, another phase, another instant and an extra key 11ms
+CAUGHT  run: no answer before the instant passes :: 2 failing; named: tools/ops: × fails when no answer came before the instant, as when dev's clock lands past it 8ms
+CAUGHT  run: the poll four times as fast :: 2 failing; named: tools/ops: × reads four times a second, and watches each instant until five answers are at or after it 45ms
+CAUGHT  run: the may-be-left address not named :: 2 failing; named: tools/ops: × names the address it may leave when the call that makes the user has no clear answer, but not after a refusal 7ms
+CAUGHT  run: shown reading the answer's name :: 2 failing; named: tools/ops: × says which of the run's own days an answer showed, named from what the run wrote, never a name, date or phase of the answer's 8
+CAUGHT  run: the close moved after an empty reveal window :: 2 failing; named: tools/ops: × makes no second move of dev's clock after a reveal's window with no answer, and still deletes the user 113ms
+CAUGHT  run: the club's write awaited without the limit :: 2 failing; named: tools/ops: × leaves a database call that never settles at the run's limit, says it may still commit, and deletes the user 5010ms
+CAUGHT  run.ts: the transaction's limits after the clock's check :: 2 failing; named: tools/ops: × runs from an image without the repository's other folders, signs in, and stops at a database without dev's clock, deleting the 
+CAUGHT  run.ts: the connection's end unbounded :: 2 failing; named: tools/ops: × runs from an image without the repository's other folders, signs in, and stops at a database without dev's clock, deleting the 
+CAUGHT  listClubs: a day under another club's id served :: 2 failing; named: services/api: × refuses to serve a day whose club isn't the club it is listed under, open or next 14ms
+CAUGHT  club: the account's state not checked :: 2 failing; named: tests: × refuses an account that isn't the run's own, finished as the API finishes it and active, and writes nothing 30ms
+done: 73 caught of 73

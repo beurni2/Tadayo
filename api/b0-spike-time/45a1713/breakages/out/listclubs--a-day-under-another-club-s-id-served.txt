@@ -1,0 +1,35 @@
+$ (cd services/api && npx vitest run src/clubs/list.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/services/api
+
+ ❯ src/clubs/list.test.ts (7 tests | 1 failed) 100ms
+   ❯ GET /v1/clubs: one sample of the clock for the instant and the days (T1) (2)
+     × refuses to serve a day whose club isn't the club it is listed under, open or next 14ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  01:42:20
+   Duration  488ms (import 46%, tests 28%, transform 25%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/clubs/list.test.ts > GET /v1/clubs: one sample of the clock for the instant and the days (T1) > refuses to serve a day whose club isn't the club it is listed under, open or next
+AssertionError: {"open_day":{"id":"occ_sat","club_id":"club_2","local_date":"2026-11-07","reveal_at":"2026-11-07T07:00:00+00:00","close_at":"2026-11-08T01:00:00+00:00","star_membership_id":"mem_ana","star_name":"Ana","star_avatar_version":null},"next_day":null}: expected 200 to be 500 // Object.is equality
+
+- Expected
++ Received
+
+- 500
++ 200
+
+ ❯ src/clubs/list.test.ts:229:57
+    227|     ]) {
+    228|       const { response } = await serve(days);
+    229|       expect(response.statusCode, JSON.stringify(days)).toBe(500);
+       |                                                         ^
+    230|       expect(response.body).not.toMatch(/occ_sat|occ_mon|club_2|Ana/);
+    231|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
