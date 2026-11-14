@@ -24,6 +24,7 @@ import {
   POLL_MS,
   SPIKE_LIMITS,
   spikeTime,
+  startDay,
   ZONE,
   type SpikeAccount,
   type SpikeClub,
@@ -691,6 +692,36 @@ describe("the first day's date", () => {
       expect(first.toString(), now).toBe(date);
       expect(first.dayOfWeek, now).toBeLessThanOrEqual(5);
       expect(first.add({ days: 1 }).dayOfWeek, now).not.toBe(7);
+    }
+  });
+});
+
+describe("the run's start", () => {
+  it("is the first day only when the club is written between 06:45 and 06:57 in New York on a weekday", () => {
+    const starts: [string, string][] = [
+      ["2026-11-16T11:50:00Z", "2026-11-16"], // Monday, 06:50
+      ["2026-11-16T11:45:00Z", "2026-11-16"], // 06:45 exactly: 07:00 fifteen minutes ahead
+      ["2026-11-16T11:57:00Z", "2026-11-16"], // 06:57 exactly: three minutes ahead
+      ["2026-11-20T11:56:59Z", "2026-11-20"], // Friday, 06:56:59
+      ["2026-03-09T10:50:00Z", "2026-03-09"], // Monday after the spring change, 06:50 in daylight time
+    ];
+    for (const [now, date] of starts) expect(startDay(at(now)).toString(), now).toBe(date);
+  });
+
+  it("refuses, saying what dev's clock reads, a club written before 06:45, after 06:57 or on a weekend", () => {
+    const refused: [string, string][] = [
+      ["2026-11-16T11:44:59.999999Z", "2026-11-16T06:44:59"], // a microsecond too early: 07:00 just over 15 minutes ahead
+      ["2026-11-16T11:57:00.000001Z", "2026-11-16T06:57:00"], // a microsecond too late: the first day would be Tuesday
+      ["2026-11-20T11:57:01Z", "2026-11-20T06:57:01"], // Friday, late: the first day would be Monday, three days on
+      ["2026-11-21T11:50:00Z", "2026-11-21T06:50:00"], // Saturday
+      ["2026-11-16T05:30:00Z", "2026-11-16T00:30:00"], // Monday, 00:30: six and a half hours early
+      ["2026-11-20T04:00:00Z", "2026-11-19T23:00:00"], // Thursday, 23:00
+    ];
+    for (const [now, reads] of refused) {
+      expect(() => startDay(at(now)), now).toThrow(OpsError);
+      expect(() => startDay(at(now)), now).toThrow(
+        `spike-time: dev's clock reads ${reads} in New York, and a run starts between 06:45 and 06:57 there on a weekday`,
+      );
     }
   });
 });

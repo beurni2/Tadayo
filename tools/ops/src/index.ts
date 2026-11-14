@@ -40,6 +40,7 @@ export {
   moveClock,
   SPIKE_LIMITS,
   spikeTime,
+  startDay,
   writeClub,
   ZONE,
   type ClubInput,

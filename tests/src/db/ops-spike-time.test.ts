@@ -167,6 +167,23 @@ describe("spike-time's club, written as tadayo_app", () => {
       expect(row?.n).toBe("0");
     });
   });
+
+  it("refuses a clock outside the run's start window, between 06:45 and 06:57 in New York on a weekday, and writes nothing", async () => {
+    await rolledBack(app, async (tx) => {
+      const ana = await apiAccount(tx);
+      const rows = () => tx<{ users: string; clubs: string }[]>`
+        SELECT (SELECT pg_catalog.count(*) FROM app.users)::pg_catalog.text AS users,
+               (SELECT pg_catalog.count(*) FROM app.clubs)::pg_catalog.text AS clubs`;
+      const [before] = await rows();
+      for (const outside of ["2026-11-16T11:57:00.000001Z", "2026-11-16T11:44:59Z", "2026-11-21T11:50:00Z"]) {
+        await expect(
+          writeClub(tx, { run: RUN, account: ana, clock: fakeClock(Temporal.Instant.from(outside)) }),
+        ).rejects.toThrow(OpsError);
+      }
+      const [after] = await rows();
+      expect(after).toEqual(before);
+    });
+  });
 });
 
 describe("what spike-time expects, against the API's own day choice and serializer on its rows", () => {

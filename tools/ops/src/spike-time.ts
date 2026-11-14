@@ -2,9 +2,9 @@
 // `spike-time`: spike S5's live half (docs/plans/api-b0-spike-time.md, section 6; docs/plans/B0.md,
 // section 4; T1, T5; spec 06, 08; Q18). On `dev`, with the worker Machine stopped, it shows that what
 // Home's day choice answers switches at 07:00 and at 01:00 exactly, by the server's clock alone: a
-// club of two synthetic members, its first day the next weekday's 7 AM in New York by `dev`'s clock
-// (a few minutes ahead when the run starts at about 6:50 there: docs/plans/api-b0-spike-time.md, section
-// 8), the dev clock
+// club of two synthetic members, its first day that day's 7 AM in New York by `dev`'s clock, a few
+// minutes ahead, since the run writes and moves nothing unless the club is written between 6:45 and
+// 6:57 there on a weekday (`startDay`; docs/plans/api-b0-spike-time.md, section 8), the dev clock
 // moved to 20 seconds before that day's reveal and then to 20 seconds before its close, and
 // `GET /v1/clubs` read as a member four times a second around each instant. Every answer must be the
 // club's days as T5 has them at the answer's own `server_now`.
@@ -37,8 +37,10 @@
 // its user may be left: Auth's replies by their status and code (supabase.ts' `describe`), the API's
 // by their status, their `server_now`, whether their Cache-Control is missing or not the contract's
 // (never its value), where an answer differs from T5's (the keys' path only), and which of the run's
-// own two days it showed, named from what the run wrote, never from the answer (`shown`). What it can't see is whether the worker Machine is stopped, which only `flyctl` sees: the
-// run's order does that (`worker-scale --to stopped` first).
+// own two days it showed, named from what the run wrote, never from the answer (`shown`); and, when it
+// won't start, what `dev`'s clock reads in New York, to the second. What it can't see is whether the
+// worker Machine is stopped, which only `flyctl` sees: the run's order does that (`worker-scale --to
+// stopped` first).
 
 import { randomBytes, randomUUID } from "node:crypto";
 import { contractInstant, dayInstants, newId, type Clock } from "@tadayo/domain";
@@ -74,6 +76,8 @@ export const POLL_MS = 250;
 export const ANSWERS_AFTER = 5;
 /** The first day's 07:00 is at least this many minutes ahead of the clock when the club is written. */
 export const AHEAD_MINUTES = 3;
+/** And at most this many, or the run writes and moves nothing (`startDay`). */
+export const WITHIN_MINUTES = 15;
 
 /** The dev API, as a phone reaches it. */
 export const API = `https://${DEV_HOST}`;
@@ -121,6 +125,26 @@ export function firstDate(now: Temporal.Instant): Temporal.PlainDate {
   throw new OpsError("spike-time: no weekday in the next week opens after the clock, which can't be");
 }
 
+/**
+ * The run's first day, `firstDate(now)`, when its 07:00 is at most `WITHIN_MINUTES` after `now`: a
+ * club written between 06:45 and 06:57 in New York on a weekday by `dev`'s clock. Otherwise it
+ * refuses, since the run's moves of `dev`'s clock never come back: started earlier, the first move
+ * would add those hours to `dev`'s lead; started later, or on a weekend, it would go to a later
+ * weekday's 06:59:40 and add a day or more (three from a Friday). Started in time, a run adds about
+ * 18 hours and a quarter at most.
+ */
+export function startDay(now: Temporal.Instant): Temporal.PlainDate {
+  const date = firstDate(now);
+  if (Temporal.Instant.compare(dayInstants(date, ZONE).revealAt, now.add({ minutes: WITHIN_MINUTES })) > 0) {
+    const reads = now.toZonedDateTimeISO(ZONE).toPlainDateTime().toString({ smallestUnit: "second" });
+    throw new OpsError(
+      `spike-time: dev's clock reads ${reads} in New York, and a run starts between 06:45 and 06:57 there on a ` +
+        "weekday, so nothing is written and dev's clock isn't moved",
+    );
+  }
+  return date;
+}
+
 /** The first date on or after `from` that falls on the weekday `WEEKDAYS[index]`. */
 function firstOn(from: Temporal.PlainDate, index: number): Temporal.PlainDate {
   let date = from;
@@ -157,7 +181,8 @@ export async function limitTransaction(tx: postgres.TransactionSql): Promise<voi
  * T6); and the two days the run watches, with their instants from the time module (ADR-008) and
  * collecting from the clock's sample. Every instant is bound as text and cast in SQL, since
  * postgres.js would cut one bound as a timestamp to milliseconds. Throws, writing nothing that
- * commits, if the account isn't the run's own, finished as the API finishes it.
+ * commits, if the account isn't the run's own, finished as the API finishes it, or if the clock's
+ * sample isn't in the run's start window (`startDay`).
  */
 export async function writeClub(tx: postgres.TransactionSql, input: ClubInput): Promise<SpikeClub> {
   await limitTransaction(tx);
@@ -173,7 +198,7 @@ export async function writeClub(tx: postgres.TransactionSql, input: ClubInput): 
   }
   const now = await input.clock.sample(tx);
   const at = now.toString();
-  const date = firstDate(now);
+  const date = startDay(now);
   const next = date.add({ days: 1 });
   const firstDay = dayInstants(date, ZONE);
   const nextDay = dayInstants(next, ZONE);
