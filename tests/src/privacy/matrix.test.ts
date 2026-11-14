@@ -210,7 +210,8 @@ async function factsOf(
       left_at: Temporal.Instant | null;
     }[]
   >`
-    SELECT m.interval_id, m.club_id AS club, m.user_id AS account, coalesce(m.ended_display_name, u.display_name) AS name,
+    SELECT m.interval_id, m.club_id AS club, m.user_id AS account,
+           CASE WHEN m.state = 'active' THEN u.display_name ELSE m.ended_display_name END AS name,
            m.joined_at, m.left_at
       FROM app.memberships m JOIN app.users u ON u.id = m.user_id
      WHERE m.club_id IN ${db(clubs)}`;
@@ -263,7 +264,7 @@ async function factsOf(
     { id: string; bound: string | null; club: string; joined: boolean; club_name: string; inviter: string | null }[]
   >`
     SELECT i.id, i.bound_user_id AS bound, c.club_id AS club, c.state = 'joined' AS joined, k.name AS club_name,
-           coalesce(m.ended_display_name, u.display_name) AS inviter
+           CASE WHEN m.state = 'active' THEN u.display_name ELSE m.ended_display_name END AS inviter
       FROM app.invitations i
       JOIN app.candidates c ON c.id = i.candidate_id
       JOIN app.clubs k ON k.id = c.club_id

@@ -370,14 +370,11 @@ describe("each club's open day and next day, from the rows and the time alone (d
   it("makes clubsJudge refuse a missing day, a day where there is none, another phase, another instant and an extra key", () => {
     const world = worldWith();
     const at = REVEAL;
-    const judge = clubsJudge(() => ({
-      world,
-      viewer: { account: "acct_me", intervals: new Set(["itv_me"]), texts: new Set() },
-      now: at,
-    }));
-    const listed = (fields: Record<string, unknown>) =>
+    const viewer = { account: "acct_me", intervals: new Set(["itv_me"]), texts: new Set<string>() };
+    const judge = clubsJudge(() => ({ world, viewer, now: at }));
+    const listed = (fields: Record<string, unknown>, serverNow = "2026-11-07T07:00:00Z") =>
       answer({
-        server_now: "2026-11-07T07:00:00Z",
+        server_now: serverNow,
         clubs: [{ id: "clb_one", member_count: 2, ...fields }],
         invitations: [],
       });
@@ -403,6 +400,19 @@ describe("each club's open day and next day, from the rows and the time alone (d
       ]);
     expect(judge(listed({ open_day: open, next_day: open }))).toEqual([
       `a club's next_day is ${JSON.stringify(open)}, not ${JSON.stringify(next)}`,
+    ]);
+    // A day where the world has none: an open day a microsecond before the reveal, a next day in a suspended club.
+    const early = clubsJudge(() => ({ world, viewer, now: µs(REVEAL, -1) }));
+    const saturdayNext = occurrence("occ_sat", saturday, "collecting");
+    const beforeReveal = "2026-11-07T06:59:59Z";
+    expect(early(listed({ next_day: saturdayNext }, beforeReveal))).toEqual([]);
+    expect(early(listed({ open_day: open, next_day: saturdayNext }, beforeReveal))).toEqual([
+      `a club's open_day is ${JSON.stringify(open)}, not nothing`,
+    ]);
+    const suspended = clubsJudge(() => ({ world: worldWith({ suspended: true }), viewer, now: at }));
+    expect(suspended(listed({}))).toEqual([]);
+    expect(suspended(listed({ next_day: next }))).toEqual([
+      `a club's next_day is ${JSON.stringify(next)}, not nothing`,
     ]);
   });
 });

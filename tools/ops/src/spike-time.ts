@@ -16,20 +16,26 @@
 //     in America/New_York, written as `tadayo_app` in one transaction through the rows the API's
 //     commands will write (`writeClub`, which tests/src/db/ops-spike-time.test.ts runs on Postgres);
 //   - the dev clock's two moves, forward only (dev-clock.ts). They never come back.
-// Whatever happens, it deletes the Supabase user at the end. The club, its two accounts and its days
-// stay, since the schema deletes none of them, and they're synthetic (ADR-021); Ana's account keeps a
-// subject whose user is gone, so nobody can sign in as it. Nothing reads or touches any other account.
+// At the end it deletes the Supabase user; when it can't, or when the call that makes the user had no
+// clear answer and may have made one, a failed check names the address to delete it by. The club, its
+// two accounts and its days stay, since the schema deletes none of them, and they're synthetic
+// (ADR-021); Ana's account keeps a subject whose user is gone, so nobody can sign in as it. Nothing
+// reads or touches any other account.
 //
 // Its time is limited, since the runner may give up on the Machine's command 300 seconds after it
 // starts (on-machine.ts, `COMMAND_SECONDS`): no new work starts after the budget, the clean-up stops
-// at the deadline, a minute before that, and each call has its own limit. Every limit is an
-// `AbortSignal`'s, which reads no clock: every instant it writes or compares comes from the server's
-// clock, through `Clock.sample` in the database or `server_now` in the API's answers (T1).
+// at the deadline, a minute before that, and each call has its own limit. A database call still under
+// way at the run's limit is left to end on its own (`untilAborted`): the run goes on to its clean-up,
+// and says the club or the move may still commit. Every limit is an `AbortSignal`'s, which reads no
+// clock: every instant it writes or compares comes from the server's clock, through `Clock.sample` in
+// the database or `server_now` in the API's answers (T1).
 //
-// What it prints carries no token, address, code or key: Auth's replies by their status and code
-// (supabase.ts' `describe`), the API's by their status and what the club's days were, which are the
-// run's own synthetic club. What it can't see is whether the worker Machine is stopped, which only
-// `flyctl` sees: the run's order does that (`worker-scale --to stopped` first).
+// What it prints carries no token, code or key, and no address but the run's own synthetic one when
+// its user may be left: Auth's replies by their status and code (supabase.ts' `describe`), the API's
+// by their status, their `server_now`, where an answer differs from T5's (the keys' path only), and
+// which of the run's own two days it showed, named from what the run wrote, never from the answer
+// (`shown`). What it can't see is whether the worker Machine is stopped, which only `flyctl` sees: the
+// run's order does that (`worker-scale --to stopped` first).
 
 import { randomBytes, randomUUID } from "node:crypto";
 import { contractInstant, dayInstants, newId, type Clock } from "@tadayo/domain";
@@ -132,6 +138,16 @@ export interface ClubInput {
 }
 
 /**
+ * The limits each of the run's transactions sets before anything else, so that no statement in it
+ * waits on the server without end. run.ts sets them again before it checks dev's clock in the club's
+ * transaction, and `writeClub` and `moveClock` set them themselves.
+ */
+export async function limitTransaction(tx: postgres.TransactionSql): Promise<void> {
+  await tx`SET LOCAL statement_timeout = '20s'`;
+  await tx`SET LOCAL lock_timeout = '10s'`;
+}
+
+/**
  * Writes the run's club in `tx`, the caller's transaction, as `tadayo_app`: Ben; the club, Ana its
  * creator; Ben joining by an exact roster that Ana approves (T7), as tests/src/db/world.ts'
  * `joinByRoster` does; its activation; a week from the first date with a pair's four days (spec 05,
@@ -141,8 +157,7 @@ export interface ClubInput {
  * commits, if the account isn't the run's own, finished as the API finishes it.
  */
 export async function writeClub(tx: postgres.TransactionSql, input: ClubInput): Promise<SpikeClub> {
-  await tx`SET LOCAL statement_timeout = '20s'`;
-  await tx`SET LOCAL lock_timeout = '10s'`;
+  await limitTransaction(tx);
   const { run, account } = input;
   const [own] = await tx<{ own: boolean }[]>`
     SELECT EXISTS (SELECT FROM app.users
@@ -273,8 +288,7 @@ export async function writeClub(tx: postgres.TransactionSql, input: ClubInput): 
 /** Moves the dev clock forward to `to` in its own transaction (dev-clock.ts), and says the offsets. */
 export async function moveClock(db: postgres.Sql, to: Temporal.Instant): Promise<{ before: bigint; after: bigint }> {
   const report = await db.begin(async (tx) => {
-    await tx`SET LOCAL statement_timeout = '20s'`;
-    await tx`SET LOCAL lock_timeout = '10s'`;
+    await limitTransaction(tx);
     return devClock(tx, { to });
   });
   return { before: report.offsetBeforeMicroseconds, after: report.offsetMicroseconds };
@@ -351,20 +365,28 @@ export interface Answer {
 
 const SECOND = /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$/;
 
-/** What a club summary shows of its days, in words: "open Ana's 2026-11-16, next Ben's 2026-11-17". */
-function shown(json: unknown): string {
-  const clubs = typeof json === "object" && json !== null ? (json as Record<string, unknown>)["clubs"] : undefined;
-  const summary = Array.isArray(clubs) && clubs.length === 1 ? (clubs[0] as unknown) : undefined;
-  if (typeof summary !== "object" || summary === null) return "no one club";
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+/**
+ * Which of the run's own days a club list shows, in words: "open Ana's 2026-11-16 (open), next Ben's
+ * 2026-11-17 (collecting)". Each day is found by its id among the two the run wrote, and named and
+ * dated from what the run wrote, never from the answer, so a wrong answer can't put another club's
+ * name or date in the run's report; its phase is said only when it is one of the contract's two.
+ */
+function shown(json: unknown, club: SpikeClub): string {
+  const clubs = isRecord(json) ? json["clubs"] : undefined;
+  const summary: unknown = Array.isArray(clubs) && clubs.length === 1 ? clubs[0] : undefined;
+  if (!isRecord(summary)) return "no one club";
+  if (summary["id"] !== club.id) return "not the run's club";
   const day = (key: string) => {
-    const value = (summary as Record<string, unknown>)[key];
+    const value = summary[key];
     if (value === undefined) return "none";
-    if (typeof value !== "object" || value === null) return "not a day";
-    const record = value as Record<string, unknown>;
-    const star = record["star"];
-    const name =
-      typeof star === "object" && star !== null ? (star as Record<string, unknown>)["display_name"] : undefined;
-    return `${typeof name === "string" ? `${name}'s` : "someone's"} ${String(record["local_date"])} (${String(record["phase"])})`;
+    if (!isRecord(value)) return "not a day";
+    const own = [club.first, club.second].find((one) => one.id === value["id"]);
+    if (own === undefined) return "a day not the run's";
+    const phase = value["phase"] === "open" || value["phase"] === "collecting" ? value["phase"] : "another phase";
+    return `${own.star.displayName}'s ${own.localDate.toString()} (${phase})`;
   };
   return `open ${day("open_day")}, next ${day("next_day")}`;
 }
@@ -395,14 +417,11 @@ export function judge(answer: Answer, club: SpikeClub): { serverNow?: Temporal.I
     const where = differences(answer.json, expected).slice(0, 5).join(", ");
     return {
       serverNow,
-      problem: `at server_now ${contractInstant(serverNow)} it showed ${shown(answer.json)}, where T5 has ${shown(expected)}; it differs at ${where}`,
+      problem: `at server_now ${contractInstant(serverNow)} it showed ${shown(answer.json, club)}, where T5 has ${shown(expected, club)}; it differs at ${where}`,
     };
   }
   return { serverNow };
 }
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
 
 /** Where `actual` differs from `expected`, by the keys' path only, never a value: "clubs[0].open_day.phase". */
 function differences(actual: unknown, expected: unknown, path = ""): string[] {
@@ -451,6 +470,41 @@ export interface SpikeInput {
 
 const NO_ANSWER = "no answer";
 const OUT_OF_TIME = "the run's time ran out";
+const UNDER_WAY = "the run's time ran out while it was under way, so it may still commit";
+
+/**
+ * `work`'s outcome, unless `within` ends first: then, a turn later, a refusal that says the call was
+ * still under way, so that a database call that never settles can't hold the run, or its clean-up,
+ * past their limits. A call that has settled by that turn is taken as it settled.
+ */
+function untilAborted<T>(work: Promise<T>, within: AbortSignal): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    let settled = false;
+    const stop = () => {
+      setImmediate(() => {
+        if (settled) return;
+        settled = true;
+        reject(new OpsError(UNDER_WAY));
+      });
+    };
+    if (within.aborted) stop();
+    else within.addEventListener("abort", stop, { once: true });
+    work.then(
+      (value) => {
+        if (settled) return;
+        settled = true;
+        within.removeEventListener("abort", stop);
+        resolve(value);
+      },
+      (error: unknown) => {
+        if (settled) return;
+        settled = true;
+        within.removeEventListener("abort", stop);
+        reject(error instanceof Error ? error : new Error(String(error)));
+      },
+    );
+  });
+}
 
 const seconds = (microseconds: bigint) => `${(microseconds / 1_000_000n).toString()} s`;
 
@@ -471,6 +525,11 @@ export async function spikeTime(input: SpikeInput): Promise<Check[]> {
   const email = `spike-${input.run}@probe.invalid`;
   const checks: Check[] = [];
   let user: string | undefined;
+  /**
+   * True when the call that makes the user had no clear answer (none, a server error, or a 200 with
+   * no id), so the user may have been made with no id the run knows; a refusal (4xx) made nothing.
+   */
+  let mayBeMade: boolean | undefined;
   /** True once the clean-up has begun: only the deadline ends it. */
   let cleaning = false;
   const working = AbortSignal.any([input.budget, input.deadline]);
@@ -526,6 +585,7 @@ export async function spikeTime(input: SpikeInput): Promise<Check[]> {
     });
     const id = made?.status === 200 ? text(made.json, "id") : undefined;
     if (id !== undefined) user = id;
+    else mayBeMade = made === undefined || made.status === 200 || made.status >= 500;
     const makeProblem = made === undefined ? silence() : id === undefined ? `answered ${describe(made)}` : undefined;
     if (!record("sign-in: the service key makes the run's user", makeProblem) || id === undefined) return undefined;
     const link = await auth("/auth/v1/admin/generate_link", {
@@ -582,12 +642,13 @@ export async function spikeTime(input: SpikeInput): Promise<Check[]> {
   }
 
   async function writeClub(account: SpikeAccount): Promise<SpikeClub | undefined> {
-    if (limit().aborted) {
+    const within = limit();
+    if (within.aborted) {
       record("database: the club is written", OUT_OF_TIME);
       return undefined;
     }
     try {
-      const club = await input.database.writeClub(account);
+      const club = await untilAborted(input.database.writeClub(account), within);
       record("database: the club is written", undefined);
       return club;
     } catch (error) {
@@ -598,9 +659,10 @@ export async function spikeTime(input: SpikeInput): Promise<Check[]> {
 
   async function move(edge: string, to: Temporal.Instant): Promise<boolean> {
     const name = `${edge}: dev's clock moves to ${to.toString()}`;
-    if (limit().aborted) return record(name, OUT_OF_TIME);
+    const within = limit();
+    if (within.aborted) return record(name, OUT_OF_TIME);
     try {
-      const { before, after } = await input.database.moveClock(to);
+      const { before, after } = await untilAborted(input.database.moveClock(to), within);
       input.say(
         `spike-time: ${edge}: dev's clock moved to ${to.toString()}, ${seconds(before)} ahead before, ${seconds(after)} after`,
       );
@@ -610,8 +672,11 @@ export async function spikeTime(input: SpikeInput): Promise<Check[]> {
     }
   }
 
-  /** Reads the club list around `at` until `ANSWERS_AFTER` answers are at or after it, and judges each. */
-  async function watch(token: string, club: SpikeClub, edge: string, at: Temporal.Instant): Promise<void> {
+  /**
+   * Reads the club list around `at` until `ANSWERS_AFTER` answers are at or after it, and judges each.
+   * Returns how many answers carried a `server_now`, so the run can tell a window that saw nothing.
+   */
+  async function watch(token: string, club: SpikeClub, edge: string, at: Temporal.Instant): Promise<number> {
     const window = AbortSignal.timeout(limits.windowMs);
     let before = 0;
     let after = 0;
@@ -644,12 +709,12 @@ export async function spikeTime(input: SpikeInput): Promise<Check[]> {
     }
     const lines = [`${String(before)} answers before it and ${String(after)} at or after it`];
     if (lastBefore !== undefined) {
-      lines.push(`the last before at ${contractInstant(lastBefore.serverNow)}: ${shown(lastBefore.json)}`);
+      lines.push(`the last before at ${contractInstant(lastBefore.serverNow)}: ${shown(lastBefore.json, club)}`);
     }
     if (firstAfter !== undefined) {
       const late = firstAfter.serverNow.since(at).total({ unit: "seconds" });
       lines.push(
-        `the first after at ${contractInstant(firstAfter.serverNow)}, ${String(late)} s after it: ${shown(firstAfter.json)}`,
+        `the first after at ${contractInstant(firstAfter.serverNow)}, ${String(late)} s after it: ${shown(firstAfter.json, club)}`,
       );
     }
     input.say(`spike-time: ${edge} at ${at.toString()}: ${lines.join("; ")}`);
@@ -663,6 +728,7 @@ export async function spikeTime(input: SpikeInput): Promise<Check[]> {
         ? undefined
         : `${String(before)} before and ${String(after)} after${window.aborted ? ", when its minute ran out" : limit().aborted ? `, when ${OUT_OF_TIME}` : ""}`,
     );
+    return before + after;
   }
 
   try {
@@ -675,12 +741,21 @@ export async function spikeTime(input: SpikeInput): Promise<Check[]> {
           `${club.first.revealAt.toString()} and closes ${club.first.closeAt.toString()}; Ben's day ` +
           `${club.second.localDate.toString()} opens ${club.second.revealAt.toString()}`,
       );
+      // Both instants are watched whatever the reveal's window found, so a failed run still shows
+      // both, except when the reveal's window had no answer at all: then the close's couldn't either,
+      // and dev's clock isn't moved the further 18 hours or so for nothing (it never comes back).
       for (const [edge, at] of [
         ["reveal", club.first.revealAt],
         ["close", club.first.closeAt],
       ] as const) {
         if (!(await move(edge, at.subtract({ seconds: LEAD_SECONDS })))) break;
-        await watch(token, club, edge, at);
+        if ((await watch(token, club, edge, at)) === 0 && edge === "reveal") {
+          record(
+            "close: dev's clock moves again only after a reveal's window that had answers",
+            "the reveal's window had no answer with a server_now, so the close isn't watched",
+          );
+          break;
+        }
       }
     }
   } finally {
@@ -694,6 +769,11 @@ export async function spikeTime(input: SpikeInput): Promise<Check[]> {
       record(
         "cleanup: delete the run's user",
         gone ? undefined : `${reply === undefined ? silence() : `answered ${describe(reply)}`}; ${email} is left`,
+      );
+    } else if (mayBeMade === true) {
+      record(
+        "cleanup: the run's user may be left",
+        `the call that makes it had no clear answer, so ${email} may have been made: delete it by that address`,
       );
     }
   }

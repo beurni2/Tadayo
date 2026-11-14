@@ -147,13 +147,19 @@ describe("spike-time's club, written as tadayo_app", () => {
     });
   });
 
-  it("refuses an account that isn't the run's own, finished as the API finishes it, and writes nothing", async () => {
+  it("refuses an account that isn't the run's own, finished as the API finishes it and active, and writes nothing", async () => {
     await rolledBack(app, async (tx) => {
       const unnamed = await apiAccount(tx, { name: null, age: false });
       const unconfirmed = await apiAccount(tx, { name: null, age: true });
       const other = await apiAccount(tx, { name: "Nina" });
       const ana = await apiAccount(tx);
-      for (const account of [unnamed, unconfirmed, other, { id: ana.id, subject: randomUUID() }]) {
+      // Ana as the API finished it, then asked to delete: no longer an active account.
+      const deleting = await apiAccount(tx);
+      await tx`
+        UPDATE app.users SET state = 'deleting',
+               deletion_requested_at = '2026-11-16T11:49:30Z'::pg_catalog.text::pg_catalog.timestamptz
+         WHERE id = ${deleting.id}`;
+      for (const account of [unnamed, unconfirmed, other, { id: ana.id, subject: randomUUID() }, deleting]) {
         await expect(writeClub(tx, { run: RUN, account, clock: fakeClock(SAMPLE) })).rejects.toThrow(OpsError);
       }
       const [row] = await tx<{ n: string }[]>`

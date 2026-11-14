@@ -278,7 +278,8 @@ describe("the caller's clubs and invitations (spec 04, 05)", () => {
       // Counts the statements sent: postgres.js sends a statement when it is awaited (its `then` is
       // called, once or more), and a fragment built with the same tagged template, such as the day
       // choice's, never is. So it counts the queries awaited, which is what reaches Postgres; a count of
-      // calls would count the fragments too.
+      // calls would count the fragments too. `QuerySql` returns a `PromiseLike`, so awaiting is the only way
+      // `listClubs` can send a statement.
       const sent = new Set<unknown>();
       let made = 0;
       const counting: QuerySql = (template, ...values) => {

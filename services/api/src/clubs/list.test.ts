@@ -123,7 +123,7 @@ describe("GET /v1/clubs: the answer's field list (T55)", () => {
     expect(JSON.stringify(body)).not.toMatch(/drp_1|acct_ana|example\.invalid|count/);
   });
 
-  it("cuts an instant to whole seconds downwards, never up: a day isn't announced as opening before it does", () => {
+  it("gives a day's instants in the contract's whole seconds, rounded down as server_now is (a real day's instants are whole seconds anyway: dayInstants)", () => {
     const fraction = { ...saturday, revealAt: Temporal.Instant.from("2026-11-07T06:59:59.999999Z") };
     expect((occurrenceBody(fraction) as { reveal_at: string }).reveal_at).toBe("2026-11-07T06:59:59Z");
   });
@@ -135,7 +135,21 @@ describe("GET /v1/clubs: one sample of the clock for the instant and the days (T
     await Promise.all(open.splice(0).map((app) => app.close()));
   });
 
-  it("chooses the days at the instant it answers with, read first in the same read-only transaction", async () => {
+  /** The day row the statement gives for `club_1`, as Postgres's jsonb would. */
+  const dayRow = (over: Record<string, unknown> = {}) => ({
+    id: "occ_sat",
+    club_id: "club_1",
+    local_date: "2026-11-07",
+    reveal_at: "2026-11-07T07:00:00+00:00",
+    close_at: "2026-11-08T01:00:00+00:00",
+    star_membership_id: "mem_ana",
+    star_name: "Ana",
+    star_avatar_version: null,
+    ...over,
+  });
+
+  /** The route against a statement that gives `club_1` these days, and what it bound and how it began. */
+  async function serve(days: { open_day: unknown; next_day: unknown }) {
     const bound: unknown[] = [];
     const modes: unknown[] = [];
     const statement = Promise.resolve([
@@ -149,17 +163,7 @@ describe("GET /v1/clubs: one sample of the clock for the instant and the days (T
             suspended: false,
             activated: true,
             member_count: 3,
-            open_day: {
-              id: "occ_sat",
-              club_id: "club_1",
-              local_date: "2026-11-07",
-              reveal_at: "2026-11-07T07:00:00+00:00",
-              close_at: "2026-11-08T01:00:00+00:00",
-              star_membership_id: "mem_ana",
-              star_name: "Ana",
-              star_avatar_version: null,
-            },
-            next_day: null,
+            ...days,
           },
         ],
         invitations: [],
@@ -197,6 +201,11 @@ describe("GET /v1/clubs: one sample of the clock for the instant and the days (T
     await app.ready();
     open.push(app);
     const response = await app.inject({ method: "GET", url: "/v1/clubs", headers: { authorization: "Bearer x" } });
+    return { response, bound, modes, sampled, tx };
+  }
+
+  it("chooses the days at the instant it answers with, read first in the same read-only transaction", async () => {
+    const { response, bound, modes, sampled, tx } = await serve({ open_day: dayRow(), next_day: null });
     expect(response.statusCode).toBe(200);
     expect(response.headers["cache-control"]).toBe("private, no-store");
     expect(modes).toEqual(["read only"]);
@@ -209,5 +218,16 @@ describe("GET /v1/clubs: one sample of the clock for the instant and the days (T
     expect(body.server_now).toBe("2026-11-07T07:00:00Z");
     expect(body.clubs[0]?.open_day?.phase).toBe("open");
     expect(ClubList.safeParse(body).success).toBe(true);
+  });
+
+  it("refuses to serve a day whose club isn't the club it is listed under, open or next", async () => {
+    for (const days of [
+      { open_day: dayRow({ club_id: "club_2" }), next_day: null },
+      { open_day: null, next_day: dayRow({ id: "occ_mon", club_id: "club_2" }) },
+    ]) {
+      const { response } = await serve(days);
+      expect(response.statusCode, JSON.stringify(days)).toBe(500);
+      expect(response.body).not.toMatch(/occ_sat|occ_mon|club_2|Ana/);
+    }
   });
 });

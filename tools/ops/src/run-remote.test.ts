@@ -866,14 +866,26 @@ describe("spike-time on the Machine (--here)", () => {
     };
     const h = harness({ args, env: MACHINE_ENV, fetch: api });
     const transactions: number[] = [];
-    const nothing: unknown = Object.assign(() => Promise.resolve([]), {
-      unsafe: () => Promise.resolve([]),
-      end: () => Promise.resolve(),
-      begin: (body: (tx: unknown) => Promise<unknown>) => {
-        transactions.push(1);
-        return body(nothing);
+    const statements: string[] = [];
+    const ends: unknown[] = [];
+    const nothing: unknown = Object.assign(
+      (strings: TemplateStringsArray) => {
+        statements.push(strings.join("?").replace(/\s+/g, " ").trim().slice(0, 40));
+        return Promise.resolve([]);
       },
-    });
+      {
+        unsafe: () => Promise.resolve([]),
+        end: (options?: unknown) => {
+          ends.push(options);
+          return Promise.resolve();
+        },
+        begin: (body: (tx: unknown) => Promise<unknown>) => {
+          transactions.push(1);
+          statements.push("BEGIN");
+          return body(nothing);
+        },
+      },
+    );
     const ctx: OpsContext = { ...h.ctx, connect: () => nothing as ReturnType<OpsContext["connect"]> };
     expect(await failure("spike-time", ctx)).toBe("spike-time: 1 of 6 checks failed");
     expect(h.said.slice(1)).toEqual([
@@ -886,6 +898,15 @@ describe("spike-time on the Machine (--here)", () => {
       "spike-time: ok    cleanup: delete the run's user",
     ]);
     expect(transactions).toEqual([1]);
+    // The club's transaction sets its limits before dev's clock is checked, so the check has them too.
+    expect(statements.slice(statements.indexOf("BEGIN"), statements.indexOf("BEGIN") + 4)).toEqual([
+      "BEGIN",
+      "SET LOCAL statement_timeout = '20s'",
+      "SET LOCAL lock_timeout = '10s'",
+      expect.stringMatching(/^SELECT EXISTS \(SELECT FROM pg_catalog/) as unknown,
+    ]);
+    // The connection's end waits 5 seconds at most for a call the run left under way.
+    expect(ends).toEqual([{ timeout: 5 }]);
     expect(project.users.size).toBe(0);
     expect(JSON.stringify(h.said)).not.toContain(FAKE_SECRET);
   });

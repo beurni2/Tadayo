@@ -122,11 +122,19 @@ describe("only the viewer's clubs, and only a scheduled day that isn't held (T9,
   });
 
   it("gives nothing in a suspended club, and keeps a club that isn't suspended to the days its rows hold (FQ50)", () => {
-    for (const instant of PHASES)
+    const held = [
+      { open: null, next: "occ_sat" },
+      { open: "occ_sat", next: "occ_mon" },
+      { open: "occ_sat", next: "occ_mon" },
+      { open: null, next: "occ_mon" },
+    ];
+    PHASES.forEach((instant, index) => {
       expect(choose({ ...CLUB, clubSuspendedAt: at("2026-11-06T20:30:00Z") }, instant)).toEqual({
         open: null,
         next: null,
       });
+      expect(ids(choose({ ...CLUB, clubSuspendedAt: null }, instant)), instant.toString()).toEqual(held[index]);
+    });
   });
 
   it("never chooses a suspended or cancelled day, open or next, and moves next on to the day after it", () => {

@@ -4,7 +4,8 @@
 // database moves, and that answers each read at its own `server_now`. The run has to pass an API that
 // switches at the instant, and fail one that switches a second early or late, answers with another
 // cache header or anything more or less than the club list, or never reaches the instant; whatever
-// fails or hangs, the run's user is deleted, and a clean-up the deadline cuts says what is left. The
+// fails or hangs, an API, Auth or the database, the run's user is deleted, and a clean-up the deadline
+// cuts, or a user made by a call whose answer was lost, says what may be left. The
 // club the run writes and its move of the clock, on Postgres, are tests/src/db/ops-spike-time.test.ts,
 // which also holds `expectedClubList` against the API's own day choice and serializer; the runner's
 // and the Machine's halves, as run.ts wires them, are in run-remote.test.ts.
@@ -117,6 +118,8 @@ interface World {
   readonly said: string[];
   readonly written: SpikeAccount[];
   readonly moves: Temporal.Instant[];
+  /** Each wait the run asked for between two reads, in milliseconds. */
+  readonly sleeps: number[];
   /** dev's clock as the made-up API reads it. */
   readonly clock: { now: Temporal.Instant };
 }
@@ -139,6 +142,8 @@ interface Options {
   cacheControl?: string;
   /** Answer number n (from 1) of the club list is this instead. */
   odd?: { n: number; status?: number; body?: unknown };
+  /** Every read of the club list answers this status, with no body. */
+  down?: number;
   /** What the answer carries beyond the club list. */
   extra?: (body: ReturnType<typeof clubList>) => unknown;
   /** A call that never answers, by `METHOD path`. */
@@ -156,6 +161,7 @@ function world(options: Options = {}): World {
   const said: string[] = [];
   const written: SpikeAccount[] = [];
   const moves: Temporal.Instant[] = [];
+  const sleeps: number[] = [];
   const clock = { now: at("2026-11-16T11:50:00.000001Z") };
   let offset = 0n;
   let reads = 0;
@@ -190,6 +196,7 @@ function world(options: Options = {}): World {
     if (request.method === "GET" && url.pathname === "/v1/clubs") {
       reads += 1;
       clock.now = clock.now.add({ microseconds: options.step ?? 250_013 });
+      if (options.down !== undefined) return new Response(null, { status: options.down });
       if (options.odd?.n === reads) return json(options.odd.status ?? 200, options.odd.body ?? {});
       const list = clubList(clock.now, options.skew);
       return json(200, options.extra ? options.extra(list) : list, {
@@ -206,10 +213,12 @@ function world(options: Options = {}): World {
     api: API_ROOT,
     run: RUN,
     // A turn of the event loop, so that the limits' timers can fire while a window reads.
-    sleep: () =>
-      new Promise((resolve) => {
+    sleep: (ms) => {
+      sleeps.push(ms);
+      return new Promise((resolve) => {
         setImmediate(resolve);
-      }),
+      });
+    },
     say: (line) => said.push(line),
     budget: options.budget ?? new AbortController().signal,
     deadline: options.deadline ?? new AbortController().signal,
@@ -232,7 +241,7 @@ function world(options: Options = {}): World {
         }),
     },
   };
-  return { input, supabase, calls, said, written, moves, clock };
+  return { input, supabase, calls, said, written, moves, sleeps, clock };
 }
 
 const names = (checks: readonly { name: string }[]) => checks.map((check) => check.name);
@@ -289,10 +298,16 @@ describe("spike-time against an API that switches at the instant", () => {
     }
   });
 
-  it("reads four times a second, and watches each instant until five answers are at or after it", () => {
+  it("reads four times a second, and watches each instant until five answers are at or after it", async () => {
     expect(POLL_MS).toBe(250);
     expect(ANSWERS_AFTER).toBe(5);
     expect(LEAD_SECONDS).toBe(20);
+    const w = world();
+    expect(failed(await spikeTime(w.input))).toEqual([]);
+    // A wait of POLL_MS after each read, but the one that brings each window's fifth answer after its instant.
+    const reads = w.calls.filter((call) => call.path === "/v1/clubs").length;
+    expect(reads).toBe(2 * (79 + ANSWERS_AFTER));
+    expect(w.sleeps).toEqual(Array.from({ length: reads - 2 }, () => POLL_MS));
   });
 });
 
@@ -367,6 +382,39 @@ describe("spike-time against an API that doesn't", () => {
       ),
       expect.stringMatching(/^close: answers came from both sides of 2026-11-17T06:00:00Z: \d+ before and 0 after/),
     ]);
+    expect(w.supabase.users.size).toBe(0);
+  });
+
+  it("fails when no answer came before the instant, as when dev's clock lands past it", async () => {
+    // A clock that goes past the instant, its lead and ten seconds more: every answer is right, and
+    // all of them come after it, so the window saw no switch.
+    let w: World | undefined = undefined;
+    w = world({
+      moveClock: (to) => {
+        if (w !== undefined) w.clock.now = to.add({ seconds: LEAD_SECONDS + 10 });
+        return Promise.resolve({ before: 0n, after: 0n });
+      },
+    });
+    const checks = await spikeTime(w.input);
+    expect(failed(checks)).toEqual([
+      "reveal: answers came from both sides of 2026-11-16T12:00:00Z: 0 before and 5 after",
+      "close: answers came from both sides of 2026-11-17T06:00:00Z: 0 before and 5 after",
+    ]);
+    expect(w.supabase.users.size).toBe(0);
+  });
+
+  it("makes no second move of dev's clock after a reveal's window with no answer, and still deletes the user", async () => {
+    const w = world({ down: 503, windowMs: 50 });
+    const checks = await spikeTime(w.input);
+    expect(failed(checks)).toEqual([
+      expect.stringMatching(
+        /^reveal: every answer is the club's days as T5 has them at its server_now: \d+ wrong; the first: answered HTTP 503$/,
+      ),
+      "reveal: answers came from both sides of 2026-11-16T12:00:00Z: 0 before and 0 after, when its minute ran out",
+      "close: dev's clock moves again only after a reveal's window that had answers: the reveal's window had no answer with a server_now, so the close isn't watched",
+    ]);
+    expect(w.moves.map(String)).toEqual(["2026-11-16T11:59:40Z"]);
+    expect(checks.at(-1)).toEqual({ name: "cleanup: delete the run's user", ok: true });
     expect(w.supabase.users.size).toBe(0);
   });
 });
@@ -466,6 +514,55 @@ describe("spike-time when something fails or hangs", () => {
     expect(refusedMove.supabase.users.size).toBe(0);
   });
 
+  it("leaves a database call that never settles at the run's limit, says it may still commit, and deletes the user", async () => {
+    const never = () => new Promise<never>(() => undefined);
+    const club = world({ writeClub: never, budget: AbortSignal.timeout(50), deadline: AbortSignal.timeout(5_000) });
+    const clubChecks = await spikeTime(club.input);
+    expect(failed(clubChecks)).toEqual([
+      "database: the club is written: the run's time ran out while it was under way, so it may still commit",
+    ]);
+    expect(clubChecks.at(-1)).toEqual({ name: "cleanup: delete the run's user", ok: true });
+    expect(club.supabase.users.size).toBe(0);
+
+    const move = world({ moveClock: never, budget: AbortSignal.timeout(50), deadline: AbortSignal.timeout(5_000) });
+    const moveChecks = await spikeTime(move.input);
+    expect(failed(moveChecks)).toEqual([
+      "reveal: dev's clock moves to 2026-11-16T11:59:40Z: the run's time ran out while it was under way, so it may still commit",
+    ]);
+    expect(move.calls.filter((call) => call.path === "/v1/clubs")).toEqual([]);
+    expect(move.supabase.users.size).toBe(0);
+  });
+
+  it("names the address it may leave when the call that makes the user has no clear answer, but not after a refusal", async () => {
+    const MAY_BE_LEFT = `cleanup: the run's user may be left: the call that makes it had no clear answer, so spike-${RUN}@probe.invalid may have been made: delete it by that address`;
+    const makes = (request: Request) =>
+      request.method === "POST" && new URL(request.url).pathname === "/auth/v1/admin/users";
+    // Auth makes the user, and then the answer is lost, or a gateway answers 502 in its place.
+    for (const [after, note] of [
+      [() => Promise.reject(new Error("socket hang up")), "no answer"],
+      [() => Promise.resolve(new Response("{}", { status: 502 })), "answered HTTP 502"],
+    ] as const) {
+      const w = world();
+      const lossy: typeof fetch = async (input, init) => {
+        if (!makes(new Request(input, init))) return w.input.fetch(input, init);
+        await w.input.fetch(input, init);
+        return after();
+      };
+      const checks = await spikeTime({ ...w.input, fetch: lossy });
+      expect(failed(checks), note).toEqual([`sign-in: the service key makes the run's user: ${note}`, MAY_BE_LEFT]);
+      expect(w.supabase.users.size, note).toBe(1);
+    }
+    // A refusal makes nothing, so nothing is said to be left.
+    const refused = world();
+    const refusing: typeof fetch = (input, init) =>
+      makes(new Request(input, init))
+        ? Promise.resolve(new Response(JSON.stringify({ code: "email_exists" }), { status: 422 }))
+        : refused.input.fetch(input, init);
+    const checks = await spikeTime({ ...refused.input, fetch: refusing });
+    expect(failed(checks)).toEqual(["sign-in: the service key makes the run's user: answered HTTP 422, email_exists"]);
+    expect(refused.supabase.users.size).toBe(0);
+  });
+
   it("refuses a project URL that isn't a Supabase project's before it calls anyone", async () => {
     const w = world();
     await expect(spikeTime({ ...w.input, url: "https://example.com" })).rejects.toThrow(OpsError);
@@ -514,6 +611,51 @@ describe("what the run expects of each answer", () => {
     // The order of an object's keys is no difference; the order of a list is.
     expect(canonical({ b: 1, a: [1, 2] })).toBe(canonical({ a: [1, 2], b: 1 }));
     expect(canonical([1, 2])).not.toBe(canonical([2, 1]));
+  });
+
+  it("says which of the run's own days an answer showed, named from what the run wrote, never a name, date or phase of the answer's", () => {
+    const answer = (body: unknown) => ({ status: 200, cacheControl: "private, no-store", json: body });
+    const reveal = at("2026-11-16T12:00:00Z");
+    const list = clubList(reveal);
+    const summary = list.clubs[0];
+    if (summary === undefined) throw new Error("no club");
+    const foreign = { display_name: "Someone Else", local_date: "1999-01-01", phase: "weird" };
+    const cases: [unknown, string][] = [
+      // The run's day by its id, with another star's name, another date and a phase the contract hasn't.
+      [
+        {
+          ...list,
+          clubs: [
+            {
+              ...summary,
+              open_day: {
+                ...day("first", "open"),
+                star: { membership_id: "mem_ana", display_name: foreign.display_name },
+                local_date: foreign.local_date,
+                phase: foreign.phase,
+              },
+            },
+          ],
+        },
+        "it showed open Ana's 2026-11-16 (another phase), next Ben's 2026-11-17 (collecting)",
+      ],
+      [
+        { ...list, clubs: [{ ...summary, open_day: { ...day("first", "open"), id: "occ_someone", ...foreign } }] },
+        "it showed open a day not the run's, next Ben's 2026-11-17 (collecting)",
+      ],
+      [
+        { ...list, clubs: [{ ...summary, id: "club_someone", name: foreign.display_name }] },
+        "it showed not the run's club",
+      ],
+      [{ ...list, clubs: [summary, { ...summary, id: "club_someone" }] }, "it showed no one club"],
+    ];
+    for (const [body, words] of cases) {
+      const problem = judge(answer(body), CLUB).problem ?? "";
+      expect(problem, words).toContain(words);
+      for (const value of [...Object.values(foreign), "occ_someone", "club_someone"]) {
+        expect(problem, words).not.toContain(value);
+      }
+    }
   });
 
   it("never prints a value of the answer's in where it differs, only the keys' path", () => {

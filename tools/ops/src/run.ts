@@ -32,7 +32,7 @@ import { onMachine } from "./on-machine.ts";
 import { OpsError } from "./ops-error.ts";
 import { seed } from "./seed.ts";
 import type { Spawn } from "./spawn.ts";
-import { moveClock, SPIKE_LIMITS, spikeTime, writeClub } from "./spike-time.ts";
+import { limitTransaction, moveClock, SPIKE_LIMITS, spikeTime, writeClub } from "./spike-time.ts";
 import { BUCKETS, storageSetup } from "./storage-setup.ts";
 import { projectUrl } from "./supabase.ts";
 import {
@@ -89,6 +89,8 @@ async function withDatabase<T>(
   site: Site,
   url: DevDatabaseUrl,
   body: (db: postgres.Sql) => Promise<T>,
+  /** How long the end waits for a statement still under way, in seconds; without it, as long as it takes. */
+  endSeconds?: number,
 ): Promise<T> {
   const db = ctx.connect(url);
   try {
@@ -108,7 +110,7 @@ async function withDatabase<T>(
     }
     return await body(db);
   } finally {
-    await db.end();
+    await db.end(endSeconds === undefined ? undefined : { timeout: endSeconds });
   }
 }
 
@@ -388,24 +390,35 @@ async function spikeOnMachine(ctx: OpsContext, ref: string): Promise<void> {
   // What a failed clean-up leaves is named by this id (`spike-<run>@probe.invalid`).
   const run = randomUUID();
   ctx.say(`spike-time: run ${run}`);
-  const checks = await withDatabase(ctx, { script: "spike-time", variable: "DATABASE_URL" }, database, (db) =>
-    spikeTime({
-      fetch: ctx.fetch,
-      url,
-      publishableKey: variables.SUPABASE_PUBLISHABLE_KEY,
-      serviceKey: variables.SUPABASE_SERVICE_KEY,
-      run,
-      sleep: ctx.sleep,
-      say: ctx.say,
-      budget,
-      deadline,
-      database: {
-        // dev's own clock, checked as the API checks it at start-up, sampled in the club's transaction.
-        writeClub: (account) =>
-          db.begin(async (tx) => writeClub(tx, { run, account, clock: await prepareClock("dev", tx) })),
-        moveClock: (to) => moveClock(db, to),
-      },
-    }),
+  // A call the run left under way (spike-time.ts, `untilAborted`) gets 5 seconds before its connection
+  // is closed, so the Machine's half still prints its checks and its last line inside its time.
+  const checks = await withDatabase(
+    ctx,
+    { script: "spike-time", variable: "DATABASE_URL" },
+    database,
+    (db) =>
+      spikeTime({
+        fetch: ctx.fetch,
+        url,
+        publishableKey: variables.SUPABASE_PUBLISHABLE_KEY,
+        serviceKey: variables.SUPABASE_SERVICE_KEY,
+        run,
+        sleep: ctx.sleep,
+        say: ctx.say,
+        budget,
+        deadline,
+        database: {
+          // dev's own clock, checked as the API checks it at start-up, sampled in the club's transaction,
+          // whose limits come first, so the check's statements have them too.
+          writeClub: (account) =>
+            db.begin(async (tx) => {
+              await limitTransaction(tx);
+              return writeClub(tx, { run, account, clock: await prepareClock("dev", tx) });
+            }),
+          moveClock: (to) => moveClock(db, to),
+        },
+      }),
+    5,
   );
   for (const check of checks) ctx.say(`spike-time: ${reportLine(check)}`);
   const failed = checks.filter((check) => !check.ok).length;
