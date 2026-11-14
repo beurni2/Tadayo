@@ -1,0 +1,40 @@
+$ (cd tests && npx vitest run --config vitest.db.config.ts src/db/club-list.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tests
+
+ ❯ src/db/club-list.test.ts (12 tests | 1 failed) 404ms
+   ❯ the caller's clubs and invitations (spec 04, 05) (12)
+     × reads both lists and the clubs' days in one statement, so they are one snapshot 16ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  02:49:16
+   Duration  736ms (tests 84%, import 10%, transform 5%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/club-list.test.ts > the caller's clubs and invitations (spec 04, 05) > reads both lists and the clubs' days in one statement, so they are one snapshot
+AssertionError: expected 2 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 2
+
+ ❯ src/db/club-list.test.ts:298:25
+    296|       };
+    297|       const listing = await listClubs(counting, w.ana.user, NOW);
+    298|       expect(sent.size).toBe(1);
+       |                         ^
+    299|       // The fragments were made with it too, and weren't sent.
+    300|       expect(made).toBeGreaterThan(1);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/club-list.test.ts:276:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

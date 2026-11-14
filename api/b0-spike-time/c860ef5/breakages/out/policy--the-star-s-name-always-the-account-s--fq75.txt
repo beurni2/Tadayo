@@ -1,0 +1,39 @@
+$ (cd packages/domain && npx vitest run src/authorization/days.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/packages/domain
+
+ ❯ src/authorization/days.test.ts (17 tests | 1 failed) 19ms
+   ❯ the star as the club sees them (FQ75) (4)
+     × names a star whose interval ended during the open day by the name it ended with, with no avatar 6ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+   Start at  02:49:13
+   Duration  152ms (tests 38%, import 33%, transform 22%, worker 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/authorization/days.test.ts > the star as the club sees them (FQ75) > names a star whose interval ended during the open day by the name it ended with, with no avatar
+AssertionError: expected { membershipId: 'mem_ana', …(2) } to deeply equal { membershipId: 'mem_ana', …(2) }
+
+- Expected
++ Received
+
+  {
+    "avatarVersion": null,
+-   "displayName": "Ana B",
++   "displayName": "Someone else",
+    "membershipId": "mem_ana",
+  }
+
+ ❯ src/authorization/days.test.ts:219:86
+    217|       starName: "Someone else",
+    218|     };
+    219|     expect(choose({ ...CLUB, days: [left] }, at("2026-11-07T10:00:00Z"…
+       |                                                                                      ^
+    220|       membershipId: "mem_ana",
+    221|       displayName: "Ana B",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

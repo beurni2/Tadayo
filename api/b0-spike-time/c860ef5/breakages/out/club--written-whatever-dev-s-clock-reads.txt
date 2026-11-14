@@ -1,0 +1,65 @@
+$ (cd tests && npx vitest run --config vitest.db.config.ts src/db/ops-spike-time.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tests
+
+ ❯ src/db/ops-spike-time.test.ts (6 tests | 1 failed) 248ms
+   ❯ spike-time's club, written as tadayo_app (4)
+     × refuses a clock outside the run's start window, between 06:45 and 06:57 in New York on a weekday, and writes nothing 25ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 passed (6)
+   Start at  02:50:44
+   Duration  843ms (tests 44%, import 36%, transform 20%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/ops-spike-time.test.ts > spike-time's club, written as tadayo_app > refuses a clock outside the run's start window, between 06:45 and 06:57 in New York on a weekday, and writes nothing
+AssertionError: promise resolved "{ …(6) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "first": {
++     "closeAt": "2026-11-18T06:00:00Z",
++     "id": "occ_tq6qDGjmM-ddEQUdUxMs6w",
++     "localDate": "2026-11-17",
++     "revealAt": "2026-11-17T12:00:00Z",
++     "star": {
++       "displayName": "Ana",
++       "membershipId": "mem_lCsJjURl1_SjWfV93OlemQ",
++     },
++   },
++   "id": "club_tIeN49-htKAaE2Gh2mxB6g",
++   "membershipId": "mem_lCsJjURl1_SjWfV93OlemQ",
++   "name": "S5 1a2b3c4d",
++   "second": {
++     "closeAt": "2026-11-19T06:00:00Z",
++     "id": "occ_7IXdZbB2HhWaN1CMoQsqtA",
++     "localDate": "2026-11-18",
++     "revealAt": "2026-11-18T12:00:00Z",
++     "star": {
++       "displayName": "Ben",
++       "membershipId": "mem_QeP_PngHHYpzYTGDT1cnow",
++     },
++   },
++   "timezone": "America/New_York",
+  }
+
+ ❯ src/db/ops-spike-time.test.ts:181:10
+    179|         await expect(
+    180|           writeClub(tx, { run: RUN, account: ana, clock: fakeClock(Tem…
+    181|         ).rejects.toThrow(OpsError);
+       |          ^
+    182|       }
+    183|       const [after] = await rows();
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

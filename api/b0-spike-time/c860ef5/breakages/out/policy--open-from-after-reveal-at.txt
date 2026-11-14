@@ -1,0 +1,143 @@
+$ (cd packages/domain && npx vitest run src/authorization/days.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/packages/domain
+
+ ❯ src/authorization/days.test.ts (17 tests | 5 failed) 22ms
+   ❯ which day is open and which is next, by the server's time alone (T1, T5; spec 06) (4)
+     × opens the day at reveal_at exactly, not a microsecond before, and keeps it open until a microsecond before close_at 8ms
+     × gives the earliest day to open as next: the day itself while it collects, the one after while it is open and after it closes 1ms
+     × says each chosen day's phase from its slot, and carries the day's own date, instants and club 1ms
+   ❯ only the viewer's clubs, and only a scheduled day that isn't held (T9, T14, T27; FQ50, FQ63; spec 22) (7)
+     × gives nothing in a suspended club, and keeps a club that isn't suspended to the days its rows hold (FQ50) 1ms
+   ❯ the star as the club sees them (FQ75) (4)
+     × names an active star by their account's name now, with their avatar's version while their account is active 1ms
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 12 passed (17)
+   Start at  02:49:05
+   Duration  180ms (tests 43%, import 29%, transform 21%, worker 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/authorization/days.test.ts > which day is open and which is next, by the server's time alone (T1, T5; spec 06) > opens the day at reveal_at exactly, not a microsecond before, and keeps it open until a microsecond before close_at
+AssertionError: expected { open: null, next: 'occ_mon' } to deeply equal { open: 'occ_sat', next: 'occ_mon' }
+
+- Expected
++ Received
+
+  {
+    "next": "occ_mon",
+-   "open": "occ_sat",
++   "open": null,
+  }
+
+ ❯ src/authorization/days.test.ts:63:43
+     61|   it("opens the day at reveal_at exactly, not a microsecond before, an…
+     62|     expect(ids(choose(CLUB, µs(SAT.reveal, -1)))).toEqual({ open: null…
+     63|     expect(ids(choose(CLUB, SAT.reveal))).toEqual({ open: "occ_sat", n…
+       |                                           ^
+     64|     expect(ids(choose(CLUB, µs(SAT.close, -1)))).toEqual({ open: "occ_…
+     65|     expect(ids(choose(CLUB, SAT.close))).toEqual({ open: null, next: "…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/authorization/days.test.ts > which day is open and which is next, by the server's time alone (T1, T5; spec 06) > gives the earliest day to open as next: the day itself while it collects, the one after while it is open and after it closes
+AssertionError: expected { open: null, next: null } to deeply equal { open: 'occ_mon', next: null }
+
+- Expected
++ Received
+
+  {
+    "next": null,
+-   "open": "occ_mon",
++   "open": null,
+  }
+
+ ❯ src/authorization/days.test.ts:72:43
+     70|     expect(ids(choose(CLUB, at("2026-11-07T12:00:00Z")))).toEqual({ op…
+     71|     expect(ids(choose(CLUB, at("2026-11-08T12:00:00Z")))).toEqual({ op…
+     72|     expect(ids(choose(CLUB, MON.reveal))).toEqual({ open: "occ_mon", n…
+       |                                           ^
+     73|     // After the last day there is no next: nothing is invented (T49).
+     74|     expect(ids(choose(CLUB, MON.close))).toEqual({ open: null, next: n…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/authorization/days.test.ts > which day is open and which is next, by the server's time alone (T1, T5; spec 06) > says each chosen day's phase from its slot, and carries the day's own date, instants and club
+AssertionError: expected null to deeply equal { id: 'occ_sat', …(6) }
+
+- Expected:
+{
+  "closeAt": Instant {},
+  "clubId": "club_1",
+  "id": "occ_sat",
+  "localDate": "2026-11-07",
+  "phase": "open",
+  "revealAt": Instant {},
+  "star": {
+    "avatarVersion": "v_ana",
+    "displayName": "Ana",
+    "membershipId": "mem_ana",
+  },
+}
+
++ Received:
+null
+
+ ❯ src/authorization/days.test.ts:80:25
+     78|   it("says each chosen day's phase from its slot, and carries the day'…
+     79|     const choice = choose(CLUB, SAT.reveal);
+     80|     expect(choice.open).toEqual({
+       |                         ^
+     81|       id: "occ_sat",
+     82|       clubId: "club_1",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/authorization/days.test.ts > only the viewer's clubs, and only a scheduled day that isn't held (T9, T14, T27; FQ50, FQ63; spec 22) > gives nothing in a suspended club, and keeps a club that isn't suspended to the days its rows hold (FQ50)
+AssertionError: 2026-11-07T07:00:00Z: expected { open: null, next: 'occ_mon' } to deeply equal { open: 'occ_sat', next: 'occ_mon' }
+
+- Expected
++ Received
+
+  {
+    "next": "occ_mon",
+-   "open": "occ_sat",
++   "open": null,
+  }
+
+ ❯ src/authorization/days.test.ts:136:92
+    134|         next: null,
+    135|       });
+    136|       expect(ids(choose({ ...CLUB, clubSuspendedAt: null }, instant)),…
+       |                                                                                            ^
+    137|     });
+    138|   });
+ ❯ src/authorization/days.test.ts:131:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/authorization/days.test.ts > the star as the club sees them (FQ75) > names an active star by their account's name now, with their avatar's version while their account is active
+AssertionError: expected undefined to deeply equal { membershipId: 'mem_ana', …(2) }
+
+- Expected:
+{
+  "avatarVersion": "v_ana",
+  "displayName": "Ana",
+  "membershipId": "mem_ana",
+}
+
++ Received:
+undefined
+
+ ❯ src/authorization/days.test.ts:193:49
+    191| describe("the star as the club sees them (FQ75)", () => {
+    192|   it("names an active star by their account's name now, with their ava…
+    193|     expect(choose(CLUB, SAT.reveal).open?.star).toEqual({
+       |                                                 ^
+    194|       membershipId: "mem_ana",
+    195|       displayName: "Ana",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+

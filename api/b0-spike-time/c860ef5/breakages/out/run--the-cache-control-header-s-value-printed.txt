@@ -1,0 +1,32 @@
+$ (cd tools/ops && npx vitest run src/spike-time.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tools/ops
+
+ ❯ src/spike-time.test.ts (24 tests | 1 failed) 2626ms
+   ❯ spike-time against an API that doesn't (5)
+     × fails an answer with another cache header, another status, no server_now, or anything more than the club list 24ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 23 passed (24)
+   Start at  02:50:41
+   Duration  2.88s (tests 95%, transform 3%, import 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/spike-time.test.ts > spike-time against an API that doesn't > fails an answer with another cache header, another status, no server_now, or anything more than the club list
+AssertionError: answered with a Cache-Control other than private, no-store: expected 'reveal: every answer is the club\'s d…' to contain 'answered with a Cache-Control other t…'
+
+Expected: "answered with a Cache-Control other than private, no-store"
+Received: "reveal: every answer is the club's days as T5 has them at its server_now: 84 wrong; the first: answered with Cache-Control "no-store, marker-7f3a""
+
+ ❯ src/spike-time.test.ts:372:30
+    370|         /^reveal: every answer is the club's days as T5 has them at it…
+    371|       );
+    372|       expect(wrong[0], note).toContain(note);
+       |                              ^
+    373|       expect(checks.at(-1)).toEqual({ name: "cleanup: delete the run's…
+    374|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

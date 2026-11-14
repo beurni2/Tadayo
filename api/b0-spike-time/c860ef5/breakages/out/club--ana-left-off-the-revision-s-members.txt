@@ -1,0 +1,54 @@
+$ (cd tests && npx vitest run --config vitest.db.config.ts src/db/ops-spike-time.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tests
+
+ ❯ src/db/ops-spike-time.test.ts (6 tests | 2 failed) 129ms
+   ❯ spike-time's club, written as tadayo_app (4)
+     × goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond 43ms
+   ❯ what spike-time expects, against the API's own day choice and serializer on its rows (1)
+     × is the club list GET /v1/clubs gives Ana at every instant round both of the day's edges 25ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 4 passed (6)
+   Start at  02:50:01
+   Duration  777ms (import 48%, tests 28%, transform 22%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/ops-spike-time.test.ts > spike-time's club, written as tadayo_app > goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond
+PostgresError: app.roster_revisions: revision rev_4PnHybvRQV2ffIhePJ_aqA's roster isn't exactly the club's members (T7)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ writeClub ../tools/ops/src/spike-time.ts:240:11
+    238|     INSERT INTO app.roster_revision_candidates (revision_id, club_id, …
+    239|     VALUES (${revision}, ${club}, ${candidate}, 'Ben', 1)`;
+    240|   await tx`
+       |           ^
+    241|     UPDATE app.roster_revisions SET roster_sealed_at = ${at}::pg_catal…
+    242|      WHERE id = ${revision}`;
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/ops-spike-time.test.ts > what spike-time expects, against the API's own day choice and serializer on its rows > is the club list GET /v1/clubs gives Ana at every instant round both of the day's edges
+PostgresError: app.roster_revisions: revision rev_oPpq8IOPC4-2UgnlilX6eg's roster isn't exactly the club's members (T7)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ writeClub ../tools/ops/src/spike-time.ts:240:11
+    238|     INSERT INTO app.roster_revision_candidates (revision_id, club_id, …
+    239|     VALUES (${revision}, ${club}, ${candidate}, 'Ben', 1)`;
+    240|   await tx`
+       |           ^
+    241|     UPDATE app.roster_revisions SET roster_sealed_at = ${at}::pg_catal…
+    242|      WHERE id = ${revision}`;
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

@@ -1,0 +1,65 @@
+$ (cd tests && npx vitest run --config vitest.db.config.ts src/db/ops-spike-time.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tests
+
+ ❯ src/db/ops-spike-time.test.ts (6 tests | 1 failed) 239ms
+   ❯ spike-time's club, written as tadayo_app (4)
+     × refuses an account that isn't the run's own, finished as the API finishes it and active, and writes nothing 28ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 passed (6)
+   Start at  02:49:55
+   Duration  836ms (tests 43%, import 35%, transform 22%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/ops-spike-time.test.ts > spike-time's club, written as tadayo_app > refuses an account that isn't the run's own, finished as the API finishes it and active, and writes nothing
+AssertionError: promise resolved "{ …(6) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "first": {
++     "closeAt": "2026-11-17T06:00:00Z",
++     "id": "occ_luiNc4Q5n5J4UUIveBJAiA",
++     "localDate": "2026-11-16",
++     "revealAt": "2026-11-16T12:00:00Z",
++     "star": {
++       "displayName": "Ana",
++       "membershipId": "mem_CQRZcRjChNPPrm2t-hL2BA",
++     },
++   },
++   "id": "club_nXuLT892ocek7GzuK3GY_A",
++   "membershipId": "mem_CQRZcRjChNPPrm2t-hL2BA",
++   "name": "S5 1a2b3c4d",
++   "second": {
++     "closeAt": "2026-11-18T06:00:00Z",
++     "id": "occ_N2YKsnPxEGi5eJprCZMEZA",
++     "localDate": "2026-11-17",
++     "revealAt": "2026-11-17T12:00:00Z",
++     "star": {
++       "displayName": "Ben",
++       "membershipId": "mem_sx5-MDZgSyuCR7NcCvSwPQ",
++     },
++   },
++   "timezone": "America/New_York",
+  }
+
+ ❯ src/db/ops-spike-time.test.ts:163:85
+    161|          WHERE id = ${deleting.id}`;
+    162|       for (const account of [unnamed, unconfirmed, other, { id: ana.id…
+    163|         await expect(writeClub(tx, { run: RUN, account, clock: fakeClo…
+       |                                                                                     ^
+    164|       }
+    165|       const [row] = await tx<{ n: string }[]>`
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

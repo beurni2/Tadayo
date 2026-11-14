@@ -1,0 +1,73 @@
+$ (cd packages/domain && npx vitest run src/authorization/days.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/packages/domain
+
+ ❯ src/authorization/days.test.ts (17 tests | 2 failed) 21ms
+   ❯ only the viewer's clubs, and only a scheduled day that isn't held (T9, T14, T27; FQ50, FQ63; spec 22) (7)
+     × holds a day whose star left before its reveal, by any ending: never open, never next (FQ63) 8ms
+     × refuses a held day's facts it can't read: a leaving that isn't an instant denies 1ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 15 passed (17)
+   Start at  02:49:11
+   Duration  173ms (tests 42%, import 30%, transform 21%, worker 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/authorization/days.test.ts > only the viewer's clubs, and only a scheduled day that isn't held (T9, T14, T27; FQ50, FQ63; spec 22) > holds a day whose star left before its reveal, by any ending: never open, never next (FQ63)
+AssertionError: left 2026-11-07T06:59:59.999999Z: expected { open: null, next: { …(7) } } to deeply equal { open: null, next: null }
+
+- Expected
++ Received
+
+  {
+-   "next": null,
++   "next": {
++     "closeAt": "2026-11-08T01:00:00Z",
++     "clubId": "club_1",
++     "id": "occ_sat",
++     "localDate": "2026-11-07",
++     "phase": "collecting",
++     "revealAt": "2026-11-07T07:00:00Z",
++     "star": {
++       "avatarVersion": null,
++       "displayName": "Ana",
++       "membershipId": "mem_ana",
++     },
++   },
+    "open": null,
+  }
+
+ ❯ src/authorization/days.test.ts:152:94
+    150|       const held = { ...ANA, starIntervalState: state, starLeftAt: µs(…
+    151|       for (const instant of PHASES)
+    152|         expect(choose({ ...CLUB, days: [held] }, instant), `${state} $…
+       |                                                                                              ^
+    153|           open: null,
+    154|           next: null,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/authorization/days.test.ts > only the viewer's clubs, and only a scheduled day that isn't held (T9, T14, T27; FQ50, FQ63; spec 22) > refuses a held day's facts it can't read: a leaving that isn't an instant denies
+AssertionError: expected { open: 'occ_sat', next: null } to deeply equal { open: null, next: null }
+
+- Expected
++ Received
+
+  {
+    "next": null,
+-   "open": null,
++   "open": "occ_sat",
+  }
+
+ ❯ src/authorization/days.test.ts:187:67
+    185|   it("refuses a held day's facts it can't read: a leaving that isn't a…
+    186|     const strange = { ...ANA, starLeftAt: "2026-11-01T00:00:00Z" as un…
+    187|     expect(ids(choose({ ...CLUB, days: [strange] }, SAT.reveal))).toEq…
+       |                                                                   ^
+    188|   });
+    189| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

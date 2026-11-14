@@ -1,0 +1,51 @@
+$ (cd packages/domain && npx vitest run src/authorization/days.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/packages/domain
+
+ ❯ src/authorization/days.test.ts (17 tests | 1 failed) 22ms
+   ❯ only the viewer's clubs, and only a scheduled day that isn't held (T9, T14, T27; FQ50, FQ63; spec 22) (7)
+     × gives nothing in a suspended club, and keeps a club that isn't suspended to the days its rows hold (FQ50) 9ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+   Start at  02:49:09
+   Duration  174ms (tests 41%, import 30%, transform 21%, worker 8%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/authorization/days.test.ts > only the viewer's clubs, and only a scheduled day that isn't held (T9, T14, T27; FQ50, FQ63; spec 22) > gives nothing in a suspended club, and keeps a club that isn't suspended to the days its rows hold (FQ50)
+AssertionError: expected { open: null, next: { …(7) } } to deeply equal { open: null, next: null }
+
+- Expected
++ Received
+
+  {
+-   "next": null,
++   "next": {
++     "closeAt": "2026-11-08T01:00:00Z",
++     "clubId": "club_1",
++     "id": "occ_sat",
++     "localDate": "2026-11-07",
++     "phase": "collecting",
++     "revealAt": "2026-11-07T07:00:00Z",
++     "star": {
++       "avatarVersion": "v_ana",
++       "displayName": "Ana",
++       "membershipId": "mem_ana",
++     },
++   },
+    "open": null,
+  }
+
+ ❯ src/authorization/days.test.ts:132:89
+    130|     ];
+    131|     PHASES.forEach((instant, index) => {
+    132|       expect(choose({ ...CLUB, clubSuspendedAt: at("2026-11-06T20:30:0…
+       |                                                                                         ^
+    133|         open: null,
+    134|         next: null,
+ ❯ src/authorization/days.test.ts:131:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

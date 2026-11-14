@@ -1,0 +1,56 @@
+$ (cd services/api && npx vitest run src/clubs/list.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/services/api
+
+ ❯ src/clubs/list.test.ts (7 tests | 2 failed) 129ms
+   ❯ GET /v1/clubs: the answer's field list (T55) (5)
+     × gives each day as the contract's Occurrence and nothing else of it: instants in whole seconds, the avatar only when there is one (T5, T15, T33) 10ms
+   ❯ GET /v1/clubs: one sample of the clock for the instant and the days (T1) (2)
+     × chooses the days at the instant it answers with, read first in the same read-only transaction 87ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 5 passed (7)
+   Start at  02:49:19
+   Duration  490ms (import 49%, tests 34%, transform 17%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/clubs/list.test.ts > GET /v1/clubs: the answer's field list (T55) > gives each day as the contract's Occurrence and nothing else of it: instants in whole seconds, the avatar only when there is one (T5, T15, T33)
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/clubs/list.test.ts:81:46
+     79|   it("gives each day as the contract's Occurrence and nothing else of …
+     80|     const body = clubListBody(now, { clubs: [club({ openDay: saturday,…
+     81|     expect(ClubList.safeParse(body).success).toBe(true);
+       |                                              ^
+     82|     const [listed] = (body as { clubs: Record<string, unknown>[] }).cl…
+     83|     expect(listed?.["open_day"]).toEqual({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/clubs/list.test.ts > GET /v1/clubs: one sample of the clock for the instant and the days (T1) > chooses the days at the instant it answers with, read first in the same read-only transaction
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/clubs/list.test.ts:220:46
+    218|     expect(body.server_now).toBe("2026-11-07T07:00:00Z");
+    219|     expect(body.clubs[0]?.open_day?.phase).toBe("open");
+    220|     expect(ClubList.safeParse(body).success).toBe(true);
+       |                                              ^
+    221|   });
+    222|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

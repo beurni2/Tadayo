@@ -1,0 +1,323 @@
+$ (cd tools/ops && npx vitest run src/spike-time.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tools/ops
+
+ ❯ src/spike-time.test.ts (24 tests | 13 failed) 2437ms
+   ❯ spike-time against an API that switches at the instant (2)
+     × signs in, makes the account the app's way, writes the club, watches both instants from 20 seconds before, and deletes the user 88ms
+   ❯ spike-time against an API that doesn't (5)
+     × fails a switch a second early or a second late, at each instant, naming the first answer that was wrong 29ms
+     × fails an answer with another cache header, another status, no server_now, or anything more than the club list 16ms
+     × fails when its answers never reach the instant, when the window runs out, and still deletes the user 104ms
+     × fails when no answer came before the instant, as when dev's clock lands past it 4ms
+     × makes no second move of dev's clock after a reveal's window with no answer, and still deletes the user 52ms
+   ❯ spike-time when something fails or hangs (9)
+     × stops at an API that doesn't answer, and deletes the user 2001ms
+     × stops when the budget is spent during a call to Auth that hangs, and still deletes the user before the deadline 23ms
+     × starts no new work once the budget is spent, and still deletes the user 2ms
+     × fails, naming the user it leaves, when the deadline cuts the clean-up 2ms
+     × fails, naming the user it leaves, when Auth won't delete it 17ms
+     × stops at a club the database refuses, or a move of the clock it refuses, saying why, and deletes the user 1ms
+     × leaves a database call that never settles at the run's limit, says it may still commit, and deletes the user 51ms
+
+ Test Files  1 failed (1)
+      Tests  13 failed | 11 passed (24)
+   Start at  02:49:47
+   Duration  2.70s (tests 95%, transform 3%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 13 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/spike-time.test.ts > spike-time against an API that switches at the instant > signs in, makes the account the app's way, writes the club, watches both instants from 20 seconds before, and deletes the user
+AssertionError: expected [ …(11) ] to deeply equal [ …(12) ]
+
+- Expected
++ Received
+
+@@ -8,7 +8,6 @@
+    "reveal: every answer is the club's days as T5 has them at its server_now",
+    "reveal: answers came from both sides of 2026-11-16T12:00:00Z",
+    "close: dev's clock moves to 2026-11-17T05:59:40Z",
+    "close: every answer is the club's days as T5 has them at its server_now",
+    "close: answers came from both sides of 2026-11-17T06:00:00Z",
+-   "cleanup: delete the run's user",
+  ]
+
+ ❯ src/spike-time.test.ts:272:27
+    270|     const checks = await spikeTime(w.input);
+    271|     expect(failed(checks)).toEqual([]);
+    272|     expect(names(checks)).toEqual(ALL);
+       |                           ^
+    273|     // The run's user is gone, and the account it wrote the club for i…
+    274|     expect(w.supabase.users.size).toBe(0);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/13]⎯
+
+ FAIL  src/spike-time.test.ts > spike-time against an API that doesn't > fails a switch a second early or a second late, at each instant, naming the first answer that was wrong
+AssertionError: expected 1 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ ❯ src/spike-time.test.ts:338:37
+    336|         /^close: every answer is the club's days as T5 has them at its…
+    337|       );
+    338|       expect(w.supabase.users.size).toBe(0);
+       |                                     ^
+    339|     }
+    340|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/13]⎯
+
+ FAIL  src/spike-time.test.ts > spike-time against an API that doesn't > fails an answer with another cache header, another status, no server_now, or anything more than the club list
+AssertionError: expected { …(2) } to deeply equal { …(2) }
+
+- Expected
++ Received
+
+  {
+-   "name": "cleanup: delete the run's user",
++   "name": "close: answers came from both sides of 2026-11-17T06:00:00Z",
+    "ok": true,
+  }
+
+ ❯ src/spike-time.test.ts:373:29
+    371|       );
+    372|       expect(wrong[0], note).toContain(note);
+    373|       expect(checks.at(-1)).toEqual({ name: "cleanup: delete the run's…
+       |                             ^
+    374|     }
+    375|     // The header's own value is never printed, and a missing header i…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/13]⎯
+
+ FAIL  src/spike-time.test.ts > spike-time against an API that doesn't > fails when its answers never reach the instant, when the window runs out, and still deletes the user
+AssertionError: expected 1 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ ❯ src/spike-time.test.ts:392:35
+    390|       expect.stringMatching(/^close: answers came from both sides of 2…
+    391|     ]);
+    392|     expect(w.supabase.users.size).toBe(0);
+       |                                   ^
+    393|   });
+    394|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/13]⎯
+
+ FAIL  src/spike-time.test.ts > spike-time against an API that doesn't > fails when no answer came before the instant, as when dev's clock lands past it
+AssertionError: expected 1 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ ❯ src/spike-time.test.ts:410:35
+    408|       "close: answers came from both sides of 2026-11-17T06:00:00Z: 0 …
+    409|     ]);
+    410|     expect(w.supabase.users.size).toBe(0);
+       |                                   ^
+    411|   });
+    412|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/13]⎯
+
+ FAIL  src/spike-time.test.ts > spike-time against an API that doesn't > makes no second move of dev's clock after a reveal's window with no answer, and still deletes the user
+AssertionError: expected { …(3) } to deeply equal { …(2) }
+
+- Expected
++ Received
+
+  {
+-   "name": "cleanup: delete the run's user",
+-   "ok": true,
++   "name": "close: dev's clock moves again only after a reveal's window that had answers",
++   "note": "the reveal's window had no answer with a server_now, so the close isn't watched",
++   "ok": false,
+  }
+
+ ❯ src/spike-time.test.ts:424:27
+    422|     ]);
+    423|     expect(w.moves.map(String)).toEqual(["2026-11-16T11:59:40Z"]);
+    424|     expect(checks.at(-1)).toEqual({ name: "cleanup: delete the run's u…
+       |                           ^
+    425|     expect(w.supabase.users.size).toBe(0);
+    426|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/13]⎯
+
+ FAIL  src/spike-time.test.ts > spike-time when something fails or hangs > stops at an API that doesn't answer, and deletes the user
+AssertionError: expected [ …(3) ] to deeply equal [ …(4) ]
+
+- Expected
++ Received
+
+  [
+    "sign-in: the service key makes the run's user",
+    "sign-in: the user signs in without an email",
+    "api: GET /v1/me makes the run's account",
+-   "cleanup: delete the run's user",
+  ]
+
+ ❯ src/spike-time.test.ts:434:27
+    432|     const checks = await spikeTime(w.input);
+    433|     expect(failed(checks)).toEqual(["api: GET /v1/me makes the run's a…
+    434|     expect(names(checks)).toEqual([...ALL.slice(0, 3), "cleanup: delet…
+       |                           ^
+    435|     expect(w.supabase.users.size).toBe(0);
+    436|     expect(w.written).toEqual([]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/13]⎯
+
+ FAIL  src/spike-time.test.ts > spike-time when something fails or hangs > stops when the budget is spent during a call to Auth that hangs, and still deletes the user before the deadline
+AssertionError: expected { …(3) } to deeply equal { …(2) }
+
+- Expected
++ Received
+
+  {
+-   "name": "cleanup: delete the run's user",
+-   "ok": true,
++   "name": "sign-in: the user signs in without an email",
++   "note": "the run's time ran out",
++   "ok": false,
+  }
+
+ ❯ src/spike-time.test.ts:448:27
+    446|     const checks = await run;
+    447|     expect(failed(checks)).toEqual(["sign-in: the user signs in withou…
+    448|     expect(checks.at(-1)).toEqual({ name: "cleanup: delete the run's u…
+       |                           ^
+    449|     expect(w.supabase.users.size).toBe(0);
+    450|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/13]⎯
+
+ FAIL  src/spike-time.test.ts > spike-time when something fails or hangs > starts no new work once the budget is spent, and still deletes the user
+AssertionError: expected { …(3) } to deeply equal { …(2) }
+
+- Expected
++ Received
+
+  {
+-   "name": "cleanup: delete the run's user",
+-   "ok": true,
++   "name": "reveal: dev's clock moves to 2026-11-16T11:59:40Z",
++   "note": "the run's time ran out",
++   "ok": false,
+  }
+
+ ❯ src/spike-time.test.ts:464:27
+    462|     expect(failed(checks)).toEqual(["reveal: dev's clock moves to 2026…
+    463|     expect(w.moves).toEqual([]);
+    464|     expect(checks.at(-1)).toEqual({ name: "cleanup: delete the run's u…
+       |                           ^
+    465|     expect(w.supabase.users.size).toBe(0);
+    466|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/13]⎯
+
+ FAIL  src/spike-time.test.ts > spike-time when something fails or hangs > fails, naming the user it leaves, when the deadline cuts the clean-up
+AssertionError: expected [ Array(1) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+    "database: the club is written: statement timeout",
+-   "cleanup: delete the run's user: the run's time ran out; spike-1a2b3c4d-0000-4000-8000-000000000000@probe.invalid is left",
+  ]
+
+ ❯ src/spike-time.test.ts:478:28
+    476|     });
+    477|     const checks = await spikeTime(w.input);
+    478|     expect(failed(checks)).toEqual([
+       |                            ^
+    479|       "database: the club is written: statement timeout",
+    480|       `cleanup: delete the run's user: the run's time ran out; spike-$…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/13]⎯
+
+ FAIL  src/spike-time.test.ts > spike-time when something fails or hangs > fails, naming the user it leaves, when Auth won't delete it
+AssertionError: expected { …(2) } to deeply equal { …(3) }
+
+- Expected
++ Received
+
+  {
+-   "name": "cleanup: delete the run's user",
+-   "note": "the run's time ran out; spike-1a2b3c4d-0000-4000-8000-000000000000@probe.invalid is left",
+-   "ok": false,
++   "name": "close: answers came from both sides of 2026-11-17T06:00:00Z",
++   "ok": true,
+  }
+
+ ❯ src/spike-time.test.ts:491:27
+    489|     });
+    490|     const checks = await spikeTime({ ...w.input, budget: AbortSignal.t…
+    491|     expect(checks.at(-1)).toEqual({
+       |                           ^
+    492|       name: "cleanup: delete the run's user",
+    493|       ok: false,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/13]⎯
+
+ FAIL  src/spike-time.test.ts > spike-time when something fails or hangs > stops at a club the database refuses, or a move of the clock it refuses, saying why, and deletes the user
+AssertionError: expected [ …(5) ] to deeply equal [ …(6) ]
+
+- Expected
++ Received
+
+@@ -2,7 +2,6 @@
+    "sign-in: the service key makes the run's user",
+    "sign-in: the user signs in without an email",
+    "api: GET /v1/me makes the run's account",
+    "api: PATCH /v1/me names it Ana and confirms its age",
+    "database: the club is written",
+-   "cleanup: delete the run's user",
+  ]
+
+ ❯ src/spike-time.test.ts:507:25
+    505|       "database: the club is written: app.occurrences: 2026-11-16 isn'…
+    506|     ]);
+    507|     expect(names(club)).toEqual([...ALL.slice(0, 5), "cleanup: delete …
+       |                         ^
+    508|     expect(refusedClub.moves).toEqual([]);
+    509|     expect(refusedClub.supabase.users.size).toBe(0);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/13]⎯
+
+ FAIL  src/spike-time.test.ts > spike-time when something fails or hangs > leaves a database call that never settles at the run's limit, says it may still commit, and deletes the user
+AssertionError: expected { …(3) } to deeply equal { …(2) }
+
+- Expected
++ Received
+
+  {
+-   "name": "cleanup: delete the run's user",
+-   "ok": true,
++   "name": "database: the club is written",
++   "note": "the run's time ran out while it was under way, so it may still commit",
++   "ok": false,
+  }
+
+ ❯ src/spike-time.test.ts:531:31
+    529|       "database: the club is written: the run's time ran out while it …
+    530|     ]);
+    531|     expect(clubChecks.at(-1)).toEqual({ name: "cleanup: delete the run…
+       |                               ^
+    532|     expect(club.supabase.users.size).toBe(0);
+    533|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/13]⎯
+

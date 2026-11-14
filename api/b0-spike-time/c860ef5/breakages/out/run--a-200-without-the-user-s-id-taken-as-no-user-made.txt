@@ -1,0 +1,37 @@
+$ (cd tools/ops && npx vitest run src/spike-time.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tools/ops
+
+ ❯ src/spike-time.test.ts (24 tests | 1 failed) 2733ms
+   ❯ spike-time when something fails or hangs (9)
+     × names the address it may leave when the call that makes the user has no clear answer, but not after a refusal 9ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 23 passed (24)
+   Start at  02:50:37
+   Duration  2.98s (tests 95%, transform 3%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/spike-time.test.ts > spike-time when something fails or hangs > names the address it may leave when the call that makes the user has no clear answer, but not after a refusal
+AssertionError: answered HTTP 200: expected [ Array(1) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+    "sign-in: the service key makes the run's user: answered HTTP 200",
+-   "cleanup: the run's user may be left: the call that makes it had no clear answer, so spike-1a2b3c4d-0000-4000-8000-000000000000@probe.invalid may have been made: delete it by that address",
+  ]
+
+ ❯ src/spike-time.test.ts:561:36
+    559|       };
+    560|       const checks = await spikeTime({ ...w.input, fetch: lossy });
+    561|       expect(failed(checks), note).toEqual([`sign-in: the service key …
+       |                                    ^
+    562|       expect(w.supabase.users.size, note).toBe(1);
+    563|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
