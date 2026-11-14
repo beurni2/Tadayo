@@ -140,14 +140,14 @@ jobs:
 
   # A fresh runner, holding the Cloudflare token and the job's read-only token (check-head's) and
   # no other, that runs no file of the checkout but deploy_dev_steps.py, besides these pinned
-  # actions and the pinned wrangler: flyctl's agent, still running on the deploy job's runner with
-  # Fly's token, the database's and Supabase's secrets, and the repository's own build code and
-  # packages never meet the Cloudflare token. The site is downloaded under RUNNER_TEMP, outside
-  # the checkout: download-artifact writes through a link on its path, so a link the repository
-  # held at apps/web/dist would put the site's files into tools/ci/. check-head stops a run whose
-  # commit is no longer main's head, so a re-run never puts an older site back. Its own group keeps
-  # two commits' sites from deploying at once; a newer job waiting replaces an older one, and a
-  # re-run joining the group can replace the head's waiting job, which is then run again.
+  # actions and the pinned wrangler: flyctl and Fly's token, the database's and Supabase's secrets,
+  # all on the deploy job's runner, and the repository's own build code and packages never meet the
+  # Cloudflare token. The site is downloaded under RUNNER_TEMP, outside the checkout:
+  # download-artifact writes through a link on its path, so a link the repository held at
+  # apps/web/dist would put the site's files into tools/ci/. check-head stops a run whose commit is
+  # no longer main's head, so a re-run never puts an older site back. Its own group keeps two
+  # commits' sites from deploying at once; a newer job waiting replaces an older one, and a re-run
+  # joining the group can replace the head's waiting job, which is then run again.
   pages:
     name: pages
     needs:

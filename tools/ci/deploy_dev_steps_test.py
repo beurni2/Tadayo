@@ -1302,8 +1302,8 @@ class WorkflowFileTest(unittest.TestCase):
         self.assertEqual(set(re.findall(r"vars\.([A-Z_]+)", self.text)), {"CLOUDFLARE_ACCOUNT_ID"})
 
     def test_the_cloudflare_secret_is_on_a_runner_that_holds_no_other(self):
-        # The deploy job's runner keeps flyctl's agent, with Fly's token, running after the probe,
-        # so wrangler and its packages run in a job of their own (PR #52's review, security-1); and
+        # flyctl and Fly's token, the database's and Supabase's secrets are all on the deploy job's
+        # runner, so wrangler and its packages run in a job of their own (PR #52's review, security-1); and
         # that job runs no file of the checkout but deploy_dev_steps.py, so the site is built in a
         # job that holds no secret (round 2) and downloaded outside the checkout (round 3).
         jobs = self.document["jobs"]
