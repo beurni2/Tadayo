@@ -1,3 +1,4 @@
+import CryptoKit
 import ObjectiveC
 import SnapshotTesting
 import SwiftUI
@@ -19,6 +20,16 @@ import XCTest
 /// since at AX5 the content scrolls: what would scroll is laid out down the image, with the
 /// pinned action at its foot (a known difference in INVENTORY.md). No taller: a window 2,800
 /// points tall came out empty, the render server returning an error (`docs/LIMITATIONS.md`).
+///
+/// Each image is drawn until two draws in a row come out the same, byte for byte, and that image
+/// is compared with its reference once, at the same precision as ever. Each draw is a fresh
+/// host's first, as before, so no screen is given longer to draw; the reference plays no part in
+/// when the drawing stops. On iOS 27.2 a draw of the system's glass, a bar's button or the tab
+/// bar, now and then comes out a little different, within 17 of 255, and the next draw as usual;
+/// what decides it isn't known (`docs/LIMITATIONS.md`, 2026-11-14). A one-off difference anywhere
+/// in a screen is drawn again the same way, so each extra draw is logged by name. A screen that
+/// hasn't drawn the same twice in a row in `maximumDraws` draws fails: an element that moves has
+/// to be made still, as the spinner is (`Spinners`), not left to the drawing.
 @MainActor
 enum ScreenSnapshot {
     enum Variant: CaseIterable {
@@ -65,23 +76,92 @@ enum ScreenSnapshot {
         file: StaticString = #filePath, testName: String = #function, line: UInt = #line
     ) {
         for variant in variants {
+            let name = state + variant.suffix
             let shown =
                 view
                 .environment(\.colorScheme, variant == .dark ? .dark : .light)
                 .environment(\.dynamicTypeSize, variant == .xl ? .accessibility5 : .large)
                 .environment(\.locale, Locale(identifier: "en_US"))
-            let host = FramedHost(rootView: shown)
+            let (drawn, problem) = settled(
+                { FramedHost(rootView: shown) }, variant: variant, width: width, name: name)
+            if let problem { XCTFail("\(name): \(problem)", file: file, line: line) }
+            guard let drawn else { continue }
             assertSnapshot(
-                of: host as UIViewController,
+                of: drawn.image,
                 as: .image(
-                    on: variant.config(width: width),
-                    drawHierarchyInKeyWindow: true,
-                    perceptualPrecision: 0.98,
-                    traits: variant.traits),
-                named: state + variant.suffix, file: file, testName: testName, line: line)
-            Spinners.check(
-                host.view, busy: busy, "\(state)\(variant.suffix)", file: file, line: line)
+                    precision: 1, perceptualPrecision: 0.98, scale: variant.traits.displayScale),
+                named: name, file: file, testName: testName, line: line)
+            Spinners.check(drawn.host.view, busy: busy, name, file: file, line: line)
         }
+    }
+
+    /// The most draws made for one image: one that hasn't come out the same twice in a row by
+    /// then fails.
+    static let maximumDraws = 5
+
+    /// How long one draw may take, SnapshotTesting's own `assertSnapshot` timeout.
+    static let drawTimeout: TimeInterval = 5
+
+    /// An image to compare with its reference, and the host that drew it.
+    private struct Drawn {
+        let image: UIImage
+        let host: UIViewController
+    }
+
+    /// Draws a fresh host from `make` again and again, each as SnapshotTesting draws a view
+    /// controller in the key window, until two draws in a row are the same, byte for byte as
+    /// PNGs, or `maximumDraws` have been made, and gives the last draw. The problem, if any, is
+    /// for the test to fail with: no settling, or a draw that gave no image or no PNG, which ends
+    /// the drawing there. When it takes more than two draws, or doesn't settle, it logs a
+    /// `warning:` line naming the image, with the start of each draw's SHA-256, in order.
+    private static func settled(
+        _ make: () -> UIViewController, variant: Variant, width: CGFloat, name: String
+    ) -> (drawn: Drawn?, problem: String?) {
+        var last: Data?
+        var digests: [String] = []
+        for number in 1...maximumDraws {
+            let host = make()
+            guard let image = draw(host, variant: variant, width: width) else {
+                return (nil, "draw \(number) gave no image within \(drawTimeout) seconds")
+            }
+            guard let data = image.pngData() else {
+                return (nil, "draw \(number) couldn't be made a PNG")
+            }
+            digests.append(
+                SHA256.hash(data: data).prefix(4).map { String(format: "%02x", $0) }.joined())
+            let same = data == last
+            last = data
+            guard same || number == maximumDraws else { continue }
+            if number > 2 || !same {
+                let what = same ? "settled after" : "didn't settle in"
+                print(
+                    "warning: ScreenSnapshot \(name): \(what) \(number) draws, SHA-256 "
+                        + digests.joined(separator: " "))
+            }
+            let problem =
+                same ? nil : "no two draws in a row were the same in \(maximumDraws) draws"
+            return (Drawn(image: image, host: host), problem)
+        }
+        return (nil, "no draw was made")
+    }
+
+    /// One draw, as `assertSnapshot(of:as: .image(on:drawHierarchyInKeyWindow:…))` makes it:
+    /// nil if it gave no image in `drawTimeout`. It only draws; the comparison is
+    /// `assertSnapshot`'s, after `settled`.
+    private static func draw(
+        _ host: UIViewController, variant: Variant, width: CGFloat
+    ) -> UIImage? {
+        let strategy = Snapshotting<UIViewController, UIImage>.image(
+            on: variant.config(width: width), drawHierarchyInKeyWindow: true,
+            traits: variant.traits)
+        var image: UIImage?
+        let drawn = XCTestExpectation(description: "drawn")
+        strategy.snapshot(host).run {
+            image = $0
+            drawn.fulfill()
+        }
+        guard XCTWaiter.wait(for: [drawn], timeout: drawTimeout) == .completed else { return nil }
+        return image
     }
 }
 
