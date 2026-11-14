@@ -3,8 +3,9 @@
 // section 4; T1, T5; spec 06, 08; Q18). On `dev`, with the worker Machine stopped, it shows that what
 // Home's day choice answers switches at 07:00 and at 01:00 exactly, by the server's clock alone: a
 // club of two synthetic members, its first day that day's 7 AM in New York by `dev`'s clock, a few
-// minutes ahead, since the run writes and moves nothing unless the club is written between 6:45 and
-// 6:57 there on a weekday (`startDay`; docs/plans/api-b0-spike-time.md, section 8), the dev clock
+// minutes ahead, since the run writes no club and moves nothing unless the club's transaction samples
+// that clock between 6:45 and 6:57 there on a weekday (`startDay`; by then it has made its account,
+// Ana, which stays, as after any run: docs/plans/api-b0-spike-time.md, section 8), the dev clock
 // moved to 20 seconds before that day's reveal and then to 20 seconds before its close, and
 // `GET /v1/clubs` read as a member four times a second around each instant. Every answer must be the
 // club's days as T5 has them at the answer's own `server_now`.
@@ -38,9 +39,9 @@
 // by their status, their `server_now`, whether their Cache-Control is missing or not the contract's
 // (never its value), where an answer differs from T5's (the keys' path only), and which of the run's
 // own two days it showed, named from what the run wrote, never from the answer (`shown`); and, when it
-// won't start, what `dev`'s clock reads in New York, to the second. What it can't see is whether the
-// worker Machine is stopped, which only `flyctl` sees: the run's order does that (`worker-scale --to
-// stopped` first).
+// won't start, what `dev`'s clock reads in New York, to the second (to the microsecond when the sample
+// has a fraction). What it can't see is whether the worker Machine is stopped, which only `flyctl` sees:
+// the run's order does that (`worker-scale --to stopped` first).
 
 import { randomBytes, randomUUID } from "node:crypto";
 import { contractInstant, dayInstants, newId, type Clock } from "@tadayo/domain";
@@ -76,7 +77,7 @@ export const POLL_MS = 250;
 export const ANSWERS_AFTER = 5;
 /** The first day's 07:00 is at least this many minutes ahead of the clock when the club is written. */
 export const AHEAD_MINUTES = 3;
-/** And at most this many, or the run writes and moves nothing (`startDay`). */
+/** And at most this many, or the run writes no club and moves nothing (`startDay`). */
 export const WITHIN_MINUTES = 15;
 
 /** The dev API, as a phone reaches it. */
@@ -136,10 +137,11 @@ export function firstDate(now: Temporal.Instant): Temporal.PlainDate {
 export function startDay(now: Temporal.Instant): Temporal.PlainDate {
   const date = firstDate(now);
   if (Temporal.Instant.compare(dayInstants(date, ZONE).revealAt, now.add({ minutes: WITHIN_MINUTES })) > 0) {
-    const reads = now.toZonedDateTimeISO(ZONE).toPlainDateTime().toString({ smallestUnit: "second" });
+    // To the microsecond when the sample has a fraction, so a sample just after 06:57 never reads 06:57:00.
+    const reads = now.toZonedDateTimeISO(ZONE).toPlainDateTime().toString();
     throw new OpsError(
       `spike-time: dev's clock reads ${reads} in New York, and a run starts between 06:45 and 06:57 there on a ` +
-        "weekday, so nothing is written and dev's clock isn't moved",
+        "weekday, so no club is written and dev's clock isn't moved",
     );
   }
   return date;

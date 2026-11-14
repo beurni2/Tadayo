@@ -710,8 +710,8 @@ describe("the run's start", () => {
 
   it("refuses, saying what dev's clock reads, a club written before 06:45, after 06:57 or on a weekend", () => {
     const refused: [string, string][] = [
-      ["2026-11-16T11:44:59.999999Z", "2026-11-16T06:44:59"], // a microsecond too early: 07:00 just over 15 minutes ahead
-      ["2026-11-16T11:57:00.000001Z", "2026-11-16T06:57:00"], // a microsecond too late: the first day would be Tuesday
+      ["2026-11-16T11:44:59.999999Z", "2026-11-16T06:44:59.999999"], // a microsecond too early: 07:00 just over 15 minutes ahead
+      ["2026-11-16T11:57:00.000001Z", "2026-11-16T06:57:00.000001"], // a microsecond too late: the first day would be Tuesday
       ["2026-11-20T11:57:01Z", "2026-11-20T06:57:01"], // Friday, late: the first day would be Monday, three days on
       ["2026-11-21T11:50:00Z", "2026-11-21T06:50:00"], // Saturday
       ["2026-11-16T05:30:00Z", "2026-11-16T00:30:00"], // Monday, 00:30: six and a half hours early
@@ -720,7 +720,7 @@ describe("the run's start", () => {
     for (const [now, reads] of refused) {
       expect(() => startDay(at(now)), now).toThrow(OpsError);
       expect(() => startDay(at(now)), now).toThrow(
-        `spike-time: dev's clock reads ${reads} in New York, and a run starts between 06:45 and 06:57 there on a weekday`,
+        `spike-time: dev's clock reads ${reads} in New York, and a run starts between 06:45 and 06:57 there on a weekday, so no club is written and dev's clock isn't moved`,
       );
     }
   });
