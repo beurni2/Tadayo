@@ -21,19 +21,18 @@ import XCTest
 /// pinned action at its foot (a known difference in INVENTORY.md). No taller: a window 2,800
 /// points tall came out empty, the render server returning an error (`docs/LIMITATIONS.md`).
 ///
-/// Each image is drawn until two draws in a row come out the same, byte for byte, and that image
-/// is compared with its reference once, at the same precision as ever. Each draw is a fresh
-/// host's first, as before, so no screen is given longer to draw; the reference plays no part in
-/// when the drawing stops. On iOS 27.2 a draw of the system's glass, a bar's button or the tab
-/// bar, now and then comes out a little different, within 17 of 255, and the next draw as usual;
-/// what decides it isn't known (`docs/LIMITATIONS.md`, 2026-11-14). So one draw that differs from
-/// the image the drawing settles on passes, wherever in the screen it differs, and is logged by
-/// name with where and by how much, to be read; a second such draw fails the test, and so does a
-/// screen that hasn't drawn the same twice in a row in `maximumDraws` draws. The hosts are fresh,
-/// but the view and its models are the same objects in every draw, so a screen that changes them
-/// as it appears would log its first draw as the odd one. An element that moves, or a model that
-/// changes as it's drawn, has to be made still, as the spinner is (`Spinners`), not left to the
-/// drawing.
+/// Each image is drawn until two draws in a row come out the same, byte for byte, and that image is
+/// compared with its reference once, at the same precision as ever. Each draw is a fresh host's
+/// first, as before, so no screen is given longer to draw; the reference plays no part in when the
+/// drawing stops. On iOS 27.2 a draw of the system's glass, a bar's button or the tab bar, now and
+/// then comes out a little different, within 18 of 255 so far, and the next draw as usual; what
+/// decides it isn't known (`docs/LIMITATIONS.md`, 2026-11-14). So one draw that differs from the
+/// image the drawing settles on passes, wherever in the screen it differs, and is logged by name
+/// with where and by how much, to be read; a second such draw fails the test, and so does a screen
+/// that hasn't drawn the same twice in a row in `maximumDraws` draws. The hosts are fresh, but the
+/// view and its models are the same objects in every draw, so a screen that changes them as it
+/// appears would log its first draw as the odd one. An element that moves, or a model that changes
+/// as it's drawn, has to be made still, as the spinner is (`Spinners`), not left to the drawing.
 @MainActor
 enum ScreenSnapshot {
     enum Variant: CaseIterable {
@@ -119,15 +118,22 @@ enum ScreenSnapshot {
     /// from the image it settled on; or a draw that gave no image or no PNG, which ends the
     /// drawing there. When it takes more than two draws, or doesn't settle, it logs, through
     /// `log`, one `warning:` line naming the image, with the start of each draw's SHA-256 in
-    /// order and, for each draw that differs from the last, how (`difference`).
+    /// order and, for each draw that differs from the last, how (`difference`). `drawing` stands
+    /// in for `draw` in `ScreenSnapshotSettleTests`, to make a draw give no image or no PNG.
     static func settled(
         _ make: () -> UIViewController, variant: Variant, width: CGFloat, name: String,
-        log: (String) -> Void = { print($0) }
+        log: (String) -> Void = { print($0) }, drawing: ((UIViewController) -> UIImage?)? = nil
     ) -> (drawn: Drawn?, problem: String?) {
         var draws: [Data] = []
         for number in 1...maximumDraws {
             let host = make()
-            guard let image = draw(host, variant: variant, width: width) else {
+            let drawn: UIImage?
+            if let drawing {
+                drawn = drawing(host)
+            } else {
+                drawn = draw(host, variant: variant, width: width)
+            }
+            guard let image = drawn else {
                 return (nil, "draw \(number) gave no image within \(drawTimeout) seconds")
             }
             guard let data = image.pngData() else {
