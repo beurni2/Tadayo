@@ -61,6 +61,7 @@ import {
   type MediaClass,
   type Viewer,
   type WorldAccount,
+  type WorldDay,
   type WorldDrop,
   type WorldFacts,
   type WorldInvitation,
@@ -189,23 +190,29 @@ async function factsOf(
       id: string;
       club: string;
       star: string;
+      local_date: string;
       reveal_at: Temporal.Instant;
       close_at: Temporal.Instant;
       collecting_from: Temporal.Instant;
+      status: WorldDay["status"];
     }[]
   >`
-    SELECT id, club_id AS club, star_interval_id AS star, reveal_at, close_at, collecting_from
+    SELECT id, club_id AS club, star_interval_id AS star, local_date::text AS local_date, reveal_at, close_at,
+           collecting_from, status
       FROM app.occurrences WHERE club_id IN ${db(clubs)}`;
   const members = await db<
     {
       interval_id: string;
       club: string;
+      account: string;
       name: string | null;
       joined_at: Temporal.Instant;
       left_at: Temporal.Instant | null;
     }[]
   >`
-    SELECT m.interval_id, m.club_id AS club, coalesce(m.ended_display_name, u.display_name) AS name, m.joined_at, m.left_at
+    SELECT m.interval_id, m.club_id AS club, m.user_id AS account,
+           CASE WHEN m.state = 'active' THEN u.display_name ELSE m.ended_display_name END AS name,
+           m.joined_at, m.left_at
       FROM app.memberships m JOIN app.users u ON u.id = m.user_id
      WHERE m.club_id IN ${db(clubs)}`;
   const reservations = await db<
@@ -221,8 +228,8 @@ async function factsOf(
     SELECT r.id, r.interval_id AS interval, r.occurrence_id AS day, r.media_class AS media, r.state, r.expires_at
       FROM app.reservations r JOIN app.occurrences o ON o.id = r.occurrence_id
      WHERE o.club_id IN ${db(clubs)}`;
-  const clubRows = await db<{ id: string; name: string }[]>`
-    SELECT id, name FROM app.clubs WHERE id IN ${db(clubs)}`;
+  const clubRows = await db<{ id: string; name: string; suspended_at: Temporal.Instant | null }[]>`
+    SELECT id, name, suspended_at FROM app.clubs WHERE id IN ${db(clubs)}`;
   // Each roster label, with when the first revision holding it was made (FQ75).
   const labelRows = await db<{ club: string; label: string; since: Temporal.Instant }[]>`
     SELECT c.club_id AS club, c.label, min(v.created_at) AS since
@@ -236,6 +243,8 @@ async function factsOf(
   const accountRows = await db<
     {
       id: string;
+      state: WorldAccount["state"];
+      deletion_requested_at: Temporal.Instant | null;
       name: string | null;
       avatar: string | null;
       age_confirmed: boolean;
@@ -243,8 +252,8 @@ async function factsOf(
       subject: string | null;
     }[]
   >`
-    SELECT u.id, u.display_name AS name, a.content_version AS avatar, u.age_confirmed_at IS NOT NULL AS age_confirmed,
-           u.version, u.auth_subject AS subject
+    SELECT u.id, u.state, u.deletion_requested_at, u.display_name AS name, a.content_version AS avatar,
+           u.age_confirmed_at IS NOT NULL AS age_confirmed, u.version, u.auth_subject AS subject
       FROM app.users u LEFT JOIN app.uploads a ON a.id = u.avatar_upload_id
      WHERE u.id IN (SELECT user_id FROM app.memberships WHERE club_id IN ${db(clubs)})
         OR u.id IN (SELECT i.bound_user_id FROM app.invitations i JOIN app.candidates c ON c.id = i.candidate_id
@@ -255,7 +264,7 @@ async function factsOf(
     { id: string; bound: string | null; club: string; joined: boolean; club_name: string; inviter: string | null }[]
   >`
     SELECT i.id, i.bound_user_id AS bound, c.club_id AS club, c.state = 'joined' AS joined, k.name AS club_name,
-           coalesce(m.ended_display_name, u.display_name) AS inviter
+           CASE WHEN m.state = 'active' THEN u.display_name ELSE m.ended_display_name END AS inviter
       FROM app.invitations i
       JOIN app.candidates c ON c.id = i.candidate_id
       JOIN app.clubs k ON k.id = c.club_id
@@ -315,16 +324,18 @@ async function factsOf(
           {
             club: day.club,
             star: day.star,
+            localDate: day.local_date,
             revealAt: day.reveal_at,
             closeAt: day.close_at,
             collectingFrom: day.collecting_from,
+            status: day.status,
           },
         ]),
       ),
       members: new Map(
         members.map((row) => [
           row.interval_id,
-          { club: row.club, name: row.name, joinedAt: row.joined_at, leftAt: row.left_at },
+          { club: row.club, account: row.account, name: row.name, joinedAt: row.joined_at, leftAt: row.left_at },
         ]),
       ),
       clubs: new Map(
@@ -332,6 +343,7 @@ async function factsOf(
           row.id,
           {
             name: row.name,
+            suspendedAt: row.suspended_at,
             labels: new Map(
               labelRows.filter((label) => label.club === row.id).map((label) => [label.label, label.since]),
             ),
@@ -348,7 +360,14 @@ async function factsOf(
       accounts: new Map(
         accountRows.map((row): [string, WorldAccount] => [
           row.id,
-          { name: row.name, avatar: row.avatar, ageConfirmed: row.age_confirmed, version: row.version },
+          {
+            state: row.state,
+            deletionRequestedAt: row.deletion_requested_at,
+            name: row.name,
+            avatar: row.avatar,
+            ageConfirmed: row.age_confirmed,
+            version: row.version,
+          },
         ]),
       ),
       invitations: new Map(

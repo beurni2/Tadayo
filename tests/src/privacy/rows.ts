@@ -50,6 +50,12 @@
 // - for listClubs (slice 8, done), the invitations the role "invited, not yet a member" has accepted: the
 //   club's name and the inviter's name, read from the world's invitations bound to that account (the
 //   scanner's `WorldInvitation`), and nothing else of that club (scanner.ts, its header);
+// - for listClubs (spike S5, done), each club's `open_day` and `next_day` at the cell's instant, each the
+//   whole Occurrence the world's rows and the time give, or none: in a suspended club, on a suspended or
+//   cancelled day, after the day closes (account.ts: daysOf). A state where the day's star leaves or asks to
+//   delete their account is still to come with B6's leaving; the held day is proved on Postgres meanwhile
+//   (tests/src/db/home-days.test.ts), and the schedule's checks below keep `next_day` for B2's
+//   membership changes;
 // - for a route that changes the world (a commit, a reservation, a leave, a block), the facts each
 //   answer is scanned against, read from the world after it (scanner.ts, its header);
 // - for the schedule's routes (getSchedule, chooseScheduleDays, confirmScheduleDays and listMembers, B2's

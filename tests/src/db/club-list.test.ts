@@ -1,13 +1,15 @@
 /// <reference lib="esnext.temporal" />
 // The caller's clubs and the invitations they have accepted, against Postgres as `tadayo_app` (spec 04,
 // 05; T7, T14, T33; FQ16, FQ75; packages/domain/src/clubs/club-list.ts). A club is listed for an active
-// interval of the caller's and nothing else of it comes out; an invitation is listed for the link the
-// caller is bound to, while its candidate hasn't joined, with the club's name and the proposer's.
+// interval of the caller's and nothing else of it comes out but its two days, Home's day choice at the
+// caller's `now` (tests/src/db/home-days.test.ts tests that choice itself); an invitation is listed for
+// the link the caller is bound to, while its candidate hasn't joined, with the club's name and the
+// proposer's.
 
 import { randomBytes, randomUUID } from "node:crypto";
-import { listClubs, type QuerySql } from "@tadayo/domain";
+import { listClubs, type QuerySql, type ServerNow } from "@tadayo/domain";
 import { afterAll, describe, expect, it } from "vitest";
-import { invite } from "../matrix.ts";
+import { CLOSE, invite, PHASES, REVEAL } from "../matrix.ts";
 import { rolledBack, worldSql, type Tx, type WorldTx } from "./harness.ts";
 import { AT, leave, named, newId, newUser, newWorld, type World } from "./world.ts";
 
@@ -18,6 +20,8 @@ afterAll(async () => {
 
 const plain = (tx: WorldTx) => tx as unknown as Tx;
 const OPENED = AT.opened;
+/** The server's time, as only a clock makes it; here the tests stand in for one: Ana's Saturday collecting. */
+const NOW = PHASES.collecting as ServerNow;
 
 /** A club of one, its creator, made at `at`: proposed until a roster starts it. Returns the club and the creator's interval. */
 async function makeClub(
@@ -76,11 +80,11 @@ describe("the caller's clubs and invitations (spec 04, 05)", () => {
   it("lists nothing for an account with no club and no invitation: two empty lists (G06-no-club)", async () => {
     await rolledBack(db, async (tx) => {
       const nobody = await newUser(plain(tx), "New");
-      expect(await listClubs(tx, nobody)).toEqual({ clubs: [], invitations: [] });
+      expect(await listClubs(tx, nobody, NOW)).toEqual({ clubs: [], invitations: [] });
       const w = await newWorld(plain(tx));
-      expect(await listClubs(tx, w.dan.user)).toEqual({ clubs: [], invitations: [] });
+      expect(await listClubs(tx, w.dan.user, NOW)).toEqual({ clubs: [], invitations: [] });
       // An account that doesn't exist is the same as one with nothing.
-      expect(await listClubs(tx, newId("acct"))).toEqual({ clubs: [], invitations: [] });
+      expect(await listClubs(tx, newId("acct"), NOW)).toEqual({ clubs: [], invitations: [] });
     });
   });
 
@@ -88,8 +92,17 @@ describe("the caller's clubs and invitations (spec 04, 05)", () => {
     await rolledBack(db, async (tx) => {
       const w = await newWorld(plain(tx), "-a");
       const other = await newWorld(plain(tx), "-b");
+      // Ana's Saturday, the club's one day, as each member sees it: next while it collects, open from its reveal.
+      const saturday = {
+        id: w.day,
+        clubId: w.club,
+        star: { membershipId: w.ana.interval, displayName: named(w, "Ana"), avatarVersion: null },
+        localDate: "2026-11-07",
+        revealAt: REVEAL,
+        closeAt: CLOSE,
+      };
       for (const member of [w.ana, w.ben, w.cleo]) {
-        expect(await listClubs(tx, member.user)).toEqual({
+        expect(await listClubs(tx, member.user, NOW)).toEqual({
           clubs: [
             {
               id: w.club,
@@ -98,13 +111,17 @@ describe("the caller's clubs and invitations (spec 04, 05)", () => {
               membershipId: member.interval,
               state: "active",
               memberCount: 3,
+              openDay: null,
+              nextDay: { ...saturday, phase: "collecting" },
             },
           ],
           invitations: [],
         });
+        const open = (await listClubs(tx, member.user, PHASES.open as ServerNow)).clubs[0];
+        expect([open?.openDay, open?.nextDay]).toEqual([{ ...saturday, phase: "open" }, null]);
       }
       // Another club's member sees only their own.
-      expect((await listClubs(tx, other.ana.user)).clubs.map((club) => club.id)).toEqual([other.club]);
+      expect((await listClubs(tx, other.ana.user, NOW)).clubs.map((club) => club.id)).toEqual([other.club]);
     });
   });
 
@@ -112,24 +129,24 @@ describe("the caller's clubs and invitations (spec 04, 05)", () => {
     await rolledBack(db, async (tx) => {
       const w = await newWorld(plain(tx));
       await leave(plain(tx), w.ben, named(w, "Ben"), OPENED);
-      expect((await listClubs(tx, w.ben.user)).clubs).toEqual([]);
-      expect((await listClubs(tx, w.ana.user)).clubs.map((club) => club.memberCount)).toEqual([2]);
+      expect((await listClubs(tx, w.ben.user, NOW)).clubs).toEqual([]);
+      expect((await listClubs(tx, w.ana.user, NOW)).clubs.map((club) => club.memberCount)).toEqual([2]);
       // An interval ended by a block or an account deletion is not listed either.
       await tx`UPDATE app.memberships SET state = 'account_deleted', left_at = ${OPENED} WHERE interval_id = ${w.cleo.interval}`;
-      expect((await listClubs(tx, w.cleo.user)).clubs).toEqual([]);
-      expect((await listClubs(tx, w.ana.user)).clubs.map((club) => club.memberCount)).toEqual([1]);
+      expect((await listClubs(tx, w.cleo.user, NOW)).clubs).toEqual([]);
+      expect((await listClubs(tx, w.ana.user, NOW)).clubs.map((club) => club.memberCount)).toEqual([1]);
     });
   });
 
   it("says each state the contract has: proposed, active, paused, suspended (FQ16, spec 22)", async () => {
     await rolledBack(db, async (tx) => {
       const w = await newWorld(plain(tx));
-      const stateOf = async (user: string) => (await listClubs(tx, user)).clubs.map((club) => club.state);
+      const stateOf = async (user: string) => (await listClubs(tx, user, NOW)).clubs.map((club) => club.state);
       expect(await stateOf(w.ana.user)).toEqual(["active"]);
       // A club of one that nobody has joined yet is proposed.
       const dan = await makeClub(tx, w.dan.user, "Tuesday people", AT.created);
       expect(await stateOf(w.dan.user)).toEqual(["proposed"]);
-      expect((await listClubs(tx, w.dan.user)).clubs[0]?.memberCount).toBe(1);
+      expect((await listClubs(tx, w.dan.user, NOW)).clubs[0]?.memberCount).toBe(1);
       // A started club with one member left is paused.
       await leave(plain(tx), w.ben, named(w, "Ben"), OPENED);
       await leave(plain(tx), w.cleo, named(w, "Cleo"), OPENED);
@@ -155,7 +172,7 @@ describe("the caller's clubs and invitations (spec 04, 05)", () => {
           new Date(AT.created.getTime() + second * 1000),
         );
       }
-      const listed = (await listClubs(tx, person)).clubs.map((club) => club.name);
+      const listed = (await listClubs(tx, person, NOW)).clubs.map((club) => club.name);
       expect(listed).toHaveLength(50);
       expect(listed).toEqual(Array.from({ length: 50 }, (_, index) => `Club ${String(index).padStart(2, "0")}`));
     });
@@ -180,7 +197,7 @@ describe("the caller's clubs and invitations (spec 04, 05)", () => {
           VALUES (${invitation}, ${candidate}, ${randomBytes(32)}, ${at}, ${new Date(at.getTime() + 7 * 864e5)}, ${mo}, ${at})`;
         bySecond.set(second, invitation);
       }
-      const listed = (await listClubs(tx, mo)).invitations.map((one) => one.id);
+      const listed = (await listClubs(tx, mo, NOW)).invitations.map((one) => one.id);
       // The fifty newest of the fifty-two, the newest first: seconds 51 down to 2.
       expect(listed).toHaveLength(50);
       expect(listed).toEqual(Array.from({ length: 50 }, (_, index) => bySecond.get(51 - index)));
@@ -192,16 +209,16 @@ describe("the caller's clubs and invitations (spec 04, 05)", () => {
       const w = await newWorld(plain(tx));
       const mo = await invite(tx, w, OPENED);
       const id = await invitationOf(tx, mo);
-      expect(await listClubs(tx, mo)).toEqual({
+      expect(await listClubs(tx, mo, NOW)).toEqual({
         clubs: [],
         invitations: [{ id, clubName: named(w, "Saturday people"), inviterName: named(w, "Ana"), state: "waiting" }],
       });
       // Nobody else sees it: not the club's members, not an account with nothing (T14).
       for (const viewer of [w.ana.user, w.ben.user, w.cleo.user, w.dan.user]) {
-        expect((await listClubs(tx, viewer)).invitations).toEqual([]);
+        expect((await listClubs(tx, viewer, NOW)).invitations).toEqual([]);
       }
       // The invitation names the club and the proposer and nothing more: no roster, no approval, no count (T33).
-      const listing = await listClubs(tx, mo);
+      const listing = await listClubs(tx, mo, NOW);
       expect(Object.keys(listing.invitations[0] ?? {}).sort()).toEqual(["clubName", "id", "inviterName", "state"]);
     });
   });
@@ -210,7 +227,7 @@ describe("the caller's clubs and invitations (spec 04, 05)", () => {
     await rolledBack(db, async (tx) => {
       const w = await newWorld(plain(tx));
       const mo = await invite(tx, w, OPENED);
-      const stateOf = async () => (await listClubs(tx, mo)).invitations.map((one) => one.state);
+      const stateOf = async () => (await listClubs(tx, mo, NOW)).invitations.map((one) => one.state);
       expect(await stateOf()).toEqual(["waiting"]);
       await changeTheRoster(tx, w);
       expect(await stateOf()).toEqual(["roster_changed"]);
@@ -227,8 +244,8 @@ describe("the caller's clubs and invitations (spec 04, 05)", () => {
       for (const member of [w.ben, w.cleo]) {
         const [link] = await tx<{ id: string }[]>`SELECT id FROM app.invitations WHERE bound_user_id = ${member.user}`;
         expect(link).toBeDefined();
-        expect((await listClubs(tx, member.user)).invitations).toEqual([]);
-        expect((await listClubs(tx, member.user)).clubs).toHaveLength(1);
+        expect((await listClubs(tx, member.user, NOW)).invitations).toEqual([]);
+        expect((await listClubs(tx, member.user, NOW)).clubs).toHaveLength(1);
       }
     });
   });
@@ -237,7 +254,7 @@ describe("the caller's clubs and invitations (spec 04, 05)", () => {
     await rolledBack(db, async (tx) => {
       const w = await newWorld(plain(tx));
       const mo = await invite(tx, w, OPENED);
-      const inviter = async () => (await listClubs(tx, mo)).invitations.map((one) => one.inviterName);
+      const inviter = async () => (await listClubs(tx, mo, NOW)).invitations.map((one) => one.inviterName);
       expect(await inviter()).toEqual([named(w, "Ana")]);
       // While active, a new name shows at once.
       await tx`UPDATE app.users SET display_name = ${named(w, "Anna")} WHERE id = ${w.ana.user}`;
@@ -249,31 +266,48 @@ describe("the caller's clubs and invitations (spec 04, 05)", () => {
       // A deleted account leaves no name to show, so the invitation has none to list.
       const gone = await newWorld(plain(tx), "-gone");
       const stranger = await invite(tx, gone, OPENED);
-      expect((await listClubs(tx, stranger)).invitations).toHaveLength(1);
+      expect((await listClubs(tx, stranger, NOW)).invitations).toHaveLength(1);
       await tx`UPDATE app.memberships SET state = 'account_deleted', left_at = ${OPENED} WHERE interval_id = ${gone.ana.interval}`;
-      expect((await listClubs(tx, stranger)).invitations).toEqual([]);
+      expect((await listClubs(tx, stranger, NOW)).invitations).toEqual([]);
     });
   });
 
-  it("reads both lists in one statement, so they are one snapshot", async () => {
+  it("reads both lists and the clubs' days in one statement, so they are one snapshot", async () => {
     await rolledBack(db, async (tx) => {
       const w = await newWorld(plain(tx));
-      let queries = 0;
+      // Counts the statements sent: postgres.js sends a statement when it is awaited (its `then` is
+      // called, once or more), and a fragment built with the same tagged template, such as the day
+      // choice's, never is. So it counts the queries awaited, which is what reaches Postgres; a count of
+      // calls would count the fragments too. `QuerySql` returns a `PromiseLike`, so awaiting is the only way
+      // `listClubs` can send a statement.
+      const sent = new Set<unknown>();
+      let made = 0;
       const counting: QuerySql = (template, ...values) => {
-        queries += 1;
-        return (tx as unknown as QuerySql)(template, ...values);
+        const query = (tx as unknown as QuerySql)(template, ...values);
+        made += 1;
+        const then = query.then.bind(query);
+        Object.defineProperty(query, "then", {
+          value: (...args: Parameters<typeof then>) => {
+            sent.add(query);
+            return then(...args);
+          },
+        });
+        return query;
       };
-      await listClubs(counting, w.ana.user);
-      expect(queries).toBe(1);
+      const listing = await listClubs(counting, w.ana.user, NOW);
+      expect(sent.size).toBe(1);
+      // The fragments were made with it too, and weren't sent.
+      expect(made).toBeGreaterThan(1);
+      expect(listing.clubs.map((club) => club.nextDay?.id)).toEqual([w.day]);
     });
   });
 
   it("refuses an account id that isn't one before it reaches Postgres", async () => {
     await rolledBack(db, async (tx) => {
       for (const bad of ["", "x'; DROP TABLE app.users; --", "a".repeat(65), randomUUID() + " "]) {
-        await expect(listClubs(tx, bad), JSON.stringify(bad)).rejects.toThrow(TypeError);
+        await expect(listClubs(tx, bad, NOW), JSON.stringify(bad)).rejects.toThrow(TypeError);
       }
-      await expect(listClubs(tx, 7 as unknown as string)).rejects.toThrow(TypeError);
+      await expect(listClubs(tx, 7 as unknown as string, NOW)).rejects.toThrow(TypeError);
     });
   });
 });

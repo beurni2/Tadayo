@@ -18,6 +18,7 @@ import {
   type ScanContext,
   type Viewer,
   type WorldAccount,
+  type WorldDay,
   type WorldDrop,
   type WorldFacts,
   type WorldInvitation,
@@ -64,7 +65,13 @@ function drop(
 }
 
 function member(club: string, name: string, joined: string, left: string | null = null) {
-  return { club, name, joinedAt: instant(joined), leftAt: left === null ? null : instant(left) };
+  return {
+    club,
+    account: `acct_${name.toLowerCase()}`,
+    name,
+    joinedAt: instant(joined),
+    leftAt: left === null ? null : instant(left),
+  };
 }
 
 function reservation(
@@ -75,15 +82,23 @@ function reservation(
   return { interval, day: "occ_sat", media: "photo", state, expiresAt };
 }
 
-function day(club: string, star: string, reveal: string, close: string, collecting: string) {
-  return { club, star, revealAt: instant(reveal), closeAt: instant(close), collectingFrom: instant(collecting) };
+function day(club: string, star: string, reveal: string, close: string, collecting: string): WorldDay {
+  return {
+    club,
+    star,
+    localDate: reveal.slice(0, 10),
+    revealAt: instant(reveal),
+    closeAt: instant(close),
+    collectingFrom: instant(collecting),
+    status: "scheduled",
+  };
 }
 
 /** The account of the person named `who`: `acct_cleo` for Cleo's interval `itv_cleo`. */
 const acct = (who: string) => `acct_${who.replace(/^itv_/, "")}`;
 
 function accountOf(name: string | null, version: number, over: Partial<WorldAccount> = {}): WorldAccount {
-  return { name, avatar: null, ageConfirmed: true, version, ...over };
+  return { state: "active", deletionRequestedAt: null, name, avatar: null, ageConfirmed: true, version, ...over };
 }
 
 const world: WorldFacts = {
@@ -141,13 +156,14 @@ const world: WorldFacts = {
       "clb_sat",
       {
         name: "Saturday People",
+        suspendedAt: null,
         labels: new Map([
           ["Mo", instant("2026-10-01T09:00:00Z")],
           ["Gus", instant("2026-11-06T21:30:00Z")],
         ]),
       },
     ],
-    ["clb_far", { name: "Far Club", labels: new Map<string, Temporal.Instant>() }],
+    ["clb_far", { name: "Far Club", suspendedAt: null, labels: new Map<string, Temporal.Instant>() }],
   ]),
   // Cleo's live slot, one Cleo's photo used, and one past its expiry not yet marked; Ana's live slot.
   reservations: new Map([
