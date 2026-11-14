@@ -10,10 +10,12 @@
 // when the table is missing, and the one upsert of its row.
 //   - It refuses first if the schema `app` isn't closed (`closedProblems`), so it never works on a
 //     database a migration left open.
-//   - It makes the table only on a database that has no occurrence. A table missing from a database
-//     that has days in it may have been dropped after the clock moved, and a new one starts at no
-//     offset, which is a clock moved back: a day that had opened would take new drops, and a day
-//     that had closed would reopen (T3).
+//   - It makes the table only when its caller gives it the file that makes it, and only on a
+//     database that has no occurrence. `dev-clock` gives it the file, from the repository;
+//     `spike-time`, on the API's Machine, whose image has no `tools/ops/sql`, doesn't, so it moves
+//     only a table that is there. A table missing from a database that has days in it may have been
+//     dropped after the clock moved, and a new one starts at no offset, which is a clock moved back:
+//     a day that had opened would take new drops, and a day that had closed would reopen (T3).
 //   - A move is to an instant, never by an amount, so running the same command twice can't move the
 //     clock twice. The new offset is the instant less Postgres's own clock, to the microsecond.
 //     It only grows (the table's triggers refuse anything else, and this says why first) and it
@@ -32,8 +34,11 @@ export const LONGEST_OFFSET_DAYS = 366;
 const MICROSECONDS_PER_DAY = 86_400_000_000n;
 
 export interface DevClockOptions {
-  /** The text of `tools/ops/sql/dev_clock.sql`, which makes the table. */
-  readonly makeSql: string;
+  /**
+   * The text of `tools/ops/sql/dev_clock.sql`, which makes the table when it's missing. Without it,
+   * a missing table is refused and nothing is made.
+   */
+  readonly makeSql?: string;
   /** Move the clock forward to this instant. Without it the clock is only reported. */
   readonly to?: Temporal.Instant;
 }
@@ -41,8 +46,9 @@ export interface DevClockOptions {
 export interface DevClockReport {
   /** True when this run made the table. */
   readonly made: boolean;
-  /** The offset after the run, in microseconds. */
+  /** The offset after the run, in microseconds, and the one it found. */
   readonly offsetMicroseconds: bigint;
+  readonly offsetBeforeMicroseconds: bigint;
   /** Postgres's own clock when the run read it, and what `dev`'s clock read at that moment. */
   readonly postgresNow: Temporal.Instant;
   readonly devNow: Temporal.Instant;
@@ -102,7 +108,10 @@ export async function devClock(tx: postgres.TransactionSql, options: DevClockOpt
                     WHERE n.nspname = 'app' AND c.relname = 'dev_clock') AS present`;
   if (typeof exists?.present !== "boolean") throw new OpsError("dev-clock: the check for app.dev_clock got no answer");
   const made = !exists.present;
-  if (made) {
+  if (made && options.makeSql === undefined) {
+    throw new OpsError("dev-clock: app.dev_clock is missing, and only `ops dev-clock` makes it, so nothing is changed");
+  }
+  if (made && options.makeSql !== undefined) {
     const [days] = await tx<{ any: boolean }[]>`SELECT EXISTS (SELECT FROM app.occurrences) AS any`;
     if (days?.any !== false) {
       throw new OpsError(
@@ -121,6 +130,7 @@ export async function devClock(tx: postgres.TransactionSql, options: DevClockOpt
     throw new OpsError(`dev-clock: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
   }
   let reading = await read(tx);
+  const before = reading.offset;
   if (options.to) {
     const offset = moveOffset(reading.offset, reading.postgresNow, options.to);
     await tx`
@@ -135,6 +145,7 @@ export async function devClock(tx: postgres.TransactionSql, options: DevClockOpt
   return {
     made,
     offsetMicroseconds: reading.offset,
+    offsetBeforeMicroseconds: before,
     postgresNow: instantOf(reading.postgresNow),
     devNow: instantOf(reading.postgresNow + reading.offset),
   };

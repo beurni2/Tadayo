@@ -164,6 +164,25 @@ describe("dev-clock, through the schema's own owner", () => {
     });
   });
 
+  it("without the file, moves a table that's there and says the offset it found, and refuses a missing one, making nothing", async () => {
+    await rolledBack(app, async (tx) => {
+      await expect(devClock(tx, { to: inHours(24) })).rejects.toThrow(/missing, and only `ops dev-clock` makes it/);
+      expect(await present(tx)).toBe(false);
+      await expect(devClock(tx, {})).rejects.toThrow(/missing/);
+      expect(await present(tx)).toBe(false);
+    });
+    await rolledBack(app, async (tx) => {
+      await devClock(tx, { makeSql: MAKE_SQL });
+      const first = await devClock(tx, { to: inHours(24) });
+      expect(first.made).toBe(false);
+      expect(first.offsetBeforeMicroseconds).toBe(0n);
+      const second = await devClock(tx, { to: inHours(48) });
+      expect(second.offsetBeforeMicroseconds).toBe(first.offsetMicroseconds);
+      expect(second.offsetMicroseconds).toBeGreaterThan(first.offsetMicroseconds);
+      expect(await stored(tx)).toEqual({ rows: 1, offset: second.offsetMicroseconds.toString() });
+    });
+  });
+
   it("goes on moving a table that's there once the database has occurrences", async () => {
     await rolledBack(app, async (tx) => {
       await devClock(tx, { makeSql: MAKE_SQL });

@@ -13,6 +13,7 @@ import {
   PUBLIC,
   cellExpected,
   clubsJudge,
+  daysOf,
   gateOf,
   sessionOf,
   updateMeCases,
@@ -21,7 +22,7 @@ import {
   type Session,
 } from "./account.ts";
 import { NEUTRAL, PROFILE_INCOMPLETE, UNAUTHENTICATED, pinned, pinnedProblems } from "./harness.ts";
-import type { Answer, WorldFacts, WorldInvitation } from "./scanner.ts";
+import type { Answer, WorldAccount, WorldDay, WorldFacts, WorldInvitation, WorldMember } from "./scanner.ts";
 
 const answer = (body: unknown, status = 200): Answer => {
   const text = JSON.stringify(body);
@@ -120,6 +121,7 @@ describe("the viewer's clubs and invitations (clubsJudge)", () => {
   const at = Temporal.Instant.from("2026-11-07T06:59:59.999999Z");
   const member = (club: string, left: string | null = null) => ({
     club,
+    account: "acct_someone",
     name: null,
     joinedAt: Temporal.Instant.from("2026-10-01T10:00:00Z"),
     leftAt: left === null ? null : Temporal.Instant.from(left),
@@ -230,6 +232,177 @@ describe("the viewer's clubs and invitations (clubsJudge)", () => {
     expect(stranger(answer(listing([], [])))).toEqual([]);
     expect(stranger(answer(listing([], [{ invitation_id: "inv_mine" }])))).toEqual([
       "the invitations holds inv_mine, which aren't the viewer's",
+    ]);
+  });
+});
+
+describe("each club's open day and next day, from the rows and the time alone (daysOf; T1, T5; FQ50, FQ63, FQ75)", () => {
+  const instant = (text: string) => Temporal.Instant.from(text);
+  const REVEAL = instant("2026-11-07T07:00:00Z");
+  const CLOSE = instant("2026-11-08T01:00:00Z");
+  const µs = (at: Temporal.Instant, n: number) => at.add({ microseconds: n });
+  const ana: WorldMember = {
+    club: "clb_one",
+    account: "acct_ana",
+    name: "Ana",
+    joinedAt: instant("2026-10-01T10:00:00Z"),
+    leftAt: null,
+  };
+  const me: WorldMember = { ...ana, account: "acct_me", name: "Me" };
+  const anaAccount: WorldAccount = {
+    state: "active",
+    deletionRequestedAt: null,
+    name: "Ana",
+    avatar: "v_ana",
+    ageConfirmed: true,
+    version: 1,
+  };
+  const saturday: WorldDay = {
+    club: "clb_one",
+    star: "itv_ana",
+    localDate: "2026-11-07",
+    revealAt: REVEAL,
+    closeAt: CLOSE,
+    collectingFrom: instant("2026-11-02T08:00:00Z"),
+    status: "scheduled",
+  };
+  const monday: WorldDay = {
+    ...saturday,
+    localDate: "2026-11-09",
+    revealAt: instant("2026-11-09T07:00:00Z"),
+    closeAt: instant("2026-11-10T01:00:00Z"),
+  };
+  const worldWith = (
+    over: {
+      day?: Partial<WorldDay>;
+      ana?: Partial<WorldMember>;
+      account?: Partial<WorldAccount>;
+      suspended?: boolean;
+    } = {},
+  ): WorldFacts => ({
+    drops: new Map(),
+    days: new Map([
+      ["occ_mon", monday],
+      ["occ_sat", { ...saturday, ...over.day }],
+    ]),
+    members: new Map([
+      ["itv_ana", { ...ana, ...over.ana }],
+      ["itv_me", me],
+    ]),
+    clubs: new Map([
+      [
+        "clb_one",
+        {
+          name: "One",
+          suspendedAt: over.suspended === true ? instant("2026-11-06T20:30:00Z") : null,
+          labels: new Map<string, Temporal.Instant>(),
+        },
+      ],
+    ]),
+    reservations: new Map(),
+    canaries: new Map(),
+    accounts: new Map([["acct_ana", { ...anaAccount, ...over.account }]]),
+    invitations: new Map(),
+  });
+  const occurrence = (id: string, day: WorldDay, phase: string, avatar: string | null = "v_ana") => ({
+    id,
+    club_id: "clb_one",
+    star: { membership_id: "itv_ana", display_name: "Ana", ...(avatar === null ? {} : { avatar_version: avatar }) },
+    local_date: day.localDate,
+    reveal_at: day.revealAt.toString(),
+    close_at: day.closeAt.toString(),
+    phase,
+  });
+  const days = (world: WorldFacts, at: Temporal.Instant) => {
+    const found = daysOf(world, "clb_one", at);
+    return {
+      open: (found.open as { id?: string } | undefined)?.id,
+      next: (found.next as { id?: string } | undefined)?.id,
+    };
+  };
+
+  it("opens the day at its reveal exactly and closes it at its close exactly, the next being the earliest still to open", () => {
+    const world = worldWith();
+    expect(daysOf(world, "clb_one", µs(REVEAL, -1))).toEqual({
+      open: undefined,
+      next: occurrence("occ_sat", saturday, "collecting"),
+    });
+    expect(daysOf(world, "clb_one", REVEAL)).toEqual({
+      open: occurrence("occ_sat", saturday, "open"),
+      next: occurrence("occ_mon", monday, "collecting"),
+    });
+    expect(days(world, µs(CLOSE, -1))).toEqual({ open: "occ_sat", next: "occ_mon" });
+    expect(days(world, CLOSE)).toEqual({ open: undefined, next: "occ_mon" });
+    expect(days(world, monday.closeAt)).toEqual({ open: undefined, next: undefined });
+  });
+
+  it("gives none in a suspended club or a club it doesn't know, and never a suspended or cancelled day", () => {
+    expect(daysOf(worldWith({ suspended: true }), "clb_one", REVEAL)).toEqual({});
+    expect(daysOf(worldWith(), "clb_nowhere", REVEAL)).toEqual({});
+    for (const status of ["suspended", "cancelled"] as const)
+      expect(days(worldWith({ day: { status } }), REVEAL), status).toEqual({ open: undefined, next: "occ_mon" });
+  });
+
+  it("holds a day whose star left or asked to delete their account before its reveal, and keeps one they left at it", () => {
+    const early = µs(REVEAL, -1);
+    expect(days(worldWith({ ana: { leftAt: early } }), REVEAL)).toEqual({ open: undefined, next: undefined });
+    expect(days(worldWith({ account: { state: "deleting", deletionRequestedAt: early } }), µs(REVEAL, -1))).toEqual({
+      open: undefined,
+      next: undefined,
+    });
+    expect(days(worldWith({ ana: { leftAt: REVEAL } }), µs(CLOSE, -1)).open).toBe("occ_sat");
+    expect(days(worldWith({ account: { state: "deleting", deletionRequestedAt: REVEAL } }), µs(CLOSE, -1)).open).toBe(
+      "occ_sat",
+    );
+  });
+
+  it("shows the star's avatar only while their interval and account are both active, and never a day with no name", () => {
+    const during = instant("2026-11-07T09:00:00Z");
+    const later = instant("2026-11-07T10:00:00Z");
+    const deleting = worldWith({ account: { state: "deleting", deletionRequestedAt: during } });
+    expect(daysOf(deleting, "clb_one", later).open).toEqual(occurrence("occ_sat", saturday, "open", null));
+    const left = worldWith({ ana: { leftAt: during } });
+    expect(daysOf(left, "clb_one", later).open).toEqual(occurrence("occ_sat", saturday, "open", null));
+    const nameless = worldWith({ ana: { leftAt: during, name: null } });
+    expect(days(nameless, later)).toEqual({ open: undefined, next: undefined });
+  });
+
+  it("makes clubsJudge refuse a missing day, a day where there is none, another phase, another instant and an extra key", () => {
+    const world = worldWith();
+    const at = REVEAL;
+    const judge = clubsJudge(() => ({
+      world,
+      viewer: { account: "acct_me", intervals: new Set(["itv_me"]), texts: new Set() },
+      now: at,
+    }));
+    const listed = (fields: Record<string, unknown>) =>
+      answer({
+        server_now: "2026-11-07T07:00:00Z",
+        clubs: [{ id: "clb_one", member_count: 2, ...fields }],
+        invitations: [],
+      });
+    const open = occurrence("occ_sat", saturday, "open");
+    const next = occurrence("occ_mon", monday, "collecting");
+    expect(judge(listed({ open_day: open, next_day: next }))).toEqual([]);
+    // Keys in another order are the same answer.
+    expect(judge(listed({ next_day: next, open_day: Object.fromEntries(Object.entries(open).reverse()) }))).toEqual([]);
+    expect(judge(listed({ next_day: next }))).toEqual([`a club's open_day is nothing, not ${JSON.stringify(open)}`]);
+    expect(judge(listed({ open_day: open, next_day: next, extra: 1 }))).toEqual([]);
+    const wrong = [
+      { ...open, phase: "collecting" },
+      { ...open, reveal_at: "2026-11-07T07:00:01Z" },
+      { ...open, local_date: "2026-11-08" },
+      { ...open, star: { ...open.star, display_name: "Ben" } },
+      { ...open, star: { membership_id: "itv_ana", display_name: "Ana" } },
+      { ...open, flagged: true },
+      null,
+    ];
+    for (const day of wrong)
+      expect(judge(listed({ open_day: day, next_day: next })), JSON.stringify(day)).toEqual([
+        `a club's open_day is ${JSON.stringify(day)}, not ${JSON.stringify(open)}`,
+      ]);
+    expect(judge(listed({ open_day: open, next_day: open }))).toEqual([
+      `a club's next_day is ${JSON.stringify(open)}, not ${JSON.stringify(next)}`,
     ]);
   });
 });

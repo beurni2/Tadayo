@@ -2,12 +2,11 @@
 // database: the serializer's field list, and everything the route refuses before the command runs. The
 // command itself, its receipts and its races are against Postgres (tests/src/db/update-me.test.ts).
 
-import { ClubList, Me } from "@tadayo/contracts";
+import { Me } from "@tadayo/contracts";
 import { Refused, type Account, type Clock } from "@tadayo/domain";
 import type { FastifyInstance, InjectOptions } from "fastify";
 import { afterEach, describe, expect, it } from "vitest";
 import { bodyLimitOf, buildApp, type Deps } from "../app.ts";
-import { clubListBody } from "../clubs/list.ts";
 import type { ApiSql } from "../connection.ts";
 import { firstBadField, meBody } from "./me.ts";
 
@@ -333,46 +332,5 @@ describe("PATCH /v1/me: a refused command is the contract's answer", () => {
     const got = await refused(new Error("duplicate key value (auth_subject)=(secret) ben@example.invalid"));
     expect(got).toMatchObject({ status: 500, body: "" });
     expect(JSON.stringify(got)).not.toMatch(/secret|ben@/);
-  });
-});
-
-describe("GET /v1/clubs: the answer's field list (T55)", () => {
-  const now = Temporal.Instant.from("2026-11-11T05:00:00.987654Z");
-
-  it("is two empty lists and the server's instant, whole seconds rounded down, for an account with nothing", () => {
-    const body = clubListBody(now, { clubs: [], invitations: [] });
-    expect(body).toEqual({ server_now: "2026-11-11T05:00:00Z", clubs: [], invitations: [] });
-    expect(ClubList.safeParse(body).success).toBe(true);
-  });
-
-  it("lists a club and an invitation by the contract's names alone, with no day until B2", () => {
-    const body = clubListBody(now, {
-      clubs: [
-        {
-          id: "club_1",
-          name: "Saturday people",
-          timezone: "Europe/London",
-          membershipId: "mem_1",
-          state: "active",
-          memberCount: 3,
-        },
-      ],
-      invitations: [{ id: "inv_1", clubName: "Tuesday people", inviterName: "Ana", state: "waiting" }],
-    });
-    expect(body).toEqual({
-      server_now: "2026-11-11T05:00:00Z",
-      clubs: [
-        {
-          id: "club_1",
-          name: "Saturday people",
-          timezone: "Europe/London",
-          my_membership_id: "mem_1",
-          state: "active",
-          member_count: 3,
-        },
-      ],
-      invitations: [{ invitation_id: "inv_1", club_name: "Tuesday people", inviter_name: "Ana", state: "waiting" }],
-    });
-    expect(ClubList.safeParse(body).success).toBe(true);
   });
 });

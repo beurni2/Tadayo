@@ -11,6 +11,7 @@ import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
+import { prepareClock } from "@tadayo/domain";
 import type postgres from "postgres";
 import { runBootstrap } from "./bootstrap.ts";
 import { certificateRefusal } from "./database.ts";
@@ -31,6 +32,7 @@ import { onMachine } from "./on-machine.ts";
 import { OpsError } from "./ops-error.ts";
 import { seed } from "./seed.ts";
 import type { Spawn } from "./spawn.ts";
+import { moveClock, SPIKE_LIMITS, spikeTime, writeClub } from "./spike-time.ts";
 import { BUCKETS, storageSetup } from "./storage-setup.ts";
 import { projectUrl } from "./supabase.ts";
 import {
@@ -370,6 +372,93 @@ const supabaseProbeScript: Script = {
   },
 };
 
+/** The Machine's half of spike S5: the run on dev, with the database as the API's role and dev's clock. */
+async function spikeOnMachine(ctx: OpsContext, ref: string): Promise<void> {
+  const variables = readVariables(ctx.env, [
+    "SUPABASE_URL",
+    "SUPABASE_PUBLISHABLE_KEY",
+    "SUPABASE_SERVICE_KEY",
+    "DATABASE_URL",
+  ]);
+  const url = machineProject(variables.SUPABASE_URL, ref, "spike-time");
+  const database = devDatabaseUrl(variables.DATABASE_URL, ref);
+  // From here, as the probe's, so that opening the database counts against them too.
+  const budget = AbortSignal.timeout(SPIKE_LIMITS.budgetMs);
+  const deadline = AbortSignal.timeout(SPIKE_LIMITS.deadlineMs);
+  // What a failed clean-up leaves is named by this id (`spike-<run>@probe.invalid`).
+  const run = randomUUID();
+  ctx.say(`spike-time: run ${run}`);
+  const checks = await withDatabase(ctx, { script: "spike-time", variable: "DATABASE_URL" }, database, (db) =>
+    spikeTime({
+      fetch: ctx.fetch,
+      url,
+      publishableKey: variables.SUPABASE_PUBLISHABLE_KEY,
+      serviceKey: variables.SUPABASE_SERVICE_KEY,
+      run,
+      sleep: ctx.sleep,
+      say: ctx.say,
+      budget,
+      deadline,
+      database: {
+        // dev's own clock, checked as the API checks it at start-up, sampled in the club's transaction.
+        writeClub: (account) =>
+          db.begin(async (tx) => writeClub(tx, { run, account, clock: await prepareClock("dev", tx) })),
+        moveClock: (to) => moveClock(db, to),
+      },
+    }),
+  );
+  for (const check of checks) ctx.say(`spike-time: ${reportLine(check)}`);
+  const failed = checks.filter((check) => !check.ok).length;
+  if (failed > 0) throw new OpsError(`spike-time: ${String(failed)} of ${String(checks.length)} checks failed`);
+  ctx.say(`spike-time: all ${String(checks.length)} checks passed`);
+}
+
+const SPIKE_RUN = /^spike-time: run ([0-9a-f-]{36})$/;
+const SPIKE_PASSED = /^spike-time: all \d+ checks passed$/;
+const SPIKE_FAILED = /^spike-time: \d+ of \d+ checks failed$/;
+/** What the spike may leave when its clean-up didn't run: its user, named by the run's id. */
+const spikeLeftovers = (run: string | undefined) =>
+  `tadayo-dev's Auth may hold the run's user, spike-${run ?? "<the run's id>"}@probe.invalid: delete it by that address. ` +
+  "The run's club, its two accounts and its days stay, as every run's do";
+
+/** The runner's half: the Machine's half, and what it may have left if its report was cut short. */
+async function spikeFromRunner(ctx: OpsContext): Promise<void> {
+  const variables = readVariables(ctx.env, ["FLY_API_TOKEN", "SUPABASE_DEV_PROJECT_REF"]);
+  const ref = devProjectRef(variables.SUPABASE_DEV_PROJECT_REF);
+  // As the probe's runner reads its Machine (probeFromRunner): a report with the run's id and without
+  // its last line is one cut short, whose clean-up may not have run, whatever flyctl's exit status.
+  const heard: string[] = [];
+  let onMachineFailure: OpsError | undefined;
+  try {
+    await onTheMachine(ctx, "spike-time", ref, heard);
+  } catch (error) {
+    if (!(error instanceof OpsError)) throw error;
+    onMachineFailure = error;
+  }
+  const run = heard.map((line) => SPIKE_RUN.exec(line)?.[1]).find((id) => id !== undefined);
+  const passed = heard.some((line) => SPIKE_PASSED.test(line));
+  const ended = passed || heard.some((line) => SPIKE_FAILED.test(line));
+  if (heard.length === 0) {
+    ctx.say(`spike-time: nothing came back from the Machine. If its command had started, ${spikeLeftovers(undefined)}`);
+  } else if (run !== undefined && !ended) {
+    ctx.say(`spike-time: the Machine's report ended before its checks did, so ${spikeLeftovers(run)}`);
+  }
+  if (onMachineFailure !== undefined) throw onMachineFailure;
+  if (run === undefined || !passed) {
+    throw new OpsError("spike-time: the Machine's report doesn't say its checks passed, so it shows nothing");
+  }
+  ctx.say("spike-time: every check passed");
+}
+
+const spikeTimeScript: Script = {
+  about:
+    "spike S5 on dev, with the worker stopped: a synthetic club, dev's clock moved to just before its day's 07:00 and 01:00, and the club list read as a member across each",
+  async run(ctx) {
+    const where = whereOf(optionsOf(ctx.args, HERE, "spike-time"), "spike-time");
+    await (where.here ? spikeOnMachine(ctx, where.ref) : spikeFromRunner(ctx));
+  },
+};
+
 // ---- The scripts that call Fly, and GitHub, from the runner.
 
 const workerScaleScript: Script = {
@@ -416,6 +505,7 @@ export const SCRIPTS: Readonly<Record<string, Script>> = {
   "fly-app-create": flyAppCreateScript,
   migrate: migrateScript,
   seed: seedScript,
+  "spike-time": spikeTimeScript,
   "storage-setup": storageSetupScript,
   "supabase-probe": supabaseProbeScript,
   "worker-scale": workerScaleScript,

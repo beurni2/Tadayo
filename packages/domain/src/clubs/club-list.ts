@@ -3,15 +3,19 @@
 // invitation that turns into a membership while the list is read is in the clubs or in the invitations,
 // never in neither. They are read through the account's own rows only: a club is listed for an *active*
 // interval of the caller's (a club they left is never listed), an invitation for the link the caller is
-// bound to. Nothing else of a club comes out: no roster, no approval, no day (T33; `open_day` and
-// `next_day`, which need Home's day logic, come in B2).
+// bound to. Nothing else of a club comes out but its two days: no roster, no approval, nothing about who
+// has added (T15, T33). Each club's `open_day` and `next_day` are Home's day choice at the caller's `now`
+// (../authorization/days.ts; T1, T5, T9), joined into the same statement, so the clubs and their days are
+// one snapshot too.
 //
 // An invitation's inviter is the candidate's proposer, by FQ75's rule: the interval's person's name
 // while the interval is active, the name it ended with after (a deleted account may have none, and the
 // invitation then has no name to show and is left out; FQ75 settles what the app shows, needed by B6,
 // which builds the deletion).
 
+import { chosenDay, daysByClub, type ChosenDay } from "../authorization/days.ts";
 import type { QuerySql } from "../authorization/read-sql.ts";
+import type { ServerNow } from "../time/clock.ts";
 import { clubState, type ClubState } from "./club-state.ts";
 import { invitationState, type InvitationState } from "./invitation-state.ts";
 
@@ -27,6 +31,9 @@ export interface ClubRow {
   readonly state: ClubState;
   /** Active members, the caller included. */
   readonly memberCount: number;
+  /** The day open now, and the next day to open (../authorization/days.ts), each null when there is none. */
+  readonly openDay: ChosenDay | null;
+  readonly nextDay: ChosenDay | null;
 }
 
 export interface InvitationRow {
@@ -43,7 +50,7 @@ export interface ClubListing {
   readonly invitations: readonly InvitationRow[];
 }
 
-type Bound<R> = (template: TemplateStringsArray, ...values: readonly string[]) => R;
+type Bound<R> = (template: TemplateStringsArray, ...values: readonly (string | R)[]) => R;
 
 function bound<R>(sql: (template: TemplateStringsArray, ...values: readonly never[]) => R): Bound<R> {
   return sql as Bound<R>;
@@ -76,12 +83,20 @@ function shape(): Error {
   return new Error("clubs: the list came back in a shape the schema doesn't allow");
 }
 
+/** A club's day, which must be the club's own. */
+function dayOf(value: unknown, phase: "open" | "collecting", club: string): ChosenDay | null {
+  const day = chosenDay(value, phase);
+  if (day !== null && day.clubId !== club) throw shape();
+  return day;
+}
+
 function club(value: unknown): ClubRow {
   const row = record(value);
   const count = row["member_count"];
   if (typeof count !== "number" || !Number.isInteger(count) || count < 1) throw shape();
+  const id = text(row["id"]);
   return {
-    id: text(row["id"]),
+    id,
     name: text(row["name"]),
     timezone: text(row["timezone"]),
     membershipId: text(row["membership_id"]),
@@ -91,6 +106,8 @@ function club(value: unknown): ClubRow {
       activeMembers: count,
     }),
     memberCount: count,
+    openDay: dayOf(row["open_day"], "open", id),
+    nextDay: dayOf(row["next_day"], "collecting", id),
   };
 }
 
@@ -107,15 +124,21 @@ function invitation(value: unknown): InvitationRow {
   };
 }
 
-/** The clubs and invitations of the account `userId`, in `sql`'s transaction or pool. */
-export async function listClubs(sql: QuerySql, userId: string): Promise<ClubListing> {
+/**
+ * The clubs and invitations of the account `userId`, in `sql`'s transaction or pool, with each club's
+ * days at `now`, the clock's sample taken first in that transaction (T1). The connection needs
+ * INSTANT_TYPE, since `now` is bound as a timestamptz.
+ */
+export async function listClubs(sql: QuerySql, userId: string, now: ServerNow): Promise<ClubListing> {
   if (typeof userId !== "string" || !ID.test(userId)) throw new TypeError("clubs: the caller is an account id");
+  const days = daysByClub(sql, userId, now);
   const rows = await bound(sql)`
     SELECT
       (SELECT COALESCE(pg_catalog.jsonb_agg(pg_catalog.jsonb_build_object(
                 'id', k.id, 'name', k.name, 'timezone', k.timezone, 'membership_id', k.interval_id,
                 'suspended', k.suspended_at IS NOT NULL, 'activated', k.activated_at IS NOT NULL,
-                'member_count', k.member_count) ORDER BY k.joined_at, k.interval_id), '[]'::pg_catalog.jsonb)
+                'member_count', k.member_count, 'open_day', h.open_day, 'next_day', h.next_day)
+                ORDER BY k.joined_at, k.interval_id), '[]'::pg_catalog.jsonb)
          FROM (SELECT c.id, c.name, c.timezone, c.suspended_at, c.activated_at, m.interval_id, m.joined_at,
                       (SELECT pg_catalog.count(*) FROM app.memberships a
                         WHERE a.club_id = c.id AND a.state = 'active') AS member_count
@@ -123,7 +146,8 @@ export async function listClubs(sql: QuerySql, userId: string): Promise<ClubList
                  JOIN app.clubs c ON c.id = m.club_id
                 WHERE m.user_id = ${userId} AND m.state = 'active'
                 ORDER BY m.joined_at, m.interval_id
-                LIMIT ${String(LIST_LIMIT)}::pg_catalog.int4) k) AS clubs,
+                LIMIT ${String(LIST_LIMIT)}::pg_catalog.int4) k
+         LEFT JOIN (${days}) h ON h.club_id = k.id) AS clubs,
       (SELECT COALESCE(pg_catalog.jsonb_agg(pg_catalog.jsonb_build_object(
                 'id', v.id, 'club_name', v.club_name, 'inviter_name', v.inviter_name,
                 'candidate_ended', v.candidate_ended, 'accepted_on_open_revision', v.accepted_on_open_revision)

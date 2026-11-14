@@ -22,6 +22,7 @@ import {
 import { FAKE_PUBLISHABLE, FAKE_SECRET, FAKE_URL, fakeSupabase } from "../test/fake-supabase.ts";
 import { hostSlug } from "./on-machine.ts";
 import { runScript, type OpsContext } from "./run.ts";
+import { SPIKE_LIMITS } from "./spike-time.ts";
 import { BUDGET_MS, DEADLINE_MS } from "./supabase-probe.ts";
 
 const REF = "abcdefghijklmnopqrst";
@@ -166,6 +167,7 @@ const FLY_SCRIPTS: readonly (readonly [string, readonly string[]])[] = [
   ["deploy-branch", ["--branch", BRANCH]],
   ["storage-setup", []],
   ["supabase-probe", []],
+  ["spike-time", []],
 ];
 
 describe("every script that calls Fly", () => {
@@ -683,5 +685,208 @@ describe("supabase-probe on the Machine (--here)", () => {
     const h = harness({ args: ["--here", "--ref", OTHER_REF], env: { ...MACHINE_ENV, SUPABASE_DEV_PROJECT_REF: REF } });
     expect(await failure("supabase-probe", h.ctx)).toMatch(/SUPABASE_URL isn't the project --ref names/);
     expect(h.connected).toEqual([]);
+  });
+});
+
+describe("spike-time on the runner", () => {
+  const RUN = "0f0f0f0f-1111-4222-8333-444444444444";
+  const passes = (stdout: string) =>
+    [[LIST, started], [ssh("spike-time"), answer(stdout)], ...CLEAN_UP] as const satisfies readonly Route[];
+
+  it("runs itself on the API's Machine, with --here and dev's reference, needing nothing of Supabase's here, and passes when the Machine's report says its checks passed", async () => {
+    const h = harness({
+      env: without(ENV, "SUPABASE_ACCESS_TOKEN", "GITHUB_TOKEN"),
+      routes: passes(
+        `spike-time: run ${RUN}\nspike-time: ok    database: the club is written\nspike-time: all 1 checks passed\n`,
+      ),
+    });
+    await runScript("spike-time", h.ctx);
+    expect(h.requests).toEqual([]);
+    expect(h.lines()).toEqual(onMachineCalls("spike-time"));
+    expect(h.said).toEqual([
+      making("spike-time"),
+      `spike-time: run ${RUN}`,
+      "spike-time: ok    database: the club is written",
+      "spike-time: all 1 checks passed",
+      removed("spike-time"),
+      "spike-time: every check passed",
+    ]);
+  });
+
+  it("needs dev's reference, and one that is a reference, before it calls anyone", async () => {
+    const none = harness({ env: without(ENV, "SUPABASE_DEV_PROJECT_REF") });
+    expect(await failure("spike-time", none.ctx)).toBe("set SUPABASE_DEV_PROJECT_REF");
+    const bad = harness({ env: { ...ENV, SUPABASE_DEV_PROJECT_REF: "not-a-ref" } });
+    expect(await failure("spike-time", bad.ctx)).toMatch(/SUPABASE_DEV_PROJECT_REF/);
+    expect([...none.calls, ...bad.calls]).toEqual([]);
+  });
+
+  it("fails with the Machine's failure, and says nothing of what may be left when the report came back whole", async () => {
+    const h = harness({
+      routes: [
+        [LIST, started],
+        [
+          ssh("spike-time"),
+          answer(
+            `spike-time: run ${RUN}\nspike-time: FAIL  reveal: answers came from both sides of 2026-11-16T12:00:00Z: 80 before and 0 after\n`,
+            1,
+            "spike-time: 1 of 1 checks failed\n",
+          ),
+        ],
+        ...CLEAN_UP,
+      ],
+    });
+    expect(await failure("spike-time", h.ctx)).toBe("spike-time: it failed on the Machine, with exit code 1");
+    expect(h.said).toEqual([
+      making("spike-time"),
+      `spike-time: run ${RUN}`,
+      "spike-time: FAIL  reveal: answers came from both sides of 2026-11-16T12:00:00Z: 80 before and 0 after",
+      "spike-time: 1 of 1 checks failed",
+      removed("spike-time"),
+    ]);
+  });
+
+  it("names the run's user as what may be left when the report has the run's id and not its last line, even with an exit status of 0", async () => {
+    for (const reply of [
+      answer(`spike-time: run ${RUN}\nspike-time: club S5 0f0f0f0f in America/New_York\n`),
+      { code: null, timedOut: true, stdout: `spike-time: run ${RUN}\n` },
+      {
+        code: 1,
+        stdout: `spike-time: run ${RUN}\n`,
+        stderr: "Error: ssh shell: Process exited with status 137 from signal KILL\n",
+      },
+    ] satisfies Reply[]) {
+      const h = harness({ routes: [[LIST, started], [ssh("spike-time"), reply], ...CLEAN_UP] });
+      expect(await failure("spike-time", h.ctx)).toMatch(/^spike-time: /);
+      expect(h.said.at(-1)).toBe(
+        `spike-time: the Machine's report ended before its checks did, so tadayo-dev's Auth may hold the run's user, spike-${RUN}@probe.invalid: delete it by that address. The run's club, its two accounts and its days stay, as every run's do`,
+      );
+      expect(h.said).not.toContain("spike-time: every check passed");
+    }
+  });
+
+  it("says the run's user may be left when nothing came back, and still fails with the call's own failure", async () => {
+    for (const reply of [
+      { code: 1, stderr: "Error: tunnel unavailable: context deadline exceeded" },
+      {},
+    ] satisfies Reply[]) {
+      const h = harness({ routes: [[LIST, started], [ssh("spike-time"), reply], ...CLEAN_UP] });
+      expect(await failure("spike-time", h.ctx)).toMatch(/^spike-time: /);
+      expect(h.said.at(-1)).toMatch(
+        /^spike-time: nothing came back from the Machine\. If its command had started, tadayo-dev's Auth may hold the run's user, spike-<the run's id>@probe\.invalid/,
+      );
+    }
+  });
+
+  it("doesn't take a report without the run's id, or one that only says its checks passed, as a pass", async () => {
+    for (const stdout of [
+      "spike-time: all 1 checks passed\n",
+      "spike-time: ok    database: the club is written\n",
+      "spike-time: run not-a-uuid\nspike-time: all 1 checks passed\n",
+    ]) {
+      const h = harness({ routes: passes(stdout) });
+      expect(await failure("spike-time", h.ctx), stdout).toBe(
+        "spike-time: the Machine's report doesn't say its checks passed, so it shows nothing",
+      );
+    }
+  });
+});
+
+describe("spike-time on the Machine (--here)", () => {
+  const args = ["--here", "--ref", REF];
+
+  it("refuses a project that isn't the one --ref names, a database that isn't dev's, and a missing key, before anything is opened", async () => {
+    const wrongProject = harness({ args, env: { ...MACHINE_ENV, SUPABASE_URL: OTHER_URL } });
+    expect(await failure("spike-time", wrongProject.ctx)).toBe(
+      "spike-time: SUPABASE_URL isn't the project --ref names, which is tadayo-dev's",
+    );
+    const wrongDatabase = harness({
+      args,
+      env: { ...MACHINE_ENV, DATABASE_URL: `postgresql://tadayo_app.${OTHER_REF}:a-password@${HOST}:5432/postgres` },
+    });
+    expect(await failure("spike-time", wrongDatabase.ctx)).toMatch(
+      /^DATABASE_URL isn't a connection to tadayo-dev's database/,
+    );
+    const noKey = harness({ args, env: without(MACHINE_ENV, "SUPABASE_SERVICE_KEY") });
+    expect(await failure("spike-time", noKey.ctx)).toBe("set SUPABASE_SERVICE_KEY");
+    const otherRef = harness({
+      args: ["--here", "--ref", OTHER_REF],
+      env: { ...MACHINE_ENV, SUPABASE_DEV_PROJECT_REF: REF },
+    });
+    expect(await failure("spike-time", otherRef.ctx)).toMatch(/SUPABASE_URL isn't the project --ref names/);
+    for (const h of [wrongProject, wrongDatabase, noKey, otherRef]) {
+      expect(h.connected).toEqual([]);
+      expect(h.requests).toEqual([]);
+      expect(h.said).toEqual([]);
+    }
+  });
+
+  it("says the run's id, and starts its limits, before it opens the database", async () => {
+    const timeout = vi.spyOn(AbortSignal, "timeout");
+    try {
+      const h = harness({ args, env: MACHINE_ENV });
+      let before: number[] = [];
+      let said: string[] = [];
+      const ctx: OpsContext = {
+        ...h.ctx,
+        connect: (url) => {
+          before = timeout.mock.calls.map(([milliseconds]) => milliseconds);
+          said = [...h.said];
+          return h.ctx.connect(url);
+        },
+      };
+      expect(await failure("spike-time", ctx)).toBe("no database here");
+      expect(before).toEqual(expect.arrayContaining([SPIKE_LIMITS.budgetMs, SPIKE_LIMITS.deadlineMs]));
+      expect(said).toEqual([
+        expect.stringMatching(/^spike-time: run [0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/),
+      ]);
+    } finally {
+      timeout.mockRestore();
+    }
+  });
+
+  it("runs from an image without the repository's other folders, signs in, and stops at a database without dev's clock, deleting the user", async () => {
+    // The harness's repository root, /repo, isn't there, as the image has no tools/ops/sql: the
+    // Machine's half reads no file. A made-up project signs the user in, a made-up API makes the
+    // account, and a database that answers every question with no rows has no dev clock to write by.
+    const project = fakeSupabase();
+    let version = 1;
+    const api: typeof fetch = async (input, init) => {
+      const request = new Request(input, init);
+      const url = new URL(request.url);
+      if (url.origin === FAKE_URL) return project.fetch(input, init);
+      if (url.host !== "api-dev.tadayo.app") throw new Error("no network here");
+      if (request.method === "PATCH") version += 1;
+      return new Response(
+        JSON.stringify({ id: "acct_ana", display_name: "Ana", age_confirmed: version > 1, version }),
+        {
+          status: 200,
+        },
+      );
+    };
+    const h = harness({ args, env: MACHINE_ENV, fetch: api });
+    const transactions: number[] = [];
+    const nothing: unknown = Object.assign(() => Promise.resolve([]), {
+      unsafe: () => Promise.resolve([]),
+      end: () => Promise.resolve(),
+      begin: (body: (tx: unknown) => Promise<unknown>) => {
+        transactions.push(1);
+        return body(nothing);
+      },
+    });
+    const ctx: OpsContext = { ...h.ctx, connect: () => nothing as ReturnType<OpsContext["connect"]> };
+    expect(await failure("spike-time", ctx)).toBe("spike-time: 1 of 6 checks failed");
+    expect(h.said.slice(1)).toEqual([
+      "spike-time: ok    sign-in: the service key makes the run's user",
+      "spike-time: ok    sign-in: the user signs in without an email",
+      "spike-time: ok    api: GET /v1/me makes the run's account",
+      "spike-time: ok    api: PATCH /v1/me names it Ana and confirms its age",
+      // dev's clock is checked first, in the club's own transaction, as the API checks it at start-up.
+      "spike-time: FAIL  database: the club is written: time: the dev clock's check got no answer",
+      "spike-time: ok    cleanup: delete the run's user",
+    ]);
+    expect(transactions).toEqual([1]);
+    expect(project.users.size).toBe(0);
+    expect(JSON.stringify(h.said)).not.toContain(FAKE_SECRET);
   });
 });

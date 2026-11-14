@@ -1,4 +1,14 @@
 export { READS, type ReadWhat } from "./authorization/read.ts";
+export {
+  chooseDays,
+  chosenDay,
+  daysByClub,
+  type ChosenDay,
+  type ChosenPhase,
+  type ClubDayFacts,
+  type DayChoice,
+  type DayFacts,
+} from "./authorization/days.ts";
 export { mayReadDrop, readableDrops, type FragmentSql, type QuerySql } from "./authorization/read-sql.ts";
 export { listClubs, LIST_LIMIT, type ClubListing, type ClubRow, type InvitationRow } from "./clubs/club-list.ts";
 export {

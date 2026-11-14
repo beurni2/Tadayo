@@ -37,7 +37,8 @@ import {
 
 // The values are typed `never` so that postgres.js's own tagged template, whose values are its
 // parameter types, fits; each function below binds only strings, nulls, booleans and Temporal.Instants,
-// which INSTANT_TYPE's connection takes, through `bound`.
+// which INSTANT_TYPE's connection takes, and fragments made by the same tagged template, through
+// `bound`.
 
 /** postgres.js's tagged template: awaited it runs, and inside another query it is a fragment. */
 export type FragmentSql<F> = (template: TemplateStringsArray, ...values: readonly never[]) => F;
@@ -50,7 +51,7 @@ export type QuerySql = (
 
 type Bound<R> = (
   template: TemplateStringsArray,
-  ...values: readonly (string | null | boolean | Temporal.Instant)[]
+  ...values: readonly (string | null | boolean | Temporal.Instant | R)[]
 ) => R;
 
 function bound<R>(sql: (template: TemplateStringsArray, ...values: readonly never[]) => R): Bound<R> {
@@ -60,8 +61,21 @@ function bound<R>(sql: (template: TemplateStringsArray, ...values: readonly neve
 /** `app.id`'s pattern (db/migrations/0002_shared_rules.sql). */
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
 
-function checkViewer(viewer: unknown): void {
+/** Throws unless `viewer` is an account id: the session's, so anything else is the caller's mistake. */
+export function checkViewer(viewer: unknown): void {
   if (typeof viewer !== "string" || !ID.test(viewer)) throw new TypeError("authorization: the viewer is an account id");
+}
+
+/**
+ * The read predicate's two conditions on a day's star (FQ63, T27): the star's interval hadn't ended,
+ * and the star hadn't asked to delete their account, before the day's reveal, so a day whose star
+ * left before it opened is held and never opens, whatever the worker that ends the interval has done
+ * (T1). `readableDrops` and Home's day choice (./days.ts) both put it in their statements, so the two
+ * can't drift; it names their aliases: `o` the day, `s` the star's interval, `su` the star's account.
+ */
+export function starKeepsDay<F>(sql: FragmentSql<F>): F {
+  return bound(sql)`(s.left_at IS NULL OR s.left_at >= o.reveal_at)
+       AND (su.deletion_requested_at IS NULL OR su.deletion_requested_at >= o.reveal_at)`;
 }
 
 /**
@@ -91,8 +105,7 @@ export function readableDrops<F>(sql: FragmentSql<F>, viewer: string, now: Serve
        AND d.state = 'active'
        AND o.status = 'scheduled'
        AND c.suspended_at IS NULL
-       AND (s.left_at IS NULL OR s.left_at >= o.reveal_at)
-       AND (su.deletion_requested_at IS NULL OR su.deletion_requested_at >= o.reveal_at)
+       AND ${starKeepsDay(sql)}
        AND au.state = 'active'
        AND NOT EXISTS (SELECT FROM app.blocks b
                         WHERE (b.blocker_user_id = m.user_id AND b.blocked_user_id = am.user_id)

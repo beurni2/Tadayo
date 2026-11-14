@@ -178,14 +178,20 @@ export interface WorldDay {
   club: string;
   /** The star's membership interval. */
   star: string;
+  /** Its date in the club's timezone, such as 2026-11-07. */
+  localDate: string;
   revealAt: Temporal.Instant;
   closeAt: Temporal.Instant;
   /** When it started collecting: a member who joined after it joined later (T15). */
   collectingFrom: Temporal.Instant;
+  /** What denies it, if anything (T9): suspended or cancelled. */
+  status: "scheduled" | "suspended" | "cancelled";
 }
 
 export interface WorldMember {
   club: string;
+  /** Whose interval it is: an account of the world's. */
+  account: string;
   /** The name members see (FQ75: the name it ended with, once ended), or null while it has none. */
   name: string | null;
   joinedAt: Temporal.Instant;
@@ -205,6 +211,8 @@ export interface WorldReservation {
 
 export interface WorldClub {
   name: string;
+  /** When moderation suspended it, or null while it isn't (spec 22). */
+  suspendedAt: Temporal.Instant | null;
   /**
    * The labels of its roster revisions' candidates, each with when the first revision holding it was
    * made: a member saw it from then, so someone who left before then never did (FQ75).
@@ -214,6 +222,10 @@ export interface WorldClub {
 
 /** An account, as its row says (spec 23): what `Me` shows its owner, and no one else. */
 export interface WorldAccount {
+  /** Its state: a deletion begun makes it `deleting` (spec 23, T27). */
+  state: "active" | "deleting" | "deleted";
+  /** When its deletion was asked for, or null while it hasn't been. */
+  deletionRequestedAt: Temporal.Instant | null;
   /** The profile name now, or null while it has none. */
   name: string | null;
   /** The content version of its avatar, or null while it has none. */

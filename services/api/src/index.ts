@@ -1,5 +1,6 @@
 // The API as a library, for the tests: importing it starts nothing (the entry is main.ts).
 export { BODY_LIMIT, bodyLimitOf, buildApp, notFound, routesOf, type Deps } from "./app.ts";
+export { clubListBody, occurrenceBody } from "./clubs/list.ts";
 export { connect, type ApiSql } from "./connection.ts";
 export {
   KeysUnavailable,

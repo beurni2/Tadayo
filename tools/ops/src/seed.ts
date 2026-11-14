@@ -1,6 +1,9 @@
 // `seed`: applies the files in `db/seed/` to `dev`, as `tadayo_app` (docs/plans/B0.md, slice 10a;
-// docs/TECH-DESIGN.md sections 3 and 9; ADR-021). The folder is where B1's fixture clubs and the
-// spikes' few occurrences go; until the first of them it's empty, and `seed` says so.
+// docs/TECH-DESIGN.md sections 3 and 9; ADR-021). The folder is where B1's fixture clubs go; until
+// the first of them it's empty, and `seed` says so. Spike S5's club isn't a seed: a seed file can't
+// resolve a day's instants (ADR-008), and the dev clock, which only moves forward, would use up its
+// fixed dates on the first run, so `spike-time` writes its club with dates just ahead of dev's clock
+// (spike-time.ts; docs/plans/api-b0-spike-time.md, section 0).
 //
 // A seed file is test data for `dev`, so it can run again: it writes rows by fixed ids and says
 // `ON CONFLICT DO NOTHING`, or removes what it wrote first. The runner doesn't remember which
