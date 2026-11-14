@@ -18,7 +18,7 @@ The api lane's plan for a small fix, written before the change and pasted into t
 
 ## The test, written first
 
-A preload, `tests/src/db/signal-at-ready.ts`, loaded with `node --import` into the entry's process by `startup.test.ts`, wraps `process.stdout.write`: when the entry writes its ready line (`api: listening at `, `worker: started`), the process sends itself the signal `TADAYO_TEST_SIGNAL_AT_READY` names, the worst moment a signal can come, every time. Four tests, each entry with each signal: the process exits 0, writes its stop lines, and writes nothing to stderr. Before the fix all four fail every time with an exit code of null, the `ci` failure made deterministic; after it they pass. The existing tests keep their checks; `start()` gains the optional signal, which adds the preload and its variable only when given.
+A preload, `tests/src/db/signal-at-ready.ts`, loaded with `node --import` into the entry's process by `startup.test.ts`, wraps `process.stdout.write`: when the entry writes its ready line (`api: listening at `, `worker: started`), the process sends itself the signal `TADAYO_TEST_SIGNAL_AT_READY` names, the earliest moment a test reading that line could send one, every time. Four tests, each entry with each signal: the process exits 0, writes its stop lines, and writes nothing to stderr. Before the fix all four fail every time with an exit code of null, the `ci` failure made deterministic; after it they pass. The existing tests keep their checks; `start()` gains the optional signal, which adds the preload and its variable only when given.
 
 ## Not in it
 
