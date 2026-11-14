@@ -5,10 +5,12 @@
 // each stops cleanly, with exit code 0, on SIGTERM (a deploy's signal) and on SIGINT (the signal
 // `fly machine stop` sends by default), so a stop isn't a failure that fly.toml's `on-failure` would
 // restart, and no request is cut short; with `dev`, which needs the dev clock this database doesn't
-// have, each stops with the time module's message.
+// have, each stops with the time module's message. Each puts its handlers in place before it writes
+// the line that says it is up, so a signal sent as soon as that line is read stops it cleanly too.
 
 import { spawn, type ChildProcess } from "node:child_process";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 
 const SERVICES = join(import.meta.dirname, "..", "..", "..", "services");
@@ -16,13 +18,22 @@ const url = process.env.DATABASE_URL ?? "";
 /** A Supabase project's URL as theirs are, which no request here makes the API fetch from. */
 const PROJECT = "https://abcdefghijklmnopqrst.supabase.co";
 const running: ChildProcess[] = [];
+/** Makes the process signal itself as it writes its ready line (./signal-at-ready.ts). */
+const AT_READY = pathToFileURL(join(import.meta.dirname, "signal-at-ready.ts")).href;
 
 afterEach(() => {
   for (const child of running.splice(0)) child.kill("SIGKILL");
 });
 
-function start(service: "api" | "worker", environment: string, more: Record<string, string> = {}) {
-  const child = spawn(process.execPath, [join(SERVICES, service, "src", "main.ts")], {
+function start(
+  service: "api" | "worker",
+  environment: string,
+  more: Record<string, string> = {},
+  signalAtReady?: "SIGTERM" | "SIGINT",
+) {
+  const main = join(SERVICES, service, "src", "main.ts");
+  const args = signalAtReady === undefined ? [main] : ["--import", AT_READY, main];
+  const child = spawn(process.execPath, args, {
     env: {
       PATH: process.env.PATH ?? "",
       DATABASE_URL: url,
@@ -30,6 +41,7 @@ function start(service: "api" | "worker", environment: string, more: Record<stri
       TADAYO_ENVIRONMENT: environment,
       PORT: "0",
       HOST: "127.0.0.1",
+      ...(signalAtReady === undefined ? {} : { TADAYO_TEST_SIGNAL_AT_READY: signalAtReady }),
       ...more,
     },
   });
@@ -159,6 +171,21 @@ describe("the API's entry against the test database", () => {
     30_000,
   );
 
+  it.each(["SIGTERM", "SIGINT"] as const)(
+    "stops cleanly on a %s that comes as it writes its listening line: its handlers are in place first",
+    async (signal) => {
+      expect(url, "set DATABASE_URL, as the ci step db-tests does").not.toBe("");
+      const api = start("api", "prod", {}, signal);
+      expect(await api.exited, `${api.output.stdout}${api.output.stderr}`).toBe(0);
+      expect(api.output.stdout).toMatch(
+        new RegExp(`api: listening at http://127\\.0\\.0\\.1:\\d+\\napi: stopping on ${signal}\\n`),
+      );
+      expect(api.output.stdout).toMatch(/api: stopped\n$/);
+      expect(api.output.stderr).toBe("");
+    },
+    30_000,
+  );
+
   it("begins one stop when two signals come in a row, and the second, which has no handler left, ends the process or lets the first finish", async () => {
     const api = start("api", "prod");
     expect(await waitFor(api, /api: listening at/)).not.toBeNull();
@@ -191,6 +218,17 @@ describe("the worker's entry against the test database", () => {
       expect(await waitFor(worker, /worker: started/), worker.output.stderr).not.toBeNull();
       expect(await stopWith(worker, signal)).toBe(0);
       expect(worker.output.stdout).toMatch(new RegExp(`worker: stopped on ${signal}\\n$`));
+      expect(worker.output.stderr).toBe("");
+    },
+    30_000,
+  );
+
+  it.each(["SIGTERM", "SIGINT"] as const)(
+    "stops cleanly on a %s that comes as it writes its started line: its handlers are in place first",
+    async (signal) => {
+      const worker = start("worker", "prod", {}, signal);
+      expect(await worker.exited, `${worker.output.stdout}${worker.output.stderr}`).toBe(0);
+      expect(worker.output.stdout).toBe(`worker: started, with no jobs yet\nworker: stopped on ${signal}\n`);
       expect(worker.output.stderr).toBe("");
     },
     30_000,
