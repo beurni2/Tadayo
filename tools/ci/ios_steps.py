@@ -88,8 +88,9 @@ The steps:
                images shows it, not only the raw log: the glass on iOS 27.2 now and then draws a
                little different (docs/LIMITATIONS.md, 2026-11-14). A re-run still replaces the
                whole folder, and an earlier attempt's stay in the `evidence` branch's history.
-               Any other line that names the warning, such as a failing test's message that
-               quotes one or a line cut short, is counted (`odd-draws-unread`), never copied.
+               Any other line that looks like the warning, such as a failing test's message
+               that quotes one or a line cut at a difference's boundary, is counted
+               (`odd-draws-unread`), never copied.
                Neither fails the step. Every field
                of snapshots.json and every value of run.json is checked again here, since this
                job can write: an entry with a field, or fields together, that collect can't
@@ -433,20 +434,23 @@ def snapshot_runtime(root):
 
 def odd_draw_holds(line):
     """Whether a line ODD_DRAW matches whole also holds together as `settled` writes one: a
-    digest for each draw; the last two draws the same when it settled and different when it
-    didn't; each draw it measures numbered in order, before the last; every draw whose digest
-    isn't the last's measured (a draw whose digest prefix happens to be the last's may be
-    measured too); and no difference by more than 255 or by nothing. So a line cut at a
-    difference's boundary, which the pattern alone would read, is counted instead."""
+    digest for each draw; the last two draws the same when it settled; each draw it measures
+    numbered once and in order, before the last; every draw whose digest isn't the last's
+    measured; and no difference by more than 255 or by nothing. The digests are the first 4
+    bytes of each draw's SHA-256, so two that differ may share them: a measured draw whose digest
+    is the last's, and the last two alike when it didn't settle, both hold. So a line cut at a
+    difference's boundary, which the pattern alone would read, is counted instead; a line cut
+    inside a last `sizes differ`'s height still reads, as a shorter height."""
     found = ODD_DRAW.fullmatch(line)
     if not found:
         return False
     what, count, digests, measured = found.groups()
     count, digests = int(count), digests.split(" ")
+    if len(digests) != count:
+        return False
     numbers = [int(n) for n in ODD_DRAW_NUMBER.findall(measured)]
     differing = {k + 1 for k in range(count) if digests[k] != digests[-1]}
-    return (len(digests) == count
-            and (digests[-1] == digests[-2]) == (what == "settled after")
+    return ((what != "settled after" or digests[-1] == digests[-2])
             and numbers == sorted(set(numbers)) and all(1 <= n < count for n in numbers)
             and differing <= set(numbers)
             and all(1 <= int(m) <= 255 for m in ODD_DRAW_LARGEST.findall(measured)))
@@ -454,9 +458,9 @@ def odd_draw_holds(line):
 
 def odd_draws(lines):
     """(the lines that read whole as `settled`'s warning, how many other lines hold
-    ODD_DRAW_MARK or ODD_DRAW_TAIL) of a test log. A line that names the warning but isn't one,
-    such as a failing test's message that quotes one, or a line cut short or run into another,
-    is counted, never copied."""
+    ODD_DRAW_MARK or ODD_DRAW_TAIL) of a test log. A line that looks like the warning but isn't
+    one, such as a failing test's message that quotes one, or a line cut (odd_draw_holds) or run
+    into another, is counted, never copied."""
     found, unread = [], 0
     for line in lines:
         line = line.rstrip("\r\n")
@@ -1666,7 +1670,7 @@ class Steps:
                   "step writes, left out")
         if odd is not None:
             print(f"ios: sheets: {len(odd)} odd draw(s) in logs/{odd_log}"
-                  + (f", and {unread} other line(s) naming `{ODD_DRAW_MARK.strip()}`"
+                  + (f", and {unread} other line(s) like `{ODD_DRAW_MARK.strip()}`'s"
                      if unread else ""))
         return 1 if failed or list_missing or strays else 0
 
@@ -1786,7 +1790,7 @@ class Steps:
             odd_draws_line = (f"{len(odd) or 'none'} in `logs/{odd_log}`"
                               + (", below" if odd else ""))
             if unread:
-                odd_draws_line += (f"; {unread} other line(s) there name "
+                odd_draws_line += (f"; {unread} other line(s) there look like "
                                    f"`{ODD_DRAW_MARK.strip()}` but don't read as one")
         lines += [f"- References: {references}",
                   f"- Tests: `{record.get('tests', 'not run')}`",

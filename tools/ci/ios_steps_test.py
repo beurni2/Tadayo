@@ -2008,18 +2008,25 @@ class OddDrawsTest(unittest.TestCase):
                "2a2b2c2d 3a3b3c3d; against the last draw, draw 1: 12 pixels in x 0 to 3, y 0 to 2, by at "
                "most 9/255; draw 2: not readable; draw 3: no pixel differs")
         self.assertEqual(ios_steps.odd_draws([two]), ([two], 0))
+        # Two draws that differ may share their digests' first 4 bytes, and `settled` writes them
+        # so: the last two alike by digest when it didn't settle, and a draw measured whose
+        # digest is the last's.
+        collided = [two.replace("3a3b3c3d", "2a2b2c2d"),
+                    ODD[0].replace("draw 2:", "draw 1: 1 pixels in x 0 to 0, y 0 to 0, by at most 1/255; draw 2:")]
+        self.assertEqual(ios_steps.odd_draws(collided), (collided, 0))
         unread += [
             two[:two.index("; draw 2")],  # cut at a difference's boundary
             two[:two.index("; draw 3")],
             ODD[0].replace("4 draws", "3 draws"),  # four digests for three draws
-            ODD[0].replace("draw 2:", "draw 4:"),  # the last draw measured against itself
-            ODD[0].replace("draw 2:", "draw 0:"),
+            ODD[0].replace("4 draws", "5 draws"),  # four digests for five draws
+            ODD[0].replace("draw 2:", "draw 4:"),  # draw 2, apart from the last, not measured
+            ODD[1] + "; draw 3: no pixel differs",  # the last draw measured against itself
+            ODD[1].replace("draw 1:", "draw 0: no pixel differs; draw 1:"),  # a draw 0
             ODD[0].replace("21/255", "999/255"),
             ODD[0].replace("21/255", "0/255"),
             ODD[0].replace("8e08afde 8e08afde;", "8e08afde 00000000;"),  # settled, the last two apart
-            two.replace("3a3b3c3d", "2a2b2c2d"),  # didn't settle, the last two alike
             two.replace("draw 1: 12", "draw 2: 12").replace("draw 2: not", "draw 1: not"),  # out of order
-            two.replace("; draw 2: not readable", "; draw 1: not readable"),  # twice
+            two.replace("; draw 2: not readable", "; draw 2: not readable; draw 2: not readable"),  # twice
             ODD[0][ODD[0].index("; against"):],  # its tail, the mark cut off before it
         ]
         other = ["Test Case '-[TadayoSnapshotTests.X testY]' passed (0.906 seconds).", "",
@@ -2632,20 +2639,20 @@ class SheetsTest(StepsTest):
             return json.load(f)
 
     def test_odd_draws_are_listed_in_the_index_and_kept_in_run_json(self):
-        # PR #57's review (C5): a re-run's evidence replaces the log, so each odd draw stays
-        # beside the run's images. Neither an odd draw nor a line that doesn't read as one fails
-        # the step.
+        # PR #57's review (C5): each odd draw shows on the page beside the run's images, not
+        # only in the raw log (a re-run still replaces the whole folder). Neither an odd draw nor
+        # a line that doesn't read as one fails the step.
         self.snapshots([self.entry("F02-upcoming", "new")])
         self.write_log("test-27.2.log", ["Test Suite 'All tests' started", ODD[0], QUOTED, ODD[1],
                                          "** TEST SUCCEEDED **"])
         code, out = self.step("sheets", FakeShell())
         self.assertEqual(code, 0, out)
-        self.assertIn("ios: sheets: 2 odd draw(s) in logs/test-27.2.log, and 1 other line(s) naming "
-                      "`warning: ScreenSnapshot`", out)
+        self.assertIn("ios: sheets: 2 odd draw(s) in logs/test-27.2.log, and 1 other line(s) like "
+                      "`warning: ScreenSnapshot`'s", out)
         lines = self.index().splitlines()
         self.assertEqual(lines[8:10], [
             "- Tests: `failed`",
-            "- Odd draws: 2 in `logs/test-27.2.log`, below; 1 other line(s) there name "
+            "- Odd draws: 2 in `logs/test-27.2.log`, below; 1 other line(s) there look like "
             "`warning: ScreenSnapshot` but don't read as one"])
         start = lines.index("Odd draws: each a screen whose drawing took a third draw or more "
                             "(`ScreenSnapshot.settled`; the system's glass, `docs/LIMITATIONS.md`, "
