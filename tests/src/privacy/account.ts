@@ -11,7 +11,8 @@
 // - getMe: 200 with the `Me` of the viewer's own row, which the scanner holds to the row (scanner.ts), and
 //   every other account route the same;
 // - listClubs: 200 with the clubs the viewer is an active member of and the invitations they accepted that
-//   haven't become memberships, each count and each id read from the world's rows (clubsJudge);
+//   haven't become memberships, each count and each id read from the world's rows, and each club's open day
+//   and next day at the cell's instant, whole, as the rows and the time say they are (clubsJudge, daysOf);
 // - updateMe: the table of bodies each session sends in each cell (updateMeCases), each with the answer
 //   pinned byte for byte, so that a guessed, another account's and a drop's upload get the same bytes (T14),
 //   a refused body says only its code and field and never a value (T55), a body past the route's 17 KiB is
@@ -119,11 +120,78 @@ function sameIds(what: string, got: readonly string[], want: ReadonlySet<string>
   ];
 }
 
+/** An instant as the contract writes it: whole seconds, rounded down, and Z. */
+const second = (instant: Temporal.Instant) => instant.toString({ smallestUnit: "second", roundingMode: "floor" });
+
+/**
+ * A club's open day and next day at `now`, as a member must get them (spec 06, 08; T1, T5, T9; FQ50, FQ63, FQ75),
+ * each the whole Occurrence expected or undefined, read from the world's rows and the time alone, apart from
+ * the authorization module: none in a suspended club; a day only while it is scheduled and its star neither
+ * left nor asked to delete their account before its reveal; open while reveal_at <= now < close_at, next the
+ * earliest reveal after now; the star by the name members see, with their avatar's version only while their
+ * interval and their account are both active; and a day whose star has no name to show is never given.
+ */
+export function daysOf(world: WorldFacts, club: string, now: Temporal.Instant): { open?: unknown; next?: unknown } {
+  if (world.clubs.get(club)?.suspendedAt !== null) return {};
+  const before = (a: Temporal.Instant, b: Temporal.Instant) => Temporal.Instant.compare(a, b) < 0;
+  const days = [...world.days]
+    .map(([id, day]) => ({ id, day, star: world.members.get(day.star) }))
+    .filter(({ day, star }) => {
+      if (day.club !== club || day.status !== "scheduled" || star === undefined || star.name === null) return false;
+      const account = world.accounts.get(star.account);
+      const left = star.leftAt !== null && before(star.leftAt, day.revealAt);
+      const asked = account?.deletionRequestedAt ?? null;
+      const deleting = asked !== null && before(asked, day.revealAt);
+      return !left && !deleting;
+    })
+    .sort((a, b) => Temporal.Instant.compare(a.day.revealAt, b.day.revealAt));
+  const occurrence = (found: (typeof days)[number] | undefined, phase: "open" | "collecting") => {
+    if (found === undefined) return undefined;
+    const { id, day, star } = found;
+    const account = star === undefined ? undefined : world.accounts.get(star.account);
+    const avatar = star?.leftAt === null && account?.state === "active" ? account.avatar : null;
+    return {
+      id,
+      club_id: day.club,
+      star: {
+        membership_id: day.star,
+        display_name: star?.name,
+        ...(avatar === null ? {} : { avatar_version: avatar }),
+      },
+      local_date: day.localDate,
+      reveal_at: second(day.revealAt),
+      close_at: second(day.closeAt),
+      phase,
+    };
+  };
+  return {
+    open: occurrence(
+      days.find(({ day }) => !before(now, day.revealAt) && before(now, day.closeAt)),
+      "open",
+    ),
+    next: occurrence(
+      days.find(({ day }) => before(now, day.revealAt)),
+      "collecting",
+    ),
+  };
+}
+
+/** A JSON value with its keys sorted, so two values compare as text whatever order their keys came in. */
+function canonical(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
+  if (isObject(value))
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`)
+      .join(",")}}`;
+  return value === undefined ? "undefined" : JSON.stringify(value);
+}
+
 /**
  * listClubs for the viewer (spec 04, 05; T7, T14, T33; the contract's ClubList): the server's instant in whole
- * seconds, the clubs the viewer is an active member of each with its active members counted, and the
- * invitations bound to the viewer's account whose person hasn't joined yet and that have an inviter to name:
- * read from the world's rows, apart from the query the route runs.
+ * seconds, the clubs the viewer is an active member of each with its active members counted and its two days
+ * (daysOf), and the invitations bound to the viewer's account whose person hasn't joined yet and that have an
+ * inviter to name: read from the world's rows, apart from the query the route runs.
  */
 export function clubsJudge(seen: () => Seen): (answer: Answer) => string[] {
   return (answer) => {
@@ -149,6 +217,13 @@ export function clubsJudge(seen: () => Seen): (answer: Answer) => string[] {
       if (!isObject(club) || typeof club.id !== "string" || !mine.has(club.id)) continue;
       if (club.member_count !== active.get(club.id))
         problems.push(`a club says ${shown(club.member_count)} members, not ${String(active.get(club.id))}`);
+      const expected = daysOf(world, club.id, now);
+      for (const [field, want] of [
+        ["open_day", expected.open],
+        ["next_day", expected.next],
+      ] as const)
+        if (canonical(club[field]) !== canonical(want))
+          problems.push(`a club's ${field} is ${shown(club[field])}, not ${shown(want)}`);
     }
     const accepted = new Set(
       [...world.invitations]

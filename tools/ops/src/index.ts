@@ -32,6 +32,25 @@ export { REDACTED, redactor, SECRET_VARIABLES } from "./output.ts";
 export { runScript, SCRIPTS, type OpsContext } from "./run.ts";
 export { applySeed, readSeeds, seed, type SeedFile } from "./seed.ts";
 export { scramVerifier } from "./scram.ts";
+export {
+  canonical,
+  expectedClubList,
+  firstDate,
+  judge,
+  moveClock,
+  SPIKE_LIMITS,
+  spikeTime,
+  startDay,
+  writeClub,
+  ZONE,
+  type ClubInput,
+  type SpikeAccount,
+  type SpikeClub,
+  type SpikeDatabase,
+  type SpikeDay,
+  type SpikeInput,
+  type SpikeLimits,
+} from "./spike-time.ts";
 export { spawnProcess, type Spawn, type SpawnOptions, type Spawned } from "./spawn.ts";
 export { ALLOWED_TYPES, BUCKETS, FILE_SIZE_LIMIT, storageSetup, type StorageSetupInput } from "./storage-setup.ts";
 export {

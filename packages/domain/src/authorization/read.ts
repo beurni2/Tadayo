@@ -102,9 +102,10 @@ export function mayRead(facts: DropReadFacts | null, what: ReadWhat, now: Server
 
 /**
  * Whether the star's leaving, `at`, keeps the day: it hasn't happened (null), or it came at
- * `revealAt` or later, once the day had opened. Anything that isn't an instant denies.
+ * `revealAt` or later, once the day had opened. Anything that isn't an instant denies. Home's day
+ * choice (./days.ts) asks it too, so a held day is held alike for its drops and for Home (FQ63).
  */
-function notBeforeReveal(at: unknown, revealAt: unknown): boolean {
+export function notBeforeReveal(at: unknown, revealAt: unknown): boolean {
   return (
     at === null ||
     (at instanceof Temporal.Instant &&
@@ -118,6 +119,11 @@ export function checkRead(what: unknown, now: unknown): void {
   if (!READS.includes(what as ReadWhat)) {
     throw new TypeError(`authorization: ${String(what)} isn't one of ${READS.join(", ")}`);
   }
+  checkNow(now);
+}
+
+/** Throws unless `now` is an instant Postgres keeps exactly. */
+export function checkNow(now: unknown): void {
   if (!(now instanceof Temporal.Instant)) throw new TypeError("authorization: now is the server's time, a ServerNow");
   wholeMicroseconds(now, "now");
 }
