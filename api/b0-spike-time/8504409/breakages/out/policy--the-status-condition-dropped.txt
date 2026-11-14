@@ -1,0 +1,38 @@
+$ (cd packages/domain && npx vitest run src/authorization/days.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/packages/domain
+
+ ❯ src/authorization/days.test.ts (17 tests | 1 failed) 20ms
+   ❯ only the viewer's clubs, and only a scheduled day that isn't held (T9, T14, T27; FQ50, FQ63; spec 22) (7)
+     × never chooses a suspended or cancelled day, open or next, and moves next on to the day after it 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+   Start at  02:18:27
+   Duration  164ms (tests 40%, import 30%, transform 22%, worker 8%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/authorization/days.test.ts > only the viewer's clubs, and only a scheduled day that isn't held (T9, T14, T27; FQ50, FQ63; spec 22) > never chooses a suspended or cancelled day, open or next, and moves next on to the day after it
+AssertionError: suspended: expected { open: null, next: 'occ_sat' } to deeply equal { open: null, next: 'occ_mon' }
+
+- Expected
++ Received
+
+  {
+-   "next": "occ_mon",
++   "next": "occ_sat",
+    "open": null,
+  }
+
+ ❯ src/authorization/days.test.ts:143:62
+    141|     for (const status of ["suspended", "cancelled"] as const) {
+    142|       const facts = { ...CLUB, days: [BEN, { ...ANA, status }] };
+    143|       expect(ids(choose(facts, µs(SAT.reveal, -1))), status).toEqual({…
+       |                                                              ^
+    144|       expect(ids(choose(facts, SAT.reveal)), status).toEqual({ open: n…
+    145|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

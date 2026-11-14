@@ -1,0 +1,54 @@
+$ (cd tests && npx vitest run --config vitest.db.config.ts src/db/ops-spike-time.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tests
+
+ ❯ src/db/ops-spike-time.test.ts (5 tests | 2 failed) 140ms
+   ❯ spike-time's club, written as tadayo_app (3)
+     × goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond 50ms
+   ❯ what spike-time expects, against the API's own day choice and serializer on its rows (1)
+     × is the club list GET /v1/clubs gives Ana at every instant round both of the day's edges 35ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 3 passed (5)
+   Start at  02:19:17
+   Duration  777ms (import 47%, tests 28%, transform 24%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/ops-spike-time.test.ts > spike-time's club, written as tadayo_app > goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond
+PostgresError: app.memberships: acct_4neahaHniPNxtuBKH0B2Ug joins only by an exact roster they accepted and every member approved (T7)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ writeClub ../tools/ops/src/spike-time.ts:232:11
+    230|      WHERE id = ${revision}`;
+    231|   const benInterval = newId("mem");
+    232|   await tx`
+       |           ^
+    233|     INSERT INTO app.memberships (interval_id, club_id, user_id, origin…
+    234|     VALUES (${benInterval}, ${club}, ${ben}, 'roster', ${revision}, ${…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/ops-spike-time.test.ts > what spike-time expects, against the API's own day choice and serializer on its rows > is the club list GET /v1/clubs gives Ana at every instant round both of the day's edges
+PostgresError: app.memberships: acct_h6e1LmD_rismxuziqhxTMg joins only by an exact roster they accepted and every member approved (T7)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ writeClub ../tools/ops/src/spike-time.ts:232:11
+    230|      WHERE id = ${revision}`;
+    231|   const benInterval = newId("mem");
+    232|   await tx`
+       |           ^
+    233|     INSERT INTO app.memberships (interval_id, club_id, user_id, origin…
+    234|     VALUES (${benInterval}, ${club}, ${ben}, 'roster', ${revision}, ${…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

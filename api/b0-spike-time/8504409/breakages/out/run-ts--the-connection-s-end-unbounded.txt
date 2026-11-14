@@ -1,0 +1,39 @@
+$ (cd tools/ops && npx vitest run src/run-remote.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tools/ops
+
+ ❯ src/run-remote.test.ts (38 tests | 1 failed) 118ms
+   ❯ spike-time on the Machine (--here) (3)
+     × runs from an image without the repository's other folders, signs in, and stops at a database without dev's clock, deleting the user 10ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 37 passed (38)
+   Start at  02:19:54
+   Duration  353ms (tests 49%, import 26%, transform 24%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/run-remote.test.ts > spike-time on the Machine (--here) > runs from an image without the repository's other folders, signs in, and stops at a database without dev's clock, deleting the user
+AssertionError: expected [ undefined ] to deeply equal [ { timeout: 5 } ]
+
+- Expected
++ Received
+
+  [
+-   {
+-     "timeout": 5,
+-   },
++   undefined,
+  ]
+
+ ❯ src/run-remote.test.ts:909:18
+    907|     ]);
+    908|     // The connection's end waits 5 seconds at most for a call the run…
+    909|     expect(ends).toEqual([{ timeout: 5 }]);
+       |                  ^
+    910|     expect(project.users.size).toBe(0);
+    911|     expect(JSON.stringify(h.said)).not.toContain(FAKE_SECRET);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

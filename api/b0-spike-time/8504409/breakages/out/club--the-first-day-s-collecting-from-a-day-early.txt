@@ -1,0 +1,58 @@
+$ (cd tests && npx vitest run --config vitest.db.config.ts src/db/ops-spike-time.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tests
+
+ ❯ src/db/ops-spike-time.test.ts (5 tests | 1 failed) 216ms
+   ❯ spike-time's club, written as tadayo_app (3)
+     × goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond 72ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+   Start at  02:19:22
+   Duration  833ms (import 41%, tests 38%, transform 19%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/ops-spike-time.test.ts > spike-time's club, written as tadayo_app > goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond
+AssertionError: expected [ { …(6) }, { …(6) } ] to deeply equal [ { …(6) }, { …(6) } ]
+
+- Expected
++ Received
+
+  [
+    {
+      "close": "1794895200000000",
+      "date": "2026-11-16",
+-     "from": "1794829800123456",
++     "from": "1794743400123456",
+      "id": "occ_CgY2KUiCNriDG_OBhCGmTg",
+      "reveal": "1794830400000000",
+      "star": "mem_nOI04IAvoRMo1WSHncNisg",
+    },
+    {
+      "close": "1794981600000000",
+      "date": "2026-11-17",
+-     "from": "1794829800123456",
++     "from": "1794743400123456",
+      "id": "occ_OTAG9O3pNW-cOb-DLMrfwQ",
+      "reveal": "1794916800000000",
+      "star": "mem_sauelNXAyGNELBwnJgQE8A",
+    },
+  ]
+
+ ❯ src/db/ops-spike-time.test.ts:136:20
+    134|                (extract(epoch FROM o.collecting_from) OPERATOR(pg_cata…
+    135|           FROM app.occurrences o WHERE o.club_id = ${club.id} AND o.st…
+    136|       expect(days).toEqual(
+       |                    ^
+    137|         [club.first, club.second].map((day) => ({
+    138|           id: day.id,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/ops-spike-time.test.ts:73:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,38 @@
+$ (cd packages/domain && npx vitest run src/authorization/days.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/packages/domain
+
+ ❯ src/authorization/days.test.ts (17 tests | 1 failed) 27ms
+   ❯ only the viewer's clubs, and only a scheduled day that isn't held (T9, T14, T27; FQ50, FQ63; spec 22) (7)
+     × keeps a day open to its close when its star leaves or asks to delete at its reveal or after 7ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+   Start at  02:18:31
+   Duration  181ms (tests 42%, import 34%, transform 19%, worker 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/authorization/days.test.ts > only the viewer's clubs, and only a scheduled day that isn't held (T9, T14, T27; FQ50, FQ63; spec 22) > keeps a day open to its close when its star leaves or asks to delete at its reveal or after
+AssertionError: expected { open: null, next: null } to deeply equal { open: 'occ_sat', next: null }
+
+- Expected
++ Received
+
+  {
+    "next": null,
+-   "open": "occ_sat",
++   "open": null,
+  }
+
+ ❯ src/authorization/days.test.ts:179:74
+    177|       const deleting = { ...ANA, starAccount: "deleting" as const, sta…
+    178|       for (const day of [left, deleting]) {
+    179|         expect(ids(choose({ ...CLUB, days: [day] }, µs(SAT.close, -1))…
+       |                                                                          ^
+    180|         expect(ids(choose({ ...CLUB, days: [day] }, SAT.close))).toEqu…
+    181|       }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

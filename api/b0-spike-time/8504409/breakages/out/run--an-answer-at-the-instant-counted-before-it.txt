@@ -1,0 +1,63 @@
+$ (cd tools/ops && npx vitest run src/spike-time.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tools/ops
+
+ ❯ src/spike-time.test.ts (22 tests | 2 failed) 2730ms
+   ❯ spike-time against an API that switches at the instant (2)
+     × signs in, makes the account the app's way, writes the club, watches both instants from 20 seconds before, and deletes the user 77ms
+     × reads four times a second, and watches each instant until five answers are at or after it 33ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 20 passed (22)
+   Start at  02:18:59
+   Duration  2.97s (tests 95%, transform 3%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/spike-time.test.ts > spike-time against an API that switches at the instant > signs in, makes the account the app's way, writes the club, watches both instants from 20 seconds before, and deletes the user
+AssertionError: expected [ …(5) ] to deeply equal [ …(5) ]
+
+- Expected
++ Received
+
+  [
+    "spike-time: club S5 1a2b3c4d in America/New_York: Ana's day 2026-11-16 opens 2026-11-16T12:00:00Z and closes 2026-11-17T06:00:00Z; Ben's day 2026-11-17 opens 2026-11-17T12:00:00Z",
+    "spike-time: reveal: dev's clock moved to 2026-11-16T11:59:40Z, 0 s ahead before, 579 s after",
+-   "spike-time: reveal at 2026-11-16T12:00:00Z: 79 answers before it and 5 at or after it; the last before at 2026-11-16T11:59:59Z: open none, next Ana's 2026-11-16 (collecting); the first after at 2026-11-16T12:00:00Z, 0 s after it: open Ana's 2026-11-16 (open), next Ben's 2026-11-17 (collecting)",
+-   StringMatching /^spike-time: close: dev's clock moved to 2026-11-17T05:59:40Z, 579 s ahead before, 65358 s after$/,
+-   "spike-time: close at 2026-11-17T06:00:00Z: 79 answers before it and 5 at or after it; the last before at 2026-11-17T05:59:59Z: open Ana's 2026-11-16 (open), next Ben's 2026-11-17 (collecting); the first after at 2026-11-17T06:00:00Z, 0 s after it: open none, next Ben's 2026-11-17 (collecting)",
++   "spike-time: reveal at 2026-11-16T12:00:00Z: 83 answers before it and 5 at or after it; the last before at 2026-11-16T12:00:00Z: open Ana's 2026-11-16 (open), next Ben's 2026-11-17 (collecting); the first after at 2026-11-16T12:00:01Z, 1 s after it: open Ana's 2026-11-16 (open), next Ben's 2026-11-17 (collecting)",
++   "spike-time: close: dev's clock moved to 2026-11-17T05:59:40Z, 579 s ahead before, 65357 s after",
++   "spike-time: close at 2026-11-17T06:00:00Z: 83 answers before it and 5 at or after it; the last before at 2026-11-17T06:00:00Z: open none, next Ben's 2026-11-17 (collecting); the first after at 2026-11-17T06:00:01Z, 1 s after it: open none, next Ben's 2026-11-17 (collecting)",
+  ]
+
+ ❯ src/spike-time.test.ts:284:20
+    282|     expect(patch?.key).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-…
+    283|     expect(JSON.parse(patch?.body ?? "{}")).toEqual({ expected_version…
+    284|     expect(w.said).toEqual([
+       |                    ^
+    285|       "spike-time: club S5 1a2b3c4d in America/New_York: Ana's day 202…
+    286|       "spike-time: reveal: dev's clock moved to 2026-11-16T11:59:40Z, …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/spike-time.test.ts > spike-time against an API that switches at the instant > reads four times a second, and watches each instant until five answers are at or after it
+AssertionError: expected 176 to be 168 // Object.is equality
+
+- Expected
++ Received
+
+- 168
++ 176
+
+ ❯ src/spike-time.test.ts:309:19
+    307|     // A wait of POLL_MS after each read, but the one that brings each…
+    308|     const reads = w.calls.filter((call) => call.path === "/v1/clubs").…
+    309|     expect(reads).toBe(2 * (79 + ANSWERS_AFTER));
+       |                   ^
+    310|     expect(w.sleeps).toEqual(Array.from({ length: reads - 2 }, () => P…
+    311|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

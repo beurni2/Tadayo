@@ -1,0 +1,61 @@
+$ (cd tests && npx vitest run --config vitest.db.config.ts src/db/home-days.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tests
+
+ ❯ src/db/home-days.test.ts (20 tests | 1 failed) 807ms
+   ❯ a viewer of two clubs in two zones gets each club's own days (T14) (1)
+     × never mixes them: each club's days carry its own id, star and date, whatever the other's hold 23ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  02:18:06
+   Duration  1.14s (tests 93%, import 4%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/home-days.test.ts > a viewer of two clubs in two zones gets each club's own days (T14) > never mixes them: each club's days carry its own id, star and date, whatever the other's hold
+AssertionError: the SQL and the policy at 2026-11-07T08:00:00Z: expected { open: { …(7) }, next: { …(7) } } to deeply equal { open: { …(7) }, next: null }
+
+- Expected
++ Received
+
+@@ -1,7 +1,19 @@
+  {
+-   "next": null,
++   "next": {
++     "closeAt": "2026-11-08T06:00:00Z",
++     "clubId": "club_Rc0rPFRX-xJ56R8r_UXFTw",
++     "id": "occ_EGh5DEKHiPanVYqW8wFHEA",
++     "localDate": "2026-11-07",
++     "phase": "collecting",
++     "revealAt": "2026-11-07T12:00:00Z",
++     "star": {
++       "avatarVersion": null,
++       "displayName": "Ana kZ-r3A",
++       "membershipId": "mem_WAg_V0xiGdNI92AadO07qA",
++     },
++   },
+    "open": {
+      "closeAt": "2026-11-08T01:00:00Z",
+      "clubId": "club__0TXSaZysA-77JFbU9FcMA",
+      "id": "occ_y4es6XOQH-g5aE7FGHhW3Q",
+      "localDate": "2026-11-07",
+
+ ❯ both src/db/home-days.test.ts:203:66
+    201|   const sql = await bySql(tx, viewer, club, now);
+    202|   const policy = chooseDays(await factsOf(tx, viewer, club), now);
+    203|   expect(sql, `the SQL and the policy at ${instant.toString()}`).toEqu…
+       |                                                                  ^
+    204|   return sql;
+    205| }
+ ❯ both2 src/db/home-days.test.ts:512:17
+ ❯ src/db/home-days.test.ts:515:19
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:498:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

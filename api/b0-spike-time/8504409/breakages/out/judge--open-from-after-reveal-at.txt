@@ -1,0 +1,76 @@
+$ (cd tests && npx vitest run --config vitest.privacy.config.ts src/privacy/account.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tests
+
+ ❯ src/privacy/account.test.ts (23 tests | 2 failed) 29ms
+   ❯ each club's open day and next day, from the rows and the time alone (daysOf; T1, T5; FQ50, FQ63, FQ75) (5)
+     × opens the day at its reveal exactly and closes it at its close exactly, the next being the earliest still to open 9ms
+     × makes clubsJudge refuse a missing day, a day where there is none, another phase, another instant and an extra key 2ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 21 passed (23)
+   Start at  02:18:43
+   Duration  520ms (import 71%, transform 15%, tests 11%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/account.test.ts > each club's open day and next day, from the rows and the time alone (daysOf; T1, T5; FQ50, FQ63, FQ75) > opens the day at its reveal exactly and closes it at its close exactly, the next being the earliest still to open
+AssertionError: expected { open: undefined, next: { …(7) } } to deeply equal { open: { id: 'occ_sat', …(6) }, …(1) }
+
+- Expected
++ Received
+
+@@ -10,19 +10,7 @@
+        "avatar_version": "v_ana",
+        "display_name": "Ana",
+        "membership_id": "itv_ana",
+      },
+    },
+-   "open": {
+-     "close_at": "2026-11-08T01:00:00Z",
+-     "club_id": "clb_one",
+-     "id": "occ_sat",
+-     "local_date": "2026-11-07",
+-     "phase": "open",
+-     "reveal_at": "2026-11-07T07:00:00Z",
+-     "star": {
+-       "avatar_version": "v_ana",
+-       "display_name": "Ana",
+-       "membership_id": "itv_ana",
+-     },
+-   },
++   "open": undefined,
+  }
+
+ ❯ src/privacy/account.test.ts:330:46
+    328|       next: occurrence("occ_sat", saturday, "collecting"),
+    329|     });
+    330|     expect(daysOf(world, "clb_one", REVEAL)).toEqual({
+       |                                              ^
+    331|       open: occurrence("occ_sat", saturday, "open"),
+    332|       next: occurrence("occ_mon", monday, "collecting"),
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/account.test.ts > each club's open day and next day, from the rows and the time alone (daysOf; T1, T5; FQ50, FQ63, FQ75) > makes clubsJudge refuse a missing day, a day where there is none, another phase, another instant and an extra key
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "a club's open_day is {\"id\":\"occ_sat\",\"club_id\":\"clb_one\",\"star\":{\"membership_id\":\"itv_ana\",\"display_name\":\"Ana\",\"avatar_version\":\"v_ana\"},\"local_date\":\"2026-11-07\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"close_at\":\"2026-11-08T01:00:00Z\",\"phase\":\"open\"}, not nothing",
++ ]
+
+ ❯ src/privacy/account.test.ts:383:63
+    381|     const open = occurrence("occ_sat", saturday, "open");
+    382|     const next = occurrence("occ_mon", monday, "collecting");
+    383|     expect(judge(listed({ open_day: open, next_day: next }))).toEqual(…
+       |                                                               ^
+    384|     // Keys in another order are the same answer.
+    385|     expect(judge(listed({ next_day: next, open_day: Object.fromEntries…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

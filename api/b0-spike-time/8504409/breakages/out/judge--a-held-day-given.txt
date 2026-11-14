@@ -1,0 +1,39 @@
+$ (cd tests && npx vitest run --config vitest.privacy.config.ts src/privacy/account.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tests
+
+ ❯ src/privacy/account.test.ts (23 tests | 1 failed) 30ms
+   ❯ each club's open day and next day, from the rows and the time alone (daysOf; T1, T5; FQ50, FQ63, FQ75) (5)
+     × holds a day whose star left or asked to delete their account before its reveal, and keeps one they left at it 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  02:18:45
+   Duration  520ms (import 70%, transform 16%, tests 13%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/account.test.ts > each club's open day and next day, from the rows and the time alone (daysOf; T1, T5; FQ50, FQ63, FQ75) > holds a day whose star left or asked to delete their account before its reveal, and keeps one they left at it
+AssertionError: expected { open: 'occ_sat', next: 'occ_mon' } to deeply equal { open: undefined, next: undefined }
+
+- Expected
++ Received
+
+  {
+-   "next": undefined,
+-   "open": undefined,
++   "next": "occ_mon",
++   "open": "occ_sat",
+  }
+
+ ❯ src/privacy/account.test.ts:348:65
+    346|   it("holds a day whose star left or asked to delete their account bef…
+    347|     const early = µs(REVEAL, -1);
+    348|     expect(days(worldWith({ ana: { leftAt: early } }), REVEAL)).toEqua…
+       |                                                                 ^
+    349|     expect(days(worldWith({ account: { state: "deleting", deletionRequ…
+    350|       open: undefined,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

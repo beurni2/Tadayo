@@ -1,0 +1,36 @@
+$ (cd tests && npx vitest run --config vitest.db.config.ts src/db/home-days.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tests
+
+ ❯ src/db/home-days.test.ts (20 tests | 1 failed) 790ms
+   ❯ the star as the club sees them, on Postgres (FQ75) (4)
+     × leaves out an open day whose star has no name to show, and still gives the next day (B6, docs/LIMITATIONS.md) 16ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  02:18:13
+   Duration  1.11s (tests 92%, import 4%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/home-days.test.ts > the star as the club sees them, on Postgres (FQ75) > leaves out an open day whose star has no name to show, and still gives the next day (B6, docs/LIMITATIONS.md)
+Error: authorization: a day came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/authorization/days.ts:216:10
+    214|
+    215| function shape(): Error {
+    216|   return new Error("authorization: a day came back in a shape the sche…
+       |          ^
+    217| }
+    218|
+ ❯ text ../packages/domain/src/authorization/days.ts:220:62
+ ❯ chosenDay ../packages/domain/src/authorization/days.ts:256:73
+ ❯ bySql src/db/home-days.test.ts:135:15
+ ❯ both src/db/home-days.test.ts:201:15
+ ❯ ids src/db/home-days.test.ts:209:18
+ ❯ src/db/home-days.test.ts:491:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

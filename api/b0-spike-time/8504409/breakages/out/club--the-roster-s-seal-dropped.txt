@@ -1,0 +1,54 @@
+$ (cd tests && npx vitest run --config vitest.db.config.ts src/db/ops-spike-time.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tests
+
+ ❯ src/db/ops-spike-time.test.ts (5 tests | 2 failed) 140ms
+   ❯ spike-time's club, written as tadayo_app (3)
+     × goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond 50ms
+   ❯ what spike-time expects, against the API's own day choice and serializer on its rows (1)
+     × is the club list GET /v1/clubs gives Ana at every instant round both of the day's edges 25ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 3 passed (5)
+   Start at  02:19:16
+   Duration  749ms (import 44%, tests 30%, transform 25%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/ops-spike-time.test.ts > spike-time's club, written as tadayo_app > goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond
+PostgresError: app.roster_approvals: revision rev_Cjv0JSwUA_pwBY2N1BKA0w isn't sealed yet (T7)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ writeClub ../tools/ops/src/spike-time.ts:224:11
+    222|        SET accepted_at = ${at}::pg_catalog.text::pg_catalog.timestampt…
+    223|      WHERE revision_id = ${revision} AND candidate_id = ${candidate}`;
+    224|   await tx`
+       |           ^
+    225|     INSERT INTO app.roster_approvals (revision_id, interval_id, decisi…
+    226|     VALUES (${revision}, ${ana}, 'approved', true, ${at}::pg_catalog.t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/ops-spike-time.test.ts > what spike-time expects, against the API's own day choice and serializer on its rows > is the club list GET /v1/clubs gives Ana at every instant round both of the day's edges
+PostgresError: app.roster_approvals: revision rev_C5m4NymhNKy00_Ah6myBaA isn't sealed yet (T7)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ writeClub ../tools/ops/src/spike-time.ts:224:11
+    222|        SET accepted_at = ${at}::pg_catalog.text::pg_catalog.timestampt…
+    223|      WHERE revision_id = ${revision} AND candidate_id = ${candidate}`;
+    224|   await tx`
+       |           ^
+    225|     INSERT INTO app.roster_approvals (revision_id, interval_id, decisi…
+    226|     VALUES (${revision}, ${ana}, 'approved', true, ${at}::pg_catalog.t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

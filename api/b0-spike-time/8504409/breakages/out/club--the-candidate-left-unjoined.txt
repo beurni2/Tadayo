@@ -1,0 +1,47 @@
+$ (cd tests && npx vitest run --config vitest.db.config.ts src/db/ops-spike-time.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tests
+
+ ❯ src/db/ops-spike-time.test.ts (5 tests | 1 failed) 217ms
+   ❯ spike-time's club, written as tadayo_app (3)
+     × goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond 66ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+   Start at  02:19:19
+   Duration  880ms (tests 39%, import 37%, transform 24%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/ops-spike-time.test.ts > spike-time's club, written as tadayo_app > goes in whole through the schema's guards, its deferred checks included, with its instants to the microsecond
+AssertionError: expected { name: 'S5 1a2b3c4d', …(5) } to deeply equal { name: 'S5 1a2b3c4d', …(5) }
+
+- Expected
++ Received
+
+  {
+    "activated": "1794829800123456",
+-   "candidates": "joined:1794829800123456",
++   "candidates": null,
+    "members": "Ana:creator:active,Ben:roster:active",
+    "name": "S5 1a2b3c4d",
+    "roster": "applied:2",
+    "zone": "America/New_York",
+  }
+
+ ❯ src/db/ops-spike-time.test.ts:102:19
+    100|       // Ben's candidate has joined, so Ben's club list holds the club…
+    101|       // leaves out an invitation once its candidate has joined), as j…
+    102|       expect(row).toEqual({
+       |                   ^
+    103|         name: "S5 1a2b3c4d",
+    104|         zone: ZONE,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/ops-spike-time.test.ts:73:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

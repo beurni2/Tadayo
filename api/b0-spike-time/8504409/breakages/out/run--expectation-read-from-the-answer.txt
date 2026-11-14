@@ -1,0 +1,100 @@
+$ (cd tools/ops && npx vitest run src/spike-time.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tools/ops
+
+ ❯ src/spike-time.test.ts (22 tests | 5 failed) 2662ms
+   ❯ spike-time against an API that doesn't (5)
+     × fails a switch a second early or a second late, at each instant, naming the first answer that was wrong 41ms
+     × fails an answer with another cache header, another status, no server_now, or anything more than the club list 110ms
+   ❯ what the run expects of each answer (4)
+     × judges an answer whole: one a second early, a second late, or with a key more or less is wrong 1ms
+     × says which of the run's own days an answer showed, named from what the run wrote, never a name, date or phase of the answer's 1ms
+     × never prints a value of the answer's in where it differs, only the keys' path 1ms
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 17 passed (22)
+   Start at  02:18:46
+   Duration  2.93s (tests 95%, transform 4%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/spike-time.test.ts > spike-time against an API that doesn't > fails a switch a second early or a second late, at each instant, naming the first answer that was wrong
+AssertionError: -1: expected [] to have a length of 2 but got +0
+
+- Expected
++ Received
+
+- 2
++ 0
+
+ ❯ src/spike-time.test.ts:329:35
+    327|       const checks = await spikeTime(w.input);
+    328|       const wrong = failed(checks);
+    329|       expect(wrong, String(skew)).toHaveLength(2);
+       |                                   ^
+    330|       expect(wrong[0], String(skew)).toMatch(
+    331|         /^reveal: every answer is the club's days as T5 has them at it…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/spike-time.test.ts > spike-time against an API that doesn't > fails an answer with another cache header, another status, no server_now, or anything more than the club list
+TypeError: .toMatch() expects to receive a string, but got undefined
+ ❯ src/spike-time.test.ts:368:30
+    366|       const checks = await spikeTime(world(options).input);
+    367|       const wrong = failed(checks);
+    368|       expect(wrong[0], note).toMatch(
+       |                              ^
+    369|         /^reveal: every answer is the club's days as T5 has them at it…
+    370|       );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/spike-time.test.ts > what the run expects of each answer > judges an answer whole: one a second early, a second late, or with a key more or less is wrong
+TypeError: .toMatch() expects to receive a string, but got undefined
+ ❯ src/spike-time.test.ts:607:62
+    605|     const reveal = at("2026-11-16T12:00:00Z");
+    606|     expect(judge(answer(clubList(reveal)), CLUB)).toEqual({ serverNow:…
+    607|     expect(judge(answer(clubList(reveal, 1)), CLUB).problem).toMatch(
+       |                                                              ^
+    608|       /^at server_now 2026-11-16T12:00:00Z it showed open none/,
+    609|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/spike-time.test.ts > what the run expects of each answer > says which of the run's own days an answer showed, named from what the run wrote, never a name, date or phase of the answer's
+AssertionError: it showed open Ana's 2026-11-16 (another phase), next Ben's 2026-11-17 (collecting): expected '' to contain 'it showed open Ana\'s 2026-11-16 (ano…'
+
+- Expected
++ Received
+
+- it showed open Ana's 2026-11-16 (another phase), next Ben's 2026-11-17 (collecting)
+
+ ❯ src/spike-time.test.ts:662:30
+    660|     for (const [body, words] of cases) {
+    661|       const problem = judge(answer(body), CLUB).problem ?? "";
+    662|       expect(problem, words).toContain(words);
+       |                              ^
+    663|       for (const value of [...Object.values(foreign), "occ_someone", "…
+    664|         expect(problem, words).not.toContain(value);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/spike-time.test.ts > what the run expects of each answer > never prints a value of the answer's in where it differs, only the keys' path
+AssertionError: expected '' to contain 'it differs at sb_secret_x?leaked'
+
+- Expected
++ Received
+
+- it differs at sb_secret_x?leaked
+
+ ❯ src/spike-time.test.ts:673:21
+    671|     const problem = judge({ status: 200, cacheControl: "private, no-st…
+    672|     expect(problem).not.toContain("sb_secret_y");
+    673|     expect(problem).toContain("it differs at sb_secret_x?leaked");
+       |                     ^
+    674|   });
+    675| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
