@@ -1,0 +1,40 @@
+$ (cd tools/ops && npx vitest run src/run-remote.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tools/ops
+
+ ❯ src/run-remote.test.ts (38 tests | 1 failed) 142ms
+   ❯ spike-time on the Machine (--here) (3)
+     × runs from an image without the repository's other folders, signs in, and stops at a database without dev's clock, deleting the user 14ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 37 passed (38)
+   Start at  03:18:35
+   Duration  367ms (tests 54%, import 22%, transform 22%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/run-remote.test.ts > spike-time on the Machine (--here) > runs from an image without the repository's other folders, signs in, and stops at a database without dev's clock, deleting the user
+AssertionError: expected [ 'BEGIN', …(1) ] to deeply equal [ 'BEGIN', …(3) ]
+
+- Expected
++ Received
+
+  [
+    "BEGIN",
+-   "SET LOCAL statement_timeout = '20s'",
+-   "SET LOCAL lock_timeout = '10s'",
+-   StringMatching /^SELECT EXISTS \(SELECT FROM pg_catalog/,
++   "SELECT EXISTS (SELECT FROM pg_catalog.pg",
+  ]
+
+ ❯ src/run-remote.test.ts:902:92
+    900|     expect(transactions).toEqual([1]);
+    901|     // The club's transaction sets its limits before dev's clock is ch…
+    902|     expect(statements.slice(statements.indexOf("BEGIN"), statements.in…
+       |                                                                                            ^
+    903|       "BEGIN",
+    904|       "SET LOCAL statement_timeout = '20s'",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

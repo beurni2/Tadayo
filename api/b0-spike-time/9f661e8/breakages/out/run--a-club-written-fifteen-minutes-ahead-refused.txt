@@ -1,0 +1,29 @@
+$ (cd tools/ops && npx vitest run src/spike-time.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tools/ops
+
+ ❯ src/spike-time.test.ts (24 tests | 1 failed) 2742ms
+   ❯ the run's start (2)
+     × is the first day only when the club is written between 06:45 and 06:57 in New York on a weekday 6ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 23 passed (24)
+   Start at  03:18:53
+   Duration  2.99s (tests 95%, transform 3%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/spike-time.test.ts > the run's start > is the first day only when the club is written between 06:45 and 06:57 in New York on a weekday
+OpsError: spike-time: dev's clock reads 2026-11-16T06:45:00 in New York, and a run starts between 06:45 and 06:57 there on a weekday, so no club is written and dev's clock isn't moved
+ ❯ startDay src/spike-time.ts:142:11
+    140|     // To the microsecond when the sample has a fraction, so a sample …
+    141|     const reads = now.toZonedDateTimeISO(ZONE).toPlainDateTime().toStr…
+    142|     throw new OpsError(
+       |           ^
+    143|       `spike-time: dev's clock reads ${reads} in New York, and a run s…
+    144|         "weekday, so no club is written and dev's clock isn't moved",
+ ❯ src/spike-time.test.ts:708:46
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

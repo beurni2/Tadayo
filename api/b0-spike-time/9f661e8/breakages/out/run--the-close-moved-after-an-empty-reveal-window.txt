@@ -1,0 +1,40 @@
+$ (cd tools/ops && npx vitest run src/spike-time.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tools/ops
+
+ ❯ src/spike-time.test.ts (24 tests | 1 failed) 2793ms
+   ❯ spike-time against an API that doesn't (5)
+     × makes no second move of dev's clock after a reveal's window with no answer, and still deletes the user 110ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 23 passed (24)
+   Start at  03:18:23
+   Duration  3.08s (tests 95%, transform 3%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/spike-time.test.ts > spike-time against an API that doesn't > makes no second move of dev's clock after a reveal's window with no answer, and still deletes the user
+AssertionError: expected [ …(4) ] to deeply equal [ StringMatching{…}, …(2) ]
+
+- Expected
++ Received
+
+  [
+    "reveal: every answer is the club's days as T5 has them at its server_now: 1531 wrong; the first: answered HTTP 503",
+    "reveal: answers came from both sides of 2026-11-16T12:00:00Z: 0 before and 0 after, when its minute ran out",
+-   "close: dev's clock moves again only after a reveal's window that had answers: the reveal's window had no answer with a server_now, so the close isn't watched",
++   "close: every answer is the club's days as T5 has them at its server_now: 1245 wrong; the first: answered HTTP 503",
++   "close: answers came from both sides of 2026-11-17T06:00:00Z: 0 before and 0 after, when its minute ran out",
+  ]
+
+ ❯ src/spike-time.test.ts:416:28
+    414|     const w = world({ down: 503, windowMs: 50 });
+    415|     const checks = await spikeTime(w.input);
+    416|     expect(failed(checks)).toEqual([
+       |                            ^
+    417|       expect.stringMatching(
+    418|         /^reveal: every answer is the club's days as T5 has them at it…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

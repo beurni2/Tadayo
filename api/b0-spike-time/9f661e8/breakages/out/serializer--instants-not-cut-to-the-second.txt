@@ -1,0 +1,32 @@
+$ (cd services/api && npx vitest run src/clubs/list.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/services/api
+
+ ❯ src/clubs/list.test.ts (7 tests | 1 failed) 105ms
+   ❯ GET /v1/clubs: the answer's field list (T55) (5)
+     × gives a day's instants in the contract's whole seconds, rounded down as server_now is (a real day's instants are whole seconds anyway: dayInstants) 5ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  03:17:18
+   Duration  519ms (import 52%, tests 27%, transform 19%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/clubs/list.test.ts > GET /v1/clubs: the answer's field list (T55) > gives a day's instants in the contract's whole seconds, rounded down as server_now is (a real day's instants are whole seconds anyway: dayInstants)
+AssertionError: expected '2026-11-07T06:59:59.999999Z' to be '2026-11-07T06:59:59Z' // Object.is equality
+
+Expected: "2026-11-07T06:59:59Z"
+Received: "2026-11-07T06:59:59.999999Z"
+
+ ❯ src/clubs/list.test.ts:128:75
+    126|   it("gives a day's instants in the contract's whole seconds, rounded …
+    127|     const fraction = { ...saturday, revealAt: Temporal.Instant.from("2…
+    128|     expect((occurrenceBody(fraction) as { reveal_at: string }).reveal_…
+       |                                                                           ^
+    129|   });
+    130| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

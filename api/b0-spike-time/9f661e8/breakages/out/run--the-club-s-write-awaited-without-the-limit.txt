@@ -1,0 +1,29 @@
+$ (cd tools/ops && npx vitest run src/spike-time.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tools/ops
+
+ ❯ src/spike-time.test.ts (24 tests | 1 failed) 7588ms
+   ❯ spike-time when something fails or hangs (9)
+     × leaves a database call that never settles at the run's limit, says it may still commit, and deletes the user 5008ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 23 passed (24)
+   Start at  03:18:27
+   Duration  7.83s (tests 98%, transform 1%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/spike-time.test.ts > spike-time when something fails or hangs > leaves a database call that never settles at the run's limit, says it may still commit, and deletes the user
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/spike-time.test.ts:524:3
+    522|   });
+    523|
+    524|   it("leaves a database call that never settles at the run's limit, sa…
+       |   ^
+    525|     const never = () => new Promise<never>(() => undefined);
+    526|     const club = world({ writeClub: never, budget: AbortSignal.timeout…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

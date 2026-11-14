@@ -1,0 +1,51 @@
+$ (cd tests && npx vitest run --config vitest.db.config.ts src/db/club-list.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tests
+
+ ❯ src/db/club-list.test.ts (12 tests | 1 failed) 568ms
+   ❯ the caller's clubs and invitations (spec 04, 05) (12)
+     × lists a member's club with their own membership, the active members and the state, and nobody else's (T14) 64ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  03:17:16
+   Duration  878ms (tests 89%, import 6%, transform 4%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/club-list.test.ts > the caller's clubs and invitations (spec 04, 05) > lists a member's club with their own membership, the active members and the state, and nobody else's (T14)
+AssertionError: expected [ { …(7) }, null ] to deeply equal [ { …(7) }, null ]
+
+- Expected
++ Received
+
+@@ -2,11 +2,11 @@
+    {
+      "closeAt": "2026-11-08T01:00:00Z",
+      "clubId": "club_Zzcx61qdXzRq4QtVzkuYQA",
+      "id": "occ_pWD0F8WOYkZbD0ylsDuA6g",
+      "localDate": "2026-11-07",
+-     "phase": "open",
++     "phase": "collecting",
+      "revealAt": "2026-11-07T07:00:00Z",
+      "star": {
+        "avatarVersion": null,
+        "displayName": "Ana-a",
+        "membershipId": "mem_-ZFG95isfkuWNMV0WcEfOA",
+
+ ❯ src/db/club-list.test.ts:121:48
+    119|         });
+    120|         const open = (await listClubs(tx, member.user, PHASES.open as …
+    121|         expect([open?.openDay, open?.nextDay]).toEqual([{ ...saturday,…
+       |                                                ^
+    122|       }
+    123|       // Another club's member sees only their own.
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/club-list.test.ts:92:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,46 @@
+$ (cd tools/ops && npx vitest run src/spike-time.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tools/ops
+
+ ❯ src/spike-time.test.ts (24 tests | 2 failed) 2739ms
+   ❯ the first day's date (1)
+     × is the earliest Monday to Friday in New York whose 07:00 is at least three minutes ahead, so the next date is never Sunday 7ms
+   ❯ the run's start (2)
+     × refuses, saying what dev's clock reads, a club written before 06:45, after 06:57 or on a weekend 1ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 22 passed (24)
+   Start at  03:17:50
+   Duration  3.00s (tests 96%, transform 3%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/spike-time.test.ts > the first day's date > is the earliest Monday to Friday in New York whose 07:00 is at least three minutes ahead, so the next date is never Sunday
+AssertionError: 2026-11-20T13:00:00Z: expected '2026-11-21' to be '2026-11-23' // Object.is equality
+
+Expected: "2026-11-23"
+Received: "2026-11-21"
+
+ ❯ src/spike-time.test.ts:692:37
+    690|     for (const [now, date] of cases) {
+    691|       const first = firstDate(at(now));
+    692|       expect(first.toString(), now).toBe(date);
+       |                                     ^
+    693|       expect(first.dayOfWeek, now).toBeLessThanOrEqual(5);
+    694|       expect(first.add({ days: 1 }).dayOfWeek, now).not.toBe(7);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/spike-time.test.ts > the run's start > refuses, saying what dev's clock reads, a club written before 06:45, after 06:57 or on a weekend
+AssertionError: 2026-11-21T11:50:00Z
+ ❯ src/spike-time.test.ts:721:44
+    719|     ];
+    720|     for (const [now, reads] of refused) {
+    721|       expect(() => startDay(at(now)), now).toThrow(OpsError);
+       |                                            ^
+    722|       expect(() => startDay(at(now)), now).toThrow(
+    723|         `spike-time: dev's clock reads ${reads} in New York, and a run…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

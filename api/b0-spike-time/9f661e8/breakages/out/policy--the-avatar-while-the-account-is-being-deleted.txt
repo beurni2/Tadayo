@@ -1,0 +1,39 @@
+$ (cd packages/domain && npx vitest run src/authorization/days.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/packages/domain
+
+ ❯ src/authorization/days.test.ts (17 tests | 1 failed) 22ms
+   ❯ the star as the club sees them (FQ75) (4)
+     × keeps the name and drops the avatar while a deletion asked for during the open day hasn't ended the interval 7ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+   Start at  03:17:12
+   Duration  229ms (tests 39%, import 33%, transform 20%, worker 8%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/authorization/days.test.ts > the star as the club sees them (FQ75) > keeps the name and drops the avatar while a deletion asked for during the open day hasn't ended the interval
+AssertionError: expected { membershipId: 'mem_ana', …(2) } to deeply equal { membershipId: 'mem_ana', …(2) }
+
+- Expected
++ Received
+
+  {
+-   "avatarVersion": null,
++   "avatarVersion": "v_ana",
+    "displayName": "Ana",
+    "membershipId": "mem_ana",
+  }
+
+ ❯ src/authorization/days.test.ts:204:90
+    202|   it("keeps the name and drops the avatar while a deletion asked for d…
+    203|     const deleting = { ...ANA, starAccount: "deleting" as const, starD…
+    204|     expect(choose({ ...CLUB, days: [deleting] }, at("2026-11-07T10:00:…
+       |                                                                                          ^
+    205|       membershipId: "mem_ana",
+    206|       displayName: "Ana",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

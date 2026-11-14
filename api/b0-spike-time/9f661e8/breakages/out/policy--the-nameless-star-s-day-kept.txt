@@ -1,0 +1,31 @@
+$ (cd packages/domain && npx vitest run src/authorization/days.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/packages/domain
+
+ ❯ src/authorization/days.test.ts (17 tests | 1 failed) 29ms
+   ❯ the star as the club sees them (FQ75) (4)
+     × leaves out an open day whose star has no name to show, and still gives the next day (B6, docs/LIMITATIONS.md) 7ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 16 passed (17)
+   Start at  03:17:13
+   Duration  206ms (tests 44%, import 30%, transform 19%, worker 6%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/authorization/days.test.ts > the star as the club sees them (FQ75) > leaves out an open day whose star has no name to show, and still gives the next day (B6, docs/LIMITATIONS.md)
+Error: authorization: a day with no star to name was chosen
+ ❯ chosen src/authorization/days.ts:123:28
+    121| function chosen(day: DayFacts, phase: ChosenPhase): ChosenDay {
+    122|   const name = starNameOf(day);
+    123|   if (name === null) throw new Error("authorization: a day with no sta…
+       |                            ^
+    124|   return {
+    125|     id: day.id,
+ ❯ chooseDays src/authorization/days.ts:154:39
+ ❯ choose src/authorization/days.test.ts:57:3
+ ❯ src/authorization/days.test.ts:237:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

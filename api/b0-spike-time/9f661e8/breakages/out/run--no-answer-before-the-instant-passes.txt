@@ -1,0 +1,38 @@
+$ (cd tools/ops && npx vitest run src/spike-time.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tools/ops
+
+ ❯ src/spike-time.test.ts (24 tests | 1 failed) 2734ms
+   ❯ spike-time against an API that doesn't (5)
+     × fails when no answer came before the instant, as when dev's clock lands past it 9ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 23 passed (24)
+   Start at  03:18:09
+   Duration  2.99s (tests 95%, transform 3%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/spike-time.test.ts > spike-time against an API that doesn't > fails when no answer came before the instant, as when dev's clock lands past it
+AssertionError: expected [] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+- [
+-   "reveal: answers came from both sides of 2026-11-16T12:00:00Z: 0 before and 5 after",
+-   "close: answers came from both sides of 2026-11-17T06:00:00Z: 0 before and 5 after",
+- ]
++ []
+
+ ❯ src/spike-time.test.ts:406:28
+    404|     });
+    405|     const checks = await spikeTime(w.input);
+    406|     expect(failed(checks)).toEqual([
+       |                            ^
+    407|       "reveal: answers came from both sides of 2026-11-16T12:00:00Z: 0…
+    408|       "close: answers came from both sides of 2026-11-17T06:00:00Z: 0 …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

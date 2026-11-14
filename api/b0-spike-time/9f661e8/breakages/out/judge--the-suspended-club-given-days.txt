@@ -1,0 +1,85 @@
+$ (cd tests && npx vitest run --config vitest.privacy.config.ts src/privacy/account.test.ts)  # exit 1
+
+ RUN  v5.0.5 /home/user/tadayo-s5-brk/tests
+
+ ❯ src/privacy/account.test.ts (23 tests | 2 failed) 33ms
+   ❯ each club's open day and next day, from the rows and the time alone (daysOf; T1, T5; FQ50, FQ63, FQ75) (5)
+     × gives none in a suspended club or a club it doesn't know, and never a suspended or cancelled day 9ms
+     × makes clubsJudge refuse a missing day, a day where there is none, another phase, another instant and an extra key 5ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 21 passed (23)
+   Start at  03:17:24
+   Duration  455ms (import 65%, transform 17%, tests 16%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/account.test.ts > each club's open day and next day, from the rows and the time alone (daysOf; T1, T5; FQ50, FQ63, FQ75) > gives none in a suspended club or a club it doesn't know, and never a suspended or cancelled day
+AssertionError: expected { open: { id: 'occ_sat', …(6) }, …(1) } to deeply equal {}
+
+- Expected
++ Received
+
+- {}
++ {
++   "next": {
++     "close_at": "2026-11-10T01:00:00Z",
++     "club_id": "clb_one",
++     "id": "occ_mon",
++     "local_date": "2026-11-09",
++     "phase": "collecting",
++     "reveal_at": "2026-11-09T07:00:00Z",
++     "star": {
++       "avatar_version": "v_ana",
++       "display_name": "Ana",
++       "membership_id": "itv_ana",
++     },
++   },
++   "open": {
++     "close_at": "2026-11-08T01:00:00Z",
++     "club_id": "clb_one",
++     "id": "occ_sat",
++     "local_date": "2026-11-07",
++     "phase": "open",
++     "reveal_at": "2026-11-07T07:00:00Z",
++     "star": {
++       "avatar_version": "v_ana",
++       "display_name": "Ana",
++       "membership_id": "itv_ana",
++     },
++   },
++ }
+
+ ❯ src/privacy/account.test.ts:340:71
+    338|
+    339|   it("gives none in a suspended club or a club it doesn't know, and ne…
+    340|     expect(daysOf(worldWith({ suspended: true }), "clb_one", REVEAL)).…
+       |                                                                       ^
+    341|     expect(daysOf(worldWith(), "clb_nowhere", REVEAL)).toEqual({});
+    342|     for (const status of ["suspended", "cancelled"] as const)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/account.test.ts > each club's open day and next day, from the rows and the time alone (daysOf; T1, T5; FQ50, FQ63, FQ75) > makes clubsJudge refuse a missing day, a day where there is none, another phase, another instant and an extra key
+AssertionError: expected [ …(2) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "a club's open_day is nothing, not {\"id\":\"occ_sat\",\"club_id\":\"clb_one\",\"star\":{\"membership_id\":\"itv_ana\",\"display_name\":\"Ana\",\"avatar_version\":\"v_ana\"},\"local_date\":\"2026-11-07\",\"reveal_at\":\"2026-11-07T07:00:00Z\",\"close_at\":\"2026-11-08T01:00:00Z\",\"phase\":\"open\"}",
++   "a club's next_day is nothing, not {\"id\":\"occ_mon\",\"club_id\":\"clb_one\",\"star\":{\"membership_id\":\"itv_ana\",\"display_name\":\"Ana\",\"avatar_version\":\"v_ana\"},\"local_date\":\"2026-11-09\",\"reveal_at\":\"2026-11-09T07:00:00Z\",\"close_at\":\"2026-11-10T01:00:00Z\",\"phase\":\"collecting\"}",
++ ]
+
+ ❯ src/privacy/account.test.ts:413:35
+    411|     ]);
+    412|     const suspended = clubsJudge(() => ({ world: worldWith({ suspended…
+    413|     expect(suspended(listed({}))).toEqual([]);
+       |                                   ^
+    414|     expect(suspended(listed({ next_day: next }))).toEqual([
+    415|       `a club's next_day is ${JSON.stringify(next)}, not nothing`,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
