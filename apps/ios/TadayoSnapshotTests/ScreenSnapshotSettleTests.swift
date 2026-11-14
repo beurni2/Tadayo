@@ -6,8 +6,8 @@ import XCTest
 /// view controllers it paints draw by draw, black and white so a pixel that differs differs by
 /// 255 in sRGB, and reads what `settled` gives, how many hosts it made and the line it logged:
 /// every way the drawing can end, the failures among them (but "no draw was made", which a
-/// `maximumDraws` of 1 or more can't reach). Two stand in for the draw itself, to give no image
-/// and an image with no PNG.
+/// `maximumDraws` of 1 or more can't reach). Three stand in for the draw itself: to give no
+/// image, an image with no PNG, and images drawn pixel by pixel, for where a difference is.
 @MainActor
 final class ScreenSnapshotSettleTests: XCTestCase {
     private struct Settled {
@@ -34,13 +34,20 @@ final class ScreenSnapshotSettleTests: XCTestCase {
         { $0.backgroundColor = colour }
     }
 
-    /// Black with a white patch 10 by 20 points at (100, 200): 20 by 40 pixels at (200, 400).
-    private func patched() -> Paint {
-        { view in
-            view.backgroundColor = .black
-            let patch = UIView(frame: CGRect(x: 100, y: 200, width: 10, height: 20))
-            patch.backgroundColor = .white
-            view.addSubview(patch)
+    /// An image the size a draw gives, 393 by 852 points at 2x, in black, with `patch` in white:
+    /// filled pixel by pixel, in sRGB.
+    private func image(patch: CGRect? = nil) -> UIImage {
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 2
+        format.preferredRange = .standard
+        let size = CGSize(width: 393, height: 852)
+        return UIGraphicsImageRenderer(size: size, format: format).image { context in
+            UIColor.black.setFill()
+            context.fill(CGRect(origin: .zero, size: size))
+            if let patch {
+                UIColor.white.setFill()
+                context.fill(patch)
+            }
         }
     }
 
@@ -139,9 +146,19 @@ final class ScreenSnapshotSettleTests: XCTestCase {
         assertTheLastBlackHostsImage(settled)
     }
 
-    /// The line says where an odd draw differs: here a patch, as a glass's bar would be.
+    /// The line says where an odd draw differs, to the pixel: here a patch 10 by 20 points at
+    /// (100, 200), 20 by 40 pixels at (200, 400), as a glass's bar would be. The images are
+    /// filled pixel by pixel, through `drawing`, because a host's own draw on iOS 27.2 softens
+    /// each edge of such a patch by a pixel: there the line said, rightly, 921 pixels in x 199
+    /// to 220, y 399 to 440 (commit E's run, `ios` 43547875236).
     func testAnOddDrawsDifferenceIsMeasuredWhereItIs() {
-        let settled = settle("settle-patch", [patched(), plain(.black)])
+        let patched = image(patch: CGRect(x: 100, y: 200, width: 10, height: 20))
+        let black = image()
+        var draws = 0
+        let settled = settle("settle-patch", [plain(.black)]) { _ in
+            draws += 1
+            return draws == 1 ? patched : black
+        }
         XCTAssertNil(settled.problem)
         XCTAssertEqual(settled.made, 3)
         XCTAssertEqual(settled.logged.count, 1)
