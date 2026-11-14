@@ -2,7 +2,9 @@
 // `spike-time`: spike S5's live half (docs/plans/api-b0-spike-time.md, section 6; docs/plans/B0.md,
 // section 4; T1, T5; spec 06, 08; Q18). On `dev`, with the worker Machine stopped, it shows that what
 // Home's day choice answers switches at 07:00 and at 01:00 exactly, by the server's clock alone: a
-// club of two synthetic members, its first day a few minutes ahead of `dev`'s clock, the dev clock
+// club of two synthetic members, its first day the next weekday's 7 AM in New York by `dev`'s clock
+// (a few minutes ahead when the run starts at about 6:50 there: docs/plans/api-b0-spike-time.md, section
+// 8), the dev clock
 // moved to 20 seconds before that day's reveal and then to 20 seconds before its close, and
 // `GET /v1/clubs` read as a member four times a second around each instant. Every answer must be the
 // club's days as T5 has them at the answer's own `server_now`.
@@ -15,7 +17,8 @@
 //   - Ben, an account with a random subject nobody can sign in as, and the club `S5 <run's first 8>`
 //     in America/New_York, written as `tadayo_app` in one transaction through the rows the API's
 //     commands will write (`writeClub`, which tests/src/db/ops-spike-time.test.ts runs on Postgres);
-//   - the dev clock's two moves, forward only (dev-clock.ts). They never come back.
+//   - up to two moves of the dev clock, forward only (dev-clock.ts): the close's only after a reveal
+//     window that had answers. They never come back.
 // At the end it deletes the Supabase user; when it can't, or when the call that makes the user had no
 // clear answer and may have made one, a failed check names the address to delete it by. The club, its
 // two accounts and its days stay, since the schema deletes none of them, and they're synthetic
@@ -32,9 +35,9 @@
 //
 // What it prints carries no token, code or key, and no address but the run's own synthetic one when
 // its user may be left: Auth's replies by their status and code (supabase.ts' `describe`), the API's
-// by their status, their `server_now`, where an answer differs from T5's (the keys' path only), and
-// which of the run's own two days it showed, named from what the run wrote, never from the answer
-// (`shown`). What it can't see is whether the worker Machine is stopped, which only `flyctl` sees: the
+// by their status, their `server_now`, whether their Cache-Control is missing or not the contract's
+// (never its value), where an answer differs from T5's (the keys' path only), and which of the run's
+// own two days it showed, named from what the run wrote, never from the answer (`shown`). What it can't see is whether the worker Machine is stopped, which only `flyctl` sees: the
 // run's order does that (`worker-scale --to stopped` first).
 
 import { randomBytes, randomUUID } from "node:crypto";
@@ -408,9 +411,11 @@ export function judge(answer: Answer, club: SpikeClub): { serverNow?: Temporal.I
     typeof answer.json === "object" && answer.json !== null ? (answer.json as Record<string, unknown>) : {};
   const serverNow = instantIn(record["server_now"]);
   if (serverNow === undefined) return { problem: "answered with no server_now in whole seconds" };
-  // Placed by its server_now from here, so a window ends even when every answer is wrong.
+  // Placed by its server_now from here, so a window ends even when every answer is wrong. The header's
+  // own value is never printed: only that it is missing or isn't the contract's.
   if (answer.cacheControl !== "private, no-store") {
-    return { serverNow, problem: `answered with Cache-Control ${JSON.stringify(answer.cacheControl)}` };
+    const header = answer.cacheControl === null ? "no Cache-Control" : "a Cache-Control other than private, no-store";
+    return { serverNow, problem: `answered with ${header}` };
   }
   const expected = expectedClubList(club, serverNow);
   if (canonical(answer.json) !== canonical(expected)) {

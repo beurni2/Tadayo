@@ -340,7 +340,7 @@ describe("spike-time against an API that doesn't", () => {
 
   it("fails an answer with another cache header, another status, no server_now, or anything more than the club list", async () => {
     const cases: [Options, string][] = [
-      [{ cacheControl: "no-store" }, 'answered with Cache-Control "no-store"'],
+      [{ cacheControl: "no-store, marker-7f3a" }, "answered with a Cache-Control other than private, no-store"],
       [{ odd: { n: 3, status: 500 } }, "answered HTTP 500"],
       [{ odd: { n: 3, body: { clubs: [], invitations: [] } } }, "answered with no server_now in whole seconds"],
       [
@@ -371,6 +371,12 @@ describe("spike-time against an API that doesn't", () => {
       expect(wrong[0], note).toContain(note);
       expect(checks.at(-1)).toEqual({ name: "cleanup: delete the run's user", ok: true });
     }
+    // The header's own value is never printed, and a missing header is said as missing.
+    const odd = world({ cacheControl: "no-store, marker-7f3a" });
+    const oddChecks = await spikeTime(odd.input);
+    expect(JSON.stringify([odd.said, oddChecks])).not.toContain("marker-7f3a");
+    const answer = { status: 200, cacheControl: null, json: clubList(at("2026-11-16T11:59:41Z")) };
+    expect(judge(answer, CLUB).problem).toBe("answered with no Cache-Control");
   });
 
   it("fails when its answers never reach the instant, when the window runs out, and still deletes the user", async () => {
@@ -537,10 +543,12 @@ describe("spike-time when something fails or hangs", () => {
     const MAY_BE_LEFT = `cleanup: the run's user may be left: the call that makes it had no clear answer, so spike-${RUN}@probe.invalid may have been made: delete it by that address`;
     const makes = (request: Request) =>
       request.method === "POST" && new URL(request.url).pathname === "/auth/v1/admin/users";
-    // Auth makes the user, and then the answer is lost, or a gateway answers 502 in its place.
+    // Auth makes the user, and then the answer is lost, a gateway answers 502 in its place, or a 200
+    // comes back without the user's id.
     for (const [after, note] of [
       [() => Promise.reject(new Error("socket hang up")), "no answer"],
       [() => Promise.resolve(new Response("{}", { status: 502 })), "answered HTTP 502"],
+      [() => Promise.resolve(new Response("{}", { status: 200 })), "answered HTTP 200"],
     ] as const) {
       const w = world();
       const lossy: typeof fetch = async (input, init) => {
