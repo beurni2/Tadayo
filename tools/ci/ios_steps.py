@@ -59,15 +59,15 @@ The steps:
                reference fails; TECH-DESIGN section 2). The test
                targets named *SnapshotTests (SNAPSHOT_TARGET_SUFFIX) run on the snapshot runtime
                alone, and only its pass gets the artifacts directory in OUT.
-               It fails first if the snapshot runtime's file is bad, or a Swift file under
-               apps/ios sets a record mode of its own, which would override `never`
+               It fails first if the snapshot runtime's file is missing or bad, or a Swift file
+               under apps/ios sets a record mode of its own, which would override `never`
                (RECORDING); after the passes, if the run wrote a reference under a __Snapshots__
                folder all the same (a mode set some other way); and when any pass failed.
   collect      Lists every snapshot in snapshots.json, with its state and status (below), and
                copies the images this run drew into OUT/snapshots/, a reference the run wrote
                itself included. The new ones come from the snapshot runtime's result bundle:
-               run.json's `snapshots`, else snapshot_runtime(); when the file is bad and
-               run.json doesn't say, it says why and exports none. Runs even when a step before
+               run.json's `snapshots`, else snapshot_runtime(); when the file is missing or bad
+               and run.json doesn't say, it says why and exports none. Runs even when a step before
                it failed, and always passes.
   imagemagick  Installs ImageMagick on the Linux runner, which doesn't have it.
   sheets       Makes the contact sheets (docs/DESIGN-HANDOFF.md, "Snapshot comparison"): per
@@ -81,7 +81,14 @@ The steps:
                isn't an inventory state. JPEG (TECH-DESIGN section 3). A push carries only the
                states the branch touches; a run by hand carries the full set, for gates. The
                snapshots are the snapshot runtime's, and index.md has a line for each runtime
-               and says which runtime the references are for and why. Every field
+               and says which runtime the references are for and why. index.md lists, and
+               run.json's `odd-draws` holds, each line of the snapshot runtime's test log that
+               reads whole as the warning ScreenSnapshot.settled logs when a screen's drawing
+               took a third draw or more (ODD_DRAW): the glass on iOS 27.2 now and then draws a
+               little different (docs/LIMITATIONS.md, 2026-11-14), and a re-run's evidence
+               replaces the log. Any other line that names the warning, such as a failing
+               test's message that quotes one, is counted (`odd-draws-unread`), never copied.
+               Neither fails the step. Every field
                of snapshots.json and every value of run.json is checked again here, since this
                job can write: an entry with a field, or fields together, that collect can't
                have written fails its row and is neither copied nor drawn; run.json is staged
@@ -102,21 +109,19 @@ The steps:
                a scratch repository; by hand, run it only with one, since only the workflow's
                evidence job pushes to the real branch.
 
-The snapshot runtime (snapshot_runtime): the snapshot tests run on one pinned runtime, the one
-the committed references are for. It is toolchain.SNAPSHOT_RUNTIME when the app has the file
-SNAPSHOT_RUNTIME_FILE holding exactly that version, and toolchain.SNAPSHOT_RUNTIME_INTERIM while
-the app has no such file. Anything else there fails `simulator` and `test` before any command,
-and `ci` on Linux, where ios_steps_test.py reads the real file. So the file can name only the
-founder's runtime (T58). Until a CI-configuration PR removes the interim, deleting the file moves
-the snapshots back to it; the CI PR after the app's PR that adds the file removes that path.
+The snapshot runtime (snapshot_runtime): the snapshot tests run on one pinned runtime,
+toolchain.SNAPSHOT_RUNTIME, the one the committed references are drawn on, and the app says so
+with the file SNAPSHOT_RUNTIME_FILE holding exactly that version. A missing file, or anything
+else there, fails `simulator` and `test` before any command, and `ci` on Linux, where
+ios_steps_test.py reads the real file. So the file can name only the founder's runtime, and the
+snapshot tests move to another runtime only with new references and a CI-configuration PR (T58).
 
 Files pass between the macOS job's steps in OUT ($IOS_OUT, else $RUNNER_TEMP/ios-out), which the
 job uploads as the artifact `ios-results` and the evidence job downloads to the same place:
 
   run.json        what the run used (RUN_KEYS): the Xcode, the Swift, the simulator SDK; for each
                   pinned runtime <v>, the runtime simctl gave, its build, the device, its UDID and
-                  the pass's result; the snapshot runtime and where it comes from; the tests'
-                  overall result
+                  the pass's result; the snapshot runtime; the tests' overall result
   logs/           toolchain.txt, xcodegen.txt, simulators.txt, build.log, attachments-manifest.json,
                   and test-<v>.log and test-summary-<v>.json for each pinned runtime (LOG_NAMES)
   Tests-<v>.xcresult  each pass's result bundle; collect reads the snapshot runtime's
@@ -172,7 +177,7 @@ SCHEME = "Tadayo"
 APP_PRODUCT = "Tadayo.app"
 SHARE_EXTENSION = "TadayoShare.appex"
 SNAPSHOT_TARGET_SUFFIX = "SnapshotTests"
-# The runtime the committed references are for, when it isn't toolchain.SNAPSHOT_RUNTIME_INTERIM
+# The runtime the committed references are drawn on, which can only be toolchain.SNAPSHOT_RUNTIME
 # (snapshot_runtime). collect reads only PNGs in folders under __Snapshots__, and XcodeGen
 # excludes **/__Snapshots__, so the file is neither a snapshot nor a source.
 SNAPSHOT_RUNTIME_FILE = "apps/ios/TadayoSnapshotTests/__Snapshots__/ios-version"
@@ -199,11 +204,25 @@ FACT = re.compile(r"[\w.() -]{1,64}")
 # pinned runtime <v> has its own: ios-<v> (the version simctl gave), runtime-<v> (its identifier),
 # runtime-build-<v>, device-<v>, udid-<v> and tests-<v> (that pass's result).
 RUNTIME_KEYS = ("ios", "runtime", "runtime-build", "device", "udid", "tests")
-RUN_KEYS = ("xcode", "swift", "sdk", "snapshots", "snapshots-source", "tests") + tuple(
+RUN_KEYS = ("xcode", "swift", "sdk", "snapshots", "tests") + tuple(
     f"{key}-{version}" for version in toolchain.IOS_RUNTIMES for key in RUNTIME_KEYS)
-# Where the snapshot runtime comes from (run.json's snapshots-source, snapshot_runtime), as
-# index.md and the labels say it.
-SNAPSHOT_SOURCES = {"file": "the ios-version file", "interim": "interim, no ios-version file"}
+# Where the snapshot runtime comes from, as index.md and the labels say it.
+SNAPSHOT_SOURCE = "the ios-version file"
+# The line ScreenSnapshot.settled logs (apps/ios/TadayoSnapshotTests/ScreenSnapshots.swift) when a
+# screen's drawing took a third draw or more, or didn't settle: its name, the draws' count, the
+# start of each draw's SHA-256 and, for each draw that differs from the last, how. The sheets step
+# copies each line that matches whole into index.md, in a code span, and run.json: every part is
+# bounded, and none can hold a backtick.
+ODD_DRAW_MARK = "warning: ScreenSnapshot "
+_DIFFERENCE = ("(?:[0-9]{1,8} pixels in x [0-9]{1,5} to [0-9]{1,5}, y [0-9]{1,5} to [0-9]{1,5}, "
+               "by at most [0-9]{1,3}/255|sizes differ, [0-9]{1,5} by [0-9]{1,5} and [0-9]{1,5} "
+               "by [0-9]{1,5}|no pixel differs|not readable)")
+ODD_DRAW = re.compile(
+    r"warning: ScreenSnapshot [\w+-][\w.+-]{0,127}: (?:settled after|didn't settle in) "
+    r"[0-9]{1,2} draws, SHA-256 [0-9a-f]{8}(?: [0-9a-f]{8}){1,15}; against the last draw, "
+    r"draw [0-9]{1,2}: " + _DIFFERENCE + r"(?:; draw [0-9]{1,2}: " + _DIFFERENCE + r"){0,15}")
+# index.md shows at most this many odd draws; run.json holds them all.
+ODD_DRAWS_SHOWN = 100
 # `xcrun simctl runtime list -j`: a runtime downloaded as a MobileAsset has its image under
 # ASSET_IMAGES; an imported one has its own (/Library/Developer/CoreSimulator/Cryptex/Images/ on
 # the `xcode-27` image). Only iOS simulator images are looked at.
@@ -371,19 +390,19 @@ def build_key(build):
 
 
 def snapshot_runtime(root):
-    """(version, source): the runtime the snapshot tests run on, and where that comes from.
-    (toolchain.SNAPSHOT_RUNTIME, "file") when SNAPSHOT_RUNTIME_FILE is a regular file holding
-    exactly that version, with at most one line break after it; (toolchain.SNAPSHOT_RUNTIME_INTERIM,
-    "interim") when there is no such file. ValueError for anything else: another version (the
-    interim's among them), a second line, a space, CRLF, a byte outside ASCII, an empty file, a
-    link, a folder or anything else that isn't a regular file. So the file can name only the
-    founder's runtime (T58); until the interim is removed, deleting it moves the snapshots back to
-    the interim's runtime."""
+    """The runtime the snapshot tests run on: toolchain.SNAPSHOT_RUNTIME, when SNAPSHOT_RUNTIME_FILE
+    is a regular file holding exactly that version, with at most one line break after it.
+    ValueError for anything else: no file, another version (26.5, the runtime the interim named
+    before `ios/b0-snapshot-interim`, among them), a second line, a space, CRLF, a byte outside
+    ASCII, an empty file, a link, a folder or anything else that isn't a regular file. So the file
+    can name only the founder's runtime (T58)."""
     path = os.path.join(root, *SNAPSHOT_RUNTIME_FILE.split("/"))
     try:
         info = os.lstat(path)
     except FileNotFoundError:
-        return toolchain.SNAPSHOT_RUNTIME_INTERIM, "interim"
+        raise ValueError(f"{SNAPSHOT_RUNTIME_FILE} is missing: it must hold "
+                         f"{toolchain.SNAPSHOT_RUNTIME!r} (toolchain.SNAPSHOT_RUNTIME), the "
+                         "runtime the committed references are drawn on") from None
     except OSError as error:
         raise ValueError(f"{SNAPSHOT_RUNTIME_FILE} can't be read ({error.strerror})") from None
     if not stat.S_ISREG(info.st_mode):
@@ -398,10 +417,25 @@ def snapshot_runtime(root):
     expected = toolchain.SNAPSHOT_RUNTIME.encode("ascii")
     if content not in (expected, expected + b"\n"):
         raise ValueError(f"{SNAPSHOT_RUNTIME_FILE} holds {content[:24]!r}: it may hold only "
-                         f"{toolchain.SNAPSHOT_RUNTIME!r} (toolchain.SNAPSHOT_RUNTIME) and one line "
-                         "break, or be absent while the references are "
-                         f"iOS {toolchain.SNAPSHOT_RUNTIME_INTERIM}'s")
-    return toolchain.SNAPSHOT_RUNTIME, "file"
+                         f"{toolchain.SNAPSHOT_RUNTIME!r} (toolchain.SNAPSHOT_RUNTIME) and one "
+                         "line break")
+    return toolchain.SNAPSHOT_RUNTIME
+
+
+def odd_draws(lines):
+    """(the lines ODD_DRAW matches whole, how many other lines name ODD_DRAW_MARK) of a test
+    log. A line that names the warning but isn't one, such as a failing test's message that quotes
+    one, or a line cut short or run into another, is counted, never copied."""
+    found, unread = [], 0
+    for line in lines:
+        line = line.rstrip("\r\n")
+        if ODD_DRAW_MARK not in line:
+            continue
+        if ODD_DRAW.fullmatch(line):
+            found.append(line)
+        else:
+            unread += 1
+    return found, unread
 
 
 def state_of(file_name):
@@ -660,9 +694,9 @@ class Steps:
     def run_facts(self):
         """run.json's values for index.md, the sheets' labels and the stage's run.json: the build
         job wrote them, so only the keys the steps write (RUN_KEYS) with plain text (FACT) are
-        kept, the snapshot runtime only when it is a pinned runtime and its source only when it
-        is one snapshot_runtime gives; anything else shows as unknown."""
-        allowed = {"snapshots": toolchain.IOS_RUNTIMES, "snapshots-source": tuple(SNAPSHOT_SOURCES)}
+        kept, and the snapshot runtime only when it is toolchain.SNAPSHOT_RUNTIME, the only one
+        the simulator step can write; anything else shows as unknown."""
+        allowed = {"snapshots": (toolchain.SNAPSHOT_RUNTIME,)}
         return {k: v for k, v in self.run_record().items()
                 if k in RUN_KEYS and isinstance(v, str) and FACT.fullmatch(v)
                 and (k not in allowed or v in allowed[k])}
@@ -817,7 +851,7 @@ class Steps:
     def simulator(self):
         # The snapshot runtime's file first, before any command: a bad one fails the step at once.
         try:
-            snapshots, source = snapshot_runtime(self.root)
+            snapshots = snapshot_runtime(self.root)
         except ValueError as error:
             print(f"ios: simulator: {error}")
             return 1
@@ -847,7 +881,7 @@ class Steps:
         if runtimes is None:
             return 1
         device = toolchain.SIMULATOR_DEVICE
-        values = {"sdk": sdk, "snapshots": snapshots, "snapshots-source": source}
+        values = {"sdk": sdk, "snapshots": snapshots}
         for version in pinned:
             try:
                 runtime = pick_runtime(runtimes, version, device)
@@ -908,11 +942,10 @@ class Steps:
             return 1
         self.update_run_record(**values)
         self.write_log("simulators.txt", f"The snapshot tests run on iOS {snapshots} "
-                                         f"({SNAPSHOT_SOURCES[source]}).")
+                                         f"({SNAPSHOT_SOURCE}).")
         print("ios: simulator: " + "; ".join(
             f"iOS {values[f'ios-{v}']} on {values[f'device-{v}']} ({values[f'udid-{v}']})"
-            for v in pinned) + f"; the snapshot tests on iOS {snapshots} "
-            f"({SNAPSHOT_SOURCES[source]})")
+            for v in pinned) + f"; the snapshot tests on iOS {snapshots} ({SNAPSHOT_SOURCE})")
         return 0
 
     def download(self, version):
@@ -1174,7 +1207,7 @@ class Steps:
     def test(self):
         # The snapshot runtime's file first, before any command, as in the simulator step.
         try:
-            snapshots, source = snapshot_runtime(self.root)
+            snapshots = snapshot_runtime(self.root)
         except ValueError as error:
             print(f"ios: test: {error}")
             return 1
@@ -1202,7 +1235,7 @@ class Steps:
             print(f"ios: test: the scheme {SCHEME} has no tests yet, so there is nothing to test")
             self.update_run_record(tests="none", **{f"tests-{v}": "none" for v in pinned})
             return 0
-        print(f"ios: test: the snapshot tests run on iOS {snapshots} ({SNAPSHOT_SOURCES[source]})")
+        print(f"ios: test: the snapshot tests run on iOS {snapshots} ({SNAPSHOT_SOURCE})")
         artifacts = self.out_path("artifacts")
         os.makedirs(artifacts, exist_ok=True)
         # The simulator step booted the first runtime's device; each later pass boots its own.
@@ -1394,13 +1427,14 @@ class Steps:
 
     def collected_runtime(self):
         """The runtime whose pass ran the snapshot tests: run.json's `snapshots`, written by the
-        simulator step, when it is a pinned runtime; else snapshot_runtime()'s (the simulator
-        step didn't finish). None, said, when the file is bad: collect then exports nothing."""
+        simulator step, when it is toolchain.SNAPSHOT_RUNTIME; else snapshot_runtime()'s (the
+        simulator step didn't finish). None, said, when the file is missing or bad: collect then
+        exports nothing."""
         written = self.run_record().get("snapshots")
-        if isinstance(written, str) and written in toolchain.IOS_RUNTIMES:
+        if written == toolchain.SNAPSHOT_RUNTIME:
             return written
         try:
-            return snapshot_runtime(self.root)[0]
+            return snapshot_runtime(self.root)
         except ValueError as error:
             print(f"ios: collect: {error}; so no result bundle is read for new snapshots")
             return None
@@ -1567,16 +1601,28 @@ class Steps:
                 shutil.copyfile(source, os.path.join(stage, "logs", name))
             else:
                 strays += 1
+        # The odd draws, from the snapshot runtime's test log as staged: the snapshot tests run
+        # in no other pass (SNAPSHOT_TARGET_SUFFIX). None when the log isn't there.
+        odd, unread, odd_log = None, 0, f"test-{snapshots}.log" if snapshots else None
+        if odd_log and os.path.isfile(os.path.join(stage, "logs", odd_log)):
+            with open(os.path.join(stage, "logs", odd_log), encoding="utf-8",
+                      errors="replace") as f:
+                odd, unread = odd_draws(f)
         if strays:
             notes.append(f"The build job's logs/ held {strays} other entr"
                          f"{'y' if strays == 1 else 'ies'}, not a log its steps write, so "
                          f"{'it is' if strays == 1 else 'they are'} left out and this step fails.")
-        # run.json's checked values, never the file as the build job wrote it.
+        # run.json's checked values, never the file as the build job wrote it, and the odd
+        # draws this job read.
         if os.path.isfile(self.out_path("run.json")):
+            staged = dict(record)
+            if odd is not None:
+                staged.update({"odd-draws": odd, "odd-draws-unread": unread})
             with open(os.path.join(stage, "run.json"), "w", encoding="utf-8") as f:
-                json.dump(record, f, indent=2, sort_keys=True)
+                json.dump(staged, f, indent=2, sort_keys=True)
         left_out = len(good) - len(chosen)
-        self.write_index(stage, path, mode, record, rows, left_out, notes)
+        self.write_index(stage, path, mode, record, rows, left_out, notes,
+                         (odd_log, odd, unread))
         # Written last, so publish knows this step finished for this run's folder.
         with open(self.work_path("evidence.json"), "w", encoding="utf-8") as f:
             json.dump({"path": path}, f)
@@ -1587,6 +1633,10 @@ class Steps:
         if strays:
             print(f"ios: sheets: {strays} entr{'y' if strays == 1 else 'ies'} in logs/ that no "
                   "step writes, left out")
+        if odd is not None:
+            print(f"ios: sheets: {len(odd)} odd draw(s) in logs/{odd_log}"
+                  + (f", and {unread} other line(s) naming `{ODD_DRAW_MARK.strip()}`"
+                     if unread else ""))
         return 1 if failed or list_missing or strays else 0
 
     def checked_entry(self, entry):
@@ -1658,11 +1708,10 @@ class Steps:
     @staticmethod
     def references(record):
         """Which runtime the committed references are for, and why, from run.json's checked
-        values (run_facts): "iOS 26.5 (interim, no ios-version file)"."""
+        values (run_facts): "iOS 27.2 (the ios-version file)"."""
         if not record.get("snapshots"):
             return "unknown: the simulator step didn't record their runtime"
-        return (f"iOS {record['snapshots']} "
-                f"({SNAPSHOT_SOURCES.get(record.get('snapshots-source'), 'its source unknown')})")
+        return f"iOS {record['snapshots']} ({SNAPSHOT_SOURCE})"
 
     @staticmethod
     def status_words(entry, note):
@@ -1670,7 +1719,10 @@ class Steps:
                  "committed": "the committed reference"}[entry["status"]]
         return f"{words}\n{note}" if note else words
 
-    def write_index(self, stage, path, mode, record, rows, left_out, notes):
+    def write_index(self, stage, path, mode, record, rows, left_out, notes,
+                    odd=(None, None, 0)):
+        """index.md. odd: (the snapshot runtime's test log, the odd draws read from it or None
+        when it isn't staged, how many other lines name the warning)."""
         server = self.environ.get("GITHUB_SERVER_URL", "https://github.com")
         repo = self.environ.get("GITHUB_REPOSITORY", "")
         base = f"{server}/{repo}/blob/{EVIDENCE_BRANCH}/{urllib.parse.quote(path)}"
@@ -1692,13 +1744,35 @@ class Steps:
             lines.append(f"- iOS `{record.get(f'ios-{version}', version)}` on "
                          f"`{record.get(f'device-{version}', '?')}`: tests "
                          f"`{record.get(f'tests-{version}', 'not run')}`, {which}")
-        references = (f"iOS `{snapshots}` ("
-                      f"{SNAPSHOT_SOURCES.get(record.get('snapshots-source'), 'its source unknown')})"
-                      if snapshots else "unknown: the simulator step didn't record their runtime")
+        references = (f"iOS `{snapshots}` ({SNAPSHOT_SOURCE})" if snapshots else
+                      "unknown: the simulator step didn't record their runtime")
+        odd_log, odd, unread = odd
+        if odd_log is None:
+            odd_draws_line = "unknown: the simulator step didn't record the snapshot runtime"
+        elif odd is None:
+            odd_draws_line = f"unknown: no `logs/{odd_log}`"
+        else:
+            odd_draws_line = (f"{len(odd) or 'none'} in `logs/{odd_log}`"
+                              + (", below" if odd else ""))
+            if unread:
+                odd_draws_line += (f"; {unread} other line(s) there name "
+                                   f"`{ODD_DRAW_MARK.strip()}` but don't read as one")
         lines += [f"- References: {references}",
                   f"- Tests: `{record.get('tests', 'not run')}`",
+                  f"- Odd draws: {odd_draws_line}",
                   f"- Carries {what}; {left_out} snapshot(s) not carried", ""]
         lines += [f"{n}" for n in notes] + ([""] if notes else [])
+        if odd:
+            # Each line matched ODD_DRAW whole, so none holds a backtick.
+            lines += ["Odd draws: each a screen whose drawing took a third draw or more "
+                      "(`ScreenSnapshot.settled`; the glass on iOS 27.2, `docs/LIMITATIONS.md`, "
+                      "2026-11-14). One odd draw passes; a second, or no two draws alike, fails "
+                      "the test.", ""]
+            lines += [f"- `{line}`" for line in odd[:ODD_DRAWS_SHOWN]]
+            if len(odd) > ODD_DRAWS_SHOWN:
+                lines.append(f"- and {len(odd) - ODD_DRAWS_SHOWN} more, in run.json and "
+                             f"`logs/{odd_log}`")
+            lines.append("")
         if rows:
             # File: where the image belongs in the repository, its committed reference's path
             # or, for a new snapshot, its test class and file name (the reference goes in that

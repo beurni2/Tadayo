@@ -42,13 +42,13 @@ one `ios` run builds once on Xcode 27 and tests on iOS 27.2, with the snapshot t
   keeps Xcode 27.2; the simulator step then fails, naming it, rather than download it unseen and
   double every run's time.
 - SNAPSHOT_RUNTIME: the runtime the founder chose for the snapshot tests, which run on one
-  runtime only. SNAPSHOT_RUNTIME_INTERIM: the runtime the committed references were drawn on, on
-  the `macos-26` image, which the snapshot tests use only while the app has no file
-  apps/ios/TadayoSnapshotTests/__Snapshots__/ios-version. The app's PR that takes the
-  references on SNAPSHOT_RUNTIME adds that file, holding exactly SNAPSHOT_RUNTIME; nothing else
-  may be in it (ios_steps.snapshot_runtime), so the file can name only the founder's runtime
-  (T58). Until a CI-configuration PR removes SNAPSHOT_RUNTIME_INTERIM, deleting the file moves
-  the snapshots back to it; the CI PR after the app's PR removes that path.
+  runtime only, the one the committed references are drawn on. The app names it in
+  apps/ios/TadayoSnapshotTests/__Snapshots__/ios-version, which must hold exactly
+  SNAPSHOT_RUNTIME (ios_steps.snapshot_runtime): a missing file, or anything else in it, fails
+  the run before any command. So the file can name only the founder's runtime, and the snapshot
+  tests can't move to another runtime without new references and a CI-configuration PR that
+  changes this pin (T58). Before `ios/b0-snapshot-interim`, SNAPSHOT_RUNTIME_INTERIM, 26.5,
+  stood in while the file was absent, the way back to iOS 26.5's references; it is gone.
 - SIMULATOR_DEVICE: the `xcode-27` image's README lists the iPhone 17 simulator on iOS 27.0 and on
   the iPhones' iOS 27.2 runtime, and the `macos-26` image's README lists it on iOS 26.5, so every
   run uses that device on each runtime (docs/TECH-DESIGN.md section 8). There is no fallback: a
@@ -88,7 +88,6 @@ SIMULATOR_DEVICE = "iPhone 17"
 IOS_RUNTIMES = ("27.2", "26.5")
 IOS_DOWNLOADS = ("26.5",)
 SNAPSHOT_RUNTIME = "27.2"
-SNAPSHOT_RUNTIME_INTERIM = "26.5"
 # Each package build plugin Xcode may run: the package that declares it, and the targets it may
 # be applied to.
 PACKAGE_PLUGINS = {"OpenAPIGenerator": ("swift-openapi-generator", ("TadayoAPI",))}
