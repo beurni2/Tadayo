@@ -72,7 +72,7 @@ Other cloud sessions have been refused pushes that add or change files under `.g
 - **Thin:** triggers, permissions, runners, and steps that call scripts in `tools/ci/`, where the logic lives and is tested (`docs/TECH-DESIGN.md` section 9).
 - **Checked before the push** with `actionlint`, `zizmor` and `yamllint`, using the repository's `.yamllint.yaml` (install them with pip if they're missing).
 
-**Merge timing.** Tell the founder a workflow PR is ready only when neither lane has another branch meant to merge, opened as a PR or not, and make no new branch in either lane until it has merged (`docs/MILESTONES.md`, "Lanes"). Once a workflow change merges, every open branch has to merge `main`, and a branch made before a workflow reached `main` doesn't run that workflow until it does. Whether GitHub accepts the session's push of such a merge hasn't been tested: the freeze keeps it from arising. Push a merge of `main` at once, with nothing committed on top of it.
+**Merge timing.** Tell the founder a workflow PR is ready only when neither lane has another branch meant to merge, opened as a PR or not, and make no new branch in either lane until it has merged (`docs/MILESTONES.md`, "Lanes"). Once a workflow change merges, every open branch has to merge `main`, and a branch made before a workflow reached `main` doesn't run that workflow until it does. GitHub has accepted the session's push of such a merge twice, on 2026-11-13: `ios/b0-ci-xcode27`'s (PR #50) merge `70f73d6`, of `main` at `03c00e8`, which brought in `deploy-dev.yml`, and `api/b0-ops-fresh-agent`'s (PR #53) merge `0bdaef7`, of `main` at `beb2435`, which brought in `ios.yml`'s change and `.github/actionlint.yaml` (`docs/LIMITATIONS.md`, the row of 2026-11-01 on workflow pushes). Push a merge of `main` at once, with nothing committed on top of it.
 - **If GitHub refuses that push, the branch has a PR, and your merge of `main` had no conflicts,** check that the merge is the branch's last commit (`git rev-parse -q --verify HEAD^2` prints a commit only when it is), and drop it with `git reset --keep HEAD^1`, which keeps the branch's commits from before it. Push what's left of the branch's own work, and ask the founder to tap **Update branch** on the PR: the button itself, which merges `main` in, not **Update with rebase** from its menu. Commit nothing to that branch while you wait. When he says it's done, run `git pull --ff-only`. If that refuses, stop and tell him what `git status` and `git log --oneline origin/<branch>` show; never force-push, rebase or merge `main` locally to get past it.
 - **Otherwise** (the branch has no PR yet; your merge of `main` had conflicts, so its PR conflicts with `main` too, for example in the journal; or commits sit on top of the refused merge), Update branch isn't there or can't help. Don't reset: leave the old branch as it is. Re-apply the slice on a fresh branch from `main`, as for a branch set aside (`docs/MILESTONES.md`, "Lanes"). Open its PR when the slice is complete and `ci` is green (step 2), and close the old PR, if there is one, with a comment linking the new one.
 
@@ -84,7 +84,7 @@ When the refused push is a workflow PR's own branch:
 - Either way, the next commit's journal entry and a `docs/LIMITATIONS.md` row record the refusal.
 
 Then, while the refusal holds, to add or change a workflow file:
-1. Write it in `/tmp`, never in the repository's working tree, and check it there with `actionlint`, `zizmor` and `yamllint -c <the repository>/.yamllint.yaml`, the repository's settings and not yamllint's defaults. Fix what they find, because every later fix costs the founder another paste.
+1. Write it in `/tmp`, never in the repository's working tree, and check it there with `actionlint -config-file <the repository>/.github/actionlint.yaml`, `zizmor` and `yamllint -c <the repository>/.yamllint.yaml`, the repository's settings and not actionlint's or yamllint's defaults: without its file, actionlint doesn't know `ios.yml`'s `xcode-27` label (ADR-033). Fix what they find, because every later fix costs the founder another paste.
 2. Push the branch without the workflow file. It holds CI configuration only (T58): a branch from `main` with the `tools/ci/` scripts the workflow calls, if any. Add a journal entry naming the workflow file the founder is adding, because the hook and the `ci` guard need one. Put the file's SHA-256 in it, computed with exactly one final line break: `printf '%s\n' "$(cat /tmp/<file>)" | sha256sum`.
 3. Send the founder the branch name, the file's path and the whole file in one code block, with the steps to add it on GitHub.
 4. Keep that copy in `/tmp` while you wait. A cloud session checks at the end of every turn that everything in the repository is committed and pushed: an untracked workflow file would trip that check, and it would make `git pull` refuse the founder's commit. A later session won't have the copy; the hash in the journal is the check then.
@@ -128,13 +128,13 @@ gh api -X POST repos/{owner}/{repo}/actions/runs/{id}/rerun
 #   (worker-scale) or -f 'inputs[to]=<instant>' (dev-clock), -f 'inputs[org]=<slug>' (fly-app-create, when the token sees
 #   several organizations).
 # - ios run by hand, and ios-release once it exists (docs/TECH-DESIGN.md section 9), run on the branch named as ref. ios
-#   with inputs[ios_version] is the UI and unit tests on that iOS, without the snapshot tests (its section 8, the row
-#   Screens; the docs/LIMITATIONS.md row of 2026-11-01); with none it is the full set on the newest iOS, as a gate wants. While a push's
+#   takes no inputs (ADR-033): a run by hand runs the same tests as a push, on iOS 27.2 with the snapshot tests and on
+#   iOS 26.5, and puts every snapshot in <branch>/<short-sha>/ios-full/, as a gate wants. While a push's
 #   ios run is going, start it only once that run's evidence job has started (the docs/LIMITATIONS.md row of 2026-11-11).
 # If the session's token may not, ask the founder to start it from the Actions tab, naming the branch to choose under
 # "Use workflow from" and the inputs.
 gh api -X POST repos/{owner}/{repo}/actions/workflows/ops.yml/dispatches -f ref=main -f 'inputs[script]=<script name>'
-gh api -X POST repos/{owner}/{repo}/actions/workflows/ios.yml/dispatches -f ref='<branch>' -f 'inputs[ios_version]=18.6'
+gh api -X POST repos/{owner}/{repo}/actions/workflows/ios.yml/dispatches -f ref='<branch>'
 
 # Close a PR, for example one replaced by a fresh branch
 gh api -X PATCH repos/{owner}/{repo}/pulls/{n} -f state=closed
