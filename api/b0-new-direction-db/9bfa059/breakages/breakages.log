@@ -1,0 +1,111 @@
+== B01 0010's check of existing rows lets one through: CAUGHT; exit 1 ['Tests  1 failed | 17 passed (18)']
+    × fills the star's limits and a friend's from the rows' intervals, keeping every count; a friend's row over them stops it, keeping nothing 101ms
+== B02 0010's fill gives a friend the star's photos: CAUGHT; exit 1 ['Tests  1 failed | 17 passed (18)']
+    × fills the star's limits and a friend's from the rows' intervals, keeping every count; a friend's row over them stops it, keeping nothing 75ms
+== B03 everyone is the star: CAUGHT; exit 1 ['Tests  4 failed | 23 passed (27)']
+    × keeps each member's counts on each day apart from every other's (ND04) 65ms
+    × refuses a counter that names its own limits, and any change to them (T17) 14ms
+    × refuses a friend's third photo, second link, or a photo slot beyond two photos (addendum 2) 21ms
+    × writes each counter's limits from its holder's role in that day: the star's 6, 6 and 2, anyone else's 3, 2 and 1 (addendum 2) 27ms
+== B04 nobody is the star: CAUGHT; exit 1 ['Tests  4 failed | 23 passed (27)']
+    × keeps each member's counts on each day apart from every other's (ND04) 39ms
+    × refuses a second live drop with the same scoped hash, and allows another author's 10ms
+    × refuses a seventh drop or a third link in the counter 15ms
+    × writes each counter's limits from its holder's role in that day: the star's 6, 6 and 2, anyone else's 3, 2 and 1 (addendum 2) 33ms
+== B05 a caller may name the limits: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × refuses a counter that names its own limits, and any change to them (T17) 10ms
+== B06 the limits may change: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × refuses a counter that names its own limits, and any change to them (T17) 30ms
+== B07 reserved photo slots uncounted: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × refuses a friend's third photo, second link, or a photo slot beyond two photos (addendum 2) 33ms
+== B08 a link more: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × refuses a friend's third photo, second link, or a photo slot beyond two photos (addendum 2) 19ms
+== B09 a drop more (expected equivalent: photos and links bound the total): NOT CAUGHT; exit 0 ['Tests  27 passed (27)']
+== B10 a friend's set may be the star's photos (expected equivalent: only the trigger writes them): NOT CAUGHT; exit 0 ['Tests  27 passed (27)']
+== B11 an avatar may name a drop: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × never changes the drop it's for, and can't become a drop's photo, a replacement or an avatar 23ms
+== B12 the drop may change: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × never changes the drop it's for, and can't become a drop's photo, a replacement or an avatar 38ms
+== B13 a former member may upload: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × is refused before the reveal, outside the audience, to a former member or a rejoined account, and for a drop that isn't active (T9, ND12) 52ms
+== B14 anyone may upload: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × is refused before the reveal, outside the audience, to a former member or a rejoined account, and for a drop that isn't active (T9, ND12) 53ms
+== B15 a held drop takes a photo: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × is refused before the reveal, outside the audience, to a former member or a rejoined account, and for a drop that isn't active (T9, ND12) 61ms
+== B16 before the reveal: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × is refused before the reveal, outside the audience, to a former member or a rejoined account, and for a drop that isn't active (T9, ND12) 38ms
+== B17 not at the reveal itself: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × is made by the star, a friend or the drop's author, from its reveal on 65ms
+== B18 a drop's photo has a thumbnail: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × has a thumbnail for the feed's reply preview, which a drop's photo never has (T10, T65) 31ms
+== B19 a rendition kind outside the contract: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × lists exactly the contract's upload purposes and renditions 6ms
+== B20 a photo for two messages: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × takes only its author's own ready upload, not lapsed, made for its drop, and only once 38ms
+== B21 another drop's photo: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × takes only its author's own ready upload, not lapsed, made for its drop, and only once 37ms
+== B22 an edit empties a text message: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × never adds, replaces or clears a standing message's photo, and lets emptied text keep it (FQ107) 20ms
+== B23 an ended message keeps its photo: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × keeps neither text nor photo once a message ends, and never deletes an upload a message holds (ND13) 29ms
+== B24 the preview's index on every message: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × indexes each drop's standing photo messages, latest first, for the reply preview (T65) 6ms
+== B25 a message starts at a later version: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × starts every message active, at its first version 25ms
+== B26 a message dated before the reveal: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × refuses a message with neither, one before the reveal, and one dated before it with a later updated_at (ND08) 31ms
+== B27 a message starts ended: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × starts every message active, at its first version 15ms
+== B28 a photo added to a text message: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × never adds, replaces or clears a standing message's photo, and lets emptied text keep it (FQ107) 19ms
+== B29 a photo replaced: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × never adds, replaces or clears a standing message's photo, and lets emptied text keep it (FQ107) 18ms
+== B30 a photo cleared from a standing message: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × never adds, replaces or clears a standing message's photo, and lets emptied text keep it (FQ107) 19ms
+== B31 an upload still being prepared: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × takes only its author's own ready upload, not lapsed, made for its drop, and only once 30ms
+== B32 a lapsed upload: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × takes only its author's own ready upload, not lapsed, made for its drop, and only once 37ms
+== B33 someone else's upload: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × takes only its author's own ready upload, not lapsed, made for its drop, and only once 31ms
+== B34 a removal of a message already ended: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × refuses a removal of a message that has ended, one as pictured from outside the drop's audience, an operator's action about another message, and an ac
+== B35 its author removes it as pictured: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × refuses a pictured removal by its author, of a message with no photo, or by a former member; an operator's without its action; and a drop's end while 
+== B36 a text message removed as pictured: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × refuses a pictured removal by its author, of a message with no photo, or by a former member; an operator's without its action; and a drop's end while 
+== B37 a former member removes as pictured: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × refuses a pictured removal by its author, of a message with no photo, or by a former member; an operator's without its action; and a drop's end while 
+== B38 an operator's action about another message: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × refuses a removal of a message that has ended, one as pictured from outside the drop's audience, an operator's action about another message, and an ac
+== B39 a moderation removal with no action at all: CAUGHT; exit 1 ['Tests  2 failed | 15 passed (17)']
+    × refuses a pictured removal by its author, of a message with no photo, or by a former member; an operator's without its action; and a drop's end while 
+    × refuses a removal of a message that has ended, one as pictured from outside the drop's audience, an operator's action about another message, and an ac
+== B40 a standing drop takes its conversation: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × refuses a pictured removal by its author, of a message with no photo, or by a former member; an operator's without its action; and a drop's end while 
+== B41 someone outside the drop's audience removes as pictured: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × refuses a removal of a message that has ended, one as pictured from outside the drop's audience, an operator's action about another message, and an ac
+== B42 an actor on another reason: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × refuses a removal of a message that has ended, one as pictured from outside the drop's audience, an operator's action about another message, and an ac
+== B43 an action on another reason: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × refuses a removal of a message that has ended, one as pictured from outside the drop's audience, an operator's action about another message, and an ac
+== B44 a removal deleted: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × writes a removal once, never changed or deleted 16ms
+== B45 a removal truncated: CAUGHT; exit 1 ['Tests  3 failed (3)']
+    × gives every table that refuses a DELETE a trigger that refuses TRUNCATE 29ms
+    × refuses TRUNCATE on each such table that no foreign key references, by its own trigger 14ms
+    × refuses a cascading TRUNCATE on every such table, by the table's own trigger 20ms
+== B46 a record whose message stands: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × refuses at commit a removed message without its record, and a record whose message isn't removed 28ms
+== B47 a removed message with no record: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × refuses at commit a removed message without its record, and a record whose message isn't removed 20ms
+restored:  M docs/QUESTIONS.md
+ M tests/src/db/drops.test.ts
+ M tests/src/db/kept.test.ts
+ M tests/src/db/migrations.test.ts
+ M tests/src/db/safety.test.ts
+?? db/migrations/0010_allowance_by_role.sql
+?? db/migrations/0011_photo_messages.sql
+?? docs/plans/api-b0-new-direction-db.md
+?? tests/src/db/photo-messages.test.ts
+
