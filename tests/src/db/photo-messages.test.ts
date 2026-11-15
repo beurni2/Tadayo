@@ -409,12 +409,23 @@ describe("T63 to T65: a message holds text, a photo or both, and its photo goes 
       );
       const [row] = await tx<{ upload_id: string }[]>`SELECT upload_id FROM app.drops WHERE id = ${drop}`;
       if (!row) throw new Error("no drop");
-      await expectRefused(
-        tx,
-        REFUSED.check,
-        (sp) => sp`UPDATE app.uploads SET used_at = ${AT.close} WHERE id = ${row.upload_id}`,
-        /uploads_used_for_conversation/,
-      );
+      // Nor a drop's photo, Ben's replacement of it, or an avatar.
+      const replacement = newId("upl");
+      await tx`
+        INSERT INTO app.uploads (id, owner_user_id, purpose, replaces_drop_id, content_type, byte_size, object_key,
+                                 created_at, expires_at)
+        VALUES (${replacement}, ${w.ben.user}, 'replacement', ${drop}, 'image/jpeg', 1000, ${newId("uploads/raw")},
+                ${AT.edited}, ${AT.close})
+      `;
+      const avatar = await newAvatar(tx, w.cleo.user, "ready");
+      for (const upload of [row.upload_id, replacement, avatar.id]) {
+        await expectRefused(
+          tx,
+          REFUSED.check,
+          (sp) => sp`UPDATE app.uploads SET used_at = ${AT.close} WHERE id = ${upload}`,
+          /uploads_used_for_conversation/,
+        );
+      }
     });
   });
 

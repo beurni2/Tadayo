@@ -73,7 +73,7 @@ Most were written before the migrations; the exceptions are said below. The firs
   - one with only a photo is accepted (ND09), with text and a photo too; one with neither is refused;
   - one before the reveal is refused, and one dated before the reveal with a later `updated_at` (ND08);
   - one after `close_at` is accepted and moves no counter (T64; ND11);
-  - someone else's upload, a drop's photo upload, another drop's upload, one not ready, a lapsed one, and one already used are each refused; the used mark is set at the commit and never cleared, and the UNIQUE key still holds with the guard off (round 1); an `INSERT ... ON CONFLICT` that skips the message, or turns it into an edit, leaves the upload unused and free for a real message, an upload made already used is refused, and a drop's photo can't be marked (round 2);
+  - someone else's upload, a drop's photo upload, another drop's upload, one not ready, a lapsed one, and one already used are each refused; the used mark is set at the commit and never cleared, and the UNIQUE key still holds with the guard off (round 1); an `INSERT ... ON CONFLICT` that skips the message, or turns it into an edit, leaves the upload unused and free for a real message, an upload made already used is refused, and a drop's photo, a replacement or an avatar can't be marked (round 2, and the fresh check of its fixes: privsec-r3-1);
   - a used upload stays refused after its message ends, by its author's deletion, a pictured removal or the operator's (round 1);
   - a message is never deleted, standing or ended (round 1);
   - the photo is never added to, replaced on or cleared from a standing message; emptied text is accepted with a photo and refused without one (FQ107);
