@@ -60,7 +60,7 @@ Rules that follow:
 
     Views are thin.
 - **Look at your screens.** After every `ios` run, open the contact sheets from the evidence branch. Each one puts the state's render on the left (2.1 or Claude Design) and your snapshot on the right (`docs/DESIGN-HANDOFF.md`). List the differences against the book's contracts before you call a screen done. A state with no render shows the snapshot alone, marked "built from spec".
-- **Batch pushes to iOS branches.** Each `ios` run costs about 20 to 30 macOS minutes: ADR-033 measured 20 to 28, and one run since took 32 (`ios` 43556391498, on `main` at `e1b6190`, whose simulator step took 15 minutes). GitHub Pro's included Actions usage covers roughly 300 macOS minutes a month; after that, about $0.06 a minute. Push when a slice is ready to look at, not after every edit.
+- **Batch pushes to iOS branches.** Each `ios` run costs about 20 to 30 macOS minutes: ADR-033 measured 20 to 28, and one run since took 32 (`ios` 43556391498, on `main` at `e1b6190`, whose simulator step took about 16 minutes). GitHub Pro's included Actions usage covers roughly 300 macOS minutes a month; after that, about $0.06 a minute. Push when a slice is ready to look at, not after every edit.
 - **Snapshot tests are the design review.**
     - Every state in `design/reference/INVENTORY.md` gets a snapshot in light, in dark and at the largest accessibility text size, at the 393-point width, with the book's fixture cast.
     - The representative states marked `-dark` and `-xl` in the inventory are also snapshotted at 320 and 430 points (book p27).
