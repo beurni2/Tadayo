@@ -1,0 +1,10 @@
+# Deliberate breakages of `api/b0-new-direction-db` at `2b6a25a`
+
+PR #65's fourth commit fixes a fresh check of round 2's fixes. It changed one test, the used-mark test in `tests/src/db/photo-messages.test.ts` ("marks its upload used only for a message that was inserted…"), which now tries `uploads_used_for_conversation` on a replacement and an avatar as well as a drop's photo. It changed no migration. The earlier commits' evidence is in `../../9bfa059/breakages/`, `../../75a58c1/breakages/` and `../../826fa81/breakages/`.
+
+- `breakages4.py`: the 79 entries, the third commit's 78 and one new one, B79 (`uploads_used_for_conversation` weakened to `purpose <> 'drop_photo'`, so an avatar or a replacement could be marked used). Each entry names its file, the exact line, its broken form, the test file, and the registered prefix of the test that must fail. Given codes on its command line, it runs only those. For each it changes the line in a scratch worktree (never the branch's own), remakes a local Postgres 16 cluster made like `ci`'s, runs `python3 tools/ci/ci_steps.py db-bootstrap`, runs the named test file (whose global setup applies every migration), and restores the file. Caught means the registered test fails. Paths are shortened to `$SCRATCH` and `<scratch worktree>`.
+- `breakages4.log`: its run of the four entries registered against the changed test, `python3 breakages4.py B61 B62 B63 B79`. All four are caught by it: B61 (the used mark written before the conflict check), B62 (an upload made already used), B63 (a drop's photo marked used) and B79 (an avatar or a replacement marked used).
+
+The other 75 entries are registered against tests the fourth commit didn't change, on migrations it didn't change, so they stand as run at the third commit (`../../826fa81/breakages/breakages3.log`): 79 in all, 78 caught, and B09 equivalent (a friend's two photos and one link, and the star's old six, already bound the total).
+
+The scratch worktree held the fourth commit's two migrations and its test files byte for byte (compared with `cmp`).

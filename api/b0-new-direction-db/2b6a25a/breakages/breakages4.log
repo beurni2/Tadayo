@@ -1,0 +1,19 @@
+== B61 the used mark written before the conflict check: CAUGHT; exit 1 ['Tests  2 failed | 18 passed (20)']
+    × marks its upload used only for a message that was inserted, never one an ON CONFLICT skips or turns into an edit; an upload starts unused, and only a 
+    × takes only its author's own ready upload, not lapsed, made for its drop, and only once 40ms
+== B62 an upload made already used: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × marks its upload used only for a message that was inserted, never one an ON CONFLICT skips or turns into an edit; an upload starts unused, and only a 
+== B63 a drop's photo marked used: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × marks its upload used only for a message that was inserted, never one an ON CONFLICT skips or turns into an edit; an upload starts unused, and only a 
+== B79 an avatar or a replacement marked used: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × marks its upload used only for a message that was inserted, never one an ON CONFLICT skips or turns into an edit; an upload starts unused, and only a 
+restored:  M docs/QUESTIONS.md
+ M tests/src/db/drops.test.ts
+ M tests/src/db/kept.test.ts
+ M tests/src/db/migrations.test.ts
+ M tests/src/db/safety.test.ts
+?? db/migrations/0010_allowance_by_role.sql
+?? db/migrations/0011_photo_messages.sql
+?? docs/plans/api-b0-new-direction-db.md
+?? tests/src/db/photo-messages.test.ts
+
