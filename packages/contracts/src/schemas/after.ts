@@ -3,7 +3,19 @@
 // interval (spec 18, T14). Nothing here is counted (T15, T33): no totals, no "seen", no ranking.
 import * as z from "zod";
 
-import { Allowance, CommentText, Cursor, Id, Occurrence, Person, Reaction, Version, page, text } from "../common.ts";
+import {
+  Allowance,
+  CommentText,
+  ContentVersion,
+  Cursor,
+  Id,
+  Occurrence,
+  Person,
+  Reaction,
+  Version,
+  page,
+  text,
+} from "../common.ts";
 import { named } from "../registry.ts";
 import { DayLink, DropRevealed, HighlightPointer, ReactionSummary } from "./days.ts";
 
@@ -21,19 +33,36 @@ export const ReactionState = named(
 
 export const ReplyTo = named(
   "ReplyTo",
-  "The comment a reply answers, by its author. Absent once that comment is deleted.",
+  "The comment a reply answers, by its author, whether that comment has text, a photo or both (FQ110). " +
+    "Absent once that comment is deleted or removed.",
   z.object({ comment_id: Id, author: Person }),
+);
+
+export const CommentPhoto = named(
+  "CommentPhoto",
+  "A photo message's photo: its frame, for a stable layout before the bytes arrive, and its content " +
+    "version, the ETag of `GET /v1/comments/{comment_id}/media`, the one route that serves it (T12, T63). " +
+    "Never a URL.",
+  z.object({
+    width: z.int().min(1).max(20_000),
+    height: z.int().min(1).max(20_000),
+    media_version: ContentVersion,
+  }),
 );
 
 export const Comment = named(
   "Comment",
-  "A comment on a revealed drop, seen by the drop's audience (spec 16). `edited` shows the Edited label; " +
-    "earlier text is never served (spec 31). No time and no seen state. `version` is only on the caller's " +
-    "own comments, for editing them: nobody else learns how often a comment changed.",
+  "A message in a revealed drop's conversation, seen by the drop's audience (spec 16; addendum 5): text, " +
+    "a photo, or both, never neither, and never an empty text. A photo is here only once it's ready and " +
+    "its message has committed, so nobody sees a message still preparing (T65). `edited` shows the Edited " +
+    "label; earlier text is never served (spec 31). No time and no seen state. `version` is only on the " +
+    "caller's own messages, for editing them: nobody else learns how often a message changed. A deleted or " +
+    "removed message isn't in the thread at all: no text, no photo, no author (T24, T25).",
   z.object({
     id: Id,
     author: Person,
-    text: CommentText,
+    text: CommentText.optional(),
+    photo: CommentPhoto.optional(),
     reply_to: ReplyTo.optional(),
     edited: z.boolean(),
     version: Version.optional(),
@@ -49,14 +78,28 @@ export const CommentPage = named(
 
 export const CreateCommentRequest = named(
   "CreateCommentRequest",
-  "A comment, optionally answering another on the same drop (spec 16).",
-  z.strictObject({ text: CommentText, reply_to_id: Id.optional() }),
+  "A message, optionally answering another on the same drop (spec 16; addendum 5): at least one of `text` " +
+    "and `photo_upload_id`, the caller's own ready conversation-photo upload for this drop. One photo at " +
+    "most, no video. It uses no reservation and no allowance (T64), and commits only after the reveal, " +
+    "checked again at the commit (T63).",
+  z
+    .strictObject({ text: CommentText.optional(), photo_upload_id: Id.optional(), reply_to_id: Id.optional() })
+    .refine((body) => body.text !== undefined || body.photo_upload_id !== undefined, "text, a photo or both"),
+);
+
+export const CommentEditText = named(
+  "CommentEditText",
+  "A message's edited text: 0 to 500 grapheme clusters, well formed (no lone surrogate) (T13, D09). Empty " +
+    "removes the text of a message with a photo, which keeps its photo (FQ107); a message with no photo " +
+    "can't be left empty (INVALID_REQUEST, `field` `text`).",
+  text(0, 500),
 );
 
 export const UpdateCommentRequest = named(
   "UpdateCommentRequest",
-  "The author's edit of their comment. It announces nothing again (spec 16).",
-  z.strictObject({ text: CommentText, expected_version: Version }),
+  "The author's edit of their message's text, the only thing an edit changes: a photo is never replaced, " +
+    "only the whole message deleted (T65, FQ107). It announces nothing again (spec 16).",
+  z.strictObject({ text: CommentEditText, expected_version: Version }),
 );
 
 export const CommentReceipt = named(

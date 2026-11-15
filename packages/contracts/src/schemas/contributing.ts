@@ -38,19 +38,29 @@ export const AvatarUploadRequest = named(
   z.strictObject({ purpose: tag("avatar"), ...uploadBase }),
 );
 
+export const ConversationPhotoUploadRequest = named(
+  "ConversationPhotoUploadRequest",
+  "An upload for a photo message in the conversation of a revealed drop the caller can read, named by " +
+    "`drop_id`: the same types and size as a drop's photo, and no reservation or allowance (T63, T64). For " +
+    "a drop the caller can't read now, or whose day hasn't opened, it's the neutral NOT_FOUND and nothing " +
+    "is made (T14). It can only become a message in that drop's conversation, never a drop, a replacement " +
+    "or an avatar.",
+  z.strictObject({ purpose: tag("conversation_photo"), drop_id: Id, ...uploadBase }),
+);
+
 export const CreateUploadRequest = tagged(
   "CreateUploadRequest",
   "An upload intent with its scope, type and size (spec 32, 33): at most 20 MiB. The purpose fixes what " +
-    "it can become, so a drop's upload never becomes an avatar or the reverse. No filename, capture date, " +
-    "location, dimensions or hash.",
+    "it can become, so a drop's upload never becomes an avatar or a photo message, or the reverse (T64). " +
+    "No filename, capture date, location, dimensions or hash.",
   "purpose",
-  [DropPhotoUploadRequest, ReplacementUploadRequest, AvatarUploadRequest],
+  [DropPhotoUploadRequest, ReplacementUploadRequest, AvatarUploadRequest, ConversationPhotoUploadRequest],
 );
 
 export const UploadPurpose = named(
   "UploadPurpose",
   "What an upload is for.",
-  z.enum(["drop_photo", "replacement", "avatar"]),
+  z.enum(["drop_photo", "replacement", "avatar", "conversation_photo"]),
 );
 
 export const UploadState = named(
@@ -93,7 +103,9 @@ export const Upload = named(
   "Upload",
   "The caller's own upload, which nobody else can see (T12), as `createUpload` answers it. `signed_upload` " +
     "is present only while it's pending, in the response that created it or its replay. An upload nobody " +
-    "commits lapses at `expires_at`; the device's draft keeps the photo (FQ15).",
+    "commits lapses at `expires_at` and is purged; for a drop's photo the device's draft keeps it (FQ15), " +
+    "and for a photo message the app keeps its own attachment until the message commits, never in Drafts " +
+    "(T64). It never names the drop it's for.",
   z.object({ ...uploadFields, signed_upload: SignedUpload.optional() }),
 );
 
@@ -125,7 +137,8 @@ export const Source = named(
 
 export const CreateReservationRequest = named(
   "CreateReservationRequest",
-  "Hold one of the caller's slots in this day while a photo uploads and prepares (spec 11, T18).",
+  "Hold one of the caller's slots in this day while a photo uploads and prepares (spec 11, T18). The " +
+    "caller's role, and so their limits, come from the server, never from the request (T17).",
   z.strictObject({ media_class: MediaClass }),
 );
 
@@ -172,8 +185,8 @@ export const CreateDropRequest = named(
   "CreateDropRequest",
   "Commit one drop to the day in the path (spec 32; T3, T8, T17, T19). `reservation_id` uses a held " +
     "slot; without one, a free slot is taken at commit. A caption is optional (spec 10). No audience, " +
-    "time, highlight or other target: the server decides the audience at commit and never moves the drop " +
-    "(T4, T8).",
+    "time, highlight, role or other target: the server decides the audience and the caller's role at " +
+    "commit and never moves the drop (T4, T8, T17).",
   z.strictObject({ reservation_id: Id.optional(), media: DropMedia, caption: Caption.optional() }),
 );
 
@@ -209,6 +222,6 @@ export const DropVersion = named(
 export const SetHighlightRequest = named(
   "SetHighlightRequest",
   "Make one of the caller's own drops in this day their highlight, or move it to another: a pointer, never " +
-    "a seventh drop (T22). Set or replace only; it clears only when that drop is withdrawn.",
+    "an extra drop (T17, T22). Set or replace only; it clears only when that drop is withdrawn.",
   z.strictObject({ drop_id: Id, expected_version: Version }),
 );

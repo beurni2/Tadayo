@@ -109,6 +109,33 @@ export const DropRevealed = named(
   }),
 );
 
+export const DaySection = named(
+  "DaySection",
+  "Which of a revealed day's two sections a drop is in (T35; addendum 4): `star`, From {starName}, the " +
+    "star's own drops; `friends`, From friends, everyone else's. The server reads it from the author's " +
+    "membership interval and the day's star interval, so a card never moves.",
+  z.enum(["star", "friends"]),
+);
+
+export const ReplyPreview = named(
+  "ReplyPreview",
+  "The latest photo message on this drop that this viewer may read now, for the feed card's one compact " +
+    'preview: its id, to open the conversation there, its author, for "{authorName} added a photo", and ' +
+    "the content version of `GET /v1/comments/{comment_id}/media`'s thumbnail (T65; addendum 5). Worked out " +
+    "for each viewer and never cached across viewers (T12), again after any withdrawal, removal or loss of " +
+    "access, and absent when none remains. No text, time, count or URL.",
+  z.object({ comment_id: Id, author: Person, media_version: ContentVersion }),
+);
+
+export const RevealedDayDrop = named(
+  "RevealedDayDrop",
+  "A revealed drop as a revealed day's feed shows it (spec 15; addendum 4, 5): the revealed drop, its " +
+    "section, and the reply preview when this viewer may read a photo message on it. Only in a RevealedDay: " +
+    "Home's day, a day from Memories or a linked day. A drop on its own, a favourite or a search result is " +
+    "a DropRevealed.",
+  DropRevealed.extend({ section: DaySection, reply_preview: ReplyPreview.optional() }),
+);
+
 export const DropCard = tagged(
   "DropCard",
   "A drop as this viewer may see it now: someone else's caption before the reveal, the caller's own drop " +
@@ -169,15 +196,17 @@ export const UpcomingDay = named(
 export const RevealedDay = named(
   "RevealedDay",
   "A day that has opened (phase open or past), for this viewer (spec 08, 15, 18, 32): the drops whose " +
-    "audience includes them, in commit order with the id as a tiebreak (T35), a page at a time, and the " +
-    "highlight rail. Removed, withdrawn and held drops are simply absent (T24, T29). A day with no drops " +
-    "is a quiet day; nothing says how many drops are hidden (T15). `add_target` is the star's next day " +
-    "while it's open (book p30), and absent after; the app never works it out (T4).",
+    "audience includes them, the star's own first and then friends', each section in commit order with the " +
+    "id as a tiebreak (T35; addendum 4), a page at a time, and the highlight rail. A section with no drops " +
+    "is simply absent, and nothing says it's empty (T33). Removed, withdrawn and held drops are simply " +
+    "absent (T24, T29). A day with no drops is a quiet day; nothing says how many drops are hidden (T15). " +
+    "`add_target` is the star's next day while it's open (book p30), and absent after; the app never works " +
+    "it out (T4).",
   z.object({
     stage: tag("revealed"),
     ...dayBase,
     add_target: Occurrence.optional(),
-    drops: z.array(DropRevealed).max(36),
+    drops: z.array(RevealedDayDrop).max(36),
     next_cursor: Cursor.optional(),
     highlights: z.array(HighlightEntry),
   }),

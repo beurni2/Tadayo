@@ -188,10 +188,12 @@ describe("the longest request a client can send, by the contract, and each route
         `${operation.id}: its longest body against its limit of ${String(bodyLimitOf(operation.id))}`,
       ).toBeLessThanOrEqual(bodyLimitOf(operation.id));
     }
-    // The largest are reports and comments, some 96 kilobytes of escapes; `updateMe`'s is some 8, in its 17 KiB;
-    // `sendEvents`', all ASCII, is 48,442 bytes.
+    // The largest are comments and reports, some 96 kilobytes of escapes, a comment's ahead since it may name a
+    // photo upload too (addendum 5); `updateMe`'s is some 8, in its 17 KiB; `sendEvents`', all ASCII, is 48,442
+    // bytes.
     const [largest] = [...sizes.entries()].sort((a, b) => b[1] - a[1]);
-    expect(largest?.[0]).toBe("createReport");
+    expect(largest?.[0]).toBe("createComment");
+    expect(sizes.get("createReport")).toBeGreaterThan(90_000);
     expect(largest?.[1]).toBeGreaterThan(90_000);
     expect(sizes.get("updateMe")).toBeGreaterThan(8 * 1024);
     expect(sizes.get("updateMe")).toBeLessThan(9_000);

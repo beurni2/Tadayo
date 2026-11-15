@@ -294,6 +294,12 @@ function upcomingDay(drops: unknown[], viewer = cleo) {
   };
 }
 
+/** A revealed day's card carries its section: Ana's own drops are the star's, everyone else's friends' (T35). */
+const inSaturday = (drop: unknown) => {
+  const card = drop as { author: { membership_id: string } };
+  return { ...card, section: card.author.membership_id === ana ? "star" : "friends" };
+};
+
 function revealedDay(drops: unknown[], highlights: unknown[], viewer = cleo) {
   return {
     stage: "revealed",
@@ -301,7 +307,7 @@ function revealedDay(drops: unknown[], highlights: unknown[], viewer = cleo) {
     occurrence: { ...saturday, phase: "open" },
     club: club(viewer),
     viewer: placeIn(viewer),
-    drops,
+    drops: drops.map(inSaturday),
     highlights,
   };
 }
@@ -320,13 +326,24 @@ function ownContribution(id: string, caption: string, viewer = cleo) {
 
 const AFTER_CLOSE = Temporal.Instant.from("2026-11-08T02:00:00Z");
 const pastSaturday = { ...saturday, phase: "past" };
-const allowance = (added: number, external: number, reserved: number, externalReserved: number) => ({
+/** An allowance by role (T17): Cleo, a friend in Ana's Saturday, has three drops, two photos and one link. */
+const allowance = (
+  added: number,
+  external: number,
+  reserved: number,
+  externalReserved: number,
+  role: "star" | "friend" = "friend",
+) => ({
   added,
   reserved,
-  limit: 6,
+  limit: role === "star" ? 6 : 3,
+  photo_added: added - external,
+  photo_reserved: reserved - externalReserved,
+  photo_limit: role === "star" ? 6 : 2,
   external_added: external,
   external_reserved: externalReserved,
-  external_limit: 2,
+  external_limit: role === "star" ? 2 : 1,
+  is_star: role === "star",
 });
 const cleosOwnCard = () => ({
   view: "own",
@@ -426,6 +443,7 @@ describe("the leak scanner passes what may be shown", () => {
             photo: { width: 1200, height: 900, media_version: "v_old" },
             reactions: [],
             viewer_favourite: false,
+            section: "friends",
           },
         ],
         highlights: [],
@@ -968,8 +986,11 @@ describe("the leak scanner catches each planted leak with its own check", () => 
   });
 
   it("catches counts the viewer may not see: an allowance past their own drops and reservations, and a wrong place in the day (T15)", () => {
+    // Cleo's one live drop in Saturday is a video link and her one live slot a photo's, so a photo added
+    // or a second slot is someone else's or a hidden one (T15).
     expect(at(scan(answer(ownDay(allowance(3, 2, 2, 1))), context("getOwnDay", cleo)), "world")).toEqual([
       "$.allowance.added",
+      "$.allowance.photo_added",
       "$.allowance.external_added",
       "$.allowance.reserved",
       "$.allowance.external_reserved",
@@ -978,10 +999,15 @@ describe("the leak scanner catches each planted leak with its own check", () => 
     // each count over Cleo's one live drop and one live slot is someone else's or a hidden one.
     expect(at(scan(answer(ownDay(allowance(2, 1, 2, 0))), context("getOwnDay", cleo)), "world")).toEqual([
       "$.allowance.added",
+      "$.allowance.photo_added",
       "$.allowance.reserved",
+      "$.allowance.photo_reserved",
     ]);
     const removed = { drop_id: "drp_cleo", state: "withdrawn", allowance: allowance(2, 1, 0, 0) };
-    expect(at(scan(answer(removed), context("removeDrop", cleo)), "world")).toEqual(["$.allowance.added"]);
+    expect(at(scan(answer(removed), context("removeDrop", cleo)), "world")).toEqual([
+      "$.allowance.added",
+      "$.allowance.photo_added",
+    ]);
     // A photo withdrawn after its day opened still holds its slot (spec 11): it counts, one more doesn't.
     const late = (added: number) => ({
       drop_id: "drp_cleo_late",
@@ -991,11 +1017,39 @@ describe("the leak scanner catches each planted leak with its own check", () => 
     expect(at(scan(answer(late(1)), context("removeDrop", cleo, { now: AFTER_CLOSE })), "world")).toEqual([]);
     expect(at(scan(answer(late(2)), context("removeDrop", cleo, { now: AFTER_CLOSE })), "world")).toEqual([
       "$.allowance.added",
+      "$.allowance.photo_added",
     ]);
     const lateFalse = { ...upcomingDay([], eve), viewer: { is_star: false, joined_later: false } };
     expect(at(scan(answer(lateFalse), context("getOccurrence", eve)), "world")).toEqual(["$.viewer.joined_later"]);
     const notStar = { ...upcomingDay([], ana), viewer: { is_star: false, joined_later: false } };
     expect(at(scan(answer(notStar), context("getOccurrence", ana)), "world")).toEqual(["$.viewer.is_star"]);
+  });
+
+  it("catches an allowance that isn't the viewer's own role in the day: the star's limits for a friend, or a wrong is_star (T17)", () => {
+    // Cleo is a friend in Ana's Saturday: three drops, two photos and one link.
+    expect(at(scan(answer(ownDay(allowance(1, 1, 1, 0))), context("getOwnDay", cleo)), "world")).toEqual([]);
+    expect(at(scan(answer(ownDay(allowance(1, 1, 1, 0, "star"))), context("getOwnDay", cleo)), "world")).toEqual([
+      "$.allowance.is_star",
+      "$.allowance",
+    ]);
+    const friendsLimitsAsStar = { ...allowance(1, 1, 1, 0), is_star: true };
+    expect(at(scan(answer(ownDay(friendsLimitsAsStar)), context("getOwnDay", cleo)), "world")).toEqual([
+      "$.allowance.is_star",
+    ]);
+    const starsLimits = { ...allowance(1, 1, 1, 0), limit: 6, photo_limit: 6, external_limit: 2 };
+    expect(at(scan(answer(ownDay(starsLimits)), context("getOwnDay", cleo)), "world")).toEqual(["$.allowance"]);
+    // The same in a refusal, whose day is its target: PHOTO_LIMIT carries Cleo's own counts only.
+    const refusal = (counts: ReturnType<typeof allowance>) =>
+      answer({ code: "PHOTO_LIMIT", target: saturday, next_target: nextSaturday, allowance: counts }, 409);
+    expect(scan(refusal(allowance(1, 1, 1, 0)), context("createReservation", cleo))).toEqual([]);
+    expect(at(scan(refusal(allowance(3, 1, 0, 0)), context("createReservation", cleo)), "world")).toEqual([
+      "$.allowance.added",
+      "$.allowance.photo_added",
+    ]);
+    expect(at(scan(refusal(allowance(1, 1, 1, 0, "star")), context("createReservation", cleo)), "world")).toEqual([
+      "$.allowance.is_star",
+      "$.allowance",
+    ]);
   });
 
   it("catches a day link to a day that hasn't closed, and a cover that isn't a photo", () => {
