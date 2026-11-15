@@ -1,0 +1,42 @@
+
+ RUN  v5.0.5 <scratch worktree>/tests
+
+ ❯ src/db/photo-messages.test.ts (20 tests | 1 failed) 717ms
+   ❯ T63 to T65: a message holds text, a photo or both, and its photo goes only with it (8)
+     × marks its upload used only for a message that was inserted, never one an ON CONFLICT skips or turns into an edit; an upload starts unused, and only a photo message's is ever used (T65) 26ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/photo-messages.test.ts > T63 to T65: a message holds text, a photo or both, and its photo goes only with it > marks its upload used only for a message that was inserted, never one an ON CONFLICT skips or turns into an edit; an upload starts unused, and only a photo message's is ever used (T65)
+AssertionError: expected 2026-11-07T09:00:00.000Z to be null
+
+- Expected:
+null
+
++ Received:
+2026-11-07T09:00:00.000Z
+
+ ❯ src/db/photo-messages.test.ts:389:35
+    387|       `;
+    388|       expect(skipped.count).toBe(0);
+    389|       expect(await usedAt(photo)).toBeNull();
+       |                                   ^
+    390|       await tx`
+    391|         INSERT INTO app.comments (id, drop_id, author_interval_id, bod…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/photo-messages.test.ts:375:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 4 passed (5)
+      Tests  1 failed | 85 passed (86)
+   Start at  22:46:22
+   Duration  3.73s (tests 82%, import 11%, transform 6%, worker 1%)
+
+    Isolate  5 workers spawned · ~107ms startup each (spawn + environment, per file)
+             at least ~427ms faster with isolate: false — reuses workers across files instead of one per file
+

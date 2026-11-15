@@ -1,0 +1,179 @@
+== B01 0010's check of existing rows lets one through: CAUGHT; exit 1 ['Tests  1 failed | 17 passed (18)']
+    × fills the star's limits and a friend's from the rows' intervals, keeping every count, the star's beyond a friend's too; a friend's row over them stops
+== B02 0010's fill gives a friend the star's photos: CAUGHT; exit 1 ['Tests  1 failed | 17 passed (18)']
+    × fills the star's limits and a friend's from the rows' intervals, keeping every count, the star's beyond a friend's too; a friend's row over them stops
+== B03 everyone is the star: CAUGHT; exit 1 ['Tests  4 failed | 24 passed (28)']
+    × keeps each member's counts on each day apart from every other's (ND04) 45ms
+    × refuses a counter that names its own limits, and any change to them (T17) 16ms
+    × refuses a friend's third photo, second link, or a photo slot beyond two photos (addendum 2) 15ms
+    × writes each counter's limits from its holder's role in that day: the star's 6, 6 and 2, anyone else's 3, 2 and 1 (addendum 2) 25ms
+== B04 nobody is the star: CAUGHT; exit 1 ['Tests  4 failed | 24 passed (28)']
+    × keeps each member's counts on each day apart from every other's (ND04) 54ms
+    × refuses a second live drop with the same scoped hash, and allows another author's 12ms
+    × refuses a seventh drop or a third link in the counter 26ms
+    × writes each counter's limits from its holder's role in that day: the star's 6, 6 and 2, anyone else's 3, 2 and 1 (addendum 2) 25ms
+== B05 a caller may name the limits: CAUGHT; exit 1 ['Tests  1 failed | 27 passed (28)']
+    × refuses a counter that names its own limits, and any change to them (T17) 16ms
+== B06 the limits may change: CAUGHT; exit 1 ['Tests  1 failed | 27 passed (28)']
+    × refuses a counter that names its own limits, and any change to them (T17) 19ms
+== B07 reserved photo slots uncounted: CAUGHT; exit 1 ['Tests  1 failed | 27 passed (28)']
+    × refuses a friend's third photo, second link, or a photo slot beyond two photos (addendum 2) 21ms
+== B08 a link more: CAUGHT; exit 1 ['Tests  1 failed | 27 passed (28)']
+    × refuses a friend's third photo, second link, or a photo slot beyond two photos (addendum 2) 23ms
+== B09 a drop more (expected equivalent: photos and links bound the total): NOT CAUGHT; exit 0 ['Tests  28 passed (28)']
+== B10 a friend's set may be the star's photos: CAUGHT; exit 1 ['Tests  1 failed | 27 passed (28)']
+    × refuses limits outside the two roles' sets with the trigger off, as the last guard behind it (T17, T58) 10ms
+== B11 an avatar may name a drop: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × never changes the drop it's for, and can't become a drop's photo, a replacement or an avatar 39ms
+== B12 the drop may change: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × never changes the drop it's for, and can't become a drop's photo, a replacement or an avatar 34ms
+== B13 a former member may upload: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × is refused before the reveal, outside the audience, to a former member or a rejoined account, and for a drop that isn't active (T9, ND12) 47ms
+== B14 anyone may upload: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × is refused before the reveal, outside the audience, to a former member or a rejoined account, and for a drop that isn't active (T9, ND12) 50ms
+== B15 a held drop takes a photo: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × is refused before the reveal, outside the audience, to a former member or a rejoined account, and for a drop that isn't active (T9, ND12) 67ms
+== B16 before the reveal: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × is refused before the reveal, outside the audience, to a former member or a rejoined account, and for a drop that isn't active (T9, ND12) 26ms
+== B17 not at the reveal itself: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × is made by the star, a friend or the drop's author, from its reveal on 65ms
+== B18 a drop's photo has a thumbnail: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × has a thumbnail for the feed's reply preview, which a drop's photo, a replacement or an avatar never has (T10, T65) 25ms
+== B19 a rendition kind outside the contract: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × lists exactly the contract's upload purposes and renditions 6ms
+== B20 a photo for two messages: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × takes only its author's own ready upload, not lapsed, made for its drop, and only once 52ms
+== B21 another drop's photo: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × takes only its author's own ready upload, not lapsed, made for its drop, and only once 35ms
+== B22 an edit empties a text message: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × never adds, replaces or clears a standing message's photo, and lets emptied text keep it (FQ107) 44ms
+== B23 an ended message keeps its photo: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × keeps neither text nor photo once a message ends, and never deletes an upload a message holds (ND13) 16ms
+== B24 the preview's index on every message: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × indexes each drop's standing photo messages, latest first, for the reply preview (T65) 6ms
+== B25 a message starts at a later version: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × starts every message active, at its first version 13ms
+== B26 a message dated before the reveal: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × refuses a message with neither, one before the reveal, and one dated before it with a later updated_at (ND08) 23ms
+== B27 a message starts ended: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × starts every message active, at its first version 17ms
+== B28 a photo added to a text message: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × never adds, replaces or clears a standing message's photo, and lets emptied text keep it (FQ107) 16ms
+== B29 a photo replaced: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × never adds, replaces or clears a standing message's photo, and lets emptied text keep it (FQ107) 28ms
+== B30 a photo cleared from a standing message: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × never adds, replaces or clears a standing message's photo, and lets emptied text keep it (FQ107) 20ms
+== B31 an upload still being prepared: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × takes only its author's own ready upload, not lapsed, made for its drop, and only once 40ms
+== B32 a lapsed upload: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × takes only its author's own ready upload, not lapsed, made for its drop, and only once 41ms
+== B33 someone else's upload: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × takes only its author's own ready upload, not lapsed, made for its drop, and only once 26ms
+== B34 a removal of a message already ended: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × refuses a removal of a message that has ended, one as pictured from outside the drop's audience, one citing another drop, an operator's action that is
+== B35 its author removes it as pictured: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × refuses a pictured removal by its author, of a message with no photo, or by a former member; an operator's without its action; and a drop's end while 
+== B36 a text message removed as pictured: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × refuses a pictured removal by its author, of a message with no photo, or by a former member; an operator's without its action; and a drop's end while 
+== B37 a former member removes as pictured: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × refuses a pictured removal by its author, of a message with no photo, or by a former member; an operator's without its action; and a drop's end while 
+== B38 an operator's action about another message: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × refuses a removal of a message that has ended, one as pictured from outside the drop's audience, one citing another drop, an operator's action that is
+== B39 a moderation removal with no action at all: CAUGHT; exit 1 ['Tests  2 failed | 18 passed (20)']
+    × refuses a pictured removal by its author, of a message with no photo, or by a former member; an operator's without its action; and a drop's end while 
+    × refuses a removal of a message that has ended, one as pictured from outside the drop's audience, one citing another drop, an operator's action that is
+== B40 a standing drop takes its conversation: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × refuses a pictured removal by its author, of a message with no photo, or by a former member; an operator's without its action; and a drop's end while 
+== B41 someone outside the drop's audience removes as pictured: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × refuses a removal of a message that has ended, one as pictured from outside the drop's audience, one citing another drop, an operator's action that is
+== B42 an actor on another reason: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × refuses a removal of a message that has ended, one as pictured from outside the drop's audience, one citing another drop, an operator's action that is
+== B43 an action on another reason: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × refuses a removal of a message that has ended, one as pictured from outside the drop's audience, one citing another drop, an operator's action that is
+== B44 a removal deleted: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × writes a removal once, never changed or deleted 23ms
+== B45 a removal truncated: CAUGHT; exit 1 ['Tests  3 failed (3)']
+    × gives every table that refuses a DELETE a trigger that refuses TRUNCATE 36ms
+    × refuses TRUNCATE on each such table that no foreign key references, by its own trigger 13ms
+    × refuses a cascading TRUNCATE on every such table, by the table's own trigger 17ms
+== B46 a record whose message stands: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × refuses at commit a removed message without its record, and a record whose message isn't removed 28ms
+== B47 a removed message with no record: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × refuses at commit a removed message without its record, and a record whose message isn't removed 20ms
+== B48 an upload for any drop whose audience holds its owner: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × is refused before the reveal, outside the audience, to a former member or a rejoined account, and for a drop that isn't active (T9, ND12) 58ms
+== B49 a removal citing another drop: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × refuses a removal of a message that has ended, one as pictured from outside the drop's audience, one citing another drop, an operator's action that is
+== B50 a friend's reserved link uncounted: CAUGHT; exit 1 ['Tests  1 failed | 27 passed (28)']
+    × refuses a friend's third photo, second link, or a photo slot beyond two photos (addendum 2) 43ms
+== B51 a record for a message nobody ends: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × refuses at commit a removed message without its record, and a record whose message isn't removed 20ms
+== B52 a moderation removal citing any action on the message: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × refuses a removal of a message that has ended, one as pictured from outside the drop's audience, one citing another drop, an operator's action that is
+== B53 a moderation removal citing any kind of target: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × refuses a removal of a message that has ended, one as pictured from outside the drop's audience, one citing another drop, an operator's action that is
+== B54 a reason outside the list: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × refuses a removal of a message that has ended, one as pictured from outside the drop's audience, one citing another drop, an operator's action that is
+== B55 0010 counts the star's rows against a friend's allowance: CAUGHT; exit 1 ['Tests  1 failed | 17 passed (18)']
+    × fills the star's limits and a friend's from the rows' intervals, keeping every count, the star's beyond a friend's too; a friend's row over them stops
+== B56 a used upload taken again: CAUGHT; exit 1 ['Tests  2 failed | 18 passed (20)']
+    × never lets a used upload back into a message, after its author's deletion, a pictured removal or the operator's (T25, T65) 34ms
+    × takes only its author's own ready upload, not lapsed, made for its drop, and only once 52ms
+== B57 the commit leaves the upload unused: CAUGHT; exit 1 ['Tests  3 failed | 17 passed (20)']
+    × marks its upload used only for a message that was inserted, never one an ON CONFLICT skips or turns into an edit; an upload starts unused, and only a 
+    × never lets a used upload back into a message, after its author's deletion, a pictured removal or the operator's (T25, T65) 18ms
+    × takes only its author's own ready upload, not lapsed, made for its drop, and only once 57ms
+== B58 the used mark cleared: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × takes only its author's own ready upload, not lapsed, made for its drop, and only once 56ms
+== B59 a message deleted: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × is ended in place and never deleted, standing or ended (T24, T25) 18ms
+== B60 a message truncated: CAUGHT; exit 1 ['Tests  2 failed | 1 passed (3)']
+    × gives every table that refuses a DELETE a trigger that refuses TRUNCATE 32ms
+    × refuses a cascading TRUNCATE on every such table, by the table's own trigger 8ms
+== B61 the used mark written before the conflict check: CAUGHT; exit 1 ['Tests  2 failed | 18 passed (20)']
+    × marks its upload used only for a message that was inserted, never one an ON CONFLICT skips or turns into an edit; an upload starts unused, and only a 
+    × takes only its author's own ready upload, not lapsed, made for its drop, and only once 57ms
+== B62 an upload made already used: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × marks its upload used only for a message that was inserted, never one an ON CONFLICT skips or turns into an edit; an upload starts unused, and only a 
+== B63 a drop's photo marked used: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × marks its upload used only for a message that was inserted, never one an ON CONFLICT skips or turns into an edit; an upload starts unused, and only a 
+== B64 a removed drop keeps its conversation: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × records a pictured removal, an operator's, and its drop's end, each with its message removed 44ms
+== B65 a replacement has a thumbnail: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × has a thumbnail for the feed's reply preview, which a drop's photo, a replacement or an avatar never has (T10, T65) 33ms
+== B66 an avatar has a thumbnail: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × has a thumbnail for the feed's reply preview, which a drop's photo, a replacement or an avatar never has (T10, T65) 25ms
+== B67 a caller may name the total: CAUGHT; exit 1 ['Tests  1 failed | 27 passed (28)']
+    × refuses a counter that names its own limits, and any change to them (T17) 16ms
+== B68 a caller may name the photos: CAUGHT; exit 1 ['Tests  1 failed | 27 passed (28)']
+    × refuses a counter that names its own limits, and any change to them (T17) 16ms
+== B69 a caller may name the links: CAUGHT; exit 1 ['Tests  1 failed | 27 passed (28)']
+    × refuses a counter that names its own limits, and any change to them (T17) 17ms
+== B70 the star's set without its total: CAUGHT; exit 1 ['Tests  1 failed | 27 passed (28)']
+    × refuses limits outside the two roles' sets with the trigger off, as the last guard behind it (T17, T58) 22ms
+== B71 the star's set without its photos: CAUGHT; exit 1 ['Tests  1 failed | 27 passed (28)']
+    × refuses limits outside the two roles' sets with the trigger off, as the last guard behind it (T17, T58) 13ms
+== B72 the star's set without its links: CAUGHT; exit 1 ['Tests  1 failed | 27 passed (28)']
+    × refuses limits outside the two roles' sets with the trigger off, as the last guard behind it (T17, T58) 15ms
+== B73 a friend's set without its total: CAUGHT; exit 1 ['Tests  1 failed | 27 passed (28)']
+    × refuses limits outside the two roles' sets with the trigger off, as the last guard behind it (T17, T58) 14ms
+== B74 a friend's set without its photos: CAUGHT; exit 1 ['Tests  1 failed | 27 passed (28)']
+    × refuses limits outside the two roles' sets with the trigger off, as the last guard behind it (T17, T58) 11ms
+== B75 a friend's set without its links: CAUGHT; exit 1 ['Tests  1 failed | 27 passed (28)']
+    × refuses limits outside the two roles' sets with the trigger off, as the last guard behind it (T17, T58) 14ms
+== B76 a null total limit: CAUGHT; exit 1 ['Tests  1 failed | 27 passed (28)']
+    × refuses limits outside the two roles' sets with the trigger off, as the last guard behind it (T17, T58) 18ms
+== B77 a null photo limit: CAUGHT; exit 1 ['Tests  1 failed | 27 passed (28)']
+    × refuses limits outside the two roles' sets with the trigger off, as the last guard behind it (T17, T58) 20ms
+== B78 a null link limit: CAUGHT; exit 1 ['Tests  1 failed | 27 passed (28)']
+    × refuses limits outside the two roles' sets with the trigger off, as the last guard behind it (T17, T58) 18ms
+restored:  M docs/QUESTIONS.md
+ M tests/src/db/drops.test.ts
+ M tests/src/db/kept.test.ts
+ M tests/src/db/migrations.test.ts
+ M tests/src/db/safety.test.ts
+?? db/migrations/0010_allowance_by_role.sql
+?? db/migrations/0011_photo_messages.sql
+?? docs/plans/api-b0-new-direction-db.md
+?? tests/src/db/photo-messages.test.ts
+
