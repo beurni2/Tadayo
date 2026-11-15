@@ -1,6 +1,6 @@
 # Tadayo invariants
 
-Every pull request keeps these rules. They come from the build specification v3 (`docs/tadayo-build-spec-v3.md`), the design book revision 2.1 (`docs/tadayo-design-book-2.1.md`) and the founder. A change that breaks one is wrong even if it works. Every PR lists the invariants it touches, and its independent review checks them (`docs/GITHUB.md`).
+Every pull request keeps these rules. They come from the build specification v3 (`docs/tadayo-build-spec-v3.md`), the design book revision 2.1 (`docs/tadayo-design-book-2.1.md`), the founder's new direction addendum, revision 1 (`docs/tadayo-new-direction-addendum-r1.md`), and the founder. A change that breaks one is wrong even if it works. Every PR lists the invariants it touches, and its independent review checks them (`docs/GITHUB.md`).
 
 How sources are cited:
 - **spec 06**: section 06 of the build specification.
@@ -9,6 +9,8 @@ How sources are cited:
 - **screen H01**: a screen in the spec's inventory (spec 29). The spec reuses A01 to A03 for both rules and screens, so screens always carry the word "screen".
 - **book p13**: page 13 of the design book.
 - **FQ20** and **ADR-006**: entries in `docs/QUESTIONS.md` and `docs/DECISIONS.md`.
+- **addendum 4**: section 4 of the new direction addendum (`docs/tadayo-new-direction-addendum-r1.md`).
+- **ND07**: its verification item 7.
 
 ## Time, reveal and Home
 
@@ -25,7 +27,7 @@ How sources are cited:
     - Every member shares the same two instants. A member who is travelling sees the local equivalent, with the club's zone available.
 
     (A13, spec 05; Q03)
-- **T3. The reveal is the cutoff (D02).** A drop joins an occurrence only if its commit, holding the occurrence lock, reads server time before `reveal_at`. From that instant the occurrence is frozen: no new drops, replacements, caption edits or highlight changes, only removal. A withdrawal after the reveal never reopens a slot. (spec 06, 11; Q12, Q13)
+- **T3. The reveal is the cutoff (D02).** A drop joins an occurrence only if its commit, holding the occurrence lock, reads server time before `reveal_at`. From that instant the occurrence's drops and highlights are frozen: no new drops, replacements, caption edits or highlight changes, only removal. The freeze doesn't reach conversations: comments, photo replies included, go on after the reveal and after the day closes (T64). A withdrawal after the reveal never reopens a slot. (spec 06, 11; addendum 7; Q12, Q13)
 - **T4. Nothing is retargeted silently.** A missed cutoff, an upload that finishes late, a changed recipient or a full allowance returns the work as a draft, with the exact next date for the person to confirm.
     - The server never moves a drop to another occurrence.
     - The client never advances a target by itself.
@@ -74,7 +76,7 @@ How sources are cited:
     - Media leaves the server only through the API: the media route, which runs the read predicate on every request, and the author's own preview (T11). Both stream the bytes with private, no-store caching.
     - No signed read URL or media token ever reaches a client: a CDN can keep serving a signed URL after it expires (ADR-009). This is stricter than D10's five minutes.
     - The one storage URL a client ever receives is the signed upload URL for its own pending upload: one object, write only, with overwriting off.
-    - Every derivative (display, full, widget still, Live Photo motion) has the same audience and reveal boundary as its source.
+    - Every derivative (display, full, widget still, Live Photo motion) has the same audience and reveal boundary as its source. A photo in a conversation and its thumbnail have the audience of the drop they answer (T63).
     - Caches of manifests and media are keyed by viewer, membership interval and content version, never shared club-wide.
 
     (spec 33; D10)
@@ -102,13 +104,16 @@ How sources are cited:
 
 ## Limits, commits and receipts
 
-- **T17. Six and two, per contributor per occurrence.**
-    - For each contributor membership interval and occurrence: at most six active drops, of which at most two are external video links. Live reservations count towards both.
-    - The star's own allowance has the same limits.
-    - A highlight is a pointer, never a seventh drop.
-    - The limits are enforced in one transaction with row locks or serializable isolation, never by a counter CHECK alone.
+- **T17. Allowances by role, per contributor per occurrence.** For each contributor membership interval and occurrence, live reservations included:
+    - **the star** (the author's interval is the occurrence's star interval, as the server reads them; never a flag from the app): at most six drops, of which at most two are external video links;
+    - **anyone else:** at most three drops: at most two photos and at most one external video link. A friend's third drop can only be a video link;
+    - a Live Photo counts as one photo; a replacement that changes a drop's kind is checked against the limits again;
+    - a highlight is a pointer, never an extra drop; Drafts and photos in conversations use none of it;
+    - per occurrence, never per week, even for a member with two days;
+    - enforced in one transaction with row locks or serializable isolation; the database's last guard holds each role's limits, and a counter CHECK is never the only guard;
+    - a refusal names the exact day and the caller's own usage, never anyone else's (T15).
 
-    (A06, A07, spec 11, 31; Q10, Q14)
+    (A06, A07, spec 11, 31; addendum 2; Q10, Q14; ND01 to ND04)
 - **T18. Reservations expire.** A slot reserved for a preparing upload has an expiry. The expiry, or a withdrawal before the reveal, releases it. A replacement reuses its slot. No phantom slots. (spec 11)
 - **T19. One commit per idempotency key.** Every mutation that a retry could duplicate carries a key, created when the action starts and reused on every retry.
     - The same key and body return the original result, even after the cutoff or midnight.
@@ -136,11 +141,11 @@ How sources are cited:
     A favourite, a cache, a widget snapshot, a notification or a deep link never brings content back. (spec 07, 18, 22)
 - **T24. Removal reaches everything at once.**
     - Authoritative reads fail immediately. Media comes only through the API (T12), so a removed photo stops loading at once.
-    - The feed, highlights, reactions, comments, favourites, search, widget candidates, suggestions, manifests and renditions are invalidated.
+    - The feed, highlights, reactions, comments and their photos, the feed's reply preview, favourites, search, widget candidates, suggestions, manifests and renditions are invalidated.
     - A copy already on someone's phone goes at the app's next reconciliation. The app's privacy copy says exactly that.
 
     (spec 22, 33; Q19)
-- **T25. A pictured member removes without asking.** Any club member who says they're in a photo removes it club-wide at once, with no approval and no public reason. The removal is audited. The star is told neutrally, without naming who asked. (spec 22)
+- **T25. A pictured member removes without asking.** Any club member who says they're in a photo removes it club-wide at once, with no approval and no public reason. The removal is audited. The star is told neutrally, without naming who asked. (spec 22) This holds for a photo in a conversation: removing it never removes the drop it answers (addendum 5; FQ108).
 - **T26. Leaving and blocking are explicit.**
     - **Leaving** asks whether to keep or withdraw contributions, and ends club and favourites access either way.
     - **Blocking** lists the shared clubs and offers Block and leave these clubs. It withdraws pending contributions, asks keep or withdraw for past ones, and revokes membership access.
@@ -149,7 +154,7 @@ How sources are cited:
     (spec 22, D11)
 - **T27. Deletion removes authored content everywhere,** whatever was chosen when leaving a club.
     1. Sessions and memberships are revoked first.
-    2. Durable jobs then purge media, captions, comments, reactions and favourites, and derived renders are invalidated.
+    2. Durable jobs then purge media, captions, comments and their photos, reactions and favourites, and derived renders are invalidated.
 
     The targets are D10's: objects purged within 24 hours, backups expired within 30 days, both to be validated before any privacy promise is published. Audit records keep the minimum identifiers, under a written retention policy. (spec 23; D10; Q27)
 - **T28. Deletions survive a restore.** Every deletion also writes a tombstone to a log kept outside the main database. A restore replays that log before the service takes traffic. (spec 23, 34; Q28; ADR-010)
@@ -165,23 +170,26 @@ How sources are cited:
     - After logout or an account switch, the next account can't read it.
 
     (book p44, p46; spec 10, 23; FQ15)
-- **T31. The target is always explicit.** The composer and the share extension show the club, the person and the exact date before Add. Remembering the club is fine; reusing a recipient silently is not. Changing the recipient recalculates the date and the allowance. (spec 10)
+- **T31. The target is always explicit.** The composer and the share extension show the club, the person and the exact date before Add. Remembering the club is fine; reusing a recipient silently is not. Changing the recipient recalculates the date and the allowance for the new role, and keeps the person's work when it doesn't fit: nothing is added until they change it (addendum 2, 3). (spec 10)
 - **T32. Favourites are private pointers.** Favourites notify no one and count nothing. They transfer no ownership, change no widget or feed order, and copy no content. Access is rechecked on every read. (A11, spec 18; Q23)
 - **T33. Nothing is counted, ranked or chased.** None of these exist anywhere:
     - streaks, contributor rankings or leaderboards;
-    - completion scores, progress rings or six empty slots;
+    - completion scores, progress rings or empty slots;
     - read receipts, opened times or "Waiting for Debby";
-    - missed-contribution language, or reminders about who hasn't added anything.
+    - missed-contribution language, or reminders about who hasn't added anything;
+    - a response count, or anything that says who hasn't answered, or that a section of the day is empty.
 
     (A09, spec 08, 16, 21; Q22, Q25)
 - **T34. Opening is private.** Highlight animation state, opens and widget glances are local or pseudonymous instrumentation. They're never receipts and never notify anyone. (spec 15, 16, 36)
-- **T35. The day is finite.**
-    - A revealed day is one chronological feed in commit order, with the id as a tiebreak.
-    - It is never re-ranked by reactions or comments, and never followed by another stream.
+- **T35. The day is finite, the star's own drops first.**
+    - A revealed day is two sections in one scroll: "From {starName}", the star's own drops, then "From friends", everyone else's. Each is in commit order, with the id as a tiebreak.
+    - An empty section is left out with its heading. A day without the star's drops never says so.
+    - It's never re-ranked by reactions, comments or photo replies, and never followed by another stream.
+    - The same grouping on Home, in Memories and on a linked day. Stored submission times and records don't change.
     - It ends with "That's Debby's Friday."
     - A refresh doesn't move cards.
 
-    (spec 15; Q16)
+    (spec 15; addendum 4; Q16; ND05, ND06)
 
 ## Notifications
 
@@ -191,7 +199,7 @@ How sources are cited:
     - a reminder;
     - an invented reaction.
 
-    A held or removed drop is not an arrival. (spec 21; Q22)
+    A photo reply is one comment event, never a category of its own (addendum 6). A held or removed drop is not an arrival. (spec 21; Q22)
 - **T37. Two a day, with quiet hours.**
     - At most two ordinary social pushes per member per device-local day, across all clubs.
     - Quiet hours are 23:00 to 08:00 in the viewer's device zone. The 7 AM reveal opens in the app on time while its push waits.
@@ -318,3 +326,16 @@ How sources are cited:
     - Never a push, a repost or a new drop. Dismissals are durable.
 
     (spec 19)
+
+## Photo replies
+
+- **T63. A photo reply has its drop's audience.** A photo in a drop's conversation is read only by viewers who may read that drop: its immutable audience (T8), through the one read predicate (T9), plus the photo's own availability (ready, not deleted, not removed). Preparing its upload, committing the message, and every read of the message, its photo, its thumbnail and the feed's preview each check again; opening the conversation grants nothing. Joining or rejoining later never reaches an earlier drop or its replies. The bytes come only through the media route (T12). Losing the drop (a withdrawal, a removal, a suspension or the end of access) closes its conversation and every path to its photos, previews and notifications. A provider removing a video is not a withdrawal. (addendum 5, 6; ND08, ND12, ND13)
+- **T64. Photo replies come after the reveal, outside the allowance.** A photo message commits only when the server's clock, read at commit, has reached the drop's `reveal_at` (T1). Before that, no upload is prepared for one. It stays possible after the day leaves Home, and in Memories. It uses no reservation or counter, and never changes the frozen manifest. It is never a drop: it can't be highlighted, favourited as a drop, copied into Drafts or shown as a card of the day. (addendum 5, 6; ND08, ND11)
+- **T65. One quiet preview, per viewer.**
+    - Under a revealed drop, the feed shows at most one preview: the thumbnail and "{authorName} added a photo" of the latest photo reply that viewer may read now. Tapping it opens the drop's conversation at that reply. It's computed for that viewer and never cached across viewers. It's recomputed after a withdrawal, a removal or a loss of access, and it's gone when none remains.
+    - Nobody but its author sees a photo message, or a preview of it, until its photo is ready and the message has committed. Choosing or taking a photo never sends it; only Send does.
+    - There's no response count anywhere, and replies never move the drop (T35).
+    - A message holds at most one photo. Its text is optional when a ready photo is attached, keeps its 500-grapheme limit (T13), and can be edited like any comment's (FQ107). A sent photo is never replaced in place.
+    - A retried send commits one message and one notification event (T19, T54).
+
+    (addendum 5, 6; ND09, ND10, ND13, ND15)

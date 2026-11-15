@@ -120,7 +120,7 @@ How the two threads start and stay in step (ADR-025):
     - The activation rule; the club list for the switcher; club details; leaving, with the end of the membership interval. The withdraw-on-leave cascade comes in B6.
     - Privacy-matrix rows for every club route, including the unaccepted invitee and the stranger (Q05).
 - **ios:**
-    - Screen A01 (`A01-welcome`, with the labelled example, FQ23). Screens A02 and A03 are brought to their renders as they arrive.
+    - Screen A01 (`A01-welcome`, with the labelled example, FQ23), with the brand line and the new explanation (addendum 1, 3; FQ106). Screens A02 and A03 are brought to their renders as they arrive.
     - G01 (`G01-create`, then inviting people), G02 (`G02-invitation`, plus expired, changed and full), G03 (`G03-approve`, plus waiting and declined), G05 (`G05-club-details` and its members list) and G06 (`G06-switcher`).
     - `apps/web`'s invitation page, with the api lane.
 
@@ -131,8 +131,8 @@ How the two threads start and stay in step (ADR-025):
     - Schedule versions and transitions at a safe boundary; the club paused under two members (FQ16).
     - Occurrence generation several weeks ahead.
     - `GET /v1/clubs/{id}/home` with `server_now`, the active or next occurrence and the countdown fields.
-    - Reservations and counters, the six-and-two transaction (exercised with test uploads), the cutoff under the lock, idempotency.
-    - Tests: Q01 to Q04, Q09 and Q10, Q12, and Q18 with workers stopped; ADR-008's zones.
+    - Reservations and counters, with the allowance transaction by role (addendum 2; T17) (exercised with test uploads), the cutoff under the lock, idempotency.
+    - Tests: Q01 to Q04, Q09 and Q10, Q12, and Q18 with workers stopped; ADR-008's zones; ND01, ND02 (the API's half) and ND04.
 - **ios:**
     - G04 (`G04-one-day`, `G04-two-days`, the conflict state).
     - H01 waiting states (`H01-waiting`, `H01-after-close`, `H01-sunday`, awaiting activation, club paused), with countdowns from `server_now` and a VoiceOver label giving the target date.
@@ -157,6 +157,7 @@ How the two threads start and stay in step (ADR-025):
     - The commit with the immutable audience and the sealing trigger.
     - Viewer-filtered manifests with the pre-reveal DTO.
     - The media route: the read predicate on every request, the bytes streamed with private, no-store caching, nothing before the reveal, and no signed read URL ever leaving the server (ADR-009).
+    - Upload intents gain a conversation photo's purpose, refused for a drop the caller can't read or whose day hasn't opened (T63, T64); the media route serves reply photos and their thumbnails.
     - `sources/resolve`, with TikTok and Instagram normalization and the safe fetcher.
     - The duplicate checks and the caption-source rule.
     - The leak scanner over every new route. Tests: Q05 to Q12.
@@ -173,6 +174,8 @@ How the two threads start and stay in step (ADR-025):
     - C07 (`C07-uploading`, `C07-failed`, `C07-missed-cutoff`, `C07-limit`, processing, pending offline, partial batch, returned from hold) and C08.
     - F02 (`F02-upcoming`, `F02-added`, `F02-your-drops`, author preview, caption edit, replace, withdraw, the note for a member who joined later).
     - `H01-first-drop`.
+    - The role's allowance in the composer, multi-select, retry and resume, Drafts submission and the share extension; the own-day prompt, and the idea helper's own-day set; the friend's allowance line and limit states (FQ104); a change of person keeps the work (addendum 2, 3).
+    - Tests: ND01 to ND03 and ND07, the app's half.
 - **api:**
     - `PATCH` and `DELETE /v1/drops/{id}` while collecting; `PUT /v1/occurrences/{id}/highlight`.
     - The idea helper's aggregate events.
@@ -186,7 +189,7 @@ How the two threads start and stay in step (ADR-025):
     - a network capture from a non-author account;
     - the author's preview staying with the author;
 - Drafts, kept and resumed;
-- the allowance at six and two, with the race test's results;
+- the allowances by role (six and two on one's own day, two photos and one link on a friend's), from the app and the share extension, with the race test's results;
 - an upload crossing 7 AM on the dev clock, kept in Drafts with the next date offered;
 - the idea helper.
 
@@ -197,10 +200,12 @@ How the two threads start and stay in step (ADR-025):
     - The highlight order: the star's pick, then schedule order (FQ26).
     - The star's own contributions; the moderation-hold exclusion.
     - Opening and closing outbox events, with no closing push.
-    - Tests: Q14 to Q18.
+    - The revealed day in two sections, the star's own drops, then friends' (T35; addendum 4).
+    - Tests: Q14 to Q18; ND05 and ND06.
 - **ios:**
     - H01 during a day: `H01-open`, `H01-open-dark`, `H01-your-day` and `H01-quiet`, with the feed directly on Home.
     - R01: `R01-blank-caption`, `R01-past-day`, the end line, the removed placeholder, the video card, the large-text rail as a list.
+    - R01 in two sections on Home and on a linked day, the empty section left out (addendum 4; FQ105). Tests ND05 and ND06.
     - R02 (`R02-photo`, `R02-screenshot`, removed while open, the author's own view).
     - R03 (`R03-opening`: the 650 ms fold, skip, Reduce Motion, repeat).
     - Safe transitions at 7 AM and 1 AM; the offline cached state.
@@ -212,9 +217,11 @@ How the two threads start and stay in step (ADR-025):
     - Favourites; Memories with member and month filters and For me; search over names, dates and caption text.
     - Removal propagation for withdrawal, pictured removal, hiding for oneself, moderation, the end of a membership, blocks, and account deletion with the tombstone log (ADR-010).
     - Leave with keep or withdraw; reports.
-    - Tests: Q19, Q22, Q23, Q25, Q27.
+    - Comments with an optional photo (T63 to T65); the feed's reply preview; reply photos in every removal path, account deletion included.
+    - Tests: Q19, Q22, Q23, Q25, Q27; ND08, ND09 and ND11 to ND13.
 - **ios:**
     - R04 (`R04-comments`, empty, edit, reply, report, mute) and the reactions.
+    - R04's photo button, Camera and Photo Library, the attachment preview, Send, failure and retry, photo messages, and the full image and back; the preview under the drop card; Memories' day in two sections (addendum 4, 5). Tests ND09, ND10, ND13 and ND14.
     - M01 (`M01-memories`, `M01-search`, `M01-empty`, filters, no results) and M02 (`M02-favourites`, empty, the one-time explanation).
     - S01 (`S01-pictured-removal`, the author's menu, other members' menu, report, withdraw after the reveal).
     - S02 block and leave; G05's leave flow.
@@ -227,6 +234,9 @@ How the two threads start and stay in step (ADR-025):
 - at 1 AM, Home moves on and the day is in Memories;
 - favourites and search work;
 - a withdrawal and a pictured removal, with a before and after report of every surface;
+- the star's drops first, on Home and in Memories;
+- a photo reply with and without text, its preview, and its withdrawal;
+- a late joiner refused, with the privacy matrix's results;
 - leave, block and delete account;
 - the screens PDF: every state's render beside its snapshot, with the differences listed, and the inventory with no state left at `built from spec` without a stated reason.
 
@@ -242,6 +252,7 @@ How the two threads start and stay in step (ADR-025):
 
 - **api:** spec 21.
     - APNs dispatch with aggregation, the two-a-day budget across clubs (FQ30), and quiet hours in the device's zone, with the reveal push deferred.
+    - A photo reply is one comment event (T36; FQ109; ND10's notification half).
     - The access recheck at dispatch; preferences per account, club and thread; previews off by default; device registration, and its removal at logout or account switch.
     - Tests: Q22, and T36's never-cases; and, for the push registration's removal, one for each requirement and each case `docs/TECH-DESIGN.md` section 6 lists that the server meets: a removal removes only its own sign-in's registration, a new token's included, and gets the neutral `NOT_FOUND` for anything else, its own registration already removed included, and so does a removal sent after the token moved to a later sign-in, of the same account or of another, while the later sign-in keeps the token and its registration (a, d, T14); the server holds the removal's secret only in a form that can't authorize a removal (a); after a removal, and after a late registration it refused, the database holds nothing personal for that sign-in, including anything that names its account or the device or leads to either through another table, such as a session id the auth tables still link to the account (b); a push for that account that the worker sends after the removal lands, a reveal push deferred by quiet hours, an aggregated arrival and a retry of a push queued before the removal included, goes to none of the device's tokens unless a later sign-in of the same account holds that token when it is sent (the outcome); and a registration of a sign-in that lands after that sign-in's removal, or after the token moved to a later sign-in of the same account or of another, whether delayed or sent again after a lost answer, changes nothing: no registration of that sign-in remains, the later sign-in keeps the token and its registration, and a later sign-in's registration, of the same account or of another, is accepted, both its first, made after the earlier sign-in's removal and after a late registration of that sign-in was refused, and one sent again (e).
 - **ios:**
@@ -257,7 +268,8 @@ How the two threads start and stay in step (ADR-025):
 - **The restore drill**, with tombstone replay on a temporary project (Q28).
 - **The moderation exercise:** a report, a hold or removal through the `ops` scripts, and the audit trail (FQ27).
 - **Incident playbooks** in `docs/runbooks/` for spec 34's list.
-- **The events dictionary** and the weekly trial report script (ADR-012).
+- **The events dictionary** and the weekly trial report script (ADR-012), with analytics' categorical fields for the role and the kind of response (addendum 7; T51).
+- **ND15** in the readiness audit: no response count, missing-contributor display, receipt, ranking or pressure notification.
 - **The privacy pages and in-app explanations** (FQ6).
 - **`prod`** in the FQ3 region, with its data API turned off by the founder and the Supabase probe green on it. No key that reaches it is available to a run on a branch other than `main` (`docs/TECH-DESIGN.md` section 9). Before it exists, its deletion log gets an R2 bucket of its own, and each app's R2 keys, read back in Cloudflare, reach only their own environment's bucket, so no key in `dev`'s app reaches `prod`'s (section 10, FQ37).
 - **App Store Connect:**
