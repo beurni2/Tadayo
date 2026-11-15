@@ -185,7 +185,7 @@ The evidence branch must not grow without limit:
     6. Store the receipt, and commit.
 
     The commit of a drop does all of this in one transaction (T3, T8, T17, T19):
-    - checks membership, audience, media readiness, the cutoff and both limits;
+    - checks membership, audience, media readiness, the cutoff and the author's limits by role: the total and the links for the star, the total, the photos and the links for anyone else (T17);
     - inserts the immutable audience rows;
     - seals the audience with a trigger that refuses later rows.
 - **Serializers are explicit field lists per viewer role:** author, star, member before the reveal, member after it, operator (T55). The pre-reveal DTO for non-authors is exactly spec 14's whitelist (T10). The leak scanner (section 8) fails on any field outside it.
