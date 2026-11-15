@@ -1,0 +1,287 @@
+
+ RUN  v5.0.5 <scratch worktree>/tests
+
+ ❯ src/db/photo-messages.test.ts (19 tests | 19 failed) 385ms
+   ❯ T63 and T64: a photo message's upload, made for one revealed drop by its audience (4)
+     × is made by the star, a friend or the drop's author, from its reveal on 73ms
+     × is refused before the reveal, outside the audience, to a former member or a rejoined account, and for a drop that isn't active (T9, ND12) 35ms
+     × never changes the drop it's for, and can't become a drop's photo, a replacement or an avatar 36ms
+     × has a thumbnail for the feed's reply preview, which a drop's photo never has (T10, T65) 15ms
+   ❯ T63 to T65: a message holds text, a photo or both, and its photo goes only with it (7)
+     × commits a photo alone, text alone, or both, from the reveal, in Memories too, moving no counter (ND09, ND11) 20ms
+     × refuses a message with neither, one before the reveal, and one dated before it with a later updated_at (ND08) 25ms
+     × starts every message active, at its first version 18ms
+     × takes only its author's own ready upload, not lapsed, made for its drop, and only once 21ms
+     × never adds, replaces or clears a standing message's photo, and lets emptied text keep it (FQ107) 17ms
+     × keeps neither text nor photo once a message ends, and never deletes an upload a message holds (ND13) 15ms
+     × is ended in place and never deleted, standing or ended (T24, T25) 14ms
+   ❯ T25 and FQ108: a message removed by someone other than its author is recorded once (6)
+     × records a pictured removal, an operator's, and its drop's end, each with its message removed 11ms
+     × never lets a used upload back into a message, after its author's deletion, a pictured removal or the operator's (T25, T65) 12ms
+     × refuses a pictured removal by its author, of a message with no photo, or by a former member; an operator's without its action; and a drop's end while the drop stands 16ms
+     × refuses a removal of a message that has ended, one as pictured from outside the drop's audience, one citing another drop, an operator's action that isn't this message's removal, a reason outside the list, and an actor or action its reason doesn't take 14ms
+     × refuses at commit a removed message without its record, and a record whose message isn't removed 12ms
+     × writes a removal once, never changed or deleted 16ms
+   ❯ the schema's lists and the latest photo message (2)
+     × lists exactly the contract's upload purposes and renditions 4ms
+     × indexes each drop's standing photo messages, latest first, for the reply preview (T65) 2ms
+ ❯ src/db/kept.test.ts (3 tests | 1 failed) 83ms
+   ❯ rows kept for good can't be truncated (3)
+     × gives every table that refuses a DELETE a trigger that refuses TRUNCATE 37ms
+ ❯ src/db/drops.test.ts (28 tests | 6 failed) 586ms
+   ❯ T17: allowances by role, as a last guard behind the counter's lock (7)
+     × writes each counter's limits from its holder's role in that day: the star's 6, 6 and 2, anyone else's 3, 2 and 1 (addendum 2) 21ms
+     × refuses a counter that names its own limits, and any change to them (T17) 12ms
+     × refuses a friend's third photo, second link, or a photo slot beyond two photos (addendum 2) 22ms
+     × refuses limits outside the two roles' sets with the trigger off, as the last guard behind it (T17, T58) 11ms
+     × refuses a seventh drop or a third link in the counter 39ms
+     × keeps each member's counts on each day apart from every other's (ND04) 54ms
+ ❯ src/db/migrations.test.ts (18 tests | 1 failed) 261ms
+   ❯ 0010: each role's allowance, over counters made before it (T17, T57; addendum 7) (1)
+     × fills the star's limits and a friend's from the rows' intervals, keeping every count, the star's beyond a friend's too; a friend's row over them stops it 2ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 27 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/drops.test.ts > T17: allowances by role, as a last guard behind the counter's lock > writes each counter's limits from its holder's role in that day: the star's 6, 6 and 2, anyone else's 3, 2 and 1 (addendum 2)
+ FAIL  src/db/drops.test.ts > T17: allowances by role, as a last guard behind the counter's lock > refuses a friend's third photo, second link, or a photo slot beyond two photos (addendum 2)
+ FAIL  src/db/drops.test.ts > T17: allowances by role, as a last guard behind the counter's lock > refuses a seventh drop or a third link in the counter
+ FAIL  src/db/drops.test.ts > T17: allowances by role, as a last guard behind the counter's lock > keeps each member's counts on each day apart from every other's (ND04)
+PostgresError: column "total_limit" does not exist
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ counterOf src/db/drops.test.ts:263:6
+    261|         committed_external: number;
+    262|       }[]
+    263|     >`
+       |      ^
+    264|       SELECT total_limit, photo_limit, external_limit, committed_total…
+    265|        WHERE occurrence_id = ${day} AND interval_id = ${member.interva…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/27]⎯
+
+ FAIL  src/db/drops.test.ts > T17: allowances by role, as a last guard behind the counter's lock > refuses a counter that names its own limits, and any change to them (T17)
+AssertionError: column "total_limit" of relation "contribution_counters" does not exist: expected '42703' to be '23000' // Object.is equality
+
+Expected: "23000"
+Received: "42703"
+
+ ❯ expectRefused src/db/harness.ts:112:37
+    110|   expect(caught, `expected Postgres to refuse with ${code}`).toBeInsta…
+    111|   const error = caught as postgres.PostgresError;
+    112|   expect(error.code, error.message).toBe(code);
+       |                                     ^
+    113|   if (message) expect(error.message).toMatch(message);
+    114| }
+ ❯ src/db/drops.test.ts:305:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/drops.test.ts:303:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/27]⎯
+
+ FAIL  src/db/drops.test.ts > T17: allowances by role, as a last guard behind the counter's lock > refuses limits outside the two roles' sets with the trigger off, as the last guard behind it (T17, T58)
+PostgresError: trigger "contribution_counters_limits" for table "contribution_counters" does not exist
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/27]⎯
+
+ FAIL  src/db/kept.test.ts > rows kept for good can't be truncated > gives every table that refuses a DELETE a trigger that refuses TRUNCATE
+AssertionError: expected [ 'candidates', 'clubs', …(16) ] to deeply equal [ 'candidates', 'clubs', …(18) ]
+
+- Expected
++ Received
+
+@@ -1,10 +1,8 @@
+  [
+    "candidates",
+    "clubs",
+-   "comment_removals",
+-   "comments",
+    "deletion_tombstones",
+    "drop_audience",
+    "drop_removals",
+    "drops",
+    "highlights",
+
+ ❯ src/db/kept.test.ts:46:47
+     44|   it("gives every table that refuses a DELETE a trigger that refuses T…
+     45|     const tables = await kept();
+     46|     expect(tables.map((table) => table.name)).toEqual([
+       |                                               ^
+     47|       "candidates",
+     48|       "clubs",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/27]⎯
+
+ FAIL  src/db/migrations.test.ts > 0010: each role's allowance, over counters made before it (T17, T57; addendum 7) > fills the star's limits and a friend's from the rows' intervals, keeping every count, the star's beyond a friend's too; a friend's row over them stops it
+Error: ENOENT: no such file or directory, open '<scratch worktree>/db/migrations/0010_allowance_by_role.sql'
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/27]⎯
+
+ FAIL  src/db/photo-messages.test.ts > T63 and T64: a photo message's upload, made for one revealed drop by its audience > is made by the star, a friend or the drop's author, from its reveal on
+ FAIL  src/db/photo-messages.test.ts > T63 and T64: a photo message's upload, made for one revealed drop by its audience > never changes the drop it's for, and can't become a drop's photo, a replacement or an avatar
+ FAIL  src/db/photo-messages.test.ts > T63 and T64: a photo message's upload, made for one revealed drop by its audience > has a thumbnail for the feed's reply preview, which a drop's photo never has (T10, T65)
+ FAIL  src/db/photo-messages.test.ts > T63 to T65: a message holds text, a photo or both, and its photo goes only with it > commits a photo alone, text alone, or both, from the reveal, in Memories too, moving no counter (ND09, ND11)
+ FAIL  src/db/photo-messages.test.ts > T63 to T65: a message holds text, a photo or both, and its photo goes only with it > takes only its author's own ready upload, not lapsed, made for its drop, and only once
+ FAIL  src/db/photo-messages.test.ts > T63 to T65: a message holds text, a photo or both, and its photo goes only with it > keeps neither text nor photo once a message ends, and never deletes an upload a message holds (ND13)
+ FAIL  src/db/photo-messages.test.ts > T63 to T65: a message holds text, a photo or both, and its photo goes only with it > is ended in place and never deleted, standing or ended (T24, T25)
+ FAIL  src/db/photo-messages.test.ts > T25 and FQ108: a message removed by someone other than its author is recorded once > records a pictured removal, an operator's, and its drop's end, each with its message removed
+ FAIL  src/db/photo-messages.test.ts > T25 and FQ108: a message removed by someone other than its author is recorded once > never lets a used upload back into a message, after its author's deletion, a pictured removal or the operator's (T25, T65)
+ FAIL  src/db/photo-messages.test.ts > T25 and FQ108: a message removed by someone other than its author is recorded once > refuses a pictured removal by its author, of a message with no photo, or by a former member; an operator's without its action; and a drop's end while the drop stands
+ FAIL  src/db/photo-messages.test.ts > T25 and FQ108: a message removed by someone other than its author is recorded once > writes a removal once, never changed or deleted
+PostgresError: column "conversation_drop_id" of relation "uploads" does not exist
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ photoFor src/db/photo-messages.test.ts:42:11
+     40|   const id = newId("upl");
+     41|   const at = options.at ?? AT.opened;
+     42|   await tx`
+       |           ^
+     43|     INSERT INTO app.uploads (id, owner_user_id, purpose, conversation_…
+     44|                              created_at, expires_at)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/27]⎯
+
+ FAIL  src/db/photo-messages.test.ts > T63 and T64: a photo message's upload, made for one revealed drop by its audience > is refused before the reveal, outside the audience, to a former member or a rejoined account, and for a drop that isn't active (T9, ND12)
+AssertionError: column "conversation_drop_id" of relation "uploads" does not exist: expected '42703' to be '23000' // Object.is equality
+
+Expected: "23000"
+Received: "42703"
+
+ ❯ expectRefused src/db/harness.ts:112:37
+    110|   expect(caught, `expected Postgres to refuse with ${code}`).toBeInsta…
+    111|   const error = caught as postgres.PostgresError;
+    112|   expect(error.code, error.message).toBe(code);
+       |                                     ^
+    113|   if (message) expect(error.message).toMatch(message);
+    114| }
+ ❯ src/db/photo-messages.test.ts:117:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/photo-messages.test.ts:114:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/27]⎯
+
+ FAIL  src/db/photo-messages.test.ts > T63 to T65: a message holds text, a photo or both, and its photo goes only with it > refuses a message with neither, one before the reveal, and one dated before it with a later updated_at (ND08)
+AssertionError: column "photo_upload_id" of relation "comments" does not exist: expected '42703' to be '23514' // Object.is equality
+
+Expected: "23514"
+Received: "42703"
+
+ ❯ expectRefused src/db/harness.ts:112:37
+    110|   expect(caught, `expected Postgres to refuse with ${code}`).toBeInsta…
+    111|   const error = caught as postgres.PostgresError;
+    112|   expect(error.code, error.message).toBe(code);
+       |                                     ^
+    113|   if (message) expect(error.message).toMatch(message);
+    114| }
+ ❯ src/db/photo-messages.test.ts:258:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/photo-messages.test.ts:255:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/27]⎯
+
+ FAIL  src/db/photo-messages.test.ts > T63 to T65: a message holds text, a photo or both, and its photo goes only with it > starts every message active, at its first version
+AssertionError: expected Postgres to refuse with 23000: expected undefined to be an instance of PostgresError
+ ❯ expectRefused src/db/harness.ts:110:62
+    108|     caught = error;
+    109|   }
+    110|   expect(caught, `expected Postgres to refuse with ${code}`).toBeInsta…
+       |                                                              ^
+    111|   const error = caught as postgres.PostgresError;
+    112|   expect(error.code, error.message).toBe(code);
+ ❯ src/db/photo-messages.test.ts:288:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/27]⎯
+
+ FAIL  src/db/photo-messages.test.ts > T63 to T65: a message holds text, a photo or both, and its photo goes only with it > never adds, replaces or clears a standing message's photo, and lets emptied text keep it (FQ107)
+ FAIL  src/db/photo-messages.test.ts > T25 and FQ108: a message removed by someone other than its author is recorded once > refuses a removal of a message that has ended, one as pictured from outside the drop's audience, one citing another drop, an operator's action that isn't this message's removal, a reason outside the list, and an actor or action its reason doesn't take
+ FAIL  src/db/photo-messages.test.ts > T25 and FQ108: a message removed by someone other than its author is recorded once > refuses at commit a removed message without its record, and a record whose message isn't removed
+PostgresError: column "photo_upload_id" of relation "comments" does not exist
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ message src/db/photo-messages.test.ts:71:12
+     69|   id: string = newId("cmt"),
+     70| ) {
+     71|   return tx`
+       |            ^
+     72|     INSERT INTO app.comments (id, drop_id, author_interval_id, body, p…
+     73|     VALUES (${id}, ${drop}, ${author.interval}, ${body}, ${photo}, ${a…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/27]⎯
+
+ FAIL  src/db/photo-messages.test.ts > the schema's lists and the latest photo message > lists exactly the contract's upload purposes and renditions
+AssertionError: expected [ 'avatar', 'drop_photo', …(1) ] to deeply equal [ Array(4) ]
+
+- Expected
++ Received
+
+  [
+    "avatar",
+-   "conversation_photo",
+    "drop_photo",
+    "replacement",
+  ]
+
+ ❯ src/db/photo-messages.test.ts:716:62
+    714|
+    715|   it("lists exactly the contract's upload purposes and renditions", as…
+    716|     expect(await listed("uploads", "uploads_purpose_check")).toEqual([…
+       |                                                              ^
+    717|     const renditions = new Set(
+    718|       OPERATIONS.flatMap((op) => (op.query?.shape["rendition"] as { op…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/27]⎯
+
+ FAIL  src/db/photo-messages.test.ts > the schema's lists and the latest photo message > indexes each drop's standing photo messages, latest first, for the reply preview (T65)
+AssertionError: expected undefined to be 'CREATE INDEX comments_latest_photo ON…' // Object.is equality
+
+- Expected:
+"CREATE INDEX comments_latest_photo ON app.comments USING btree (drop_id, created_at DESC, id DESC) WHERE ((state = 'active'::text) AND (photo_upload_id IS NOT NULL))"
+
++ Received:
+undefined
+
+ ❯ src/db/photo-messages.test.ts:728:27
+    726|       SELECT indexdef FROM pg_catalog.pg_indexes WHERE schemaname = 'a…
+    727|     `;
+    728|     expect(row?.indexdef).toBe(
+       |                           ^
+    729|       "CREATE INDEX comments_latest_photo ON app.comments USING btree …
+    730|         "WHERE ((state = 'active'::text) AND (photo_upload_id IS NOT N…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/27]⎯
+
+
+ Test Files  4 failed | 1 passed (5)
+      Tests  27 failed | 58 passed (85)
+   Start at  21:55:30
+   Duration  3.06s (tests 82%, import 14%, transform 3%, worker 1%)
+
+    Isolate  5 workers spawned · ~97ms startup each (spawn + environment, per file)
+             at least ~389ms faster with isolate: false — reuses workers across files instead of one per file
+

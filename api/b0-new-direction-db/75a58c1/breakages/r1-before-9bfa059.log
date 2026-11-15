@@ -1,0 +1,111 @@
+
+ RUN  v5.0.5 <scratch worktree>/tests
+
+ ❯ src/db/photo-messages.test.ts (19 tests | 3 failed) 642ms
+   ❯ T63 to T65: a message holds text, a photo or both, and its photo goes only with it (7)
+     × takes only its author's own ready upload, not lapsed, made for its drop, and only once 28ms
+     × is ended in place and never deleted, standing or ended (T24, T25) 22ms
+   ❯ T25 and FQ108: a message removed by someone other than its author is recorded once (6)
+     × never lets a used upload back into a message, after its author's deletion, a pictured removal or the operator's (T25, T65) 36ms
+ ❯ src/db/kept.test.ts (3 tests | 1 failed) 69ms
+   ❯ rows kept for good can't be truncated (3)
+     × gives every table that refuses a DELETE a trigger that refuses TRUNCATE 27ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/kept.test.ts > rows kept for good can't be truncated > gives every table that refuses a DELETE a trigger that refuses TRUNCATE
+AssertionError: expected [ 'candidates', 'clubs', …(17) ] to deeply equal [ 'candidates', 'clubs', …(18) ]
+
+- Expected
++ Received
+
+@@ -1,10 +1,9 @@
+  [
+    "candidates",
+    "clubs",
+    "comment_removals",
+-   "comments",
+    "deletion_tombstones",
+    "drop_audience",
+    "drop_removals",
+    "drops",
+    "highlights",
+
+ ❯ src/db/kept.test.ts:46:47
+     44|   it("gives every table that refuses a DELETE a trigger that refuses T…
+     45|     const tables = await kept();
+     46|     expect(tables.map((table) => table.name)).toEqual([
+       |                                               ^
+     47|       "candidates",
+     48|       "clubs",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/db/photo-messages.test.ts > T63 to T65: a message holds text, a photo or both, and its photo goes only with it > takes only its author's own ready upload, not lapsed, made for its drop, and only once
+AssertionError: expected 'app.comments: a message\'s photo is i…' to match /a message's photo is its author's own…/
+
+- Expected:
+/a message's photo is its author's own ready upload, not lapsed and never used \(T12, T63, T65\)/
+
++ Received:
+"app.comments: a message's photo is its author's own ready upload, not lapsed (T12, T63, T65)"
+
+ ❯ expectRefused src/db/harness.ts:113:38
+    111|   const error = caught as postgres.PostgresError;
+    112|   expect(error.code, error.message).toBe(code);
+    113|   if (message) expect(error.message).toMatch(message);
+       |                                      ^
+    114| }
+    115|
+ ❯ src/db/photo-messages.test.ts:315:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/photo-messages.test.ts:310:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/db/photo-messages.test.ts > T63 to T65: a message holds text, a photo or both, and its photo goes only with it > is ended in place and never deleted, standing or ended (T24, T25)
+AssertionError: expected Postgres to refuse with 23000: expected undefined to be an instance of PostgresError
+ ❯ expectRefused src/db/harness.ts:110:62
+    108|     caught = error;
+    109|   }
+    110|   expect(caught, `expected Postgres to refuse with ${code}`).toBeInsta…
+       |                                                              ^
+    111|   const error = caught as postgres.PostgresError;
+    112|   expect(error.code, error.message).toBe(code);
+ ❯ src/db/photo-messages.test.ts:444:9
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/db/photo-messages.test.ts > T25 and FQ108: a message removed by someone other than its author is recorded once > never lets a used upload back into a message, after its author's deletion, a pictured removal or the operator's (T25, T65)
+AssertionError: expected Postgres to refuse with 23000: expected undefined to be an instance of PostgresError
+ ❯ expectRefused src/db/harness.ts:110:62
+    108|     caught = error;
+    109|   }
+    110|   expect(caught, `expected Postgres to refuse with ${code}`).toBeInsta…
+       |                                                              ^
+    111|   const error = caught as postgres.PostgresError;
+    112|   expect(error.code, error.message).toBe(code);
+ ❯ src/db/photo-messages.test.ts:529:9
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  2 failed | 3 passed (5)
+      Tests  4 failed | 81 passed (85)
+   Start at  21:55:18
+   Duration  3.70s (tests 81%, import 10%, transform 7%, worker 1%)
+
+    Isolate  5 workers spawned · ~107ms startup each (spawn + environment, per file)
+             at least ~427ms faster with isolate: false — reuses workers across files instead of one per file
+

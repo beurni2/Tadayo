@@ -1,0 +1,30 @@
+--- a/tests/src/db/photo-messages.test.ts (as the breakages ran it)
++++ b/tests/src/db/photo-messages.test.ts (at 75a58c1)
+@@ -454,12 +454,7 @@
+ 
+ describe("T25 and FQ108: a message removed by someone other than its author is recorded once", () => {
+   /** The operator's action on `target`: by default, its removal of that message (FQ27). */
+-  async function operatorRemoves(
+-    tx: Tx,
+-    target: string,
+-    action = "remove_comment",
+-    kind = "comment",
+-  ): Promise<string> {
++  async function operatorRemoves(tx: Tx, target: string, action = "remove_comment", kind = "comment"): Promise<string> {
+     const id = newId("act");
+     await tx`
+       INSERT INTO app.operator_actions (id, operator, script, script_version, action, target_kind, target_id, policy, acted_at)
+@@ -610,7 +605,12 @@
+       const held = await operatorRemoves(tx, withPhoto, "hold_drop", "comment");
+       const asDrop = await operatorRemoves(tx, withPhoto, "remove_comment", "drop");
+       for (const action of [aboutOther, held, asDrop]) {
+-        await expectRefused(tx, REFUSED.integrity, (sp) => removal(sp, withPhoto, drop, "moderation", null, action), fq27);
++        await expectRefused(
++          tx,
++          REFUSED.integrity,
++          (sp) => removal(sp, withPhoto, drop, "moderation", null, action),
++          fq27,
++        );
+       }
+       await expectRefused(
+         tx,
