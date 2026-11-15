@@ -47,6 +47,7 @@ describe("rows kept for good can't be truncated", () => {
       "candidates",
       "clubs",
       "comment_removals",
+      "comments",
       "deletion_tombstones",
       "drop_audience",
       "drop_removals",

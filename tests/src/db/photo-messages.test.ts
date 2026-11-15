@@ -121,19 +121,22 @@ describe("T63 and T64: a photo message's upload, made for one revealed drop by i
         /day hasn't opened \(D07, T63\)/,
       );
       const outside = /answers drop .* only as a member of its audience \(T9, T63\)/;
+      // Another club's member, in the audience of that club's drop but never this one's.
       const other = await newWorld(tx);
+      await commitDrop(tx, other, other.ana);
       await expectRefused(tx, REFUSED.integrity, (sp) => photoFor(sp, other.cleo.user, drop), outside);
       await expectRefused(tx, REFUSED.integrity, (sp) => photoFor(sp, w.dan.user, drop), outside);
       await leave(tx, w.cleo, "Cleo", AT.opened);
       await expectRefused(tx, REFUSED.integrity, (sp) => photoFor(sp, w.cleo.user, drop, { at: AT.close }), outside);
       await joinByRoster(tx, w.club, w.ana, [{ user: w.cleo.user, label: "Cleo" }], AT.close);
+      // Cleo's new interval is in the audience of a drop committed after the rejoin, never in this one's (T8).
+      const held = await commitDrop(tx, w, w.ana);
       await expectRefused(
         tx,
         REFUSED.integrity,
         (sp) => photoFor(sp, w.cleo.user, drop, { at: after(AT.close, 60) }),
         outside,
       );
-      const held = await commitDrop(tx, w, w.ana);
       await tx`UPDATE app.drops SET state = 'held', updated_at = ${AT.edited} WHERE id = ${held}`;
       const inactive = /drop .* isn't active, so nothing is added to it \(T9, T24\)/;
       await expectRefused(tx, REFUSED.integrity, (sp) => photoFor(sp, w.ben.user, held), inactive);
@@ -307,7 +310,7 @@ describe("T63 to T65: a message holds text, a photo or both, and its photo goes 
     await rolledBack(app, async (tx) => {
       const w = await newWorld(tx);
       const [drop, another] = [await commitDrop(tx, w, w.ben), await commitDrop(tx, w, w.ana)];
-      const own = /a message's photo is its author's own ready upload, not lapsed \(T12, T63, T65\)/;
+      const own = /a message's photo is its author's own ready upload, not lapsed and never used \(T12, T63, T65\)/;
       const anas = await photoFor(tx, w.ana.user, drop);
       await expectRefused(tx, REFUSED.integrity, (sp) => message(sp, drop, w.cleo, null, anas), own);
       for (const end of ["pending", "preparing", "held", "rejected"] as const) {
@@ -329,10 +332,23 @@ describe("T63 to T65: a message holds text, a photo or both, and its photo goes 
       await expectRefused(tx, REFUSED.foreignKey, (sp) => message(sp, drop, w.cleo, null, row.upload_id));
       const photo = await photoFor(tx, w.cleo.user, drop);
       await message(tx, drop, w.cleo, null, photo);
+      const [used] = await tx<{ used_at: Date }[]>`SELECT used_at FROM app.uploads WHERE id = ${photo}`;
+      expect(used?.used_at).toEqual(AT.opened);
+      await expectRefused(tx, REFUSED.integrity, (sp) => message(sp, drop, w.cleo, "Again", photo, AT.close), own);
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) => sp`UPDATE app.uploads SET used_at = NULL WHERE id = ${photo}`,
+        /app\.uploads\.used_at is set once and can't change/,
+      );
+      // Behind the guard, one message per photo is the last guard still.
       await expectRefused(
         tx,
         REFUSED.unique,
-        (sp) => message(sp, drop, w.cleo, "Again", photo, AT.close),
+        async (sp) => {
+          await sp.unsafe("ALTER TABLE app.comments DISABLE TRIGGER comments_photo_guard");
+          await message(sp, drop, w.cleo, "Again", photo, AT.close);
+        },
         /comments_one_message_per_photo/,
       );
     });
@@ -412,14 +428,37 @@ describe("T63 to T65: a message holds text, a photo or both, and its photo goes 
       await checkAsAtCommit(tx);
     });
   });
+
+  it("is ended in place and never deleted, standing or ended (T24, T25)", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await newWorld(tx);
+      const drop = await commitDrop(tx, w, w.ben);
+      const [standing, ended] = [newId("cmt"), newId("cmt")];
+      await message(tx, drop, w.cleo, null, await photoFor(tx, w.cleo.user, drop), AT.opened, standing);
+      await message(tx, drop, w.cleo, "Hi", null, AT.opened, ended);
+      await tx`
+        UPDATE app.comments SET state = 'deleted', body = NULL, ended_at = ${AT.close}, updated_at = ${AT.close}
+         WHERE id = ${ended}
+      `;
+      for (const comment of [standing, ended]) {
+        await expectRefused(
+          tx,
+          REFUSED.integrity,
+          (sp) => sp`DELETE FROM app.comments WHERE id = ${comment}`,
+          /^app\.comments: delete refused: a message is ended in place, never deleted \(T24, T25\)/,
+        );
+      }
+    });
+  });
 });
 
 describe("T25 and FQ108: a message removed by someone other than its author is recorded once", () => {
-  async function operatorRemoves(tx: Tx, comment: string): Promise<string> {
+  /** The operator's action on `target`: by default, its removal of that message (FQ27). */
+  async function operatorRemoves(tx: Tx, target: string, action = "remove_comment", kind = "comment"): Promise<string> {
     const id = newId("act");
     await tx`
       INSERT INTO app.operator_actions (id, operator, script, script_version, action, target_kind, target_id, policy, acted_at)
-      VALUES (${id}, 'founder', 'remove-comment', ${"0".repeat(40)}, 'remove_comment', 'comment', ${comment}, 'trial.safety',
+      VALUES (${id}, 'founder', 'remove-comment', ${"0".repeat(40)}, ${action}, ${kind}, ${target}, 'trial.safety',
               ${AT.close})
     `;
     return id;
@@ -458,6 +497,40 @@ describe("T25 and FQ108: a message removed by someone other than its author is r
     });
   });
 
+  it("never lets a used upload back into a message, after its author's deletion, a pictured removal or the operator's (T25, T65)", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await newWorld(tx);
+      const drop = await commitDrop(tx, w, w.ben);
+      const [deleted, pictured, moderated] = [newId("cmt"), newId("cmt"), newId("cmt")];
+      const photos = {
+        deleted: await photoFor(tx, w.cleo.user, drop),
+        pictured: await photoFor(tx, w.cleo.user, drop),
+        moderated: await photoFor(tx, w.cleo.user, drop),
+      };
+      await message(tx, drop, w.cleo, null, photos.deleted, AT.opened, deleted);
+      await message(tx, drop, w.cleo, "Us", photos.pictured, AT.opened, pictured);
+      await message(tx, drop, w.cleo, null, photos.moderated, AT.opened, moderated);
+      await tx`
+        UPDATE app.comments SET state = 'deleted', body = NULL, photo_upload_id = NULL, ended_at = ${AT.close},
+               updated_at = ${AT.close}
+         WHERE id = ${deleted}
+      `;
+      await removal(tx, pictured, drop, "pictured", w.ana);
+      await endRemoved(tx, pictured);
+      await removal(tx, moderated, drop, "moderation", null, await operatorRemoves(tx, moderated));
+      await endRemoved(tx, moderated);
+      await checkAsAtCommit(tx);
+      for (const photo of [photos.deleted, photos.pictured, photos.moderated]) {
+        await expectRefused(
+          tx,
+          REFUSED.integrity,
+          (sp) => message(sp, drop, w.cleo, null, photo, after(AT.close, 1)),
+          /a message's photo is its author's own ready upload, not lapsed and never used \(T12, T63, T65\)/,
+        );
+      }
+    });
+  });
+
   it("refuses a pictured removal by its author, of a message with no photo, or by a former member; an operator's without its action; and a drop's end while the drop stands", async () => {
     await rolledBack(app, async (tx) => {
       const w = await newWorld(tx);
@@ -490,7 +563,7 @@ describe("T25 and FQ108: a message removed by someone other than its author is r
     });
   });
 
-  it("refuses a removal of a message that has ended, one as pictured from outside the drop's audience, an operator's action about another message, and an actor or action its reason doesn't take", async () => {
+  it("refuses a removal of a message that has ended, one as pictured from outside the drop's audience, one citing another drop, an operator's action that isn't this message's removal, a reason outside the list, and an actor or action its reason doesn't take", async () => {
     await rolledBack(app, async (tx) => {
       const w = await newWorld(tx);
       const drop = await commitDrop(tx, w, w.ben);
@@ -514,12 +587,36 @@ describe("T25 and FQ108: a message removed by someone other than its author is r
       await expectRefused(tx, REFUSED.foreignKey, (sp) =>
         removal(sp, withPhoto, drop, "pictured", { user: w.dan.user, interval: dan }),
       );
+      // A removal names its message's own drop: neither another, withdrawn, drop of the club nor,
+      // as pictured, another club's drop whose audience the remover is in.
+      const gone = await commitDrop(tx, w, w.ana);
+      await withdraw(tx, gone, w.ana, AT.close);
+      const elsewhere = await newWorld(tx);
+      const theirs = await commitDrop(tx, elsewhere, elsewhere.ben);
+      for (const cited of [
+        (sp: Tx) => removal(sp, withPhoto, gone, "drop_ended", null),
+        (sp: Tx) => removal(sp, withPhoto, theirs, "pictured", elsewhere.ana),
+      ]) {
+        await expectRefused(tx, REFUSED.foreignKey, cited, /comment_removals_comment_id_drop_id_fkey/);
+      }
+      // Only the operator's remove_comment action on this very message.
+      const fq27 = /a moderation removal cites the operator's removal of this message \(FQ27\)/;
       const aboutOther = await operatorRemoves(tx, other);
+      const held = await operatorRemoves(tx, withPhoto, "hold_drop", "comment");
+      const asDrop = await operatorRemoves(tx, withPhoto, "remove_comment", "drop");
+      for (const action of [aboutOther, held, asDrop]) {
+        await expectRefused(
+          tx,
+          REFUSED.integrity,
+          (sp) => removal(sp, withPhoto, drop, "moderation", null, action),
+          fq27,
+        );
+      }
       await expectRefused(
         tx,
-        REFUSED.integrity,
-        (sp) => removal(sp, withPhoto, drop, "moderation", null, aboutOther),
-        /a moderation removal cites the operator's removal of this message \(FQ27\)/,
+        REFUSED.check,
+        (sp) => removal(sp, withPhoto, drop, "withdraw", null),
+        /comment_removals_reason_check/,
       );
       // Each reason takes only its own: a pictured removal its member, an operator's its action.
       await expectRefused(
@@ -541,9 +638,10 @@ describe("T25 and FQ108: a message removed by someone other than its author is r
     await rolledBack(app, async (tx) => {
       const w = await newWorld(tx);
       const drop = await commitDrop(tx, w, w.ben);
-      const [bare, deleted] = [newId("cmt"), newId("cmt")];
+      const [bare, deleted, standing] = [newId("cmt"), newId("cmt"), newId("cmt")];
       await message(tx, drop, w.cleo, "Hi", null, AT.opened, bare);
       await message(tx, drop, w.cleo, null, await photoFor(tx, w.cleo.user, drop), AT.opened, deleted);
+      await message(tx, drop, w.cleo, null, await photoFor(tx, w.cleo.user, drop), AT.opened, standing);
       await expectRefused(
         tx,
         REFUSED.integrity,
@@ -566,6 +664,16 @@ describe("T25 and FQ108: a message removed by someone other than its author is r
           await checkAsAtCommit(sp);
         },
         /message .* is deleted and has a removal/,
+      );
+      // A record written for a message nobody then ends.
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        async (sp) => {
+          await removal(sp, standing, drop, "pictured", w.ana);
+          await checkAsAtCommit(sp);
+        },
+        /message .* is active and has a removal/,
       );
     });
   });

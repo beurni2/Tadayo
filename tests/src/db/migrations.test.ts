@@ -387,15 +387,16 @@ describe("0010: each role's allowance, over counters made before it (T17, T57; a
     return row;
   }
 
-  it("fills the star's limits and a friend's from the rows' intervals, keeping every count; a friend's row over them stops it, keeping nothing", async () => {
+  it("fills the star's limits and a friend's from the rows' intervals, keeping every count, the star's beyond a friend's too; a friend's row over them stops it", async () => {
     const text = await readFile(join(MIGRATIONS, "0010_allowance_by_role.sql"), "utf8");
     const replay = { version: 99, name: "allowance_by_role", sha256: "0".repeat(64), text };
     const rollback = new Error("rolled back");
     await expect(
       app.begin(async (tx) => {
         const w = await newWorld(tx);
-        await commitDrop(tx, w, w.ana);
-        await commitDrop(tx, w, w.ana, { media: "external_video" });
+        // Ana, the star, holds more than a friend may: four photos and two links.
+        for (let i = 0; i < 4; i += 1) await commitDrop(tx, w, w.ana);
+        for (let i = 0; i < 2; i += 1) await commitDrop(tx, w, w.ana, { media: "external_video" });
         await commitDrop(tx, w, w.ben);
         await commitDrop(tx, w, w.ben, { media: "external_video" });
         await checkAsAtCommit(tx);
@@ -405,8 +406,8 @@ describe("0010: each role's allowance, over counters made before it (T17, T57; a
           total_limit: 6,
           photo_limit: 6,
           external_limit: 2,
-          committed_total: 2,
-          committed_external: 1,
+          committed_total: 6,
+          committed_external: 2,
           reserved_total: 0,
           reserved_external: 0,
         });
@@ -419,7 +420,9 @@ describe("0010: each role's allowance, over counters made before it (T17, T57; a
           reserved_total: 0,
           reserved_external: 0,
         });
-        // Under 0006 alone, Ben could hold three photos; 0010 then refuses to run.
+        // Under 0006 alone, Ben could hold three photos; 0010 then refuses to run, counting Ben's row
+        // alone. What a failed file keeps is the runner's: "rolls back a migration that fails part
+        // way, with nothing of it left", above.
         await expect(
           tx.savepoint(async (sp) => {
             await undo0010(sp);
@@ -430,7 +433,6 @@ describe("0010: each role's allowance, over counters made before it (T17, T57; a
             await applyMigration(sp, { ...replay, version: 98 });
           }),
         ).rejects.toThrow(/0010: 1 contribution counters already exceed a friend's allowance; nothing is changed/);
-        expect(await counterOf(tx, w.day, w.ben)).toMatchObject({ total_limit: 3, committed_total: 2 });
         throw rollback;
       }),
     ).rejects.toBe(rollback);

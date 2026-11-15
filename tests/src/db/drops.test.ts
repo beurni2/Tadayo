@@ -352,6 +352,35 @@ describe("T17: allowances by role, as a last guard behind the counter's lock", (
         `,
         /contribution_counters_photos_within_limit/,
       );
+      // A friend's reserved link counts toward the one link, as a reserved photo toward the two.
+      const other = await newWorld(tx);
+      await commitDrop(tx, other, other.ben, { media: "external_video" });
+      await expectRefused(
+        tx,
+        REFUSED.check,
+        (sp) => sp`
+          UPDATE app.contribution_counters SET reserved_total = reserved_total + 1, reserved_external = reserved_external + 1
+           WHERE occurrence_id = ${other.day} AND interval_id = ${other.ben.interval}
+        `,
+        /contribution_counters_links_within_limit/,
+      );
+    });
+  });
+
+  it("refuses limits outside the two roles' sets with the trigger off, as the last guard behind it (T17, T58)", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await newWorld(tx);
+      await tx.unsafe("ALTER TABLE app.contribution_counters DISABLE TRIGGER contribution_counters_limits");
+      // A friend's total and link with the star's photos.
+      await expectRefused(
+        tx,
+        REFUSED.check,
+        (sp) => sp`
+          INSERT INTO app.contribution_counters (occurrence_id, interval_id, club_id, total_limit, photo_limit, external_limit)
+          VALUES (${w.day}, ${w.ben.interval}, ${w.club}, 3, 6, 1)
+        `,
+        /contribution_counters_limits_by_role/,
+      );
     });
   });
 

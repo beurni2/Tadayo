@@ -9,9 +9,12 @@
 -- counter's lock is what serializes the limits; these CHECKs are only the last guard behind it.
 --
 -- Expand, migrate, tighten (T57): three columns, filled from each row's two intervals, then made
--- NOT NULL and checked. No count, key or row is changed or deleted. The new direction holds no
--- grandfathered row (the plan's decision 3: no real data exceeds the new allowance), so a row that
--- already does stops this file, which keeps nothing, for the founder's answer (addendum 7, FQ39).
+-- NOT NULL and checked. No count, key or row is changed or deleted. No counter exists anywhere,
+-- past or upcoming (the plan's decision 3), so nothing is grandfathered: a row that already
+-- exceeds a friend's allowance stops this file, which keeps nothing, for the founder's answer (the
+-- plan's section 6; no silent change: addendum 7, FQ39). A past, revealed row would stop it too,
+-- though addendum 7 leaves historical revealed drops alone; that is accepted only because none
+-- exists.
 -- The old CHECKs on six and two stay: they are the star's own limits and hold for everyone.
 
 DO $$

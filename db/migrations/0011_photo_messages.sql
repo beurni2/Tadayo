@@ -6,21 +6,27 @@
 -- it becomes that message's photo only once it is ready and the message commits, it uses no
 -- reservation and no allowance (T64), and it can never become a drop, a replacement or an avatar.
 -- Its processing state is its upload's; its removal state is its message's. A message never
--- changes its photo, and loses it only with the whole message (FQ107).
+-- changes its photo, and loses it only with the whole message (FQ107). An upload is a message's
+-- photo once: the commit marks it used, for good, so a photo a removal took away never comes back
+-- in a new message, whatever is left of its upload (T25, T65).
 --
--- Every path ends a message in place, clearing its text and photo, then deletes the upload, whose
--- renditions go with it; each writes its tombstones (T24, T28). 0007 says a removal's purge deletes
--- comments, but one a moderation case names can't be deleted (moderation_cases' foreign key), so
--- none is: the row stays, empty, for the replies that point to it. A removal by someone other than
--- its author is recorded once, here, with its reason (T25).
+-- Every path ends a message in place, clearing its text and photo. B6's paths then delete the
+-- upload in the same transaction, whose renditions go with it, and write its tombstones (T24, T28);
+-- an account's purge does it in its own job (T27). 0007 says a removal's purge deletes comments,
+-- but one a moderation case names can't be deleted (moderation_cases' foreign key), so none is:
+-- the row stays, empty, for the replies that point to it, and a DELETE is refused. A removal by
+-- someone other than its author is recorded once, here, with its reason (T25).
 --
--- Nothing is dropped or rewritten. Three CHECKs are replaced: the upload's purposes and the
--- renditions' kinds widen, and a message may be a photo alone (addendum 5); a message that has
--- ended may now keep neither text nor photo, where a removed one could keep its text until a purge.
+-- No table, column or row is dropped or rewritten. Three CHECKs are replaced: the upload's
+-- purposes and the renditions' kinds widen, and a message may be a photo alone (addendum 5); a
+-- message that has ended may now keep neither text nor photo, where a removed one could keep its
+-- text until a purge.
 
--- A photo message's upload, scoped when it is made to the drop whose conversation it is for (T63).
+-- A photo message's upload, scoped when it is made to the drop whose conversation it is for (T63),
+-- and the instant a message took it, set once by comments_photo_guard (T65).
 ALTER TABLE app.uploads
   ADD COLUMN conversation_drop_id app.id REFERENCES app.drops,
+  ADD COLUMN used_at timestamptz,
   DROP CONSTRAINT uploads_purpose_check,
   ADD CONSTRAINT uploads_purpose_check
     CHECK (purpose IN ('drop_photo', 'replacement', 'avatar', 'conversation_photo')),
@@ -30,6 +36,8 @@ ALTER TABLE app.uploads
 CREATE INDEX uploads_by_conversation_drop ON app.uploads (conversation_drop_id) WHERE conversation_drop_id IS NOT NULL;
 CREATE TRIGGER uploads_keep_conversation BEFORE UPDATE ON app.uploads
   FOR EACH ROW EXECUTE FUNCTION app.keep_columns('conversation_drop_id');
+CREATE TRIGGER uploads_used_once BEFORE UPDATE ON app.uploads
+  FOR EACH ROW EXECUTE FUNCTION app.set_once('used_at');
 
 -- BEFORE INSERT, for a photo message's upload: made only by someone in the drop's audience who is
 -- still a member, for a drop still active, from its reveal on (T9, T63, T64). The membership, then
@@ -63,8 +71,11 @@ CREATE TRIGGER uploads_conversation_guard BEFORE INSERT ON app.uploads
   FOR EACH ROW WHEN (NEW.conversation_drop_id IS NOT NULL)
   EXECUTE FUNCTION app.uploads_conversation_guard();
 
--- The feed's reply preview reads a photo message's thumbnail (T65). A drop's photo never has one:
--- a thumbnail is exactly what must not exist before a reveal (T10).
+-- The feed's reply preview reads a photo message's thumbnail (T65). Every other upload keeps 0006's
+-- two renditions, display and full (TECH-DESIGN section 1, "Images"), so the kind widens for a
+-- photo message alone, and checks only get stronger (T58): a drop's photo has no thumbnail that
+-- an answer before its reveal could carry (T10). Remember this (spec 19, T62), a later feature,
+-- would lift this for its own suggestions.
 ALTER TABLE app.upload_renditions
   DROP CONSTRAINT upload_renditions_kind_check,
   ADD CONSTRAINT upload_renditions_kind_check CHECK (kind IN ('display', 'full', 'thumbnail'));
@@ -113,9 +124,11 @@ $$;
 CREATE TRIGGER comments_start BEFORE INSERT ON app.comments
   FOR EACH ROW EXECUTE FUNCTION app.comments_start();
 
--- BEFORE INSERT OR UPDATE: at the commit, the photo is its author's own upload, ready and not
--- lapsed, locked so a lapse that races the commit waits and then fails on the foreign key (T12,
--- T63). Afterwards it is never added or replaced, and goes only with the whole message (T65, FQ107).
+-- BEFORE INSERT OR UPDATE: at the commit, the photo is its author's own upload, ready, not lapsed
+-- and never used, locked so a lapse that races the commit waits and then fails on the foreign key,
+-- and a second commit of the same upload waits and then finds it used (T12, T63). The commit marks
+-- it used for good. Afterwards it is never added or replaced, and goes only with the whole message
+-- (T65, FQ107).
 CREATE FUNCTION app.comments_photo_guard() RETURNS trigger
   LANGUAGE plpgsql SET search_path = '' AS $$
 BEGIN
@@ -134,18 +147,25 @@ BEGIN
     RETURN NEW;
   END IF;
   PERFORM FROM app.uploads u
-    WHERE u.id = NEW.photo_upload_id AND u.state = 'ready' AND u.expires_at > NEW.created_at
+    WHERE u.id = NEW.photo_upload_id AND u.state = 'ready' AND u.expires_at > NEW.created_at AND u.used_at IS NULL
       AND u.owner_user_id = (SELECT m.user_id FROM app.memberships m WHERE m.interval_id = NEW.author_interval_id)
-    FOR SHARE;
+    FOR UPDATE;
   IF NOT FOUND THEN
-    RAISE EXCEPTION 'app.comments: a message''s photo is its author''s own ready upload, not lapsed (T12, T63, T65)'
+    RAISE EXCEPTION 'app.comments: a message''s photo is its author''s own ready upload, not lapsed and never used (T12, T63, T65)'
       USING ERRCODE = 'integrity_constraint_violation';
   END IF;
+  UPDATE app.uploads SET used_at = NEW.created_at WHERE id = NEW.photo_upload_id;
   RETURN NEW;
 END
 $$;
 CREATE TRIGGER comments_photo_guard BEFORE INSERT OR UPDATE ON app.comments
   FOR EACH ROW EXECUTE FUNCTION app.comments_photo_guard();
+-- A message is ended in place, never deleted: its replies, a moderation case and its removal name
+-- it, and its end is what every reader and purge path follows (T24, T25).
+CREATE TRIGGER comments_no_delete BEFORE DELETE ON app.comments
+  FOR EACH ROW EXECUTE FUNCTION app.refuse_change('a message is ended in place, never deleted (T24, T25)');
+CREATE TRIGGER comments_no_truncate BEFORE TRUNCATE ON app.comments
+  FOR EACH STATEMENT EXECUTE FUNCTION app.refuse_change('a message is ended in place, never deleted (T24, T25)');
 
 -- The one record of why a message was removed by someone other than its author (T25): a member in
 -- its photo (FQ108: the whole message goes), the operator (FQ27), or its drop's own withdrawal or
@@ -168,12 +188,21 @@ CREATE TABLE app.comment_removals (
 ALTER TABLE app.comment_removals ENABLE ROW LEVEL SECURITY;
 CREATE INDEX comment_removals_by_drop ON app.comment_removals (drop_id);
 
--- BEFORE INSERT, written before the message is ended, while it still holds its photo.
+-- BEFORE INSERT, written before the message is ended, while it still holds its photo. The member's
+-- interval is locked before the message, in TECH-DESIGN section 5's order.
 CREATE FUNCTION app.comment_removals_guard() RETURNS trigger
   LANGUAGE plpgsql SET search_path = '' AS $$
 DECLARE
   c app.comments%ROWTYPE;
 BEGIN
+  IF NEW.reason = 'pictured' THEN
+    PERFORM FROM app.memberships WHERE interval_id = NEW.actor_interval_id AND state = 'active' FOR SHARE;
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'app.comment_removals: % is no longer a member, so removes nothing as pictured (T9, T25)',
+        NEW.actor_interval_id
+        USING ERRCODE = 'integrity_constraint_violation';
+    END IF;
+  END IF;
   SELECT * INTO c FROM app.comments WHERE id = NEW.comment_id FOR UPDATE;
   IF c.state <> 'active' THEN
     RAISE EXCEPTION 'app.comment_removals: message % has already ended', NEW.comment_id
@@ -182,14 +211,6 @@ BEGIN
   IF NEW.reason = 'pictured' AND (NEW.actor_interval_id = c.author_interval_id OR c.photo_upload_id IS NULL) THEN
     RAISE EXCEPTION 'app.comment_removals: a member in a message''s photo, never its author, removes it as pictured (T25, FQ108)'
       USING ERRCODE = 'integrity_constraint_violation';
-  END IF;
-  IF NEW.reason = 'pictured' THEN
-    PERFORM FROM app.memberships WHERE interval_id = NEW.actor_interval_id AND state = 'active' FOR SHARE;
-    IF NOT FOUND THEN
-      RAISE EXCEPTION 'app.comment_removals: % is no longer a member, so removes nothing as pictured (T9, T25)',
-        NEW.actor_interval_id
-        USING ERRCODE = 'integrity_constraint_violation';
-    END IF;
   END IF;
   IF NEW.reason = 'moderation' AND NOT EXISTS (
        SELECT FROM app.operator_actions
