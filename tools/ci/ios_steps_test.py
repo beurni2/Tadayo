@@ -209,6 +209,23 @@ class StepsTest(unittest.TestCase):
         self.repo = Repo()
         self.addCleanup(self.repo.remove)
         self.environ = {"RUNNER_TEMP": os.path.join(self.repo.root, "_runner_temp")}
+        # The app's file, as the repository holds it: the snapshot tests on iOS 27.2.
+        self.repo.write(ios_steps.SNAPSHOT_RUNTIME_FILE, b"27.2\n")
+
+    def remove_ios_version(self):
+        os.remove(os.path.join(self.repo.root, *ios_steps.SNAPSHOT_RUNTIME_FILE.split("/")))
+
+    @contextlib.contextmanager
+    def snapshots_on(self, version):
+        """The snapshot tests pinned to another of the runtimes, with the app's file to match:
+        never so with the pins PinsTest checks, it shows the passes follow the snapshot runtime,
+        not its place among toolchain.IOS_RUNTIMES."""
+        with mock.patch.object(toolchain, "SNAPSHOT_RUNTIME", version):
+            self.repo.write(ios_steps.SNAPSHOT_RUNTIME_FILE, f"{version}\n".encode())
+            try:
+                yield
+            finally:
+                self.repo.write(ios_steps.SNAPSHOT_RUNTIME_FILE, b"27.2\n")
 
     def steps(self, shell=None, environ=None, require_app=False):
         env = dict(self.environ)
@@ -383,7 +400,9 @@ class PinsTest(unittest.TestCase):
         self.assertEqual((toolchain.XCODE_VERSION, toolchain.SWIFT_VERSION), ("27.2", "6.4.2"))
         self.assertEqual(toolchain.IOS_RUNTIMES, ("27.2", "26.5"))
         self.assertEqual(toolchain.IOS_DOWNLOADS, ("26.5",))
-        self.assertEqual((toolchain.SNAPSHOT_RUNTIME, toolchain.SNAPSHOT_RUNTIME_INTERIM), ("27.2", "26.5"))
+        self.assertEqual(toolchain.SNAPSHOT_RUNTIME, "27.2")
+        # The interim, 26.5 while the app had no ios-version file, is gone (ios/b0-snapshot-interim).
+        self.assertFalse(hasattr(toolchain, "SNAPSHOT_RUNTIME_INTERIM"))
         self.assertEqual(toolchain.SIMULATOR_DEVICE, "iPhone 17")
 
     def test_the_runtimes_are_versions_each_once_the_first_of_the_xcode_s_major(self):
@@ -398,14 +417,13 @@ class PinsTest(unittest.TestCase):
     def test_a_run_downloads_only_pinned_runtimes(self):
         self.assertTrue(set(toolchain.IOS_DOWNLOADS) <= set(toolchain.IOS_RUNTIMES))
 
-    def test_the_snapshot_runtimes_are_pinned_runtimes(self):
+    def test_the_snapshot_runtime_is_a_pinned_runtime(self):
         # Else no pass would run the snapshot tests.
         self.assertIn(toolchain.SNAPSHOT_RUNTIME, toolchain.IOS_RUNTIMES)
-        self.assertIn(toolchain.SNAPSHOT_RUNTIME_INTERIM, toolchain.IOS_RUNTIMES)
 
     def test_every_runtime_is_at_or_above_the_app_s_minimum(self):
-        # apps/ios/project.yml's deploymentTarget, read from the file: 17.0 now, 26.0 once the
-        # app's PR raises it. A runtime below it couldn't install the app.
+        # apps/ios/project.yml's deploymentTarget, read from the file: 26.0 since PR #57
+        # (ADR-033). A runtime below it couldn't install the app.
         with open(os.path.join(ROOT, *ios_steps.PROJECT_SPEC.split("/")), encoding="utf-8") as f:
             found = re.search(r'^  deploymentTarget:\n    iOS: "?([0-9.]+)"?\s*$', f.read(), flags=re.M)
         self.assertIsNotNone(found, "apps/ios/project.yml's deploymentTarget")
@@ -419,17 +437,25 @@ class SnapshotRuntimeTest(StepsTest):
         return self.repo.write(ios_steps.SNAPSHOT_RUNTIME_FILE, content)
 
     def test_the_repository_s_own_file(self):
-        # The real tree, as test_the_inventory_s_states reads the real INVENTORY: a bad file
-        # fails here, so it fails `ci` on Linux, the required check, and not only `ios`. Until
-        # the app's PR adds the file, the interim; after it, the founder's runtime.
-        self.assertIn(ios_steps.snapshot_runtime(ROOT), [("26.5", "interim"), ("27.2", "file")])
+        # The real tree, as test_the_inventory_s_states reads the real INVENTORY: a missing or
+        # bad file fails here, so it fails `ci` on Linux, the required check, and not only `ios`.
+        self.assertEqual(ios_steps.snapshot_runtime(ROOT), "27.2")
 
-    def test_no_file_is_the_interim_and_exactly_27_2_is_the_file(self):
-        self.assertEqual(ios_steps.snapshot_runtime(self.repo.root), ("26.5", "interim"))
+    def test_exactly_27_2_is_the_snapshot_runtime(self):
         for content in (b"27.2", b"27.2\n"):
             with self.subTest(content=content):
                 self.write(content)
-                self.assertEqual(ios_steps.snapshot_runtime(self.repo.root), ("27.2", "file"))
+                self.assertEqual(ios_steps.snapshot_runtime(self.repo.root), "27.2")
+
+    def test_no_file_fails(self):
+        # Since ios/b0-snapshot-interim: no file once stood for iOS 26.5's references.
+        self.remove_ios_version()
+        with self.assertRaises(ValueError) as raised:
+            ios_steps.snapshot_runtime(self.repo.root)
+        self.assertEqual(str(raised.exception),
+                         f"{ios_steps.SNAPSHOT_RUNTIME_FILE} is missing: it must hold '27.2' "
+                         "(toolchain.SNAPSHOT_RUNTIME), the runtime the committed references are "
+                         "drawn on")
 
     def test_anything_else_fails(self):
         # 26.5 among them: the file can name only the founder's runtime.
@@ -443,7 +469,7 @@ class SnapshotRuntimeTest(StepsTest):
     def test_only_a_regular_file_counts(self):
         path = os.path.join(self.repo.root, *ios_steps.SNAPSHOT_RUNTIME_FILE.split("/"))
         good = self.repo.write("elsewhere/ios-version", b"27.2\n")
-        os.makedirs(os.path.dirname(path))
+        self.remove_ios_version()
         for make in (lambda: os.symlink(good, path), lambda: os.mkdir(path), lambda: os.mkfifo(path),
                      lambda: os.symlink(os.path.join(self.repo.root, "missing"), path)):
             with self.subTest(make=make):
@@ -457,15 +483,17 @@ class SnapshotRuntimeTest(StepsTest):
                     os.remove(path)
 
     def test_a_snapshots_folder_that_is_a_file_fails(self):
-        # Only a missing file is the interim: here lstat fails with "not a directory".
+        # lstat fails with "not a directory", not "no such file".
+        shutil.rmtree(os.path.join(self.repo.root, *os.path.dirname(
+            ios_steps.SNAPSHOT_RUNTIME_FILE).split("/")))
         self.repo.write(os.path.dirname(ios_steps.SNAPSHOT_RUNTIME_FILE), b"27.2\n")
         with self.assertRaises(ValueError) as raised:
             ios_steps.snapshot_runtime(self.repo.root)
         self.assertIn(f"{ios_steps.SNAPSHOT_RUNTIME_FILE} can't be read", str(raised.exception))
 
     def test_a_file_that_can_t_be_opened_fails(self):
-        # A good file that can't be read isn't the interim either. The session runs as root, so
-        # open() is made to refuse it rather than chmod.
+        # A good file that can't be read fails too. The session runs as root, so open() is made
+        # to refuse it rather than chmod.
         path = self.write(b"27.2\n")
         real_open = open
 
@@ -599,7 +627,7 @@ class SimulatorTest(StepsTest):
         self.assertEqual([c for c in shell.commands if "dyld_shared_cache" in c],
                          [["xcrun", "simctl", "runtime", "dyld_shared_cache", "update", IOS_26_5["identifier"]]])
         self.assertEqual(self.runtime_keys(), {
-            "sdk": "27.2", "snapshots": "26.5", "snapshots-source": "interim",
+            "sdk": "27.2", "snapshots": "27.2",
             "ios-27.2": "27.2", "runtime-27.2": IOS_27_2["identifier"], "runtime-build-27.2": "24C55",
             "device-27.2": "iPhone 17", "udid-27.2": UDID,
             "ios-26.5": "26.5", "runtime-26.5": IOS_26_5["identifier"], "runtime-build-26.5": "23F77",
@@ -751,11 +779,13 @@ class SimulatorTest(StepsTest):
         self.assertEqual(self.imports(shell), [])
         self.assertFalse(os.path.exists(os.path.join(self.export(), "stale.exportedBundle")))
 
-    def test_with_the_file_the_snapshots_are_27_2_s(self):
-        self.repo.write(ios_steps.SNAPSHOT_RUNTIME_FILE, "27.2\n")
-        code, out = self.step("simulator", self.shell(after_download=WITH_26_5))
-        self.assertEqual(code, 0, out)
-        self.assertEqual((self.read_record()["snapshots"], self.read_record()["snapshots-source"]), ("27.2", "file"))
+    def test_no_ios_version_file_fails_before_any_command(self):
+        # Since ios/b0-snapshot-interim: no file once meant iOS 26.5's references.
+        self.remove_ios_version()
+        shell = self.shell(after_download=WITH_26_5)
+        code, out = self.step("simulator", shell)
+        self.assertEqual((code, shell.commands), (1, []))
+        self.assertIn(f"{ios_steps.SNAPSHOT_RUNTIME_FILE} is missing", out)
 
     def test_records_the_versions_simctl_gives_not_the_pins(self):
         # Patch releases under the pins: the record says what simctl gave.
@@ -900,7 +930,16 @@ class SimulatorTest(StepsTest):
         self.assertIn("+ xcrun simctl list devices available", text)
         self.assertIn(f"iOS 27.2: runtime {IOS_27_2['identifier']}, build 24C55, version 27.2; iPhone 17 {UDID}", text)
         self.assertIn(f"iOS 26.5: runtime {IOS_26_5['identifier']}, build 23F77, version 26.5; iPhone 17 {UDID_26}", text)
-        self.assertIn("The snapshot tests run on iOS 26.5 (interim, no ios-version file).", text)
+        self.assertIn("The snapshot tests run on iOS 27.2 (the ios-version file).", text)
+
+    def test_the_snapshot_runtime_recorded_is_the_pinned_one_not_the_first(self):
+        # Pinned to the second runtime, run.json and simulators.txt name it, never the first.
+        with self.snapshots_on("26.5"):
+            code, out = self.step("simulator", self.shell(after_download=WITH_26_5))
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.read_record()["snapshots"], "26.5")
+        with open(os.path.join(self.repo.out, "logs", "simulators.txt")) as f:
+            self.assertIn("The snapshot tests run on iOS 26.5 (the ios-version file).", f.read())
 
     def test_the_universal_variant_is_tried_when_the_plain_download_brings_nothing(self):
         shell = self.shell(after_download=WITH_26_5, works_with=["universal"])
@@ -1086,7 +1125,7 @@ class BuildAndTestSteps(StepsTest):
         self.write_scheme(scheme(("TadayoTests", False)))
         self.record({"udid-27.2": UDID, "ios-27.2": "27.2", "device-27.2": "iPhone 17",
                      "udid-26.5": UDID_26, "ios-26.5": "26.5", "device-26.5": "iPhone 17",
-                     "snapshots": "26.5", "snapshots-source": "interim"})
+                     "snapshots": "27.2"})
 
     def products(self, extension=True, log=("** TEST BUILD SUCCEEDED **\n",)):
         app = os.path.join(self.repo.root, "_runner_temp", "DerivedData", "Build", "Products",
@@ -1242,15 +1281,14 @@ class BuildAndTestSteps(StepsTest):
         self.assertEqual(self.results(), {"tests": "passed", "tests-27.2": "passed", "tests-26.5": "passed"})
 
     def test_the_snapshot_targets_run_on_the_snapshot_runtime_alone(self):
-        # The interim (no ios-version file) is 26.5, the second pass; with the file, 27.2. Only
-        # that pass has the artifacts directory.
+        # iOS 27.2, the first pass; were they pinned to 26.5, the second. Only that pass has the
+        # artifacts directory.
         self.write_scheme(scheme(("TadayoTests", False), ("TadayoSnapshotTests", False),
                                  ("TadayoShareSnapshotTests", False), ("TadayoUITests", False)))
         artifacts = os.path.join(self.repo.out, "artifacts")
-        for content, snapshots in ((None, "26.5"), (b"27.2\n", "27.2")):
-            with self.subTest(snapshots=snapshots):
-                if content:
-                    self.repo.write(ios_steps.SNAPSHOT_RUNTIME_FILE, content)
+        for snapshots in ("27.2", "26.5"):
+            with self.subTest(snapshots=snapshots), (
+                    self.snapshots_on(snapshots) if snapshots != "27.2" else contextlib.nullcontext()):
                 shell = FakeShell()
                 code, out = self.step("test", shell)
                 self.assertEqual(code, 0, out)
@@ -1293,7 +1331,7 @@ class BuildAndTestSteps(StepsTest):
         # A pass with nothing to run is recorded as it ends too.
         self.record({k: v for k, v in self.read_record().items() if k != "tests" and not k.startswith("tests-")})
         self.write_scheme(scheme(("TadayoSnapshotTests", False)))
-        with self.assertRaises(Stopped):
+        with self.snapshots_on("26.5"), self.assertRaises(Stopped):
             self.step("test", FakeShell(codes=[(on(UDID_26), stop)]))
         self.assertEqual(self.results(), {"tests-27.2": "none"})
 
@@ -1374,16 +1412,17 @@ class BuildAndTestSteps(StepsTest):
         self.assertEqual(self.results(), {"tests": "failed", "tests-27.2": "passed", "tests-26.5": "failed"})
 
     def test_a_pass_with_no_target_left_is_none_and_boots_nothing(self):
-        # A scheme of snapshot tests alone: the other runtime's pass has nothing to run.
+        # A scheme of snapshot tests alone: the other runtime's pass has nothing to run. Were
+        # they pinned to 26.5, the first pass would be the empty one.
         self.write_scheme(scheme(("TadayoSnapshotTests", False)))
         shell = FakeShell()
-        self.assertEqual(self.step("test", shell)[0], 0)
+        with self.snapshots_on("26.5"):
+            self.assertEqual(self.step("test", shell)[0], 0)
         self.assertEqual([c[c.index("-destination") + 1] for c, _, _ in self.passes(shell)],
                          [f"platform=iOS Simulator,id={UDID_26}"])
         # 27.2's device, booted by the simulator step, is shut down for 26.5's.
         self.assertIn(["xcrun", "simctl", "shutdown", UDID], shell.commands)
         self.assertEqual(self.results(), {"tests": "passed", "tests-27.2": "none", "tests-26.5": "passed"})
-        self.repo.write(ios_steps.SNAPSHOT_RUNTIME_FILE, "27.2\n")
         shell = FakeShell()
         self.assertEqual(self.step("test", shell)[0], 0)
         self.assertEqual(len(self.passes(shell)), 1)
@@ -1403,15 +1442,19 @@ class BuildAndTestSteps(StepsTest):
 
     def test_an_unpinned_snapshot_runtime_fails_before_any_command(self):
         # Never so with the pins PinsTest checks; were it so, no pass would run the snapshot tests.
-        for name, value, content in (("SNAPSHOT_RUNTIME_INTERIM", "26.4", None),
-                                     ("SNAPSHOT_RUNTIME", "27.3", b"27.3\n")):
-            with self.subTest(name=name), mock.patch.object(toolchain, name, value):
-                if content:
-                    self.repo.write(ios_steps.SNAPSHOT_RUNTIME_FILE, content)
-                shell = FakeShell()
-                code, out = self.step("test", shell)
-                self.assertEqual((code, shell.commands), (1, []))
-                self.assertIn(f"the snapshot runtime, iOS {value}, isn't one of 27.2, 26.5", out)
+        with mock.patch.object(toolchain, "SNAPSHOT_RUNTIME", "27.3"):
+            self.repo.write(ios_steps.SNAPSHOT_RUNTIME_FILE, b"27.3\n")
+            shell = FakeShell()
+            code, out = self.step("test", shell)
+        self.assertEqual((code, shell.commands), (1, []))
+        self.assertIn("the snapshot runtime, iOS 27.3, isn't one of 27.2, 26.5", out)
+
+    def test_no_ios_version_file_fails_before_any_command(self):
+        self.remove_ios_version()
+        shell = FakeShell()
+        code, out = self.step("test", shell)
+        self.assertEqual((code, shell.commands), (1, []))
+        self.assertIn(f"{ios_steps.SNAPSHOT_RUNTIME_FILE} is missing", out)
 
     def test_the_backstop_runs_once_after_every_pass(self):
         for codes in ([], [(has("test-without-building"), 65)]):
@@ -1768,8 +1811,8 @@ class CollectTest(StepsTest):
         self.png(f"{snaps}/testUpcoming.F02-upcoming.png")
         self.png(f"{snaps}/testUpcoming.F02-upcoming-dark.png")
         self.png(os.path.join(self.repo.out, "artifacts", "Upcoming+Snapshots", "testUpcoming.F02-upcoming-dark.png"), "#000")
-        self.record(snapshots="26.5")
-        os.makedirs(os.path.join(self.repo.out, "Tests-26.5.xcresult"))
+        self.record(snapshots="27.2")
+        os.makedirs(os.path.join(self.repo.out, "Tests-27.2.xcresult"))
 
         def export(cmd):
             target = cmd[cmd.index("--output-path") + 1]
@@ -1786,7 +1829,7 @@ class CollectTest(StepsTest):
         code, out = self.step("collect", shell)
         self.assertEqual(code, 0, out)
         export_cmd = next(c for c in shell.commands if c[:4] == ["xcrun", "xcresulttool", "export", "attachments"])
-        self.assertEqual(export_cmd[export_cmd.index("--path") + 1], os.path.join(self.repo.out, "Tests-26.5.xcresult"))
+        self.assertEqual(export_cmd[export_cmd.index("--path") + 1], os.path.join(self.repo.out, "Tests-27.2.xcresult"))
         entries = self.entries()
         self.assertEqual(set(entries), {"testUpcoming.F02-upcoming.png", "testUpcoming.F02-upcoming-dark.png",
                                         "testFriends.F01-friends.png"})
@@ -1833,13 +1876,15 @@ class CollectTest(StepsTest):
                 if c[:4] == ["xcrun", "xcresulttool", "export", "attachments"]]
 
     def test_new_snapshots_come_from_the_snapshot_runtime_s_bundle(self):
-        # run.json's `snapshots` when the simulator step wrote a pinned runtime there; else the
-        # ios-version file's, as snapshot_runtime() reads it.
+        # run.json's `snapshots` when the simulator step wrote the pinned one there; else the
+        # ios-version file's, as snapshot_runtime() reads it; else none, since no file no longer
+        # stands for 26.5 (ios/b0-snapshot-interim).
         for version in ("27.2", "26.5"):
             os.makedirs(os.path.join(self.repo.out, f"Tests-{version}.xcresult"))
-        for written, content, expected in (("27.2", None, "27.2"), ("26.5", b"27.2\n", "26.5"),
-                                           (None, None, "26.5"), (None, b"27.2\n", "27.2"),
-                                           ("99.9", None, "26.5"), (["27.2"], b"27.2", "27.2")):
+        for written, content, expected in (("27.2", None, "27.2"), ("26.5", b"27.2\n", "27.2"),
+                                           (None, None, None), (None, b"27.2\n", "27.2"),
+                                           ("99.9", None, None), ("99.9", b"27.2\n", "27.2"),
+                                           (["27.2"], b"27.2", "27.2")):
             with self.subTest(written=written, content=content):
                 self.record({} if written is None else {"snapshots": written})
                 path = os.path.join(self.repo.root, *ios_steps.SNAPSHOT_RUNTIME_FILE.split("/"))
@@ -1851,7 +1896,22 @@ class CollectTest(StepsTest):
                 shell = FakeShell()
                 code, out = self.step("collect", shell)
                 self.assertEqual(code, 0, out)
-                self.assertEqual(self.exported(shell), [os.path.join(self.repo.out, f"Tests-{expected}.xcresult")])
+                self.assertEqual(self.exported(shell), [os.path.join(
+                    self.repo.out, f"Tests-{expected}.xcresult")] if expected else [])
+                if expected is None:
+                    self.assertIn(f"{ios_steps.SNAPSHOT_RUNTIME_FILE} is missing", out)
+
+    def test_new_snapshots_come_from_the_pinned_runtime_s_bundle_not_the_first(self):
+        # Pinned to the second runtime: its bundle, from run.json or else from the file.
+        for version in ("27.2", "26.5"):
+            os.makedirs(os.path.join(self.repo.out, f"Tests-{version}.xcresult"))
+        for record in ({"snapshots": "26.5"}, {}):
+            with self.subTest(record=record), self.snapshots_on("26.5"):
+                self.record(record)
+                shell = FakeShell()
+                code, out = self.step("collect", shell)
+                self.assertEqual(code, 0, out)
+                self.assertEqual(self.exported(shell), [os.path.join(self.repo.out, "Tests-26.5.xcresult")])
 
     def test_a_bad_file_with_nothing_in_run_json_exports_nothing_and_passes(self):
         # The simulator step failed on the file before it wrote `snapshots`: collect can't say
@@ -1870,16 +1930,115 @@ class CollectTest(StepsTest):
 
 
 # What the build job's steps write in run.json, but the overall `tests`.
-FACTS = {"xcode": "27.2", "swift": "6.4.2", "sdk": "27.2", "snapshots": "26.5", "snapshots-source": "interim",
+FACTS = {"xcode": "27.2", "swift": "6.4.2", "sdk": "27.2", "snapshots": "27.2",
          "ios-27.2": "27.2", "runtime-27.2": IOS_27_2["identifier"], "runtime-build-27.2": "24C55",
          "device-27.2": "iPhone 17", "udid-27.2": UDID, "tests-27.2": "passed",
          "ios-26.5": "26.5", "runtime-26.5": IOS_26_5["identifier"], "runtime-build-26.5": "23F77",
          "device-26.5": "iPhone 17", "udid-26.5": UDID_26, "tests-26.5": "failed"}
 # index.md's lines about the run, under its title and first sentence, for FACTS.
 RUN_LINES = ["- Xcode `27.2`, Swift `6.4.2`, simulator SDK `27.2`",
-             "- iOS `27.2` on `iPhone 17`: tests `passed`, without the snapshot tests",
-             "- iOS `26.5` on `iPhone 17`: tests `failed`, with the snapshot tests",
-             "- References: iOS `26.5` (interim, no ios-version file)"]
+             "- iOS `27.2` on `iPhone 17`: tests `passed`, with the snapshot tests",
+             "- iOS `26.5` on `iPhone 17`: tests `failed`, without the snapshot tests",
+             "- References: iOS `27.2` (the ios-version file)"]
+# What the sheets step adds to the staged run.json when the snapshot runtime's log has no odd draw.
+NO_ODD_DRAWS = {"odd-draws": [], "odd-draws-unread": 0}
+# Odd draws as ScreenSnapshot.settled logged them on iOS 27.2, each from a run's test-27.2.log on
+# `evidence`: ios/b0-ios26/08fb8ef/ios/, 2d1a76f/ios/ and af1c97b/ios/.
+ODD = ["warning: ScreenSnapshot A03-profile-saving-dark: settled after 4 draws, SHA-256 8e08afde "
+       "de26bd9b 8e08afde 8e08afde; against the last draw, draw 2: 13356 pixels in x 31 to 305, y 123 "
+       "to 212, by at most 21/255",
+       "warning: ScreenSnapshot H01-error-no-club: settled after 3 draws, SHA-256 980989b8 d4976358 "
+       "d4976358; against the last draw, draw 1: 9038 pixels in x 118 to 668, y 1535 to 1662, by at "
+       "most 17/255",
+       "warning: ScreenSnapshot A02-age-failed-network: settled after 3 draws, SHA-256 970332a1 "
+       "dd445dbc dd445dbc; against the last draw, draw 1: 5433 pixels in x 30 to 305, y 123 to 214, by "
+       "at most 2/255"]
+# A failing settle test's message quoting a line, from ios/b0-ios26/a15a95a/ios/logs/test-27.2.log.
+QUOTED = ("/Users/runner/work/Tadayo/Tadayo/apps/ios/TadayoSnapshotTests/ScreenSnapshotSettleTests.swift:"
+          "149: error: -[TadayoSnapshotTests.ScreenSnapshotSettleTests "
+          "testAnOddDrawsDifferenceIsMeasuredWhereItIs] : XCTAssertTrue failed - warning: ScreenSnapshot "
+          "settle-patch: settled after 3 draws, SHA-256 4e4833f1 cd805f12 cd805f12; against the last "
+          "draw, draw 1: 921 pixels in x 199 to 220, y 399 to 440, by at most 255/255")
+
+
+class OddDrawsTest(unittest.TestCase):
+    """ios_steps.odd_draws: only a line that reads whole as ScreenSnapshot.settled writes one is
+    copied, so index.md can show each in a code span as it is."""
+
+    def test_the_lines_runs_logged_are_read(self):
+        self.assertEqual(ios_steps.odd_draws([line + "\n" for line in ODD]), (ODD, 0))
+
+    def test_every_difference_settled_writes_is_read(self):
+        lines = ["warning: ScreenSnapshot F02-upcoming-dark: didn't settle in 4 draws, SHA-256 0a0b0c0d "
+                 "1a1b1c1d 2a2b2c2d 3a3b3c3d; against the last draw, draw 1: 12 pixels in x 0 to 3, y 0 to "
+                 "2, by at most 255/255; draw 2: sizes differ, 786 by 1704 and 786 by 1706; draw 3: not "
+                 "readable",
+                 "warning: ScreenSnapshot Lab+Rows-320-xl: settled after 4 draws, SHA-256 0a0b0c0d 1a1b1c1d "
+                 "0a0b0c0d 0a0b0c0d; against the last draw, draw 2: no pixel differs"]
+        self.assertEqual(ios_steps.odd_draws(lines), (lines, 0))
+
+    def test_a_line_break_of_either_kind_is_left_off(self):
+        self.assertEqual(ios_steps.odd_draws([ODD[0] + "\r\n", ODD[1]]), (ODD[:2], 0))
+
+    def test_other_lines_are_skipped_and_a_line_that_names_the_warning_otherwise_is_counted(self):
+        unread = [
+            QUOTED,  # a failing test's message, which quotes one
+            ODD[0][:120],  # cut short
+            ODD[0] + ODD[1],  # run into the next
+            ODD[0] + " ",  # anything after it
+            ODD[0].replace("A03-profile-saving-dark", "A03`](https://example.invalid)`"),  # a backtick
+            ODD[0].replace("A03-profile-saving-dark", "A03 | x"),  # a space and a pipe
+            ODD[0].replace("A03-profile-saving-dark", "A" * 129),  # too long a name
+            ODD[0].replace("A03-profile-saving-dark", ".."),  # not a name
+            ODD[0].replace("4 draws", "400 draws"),
+            ODD[0].replace("8e08afde de26bd9b", "8E08AFDE de26bd9b"),  # not as Swift writes a digest
+            ODD[0].replace("21/255", "21/256"),
+            ODD[0].replace("; against", " against"),
+            "warning: ScreenSnapshot A03-profile-saving-dark: settled after 4 draws",
+            ODD[0].replace("A03-profile-saving-dark", "\u3164\u3164"),  # not ASCII: blank on GitHub
+            ODD[0].replace("A03-profile-saving-dark", "A02\u05d0\u05d1-x"),  # right to left
+            ODD[1].replace(" d4976358 d4976358;", ";").replace("3 draws", "1 draws"),  # one digest
+            ODD[0].replace("13356 pixels", "133560000 pixels"),
+            ODD[0].replace("x 31 to", "x 310000 to"),
+            ODD[0].replace("draw 2:", "draw 100:"),
+            ODD[0] + "; draw 3: no pixel differs" * 16,  # more differences than the bound
+        ]
+        # What the pattern alone would read but `settled` can't have written.
+        two = ("warning: ScreenSnapshot F02-upcoming: didn't settle in 4 draws, SHA-256 0a0b0c0d 1a1b1c1d "
+               "2a2b2c2d 3a3b3c3d; against the last draw, draw 1: 12 pixels in x 0 to 3, y 0 to 2, by at "
+               "most 9/255; draw 2: not readable; draw 3: no pixel differs")
+        self.assertEqual(ios_steps.odd_draws([two]), ([two], 0))
+        # Two draws that differ may share their digests' first 4 bytes, and `settled` writes them
+        # so: the last two alike by digest when it didn't settle, and a draw measured whose
+        # digest is the last's.
+        collided = [two.replace("3a3b3c3d", "2a2b2c2d"),
+                    ODD[0].replace("draw 2:", "draw 1: 1 pixels in x 0 to 0, y 0 to 0, by at most 1/255; draw 2:")]
+        self.assertEqual(ios_steps.odd_draws(collided), (collided, 0))
+        unread += [
+            two[:two.index("; draw 2")],  # cut at a difference's boundary
+            two[:two.index("; draw 3")],
+            ODD[0].replace("4 draws", "3 draws"),  # four digests for three draws
+            ODD[0].replace("4 draws", "5 draws"),  # four digests for five draws
+            ODD[0].replace("draw 2:", "draw 4:"),  # draw 2, apart from the last, not measured
+            ODD[1] + "; draw 3: no pixel differs",  # the last draw measured against itself
+            ODD[1].replace("draw 1:", "draw 0: no pixel differs; draw 1:"),  # a draw 0
+            ODD[0].replace("21/255", "999/255"),
+            ODD[0].replace("21/255", "0/255"),
+            ODD[0].replace("8e08afde 8e08afde;", "8e08afde 00000000;"),  # settled, the last two apart
+            two.replace("draw 1: 12", "draw 2: 12").replace("draw 2: not", "draw 1: not"),  # out of order
+            two.replace("; draw 2: not readable", "; draw 2: not readable; draw 2: not readable"),  # twice
+            ODD[0][ODD[0].index("; against"):],  # its tail, the mark cut off before it
+        ]
+        other = ["Test Case '-[TadayoSnapshotTests.X testY]' passed (0.906 seconds).", "",
+                 "/x/ScreenSnapshots.swift:12: warning: ScreenSnapshot.settled is deprecated"]
+        self.assertEqual(ios_steps.odd_draws(other + unread + ODD), (ODD, len(unread)))
+
+    def test_nothing_read_holds_a_backtick_or_a_line_break(self):
+        # So each shows in index.md's code span as it is, on its own line.
+        for line in (ODD[0].replace("A03", "A`03"), ODD[0].replace("A03", "A\r03"),
+                     ODD[0].replace("A03", "A\n03")):
+            with self.subTest(line=line):
+                self.assertIsNone(ios_steps.ODD_DRAW.fullmatch(line))
 
 
 class SheetsTest(StepsTest):
@@ -1894,6 +2053,8 @@ class SheetsTest(StepsTest):
                              "GITHUB_SERVER_URL": "https://github.com", "GITHUB_RUN_ID": "42"})
         self.record(FACTS, tests="failed")
         os.makedirs(os.path.join(self.repo.out, "logs"))
+        with open(os.path.join(self.repo.out, "logs", "test-27.2.log"), "w") as f:
+            f.write("** TEST SUCCEEDED **\n")
         with open(os.path.join(self.repo.out, "logs", "test-26.5.log"), "w") as f:
             f.write("** TEST FAILED **\n")
 
@@ -1980,7 +2141,7 @@ class SheetsTest(StepsTest):
         # state alone, and the run's details are lines of the snapshot's label.
         self.assertEqual(montage[montage.index("-title") + 1], "A02-email")
         # The snapshot runtime's iOS and device, and which runtime the references are for.
-        self.assertIn("iOS 26.5 · iPhone 17\nreferences: iOS 26.5 (interim, no ios-version file)\n"
+        self.assertIn("iOS 27.2 · iPhone 17\nreferences: iOS 27.2 (the ios-version file)\n"
                       "ios/b0-ios-check @ 0123456", labels[0])
 
     def test_a_changed_snapshot_s_sheet_has_three_panels(self):  # without ImageMagick, so in ci too
@@ -2188,63 +2349,71 @@ class SheetsTest(StepsTest):
                 # A key no step writes isn't kept either, whatever its value: the keys from
                 # before two runtimes among them.
                 self.record(facts, tests=tests, **{"Gate A passed": "yes", "notes": "plain", "ios": "26.5",
-                                                   "device": "iPhone 17", "udid": UDID, "requested": "18.6"})
+                                                   "device": "iPhone 17", "udid": UDID, "requested": "18.6",
+                                                   "snapshots-source": "interim"})
                 self.assertEqual(self.step("sheets", FakeShell())[0], 0)
                 index = self.index()
                 self.assertNotIn("example.invalid", index)
                 self.assertNotIn("Gate A passed", index)
                 self.assertNotIn("phish", index)
-                self.assertEqual(index.splitlines()[4:10], RUN_LINES + ["- Tests: `not run`",
-                                                                        "- Carries the states this branch "
-                                                                        "touches; 0 snapshot(s) not carried"])
-                # The stage's run.json holds the checked values, never the file as written.
+                self.assertEqual(index.splitlines()[4:11], RUN_LINES + [
+                    "- Tests: `not run`", "- Odd draws: none in `logs/test-27.2.log`",
+                    "- Carries the states this branch touches; 0 snapshot(s) not carried"])
+                # The stage's run.json holds the checked values, never the file as written, and
+                # the odd draws this job read.
                 with open(os.path.join(self.stage(), "run.json")) as f:
-                    self.assertEqual(json.load(f), facts)
+                    self.assertEqual(json.load(f), dict(facts, **NO_ODD_DRAWS))
         # A value FACT lets through is shown in a code span, so GitHub never makes it a link.
         self.record(facts, **{"device-26.5": "www.phish.example", "tests": "www.phish.example"})
         self.assertEqual(self.step("sheets", FakeShell())[0], 0)
         self.assertEqual(self.index().splitlines()[6], "- iOS `26.5` on `www.phish.example`: tests `failed`, "
-                                                       "with the snapshot tests")
+                                                       "without the snapshot tests")
         self.assertEqual(self.index().splitlines()[8], "- Tests: `www.phish.example`")
         with open(os.path.join(self.stage(), "run.json")) as f:  # every key the steps write
-            self.assertEqual(json.load(f), dict(facts, **{"device-26.5": "www.phish.example",
-                                                          "tests": "www.phish.example"}))
+            self.assertEqual(json.load(f), dict(facts, **NO_ODD_DRAWS, **{
+                "device-26.5": "www.phish.example", "tests": "www.phish.example"}))
         with open(os.path.join(self.repo.out, "run.json"), "w") as f:
             json.dump(["not", "an", "object"], f)
         code, out = self.step("sheets", FakeShell())
         self.assertEqual(code, 0, out)
         self.assertIn("- Xcode `?`, Swift `?`, simulator SDK `?`", self.index())
+        # No snapshot runtime, so no log is read for odd draws.
+        self.assertIn("- Odd draws: unknown: the simulator step didn't record the snapshot runtime",
+                      self.index())
         with open(os.path.join(self.stage(), "run.json")) as f:
             self.assertEqual(json.load(f), {})
 
-    def test_the_snapshot_runtime_must_be_pinned_and_its_source_one_there_is(self):
-        # This job can write, so run.json's `snapshots` is kept only when it is a pinned runtime,
-        # and `snapshots-source` only when it is snapshot_runtime's (critique 6d); each passes
-        # FACT, so only this check keeps it out.
+    def test_the_snapshot_runtime_must_be_the_pinned_one(self):
+        # This job can write, so run.json's `snapshots` is kept only when it is
+        # toolchain.SNAPSHOT_RUNTIME, the only one the simulator step writes (critique 6d): 26.5,
+        # the other pinned runtime and the interim's before ios/b0-snapshot-interim, among the
+        # rest. Each passes FACT, so only this check keeps it out.
         self.snapshots([self.entry("F02-upcoming", "new")])
-        for key, value in (("snapshots", "26.4"), ("snapshots", "27.20"), ("snapshots", "18.6"),
-                           ("snapshots-source", "manual"), ("snapshots-source", "File")):
-            with self.subTest(key=key, value=value):
-                self.record(FACTS, **{key: value})
+        for value in ("26.5", "26.4", "27.20", "18.6"):
+            with self.subTest(value=value):
+                self.record(FACTS, snapshots=value)
                 self.assertEqual(self.step("sheets", FakeShell())[0], 0)
                 with open(os.path.join(self.stage(), "run.json")) as f:
                     staged = json.load(f)
-                self.assertNotIn(key, staged)
+                self.assertNotIn("snapshots", staged)
                 self.assertNotIn(value, next(line for line in self.index().splitlines()
                                              if line.startswith("- References: ")))
-                self.assertEqual(staged, {k: v for k, v in FACTS.items() if k != key})
-        self.record(FACTS, snapshots="26.4")
+                # Without the runtime, no log is read for odd draws.
+                self.assertEqual(staged, {k: v for k, v in FACTS.items() if k != "snapshots"})
+        self.record(FACTS, snapshots="26.5")
         self.step("sheets", FakeShell())
-        self.assertEqual(self.index().splitlines()[5:8], [
+        self.assertEqual(self.index().splitlines()[5:10], [
             "- iOS `27.2` on `iPhone 17`: tests `passed`, the snapshot tests unknown",
             "- iOS `26.5` on `iPhone 17`: tests `failed`, the snapshot tests unknown",
-            "- References: unknown: the simulator step didn't record their runtime"])
+            "- References: unknown: the simulator step didn't record their runtime",
+            "- Tests: `not run`",
+            "- Odd draws: unknown: the simulator step didn't record the snapshot runtime"])
 
     def test_the_index_has_a_line_per_runtime_and_says_which_the_references_are_for(self):
         self.snapshots([])
         self.assertEqual(self.step("sheets", FakeShell())[0], 0)
         self.assertEqual(self.index().splitlines()[4:9], RUN_LINES + ["- Tests: `failed`"])
-        self.record(FACTS, snapshots="27.2", tests="passed", **{"snapshots-source": "file", "tests-26.5": "passed"})
+        self.record(FACTS, tests="passed", **{"tests-26.5": "passed"})
         self.assertEqual(self.step("sheets", FakeShell())[0], 0)
         self.assertEqual(self.index().splitlines()[5:9], [
             "- iOS `27.2` on `iPhone 17`: tests `passed`, with the snapshot tests",
@@ -2261,6 +2430,16 @@ class SheetsTest(StepsTest):
             "- References: unknown: the simulator step didn't record their runtime",
             "- Tests: `not run`"])
 
+    def test_the_index_follows_the_pinned_runtime_not_the_first(self):
+        self.snapshots([])
+        with mock.patch.object(toolchain, "SNAPSHOT_RUNTIME", "26.5"):
+            self.record(FACTS, snapshots="26.5")
+            self.assertEqual(self.step("sheets", FakeShell())[0], 0)
+        self.assertEqual(self.index().splitlines()[5:8], [
+            "- iOS `27.2` on `iPhone 17`: tests `passed`, without the snapshot tests",
+            "- iOS `26.5` on `iPhone 17`: tests `failed`, with the snapshot tests",
+            "- References: iOS `26.5` (the ios-version file)"])
+
     def test_the_index_and_the_label_show_the_versions_simctl_gave(self):
         # pick_runtime takes a patch release for its pin, so the evidence says which one ran.
         self.snapshots([self.entry("A02-email", "new")])
@@ -2268,19 +2447,20 @@ class SheetsTest(StepsTest):
         shell = FakeShell()
         self.assertEqual(self.step("sheets", shell)[0], 0)
         self.assertEqual(self.index().splitlines()[5:7], [
-            "- iOS `27.2.1` on `iPhone 17`: tests `passed`, without the snapshot tests",
-            "- iOS `26.5.1` on `iPhone 17`: tests `failed`, with the snapshot tests"])
+            "- iOS `27.2.1` on `iPhone 17`: tests `passed`, with the snapshot tests",
+            "- iOS `26.5.1` on `iPhone 17`: tests `failed`, without the snapshot tests"])
         montage = next(c for c in shell.commands if c[0] == "montage")
-        self.assertIn("iOS 26.5.1 · iPhone 17\n", montage[montage.index("-label") + 1])
+        self.assertIn("iOS 27.2.1 · iPhone 17\n", montage[montage.index("-label") + 1])
 
     def test_the_label_names_the_snapshot_runtime_s_device(self):
         # The other runtime's device has another name, so the label can't take it.
         self.snapshots([self.entry("A02-email", "new")])
-        for facts, drawn in (({"device-27.2": "iPhone Air"},
-                              "iOS 26.5 · iPhone 17\nreferences: iOS 26.5 (interim, no ios-version file)\n"),
-                             ({"device-26.5": "iPhone Air", "snapshots": "27.2", "snapshots-source": "file"},
-                              "iOS 27.2 · iPhone 17\nreferences: iOS 27.2 (the ios-version file)\n")):
-            with self.subTest(facts=facts):
+        for snapshots, facts, drawn in (
+                ("27.2", {"device-26.5": "iPhone Air"},
+                 "iOS 27.2 · iPhone 17\nreferences: iOS 27.2 (the ios-version file)\n"),
+                ("26.5", {"device-27.2": "iPhone Air", "snapshots": "26.5"},
+                 "iOS 26.5 · iPhone 17\nreferences: iOS 26.5 (the ios-version file)\n")):
+            with self.subTest(snapshots=snapshots), mock.patch.object(toolchain, "SNAPSHOT_RUNTIME", snapshots):
                 self.record(FACTS, **facts)
                 shell = FakeShell()
                 self.assertEqual(self.step("sheets", shell)[0], 0)
@@ -2303,15 +2483,16 @@ class SheetsTest(StepsTest):
         os.symlink(outside, os.path.join(logs, "build.log"))  # a step's name, but not a file it wrote
         code, out = self.step("sheets", FakeShell())
         self.assertEqual(code, 1, out)
-        self.assertEqual(sorted(os.listdir(os.path.join(self.stage(), "logs"))), ["test-26.5.log", "toolchain.txt"])
+        self.assertEqual(sorted(os.listdir(os.path.join(self.stage(), "logs"))),
+                         ["test-26.5.log", "test-27.2.log", "toolchain.txt"])
         index = self.index()
         self.assertNotIn("Gate 0 passed", index)
         self.assertNotIn("README", index)
         self.assertIn("The build job's logs/ held 6 other entries, not a log its steps write, so they are "
                       "left out and this step fails.", index)
         base = "https://github.com/beurni2/tadayo/blob/evidence/ios/b0-ios-check/0123456/ios/logs"
-        self.assertIn(f"Logs: [test-26.5.log]({base}/test-26.5.log), [toolchain.txt]({base}/toolchain.txt)\n",
-                      index)
+        self.assertIn(f"Logs: [test-26.5.log]({base}/test-26.5.log), [test-27.2.log]({base}/test-27.2.log), "
+                      f"[toolchain.txt]({base}/toolchain.txt)\n", index)
         # The rest still goes up.
         self.assertTrue(os.path.isfile(os.path.join(self.stage(), "snapshots", "F02-upcoming.png")))
         self.assertEqual(self.finished(), {"path": "ios/b0-ios-check/0123456/ios"})
@@ -2448,6 +2629,116 @@ class SheetsTest(StepsTest):
         second["image"] = self.sample("snapshots/OtherTests/testX.F02-upcoming.png")
         _, _, montaged, _ = self.run_sheets([first, second])
         self.assertEqual(montaged, ["F02-upcoming.jpg", "F02-upcoming--OtherTests.jpg"])
+
+    def write_log(self, name, lines):
+        with open(os.path.join(self.repo.out, "logs", name), "w", encoding="utf-8") as f:
+            f.write("".join(line + "\n" for line in lines))
+
+    def staged_record(self):
+        with open(os.path.join(self.stage(), "run.json")) as f:
+            return json.load(f)
+
+    def test_odd_draws_are_listed_in_the_index_and_kept_in_run_json(self):
+        # PR #57's review (C5): each odd draw shows on the page beside the run's images, not
+        # only in the raw log (a re-run still replaces the whole folder). Neither an odd draw nor
+        # a line that doesn't read as one fails the step.
+        self.snapshots([self.entry("F02-upcoming", "new")])
+        self.write_log("test-27.2.log", ["Test Suite 'All tests' started", ODD[0], QUOTED, ODD[1],
+                                         "** TEST SUCCEEDED **"])
+        code, out = self.step("sheets", FakeShell())
+        self.assertEqual(code, 0, out)
+        self.assertIn("ios: sheets: 2 odd draw(s) in logs/test-27.2.log, and 1 other line(s) like "
+                      "`warning: ScreenSnapshot`'s", out)
+        lines = self.index().splitlines()
+        self.assertEqual(lines[8:10], [
+            "- Tests: `failed`",
+            "- Odd draws: 2 in `logs/test-27.2.log`, below; 1 other line(s) there look like "
+            "`warning: ScreenSnapshot` but don't read as one"])
+        start = lines.index("Odd draws: each a screen whose drawing took a third draw or more "
+                            "(`ScreenSnapshot.settled`; the system's glass, `docs/LIMITATIONS.md`, "
+                            "2026-11-14). One odd draw passes; a second, or no two draws alike, fails "
+                            "the test.")
+        self.assertEqual(lines[start + 1:start + 5], ["", f"- `{ODD[0]}`", f"- `{ODD[1]}`", ""])
+        # Before the table, and the quoted line nowhere.
+        self.assertLess(start, lines.index("| State | Status | File | Render | Sheet | Snapshot |"))
+        self.assertNotIn("settle-patch", self.index())
+        self.assertEqual(self.staged_record(), dict(FACTS, tests="failed", **{
+            "odd-draws": ODD[:2], "odd-draws-unread": 1}))
+
+    def test_no_odd_draw_is_said(self):
+        self.snapshots([self.entry("F02-upcoming", "new")])
+        code, out = self.step("sheets", FakeShell())
+        self.assertEqual(code, 0, out)
+        self.assertIn("- Odd draws: none in `logs/test-27.2.log`\n", self.index())
+        self.assertNotIn("Odd draws: each", self.index())
+        self.assertIn("ios: sheets: 0 odd draw(s) in logs/test-27.2.log\n", out)
+        self.assertEqual(self.staged_record(), dict(FACTS, tests="failed", **NO_ODD_DRAWS))
+
+    def test_only_the_snapshot_runtime_s_log_is_read(self):
+        # The snapshot tests run in no other pass.
+        self.snapshots([self.entry("F02-upcoming", "new")])
+        self.write_log("test-26.5.log", [ODD[0], "** TEST FAILED **"])
+        self.assertEqual(self.step("sheets", FakeShell())[0], 0)
+        self.assertIn("- Odd draws: none in `logs/test-27.2.log`\n", self.index())
+        self.assertEqual(self.staged_record()["odd-draws"], [])
+
+    def test_the_log_read_is_the_pinned_runtime_s_not_the_first(self):
+        self.snapshots([self.entry("F02-upcoming", "new")])
+        self.write_log("test-26.5.log", [ODD[0], "** TEST FAILED **"])
+        self.write_log("test-27.2.log", [ODD[1], "** TEST SUCCEEDED **"])
+        with mock.patch.object(toolchain, "SNAPSHOT_RUNTIME", "26.5"):
+            self.record(FACTS, snapshots="26.5")
+            self.assertEqual(self.step("sheets", FakeShell())[0], 0)
+        self.assertIn("- Odd draws: 1 in `logs/test-26.5.log`, below\n", self.index())
+        self.assertEqual(self.staged_record()["odd-draws"], ODD[:1])
+
+    def test_bytes_that_aren_t_utf_8_are_read_past(self):
+        # The build job's log is its own text: a byte that isn't UTF-8 doesn't stop the step,
+        # and a line it falls in is counted, never copied.
+        self.snapshots([self.entry("F02-upcoming", "new")])
+        with open(os.path.join(self.repo.out, "logs", "test-27.2.log"), "wb") as f:
+            f.write(b"\xff\xfe junk\n" + ODD[0].encode() + b"\n"
+                    + ODD[1].replace("H01", "H\udcff1").encode("utf-8", "surrogateescape") + b"\n")
+        code, out = self.step("sheets", FakeShell())
+        self.assertEqual(code, 0, out)
+        self.assertEqual((self.staged_record()["odd-draws"], self.staged_record()["odd-draws-unread"]),
+                         (ODD[:1], 1))
+        self.assertTrue(os.path.isfile(os.path.join(self.repo.work, "evidence.json")))
+
+    def test_a_log_that_isn_t_staged_is_unknown(self):
+        # Read from the stage, so a log the steps' checks left out is never read: missing, or a
+        # link (which fails the step as a stray).
+        self.snapshots([self.entry("F02-upcoming", "new")])
+        log = os.path.join(self.repo.out, "logs", "test-27.2.log")
+        os.remove(log)
+        self.assertEqual(self.step("sheets", FakeShell())[0], 0)
+        self.assertIn("- Odd draws: unknown: no `logs/test-27.2.log`\n", self.index())
+        self.assertEqual(self.staged_record(), dict(FACTS, tests="failed"))
+        os.symlink(self.repo.write("elsewhere.log", ODD[0] + "\n"), log)
+        code, out = self.step("sheets", FakeShell())
+        self.assertEqual(code, 1, out)
+        self.assertIn("- Odd draws: unknown: no `logs/test-27.2.log`\n", self.index())
+        self.assertNotIn("A03-profile-saving-dark", self.index())
+        self.assertNotIn("odd-draws", self.staged_record())
+
+    def test_the_index_shows_the_first_hundred_and_run_json_keeps_them_all(self):
+        self.snapshots([self.entry("F02-upcoming", "new")])
+        many = [ODD[0].replace("A03-profile-saving-dark", f"S{n:03}") for n in range(102)]
+        self.write_log("test-27.2.log", many)
+        self.assertEqual(self.step("sheets", FakeShell())[0], 0)
+        lines = self.index().splitlines()
+        self.assertIn("- Odd draws: 102 in `logs/test-27.2.log`, below", lines)
+        shown = [line for line in lines if line.startswith("- `warning: ScreenSnapshot ")]
+        self.assertEqual(shown, [f"- `{line}`" for line in many[:ios_steps.ODD_DRAWS_SHOWN]])
+        self.assertEqual(ios_steps.ODD_DRAWS_SHOWN, 100)
+        self.assertIn("- and 2 more, in run.json and `logs/test-27.2.log`", lines)
+        self.assertEqual(self.staged_record()["odd-draws"], many)
+        # Exactly the hundred: every one shown, and no "more".
+        self.write_log("test-27.2.log", many[:100])
+        self.assertEqual(self.step("sheets", FakeShell())[0], 0)
+        lines = self.index().splitlines()
+        self.assertEqual(len([line for line in lines if line.startswith("- `warning: ScreenSnapshot ")]), 100)
+        self.assertFalse([line for line in lines if line.startswith("- and ")])
 
 
 class PublishTest(StepsTest):
