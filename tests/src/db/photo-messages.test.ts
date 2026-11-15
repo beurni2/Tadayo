@@ -14,6 +14,7 @@ import {
   commitDrop,
   joinByRoster,
   leave,
+  newAvatar,
   newId,
   newWorld,
   type Member,
@@ -212,7 +213,7 @@ describe("T63 and T64: a photo message's upload, made for one revealed drop by i
     });
   });
 
-  it("has a thumbnail for the feed's reply preview, which a drop's photo never has (T10, T65)", async () => {
+  it("has a thumbnail for the feed's reply preview, which a drop's photo, a replacement or an avatar never has (T10, T65)", async () => {
     await rolledBack(app, async (tx) => {
       const w = await newWorld(tx);
       const drop = await commitDrop(tx, w, w.ben);
@@ -220,13 +221,29 @@ describe("T63 and T64: a photo message's upload, made for one revealed drop by i
       for (const kind of ["thumbnail", "display", "full"]) await rendition(tx, photo, kind);
       const [row] = await tx<{ upload_id: string }[]>`SELECT upload_id FROM app.drops WHERE id = ${drop}`;
       if (!row) throw new Error("no drop");
-      await rendition(tx, row.upload_id, "display");
-      await expectRefused(
-        tx,
-        REFUSED.integrity,
-        (sp) => rendition(sp, row.upload_id, "thumbnail"),
-        /only a photo message's upload has a thumbnail \(T10, T65\)/,
-      );
+      // Ben's replacement of the drop's photo, waiting before the reveal, is a drop's photo too.
+      const replacement = newId("upl");
+      await tx`
+        INSERT INTO app.uploads (id, owner_user_id, purpose, replaces_drop_id, content_type, byte_size, object_key,
+                                 created_at, expires_at)
+        VALUES (${replacement}, ${w.ben.user}, 'replacement', ${drop}, 'image/jpeg', 1000, ${newId("uploads/raw")},
+                ${AT.edited}, ${AT.close})
+      `;
+      await tx`UPDATE app.uploads SET state = 'preparing' WHERE id = ${replacement}`;
+      await tx`
+        UPDATE app.uploads SET state = 'ready', content_hash = ${randomBytes(32)}, content_version = ${newId("v")}
+         WHERE id = ${replacement}
+      `;
+      const avatar = await newAvatar(tx, w.cleo.user, "ready");
+      for (const upload of [row.upload_id, replacement, avatar.id]) {
+        await rendition(tx, upload, "display");
+        await expectRefused(
+          tx,
+          REFUSED.integrity,
+          (sp) => rendition(sp, upload, "thumbnail"),
+          /only a photo message's upload has a thumbnail \(T10, T65\)/,
+        );
+      }
     });
   });
 });
@@ -350,6 +367,53 @@ describe("T63 to T65: a message holds text, a photo or both, and its photo goes 
           await message(sp, drop, w.cleo, "Again", photo, AT.close);
         },
         /comments_one_message_per_photo/,
+      );
+    });
+  });
+
+  it("marks its upload used only for a message that was inserted, never one an ON CONFLICT skips or turns into an edit; an upload starts unused, and only a photo message's is ever used (T65)", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await newWorld(tx);
+      const drop = await commitDrop(tx, w, w.ben);
+      const text = newId("cmt");
+      await message(tx, drop, w.cleo, "Hi", null, AT.opened, text);
+      const photo = await photoFor(tx, w.cleo.user, drop);
+      const usedAt = async (upload: string) =>
+        (await tx<{ used_at: Date | null }[]>`SELECT used_at FROM app.uploads WHERE id = ${upload}`)[0]?.used_at;
+      const skipped = await tx`
+        INSERT INTO app.comments (id, drop_id, author_interval_id, body, photo_upload_id, created_at, updated_at)
+        VALUES (${text}, ${drop}, ${w.cleo.interval}, NULL, ${photo}, ${AT.opened}, ${AT.opened})
+        ON CONFLICT (id) DO NOTHING
+      `;
+      expect(skipped.count).toBe(0);
+      expect(await usedAt(photo)).toBeNull();
+      await tx`
+        INSERT INTO app.comments (id, drop_id, author_interval_id, body, photo_upload_id, created_at, updated_at)
+        VALUES (${text}, ${drop}, ${w.cleo.interval}, 'Hello', ${photo}, ${AT.opened}, ${AT.opened})
+        ON CONFLICT (id) DO UPDATE SET body = EXCLUDED.body, version = 2, updated_at = ${AT.close}
+      `;
+      expect(await usedAt(photo)).toBeNull();
+      // The photo the skipped message named is still free for a message of Cleo's own.
+      await message(tx, drop, w.cleo, null, photo, AT.close);
+      expect(await usedAt(photo)).toEqual(AT.close);
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) => sp`
+          INSERT INTO app.uploads (id, owner_user_id, purpose, conversation_drop_id, content_type, byte_size, object_key,
+                                   created_at, expires_at, used_at)
+          VALUES (${newId("upl")}, ${w.cleo.user}, 'conversation_photo', ${drop}, 'image/jpeg', 1000, ${newId("uploads/raw")},
+                  ${AT.opened}, ${AT.close}, ${AT.opened})
+        `,
+        /^app\.uploads: insert refused: an upload starts unused \(T65\)/,
+      );
+      const [row] = await tx<{ upload_id: string }[]>`SELECT upload_id FROM app.drops WHERE id = ${drop}`;
+      if (!row) throw new Error("no drop");
+      await expectRefused(
+        tx,
+        REFUSED.check,
+        (sp) => sp`UPDATE app.uploads SET used_at = ${AT.close} WHERE id = ${row.upload_id}`,
+        /uploads_used_for_conversation/,
       );
     });
   });
@@ -493,6 +557,33 @@ describe("T25 and FQ108: a message removed by someone other than its author is r
       await withdraw(tx, drop, w.ben, AT.close);
       await removal(tx, withDrop, drop, "drop_ended", null);
       await endRemoved(tx, withDrop);
+      // A drop's removal, by a member in its photo or by the operator, ends its messages the same way (T24).
+      const [anas, cleos] = [await commitDrop(tx, w, w.ana), await commitDrop(tx, w, w.cleo)];
+      const [onAnas, onCleos] = [newId("cmt"), newId("cmt")];
+      await message(tx, anas, w.ben, "Wow", null, AT.opened, onAnas);
+      await message(tx, cleos, w.ana, null, await photoFor(tx, w.ana.user, cleos), AT.opened, onCleos);
+      await tx`
+        INSERT INTO app.drop_removals (drop_id, reason, actor_interval_id, removed_at)
+        VALUES (${anas}, 'pictured', ${w.cleo.interval}, ${AT.close})
+      `;
+      const removeDrop = newId("act");
+      await tx`
+        INSERT INTO app.operator_actions (id, operator, script, script_version, action, target_kind, target_id, policy, acted_at)
+        VALUES (${removeDrop}, 'founder', 'remove-drop', ${"0".repeat(40)}, 'remove_drop', 'drop', ${cleos}, 'trial.safety',
+                ${AT.close})
+      `;
+      await tx`
+        INSERT INTO app.drop_removals (drop_id, reason, operator_action_id, removed_at)
+        VALUES (${cleos}, 'moderation', ${removeDrop}, ${AT.close})
+      `;
+      for (const [removedDrop, onIt] of [
+        [anas, onAnas],
+        [cleos, onCleos],
+      ] as const) {
+        await tx`UPDATE app.drops SET state = 'removed', ended_at = ${AT.close}, updated_at = ${AT.close} WHERE id = ${removedDrop}`;
+        await removal(tx, onIt, removedDrop, "drop_ended", null);
+        await endRemoved(tx, onIt);
+      }
       await checkAsAtCommit(tx);
     });
   });

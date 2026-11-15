@@ -302,15 +302,22 @@ describe("T17: allowances by role, as a last guard behind the counter's lock", (
   it("refuses a counter that names its own limits, and any change to them (T17)", async () => {
     await rolledBack(app, async (tx) => {
       const w = await newWorld(tx);
-      await expectRefused(
-        tx,
-        REFUSED.integrity,
-        (sp) => sp`
-          INSERT INTO app.contribution_counters (occurrence_id, interval_id, club_id, total_limit, photo_limit, external_limit)
-          VALUES (${w.day}, ${w.ben.interval}, ${w.club}, 6, 6, 2)
-        `,
-        /the limits come from the day's star interval, never from the caller \(T17\)/,
-      );
+      // Each limit named alone, at the star's value, for Ben, a friend that day.
+      for (const [limit, value] of [
+        ["total_limit", 6],
+        ["photo_limit", 6],
+        ["external_limit", 2],
+      ] as const) {
+        await expectRefused(
+          tx,
+          REFUSED.integrity,
+          (sp) => sp`
+            INSERT INTO app.contribution_counters (occurrence_id, interval_id, club_id, ${sp(limit)})
+            VALUES (${w.day}, ${w.ben.interval}, ${w.club}, ${value})
+          `,
+          /the limits come from the day's star interval, never from the caller \(T17\)/,
+        );
+      }
       await commitDrop(tx, w, w.ben);
       await expectRefused(
         tx,
@@ -371,16 +378,29 @@ describe("T17: allowances by role, as a last guard behind the counter's lock", (
     await rolledBack(app, async (tx) => {
       const w = await newWorld(tx);
       await tx.unsafe("ALTER TABLE app.contribution_counters DISABLE TRIGGER contribution_counters_limits");
-      // A friend's total and link with the star's photos.
-      await expectRefused(
-        tx,
-        REFUSED.check,
-        (sp) => sp`
-          INSERT INTO app.contribution_counters (occurrence_id, interval_id, club_id, total_limit, photo_limit, external_limit)
-          VALUES (${w.day}, ${w.ben.interval}, ${w.club}, 3, 6, 1)
-        `,
-        /contribution_counters_limits_by_role/,
-      );
+      const counter = (sp: Tx, limits: readonly [number | null, number | null, number | null]) => sp`
+        INSERT INTO app.contribution_counters (occurrence_id, interval_id, club_id, total_limit, photo_limit, external_limit)
+        VALUES (${w.day}, ${w.ben.interval}, ${w.club}, ${limits[0]}, ${limits[1]}, ${limits[2]})
+      `;
+      // Each set one value off a role's own: a friend's with one of the star's, and the star's with one of a friend's.
+      for (const limits of [
+        [6, 2, 1],
+        [3, 6, 1],
+        [3, 2, 2],
+        [3, 6, 2],
+        [6, 2, 2],
+        [6, 6, 1],
+      ] as const) {
+        await expectRefused(tx, REFUSED.check, (sp) => counter(sp, limits), /contribution_counters_limits_by_role/);
+      }
+      // A null limit would pass every CHECK; the columns refuse it.
+      for (const limits of [
+        [null, 2, 1],
+        [3, null, 1],
+        [3, 2, null],
+      ] as const) {
+        await expectRefused(tx, REFUSED.notNull, (sp) => counter(sp, limits));
+      }
     });
   });
 

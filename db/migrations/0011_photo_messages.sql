@@ -7,8 +7,8 @@
 -- reservation and no allowance (T64), and it can never become a drop, a replacement or an avatar.
 -- Its processing state is its upload's; its removal state is its message's. A message never
 -- changes its photo, and loses it only with the whole message (FQ107). An upload is a message's
--- photo once: the commit marks it used, for good, so a photo a removal took away never comes back
--- in a new message, whatever is left of its upload (T25, T65).
+-- photo once: the message that takes it marks it used, for good, so a photo a removal took away
+-- never comes back in a new message, whatever is left of its upload (T25, T65).
 --
 -- Every path ends a message in place, clearing its text and photo. B6's paths then delete the
 -- upload in the same transaction, whose renditions go with it, and write its tombstones (T24, T28);
@@ -23,7 +23,8 @@
 -- text until a purge.
 
 -- A photo message's upload, scoped when it is made to the drop whose conversation it is for (T63),
--- and the instant a message took it, set once by comments_photo_guard (T65).
+-- and the instant a message took it: unset when the upload is made, set once by
+-- comments_photo_used, and only on a photo message's upload (T65).
 ALTER TABLE app.uploads
   ADD COLUMN conversation_drop_id app.id REFERENCES app.drops,
   ADD COLUMN used_at timestamptz,
@@ -31,13 +32,17 @@ ALTER TABLE app.uploads
   ADD CONSTRAINT uploads_purpose_check
     CHECK (purpose IN ('drop_photo', 'replacement', 'avatar', 'conversation_photo')),
   ADD CONSTRAINT uploads_conversation_drop CHECK ((purpose = 'conversation_photo') = (conversation_drop_id IS NOT NULL)),
-  ADD CONSTRAINT uploads_for_conversation UNIQUE (id, conversation_drop_id);
+  ADD CONSTRAINT uploads_for_conversation UNIQUE (id, conversation_drop_id),
+  ADD CONSTRAINT uploads_used_for_conversation CHECK (used_at IS NULL OR purpose = 'conversation_photo');
 -- The drop's withdrawal and removal find the photos no message holds yet (T24).
 CREATE INDEX uploads_by_conversation_drop ON app.uploads (conversation_drop_id) WHERE conversation_drop_id IS NOT NULL;
 CREATE TRIGGER uploads_keep_conversation BEFORE UPDATE ON app.uploads
   FOR EACH ROW EXECUTE FUNCTION app.keep_columns('conversation_drop_id');
 CREATE TRIGGER uploads_used_once BEFORE UPDATE ON app.uploads
   FOR EACH ROW EXECUTE FUNCTION app.set_once('used_at');
+CREATE TRIGGER uploads_start_unused BEFORE INSERT ON app.uploads
+  FOR EACH ROW WHEN (NEW.used_at IS NOT NULL)
+  EXECUTE FUNCTION app.refuse_change('an upload starts unused (T65)');
 
 -- BEFORE INSERT, for a photo message's upload: made only by someone in the drop's audience who is
 -- still a member, for a drop still active, from its reveal on (T9, T63, T64). The membership, then
@@ -125,9 +130,9 @@ CREATE TRIGGER comments_start BEFORE INSERT ON app.comments
   FOR EACH ROW EXECUTE FUNCTION app.comments_start();
 
 -- BEFORE INSERT OR UPDATE: at the commit, the photo is its author's own upload, ready, not lapsed
--- and never used, locked so a lapse that races the commit waits and then fails on the foreign key,
--- and a second commit of the same upload waits and then finds it used (T12, T63). The commit marks
--- it used for good. Afterwards it is never added or replaced, and goes only with the whole message
+-- and never used, locked to the end of the transaction, so a lapse that races the commit waits and
+-- then fails on the foreign key, and a second commit of the same upload waits and then finds it
+-- used (T12, T63). Afterwards it is never added or replaced, and goes only with the whole message
 -- (T65, FQ107).
 CREATE FUNCTION app.comments_photo_guard() RETURNS trigger
   LANGUAGE plpgsql SET search_path = '' AS $$
@@ -154,12 +159,24 @@ BEGIN
     RAISE EXCEPTION 'app.comments: a message''s photo is its author''s own ready upload, not lapsed and never used (T12, T63, T65)'
       USING ERRCODE = 'integrity_constraint_violation';
   END IF;
-  UPDATE app.uploads SET used_at = NEW.created_at WHERE id = NEW.photo_upload_id;
   RETURN NEW;
 END
 $$;
 CREATE TRIGGER comments_photo_guard BEFORE INSERT OR UPDATE ON app.comments
   FOR EACH ROW EXECUTE FUNCTION app.comments_photo_guard();
+-- AFTER INSERT, for a message with a photo: its upload is marked used, at the message's instant,
+-- for good (uploads_used_once). An AFTER trigger fires only for a row that was inserted, so an
+-- INSERT that ON CONFLICT skips, or turns into an edit, leaves the upload unused (T65).
+CREATE FUNCTION app.comments_photo_used() RETURNS trigger
+  LANGUAGE plpgsql SET search_path = '' AS $$
+BEGIN
+  UPDATE app.uploads SET used_at = NEW.created_at WHERE id = NEW.photo_upload_id;
+  RETURN NEW;
+END
+$$;
+CREATE TRIGGER comments_photo_used AFTER INSERT ON app.comments
+  FOR EACH ROW WHEN (NEW.photo_upload_id IS NOT NULL)
+  EXECUTE FUNCTION app.comments_photo_used();
 -- A message is ended in place, never deleted: its replies, a moderation case and its removal name
 -- it, and its end is what every reader and purge path follows (T24, T25).
 CREATE TRIGGER comments_no_delete BEFORE DELETE ON app.comments
