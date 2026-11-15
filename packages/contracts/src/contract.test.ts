@@ -21,11 +21,26 @@ import {
   InvitationAcceptance,
   RosterRevision,
 } from "./schemas/clubs.ts";
-import { Caption, ClubName, CommentText, DisplayName, NAME_PATTERN, Person, Timezone } from "./common.ts";
-import { ReportNote, SearchText } from "./schemas/after.ts";
-import { DropCaption } from "./schemas/days.ts";
+import { Allowance, Caption, ClubName, CommentText, DisplayName, NAME_PATTERN, Person, Timezone } from "./common.ts";
+import {
+  CommentEditText,
+  CreateCommentRequest,
+  ReportNote,
+  SearchText,
+  UpdateCommentRequest,
+} from "./schemas/after.ts";
+import {
+  CreateDropRequest,
+  CreateReservationRequest,
+  CreateUploadRequest,
+  DropPhotoUploadRequest,
+  SetHighlightRequest,
+  UpdateDropRequest,
+  UploadPurpose,
+} from "./schemas/contributing.ts";
+import { DropCaption, DropOwn } from "./schemas/days.ts";
 import { unknownKeys } from "./strict.ts";
-import { allSuccessExamples, errorExample } from "./fixtures/examples.ts";
+import { allSuccessExamples, debby6Drops, errorExample } from "./fixtures/examples.ts";
 import { member, rosters, type Who } from "./fixtures/world.ts";
 
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
@@ -319,10 +334,12 @@ describe("the document", () => {
         "MEDIA_NOT_READY",
         "MEMBERSHIP_CHANGED",
         "OCCURRENCE_CLOSED",
+        "PHOTO_LIMIT",
         "QUOTA_FULL",
       ],
+      createComment: ["MEDIA_NOT_READY"],
       createReport: ["NOT_FOUND"],
-      createReservation: ["EXTERNAL_LIMIT", "MEMBERSHIP_CHANGED", "OCCURRENCE_CLOSED", "QUOTA_FULL"],
+      createReservation: ["EXTERNAL_LIMIT", "MEMBERSHIP_CHANGED", "OCCURRENCE_CLOSED", "PHOTO_LIMIT", "QUOTA_FULL"],
       createUpload: ["MEMBERSHIP_CHANGED", "NOT_FOUND", "OCCURRENCE_CLOSED", "PROFILE_INCOMPLETE"],
       declineRoster: ["ROSTER_CHANGED", "VERSION_CONFLICT"],
       getMyAvatar: ["NOT_FOUND"],
@@ -360,8 +377,10 @@ describe("the document", () => {
       Caption: text,
       ChosenWeekdays: /each only once/,
       ClubName: names,
+      CommentEditText: text,
       CommentText: text,
       ConfirmedWeekdays: /each only once/,
+      CreateCommentRequest: /at least one of `text` and `photo_upload_id`/,
       DisplayName: names,
       ReportNote: text,
       SearchText: text,
@@ -431,6 +450,20 @@ describe("the pre-reveal whitelist (T10)", () => {
       required: ["membership_id", "display_name"],
     });
     expect((schemas.MediaClass as JsonObject).enum).toEqual(["photo", "external_video"]);
+  });
+
+  it("gives the caller's own drop before the reveal only its own fields, so nothing rides on it into a day (T10, T11)", () => {
+    // DropOwn sits in every day before the reveal: a field added to it would pass the pins above.
+    expect(Object.keys(DropOwn.shape).sort()).toEqual([
+      "author",
+      "caption",
+      "highlight",
+      "id",
+      "media_class",
+      "state",
+      "version",
+      "view",
+    ]);
   });
 
   it("is all a day before the reveal can hold: nothing revealed, no rail, no count (T10, T15)", () => {
@@ -555,6 +588,7 @@ describe("text's guard and its well-formedness (T13, FQ70)", () => {
     [CandidateLabel, 640],
     [Caption, 2240],
     [CommentText, 8000],
+    [CommentEditText, 8000],
     [ReportNote, 8000],
     [SearchText, 1600],
   ];
@@ -756,7 +790,7 @@ describe("the examples", () => {
         expect(named.has(key), `${code} names ${key}`).toBe(true);
       }
     }
-    for (const code of ["OCCURRENCE_CLOSED", "QUOTA_FULL", "EXTERNAL_LIMIT"] as const) {
+    for (const code of ["OCCURRENCE_CLOSED", "QUOTA_FULL", "EXTERNAL_LIMIT", "PHOTO_LIMIT"] as const) {
       expect(Object.keys(errorExample(code) as JsonObject), code).toEqual(
         expect.arrayContaining(["target", "next_target"]),
       );
@@ -798,7 +832,7 @@ describe("the examples", () => {
               `${id}.${name}`,
             );
           }
-          // Every scene is Ben's, so a day has one cover for him wherever it appears (D08).
+          // Every scene is Ben's, so a day has one cover for Ben wherever it appears (D08).
           if (
             typeof node.cover_drop_id === "string" &&
             node.occurrence !== null &&
@@ -825,7 +859,8 @@ describe("the examples", () => {
     for (const [id, set] of Object.entries(examples)) {
       for (const [name, example] of Object.entries(set)) {
         walk(example.value as Json, (node) => {
-          if (typeof node.text !== "string" || typeof node.edited !== "boolean") return;
+          // A comment by its author and Edited label, so one with a photo and no text is checked too (T65).
+          if (typeof node.edited !== "boolean" || node.author === undefined) return;
           const author = (node.author as JsonObject).membership_id;
           const bens = typeof author === "string" && author.endsWith("_ben");
           if (bens) own += 1;
@@ -1236,6 +1271,262 @@ describe("the examples", () => {
         });
       }
     }
+  });
+});
+
+// The founder's new direction, revision 1 (ADR-035; docs/plans/new-direction-r1.md, section 5): allowances by
+// role, a friend's photo limit, photo replies, and the revealed day's two sections. The pre-reveal pins above
+// are unchanged; these hold the new shapes to the addendum and keep them out of every answer before the reveal.
+describe("the new direction (ADR-035)", () => {
+  const examples = allSuccessExamples();
+  const everyExample = (): [string, Json][] => [
+    ...Object.entries(examples).flatMap(([id, set]) =>
+      Object.entries(set).map(([name, example]): [string, Json] => [`${id}.${name}`, example.value as Json]),
+    ),
+    ...ERROR_CODES.map((code): [string, Json] => [`error ${code}`, errorExample(code) as Json]),
+  ];
+
+  it("gives the allowance the caller's own drops, photos and video links, each committed and reserved (T15, T17)", () => {
+    expect(Object.keys(Allowance.shape).sort()).toEqual([
+      "added",
+      "external_added",
+      "external_limit",
+      "external_reserved",
+      "is_star",
+      "limit",
+      "photo_added",
+      "photo_limit",
+      "photo_reserved",
+      "reserved",
+    ]);
+  });
+
+  it("gives every allowance exactly the star's limits or a friend's, and counts within them (addendum 2)", () => {
+    let star = 0;
+    let friend = 0;
+    for (const [where, value] of everyExample()) {
+      walk(value, (node, path) => {
+        if (typeof node.external_limit !== "number") return;
+        const at = `${where}${path.slice(1)}`;
+        const limits = [node.limit, node.photo_limit, node.external_limit];
+        expect(limits, at).toEqual(node.is_star === true ? [6, 6, 2] : [3, 2, 1]);
+        if (node.is_star === true) star += 1;
+        else friend += 1;
+        expect(node.photo_added, at).toBe(Number(node.added) - Number(node.external_added));
+        expect(node.photo_reserved, at).toBe(Number(node.reserved) - Number(node.external_reserved));
+        expect(Number(node.added) + Number(node.reserved), at).toBeLessThanOrEqual(Number(node.limit));
+        expect(Number(node.photo_added) + Number(node.photo_reserved), at).toBeLessThanOrEqual(
+          Number(node.photo_limit),
+        );
+        expect(Number(node.external_added) + Number(node.external_reserved), at).toBeLessThanOrEqual(
+          node.external_limit,
+        );
+      });
+    }
+    expect(star, "a star's allowance").toBeGreaterThan(0);
+    expect(friend, "a friend's allowance").toBeGreaterThan(0);
+  });
+
+  it("refuses a role in any request: the server reads it from the membership intervals (T17; plan section 9, check 1)", () => {
+    const bodies: [string, z.ZodType, Record<string, unknown>][] = [
+      ["CreateReservationRequest", CreateReservationRequest, { media_class: "photo" }],
+      [
+        "CreateDropRequest",
+        CreateDropRequest,
+        { reservation_id: "rsv_1", media: { kind: "photo", upload_id: "upl_1" } },
+      ],
+      [
+        "DropPhotoUploadRequest",
+        DropPhotoUploadRequest,
+        { purpose: "drop_photo", reservation_id: "rsv_1", content_type: "image/jpeg", byte_size: 1 },
+      ],
+      ["UpdateDropRequest", UpdateDropRequest, { caption: "", expected_version: 1 }],
+      ["SetHighlightRequest", SetHighlightRequest, { drop_id: "drp_1", expected_version: 0 }],
+      [
+        "CreateUploadRequest",
+        CreateUploadRequest,
+        { purpose: "conversation_photo", drop_id: "drp_1", content_type: "image/jpeg", byte_size: 1 },
+      ],
+      ["CreateCommentRequest", CreateCommentRequest, { text: "Count me in." }],
+      ["UpdateCommentRequest", UpdateCommentRequest, { text: "Count me in.", expected_version: 1 }],
+    ];
+    for (const [name, schema, body] of bodies) {
+      const plain = schema.safeParse(body);
+      expect(plain.success ? "" : JSON.stringify(plain.error.issues), `${name} without a role`).toBe("");
+      for (const key of ["role", "is_star", "self", "star"]) {
+        expect(schema.safeParse({ ...body, [key]: true }).success, `${name} with ${key}`).toBe(false);
+      }
+    }
+  });
+
+  it("names each role's numbers, and which refusal comes first, in the three limit codes (T4, T17)", () => {
+    expect(ERRORS.QUOTA_FULL[0]).toBe(409);
+    expect(ERRORS.EXTERNAL_LIMIT[0]).toBe(409);
+    expect(ERRORS.PHOTO_LIMIT[0]).toBe(409);
+    expect(ERRORS.QUOTA_FULL[1]).toMatch(/six drops for the star, three for anyone else/);
+    expect(ERRORS.EXTERNAL_LIMIT[1]).toMatch(/two for the star, one for anyone else/);
+    expect(ERRORS.PHOTO_LIMIT[1]).toMatch(/^A photo refused: two photos already in someone else's day/);
+    // Otherwise the limit of the drop's own kind answers: each says which kind it refuses.
+    expect(ERRORS.EXTERNAL_LIMIT[1]).toMatch(/^A video link refused: /);
+    for (const code of ["QUOTA_FULL", "EXTERNAL_LIMIT", "PHOTO_LIMIT"] as const) {
+      expect(ERRORS[code][1], code).toMatch(/QUOTA_FULL comes first/);
+      for (const field of ["target", "allowance", "next_target"])
+        expect(ERRORS[code][1], code).toContain(`\`${field}\``);
+    }
+  });
+
+  it("keeps a revealed section, a reply preview and a reply's photo out of every answer before the reveal (T10, T65)", () => {
+    const revealedOnly = ["DaySection", "RevealedDayDrop", "ReplyPreview", "CommentPhoto"];
+    const preReveal = ["UpcomingDay", "OwnDay", "OwnContributionPage", "Error", "UpcomingDropCard"];
+    for (const root of preReveal) {
+      const reached = reachable([{ $ref: `#/components/schemas/${root}` }]);
+      for (const name of revealedOnly) expect(reached.has(name), `${root} reaches ${name}`).toBe(false);
+    }
+    for (const name of revealedOnly) expect(requestSchemas.has(name), `a request reaches ${name}`).toBe(false);
+    // Each is reached through a revealed day or a comment, and nowhere else: every schema that reaches it,
+    // pinned, so a new path from any answer (a receipt, a waiting Home, a drop's detail) fails here.
+    const reachedFrom = (name: string): string[] =>
+      Object.keys(schemas)
+        .filter((root) => root !== name && reachable([{ $ref: `#/components/schemas/${root}` }]).has(name))
+        .sort();
+    expect(reachedFrom("DaySection")).toEqual(["Day", "Home", "HomeDay", "RevealedDay", "RevealedDayDrop"]);
+    expect(reachedFrom("ReplyPreview")).toEqual(["Day", "Home", "HomeDay", "RevealedDay", "RevealedDayDrop"]);
+    expect(reachedFrom("RevealedDayDrop")).toEqual(["Day", "Home", "HomeDay", "RevealedDay"]);
+    expect(reachedFrom("CommentPhoto")).toEqual(["Comment", "CommentPage"]);
+    // And the answers that reach them are getHome's and getOccurrence's revealed day and listComments' page.
+    const answering = operations
+      .filter((operation) => revealedOnly.some((name) => reachable([operation.responses ?? null]).has(name)))
+      .map((operation) => operation.operationId as string)
+      .sort();
+    expect(answering).toEqual(["getHome", "getOccurrence", "listComments"]);
+  });
+
+  it("pins the reply preview and a reply's photo to the fields the addendum names: no text, time, count or URL", () => {
+    const keys = (name: string): string[] =>
+      Object.keys(((schemas[name] as JsonObject).properties ?? {}) as JsonObject).sort();
+    expect(keys("ReplyPreview")).toEqual(["author", "comment_id", "media_version"]);
+    expect(keys("CommentPhoto")).toEqual(["height", "media_version", "width"]);
+    expect(keys("Comment")).toEqual(["author", "edited", "id", "photo", "reply_to", "text", "version"]);
+    expect((schemas.DaySection as JsonObject).enum).toEqual(["star", "friends"]);
+    const card = schemas.RevealedDayDrop as JsonObject;
+    expect(keys("RevealedDayDrop")).toEqual([...keys("DropRevealed"), "reply_preview", "section"].sort());
+    expect(card.required).toContain("section");
+    expect(card.required).not.toContain("reply_preview");
+  });
+
+  it("orders every revealed day star first and marks each drop's section (T35, addendum 4)", () => {
+    let days = 0;
+    let friendsOnly = 0;
+    for (const [where, value] of everyExample()) {
+      walk(value, (node, path) => {
+        if (node.stage !== "revealed" || !Array.isArray(node.drops)) return;
+        days += 1;
+        const star = ((node.occurrence as JsonObject).star as JsonObject).membership_id;
+        let friendsSeen = false;
+        for (const drop of node.drops as JsonObject[]) {
+          const at = `${where}${path.slice(1)} ${JSON.stringify(drop.id)}`;
+          const mine = (drop.author as JsonObject).membership_id === star;
+          expect(drop.section, at).toBe(mine ? "star" : "friends");
+          if (drop.section === "friends") friendsSeen = true;
+          else expect(friendsSeen, `${at} comes after a friend's drop`).toBe(false);
+        }
+        const sections = (node.drops as JsonObject[]).map((drop) => drop.section);
+        if (sections.length > 0 && !sections.includes("star")) friendsOnly += 1;
+      });
+      // A section is only on a revealed day's card: never on a drop elsewhere.
+      walk(value, (node, path) => {
+        if (node.view !== undefined && "section" in node) {
+          expect(path, `${where}: a section outside a revealed day`).toMatch(/\/drops\/\d+$/);
+          expect(node.view, where).toBe("revealed");
+        }
+      });
+    }
+    expect(days).toBeGreaterThan(0);
+    expect(friendsOnly, "a day with friends' drops only (addendum 4)").toBeGreaterThan(0);
+    // The order within a section can't be read from the shapes, which carry no commit time: B5 proves it on
+    // the database. This pins the fixture's own scene: Debby's drop, then friends' in the commit order main's
+    // scene had before the new direction (Maya, Sam, Ben, Nina).
+    expect(debby6Drops.map((drop) => drop.id)).toEqual([
+      "drp_debby_6_own",
+      "drp_maya_chair",
+      "drp_sam_hill",
+      "drp_ben_6",
+      "drp_nina_6_video",
+    ]);
+  });
+
+  it("points every reply preview at the latest photo message on its drop, by that message's author (T65)", () => {
+    // Each thread example's drop, so a preview is checked against its own drop's thread and no other.
+    const THREAD_DROP: Record<string, string> = {
+      thread: "drp_sam_hill",
+      with_own: "drp_sam_hill",
+      empty: "drp_sam_hill",
+    };
+    const threads = Object.entries(examples.listComments ?? {}).map(([name, example]) => {
+      expect(THREAD_DROP[name], `listComments.${name} names its drop here`).toBeDefined();
+      return { drop: THREAD_DROP[name], items: (example.value as JsonObject).items as JsonObject[] };
+    });
+    let previews = 0;
+    for (const [where, value] of everyExample()) {
+      walk(value, (node) => {
+        if (node.stage !== "revealed" || !Array.isArray(node.drops)) return;
+        for (const drop of node.drops as JsonObject[]) {
+          const preview = drop.reply_preview as JsonObject | undefined;
+          if (preview === undefined) continue;
+          previews += 1;
+          const thread = threads.find(
+            (candidate) => candidate.drop === drop.id && candidate.items.some((item) => item.id === preview.comment_id),
+          )?.items;
+          expect(
+            thread,
+            `${where}: ${JSON.stringify(preview.comment_id)} is in ${JSON.stringify(drop.id)}'s thread`,
+          ).toBeDefined();
+          const photos = (thread ?? []).filter((item) => item.photo !== undefined);
+          const latest = photos[photos.length - 1];
+          expect(latest?.id, `${where}: the latest photo message`).toBe(preview.comment_id);
+          expect((preview.author as JsonObject).membership_id).toBe(
+            ((latest?.author ?? {}) as JsonObject).membership_id,
+          );
+          expect(preview.media_version).toBe(((latest?.photo ?? {}) as JsonObject).media_version);
+        }
+      });
+    }
+    expect(previews).toBeGreaterThan(0);
+  });
+
+  it("asks a message for text, a photo or both, and lets an edit empty only a photo message's text (addendum 5, FQ107)", () => {
+    expect(CreateCommentRequest.safeParse({ text: "Count me in." }).success).toBe(true);
+    expect(CreateCommentRequest.safeParse({ photo_upload_id: "upl_ben_reply_1" }).success).toBe(true);
+    expect(CreateCommentRequest.safeParse({ text: "Same view.", photo_upload_id: "upl_ben_reply_1" }).success).toBe(
+      true,
+    );
+    expect(CreateCommentRequest.safeParse({}).success).toBe(false);
+    expect(CreateCommentRequest.safeParse({ reply_to_id: "cmt_debby_1" }).success).toBe(false);
+    expect(CreateCommentRequest.safeParse({ text: "" }).success).toBe(false);
+    expect(UpdateCommentRequest.safeParse({ text: "", expected_version: 1 }).success).toBe(true);
+    expect(UpdateCommentRequest.safeParse({ photo_upload_id: "upl_1", text: "x", expected_version: 1 }).success).toBe(
+      false,
+    );
+    expect(CommentText.safeParse("").success).toBe(false);
+  });
+
+  it("gives an upload's purposes one list: the purpose fixes what it can become (T64)", () => {
+    const mapping = ((schemas.CreateUploadRequest as JsonObject).discriminator as JsonObject).mapping as JsonObject;
+    expect(Object.keys(mapping).sort()).toEqual([...UploadPurpose.options].sort());
+    expect(UploadPurpose.options).toContain("conversation_photo");
+  });
+
+  it("gives every photo message in the examples a frame and a content version, and never an empty text (T12, T65)", () => {
+    let photos = 0;
+    for (const [where, value] of everyExample()) {
+      walk(value, (node) => {
+        if (typeof node.edited !== "boolean" || node.author === undefined) return;
+        expect(node.text === undefined && node.photo === undefined, `${where}: neither text nor photo`).toBe(false);
+        expect(node.text, where).not.toBe("");
+        if (node.photo !== undefined) photos += 1;
+      });
+    }
+    expect(photos).toBeGreaterThanOrEqual(2);
   });
 });
 

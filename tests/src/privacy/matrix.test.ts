@@ -21,7 +21,7 @@
 // itself are values the world keeps back.
 //
 // Each role's test prints the cells it ran and the answers it scanned, and asserts both: the cells
-// against the contract's 69 requests a world, the answers against what each step says it sends.
+// against the contract's 72 requests a world, the answers against what each step says it sends.
 
 import { randomBytes } from "node:crypto";
 import { buildApp, connect, routesOf, sessions, type ApiSql } from "@tadayo/api";
@@ -79,7 +79,7 @@ const plain = (tx: WorldTx) => tx as unknown as Tx;
 const CLAIMED = PHASES.collecting.add({ hours: 24 });
 
 /** The requests each world gets from the contract's operations (specsFor), pinned. */
-const REQUESTS_PER_WORLD = 69;
+const REQUESTS_PER_WORLD = 72;
 
 /** A world's own suffix, so its names are no other world's. */
 const suffix = () => ` ${randomBytes(6).toString("hex")}`;
@@ -536,7 +536,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       }
       console.log(`${role.name}: ${String(counted.cells)} cells run, ${String(counted.answers)} answers scanned`);
       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqual({ count: 0, first: [] });
-      // Every cell ran: the contract's 69 requests a world (each operation with each value of a
+      // Every cell ran: the contract's 72 requests a world (each operation with each value of a
       // required enum, and again with its optional ids), in each of the 7 states and each phase the
       // role has. And every answer was scanned, with the manipulated and guessed requests and the bodies.
       const specsPerWorld = operations.reduce(

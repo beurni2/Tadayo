@@ -63,9 +63,10 @@
 //   - a person only from such a club, under the name members see, with no avatar version once the
 //     person's interval or the viewer's in the club has ended, and never one who joined after the
 //     viewer's last interval there ended (FQ75);
-//   - an allowance that counts no more than the viewer's own drops in its day, but those withdrawn
-//     before its reveal, and the viewer's reservations in it still live at the answer's instant, and
-//     a day's ViewerDay from the viewer's own membership and the day's star (T15);
+//   - an allowance that counts no more than the viewer's own drops in its day, photos and video links
+//     alike, but those withdrawn before its reveal, and the viewer's reservations in it still live at
+//     the answer's instant, with the limits of the viewer's own role in that day, the star's or anyone
+//     else's (T17), and a day's ViewerDay from the viewer's own membership and the day's star (T15);
 //   - a day link only to a closed day the viewer can read a drop in, its cover a photo;
 //   - an account only as the viewer's own `Me`, with the id, name, avatar version, age confirmation and
 //     version of the viewer's own row (spec 23: the only place an account id appears; none for a
@@ -460,6 +461,7 @@ const ERROR_FIELDS: Readonly<Record<string, readonly string[]>> = {
   OCCURRENCE_CLOSED: ["target", "next_target"],
   QUOTA_FULL: ["target", "allowance", "next_target"],
   EXTERNAL_LIMIT: ["target", "allowance", "next_target"],
+  PHOTO_LIMIT: ["target", "allowance", "next_target"],
   VERSION_CONFLICT: ["current_version"],
   MEMBERSHIP_CHANGED: ["target", "current_id"],
   ROSTER_CHANGED: ["current_id"],
@@ -1229,8 +1231,10 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
         const allowance = node.allowance;
         for (const [field, most] of [
           ["added", drops.length],
+          ["photo_added", drops.filter((drop) => drop.media === "photo").length],
           ["external_added", drops.filter((drop) => drop.media === "external_video").length],
           ["reserved", held.length],
+          ["photo_reserved", held.filter((slot) => slot.media === "photo").length],
           ["external_reserved", held.filter((slot) => slot.media === "external_video").length],
         ] as const) {
           const count = allowance[field];
@@ -1240,6 +1244,18 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
               `${where}.${field}`,
               `more than the viewer's own ${field.replace("_", " ")} in the day (T15)`,
             );
+        }
+        // The role, and so the limits, are the viewer's own in that day: the star's six, six and two, or
+        // anyone else's three, two and one (T17; addendum 2).
+        const theDay = world.days.get(of);
+        if (theDay !== undefined) {
+          const star = mine(theDay.star);
+          if (allowance.is_star !== star)
+            find("world", `${where}.is_star`, "not whether the day is the viewer's own (T17)");
+          const limits = [allowance.limit, allowance.photo_limit, allowance.external_limit];
+          const role = star ? [6, 6, 2] : [3, 2, 1];
+          if (limits.some((limit, index) => limit !== role[index]))
+            find("world", where, "not the limits of the viewer's own role in the day (T17)");
         }
       }
     }

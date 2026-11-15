@@ -120,7 +120,8 @@ export const Version = named(
 
 export const Cursor = named(
   "Cursor",
-  "An opaque page cursor, bound to the viewer and the list it came from (T14): a random handle the server " +
+  "An opaque page cursor, bound to the viewer and the list it came from, and for a day to its stage, " +
+    "since a revealed day's order isn't its collecting order (T14, T35): a random handle the server " +
     "keeps, or an encrypted and authenticated value only the server can read, in base64url. Never a readable " +
     "key, so it carries no time, order key or count (T10, T15).",
   z
@@ -171,7 +172,7 @@ export const ContentVersion = named(
   "An opaque value that changes whenever an image's bytes do: the ETag its route sends, for caching per " +
     "account and content version (TECH-DESIGN section 4), and never a URL (T12). An avatar's version is " +
     "part of a person's display identity, so it can appear before the reveal (FQ74); a photo's " +
-    "`media_version` never does (T10).",
+    "`media_version`, a drop's or a reply's, never does (T10, T63).",
   z
     .string()
     .min(1)
@@ -255,16 +256,26 @@ export const Occurrence = named(
 
 export const Allowance = named(
   "Allowance",
-  "The caller's own allowance in one day, never anyone else's (T15): six drops, at most two of them " +
-    "external videos (spec 10, 11; T17). `added` counts committed drops, the only ones that are Added " +
-    "(T20); `reserved` counts the caller's live reservations, which the limits also count (T18).",
+  "The caller's own allowance in one day, never anyone else's (T15), by their role in it (T17; addendum " +
+    "2): the star (`is_star`) has six drops, any of them photos and at most two of them external video " +
+    "links (`limit` 6, `photo_limit` 6, `external_limit` 2); anyone else has three, at most two photos " +
+    "and at most one video link (3, 2 and 1). The limits are always exactly one of those two sets. The " +
+    "server reads the role from the caller's membership interval and the day's star interval, never " +
+    "from a request. `added`, `photo_added` and `external_added` count committed drops, the only ones " +
+    "that are Added (T20); `reserved`, `photo_reserved` and `external_reserved` count the caller's live " +
+    "reservations, which the limits also count (T18). The photos are the drops less the video links. " +
+    "Drafts and photos in conversations count for nothing (T17, T64).",
   z.object({
     added: z.int().min(0).max(6),
     reserved: z.int().min(0).max(6),
-    limit: z.int().min(6).max(6),
+    limit: z.int().min(3).max(6),
+    photo_added: z.int().min(0).max(6),
+    photo_reserved: z.int().min(0).max(6),
+    photo_limit: z.int().min(2).max(6),
     external_added: z.int().min(0).max(2),
     external_reserved: z.int().min(0).max(2),
-    external_limit: z.int().min(2).max(2),
+    external_limit: z.int().min(1).max(2),
+    is_star: z.boolean(),
   }),
 );
 

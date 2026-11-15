@@ -5,7 +5,10 @@ import * as z from "zod";
 import { Allowance, Id, Occurrence, Version } from "./common.ts";
 import { named } from "./registry.ts";
 
-/** Each code with its HTTP status and what it means. Spec 32's codes, TECH-DESIGN section 6's, and four more. */
+/**
+ * Each code with its HTTP status and what it means. Spec 32's codes, TECH-DESIGN section 6's, four more,
+ * and the founder's addendum's `PHOTO_LIMIT` (ADR-035).
+ */
 export const ERRORS = {
   INVALID_REQUEST: [400, "The request doesn't match the contract. `field` names the first bad field, never its value."],
   CAPTION_CONTAINS_SOURCE: [400, "The caption holds the drop's own link: move the link into the video drop (T13)."],
@@ -35,13 +38,25 @@ export const ERRORS = {
   ],
   QUOTA_FULL: [
     409,
-    "Six drops already, live reservations included (T17). `target`, the caller's `allowance`, and " +
-      "`next_target`, the same person's next day, for the person to confirm; nothing was moved (T4).",
+    "The caller's whole allowance for their role in that day, live reservations included: six drops for " +
+      "the star, three for anyone else (T17). When more than one limit is met, QUOTA_FULL comes first. " +
+      "`target`, the caller's `allowance`, and `next_target`, the same person's next day, for the person " +
+      "to confirm; nothing was moved (T4).",
   ],
   EXTERNAL_LIMIT: [
     409,
-    "Two video links already (T17). `target`, the caller's `allowance`, and `next_target`, the same " +
-      "person's next day, for the person to confirm; nothing was moved (T4).",
+    "A video link refused: the caller's video links for their role in that day, live reservations included: " +
+      "two for the star, one for anyone else (T17). QUOTA_FULL comes first when the whole allowance is used " +
+      "too. `target`, the caller's `allowance`, and `next_target`, the same person's next day, for the person " +
+      "to confirm; nothing was moved (T4).",
+  ],
+  PHOTO_LIMIT: [
+    409,
+    "A photo refused: two photos already in someone else's day, live reservations included, while the " +
+      "caller's video link is still free, so their last drop there can only be a video link (T17; addendum " +
+      "2). Never the star's, whose photos are their whole allowance. QUOTA_FULL comes first when the whole " +
+      "allowance is used too. `target`, the caller's `allowance`, and `next_target`, the same person's next " +
+      "day, for the person to confirm; nothing was moved (T4).",
   ],
   MEDIA_NOT_READY: [409, "The upload isn't ready yet: wait for `GET /v1/uploads/{upload_id}` to say ready."],
   VERSION_CONFLICT: [409, "Someone changed it first. `current_version` is the version now."],

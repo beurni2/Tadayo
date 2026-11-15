@@ -807,6 +807,21 @@ paths:
                         phase: collecting
                       drops:
                         - view: revealed
+                          id: drp_debby_6_own
+                          author:
+                            membership_id: mem_sp_debby
+                            display_name: Debby
+                            avatar_version: av_debby_1
+                          media_class: photo
+                          highlight: true
+                          photo:
+                            width: 3024
+                            height: 4032
+                            media_version: mv_drp_debby_6_own_1
+                          reactions: []
+                          viewer_favourite: false
+                          section: star
+                        - view: revealed
                           id: drp_maya_chair
                           author:
                             membership_id: mem_sp_maya
@@ -821,20 +836,7 @@ paths:
                           reactions: []
                           viewer_favourite: false
                           caption: Your future living room.
-                        - view: revealed
-                          id: drp_debby_6_own
-                          author:
-                            membership_id: mem_sp_debby
-                            display_name: Debby
-                            avatar_version: av_debby_1
-                          media_class: photo
-                          highlight: true
-                          photo:
-                            width: 3024
-                            height: 4032
-                            media_version: mv_drp_debby_6_own_1
-                          reactions: []
-                          viewer_favourite: false
+                          section: friends
                         - view: revealed
                           id: drp_sam_hill
                           author:
@@ -851,6 +853,14 @@ paths:
                           viewer_favourite: true
                           caption: We said we’d go back here.
                           viewer_reaction: heart
+                          section: friends
+                          reply_preview:
+                            comment_id: cmt_debby_2
+                            author:
+                              membership_id: mem_sp_debby
+                              display_name: Debby
+                              avatar_version: av_debby_1
+                            media_version: mv_cmt_debby_2_1
                         - view: revealed
                           id: drp_ben_6
                           author:
@@ -870,6 +880,7 @@ paths:
                                   display_name: Debby
                                   avatar_version: av_debby_1
                           viewer_favourite: false
+                          section: friends
                         - view: revealed
                           id: drp_nina_6_video
                           author:
@@ -882,6 +893,7 @@ paths:
                             provider: tiktok
                           reactions: []
                           viewer_favourite: false
+                          section: friends
                       highlights:
                         - drop_id: drp_debby_6_own
                           author:
@@ -1261,7 +1273,7 @@ paths:
                           phase: past
                         cover_drop_id: drp_alex_30
                 your_day:
-                  summary: "Monday 9 November, 9:41 AM: Ben's own day, with his pick first (H01-your-day)"
+                  summary: "Monday 9 November, 9:41 AM: Ben's own day, with Ben's pick first (H01-your-day)"
                   value:
                     mode: day
                     server_now: 2026-11-09T14:41:00Z
@@ -1320,6 +1332,7 @@ paths:
                           reactions: []
                           viewer_favourite: false
                           caption: This week, mostly this.
+                          section: star
                         - view: revealed
                           id: drp_maya_9
                           author:
@@ -1334,6 +1347,7 @@ paths:
                             media_version: mv_drp_maya_9_1
                           reactions: []
                           viewer_favourite: false
+                          section: friends
                         - view: revealed
                           id: drp_sam_9
                           author:
@@ -1347,6 +1361,7 @@ paths:
                             media_version: mv_drp_sam_9_1
                           reactions: []
                           viewer_favourite: false
+                          section: friends
                       highlights:
                         - drop_id: drp_ben_9_own
                           author:
@@ -3824,7 +3839,7 @@ paths:
     patch:
       operationId: updateComment
       summary: Edit the caller's comment
-      description: It shows Edited and announces nothing again (spec 16).
+      description: "Its text only: it shows Edited and announces nothing again (spec 16). A photo message's text may be emptied; its photo is never replaced (T65, FQ107)."
       parameters:
         - name: comment_id
           in: path
@@ -3853,6 +3868,13 @@ paths:
                   summary: Ben's comment, edited (R04-edit)
                   value:
                     comment_id: cmt_ben_1
+                    drop_id: drp_sam_hill
+                    edited: true
+                    version: 2
+                text_removed:
+                  summary: "The text of Ben's photo message removed: its photo stays (FQ107)"
+                  value:
+                    comment_id: cmt_ben_3
                     drop_id: drp_sam_hill
                     edited: true
                     version: 2
@@ -3951,7 +3973,7 @@ paths:
     delete:
       operationId: deleteComment
       summary: Delete the caller's comment
-      description: It leaves the thread at once; replies to it stay (spec 16).
+      description: It leaves the thread at once, a photo message's photo and text together; replies to it stay (spec 16; addendum 5). Its photo and thumbnail stop being served, and the drop's reply preview is worked out again (T24, T65).
       parameters:
         - name: comment_id
           in: path
@@ -3961,6 +3983,112 @@ paths:
       responses:
         "204":
           description: Done.
+        "400":
+          description: INVALID_REQUEST
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                INVALID_REQUEST:
+                  summary: The request doesn't match the contract. `field` names the first bad field, never its value.
+                  value:
+                    code: INVALID_REQUEST
+        "401":
+          description: UNAUTHENTICATED
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                UNAUTHENTICATED:
+                  summary: "No valid session: sign in again."
+                  value:
+                    code: UNAUTHENTICATED
+        "403":
+          description: PROFILE_INCOMPLETE
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                PROFILE_INCOMPLETE:
+                  summary: "The account hasn't confirmed it's 18 or older (FQ13) or has no name yet: finish `PATCH /v1/me` first. Until then it can only finish setup or leave (FQ69)."
+                  value:
+                    code: PROFILE_INCOMPLETE
+        "404":
+          description: NOT_FOUND
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                NOT_FOUND:
+                  summary: "Missing, or not the caller's to see: the two are the same answer, and say nothing about hidden content (T14)."
+                  value:
+                    code: NOT_FOUND
+        "429":
+          description: RATE_LIMITED
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+            Retry-After:
+              $ref: "#/components/headers/RetryAfter"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                RATE_LIMITED:
+                  summary: "Too many requests: try again after `retry_after_seconds`."
+                  value:
+                    code: RATE_LIMITED
+                    retry_after_seconds: 30
+  /v1/comments/{comment_id}/media:
+    get:
+      operationId: getCommentMedia
+      summary: A photo message's bytes
+      description: "Runs the drop's read predicate, through the drop's own audience, and the photo's own state (ready, its message neither deleted nor removed) on every request, and streams the rendition: `thumbnail` for the feed's reply preview, `display` in the conversation, `full` when it's opened (addendum 5). The same NOT_FOUND otherwise, before the reveal included (T9, T12, T14, T63). One content version serves all three. Never a storage URL."
+      parameters:
+        - name: comment_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Id"
+        - name: rendition
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - thumbnail
+              - display
+              - full
+      responses:
+        "200":
+          description: A photo message's bytes
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/CacheControl"
+            ETag:
+              $ref: "#/components/headers/ETag"
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
         "400":
           description: INVALID_REQUEST
           headers:
@@ -4605,7 +4733,7 @@ paths:
     delete:
       operationId: removeDrop
       summary: Withdraw a drop, or remove a photo you're in
-      description: "Withdraw or authorized removal with a distinct reason (spec 32). withdraw: the author, before or after the reveal, even after leaving the club (spec 22). pictured: a member in the photograph, after the reveal, with no approval and no public reason (T25). Either reaches everything at once (T24) and never reopens a closed day (T3)."
+      description: "Withdraw or authorized removal with a distinct reason (spec 32). withdraw: the author, before or after the reveal, even after leaving the club (spec 22). pictured: a member in the photograph, after the reveal, with no approval and no public reason (T25). Either reaches everything at once, the drop's conversation, its photo messages and their previews included (T24, T63), and never reopens a closed day (T3)."
       parameters:
         - name: drop_id
           in: path
@@ -4637,10 +4765,14 @@ paths:
                     allowance:
                       added: 0
                       reserved: 0
-                      limit: 6
+                      limit: 3
+                      photo_added: 0
+                      photo_reserved: 0
+                      photo_limit: 2
                       external_added: 0
                       external_reserved: 0
-                      external_limit: 2
+                      external_limit: 1
+                      is_star: false
                     highlight:
                       version: 2
                 after_reveal:
@@ -4850,7 +4982,7 @@ paths:
     get:
       operationId: listComments
       summary: A drop's thread
-      description: In the order written, with replies pointing to their comment (spec 16). Only after the reveal (D07).
+      description: In the order written, with replies pointing to their comment (spec 16). Only after the reveal (D07). A message's photo is read from `GET /v1/comments/{comment_id}/media` (T12, T63).
       parameters:
         - name: drop_id
           in: path
@@ -4904,6 +5036,31 @@ paths:
                             membership_id: mem_sp_debby
                             display_name: Debby
                             avatar_version: av_debby_1
+                      - id: cmt_nina_1
+                        author:
+                          membership_id: mem_sp_nina
+                          display_name: Nina
+                        edited: false
+                        photo:
+                          width: 3024
+                          height: 4032
+                          media_version: mv_cmt_nina_1_1
+                      - id: cmt_debby_2
+                        author:
+                          membership_id: mem_sp_debby
+                          display_name: Debby
+                          avatar_version: av_debby_1
+                        text: Found the one from last time.
+                        edited: false
+                        photo:
+                          width: 4032
+                          height: 3024
+                          media_version: mv_cmt_debby_2_1
+                        reply_to:
+                          comment_id: cmt_nina_1
+                          author:
+                            membership_id: mem_sp_nina
+                            display_name: Nina
                     thread_muted: false
                 with_own:
                   summary: "The same thread once Ben has commented: only Ben's own comment carries its version, for editing (R04-edit)"
@@ -4929,6 +5086,31 @@ paths:
                             membership_id: mem_sp_debby
                             display_name: Debby
                             avatar_version: av_debby_1
+                      - id: cmt_nina_1
+                        author:
+                          membership_id: mem_sp_nina
+                          display_name: Nina
+                        edited: false
+                        photo:
+                          width: 3024
+                          height: 4032
+                          media_version: mv_cmt_nina_1_1
+                      - id: cmt_debby_2
+                        author:
+                          membership_id: mem_sp_debby
+                          display_name: Debby
+                          avatar_version: av_debby_1
+                        text: Found the one from last time.
+                        edited: false
+                        photo:
+                          width: 4032
+                          height: 3024
+                          media_version: mv_cmt_debby_2_1
+                        reply_to:
+                          comment_id: cmt_nina_1
+                          author:
+                            membership_id: mem_sp_nina
+                            display_name: Nina
                       - id: cmt_ben_1
                         author:
                           membership_id: mem_sp_ben
@@ -5019,7 +5201,7 @@ paths:
     post:
       operationId: createComment
       summary: Comment on a revealed drop
-      description: Eligible after the reveal, with active membership (spec 16, 32).
+      description: "Eligible after the reveal, with active membership and the drop's read predicate (spec 16, 32), checked again at the commit, after its locks (T63). With text, a photo or both (addendum 5): the photo is the caller's own ready conversation-photo upload for this drop; one still on its way or held is MEDIA_NOT_READY, as is a rejected one, which never becomes ready (`GET /v1/uploads/{upload_id}` says why), and one that isn't theirs, is for another drop or purpose, or is used or lapsed is NOT_FOUND. Nothing about the message reaches anyone, its preview included, until it commits (T65). No cutoff, reservation or allowance: it stays possible after the day leaves Home, and in Memories (T3, T64). One Idempotency-Key, one message (T19)."
       parameters:
         - name: drop_id
           in: path
@@ -5048,6 +5230,20 @@ paths:
                   summary: Ben's comment
                   value:
                     comment_id: cmt_ben_1
+                    drop_id: drp_sam_hill
+                    edited: false
+                    version: 1
+                photo:
+                  summary: Ben's photo message with no text, once its upload was ready (addendum 5)
+                  value:
+                    comment_id: cmt_ben_2
+                    drop_id: drp_sam_hill
+                    edited: false
+                    version: 1
+                photo_with_text:
+                  summary: Ben's photo message with text (addendum 5)
+                  value:
+                    comment_id: cmt_ben_3
                     drop_id: drp_sam_hill
                     edited: false
                     version: 1
@@ -5108,7 +5304,7 @@ paths:
                   value:
                     code: NOT_FOUND
         "409":
-          description: IDEMPOTENCY_CONFLICT
+          description: IDEMPOTENCY_CONFLICT, MEDIA_NOT_READY
           headers:
             Cache-Control:
               $ref: "#/components/headers/CacheControl"
@@ -5121,6 +5317,10 @@ paths:
                   summary: The same Idempotency-Key came again for the same operation with a different path, query or body (T19). A key is the caller's own, for one operation.
                   value:
                     code: IDEMPOTENCY_CONFLICT
+                MEDIA_NOT_READY:
+                  summary: "The upload isn't ready yet: wait for `GET /v1/uploads/{upload_id}` to say ready."
+                  value:
+                    code: MEDIA_NOT_READY
         "429":
           description: RATE_LIMITED
           headers:
@@ -6784,7 +6984,7 @@ paths:
                 $ref: "#/components/schemas/Me"
               examples:
                 ben:
-                  summary: Ben, signed in with his profile done
+                  summary: Ben, signed in with Ben's profile done
                   value:
                     id: acct_ben
                     display_name: Ben
@@ -7757,7 +7957,7 @@ paths:
     get:
       operationId: getOccurrence
       summary: One day as the caller may see it
-      description: "The state, the date and the viewer-allowed drops (spec 09, 15, 32): others' captions only before the reveal (T10), the caller's own drops for the caller, everything in the audience after it. A past day that closed before the caller joined is NOT_FOUND (Q06). The cursor is bound to the caller and the day."
+      description: "The state, the date and the viewer-allowed drops (spec 09, 15, 32): others' captions only before the reveal (T10), the caller's own drops for the caller, everything in the audience after it. A past day that closed before the caller joined is NOT_FOUND (Q06). After the reveal the drops come star first, then friends', each with its section (T35). The cursor is bound to the caller, the day and its stage: a cursor from a day still collecting doesn't page its revealed drops."
       parameters:
         - name: occurrence_id
           in: path
@@ -7903,6 +8103,21 @@ paths:
                       phase: collecting
                     drops:
                       - view: revealed
+                        id: drp_debby_6_own
+                        author:
+                          membership_id: mem_sp_debby
+                          display_name: Debby
+                          avatar_version: av_debby_1
+                        media_class: photo
+                        highlight: true
+                        photo:
+                          width: 3024
+                          height: 4032
+                          media_version: mv_drp_debby_6_own_1
+                        reactions: []
+                        viewer_favourite: false
+                        section: star
+                      - view: revealed
                         id: drp_maya_chair
                         author:
                           membership_id: mem_sp_maya
@@ -7917,20 +8132,7 @@ paths:
                         reactions: []
                         viewer_favourite: false
                         caption: Your future living room.
-                      - view: revealed
-                        id: drp_debby_6_own
-                        author:
-                          membership_id: mem_sp_debby
-                          display_name: Debby
-                          avatar_version: av_debby_1
-                        media_class: photo
-                        highlight: true
-                        photo:
-                          width: 3024
-                          height: 4032
-                          media_version: mv_drp_debby_6_own_1
-                        reactions: []
-                        viewer_favourite: false
+                        section: friends
                       - view: revealed
                         id: drp_sam_hill
                         author:
@@ -7947,6 +8149,14 @@ paths:
                         viewer_favourite: true
                         caption: We said we’d go back here.
                         viewer_reaction: heart
+                        section: friends
+                        reply_preview:
+                          comment_id: cmt_debby_2
+                          author:
+                            membership_id: mem_sp_debby
+                            display_name: Debby
+                            avatar_version: av_debby_1
+                          media_version: mv_cmt_debby_2_1
                       - view: revealed
                         id: drp_ben_6
                         author:
@@ -7966,6 +8176,7 @@ paths:
                                 display_name: Debby
                                 avatar_version: av_debby_1
                         viewer_favourite: false
+                        section: friends
                       - view: revealed
                         id: drp_nina_6_video
                         author:
@@ -7978,6 +8189,7 @@ paths:
                           provider: tiktok
                         reactions: []
                         viewer_favourite: false
+                        section: friends
                     highlights:
                       - drop_id: drp_debby_6_own
                         author:
@@ -8028,6 +8240,21 @@ paths:
                       joined_later: false
                     drops:
                       - view: revealed
+                        id: drp_debby_6_own
+                        author:
+                          membership_id: mem_sp_debby
+                          display_name: Debby
+                          avatar_version: av_debby_1
+                        media_class: photo
+                        highlight: true
+                        photo:
+                          width: 3024
+                          height: 4032
+                          media_version: mv_drp_debby_6_own_1
+                        reactions: []
+                        viewer_favourite: false
+                        section: star
+                      - view: revealed
                         id: drp_maya_chair
                         author:
                           membership_id: mem_sp_maya
@@ -8042,20 +8269,7 @@ paths:
                         reactions: []
                         viewer_favourite: false
                         caption: Your future living room.
-                      - view: revealed
-                        id: drp_debby_6_own
-                        author:
-                          membership_id: mem_sp_debby
-                          display_name: Debby
-                          avatar_version: av_debby_1
-                        media_class: photo
-                        highlight: true
-                        photo:
-                          width: 3024
-                          height: 4032
-                          media_version: mv_drp_debby_6_own_1
-                        reactions: []
-                        viewer_favourite: false
+                        section: friends
                       - view: revealed
                         id: drp_sam_hill
                         author:
@@ -8072,6 +8286,14 @@ paths:
                         viewer_favourite: true
                         caption: We said we’d go back here.
                         viewer_reaction: heart
+                        section: friends
+                        reply_preview:
+                          comment_id: cmt_debby_2
+                          author:
+                            membership_id: mem_sp_debby
+                            display_name: Debby
+                            avatar_version: av_debby_1
+                          media_version: mv_cmt_debby_2_1
                       - view: revealed
                         id: drp_ben_6
                         author:
@@ -8091,6 +8313,7 @@ paths:
                                 display_name: Debby
                                 avatar_version: av_debby_1
                         viewer_favourite: false
+                        section: friends
                       - view: revealed
                         id: drp_nina_6_video
                         author:
@@ -8103,6 +8326,7 @@ paths:
                           provider: tiktok
                         reactions: []
                         viewer_favourite: false
+                        section: friends
                     highlights:
                       - drop_id: drp_debby_6_own
                         author:
@@ -8126,6 +8350,68 @@ paths:
                         author:
                           membership_id: mem_sp_sam
                           display_name: Sam
+                        star_pick: false
+                friends_only:
+                  summary: "Sam's Thursday 5 November from Memories: Sam added nothing, so the day is friends' drops alone, with no empty section and nothing said about it (addendum 4)"
+                  value:
+                    stage: revealed
+                    server_now: 2026-11-09T14:41:00Z
+                    occurrence:
+                      id: occ_sp_sam_2026_11_05
+                      club_id: club_sunday_people
+                      star:
+                        membership_id: mem_sp_sam
+                        display_name: Sam
+                      local_date: 2026-11-05
+                      reveal_at: 2026-11-05T12:00:00Z
+                      close_at: 2026-11-06T06:00:00Z
+                      phase: past
+                    club:
+                      id: club_sunday_people
+                      name: Sunday people
+                      timezone: America/New_York
+                      my_membership_id: mem_sp_ben
+                    viewer:
+                      is_star: false
+                      joined_later: false
+                    drops:
+                      - view: revealed
+                        id: drp_maya_5
+                        author:
+                          membership_id: mem_sp_maya
+                          display_name: Maya
+                          avatar_version: av_maya_1
+                        media_class: photo
+                        highlight: true
+                        photo:
+                          width: 3024
+                          height: 4032
+                          media_version: mv_drp_maya_5_1
+                        reactions: []
+                        viewer_favourite: false
+                        caption: Thursday’s light.
+                        section: friends
+                      - view: revealed
+                        id: drp_ben_5
+                        author:
+                          membership_id: mem_sp_ben
+                          display_name: Ben
+                          avatar_version: av_ben_1
+                        media_class: photo
+                        highlight: false
+                        photo:
+                          width: 3024
+                          height: 4032
+                          media_version: mv_drp_ben_5_1
+                        reactions: []
+                        viewer_favourite: false
+                        section: friends
+                    highlights:
+                      - drop_id: drp_maya_5
+                        author:
+                          membership_id: mem_sp_maya
+                          display_name: Maya
+                          avatar_version: av_maya_1
                         star_pick: false
                 joined_later:
                   summary: "A day Ben joined after it began collecting: partly visible, with no numbers (F02-joined-later)"
@@ -8274,7 +8560,7 @@ paths:
     post:
       operationId: createDrop
       summary: Add a drop to a day
-      description: "Commit ready media, the caption and the immutable audience in one transaction (spec 32; T3, T8, T17, T19). Only this response means Added (T20). A missed cutoff answers OCCURRENCE_CLOSED with the same person's next day to confirm, and nothing is moved (T4). A reservation that has lapsed counts as none: a free slot is taken if there is one, or QUOTA_FULL (T18)."
+      description: "Commit ready media, the caption and the immutable audience in one transaction (spec 32; T3, T8, T17, T19). Only this response means Added (T20). A missed cutoff answers OCCURRENCE_CLOSED with the same person's next day to confirm, and nothing is moved (T4). A reservation that has lapsed counts as none: a free slot is taken if there is one, or the refusal of the caller's limits by role: QUOTA_FULL, EXTERNAL_LIMIT or PHOTO_LIMIT, QUOTA_FULL first (T17, T18)."
       parameters:
         - name: occurrence_id
           in: path
@@ -8300,7 +8586,7 @@ paths:
                 $ref: "#/components/schemas/DropReceipt"
               examples:
                 added:
-                  summary: Added for Debby's Friday 13 November (F02-added)
+                  summary: "Added for Debby's Friday 13 November: as a friend, 1 of 2 photos and 0 of 1 video link (F02-added, addendum 2)"
                   value:
                     drop_id: drp_ben_13
                     occurrence:
@@ -8320,10 +8606,14 @@ paths:
                     allowance:
                       added: 1
                       reserved: 0
-                      limit: 6
+                      limit: 3
+                      photo_added: 1
+                      photo_reserved: 0
+                      photo_limit: 2
                       external_added: 0
                       external_reserved: 0
-                      external_limit: 2
+                      external_limit: 1
+                      is_star: false
                     highlight:
                       version: 0
         "400":
@@ -8387,7 +8677,7 @@ paths:
                   value:
                     code: NOT_FOUND
         "409":
-          description: IDEMPOTENCY_CONFLICT, OCCURRENCE_CLOSED, MEMBERSHIP_CHANGED, MEDIA_NOT_READY, DUPLICATE_DROP, QUOTA_FULL, EXTERNAL_LIMIT
+          description: IDEMPOTENCY_CONFLICT, OCCURRENCE_CLOSED, MEMBERSHIP_CHANGED, MEDIA_NOT_READY, DUPLICATE_DROP, QUOTA_FULL, EXTERNAL_LIMIT, PHOTO_LIMIT
           headers:
             Cache-Control:
               $ref: "#/components/headers/CacheControl"
@@ -8451,7 +8741,7 @@ paths:
                     code: DUPLICATE_DROP
                     existing_drop_id: drp_ben_13
                 QUOTA_FULL:
-                  summary: Six drops already, live reservations included (T17). `target`, the caller's `allowance`, and `next_target`, the same person's next day, for the person to confirm; nothing was moved (T4).
+                  summary: "The caller's whole allowance for their role in that day, live reservations included: six drops for the star, three for anyone else (T17). When more than one limit is met, QUOTA_FULL comes first. `target`, the caller's `allowance`, and `next_target`, the same person's next day, for the person to confirm; nothing was moved (T4)."
                   value:
                     code: QUOTA_FULL
                     target:
@@ -8477,14 +8767,18 @@ paths:
                       close_at: 2026-11-21T06:00:00Z
                       phase: collecting
                     allowance:
-                      added: 6
+                      added: 3
                       reserved: 0
-                      limit: 6
+                      limit: 3
+                      photo_added: 2
+                      photo_reserved: 0
+                      photo_limit: 2
                       external_added: 1
                       external_reserved: 0
-                      external_limit: 2
+                      external_limit: 1
+                      is_star: false
                 EXTERNAL_LIMIT:
-                  summary: Two video links already (T17). `target`, the caller's `allowance`, and `next_target`, the same person's next day, for the person to confirm; nothing was moved (T4).
+                  summary: "A video link refused: the caller's video links for their role in that day, live reservations included: two for the star, one for anyone else (T17). QUOTA_FULL comes first when the whole allowance is used too. `target`, the caller's `allowance`, and `next_target`, the same person's next day, for the person to confirm; nothing was moved (T4)."
                   value:
                     code: EXTERNAL_LIMIT
                     target:
@@ -8510,12 +8804,53 @@ paths:
                       close_at: 2026-11-21T06:00:00Z
                       phase: collecting
                     allowance:
-                      added: 3
+                      added: 2
                       reserved: 0
-                      limit: 6
-                      external_added: 2
+                      limit: 3
+                      photo_added: 1
+                      photo_reserved: 0
+                      photo_limit: 2
+                      external_added: 1
                       external_reserved: 0
-                      external_limit: 2
+                      external_limit: 1
+                      is_star: false
+                PHOTO_LIMIT:
+                  summary: "A photo refused: two photos already in someone else's day, live reservations included, while the caller's video link is still free, so their last drop there can only be a video link (T17; addendum 2). Never the star's, whose photos are their whole allowance. QUOTA_FULL comes first when the whole allowance is used too. `target`, the caller's `allowance`, and `next_target`, the same person's next day, for the person to confirm; nothing was moved (T4)."
+                  value:
+                    code: PHOTO_LIMIT
+                    target:
+                      id: occ_sp_debby_2026_11_13
+                      club_id: club_sunday_people
+                      star:
+                        membership_id: mem_sp_debby
+                        display_name: Debby
+                        avatar_version: av_debby_1
+                      local_date: 2026-11-13
+                      reveal_at: 2026-11-13T12:00:00Z
+                      close_at: 2026-11-14T06:00:00Z
+                      phase: collecting
+                    next_target:
+                      id: occ_sp_debby_2026_11_20
+                      club_id: club_sunday_people
+                      star:
+                        membership_id: mem_sp_debby
+                        display_name: Debby
+                        avatar_version: av_debby_1
+                      local_date: 2026-11-20
+                      reveal_at: 2026-11-20T12:00:00Z
+                      close_at: 2026-11-21T06:00:00Z
+                      phase: collecting
+                    allowance:
+                      added: 2
+                      reserved: 0
+                      limit: 3
+                      photo_added: 2
+                      photo_reserved: 0
+                      photo_limit: 2
+                      external_added: 0
+                      external_reserved: 0
+                      external_limit: 1
+                      is_star: false
         "429":
           description: RATE_LIMITED
           headers:
@@ -8723,7 +9058,7 @@ paths:
                 $ref: "#/components/schemas/OwnDay"
               examples:
                 your_drops:
-                  summary: "Ben's own drops for Debby's Friday 13 November: two added, the first his highlight (F02-your-drops)"
+                  summary: "Ben's own drops for Debby's Friday 13 November: two photos added, the first Ben's highlight; as a friend, 2 of 2 photos and 0 of 1 video link (F02-your-drops, addendum 2)"
                   value:
                     server_now: 2026-11-10T14:41:00Z
                     occurrence:
@@ -8745,10 +9080,14 @@ paths:
                     allowance:
                       added: 2
                       reserved: 0
-                      limit: 6
+                      limit: 3
+                      photo_added: 2
+                      photo_reserved: 0
+                      photo_limit: 2
                       external_added: 0
                       external_reserved: 0
-                      external_limit: 2
+                      external_limit: 1
+                      is_star: false
                     highlight:
                       drop_id: drp_ben_13
                       version: 1
@@ -8798,13 +9137,62 @@ paths:
                     allowance:
                       added: 0
                       reserved: 0
-                      limit: 6
+                      limit: 3
+                      photo_added: 0
+                      photo_reserved: 0
+                      photo_limit: 2
                       external_added: 0
                       external_reserved: 0
-                      external_limit: 2
+                      external_limit: 1
+                      is_star: false
                     highlight:
                       version: 0
                     drops: []
+                own_day:
+                  summary: "Ben's own Monday 16 November, as its star: one photo added, with the star's six drops and two video links (addendum 2)"
+                  value:
+                    server_now: 2026-11-10T14:41:00Z
+                    occurrence:
+                      id: occ_sp_ben_2026_11_16
+                      club_id: club_sunday_people
+                      star:
+                        membership_id: mem_sp_ben
+                        display_name: Ben
+                        avatar_version: av_ben_1
+                      local_date: 2026-11-16
+                      reveal_at: 2026-11-16T12:00:00Z
+                      close_at: 2026-11-17T06:00:00Z
+                      phase: collecting
+                    club:
+                      id: club_sunday_people
+                      name: Sunday people
+                      timezone: America/New_York
+                      my_membership_id: mem_sp_ben
+                    allowance:
+                      added: 1
+                      reserved: 0
+                      limit: 6
+                      photo_added: 1
+                      photo_reserved: 0
+                      photo_limit: 6
+                      external_added: 0
+                      external_reserved: 0
+                      external_limit: 2
+                      is_star: true
+                    highlight:
+                      version: 0
+                    drops:
+                      - view: own
+                        id: drp_ben_16_own
+                        author:
+                          membership_id: mem_sp_ben
+                          display_name: Ben
+                          avatar_version: av_ben_1
+                        media_class: photo
+                        caption: What I’ve been up to.
+                        highlight: false
+                        state: added
+                        version: 1
         "400":
           description: INVALID_REQUEST
           headers:
@@ -8882,7 +9270,7 @@ paths:
     post:
       operationId: createReservation
       summary: Hold a slot in a day
-      description: Reserve one slot before the upload (spec 11, 32; T17, T18), with the cutoff checked under the lock (T3).
+      description: "Reserve one slot before the upload (spec 11, 32; T17, T18), with the cutoff checked under the lock (T3) and the caller's limits by role: QUOTA_FULL, EXTERNAL_LIMIT or PHOTO_LIMIT, QUOTA_FULL first."
       parameters:
         - name: occurrence_id
           in: path
@@ -8917,10 +9305,14 @@ paths:
                     allowance:
                       added: 1
                       reserved: 1
-                      limit: 6
+                      limit: 3
+                      photo_added: 1
+                      photo_reserved: 1
+                      photo_limit: 2
                       external_added: 0
                       external_reserved: 0
-                      external_limit: 2
+                      external_limit: 1
+                      is_star: false
         "400":
           description: INVALID_REQUEST
           headers:
@@ -8978,7 +9370,7 @@ paths:
                   value:
                     code: NOT_FOUND
         "409":
-          description: IDEMPOTENCY_CONFLICT, OCCURRENCE_CLOSED, QUOTA_FULL, EXTERNAL_LIMIT, MEMBERSHIP_CHANGED
+          description: IDEMPOTENCY_CONFLICT, OCCURRENCE_CLOSED, QUOTA_FULL, EXTERNAL_LIMIT, PHOTO_LIMIT, MEMBERSHIP_CHANGED
           headers:
             Cache-Control:
               $ref: "#/components/headers/CacheControl"
@@ -9018,7 +9410,7 @@ paths:
                       close_at: 2026-11-14T06:00:00Z
                       phase: collecting
                 QUOTA_FULL:
-                  summary: Six drops already, live reservations included (T17). `target`, the caller's `allowance`, and `next_target`, the same person's next day, for the person to confirm; nothing was moved (T4).
+                  summary: "The caller's whole allowance for their role in that day, live reservations included: six drops for the star, three for anyone else (T17). When more than one limit is met, QUOTA_FULL comes first. `target`, the caller's `allowance`, and `next_target`, the same person's next day, for the person to confirm; nothing was moved (T4)."
                   value:
                     code: QUOTA_FULL
                     target:
@@ -9044,14 +9436,18 @@ paths:
                       close_at: 2026-11-21T06:00:00Z
                       phase: collecting
                     allowance:
-                      added: 6
+                      added: 3
                       reserved: 0
-                      limit: 6
+                      limit: 3
+                      photo_added: 2
+                      photo_reserved: 0
+                      photo_limit: 2
                       external_added: 1
                       external_reserved: 0
-                      external_limit: 2
+                      external_limit: 1
+                      is_star: false
                 EXTERNAL_LIMIT:
-                  summary: Two video links already (T17). `target`, the caller's `allowance`, and `next_target`, the same person's next day, for the person to confirm; nothing was moved (T4).
+                  summary: "A video link refused: the caller's video links for their role in that day, live reservations included: two for the star, one for anyone else (T17). QUOTA_FULL comes first when the whole allowance is used too. `target`, the caller's `allowance`, and `next_target`, the same person's next day, for the person to confirm; nothing was moved (T4)."
                   value:
                     code: EXTERNAL_LIMIT
                     target:
@@ -9077,12 +9473,53 @@ paths:
                       close_at: 2026-11-21T06:00:00Z
                       phase: collecting
                     allowance:
-                      added: 3
+                      added: 2
                       reserved: 0
-                      limit: 6
-                      external_added: 2
+                      limit: 3
+                      photo_added: 1
+                      photo_reserved: 0
+                      photo_limit: 2
+                      external_added: 1
                       external_reserved: 0
-                      external_limit: 2
+                      external_limit: 1
+                      is_star: false
+                PHOTO_LIMIT:
+                  summary: "A photo refused: two photos already in someone else's day, live reservations included, while the caller's video link is still free, so their last drop there can only be a video link (T17; addendum 2). Never the star's, whose photos are their whole allowance. QUOTA_FULL comes first when the whole allowance is used too. `target`, the caller's `allowance`, and `next_target`, the same person's next day, for the person to confirm; nothing was moved (T4)."
+                  value:
+                    code: PHOTO_LIMIT
+                    target:
+                      id: occ_sp_debby_2026_11_13
+                      club_id: club_sunday_people
+                      star:
+                        membership_id: mem_sp_debby
+                        display_name: Debby
+                        avatar_version: av_debby_1
+                      local_date: 2026-11-13
+                      reveal_at: 2026-11-13T12:00:00Z
+                      close_at: 2026-11-14T06:00:00Z
+                      phase: collecting
+                    next_target:
+                      id: occ_sp_debby_2026_11_20
+                      club_id: club_sunday_people
+                      star:
+                        membership_id: mem_sp_debby
+                        display_name: Debby
+                        avatar_version: av_debby_1
+                      local_date: 2026-11-20
+                      reveal_at: 2026-11-20T12:00:00Z
+                      close_at: 2026-11-21T06:00:00Z
+                      phase: collecting
+                    allowance:
+                      added: 2
+                      reserved: 0
+                      limit: 3
+                      photo_added: 2
+                      photo_reserved: 0
+                      photo_limit: 2
+                      external_added: 0
+                      external_reserved: 0
+                      external_limit: 1
+                      is_star: false
                 MEMBERSHIP_CHANGED:
                   summary: "A membership changed since the action started: the person's, so `target`, the day asked for, must be chosen again (T4, spec 32); the club's, so a newer schedule proposal (`current_id`) replaced this one, as when a membership change's start passed before everyone confirmed (FQ49); or the clubs a block would leave."
                   value:
@@ -9261,10 +9698,14 @@ paths:
                     allowance:
                       added: 1
                       reserved: 0
-                      limit: 6
+                      limit: 3
+                      photo_added: 1
+                      photo_reserved: 0
+                      photo_limit: 2
                       external_added: 0
                       external_reserved: 0
-                      external_limit: 2
+                      external_limit: 1
+                      is_star: false
                 consumed:
                   summary: "Its commit had landed: Added, though the answer was lost (T20)"
                   value:
@@ -10798,7 +11239,7 @@ paths:
     post:
       operationId: createUpload
       summary: Start an upload
-      description: A scoped intent and the signed upload URL for one object (spec 32, 33; T12). A replay signs a new URL only while the upload is pending (TECH-DESIGN section 6).
+      description: A scoped intent and the signed upload URL for one object (spec 32, 33; T12). A replay signs a new URL only while the upload is pending (TECH-DESIGN section 6). Only the avatar's purpose works before the profile is finished. A conversation photo's purpose answers only the neutral NOT_FOUND for a drop the caller can't read now or whose day hasn't opened, never OCCURRENCE_CLOSED or MEMBERSHIP_CHANGED, and it has no cutoff, no reservation and no allowance (T3, T14, T63, T64).
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
@@ -10827,6 +11268,20 @@ paths:
                     expires_at: 2026-11-11T14:41:00Z
                     signed_upload:
                       url: https://dev-project.supabase.co/storage/v1/object/upload/sign/uploads/f3a9c1d2e8b7?token=example
+                      method: PUT
+                      headers:
+                        Content-Type: image/jpeg
+                        x-upsert: "false"
+                      expires_at: 2026-11-10T16:41:00Z
+                conversation_photo:
+                  summary: "A photo for the conversation on Sam's photo, waiting for its bytes: it never names the drop, and uses no slot (addendum 5, T64)"
+                  value:
+                    id: upl_ben_reply_1
+                    purpose: conversation_photo
+                    state: pending
+                    expires_at: 2026-11-11T14:41:00Z
+                    signed_upload:
+                      url: https://dev-project.supabase.co/storage/v1/object/upload/sign/uploads/9b2e7d4a1c6f?token=example
                       method: PUT
                       headers:
                         Content-Type: image/jpeg
@@ -11211,7 +11666,19 @@ components:
           maximum: 6
         limit:
           type: integer
-          minimum: 6
+          minimum: 3
+          maximum: 6
+        photo_added:
+          type: integer
+          minimum: 0
+          maximum: 6
+        photo_reserved:
+          type: integer
+          minimum: 0
+          maximum: 6
+        photo_limit:
+          type: integer
+          minimum: 2
           maximum: 6
         external_added:
           type: integer
@@ -11223,16 +11690,22 @@ components:
           maximum: 2
         external_limit:
           type: integer
-          minimum: 2
+          minimum: 1
           maximum: 2
+        is_star:
+          type: boolean
       required:
         - added
         - reserved
         - limit
+        - photo_added
+        - photo_reserved
+        - photo_limit
         - external_added
         - external_reserved
         - external_limit
-      description: "The caller's own allowance in one day, never anyone else's (T15): six drops, at most two of them external videos (spec 10, 11; T17). `added` counts committed drops, the only ones that are Added (T20); `reserved` counts the caller's live reservations, which the limits also count (T18)."
+        - is_star
+      description: "The caller's own allowance in one day, never anyone else's (T15), by their role in it (T17; addendum 2): the star (`is_star`) has six drops, any of them photos and at most two of them external video links (`limit` 6, `photo_limit` 6, `external_limit` 2); anyone else has three, at most two photos and at most one video link (3, 2 and 1). The limits are always exactly one of those two sets. The server reads the role from the caller's membership interval and the day's star interval, never from a request. `added`, `photo_added` and `external_added` count committed drops, the only ones that are Added (T20); `reserved`, `photo_reserved` and `external_reserved` count the caller's live reservations, which the limits also count (T18). The photos are the drops less the video links. Drafts and photos in conversations count for nothing (T17, T64)."
     AvatarUploadRequest:
       type: object
       properties:
@@ -11546,6 +12019,8 @@ components:
           $ref: "#/components/schemas/Person"
         text:
           $ref: "#/components/schemas/CommentText"
+        photo:
+          $ref: "#/components/schemas/CommentPhoto"
         reply_to:
           $ref: "#/components/schemas/ReplyTo"
         edited:
@@ -11555,9 +12030,13 @@ components:
       required:
         - id
         - author
-        - text
         - edited
-      description: "A comment on a revealed drop, seen by the drop's audience (spec 16). `edited` shows the Edited label; earlier text is never served (spec 31). No time and no seen state. `version` is only on the caller's own comments, for editing them: nobody else learns how often a comment changed."
+      description: "A message in a revealed drop's conversation, seen by the drop's audience (spec 16; addendum 5): text, a photo, or both, never neither, and never an empty text. A photo is here only once it's ready and its message has committed, so nobody sees a message still preparing (T65). `edited` shows the Edited label; earlier text is never served (spec 31). No time and no seen state. `version` is only on the caller's own messages, for editing them: nobody else learns how often a message changed. A deleted or removed message isn't in the thread at all: no text, no photo, no author (T24, T25)."
+    CommentEditText:
+      type: string
+      minLength: 0
+      maxLength: 8000
+      description: "A message's edited text: 0 to 500 grapheme clusters, well formed (no lone surrogate) (T13, D09). Empty removes the text of a message with a photo, which keeps its photo (FQ107); a message with no photo can't be left empty (INVALID_REQUEST, `field` `text`)."
     CommentPage:
       type: object
       properties:
@@ -11574,6 +12053,24 @@ components:
         - items
         - thread_muted
       description: A drop's thread in the order it was written, and whether the caller muted its notifications (spec 16, 21). Never a count.
+    CommentPhoto:
+      type: object
+      properties:
+        width:
+          type: integer
+          minimum: 1
+          maximum: 20000
+        height:
+          type: integer
+          minimum: 1
+          maximum: 20000
+        media_version:
+          $ref: "#/components/schemas/ContentVersion"
+      required:
+        - width
+        - height
+        - media_version
+      description: "A photo message's photo: its frame, for a stable layout before the bytes arrive, and its content version, the ETag of `GET /v1/comments/{comment_id}/media`, the one route that serves it (T12, T63). Never a URL."
     CommentReceipt:
       type: object
       properties:
@@ -11619,13 +12116,35 @@ components:
       minLength: 1
       maxLength: 64
       pattern: ^[A-Za-z0-9_-]+$
-      description: "An opaque value that changes whenever an image's bytes do: the ETag its route sends, for caching per account and content version (TECH-DESIGN section 4), and never a URL (T12). An avatar's version is part of a person's display identity, so it can appear before the reveal (FQ74); a photo's `media_version` never does (T10)."
+      description: "An opaque value that changes whenever an image's bytes do: the ETag its route sends, for caching per account and content version (TECH-DESIGN section 4), and never a URL (T12). An avatar's version is part of a person's display identity, so it can appear before the reveal (FQ74); a photo's `media_version`, a drop's or a reply's, never does (T10, T63)."
     Contributions:
       type: string
       enum:
         - keep
         - withdraw
       description: "What happens to the caller's drops in a club they leave: keep them in the club's days, or withdraw them (spec 22, T26). Either way the caller loses the club and its favourites (spec 18)."
+    ConversationPhotoUploadRequest:
+      type: object
+      properties:
+        purpose:
+          type: string
+          enum:
+            - conversation_photo
+        drop_id:
+          $ref: "#/components/schemas/Id"
+        content_type:
+          $ref: "#/components/schemas/UploadContentType"
+        byte_size:
+          type: integer
+          minimum: 1
+          maximum: 20971520
+      required:
+        - purpose
+        - drop_id
+        - content_type
+        - byte_size
+      additionalProperties: false
+      description: "An upload for a photo message in the conversation of a revealed drop the caller can read, named by `drop_id`: the same types and size as a drop's photo, and no reservation or allowance (T63, T64). For a drop the caller can't read now, or whose day hasn't opened, it's the neutral NOT_FOUND and nothing is made (T14). It can only become a message in that drop's conversation, never a drop, a replacement or an avatar."
     CreateClubRequest:
       type: object
       properties:
@@ -11643,12 +12162,12 @@ components:
       properties:
         text:
           $ref: "#/components/schemas/CommentText"
+        photo_upload_id:
+          $ref: "#/components/schemas/Id"
         reply_to_id:
           $ref: "#/components/schemas/Id"
-      required:
-        - text
       additionalProperties: false
-      description: A comment, optionally answering another on the same drop (spec 16).
+      description: "A message, optionally answering another on the same drop (spec 16; addendum 5): at least one of `text` and `photo_upload_id`, the caller's own ready conversation-photo upload for this drop. One photo at most, no video. It uses no reservation and no allowance (T64), and commits only after the reveal, checked again at the commit (T63)."
     CreateDropRequest:
       type: object
       properties:
@@ -11661,7 +12180,7 @@ components:
       required:
         - media
       additionalProperties: false
-      description: "Commit one drop to the day in the path (spec 32; T3, T8, T17, T19). `reservation_id` uses a held slot; without one, a free slot is taken at commit. A caption is optional (spec 10). No audience, time, highlight or other target: the server decides the audience at commit and never moves the drop (T4, T8)."
+      description: "Commit one drop to the day in the path (spec 32; T3, T8, T17, T19). `reservation_id` uses a held slot; without one, a free slot is taken at commit. A caption is optional (spec 10). No audience, time, highlight, role or other target: the server decides the audience and the caller's role at commit and never moves the drop (T4, T8, T17)."
     CreateInvitationRequest:
       type: object
       properties:
@@ -11690,19 +12209,21 @@ components:
       required:
         - media_class
       additionalProperties: false
-      description: Hold one of the caller's slots in this day while a photo uploads and prepares (spec 11, T18).
+      description: Hold one of the caller's slots in this day while a photo uploads and prepares (spec 11, T18). The caller's role, and so their limits, come from the server, never from the request (T17).
     CreateUploadRequest:
       oneOf:
         - $ref: "#/components/schemas/DropPhotoUploadRequest"
         - $ref: "#/components/schemas/ReplacementUploadRequest"
         - $ref: "#/components/schemas/AvatarUploadRequest"
-      description: "An upload intent with its scope, type and size (spec 32, 33): at most 20 MiB. The purpose fixes what it can become, so a drop's upload never becomes an avatar or the reverse. No filename, capture date, location, dimensions or hash."
+        - $ref: "#/components/schemas/ConversationPhotoUploadRequest"
+      description: "An upload intent with its scope, type and size (spec 32, 33): at most 20 MiB. The purpose fixes what it can become, so a drop's upload never becomes an avatar or a photo message, or the reverse (T64). No filename, capture date, location, dimensions or hash."
       discriminator:
         propertyName: purpose
         mapping:
           drop_photo: "#/components/schemas/DropPhotoUploadRequest"
           replacement: "#/components/schemas/ReplacementUploadRequest"
           avatar: "#/components/schemas/AvatarUploadRequest"
+          conversation_photo: "#/components/schemas/ConversationPhotoUploadRequest"
     CurrentSchedule:
       type: object
       properties:
@@ -11723,7 +12244,7 @@ components:
       minLength: 1
       maxLength: 512
       pattern: ^[A-Za-z0-9_-]+$
-      description: "An opaque page cursor, bound to the viewer and the list it came from (T14): a random handle the server keeps, or an encrypted and authenticated value only the server can read, in base64url. Never a readable key, so it carries no time, order key or count (T10, T15)."
+      description: "An opaque page cursor, bound to the viewer and the list it came from, and for a day to its stage, since a revealed day's order isn't its collecting order (T14, T35): a random handle the server keeps, or an encrypted and authenticated value only the server can read, in base64url. Never a readable key, so it carries no time, order key or count (T10, T15)."
     Day:
       oneOf:
         - $ref: "#/components/schemas/UpcomingDay"
@@ -11746,6 +12267,12 @@ components:
       required:
         - occurrence
       description: A closed day the caller can read something in, for Home's secondary links and Memories (spec 08, 18). `cover_drop_id` is the photo that covers it, chosen for this viewer in D08's order and never a video; its bytes come from the media route (T12).
+    DaySection:
+      type: string
+      enum:
+        - star
+        - friends
+      description: "Which of a revealed day's two sections a drop is in (T35; addendum 4): `star`, From {starName}, the star's own drops; `friends`, From friends, everyone else's. The server reads it from the author's membership interval and the day's star interval, so a card never moves."
     DeleteAccountRequest:
       type: object
       properties:
@@ -12073,6 +12600,7 @@ components:
         - OCCURRENCE_CLOSED
         - QUOTA_FULL
         - EXTERNAL_LIMIT
+        - PHOTO_LIMIT
         - MEDIA_NOT_READY
         - VERSION_CONFLICT
         - MEMBERSHIP_CHANGED
@@ -12091,8 +12619,9 @@ components:
         NOT_ALLOWED (403): Something the caller can see but can't do now: reacting to their own drop (spec 16); in a schedule proposal, choosing after confirming, in a membership change, more days than the club gives each member or a day another member has confirmed, or confirming days the caller doesn't hold, too few of them, or one another member holds too (FQ55, FQ57); or, for the candidate's proposer alone, revoking or replacing a link the candidate has accepted with (handoff 4).
         NOT_FOUND (404): Missing, or not the caller's to see: the two are the same answer, and say nothing about hidden content (T14).
         OCCURRENCE_CLOSED (409): The day's cutoff has passed (T3). `target` is the day asked for and `next_target` the same person's next day, for the person to confirm; nothing was moved (T4).
-        QUOTA_FULL (409): Six drops already, live reservations included (T17). `target`, the caller's `allowance`, and `next_target`, the same person's next day, for the person to confirm; nothing was moved (T4).
-        EXTERNAL_LIMIT (409): Two video links already (T17). `target`, the caller's `allowance`, and `next_target`, the same person's next day, for the person to confirm; nothing was moved (T4).
+        QUOTA_FULL (409): The caller's whole allowance for their role in that day, live reservations included: six drops for the star, three for anyone else (T17). When more than one limit is met, QUOTA_FULL comes first. `target`, the caller's `allowance`, and `next_target`, the same person's next day, for the person to confirm; nothing was moved (T4).
+        EXTERNAL_LIMIT (409): A video link refused: the caller's video links for their role in that day, live reservations included: two for the star, one for anyone else (T17). QUOTA_FULL comes first when the whole allowance is used too. `target`, the caller's `allowance`, and `next_target`, the same person's next day, for the person to confirm; nothing was moved (T4).
+        PHOTO_LIMIT (409): A photo refused: two photos already in someone else's day, live reservations included, while the caller's video link is still free, so their last drop there can only be a video link (T17; addendum 2). Never the star's, whose photos are their whole allowance. QUOTA_FULL comes first when the whole allowance is used too. `target`, the caller's `allowance`, and `next_target`, the same person's next day, for the person to confirm; nothing was moved (T4).
         MEDIA_NOT_READY (409): The upload isn't ready yet: wait for `GET /v1/uploads/{upload_id}` to say ready.
         VERSION_CONFLICT (409): Someone changed it first. `current_version` is the version now.
         MEMBERSHIP_CHANGED (409): A membership changed since the action started: the person's, so `target`, the day asked for, must be chosen again (T4, spec 32); the club's, so a newer schedule proposal (`current_id`) replaced this one, as when a membership change's start passed before everyone confirmed (FQ49); or the clubs a block would leave.
@@ -13153,6 +13682,20 @@ components:
         - byte_size
       additionalProperties: false
       description: An upload to replace the photo of the caller's own drop while its day is collecting (spec 09).
+    ReplyPreview:
+      type: object
+      properties:
+        comment_id:
+          $ref: "#/components/schemas/Id"
+        author:
+          $ref: "#/components/schemas/Person"
+        media_version:
+          $ref: "#/components/schemas/ContentVersion"
+      required:
+        - comment_id
+        - author
+        - media_version
+      description: "The latest photo message on this drop that this viewer may read now, for the feed card's one compact preview: its id, to open the conversation there, its author, for \"{authorName} added a photo\", and the content version of `GET /v1/comments/{comment_id}/media`'s thumbnail (T65; addendum 5). Worked out for each viewer and never cached across viewers (T12), again after any withdrawal, removal or loss of access, and absent when none remains. No text, time, count or URL."
     ReplyTo:
       type: object
       properties:
@@ -13163,7 +13706,7 @@ components:
       required:
         - comment_id
         - author
-      description: The comment a reply answers, by its author. Absent once that comment is deleted.
+      description: "The comment a reply answers, by its id and author: any message, whatever it holds, text, a photo or both (FQ110). Absent once that comment is deleted or removed."
     ReportNote:
       type: string
       minLength: 1
@@ -13249,7 +13792,7 @@ components:
           maxItems: 36
           type: array
           items:
-            $ref: "#/components/schemas/DropRevealed"
+            $ref: "#/components/schemas/RevealedDayDrop"
         next_cursor:
           $ref: "#/components/schemas/Cursor"
         highlights:
@@ -13264,7 +13807,51 @@ components:
         - viewer
         - drops
         - highlights
-      description: "A day that has opened (phase open or past), for this viewer (spec 08, 15, 18, 32): the drops whose audience includes them, in commit order with the id as a tiebreak (T35), a page at a time, and the highlight rail. Removed, withdrawn and held drops are simply absent (T24, T29). A day with no drops is a quiet day; nothing says how many drops are hidden (T15). `add_target` is the star's next day while it's open (book p30), and absent after; the app never works it out (T4)."
+      description: "A day that has opened (phase open or past), for this viewer (spec 08, 15, 18, 32): the drops whose audience includes them, the star's own first and then friends', each section in commit order with the id as a tiebreak (T35; addendum 4), a page at a time, and the highlight rail. A section with no drops is simply absent, and nothing says it's empty (T33). Removed, withdrawn and held drops are simply absent (T24, T29). A day with no drops is a quiet day; nothing says how many drops are hidden (T15). `add_target` is the star's next day while it's open (book p30), and absent after; the app never works it out (T4)."
+    RevealedDayDrop:
+      type: object
+      properties:
+        view:
+          type: string
+          enum:
+            - revealed
+        id:
+          $ref: "#/components/schemas/Id"
+        author:
+          $ref: "#/components/schemas/Person"
+        media_class:
+          $ref: "#/components/schemas/MediaClass"
+        caption:
+          $ref: "#/components/schemas/Caption"
+        highlight:
+          type: boolean
+        photo:
+          $ref: "#/components/schemas/RevealedPhoto"
+        video:
+          $ref: "#/components/schemas/RevealedVideo"
+        reactions:
+          maxItems: 1
+          type: array
+          items:
+            $ref: "#/components/schemas/ReactionSummary"
+        viewer_reaction:
+          $ref: "#/components/schemas/Reaction"
+        viewer_favourite:
+          type: boolean
+        section:
+          $ref: "#/components/schemas/DaySection"
+        reply_preview:
+          $ref: "#/components/schemas/ReplyPreview"
+      required:
+        - view
+        - id
+        - author
+        - media_class
+        - highlight
+        - reactions
+        - viewer_favourite
+        - section
+      description: "A revealed drop as a revealed day's feed shows it (spec 15; addendum 4, 5): the revealed drop, its section, and the reply preview when this viewer may read a photo message on it. Only in a RevealedDay: Home's day, a day from Memories or a linked day. A drop on its own, a favourite or a search result is a DropRevealed."
     RevealedPhoto:
       type: object
       properties:
@@ -13541,7 +14128,7 @@ components:
         - drop_id
         - expected_version
       additionalProperties: false
-      description: "Make one of the caller's own drops in this day their highlight, or move it to another: a pointer, never a seventh drop (T22). Set or replace only; it clears only when that drop is withdrawn."
+      description: "Make one of the caller's own drops in this day their highlight, or move it to another: a pointer, never an extra drop (T17, T22). Set or replace only; it clears only when that drop is withdrawn."
     SetReactionRequest:
       type: object
       properties:
@@ -13692,14 +14279,14 @@ components:
       type: object
       properties:
         text:
-          $ref: "#/components/schemas/CommentText"
+          $ref: "#/components/schemas/CommentEditText"
         expected_version:
           $ref: "#/components/schemas/Version"
       required:
         - text
         - expected_version
       additionalProperties: false
-      description: The author's edit of their comment. It announces nothing again (spec 16).
+      description: "The author's edit of their message's text, the only thing an edit changes: a photo is never replaced, only the whole message deleted (T65, FQ107). It announces nothing again (spec 16)."
     UpdateDropRequest:
       type: object
       properties:
@@ -13748,7 +14335,7 @@ components:
         - purpose
         - state
         - expires_at
-      description: The caller's own upload, which nobody else can see (T12), as `createUpload` answers it. `signed_upload` is present only while it's pending, in the response that created it or its replay. An upload nobody commits lapses at `expires_at`; the device's draft keeps the photo (FQ15).
+      description: The caller's own upload, which nobody else can see (T12), as `createUpload` answers it. `signed_upload` is present only while it's pending, in the response that created it or its replay. An upload nobody commits lapses at `expires_at` and is purged; for a drop's photo the device's draft keeps it (FQ15), and for a photo message the app keeps its own attachment until the message commits, never in Drafts (T64). It never names the drop it's for.
     UploadContentType:
       type: string
       enum:
@@ -13762,6 +14349,7 @@ components:
         - drop_photo
         - replacement
         - avatar
+        - conversation_photo
       description: What an upload is for.
     UploadRejection:
       type: string

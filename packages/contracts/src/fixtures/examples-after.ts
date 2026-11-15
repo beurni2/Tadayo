@@ -4,7 +4,7 @@ import { day, people } from "./world.ts";
 
 const debby6Past = day("sundayPeople", "debby", 6, "past");
 
-// Ben sees the heart on Sam's photo without names, and his own in `viewer_reaction` (FQ73).
+// Ben sees the heart on Sam's photo without names, and Ben's own in `viewer_reaction` (FQ73).
 const samHill = {
   view: "revealed",
   id: "drp_sam_hill",
@@ -30,21 +30,36 @@ const mayaChair = {
   viewer_favourite: true,
 };
 
-const comment = (id: string, who: "debby" | "maya" | "ben", text: string, extra: Record<string, unknown> = {}) => ({
+const comment = (
+  id: string,
+  who: "debby" | "maya" | "nina" | "ben",
+  text: string | undefined,
+  extra: Record<string, unknown> = {},
+) => ({
   id,
   author: people[who],
-  text,
+  // A photo message may have no text (addendum 5): then the field is absent, never empty.
+  ...(text === undefined ? {} : { text }),
   edited: false,
   // The version is only on the caller's own comments.
   ...(who === "ben" ? { version: 1 } : {}),
   ...extra,
 });
 
-// The thread on Sam's photo as R04-comments shows it.
+/** A photo message's photo: its frame and content version, read from the comment media route (T12, T63). */
+const replyPhoto = (id: string, width: number, height: number) => ({ width, height, media_version: `mv_${id}_1` });
+
+// The thread on Sam's photo as R04-comments shows it, then a photo message from Nina with no text and one from
+// Debby with text (addendum 5). Debby's is the latest photo message, so the feed card's preview names it.
 const samHillThread = [
   comment("cmt_debby_1", "debby", "Next summer. No excuses."),
   comment("cmt_maya_1", "maya", "I’m saving this as evidence.", {
     reply_to: { comment_id: "cmt_debby_1", author: people.debby },
+  }),
+  comment("cmt_nina_1", "nina", undefined, { photo: replyPhoto("cmt_nina_1", 3024, 4032) }),
+  comment("cmt_debby_2", "debby", "Found the one from last time.", {
+    photo: replyPhoto("cmt_debby_2", 4032, 3024),
+    reply_to: { comment_id: "cmt_nina_1", author: people.nina },
   }),
 ];
 
@@ -78,11 +93,23 @@ export const AFTER_EXAMPLES: Record<string, Examples> = {
       summary: "Ben's comment",
       value: { comment_id: "cmt_ben_1", drop_id: "drp_sam_hill", edited: false, version: 1 },
     },
+    photo: {
+      summary: "Ben's photo message with no text, once its upload was ready (addendum 5)",
+      value: { comment_id: "cmt_ben_2", drop_id: "drp_sam_hill", edited: false, version: 1 },
+    },
+    photo_with_text: {
+      summary: "Ben's photo message with text (addendum 5)",
+      value: { comment_id: "cmt_ben_3", drop_id: "drp_sam_hill", edited: false, version: 1 },
+    },
   },
   updateComment: {
     edited: {
       summary: "Ben's comment, edited (R04-edit)",
       value: { comment_id: "cmt_ben_1", drop_id: "drp_sam_hill", edited: true, version: 2 },
+    },
+    text_removed: {
+      summary: "The text of Ben's photo message removed: its photo stays (FQ107)",
+      value: { comment_id: "cmt_ben_3", drop_id: "drp_sam_hill", edited: true, version: 2 },
     },
   },
   setThreadNotifications: { muted: { summary: "Muted (R04-menu)", value: { drop_id: "drp_sam_hill", muted: true } } },

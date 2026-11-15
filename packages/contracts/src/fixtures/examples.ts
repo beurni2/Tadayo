@@ -34,11 +34,12 @@ const revealed = (id: string, author: keyof typeof people, extra: Record<string,
   ...extra,
 });
 
-// The feed in commit order (T35), Maya's chair first (H01-open). Ben sees who reacted only to his own drop
-// (FQ73): on Sam's photo, the heart alone, and his own in `viewer_reaction`.
+// Debby's Friday 6 November's drops, star first (T35, addendum 4): Debby's own, then friends' in commit
+// order, Maya's chair first. Ben sees who reacted only to Ben's own drop (FQ73): on Sam's photo, the heart
+// alone, and Ben's own in `viewer_reaction`.
 export const debby6Drops = [
-  revealed("drp_maya_chair", "maya", { caption: "Your future living room.", highlight: true }),
   revealed("drp_debby_6_own", "debby", { highlight: true }),
+  revealed("drp_maya_chair", "maya", { caption: "Your future living room.", highlight: true }),
   revealed("drp_sam_hill", "sam", {
     caption: "We said we’d go back here.",
     highlight: true,
@@ -61,6 +62,24 @@ export const debby6Drops = [
   },
 ];
 
+/** A revealed day's card: the drop, its section (addendum 4) and any reply preview this viewer may read. */
+const inDay = (star: keyof typeof people, drop: { author: { membership_id: string } }, extra = {}) => ({
+  ...drop,
+  section: drop.author.membership_id === people[star].membership_id ? "star" : "friends",
+  ...extra,
+});
+
+// On Sam's photo, the latest photo message Ben may read is Debby's (T65; examples-after.ts's thread).
+const debby6Feed = debby6Drops.map((drop) =>
+  inDay(
+    "debby",
+    drop,
+    drop.id === "drp_sam_hill"
+      ? { reply_preview: { comment_id: "cmt_debby_2", author: people.debby, media_version: "mv_cmt_debby_2_1" } }
+      : {},
+  ),
+);
+
 // The star's pick, then the club's schedule order from Monday (FQ26): Debby, Ben, Maya, Sam.
 const debby6Rail = [
   { drop_id: "drp_debby_6_own", author: people.debby, star_pick: true },
@@ -78,11 +97,11 @@ export const debby6Day = {
   club: sp,
   viewer: notStar,
   add_target: debby13,
-  drops: debby6Drops,
+  drops: debby6Feed,
   highlights: debby6Rail,
 };
 
-// Ben's two drops for Debby's Friday 13 November (F02-your-drops): his highlight, then another.
+// Ben's two drops for Debby's Friday 13 November (F02-your-drops): Ben's highlight, then another.
 const benOwn13 = {
   view: "own",
   id: "drp_ben_13",
@@ -106,7 +125,7 @@ const benOwn13b = {
 };
 
 // Debby's Friday 13 November, collecting, as Ben sees it on Tuesday (F02-upcoming): others' captions,
-// and his own drops.
+// and Ben's own drops.
 export const debby13Day = {
   stage: "upcoming",
   server_now: at.tuesday10Morning,
@@ -135,13 +154,27 @@ export const debby13Day = {
   ],
 };
 
-export const allowance = (added: number, external = 0, reserved = 0, externalReserved = 0) => ({
+/**
+ * The caller's own allowance in a day by their role in it (T17; addendum 2): the star's six drops, any of them
+ * photos, two of them at most links; anyone else's three, two photos and one link at most.
+ */
+export const allowance = (
+  role: "star" | "friend",
+  added: number,
+  external = 0,
+  reserved = 0,
+  externalReserved = 0,
+) => ({
   added,
   reserved,
-  limit: 6,
+  limit: role === "star" ? 6 : 3,
+  photo_added: added - external,
+  photo_reserved: reserved - externalReserved,
+  photo_limit: role === "star" ? 6 : 2,
   external_added: external,
   external_reserved: externalReserved,
-  external_limit: 2,
+  external_limit: role === "star" ? 2 : 1,
+  is_star: role === "star",
 });
 
 const link = (date: number | string, who: Parameters<typeof day>[1], cover?: string) => ({
@@ -159,7 +192,7 @@ const benDay9 = day("sundayPeople", "ben", 9, "open");
 const SUCCESS: Record<string, Examples> = {
   getMe: {
     ben: {
-      summary: "Ben, signed in with his profile done",
+      summary: "Ben, signed in with Ben's profile done",
       value: { id: "acct_ben", display_name: "Ben", avatar_version: "av_ben_1", age_confirmed: true, version: 3 },
     },
     new_account: {
@@ -301,7 +334,7 @@ const SUCCESS: Record<string, Examples> = {
       },
     },
     your_day: {
-      summary: "Monday 9 November, 9:41 AM: Ben's own day, with his pick first (H01-your-day)",
+      summary: "Monday 9 November, 9:41 AM: Ben's own day, with Ben's pick first (H01-your-day)",
       value: {
         mode: "day",
         ...homeBase(at.monday9Morning, "2026-11-09"),
@@ -316,7 +349,7 @@ const SUCCESS: Record<string, Examples> = {
             revealed("drp_ben_9_own", "ben", { caption: "This week, mostly this.", highlight: true }),
             revealed("drp_maya_9", "maya", { highlight: true }),
             revealed("drp_sam_9", "sam", { highlight: true }),
-          ],
+          ].map((drop) => inDay("ben", drop)),
           // Ben's pick, then the club's schedule order from Monday (FQ26): Maya, Sam.
           highlights: [
             { drop_id: "drp_ben_9_own", author: people.ben, star_pick: true },
@@ -345,6 +378,23 @@ const SUCCESS: Record<string, Examples> = {
         add_target: undefined,
       },
     },
+    friends_only: {
+      summary:
+        "Sam's Thursday 5 November from Memories: Sam added nothing, so the day is friends' drops alone, with " +
+        "no empty section and nothing said about it (addendum 4)",
+      value: {
+        stage: "revealed",
+        server_now: at.monday9Morning,
+        occurrence: day("sundayPeople", "sam", 5, "past"),
+        club: sp,
+        viewer: notStar,
+        drops: [
+          revealed("drp_maya_5", "maya", { caption: "Thursday’s light.", highlight: true }),
+          revealed("drp_ben_5", "ben"),
+        ].map((drop) => inDay("sam", drop)),
+        highlights: [{ drop_id: "drp_maya_5", author: people.maya, star_pick: false }],
+      },
+    },
     joined_later: {
       summary: "A day Ben joined after it began collecting: partly visible, with no numbers (F02-joined-later)",
       value: { ...debby13Day, viewer: { is_star: false, joined_later: true }, drops: [benOwn13] },
@@ -362,12 +412,14 @@ const SUCCESS: Record<string, Examples> = {
   },
   getOwnDay: {
     your_drops: {
-      summary: "Ben's own drops for Debby's Friday 13 November: two added, the first his highlight (F02-your-drops)",
+      summary:
+        "Ben's own drops for Debby's Friday 13 November: two photos added, the first Ben's highlight; as a friend, " +
+        "2 of 2 photos and 0 of 1 video link (F02-your-drops, addendum 2)",
       value: {
         server_now: at.tuesday10Morning,
         occurrence: debby13,
         club: sp,
-        allowance: allowance(2),
+        allowance: allowance("friend", 2),
         highlight: { drop_id: "drp_ben_13", version: 1 },
         drops: [benOwn13, benOwn13b],
       },
@@ -378,16 +430,45 @@ const SUCCESS: Record<string, Examples> = {
         server_now: at.tuesday10Morning,
         occurrence: debby13,
         club: sp,
-        allowance: allowance(0),
+        allowance: allowance("friend", 0),
         highlight: { version: 0 },
         drops: [],
+      },
+    },
+    own_day: {
+      summary:
+        "Ben's own Monday 16 November, as its star: one photo added, with the star's six drops and two video " +
+        "links (addendum 2)",
+      value: {
+        server_now: at.tuesday10Morning,
+        occurrence: day("sundayPeople", "ben", 16, "collecting"),
+        club: sp,
+        allowance: allowance("star", 1),
+        highlight: { version: 0 },
+        drops: [
+          {
+            view: "own",
+            id: "drp_ben_16_own",
+            author: people.ben,
+            media_class: "photo",
+            caption: "What I’ve been up to.",
+            highlight: false,
+            state: "added",
+            version: 1,
+          },
+        ],
       },
     },
   },
   getDrop: {
     revealed: {
       summary: "Sam's photo on Debby's Friday 6 November (R02-photo)",
-      value: { server_now: at.friday6Morning, occurrence: debby6Open, club: sp, drop: debby6Drops[2] },
+      value: {
+        server_now: at.friday6Morning,
+        occurrence: debby6Open,
+        club: sp,
+        drop: debby6Drops.find((drop) => drop.id === "drp_sam_hill"),
+      },
     },
     caption_only: {
       summary: "Maya's drop for Debby's Friday 13 November before the reveal: its caption only (T10)",
@@ -404,6 +485,23 @@ const SUCCESS: Record<string, Examples> = {
         expires_at: "2026-11-11T14:41:00Z",
         signed_upload: {
           url: "https://dev-project.supabase.co/storage/v1/object/upload/sign/uploads/f3a9c1d2e8b7?token=example",
+          method: "PUT",
+          headers: { "Content-Type": "image/jpeg", "x-upsert": "false" },
+          expires_at: "2026-11-10T16:41:00Z",
+        },
+      },
+    },
+    conversation_photo: {
+      summary:
+        "A photo for the conversation on Sam's photo, waiting for its bytes: it never names the drop, and " +
+        "uses no slot (addendum 5, T64)",
+      value: {
+        id: "upl_ben_reply_1",
+        purpose: "conversation_photo",
+        state: "pending",
+        expires_at: "2026-11-11T14:41:00Z",
+        signed_upload: {
+          url: "https://dev-project.supabase.co/storage/v1/object/upload/sign/uploads/9b2e7d4a1c6f?token=example",
           method: "PUT",
           headers: { "Content-Type": "image/jpeg", "x-upsert": "false" },
           expires_at: "2026-11-10T16:41:00Z",
@@ -451,14 +549,14 @@ const SUCCESS: Record<string, Examples> = {
         occurrence_id: debby13.id,
         media_class: "photo",
         expires_at: "2026-11-10T15:11:00Z",
-        allowance: allowance(1, 0, 1),
+        allowance: allowance("friend", 1, 0, 1),
       },
     },
   },
   releaseReservation: {
     released: {
       summary: "Kept as a draft instead",
-      value: { id: "rsv_ben_2", state: "released", allowance: allowance(1) },
+      value: { id: "rsv_ben_2", state: "released", allowance: allowance("friend", 1) },
     },
     consumed: {
       summary: "Its commit had landed: Added, though the answer was lost (T20)",
@@ -467,14 +565,16 @@ const SUCCESS: Record<string, Examples> = {
   },
   createDrop: {
     added: {
-      summary: "Added for Debby's Friday 13 November (F02-added)",
+      summary:
+        "Added for Debby's Friday 13 November: as a friend, 1 of 2 photos and 0 of 1 video link (F02-added, " +
+        "addendum 2)",
       value: {
         drop_id: "drp_ben_13",
         occurrence: debby13,
         media_class: "photo",
         state: "added",
         version: 1,
-        allowance: allowance(1),
+        allowance: allowance("friend", 1),
         highlight: { version: 0 },
       },
     },
@@ -489,7 +589,12 @@ const SUCCESS: Record<string, Examples> = {
   removeDrop: {
     before_reveal: {
       summary: "Withdrawn before the reveal: the slot is free and the highlight cleared (F02-withdraw)",
-      value: { drop_id: "drp_ben_13", state: "withdrawn", allowance: allowance(0), highlight: { version: 2 } },
+      value: {
+        drop_id: "drp_ben_13",
+        state: "withdrawn",
+        allowance: allowance("friend", 0),
+        highlight: { version: 2 },
+      },
     },
     after_reveal: {
       summary: "Withdrawn after the reveal (S01-withdraw)",
@@ -550,10 +655,23 @@ const ERROR_SCENES: Partial<Record<ErrorCodeName, unknown>> = {
     target: debby6Open,
     next_target: debby13,
   },
-  // C07-limit: Friday 13 November is full for Ben; Friday 20 November offered for review (T4).
-  QUOTA_FULL: { code: "QUOTA_FULL", target: debby13, next_target: debby20, allowance: allowance(6, 1) },
-  // C02-external-limit
-  EXTERNAL_LIMIT: { code: "EXTERNAL_LIMIT", target: debby13, next_target: debby20, allowance: allowance(3, 2) },
+  // C07-limit, for a friend (FQ104): Ben has two photos and a video link in Debby's Friday 13 November, all a
+  // friend can add; Friday 20 November offered for review (T4).
+  QUOTA_FULL: {
+    code: "QUOTA_FULL",
+    target: debby13,
+    next_target: debby20,
+    allowance: allowance("friend", 3, 1),
+  },
+  // C02-external-limit, for a friend: Ben's one video link is used, with one photo.
+  EXTERNAL_LIMIT: {
+    code: "EXTERNAL_LIMIT",
+    target: debby13,
+    next_target: debby20,
+    allowance: allowance("friend", 2, 1),
+  },
+  // A friend's third photo (addendum 2): Ben has two photos and no link, so Ben's last drop can only be a link.
+  PHOTO_LIMIT: { code: "PHOTO_LIMIT", target: debby13, next_target: debby20, allowance: allowance("friend", 2) },
   DUPLICATE_DROP: { code: "DUPLICATE_DROP", existing_drop_id: "drp_ben_13" }, // C02-duplicate
   VERSION_CONFLICT: { code: "VERSION_CONFLICT", current_version: 3 },
   ROSTER_CHANGED: { code: "ROSTER_CHANGED", current_id: "rev_kt_leila_2" }, // G02-changed

@@ -222,7 +222,9 @@ const DAYS: Operation[] = [
     description:
       "The state, the date and the viewer-allowed drops (spec 09, 15, 32): others' captions only before the " +
       "reveal (T10), the caller's own drops for the caller, everything in the audience after it. A past day " +
-      "that closed before the caller joined is NOT_FOUND (Q06). The cursor is bound to the caller and the day.",
+      "that closed before the caller joined is NOT_FOUND (Q06). After the reveal the drops come star first, " +
+      "then friends', each with its section (T35). The cursor is bound to the caller, the day and its stage: " +
+      "a cursor from a day still collecting doesn't page its revealed drops.",
     query: z.object({ cursor: Cursor.optional(), limit: z.int().min(1).max(36).optional() }),
     ok: { status: 200, json: Day },
   },
@@ -254,7 +256,10 @@ const CONTRIBUTING: Operation[] = [
     summary: "Start an upload",
     description:
       "A scoped intent and the signed upload URL for one object (spec 32, 33; T12). A replay signs a new URL " +
-      "only while the upload is pending (TECH-DESIGN section 6).",
+      "only while the upload is pending (TECH-DESIGN section 6). Only the avatar's purpose works before the " +
+      "profile is finished. A conversation photo's purpose answers only the neutral NOT_FOUND for a drop " +
+      "the caller can't read now or whose day hasn't opened, never OCCURRENCE_CLOSED or MEMBERSHIP_CHANGED, " +
+      "and it has no cutoff, no reservation and no allowance (T3, T14, T63, T64).",
     idempotent: true,
     beforeProfile: true,
     body: CreateUploadRequest,
@@ -300,11 +305,12 @@ const CONTRIBUTING: Operation[] = [
     path: "/v1/occurrences/{occurrence_id}/reservations",
     summary: "Hold a slot in a day",
     description:
-      "Reserve one slot before the upload (spec 11, 32; T17, T18), with the cutoff checked under the lock (T3).",
+      "Reserve one slot before the upload (spec 11, 32; T17, T18), with the cutoff checked under the lock (T3) " +
+      "and the caller's limits by role: QUOTA_FULL, EXTERNAL_LIMIT or PHOTO_LIMIT, QUOTA_FULL first.",
     idempotent: true,
     body: CreateReservationRequest,
     ok: { status: 201, json: Reservation },
-    errors: ["OCCURRENCE_CLOSED", "QUOTA_FULL", "EXTERNAL_LIMIT", "MEMBERSHIP_CHANGED"],
+    errors: ["OCCURRENCE_CLOSED", "QUOTA_FULL", "EXTERNAL_LIMIT", "PHOTO_LIMIT", "MEMBERSHIP_CHANGED"],
   },
   {
     id: "releaseReservation",
@@ -324,7 +330,8 @@ const CONTRIBUTING: Operation[] = [
       "Commit ready media, the caption and the immutable audience in one transaction (spec 32; T3, T8, T17, " +
       "T19). Only this response means Added (T20). A missed cutoff answers OCCURRENCE_CLOSED with the same " +
       "person's next day to confirm, and nothing is moved (T4). A reservation that has lapsed counts as none: " +
-      "a free slot is taken if there is one, or QUOTA_FULL (T18).",
+      "a free slot is taken if there is one, or the refusal of the caller's limits by role: QUOTA_FULL, " +
+      "EXTERNAL_LIMIT or PHOTO_LIMIT, QUOTA_FULL first (T17, T18).",
     idempotent: true,
     body: CreateDropRequest,
     ok: { status: 201, json: DropReceipt },
@@ -336,6 +343,7 @@ const CONTRIBUTING: Operation[] = [
       "DUPLICATE_DROP",
       "QUOTA_FULL",
       "EXTERNAL_LIMIT",
+      "PHOTO_LIMIT",
     ],
   },
   {
@@ -364,8 +372,9 @@ const CONTRIBUTING: Operation[] = [
     description:
       "Withdraw or authorized removal with a distinct reason (spec 32). withdraw: the author, before or after " +
       "the reveal, even after leaving the club (spec 22). pictured: a member in the photograph, after the " +
-      "reveal, with no approval and no public reason (T25). Either reaches everything at once (T24) and never " +
-      "reopens a closed day (T3).",
+      "reveal, with no approval and no public reason (T25). Either reaches everything at once, the drop's " +
+      "conversation, its photo messages and their previews included (T24, T63), and never reopens a closed " +
+      "day (T3).",
     idempotent: true,
     query: z.object({ reason: RemovalReason }),
     ok: { status: 200, json: RemovedDrop },
@@ -413,6 +422,20 @@ const MEDIA: Operation[] = [
       "Runs the read predicate on every request and streams the rendition; NOT_FOUND before the reveal (spec " +
       "32, 33; T9, T12). Never a storage URL.",
     query: z.object({ rendition: z.enum(["display", "full"]) }),
+    ok: { status: 200, binary: "image/jpeg" },
+  },
+  {
+    id: "getCommentMedia",
+    method: "get",
+    path: "/v1/comments/{comment_id}/media",
+    summary: "A photo message's bytes",
+    description:
+      "Runs the drop's read predicate, through the drop's own audience, and the photo's own state (ready, its " +
+      "message neither deleted nor removed) on every request, and streams the rendition: `thumbnail` for the " +
+      "feed's reply preview, `display` in the conversation, `full` when it's opened (addendum 5). The same " +
+      "NOT_FOUND otherwise, before the reveal included (T9, T12, T14, T63). One content version serves all " +
+      "three. Never a storage URL.",
+    query: z.object({ rendition: z.enum(["thumbnail", "display", "full"]) }),
     ok: { status: 200, binary: "image/jpeg" },
   },
   {
@@ -465,7 +488,9 @@ const AFTER: Operation[] = [
     method: "get",
     path: "/v1/drops/{drop_id}/comments",
     summary: "A drop's thread",
-    description: "In the order written, with replies pointing to their comment (spec 16). Only after the reveal (D07).",
+    description:
+      "In the order written, with replies pointing to their comment (spec 16). Only after the reveal (D07). A " +
+      "message's photo is read from `GET /v1/comments/{comment_id}/media` (T12, T63).",
     query: PageQuery,
     ok: { status: 200, json: CommentPage },
   },
@@ -474,17 +499,28 @@ const AFTER: Operation[] = [
     method: "post",
     path: "/v1/drops/{drop_id}/comments",
     summary: "Comment on a revealed drop",
-    description: "Eligible after the reveal, with active membership (spec 16, 32).",
+    description:
+      "Eligible after the reveal, with active membership and the drop's read predicate (spec 16, 32), checked " +
+      "again at the commit, after its locks (T63). With text, a photo or both (addendum 5): the photo is the " +
+      "caller's own ready conversation-photo upload for this drop; one still on its way or held is " +
+      "MEDIA_NOT_READY, as is a rejected one, which never becomes ready (`GET /v1/uploads/{upload_id}` says " +
+      "why), and one that isn't theirs, is for another drop or purpose, or is used or lapsed is " +
+      "NOT_FOUND. Nothing about the message reaches anyone, its preview included, until it commits (T65). " +
+      "No cutoff, reservation or allowance: it stays possible after the day leaves Home, and in Memories " +
+      "(T3, T64). One Idempotency-Key, one message (T19).",
     idempotent: true,
     body: CreateCommentRequest,
     ok: { status: 201, json: CommentReceipt },
+    errors: ["MEDIA_NOT_READY"],
   },
   {
     id: "updateComment",
     method: "patch",
     path: "/v1/comments/{comment_id}",
     summary: "Edit the caller's comment",
-    description: "It shows Edited and announces nothing again (spec 16).",
+    description:
+      "Its text only: it shows Edited and announces nothing again (spec 16). A photo message's text may be " +
+      "emptied; its photo is never replaced (T65, FQ107).",
     idempotent: true,
     body: UpdateCommentRequest,
     ok: { status: 200, json: CommentReceipt },
@@ -495,7 +531,10 @@ const AFTER: Operation[] = [
     method: "delete",
     path: "/v1/comments/{comment_id}",
     summary: "Delete the caller's comment",
-    description: "It leaves the thread at once; replies to it stay (spec 16).",
+    description:
+      "It leaves the thread at once, a photo message's photo and text together; replies to it stay (spec 16; " +
+      "addendum 5). Its photo and thumbnail stop being served, and the drop's reply preview is worked out " +
+      "again (T24, T65).",
     ok: { status: 204 },
   },
   {

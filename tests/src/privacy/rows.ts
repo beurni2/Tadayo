@@ -137,6 +137,7 @@ export const ROWS: Readonly<Record<string, unknown>> = {
   getAuthorPreview: NONE,
   getClub: NONE,
   getClubNotificationPreferences: NONE,
+  getCommentMedia: NONE,
   getConfig: NONE,
   getDrop: NONE,
   getDropMedia: NONE,

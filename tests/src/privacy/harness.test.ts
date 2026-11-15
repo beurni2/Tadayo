@@ -107,7 +107,7 @@ function spec(id: string): Spec {
 
 describe("a route with no row fails (TECH-DESIGN section 8)", () => {
   it("gives every operation of the contract its row, and every row an operation, each the skeleton's but the account routes'", () => {
-    expect(operations).toHaveLength(66);
+    expect(operations).toHaveLength(67);
     expect(rowProblems(operations, ROWS)).toEqual([]);
   });
 

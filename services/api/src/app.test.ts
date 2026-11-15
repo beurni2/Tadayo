@@ -83,12 +83,12 @@ describe("the skeleton's routes (T14)", () => {
       (operation) => `${operation.method.toUpperCase()} ${operation.path.replace(/\{([a-z_]+)\}/g, ":$1")}`,
     );
     expect([...routesOf(app)].sort()).toEqual(contract.sort());
-    expect(routesOf(app)).toHaveLength(66);
+    expect(routesOf(app)).toHaveLength(67);
   });
 
   it("answers every operation nobody has built yet with the neutral not-found, and nothing else", async () => {
     const unbuilt = OPERATIONS.filter((operation) => !BUILT.has(operation.id));
-    expect(unbuilt).toHaveLength(63);
+    expect(unbuilt).toHaveLength(64);
     for (const operation of unbuilt) {
       const url = operation.path.replace(/\{[a-z_]+\}/g, "drp_x");
       expect(await answer({ method: operation.method.toUpperCase(), url }), operation.id).toEqual(NEUTRAL);
