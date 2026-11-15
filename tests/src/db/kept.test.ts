@@ -46,6 +46,7 @@ describe("rows kept for good can't be truncated", () => {
     expect(tables.map((table) => table.name)).toEqual([
       "candidates",
       "clubs",
+      "comment_removals",
       "deletion_tombstones",
       "drop_audience",
       "drop_removals",

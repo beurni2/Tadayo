@@ -2,12 +2,13 @@
 // records what it applied, and a migration that fails, or would leave the schema open, or names
 // a table without its schema, changes nothing.
 
-import { copyFile, mkdtemp, readdir, writeFile } from "node:fs/promises";
+import { copyFile, mkdtemp, readdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { applyMigration, migrate, readMigrations } from "@tadayo/ops";
 import { afterAll, describe, expect, it } from "vitest";
-import { adminSql, appSql, MIGRATIONS } from "./harness.ts";
+import { adminSql, appSql, MIGRATIONS, type Tx } from "./harness.ts";
+import { checkAsAtCommit, commitDrop, newWorld, type Member } from "./world.ts";
 
 const app = appSql();
 const admin = adminSql();
@@ -364,5 +365,74 @@ describe("the runner (T57)", () => {
     if (!first) throw new Error("no migrations");
     await writeFile(join(dir, `0001_${first.name}.sql`), `${first.text}\n-- edited\n`);
     await expect(migrate(app, dir)).rejects.toThrow(/migration 1 \(close_data_api\) has changed since it was applied/);
+  });
+});
+
+describe("0010: each role's allowance, over counters made before it (T17, T57; addendum 7)", () => {
+  /** Takes 0010 back out of the schema, inside the caller's transaction. */
+  async function undo0010(tx: Tx): Promise<void> {
+    await tx.unsafe(`
+      DROP TRIGGER contribution_counters_limits ON app.contribution_counters;
+      DROP TRIGGER contribution_counters_keep_limits ON app.contribution_counters;
+      DROP FUNCTION app.contribution_counters_limits();
+      ALTER TABLE app.contribution_counters DROP COLUMN total_limit, DROP COLUMN photo_limit, DROP COLUMN external_limit;
+    `);
+  }
+
+  async function counterOf(tx: Tx, day: string, member: Member) {
+    const [row] = await tx<Record<string, number>[]>`
+      SELECT total_limit, photo_limit, external_limit, committed_total, committed_external, reserved_total, reserved_external
+        FROM app.contribution_counters WHERE occurrence_id = ${day} AND interval_id = ${member.interval}
+    `;
+    return row;
+  }
+
+  it("fills the star's limits and a friend's from the rows' intervals, keeping every count; a friend's row over them stops it, keeping nothing", async () => {
+    const text = await readFile(join(MIGRATIONS, "0010_allowance_by_role.sql"), "utf8");
+    const replay = { version: 99, name: "allowance_by_role", sha256: "0".repeat(64), text };
+    const rollback = new Error("rolled back");
+    await expect(
+      app.begin(async (tx) => {
+        const w = await newWorld(tx);
+        await commitDrop(tx, w, w.ana);
+        await commitDrop(tx, w, w.ana, { media: "external_video" });
+        await commitDrop(tx, w, w.ben);
+        await commitDrop(tx, w, w.ben, { media: "external_video" });
+        await checkAsAtCommit(tx);
+        await undo0010(tx);
+        await applyMigration(tx, replay);
+        expect(await counterOf(tx, w.day, w.ana)).toEqual({
+          total_limit: 6,
+          photo_limit: 6,
+          external_limit: 2,
+          committed_total: 2,
+          committed_external: 1,
+          reserved_total: 0,
+          reserved_external: 0,
+        });
+        expect(await counterOf(tx, w.day, w.ben)).toEqual({
+          total_limit: 3,
+          photo_limit: 2,
+          external_limit: 1,
+          committed_total: 2,
+          committed_external: 1,
+          reserved_total: 0,
+          reserved_external: 0,
+        });
+        // Under 0006 alone, Ben could hold three photos; 0010 then refuses to run.
+        await expect(
+          tx.savepoint(async (sp) => {
+            await undo0010(sp);
+            await sp`
+              UPDATE app.contribution_counters SET committed_total = 3, committed_external = 0
+               WHERE occurrence_id = ${w.day} AND interval_id = ${w.ben.interval}
+            `;
+            await applyMigration(sp, { ...replay, version: 98 });
+          }),
+        ).rejects.toThrow(/0010: 1 contribution counters already exceed a friend's allowance; nothing is changed/);
+        expect(await counterOf(tx, w.day, w.ben)).toMatchObject({ total_limit: 3, committed_total: 2 });
+        throw rollback;
+      }),
+    ).rejects.toBe(rollback);
   });
 });
