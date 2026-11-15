@@ -502,10 +502,11 @@ const AFTER: Operation[] = [
     description:
       "Eligible after the reveal, with active membership and the drop's read predicate (spec 16, 32), checked " +
       "again at the commit, after its locks (T63). With text, a photo or both (addendum 5): the photo is the " +
-      "caller's own ready conversation-photo upload for this drop; one still on its way or held is " +
+      "caller's own ready conversation-photo upload for this drop; one still on its way, held or rejected is " +
       "MEDIA_NOT_READY, and one that isn't theirs, is for another drop or purpose, or is used or lapsed is " +
       "NOT_FOUND. Nothing about the message reaches anyone, its preview included, until it commits (T65). " +
-      "One Idempotency-Key, one message (T19).",
+      "No cutoff, reservation or allowance: it stays possible after the day leaves Home, and in Memories " +
+      "(T3, T64). One Idempotency-Key, one message (T19).",
     idempotent: true,
     body: CreateCommentRequest,
     ok: { status: 201, json: CommentReceipt },

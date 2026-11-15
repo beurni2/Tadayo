@@ -35,8 +35,8 @@ const revealed = (id: string, author: keyof typeof people, extra: Record<string,
 });
 
 // Debby's Friday 6 November's drops, star first (T35, addendum 4): Debby's own, then friends' in commit
-// order, Maya's chair first. Ben sees who reacted only to his own drop (FQ73): on Sam's photo, the heart
-// alone, and his own in `viewer_reaction`.
+// order, Maya's chair first. Ben sees who reacted only to Ben's own drop (FQ73): on Sam's photo, the heart
+// alone, and Ben's own in `viewer_reaction`.
 export const debby6Drops = [
   revealed("drp_debby_6_own", "debby", { highlight: true }),
   revealed("drp_maya_chair", "maya", { caption: "Your future living room.", highlight: true }),
@@ -101,7 +101,7 @@ export const debby6Day = {
   highlights: debby6Rail,
 };
 
-// Ben's two drops for Debby's Friday 13 November (F02-your-drops): his highlight, then another.
+// Ben's two drops for Debby's Friday 13 November (F02-your-drops): Ben's highlight, then another.
 const benOwn13 = {
   view: "own",
   id: "drp_ben_13",
@@ -125,7 +125,7 @@ const benOwn13b = {
 };
 
 // Debby's Friday 13 November, collecting, as Ben sees it on Tuesday (F02-upcoming): others' captions,
-// and his own drops.
+// and Ben's own drops.
 export const debby13Day = {
   stage: "upcoming",
   server_now: at.tuesday10Morning,
@@ -192,7 +192,7 @@ const benDay9 = day("sundayPeople", "ben", 9, "open");
 const SUCCESS: Record<string, Examples> = {
   getMe: {
     ben: {
-      summary: "Ben, signed in with his profile done",
+      summary: "Ben, signed in with Ben's profile done",
       value: { id: "acct_ben", display_name: "Ben", avatar_version: "av_ben_1", age_confirmed: true, version: 3 },
     },
     new_account: {
@@ -334,7 +334,7 @@ const SUCCESS: Record<string, Examples> = {
       },
     },
     your_day: {
-      summary: "Monday 9 November, 9:41 AM: Ben's own day, with his pick first (H01-your-day)",
+      summary: "Monday 9 November, 9:41 AM: Ben's own day, with Ben's pick first (H01-your-day)",
       value: {
         mode: "day",
         ...homeBase(at.monday9Morning, "2026-11-09"),
@@ -413,7 +413,7 @@ const SUCCESS: Record<string, Examples> = {
   getOwnDay: {
     your_drops: {
       summary:
-        "Ben's own drops for Debby's Friday 13 November: two photos added, the first his highlight; as a friend, " +
+        "Ben's own drops for Debby's Friday 13 November: two photos added, the first Ben's highlight; as a friend, " +
         "2 of 2 photos and 0 of 1 video link (F02-your-drops, addendum 2)",
       value: {
         server_now: at.tuesday10Morning,
@@ -670,7 +670,7 @@ const ERROR_SCENES: Partial<Record<ErrorCodeName, unknown>> = {
     next_target: debby20,
     allowance: allowance("friend", 2, 1),
   },
-  // A friend's third photo (addendum 2): Ben has two photos and no link, so his last drop can only be a link.
+  // A friend's third photo (addendum 2): Ben has two photos and no link, so Ben's last drop can only be a link.
   PHOTO_LIMIT: { code: "PHOTO_LIMIT", target: debby13, next_target: debby20, allowance: allowance("friend", 2) },
   DUPLICATE_DROP: { code: "DUPLICATE_DROP", existing_drop_id: "drp_ben_13" }, // C02-duplicate
   VERSION_CONFLICT: { code: "VERSION_CONFLICT", current_version: 3 },

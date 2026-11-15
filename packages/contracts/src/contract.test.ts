@@ -40,7 +40,7 @@ import {
 } from "./schemas/contributing.ts";
 import { DropCaption, DropOwn } from "./schemas/days.ts";
 import { unknownKeys } from "./strict.ts";
-import { allSuccessExamples, errorExample } from "./fixtures/examples.ts";
+import { allSuccessExamples, debby6Drops, errorExample } from "./fixtures/examples.ts";
 import { member, rosters, type Who } from "./fixtures/world.ts";
 
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
@@ -832,7 +832,7 @@ describe("the examples", () => {
               `${id}.${name}`,
             );
           }
-          // Every scene is Ben's, so a day has one cover for him wherever it appears (D08).
+          // Every scene is Ben's, so a day has one cover for Ben wherever it appears (D08).
           if (
             typeof node.cover_drop_id === "string" &&
             node.occurrence !== null &&
@@ -1365,7 +1365,9 @@ describe("the new direction (ADR-035)", () => {
     expect(ERRORS.PHOTO_LIMIT[0]).toBe(409);
     expect(ERRORS.QUOTA_FULL[1]).toMatch(/six drops for the star, three for anyone else/);
     expect(ERRORS.EXTERNAL_LIMIT[1]).toMatch(/two for the star, one for anyone else/);
-    expect(ERRORS.PHOTO_LIMIT[1]).toMatch(/Two photos already in someone else's day/);
+    expect(ERRORS.PHOTO_LIMIT[1]).toMatch(/^A photo refused: two photos already in someone else's day/);
+    // Otherwise the limit of the drop's own kind answers: each says which kind it refuses.
+    expect(ERRORS.EXTERNAL_LIMIT[1]).toMatch(/^A video link refused: /);
     for (const code of ["QUOTA_FULL", "EXTERNAL_LIMIT", "PHOTO_LIMIT"] as const) {
       expect(ERRORS[code][1], code).toMatch(/QUOTA_FULL comes first/);
       for (const field of ["target", "allowance", "next_target"])
@@ -1381,15 +1383,22 @@ describe("the new direction (ADR-035)", () => {
       for (const name of revealedOnly) expect(reached.has(name), `${root} reaches ${name}`).toBe(false);
     }
     for (const name of revealedOnly) expect(requestSchemas.has(name), `a request reaches ${name}`).toBe(false);
-    // Each is reached through a revealed day or a comment, and nowhere else.
-    expect(reachable([{ $ref: "#/components/schemas/RevealedDay" }]).has("ReplyPreview")).toBe(true);
-    expect(reachable([{ $ref: "#/components/schemas/CommentPage" }]).has("CommentPhoto")).toBe(true);
-    for (const name of ["DropDetail", "Favourite", "MemorySearchResult"]) {
-      const reached = reachable([{ $ref: `#/components/schemas/${name}` }]);
-      for (const only of ["DaySection", "RevealedDayDrop", "ReplyPreview"]) {
-        expect(reached.has(only), `${name} reaches ${only}`).toBe(false);
-      }
-    }
+    // Each is reached through a revealed day or a comment, and nowhere else: every schema that reaches it,
+    // pinned, so a new path from any answer (a receipt, a waiting Home, a drop's detail) fails here.
+    const reachedFrom = (name: string): string[] =>
+      Object.keys(schemas)
+        .filter((root) => root !== name && reachable([{ $ref: `#/components/schemas/${root}` }]).has(name))
+        .sort();
+    expect(reachedFrom("DaySection")).toEqual(["Day", "Home", "HomeDay", "RevealedDay", "RevealedDayDrop"]);
+    expect(reachedFrom("ReplyPreview")).toEqual(["Day", "Home", "HomeDay", "RevealedDay", "RevealedDayDrop"]);
+    expect(reachedFrom("RevealedDayDrop")).toEqual(["Day", "Home", "HomeDay", "RevealedDay"]);
+    expect(reachedFrom("CommentPhoto")).toEqual(["Comment", "CommentPage"]);
+    // And the answers that reach them are getHome's and getOccurrence's revealed day and listComments' page.
+    const answering = operations
+      .filter((operation) => revealedOnly.some((name) => reachable([operation.responses ?? null]).has(name)))
+      .map((operation) => operation.operationId as string)
+      .sort();
+    expect(answering).toEqual(["getHome", "getOccurrence", "listComments"]);
   });
 
   it("pins the reply preview and a reply's photo to the fields the addendum names: no text, time, count or URL", () => {
@@ -1405,7 +1414,7 @@ describe("the new direction (ADR-035)", () => {
     expect(card.required).not.toContain("reply_preview");
   });
 
-  it("orders every revealed day star first, each section in commit order, and marks each drop's section (T35, addendum 4)", () => {
+  it("orders every revealed day star first and marks each drop's section (T35, addendum 4)", () => {
     let days = 0;
     let friendsOnly = 0;
     for (const [where, value] of everyExample()) {
@@ -1434,12 +1443,28 @@ describe("the new direction (ADR-035)", () => {
     }
     expect(days).toBeGreaterThan(0);
     expect(friendsOnly, "a day with friends' drops only (addendum 4)").toBeGreaterThan(0);
+    // The order within a section can't be read from the shapes, which carry no commit time: B5 proves it on
+    // the database. This pins the fixture's own scene: Debby's drop, then friends' in the commit order main's
+    // scene had before the new direction (Maya, Sam, Ben, Nina).
+    expect(debby6Drops.map((drop) => drop.id)).toEqual([
+      "drp_debby_6_own",
+      "drp_maya_chair",
+      "drp_sam_hill",
+      "drp_ben_6",
+      "drp_nina_6_video",
+    ]);
   });
 
   it("points every reply preview at the latest photo message on its drop, by that message's author (T65)", () => {
-    const threads = Object.entries(examples.listComments ?? {}).map(([, example]) => {
-      const items = (example.value as JsonObject).items as JsonObject[];
-      return items;
+    // Each thread example's drop, so a preview is checked against its own drop's thread and no other.
+    const THREAD_DROP: Record<string, string> = {
+      thread: "drp_sam_hill",
+      with_own: "drp_sam_hill",
+      empty: "drp_sam_hill",
+    };
+    const threads = Object.entries(examples.listComments ?? {}).map(([name, example]) => {
+      expect(THREAD_DROP[name], `listComments.${name} names its drop here`).toBeDefined();
+      return { drop: THREAD_DROP[name], items: (example.value as JsonObject).items as JsonObject[] };
     });
     let previews = 0;
     for (const [where, value] of everyExample()) {
@@ -1449,8 +1474,13 @@ describe("the new direction (ADR-035)", () => {
           const preview = drop.reply_preview as JsonObject | undefined;
           if (preview === undefined) continue;
           previews += 1;
-          const thread = threads.find((items) => items.some((item) => item.id === preview.comment_id));
-          expect(thread, `${where}: ${JSON.stringify(preview.comment_id)} is in a thread`).toBeDefined();
+          const thread = threads.find(
+            (candidate) => candidate.drop === drop.id && candidate.items.some((item) => item.id === preview.comment_id),
+          )?.items;
+          expect(
+            thread,
+            `${where}: ${JSON.stringify(preview.comment_id)} is in ${JSON.stringify(drop.id)}'s thread`,
+          ).toBeDefined();
           const photos = (thread ?? []).filter((item) => item.photo !== undefined);
           const latest = photos[photos.length - 1];
           expect(latest?.id, `${where}: the latest photo message`).toBe(preview.comment_id);

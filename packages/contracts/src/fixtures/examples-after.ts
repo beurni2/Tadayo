@@ -4,7 +4,7 @@ import { day, people } from "./world.ts";
 
 const debby6Past = day("sundayPeople", "debby", 6, "past");
 
-// Ben sees the heart on Sam's photo without names, and his own in `viewer_reaction` (FQ73).
+// Ben sees the heart on Sam's photo without names, and Ben's own in `viewer_reaction` (FQ73).
 const samHill = {
   view: "revealed",
   id: "drp_sam_hill",

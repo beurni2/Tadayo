@@ -33,8 +33,8 @@ export const ReactionState = named(
 
 export const ReplyTo = named(
   "ReplyTo",
-  "The comment a reply answers, by its author, whether that comment has text, a photo or both (FQ110). " +
-    "Absent once that comment is deleted or removed.",
+  "The comment a reply answers, by its id and author: any message, whatever it holds, text, a photo or both " +
+    "(FQ110). Absent once that comment is deleted or removed.",
   z.object({ comment_id: Id, author: Person }),
 );
 

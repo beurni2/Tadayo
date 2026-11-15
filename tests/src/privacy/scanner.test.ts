@@ -986,7 +986,7 @@ describe("the leak scanner catches each planted leak with its own check", () => 
   });
 
   it("catches counts the viewer may not see: an allowance past their own drops and reservations, and a wrong place in the day (T15)", () => {
-    // Cleo's one live drop in Saturday is a video link and her one live slot a photo's, so a photo added
+    // Cleo's one live drop in Saturday is a video link and Cleo's one live slot a photo's, so a photo added
     // or a second slot is someone else's or a hidden one (T15).
     expect(at(scan(answer(ownDay(allowance(3, 2, 2, 1))), context("getOwnDay", cleo)), "world")).toEqual([
       "$.allowance.added",
@@ -1003,6 +1003,14 @@ describe("the leak scanner catches each planted leak with its own check", () => 
       "$.allowance.reserved",
       "$.allowance.photo_reserved",
     ]);
+    // A live slot for a video link isn't a photo's: with Cleo's one live slot a link's, a photo reserved is
+    // someone else's or a hidden one (the count Cleo's own photo slots alone give).
+    const reservations = new Map(world.reservations).set("rsv_cleo", {
+      ...reservation(cleo, "live", REVEAL),
+      media: "external_video",
+    });
+    const videoSlot = context("getOwnDay", cleo, { world: { ...world, reservations } });
+    expect(at(scan(answer(ownDay(allowance(1, 1, 1, 0))), videoSlot), "world")).toEqual(["$.allowance.photo_reserved"]);
     const removed = { drop_id: "drp_cleo", state: "withdrawn", allowance: allowance(2, 1, 0, 0) };
     expect(at(scan(answer(removed), context("removeDrop", cleo)), "world")).toEqual([
       "$.allowance.added",
@@ -1025,7 +1033,7 @@ describe("the leak scanner catches each planted leak with its own check", () => 
     expect(at(scan(answer(notStar), context("getOccurrence", ana)), "world")).toEqual(["$.viewer.is_star"]);
   });
 
-  it("catches an allowance that isn't the viewer's own role in the day: the star's limits for a friend, or a wrong is_star (T17)", () => {
+  it("catches an allowance that isn't the viewer's own role in the day: the star's limits for a friend, a friend's for the star, or a wrong is_star (T17)", () => {
     // Cleo is a friend in Ana's Saturday: three drops, two photos and one link.
     expect(at(scan(answer(ownDay(allowance(1, 1, 1, 0))), context("getOwnDay", cleo)), "world")).toEqual([]);
     expect(at(scan(answer(ownDay(allowance(1, 1, 1, 0, "star"))), context("getOwnDay", cleo)), "world")).toEqual([
@@ -1050,6 +1058,16 @@ describe("the leak scanner catches each planted leak with its own check", () => 
       "$.allowance.is_star",
       "$.allowance",
     ]);
+    // Ana is Saturday's star: six drops, six photos and two links, and is_star, with Ana's own photo and slot.
+    const quota = (counts: ReturnType<typeof allowance>) =>
+      answer({ code: "QUOTA_FULL", target: saturday, next_target: nextSaturday, allowance: counts }, 409);
+    const asAna = context("createReservation", ana);
+    expect(scan(quota(allowance(1, 0, 1, 0, "star")), asAna)).toEqual([]);
+    expect(at(scan(quota(allowance(1, 0, 1, 0)), asAna), "world")).toEqual(["$.allowance.is_star", "$.allowance"]);
+    expect(at(scan(quota({ ...allowance(1, 0, 1, 0, "star"), is_star: false }), asAna), "world")).toEqual([
+      "$.allowance.is_star",
+    ]);
+    expect(at(scan(quota({ ...allowance(1, 0, 1, 0), is_star: true }), asAna), "world")).toEqual(["$.allowance"]);
   });
 
   it("catches a day link to a day that hasn't closed, and a cover that isn't a photo", () => {
