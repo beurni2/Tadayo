@@ -6,7 +6,7 @@ You're the lead engineer for Tadayo. It's a private club of two to six friends, 
 - At 7 AM on the day, everything opens at once for the club, and Home becomes that person's day until 1 AM.
 - Then the day lives in Memories.
 
-The star adds to their own day under the same allowance as everyone else. Nothing is counted, nobody is chased.
+Members take turns sharing what they've been up to. The star adds up to six drops to their own day; each friend may add up to two photos and one video link. Nobody has to add anything, nothing is counted, nobody is chased. After the reveal, anyone who can see a drop can answer it in its conversation, with text, a photo or both.
 
 The first build is a native iPhone app with a share extension, on a TypeScript API, for a closed trial with the founder's friends.
 - `docs/tadayo-build-spec-v3.md` is the complete product and engineering specification.
@@ -26,7 +26,7 @@ I'm the founder. I approve every gate and every pull request, after you've had i
     The read predicate (T9), the pre-reveal whitelist (T10), the privacy matrix and the leak scanner protect this.
 2. **The right person and the right date, every time.** Every add names the club, the person and the exact date. Nothing is moved silently: a missed cutoff comes back as a draft with the next date to confirm. "Added" means committed. (T3, T4, T17 to T20, T31)
 3. **A day worth opening, with no pressure.**
-    - At 7 AM, Home is the day itself, finite and in order.
+    - At 7 AM, Home is the day itself, finite and in order: the star's own drops first, then friends'.
     - No counts, streaks, rankings, reminders or receipts.
     - Two ordinary pushes a day at most, never in quiet hours. (T5, T32 to T37)
 4. **Nothing generic.** The book's own objects carry the app on native iOS: the dated day, the weekday plaque, the folded card, people's names and photographs. The brand comes from Claude Design. A screen that could be reskinned into any other app is wrong (book p5).
@@ -39,7 +39,8 @@ I'm the founder. I approve every gate and every pull request, after you've had i
     - external sharing is in the design scope.
 
     The spec stays the authority for everything the book says it is (book p40, p50).
-- **`docs/INVARIANTS.md`:** rules T1 to T62. They beat everything except a direct instruction from me. A PR that breaks one is wrong even if it works.
+- **`docs/tadayo-new-direction-addendum-r1.md`:** my new direction, revision 1 (14 November 2026), transcribed word for word from its PDF beside it. Cite its sections as "addendum 4" and its verification items as "ND07". It supersedes the spec, the book and the invariants on what it explicitly changes: allowances by role, own-day preparation, the star-first revealed feed and photo replies in conversations. Everything else keeps its contract, and adopted handoff corrections still apply. `docs/plans/new-direction-r1.md` says how it's applied.
+- **`docs/INVARIANTS.md`:** rules T1 to T65. They beat everything except a direct instruction from me. A PR that breaks one is wrong even if it works.
 - **`docs/TECH-DESIGN.md`:** the stack, the no-Mac build loop, the repository, CI and environments. Follow it. If you see a better way that still meets the specs, write an ADR in `docs/DECISIONS.md`, raise it in the PR and wait for my answer before building on it.
 - **`docs/MILESTONES.md`:** stages B0 to B9, the lanes, the gates and the trial.
 - **`docs/GITHUB.md`:** how every PR reaches `main`: the loop, the independent review, workflow files, and GitHub from a cloud session.
@@ -65,9 +66,10 @@ I'm the founder. I approve every gate and every pull request, after you've had i
 - **Supabase stays closed (T53).** The app uses Supabase only to sign in and to put its own pending upload at the signed upload URL (T12). Tables live in the `app` schema, owned by the API's role `tadayo_app`; Supabase's data API is off; and the Supabase probe proves it on each project.
 - **Server time (T1).** Access, cutoff and Home come from `reveal_at`, `close_at` and the server's clock. The device clock decides nothing; countdowns run from `server_now`.
 - **The cutoff under the lock (T3), no silent retargeting (T4).** Sample the clock after taking the occurrence lock. A late upload becomes a draft with a question, never a drop for next week.
-- **Six and two in one transaction (T17); one commit per idempotency key (T19).** The key is created when the action starts and reused on every retry.
+- **Allowances by role, in one transaction (T17); one commit per idempotency key (T19).** The server decides the role from the membership intervals, never from the app: six drops and two video links for the star, two photos and one video link for anyone else. The key is created when the action starts and reused on every retry.
 - **Immutable audiences (T8).** Audience rows are written once, at commit, and sealed.
 - **Removal reaches everything (T24),** including favourites, search, caches and manifests.
+- **Photo replies follow their drop (T63 to T65).** A reply photo is read through the drop's read predicate and the media route, commits only after the reveal, uses no allowance, and goes wherever the drop's removal goes.
 - **The author's preview stays with the author (T11).** Its own endpoint, its own cache, purged on logout and account switch.
 - **Copy (T41 to T43).**
     - The spec's vocabulary, never Sent.

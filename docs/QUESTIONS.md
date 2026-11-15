@@ -501,3 +501,35 @@ Spike S5's PR (#55, `docs/plans/api-b0-spike-time.md`, section 0) reads B0's "mi
     - Default: yes. S5's live run reads `GET /v1/clubs` as a member across the day's 07:00 and 01:00, and its report says it read the day choice through `listClubs`, not `getHome`.
     - The other reading: S5's live run waits for `getHome` in B2, and Gate 0 shows only the zone table.
     - Needed by: S5's runs on `dev`, with S5's PR's approval and before the dev clock moves.
+
+## Raised by the new direction, revision 1 (`docs/plans/new-direction-r1.md`)
+
+The founder's addendum (`docs/tadayo-new-direction-addendum-r1.md`, ADR-035) leaves seven questions open, which its plan lists as A to G (section 11), each with the default it keeps until the founder answers. The coordinator reserved FQ104 to FQ110 for them, in that order, on 2026-11-15. The contract and database PRs that follow build on the defaults.
+
+- **FQ104. A friend's limit copy.** The addendum gives the friend's allowance line, but no friend version of `C07-limit`. 2.1's state says "Six drops added.", then "For Debby's Friday · 13 November", then the note "The six total can include up to two video links. A highlight is one of those six."
+    - Default: the same state, with its words changed for a friend:
+        - the title: "Three drops added.", "Two photos added." or "One video link added.", for whichever limit was met;
+        - the note, only where it's relevant: "For someone else's day, you can add up to two photos and one video link. A highlight is one of those three.";
+        - the rest as the star's state has it: the day with its exact date, "You can edit or withdraw an existing drop before the reveal." and "This photo stays in Drafts."
+
+      The note states the limit, and never invites another drop.
+    - Needed by: B4 (the composer's limit states).
+- **FQ105. The viewer's own name in the new strings.** Does the star read "From Ben" on their own day, and do I read "Ben added a photo" for my own reply?
+    - Default: yes, the names exactly as the addendum writes them, for everyone.
+    - The other reading: "From you" and "You added a photo", like "Your pick".
+    - Needed by: B5 (the revealed day's sections) and B6 (the reply preview).
+- **FQ106. Where the brand line appears.**
+    - Default: on Welcome (A01) and on the invitation page's introduction, and in the App Store text when B9 writes it. Nowhere else in the app's chrome.
+    - Needed by: B1 (A01).
+- **FQ107. Editing a photo message's text.**
+    - Default: like any comment's, with the Edited label. The text may become empty while the photo remains. The photo can't be replaced, only the whole message deleted.
+    - Needed by: B6; the contract PR's comment edit builds on the default (T65).
+- **FQ108. A pictured member removing a photo message.**
+    - Default: it removes the whole message, photo and text, as the author's deletion does, leaving a neutral placeholder only where the thread position needs one.
+    - Needed by: B6 (T25).
+- **FQ109. The push for a photo reply.**
+    - Default: the existing comment push, word for word, with no mention of a photo.
+    - Needed by: B8.
+- **FQ110. Reply references on photo messages.**
+    - Default: every message keeps the existing shallow reply reference, photo or not. Nothing opens a thread under a photo.
+    - Needed by: B6; the contract PR's comment builds on the default.

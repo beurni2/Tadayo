@@ -6,7 +6,7 @@ A private club of two to six friends, where each member has a day:
 - the photos and videos open together at 7 AM on the day, for the whole club;
 - the day stays on Home until 1 AM, then lives in Memories.
 
-"Your people. Your day."
+"Your day. Your story. A thought from your friends."
 
 ## Start here
 
@@ -15,7 +15,8 @@ A private club of two to six friends, where each member has a day:
 | [`CLAUDE.md`](CLAUDE.md) | How Claude Code works on this repository |
 | [`docs/tadayo-build-spec-v3.md`](docs/tadayo-build-spec-v3.md) | The build and design specification, version 3: product rules, permissions, engineering |
 | [`docs/tadayo-design-book-2.1.md`](docs/tadayo-design-book-2.1.md) | The UI and UX design book, revision 2.1: the visual system and the interaction contracts |
-| [`docs/INVARIANTS.md`](docs/INVARIANTS.md) | The rules every pull request keeps (T1 to T62) |
+| [`docs/tadayo-new-direction-addendum-r1.md`](docs/tadayo-new-direction-addendum-r1.md) | The founder's new direction, revision 1, word for word from its PDF beside it: it supersedes the spec, the book and the invariants on what it explicitly changes (ADR-035), and `docs/plans/new-direction-r1.md` says how it's applied |
+| [`docs/INVARIANTS.md`](docs/INVARIANTS.md) | The rules every pull request keeps (T1 to T65) |
 | [`docs/TECH-DESIGN.md`](docs/TECH-DESIGN.md) | The stack, the no-Mac build loop, CI and environments |
 | [`docs/MILESTONES.md`](docs/MILESTONES.md) | Stages B0 to B9, lanes and gates, up to the closed trial |
 | [`docs/JOURNAL.md`](docs/JOURNAL.md) | Everything about the project in one place: what it is, where it stands, what's next, the audit map, the log of every commit, the PRs and evidence, and how to audit it. Start here |

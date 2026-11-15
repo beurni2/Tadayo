@@ -372,3 +372,21 @@ Consequences:
 - flyctl 0.5.8 also has a token mode, in which the agent's peer lives at Fly's token gateway, is never in `wireguard list` and needs no removal. It comes on only when Fly's feature flag is on for the user the token belongs to, or `FLY_WIREGUARD_TOKEN_MODE` in flyctl's environment turns it on, or, without that variable, flyctl's configuration: the runner's `~/.fly/config.yml`, and since PR #53 the SSH session's own folder (`agent/server/tokenmode.go`; `agent/agent.go`, `TokenModeEnabled`). `FLY_API_TOKEN` is an organization token, which flyctl's own comment in `tokenmode.go` says authenticates as a token and not as a user, so no user's flag reaches it; `flyOf` gives flyctl only `FLY_API_TOKEN` and `HOME`, and the SSH call `FLY_CONFIG_DIR` and `FLY_AGENT_ISOLATED=1` beside them (since PR #53), and `spawnProcess` adds only `PATH`, so the variable never reaches flyctl or the agent it starts; and each runner's config is fresh, as is each session's folder. If token mode ever came on, every session that worked would fail with no new peer found, from its first run, with nothing left to remove; the fix then is to ask the agent its mode before failing.
 - To undo it, put `machine exec` back in `on-machine.ts` and take the two WireGuard shapes out of `forDevApp`.
 Links: T1, T56, T58; `docs/plans/api-b0-deploy.md`, section 6; `docs/LIMITATIONS.md`; runs 43160900116, 43208288809, 43330419880, 43467951472 and 43478918447; PR #39; PR #41; PR #53; `tools/ops/src/on-machine.ts`, `tools/ops/src/fly.ts`.
+
+## ADR-035 · The new direction, revision 1 · 2026-11-15 · decided
+Context: On 14 November 2026 the founder gave a new direction (`docs/tadayo-new-direction-addendum-r1.md`): allowances by role, own-day preparation, a star-first revealed feed and photos in conversations.
+Decision:
+- The addendum is a source of truth beside the spec and the book. It supersedes them, and the invariants, on what it explicitly changes; the spec and the book stay as written.
+- The invariants T3, T12, T17, T24, T25, T27, T31, T33, T35 and T36 are amended, and T63 to T65 added.
+- ADR-007's trial scope gains photo replies.
+- Where a 2.1 render shows what the addendum changes, the addendum wins until that stage's handoff redraws it; the rest of the render stays the reference.
+- No grandfathering is needed: `prod` doesn't exist before Gate D, and no route, job or script has ever committed a drop (checked at `ee356e1`: `git grep -niE "insert into (app\.)?drops" ee356e1` finds only `tests/src/db/world.ts` and `tests/src/db/drops.test.ts`; the API builds only `getMe`, `updateMe` and `listClubs` (`services/api/src/app.ts`, `handlersOf`), every other operation answering the neutral not-found; the worker and `tools/ops/` write no drop; and `git log -i -G "insert into (app\.)?drops" ee356e1` shows such a line only ever under `tests/`; and for `prod`, at `ee356e1` no workflow names it (`grep -n prod .github/workflows/*.yml` finds nothing: `deploy-dev.yml` and `ops.yml` reach `dev` alone, and `ci.yml` and `ios.yml` reach no environment, since no secret reaches them (`docs/TECH-DESIGN.md` section 9)), the journal's block 1.1 says `prod` is not created, and `docs/MILESTONES.md` creates it at Gate D; the session can't list Fly's apps or Supabase's projects, so no live listing was made).
+- The order of work is the one in `docs/plans/new-direction-r1.md`.
+Alternatives:
+- Editing the spec and the book in place, which would lose the founder's text and the baseline it was checked against.
+- Applying the changes only stage by stage, which would leave Gate 0's contract and schema on rules the founder has replaced.
+Consequences:
+- More work in B3, B4, B5, B6 and B8.
+- Gate B's and Gate C's checks change.
+- Four stage handoffs carry the new states.
+Links: the addendum; ADR-006, ADR-007; T3, T17, T35, T63 to T65; FQ104 to FQ110; ND01 to ND15.
