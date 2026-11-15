@@ -6,7 +6,7 @@ A private club of two to six friends, where each member has a day:
 - the photos and videos open together at 7 AM on the day, for the whole club;
 - the day stays on Home until 1 AM, then lives in Memories.
 
-"Your people. Your day."
+"Your day. Your story. A thought from your friends."
 
 ## Start here
 
