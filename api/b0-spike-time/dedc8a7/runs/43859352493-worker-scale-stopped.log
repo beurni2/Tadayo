@@ -1,0 +1,275 @@
+﻿2026-11-16T11:37:21.1104034Z Current runner version: '2.338.2'
+2026-11-16T11:37:21.1142218Z ##[group]Runner Image Provisioner
+2026-11-16T11:37:21.1143618Z Hosted Compute Agent
+2026-11-16T11:37:21.1144929Z Version: 20261103.629
+2026-11-16T11:37:21.1146080Z Commit: 15dbd9ccb5dbf34fae002b6ed1a2670f52df37bc
+2026-11-16T11:37:21.1147529Z Build Date: 2026-11-03T17:26:59Z
+2026-11-16T11:37:21.1148688Z Worker ID: {a1867d32-f21c-492f-a44d-7a34c7fae712}
+2026-11-16T11:37:21.1150069Z Region: eastus
+2026-11-16T11:37:21.1151002Z Cloud: Azure
+2026-11-16T11:37:21.1152043Z ##[endgroup]
+2026-11-16T11:37:21.1154877Z ##[group]Operating System
+2026-11-16T11:37:21.1155948Z Ubuntu
+2026-11-16T11:37:21.1157419Z 24.04.5
+2026-11-16T11:37:21.1158325Z LTS
+2026-11-16T11:37:21.1159280Z ##[endgroup]
+2026-11-16T11:37:21.1160312Z ##[group]Runner Image
+2026-11-16T11:37:21.1161355Z Image: ubuntu-24.04
+2026-11-16T11:37:21.1162418Z Version: 20261111.370.1
+2026-11-16T11:37:21.1164873Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261111.370/images/ubuntu/Ubuntu2404-Readme.md
+2026-11-16T11:37:21.1167876Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261111.370
+2026-11-16T11:37:21.1169663Z ##[endgroup]
+2026-11-16T11:37:21.1171621Z ##[group]GITHUB_TOKEN Permissions
+2026-11-16T11:37:21.1174923Z Contents: read
+2026-11-16T11:37:21.1176007Z Metadata: read
+2026-11-16T11:37:21.1176920Z ##[endgroup]
+2026-11-16T11:37:21.1180082Z Secret source: Actions
+2026-11-16T11:37:21.1181751Z Cache mode: write
+2026-11-16T11:37:21.1183253Z Prepare workflow directory
+2026-11-16T11:37:21.1965278Z Prepare all required actions
+2026-11-16T11:37:21.2038526Z Getting action download info
+2026-11-16T11:37:21.4099734Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-11-16T11:37:21.5989139Z Download action repository 'actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1' (SHA:949feb2413d6458794dcd2491c4babbbce0c15c1)
+2026-11-16T11:37:21.8462845Z Complete job name: worker-scale
+2026-11-16T11:37:21.9582308Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+2026-11-16T11:37:21.9583454Z with:
+2026-11-16T11:37:21.9583921Z   persist-credentials: false
+2026-11-16T11:37:21.9584747Z   repository: beurni2/Tadayo
+2026-11-16T11:37:21.9588840Z   token: ***
+2026-11-16T11:37:21.9589286Z   ssh-strict: true
+2026-11-16T11:37:21.9589725Z   ssh-user: git
+2026-11-16T11:37:21.9590155Z   clean: true
+2026-11-16T11:37:21.9590925Z   sparse-checkout-cone-mode: true
+2026-11-16T11:37:21.9591473Z   fetch-depth: 1
+2026-11-16T11:37:21.9591913Z   fetch-tags: false
+2026-11-16T11:37:21.9592412Z   show-progress: true
+2026-11-16T11:37:21.9592869Z   lfs: false
+2026-11-16T11:37:21.9593290Z   submodules: false
+2026-11-16T11:37:21.9593754Z   set-safe-directory: true
+2026-11-16T11:37:21.9594270Z   allow-unsafe-pr-checkout: false
+2026-11-16T11:37:21.9595441Z env:
+2026-11-16T11:37:21.9595898Z   OPS_SCRIPT: worker-scale
+2026-11-16T11:37:21.9596393Z   OPS_ORG: 
+2026-11-16T11:37:21.9596874Z   OPS_TO: stopped
+2026-11-16T11:37:21.9597314Z   OPS_BRANCH: 
+2026-11-16T11:37:21.9597752Z ##[endgroup]
+2026-11-16T11:37:22.3699021Z Syncing repository: beurni2/Tadayo
+2026-11-16T11:37:22.3704913Z ##[group]Getting Git version info
+2026-11-16T11:37:22.3706096Z Working directory is '/home/runner/work/Tadayo/Tadayo'
+2026-11-16T11:37:22.3769323Z [command]/usr/bin/git version
+2026-11-16T11:37:22.4025454Z git version 2.56.1
+2026-11-16T11:37:22.4089652Z ##[endgroup]
+2026-11-16T11:37:22.4114843Z Temporarily overriding HOME='/home/runner/work/_temp/c71f0d90-3810-4c0d-83cc-92eeafb71646' before making global git config changes
+2026-11-16T11:37:22.4117741Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-16T11:37:22.4146600Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/Tadayo/Tadayo
+2026-11-16T11:37:22.4236578Z Deleting the contents of '/home/runner/work/Tadayo/Tadayo'
+2026-11-16T11:37:22.4260861Z ##[group]Determining repository object format
+2026-11-16T11:37:22.4263605Z ##[endgroup]
+2026-11-16T11:37:22.4266053Z ##[group]Initializing the repository
+2026-11-16T11:37:22.4319458Z [command]/usr/bin/git init /home/runner/work/Tadayo/Tadayo
+2026-11-16T11:37:22.4530837Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-11-16T11:37:22.4533081Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-11-16T11:37:22.4535781Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-11-16T11:37:22.4537638Z hint: call:
+2026-11-16T11:37:22.4539099Z hint:
+2026-11-16T11:37:22.4542610Z hint: 	git config --global init.defaultBranch <name>
+2026-11-16T11:37:22.4543771Z hint:
+2026-11-16T11:37:22.4545121Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-11-16T11:37:22.4546869Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-11-16T11:37:22.4548132Z hint:
+2026-11-16T11:37:22.4548808Z hint: 	git branch -m <name>
+2026-11-16T11:37:22.4549707Z hint:
+2026-11-16T11:37:22.4550783Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-11-16T11:37:22.4552387Z Initialized empty Git repository in /home/runner/work/Tadayo/Tadayo/.git/
+2026-11-16T11:37:22.4587291Z [command]/usr/bin/git remote add origin https://github.com/beurni2/Tadayo
+2026-11-16T11:37:22.4749152Z ##[endgroup]
+2026-11-16T11:37:22.4751210Z ##[group]Disabling automatic garbage collection
+2026-11-16T11:37:22.4753229Z [command]/usr/bin/git config --local gc.auto 0
+2026-11-16T11:37:22.4842569Z ##[endgroup]
+2026-11-16T11:37:22.4844089Z ##[group]Setting up auth
+2026-11-16T11:37:22.4859054Z Removing SSH command configuration
+2026-11-16T11:37:22.4868982Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-16T11:37:22.4947268Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-16T11:37:22.5900635Z Removing HTTP extra header
+2026-11-16T11:37:22.5906630Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-16T11:37:22.5971223Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-16T11:37:22.6612271Z Removing includeIf entries pointing to credentials config files
+2026-11-16T11:37:22.6619140Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-16T11:37:22.6626160Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-16T11:37:22.7097157Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-8d201082-5502-4c3b-b20d-4ac876bce4cf.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-11-16T11:37:22.7110067Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/Tadayo/Tadayo/.git.path /home/runner/work/_temp/git-credentials-8d201082-5502-4c3b-b20d-4ac876bce4cf.config
+2026-11-16T11:37:22.7118557Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/Tadayo/Tadayo/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-8d201082-5502-4c3b-b20d-4ac876bce4cf.config
+2026-11-16T11:37:22.7131162Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-8d201082-5502-4c3b-b20d-4ac876bce4cf.config
+2026-11-16T11:37:22.7168769Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-8d201082-5502-4c3b-b20d-4ac876bce4cf.config
+2026-11-16T11:37:22.7216457Z ##[endgroup]
+2026-11-16T11:37:22.7218803Z ##[group]Fetching the repository
+2026-11-16T11:37:22.7225332Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +dedc8a7f603d90473978c71a2cbf85831ef48a69:refs/remotes/origin/main
+2026-11-16T11:37:25.5676547Z From https://github.com/beurni2/Tadayo
+2026-11-16T11:37:25.5685784Z  * [new ref]         dedc8a7f603d90473978c71a2cbf85831ef48a69 -> origin/main
+2026-11-16T11:37:25.5696678Z [command]/usr/bin/git branch --list --remote origin/main
+2026-11-16T11:37:25.5731599Z   origin/main
+2026-11-16T11:37:25.5755627Z [command]/usr/bin/git rev-parse refs/remotes/origin/main
+2026-11-16T11:37:25.5779278Z dedc8a7f603d90473978c71a2cbf85831ef48a69
+2026-11-16T11:37:25.5789868Z ##[endgroup]
+2026-11-16T11:37:25.5790849Z ##[group]Determining the checkout info
+2026-11-16T11:37:25.5791801Z ##[endgroup]
+2026-11-16T11:37:25.5793574Z [command]/usr/bin/git sparse-checkout disable
+2026-11-16T11:37:25.5870774Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-11-16T11:37:25.5916056Z ##[group]Checking out the ref
+2026-11-16T11:37:25.5925798Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2026-11-16T11:37:26.4632442Z Switched to a new branch 'main'
+2026-11-16T11:37:26.4638644Z branch 'main' set up to track 'origin/main'.
+2026-11-16T11:37:26.4711025Z ##[endgroup]
+2026-11-16T11:37:26.4775850Z [command]/usr/bin/git log -1 --format=%H
+2026-11-16T11:37:26.4815474Z dedc8a7f603d90473978c71a2cbf85831ef48a69
+2026-11-16T11:37:26.4827570Z ##[group]Removing auth
+2026-11-16T11:37:26.4828360Z Removing SSH command configuration
+2026-11-16T11:37:26.4832174Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-16T11:37:26.4896335Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-16T11:37:26.5190926Z Removing HTTP extra header
+2026-11-16T11:37:26.5195449Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-16T11:37:26.5245719Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-16T11:37:26.5523582Z Removing includeIf entries pointing to credentials config files
+2026-11-16T11:37:26.5525315Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-16T11:37:26.5571943Z includeif.gitdir:/home/runner/work/Tadayo/Tadayo/.git.path
+2026-11-16T11:37:26.5583459Z includeif.gitdir:/home/runner/work/Tadayo/Tadayo/.git/worktrees/*.path
+2026-11-16T11:37:26.5585656Z includeif.gitdir:/github/workspace/.git.path
+2026-11-16T11:37:26.5586668Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-16T11:37:26.5589137Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/Tadayo/Tadayo/.git.path
+2026-11-16T11:37:26.5625744Z /home/runner/work/_temp/git-credentials-8d201082-5502-4c3b-b20d-4ac876bce4cf.config
+2026-11-16T11:37:26.5659137Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/Tadayo/Tadayo/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-8d201082\-5502\-4c3b\-b20d\-4ac876bce4cf\.config
+2026-11-16T11:37:26.5737642Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/Tadayo/Tadayo/.git/worktrees/*.path
+2026-11-16T11:37:26.5825464Z /home/runner/work/_temp/git-credentials-8d201082-5502-4c3b-b20d-4ac876bce4cf.config
+2026-11-16T11:37:26.5829149Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/Tadayo/Tadayo/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-8d201082\-5502\-4c3b\-b20d\-4ac876bce4cf\.config
+2026-11-16T11:37:26.5896707Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-11-16T11:37:26.5985692Z /github/runner_temp/git-credentials-8d201082-5502-4c3b-b20d-4ac876bce4cf.config
+2026-11-16T11:37:26.6026753Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-8d201082\-5502\-4c3b\-b20d\-4ac876bce4cf\.config
+2026-11-16T11:37:26.6085461Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-16T11:37:26.6117212Z /github/runner_temp/git-credentials-8d201082-5502-4c3b-b20d-4ac876bce4cf.config
+2026-11-16T11:37:26.6166129Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-8d201082\-5502\-4c3b\-b20d\-4ac876bce4cf\.config
+2026-11-16T11:37:26.6211082Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-16T11:37:26.6576503Z Removing credentials config '/home/runner/work/_temp/git-credentials-8d201082-5502-4c3b-b20d-4ac876bce4cf.config'
+2026-11-16T11:37:26.6601987Z ##[endgroup]
+2026-11-16T11:37:26.6823335Z ##[group]Run python3 tools/ci/ops_steps.py check
+2026-11-16T11:37:26.6823802Z [36;1mpython3 tools/ci/ops_steps.py check[0m
+2026-11-16T11:37:26.6848472Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-16T11:37:26.6848831Z env:
+2026-11-16T11:37:26.6849046Z   OPS_SCRIPT: worker-scale
+2026-11-16T11:37:26.6849284Z   OPS_ORG: 
+2026-11-16T11:37:26.6849477Z   OPS_TO: stopped
+2026-11-16T11:37:26.6849687Z   OPS_BRANCH: 
+2026-11-16T11:37:26.6849886Z ##[endgroup]
+2026-11-16T11:37:26.7501756Z ops: worker-scale, from main
+2026-11-16T11:37:26.7772444Z ##[group]Run actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+2026-11-16T11:37:26.7772863Z with:
+2026-11-16T11:37:26.7773081Z   node-version-file: .nvmrc
+2026-11-16T11:37:26.7773351Z   package-manager-cache: false
+2026-11-16T11:37:26.7773622Z   check-latest: false
+2026-11-16T11:37:26.7776579Z   token: ***
+2026-11-16T11:37:26.7776784Z env:
+2026-11-16T11:37:26.7776979Z   OPS_SCRIPT: worker-scale
+2026-11-16T11:37:26.7777208Z   OPS_ORG: 
+2026-11-16T11:37:26.7777398Z   OPS_TO: stopped
+2026-11-16T11:37:26.7777616Z   OPS_BRANCH: 
+2026-11-16T11:37:26.7777826Z ##[endgroup]
+2026-11-16T11:37:26.9111856Z Node version file is not TOML file
+2026-11-16T11:37:26.9113240Z Resolved .nvmrc as 26
+2026-11-16T11:37:26.9184398Z Attempting to download 26...
+2026-11-16T11:37:27.8897797Z Acquiring 26.13.1 - x64 from https://github.com/actions/node-versions/releases/download/26.13.1-43134154182/node-26.13.1-linux-x64.tar.gz
+2026-11-16T11:37:28.4294215Z Extracting ...
+2026-11-16T11:37:28.4462639Z [command]/usr/bin/tar xz --strip 1 --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/cd594d13-9b3a-413f-99aa-bd0b3eea169f -f /home/runner/work/_temp/e2eeee99-da73-469c-a85a-4ea771453b30
+2026-11-16T11:37:29.9636336Z Adding to the cache ...
+2026-11-16T11:37:32.8246226Z ##[group]Environment details
+2026-11-16T11:37:33.1145876Z node: v26.13.1
+2026-11-16T11:37:33.1146629Z npm: 11.20.0
+2026-11-16T11:37:33.1147289Z yarn: 1.22.22
+2026-11-16T11:37:33.1148200Z ##[endgroup]
+2026-11-16T11:37:33.1346854Z ##[group]Run python3 tools/ci/ci_steps.py setup-pnpm
+2026-11-16T11:37:33.1347298Z [36;1mpython3 tools/ci/ci_steps.py setup-pnpm[0m
+2026-11-16T11:37:33.1371080Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-16T11:37:33.1371435Z env:
+2026-11-16T11:37:33.1371637Z   OPS_SCRIPT: worker-scale
+2026-11-16T11:37:33.1371871Z   OPS_ORG: 
+2026-11-16T11:37:33.1372063Z   OPS_TO: stopped
+2026-11-16T11:37:33.1372269Z   OPS_BRANCH: 
+2026-11-16T11:37:33.1372463Z ##[endgroup]
+2026-11-16T11:37:33.1758779Z + npm install --global pnpm@12.16.1
+2026-11-16T11:37:35.3373441Z 
+2026-11-16T11:37:35.3375616Z added 2 packages in 2s
+2026-11-16T11:37:35.3404899Z npm warn install-scripts 1 package has install scripts not yet covered by allowScripts:
+2026-11-16T11:37:35.3425942Z npm warn install-scripts   pnpm@12.16.1 (preinstall: node install.js; postinstall: node install.js)
+2026-11-16T11:37:35.3427248Z npm warn install-scripts
+2026-11-16T11:37:35.3431761Z npm warn install-scripts Run `npm install -g --allow-scripts=pnpm` to allow these scripts once, or `npm config set allow-scripts=pnpm --location=user` to allow them for all global installs.
+2026-11-16T11:37:35.3960093Z ##[group]Run python3 tools/ci/ci_steps.py install
+2026-11-16T11:37:35.3960515Z [36;1mpython3 tools/ci/ci_steps.py install[0m
+2026-11-16T11:37:35.3981446Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-16T11:37:35.3981787Z env:
+2026-11-16T11:37:35.3981990Z   OPS_SCRIPT: worker-scale
+2026-11-16T11:37:35.3982224Z   OPS_ORG: 
+2026-11-16T11:37:35.3982411Z   OPS_TO: stopped
+2026-11-16T11:37:35.3982612Z   OPS_BRANCH: 
+2026-11-16T11:37:35.3982801Z ##[endgroup]
+2026-11-16T11:37:35.4708035Z + pnpm install --frozen-lockfile
+2026-11-16T11:37:35.4937319Z Scope: all 8 workspace projects
+2026-11-16T11:37:35.5426790Z ? Verifying lockfile against supply-chain policies (399 entries)...
+2026-11-16T11:37:35.9791950Z Packages are hard linked from the content-addressable store to the virtual store.
+2026-11-16T11:37:35.9801190Z   Content-addressable store is at: /home/runner/.local/share/pnpm/store/v11
+2026-11-16T11:37:35.9842139Z   Virtual store is at:             node_modules/.pnpm
+2026-11-16T11:37:35.9843202Z Downloading @rolldown/binding-linux-x64-gnu@1.2.16: 0.00 B/8.82 MB
+2026-11-16T11:37:36.9891787Z Progress: resolved 374, reused 0, downloaded 136, added 135
+2026-11-16T11:37:37.2428437Z ✓ Lockfile passes supply-chain policies (399 entries in 1.7s)
+2026-11-16T11:37:37.2458809Z Lockfile is up to date, resolution step is skipped
+2026-11-16T11:37:38.1033306Z Packages: +374
+2026-11-16T11:37:38.1034115Z ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+2026-11-16T11:37:38.1401262Z Progress: resolved 374, reused 0, downloaded 374, added 374, done
+2026-11-16T11:37:38.1628689Z 
+2026-11-16T11:37:38.1629571Z devDependencies:
+2026-11-16T11:37:38.1630282Z + @eslint/js 10.0.1
+2026-11-16T11:37:38.1630867Z + @types/node 26.6.6
+2026-11-16T11:37:38.1631551Z + eslint 10.14.0
+2026-11-16T11:37:38.1632110Z + prettier 3.9.10
+2026-11-16T11:37:38.1632658Z + typescript 6.0.3
+2026-11-16T11:37:38.1633296Z + typescript-eslint 8.72.1
+2026-11-16T11:37:38.1633910Z + vitest 5.0.5
+2026-11-16T11:37:38.1634344Z 
+2026-11-16T11:37:38.1697903Z Done in 2.7s using pnpm v12.16.1
+2026-11-16T11:37:38.1990863Z ##[group]Run python3 tools/ci/ops_steps.py setup-flyctl
+2026-11-16T11:37:38.1991319Z [36;1mpython3 tools/ci/ops_steps.py setup-flyctl[0m
+2026-11-16T11:37:38.2012156Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-16T11:37:38.2012500Z env:
+2026-11-16T11:37:38.2012693Z   OPS_SCRIPT: worker-scale
+2026-11-16T11:37:38.2012919Z   OPS_ORG: 
+2026-11-16T11:37:38.2013104Z   OPS_TO: stopped
+2026-11-16T11:37:38.2013299Z   OPS_BRANCH: 
+2026-11-16T11:37:38.2013489Z ##[endgroup]
+2026-11-16T11:37:39.5851420Z ops: setup-flyctl: flyctl 0.5.8 (SHA-256 checked) is on the job's PATH
+2026-11-16T11:37:39.6006077Z ##[group]Run python3 tools/ci/ops_steps.py run
+2026-11-16T11:37:39.6006471Z [36;1mpython3 tools/ci/ops_steps.py run[0m
+2026-11-16T11:37:39.6026653Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-16T11:37:39.6027046Z env:
+2026-11-16T11:37:39.6027247Z   OPS_SCRIPT: worker-scale
+2026-11-16T11:37:39.6027483Z   OPS_ORG: 
+2026-11-16T11:37:39.6027673Z   OPS_TO: stopped
+2026-11-16T11:37:39.6027873Z   OPS_BRANCH: 
+2026-11-16T11:37:39.6031053Z   FLY_API_TOKEN: ***
+2026-11-16T11:37:39.6031279Z ##[endgroup]
+2026-11-16T11:37:39.6641299Z + node tools/ops/src/main.ts worker-scale --to=stopped
+2026-11-16T11:37:40.1506614Z worker-scale: stopping the worker Machine
+2026-11-16T11:37:43.4367491Z worker-scale: the worker Machine is stopped
+2026-11-16T11:37:43.4664380Z Post job cleanup.
+2026-11-16T11:37:43.6199323Z Post job cleanup.
+2026-11-16T11:37:43.7273849Z [command]/usr/bin/git version
+2026-11-16T11:37:43.7345168Z git version 2.56.1
+2026-11-16T11:37:43.7413582Z Temporarily overriding HOME='/home/runner/work/_temp/6d99eac4-cb05-49c4-be24-65e3865f36d3' before making global git config changes
+2026-11-16T11:37:43.7415949Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-16T11:37:43.7418510Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/Tadayo/Tadayo
+2026-11-16T11:37:43.7473176Z Removing SSH command configuration
+2026-11-16T11:37:43.7474331Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-16T11:37:43.7555150Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-16T11:37:43.8336658Z Removing HTTP extra header
+2026-11-16T11:37:43.8370192Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-16T11:37:43.8481625Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-16T11:37:43.9064329Z Removing includeIf entries pointing to credentials config files
+2026-11-16T11:37:43.9107067Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-16T11:37:43.9175969Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-16T11:37:43.9766913Z Cleaning up orphan processes

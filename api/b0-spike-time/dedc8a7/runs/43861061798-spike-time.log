@@ -1,0 +1,295 @@
+﻿2026-11-16T11:49:16.0286548Z Current runner version: '2.338.2'
+2026-11-16T11:49:16.0314477Z ##[group]Runner Image Provisioner
+2026-11-16T11:49:16.0315422Z Hosted Compute Agent
+2026-11-16T11:49:16.0315973Z Version: 20261103.629
+2026-11-16T11:49:16.0316642Z Commit: 15dbd9ccb5dbf34fae002b6ed1a2670f52df37bc
+2026-11-16T11:49:16.0317330Z Build Date: 2026-11-03T17:26:59Z
+2026-11-16T11:49:16.0318042Z Worker ID: {1aa26565-1032-4aba-b04c-94bf550f6233}
+2026-11-16T11:49:16.0318713Z Region: us-west-2
+2026-11-16T11:49:16.0319518Z Cloud: AWS
+2026-11-16T11:49:16.0320074Z ##[endgroup]
+2026-11-16T11:49:16.0321593Z ##[group]Operating System
+2026-11-16T11:49:16.0322279Z Ubuntu
+2026-11-16T11:49:16.0322776Z 24.04.5
+2026-11-16T11:49:16.0323276Z LTS
+2026-11-16T11:49:16.0323851Z ##[endgroup]
+2026-11-16T11:49:16.0324399Z ##[group]Runner Image
+2026-11-16T11:49:16.0325025Z Image: ubuntu-24.04
+2026-11-16T11:49:16.0325568Z Version: 20261111.127.1
+2026-11-16T11:49:16.0326913Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261111.127/images/ubuntu/Ubuntu2404-Readme.md
+2026-11-16T11:49:16.0328441Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261111.127
+2026-11-16T11:49:16.0329775Z ##[endgroup]
+2026-11-16T11:49:16.0330892Z ##[group]GITHUB_TOKEN Permissions
+2026-11-16T11:49:16.0333424Z Contents: read
+2026-11-16T11:49:16.0334015Z Metadata: read
+2026-11-16T11:49:16.0334648Z ##[endgroup]
+2026-11-16T11:49:16.0336731Z Secret source: Actions
+2026-11-16T11:49:16.0337732Z Cache mode: write
+2026-11-16T11:49:16.0338402Z Prepare workflow directory
+2026-11-16T11:49:16.0881634Z Prepare all required actions
+2026-11-16T11:49:16.0934803Z Getting action download info
+2026-11-16T11:49:16.5180838Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-11-16T11:49:18.7890579Z Download action repository 'actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1' (SHA:949feb2413d6458794dcd2491c4babbbce0c15c1)
+2026-11-16T11:49:19.1358555Z Complete job name: spike-time
+2026-11-16T11:49:19.2086509Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+2026-11-16T11:49:19.2087999Z with:
+2026-11-16T11:49:19.2088773Z   persist-credentials: false
+2026-11-16T11:49:19.2089949Z   repository: beurni2/Tadayo
+2026-11-16T11:49:19.2096699Z   token: ***
+2026-11-16T11:49:19.2097473Z   ssh-strict: true
+2026-11-16T11:49:19.2098328Z   ssh-user: git
+2026-11-16T11:49:19.2099219Z   clean: true
+2026-11-16T11:49:19.2100034Z   sparse-checkout-cone-mode: true
+2026-11-16T11:49:19.2101006Z   fetch-depth: 1
+2026-11-16T11:49:19.2101788Z   fetch-tags: false
+2026-11-16T11:49:19.2102615Z   show-progress: true
+2026-11-16T11:49:19.2103424Z   lfs: false
+2026-11-16T11:49:19.2104176Z   submodules: false
+2026-11-16T11:49:19.2105006Z   set-safe-directory: true
+2026-11-16T11:49:19.2105956Z   allow-unsafe-pr-checkout: false
+2026-11-16T11:49:19.2107326Z env:
+2026-11-16T11:49:19.2108053Z   OPS_SCRIPT: spike-time
+2026-11-16T11:49:19.2108892Z   OPS_ORG: 
+2026-11-16T11:49:19.2109914Z   OPS_TO: 
+2026-11-16T11:49:19.2110721Z   OPS_BRANCH: 
+2026-11-16T11:49:19.2111492Z ##[endgroup]
+2026-11-16T11:49:22.9336650Z Syncing repository: beurni2/Tadayo
+2026-11-16T11:49:22.9338192Z ##[group]Getting Git version info
+2026-11-16T11:49:22.9338575Z Working directory is '/home/runner/work/Tadayo/Tadayo'
+2026-11-16T11:49:22.9339480Z [command]/usr/bin/git version
+2026-11-16T11:49:23.2560926Z git version 2.56.1
+2026-11-16T11:49:23.2578621Z ##[endgroup]
+2026-11-16T11:49:23.2587722Z Temporarily overriding HOME='/home/runner/work/_temp/e17c496a-14f2-4fa2-a4a6-39ee9f8815c3' before making global git config changes
+2026-11-16T11:49:23.2589362Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-16T11:49:23.2595364Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/Tadayo/Tadayo
+2026-11-16T11:49:23.3084228Z Deleting the contents of '/home/runner/work/Tadayo/Tadayo'
+2026-11-16T11:49:23.3090673Z ##[group]Determining repository object format
+2026-11-16T11:49:23.3091933Z ##[endgroup]
+2026-11-16T11:49:23.3092919Z ##[group]Initializing the repository
+2026-11-16T11:49:23.3093932Z [command]/usr/bin/git init /home/runner/work/Tadayo/Tadayo
+2026-11-16T11:49:23.3943901Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-11-16T11:49:23.3945008Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-11-16T11:49:23.3946186Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-11-16T11:49:23.3946669Z hint: call:
+2026-11-16T11:49:23.3947023Z hint:
+2026-11-16T11:49:23.3947427Z hint: 	git config --global init.defaultBranch <name>
+2026-11-16T11:49:23.3947779Z hint:
+2026-11-16T11:49:23.3948157Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-11-16T11:49:23.3949116Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-11-16T11:49:23.3949464Z hint:
+2026-11-16T11:49:23.3949719Z hint: 	git branch -m <name>
+2026-11-16T11:49:23.3950019Z hint:
+2026-11-16T11:49:23.3950374Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-11-16T11:49:23.3960793Z Initialized empty Git repository in /home/runner/work/Tadayo/Tadayo/.git/
+2026-11-16T11:49:23.3965027Z [command]/usr/bin/git remote add origin https://github.com/beurni2/Tadayo
+2026-11-16T11:49:23.4030030Z ##[endgroup]
+2026-11-16T11:49:23.4030874Z ##[group]Disabling automatic garbage collection
+2026-11-16T11:49:23.4032162Z [command]/usr/bin/git config --local gc.auto 0
+2026-11-16T11:49:23.4062439Z ##[endgroup]
+2026-11-16T11:49:23.4063220Z ##[group]Setting up auth
+2026-11-16T11:49:23.4063785Z Removing SSH command configuration
+2026-11-16T11:49:23.4066222Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-16T11:49:23.4096353Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-16T11:49:23.7800086Z Removing HTTP extra header
+2026-11-16T11:49:23.7807106Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-16T11:49:23.7846092Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-16T11:49:23.8069931Z Removing includeIf entries pointing to credentials config files
+2026-11-16T11:49:23.8070852Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-16T11:49:23.8101600Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-16T11:49:23.8277214Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-16601fed-1f29-4e2e-bbe3-9fade9f660d7.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-11-16T11:49:23.8304420Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/Tadayo/Tadayo/.git.path /home/runner/work/_temp/git-credentials-16601fed-1f29-4e2e-bbe3-9fade9f660d7.config
+2026-11-16T11:49:23.8326427Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/Tadayo/Tadayo/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-16601fed-1f29-4e2e-bbe3-9fade9f660d7.config
+2026-11-16T11:49:23.8351180Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-16601fed-1f29-4e2e-bbe3-9fade9f660d7.config
+2026-11-16T11:49:23.8376788Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-16601fed-1f29-4e2e-bbe3-9fade9f660d7.config
+2026-11-16T11:49:23.8430893Z ##[endgroup]
+2026-11-16T11:49:23.8431578Z ##[group]Fetching the repository
+2026-11-16T11:49:23.8432505Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +dedc8a7f603d90473978c71a2cbf85831ef48a69:refs/remotes/origin/main
+2026-11-16T11:49:26.8259777Z From https://github.com/beurni2/Tadayo
+2026-11-16T11:49:26.8261022Z  * [new ref]         dedc8a7f603d90473978c71a2cbf85831ef48a69 -> origin/main
+2026-11-16T11:49:26.8302182Z [command]/usr/bin/git branch --list --remote origin/main
+2026-11-16T11:49:26.8322421Z   origin/main
+2026-11-16T11:49:26.8342720Z [command]/usr/bin/git rev-parse refs/remotes/origin/main
+2026-11-16T11:49:26.8380020Z dedc8a7f603d90473978c71a2cbf85831ef48a69
+2026-11-16T11:49:26.8427970Z ##[endgroup]
+2026-11-16T11:49:26.8429930Z ##[group]Determining the checkout info
+2026-11-16T11:49:26.8432822Z ##[endgroup]
+2026-11-16T11:49:26.8433350Z [command]/usr/bin/git sparse-checkout disable
+2026-11-16T11:49:26.8460371Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-11-16T11:49:26.8487678Z ##[group]Checking out the ref
+2026-11-16T11:49:26.8491088Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2026-11-16T11:49:27.6233666Z Switched to a new branch 'main'
+2026-11-16T11:49:27.6241532Z branch 'main' set up to track 'origin/main'.
+2026-11-16T11:49:27.6274249Z ##[endgroup]
+2026-11-16T11:49:27.6330601Z [command]/usr/bin/git log -1 --format=%H
+2026-11-16T11:49:27.6379962Z dedc8a7f603d90473978c71a2cbf85831ef48a69
+2026-11-16T11:49:27.6415517Z ##[group]Removing auth
+2026-11-16T11:49:27.6417373Z Removing SSH command configuration
+2026-11-16T11:49:27.6418027Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-16T11:49:27.6420213Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-16T11:49:27.6565287Z Removing HTTP extra header
+2026-11-16T11:49:27.6567990Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-16T11:49:27.6595483Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-16T11:49:27.6741950Z Removing includeIf entries pointing to credentials config files
+2026-11-16T11:49:27.6742740Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-16T11:49:27.6765893Z includeif.gitdir:/home/runner/work/Tadayo/Tadayo/.git.path
+2026-11-16T11:49:27.6767769Z includeif.gitdir:/home/runner/work/Tadayo/Tadayo/.git/worktrees/*.path
+2026-11-16T11:49:27.6768690Z includeif.gitdir:/github/workspace/.git.path
+2026-11-16T11:49:27.6769536Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-16T11:49:27.6798693Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/Tadayo/Tadayo/.git.path
+2026-11-16T11:49:27.6802893Z /home/runner/work/_temp/git-credentials-16601fed-1f29-4e2e-bbe3-9fade9f660d7.config
+2026-11-16T11:49:27.6810339Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/Tadayo/Tadayo/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-16601fed\-1f29\-4e2e\-bbe3\-9fade9f660d7\.config
+2026-11-16T11:49:27.6839312Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/Tadayo/Tadayo/.git/worktrees/*.path
+2026-11-16T11:49:27.6873790Z /home/runner/work/_temp/git-credentials-16601fed-1f29-4e2e-bbe3-9fade9f660d7.config
+2026-11-16T11:49:27.6876035Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/Tadayo/Tadayo/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-16601fed\-1f29\-4e2e\-bbe3\-9fade9f660d7\.config
+2026-11-16T11:49:27.6894910Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-11-16T11:49:27.6918818Z /github/runner_temp/git-credentials-16601fed-1f29-4e2e-bbe3-9fade9f660d7.config
+2026-11-16T11:49:27.6923719Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-16601fed\-1f29\-4e2e\-bbe3\-9fade9f660d7\.config
+2026-11-16T11:49:27.6960234Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-16T11:49:27.6980606Z /github/runner_temp/git-credentials-16601fed-1f29-4e2e-bbe3-9fade9f660d7.config
+2026-11-16T11:49:27.6982515Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-16601fed\-1f29\-4e2e\-bbe3\-9fade9f660d7\.config
+2026-11-16T11:49:27.7001027Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-16T11:49:27.7146443Z Removing credentials config '/home/runner/work/_temp/git-credentials-16601fed-1f29-4e2e-bbe3-9fade9f660d7.config'
+2026-11-16T11:49:27.7150974Z ##[endgroup]
+2026-11-16T11:49:27.7304586Z ##[group]Run python3 tools/ci/ops_steps.py check
+2026-11-16T11:49:27.7304995Z [36;1mpython3 tools/ci/ops_steps.py check[0m
+2026-11-16T11:49:27.9402194Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-16T11:49:27.9402776Z env:
+2026-11-16T11:49:27.9403010Z   OPS_SCRIPT: spike-time
+2026-11-16T11:49:27.9403241Z   OPS_ORG: 
+2026-11-16T11:49:27.9403477Z   OPS_TO: 
+2026-11-16T11:49:27.9403711Z   OPS_BRANCH: 
+2026-11-16T11:49:27.9403962Z ##[endgroup]
+2026-11-16T11:49:28.0374784Z ops: spike-time, from main
+2026-11-16T11:49:28.0527969Z ##[group]Run actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+2026-11-16T11:49:28.0528309Z with:
+2026-11-16T11:49:28.0528561Z   node-version-file: .nvmrc
+2026-11-16T11:49:28.0528821Z   package-manager-cache: false
+2026-11-16T11:49:28.0529341Z   check-latest: false
+2026-11-16T11:49:28.0531123Z   token: ***
+2026-11-16T11:49:28.0531339Z env:
+2026-11-16T11:49:28.0531552Z   OPS_SCRIPT: spike-time
+2026-11-16T11:49:28.0531811Z   OPS_ORG: 
+2026-11-16T11:49:28.0532023Z   OPS_TO: 
+2026-11-16T11:49:28.0532259Z   OPS_BRANCH: 
+2026-11-16T11:49:28.0532482Z ##[endgroup]
+2026-11-16T11:49:28.1569928Z Node version file is not TOML file
+2026-11-16T11:49:28.1571042Z Resolved .nvmrc as 26
+2026-11-16T11:49:28.2289931Z Attempting to download 26...
+2026-11-16T11:49:28.9218729Z Acquiring 26.13.1 - x64 from https://github.com/actions/node-versions/releases/download/26.13.1-43134154182/node-26.13.1-linux-x64.tar.gz
+2026-11-16T11:49:29.6170888Z Extracting ...
+2026-11-16T11:49:29.6307672Z [command]/usr/bin/tar xz --strip 1 --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/2c1af513-4e60-4b70-bf55-1ed98f04d6ff -f /home/runner/work/_temp/8bbce829-73fd-4690-8929-f72721be34f9
+2026-11-16T11:49:30.8368856Z Adding to the cache ...
+2026-11-16T11:49:33.2542592Z ##[group]Environment details
+2026-11-16T11:49:33.8351065Z node: v26.13.1
+2026-11-16T11:49:33.8351931Z npm: 11.20.0
+2026-11-16T11:49:33.8353091Z yarn: 1.22.22
+2026-11-16T11:49:33.8353727Z ##[endgroup]
+2026-11-16T11:49:33.8462821Z ##[group]Run python3 tools/ci/ci_steps.py setup-pnpm
+2026-11-16T11:49:33.8463239Z [36;1mpython3 tools/ci/ci_steps.py setup-pnpm[0m
+2026-11-16T11:49:33.8493008Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-16T11:49:33.8493327Z env:
+2026-11-16T11:49:33.8493662Z   OPS_SCRIPT: spike-time
+2026-11-16T11:49:33.8494013Z   OPS_ORG: 
+2026-11-16T11:49:33.8494255Z   OPS_TO: 
+2026-11-16T11:49:33.8494470Z   OPS_BRANCH: 
+2026-11-16T11:49:33.8494676Z ##[endgroup]
+2026-11-16T11:49:33.8792580Z + npm install --global pnpm@12.16.1
+2026-11-16T11:49:35.3819665Z 
+2026-11-16T11:49:35.3820540Z added 2 packages in 1s
+2026-11-16T11:49:35.3850581Z npm warn install-scripts 1 package has install scripts not yet covered by allowScripts:
+2026-11-16T11:49:35.3851929Z npm warn install-scripts   pnpm@12.16.1 (preinstall: node install.js; postinstall: node install.js)
+2026-11-16T11:49:35.3864930Z npm warn install-scripts
+2026-11-16T11:49:35.3866818Z npm warn install-scripts Run `npm install -g --allow-scripts=pnpm` to allow these scripts once, or `npm config set allow-scripts=pnpm --location=user` to allow them for all global installs.
+2026-11-16T11:49:35.4093594Z ##[group]Run python3 tools/ci/ci_steps.py install
+2026-11-16T11:49:35.4094097Z [36;1mpython3 tools/ci/ci_steps.py install[0m
+2026-11-16T11:49:35.4120217Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-16T11:49:35.4120529Z env:
+2026-11-16T11:49:35.4120750Z   OPS_SCRIPT: spike-time
+2026-11-16T11:49:35.4121012Z   OPS_ORG: 
+2026-11-16T11:49:35.4121229Z   OPS_TO: 
+2026-11-16T11:49:35.4121455Z   OPS_BRANCH: 
+2026-11-16T11:49:35.4121668Z ##[endgroup]
+2026-11-16T11:49:35.4720707Z + pnpm install --frozen-lockfile
+2026-11-16T11:49:35.4940708Z Scope: all 8 workspace projects
+2026-11-16T11:49:35.5240855Z ? Verifying lockfile against supply-chain policies (399 entries)...
+2026-11-16T11:49:35.6436987Z Packages are hard linked from the content-addressable store to the virtual store.
+2026-11-16T11:49:35.6455099Z   Content-addressable store is at: /home/runner/.local/share/pnpm/store/v11
+2026-11-16T11:49:35.6462281Z   Virtual store is at:             node_modules/.pnpm
+2026-11-16T11:49:35.8485981Z Downloading @rolldown/binding-linux-x64-gnu@1.2.16: 0.00 B/8.82 MB
+2026-11-16T11:49:36.7251590Z ✓ Lockfile passes supply-chain policies (399 entries in 1.2s)
+2026-11-16T11:49:36.7263331Z Lockfile is up to date, resolution step is skipped
+2026-11-16T11:49:37.2393207Z Packages: +374
+2026-11-16T11:49:37.2400668Z ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+2026-11-16T11:49:37.2497729Z Progress: resolved 374, reused 0, downloaded 374, added 374, done
+2026-11-16T11:49:37.5024715Z 
+2026-11-16T11:49:37.5025647Z devDependencies:
+2026-11-16T11:49:37.5026174Z + @eslint/js 10.0.1
+2026-11-16T11:49:37.5026481Z + @types/node 26.6.6
+2026-11-16T11:49:37.5026781Z + eslint 10.14.0
+2026-11-16T11:49:37.5027098Z + prettier 3.9.10
+2026-11-16T11:49:37.5027423Z + typescript 6.0.3
+2026-11-16T11:49:37.5027729Z + typescript-eslint 8.72.1
+2026-11-16T11:49:37.5028311Z + vitest 5.0.5
+2026-11-16T11:49:37.5028529Z 
+2026-11-16T11:49:37.9455638Z Done in 2.5s using pnpm v12.16.1
+2026-11-16T11:49:37.9819843Z ##[group]Run python3 tools/ci/ops_steps.py setup-flyctl
+2026-11-16T11:49:37.9820240Z [36;1mpython3 tools/ci/ops_steps.py setup-flyctl[0m
+2026-11-16T11:49:37.9849951Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-16T11:49:37.9850349Z env:
+2026-11-16T11:49:37.9850580Z   OPS_SCRIPT: spike-time
+2026-11-16T11:49:37.9850841Z   OPS_ORG: 
+2026-11-16T11:49:37.9851058Z   OPS_TO: 
+2026-11-16T11:49:37.9851278Z   OPS_BRANCH: 
+2026-11-16T11:49:37.9851482Z ##[endgroup]
+2026-11-16T11:49:39.3118615Z ops: setup-flyctl: flyctl 0.5.8 (SHA-256 checked) is on the job's PATH
+2026-11-16T11:49:39.3255259Z ##[group]Run python3 tools/ci/ops_steps.py run
+2026-11-16T11:49:39.3255615Z [36;1mpython3 tools/ci/ops_steps.py run[0m
+2026-11-16T11:49:39.3282562Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-16T11:49:39.3282986Z env:
+2026-11-16T11:49:39.3283262Z   OPS_SCRIPT: spike-time
+2026-11-16T11:49:39.3283498Z   OPS_ORG: 
+2026-11-16T11:49:39.3283739Z   OPS_TO: 
+2026-11-16T11:49:39.3283977Z   OPS_BRANCH: 
+2026-11-16T11:49:39.3286667Z   FLY_API_TOKEN: ***
+2026-11-16T11:49:39.3286997Z   SUPABASE_DEV_PROJECT_REF: ***
+2026-11-16T11:49:39.3287236Z ##[endgroup]
+2026-11-16T11:49:39.3756164Z + node tools/ops/src/main.ts spike-time
+2026-11-16T11:49:40.6764510Z spike-time: the SSH session makes a WireGuard peer in <organization>, which this run removes after it; if the run is cancelled or cut off first, `flyctl wireguard list <organization>` lists the organization's peers, and `flyctl wireguard remove <organization> <name>` removes one; this run's names start with interactive-<runner>-
+2026-11-16T11:50:35.7491324Z spike-time: run 1fb70b23-1136-4166-88c8-70e0f5b4ab25
+2026-11-16T11:50:35.7492710Z spike-time: club S5 1fb70b23 in America/New_York: Ana's day 2026-11-16 opens 2026-11-16T12:00:00Z and closes 2026-11-17T06:00:00Z; Ben's day 2026-11-17 opens 2026-11-17T12:00:00Z
+2026-11-16T11:50:35.7501714Z spike-time: reveal: dev's clock moved to 2026-11-16T11:59:40Z, 0 s ahead before, 587 s after
+2026-11-16T11:50:35.7503897Z spike-time: reveal at 2026-11-16T12:00:00Z: 60 answers before it and 5 at or after it; the last before at 2026-11-16T11:59:59Z: open none, next Ana's 2026-11-16 (collecting); the first after at 2026-11-16T12:00:00Z, 0 s after it: open Ana's 2026-11-16 (open), next Ben's 2026-11-17 (collecting)
+2026-11-16T11:50:35.7505626Z spike-time: close: dev's clock moved to 2026-11-17T05:59:40Z, 587 s ahead before, 65366 s after
+2026-11-16T11:50:35.7507245Z spike-time: close at 2026-11-17T06:00:00Z: 60 answers before it and 5 at or after it; the last before at 2026-11-17T05:59:59Z: open Ana's 2026-11-16 (open), next Ben's 2026-11-17 (collecting); the first after at 2026-11-17T06:00:00Z, 0 s after it: open none, next Ben's 2026-11-17 (collecting)
+2026-11-16T11:50:35.7508629Z spike-time: ok    sign-in: the service key makes the run's user
+2026-11-16T11:50:35.7509867Z spike-time: ok    sign-in: the user signs in without an email
+2026-11-16T11:50:35.7510605Z spike-time: ok    api: GET /v1/me makes the run's account
+2026-11-16T11:50:35.7511338Z spike-time: ok    api: PATCH /v1/me names it Ana and confirms its age
+2026-11-16T11:50:35.7513133Z spike-time: ok    database: the club is written
+2026-11-16T11:50:35.7514064Z spike-time: ok    reveal: dev's clock moves to 2026-11-16T11:59:40Z
+2026-11-16T11:50:35.7514857Z spike-time: ok    reveal: every answer is the club's days as T5 has them at its server_now
+2026-11-16T11:50:35.7515748Z spike-time: ok    reveal: answers came from both sides of 2026-11-16T12:00:00Z
+2026-11-16T11:50:35.7516551Z spike-time: ok    close: dev's clock moves to 2026-11-17T05:59:40Z
+2026-11-16T11:50:35.7517423Z spike-time: ok    close: every answer is the club's days as T5 has them at its server_now
+2026-11-16T11:50:35.7518230Z spike-time: ok    close: answers came from both sides of 2026-11-17T06:00:00Z
+2026-11-16T11:50:35.7519058Z spike-time: ok    cleanup: delete the run's user
+2026-11-16T11:50:35.7519798Z spike-time: all 12 checks passed
+2026-11-16T11:50:36.8908793Z spike-time: removed the WireGuard peer this run made
+2026-11-16T11:50:36.8910187Z spike-time: every check passed
+2026-11-16T11:50:36.9135681Z Post job cleanup.
+2026-11-16T11:50:37.0237373Z Post job cleanup.
+2026-11-16T11:50:37.1027387Z [command]/usr/bin/git version
+2026-11-16T11:50:37.1126261Z git version 2.56.1
+2026-11-16T11:50:37.1135180Z Temporarily overriding HOME='/home/runner/work/_temp/20d613d5-670c-4fc7-858c-b0b575d19dc2' before making global git config changes
+2026-11-16T11:50:37.1136547Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-16T11:50:37.1137447Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/Tadayo/Tadayo
+2026-11-16T11:50:37.1171083Z Removing SSH command configuration
+2026-11-16T11:50:37.1172199Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-16T11:50:37.1240534Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-16T11:50:37.1521636Z Removing HTTP extra header
+2026-11-16T11:50:37.1522729Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-16T11:50:37.1537767Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-16T11:50:37.1780580Z Removing includeIf entries pointing to credentials config files
+2026-11-16T11:50:37.1786263Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-16T11:50:37.1836852Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-16T11:50:37.2213448Z Cleaning up orphan processes
