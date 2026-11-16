@@ -501,6 +501,7 @@ Spike S5's PR (#55, `docs/plans/api-b0-spike-time.md`, section 0) reads B0's "mi
     - Default: yes. S5's live run reads `GET /v1/clubs` as a member across the day's 07:00 and 01:00, and its report says it read the day choice through `listClubs`, not `getHome`.
     - The other reading: S5's live run waits for `getHome` in B2, and Gate 0 shows only the zone table.
     - Needed by: S5's runs on `dev`, with S5's PR's approval and before the dev clock moves.
+    - Since then: S5's runs on `dev` on 2026-11-16 read the day choice through `GET /v1/clubs` under this default, and the report says so (`docs/spikes/S5-time.md`). If the founder chooses the other reading, a new live run waits for `getHome` in B2, on its own yes, and Gate 0 shows only the zone table.
 
 ## Raised by the new direction, revision 1 (`docs/plans/new-direction-r1.md`)
 
