@@ -384,12 +384,14 @@ final class SignInUITests: XCTestCase {
     /// twice, about 0.2 seconds apart, at 399 to 482, its place before the scroll, while Verify
     /// code's frame matched the screen. So this waits for the field's frame to reach what is
     /// drawn. The wait has never been seen to help: in each of the six failures (iOS 26.5 only)
-    /// the frame stayed at 399 to 482 for the whole 2 seconds, and no passing run's log shows more
-    /// than one read. So a frame still under the button after 2 seconds is stuck, not late, and
-    /// the accessibility tree is kept then (`stuck`), to say next time what holds it. The check
-    /// is unchanged: a field still under the button after 2 seconds fails it, with what was read.
+    /// the frame stayed at 399 to 482 for the whole 2 seconds, and `ios` run 44411795444 read
+    /// once at each of its six settles. So a frame still under the button after 2 seconds is
+    /// stuck, not late. The check is unchanged: a field still under the button after 2 seconds
+    /// fails the test, and it fails here, before the accessibility tree is read for `stuck`,
+    /// since reading the whole tree might itself bring the frame up to date.
     @MainActor private func settle(
-        _ field: XCUIElement, above verify: XCUIElement, in app: XCUIApplication
+        _ field: XCUIElement, above verify: XCUIElement, in app: XCUIApplication,
+        line: UInt = #line
     ) -> [String] {
         var read: [String] = []
         var settled = false
@@ -406,33 +408,43 @@ final class SignInUITests: XCTestCase {
             named: "The code field's foot over Verify code's top, read \(read.count) "
                 + "times: \(read.joined(separator: ", "))"
         ) { _ in }
-        if !settled { stuck(app, after: read) }
+        if !settled {
+            XCTFail(
+                "the field's frame \(field.frame) stayed under Verify code \(verify.frame) for "
+                    + "2 seconds: \(read)", line: line)
+            stuck(app, after: read)
+        }
         return read
     }
 
-    /// Keeps the app's accessibility tree when the code field's frame never reached the screen:
-    /// the whole of `debugDescription` as a text attachment in the result bundle, and its lines
-    /// on the scroll view, the field, Verify code and the keyboard as an activity, which the
-    /// test log carries. Diagnostics only: the test's checks then fail as they did.
+    /// Keeps the app's accessibility tree when the code field's frame never reached the screen,
+    /// to say what holds it: the whole of `debugDescription`, 25 lines to an activity, which the
+    /// test log on `evidence` carries, and as a text attachment in the run's result bundle,
+    /// which `tools/ci/ios_steps.py` doesn't collect yet, so it goes with the runner. Diagnostics
+    /// only: `settle(_:above:in:)` has already failed the test.
     @MainActor private func stuck(_ app: XCUIApplication, after read: [String]) {
         let tree = app.debugDescription
         let whole = XCTAttachment(string: tree)
         whole.name = "testVerifyCodeIsPinnedAboveTheKeyboardAtTheLargestText.stuck-frame.txt"
         whole.lifetime = .keepAlways
         add(whole)
-        let wanted = ["ScrollView", "Six-digit code", "Verify code", "Keyboard", "Window"]
-        let lines = tree.split(separator: "\n").filter { line in
-            wanted.contains { line.contains($0) }
-        }.prefix(40).map { $0.trimmingCharacters(in: .whitespaces) }
-        XCTContext.runActivity(
-            named: "The code field's frame stuck after \(read.count) reads; the tree's lines: "
-                + lines.joined(separator: " | ")
-        ) { _ in }
+        let lines = tree.split(separator: "\n").map {
+            $0.trimmingCharacters(in: .whitespaces)
+        }
+        let parts = stride(from: 0, to: lines.count, by: 25).map {
+            lines[$0..<min($0 + 25, lines.count)].joined(separator: " | ")
+        }
+        for (index, part) in parts.enumerated() {
+            XCTContext.runActivity(
+                named: "The tree with the code field's frame stuck after \(read.count) reads, "
+                    + "part \(index + 1) of \(parts.count): \(part)"
+            ) { _ in }
+        }
     }
 
     /// Reads `what` every 0.2 seconds until `done`, for 2 seconds at most, and logs the reads as
     /// an activity named for it, so a passing run's log shows whether it had to wait: an
-    /// element's accessibility frame can lag the screen after a scroll (`settle(_:above:)`).
+    /// element's accessibility frame can lag the screen after a scroll (`settle(_:above:in:)`).
     @MainActor private func settle(
         _ what: String, read: () -> String, until done: () -> Bool
     ) -> [String] {
@@ -463,15 +475,18 @@ final class SignInUITests: XCTestCase {
     /// can be tapped there; the code field ends above the pinned footer, which starts 8 above the
     /// button, so the button covers none of it (handoff 7: "controls are never overlaid on form
     /// text"; frame 19 scrolls the field under the navigation bar). The field is also checked
-    /// where `shot` draws it, by its focus ring (`drawnRing`): the ring's foot is above Verify
-    /// code's top, and where `ringDrawn`, before any drag, a ring must be found. The frame's
+    /// where `shot` draws it, by its focus ring (`drawnRing`): the ring's drawn foot is held to
+    /// the bound the frame's foot is, 8 above Verify code's top, since the ring's outer edge is
+    /// where the frame ends (`ios` run 44411795444: ring to 292, frame to 292, on both
+    /// runtimes); and where `ringDrawn`, before any drag, the ring must be found. The frame's
     /// check stays as it was, and its message now says where the ring is drawn, so a frame
     /// that disagrees with the screen shows as that.
     @MainActor private func assertPinned(
         _ verify: XCUIElement, below field: XCUIElement, on shot: XCUIScreenshot,
         in app: XCUIApplication, read: [String], ringDrawn: Bool, line: UInt = #line
     ) {
-        let ring = drawnRing(above: verify.frame.minY, at: field.frame.midX, on: shot, in: app)
+        let ring = drawnRing(
+            at: field.frame.midX, high: field.frame.height, on: shot, in: app)
         XCTContext.runActivity(named: "The code field's focus ring as drawn: \(ring.said)") { _ in }
         XCTAssertLessThanOrEqual(
             field.frame.maxY, verify.frame.minY - 8 + 0.5,
@@ -480,11 +495,11 @@ final class SignInUITests: XCTestCase {
             line: line)
         if let drawn = ring.foot {
             XCTAssertLessThanOrEqual(
-                drawn, verify.frame.minY + 0.5,
-                "the focus ring is drawn to \(drawn), under Verify code's top "
+                drawn, verify.frame.minY - 8 + 0.5,
+                "the focus ring is drawn to \(drawn), not 8 above Verify code's top "
                     + "\(verify.frame.minY): \(ring.said)", line: line)
         } else if ringDrawn {
-            XCTFail("no focus ring found above Verify code: \(ring.said)", line: line)
+            XCTFail("no focus ring found on the screen: \(ring.said)", line: line)
         }
         let foot = verify.frame.maxY
         let edge = drawnEdge(below: foot, on: shot, in: app)
@@ -496,48 +511,51 @@ final class SignInUITests: XCTestCase {
         XCTAssertTrue(verify.isHittable, line: line)
     }
 
-    /// Where `shot` draws the code field's focus ring above `y`, down the column at `x` (the
-    /// field's middle, where the ring's top and foot cross it): the runs of points near
-    /// `Palette.focusRing`'s light blue that are 1 to 4 points thick, as a 2-point stroke is and
-    /// the caret isn't. `foot` is the end of the lowest run, nil when none is found, as when the
-    /// field is scrolled under the navigation bar. `said` gives the runs, for a message.
+    /// Where `shot` draws the code field's focus ring, down the whole column at `x` (the field's
+    /// middle, where the ring's top and foot cross it): two runs of the ring's blue, each 1 to 4
+    /// points thick as a 2-point stroke is, that span `high`, the field's height, within 1 from
+    /// the top of one to the foot of the other. `foot` is the end of the lower one, nil when no
+    /// such pair is found, as when the field is scrolled under the navigation bar. The blue is
+    /// `Palette.focusRing`'s in the light appearance, which the simulator runs in; it is also
+    /// `Palette.action`'s, so the caret, a text action's letters and Verify code's fill match
+    /// it too, which is why a pair of thin runs the field's height apart is asked for, not a
+    /// run. `said` gives every run, for a message.
     @MainActor private func drawnRing(
-        above y: CGFloat, at x: CGFloat, on shot: XCUIScreenshot, in app: XCUIApplication
+        at x: CGFloat, high: CGFloat, on shot: XCUIScreenshot, in app: XCUIApplication
     ) -> (foot: CGFloat?, said: String) {
         guard let (pixels, width, height) = bitmap(shot), app.frame.height > 0 else {
             return (nil, "no screenshot")
         }
         let scale = CGFloat(height) / app.frame.height
         let column = min(max(Int((x * scale).rounded()), 0), width - 1)
-        let end = min(max(Int((y * scale).rounded()), 0), height)
-        // 0x284CDB, with room for the screen's colour space: the canvas, the surface and the
-        // ink are far from it.
+        // 0x284CDB, with room for the screen's colour space.
         let blue = [40, 76, 219]
         func isRing(_ row: Int) -> Bool {
             let at = (row * width + column) * 4
             return (0..<3).map { abs(Int(pixels[at + $0]) - blue[$0]) }.reduce(0, +) <= 75
         }
-        var runs: [(from: Int, to: Int)] = []
+        var runs: [(from: CGFloat, to: CGFloat)] = []
         var row = 0
-        while row < end {
+        while row < height {
             guard isRing(row) else {
                 row += 1
                 continue
             }
             let from = row
-            while row < end, isRing(row) { row += 1 }
-            runs.append((from, row))
-        }
-        let strokes = runs.filter { run in
-            let thick = CGFloat(run.to - run.from) / scale
-            return thick >= 1 && thick <= 4
+            while row < height, isRing(row) { row += 1 }
+            runs.append((CGFloat(from) / scale, CGFloat(row) / scale))
         }
         let said =
-            "runs of ring blue at x \(x) above \(y): "
-            + runs.map { "\(CGFloat($0.from) / scale) to \(CGFloat($0.to) / scale)" }
-            .joined(separator: ", ") + " (scale \(scale))"
-        guard let last = strokes.last else { return (nil, said) }
-        return (CGFloat(last.to) / scale, said)
+            "runs of ring blue at x \(x): "
+            + runs.map { "\($0.from) to \($0.to)" }.joined(separator: ", ")
+            + "; a field \(high) high (scale \(scale))"
+        let strokes = runs.filter { $0.to - $0.from >= 1 && $0.to - $0.from <= 4 }
+        for (index, top) in strokes.enumerated() {
+            for foot in strokes[(index + 1)...] where abs(foot.to - top.from - high) <= 1 {
+                return (foot.to, said)
+            }
+        }
+        return (nil, said)
     }
 
     /// `shot`'s pixels as RGBA bytes, row by row from the top, with its size in pixels.
