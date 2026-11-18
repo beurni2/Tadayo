@@ -54,11 +54,11 @@ Pure functions first, with no clock and no database, so every rule is tested as 
 
 - **`propose.ts` `proposedWeek(memberCount)`**: spec 05's table and examples. Members in the order they joined (FQ98's fixture order). Four to six: one day each, Monday to the first. Two: Monday and Thursday, Tuesday and Friday. Three: Monday and Thursday, Tuesday and Friday, Wednesday and Saturday. Refuses a count outside two to six.
 - **`first-date.ts` `firstDate(weekday, confirmedAt, zone)`**: FQ79. The first date on that weekday whose 7 AM, resolved through `resolveCivilTime` in the club's zone, is at least 24 elapsed hours after `confirmedAt`. It compares instants, never dates; exactly 24 hours qualifies.
-- **`view.ts` `slotsFor(viewer, facts)`**: the six slots as one viewer sees them (the contract plan's sections 1.2 and 1.8). Its input is every member's holds and confirmations; its output carries a name only where the contract gives that viewer one:
+- **`view.ts` `viewFor(viewer, facts)`**: the six slots as one viewer sees them (the contract plan's sections 1.2 and 1.8). Its input is every member's holds and confirmations; its output carries a name only where the contract gives that viewer one:
     - `yours`, `taken` with `owner` and `first_date`, `available` with `held_by` only for a viewer still choosing, `clash` with `holders` (the viewer included) in the order members joined, `no_reveal` with nothing else;
     - `suggested` on the viewer's own proposed days only;
     - no `first_date` on a day whose owner's membership has ended (FQ102), which PR 3 produces and this function already answers.
-- **`choose.ts` `judgeChoice`** and **`confirm.ts` `judgeConfirmation`**: what a request gets from the facts, as the contract orders it: `NOT_ALLOWED` after the caller confirmed, for more days than `days_per_member`, for a day another member has confirmed; a confirmation only of exactly the days the caller holds, `days_per_member` of them, none held by anyone else (FQ55, FQ99).
+- **`decide.ts` `judgeChoice`, `judgeConfirmation`** and **`everyoneConfirmed`** (one file, since the two rules share their checks): what a request gets from the facts, as the contract orders it: `NOT_ALLOWED` after the caller confirmed, for more days than `days_per_member`, for a day another member has confirmed; a confirmation only of exactly the days the caller holds, `days_per_member` of them, none held by anyone else (FQ55, FQ99).
 
 Then the commands and the read, in SQL through the `postgres` driver, each in one READ COMMITTED transaction:
 
@@ -77,7 +77,7 @@ Then the commands and the read, in SQL through the `postgres` driver, each in on
 7. **The rule** (section 3): `NOT_ALLOWED`, or the change.
     - A choice replaces the caller's `held` rows, keeps their `suggested` ones, sets `chose_at` if it was null, and moves no `version` (T33).
     - A confirmation sets `confirmed_at` to the sample and writes one `schedule_assignments` row per day with `firstDate`. When every member the proposal includes who is still active has then confirmed, it sets `state` to `applied`, `closed_at`, and `version` plus 1.
-8. **The answer**: the proposal as the caller now sees it, made by the same `slotsFor` the read uses, stored in the receipt.
+8. **The answer**: the proposal as the caller now sees it, made by the same `viewFor` the read uses, stored in the receipt.
 
 A choice of the days the caller already holds changes nothing and still answers. A confirmation by a member who has already confirmed is `NOT_ALLOWED` unless it is the replay of its own key.
 
@@ -92,7 +92,7 @@ Written before the code they test, and seen to fail.
 - **`propose.test.ts`**: spec 05's two examples and the pair, name for name; every count from two to six gives each member `days_per_member` days, each weekday at most once, never Sunday; a count of one or seven is refused.
 - **`first-date.test.ts`** (FQ79's list, with fixed instants): exactly 24 hours opens on that date; one second short waits a week; a 23-hour day waits a week and a 25-hour day opens, in a zone whose clock changes in the 24 hours before a reveal day's 7 AM; handoff 6's fixture (confirmed at 9 AM in New York on Wednesday 4 November 2026: Thursday first opens on 12 November); a zone east of the date line and one west of it.
 - **`view.test.ts`**: one case for each frame the contract's examples draw (`G04-one-day`, `G04-conflict`, `G04-conflict-three`, `G04-contested-other`, `G04-confirm-refused`, `G04-two-days-one-chosen`, `G04-confirmed-others`, `G04-confirmed-many`), and a property over every small world: no viewer gets a name on a `no_reveal` day; `holders` only goes to a holder; `held_by` never goes to a confirmed viewer and never names the viewer; `first_date` only on a confirmed day; the six weekdays, each once, Monday first.
-- **`choose.test.ts`, `confirm.test.ts`**: each refusal and each allowed change, FQ99's contested second day among them.
+- **`decide.test.ts`**: each refusal and each allowed change, FQ99's contested second day among them.
 - **`tests/src/db/schedule-proposals.test.ts`**: the migration's guards, each shown to refuse (a second open proposal, a third held day in a one-day club, a change after confirming, a state going back, a deleted row).
 - **`tests/src/db/schedule-commands.test.ts`**, on Postgres with the clock's test double:
     - open, choose and confirm for clubs of two, three, four and six; the last confirmation applies and moves `version`; no other confirmation or choice moves it;
