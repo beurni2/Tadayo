@@ -18,6 +18,8 @@ export interface ErrorFacts {
   /** The first bad field of the request, by name: never its value. */
   readonly field?: string;
   readonly current_version?: number;
+  /** The newer revision or proposal that replaced the one the request named. */
+  readonly current_id?: string;
 }
 
 /** An error as the contract has it: its status, and a body of its code and `facts`. */
