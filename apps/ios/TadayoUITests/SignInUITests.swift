@@ -386,9 +386,12 @@ final class SignInUITests: XCTestCase {
     /// drawn. The wait has never been seen to help: in each of the six failures (iOS 26.5 only)
     /// the frame stayed at 399 to 482 for the whole 2 seconds, and `ios` run 44411795444 read
     /// once at each of its six settles. So a frame still under the button after 2 seconds is
-    /// stuck, not late. The check is unchanged: a field still under the button after 2 seconds
-    /// fails the test, and it fails here, before the accessibility tree is read for `stuck`,
-    /// since reading the whole tree might itself bring the frame up to date.
+    /// stuck, not late. A field still under the button after 2 seconds fails the test, as it
+    /// did, and now it is decided here, at the wait's last read, before the accessibility tree
+    /// is read for `stuck`, since reading the whole tree might itself bring the frame up to
+    /// date: stricter by that one read than `assertPinned`'s own, which comes after the
+    /// screenshot. The tree is logged first and the test failed last, since a failure ends the
+    /// test (`continueAfterFailure` is false).
     @MainActor private func settle(
         _ field: XCUIElement, above verify: XCUIElement, in app: XCUIApplication,
         line: UInt = #line
@@ -409,10 +412,9 @@ final class SignInUITests: XCTestCase {
                 + "times: \(read.joined(separator: ", "))"
         ) { _ in }
         if !settled {
-            XCTFail(
-                "the field's frame \(field.frame) stayed under Verify code \(verify.frame) for "
-                    + "2 seconds: \(read)", line: line)
+            let frames = "the field's frame \(field.frame) stayed under Verify code \(verify.frame)"
             stuck(app, after: read)
+            XCTFail("\(frames) for 2 seconds: \(read)", line: line)
         }
         return read
     }
@@ -421,7 +423,7 @@ final class SignInUITests: XCTestCase {
     /// to say what holds it: the whole of `debugDescription`, 25 lines to an activity, which the
     /// test log on `evidence` carries, and as a text attachment in the run's result bundle,
     /// which `tools/ci/ios_steps.py` doesn't collect yet, so it goes with the runner. Diagnostics
-    /// only: `settle(_:above:in:)` has already failed the test.
+    /// only: `settle(_:above:in:)` has decided the failure and records it once this returns.
     @MainActor private func stuck(_ app: XCUIApplication, after read: [String]) {
         let tree = app.debugDescription
         let whole = XCTAttachment(string: tree)
@@ -477,8 +479,8 @@ final class SignInUITests: XCTestCase {
     /// text"; frame 19 scrolls the field under the navigation bar). The field is also checked
     /// where `shot` draws it, by its focus ring (`drawnRing`): the ring's drawn foot is held to
     /// the bound the frame's foot is, 8 above Verify code's top, since the ring's outer edge is
-    /// where the frame ends (`ios` run 44411795444: ring to 292, frame to 292, on both
-    /// runtimes); and where `ringDrawn`, before any drag, the ring must be found. The frame's
+    /// where the frame ends (`ios` runs 44411795444 and 44418156518: ring to 292, frame to 292,
+    /// on both runtimes); and where `ringDrawn`, before any drag, the ring must be found. The frame's
     /// check stays as it was, and its message now says where the ring is drawn, so a frame
     /// that disagrees with the screen shows as that.
     @MainActor private func assertPinned(
