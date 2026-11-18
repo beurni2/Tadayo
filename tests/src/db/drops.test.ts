@@ -1,6 +1,6 @@
 // The database's last guards on adding to a day. Each is a backstop behind the command that holds
 // the locks and reads the clock (TECH-DESIGN section 5): the cutoff (T3), nothing moved (T4),
-// six and two (T17), reservations that end by the reveal (T18), no duplicate (T21), highlights as
+// each role's allowance (T17), reservations that end by the reveal (T18), no duplicate (T21), highlights as
 // pointers (T22), a held drop never appearing late (T29), and uploads and links that keep nothing
 // they shouldn't (T12, T40, T52).
 
@@ -249,28 +249,215 @@ describe("T29: a drop on hold at the reveal never appears afterwards", () => {
   });
 });
 
-describe("T17: six and two, as a last guard behind the counter's lock", () => {
+describe("T17: allowances by role, as a last guard behind the counter's lock", () => {
+  /** The counter of `member` on `day`: its limits and its committed counts. */
+  async function counterOf(tx: Tx, day: string, member: Member) {
+    const [row] = await tx<
+      {
+        total_limit: number;
+        photo_limit: number;
+        external_limit: number;
+        committed_total: number;
+        committed_external: number;
+      }[]
+    >`
+      SELECT total_limit, photo_limit, external_limit, committed_total, committed_external FROM app.contribution_counters
+       WHERE occurrence_id = ${day} AND interval_id = ${member.interval}
+    `;
+    return row;
+  }
+
+  /** Another day of the world's club, whose star is `star` (its weekday's, from its first date). */
+  async function dayOf(tx: Tx, w: World, star: Member, date: string): Promise<string> {
+    const id = newId("occ");
+    const reveal = new Date(`${date}T07:00:00Z`);
+    await tx`
+      INSERT INTO app.occurrences (id, club_id, star_interval_id, schedule_version_id, local_date, reveal_at, close_at,
+                                   collecting_from)
+      VALUES (${id}, ${w.club}, ${star.interval}, ${w.version}, ${date}, ${reveal}, ${new Date(reveal.getTime() + 18 * 3600e3)},
+              ${AT.generated})
+    `;
+    return id;
+  }
+
+  const STAR = { total_limit: 6, photo_limit: 6, external_limit: 2 };
+  const FRIEND = { total_limit: 3, photo_limit: 2, external_limit: 1 };
+
+  it("writes each counter's limits from its holder's role in that day: the star's 6, 6 and 2, anyone else's 3, 2 and 1 (addendum 2)", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await newWorld(tx);
+      for (const member of [w.ana, w.ben, w.cleo]) await commitDrop(tx, w, member);
+      expect(await counterOf(tx, w.day, w.ana)).toMatchObject(STAR);
+      expect(await counterOf(tx, w.day, w.ben)).toMatchObject(FRIEND);
+      expect(await counterOf(tx, w.day, w.cleo)).toMatchObject(FRIEND);
+      // Ben's own Friday: Ben is its star, and Ana anyone else.
+      const friday = await dayOf(tx, w, w.ben, "2026-11-13");
+      await commitDrop(tx, { ...w, day: friday }, w.ben);
+      await commitDrop(tx, { ...w, day: friday }, w.ana);
+      expect(await counterOf(tx, friday, w.ben)).toMatchObject(STAR);
+      expect(await counterOf(tx, friday, w.ana)).toMatchObject(FRIEND);
+    });
+  });
+
+  it("refuses a counter that names its own limits, and any change to them (T17)", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await newWorld(tx);
+      // Each limit named alone, at the star's value, for Ben, a friend that day.
+      for (const [limit, value] of [
+        ["total_limit", 6],
+        ["photo_limit", 6],
+        ["external_limit", 2],
+      ] as const) {
+        await expectRefused(
+          tx,
+          REFUSED.integrity,
+          (sp) => sp`
+            INSERT INTO app.contribution_counters (occurrence_id, interval_id, club_id, ${sp(limit)})
+            VALUES (${w.day}, ${w.ben.interval}, ${w.club}, ${value})
+          `,
+          /the limits come from the day's star interval, never from the caller \(T17\)/,
+        );
+      }
+      await commitDrop(tx, w, w.ben);
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) => sp`
+          UPDATE app.contribution_counters SET total_limit = 6, photo_limit = 6, external_limit = 2
+           WHERE occurrence_id = ${w.day} AND interval_id = ${w.ben.interval}
+        `,
+        /app\.contribution_counters\.total_limit can't change/,
+      );
+    });
+  });
+
+  it("refuses a friend's third photo, second link, or a photo slot beyond two photos (addendum 2)", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await newWorld(tx);
+      for (let i = 0; i < 2; i += 1) await commitDrop(tx, w, w.ben);
+      await commitDrop(tx, w, w.ben, { media: "external_video" });
+      expect(await counterOf(tx, w.day, w.ben)).toMatchObject({ ...FRIEND, committed_total: 3, committed_external: 1 });
+      await expectRefused(
+        tx,
+        REFUSED.check,
+        (sp) => commitDrop(sp, w, w.ben),
+        /contribution_counters_photos_within_limit/,
+      );
+      await expectRefused(
+        tx,
+        REFUSED.check,
+        (sp) => commitDrop(sp, w, w.ben, { media: "external_video" }),
+        /contribution_counters_links_within_limit/,
+      );
+      for (let i = 0; i < 2; i += 1) await commitDrop(tx, w, w.cleo);
+      await expectRefused(
+        tx,
+        REFUSED.check,
+        (sp) => sp`
+          UPDATE app.contribution_counters SET reserved_total = reserved_total + 1
+           WHERE occurrence_id = ${w.day} AND interval_id = ${w.cleo.interval}
+        `,
+        /contribution_counters_photos_within_limit/,
+      );
+      // A friend's reserved link counts toward the one link, as a reserved photo toward the two.
+      const other = await newWorld(tx);
+      await commitDrop(tx, other, other.ben, { media: "external_video" });
+      await expectRefused(
+        tx,
+        REFUSED.check,
+        (sp) => sp`
+          UPDATE app.contribution_counters SET reserved_total = reserved_total + 1, reserved_external = reserved_external + 1
+           WHERE occurrence_id = ${other.day} AND interval_id = ${other.ben.interval}
+        `,
+        /contribution_counters_links_within_limit/,
+      );
+    });
+  });
+
+  it("refuses limits outside the two roles' sets with the trigger off, as the last guard behind it (T17, T58)", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await newWorld(tx);
+      await tx.unsafe("ALTER TABLE app.contribution_counters DISABLE TRIGGER contribution_counters_limits");
+      const counter = (sp: Tx, limits: readonly [number | null, number | null, number | null]) => sp`
+        INSERT INTO app.contribution_counters (occurrence_id, interval_id, club_id, total_limit, photo_limit, external_limit)
+        VALUES (${w.day}, ${w.ben.interval}, ${w.club}, ${limits[0]}, ${limits[1]}, ${limits[2]})
+      `;
+      // Each set one value off a role's own: a friend's with one of the star's, and the star's with one of a friend's.
+      for (const limits of [
+        [6, 2, 1],
+        [3, 6, 1],
+        [3, 2, 2],
+        [3, 6, 2],
+        [6, 2, 2],
+        [6, 6, 1],
+      ] as const) {
+        await expectRefused(tx, REFUSED.check, (sp) => counter(sp, limits), /contribution_counters_limits_by_role/);
+      }
+      // A null limit would pass every CHECK; the columns refuse it.
+      for (const limits of [
+        [null, 2, 1],
+        [3, null, 1],
+        [3, 2, null],
+      ] as const) {
+        await expectRefused(tx, REFUSED.notNull, (sp) => counter(sp, limits));
+      }
+    });
+  });
+
   it("refuses a seventh drop or a third link in the counter", async () => {
     await rolledBack(app, async (tx) => {
       const w = await newWorld(tx);
-      for (let i = 0; i < 4; i += 1) await commitDrop(tx, w, w.ben);
-      for (let i = 0; i < 2; i += 1) await commitDrop(tx, w, w.ben, { media: "external_video" });
-      const [counter] = await tx<{ committed_total: number; committed_external: number }[]>`
-        SELECT committed_total, committed_external FROM app.contribution_counters
-         WHERE occurrence_id = ${w.day} AND interval_id = ${w.ben.interval}
-      `;
-      expect(counter).toEqual({ committed_total: 6, committed_external: 2 });
-      await expectRefused(tx, REFUSED.check, (sp) => commitDrop(sp, w, w.ben), /contribution_counters_check2/);
+      for (let i = 0; i < 4; i += 1) await commitDrop(tx, w, w.ana);
+      for (let i = 0; i < 2; i += 1) await commitDrop(tx, w, w.ana, { media: "external_video" });
+      expect(await counterOf(tx, w.day, w.ana)).toMatchObject({ ...STAR, committed_total: 6, committed_external: 2 });
+      await expectRefused(tx, REFUSED.check, (sp) => commitDrop(sp, w, w.ana), /contribution_counters_check2/);
       await expectRefused(
         tx,
         REFUSED.check,
         (sp) => sp`
           UPDATE app.contribution_counters SET committed_total = 5, committed_external = 2, reserved_total = 1,
                  reserved_external = 1
-           WHERE occurrence_id = ${w.day} AND interval_id = ${w.ben.interval}
+           WHERE occurrence_id = ${w.day} AND interval_id = ${w.ana.interval}
         `,
         /contribution_counters_check3/,
       );
+      // Six photos are the star's too.
+      const other = await newWorld(tx);
+      for (let i = 0; i < 6; i += 1) await commitDrop(tx, other, other.ana);
+      expect(await counterOf(tx, other.day, other.ana)).toMatchObject({ committed_total: 6, committed_external: 0 });
+    });
+  });
+
+  it("keeps each member's counts on each day apart from every other's (ND04)", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await newWorld(tx);
+      // Ben's allowance on Ana's Saturday is used up; Cleo's there, and Ben's on other days, aren't.
+      for (let i = 0; i < 2; i += 1) await commitDrop(tx, w, w.ben);
+      await commitDrop(tx, w, w.ben, { media: "external_video" });
+      for (let i = 0; i < 2; i += 1) await commitDrop(tx, w, w.cleo);
+      await commitDrop(tx, w, w.cleo, { media: "external_video" });
+      const thursday = { ...w, day: await dayOf(tx, w, w.cleo, "2026-11-12") };
+      for (let i = 0; i < 2; i += 1) await commitDrop(tx, thursday, w.ben);
+      await commitDrop(tx, thursday, w.ben, { media: "external_video" });
+      const friday = { ...w, day: await dayOf(tx, w, w.ben, "2026-11-13") };
+      for (let i = 0; i < 4; i += 1) await commitDrop(tx, friday, w.ben);
+      for (let i = 0; i < 2; i += 1) await commitDrop(tx, friday, w.ben, { media: "external_video" });
+      expect(await counterOf(tx, w.day, w.ben)).toMatchObject({ ...FRIEND, committed_total: 3, committed_external: 1 });
+      expect(await counterOf(tx, w.day, w.cleo)).toMatchObject({
+        ...FRIEND,
+        committed_total: 3,
+        committed_external: 1,
+      });
+      expect(await counterOf(tx, thursday.day, w.ben)).toMatchObject({
+        ...FRIEND,
+        committed_total: 3,
+        committed_external: 1,
+      });
+      expect(await counterOf(tx, friday.day, w.ben)).toMatchObject({
+        ...STAR,
+        committed_total: 6,
+        committed_external: 2,
+      });
     });
   });
 
@@ -309,10 +496,11 @@ describe("T21: the same photo or link once per author and day", () => {
   it("refuses a second live drop with the same scoped hash, and allows another author's", async () => {
     await rolledBack(app, async (tx) => {
       const w = await newWorld(tx);
-      const drop = await commitDrop(tx, w, w.ben, { media: "external_video" });
+      // Ana's, since a link a second time is the star's alone (addendum 2).
+      const drop = await commitDrop(tx, w, w.ana, { media: "external_video" });
       const [row] = await tx<{ dedupe_key: Buffer }[]>`SELECT dedupe_key FROM app.drops WHERE id = ${drop}`;
       if (!row) throw new Error("no drop");
-      const second = await commitDrop(tx, w, w.ben, { media: "external_video", unsealed: true });
+      const second = await commitDrop(tx, w, w.ana, { media: "external_video", unsealed: true });
       await expectRefused(
         tx,
         REFUSED.unique,

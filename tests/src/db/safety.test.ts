@@ -221,10 +221,12 @@ describe("D07, T8 and spec 16: reactions, comments and favourites, from the reve
   it("adds nothing to a drop that isn't active, or from someone who has left, who can still take their own away (T9, T24)", async () => {
     await rolledBack(app, async (tx) => {
       const w = await newWorld(tx);
+      // Within a friend's two photos and one link (addendum 2): Ben's link, Ben's two photos, and
+      // Cleo's photo, which Ana, not its author, then reacts to.
       const [withdrawn, removed, held, live] = [
+        await commitDrop(tx, w, w.ben, { media: "external_video" }),
         await commitDrop(tx, w, w.ben),
-        await commitDrop(tx, w, w.ben),
-        await commitDrop(tx, w, w.ben),
+        await commitDrop(tx, w, w.cleo),
         await commitDrop(tx, w, w.ben),
       ];
       await remove(tx, withdrawn, "withdraw", w.ben, "withdrawn", AT.edited);
