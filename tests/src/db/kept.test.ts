@@ -63,6 +63,9 @@ describe("rows kept for good can't be truncated", () => {
       "roster_revision_members",
       "roster_revisions",
       "schedule_assignments",
+      "schedule_proposal_days",
+      "schedule_proposal_members",
+      "schedule_proposals",
       "schedule_versions",
     ]);
     for (const table of tables) expect(table, table.name).toMatchObject({ refusesTruncate: true });

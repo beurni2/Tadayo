@@ -37,12 +37,13 @@ It adds three tables and changes none. Nothing is dropped or rewritten (FQ39).
     - One open proposal per club (a partial unique index), which is the contract's one `Schedule.proposal`.
     - A guard keeps `id`, `club_id`, `reason`, `effective_from`, `schedule_version_id` and `created_at`; lets `state` go only from `open` to `applied` or `superseded`, with `closed_at` set exactly then; and lets `version` only rise. `days_per_member` changes only while the proposal is open (PR 3's revision).
 - **`app.schedule_proposal_members`**: the members a proposal includes, by membership interval.
-    - `proposal_id`, `interval_id`, `club_id`, `chose_at` (when they first chose, or null while they hold by proposal), `confirmed_at`.
+    - `proposal_id`, `interval_id`, `club_id`, `confirmed_at`. As built, there is no `chose_at`: the day rows already say what a member holds, whether by proposal or by choice, and no rule reads when they first chose.
     - `confirmed_at` is set once and never cleared (FQ57).
 - **`app.schedule_proposal_days`**: who is proposed and who holds which weekday.
     - `proposal_id`, `interval_id`, `weekday`, `suggested` (the proposal gave it to this member), `held` (the member holds it now). A row has one or both; a row with neither is deleted.
     - A member holds at most `days_per_member` days: a deferred constraint trigger counts them at commit.
-    - A member who has confirmed changes no row (the guard reads `confirmed_at`).
+    - A member who has confirmed changes no row (the guard reads `confirmed_at`), and no hold lands on a day already confirmed.
+    - As built, a confirmation is checked at commit by `app.schedule_confirmation_guard`: the member holds exactly `days_per_member` days, no other member holds any of them (a member who left aside), and each is in the proposal's week for them with the confirmation's instant. A change of holds takes the proposal's row `FOR SHARE` and a confirmation takes it `FOR UPDATE`, so neither passes the other's check unseen, whatever the commands do.
     - No uniqueness on a weekday across members: two members may hold one day, which is the clash (FQ55). A day is confirmed once by `schedule_assignments`' own key.
 - Row level security on, no policy, as every table (T53). No delete of a proposal or a member row; truncation refused.
 
@@ -75,7 +76,7 @@ Then the commands and the read, in SQL through the `postgres` driver, each in on
 5. **`VERSION_CONFLICT`** with `current_version` when `expected_version` isn't the proposal's.
 6. **The clock**, sampled now, after the lock (T1; T3's order).
 7. **The rule** (section 3): `NOT_ALLOWED`, or the change.
-    - A choice replaces the caller's `held` rows, keeps their `suggested` ones, sets `chose_at` if it was null, and moves no `version` (T33).
+    - A choice replaces the caller's `held` rows, keeps their `suggested` ones, and moves no `version` (T33).
     - A confirmation sets `confirmed_at` to the sample and writes one `schedule_assignments` row per day with `firstDate`. When every member the proposal includes who is still active has then confirmed, it sets `state` to `applied`, `closed_at`, and `version` plus 1.
 8. **The answer**: the proposal as the caller now sees it, made by the same `viewFor` the read uses, stored in the receipt.
 
