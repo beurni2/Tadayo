@@ -491,7 +491,7 @@ PR #46 as merged (`888c0fb`), run in the session with Node 26.13.0 before its me
 
 ### 1.3 ios lane
 
-**Updated:** 2026-11-19 03:46 UTC, ios/b0-pin-stuck-shot
+**Updated:** 2026-11-19 03:47 UTC, ios/b0-pin-stuck-shot-check
 
 - **Started:** 2026-11-03 at 11:03 UTC, by the coordinator (ADR-025). Environment: Swift from swift.org's signed release tarball, installed by hand, since the environment has no setup script (6.3.3 from 2026-11-03, 6.4.2 since 2026-11-13 09:58 UTC); the journal hook isn't confirmed to fire in this session, so it runs by hand before each commit (`docs/LIMITATIONS.md`'s row of 2026-11-03 for the ios thread).
 - **This branch:** `ios/b0-pin-stuck-shot`, from `main` at `42b828e` (#69), no PR yet, test code only: the pin test's stuck path keeps the screen. `stuck(_:_:after:)` (`apps/ios/TadayoUITests/SignInUITests.swift`) takes a screenshot before it reads the tree, keeps it as `….stuck-frame.png`, and logs the focus ring as drawn on it (`drawnRing`, the activity "The code field's focus ring as drawn with its frame stuck at …"), as a passing run logs it; nothing else changes, and no check is loosened. Why: `ios` run 44447546288 on `main` at `42b828e` (#69's merge), attempt 1: iOS 27.2 passed 199 of 199; iOS 26.5 failed 1 of 119, `SignInUITests.testVerifyCodeIsPinnedAboveTheKeyboardAtTheLargestText`, in `settle(_:above:in:)`: the field's frame (16, 399, 370, 83) under Verify code (20, 476, 362, 78), "482 over 476" at all 8 reads over 2 seconds; the seventh failure of this kind, the first with #67's diagnostics. Its test log (`git show 2dcfe59c:main/42b828e/ios/logs/test-26.5.log` on `evidence`; attempt 2's evidence replaced the folder at `e238d094`) carries the tree in four activities: every element of the column is at the same position as the field, 190 points under where a passing run has them (Enter your code at y 37.3, Sent to ben@example.com at 184, the field at 399, the resend line at 611, Change email address at 708), the field has the keyboard's focus and the value 529614, the scroll view's bar says "Vertical scroll bar, 3 pages" with the value 61%, Verify code is pinned at 476 to 554 and the keyboard's input view starts at 566. So the whole column and the scroll bar agree with the stuck frame. What the run doesn't have is the screen: `settle` ends the test before `assertPinned`'s first screenshot, and the attachment manifest is empty (`ios_steps.py` collects no text attachment), so it can't say whether the screen was there too, or only the tree, as block 1.3's Next 1 has it from the six earlier failures' screenshots. Attempt 2 (the failed job re-run once): green, 199 and 119.
@@ -3636,6 +3636,14 @@ A new `docs/LIMITATIONS.md` row too: two database-backed runs at once on the ses
 **Next:** Push, check `ci`, then PR #11's description and the founder (block 1.2's Next steps 1 and 2).
 
 ### 3.3 ios lane
+
+#### 2026-11-19 03:47 UTC · ios · ios/b0-pin-stuck-shot-check · PR none
+**Did:** A probe on the check branch `ios/b0-pin-stuck-shot-check`, which never merges: `settle(_:above:in:)` in `apps/ios/TadayoUITests/SignInUITests.swift` takes its stuck path every time (`if !settled || true`), red by design.
+**Why:** The stuck path's lines run only when the pin test fails, which is rare, so nothing has shown the new screenshot and ring reading working. This run takes the path on a settled screen on both runtimes, to show that the screenshot is taken, the ring is read from it and logged, the tree follows, and the failure is recorded last.
+**Verified:** In the session: `git diff 89bbf12 --stat` shows `SignInUITests.swift` alone, with this entry; `swift format lint --strict --configuration apps/ios/.swift-format --recursive apps/ios` passes.
+**Not verified:** The result: the `ios` run comes after the push. It shows the path on a settled screen, not on a stuck one.
+**Decisions and questions:** None.
+**Next:** Read both runtimes' test logs on this commit for the ring's activity on the stuck path, and record them in the PR of `ios/b0-pin-stuck-shot`.
 
 #### 2026-11-19 03:46 UTC · ios · ios/b0-pin-stuck-shot · PR none
 **Did:** The pin test's stuck path keeps the screen (`ios/b0-pin-stuck-shot`, block 1.3's Next 1), in `apps/ios/TadayoUITests/SignInUITests.swift` only: `stuck(_:_:after:)` takes the code field too, takes a screenshot before it reads the tree, keeps it (`kept(_:as:)`, `stuck-frame`), and logs `drawnRing`'s reading of it as an activity; `settle(_:above:in:)` passes the field. Records: block 1.3 (this branch with the failure's facts; #69's merge, commit C's runs, the merge commit's `ci` and `main`'s runs; Next 1 and 2), section 4.2's #69 row finished and this branch's row, `docs/PROGRESS.md`.

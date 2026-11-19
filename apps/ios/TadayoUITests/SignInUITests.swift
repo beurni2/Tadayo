@@ -423,7 +423,7 @@ final class SignInUITests: XCTestCase {
             named: "The code field's foot over Verify code's top, read \(read.count) "
                 + "times: \(read.joined(separator: ", "))"
         ) { _ in }
-        if !settled {
+        if !settled || true {
             let frames = "the field's frame \(field.frame) stayed under Verify code \(verify.frame)"
             stuck(app, field, after: read)
             XCTFail("\(frames) for 2 seconds: \(read)", line: line)
