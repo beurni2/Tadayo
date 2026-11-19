@@ -14,10 +14,12 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   chooseDays,
+  chooseNextDayOf,
   chosenDay,
   dayInstants,
   daysByClub,
   listClubs,
+  nextDaysByStar,
   prepareClock,
   type ClubDayFacts,
   type DayChoice,
@@ -195,12 +197,55 @@ async function factsOf(tx: WorldTx, viewer: string, club: string): Promise<ClubD
   };
 }
 
-/** Both paths at `instant`, which must agree whole; returns their answer. */
+/**
+ * Each active member's next day for `viewer` at `now` by the SQL path (`nextDaysByStar`, the roster's next
+ * dates), by the member's interval: no entry at all when the path lists nothing of the club.
+ */
+async function byStarSql(tx: WorldTx, viewer: string, club: string, now: ServerNow) {
+  const rows = await tx<{ star_interval_id: string; next_day: unknown }[]>`
+    SELECT d.star_interval_id, d.next_day FROM (${nextDaysByStar(tx, viewer, now)}) d WHERE d.club_id = ${club}`;
+  const found = new Map(rows.map((row) => [row.star_interval_id, chosenDay(row.next_day, "collecting")]));
+  if (found.size !== rows.length) throw new Error("nextDaysByStar listed a member twice");
+  return found;
+}
+
+/** The same by the policy on this test's facts: every active member, when the rule lets the viewer see the club. */
+async function byStarPolicy(tx: WorldTx, facts: ClubDayFacts | null, club: string, now: ServerNow) {
+  const found = new Map<string, DayChoice["next"]>();
+  if (
+    facts === null ||
+    !(facts.viewerAccount === "active" && facts.viewerInterval === "active" && facts.clubSuspendedAt === null)
+  ) {
+    return found;
+  }
+  const members = await tx<{ interval_id: string }[]>`
+    SELECT interval_id FROM app.memberships WHERE club_id = ${club} AND state = 'active'`;
+  for (const member of members) found.set(member.interval_id, chooseNextDayOf(facts, member.interval_id, now));
+  return found;
+}
+
+/**
+ * Both paths at `instant`, which must agree whole; returns their answer. Each member's next day is held the
+ * same way at every instant asked: the SQL that lists it and the policy on the same facts.
+ */
 async function both(tx: WorldTx, viewer: string, club: string, instant: Temporal.Instant): Promise<DayChoice> {
   const now = await sample(tx, instant);
   const sql = await bySql(tx, viewer, club, now);
-  const policy = chooseDays(await factsOf(tx, viewer, club), now);
+  const facts = await factsOf(tx, viewer, club);
+  const policy = chooseDays(facts, now);
   expect(sql, `the SQL and the policy at ${instant.toString()}`).toEqual(policy);
+  const starsSql = await byStarSql(tx, viewer, club, now);
+  const starsPolicy = await byStarPolicy(tx, facts, club, now);
+  expect(starsSql, `each member's next day, the SQL and the policy, at ${instant.toString()}`).toEqual(starsPolicy);
+  // The club's next day is the earliest of its members' next days, or one whose star is no longer active.
+  const earliest = [...starsSql.values()]
+    .filter((day) => day !== null)
+    .sort((a, b) => Temporal.Instant.compare(a.revealAt, b.revealAt))[0];
+  if (earliest !== undefined) {
+    expect(sql.next).not.toBeNull();
+    if (sql.next !== null)
+      expect(Temporal.Instant.compare(sql.next.revealAt, earliest.revealAt)).toBeLessThanOrEqual(0);
+  }
   return sql;
 }
 

@@ -11,7 +11,8 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, describe, expect, it } from "vitest";
+import { forgetCommittedDays } from "./week-world.ts";
 
 const SERVICES = join(import.meta.dirname, "..", "..", "..", "services");
 const url = process.env.DATABASE_URL ?? "";
@@ -24,6 +25,10 @@ const AT_READY = pathToFileURL(join(import.meta.dirname, "signal-at-ready.ts")).
 afterEach(() => {
   for (const child of running.splice(0)) child.kill("SIGKILL");
 });
+
+// A started worker makes the days of whatever committed club another file left with a week, by the real
+// clock, and commits them: none may stay (week-world.ts, forgetCommittedDays).
+afterAll(forgetCommittedDays);
 
 function start(
   service: "api" | "worker",
@@ -201,9 +206,9 @@ describe("the API's entry against the test database", () => {
 });
 
 describe("the worker's entry against the test database", () => {
-  it("starts with prod and stays up, with no jobs yet, until it is told to stop", async () => {
+  it("starts with prod and stays up, making days, until it is told to stop", async () => {
     const worker = start("worker", "prod");
-    expect(await waitFor(worker, /worker: started, with no jobs yet\n/), worker.output.stderr).not.toBeNull();
+    expect(await waitFor(worker, /worker: started, making days every minute\n/), worker.output.stderr).not.toBeNull();
     // Nothing ends it: a worker that exited would leave its Machine stopped (a clean exit isn't restarted).
     await new Promise((done) => setTimeout(done, 1_500));
     expect(worker.child.exitCode).toBeNull();
@@ -228,7 +233,7 @@ describe("the worker's entry against the test database", () => {
     async (signal) => {
       const worker = start("worker", "prod", {}, signal);
       expect(await worker.exited, `${worker.output.stdout}${worker.output.stderr}`).toBe(0);
-      expect(worker.output.stdout).toBe(`worker: started, with no jobs yet\nworker: stopped on ${signal}\n`);
+      expect(worker.output.stdout).toBe(`worker: started, making days every minute\nworker: stopped on ${signal}\n`);
       expect(worker.output.stderr).toBe("");
     },
     30_000,

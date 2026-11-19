@@ -129,15 +129,23 @@ const second = (instant: Temporal.Instant) => instant.toString({ smallestUnit: "
  * the authorization module: none in a suspended club; a day only while it is scheduled and its star neither
  * left nor asked to delete their account before its reveal; open while reveal_at <= now < close_at, next the
  * earliest reveal after now; the star by the name members see, with their avatar's version only while their
- * interval and their account are both active; and a day whose star has no name to show is never given.
+ * interval and their account are both active; and a day whose star has no name to show is never given. With
+ * `star`, the same two among the days of that one member (an interval): the roster's next day for them.
  */
-export function daysOf(world: WorldFacts, club: string, now: Temporal.Instant): { open?: unknown; next?: unknown } {
+export function daysOf(
+  world: WorldFacts,
+  club: string,
+  now: Temporal.Instant,
+  star?: string,
+): { open?: unknown; next?: unknown } {
   if (world.clubs.get(club)?.suspendedAt !== null) return {};
   const before = (a: Temporal.Instant, b: Temporal.Instant) => Temporal.Instant.compare(a, b) < 0;
+  const only = star;
   const days = [...world.days]
     .map(([id, day]) => ({ id, day, star: world.members.get(day.star) }))
     .filter(({ day, star }) => {
       if (day.club !== club || day.status !== "scheduled" || star === undefined || star.name === null) return false;
+      if (only !== undefined && day.star !== only) return false;
       const account = world.accounts.get(star.account);
       const left = star.leftAt !== null && before(star.leftAt, day.revealAt);
       const asked = account?.deletionRequestedAt ?? null;

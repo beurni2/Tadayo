@@ -79,7 +79,7 @@ const ID = /^[A-Za-z0-9_-]{1,64}$/;
 const DATE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
 
 /** A person as jsonb, by FQ75's rule; it names its statement's aliases: `s` the interval, `su` the account. */
-function person<F>(sql: FragmentSql<F>): F {
+export function person<F>(sql: FragmentSql<F>): F {
   return bound(sql)`
     pg_catalog.jsonb_build_object(
       'membership_id', s.interval_id,
@@ -134,7 +134,7 @@ function fromMonday<T extends { readonly weekday: Weekday }>(rows: readonly T[])
   return [...rows].sort((a, b) => WEEKDAYS.indexOf(a.weekday) - WEEKDAYS.indexOf(b.weekday));
 }
 
-function personOf(value: unknown): { readonly id: string; readonly person: SchedulePerson | null } {
+export function personOf(value: unknown): { readonly id: string; readonly person: SchedulePerson | null } {
   const row = record(value);
   const id = text(row["membership_id"]);
   const name = optionalText(row["name"]);

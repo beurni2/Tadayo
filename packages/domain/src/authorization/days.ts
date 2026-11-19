@@ -7,6 +7,10 @@
 // (`chooseDays`). The two state the same rule, condition by condition, and
 // tests/src/db/home-days.test.ts runs both on the same rows.
 //
+// The roster's next dates are the same rule asked of one member (listMembers; spec 09, 32): the next
+// day among those whose star is that member, by the SQL (`nextDaysByStar`) or by the policy
+// (`chooseNextDayOf`), the pair run on the same rows by the same test.
+//
 // The rule:
 // - Only the viewer's clubs: their account is active and they have an active interval there. A
 //   stranger, a former member or a guessed id gets nothing (T14); a rejoined member gets the club's
@@ -157,14 +161,27 @@ export function chooseDays(facts: ClubDayFacts | null, now: ServerNow): DayChoic
   };
 }
 
+/**
+ * The next day of the member `starInterval` for the viewer at `now`: `chooseDays`' next, among the days
+ * whose star is that member; null for facts that are null or that deny, and when the member has none.
+ */
+export function chooseNextDayOf(facts: ClubDayFacts | null, starInterval: string, now: ServerNow): ChosenDay | null {
+  if (facts === null) return null;
+  return chooseDays({ ...facts, days: facts.days.filter((day) => day.starInterval === starInterval) }, now).next;
+}
+
 type Bound<F> = (template: TemplateStringsArray, ...values: readonly (string | Temporal.Instant | F)[]) => F;
 
 function bound<F>(sql: FragmentSql<F>): Bound<F> {
   return sql as unknown as Bound<F>;
 }
 
-/** One of a club's two days, as a scalar subquery on the outer statement's club `c`. */
-function oneDay<F>(sql: FragmentSql<F>, now: ServerNow, phase: ChosenPhase): F {
+/**
+ * One of a club's two days, as a scalar subquery on the outer statement's club `c`; with `ofMember`, the
+ * day of that kind whose star is the outer statement's membership `sm`.
+ */
+function oneDay<F>(sql: FragmentSql<F>, now: ServerNow, phase: ChosenPhase, ofMember = false): F {
+  const whose = ofMember ? bound(sql)`o.star_interval_id = sm.interval_id` : bound(sql)`TRUE`;
   const when =
     phase === "open"
       ? bound(sql)`o.reveal_at <= ${now}::pg_catalog.timestamptz AND ${now}::pg_catalog.timestamptz < o.close_at`
@@ -187,8 +204,31 @@ function oneDay<F>(sql: FragmentSql<F>, now: ServerNow, phase: ChosenPhase): F {
        AND ${starKeepsDay(sql)}
        AND (CASE WHEN s.state = 'active' THEN su.display_name ELSE s.ended_display_name END) IS NOT NULL
        AND ${when}
+       AND ${whose}
      ORDER BY o.reveal_at, o.id
      LIMIT 1`;
+}
+
+/**
+ * Each active member of each club of `viewer`'s with that member's next day at `now`, as a subquery of
+ * rows `(club_id, star_interval_id, next_day)`: the roster's next dates (listMembers; spec 09, 32). A
+ * member's next day is the club's next-day rule above, among the days whose star is that member: the
+ * earliest reveal after `now` of a scheduled day that isn't held, or null when they have none (T49). It
+ * lists only the clubs `daysByClub` lists, by the same three conditions, so a caller joins it on its own
+ * club and member ids with no check of its own (T9, T14).
+ */
+export function nextDaysByStar<F>(sql: FragmentSql<F>, viewer: string, now: ServerNow): F {
+  checkViewer(viewer);
+  checkNow(now);
+  return bound(sql)`
+    SELECT c.id AS club_id, sm.interval_id AS star_interval_id,
+           (${oneDay(sql, now, "collecting", true)}) AS next_day
+      FROM app.clubs c
+      JOIN app.memberships sm ON sm.club_id = c.id AND sm.state = 'active'
+     WHERE c.suspended_at IS NULL
+       AND EXISTS (SELECT FROM app.memberships m JOIN app.users u ON u.id = m.user_id
+                    WHERE m.club_id = c.id AND m.user_id = ${viewer}::pg_catalog.text
+                      AND m.state = 'active' AND u.state = 'active')`;
 }
 
 /**
