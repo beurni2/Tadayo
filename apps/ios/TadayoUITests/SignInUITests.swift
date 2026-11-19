@@ -59,11 +59,18 @@ final class SignInUITests: XCTestCase {
         app.typeText("x")
         XCTAssertEqual(field.value as? String, "ben@example.com")
         XCTAssertTrue(app.staticTexts["What’s your email?"].exists)
+        // Return after Send a code starts no send; the code on its way puts the focus back.
+        app.typeText("\n")
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        app.typeText("x")
+        XCTAssertEqual(field.value as? String, "ben@example.com")
+        XCTAssertTrue(app.keyboards.firstMatch.exists)
     }
 
     /// The keyboard's return key sends a code too, and the field keeps its focus and its keyboard
     /// while it goes, as it does when Send a code is tapped: Return ends a field's editing, and
-    /// the screen puts the focus back. `typeText` fails the test if no element has the focus.
+    /// the screen puts the focus back, also when Return is pressed again while the code is on its
+    /// way, which starts no send. `typeText` fails the test if no element has the focus.
     @MainActor func testSendingFromTheReturnKeyKeepsTheFocus() {
         let app = launch("-TadayoUITestHangingSend")
         let field = app.textFields["Email address"]
@@ -77,6 +84,11 @@ final class SignInUITests: XCTestCase {
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
         app.typeText("x")
         XCTAssertEqual(field.value as? String, "ben@example.com")
+        app.typeText("\n")
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        app.typeText("x")
+        XCTAssertEqual(field.value as? String, "ben@example.com")
+        XCTAssertTrue(app.keyboards.firstMatch.exists)
     }
 
     /// Sign-in to its end on stand-in services. Back and Change email address return to A02-email
