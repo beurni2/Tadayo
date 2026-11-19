@@ -571,3 +571,11 @@ The founder's addendum (`docs/tadayo-new-direction-addendum-r1.md`, ADR-035) lea
     - The other reading: the member is left out of the roster from the request on, as if already gone, which tells the club of the request at once.
     - Needed by: B6 (account deletion).
 
+
+## Raised by B1's first clubs PR (`api/b1-create-club`)
+
+- **FQ118. How many clubs one account may make or belong to.** Spec 03 and 04 say a club holds two to six people and say nothing of how many clubs a person has. `createClub` answers 201 or a refusal the contract lists, and the contract has no code for "too many clubs". `GET /v1/clubs` gives an account's first 50 clubs, by when it joined (`packages/domain/src/clubs/club-list.ts`, `LIST_LIMIT`).
+    - Default: no cap in the closed trial. Anyone signed in with a finished profile can make a club, any number of times; each needs its own idempotency key, so a retry never makes a second one (T19). A club made and never used stays proposed with one member, and nobody else sees it.
+    - The other reading: a cap (a handful of clubs per account, or of clubs still proposed), refused with a code of its own. That needs a contract PR for the code, copy for the refusal (a handoff) and a rule for which clubs count.
+    - The cost of the default: an account can fill the database with empty clubs, one request each. The trial's accounts are the founder's friends; before a wider release, a cap or a rate limit should come.
+    - Needed by: B8, or sooner if you prefer a cap.

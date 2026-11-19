@@ -19,7 +19,10 @@ import type { ServerNow } from "../time/clock.ts";
 import { clubState, type ClubState } from "./club-state.ts";
 import { invitationState, type InvitationState } from "./invitation-state.ts";
 
-/** The contract's bound on each list. A person's clubs are capped in B1; no row can pass this in B0. */
+/**
+ * The contract's bound on each list. Nothing caps how many clubs an account makes or joins yet (FQ118), so an
+ * account in more than this many sees its oldest memberships only.
+ */
 export const LIST_LIMIT = 50;
 
 export interface ClubRow {
@@ -90,7 +93,8 @@ function dayOf(value: unknown, phase: "open" | "collecting", club: string): Chos
   return day;
 }
 
-function club(value: unknown): ClubRow {
+/** One club as the list's statement and the club's own read (./club.ts) build it. */
+export function clubRow(value: unknown): ClubRow {
   const row = record(value);
   const count = row["member_count"];
   if (typeof count !== "number" || !Number.isInteger(count) || count < 1) throw shape();
@@ -172,7 +176,7 @@ export async function listClubs(sql: QuerySql, userId: string, now: ServerNow): 
   const row = rows[0];
   if (row === undefined) throw shape();
   return {
-    clubs: list(row["clubs"]).map(club),
+    clubs: list(row["clubs"]).map(clubRow),
     invitations: list(row["invitations"]).map(invitation),
   };
 }

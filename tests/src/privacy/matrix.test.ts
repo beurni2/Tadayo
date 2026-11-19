@@ -32,6 +32,17 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { worldSql, type Tx, type WorldTx } from "../db/harness.ts";
 import { AT, checkAsAtCommit, commitDrop, named, newAvatar, newWorld, type World } from "../db/world.ts";
 import { PHASES, REVEAL, ROLES, STATES, type Phase } from "../matrix.ts";
+import {
+  CREATE_CLUB_NO_BODY,
+  clubExpected,
+  clubFor,
+  clubRowsOf,
+  createClubCases,
+  createdClubId,
+  newClubProblems,
+  sameDetail,
+  type ClubSeen,
+} from "./club.ts";
 import { PUBLIC, cellExpected, daysOf, gateOf, sessionOf, updateMeCases, type Own, type Session } from "./account.ts";
 import { freshId, type Targets } from "./bindings.ts";
 import {
@@ -496,7 +507,10 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
         const authorization = bearer(await keys.signer.token(account.subject));
         const viewerClubs = await db<{ club_id: string }[]>`
           SELECT club_id FROM app.memberships WHERE user_id = ${cell.viewer}`;
+        // The clubs the facts are read from: the viewer's own `createClub` adds each club it makes.
         const clubs = [...new Set([cell.w.club, elsewhere.club, ...viewerClubs.map((row) => row.club_id)])];
+        const made: string[] = [];
+        let tablesThrough = 0;
         const load = () =>
           factsOf(clubs, cell.viewer, {
             accounts: [cell.w.dan.user],
@@ -504,8 +518,11 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
           });
         let facts = await load();
         // The schedule's rows of the cell's club and the other club, read again after each request that may change them.
-        const loadSchedule = () => scheduleWorldOf(db as unknown as WorldTx, [cell.w.club, elsewhere.club]);
+        const loadSchedule = () => scheduleWorldOf(db as unknown as WorldTx, [cell.w.club, elsewhere.club, ...made]);
         let schedule = await loadSchedule();
+        // The clubs' own rows (club.ts), read again with the schedule's.
+        const loadClubRows = () => clubRowsOf(db as unknown as WorldTx, [cell.w.club, elsewhere.club, ...made]);
+        let clubRows = await loadClubRows();
         const startVersion = schedule.proposals.get(cell.targets.proposal)?.version ?? -1;
         // A schedule command's generic request carries a body the contract accepts and every rule refuses
         // (schedule.ts's genericBody), so the guessed and malformed ids beside it are judged past the body's check.
@@ -531,17 +548,26 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             ...scheduleSeen(),
             nextOf: (star) => daysOf(facts.world, cell.w.club, now, star).next,
           });
+          const clubSeen = (): ClubSeen => ({
+            ...scheduleSeen(),
+            rows: clubRows,
+            daysOf: (club) => daysOf(facts.world, club, now),
+          });
           for (const spec of specs) {
             const gate = gateOf(session, spec.operation);
             const id = spec.operation.id;
             const expected =
               gate === undefined && id === "listMembers"
                 ? membersExpected(membersSeen, cell.w.club)
-                : gate !== undefined || !SCHEDULE_JUDGED.has(id)
-                  ? cellExpected(session, spec.operation, seen)
-                  : id === "getSchedule"
-                    ? weekExpected(scheduleSeen, cell.w.club)
-                    : commandExpected(scheduleSeen, id as ScheduleCommand, cell.targets.proposal, startVersion);
+                : gate === undefined && id === "getClub"
+                  ? clubExpected(clubSeen, cell.w.club)
+                  : gate === undefined && id === "createClub"
+                    ? CREATE_CLUB_NO_BODY
+                    : gate !== undefined || !SCHEDULE_JUDGED.has(id)
+                      ? cellExpected(session, spec.operation, seen)
+                      : id === "getSchedule"
+                        ? weekExpected(scheduleSeen, cell.w.club)
+                        : commandExpected(scheduleSeen, id as ScheduleCommand, cell.targets.proposal, startVersion);
             counted.cells += 1;
             counted.expectedAnswers += 1 + guessCount(spec);
             record(await cellStep(app, spec, expected));
@@ -604,6 +630,67 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             ageConfirmed: profile.age_confirmed,
             name: profile.name,
           });
+          // createClub's table of bodies (club.ts): what the contract refuses, then one club made, its retry
+          // and another body under its key. The club it makes joins the clubs the facts are read from, and its
+          // creator then reads it with getClub.
+          const create = specs.find((spec) => spec.operation.id === "createClub");
+          const read = specs.find((spec) => spec.operation.id === "getClub");
+          if (create === undefined || read === undefined) throw new Error("the contract has no createClub or getClub");
+          const clubName = `${named(cell.w, "Made")} ${String(index)}`;
+          let createdSaid: string | undefined;
+          for (const one of createClubCases(clubName)) {
+            const request = render({
+              ...create,
+              headers: { ...create.headers, "content-type": "application/json" },
+              body: one.body,
+            });
+            if (one.key === null) delete request.headers["idempotency-key"];
+            else request.headers["idempotency-key"] = one.key;
+            counted.expectedBodies += 1;
+            counted.expectedAnswers += 1;
+            const answer = await answerOf(app, request);
+            counted.bodies += 1;
+            const problems: string[] = [];
+            const gate = gateOf(sessionNow, create.operation);
+            let club: string | undefined;
+            if (gate !== undefined) problems.push(...pinnedProblems(answer, gate));
+            else if (one.expected === "created") {
+              club = createdClubId(answer);
+              if (club === undefined) problems.push(`status ${String(answer.status)}, not 201 with a new club`);
+              else {
+                clubs.push(club);
+                made.push(club);
+                facts = await load();
+                schedule = await loadSchedule();
+                clubRows = await loadClubRows();
+                const want = clubFor(schedule, clubRows, club, cell.viewer, now, clubSeen().daysOf);
+                if (want === undefined) problems.push("the creator can't read the club just made");
+                else problems.push(...sameDetail(201, want)(answer), ...newClubProblems(answer, clubName));
+                createdSaid = said(answer);
+              }
+            } else if (one.expected === "replay") {
+              // A retry under its key is the first answer, byte for byte at the same server time (T19), and
+              // makes no second club: the viewer's clubs are judged again below and in the next phase.
+              if (createdSaid === undefined || createdSaid !== said(answer))
+                problems.push("a retry under its key got another answer than the first (T19)");
+            } else problems.push(...pinnedProblems(answer, one.expected));
+            record({
+              problems: problems.map((problem) => `createClub: ${problem} (${one.name})`),
+              answers: [{ spec: { ...create, body: one.body }, answer }],
+            });
+            if (club !== undefined) {
+              // The new club, read by its creator, and the creator's clubs, which now hold it once.
+              counted.expectedAnswers += 2;
+              record(await cellStep(app, { ...read, path: { club_id: club } }, clubExpected(clubSeen, club)));
+              const list = specs.find((spec) => spec.operation.id === "listClubs");
+              if (list === undefined) throw new Error("the contract has no listClubs");
+              record(await cellStep(app, list, cellExpected(sessionNow, list.operation, seen)));
+            }
+          }
+          // One club for each table the gate let through: the retry and the refused bodies made none.
+          if (gateOf(sessionNow, create.operation) === undefined) tablesThrough += 1;
+          if (made.length !== tablesThrough)
+            wrong.push(`${state.name}, ${phase}: ${String(made.length)} clubs made by ${String(tablesThrough)} tables`);
           const last = index === phases.length - 1;
           const scheduleGroups = new Map<string, string>();
           let previous: { key: string; said: string } | undefined;
