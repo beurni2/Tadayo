@@ -5,8 +5,8 @@
 // causes behind it ran: the 401 for a missing header, a bad token and a deleting account is the same
 // string (T14's one-answer rule; the gate's tests compare them byte for byte).
 
-import type { ErrorCodeName } from "@tadayo/contracts";
-import { statusOf } from "@tadayo/contracts";
+import { ERRORS, statusOf, type ErrorCodeName } from "@tadayo/contracts";
+import type { Refused } from "@tadayo/domain";
 import type { FastifyReply } from "fastify";
 
 /** Every answer with a body is for the caller alone (the contract; T11, T12). */
@@ -18,6 +18,8 @@ export interface ErrorFacts {
   /** The first bad field of the request, by name: never its value. */
   readonly field?: string;
   readonly current_version?: number;
+  /** The newer revision or proposal that replaced the one the request named. */
+  readonly current_id?: string;
 }
 
 /** An error as the contract has it: its status, and a body of its code and `facts`. */
@@ -27,6 +29,19 @@ export function problem(reply: FastifyReply, code: ErrorCodeName, facts: ErrorFa
     .header("cache-control", NO_STORE)
     .type(JSON_TYPE)
     .send(JSON.stringify({ code, ...facts }));
+}
+
+/** The `Idempotency-Key` header: a UUID. */
+export const IDEMPOTENCY_KEY = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isErrorCode(code: string): code is ErrorCodeName {
+  return Object.hasOwn(ERRORS, code);
+}
+
+/** A command's refusal as the contract's answer; a code that isn't the contract's is a bug, which is a 500. */
+export function refusal(reply: FastifyReply, refused: Refused): FastifyReply {
+  if (!isErrorCode(refused.code)) throw refused;
+  return problem(reply, refused.code, refused.facts);
 }
 
 /** A success: `body` as JSON, which only the caller may keep. */

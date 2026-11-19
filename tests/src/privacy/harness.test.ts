@@ -28,8 +28,7 @@ import {
   type Spec,
 } from "./harness.ts";
 import { contractOperations, readDocument, type ContractOperation } from "./operations.ts";
-import { JUDGED } from "./account.ts";
-import { NONE, ROWS, rowProblems } from "./rows.ts";
+import { JUDGED, NONE, ROWS, rowProblems } from "./rows.ts";
 import { transportProblem } from "./scanner.ts";
 
 const operations = contractOperations(readDocument());
@@ -47,6 +46,7 @@ const here: Targets = {
   day: "occ_here",
   author: "itv_here",
   star: "itv_star_here",
+  proposal: "spr_here",
 };
 const elsewhere: Targets = {
   club: "clb_there",
@@ -54,6 +54,7 @@ const elsewhere: Targets = {
   day: "occ_there",
   author: "itv_there",
   star: "itv_star_there",
+  proposal: "spr_there",
 };
 const LATER = Temporal.Instant.from("2026-11-08T07:00:00Z");
 

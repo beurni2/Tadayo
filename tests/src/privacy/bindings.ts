@@ -15,6 +15,8 @@ export interface Targets {
   author: string;
   /** The day's star's membership interval, Ana's. */
   star: string;
+  /** The club's open schedule proposal: the matrix's first days (schedule.ts). */
+  proposal: string;
 }
 
 /** A fresh id that names nothing, in the contract's `Id` shape (T14: a guessed id). */
@@ -32,10 +34,10 @@ export const BINDINGS: Readonly<Record<string, ((targets: Targets) => string) | 
   drop_id: (targets) => targets.drop,
   membership_id: (targets) => targets.author,
   occurrence_id: (targets) => targets.day,
+  proposal_id: (targets) => targets.proposal,
   star: (targets) => targets.star,
   comment_id: "missing",
   invitation_id: "missing",
-  proposal_id: "missing",
   reservation_id: "missing",
   revision_id: "missing",
   upload_id: "missing",

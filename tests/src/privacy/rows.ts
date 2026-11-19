@@ -58,16 +58,21 @@
 //   membership changes;
 // - for a route that changes the world (a commit, a reservation, a leave, a block), the facts each
 //   answer is scanned against, read from the world after it (scanner.ts, its header);
-// - for the schedule's routes (getSchedule, chooseScheduleDays, confirmScheduleDays and listMembers, B2's
-//   schedule slice; getHome, listClubs' `next_day` and a revealed day's `add_target` where a schedule's
-//   day shows), what the contract gives each viewer (B2's contract PR; `Schedule`'s description, T55),
+// - for the schedule's routes built by B2's schedule slice (getSchedule, chooseScheduleDays and
+//   confirmScheduleDays, done for the club's first days): what the contract gives each viewer (B2's contract
+//   PR; `Schedule`'s description, T55), judged from the world's rows by schedule.ts: `held_by` only to a
+//   member still choosing, `holders` only to the members who hold the day, no name on a `no_reveal` day,
+//   `first_date` only on a confirmed day whose owner is still a member; `current` alone to an active member
+//   the open proposal doesn't include (FQ100); a proposal's `version` unchanged by a choice or by a
+//   confirmation that leaves its `state` as it was, and moved with `state` when the first days apply (T33);
+//   and the neutral not-found before any other code to a caller the proposal doesn't include (T9, T14).
+//   The leak scanner can't judge these: it accepts any person of a club the viewer is in (scanner.ts), so
+//   each row judges them.
+// - for the schedule's routes still to come (listMembers and the membership change, B2's later schedule
+//   PRs; getHome, listClubs' `next_day` and a revealed day's `add_target` where a schedule's day shows),
 //   each as a check a row can run:
-//   - `held_by` only to a member still choosing in the club's first days and to every member of a
-//     membership change; `holders` only to the members who hold the day; no name on a `no_reveal` day;
-//     `first_date` only on a day confirmed in the first days whose owner is still a member; `announced`
-//     only in a membership change, never to its new member, and never in the first days;
-//   - getSchedule to an active member the open proposal doesn't include (one who joined after the first
-//     days' first confirmation, FQ100) with `current` alone and no `proposal`;
+//   - `held_by` to every member of a membership change; `announced` only in a membership change, never to
+//     its new member, and never in the first days;
 //   - a membership change's answers to a viewer the same before and after any other member's
 //     confirmation at the same server time: only `my_state` changes, on the viewer's own, and `announced`
 //     only as its days close; and before its start no member's `position`, `next_day` or `next_up` in
@@ -79,17 +84,15 @@
 //     moves only when the first days apply, on their last confirmation or on a leave that leaves only
 //     confirmed members, to the schedule's order (FQ98, FQ102);
 //   - after a leave, the leaver in no `held_by` or `holders`, and still the `owner` of a day they
-//     confirmed, with no `first_date` (FQ63, FQ102);
-//   - a proposal's `version` unchanged by a choice, or by a confirmation or a leave that leaves its `state`
-//     as it was; moved by a revision of the first days, and with `state` when they apply (T33, FQ102);
-//   - the neutral not-found before any other code to a caller without an active membership in the
-//     proposal's club, a former member listed in a replaced proposal among them, and to an active member
-//     whose current membership the proposal doesn't include, one who left and rejoined among them (T9,
-//     T14; spec 07; FQ100).
-//   The leak scanner can't judge these: it accepts any person of a club the viewer is in (scanner.ts), so
-//   each row judges them.
+//     confirmed, with no `first_date` (FQ63, FQ102), once a leave frees a leaver's holds (the first days'
+//     roster PR); a revision of the first days moving the `version` (FQ102); and a former member listed in
+//     a replaced proposal getting the neutral not-found.
 
-import { JUDGED } from "./account.ts";
+import { JUDGED as ACCOUNT_JUDGED } from "./account.ts";
+import { SCHEDULE_JUDGED } from "./schedule.ts";
+
+/** The operations some file judges: the account routes (slice 8) and the schedule routes (B2's schedule slice). */
+export const JUDGED: ReadonlySet<string> = new Set([...ACCOUNT_JUDGED, ...SCHEDULE_JUDGED]);
 
 const GATE =
   "the gate's one 401 to an account whose deletion has begun (T27) and to every caller without a session, " +
@@ -115,14 +118,30 @@ export const CLUBS = Object.freeze({
   answer: `200 with the viewer's active clubs and accepted invitations, in every state and phase (${GATE})`,
 });
 
+/** getSchedule (B2's schedule slice): the club's week for one of its members, whole, from the world's rows. */
+export const SCHEDULE = Object.freeze({
+  answer:
+    "200 with the club's Schedule as schedule.ts's weekFor makes it from the world's rows, to an account with an " +
+    "active interval in a club that isn't suspended: `current`, and the open proposal only when it includes that " +
+    `interval (FQ100), each slot naming only whom the contract gives that viewer; the neutral NOT_FOUND to every other role the gate lets through (${GATE})`,
+});
+
+/** chooseScheduleDays and confirmScheduleDays (B2's schedule slice): schedule.ts's table of bodies. */
+export const SCHEDULE_COMMAND = Object.freeze({
+  answer:
+    "each body of schedule.ts's table answered as its outcomeOf says from the world's rows: INVALID_REQUEST to " +
+    "what the contract refuses, then the neutral NOT_FOUND to anyone the proposal doesn't include, MEMBERSHIP_CHANGED, " +
+    `VERSION_CONFLICT, NOT_ALLOWED, or 200 with the proposal as the viewer sees it after the change (${GATE})`,
+});
+
 export const ROWS: Readonly<Record<string, unknown>> = {
   acceptInvitation: NONE,
   approveRoster: NONE,
   blockMember: NONE,
-  chooseScheduleDays: NONE,
+  chooseScheduleDays: SCHEDULE_COMMAND,
   clearReaction: NONE,
   completeUpload: NONE,
-  confirmScheduleDays: NONE,
+  confirmScheduleDays: SCHEDULE_COMMAND,
   createClub: NONE,
   createComment: NONE,
   createDrop: NONE,
@@ -150,7 +169,7 @@ export const ROWS: Readonly<Record<string, unknown>> = {
   getOccurrence: NONE,
   getOwnDay: NONE,
   getRosterRevision: NONE,
-  getSchedule: NONE,
+  getSchedule: SCHEDULE,
   getUpload: NONE,
   hideDrop: NONE,
   leaveClub: NONE,
@@ -187,7 +206,7 @@ export const ROWS: Readonly<Record<string, unknown>> = {
 
 /**
  * What's wrong with `rows` for `operations`: an operation with no row, a row with no operation, a row that
- * isn't NONE and that nothing judges (account.ts's JUDGED, the operations whose cells it answers), and an
+ * isn't NONE and that nothing judges (JUDGED: the operations account.ts and schedule.ts answer), and an
  * operation it judges whose row is NONE, which would leave its judge unasked.
  */
 export function rowProblems(
