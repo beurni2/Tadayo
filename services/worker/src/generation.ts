@@ -7,8 +7,12 @@
 // No club can hold the others up. Each club's transaction waits at most LOCK_WAIT_MS for a lock (the
 // club's row, which every schedule command takes) and gives each statement at most STATEMENT_MS; past
 // either, that club's run fails, is reported, and the pass goes on to the next club. The club is tried
-// again at the next pass. A pass told to stop finishes the club it is on and visits no other, so a stop
-// takes a few seconds at most, well inside the 30 seconds Fly gives (fly.toml, `kill_timeout`).
+// again at the next pass. A pass told to stop finishes the club it is on and visits no other. The limits
+// are each statement's, not the club's: a club's run is three statements and an insert for each day, so
+// its worst case is longer than either number, though each statement is small. The read of the work list
+// has no limit, and nothing here times out a connection that has gone silent. If a stop outlasts the 30
+// seconds Fly gives (fly.toml, `kill_timeout`), Fly ends the process; every club's days are one
+// transaction, so nothing is left half made (docs/LIMITATIONS.md).
 //
 // What it reports carries no content and names nobody (T52, T56): counts, and for a failure the club's
 // opaque id (T52 allows opaque ids, and a failure nobody can trace to its club can't be put right), the

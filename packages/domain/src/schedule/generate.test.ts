@@ -69,10 +69,11 @@ describe("the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ11
     expect(owed).not.toContain("2026-12-07");
   });
 
-  it("owes, seen from Friday 6 November at 9:41 AM, the 25 dates the contract's example announces", () => {
-    // packages/contracts/src/fixtures/examples-clubs.ts, `ktAnnounced`: Saturday 7 November to Saturday
-    // 5 December without the Sundays, written out here by hand; the change it shows starts on Monday
-    // 7 December (world.ts, `changeFrom`), the day after the window's end.
+  it("owes, seen from Friday 6 November at 9:41 AM, every date to Saturday 5 December, where the contract's example ends", () => {
+    // packages/contracts/src/fixtures/examples-clubs.ts, `ktAnnounced`, runs from Saturday 7 November to
+    // Saturday 5 December, and the change it shows starts on Monday 7 December (world.ts, `changeFrom`),
+    // the day after the window's end. For a week of six days that span is these 25 dates, written out by
+    // hand; the example's own club has no Friday, and its 21 are below.
     expect(dates(club(), "2026-11-06T14:41:00Z")).toEqual([
       "2026-11-07",
       "2026-11-09",
@@ -98,6 +99,37 @@ describe("the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ11
       "2026-12-02",
       "2026-12-03",
       "2026-12-04",
+      "2026-12-05",
+    ]);
+    // Kitchen table's week (world.ts, `rosters.kitchenTable`): every day but Friday, so 21 dates.
+    const noFriday = version("ver_1", "2026-10-05", [
+      ["monday", "ben", "2026-10-05"],
+      ["tuesday", "maya", "2026-10-06"],
+      ["wednesday", "alex", "2026-10-07"],
+      ["thursday", "sam", "2026-10-08"],
+      ["saturday", "nina", "2026-10-10"],
+    ]);
+    expect(dates(club({ activeMembers: 5, versions: [noFriday] }), "2026-11-06T14:41:00Z")).toEqual([
+      "2026-11-07",
+      "2026-11-09",
+      "2026-11-10",
+      "2026-11-11",
+      "2026-11-12",
+      "2026-11-14",
+      "2026-11-16",
+      "2026-11-17",
+      "2026-11-18",
+      "2026-11-19",
+      "2026-11-21",
+      "2026-11-23",
+      "2026-11-24",
+      "2026-11-25",
+      "2026-11-26",
+      "2026-11-28",
+      "2026-11-30",
+      "2026-12-01",
+      "2026-12-02",
+      "2026-12-03",
       "2026-12-05",
     ]);
   });

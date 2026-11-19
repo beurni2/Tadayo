@@ -6,7 +6,7 @@
 //
 // - The window is the club's own today at `now` through the Sunday that ends the fourth week after
 //   today's (WEEKS_AHEAD; weeks run Monday to Sunday), both dates in the club's zone. Seen from Friday
-//   6 November 2026 that is every day to Saturday 5 December, the contract's own example
+//   6 November 2026 that is every day to Saturday 5 December, where the contract's own example ends
 //   (packages/contracts/src/fixtures/examples-clubs.ts, `ktAnnounced`). The window's end moves once a
 //   week, at the club's Monday midnight, so the first Monday no day is made for yet, the earliest a
 //   changed week can start (FQ61), is the same all week.

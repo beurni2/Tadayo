@@ -7,8 +7,8 @@
 // club it is on and visits no other (generation.ts), and the worker ends its connection and exits 0. Its
 // handlers are in place before it says it started, so a signal sent as soon as that line is read stops
 // it cleanly too, never by the signal's default action, with no exit code; they stay in place, so a
-// second signal changes nothing and the stop under way still finishes. A pass that fails is reported, by the error's class and code alone, and tried again at the next
-// tick: a process that exited would leave its Machine stopped, since fly.toml's `[[restart]] on-failure`
+// second signal changes nothing and the stop under way still finishes. A pass that fails is reported,
+// by the error's class and code alone, and tried again at the next tick: a process that exited would leave its Machine stopped, since fly.toml's `[[restart]] on-failure`
 // restarts a failure and not a clean exit.
 
 import { describeFailure, generationPass, passLines } from "./generation.ts";

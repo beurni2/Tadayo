@@ -13,7 +13,7 @@ import { spawn } from "node:child_process";
 import { join } from "node:path";
 import { clubsWithAWeek } from "@tadayo/domain";
 import { fakeClock } from "@tadayo/domain/testing";
-import { generationPass, LOCK_WAIT_MS, type WorkerSql } from "@tadayo/worker";
+import { generationPass, LOCK_WAIT_MS, STATEMENT_MS, type WorkerSql } from "@tadayo/worker";
 import { afterAll, describe, expect, it } from "vitest";
 import { worldSql, type WorldTx } from "./harness.ts";
 import { clubOf, confirmedWeek, forgetCommittedDays, holding, waitingOn } from "./week-world.ts";
@@ -94,6 +94,35 @@ describe("a generation pass (spec 05, 34)", () => {
         made: 25,
         failures: [],
       });
+    },
+  );
+
+  it(
+    "gives up on a club when one statement of its run takes too long, with Postgres's code, and makes the next club's days",
+    { timeout: 40_000 },
+    async () => {
+      const slow = await db.begin((tx) => confirmedWeek(tx, 6, TIMES));
+      const quick = await db.begin((tx) => confirmedWeek(tx, 6, TIMES));
+      // A clock whose sample for the first club sleeps in the database past the statement limit.
+      const base = fakeClock(NOW);
+      let samples = 0;
+      const clock = {
+        ...base,
+        async sample(sql: Parameters<typeof base.sample>[0]) {
+          samples += 1;
+          if (samples === 1) {
+            await (sql as unknown as WorldTx)`SELECT pg_catalog.pg_sleep(${(STATEMENT_MS + 5_000) / 1_000})`;
+          }
+          return base.sample(sql);
+        },
+      };
+      const began = performance.now();
+      const result = await generationPass(worker, clock, only(slow.club, quick.club));
+      // 57014 is query_canceled: the statement limit ran out.
+      expect(result).toEqual({ clubs: 2, made: 25, failures: [`${slow.club}: PostgresError 57014`] });
+      expect(performance.now() - began).toBeLessThan(STATEMENT_MS + 4_000);
+      expect(await count(slow.club)).toBe(0);
+      expect(await count(quick.club)).toBe(25);
     },
   );
 
@@ -188,10 +217,17 @@ describe("the worker's process (T1)", () => {
       expect(await exited).toBe(0);
       expect(stdout).toMatch(/worker: stopped on SIGTERM\n$/);
       expect(stderr).toBe("");
-      // Its last day is the Saturday of the fourth week after this one in New York (FQ115), worked out
-      // here from the real date alone: this week's Monday plus 33 days. Its first is today's, if today
-      // isn't a Sunday and 7 AM there hasn't come, or else the next day that isn't a Sunday.
-      const zoned = real.toZonedDateTimeISO("America/New_York");
+      // Every day it made is dated from one sample of the server's clock, the pass's own (T1). From that
+      // instant alone, with none of the rule's code: its last day is the Saturday of the fourth week
+      // after that week in New York (FQ115), the week's Monday plus 33 days; its first is that date's
+      // own, if it isn't a Sunday and 7 AM there hadn't come, or else the next day that isn't a Sunday.
+      const sampled = await world<{ at: Temporal.Instant }[]>`
+        SELECT DISTINCT collecting_from AS at FROM app.occurrences WHERE club_id = ${mine.club}`;
+      expect(sampled).toHaveLength(1);
+      const sample = sampled[0]?.at ?? real;
+      // The server's clock is the real one: the sample is within the minute this test has had.
+      expect(Math.abs(sample.since(real).total("seconds"))).toBeLessThan(60);
+      const zoned = sample.toZonedDateTimeISO("America/New_York");
       const today = zoned.toPlainDate();
       const last = today.subtract({ days: today.dayOfWeek - 1 }).add({ days: 33 });
       const opened = today.dayOfWeek === 7 || zoned.hour >= 7;
