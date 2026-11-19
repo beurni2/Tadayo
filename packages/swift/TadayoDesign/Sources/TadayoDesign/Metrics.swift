@@ -145,9 +145,11 @@ public enum Size {
     /// The wordmark's band when the header stacks: the actions' row starts 48 under the header's
     /// top (handoff 7's `noClubRootHeader.largest`, `addTarget` [20, 104, 249, 76]).
     public static let headerWordmarkBand: CGFloat = 48
-    /// "+ Add"'s least width in the header's one row, and its words from its leading edge
-    /// (handoff 7's `noClubRootHeader.addTarget`, [241, 56, 80, 44], its words from 249).
+    /// "+ Add"'s least width in the header's one row (handoff 7's
+    /// `noClubRootHeader.addTarget`, [241, 56, 80, 44]).
     public static let headerAddMinWidth: CGFloat = 80
+    /// "+ Add"'s words from its target's leading edge in that row (the frames draw them from
+    /// 249).
     public static let headerAddLabelInset: CGFloat = 8
     /// Between "+ Add"'s target and Account's (handoff 7: 321 to 329).
     public static let headerActionGap: CGFloat = 8

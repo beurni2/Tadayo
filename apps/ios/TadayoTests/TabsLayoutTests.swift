@@ -106,6 +106,14 @@ final class TabsLayoutTests: XCTestCase {
             XCTAssertEqual(header.add.frame.minY - top, 48, accuracy: 0.5, "\(size): \(header.add)")
             XCTAssertEqual(header.add.frame.minX, 20, accuracy: 0.5, "\(size): \(header.add)")
             XCTAssertGreaterThanOrEqual(header.add.frame.height, 44 - 0.5, "\(size)")
+            XCTAssertGreaterThanOrEqual(header.add.frame.width, 44 - 0.5, "\(size)")
+            // What the header measures at each size, for the records: no source gives a rule
+            // for + Add's target here (the needs list, item 59).
+            XCTContext.runActivity(
+                named: "The stacked header at \(size): + Add \(header.add.frame), "
+                    + "Account \(header.account.frame), the header "
+                    + "\(header.add.frame.maxY - top) high"
+            ) { _ in }
             XCTAssertEqual(
                 header.account.frame.minX, 329, accuracy: 0.5, "\(size): \(header.account)")
             XCTAssertEqual(header.account.frame.width, 44, accuracy: 0.5, "\(size)")
@@ -193,6 +201,7 @@ final class TabsLayoutTests: XCTestCase {
         let rest = scroll.contentOffset
         scroll.setContentOffset(CGPoint(x: rest.x, y: rest.y + 68), animated: false)
         turn(0.3)
+        XCTAssertEqual(scroll.contentOffset.y, rest.y + 68, accuracy: 0.5, "the tab didn't scroll")
 
         // Read pixel for pixel at the window's own scale: scaled down to a pixel a point, the
         // words' edge just under the band rings into its last row (`ios` 44464008020: row 61 of
@@ -200,7 +209,9 @@ final class TabsLayoutTests: XCTestCase {
         let band = 20.0
         let pixels = try XCTUnwrap(drawn(window, points: top + band), "the window wasn't drawn")
         let edge = Int((top * pixels.scale).rounded(.down))
-        let canvas = pixels.at(2, edge + 4)
+        keep(pixels.image, as: "tabs-scrolled-under-the-status-bar")
+        // `Palette.canvas` in light, 0xFAFBF8: a drawing tinted all over can't pass for it.
+        let canvas: [UInt8] = [250, 251, 248]
         var odd: [String] = []
         for y in 0..<edge {
             for x in 0..<pixels.width where pixels.differs(pixels.at(x, y), canvas) {
@@ -210,10 +221,21 @@ final class TabsLayoutTests: XCTestCase {
         XCTAssertEqual(
             odd, [],
             "the status bar's area, \(edge) rows of pixels, isn't the canvas \(canvas) throughout")
+        // Under the band nothing is laid over the content either ("no … extra scroll-edge
+        // effect"): the screen's inset, where no content is, is the canvas there too.
+        var tinted: [String] = []
+        let inset = Int(20 * pixels.scale) - 1
+        for y in edge..<pixels.height {
+            for x in 0..<inset where pixels.differs(pixels.at(x, y), canvas) {
+                if tinted.count < 5 { tinted.append("(\(x), \(y)) \(pixels.at(x, y))") }
+            }
+        }
+        XCTAssertEqual(tinted, [], "the inset just under the status bar's area isn't the canvas")
         // The same rows without the band would hold + Add's words: they are there just below,
-        // so the scroll moved them and the drawing shows what's on the screen.
+        // so the scroll moved them and the drawing shows what's on the screen. Counted past
+        // the wordmark's width, where only + Add's words can be.
         var ink = 0
-        let left = Int(20 * pixels.scale)
+        let left = Int(120 * pixels.scale)
         let right = Int(200 * pixels.scale)
         for y in edge..<pixels.height {
             for x in left..<right where pixels.differs(pixels.at(x, y), canvas) { ink += 1 }
@@ -224,6 +246,14 @@ final class TabsLayoutTests: XCTestCase {
     }
 
     // MARK: Helpers
+
+    /// Keeps the drawing with the run, whether the test passes or fails.
+    private func keep(_ image: UIImage, as name: String) {
+        let attachment = XCTAttachment(image: image)
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
 
     private func turn(_ seconds: TimeInterval) {
         let until = Date().addingTimeInterval(seconds)
@@ -244,6 +274,7 @@ final class TabsLayoutTests: XCTestCase {
         let height: Int
         /// Pixels to a point.
         let scale: CGFloat
+        let image: UIImage
 
         func at(_ x: Int, _ y: Int) -> [UInt8] {
             let start = (y * width + x) * 4
@@ -283,6 +314,7 @@ final class TabsLayoutTests: XCTestCase {
             context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
             return true
         }
-        return made ? Pixels(bytes: bytes, width: width, height: height, scale: scale) : nil
+        guard made else { return nil }
+        return Pixels(bytes: bytes, width: width, height: height, scale: scale, image: image)
     }
 }
