@@ -697,14 +697,15 @@ class SimulatorTest(StepsTest):
                 self.assertFalse(os.path.isfile(os.path.join(self.repo.out, "run.json")))
 
     def sudo_import(self):
-        return ["sudo", "-n", "env", f"DEVELOPER_DIR={DEVELOPER_DIR}", "xcodebuild", "-importPlatform",
+        return ["sudo", "-n", "-H", "env", f"DEVELOPER_DIR={DEVELOPER_DIR}", "xcodebuild", "-importPlatform",
                 os.path.join(self.export(), BUNDLE)]
 
     def test_an_import_the_runner_refuses_is_run_once_more_with_sudo(self):
         # The runner image of 2026-11-19: "Requires elevated privileges: Copying a directory
         # source requires sudo". The plain import comes first, as on the image before it; only
         # when simctl lists no imported image is it run again as root, never asking for a
-        # password, with the pinned Xcode named on the line, since sudo drops the environment.
+        # password, with the pinned Xcode named on the line, since sudo drops the environment,
+        # and with root's own home (-H), so root leaves nothing in the runner user's Library.
         shell = self.shell(after_download=WITH_26_5, import_needs_sudo=True)
         code, out = self.step("simulator", shell)
         self.assertEqual(code, 0, out)

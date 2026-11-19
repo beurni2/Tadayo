@@ -1031,15 +1031,17 @@ class Steps:
                     # The runner image of 2026-11-19 (xcode-27-arm64 20261119.0378, macOS 27.2)
                     # refuses the import to the runner's own user: "Requires elevated
                     # privileges: Copying a directory source requires sudo" (exit 70), where the
-                    # image before it took it. So an import that left no image is run once more
-                    # as root, which the runner's user may do without a password (`-n` fails
-                    # rather than ask). sudo drops the environment, so the pinned Xcode is
-                    # named on its line. simctl's list still decides whether it worked
-                    # (`docs/LIMITATIONS.md`, 2026-11-19).
+                    # image before it took it. So an import that left no image is run again
+                    # as root, once for each download variant tried, which the runner's user
+                    # may do without a password (`-n` fails rather than ask). sudo drops the
+                    # environment, so the pinned Xcode is named on its line; `-H` gives root
+                    # its own home, so nothing root makes lands in the runner user's Library,
+                    # where a later step couldn't write over it. simctl's list still decides
+                    # whether it worked (`docs/LIMITATIONS.md`, 2026-11-19).
                     print(f"ios: simulator: the import left no imported image of iOS {version}; "
                           "importing again with sudo")
                     code = self.shell.run(
-                        ["sudo", "-n", "env", f"DEVELOPER_DIR={env['DEVELOPER_DIR']}",
+                        ["sudo", "-n", "-H", "env", f"DEVELOPER_DIR={env['DEVELOPER_DIR']}",
                          "xcodebuild", "-importPlatform", bundle], env=env,
                         log=self.log("simulators.txt"))
                     self.write_log("simulators.txt", f"(exit {code})")
