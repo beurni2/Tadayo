@@ -1,7 +1,9 @@
 /// <reference lib="esnext.temporal" />
 // The receipt of one command (T19; db/migrations/0009_platform.sql), as `updateMe` first wrote it inline
-// (../identity/update-me.ts): reserved first in the command's own transaction and completed last, so it
-// exists only with the effect it records, and a refusal, which rolls the transaction back, leaves none.
+// (../identity/update-me.ts): reserved in the command's own transaction before anything is changed, and
+// completed last, so it exists only with the effect it records, and a refusal, which rolls the transaction
+// back, leaves none. A command whose answer names other people first checks that its caller may have one
+// (../schedule/command.ts, step 1; FQ112).
 
 import type { QuerySql } from "../authorization/read-sql.ts";
 import { Refused } from "../refused.ts";

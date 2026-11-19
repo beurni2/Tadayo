@@ -286,6 +286,18 @@ describe("a proposal (spec 05; T33)", () => {
       await tx`UPDATE app.schedule_proposals SET days_per_member = 1 WHERE id = ${w.proposal}`;
       await confirm(tx, w, member(w, 0), ["monday"]);
       await checkAsAtCommit(tx);
+      // A member who left holds nothing, whatever their rows say: only the other's two days count.
+      const pair = await firstDays(tx, 2);
+      await leave(tx, { user: "", interval: member(pair, 1) }, "Member 2", AT.added);
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        (sp) => sp`UPDATE app.schedule_proposals SET days_per_member = 1 WHERE id = ${pair.proposal}`,
+        /nobody has confirmed or holds more/,
+      );
+      await release(tx, pair.proposal, member(pair, 0), "thursday");
+      await tx`UPDATE app.schedule_proposals SET days_per_member = 1 WHERE id = ${pair.proposal}`;
+      await checkAsAtCommit(tx);
       // A member has confirmed one day: the number can't become two under them.
       await expectRefused(
         tx,
@@ -718,7 +730,10 @@ describe("a confirmation (T6; book p11; FQ55, FQ99)", () => {
       await confirm(tx, w, member(w, 3), ["friday"]);
       await checkAsAtCommit(tx);
       await refusedAtCommit("thursday", member(w, 3), AT.added);
-      // The confirmed day's own row, at another instant than the confirmation's, in a fresh week.
+      // The confirmed day's own row, at another instant than the confirmation's, in a fresh week. The
+      // member's side refuses this one first (`schedule_confirmation_guard`: the days written with the
+      // confirmation's instant aren't the days held), and the week's key leaves no second row for the
+      // day, so the two guards can't be told apart here: it is kept as the scenario the review named.
       const other = await firstDays(tx, 4);
       await expectRefused(tx, REFUSED.integrity, async (sp) => {
         await sp`

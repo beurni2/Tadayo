@@ -70,6 +70,8 @@ Then the commands and the read, in SQL through the `postgres` driver, each in on
 
 ## 4. A command's steps
 
+As built since the review of PR #68 (FQ112): the unlocked read of the proposal's club, the caller's `activeMember` and the proposal's inclusion of that membership come first, each answered `NOT_FOUND`; the receipt of step 1 comes after them, and then the club's row. Steps 3 to 8 are as written, with step 3's checks made again under the lock.
+
 1. **The receipt** (T19), as `updateMe` reserves it: the same request under the same key gets the first answer back; another request under it gets `IDEMPOTENCY_CONFLICT`.
 2. **The proposal's club**, read by the proposal's id with no lock, then **the club's row `FOR UPDATE`**. Every schedule command of a club takes this lock first, so a choice and a confirmation of the same day are in one order, and `schedule_versions_insert_guard` and `memberships_guard` take the same row.
 3. **Who is asking** (T9, T14), through the authorization module's new `activeMember(tx, userId, clubId)` (`packages/domain/src/authorization/member.ts`), the one place the schedule's read and commands ask whether a caller is an active member of a club that isn't suspended. As built, Home's days (`daysByClub`) and the club list state the same three conditions in their own statements, and `tests/src/db/schedule-commands.test.ts` runs `activeMember` and `daysByClub` on the same rows. The command checks it once before it locks the club's row, so someone with nothing of the club never holds that row, and again under the lock. No membership, a suspended club (FQ80's default: nothing of the club), or a membership the proposal doesn't include: `NOT_FOUND`, the same answer as a proposal id that doesn't exist.
@@ -137,6 +139,6 @@ Full depth, since the PR decides who sees whose name on which day (T55, T33): fr
 - **For `api/b2-first-days-roster` (PR 3):**
     - A leave or an account deletion in a club's first days must take the club's row `FOR UPDATE` and then judge `everyoneConfirmed` itself. Ending an interval takes no lock on `app.clubs` today, so a last confirmation that runs while a leave is uncommitted sees the leaver active and unconfirmed and doesn't apply; once the leave commits, nobody is left to apply the first days.
     - A leave that leaves one unconfirmed member must supersede the proposal as FQ102 says, or that member's confirmation would apply the first days.
-    - A revision that lowers `days_per_member` must first release what each member holds above the new number; the guard refuses it otherwise.
+    - A revision that lowers `days_per_member` must first release what each member still in the club holds above the new number; the guard refuses it otherwise. A member who left holds nothing and isn't counted, since the day guard refuses any change to their rows.
     - The order of members who joined at one instant is FQ114's.
 

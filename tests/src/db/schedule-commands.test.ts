@@ -992,6 +992,14 @@ describe("one commit per key (T19)", () => {
           (id, club_id, reason, effective_from, days_per_member, schedule_version_id, created_at)
         VALUES (${successor}, ${w.club}, 'activation', '2026-11-02', 1, ${w.version}, ${AT.added})`;
       await checkAsAtCommit(plain(tx));
+      // Until it includes Ben, it is nothing to Ben, whatever key comes with the request (T14; FQ100).
+      expect(await refusal(choose(tx, clock, w, 0, ["friday"], { key, proposal: successor }))).toEqual({
+        code: "NOT_FOUND",
+        facts: {},
+      });
+      await tx`
+        INSERT INTO app.schedule_proposal_members (proposal_id, club_id, interval_id)
+        VALUES (${successor}, ${w.club}, ${w.members[0] ?? ""})`;
       expect(await refusal(choose(tx, clock, w, 0, ["friday"], { key, proposal: successor }))).toEqual(conflict);
     });
   });
@@ -1026,6 +1034,17 @@ describe("one commit per key (T19)", () => {
         expect(await receipts(tx, w, who)).toEqual([{ operation: "chooseScheduleDays", state: "completed" }]);
       };
       await leave(plain(tx), { user: w.users[2] ?? "", interval: w.members[2] ?? "" }, "Alex", AT.edited);
+      await nothing(2, alex);
+      // Alex joins again, a member of the club once more under a new interval, which the proposal doesn't
+      // include (FQ100): still nothing, though the key and the body are the ones that were answered.
+      await joinByRoster(
+        plain(tx),
+        w.club,
+        { user: w.users[0] ?? "", interval: w.members[0] ?? "" },
+        [{ user: w.users[2] ?? "", label: "Alex" }],
+        new Date(AT.edited.getTime() + 60_000),
+      );
+      expect(await activeMember(tx, w.users[2] ?? "", w.club)).not.toBeNull();
       await nothing(2, alex);
       await tx`UPDATE app.users SET state = 'deleting', deletion_requested_at = ${AT.edited} WHERE id = ${w.users[3] ?? ""}`;
       await nothing(3, sam);
@@ -1179,49 +1198,61 @@ describe("requests at once, committed (T6, T19; FQ55)", () => {
     return { clock, samples: () => samples };
   }
 
-  it("samples the confirmation's clock only once it holds the club's row (T1; T3's order)", async () => {
-    const w = await committed(4);
-    const hold = await holding(w.club);
-    const { clock: counted, samples } = counting(CONFIRMED);
-    const sent = db.begin((tx) =>
-      confirmScheduleDays(
-        tx,
-        counted,
-        {
-          userId: w.users[0] ?? "",
-          key: randomUUID(),
-          proposalId: w.proposal,
-          expectedVersion: 1,
-          weekdays: ["monday"],
-        },
-        render,
-      ),
-    );
-    try {
-      await waitingOn(hold.pid);
-      // Waiting for the row, it has sampled once, for the receipt: the deciding sample hasn't been taken.
-      expect(samples()).toBe(1);
-    } finally {
-      await hold.release();
-    }
-    await sent;
-    expect(samples()).toBe(2);
-  });
+  // Each waits up to ten seconds for the command to queue behind the held row, so it gets twenty.
+  it(
+    "samples the confirmation's clock only once it holds the club's row (T1; T3's order)",
+    { timeout: 20_000 },
+    async () => {
+      const w = await committed(4);
+      const hold = await holding(w.club);
+      const { clock: counted, samples } = counting(CONFIRMED);
+      const sent = db.begin((tx) =>
+        confirmScheduleDays(
+          tx,
+          counted,
+          {
+            userId: w.users[0] ?? "",
+            key: randomUUID(),
+            proposalId: w.proposal,
+            expectedVersion: 1,
+            weekdays: ["monday"],
+          },
+          render,
+        ),
+      );
+      try {
+        await waitingOn(hold.pid);
+        // Waiting for the row, it has sampled once, for the receipt: the deciding sample hasn't been taken.
+        expect(samples()).toBe(1);
+      } finally {
+        await hold.release();
+        // Settled either way before the test ends, so a failure above leaves no promise unanswered.
+        await sent.catch(() => undefined);
+      }
+      await sent;
+      expect(samples()).toBe(2);
+    },
+  );
 
-  it("samples the clock that dates the first days only once it holds the club's row (T1)", async () => {
-    const made = await db.begin((tx) => clubOf(tx, 4));
-    const hold = await holding(made.club);
-    const { clock: counted, samples } = counting(OPENED);
-    const opened = db.begin((tx) => openFirstDays(tx, counted, made.club));
-    try {
-      await waitingOn(hold.pid);
-      expect(samples()).toBe(0);
-    } finally {
-      await hold.release();
-    }
-    await opened;
-    expect(samples()).toBe(1);
-  });
+  it(
+    "samples the clock that dates the first days only once it holds the club's row (T1)",
+    { timeout: 20_000 },
+    async () => {
+      const made = await db.begin((tx) => clubOf(tx, 4));
+      const hold = await holding(made.club);
+      const { clock: counted, samples } = counting(OPENED);
+      const opened = db.begin((tx) => openFirstDays(tx, counted, made.club));
+      try {
+        await waitingOn(hold.pid);
+        expect(samples()).toBe(0);
+      } finally {
+        await hold.release();
+        await opened.catch(() => undefined);
+      }
+      await opened;
+      expect(samples()).toBe(1);
+    },
+  );
 
   it("gives two sends of the same key at once the same answer, and confirms once", async () => {
     const w = await committed(4);

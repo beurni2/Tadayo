@@ -3,10 +3,10 @@
 // section 5; T1, T3's order, T9, T14, T19, T33), in one READ COMMITTED transaction the caller opens. A
 // refusal throws `Refused`, which rolls it back, so a refused request leaves nothing, its receipt included.
 //
-// 1. The proposal's club, read by the proposal's id with no lock, and the caller's membership of it
-//    (`activeMember`), so someone with nothing of the club never holds its row and never gets a stored
-//    answer: NOT_FOUND comes before the receipt is looked at (T14; FQ112's default), for a first request
-//    and a retry alike.
+// 1. The proposal's club, read by the proposal's id with no lock; the caller's membership of it
+//    (`activeMember`); and that the proposal includes that membership (FQ100). Someone with nothing of the
+//    club or of the proposal never holds the club's row and never gets a stored answer: NOT_FOUND comes
+//    before the receipt is looked at (T14; FQ112's default), for a first request and a retry alike.
 // 2. The receipt (T19): the same request under the same key gets the first answer back, as it was, though
 //    the week has changed since; another request under it is IDEMPOTENCY_CONFLICT. Then the club's row,
 //    `FOR UPDATE`: every schedule command of a club takes it first, so a choice and a confirmation of the
@@ -111,7 +111,11 @@ export async function scheduleCommand(
   const [named] = await bound(tx)`SELECT club_id FROM app.schedule_proposals WHERE id = ${proposalId}`;
   const clubId = named?.["club_id"];
   if (typeof clubId !== "string") throw new Refused("NOT_FOUND");
-  if ((await activeMember(tx, userId, clubId)) === null) throw new Refused("NOT_FOUND");
+  const member = await activeMember(tx, userId, clubId);
+  if (member === null) throw new Refused("NOT_FOUND");
+  const [included] = await bound(tx)`
+    SELECT 1 AS found FROM app.schedule_proposal_members WHERE proposal_id = ${proposalId} AND interval_id = ${member}`;
+  if (included === undefined) throw new Refused("NOT_FOUND");
 
   // 2. The receipt, then the club's row.
   const first = await reserveReceipt(tx, receipt, await clock.sample(tx));

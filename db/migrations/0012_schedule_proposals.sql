@@ -53,7 +53,8 @@ CREATE UNIQUE INDEX schedule_proposals_one_open ON app.schedule_proposals (club_
 -- A proposal ends once, with the next version, and never changes after; its version never falls.
 -- The first days apply only when every member they include who is still in the club has confirmed,
 -- and at least one has (packages/domain/src/schedule/decide.ts `everyoneConfirmed`). The days a
--- member takes change only while nobody has confirmed and nobody holds more than the new number.
+-- member takes change only while nobody has confirmed and nobody still in the club holds more
+-- than the new number: a member who left holds nothing, whatever their rows say (FQ102).
 CREATE FUNCTION app.schedule_proposals_guard() RETURNS trigger
   LANGUAGE plpgsql SET search_path = '' AS $$
 BEGIN
@@ -82,9 +83,10 @@ BEGIN
   IF NEW.days_per_member <> OLD.days_per_member AND (
        EXISTS (SELECT FROM app.schedule_proposal_members
                 WHERE proposal_id = NEW.id AND confirmed_at IS NOT NULL)
-       OR EXISTS (SELECT FROM app.schedule_proposal_days
-                   WHERE proposal_id = NEW.id AND held
-                   GROUP BY interval_id HAVING pg_catalog.count(*) > NEW.days_per_member)) THEN
+       OR EXISTS (SELECT FROM app.schedule_proposal_days d
+                    JOIN app.memberships ms ON ms.interval_id = d.interval_id
+                   WHERE d.proposal_id = NEW.id AND d.held AND ms.state = 'active'
+                   GROUP BY d.interval_id HAVING pg_catalog.count(*) > NEW.days_per_member)) THEN
     RAISE EXCEPTION 'app.schedule_proposals: the days a member takes in % change only while nobody has confirmed or holds more', NEW.id
       USING ERRCODE = 'integrity_constraint_violation';
   END IF;
@@ -178,8 +180,8 @@ ALTER TABLE app.schedule_proposal_days ENABLE ROW LEVEL SECURITY;
 -- BEFORE INSERT OR UPDATE OR DELETE: holds change only in an open proposal, only for a member who
 -- hasn't confirmed (FQ57) and is still in the club (FQ102), and never onto a day already confirmed,
 -- since only a confirmed day is taken (FQ48). It takes the member's own row first, FOR UPDATE, so
--- two changes of one member's holds are in one order and the count at commit sees both
--- (schedule_proposal_days_count); then it holds the proposal's row against a confirmation
+-- two changes of one member's holds are in one order and, in READ COMMITTED transactions as the
+-- commands' are, the count at commit sees both (schedule_proposal_days_count); then it holds the proposal's row against a confirmation
 -- (schedule_proposal_members_guard), which takes the two rows in the same order.
 CREATE FUNCTION app.schedule_proposal_days_guard() RETURNS trigger
   LANGUAGE plpgsql SET search_path = '' AS $$
