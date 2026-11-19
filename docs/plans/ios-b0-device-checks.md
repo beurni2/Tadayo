@@ -45,7 +45,7 @@ Tick or cross each line and send the list back, with a word on anything that fel
 17. With the keyboard up, Continue sits a little above the keyboard. Dismiss the keyboard: Continue sits near the bottom.
 18. Press Return to save. Does the keyboard dip?
 19. After you continue, you reach the tabs. Scroll Home. The area behind the clock and battery stays plain canvas, with no blur or fade under it.
-20. At the largest accessibility text size (as in step 10), the header at the top stacks: the Tadayo wordmark on one line, and + Add and Account on the line below. All are readable and tappable. Put the size back after.
+20. At the largest accessibility text size (as in step 10), the header at the top stacks: the Tadayo wordmark on one line, and + Add and Account on the line below. All are readable, and + Add and Account can be tapped. Put the size back after.
 
 ## F. VoiceOver (Settings, Accessibility, VoiceOver; or triple-click the side button if set)
 
@@ -56,7 +56,7 @@ Log out first (Lab tab, Log out), so you start at the email screen.
 23. On the code screen, wait a minute. VoiceOver says "Send a new code is available." once.
 24. Tap Send a new code. It says "Sending a new code…" once, then "Check <your address> for a new code…" once, and the focus goes back to the code field. Do the two announcements talk over each other?
 25. At the largest text size, swipe through the code screen. Verify code is read before Send a new code.
-26. (Second address.) On the age screen, tap "I'm 18 or older" and at once move VoiceOver to Leave sign-in: while your answer is being saved it is read as dimmed. The save is quick, so you may not catch it; say so if not.
+26. (Second address.) On the code screen, tap Change email address, enter the second address and its code. On the age screen, tap "I'm 18 or older" and at once move VoiceOver to Leave sign-in: while your answer is being saved it is read as dimmed. The save is quick, so you may not catch it; say so if not.
 27. (Second address.) On the name screen: arriving doesn't move your focus; "Saving your profile." is said once when you continue.
 28. On the tabs: Account is read as "Open your account." If a tab shows Retry, it says "Load Home again." (with that tab's name).
 
