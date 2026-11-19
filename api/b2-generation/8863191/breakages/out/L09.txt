@@ -1,0 +1,218 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the author as its account and its row say, and leaks nothing the scanner can find
+author: 2016 cells run, 35105 answers scanned
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+star: 2016 cells run, 35105 answers scanned
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member who joined after the commit (T8) as its account and its row say, and leaks nothing the scanner can find
+member who joined after the commit (T8): 2016 cells run, 35105 answers scanned
+
+ ❯ src/privacy/matrix.test.ts (14 tests | 3 failed | 11 skipped) 75614ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (12)
+     × answers the author as its account and its row say, and leaks nothing the scanner can find 26142ms
+     × answers the star as its account and its row say, and leaks nothing the scanner can find 24039ms
+     × answers the member who joined after the commit (T8) as its account and its row say, and leaks nothing the scanner can find 25232ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 11 skipped (14)
+   Start at  03:40:29
+   Duration  76.42s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the author as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 84, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 84,
++   "first": [
++     "its club suspended, collecting: listMembers: status 200",
++     "its club suspended, collecting: listMembers: reason \"OK\"",
++     "its club suspended, collecting: listMembers: body \"{\\\"server_now\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_lpMiqmFXUlI45th7HWnWGQ\\\",\\\"name\\\":\\\"Saturday people 43768e98fe20\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_-Gc0aJWnJLITR9xLdEPukg\\\"},\\\"membe\"",
++     "its club suspended, collecting: listMembers: content-length: 570",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 200",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"OK\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"server_now\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_lpMiqmFXUlI45th7HWnWGQ\\\",\\\"name\\\":\\\"Saturday people 43768e98fe20\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_-Gc0aJWnJLITR9xLdEPukg\\\"},\\\"membe\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 570",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 200",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"OK\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"server_now\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_lpMiqmFXUlI45th7HWnWGQ\\\",\\\"name\\\":\\\"Saturday people 43768e98fe20\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_-Gc0aJWnJLITR9xLdEPukg\\\"},\\\"membe\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 570",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 200",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"OK\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"server_now\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_lpMiqmFXUlI45th7HWnWGQ\\\",\\\"name\\\":\\\"Saturday people 43768e98fe20\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_-Gc0aJWnJLITR9xLdEPukg\\\"},\\\"membe\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 570",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 200",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"OK\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"server_now\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_lpMiqmFXUlI45th7HWnWGQ\\\",\\\"name\\\":\\\"Saturday people 43768e98fe20\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_-Gc0aJWnJLITR9xLdEPukg\\\"},\\\"membe\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 570",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: status 200",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: reason \"OK\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: body \"{\\\"server_now\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_lpMiqmFXUlI45th7HWnWGQ\\\",\\\"name\\\":\\\"Saturday people 43768e98fe20\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_-Gc0aJWnJLITR9xLdEPukg\\\"},\\\"membe\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: content-length: 570",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: status 200",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: reason \"OK\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: body \"{\\\"server_now\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_lpMiqmFXUlI45th7HWnWGQ\\\",\\\"name\\\":\\\"Saturday people 43768e98fe20\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_-Gc0aJWnJLITR9xLdEPukg\\\"},\\\"membe\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: content-length: 570",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: status 200",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: reason \"OK\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: body \"{\\\"server_now\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_lpMiqmFXUlI45th7HWnWGQ\\\",\\\"name\\\":\\\"Saturday people 43768e98fe20\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_-Gc0aJWnJLITR9xLdEPukg\\\"},\\\"membe\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: content-length: 570",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: status 200",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: reason \"OK\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: body \"{\\\"server_now\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_lpMiqmFXUlI45th7HWnWGQ\\\",\\\"name\\\":\\\"Saturday people 43768e98fe20\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_-Gc0aJWnJLITR9xLdEPukg\\\"},\\\"membe\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: content-length: 570",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"viewer\":\"mem_-Gc0aJWnJLITR9xLdEPukg\"},\"headers\":{}}: status 200",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"viewer\":\"mem_-Gc0aJWnJLITR9xLdEPukg\"},\"headers\":{}}: reason \"OK\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"viewer\":\"mem_-Gc0aJWnJLITR9xLdEPukg\"},\"headers\":{}}: body \"{\\\"server_now\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_lpMiqmFXUlI45th7HWnWGQ\\\",\\\"name\\\":\\\"Saturday people 43768e98fe20\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_-Gc0aJWnJLITR9xLdEPukg\\\"},\\\"membe\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"viewer\":\"mem_-Gc0aJWnJLITR9xLdEPukg\"},\"headers\":{}}: content-length: 570",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:696:66
+    694|       }
+    695|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    696|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    697|       // Every cell ran: the contract's 72 requests a world (each oper…
+    698|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 84, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 84,
++   "first": [
++     "its club suspended, collecting: listMembers: status 200",
++     "its club suspended, collecting: listMembers: reason \"OK\"",
++     "its club suspended, collecting: listMembers: body \"{\\\"server_now\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_kObENj4YKc_yWVxd1WxNfw\\\",\\\"name\\\":\\\"Saturday people e30162b6d93e\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_k8PP2EN6jGHkfbSbPXn5zA\\\"},\\\"membe\"",
++     "its club suspended, collecting: listMembers: content-length: 570",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 200",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"OK\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"server_now\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_kObENj4YKc_yWVxd1WxNfw\\\",\\\"name\\\":\\\"Saturday people e30162b6d93e\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_k8PP2EN6jGHkfbSbPXn5zA\\\"},\\\"membe\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 570",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 200",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"OK\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"server_now\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_kObENj4YKc_yWVxd1WxNfw\\\",\\\"name\\\":\\\"Saturday people e30162b6d93e\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_k8PP2EN6jGHkfbSbPXn5zA\\\"},\\\"membe\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 570",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 200",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"OK\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"server_now\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_kObENj4YKc_yWVxd1WxNfw\\\",\\\"name\\\":\\\"Saturday people e30162b6d93e\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_k8PP2EN6jGHkfbSbPXn5zA\\\"},\\\"membe\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 570",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 200",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"OK\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"server_now\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_kObENj4YKc_yWVxd1WxNfw\\\",\\\"name\\\":\\\"Saturday people e30162b6d93e\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_k8PP2EN6jGHkfbSbPXn5zA\\\"},\\\"membe\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 570",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: status 200",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: reason \"OK\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: body \"{\\\"server_now\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_kObENj4YKc_yWVxd1WxNfw\\\",\\\"name\\\":\\\"Saturday people e30162b6d93e\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_k8PP2EN6jGHkfbSbPXn5zA\\\"},\\\"membe\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: content-length: 570",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: status 200",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: reason \"OK\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: body \"{\\\"server_now\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_kObENj4YKc_yWVxd1WxNfw\\\",\\\"name\\\":\\\"Saturday people e30162b6d93e\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_k8PP2EN6jGHkfbSbPXn5zA\\\"},\\\"membe\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: content-length: 570",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: status 200",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: reason \"OK\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: body \"{\\\"server_now\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_kObENj4YKc_yWVxd1WxNfw\\\",\\\"name\\\":\\\"Saturday people e30162b6d93e\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_k8PP2EN6jGHkfbSbPXn5zA\\\"},\\\"membe\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: content-length: 570",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: status 200",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: reason \"OK\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: body \"{\\\"server_now\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_kObENj4YKc_yWVxd1WxNfw\\\",\\\"name\\\":\\\"Saturday people e30162b6d93e\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_k8PP2EN6jGHkfbSbPXn5zA\\\"},\\\"membe\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: content-length: 570",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"viewer\":\"mem_3RkN-YWdbU5MmFIrd4WFmQ\"},\"headers\":{}}: status 200",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"viewer\":\"mem_3RkN-YWdbU5MmFIrd4WFmQ\"},\"headers\":{}}: reason \"OK\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"viewer\":\"mem_3RkN-YWdbU5MmFIrd4WFmQ\"},\"headers\":{}}: body \"{\\\"server_now\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_kObENj4YKc_yWVxd1WxNfw\\\",\\\"name\\\":\\\"Saturday people e30162b6d93e\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_k8PP2EN6jGHkfbSbPXn5zA\\\"},\\\"membe\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"viewer\":\"mem_3RkN-YWdbU5MmFIrd4WFmQ\"},\"headers\":{}}: content-length: 570",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:696:66
+    694|       }
+    695|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    696|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    697|       // Every cell ran: the contract's 72 requests a world (each oper…
+    698|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member who joined after the commit (T8) as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 84, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 84,
++   "first": [
++     "its club suspended, collecting: listMembers: status 200",
++     "its club suspended, collecting: listMembers: reason \"OK\"",
++     "its club suspended, collecting: listMembers: body \"{\\\"server_now\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_GOKcDa9FWgJwebbIxHOBmA\\\",\\\"name\\\":\\\"Saturday people 0ffd0f35a976\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_zUuOHeIumkD8SVdFE-uXiw\\\"},\\\"membe\"",
++     "its club suspended, collecting: listMembers: content-length: 691",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 200",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"OK\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"server_now\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_GOKcDa9FWgJwebbIxHOBmA\\\",\\\"name\\\":\\\"Saturday people 0ffd0f35a976\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_zUuOHeIumkD8SVdFE-uXiw\\\"},\\\"membe\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 691",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 200",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"OK\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"server_now\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_GOKcDa9FWgJwebbIxHOBmA\\\",\\\"name\\\":\\\"Saturday people 0ffd0f35a976\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_zUuOHeIumkD8SVdFE-uXiw\\\"},\\\"membe\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 691",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 200",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"OK\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"server_now\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_GOKcDa9FWgJwebbIxHOBmA\\\",\\\"name\\\":\\\"Saturday people 0ffd0f35a976\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_zUuOHeIumkD8SVdFE-uXiw\\\"},\\\"membe\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 691",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 200",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"OK\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"{\\\"server_now\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_GOKcDa9FWgJwebbIxHOBmA\\\",\\\"name\\\":\\\"Saturday people 0ffd0f35a976\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_zUuOHeIumkD8SVdFE-uXiw\\\"},\\\"membe\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 691",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: status 200",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: reason \"OK\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: body \"{\\\"server_now\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_GOKcDa9FWgJwebbIxHOBmA\\\",\\\"name\\\":\\\"Saturday people 0ffd0f35a976\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_zUuOHeIumkD8SVdFE-uXiw\\\"},\\\"membe\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: content-length: 691",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: status 200",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: reason \"OK\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: body \"{\\\"server_now\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_GOKcDa9FWgJwebbIxHOBmA\\\",\\\"name\\\":\\\"Saturday people 0ffd0f35a976\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_zUuOHeIumkD8SVdFE-uXiw\\\"},\\\"membe\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: content-length: 691",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: status 200",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: reason \"OK\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: body \"{\\\"server_now\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_GOKcDa9FWgJwebbIxHOBmA\\\",\\\"name\\\":\\\"Saturday people 0ffd0f35a976\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_zUuOHeIumkD8SVdFE-uXiw\\\"},\\\"membe\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: content-length: 691",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: status 200",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: reason \"OK\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: body \"{\\\"server_now\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_GOKcDa9FWgJwebbIxHOBmA\\\",\\\"name\\\":\\\"Saturday people 0ffd0f35a976\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_zUuOHeIumkD8SVdFE-uXiw\\\"},\\\"membe\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: content-length: 691",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"viewer\":\"mem_K3w10Glr3_AGdGt-2yUG6A\"},\"headers\":{}}: status 200",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"viewer\":\"mem_K3w10Glr3_AGdGt-2yUG6A\"},\"headers\":{}}: reason \"OK\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"viewer\":\"mem_K3w10Glr3_AGdGt-2yUG6A\"},\"headers\":{}}: body \"{\\\"server_now\\\":\\\"2026-11-07T06:59:59Z\\\",\\\"club\\\":{\\\"id\\\":\\\"club_GOKcDa9FWgJwebbIxHOBmA\\\",\\\"name\\\":\\\"Saturday people 0ffd0f35a976\\\",\\\"timezone\\\":\\\"Europe/London\\\",\\\"my_membership_id\\\":\\\"mem_zUuOHeIumkD8SVdFE-uXiw\\\"},\\\"membe\"",
++     "its club suspended, collecting: listMembers, manipulated {\"query\":{\"viewer\":\"mem_K3w10Glr3_AGdGt-2yUG6A\"},\"headers\":{}}: content-length: 691",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:696:66
+    694|       }
+    695|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    696|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    697|       // Every cell ran: the contract's 72 requests a world (each oper…
+    698|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

@@ -1,0 +1,60 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/services/worker
+
+ ❯ src/generation.test.ts (6 tests | 2 failed) 12ms
+   ❯ the lines of a pass (3)
+     × says how many days were made, and nothing of which club or whose 7ms
+     × gives each failed club one line 1ms
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  2 failed | 16 passed (18)
+   Start at  03:45:07
+   Duration  1.38s (tests 89%, import 6%, transform 4%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/generation.test.ts > the lines of a pass > says how many days were made, and nothing of which club or whose
+AssertionError: expected [ 'worker: made 18 days in 2 clubs' ] to deeply equal [ 'worker: made 18 days' ]
+
+- Expected
++ Received
+
+  [
+-   "worker: made 18 days",
++   "worker: made 18 days in 2 clubs",
+  ]
+
+ ❯ src/generation.test.ts:35:61
+     33|
+     34|   it("says how many days were made, and nothing of which club or whose…
+     35|     expect(passLines({ clubs: 2, made: 18, failures: [] })).toEqual(["…
+       |                                                             ^
+     36|     expect(passLines({ clubs: 2, made: 1, failures: [] })).toEqual(["w…
+     37|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/generation.test.ts > the lines of a pass > gives each failed club one line
+AssertionError: expected [ …(3) ] to deeply equal [ 'worker: made 4 days', …(2) ]
+
+- Expected
++ Received
+
+  [
+-   "worker: made 4 days",
++   "worker: made 4 days in 3 clubs",
+    "worker: a club's days failed: PostgresError 23000",
+    "worker: a club's days failed: Error",
+  ]
+
+ ❯ src/generation.test.ts:40:90
+     38|
+     39|   it("gives each failed club one line", () => {
+     40|     expect(passLines({ clubs: 3, made: 4, failures: ["PostgresError 23…
+       |                                                                                          ^
+     41|       "worker: made 4 days",
+     42|       "worker: a club's days failed: PostgresError 23000",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

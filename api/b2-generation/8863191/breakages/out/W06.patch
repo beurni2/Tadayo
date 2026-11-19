@@ -1,0 +1,13 @@
+diff --git a/services/worker/src/generation.ts b/services/worker/src/generation.ts
+index 088b4841..d0ba93b0 100644
+--- a/services/worker/src/generation.ts
++++ b/services/worker/src/generation.ts
+@@ -24,7 +24,7 @@ export interface PassResult {
+ export function describeFailure(error: unknown): string {
+   const name = error instanceof Error ? error.constructor.name : "a thrown value";
+   const code = (error as { code?: unknown } | null)?.code;
+-  return typeof code === "string" && /^[A-Za-z0-9_]{1,32}$/.test(code) ? `${name} ${code}` : name;
++  return typeof code === "string" && code.length > 0 ? `${name} ${code}` : name;
+ }
+ 
+ /**

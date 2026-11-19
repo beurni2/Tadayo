@@ -1,0 +1,13 @@
+diff --git a/services/worker/src/generation.ts b/services/worker/src/generation.ts
+index 088b4841..e8859158 100644
+--- a/services/worker/src/generation.ts
++++ b/services/worker/src/generation.ts
+@@ -52,7 +52,7 @@ export async function generationPass(
+ /** The lines a pass writes: nothing when it made nothing and nothing failed. */
+ export function passLines(result: PassResult): string[] {
+   const lines: string[] = [];
+-  if (result.made > 0) lines.push(`worker: made ${String(result.made)} ${result.made === 1 ? "day" : "days"}`);
++  if (result.made > 0) lines.push(`worker: made ${String(result.made)} ${result.made === 1 ? "day" : "days"} in ${String(result.clubs)} clubs`);
+   for (const failure of result.failures) lines.push(`worker: a club's days failed: ${failure}`);
+   return lines;
+ }

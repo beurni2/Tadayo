@@ -1,0 +1,31 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/packages/domain
+
+ ❯ src/schedule/generate.test.ts (18 tests | 1 failed) 24ms
+   ❯ the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) (13)
+     × takes today and the horizon from the club's zone, not from UTC 7ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 25 passed (26)
+   Start at  03:39:11
+   Duration  169ms (tests 38%, import 31%, transform 16%, worker 14%, environment 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > takes today and the horizon from the club's zone, not from UTC
+AssertionError: expected '2026-12-05' to be '2026-12-04' // Object.is equality
+
+Expected: "2026-12-04"
+Received: "2026-12-05"
+
+ ❯ src/schedule/generate.test.ts:76:58
+     74|   it("takes today and the horizon from the club's zone, not from UTC",…
+     75|     // 03:30Z on Saturday the 7th is still Friday the 6th, 10:30 PM, i…
+     76|     expect(dates(club(), "2026-11-07T03:30:00Z").at(-1)).toBe("2026-12…
+       |                                                          ^
+     77|     // 05:00Z is Saturday the 7th at midnight there: the window moves …
+     78|     expect(dates(club(), "2026-11-07T05:00:00Z").at(-1)).toBe("2026-12…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

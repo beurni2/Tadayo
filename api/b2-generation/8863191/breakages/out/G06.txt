@@ -1,0 +1,40 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/packages/domain
+
+ ❯ src/schedule/generate.test.ts (18 tests | 1 failed) 33ms
+   ❯ the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) (13)
+     × owes nothing before a day's first date (FQ79) 10ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 25 passed (26)
+   Start at  03:39:13
+   Duration  196ms (tests 42%, import 29%, transform 19%, worker 9%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > owes nothing before a day's first date (FQ79)
+AssertionError: expected [ '2026-11-05', '2026-11-07', …(6) ] to deeply equal [ '2026-11-07', '2026-11-12', …(5) ]
+
+- Expected
++ Received
+
+@@ -1,6 +1,7 @@
+  [
++   "2026-11-05",
+    "2026-11-07",
+    "2026-11-12",
+    "2026-11-14",
+    "2026-11-19",
+    "2026-11-21",
+
+ ❯ src/schedule/generate.test.ts:97:18
+     95|     ]);
+     96|     const owed = dates(club({ versions: [late] }), "2026-11-04T14:00:0…
+     97|     expect(owed).toEqual([
+       |                  ^
+     98|       "2026-11-07",
+     99|       "2026-11-12",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

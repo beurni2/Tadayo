@@ -1,0 +1,88 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/packages/domain
+
+ ❯ src/schedule/generate.test.ts (18 tests | 4 failed) 21ms
+   ❯ the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) (13)
+     × owes every assigned date from today to today plus 28 days, in date order, and no Sunday 6ms
+     × takes today and the horizon from the club's zone, not from UTC 1ms
+     × owes nothing to a club under two members, one not started, or a suspended one (FQ16; spec 04, 22) 4ms
+     × doesn't owe a date already made, whoever's it was 1ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  4 failed | 22 passed (26)
+   Start at  03:39:10
+   Duration  179ms (tests 40%, import 31%, transform 19%, worker 10%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > owes every assigned date from today to today plus 28 days, in date order, and no Sunday
+AssertionError: expected '2026-12-03' to be '2026-12-04' // Object.is equality
+
+Expected: "2026-12-04"
+Received: "2026-12-03"
+
+ ❯ src/schedule/generate.test.ts:56:25
+     54|     // Today's own 7 AM has passed, so the first is Saturday the 7th; …
+     55|     expect(owed[0]).toBe("2026-11-07");
+     56|     expect(owed.at(-1)).toBe("2026-12-04");
+       |                         ^
+     57|     expect(owed).toHaveLength(24);
+     58|     expect(owed).toEqual([...owed].sort());
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > takes today and the horizon from the club's zone, not from UTC
+AssertionError: expected '2026-12-03' to be '2026-12-04' // Object.is equality
+
+Expected: "2026-12-04"
+Received: "2026-12-03"
+
+ ❯ src/schedule/generate.test.ts:76:58
+     74|   it("takes today and the horizon from the club's zone, not from UTC",…
+     75|     // 03:30Z on Saturday the 7th is still Friday the 6th, 10:30 PM, i…
+     76|     expect(dates(club(), "2026-11-07T03:30:00Z").at(-1)).toBe("2026-12…
+       |                                                          ^
+     77|     // 05:00Z is Saturday the 7th at midnight there: the window moves …
+     78|     expect(dates(club(), "2026-11-07T05:00:00Z").at(-1)).toBe("2026-12…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > owes nothing to a club under two members, one not started, or a suspended one (FQ16; spec 04, 22)
+AssertionError: expected [ '2026-11-07', '2026-11-09', …(21) ] to have a length of 24 but got 23
+
+- Expected
++ Received
+
+- 24
++ 23
+
+ ❯ src/schedule/generate.test.ts:131:52
+    129|   it("owes nothing to a club under two members, one not started, or a …
+    130|     expect(dates(club({ activeMembers: 1 }), NOW)).toEqual([]);
+    131|     expect(dates(club({ activeMembers: 2 }), NOW)).toHaveLength(24);
+       |                                                    ^
+    132|     expect(dates(club({ activated: false }), NOW)).toEqual([]);
+    133|     expect(dates(club({ suspended: true }), NOW)).toEqual([]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > doesn't owe a date already made, whoever's it was
+AssertionError: expected [ '2026-11-09', '2026-11-11', …(19) ] to have a length of 22 but got 21
+
+- Expected
++ Received
+
+- 22
++ 21
+
+ ❯ src/schedule/generate.test.ts:143:18
+    141|   it("doesn't owe a date already made, whoever's it was", () => {
+    142|     const owed = dates(club({ made: new Set(["2026-11-07", "2026-11-10…
+    143|     expect(owed).toHaveLength(22);
+       |                  ^
+    144|     expect(owed).not.toContain("2026-11-07");
+    145|     expect(owed).not.toContain("2026-11-10");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+

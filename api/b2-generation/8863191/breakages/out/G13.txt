@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/packages/domain
+
+ ❯ src/schedule/generate.test.ts (18 tests | 1 failed) 26ms
+   ❯ the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) (13)
+     × makes each date under the version in force on it: the latest that started on or before it (FQ61) 6ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 25 passed (26)
+   Start at  03:39:18
+   Duration  179ms (tests 42%, import 31%, transform 17%, worker 10%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > makes each date under the version in force on it: the latest that started on or before it (FQ61)
+AssertionError: expected Set{} to deeply equal Set{ 'ver_1' }
+
+- Expected
++ Received
+
+- Set {
+-   "ver_1",
+- }
++ Set {}
+
+ ❯ src/schedule/generate.test.ts:172:57
+    170|     const before = owed.filter((day) => day.localDate < "2026-11-16");
+    171|     const after = owed.filter((day) => day.localDate >= "2026-11-16");
+    172|     expect(new Set(before.map((day) => day.versionId))).toEqual(new Se…
+       |                                                         ^
+    173|     expect(before.map((day) => day.localDate)).toEqual([
+    174|       "2026-11-07",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

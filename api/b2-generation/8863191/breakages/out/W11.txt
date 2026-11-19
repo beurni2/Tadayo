@@ -1,0 +1,55 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/tests
+
+ ❯ src/db/startup.test.ts (14 tests | 2 failed) 9328ms
+   ❯ the worker's entry against the test database (6)
+     × stops on SIGINT with exit code 0, and says which 165ms
+     × stops cleanly on a SIGINT that comes as it writes its started line: its handlers are in place first 151ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 12 passed (14)
+   Start at  03:45:08
+   Duration  9.71s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/startup.test.ts > the worker's entry against the test database > stops on SIGINT with exit code 0, and says which
+AssertionError: expected null to be +0 // Object.is equality
+
+- Expected:
+0
+
++ Received:
+null
+
+ ❯ src/db/startup.test.ts:224:46
+    222|       const worker = start("worker", "prod");
+    223|       expect(await waitFor(worker, /worker: started/), worker.output.s…
+    224|       expect(await stopWith(worker, signal)).toBe(0);
+       |                                              ^
+    225|       expect(worker.output.stdout).toMatch(new RegExp(`worker: stopped…
+    226|       expect(worker.output.stderr).toBe("");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/startup.test.ts > the worker's entry against the test database > stops cleanly on a SIGINT that comes as it writes its started line: its handlers are in place first
+AssertionError: worker: started, making days every minute
+: expected null to be +0 // Object.is equality
+
+- Expected:
+0
+
++ Received:
+null
+
+ ❯ src/db/startup.test.ts:235:85
+    233|     async (signal) => {
+    234|       const worker = start("worker", "prod", {}, signal);
+    235|       expect(await worker.exited, `${worker.output.stdout}${worker.out…
+       |                                                                                     ^
+    236|       expect(worker.output.stdout).toBe(`worker: started, making days …
+    237|       expect(worker.output.stderr).toBe("");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

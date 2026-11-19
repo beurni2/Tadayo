@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/tests
+
+ ❯ src/db/make-days.test.ts (13 tests | 1 failed) 1874ms
+   ❯ making a club's days (spec 05; FQ115) (10)
+     × makes no day for a club left with one member (FQ16), and keeps the days it had 48ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+   Start at  03:39:35
+   Duration  2.23s (tests 96%, import 2%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/make-days.test.ts > making a club's days (spec 05; FQ115) > makes no day for a club left with one member (FQ16), and keeps the days it had
+AssertionError: expected 2 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 2
+
+ ❯ src/db/make-days.test.ts:237:61
+    235|       );
+    236|       // A week later the window holds dates nobody has made, Ben's am…
+    237|       expect(await run(tx, w.club, "2026-11-13T14:41:00Z")).toBe(0);
+       |                                                             ^
+    238|       expect(await daysOf(tx, w.club)).toEqual(before);
+    239|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/make-days.test.ts:226:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/tests
+
+ ❯ src/db/make-days.test.ts (13 tests | 1 failed) 1735ms
+   ❯ making a club's days (spec 05; FQ115) (10)
+     × never makes a day at or after its 7 AM 87ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+   Start at  03:39:57
+   Duration  2.09s (tests 95%, import 3%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/make-days.test.ts > making a club's days (spec 05; FQ115) > never makes a day at or after its 7 AM
+PostgresError: new row for relation "occurrences" violates check constraint "occurrences_check1"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ makeDays ../packages/domain/src/schedule/make-days.ts:145:37
+    143|   let made = 0;
+    144|   for (const day of daysToMake(facts, now.subtract({ hours: 1 }))) {
+    145|     const inserted = await bound(tx)`
+       |                                     ^
+    146|       INSERT INTO app.occurrences
+    147|         (id, club_id, star_interval_id, schedule_version_id, local_dat…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

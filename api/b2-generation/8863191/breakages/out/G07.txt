@@ -1,0 +1,42 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/packages/domain
+
+ ❯ src/schedule/generate.test.ts (18 tests | 1 failed) 21ms
+   ❯ the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) (13)
+     × owes no day to a star who has left, and still owes everyone else's (FQ63) 7ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 25 passed (26)
+   Start at  03:39:14
+   Duration  156ms (tests 41%, import 31%, transform 17%, worker 11%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > owes no day to a star who has left, and still owes everyone else's (FQ63)
+AssertionError: expected [ 'nina', 'ben', 'nina', 'ben', …(4) ] to deeply equal [ 'ben', 'ben', 'ben', 'ben' ]
+
+- Expected
++ Received
+
+  [
++   "nina",
+    "ben",
++   "nina",
+    "ben",
++   "nina",
+    "ben",
++   "nina",
+    "ben",
+  ]
+
+ ❯ src/schedule/generate.test.ts:126:49
+    124|       at(NOW),
+    125|     );
+    126|     expect(owed.map((day) => day.starInterval)).toEqual(["ben", "ben",…
+       |                                                 ^
+    127|   });
+    128|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

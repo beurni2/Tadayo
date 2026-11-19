@@ -1,0 +1,309 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/tests
+
+ ❯ src/db/home-days.test.ts (20 tests | 9 failed) 1098ms
+   ❯ only the viewer's clubs, and only a scheduled day that isn't held, on Postgres (T9, T14, T27; FQ50, FQ63; spec 22) (7)
+     × gives a stranger, a former member, an account being deleted, an account with no club and an unknown account nothing 47ms
+     × gives a rejoined member the club's days on the new interval 24ms
+     × gives nothing in a suspended club, and a paused club's days as its rows hold them (FQ50) 12ms
+     × holds a day whose star left a microsecond before its reveal, by leaving, a block or a deletion: never open, never next (FQ63) 11ms
+     × holds a day whose star asked to delete their account a microsecond before its reveal, whether the interval has ended or not (T27) 38ms
+     × keeps a day open to its close when its star leaves or asks to delete at its reveal or a microsecond after 13ms
+   ❯ the star as the club sees them, on Postgres (FQ75) (4)
+     × keeps the name and drops the avatar while a deletion asked for during the open day hasn't ended the interval; then the name it ended with 26ms
+     × names a star who left during the open day by the name it ended with, whatever the account is called now 20ms
+     × leaves out an open day whose star has no name to show, and still gives the next day (B6, docs/LIMITATIONS.md) 18ms
+
+ Test Files  1 failed (1)
+      Tests  9 failed | 11 passed (20)
+   Start at  03:40:03
+   Duration  1.46s (tests 91%, import 5%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 9 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/home-days.test.ts > only the viewer's clubs, and only a scheduled day that isn't held, on Postgres (T9, T14, T27; FQ50, FQ63; spec 22) > gives a stranger, a former member, an account being deleted, an account with no club and an unknown account nothing
+AssertionError: each member's next day, the SQL and the policy, at 2026-11-07T06:59:59.999999Z: expected Map{ …(3) } to deeply equal Map{ …(2) }
+
+- Expected
++ Received
+
+@@ -10,7 +10,8 @@
+        "avatarVersion": null,
+        "displayName": "Ana",
+        "membershipId": "mem_JbVZGoxYATp85qa_anUL0A",
+      },
+    },
++   "mem_l_wMwQ0Z3zN5rsiUiWs5jQ" => null,
+    "mem_rDENInoQ59H9JuLs9ixY8w" => null,
+  }
+
+ ❯ both src/db/home-days.test.ts:239:96
+    237|   const starsSql = await byStarSql(tx, viewer, club, now);
+    238|   const starsPolicy = await byStarPolicy(tx, facts, club, now);
+    239|   expect(starsSql, `each member's next day, the SQL and the policy, at…
+       |                                                                                                ^
+    240|   // The club's next day is the earliest of its members' next days, or…
+    241|   const earliest = [...starsSql.values()]
+ ❯ ids src/db/home-days.test.ts:254:18
+ ❯ src/db/home-days.test.ts:359:16
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:345:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/9]⎯
+
+ FAIL  src/db/home-days.test.ts > only the viewer's clubs, and only a scheduled day that isn't held, on Postgres (T9, T14, T27; FQ50, FQ63; spec 22) > gives a rejoined member the club's days on the new interval
+AssertionError: each member's next day, the SQL and the policy, at 2026-11-07T06:59:59.999999Z: expected Map{ …(4) } to deeply equal Map{ …(3) }
+
+- Expected
++ Received
+
+@@ -1,6 +1,7 @@
+  Map {
++   "mem_-hFbgSsk6aldIYRu8KXpXw" => null,
+    "mem_4R5pl-UQ6b93slyI_kd8fg" => null,
+    "mem_IikN0H0x3Rt7_KepjtKpBQ" => {
+      "closeAt": "2026-11-08T01:00:00Z",
+      "clubId": "club_u0JUZibKrjItFkT5KakfsA",
+      "id": "occ_hcngMf33v_GCC_DzWG16dA",
+
+ ❯ both src/db/home-days.test.ts:239:96
+    237|   const starsSql = await byStarSql(tx, viewer, club, now);
+    238|   const starsPolicy = await byStarPolicy(tx, facts, club, now);
+    239|   expect(starsSql, `each member's next day, the SQL and the policy, at…
+       |                                                                                                ^
+    240|   // The club's next day is the earliest of its members' next days, or…
+    241|   const earliest = [...starsSql.values()]
+ ❯ ids src/db/home-days.test.ts:254:18
+ ❯ src/db/home-days.test.ts:380:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:369:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/9]⎯
+
+ FAIL  src/db/home-days.test.ts > only the viewer's clubs, and only a scheduled day that isn't held, on Postgres (T9, T14, T27; FQ50, FQ63; spec 22) > gives nothing in a suspended club, and a paused club's days as its rows hold them (FQ50)
+AssertionError: each member's next day, the SQL and the policy, at 2026-11-07T06:59:59.999999Z: expected Map{ …(3) } to deeply equal Map{ …(1) }
+
+- Expected
++ Received
+
+@@ -1,6 +1,7 @@
+  Map {
++   "mem_cE0a-YlwcVD2-amadRfh6Q" => null,
+    "mem_n8nGuzoK2pe_bB8NvxOomg" => {
+      "closeAt": "2026-11-08T01:00:00Z",
+      "clubId": "club_NtID1ImFrSii-6CMkDc1_Q",
+      "id": "occ_iHdL4yqPiPSTbUd7muo2JA",
+      "localDate": "2026-11-07",
+@@ -10,6 +11,7 @@
+        "avatarVersion": null,
+        "displayName": "Ana",
+        "membershipId": "mem_n8nGuzoK2pe_bB8NvxOomg",
+      },
+    },
++   "mem_uPPjh4qCmAR7HRdNHUq9Vw" => null,
+  }
+
+ ❯ both src/db/home-days.test.ts:239:96
+    237|   const starsSql = await byStarSql(tx, viewer, club, now);
+    238|   const starsPolicy = await byStarPolicy(tx, facts, club, now);
+    239|   expect(starsSql, `each member's next day, the SQL and the policy, at…
+       |                                                                                                ^
+    240|   // The club's next day is the earliest of its members' next days, or…
+    241|   const earliest = [...starsSql.values()]
+ ❯ ids src/db/home-days.test.ts:254:18
+ ❯ src/db/home-days.test.ts:390:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:386:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/9]⎯
+
+ FAIL  src/db/home-days.test.ts > only the viewer's clubs, and only a scheduled day that isn't held, on Postgres (T9, T14, T27; FQ50, FQ63; spec 22) > holds a day whose star left a microsecond before its reveal, by leaving, a block or a deletion: never open, never next (FQ63)
+AssertionError: each member's next day, the SQL and the policy, at 2026-11-07T06:59:59.999999Z: expected Map{ …(2) } to deeply equal Map{ …(1) }
+
+- Expected
++ Received
+
+@@ -10,6 +10,7 @@
+        "avatarVersion": null,
+        "displayName": "Ben NJ2J4g",
+        "membershipId": "mem_2SZCZQ4k0D0pPh4oJWutSg",
+      },
+    },
++   "mem_lUw5EaG59Vbprr5W3kMUWw" => null,
+  }
+
+ ❯ both src/db/home-days.test.ts:239:96
+    237|   const starsSql = await byStarSql(tx, viewer, club, now);
+    238|   const starsPolicy = await byStarPolicy(tx, facts, club, now);
+    239|   expect(starsSql, `each member's next day, the SQL and the policy, at…
+       |                                                                                                ^
+    240|   // The club's next day is the earliest of its members' next days, or…
+    241|   const earliest = [...starsSql.values()]
+ ❯ ids src/db/home-days.test.ts:254:18
+ ❯ src/db/home-days.test.ts:420:18
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:412:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/9]⎯
+
+ FAIL  src/db/home-days.test.ts > only the viewer's clubs, and only a scheduled day that isn't held, on Postgres (T9, T14, T27; FQ50, FQ63; spec 22) > holds a day whose star asked to delete their account a microsecond before its reveal, whether the interval has ended or not (T27)
+AssertionError: each member's next day, the SQL and the policy, at 2026-11-07T06:59:59.999999Z: expected Map{ …(2) } to deeply equal Map{ …(1) }
+
+- Expected
++ Received
+
+@@ -10,6 +10,7 @@
+        "avatarVersion": null,
+        "displayName": "Ben xt9ohg",
+        "membershipId": "mem_2e3910I1Y-k4ixqrqPonEQ",
+      },
+    },
++   "mem_oOCkL8UdyKkJM8d8bsOSgQ" => null,
+  }
+
+ ❯ both src/db/home-days.test.ts:239:96
+    237|   const starsSql = await byStarSql(tx, viewer, club, now);
+    238|   const starsPolicy = await byStarPolicy(tx, facts, club, now);
+    239|   expect(starsSql, `each member's next day, the SQL and the policy, at…
+       |                                                                                                ^
+    240|   // The club's next day is the earliest of its members' next days, or…
+    241|   const earliest = [...starsSql.values()]
+ ❯ ids src/db/home-days.test.ts:254:18
+ ❯ src/db/home-days.test.ts:444:18
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:436:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/9]⎯
+
+ FAIL  src/db/home-days.test.ts > only the viewer's clubs, and only a scheduled day that isn't held, on Postgres (T9, T14, T27; FQ50, FQ63; spec 22) > keeps a day open to its close when its star leaves or asks to delete at its reveal or a microsecond after
+AssertionError: each member's next day, the SQL and the policy, at 2026-11-08T00:59:59.999999Z: expected Map{ …(2) } to deeply equal Map{ …(1) }
+
+- Expected
++ Received
+
+  Map {
++   "mem_8r87DEGWL1lSjC3CbaZNrw" => null,
+    "mem_FvRDXebNb9t9js9CFJZD_A" => null,
+  }
+
+ ❯ both src/db/home-days.test.ts:239:96
+    237|   const starsSql = await byStarSql(tx, viewer, club, now);
+    238|   const starsPolicy = await byStarPolicy(tx, facts, club, now);
+    239|   expect(starsSql, `each member's next day, the SQL and the policy, at…
+       |                                                                                                ^
+    240|   // The club's next day is the earliest of its members' next days, or…
+    241|   const earliest = [...starsSql.values()]
+ ❯ ids src/db/home-days.test.ts:254:18
+ ❯ src/db/home-days.test.ts:465:18
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:455:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/9]⎯
+
+ FAIL  src/db/home-days.test.ts > the star as the club sees them, on Postgres (FQ75) > keeps the name and drops the avatar while a deletion asked for during the open day hasn't ended the interval; then the name it ended with
+AssertionError: each member's next day, the SQL and the policy, at 2026-11-07T10:00:00Z: expected Map{ …(3) } to deeply equal Map{ …(2) }
+
+- Expected
++ Received
+
+  Map {
++   "mem_KxuPzHClJ4NVdoeyAjLy1Q" => null,
+    "mem_UcB1SrR1kWaoaObmcqXMoA" => null,
+    "mem_hicoLAc1TUW5Lb15TJALVw" => null,
+  }
+
+ ❯ both src/db/home-days.test.ts:239:96
+    237|   const starsSql = await byStarSql(tx, viewer, club, now);
+    238|   const starsPolicy = await byStarPolicy(tx, facts, club, now);
+    239|   expect(starsSql, `each member's next day, the SQL and the policy, at…
+       |                                                                                                ^
+    240|   // The club's next day is the earliest of its members' next days, or…
+    241|   const earliest = [...starsSql.values()]
+ ❯ src/db/home-days.test.ts:509:15
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:496:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/9]⎯
+
+ FAIL  src/db/home-days.test.ts > the star as the club sees them, on Postgres (FQ75) > names a star who left during the open day by the name it ended with, whatever the account is called now
+AssertionError: each member's next day, the SQL and the policy, at 2026-11-07T10:00:00Z: expected Map{ …(3) } to deeply equal Map{ …(2) }
+
+- Expected
++ Received
+
+  Map {
++   "mem__QFSQofAq00_A7fETg7rLw" => null,
+    "mem_harC73Vfyd-cMmE-UWIwnA" => null,
+    "mem_uVK2PSl6XGsuAk3jAJecYw" => null,
+  }
+
+ ❯ both src/db/home-days.test.ts:239:96
+    237|   const starsSql = await byStarSql(tx, viewer, club, now);
+    238|   const starsPolicy = await byStarPolicy(tx, facts, club, now);
+    239|   expect(starsSql, `each member's next day, the SQL and the policy, at…
+       |                                                                                                ^
+    240|   // The club's next day is the earliest of its members' next days, or…
+    241|   const earliest = [...starsSql.values()]
+ ❯ src/db/home-days.test.ts:522:15
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:518:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/9]⎯
+
+ FAIL  src/db/home-days.test.ts > the star as the club sees them, on Postgres (FQ75) > leaves out an open day whose star has no name to show, and still gives the next day (B6, docs/LIMITATIONS.md)
+AssertionError: each member's next day, the SQL and the policy, at 2026-11-07T10:00:00Z: expected Map{ …(2) } to deeply equal Map{ …(1) }
+
+- Expected
++ Received
+
+@@ -10,6 +10,7 @@
+        "avatarVersion": null,
+        "displayName": "Ben QQJajg",
+        "membershipId": "mem_TBP1SDZSKQ-g-bIPyLgqNg",
+      },
+    },
++   "mem_vrfgaBHjZ4bCa1EOHEyn5w" => null,
+  }
+
+ ❯ both src/db/home-days.test.ts:239:96
+    237|   const starsSql = await byStarSql(tx, viewer, club, now);
+    238|   const starsPolicy = await byStarPolicy(tx, facts, club, now);
+    239|   expect(starsSql, `each member's next day, the SQL and the policy, at…
+       |                                                                                                ^
+    240|   // The club's next day is the earliest of its members' next days, or…
+    241|   const earliest = [...starsSql.values()]
+ ❯ ids src/db/home-days.test.ts:254:18
+ ❯ src/db/home-days.test.ts:536:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:531:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/9]⎯
+

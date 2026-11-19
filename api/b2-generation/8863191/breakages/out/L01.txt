@@ -1,0 +1,193 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/tests
+
+ ❯ src/db/members.test.ts (12 tests | 2 failed) 1136ms
+   ❯ the roster once the week is in force (the contract's sunday_people scene; FQ26, FQ98) (8)
+     × drops a member who has left from the list, keeps everyone else's position without a gap, and names no day of theirs as next 107ms
+   ❯ who gets the roster (T14) (1)
+     × gives nothing to a stranger, to an id nobody has, to what can't be an id, or of a suspended club 96ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 10 passed (12)
+   Start at  03:40:11
+   Duration  1.79s (tests 76%, import 17%, transform 6%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/members.test.ts > the roster once the week is in force (the contract's sunday_people scene; FQ26, FQ98) > drops a member who has left from the list, keeps everyone else's position without a gap, and names no day of theirs as next
+AssertionError: expected { club: { …(4) }, …(1) } to be null
+
+- Expected:
+null
+
++ Received:
+{
+  "club": {
+    "id": "club_g2wpd_yI7_J3ZUHajVSQuA",
+    "membershipId": "mem_nfE7v2bHFodTsQmRXzejWg",
+    "name": "Sunday people",
+    "timezone": "America/New_York",
+  },
+  "members": [
+    {
+      "nextDay": null,
+      "nextUp": false,
+      "person": {
+        "avatarVersion": null,
+        "displayName": "Ben",
+        "membershipId": "mem__JKtZdrK1ztCF3cVgy0XPA",
+      },
+      "position": 1,
+    },
+    {
+      "nextDay": null,
+      "nextUp": false,
+      "person": {
+        "avatarVersion": null,
+        "displayName": "Maya",
+        "membershipId": "mem_qD7EarvmMvO1fITBi-jqUg",
+      },
+      "position": 2,
+    },
+    {
+      "nextDay": null,
+      "nextUp": false,
+      "person": {
+        "avatarVersion": null,
+        "displayName": "Alex",
+        "membershipId": "mem_848nihUhPgozBee41sKY-A",
+      },
+      "position": 3,
+    },
+    {
+      "nextDay": null,
+      "nextUp": false,
+      "person": {
+        "avatarVersion": null,
+        "displayName": "Sam",
+        "membershipId": "mem_OOvplrOWbbo-r6-DKnyhPA",
+      },
+      "position": 4,
+    },
+    {
+      "nextDay": null,
+      "nextUp": false,
+      "person": {
+        "avatarVersion": null,
+        "displayName": "Debby",
+        "membershipId": "mem_-7_MDkgUVKYInTT4oNsAVA",
+      },
+      "position": 5,
+    },
+  ],
+}
+
+ ❯ src/db/members.test.ts:197:66
+    195|       ]);
+    196|       // And Nina no longer gets the roster.
+    197|       expect(await roster(tx, w.users[5] ?? "", w.club, FRIDAY)).toBeN…
+       |                                                                  ^
+    198|     });
+    199|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/members.test.ts:179:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/members.test.ts > who gets the roster (T14) > gives nothing to a stranger, to an id nobody has, to what can't be an id, or of a suspended club
+AssertionError: expected { club: { …(4) }, …(1) } to be null
+
+- Expected:
+null
+
++ Received:
+{
+  "club": {
+    "id": "club_9VHCnLoQ6BCtwI2iW1RWug",
+    "membershipId": "mem_Scdh-Okzp33rU-SB9mQzXg",
+    "name": "Sunday people",
+    "timezone": "America/New_York",
+  },
+  "members": [
+    {
+      "nextDay": null,
+      "nextUp": false,
+      "person": {
+        "avatarVersion": null,
+        "displayName": "Ben",
+        "membershipId": "mem_Scdh-Okzp33rU-SB9mQzXg",
+      },
+      "position": 1,
+    },
+    {
+      "nextDay": null,
+      "nextUp": false,
+      "person": {
+        "avatarVersion": null,
+        "displayName": "Maya",
+        "membershipId": "mem_2A2IhYnvUuGkS0scWQ1vrw",
+      },
+      "position": 2,
+    },
+    {
+      "nextDay": null,
+      "nextUp": false,
+      "person": {
+        "avatarVersion": null,
+        "displayName": "Alex",
+        "membershipId": "mem_y6u3mpoMrDWciR7H84-OHw",
+      },
+      "position": 3,
+    },
+    {
+      "nextDay": null,
+      "nextUp": false,
+      "person": {
+        "avatarVersion": null,
+        "displayName": "Sam",
+        "membershipId": "mem_yLqKqvQUI-aqkSRW0Cr9XQ",
+      },
+      "position": 4,
+    },
+    {
+      "nextDay": null,
+      "nextUp": false,
+      "person": {
+        "avatarVersion": null,
+        "displayName": "Debby",
+        "membershipId": "mem_9wozLa4zKiUDB6JUljGvvw",
+      },
+      "position": 5,
+    },
+    {
+      "nextDay": null,
+      "nextUp": false,
+      "person": {
+        "avatarVersion": null,
+        "displayName": "Nina",
+        "membershipId": "mem_O-YHb0Mi_879BLDNRZKiMQ",
+      },
+      "position": 6,
+    },
+  ],
+}
+
+ ❯ src/db/members.test.ts:279:66
+    277|       expect(await roster(tx, other.users[0] ?? "", other.club, FRIDAY…
+    278|       await tx`UPDATE app.clubs SET suspended_at = ${at("2026-11-05T12…
+    279|       expect(await roster(tx, w.users[0] ?? "", w.club, FRIDAY)).toBeN…
+       |                                                                  ^
+    280|     });
+    281|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/members.test.ts:268:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

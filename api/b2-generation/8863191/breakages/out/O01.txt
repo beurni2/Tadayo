@@ -1,0 +1,42 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/packages/domain
+
+ ❯ src/schedule/order.test.ts (8 tests | 1 failed) 13ms
+   ❯ the roster's order (spec 09; FQ26, FQ98, FQ114) (8)
+     × is the order they joined while the first days are open, whoever has confirmed (FQ98) 8ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 25 passed (26)
+   Start at  03:39:22
+   Duration  169ms (tests 41%, import 30%, transform 17%, worker 11%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/order.test.ts > the roster's order (spec 09; FQ26, FQ98, FQ114) > is the order they joined while the first days are open, whoever has confirmed (FQ98)
+AssertionError: expected [ 'maya', 'alex', 'sam', 'nina', …(2) ] to deeply equal [ 'ben', 'maya', 'alex', 'sam', …(2) ]
+
+- Expected
++ Received
+
+  [
+-   "ben",
+    "maya",
+    "alex",
+    "sam",
+-   "debby",
+    "nina",
++   "ben",
++   "debby",
+  ]
+
+ ❯ src/schedule/order.test.ts:14:86
+     12|   it("is the order they joined while the first days are open, whoever …
+     13|     const confirmed = days(["tuesday", "maya"], ["wednesday", "alex"],…
+     14|     expect(rosterOrder({ joined: JOINED, firstDaysOpen: true, inForce:…
+       |                                                                                      ^
+     15|     // Even when the confirmed days would order them otherwise.
+     16|     const crossed = days(["monday", "nina"], ["tuesday", "debby"]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

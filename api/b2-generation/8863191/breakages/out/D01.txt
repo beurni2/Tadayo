@@ -1,0 +1,175 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/tests
+
+ ❯ src/db/members.test.ts (12 tests | 8 failed) 1061ms
+   ❯ the roster in a club's first days (the contract's first_days scene; FQ98, T49) (3)
+     × lists every member in the order they joined, the confirmed with their first date, the others with none 202ms
+     × keeps the order they joined whichever days are confirmed, so no row moves when a member confirms 90ms
+     × gives every member the same list, whoever asks (T55) 76ms
+   ❯ the roster once the week is in force (the contract's sunday_people scene; FQ26, FQ98) (8)
+     × is the contract's Friday: Debby's day is open, so Debby's next is the 13th, and Nina is next up 88ms
+     × orders the members by the week from Monday, not by when they joined 112ms
+     × places a member of a club of three by the earlier of their two days, with the earlier date next 61ms
+     × drops a member who has left from the list, keeps everyone else's position without a gap, and names no day of theirs as next 102ms
+     × skips a day an operator has suspended: the member's next is the one after it (T5, T9) 94ms
+
+ Test Files  1 failed (1)
+      Tests  8 failed | 4 passed (12)
+   Start at  03:40:00
+   Duration  1.59s (tests 79%, import 15%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/members.test.ts > the roster in a club's first days (the contract's first_days scene; FQ98, T49) > lists every member in the order they joined, the confirmed with their first date, the others with none
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/members.ts:63:10
+     61|
+     62| function shape(): Error {
+     63|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     64| }
+     65|
+ ❯ ../packages/domain/src/clubs/members.ts:151:100
+ ❯ listMembers ../packages/domain/src/clubs/members.ts:145:38
+ ❯ src/db/members.test.ts:56:21
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+ FAIL  src/db/members.test.ts > the roster in a club's first days (the contract's first_days scene; FQ98, T49) > keeps the order they joined whichever days are confirmed, so no row moves when a member confirms
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/members.ts:63:10
+     61|
+     62| function shape(): Error {
+     63|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     64| }
+     65|
+ ❯ ../packages/domain/src/clubs/members.ts:151:100
+ ❯ listMembers ../packages/domain/src/clubs/members.ts:145:38
+ ❯ order src/db/members.test.ts:88:38
+ ❯ src/db/members.test.ts:97:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+
+ FAIL  src/db/members.test.ts > the roster in a club's first days (the contract's first_days scene; FQ98, T49) > gives every member the same list, whoever asks (T55)
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/members.ts:63:10
+     61|
+     62| function shape(): Error {
+     63|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     64| }
+     65|
+ ❯ ../packages/domain/src/clubs/members.ts:151:100
+ ❯ listMembers ../packages/domain/src/clubs/members.ts:145:38
+ ❯ src/db/members.test.ts:105:21
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+
+ FAIL  src/db/members.test.ts > the roster once the week is in force (the contract's sunday_people scene; FQ26, FQ98) > is the contract's Friday: Debby's day is open, so Debby's next is the 13th, and Nina is next up
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/members.ts:63:10
+     61|
+     62| function shape(): Error {
+     63|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     64| }
+     65|
+ ❯ ../packages/domain/src/clubs/members.ts:151:100
+ ❯ listMembers ../packages/domain/src/clubs/members.ts:145:38
+ ❯ src/db/members.test.ts:120:21
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯
+
+ FAIL  src/db/members.test.ts > the roster once the week is in force (the contract's sunday_people scene; FQ26, FQ98) > orders the members by the week from Monday, not by when they joined
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/members.ts:63:10
+     61|
+     62| function shape(): Error {
+     63|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     64| }
+     65|
+ ❯ ../packages/domain/src/clubs/members.ts:151:100
+ ❯ listMembers ../packages/domain/src/clubs/members.ts:145:38
+ ❯ src/db/members.test.ts:154:19
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯
+
+ FAIL  src/db/members.test.ts > the roster once the week is in force (the contract's sunday_people scene; FQ26, FQ98) > places a member of a club of three by the earlier of their two days, with the earlier date next
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/members.ts:63:10
+     61|
+     62| function shape(): Error {
+     63|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     64| }
+     65|
+ ❯ ../packages/domain/src/clubs/members.ts:151:100
+ ❯ listMembers ../packages/domain/src/clubs/members.ts:145:38
+ ❯ src/db/members.test.ts:170:19
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯
+
+ FAIL  src/db/members.test.ts > the roster once the week is in force (the contract's sunday_people scene; FQ26, FQ98) > drops a member who has left from the list, keeps everyone else's position without a gap, and names no day of theirs as next
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/members.ts:63:10
+     61|
+     62| function shape(): Error {
+     63|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     64| }
+     65|
+ ❯ ../packages/domain/src/clubs/members.ts:151:100
+ ❯ listMembers ../packages/domain/src/clubs/members.ts:145:38
+ ❯ src/db/members.test.ts:189:19
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/8]⎯
+
+ FAIL  src/db/members.test.ts > the roster once the week is in force (the contract's sunday_people scene; FQ26, FQ98) > skips a day an operator has suspended: the member's next is the one after it (T5, T9)
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/members.ts:63:10
+     61|
+     62| function shape(): Error {
+     63|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     64| }
+     65|
+ ❯ ../packages/domain/src/clubs/members.ts:151:100
+ ❯ listMembers ../packages/domain/src/clubs/members.ts:145:38
+ ❯ src/db/members.test.ts:206:26
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/8]⎯
+

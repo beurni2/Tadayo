@@ -1,0 +1,131 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/packages/domain
+
+ ❯ src/schedule/generate.test.ts (18 tests | 1 failed) 29ms
+   ❯ the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) (13)
+     × makes each date under the version in force on it: the latest that started on or before it (FQ61) 9ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 25 passed (26)
+   Start at  03:39:19
+   Duration  164ms (tests 44%, import 27%, transform 19%, worker 10%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > makes each date under the version in force on it: the latest that started on or before it (FQ61)
+AssertionError: expected [ …(17) ] to deeply equal [ …(6) ]
+
+- Expected
++ Received
+
+  [
+    [
+      "2026-11-16",
+-     "ver_2",
+-     "leila",
++     "ver_1",
++     "ben",
+    ],
+    [
+      "2026-11-17",
+-     "ver_2",
+-     "ben",
++     "ver_1",
++     "maya",
++   ],
++   [
++     "2026-11-18",
++     "ver_1",
++     "alex",
++   ],
++   [
++     "2026-11-19",
++     "ver_1",
++     "sam",
++   ],
++   [
++     "2026-11-20",
++     "ver_1",
++     "debby",
++   ],
++   [
++     "2026-11-21",
++     "ver_1",
++     "nina",
+    ],
+    [
+      "2026-11-23",
+-     "ver_2",
+-     "leila",
++     "ver_1",
++     "ben",
+    ],
+    [
+      "2026-11-24",
+-     "ver_2",
+-     "ben",
++     "ver_1",
++     "maya",
++   ],
++   [
++     "2026-11-25",
++     "ver_1",
++     "alex",
++   ],
++   [
++     "2026-11-26",
++     "ver_1",
++     "sam",
++   ],
++   [
++     "2026-11-27",
++     "ver_1",
++     "debby",
++   ],
++   [
++     "2026-11-28",
++     "ver_1",
++     "nina",
+    ],
+    [
+      "2026-11-30",
+-     "ver_2",
+-     "leila",
++     "ver_1",
++     "ben",
+    ],
+    [
+      "2026-12-01",
+-     "ver_2",
+-     "ben",
++     "ver_1",
++     "maya",
++   ],
++   [
++     "2026-12-02",
++     "ver_1",
++     "alex",
++   ],
++   [
++     "2026-12-03",
++     "ver_1",
++     "sam",
++   ],
++   [
++     "2026-12-04",
++     "ver_1",
++     "debby",
+    ],
+  ]
+
+ ❯ src/schedule/generate.test.ts:183:82
+    181|     ]);
+    182|     // From its start only the new week's days: nothing of the old one…
+    183|     expect(after.map((day) => [day.localDate, day.versionId, day.starI…
+       |                                                                                  ^
+    184|       ["2026-11-16", "ver_2", "leila"],
+    185|       ["2026-11-17", "ver_2", "ben"],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,14 @@
+diff --git a/services/worker/src/main.ts b/services/worker/src/main.ts
+index bfe36de5..e475c28c 100644
+--- a/services/worker/src/main.ts
++++ b/services/worker/src/main.ts
+@@ -23,9 +23,6 @@ try {
+     process.once("SIGTERM", () => {
+       resolve("SIGTERM");
+     });
+-    process.once("SIGINT", () => {
+-      resolve("SIGINT");
+-    });
+   });
+   process.stdout.write("worker: started, making days every minute\n");
+   await runLoop({

@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/generate.ts b/packages/domain/src/schedule/generate.ts
+index 33ab5e9e..8f4bf097 100644
+--- a/packages/domain/src/schedule/generate.ts
++++ b/packages/domain/src/schedule/generate.ts
+@@ -72,7 +72,7 @@ export function daysToMake(facts: GenerationFacts, now: Temporal.Instant): OwedD
+   const versions = [...facts.versions].sort((a, b) => (a.effectiveFrom < b.effectiveFrom ? -1 : 1));
+   const today = now.toZonedDateTimeISO(zone).toPlainDate();
+   const owed: OwedDay[] = [];
+-  for (let ahead = 0; ahead <= HORIZON_DAYS; ahead += 1) {
++  for (let ahead = 0; ahead < HORIZON_DAYS; ahead += 1) {
+     const date = today.add({ days: ahead });
+     const weekday = WEEKDAYS[date.dayOfWeek - 1];
+     if (weekday === undefined) continue; // Sunday (T6).

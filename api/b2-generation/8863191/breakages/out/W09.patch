@@ -1,0 +1,21 @@
+diff --git a/services/worker/src/generation.ts b/services/worker/src/generation.ts
+index 088b4841..3723f095 100644
+--- a/services/worker/src/generation.ts
++++ b/services/worker/src/generation.ts
+@@ -39,13 +39,9 @@ export async function generationPass(
+   const ids = await clubs(sql);
+   let made = 0;
+   const failures: string[] = [];
+-  for (const id of ids) {
+-    try {
+-      made += await sql.begin((tx) => makeDays(tx, clock, id));
+-    } catch (error) {
+-      failures.push(describeFailure(error));
+-    }
+-  }
++  await sql.begin(async (tx) => {
++    for (const id of ids) made += await makeDays(tx, clock, id);
++  });
+   return { clubs: ids.length, made, failures };
+ }
+ 

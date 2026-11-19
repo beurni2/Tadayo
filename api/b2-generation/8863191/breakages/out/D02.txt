@@ -1,0 +1,54 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/tests
+
+ ❯ src/db/days-without-workers.test.ts (2 tests | 2 failed) 363ms
+   ❯ Q18: Home's days and the roster's dates with no worker running (T1, T5) (2)
+     × moves from Debby's Friday to Nina's Saturday at 7 AM and 1 AM by the clock alone 237ms
+     × goes on for as long as days were made, then shows no next date instead of inventing one (T49) 120ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed (2)
+   Start at  03:40:02
+   Duration  716ms (tests 79%, import 12%, transform 8%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/days-without-workers.test.ts > Q18: Home's days and the roster's dates with no worker running (T1, T5) > moves from Debby's Friday to Nina's Saturday at 7 AM and 1 AM by the clock alone
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/members.ts:63:10
+     61|
+     62| function shape(): Error {
+     63|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     64| }
+     65|
+ ❯ ../packages/domain/src/clubs/members.ts:151:100
+ ❯ listMembers ../packages/domain/src/clubs/members.ts:145:38
+ ❯ sight src/db/days-without-workers.test.ts:30:18
+ ❯ src/db/days-without-workers.test.ts:81:16
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/days-without-workers.test.ts > Q18: Home's days and the roster's dates with no worker running (T1, T5) > goes on for as long as days were made, then shows no next date instead of inventing one (T49)
+Error: clubs: the roster came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/members.ts:63:10
+     61|
+     62| function shape(): Error {
+     63|   return new Error("clubs: the roster came back in a shape the schema …
+       |          ^
+     64| }
+     65|
+ ❯ ../packages/domain/src/clubs/members.ts:151:100
+ ❯ listMembers ../packages/domain/src/clubs/members.ts:145:38
+ ❯ sight src/db/days-without-workers.test.ts:30:18
+ ❯ src/db/days-without-workers.test.ts:111:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

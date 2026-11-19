@@ -1,0 +1,31 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/services/api
+
+ ❯ src/clubs/members.test.ts (6 tests | 1 failed) 19ms
+   ❯ the roster's serializer against the contract's examples (T55) (6)
+     × sends the server's instant in whole seconds, rounded down 5ms
+
+ Test Files  1 failed | 2 passed (3)
+      Tests  1 failed | 25 passed (26)
+   Start at  03:43:08
+   Duration  702ms (import 51%, tests 32%, transform 16%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/clubs/members.test.ts > the roster's serializer against the contract's examples (T55) > sends the server's instant in whole seconds, rounded down
+AssertionError: expected '2026-11-06T14:41:00.999999Z' to be '2026-11-06T14:41:00Z' // Object.is equality
+
+Expected: "2026-11-06T14:41:00Z"
+Received: "2026-11-06T14:41:00.999999Z"
+
+ ❯ src/clubs/members.test.ts:90:32
+     88|     const value = example?.value as Body;
+     89|     const made = membersBody(Temporal.Instant.from("2026-11-06T14:41:0…
+     90|     expect(made["server_now"]).toBe("2026-11-06T14:41:00Z");
+       |                                ^
+     91|   });
+     92|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

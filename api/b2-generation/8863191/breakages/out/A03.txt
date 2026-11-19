@@ -1,0 +1,205 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/services/api
+
+ ❯ src/clubs/members.test.ts (6 tests | 4 failed) 24ms
+   ❯ the roster's serializer against the contract's examples (T55) (6)
+     × makes sunday_people field for field, but for the cover and the open revision 14ms
+     × makes kitchen_table field for field, but for the cover and the open revision 2ms
+     × makes first_days field for field, but for the cover and the open revision 2ms
+     × sends no next day and no avatar where there is none, and nothing else of a member 1ms
+
+ Test Files  1 failed | 2 passed (3)
+      Tests  4 failed | 22 passed (26)
+   Start at  03:43:09
+   Duration  660ms (import 48%, tests 35%, transform 17%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/clubs/members.test.ts > the roster's serializer against the contract's examples (T55) > makes sunday_people field for field, but for the cover and the open revision
+AssertionError: expected { …(3) } to deeply equal { …(3) }
+
+- Expected
++ Received
+
+@@ -63,10 +63,11 @@
+            "membership_id": "mem_sp_alex",
+          },
+        },
+        "next_up": false,
+        "person": {
++         "avatar_version": null,
+          "display_name": "Alex",
+          "membership_id": "mem_sp_alex",
+        },
+        "position": 3,
+      },
+@@ -83,10 +84,11 @@
+            "membership_id": "mem_sp_sam",
+          },
+        },
+        "next_up": false,
+        "person": {
++         "avatar_version": null,
+          "display_name": "Sam",
+          "membership_id": "mem_sp_sam",
+        },
+        "position": 4,
+      },
+@@ -125,10 +127,11 @@
+            "membership_id": "mem_sp_nina",
+          },
+        },
+        "next_up": true,
+        "person": {
++         "avatar_version": null,
+          "display_name": "Nina",
+          "membership_id": "mem_sp_nina",
+        },
+        "position": 6,
+      },
+
+ ❯ src/clubs/members.test.ts:82:18
+     80|     const value = example.value as Body;
+     81|     const made = membersBody(Temporal.Instant.from(value["server_now"]…
+     82|     expect(made).toEqual(sentNow(value));
+       |                  ^
+     83|     expect(Members.safeParse(made).success).toBe(true);
+     84|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/clubs/members.test.ts > the roster's serializer against the contract's examples (T55) > makes kitchen_table field for field, but for the cover and the open revision
+AssertionError: expected { …(3) } to deeply equal { …(3) }
+
+- Expected
++ Received
+
+@@ -41,10 +41,11 @@
+            "membership_id": "mem_kt_alex",
+          },
+        },
+        "next_up": false,
+        "person": {
++         "avatar_version": null,
+          "display_name": "Alex",
+          "membership_id": "mem_kt_alex",
+        },
+        "position": 2,
+      },
+@@ -61,10 +62,11 @@
+            "membership_id": "mem_kt_sam",
+          },
+        },
+        "next_up": false,
+        "person": {
++         "avatar_version": null,
+          "display_name": "Sam",
+          "membership_id": "mem_kt_sam",
+        },
+        "position": 3,
+      },
+@@ -81,10 +83,11 @@
+            "membership_id": "mem_kt_nina",
+          },
+        },
+        "next_up": false,
+        "person": {
++         "avatar_version": null,
+          "display_name": "Nina",
+          "membership_id": "mem_kt_nina",
+        },
+        "position": 4,
+      },
+
+ ❯ src/clubs/members.test.ts:82:18
+     80|     const value = example.value as Body;
+     81|     const made = membersBody(Temporal.Instant.from(value["server_now"]…
+     82|     expect(made).toEqual(sentNow(value));
+       |                  ^
+     83|     expect(Members.safeParse(made).success).toBe(true);
+     84|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/clubs/members.test.ts > the roster's serializer against the contract's examples (T55) > makes first_days field for field, but for the cover and the open revision
+AssertionError: expected { …(3) } to deeply equal { …(3) }
+
+- Expected
++ Received
+
+@@ -50,10 +50,11 @@
+            "membership_id": "mem_sp_alex",
+          },
+        },
+        "next_up": false,
+        "person": {
++         "avatar_version": null,
+          "display_name": "Alex",
+          "membership_id": "mem_sp_alex",
+        },
+        "position": 3,
+      },
+@@ -70,10 +71,11 @@
+            "membership_id": "mem_sp_sam",
+          },
+        },
+        "next_up": false,
+        "person": {
++         "avatar_version": null,
+          "display_name": "Sam",
+          "membership_id": "mem_sp_sam",
+        },
+        "position": 4,
+      },
+@@ -99,10 +101,11 @@
+            "membership_id": "mem_sp_nina",
+          },
+        },
+        "next_up": true,
+        "person": {
++         "avatar_version": null,
+          "display_name": "Nina",
+          "membership_id": "mem_sp_nina",
+        },
+        "position": 6,
+      },
+
+ ❯ src/clubs/members.test.ts:82:18
+     80|     const value = example.value as Body;
+     81|     const made = membersBody(Temporal.Instant.from(value["server_now"]…
+     82|     expect(made).toEqual(sentNow(value));
+       |                  ^
+     83|     expect(Members.safeParse(made).success).toBe(true);
+     84|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/clubs/members.test.ts > the roster's serializer against the contract's examples (T55) > sends no next day and no avatar where there is none, and nothing else of a member
+AssertionError: expected [ { person: { …(3) }, …(2) } ] to deeply equal [ { person: { …(2) }, …(2) } ]
+
+- Expected
++ Received
+
+@@ -1,9 +1,10 @@
+  [
+    {
+      "next_up": false,
+      "person": {
++       "avatar_version": null,
+        "display_name": "Ben",
+        "membership_id": "mem_1",
+      },
+      "position": 1,
+    },
+
+ ❯ src/clubs/members.test.ts:106:26
+    104|     }) as Body & { members: Body[] };
+    105|     expect(Object.keys(made).sort()).toEqual(["club", "members", "serv…
+    106|     expect(made.members).toEqual([
+       |                          ^
+    107|       { person: { membership_id: "mem_1", display_name: "Ben" }, posit…
+    108|     ]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+

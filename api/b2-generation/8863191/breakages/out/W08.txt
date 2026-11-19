@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/tests
+
+ ❯ src/db/worker-generation.test.ts (5 tests | 1 failed) 3012ms
+   ❯ a generation pass (spec 05, 34) (4)
+     × goes on to the next club when one fails, and reports the failure by class alone 197ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+   Start at  03:44:59
+   Duration  3.39s (tests 97%, import 2%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-generation.test.ts > a generation pass (spec 05, 34) > goes on to the next club when one fails, and reports the failure by class alone
+TypeError: schedule: the club is a club id
+ ❯ makeDays ../packages/domain/src/schedule/make-days.ts:98:61
+     96|  */
+     97| export async function makeDays(tx: QuerySql & ClockSql, clock: Clock, …
+     98|   if (typeof clubId !== "string" || !ID.test(clubId)) throw new TypeEr…
+       |                                                             ^
+     99|
+    100|   // 1. The club's row.
+ ❯ ../services/worker/src/generation.ts:44:39
+ ❯ result ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:261:21
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:24
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:244:9
+ ❯ generationPass ../services/worker/src/generation.ts:44:15
+ ❯ src/db/worker-generation.test.ts:62:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

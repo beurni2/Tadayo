@@ -1,0 +1,27 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/packages/domain
+
+ ❯ src/schedule/generate.test.ts (18 tests | 1 failed) 22ms
+   ❯ the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) (13)
+     × never makes a day late: one whose 7 AM is now or past isn't owed, one a microsecond ahead is 7ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 25 passed (26)
+   Start at  03:39:12
+   Duration  165ms (tests 40%, import 32%, transform 18%, worker 11%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > never makes a day late: one whose 7 AM is now or past isn't owed, one a microsecond ahead is
+AssertionError: expected [ '2026-11-07', '2026-11-09', …(23) ] to not include '2026-11-07'
+ ❯ src/schedule/generate.test.ts:86:55
+     84|   it("never makes a day late: one whose 7 AM is now or past isn't owed…
+     85|     // Saturday the 7th opens at 12:00Z.
+     86|     expect(dates(club(), "2026-11-07T12:00:00Z")).not.toContain("2026-…
+       |                                                       ^
+     87|     expect(dates(club(), "2026-11-07T11:59:59.999999Z")).toContain("20…
+     88|     expect(dates(club(), "2026-11-07T12:00:00.000001Z")).not.toContain…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

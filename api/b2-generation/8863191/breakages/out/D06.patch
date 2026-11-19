@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/authorization/days.ts b/packages/domain/src/authorization/days.ts
+index 36677b81..6457cdd3 100644
+--- a/packages/domain/src/authorization/days.ts
++++ b/packages/domain/src/authorization/days.ts
+@@ -167,7 +167,7 @@ export function chooseDays(facts: ClubDayFacts | null, now: ServerNow): DayChoic
+  */
+ export function chooseNextDayOf(facts: ClubDayFacts | null, starInterval: string, now: ServerNow): ChosenDay | null {
+   if (facts === null) return null;
+-  return chooseDays({ ...facts, days: facts.days.filter((day) => day.starInterval === starInterval) }, now).next;
++  return chooseDays({ ...facts, days: facts.days }, now).next;
+ }
+ 
+ type Bound<F> = (template: TemplateStringsArray, ...values: readonly (string | Temporal.Instant | F)[]) => F;

@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/tests
+
+ ❯ src/db/make-days.test.ts (13 tests | 1 failed) 1967ms
+   ❯ making a club's days (spec 05; FQ115) (10)
+     × makes no day for a member who has left, and goes on making everyone else's (FQ63) 94ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+   Start at  03:39:38
+   Duration  2.35s (tests 95%, import 2%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/make-days.test.ts > making a club's days (spec 05; FQ115) > makes no day for a member who has left, and goes on making everyone else's (FQ63)
+PostgresError: app.occurrences: mem_dgJ9ACsMx_WQ_HarOuRqOA is no longer a member, so no day is made for them (FQ63)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ makeDays ../packages/domain/src/schedule/make-days.ts:145:37
+    143|   let made = 0;
+    144|   for (const day of daysToMake(facts, now)) {
+    145|     const inserted = await bound(tx)`
+       |                                     ^
+    146|       INSERT INTO app.occurrences
+    147|         (id, club_id, star_interval_id, schedule_version_id, local_dat…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

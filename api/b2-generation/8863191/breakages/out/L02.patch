@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/members.ts b/packages/domain/src/clubs/members.ts
+index 27380487..d883ca4f 100644
+--- a/packages/domain/src/clubs/members.ts
++++ b/packages/domain/src/clubs/members.ts
+@@ -117,7 +117,7 @@ export async function listMembers(
+               JOIN app.users su ON su.id = s.user_id
+               LEFT JOIN (${nextDaysByStar(sql, userId, now)}) nd
+                 ON nd.club_id = s.club_id AND nd.star_interval_id = s.interval_id
+-             WHERE s.club_id = c.id AND s.state = 'active') AS members,
++             WHERE s.club_id = c.id) AS members,
+            h.next_day AS club_next,
+            EXISTS (SELECT FROM app.schedule_proposals p
+                     WHERE p.club_id = c.id AND p.reason = 'activation' AND p.state = 'open') AS first_days_open,

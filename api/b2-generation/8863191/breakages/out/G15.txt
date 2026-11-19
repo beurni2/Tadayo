@@ -1,0 +1,115 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/packages/domain
+
+ ❯ src/schedule/generate.test.ts (18 tests | 5 failed) 28ms
+   ❯ the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) (13)
+     × names each day's star, its version and its two instants, each resolved in the club's zone 7ms
+     × never makes a day late: one whose 7 AM is now or past isn't owed, one a microsecond ahead is 2ms
+   ❯ a made day's instants across a clock change (T2; ADR-008) (5)
+     × New York's autumn change: Saturday 31 October 2026 closes at the first 01:00 of 1 November, still in EDT 1ms
+     × New York's spring change: Saturday 7 March 2026 closes at 01:00 EST, before the clocks jump at 02:00 1ms
+     × London's autumn change: Saturday 24 October 2026 closes at the first 01:00 of the 25th, still in BST 1ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  5 failed | 21 passed (26)
+   Start at  03:39:19
+   Duration  177ms (tests 43%, import 30%, transform 17%, worker 10%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > names each day's star, its version and its two instants, each resolved in the club's zone
+AssertionError: expected { localDate: '2026-11-07', …(4) } to deeply equal { localDate: '2026-11-07', …(4) }
+
+- Expected
++ Received
+
+  {
+-   "closeAt": "2026-11-08T06:00:00Z",
++   "closeAt": "2026-11-08T01:00:00Z",
+    "localDate": "2026-11-07",
+-   "revealAt": "2026-11-07T12:00:00Z",
++   "revealAt": "2026-11-07T07:00:00Z",
+    "starInterval": "nina",
+    "versionId": "ver_1",
+  }
+
+ ❯ src/schedule/generate.test.ts:65:19
+     63|   it("names each day's star, its version and its two instants, each re…
+     64|     const [first] = daysToMake(club(), at(NOW));
+     65|     expect(first).toEqual({
+       |                   ^
+     66|       localDate: "2026-11-07",
+     67|       versionId: "ver_1",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > never makes a day late: one whose 7 AM is now or past isn't owed, one a microsecond ahead is
+AssertionError: expected [ '2026-11-09', '2026-11-10', …(22) ] to include '2026-11-07'
+ ❯ src/schedule/generate.test.ts:87:58
+     85|     // Saturday the 7th opens at 12:00Z.
+     86|     expect(dates(club(), "2026-11-07T12:00:00Z")).not.toContain("2026-…
+     87|     expect(dates(club(), "2026-11-07T11:59:59.999999Z")).toContain("20…
+       |                                                          ^
+     88|     expect(dates(club(), "2026-11-07T12:00:00.000001Z")).not.toContain…
+     89|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/schedule/generate.test.ts > a made day's instants across a clock change (T2; ADR-008) > New York's autumn change: Saturday 31 October 2026 closes at the first 01:00 of 1 November, still in EDT
+AssertionError: expected Temporal.Instant{} to deeply equal Temporal.Instant{}
+
+- Expected
++ Received
+
+- "2026-10-31T11:00:00Z"
++ "2026-10-31T07:00:00Z"
+
+ ❯ src/schedule/generate.test.ts:211:26
+    209|   it("New York's autumn change: Saturday 31 October 2026 closes at the…
+    210|     const day = saturday(NY, "2026-10-31", "2026-10-20T12:00:00Z");
+    211|     expect(day.revealAt).toEqual(at("2026-10-31T11:00:00Z"));
+       |                          ^
+    212|     // 01:00 on Sunday 1 November happens twice; the first is 05:00Z, …
+    213|     expect(day.closeAt).toEqual(at("2026-11-01T05:00:00Z"));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/schedule/generate.test.ts > a made day's instants across a clock change (T2; ADR-008) > New York's spring change: Saturday 7 March 2026 closes at 01:00 EST, before the clocks jump at 02:00
+AssertionError: expected Temporal.Instant{} to deeply equal Temporal.Instant{}
+
+- Expected
++ Received
+
+- "2026-03-07T12:00:00Z"
++ "2026-03-07T07:00:00Z"
+
+ ❯ src/schedule/generate.test.ts:219:26
+    217|   it("New York's spring change: Saturday 7 March 2026 closes at 01:00 …
+    218|     const day = saturday(NY, "2026-03-07", "2026-03-01T12:00:00Z");
+    219|     expect(day.revealAt).toEqual(at("2026-03-07T12:00:00Z"));
+       |                          ^
+    220|     expect(day.closeAt).toEqual(at("2026-03-08T06:00:00Z"));
+    221|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/schedule/generate.test.ts > a made day's instants across a clock change (T2; ADR-008) > London's autumn change: Saturday 24 October 2026 closes at the first 01:00 of the 25th, still in BST
+AssertionError: expected Temporal.Instant{} to deeply equal Temporal.Instant{}
+
+- Expected
++ Received
+
+- "2026-10-24T06:00:00Z"
++ "2026-10-24T07:00:00Z"
+
+ ❯ src/schedule/generate.test.ts:232:26
+    230|   it("London's autumn change: Saturday 24 October 2026 closes at the f…
+    231|     const day = saturday("Europe/London", "2026-10-24", "2026-10-20T12…
+    232|     expect(day.revealAt).toEqual(at("2026-10-24T06:00:00Z"));
+       |                          ^
+    233|     // 01:00 on the 25th happens twice (BST then GMT); the first is 00…
+    234|     expect(day.closeAt).toEqual(at("2026-10-25T00:00:00Z"));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+

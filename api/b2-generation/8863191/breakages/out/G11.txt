@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/packages/domain
+
+ ❯ src/schedule/generate.test.ts (18 tests | 1 failed) 24ms
+   ❯ the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) (13)
+     × doesn't owe a date already made, whoever's it was 7ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 25 passed (26)
+   Start at  03:39:17
+   Duration  176ms (tests 38%, import 31%, transform 21%, worker 9%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > doesn't owe a date already made, whoever's it was
+AssertionError: expected [ '2026-11-07', '2026-11-09', …(22) ] to have a length of 22 but got 24
+
+- Expected
++ Received
+
+- 22
++ 24
+
+ ❯ src/schedule/generate.test.ts:143:18
+    141|   it("doesn't owe a date already made, whoever's it was", () => {
+    142|     const owed = dates(club({ made: new Set(["2026-11-07", "2026-11-10…
+    143|     expect(owed).toHaveLength(22);
+       |                  ^
+    144|     expect(owed).not.toContain("2026-11-07");
+    145|     expect(owed).not.toContain("2026-11-10");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,50 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/tests
+
+ ❯ src/db/members.test.ts (12 tests | 1 failed) 1141ms
+   ❯ the roster once the week is in force (the contract's sunday_people scene; FQ26, FQ98) (8)
+     × drops a member who has left from the list, keeps everyone else's position without a gap, and names no day of theirs as next 99ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  03:40:14
+   Duration  1.65s (tests 81%, import 14%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/members.test.ts > the roster once the week is in force (the contract's sunday_people scene; FQ26, FQ98) > drops a member who has left from the list, keeps everyone else's position without a gap, and names no day of theirs as next
+AssertionError: expected [ …(6) ] to deeply equal [ …(5) ]
+
+- Expected
++ Received
+
+@@ -27,6 +27,12 @@
+      "Debby",
+      5,
+      "2026-11-13",
+      false,
+    ],
++   [
++     "Nina",
++     6,
++     null,
++     false,
++   ],
+  ]
+
+ ❯ src/db/members.test.ts:189:72
+    187|         new Date("2026-11-06T01:00:00Z"),
+    188|       );
+    189|       expect(rows(await roster(tx, w.users[0] ?? "", w.club, FRIDAY)))…
+       |                                                                        ^
+    190|         ["Ben", 1, "2026-11-09", true],
+    191|         ["Maya", 2, "2026-11-10", false],
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/members.test.ts:179:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

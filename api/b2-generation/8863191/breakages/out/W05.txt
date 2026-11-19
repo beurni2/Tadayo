@@ -1,0 +1,65 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/services/worker
+
+ ❯ src/generation.test.ts (6 tests | 3 failed) 11ms
+   ❯ a failure as the worker reports it (T52, T56) (3)
+     × is the error's class and its code, never what it says 7ms
+     × drops a code that isn't a plain word, which could carry anything 1ms
+     × names nothing of a value that isn't an error 1ms
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  3 failed | 15 passed (18)
+   Start at  03:44:53
+   Duration  1.50s (tests 89%, import 6%, transform 4%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/generation.test.ts > a failure as the worker reports it (T52, T56) > is the error's class and its code, never what it says
+AssertionError: expected 'app.occurrences: 2026-11-10 isn\'t me…' to be 'Error 23000' // Object.is equality
+
+Expected: "Error 23000"
+Received: "app.occurrences: 2026-11-10 isn't mem_secret's day 23000"
+
+ ❯ src/generation.test.ts:10:38
+      8|   it("is the error's class and its code, never what it says", () => {
+      9|     const refused = Object.assign(new Error("app.occurrences: 2026-11-…
+     10|     expect(describeFailure(refused)).toBe("Error 23000");
+       |                                      ^
+     11|     expect(describeFailure(new TypeError("postgres://tadayo_app:hunter…
+     12|     expect(describeFailure(refused)).not.toMatch(/mem_secret|2026/);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/generation.test.ts > a failure as the worker reports it (T52, T56) > drops a code that isn't a plain word, which could carry anything
+AssertionError: expected 'x' to be 'Error' // Object.is equality
+
+Expected: "Error"
+Received: "x"
+
+ ❯ src/generation.test.ts:16:90
+     14|
+     15|   it("drops a code that isn't a plain word, which could carry anything…
+     16|     expect(describeFailure(Object.assign(new Error("x"), { code: "post…
+       |                                                                                          ^
+     17|     expect(describeFailure(Object.assign(new Error("x"), { code: 42 })…
+     18|     expect(describeFailure(Object.assign(new Error("x"), { code: "ECON…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/generation.test.ts > a failure as the worker reports it (T52, T56) > names nothing of a value that isn't an error
+AssertionError: expected 'mem_secret' to be 'a thrown value' // Object.is equality
+
+Expected: "a thrown value"
+Received: "mem_secret"
+
+ ❯ src/generation.test.ts:22:43
+     20|
+     21|   it("names nothing of a value that isn't an error", () => {
+     22|     expect(describeFailure("mem_secret")).toBe("a thrown value");
+       |                                           ^
+     23|     expect(describeFailure(null)).toBe("a thrown value");
+     24|     expect(describeFailure(undefined)).toBe("a thrown value");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

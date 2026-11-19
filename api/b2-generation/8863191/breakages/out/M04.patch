@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/make-days.ts b/packages/domain/src/schedule/make-days.ts
+index 4abbba73..fca780f1 100644
+--- a/packages/domain/src/schedule/make-days.ts
++++ b/packages/domain/src/schedule/make-days.ts
+@@ -147,7 +147,7 @@ export async function makeDays(tx: QuerySql & ClockSql, clock: Clock, clubId: st
+         (id, club_id, star_interval_id, schedule_version_id, local_date, reveal_at, close_at, collecting_from)
+       VALUES (${newId("occ")}, ${clubId}, ${day.starInterval}, ${day.versionId}, ${day.localDate}::pg_catalog.date,
+               ${day.revealAt}::pg_catalog.timestamptz, ${day.closeAt}::pg_catalog.timestamptz,
+-              ${now}::pg_catalog.timestamptz)
++              pg_catalog.clock_timestamp())
+       ON CONFLICT (club_id, local_date) DO NOTHING
+       RETURNING id`;
+     made += inserted.length;

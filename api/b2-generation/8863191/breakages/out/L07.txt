@@ -1,0 +1,50 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/tests
+
+ ❯ src/db/members.test.ts (12 tests | 1 failed) 1035ms
+   ❯ the roster once the week is in force (the contract's sunday_people scene; FQ26, FQ98) (8)
+     × follows the week in force on the club's own date: a later week moves the rows only from its start (FQ61) 64ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  03:40:25
+   Duration  1.59s (tests 78%, import 15%, transform 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/members.test.ts > the roster once the week is in force (the contract's sunday_people scene; FQ26, FQ98) > follows the week in force on the club's own date: a later week moves the rows only from its start (FQ61)
+AssertionError: expected [ Array(6) ] to deeply equal [ 'Ben', 'Maya', 'Alex', 'Sam', …(2) ]
+
+- Expected
++ Received
+
+  [
+-   "Ben",
+-   "Maya",
+-   "Alex",
+-   "Sam",
+-   "Debby",
+    "Nina",
++   "Debby",
++   "Sam",
++   "Alex",
++   "Maya",
++   "Ben",
+  ]
+
+ ❯ src/db/members.test.ts:229:35
+    227|       }
+    228|       const names = async (now: string) => rows(await roster(tx, w.use…
+    229|       expect(await names(FRIDAY)).toEqual([...NAMES]);
+       |                                   ^
+    230|       // Sunday the 15th, a microsecond before midnight in New York: s…
+    231|       // it has been the 16th for five hours (T2).
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/members.test.ts:213:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

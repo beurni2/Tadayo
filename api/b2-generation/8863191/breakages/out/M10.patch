@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/schedule/make-days.ts b/packages/domain/src/schedule/make-days.ts
+index 4abbba73..88ed8398 100644
+--- a/packages/domain/src/schedule/make-days.ts
++++ b/packages/domain/src/schedule/make-days.ts
+@@ -160,6 +160,6 @@ export async function clubsWithAWeek(sql: QuerySql): Promise<string[]> {
+   const rows = await bound(sql)`
+     SELECT c.id FROM app.clubs c
+      WHERE EXISTS (SELECT FROM app.schedule_versions v WHERE v.club_id = c.id)
+-     ORDER BY c.id COLLATE "C"`;
++     ORDER BY c.id COLLATE "C" DESC`;
+   return rows.map((row) => text(row["id"]));
+ }

@@ -1,0 +1,13 @@
+diff --git a/services/worker/src/generation.ts b/services/worker/src/generation.ts
+index 088b4841..e9e417a8 100644
+--- a/services/worker/src/generation.ts
++++ b/services/worker/src/generation.ts
+@@ -43,7 +43,7 @@ export async function generationPass(
+     try {
+       made += await sql.begin((tx) => makeDays(tx, clock, id));
+     } catch (error) {
+-      failures.push(describeFailure(error));
++      throw error;
+     }
+   }
+   return { clubs: ids.length, made, failures };

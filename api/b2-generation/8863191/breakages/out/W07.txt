@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/services/worker
+
+ ❯ src/generation.test.ts (6 tests | 1 failed) 11ms
+   ❯ the lines of a pass (3)
+     × says nothing when nothing was made and nothing failed 6ms
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 17 passed (18)
+   Start at  03:44:57
+   Duration  1.52s (tests 90%, import 6%, transform 3%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/generation.test.ts > the lines of a pass > says nothing when nothing was made and nothing failed
+AssertionError: expected [ 'worker: made 0 days' ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "worker: made 0 days",
++ ]
+
+ ❯ src/generation.test.ts:30:60
+     28| describe("the lines of a pass", () => {
+     29|   it("says nothing when nothing was made and nothing failed", () => {
+     30|     expect(passLines({ clubs: 3, made: 0, failures: [] })).toEqual([]);
+       |                                                            ^
+     31|     expect(passLines({ clubs: 0, made: 0, failures: [] })).toEqual([]);
+     32|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

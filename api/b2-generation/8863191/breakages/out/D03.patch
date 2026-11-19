@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/authorization/days.ts b/packages/domain/src/authorization/days.ts
+index 36677b81..af1423b8 100644
+--- a/packages/domain/src/authorization/days.ts
++++ b/packages/domain/src/authorization/days.ts
+@@ -224,7 +224,7 @@ export function nextDaysByStar<F>(sql: FragmentSql<F>, viewer: string, now: Serv
+     SELECT c.id AS club_id, sm.interval_id AS star_interval_id,
+            (${oneDay(sql, now, "collecting", true)}) AS next_day
+       FROM app.clubs c
+-      JOIN app.memberships sm ON sm.club_id = c.id AND sm.state = 'active'
++      JOIN app.memberships sm ON sm.club_id = c.id
+      WHERE c.suspended_at IS NULL
+        AND EXISTS (SELECT FROM app.memberships m JOIN app.users u ON u.id = m.user_id
+                     WHERE m.club_id = c.id AND m.user_id = ${viewer}::pg_catalog.text

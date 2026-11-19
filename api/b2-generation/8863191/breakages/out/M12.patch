@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/make-days.ts b/packages/domain/src/schedule/make-days.ts
+index 4abbba73..7acd1a48 100644
+--- a/packages/domain/src/schedule/make-days.ts
++++ b/packages/domain/src/schedule/make-days.ts
+@@ -141,7 +141,7 @@ export async function makeDays(tx: QuerySql & ClockSql, clock: Clock, clubId: st
+ 
+   // 4. The days.
+   let made = 0;
+-  for (const day of daysToMake(facts, now)) {
++  for (const day of daysToMake(facts, now.subtract({ hours: 1 }))) {
+     const inserted = await bound(tx)`
+       INSERT INTO app.occurrences
+         (id, club_id, star_interval_id, schedule_version_id, local_date, reveal_at, close_at, collecting_from)

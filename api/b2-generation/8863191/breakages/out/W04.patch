@@ -1,0 +1,12 @@
+diff --git a/services/worker/src/loop.ts b/services/worker/src/loop.ts
+index 5c323d78..9057e20b 100644
+--- a/services/worker/src/loop.ts
++++ b/services/worker/src/loop.ts
+@@ -31,6 +31,7 @@ export async function runLoop(loop: Loop): Promise<void> {
+   const stopping = (): boolean => told;
+   const stop = loop.stopped.then(stopNow, stopNow);
+   while (!stopping()) {
++    await new Promise((resolve) => setTimeout(resolve, loop.everyMs));
+     try {
+       await loop.pass();
+     } catch (error) {

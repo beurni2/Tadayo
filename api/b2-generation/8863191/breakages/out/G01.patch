@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/generate.ts b/packages/domain/src/schedule/generate.ts
+index 33ab5e9e..c4187ab4 100644
+--- a/packages/domain/src/schedule/generate.ts
++++ b/packages/domain/src/schedule/generate.ts
+@@ -23,7 +23,7 @@ import { WEEKDAYS, type Weekday } from "./propose.ts";
+  * How far ahead days are made, in days after the club's today: four weeks (FQ115), the number the
+  * contract's fixtures took (packages/contracts/src/fixtures/world.ts, `changeFrom`).
+  */
+-export const HORIZON_DAYS = 28;
++export const HORIZON_DAYS = 27;
+ 
+ export interface WeekAssignment {
+   readonly weekday: Weekday;

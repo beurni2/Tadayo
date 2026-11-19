@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/tests
+
+ ❯ src/db/make-days.test.ts (13 tests | 1 failed) 1873ms
+   ❯ making a club's days (spec 05; FQ115) (10)
+     × makes no day for a suspended club (spec 22), and makes them again once it is lifted 82ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+   Start at  03:39:41
+   Duration  2.23s (tests 95%, import 3%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/make-days.test.ts > making a club's days (spec 05; FQ115) > makes no day for a suspended club (spec 22), and makes them again once it is lifted
+AssertionError: expected 24 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 24
+
+ ❯ src/db/make-days.test.ts:246:42
+    244|       const w = await confirmedWeek(tx, 6, TIMES);
+    245|       await tx`UPDATE app.clubs SET suspended_at = ${at("2026-11-05T12…
+    246|       expect(await run(tx, w.club, NOW)).toBe(0);
+       |                                          ^
+    247|       expect(await daysOf(tx, w.club)).toEqual([]);
+    248|       await tx`UPDATE app.clubs SET suspended_at = NULL WHERE id = ${w…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/make-days.test.ts:243:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
