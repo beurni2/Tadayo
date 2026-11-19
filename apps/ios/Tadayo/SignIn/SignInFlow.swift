@@ -130,10 +130,10 @@ struct EmailScreen: View {
         // whether Return or Send a code started it, so the field keeps it as it does when Send a
         // code is tapped (handoff 7's `busyPrimary.field`: "keep first responder and keyboard if
         // already shown"). `returnSends` covers the moments between Return and the send's start,
-        // and after a send that ends just as Return is pressed; once a code is sent the focus is
-        // A02-code's, so nothing is put back then. Whether the keyboard dips on the way is a device check:
-        // focus set again on Return makes it go down and come back up (Apple's developer forums,
-        // thread 770226).
+        // and 100 milliseconds past the send's end, or past a Return made during a send; once a
+        // code is sent the focus is A02-code's, so nothing is put back then. Whether the keyboard
+        // dips on the way is a device check: focus set again on Return makes it go down and come
+        // back up (Apple's developer forums, thread 770226).
         .onChange(of: focused) { _, now in
             if !now, model.step == .email, returnSends > 0 || model.isSending { focused = true }
         }
