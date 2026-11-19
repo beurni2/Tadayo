@@ -110,14 +110,6 @@ struct TabScroll<Content: View>: View {
             .scrollBounceBehavior(.basedOnSize)
         }
         .background { Palette.canvas.ignoresSafeArea() }
-        .overlay(alignment: .top) {
-            // No height of its own: all of it is the safe area it reaches into.
-            Palette.canvas
-                .ignoresSafeArea(edges: .top)
-                .frame(height: 0)
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
-        }
     }
 }
 
