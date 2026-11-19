@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0012_schedule_proposals.sql b/db/migrations/0012_schedule_proposals.sql
+index ebe2885d..06083b76 100644
+--- a/db/migrations/0012_schedule_proposals.sql
++++ b/db/migrations/0012_schedule_proposals.sql
+@@ -162,7 +162,7 @@ BEGIN
+     the_proposal := NEW.proposal_id;
+     the_interval := NEW.interval_id;
+   END IF;
+-  SELECT * INTO proposal FROM app.schedule_proposals WHERE id = the_proposal FOR SHARE;
++  SELECT * INTO proposal FROM app.schedule_proposals WHERE id = the_proposal;
+   IF proposal.state IS DISTINCT FROM 'open' THEN
+     RAISE EXCEPTION 'app.schedule_proposal_days: holds change only while their proposal is open'
+       USING ERRCODE = 'integrity_constraint_violation';

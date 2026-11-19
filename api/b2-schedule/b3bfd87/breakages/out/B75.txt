@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/services/api
+
+ ❯ src/schedule/routes.test.ts (28 tests | 1 failed) 264ms
+   ❯ what the two commands refuse before any transaction (6)
+     × chooseScheduleDays reads at most 1 KiB of body, which shuts no valid request out 14ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 27 passed (28)
+   Start at  00:50:58
+   Duration  633ms (tests 51%, import 35%, transform 14%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/routes.test.ts > what the two commands refuse before any transaction > chooseScheduleDays reads at most 1 KiB of body, which shuts no valid request out
+AssertionError: expected 1048576 to be 1024 // Object.is equality
+
+- Expected
++ Received
+
+- 1024
++ 1048576
+
+ ❯ src/schedule/routes.test.ts:304:38
+    302|       const send = (payload: string) =>
+    303|         answer({ method, url, headers: { "content-type": "application/…
+    304|       expect(bodyLimitOf(operation)).toBe(1024);
+       |                                      ^
+    305|       // The largest body the contract allows, every key and character…
+    306|       const escape = (text: string): string =>
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

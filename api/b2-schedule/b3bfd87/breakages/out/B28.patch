@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0012_schedule_proposals.sql b/db/migrations/0012_schedule_proposals.sql
+index ebe2885d..b85761b9 100644
+--- a/db/migrations/0012_schedule_proposals.sql
++++ b/db/migrations/0012_schedule_proposals.sql
+@@ -107,7 +107,7 @@ BEGIN
+   ELSE
+     SELECT state INTO proposal_state FROM app.schedule_proposals WHERE id = NEW.proposal_id FOR SHARE;
+   END IF;
+-  IF proposal_state IS DISTINCT FROM 'open' THEN
++  IF false THEN
+     RAISE EXCEPTION 'app.schedule_proposal_members: only an open proposal gains a member or a confirmation'
+       USING ERRCODE = 'integrity_constraint_violation';
+   END IF;

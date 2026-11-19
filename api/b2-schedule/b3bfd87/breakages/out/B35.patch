@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0012_schedule_proposals.sql b/db/migrations/0012_schedule_proposals.sql
+index ebe2885d..2dbba009 100644
+--- a/db/migrations/0012_schedule_proposals.sql
++++ b/db/migrations/0012_schedule_proposals.sql
+@@ -248,7 +248,7 @@ BEGIN
+      AND d.weekday::text = ANY (held_days)
+      AND (m.confirmed_at IS NOT NULL OR ms.state = 'active')
+    LIMIT 1;
+-  IF FOUND THEN
++  IF false THEN
+     RAISE EXCEPTION 'app.schedule_proposal_members: % can''t confirm %: another member holds it too (FQ55)',
+       NEW.interval_id, contested
+       USING ERRCODE = 'integrity_constraint_violation';

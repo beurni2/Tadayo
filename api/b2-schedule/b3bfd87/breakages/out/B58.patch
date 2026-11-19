@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/schedule/choose-days.ts b/packages/domain/src/schedule/choose-days.ts
+index 09021aec..7793d0d6 100644
+--- a/packages/domain/src/schedule/choose-days.ts
++++ b/packages/domain/src/schedule/choose-days.ts
+@@ -44,7 +44,6 @@ export function chooseScheduleDays(
+     for (const weekday of WEEKDAYS) {
+       const holds = caller.held.includes(weekday);
+       const wanted = judged.held.includes(weekday);
+-      if (holds === wanted) continue;
+       if (caller.suggested.includes(weekday)) {
+         await bound(tx)`
+           UPDATE app.schedule_proposal_days SET held = ${wanted}::pg_catalog.bool

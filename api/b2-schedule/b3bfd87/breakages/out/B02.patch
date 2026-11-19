@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/propose.ts b/packages/domain/src/schedule/propose.ts
+index 8fa19084..fce24c35 100644
+--- a/packages/domain/src/schedule/propose.ts
++++ b/packages/domain/src/schedule/propose.ts
+@@ -28,7 +28,7 @@ export function proposedWeek(memberCount: number): readonly (readonly Weekday[])
+   for (let member = 0; member < memberCount; member += 1) {
+     const own: Weekday[] = [];
+     for (let nth = 0; nth < days; nth += 1) {
+-      const day = WEEKDAYS[member + nth * 3];
++      const day = WEEKDAYS[member + nth * 2];
+       if (day === undefined) throw new Error("schedule: spec 05's table gave a member a day past Saturday");
+       own.push(day);
+     }

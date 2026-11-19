@@ -1,0 +1,13 @@
+diff --git a/services/api/src/schedule/routes.ts b/services/api/src/schedule/routes.ts
+index cb896778..db70ba25 100644
+--- a/services/api/src/schedule/routes.ts
++++ b/services/api/src/schedule/routes.ts
+@@ -43,7 +43,7 @@ export function slotBody(slot: SlotAnswer): Json {
+     state: slot.state,
+     ...(slot.owner === undefined ? {} : { owner: personBody(slot.owner) }),
+     ...(slot.holders === undefined ? {} : { holders: slot.holders.map(personBody) }),
+-    ...(slot.heldBy === undefined ? {} : { held_by: personBody(slot.heldBy) }),
++    held_by: slot.heldBy === undefined ? null : personBody(slot.heldBy),
+     ...(slot.firstDate === undefined ? {} : { first_date: slot.firstDate }),
+     suggested: slot.suggested,
+   };

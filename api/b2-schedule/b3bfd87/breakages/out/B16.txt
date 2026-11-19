@@ -1,0 +1,38 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/packages/domain
+
+ ❯ src/schedule/decide.test.ts (18 tests | 1 failed) 28ms
+   ❯ a confirmation in the first days (the contract's ScheduleConfirmRequest; book p11; FQ55, FQ99) (8)
+     × refuses days that aren't exactly what the caller holds: the caller saw another choice 9ms
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 57 passed (58)
+   Start at  00:42:47
+   Duration  1.49s (tests 87%, import 10%, transform 2%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/decide.test.ts > a confirmation in the first days (the contract's ScheduleConfirmRequest; book p11; FQ55, FQ99) > refuses days that aren't exactly what the caller holds: the caller saw another choice
+AssertionError: expected { days: [ 'monday' ] } to be 'NOT_ALLOWED' // Object.is equality
+
+- Expected:
+"NOT_ALLOWED"
+
++ Received:
+{
+  "days": [
+    "monday",
+  ],
+}
+
+ ❯ src/schedule/decide.test.ts:110:56
+    108|
+    109|   it("refuses days that aren't exactly what the caller holds: the call…
+    110|     expect(judgeConfirmation("sam", FOUR, ["monday"])).toBe("NOT_ALLOW…
+       |                                                        ^
+    111|     const pair: WeekFacts = {
+    112|       ...PAIR,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

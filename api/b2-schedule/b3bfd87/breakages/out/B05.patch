@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/view.ts b/packages/domain/src/schedule/view.ts
+index 650dfb1b..a096d1e7 100644
+--- a/packages/domain/src/schedule/view.ts
++++ b/packages/domain/src/schedule/view.ts
+@@ -105,7 +105,7 @@ export function viewFor(viewerId: string, facts: WeekFacts): ProposalView {
+     return {
+       weekday,
+       state: "available",
+-      ...(other === undefined || viewer.confirmed ? {} : { heldBy: other.id }),
++      ...(other === undefined ? {} : { heldBy: other.id }),
+       suggested,
+     };
+   });

@@ -1,0 +1,76 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/tests
+
+ ❯ src/db/schedule-commands.test.ts (50 tests | 2 failed) 2235ms
+   ❯ the refusals, in the contract's order (15)
+     × answers a choice MEMBERSHIP_CHANGED with the newer proposal's id before it looks at the version or the days 37ms
+     × answers a confirmation MEMBERSHIP_CHANGED with the newer proposal's id before it looks at the version or the days 22ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 48 passed (50)
+   Start at  00:47:16
+   Duration  2.58s (tests 96%, import 2%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-commands.test.ts > the refusals, in the contract's order > answers a choice MEMBERSHIP_CHANGED with the newer proposal's id before it looks at the version or the days
+AssertionError: expected { code: 'VERSION_CONFLICT', …(1) } to deeply equal { code: 'MEMBERSHIP_CHANGED', …(1) }
+
+- Expected
++ Received
+
+  {
+-   "code": "MEMBERSHIP_CHANGED",
++   "code": "VERSION_CONFLICT",
+    "facts": {
+-     "current_id": "spr_ySjExHWFqHoXaJKNQJOD5w",
++     "current_version": 2,
+    },
+  }
+
+ ❯ src/db/schedule-commands.test.ts:826:86
+    824|         const successor = await replaced(tx, w);
+    825|         const before = await everything(tx, w);
+    826|         expect(await refusal(command(tx, clock, w, 0, ["tuesday"], { v…
+       |                                                                                      ^
+    827|           code: "MEMBERSHIP_CHANGED",
+    828|           facts: { current_id: successor },
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:821:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > the refusals, in the contract's order > answers a confirmation MEMBERSHIP_CHANGED with the newer proposal's id before it looks at the version or the days
+AssertionError: expected { code: 'VERSION_CONFLICT', …(1) } to deeply equal { code: 'MEMBERSHIP_CHANGED', …(1) }
+
+- Expected
++ Received
+
+  {
+-   "code": "MEMBERSHIP_CHANGED",
++   "code": "VERSION_CONFLICT",
+    "facts": {
+-     "current_id": "spr_qoo6iK2kJIErH5viZhQ_aA",
++     "current_version": 2,
+    },
+  }
+
+ ❯ src/db/schedule-commands.test.ts:826:86
+    824|         const successor = await replaced(tx, w);
+    825|         const before = await everything(tx, w);
+    826|         expect(await refusal(command(tx, clock, w, 0, ["tuesday"], { v…
+       |                                                                                      ^
+    827|           code: "MEMBERSHIP_CHANGED",
+    828|           facts: { current_id: successor },
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:821:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

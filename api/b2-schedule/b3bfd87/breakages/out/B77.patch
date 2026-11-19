@@ -1,0 +1,13 @@
+diff --git a/services/api/src/schedule/routes.ts b/services/api/src/schedule/routes.ts
+index cb896778..4e97782f 100644
+--- a/services/api/src/schedule/routes.ts
++++ b/services/api/src/schedule/routes.ts
+@@ -100,7 +100,7 @@ export function getScheduleHandler(deps: Deps): Handler {
+     const account = signedIn(request);
+     const clubId = parameter(request.params, "club_id");
+     // Read only, and the server's instant first: the week is one statement, so one snapshot (T1).
+-    const body = await deps.sql.begin("read only", async (tx) => {
++    const body = await deps.sql.begin(async (tx) => {
+       const now = await deps.clock.sample(tx);
+       const sight = await readSchedule(tx, account.id, clubId, now);
+       return sight === null ? null : scheduleBody(now, sight);

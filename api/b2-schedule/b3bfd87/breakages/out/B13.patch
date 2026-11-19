@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/decide.ts b/packages/domain/src/schedule/decide.ts
+index 7294c96d..b21756c0 100644
+--- a/packages/domain/src/schedule/decide.ts
++++ b/packages/domain/src/schedule/decide.ts
+@@ -42,7 +42,7 @@ export function judgeChoice(
+   if (caller.confirmed) return "NOT_ALLOWED";
+   if (held.length > facts.daysPerMember) return "NOT_ALLOWED";
+   // Only a confirmed day is taken (FQ48), and it stays its owner's even when they have left (FQ102).
+-  if (held.some((weekday) => confirmerOf(facts, weekday) !== undefined)) return "NOT_ALLOWED";
++  
+   return { held };
+ }
+ 

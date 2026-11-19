@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/first-date.ts b/packages/domain/src/schedule/first-date.ts
+index c8b6d598..f4dde37b 100644
+--- a/packages/domain/src/schedule/first-date.ts
++++ b/packages/domain/src/schedule/first-date.ts
+@@ -21,7 +21,7 @@ export function firstDate(weekday: Weekday, confirmedAt: Temporal.Instant, zone:
+   let date = confirmedAt.toZonedDateTimeISO(club).toPlainDate();
+   date = date.add({ days: (isoDay - date.dayOfWeek + 7) % 7 });
+   for (let week = 0; week < 3; week += 1) {
+-    if (resolveCivilTime(date, REVEAL_TIME, club).epochNanoseconds >= earliest) return date;
++    if (resolveCivilTime(date, REVEAL_TIME, club).epochNanoseconds > earliest) return date;
+     date = date.add({ days: 7 });
+   }
+   throw new Error(`schedule: no first date for ${weekday} after ${confirmedAt.toString()} in ${club}`);

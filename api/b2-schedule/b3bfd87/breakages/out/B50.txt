@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/tests
+
+ ❯ src/db/schedule-commands.test.ts (50 tests | 1 failed) 2009ms
+   ❯ one commit per key (T19) (4)
+     × refuses another request under a used key with IDEMPOTENCY_CONFLICT: other days, another version, another proposal's path, each alone 21ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 49 passed (50)
+   Start at  00:47:35
+   Duration  2.36s (tests 96%, import 3%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-commands.test.ts > one commit per key (T19) > refuses another request under a used key with IDEMPOTENCY_CONFLICT: other days, another version, another proposal's path, each alone
+Error: the request wasn't refused
+ ❯ refusal src/db/schedule-commands.test.ts:175:9
+    173|     throw error;
+    174|   }
+    175|   throw new Error("the request wasn't refused");
+       |         ^
+    176| }
+    177|
+ ❯ src/db/schedule-commands.test.ts:967:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:961:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

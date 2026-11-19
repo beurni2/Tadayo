@@ -1,0 +1,62 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/packages/domain
+
+ ❯ src/schedule/decide.test.ts (18 tests | 2 failed) 16ms
+   ❯ a choice of days in the first days (the contract's ScheduleChoiceRequest; FQ48, FQ55, FQ57) (8)
+     × refuses a day another member has confirmed (G04.error.chooseTaken) 6ms
+     × refuses a day a member who left had confirmed: it stays that member's (FQ102) 1ms
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  2 failed | 56 passed (58)
+   Start at  00:42:42
+   Duration  1.29s (tests 91%, import 7%, transform 1%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/decide.test.ts > a choice of days in the first days (the contract's ScheduleChoiceRequest; FQ48, FQ55, FQ57) > refuses a day another member has confirmed (G04.error.chooseTaken)
+AssertionError: expected { held: [ 'tuesday' ] } to be 'NOT_ALLOWED' // Object.is equality
+
+- Expected:
+"NOT_ALLOWED"
+
++ Received:
+{
+  "held": [
+    "tuesday",
+  ],
+}
+
+ ❯ src/schedule/decide.test.ts:53:51
+     51|
+     52|   it("refuses a day another member has confirmed (G04.error.chooseTake…
+     53|     expect(judgeChoice("sam", FOUR, ["tuesday"])).toBe("NOT_ALLOWED");
+       |                                                   ^
+     54|     const pairTaken: WeekFacts = {
+     55|       ...PAIR,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/schedule/decide.test.ts > a choice of days in the first days (the contract's ScheduleChoiceRequest; FQ48, FQ55, FQ57) > refuses a day a member who left had confirmed: it stays that member's (FQ102)
+AssertionError: expected { held: [ 'tuesday' ] } to be 'NOT_ALLOWED' // Object.is equality
+
+- Expected:
+"NOT_ALLOWED"
+
++ Received:
+{
+  "held": [
+    "tuesday",
+  ],
+}
+
+ ❯ src/schedule/decide.test.ts:77:51
+     75|       firstDates: {},
+     76|     };
+     77|     expect(judgeChoice("sam", left, ["tuesday"])).toBe("NOT_ALLOWED");
+       |                                                   ^
+     78|   });
+     79|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

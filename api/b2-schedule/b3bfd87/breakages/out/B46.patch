@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/schedule/read.ts b/packages/domain/src/schedule/read.ts
+index 38b6e90f..b9a4e0fa 100644
+--- a/packages/domain/src/schedule/read.ts
++++ b/packages/domain/src/schedule/read.ts
+@@ -58,6 +58,6 @@ export async function readSchedule(
+     club: { ...week.club, membershipId: week.membershipId },
+     current:
+       inForce === undefined || assignments.length === 0 ? null : { effectiveFrom: inForce.effectiveFrom, assignments },
+-    proposal: week.proposal !== null && included ? answerOf(week.proposal, week.membershipId) : null,
++    proposal: week.proposal !== null ? answerOf(week.proposal, week.membershipId) : null,
+   };
+ }

@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/view.ts b/packages/domain/src/schedule/view.ts
+index 650dfb1b..2ccb439f 100644
+--- a/packages/domain/src/schedule/view.ts
++++ b/packages/domain/src/schedule/view.ts
+@@ -78,7 +78,7 @@ export function holdersOf(facts: WeekFacts, weekday: Weekday): readonly Proposal
+ /** The first days as the member `viewerId` sees them. Throws for anyone the proposal doesn't include. */
+ export function viewFor(viewerId: string, facts: WeekFacts): ProposalView {
+   const viewer = facts.members.find((member) => member.id === viewerId);
+-  if (viewer === undefined || !viewer.active) {
++  if (viewer === undefined) {
+     throw new Error("schedule: the proposal doesn't include the viewer as an active member (FQ100, T14)");
+   }
+   const slots = WEEKDAYS.map((weekday): SlotView => {

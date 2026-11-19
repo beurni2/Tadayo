@@ -1,0 +1,12 @@
+diff --git a/services/api/src/schedule/routes.ts b/services/api/src/schedule/routes.ts
+index cb896778..0428ad7d 100644
+--- a/services/api/src/schedule/routes.ts
++++ b/services/api/src/schedule/routes.ts
+@@ -32,6 +32,7 @@ export function personBody(person: SchedulePerson): Json {
+   return {
+     membership_id: person.membershipId,
+     display_name: person.displayName,
++    name: person.displayName,
+     ...(person.avatarVersion === null ? {} : { avatar_version: person.avatarVersion }),
+   };
+ }

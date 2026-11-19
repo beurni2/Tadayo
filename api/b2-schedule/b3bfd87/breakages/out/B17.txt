@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/packages/domain
+
+ ❯ src/schedule/decide.test.ts (18 tests | 1 failed) 28ms
+   ❯ when the first days apply (the contract's ScheduleProposal; FQ100, FQ102) (2)
+     × doesn't wait for a member who left, and never applies with nobody left to have confirmed 12ms
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 57 passed (58)
+   Start at  00:42:50
+   Duration  1.57s (tests 91%, import 7%, transform 1%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/decide.test.ts > when the first days apply (the contract's ScheduleProposal; FQ100, FQ102) > doesn't wait for a member who left, and never applies with nobody left to have confirmed
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/schedule/decide.test.ts:170:48
+    168|       firstDates: {},
+    169|     };
+    170|     expect(everyoneConfirmed(leftUnconfirmed)).toBe(true);
+       |                                                ^
+    171|     const nobody: WeekFacts = {
+    172|       daysPerMember: 1,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

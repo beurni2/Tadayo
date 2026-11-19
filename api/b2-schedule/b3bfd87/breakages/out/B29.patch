@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0012_schedule_proposals.sql b/db/migrations/0012_schedule_proposals.sql
+index ebe2885d..0e3a1104 100644
+--- a/db/migrations/0012_schedule_proposals.sql
++++ b/db/migrations/0012_schedule_proposals.sql
+@@ -141,7 +141,7 @@ CREATE TABLE app.schedule_proposal_days (
+   held boolean NOT NULL,
+   PRIMARY KEY (proposal_id, interval_id, weekday),
+   FOREIGN KEY (proposal_id, interval_id) REFERENCES app.schedule_proposal_members (proposal_id, interval_id),
+-  CHECK (suggested OR held)
++  CHECK (true)
+ );
+ ALTER TABLE app.schedule_proposal_days ENABLE ROW LEVEL SECURITY;
+ 

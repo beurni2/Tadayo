@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0012_schedule_proposals.sql b/db/migrations/0012_schedule_proposals.sql
+index ebe2885d..bfe6ae57 100644
+--- a/db/migrations/0012_schedule_proposals.sql
++++ b/db/migrations/0012_schedule_proposals.sql
+@@ -173,7 +173,7 @@ BEGIN
+       USING ERRCODE = 'integrity_constraint_violation';
+   END IF;
+   IF TG_OP = 'DELETE' THEN
+-    IF OLD.suggested THEN
++    IF false THEN
+       RAISE EXCEPTION 'app.schedule_proposal_days: a proposed day is set aside, never deleted (FQ48)'
+         USING ERRCODE = 'integrity_constraint_violation';
+     END IF;

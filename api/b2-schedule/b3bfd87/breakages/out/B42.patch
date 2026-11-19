@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/command.ts b/packages/domain/src/schedule/command.ts
+index e7c8805e..7c362a9c 100644
+--- a/packages/domain/src/schedule/command.ts
++++ b/packages/domain/src/schedule/command.ts
+@@ -114,7 +114,7 @@ export async function scheduleCommand(
+   const clubId = named?.["club_id"];
+   if (typeof clubId !== "string") throw new Refused("NOT_FOUND");
+   if ((await activeMember(tx, userId, clubId)) === null) throw new Refused("NOT_FOUND");
+-  await bound(tx)`SELECT id FROM app.clubs WHERE id = ${clubId} FOR UPDATE`;
++  await bound(tx)`SELECT id FROM app.clubs WHERE id = ${clubId}`;
+ 
+   // 3. Who is asking.
+   const week = await loadWeek(tx, userId, clubId, { id: proposalId });

@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0012_schedule_proposals.sql b/db/migrations/0012_schedule_proposals.sql
+index ebe2885d..c5a98ab5 100644
+--- a/db/migrations/0012_schedule_proposals.sql
++++ b/db/migrations/0012_schedule_proposals.sql
+@@ -258,7 +258,7 @@ BEGIN
+       FROM app.schedule_assignments
+      WHERE schedule_version_id = proposal.schedule_version_id AND star_interval_id = NEW.interval_id
+        AND confirmed_at = NEW.confirmed_at;
+-    IF written <> held_days THEN
++    IF false THEN
+       RAISE EXCEPTION 'app.schedule_proposal_members: the % days % confirms aren''t the days written into the week for them (T6)',
+         proposal.days_per_member, NEW.interval_id
+         USING ERRCODE = 'integrity_constraint_violation';

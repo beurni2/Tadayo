@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/tests
+
+ ❯ src/db/schedule-commands.test.ts (50 tests | 1 failed) 2231ms
+   ❯ confirming days (FQ55, FQ57, FQ79, FQ99; T1, T33, T49) (10)
+     × counts a confirmed day's 24 hours to 7 AM in the club's zone, not in UTC (T2; FQ79) 33ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 49 passed (50)
+   Start at  00:49:17
+   Duration  2.63s (tests 96%, import 2%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-commands.test.ts > confirming days (FQ55, FQ57, FQ79, FQ99; T1, T33, T49) > counts a confirmed day's 24 hours to 7 AM in the club's zone, not in UTC (T2; FQ79)
+AssertionError: expected '2026-11-05' to be '2026-11-12' // Object.is equality
+
+Expected: "2026-11-12"
+Received: "2026-11-05"
+
+ ❯ src/db/schedule-commands.test.ts:650:50
+    648|       clock.set(Temporal.Instant.from("2026-11-04T05:00:00Z"));
+    649|       const answer = await confirm(tx, clock, w, 3, ["thursday"]);
+    650|       expect(slot(answer, "thursday").firstDate).toBe("2026-11-12");
+       |                                                  ^
+    651|       // And Friday's 7 AM in Auckland, 6 PM UTC on Thursday, is 37 ho…
+    652|       expect(slot(await confirm(tx, clock, w, 4, ["friday"]), "friday"…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:643:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

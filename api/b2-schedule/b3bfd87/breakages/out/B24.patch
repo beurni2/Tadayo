@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0012_schedule_proposals.sql b/db/migrations/0012_schedule_proposals.sql
+index ebe2885d..036b07e0 100644
+--- a/db/migrations/0012_schedule_proposals.sql
++++ b/db/migrations/0012_schedule_proposals.sql
+@@ -28,7 +28,7 @@ CREATE TABLE app.schedule_proposals (
+   -- The first days': the club's first local date, never an opening date (FQ79).
+   effective_from date NOT NULL,
+   -- Spec 05's table for the roster it was last proposed for.
+-  days_per_member smallint NOT NULL CHECK (days_per_member IN (1, 2)),
++  days_per_member smallint NOT NULL CHECK (days_per_member IN (1, 2, 3)),
+   -- The week its confirmed days join: the first days' own, made with the proposal.
+   schedule_version_id app.id,
+   -- The proposal that replaced it, when one did.

@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/authorization/member.ts b/packages/domain/src/authorization/member.ts
+index 825b835f..aa000898 100644
+--- a/packages/domain/src/authorization/member.ts
++++ b/packages/domain/src/authorization/member.ts
+@@ -31,7 +31,7 @@ export function activeMemberships<F>(sql: FragmentSql<F>, userId: string): F {
+       JOIN app.users u ON u.id = m.user_id
+       JOIN app.clubs c ON c.id = m.club_id
+      WHERE m.user_id = ${userId}::pg_catalog.text
+-       AND m.state = 'active' AND u.state = 'active' AND c.suspended_at IS NULL`;
++       AND m.state = 'active' AND c.suspended_at IS NULL`;
+ }
+ 
+ /** `userId`'s membership interval in `clubId`, or null when the rule gives them nothing of that club. */

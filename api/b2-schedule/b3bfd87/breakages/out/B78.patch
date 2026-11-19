@@ -1,0 +1,13 @@
+diff --git a/services/api/src/schedule/routes.ts b/services/api/src/schedule/routes.ts
+index cb896778..32fcef19 100644
+--- a/services/api/src/schedule/routes.ts
++++ b/services/api/src/schedule/routes.ts
+@@ -67,7 +67,7 @@ export function proposalBody(proposal: ProposalAnswer): Json {
+ /** The contract's `Schedule`: `now` is the clock's sample, whole seconds, rounded down. */
+ export function scheduleBody(now: Temporal.Instant, sight: ScheduleSight): Json {
+   return {
+-    server_now: contractInstant(now),
++    server_now: now.toString(),
+     club: {
+       id: sight.club.id,
+       name: sight.club.name,

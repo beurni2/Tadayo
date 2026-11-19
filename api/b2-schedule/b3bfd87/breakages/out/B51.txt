@@ -1,0 +1,52 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/tests
+
+ ❯ src/db/schedule-commands.test.ts (50 tests | 2 failed) 2111ms
+   ❯ the refusals, in the contract's order (15)
+     × answers a choice of first days that ended with no successor NOT_ALLOWED: nothing is written to a proposal that has closed (FQ102) 26ms
+     × answers a confirmation of first days that ended with no successor NOT_ALLOWED: nothing is written to a proposal that has closed (FQ102) 16ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 48 passed (50)
+   Start at  00:47:38
+   Duration  2.43s (tests 96%, import 2%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-commands.test.ts > the refusals, in the contract's order > answers a choice of first days that ended with no successor NOT_ALLOWED: nothing is written to a proposal that has closed (FQ102)
+Error: the request wasn't refused
+ ❯ refusal src/db/schedule-commands.test.ts:175:9
+    173|     throw error;
+    174|   }
+    175|   throw new Error("the request wasn't refused");
+       |         ^
+    176| }
+    177|
+ ❯ src/db/schedule-commands.test.ts:907:16
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:894:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > the refusals, in the contract's order > answers a confirmation of first days that ended with no successor NOT_ALLOWED: nothing is written to a proposal that has closed (FQ102)
+PostgresError: app.schedule_proposal_members: only an open proposal gains a member or a confirmation
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ ../packages/domain/src/schedule/confirm-days.ts:47:20
+     45|     const judged = judgeConfirmation(callerId, proposal.facts, input.w…
+     46|     if (judged === "NOT_ALLOWED") throw new Refused("NOT_ALLOWED");
+     47|     await bound(tx)`
+       |                    ^
+     48|         UPDATE app.schedule_proposal_members SET confirmed_at = ${at}:…
+     49|          WHERE proposal_id = ${proposal.id} AND interval_id = ${caller…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

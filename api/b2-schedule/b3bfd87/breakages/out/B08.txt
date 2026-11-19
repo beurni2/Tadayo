@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/packages/domain
+
+ ❯ src/schedule/view.test.ts (14 tests | 1 failed) 992ms
+   ❯ what each member sees of the first days (the contract's examples; FQ46, FQ48, FQ55, FQ78) (12)
+     × a member who left holds nothing; a day they confirmed stays taken by them, with no date (FQ102) 9ms
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 57 passed (58)
+   Start at  00:42:32
+   Duration  1.39s (tests 89%, import 9%, transform 1%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/view.test.ts > what each member sees of the first days (the contract's examples; FQ46, FQ48, FQ55, FQ78) > a member who left holds nothing; a day they confirmed stays taken by them, with no date (FQ102)
+AssertionError: expected { weekday: 'tuesday', …(4) } to deeply equal { weekday: 'tuesday', …(3) }
+
+- Expected
++ Received
+
+  {
++   "firstDate": "2026-11-10",
+    "owner": "maya",
+    "state": "taken",
+    "suggested": false,
+    "weekday": "tuesday",
+  }
+
+ ❯ src/schedule/view.test.ts:208:43
+    206|     // Maya confirmed Tuesday and left: it stays Maya's, and opens no …
+    207|     const left = sundayPeople({}, FOUR_CONFIRMED, ["maya"]);
+    208|     expect(viewFor("ben", left).slots[1]).toEqual({
+       |                                           ^
+    209|       weekday: "tuesday",
+    210|       state: "taken",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

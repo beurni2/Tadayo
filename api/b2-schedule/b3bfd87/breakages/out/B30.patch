@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0012_schedule_proposals.sql b/db/migrations/0012_schedule_proposals.sql
+index ebe2885d..bf30b57b 100644
+--- a/db/migrations/0012_schedule_proposals.sql
++++ b/db/migrations/0012_schedule_proposals.sql
+@@ -206,7 +206,7 @@ BEGIN
+   SELECT days_per_member INTO most FROM app.schedule_proposals WHERE id = NEW.proposal_id;
+   SELECT pg_catalog.count(*) INTO holds FROM app.schedule_proposal_days
+    WHERE proposal_id = NEW.proposal_id AND interval_id = NEW.interval_id AND held;
+-  IF holds > most THEN
++  IF holds > most + 1 THEN
+     RAISE EXCEPTION 'app.schedule_proposal_days: % holds at most % days in % (spec 05)',
+       NEW.interval_id, most, NEW.proposal_id
+       USING ERRCODE = 'integrity_constraint_violation';

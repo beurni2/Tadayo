@@ -1,0 +1,475 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/packages/domain
+
+ ❯ src/schedule/view.test.ts (14 tests | 10 failed) 1067ms
+   ❯ what each member sees of the first days (the contract's examples; FQ46, FQ48, FQ55, FQ78) (12)
+     × G04-conflict-three: Ben, Alex and Debby hold Friday and see each other, in the order they joined 11ms
+     × G04-contested-other: Sam sees Friday contested, with no names and no count 3ms
+     × G04-confirm-refused: Alex went back to Wednesday, and Debby still shares Friday with Ben 4ms
+     × chooseScheduleDays' `chosen`: Ben chose Monday, and Friday now has no names for Ben 1ms
+     × chooseScheduleDays' `joined_contest`: Sam chose Friday, sees its holders, and Thursday is free 2ms
+     × getSchedule's `first_days`: Ben, still choosing, sees four taken days with their dates, and Debby on Friday 2ms
+     × getSchedule's `first_days_confirmed`: Maya, who confirmed, sees no name on a day nobody has confirmed 2ms
+     × confirmScheduleDays' `first_day_confirmed`: Ben's Monday has its date, and Friday names nobody 2ms
+     × G04-two-days-one-chosen: Ben keeps Monday, and Thursday is free and still proposed for Ben 2ms
+   ❯ what no view of the first days ever carries (T55, T33; FQ46, FQ48) (2)
+     × holds in every world, for every viewer 1035ms
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  10 failed | 48 passed (58)
+   Start at  00:42:30
+   Duration  1.38s (tests 90%, import 8%, transform 1%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 10 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/view.test.ts > what each member sees of the first days (the contract's examples; FQ46, FQ48, FQ55, FQ78) > G04-conflict-three: Ben, Alex and Debby hold Friday and see each other, in the order they joined
+AssertionError: expected { slots: [ { …(3) }, …(5) ], …(2) } to deeply equal { slots: [ { …(3) }, …(5) ], …(2) }
+
+- Expected
++ Received
+
+@@ -8,23 +8,21 @@
+        "state": "available",
+        "suggested": true,
+        "weekday": "monday",
+      },
+      {
+-       "heldBy": "maya",
+-       "state": "available",
++       "state": "yours",
+        "suggested": false,
+        "weekday": "tuesday",
+      },
+      {
+        "state": "available",
+        "suggested": false,
+        "weekday": "wednesday",
+      },
+      {
+-       "heldBy": "sam",
+-       "state": "available",
++       "state": "yours",
+        "suggested": false,
+        "weekday": "thursday",
+      },
+      {
+        "holders": [
+@@ -35,12 +33,11 @@
+        "state": "clash",
+        "suggested": false,
+        "weekday": "friday",
+      },
+      {
+-       "heldBy": "nina",
+-       "state": "available",
++       "state": "yours",
+        "suggested": false,
+        "weekday": "saturday",
+      },
+    ],
+  }
+
+ ❯ src/schedule/view.test.ts:62:44
+     60| describe("what each member sees of the first days (the contract's exam…
+     61|   it("G04-conflict-three: Ben, Alex and Debby hold Friday and see each…
+     62|     expect(viewFor("ben", CONFLICT_THREE)).toEqual({
+       |                                            ^
+     63|       slots: slots(["monday"], {
+     64|         monday: ["available"],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/10]⎯
+
+ FAIL  src/schedule/view.test.ts > what each member sees of the first days (the contract's examples; FQ46, FQ48, FQ55, FQ78) > G04-contested-other: Sam sees Friday contested, with no names and no count
+AssertionError: expected { slots: [ { …(3) }, …(5) ], …(2) } to deeply equal { slots: [ { …(3) }, …(5) ], …(2) }
+
+- Expected
++ Received
+
+@@ -8,12 +8,11 @@
+        "state": "available",
+        "suggested": false,
+        "weekday": "monday",
+      },
+      {
+-       "heldBy": "maya",
+-       "state": "available",
++       "state": "yours",
+        "suggested": false,
+        "weekday": "tuesday",
+      },
+      {
+        "state": "available",
+@@ -24,17 +23,21 @@
+        "state": "yours",
+        "suggested": true,
+        "weekday": "thursday",
+      },
+      {
+-       "state": "no_reveal",
++       "holders": [
++         "ben",
++         "alex",
++         "debby",
++       ],
++       "state": "clash",
+        "suggested": false,
+        "weekday": "friday",
+      },
+      {
+-       "heldBy": "nina",
+-       "state": "available",
++       "state": "yours",
+        "suggested": false,
+        "weekday": "saturday",
+      },
+    ],
+  }
+
+ ❯ src/schedule/view.test.ts:77:44
+     75|
+     76|   it("G04-contested-other: Sam sees Friday contested, with no names an…
+     77|     expect(viewFor("sam", CONFLICT_THREE)).toEqual({
+       |                                            ^
+     78|       slots: slots(["thursday"], {
+     79|         monday: ["available"],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/10]⎯
+
+ FAIL  src/schedule/view.test.ts > what each member sees of the first days (the contract's examples; FQ46, FQ48, FQ55, FQ78) > G04-confirm-refused: Alex went back to Wednesday, and Debby still shares Friday with Ben
+AssertionError: expected { slots: [ { …(3) }, …(5) ], …(2) } to deeply equal { slots: [ { …(3) }, …(5) ], …(2) }
+
+- Expected
++ Received
+
+@@ -8,24 +8,21 @@
+        "state": "available",
+        "suggested": false,
+        "weekday": "monday",
+      },
+      {
+-       "heldBy": "maya",
+-       "state": "available",
++       "state": "yours",
+        "suggested": false,
+        "weekday": "tuesday",
+      },
+      {
+-       "heldBy": "alex",
+-       "state": "available",
++       "state": "yours",
+        "suggested": false,
+        "weekday": "wednesday",
+      },
+      {
+-       "heldBy": "sam",
+-       "state": "available",
++       "state": "yours",
+        "suggested": false,
+        "weekday": "thursday",
+      },
+      {
+        "holders": [
+@@ -35,12 +32,11 @@
+        "state": "clash",
+        "suggested": true,
+        "weekday": "friday",
+      },
+      {
+-       "heldBy": "nina",
+-       "state": "available",
++       "state": "yours",
+        "suggested": false,
+        "weekday": "saturday",
+      },
+    ],
+  }
+
+ ❯ src/schedule/view.test.ts:92:65
+     90|
+     91|   it("G04-confirm-refused: Alex went back to Wednesday, and Debby stil…
+     92|     expect(viewFor("debby", sundayPeople({ ben: ["friday"] }))).toEqua…
+       |                                                                 ^
+     93|       slots: slots(["friday"], {
+     94|         monday: ["available"],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/10]⎯
+
+ FAIL  src/schedule/view.test.ts > what each member sees of the first days (the contract's examples; FQ46, FQ48, FQ55, FQ78) > chooseScheduleDays' `chosen`: Ben chose Monday, and Friday now has no names for Ben
+AssertionError: expected [ { weekday: 'monday', …(2) }, …(5) ] to deeply equal [ { weekday: 'monday', …(2) }, …(5) ]
+
+- Expected
++ Received
+
+@@ -3,33 +3,34 @@
+      "state": "yours",
+      "suggested": true,
+      "weekday": "monday",
+    },
+    {
+-     "heldBy": "maya",
+-     "state": "available",
++     "state": "yours",
+      "suggested": false,
+      "weekday": "tuesday",
+    },
+    {
+      "state": "available",
+      "suggested": false,
+      "weekday": "wednesday",
+    },
+    {
+-     "heldBy": "sam",
+-     "state": "available",
++     "state": "yours",
+      "suggested": false,
+      "weekday": "thursday",
+    },
+    {
+-     "state": "no_reveal",
++     "holders": [
++       "alex",
++       "debby",
++     ],
++     "state": "clash",
+      "suggested": false,
+      "weekday": "friday",
+    },
+    {
+-     "heldBy": "nina",
+-     "state": "available",
++     "state": "yours",
+      "suggested": false,
+      "weekday": "saturday",
+    },
+  ]
+
+ ❯ src/schedule/view.test.ts:107:70
+    105|
+    106|   it("chooseScheduleDays' `chosen`: Ben chose Monday, and Friday now h…
+    107|     expect(viewFor("ben", sundayPeople({ alex: ["friday"] })).slots).t…
+       |                                                                      ^
+    108|       slots(["monday"], {
+    109|         monday: ["yours"],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/10]⎯
+
+ FAIL  src/schedule/view.test.ts > what each member sees of the first days (the contract's examples; FQ46, FQ48, FQ55, FQ78) > chooseScheduleDays' `joined_contest`: Sam chose Friday, sees its holders, and Thursday is free
+AssertionError: expected { slots: [ { …(3) }, …(5) ], …(2) } to deeply equal { slots: [ { …(3) }, …(5) ], …(2) }
+
+- Expected
++ Received
+
+@@ -8,12 +8,11 @@
+        "state": "available",
+        "suggested": false,
+        "weekday": "monday",
+      },
+      {
+-       "heldBy": "maya",
+-       "state": "available",
++       "state": "yours",
+        "suggested": false,
+        "weekday": "tuesday",
+      },
+      {
+        "state": "available",
+@@ -35,12 +34,11 @@
+        "state": "clash",
+        "suggested": false,
+        "weekday": "friday",
+      },
+      {
+-       "heldBy": "nina",
+-       "state": "available",
++       "state": "yours",
+        "suggested": false,
+        "weekday": "saturday",
+      },
+    ],
+  }
+
+ ❯ src/schedule/view.test.ts:120:98
+    118|
+    119|   it("chooseScheduleDays' `joined_contest`: Sam chose Friday, sees its…
+    120|     expect(viewFor("sam", sundayPeople({ ben: ["friday"], alex: ["frid…
+       |                                                                                                  ^
+    121|       slots: slots(["thursday"], {
+    122|         monday: ["available"],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/10]⎯
+
+ FAIL  src/schedule/view.test.ts > what each member sees of the first days (the contract's examples; FQ46, FQ48, FQ55, FQ78) > getSchedule's `first_days`: Ben, still choosing, sees four taken days with their dates, and Debby on Friday
+AssertionError: expected { slots: [ { …(3) }, …(5) ], …(2) } to deeply equal { slots: [ { …(3) }, …(5) ], …(2) }
+
+- Expected
++ Received
+
+@@ -29,12 +29,11 @@
+        "state": "taken",
+        "suggested": false,
+        "weekday": "thursday",
+      },
+      {
+-       "heldBy": "debby",
+-       "state": "available",
++       "state": "yours",
+        "suggested": false,
+        "weekday": "friday",
+      },
+      {
+        "firstDate": "2026-11-07",
+
+ ❯ src/schedule/view.test.ts:135:62
+    133|
+    134|   it("getSchedule's `first_days`: Ben, still choosing, sees four taken…
+    135|     expect(viewFor("ben", sundayPeople({}, FOUR_CONFIRMED))).toEqual({
+       |                                                              ^
+    136|       slots: slots(["monday"], { ...TAKEN_FOUR, monday: ["yours"], fri…
+    137|       myDays: ["monday"],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/10]⎯
+
+ FAIL  src/schedule/view.test.ts > what each member sees of the first days (the contract's examples; FQ46, FQ48, FQ55, FQ78) > getSchedule's `first_days_confirmed`: Maya, who confirmed, sees no name on a day nobody has confirmed
+AssertionError: expected { slots: [ { …(3) }, …(5) ], …(2) } to deeply equal { slots: [ { …(3) }, …(5) ], …(2) }
+
+- Expected
++ Received
+
+@@ -3,11 +3,11 @@
+      "tuesday",
+    ],
+    "myState": "confirmed",
+    "slots": [
+      {
+-       "state": "available",
++       "state": "yours",
+        "suggested": false,
+        "weekday": "monday",
+      },
+      {
+        "firstDate": "2026-11-10",
+@@ -28,11 +28,11 @@
+        "state": "taken",
+        "suggested": false,
+        "weekday": "thursday",
+      },
+      {
+-       "state": "available",
++       "state": "yours",
+        "suggested": false,
+        "weekday": "friday",
+      },
+      {
+        "firstDate": "2026-11-07",
+
+ ❯ src/schedule/view.test.ts:143:63
+    141|
+    142|   it("getSchedule's `first_days_confirmed`: Maya, who confirmed, sees …
+    143|     expect(viewFor("maya", sundayPeople({}, FOUR_CONFIRMED))).toEqual({
+       |                                                               ^
+    144|       slots: slots(["tuesday"], {
+    145|         ...TAKEN_FOUR,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/10]⎯
+
+ FAIL  src/schedule/view.test.ts > what each member sees of the first days (the contract's examples; FQ46, FQ48, FQ55, FQ78) > confirmScheduleDays' `first_day_confirmed`: Ben's Monday has its date, and Friday names nobody
+AssertionError: expected { slots: [ { …(4) }, …(5) ], …(2) } to deeply equal { slots: [ { …(4) }, …(5) ], …(2) }
+
+- Expected
++ Received
+
+@@ -30,11 +30,11 @@
+        "state": "taken",
+        "suggested": false,
+        "weekday": "thursday",
+      },
+      {
+-       "state": "available",
++       "state": "yours",
+        "suggested": false,
+        "weekday": "friday",
+      },
+      {
+        "firstDate": "2026-11-07",
+
+ ❯ src/schedule/view.test.ts:156:88
+    154|
+    155|   it("confirmScheduleDays' `first_day_confirmed`: Ben's Monday has its…
+    156|     expect(viewFor("ben", sundayPeople({}, { ...FOUR_CONFIRMED, ben: "…
+       |                                                                                        ^
+    157|       slots: slots(["monday"], { ...TAKEN_FOUR, monday: ["yours", unde…
+    158|       myDays: ["monday"],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/10]⎯
+
+ FAIL  src/schedule/view.test.ts > what each member sees of the first days (the contract's examples; FQ46, FQ48, FQ55, FQ78) > G04-two-days-one-chosen: Ben keeps Monday, and Thursday is free and still proposed for Ben
+AssertionError: expected { slots: [ { …(3) }, …(5) ], …(2) } to deeply equal { slots: [ { …(3) }, …(5) ], …(2) }
+
+- Expected
++ Received
+
+@@ -8,12 +8,11 @@
+        "state": "yours",
+        "suggested": true,
+        "weekday": "monday",
+      },
+      {
+-       "heldBy": "debby",
+-       "state": "available",
++       "state": "yours",
+        "suggested": false,
+        "weekday": "tuesday",
+      },
+      {
+        "state": "available",
+@@ -24,12 +23,11 @@
+        "state": "available",
+        "suggested": true,
+        "weekday": "thursday",
+      },
+      {
+-       "heldBy": "debby",
+-       "state": "available",
++       "state": "yours",
+        "suggested": false,
+        "weekday": "friday",
+      },
+      {
+        "state": "available",
+
+ ❯ src/schedule/view.test.ts:172:34
+    170|       firstDates: {},
+    171|     };
+    172|     expect(viewFor("ben", pair)).toEqual({
+       |                                  ^
+    173|       slots: slots(["monday", "thursday"], {
+    174|         monday: ["yours"],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/10]⎯
+
+ FAIL  src/schedule/view.test.ts > what no view of the first days ever carries (T55, T33; FQ46, FQ48) > holds in every world, for every viewer
+AssertionError: expected [ …(5) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "monday's state: a in [{\"id\":\"a\",\"suggested\":[\"monday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"b\",\"suggested\":[\"tuesday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"c\",\"suggested\":[\"wednesday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"d\",\"suggested\":[\"monday\"],\"held\":[\"monday\"],\"confirmed\":false,\"active\":true}]",
++   "held_by: a in [{\"id\":\"a\",\"suggested\":[\"monday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"b\",\"suggested\":[\"tuesday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"c\",\"suggested\":[\"wednesday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"d\",\"suggested\":[\"monday\"],\"held\":[\"monday\"],\"confirmed\":false,\"active\":true}]",
++   "monday's state: b in [{\"id\":\"a\",\"suggested\":[\"monday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"b\",\"suggested\":[\"tuesday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"c\",\"suggested\":[\"wednesday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"d\",\"suggested\":[\"monday\"],\"held\":[\"monday\"],\"confirmed\":false,\"active\":true}]",
++   "held_by: b in [{\"id\":\"a\",\"suggested\":[\"monday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"b\",\"suggested\":[\"tuesday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"c\",\"suggested\":[\"wednesday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"d\",\"suggested\":[\"monday\"],\"held\":[\"monday\"],\"confirmed\":false,\"active\":true}]",
++   "monday's state: c in [{\"id\":\"a\",\"suggested\":[\"monday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"b\",\"suggested\":[\"tuesday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"c\",\"suggested\":[\"wednesday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"d\",\"suggested\":[\"monday\"],\"held\":[\"monday\"],\"confirmed\":false,\"active\":true}]",
++ ]
+
+ ❯ src/schedule/view.test.ts:343:22
+    341|       }
+    342|     }
+    343|     expect(problems).toEqual([]);
+       |                      ^
+    344|     expect(views).toBeGreaterThan(10_000);
+    345|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/10]⎯
+

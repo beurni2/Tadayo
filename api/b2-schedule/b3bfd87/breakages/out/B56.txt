@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/tests
+
+ ❯ src/db/schedule-commands.test.ts (50 tests | 1 failed) 2594ms
+   ❯ opening the first days (spec 04, 05; FQ48) (8)
+     × leaves out a member who has left before the opening, and counts the club by who is still in it 39ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 49 passed (50)
+   Start at  00:49:07
+   Duration  2.96s (tests 96%, import 2%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-commands.test.ts > opening the first days (spec 04, 05; FQ48) > leaves out a member who has left before the opening, and counts the club by who is still in it
+AssertionError: expected 1 to be 2 // Object.is equality
+
+- Expected
++ Received
+
+- 2
++ 1
+
+ ❯ src/db/schedule-commands.test.ts:353:67
+    351|       const w = { ...made, proposal: opened.proposalId, version: opene…
+    352|       // Three members: two days each, Ben Monday and Thursday, Alex T…
+    353|       expect((await proposalRow(tx, w.proposal)).days_per_member).toBe…
+       |                                                                   ^
+    354|       expect((await proposalFor(tx, clock, w, 0)).myDays).toEqual(["mo…
+    355|       expect((await proposalFor(tx, clock, w, 2)).myDays).toEqual(["tu…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:344:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

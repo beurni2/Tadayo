@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/decide.ts b/packages/domain/src/schedule/decide.ts
+index 7294c96d..1c3051ec 100644
+--- a/packages/domain/src/schedule/decide.ts
++++ b/packages/domain/src/schedule/decide.ts
+@@ -61,7 +61,7 @@ export function judgeConfirmation(
+   if (days.length !== facts.daysPerMember) return "NOT_ALLOWED";
+   for (const weekday of days) {
+     if (confirmerOf(facts, weekday) !== undefined) return "NOT_ALLOWED";
+-    if (holdersOf(facts, weekday).some((member) => member.id !== caller.id)) return "NOT_ALLOWED";
++    
+   }
+   return { days };
+ }

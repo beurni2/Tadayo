@@ -1,0 +1,32 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/tests
+
+ ❯ src/db/schedule-proposals.test.ts (25 tests | 1 failed) 725ms
+   ❯ a proposal (spec 05; T33) (7)
+     × names its successor only when it was replaced 29ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 24 passed (25)
+   Start at  00:38:43
+   Duration  1.46s (tests 85%, transform 9%, import 6%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-proposals.test.ts > a proposal (spec 05; T33) > names its successor only when it was replaced
+AssertionError: expected Postgres to refuse with 23514: expected undefined to be an instance of PostgresError
+ ❯ expectRefused src/db/harness.ts:110:62
+    108|     caught = error;
+    109|   }
+    110|   expect(caught, `expected Postgres to refuse with ${code}`).toBeInsta…
+       |                                                              ^
+    111|   const error = caught as postgres.PostgresError;
+    112|   expect(error.code, error.message).toBe(code);
+ ❯ src/db/schedule-proposals.test.ts:284:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

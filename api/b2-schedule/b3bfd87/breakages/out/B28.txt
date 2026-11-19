@@ -1,0 +1,32 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/tests
+
+ ❯ src/db/schedule-proposals.test.ts (25 tests | 1 failed) 668ms
+   ❯ a proposal's members (3)
+     × join and confirm only while the proposal is open 15ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 24 passed (25)
+   Start at  00:44:18
+   Duration  1.28s (tests 90%, import 5%, transform 4%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-proposals.test.ts > a proposal's members > join and confirm only while the proposal is open
+AssertionError: expected Postgres to refuse with 23000: expected undefined to be an instance of PostgresError
+ ❯ expectRefused src/db/harness.ts:110:62
+    108|     caught = error;
+    109|   }
+    110|   expect(caught, `expected Postgres to refuse with ${code}`).toBeInsta…
+       |                                                              ^
+    111|   const error = caught as postgres.PostgresError;
+    112|   expect(error.code, error.message).toBe(code);
+ ❯ src/db/schedule-proposals.test.ts:363:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

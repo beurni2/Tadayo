@@ -1,0 +1,38 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/packages/domain
+
+ ❯ src/schedule/decide.test.ts (18 tests | 1 failed) 28ms
+   ❯ a confirmation in the first days (the contract's ScheduleConfirmRequest; book p11; FQ55, FQ99) (8)
+     × refuses fewer days than days_per_member, held and named alike (book p11: only for two choices) 11ms
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 57 passed (58)
+   Start at  00:42:45
+   Duration  1.40s (tests 89%, import 9%, transform 1%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/decide.test.ts > a confirmation in the first days (the contract's ScheduleConfirmRequest; book p11; FQ55, FQ99) > refuses fewer days than days_per_member, held and named alike (book p11: only for two choices)
+AssertionError: expected { days: [ 'monday' ] } to be 'NOT_ALLOWED' // Object.is equality
+
+- Expected:
+"NOT_ALLOWED"
+
++ Received:
+{
+  "days": [
+    "monday",
+  ],
+}
+
+ ❯ src/schedule/decide.test.ts:121:55
+    119|   it("refuses fewer days than days_per_member, held and named alike (b…
+    120|     const one: WeekFacts = { ...PAIR, members: [member("ben", ["monday…
+    121|     expect(judgeConfirmation("ben", one, ["monday"])).toBe("NOT_ALLOWE…
+       |                                                       ^
+    122|   });
+    123|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

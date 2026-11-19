@@ -1,0 +1,86 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/packages/domain
+
+ ❯ src/schedule/first-date.test.ts (10 tests | 4 failed) 39ms
+   ❯ a confirmed day's first date (FQ79) (10)
+     × waits a week when the 7 AM is one second, or one nanosecond, short of 24 hours 11ms
+     ❯ across a clock change in the 24 hours before a reveal day's 7 AM (Africa/Cairo) (3)
+       × waits a week when the clocks go forward: 7 AM to 7 AM is 23 hours 2ms
+       × opens when the clocks go back: 7 AM to 7 AM is 25 hours, and 8 AM to 7 AM exactly 24 1ms
+     × is always the first such weekday with its 24 hours, for every hour of two weeks in four zones 15ms
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  4 failed | 54 passed (58)
+   Start at  00:42:24
+   Duration  1.25s (tests 86%, import 11%, transform 2%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/first-date.test.ts > a confirmed day's first date (FQ79) > waits a week when the 7 AM is one second, or one nanosecond, short of 24 hours
+AssertionError: expected '2026-11-09' to be '2026-11-16' // Object.is equality
+
+Expected: "2026-11-16"
+Received: "2026-11-09"
+
+ ❯ src/schedule/first-date.test.ts:36:57
+     34|
+     35|   it("waits a week when the 7 AM is one second, or one nanosecond, sho…
+     36|     expect(first("monday", "2026-11-08T12:00:01Z", NY)).toBe("2026-11-…
+       |                                                         ^
+     37|     expect(first("monday", "2026-11-08T12:00:00.000000001Z", NY)).toBe…
+     38|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/schedule/first-date.test.ts > a confirmed day's first date (FQ79) > across a clock change in the 24 hours before a reveal day's 7 AM (Africa/Cairo) > waits a week when the clocks go forward: 7 AM to 7 AM is 23 hours
+AssertionError: expected '2026-04-24' to be '2026-05-01' // Object.is equality
+
+Expected: "2026-05-01"
+Received: "2026-04-24"
+
+ ❯ src/schedule/first-date.test.ts:58:69
+     56|
+     57|     it("waits a week when the clocks go forward: 7 AM to 7 AM is 23 ho…
+     58|       expect(firstDate("friday", thursdaySpring, CAIRO).toString()).to…
+       |                                                                     ^
+     59|     });
+     60|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/schedule/first-date.test.ts > a confirmed day's first date (FQ79) > across a clock change in the 24 hours before a reveal day's 7 AM (Africa/Cairo) > opens when the clocks go back: 7 AM to 7 AM is 25 hours, and 8 AM to 7 AM exactly 24
+AssertionError: expected '2026-10-30' to be '2026-11-06' // Object.is equality
+
+Expected: "2026-11-06"
+Received: "2026-10-30"
+
+ ❯ src/schedule/first-date.test.ts:64:99
+     62|       expect(firstDate("friday", thursdayAutumn, CAIRO).toString()).to…
+     63|       expect(firstDate("friday", thursdayAutumn.add({ hours: 1 }), CAI…
+     64|       expect(firstDate("friday", thursdayAutumn.add({ hours: 1, second…
+       |                                                                                                   ^
+     65|     });
+     66|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/schedule/first-date.test.ts > a confirmed day's first date (FQ79) > is always the first such weekday with its 24 hours, for every hour of two weeks in four zones
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/schedule/first-date.test.ts:86:61
+     84|             const date = firstDate(weekday, confirmed, zone);
+     85|             expect(date.dayOfWeek).toBe(WEEKDAYS.indexOf(weekday) + 1);
+     86|             expect(until7(confirmed, date, zone) >= DAY_NS).toBe(true);
+       |                                                             ^
+     87|             expect(until7(confirmed, date.subtract({ days: 7 }), zone)…
+     88|           }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+

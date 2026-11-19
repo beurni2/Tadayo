@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0012_schedule_proposals.sql b/db/migrations/0012_schedule_proposals.sql
+index ebe2885d..d7f0cc3e 100644
+--- a/db/migrations/0012_schedule_proposals.sql
++++ b/db/migrations/0012_schedule_proposals.sql
+@@ -46,7 +46,7 @@ CREATE TABLE app.schedule_proposals (
+ );
+ ALTER TABLE app.schedule_proposals ENABLE ROW LEVEL SECURITY;
+ -- The contract's one `Schedule.proposal`.
+-CREATE UNIQUE INDEX schedule_proposals_one_open ON app.schedule_proposals (club_id) WHERE state = 'open';
++CREATE INDEX schedule_proposals_one_open ON app.schedule_proposals (club_id) WHERE state = 'open';
+ 
+ -- A proposal ends once, with the next version, and never changes after; its version never falls.
+ CREATE FUNCTION app.schedule_proposals_guard() RETURNS trigger

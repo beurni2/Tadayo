@@ -1,0 +1,12 @@
+diff --git a/services/api/src/schedule/routes.ts b/services/api/src/schedule/routes.ts
+index cb896778..94c8e7cb 100644
+--- a/services/api/src/schedule/routes.ts
++++ b/services/api/src/schedule/routes.ts
+@@ -61,6 +61,7 @@ export function proposalBody(proposal: ProposalAnswer): Json {
+     my_days: [...proposal.myDays],
+     my_state: proposal.myState,
+     state: proposal.state,
++    members: proposal.slots.length,
+   };
+ }
+ 

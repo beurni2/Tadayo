@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0012_schedule_proposals.sql b/db/migrations/0012_schedule_proposals.sql
+index ebe2885d..4fee69a6 100644
+--- a/db/migrations/0012_schedule_proposals.sql
++++ b/db/migrations/0012_schedule_proposals.sql
+@@ -52,7 +52,7 @@ CREATE UNIQUE INDEX schedule_proposals_one_open ON app.schedule_proposals (club_
+ CREATE FUNCTION app.schedule_proposals_guard() RETURNS trigger
+   LANGUAGE plpgsql SET search_path = '' AS $$
+ BEGIN
+-  IF OLD.state <> 'open' AND NEW IS DISTINCT FROM OLD THEN
++  IF false THEN
+     RAISE EXCEPTION 'app.schedule_proposals: % has ended and never changes', OLD.id
+       USING ERRCODE = 'integrity_constraint_violation';
+   END IF;

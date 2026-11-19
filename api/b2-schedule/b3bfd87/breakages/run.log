@@ -1,0 +1,209 @@
+== B01 three members get one day each [rules]: CAUGHT; exit 1 ['Tests  2 failed | 56 passed (58)']
+    × gives two days each to two or three members and one to four, five or six (spec 05's table) 6ms
+    × proposes spec 05's example week for three members 2ms
+== B02 the second day two on, not three [rules]: CAUGHT; exit 1 ['Tests  4 failed | 54 passed (58)']
+    × gives each of 2 members their days, each weekday to one member at most 2ms
+    × gives each of 3 members their days, each weekday to one member at most 1ms
+    × proposes Monday and Thursday for Ben, Tuesday and Friday for Debby (spec 05's pair) 8ms
+    × proposes spec 05's example week for three members 1ms
+== B03 exactly 24 hours isn't enough [rules]: CAUGHT; exit 1 ['Tests  2 failed | 56 passed (58)']
+    × opens on a date whose 7 AM is exactly 24 hours after the confirmation 10ms
+    × opens when the clocks go back: 7 AM to 7 AM is 25 hours, and 8 AM to 7 AM exactly 24 1ms
+== B04 23 hours are enough [rules]: CAUGHT; exit 1 ['Tests  4 failed | 54 passed (58)']
+    × is always the first such weekday with its 24 hours, for every hour of two weeks in four zones 15ms
+    × opens when the clocks go back: 7 AM to 7 AM is 25 hours, and 8 AM to 7 AM exactly 24 1ms
+    × waits a week when the 7 AM is one second, or one nanosecond, short of 24 hours 11ms
+    × waits a week when the clocks go forward: 7 AM to 7 AM is 23 hours 2ms
+== B05 a member who confirmed sees who holds a day [rules]: CAUGHT; exit 1 ['Tests  3 failed | 55 passed (58)']
+    × confirmScheduleDays' `first_day_confirmed`: Ben's Monday has its date, and Friday names nobody 3ms
+    × getSchedule's `first_days_confirmed`: Maya, who confirmed, sees no name on a day nobody has confirmed 13ms
+    × holds in every world, for every viewer 1244ms
+== B06 a contested day names a holder to someone outside it [rules]: CAUGHT; exit 1 ['Tests  3 failed | 55 passed (58)']
+    × G04-contested-other: Sam sees Friday contested, with no names and no count 10ms
+    × chooseScheduleDays' `chosen`: Ben chose Monday, and Friday now has no names for Ben 2ms
+    × holds in every world, for every viewer 1040ms
+== B07 anyone sees a contest's holders [rules]: CAUGHT; exit 1 ['Tests  10 failed | 48 passed (58)']
+    × G04-confirm-refused: Alex went back to Wednesday, and Debby still shares Friday with Ben 4ms
+    × G04-conflict-three: Ben, Alex and Debby hold Friday and see each other, in the order they joined 11ms
+    × G04-contested-other: Sam sees Friday contested, with no names and no count 3ms
+    × G04-two-days-one-chosen: Ben keeps Monday, and Thursday is free and still proposed for Ben 2ms
+    × chooseScheduleDays' `chosen`: Ben chose Monday, and Friday now has no names for Ben 1ms
+    × chooseScheduleDays' `joined_contest`: Sam chose Friday, sees its holders, and Thursday is free 2ms
+== B08 a day whose owner left keeps its date [rules]: CAUGHT; exit 1 ['Tests  1 failed | 57 passed (58)']
+    × a member who left holds nothing; a day they confirmed stays taken by them, with no date (FQ102) 9ms
+== B09 a member who left still holds [rules]: CAUGHT; exit 1 ['Tests  3 failed | 55 passed (58)']
+    × a member who left holds nothing; a day they confirmed stays taken by them, with no date (FQ102) 17ms
+    × holds in every world, for every viewer 1298ms
+    × lets the one holder left confirm once a member who left no longer holds the day (FQ102) 17ms
+== B10 a member who left gets a view [rules]: CAUGHT; exit 1 ['Tests  2 failed | 56 passed (58)']
+    × answers only a member the proposal includes who is still active (FQ100; T14) 9ms
+    × holds in every world, for every viewer 2ms
+== B11 a choice after confirming [rules]: CAUGHT; exit 1 ['Tests  1 failed | 57 passed (58)']
+    × refuses any choice after the caller confirmed, their own day too (FQ57) 7ms
+== B12 more days than a member has [rules]: CAUGHT; exit 1 ['Tests  1 failed | 57 passed (58)']
+    × refuses more days than days_per_member 7ms
+== B13 a choice of a confirmed day [rules]: CAUGHT; exit 1 ['Tests  2 failed | 56 passed (58)']
+    × refuses a day a member who left had confirmed: it stays that member's (FQ102) 1ms
+    × refuses a day another member has confirmed (G04.error.chooseTaken) 6ms
+== B14 a contested day confirmed [rules]: CAUGHT; exit 1 ['Tests  2 failed | 56 passed (58)']
+    × refuses a day another member holds too, even by proposal alone (FQ55; G04-confirm-refused) 15ms
+    × refuses both days when one is contested: nobody confirms one day alone (FQ99) 1ms
+== B15 one day of two confirmed [rules]: CAUGHT; exit 1 ['Tests  1 failed | 57 passed (58)']
+    × refuses fewer days than days_per_member, held and named alike (book p11: only for two choices) 11ms
+== B16 other days confirmed than the caller holds [rules]: CAUGHT; exit 1 ['Tests  1 failed | 57 passed (58)']
+    × refuses days that aren't exactly what the caller holds: the caller saw another choice 9ms
+== B17 the first days wait for a member who left [rules]: CAUGHT; exit 1 ['Tests  1 failed | 57 passed (58)']
+    × doesn't wait for a member who left, and never applies with nobody left to have confirmed 12ms
+== B18 the first days apply with nobody left [rules]: CAUGHT; exit 1 ['Tests  1 failed | 57 passed (58)']
+    × doesn't wait for a member who left, and never applies with nobody left to have confirmed 12ms
+== B20 two open proposals in a club [proposals]: CAUGHT; exit 1 ['Tests  1 failed | 24 passed (25)']
+    × is the club's only open one 26ms
+== B21 an ended proposal changes [proposals]: CAUGHT; exit 1 ['Tests  1 failed | 24 passed (25)']
+    × ends once, with its closing time and the next version, and never changes after (T33) 31ms
+== B22 a state moves without its version [proposals]: CAUGHT; exit 1 ['Tests  1 failed | 24 passed (25)']
+    × ends once, with its closing time and the next version, and never changes after (T33) 27ms
+== B23 first days with no week [proposals]: CAUGHT; exit 1 ['Tests  1 failed | 24 passed (25)']
+    × names the week its confirmed days join when it is the first days' 18ms
+== B24 three days per member [proposals]: CAUGHT; exit 1 ['Tests  1 failed | 24 passed (25)']
+    × takes one or two days per member, and a week of its own club 31ms
+== B25 a proposal's reason changes [proposals]: CAUGHT; exit 1 ['Tests  1 failed | 24 passed (25)']
+    × keeps its club, reason, start, week and making time, and is never deleted 14ms
+== B26 a successor on a proposal that wasn't replaced [proposals]: CAUGHT; exit 1 ['Tests  1 failed | 24 passed (25)']
+    × names its successor only when it was replaced 29ms
+== B27 a confirmation taken back [proposals]: CAUGHT; exit 1 ['Tests  1 failed | 24 passed (25)']
+    × start unconfirmed, confirm once, and never take it back (FQ57) 19ms
+== B28 a member joins a closed proposal [proposals]: CAUGHT; exit 1 ['Tests  1 failed | 24 passed (25)']
+    × join and confirm only while the proposal is open 15ms
+== B29 a row neither proposed nor held [proposals]: CAUGHT; exit 1 ['Tests  1 failed | 24 passed (25)']
+    × are never Sunday, and each row is proposed, held or both 14ms
+== B30 a day more than a member has [proposals]: CAUGHT; exit 1 ['Tests  1 failed | 24 passed (25)']
+    × are at most days_per_member for each member, counted at commit 12ms
+== B31 a proposed day deleted [proposals]: CAUGHT; exit 1 ['Tests  1 failed | 24 passed (25)']
+    × keep what was proposed: a proposed day is set aside, never deleted or made unproposed 21ms
+== B32 a hold on a confirmed day [proposals]: CAUGHT; exit 1 ['Tests  2 failed | 23 passed (25)']
+    × never take a day another member has confirmed (FQ48: only a confirmed day is taken) 14ms
+    × refuses the hold that waited for the confirmation: the day is taken 42ms
+== B33 a hold changes after its member confirmed [proposals]: CAUGHT; exit 1 ['Tests  1 failed | 24 passed (25)']
+    × don't change once their member has confirmed (FQ57), or once the proposal has ended 20ms
+== B34 a hold changes after the proposal ended [proposals]: CAUGHT; exit 1 ['Tests  1 failed | 24 passed (25)']
+    × don't change once their member has confirmed (FQ57), or once the proposal has ended 14ms
+== B35 a contested day confirmed in the rows [proposals]: CAUGHT; exit 1 ['Tests  2 failed | 23 passed (25)']
+    × is refused while another member holds the day too, by choice or by proposal alone (FQ55) 13ms
+    × refuses the confirmation that waited for the hold: another member holds the day too 65ms
+== B36 one day of two confirmed in the rows [proposals]: CAUGHT; exit 1 ['Tests  1 failed | 24 passed (25)']
+    × is refused for one day of two: both are confirmed at once (FQ99) 13ms
+== B37 a confirmation without its days in the week [proposals]: CAUGHT; exit 1 ['Tests  2 failed | 23 passed (25)']
+    × is refused for one day of two: both are confirmed at once (FQ99) 12ms
+    × is refused without its days in the week, or with another day there than the member holds 14ms
+== B38 a member who left blocks a confirmation [proposals]: CAUGHT; exit 1 ['Tests  1 failed | 24 passed (25)']
+    × isn't blocked by a member who has left: they hold nothing (FQ102) 10ms
+== B39 a hold doesn't wait for a confirmation [proposals]: CAUGHT; exit 1 ['Tests  2 failed | 23 passed (25)']
+    × refuses the confirmation that waited for the hold: another member holds the day too 5001ms
+    × refuses the hold that waited for the confirmation: the day is taken 5002ms
+== B40 a confirmation doesn't wait for a hold [proposals]: CAUGHT; exit 1 ['Tests  2 failed | 23 passed (25)']
+    × refuses the confirmation that waited for the hold: another member holds the day too 5001ms
+    × refuses the hold that waited for the confirmation: the day is taken 5003ms
+== B41 a table without row-level security [migrate]: CAUGHT; exit 1 []
+    × migrate refused: migrate: 0012_schedule_proposals.sql would leave the schema app open (T53): the table app.schedule_proposal_days has no row-level security
+    × migrate refused: migrate: 0012_schedule_proposals.sql would leave the schema app open (T53): the table app.schedule_proposal_days has no row-level security
+    
+== B42 no lock on the club's row [commands]: CAUGHT; exit 1 ['Tests  2 failed | 48 passed (50)']
+    × lets a choice and a confirmation of the same day race: exactly one stands, whichever the club's lock took first 94ms
+    × lets every member of a club of six confirm at once: six days, one version move, no deadlock 92ms
+== B43 the clock sampled before the lock [commands]: CAUGHT; exit 1 ['Tests  1 failed | 49 passed (50)']
+    × takes the confirmation's instant after the club's lock, not when the request began (T1; T3's order) 28ms
+== B44 the version judged before the replacement [commands]: CAUGHT; exit 1 ['Tests  2 failed | 48 passed (50)']
+    × answers a choice MEMBERSHIP_CHANGED with the newer proposal's id before it looks at the version or the days 37ms
+    × answers a confirmation MEMBERSHIP_CHANGED with the newer proposal's id before it looks at the version or the days 22ms
+== B45 the last confirmation doesn't apply [commands]: CAUGHT; exit 1 ['Tests  7 failed | 43 passed (50)']
+    × answers a choice of first days that have applied VERSION_CONFLICT to the version a member read while they were open, and NOT_ALLOWED to the applied one 19ms
+    × answers a confirmation of first days that have applied VERSION_CONFLICT to the version a member read while they were open, and NOT_ALLOWED to the applied one 24ms
+    × applies the first days of a club of 2 on the last confirmation, which alone moves the version (T33) 22ms
+    × applies the first days of a club of 3 on the last confirmation, which alone moves the version (T33) 26ms
+    × applies the first days of a club of 4 on the last confirmation, which alone moves the version (T33) 41ms
+    × applies the first days of a club of 6 on the last confirmation, which alone moves the version (T33) 59ms
+== B46 a late joiner gets the proposal [commands]: CAUGHT; exit 1 ['Tests  1 failed | 49 passed (50)']
+    × gives a member who joined after the first days were opened the schedule in force alone, never the proposal (FQ100) 52ms
+== B47 a suspended club's member counts [commands]: CAUGHT; exit 1 ['Tests  3 failed | 47 passed (50)']
+    × answers a choice NOT_FOUND first: an unknown proposal, a stranger, a former member, an account being deleted and a suspended club alike (T14) 33ms
+    × answers a confirmation NOT_FOUND first: an unknown proposal, a stranger, a former member, an account being deleted and a suspended club alike (T14) 29ms
+    × gives a stranger, a former member, an account being deleted, a suspended club and a guessed id the same nothing, as Home's days do 66ms
+== B48 an account being deleted counts [commands]: CAUGHT; exit 1 ['Tests  3 failed | 47 passed (50)']
+    × answers a choice NOT_FOUND first: an unknown proposal, a stranger, a former member, an account being deleted and a suspended club alike (T14) 34ms
+    × answers a confirmation NOT_FOUND first: an unknown proposal, a stranger, a former member, an account being deleted and a suspended club alike (T14) 41ms
+    × gives a stranger, a former member, an account being deleted, a suspended club and a guessed id the same nothing, as Home's days do 30ms
+== B49 a former member counts [commands]: CAUGHT; exit 1 ['Tests  4 failed | 46 passed (50)']
+    × answers a choice NOT_FOUND first: an unknown proposal, a stranger, a former member, an account being deleted and a suspended club alike (T14) 24ms
+    × answers a confirmation NOT_FOUND first: an unknown proposal, a stranger, a former member, an account being deleted and a suspended club alike (T14) 21ms
+    × gives a stranger, a former member, an account being deleted, a suspended club and a guessed id the same nothing, as Home's days do 27ms
+    × leaves out a member who has left before the opening, and counts the club by who is still in it 26ms
+== B50 another request under a used key replays [commands]: CAUGHT; exit 1 ['Tests  1 failed | 49 passed (50)']
+    × refuses another request under a used key with IDEMPOTENCY_CONFLICT: other days, another version, another proposal's path, each alone 21ms
+== B51 a closed proposal takes a change [commands]: CAUGHT; exit 1 ['Tests  2 failed | 48 passed (50)']
+    × answers a choice of first days that ended with no successor NOT_ALLOWED: nothing is written to a proposal that has closed (FQ102) 26ms
+    × answers a confirmation of first days that ended with no successor NOT_ALLOWED: nothing is written to a proposal that has closed (FQ102) 16ms
+== B52 a member the proposal doesn't include reaches the rule [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 2 passed | 11 skipped (14)']
+    × answers the member who joined after the commit (T8) as its account and its row say, and leaks nothing the scanner can find 26721ms
+== B54 the first date in UTC, not the club's zone [commands]: CAUGHT; exit 1 ['Tests  1 failed | 49 passed (50)']
+    × takes the club's first local date from the server clock's sample in the club's zone (T1, T2) 35ms
+== B55 the proposed week not in the order the members joined [commands]: CAUGHT; exit 1 ['Tests  33 failed | 17 passed (50)']
+    × answers a choice after the caller confirmed NOT_ALLOWED: nothing is chosen or confirmed twice (FQ57) 24ms
+    × answers a choice of first days that have applied VERSION_CONFLICT to the version a member read while they were open, and NOT_ALLOWED to the applied one 12ms
+    × answers a confirmation MEMBERSHIP_CHANGED with the newer proposal's id before it looks at the version or the days 22ms
+    × answers a confirmation after the caller confirmed NOT_ALLOWED: nothing is chosen or confirmed twice (FQ57) 14ms
+    × answers a confirmation of first days that have applied VERSION_CONFLICT to the version a member read while they were open, and NOT_ALLOWED to the applied one 8ms
+    × answers a retried confirmation the same way, even after the first days have applied 8ms
+== B56 a member who left is given days [commands]: CAUGHT; exit 1 ['Tests  1 failed | 49 passed (50)']
+    × leaves out a member who has left before the opening, and counts the club by who is still in it 39ms
+== B57 the first days opened twice [commands]: CAUGHT; exit 1 ['Tests  1 failed | 49 passed (50)']
+    × opens them once: a second opening, a club of one and a club that isn't there are the caller's bugs, and write nothing 59ms
+== B58 a choice of the same days writes again [commands]: CAUGHT; exit 1 ['Tests  1 failed | 49 passed (50)']
+    × writes nothing for a choice of the days the caller already holds, and still answers 49ms
+== B59 a confirmed day's first date in UTC [commands]: CAUGHT; exit 1 ['Tests  1 failed | 49 passed (50)']
+    × counts a confirmed day's 24 hours to 7 AM in the club's zone, not in UTC (T2; FQ79) 33ms
+== B61 the latest week, in force or not [matrix]: CAUGHT; exit 1 ['Tests  3 failed | 11 skipped (14)']
+    × answers the author as its account and its row say, and leaks nothing the scanner can find 27244ms
+    × answers the member who joined after the commit (T8) as its account and its row say, and leaks nothing the scanner can find 24302ms
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 27007ms
+== B64 a contest's holders not in the order they joined [commands]: CAUGHT; exit 1 ['Tests  2 failed | 48 passed (50)']
+    × names a contest's holders in the order they joined, whatever the order of their ids 29ms
+    × shows a contest and moves nobody: its holders see each other in the order they joined, everyone else sees no reveal and no names (T6) 40ms
+== B63 a contest's holders by their ids [commands]: CAUGHT; exit 1 ['Tests  3 failed | 47 passed (50)']
+    × keeps a choice of no day, and takes the days back in any order sent (handoff 6's two-day picker) 37ms
+    × names a contest's holders in the order they joined, whatever the order of their ids 34ms
+    × shows a contest and moves nobody: its holders see each other in the order they joined, everyone else sees no reveal and no names (T6) 41ms
+== B65 a member who left read as active [commands]: CAUGHT; exit 1 ['Tests  1 failed | 49 passed (50)']
+    × frees the hold of a member who left, and shows a confirmed member who left by the name they left with (FQ75, FQ102) 35ms
+== B66 a former member keeps their live name [commands]: CAUGHT; exit 1 ['Tests  1 failed | 49 passed (50)']
+    × frees the hold of a member who left, and shows a confirmed member who left by the name they left with (FQ75, FQ102) 41ms
+== B70 a slot always has held_by [api]: CAUGHT; exit 1 ['Tests  3 failed | 25 passed (28)']
+    × gives a slot only the keys its view has: no person and no date where the view gave none 1ms
+    × makes each chooseScheduleDays and confirmScheduleDays scene of the first days, field for field 2ms
+    × makes each getSchedule scene of the first days, and the week in force alone, field for field 15ms
+== B71 a person carries another field [api]: CAUGHT; exit 1 ['Tests  3 failed | 25 passed (28)']
+    × gives a person their interval, their name and their avatar's version when there is one, and nothing else 1ms
+    × makes each chooseScheduleDays and confirmScheduleDays scene of the first days, field for field 3ms
+    × makes each getSchedule scene of the first days, and the week in force alone, field for field 12ms
+== B72 a proposal carries a count [api]: CAUGHT; exit 1 ['Tests  3 failed | 25 passed (28)']
+    × gives a proposal the contract's nine fields, and never `announced` in the first days 1ms
+    × makes each chooseScheduleDays and confirmScheduleDays scene of the first days, field for field 2ms
+    × makes each getSchedule scene of the first days, and the week in force alone, field for field 22ms
+== B73 any string is an Idempotency-Key [api]: CAUGHT; exit 1 ['Tests  2 failed | 26 passed (28)']
+    × chooseScheduleDays names the Idempotency-Key when it is missing or isn't a UUID, whatever else is wrong 98ms
+    × confirmScheduleDays names the Idempotency-Key when it is missing or isn't a UUID, whatever else is wrong 11ms
+== B74 a bad request names a field the contract doesn't have [api]: NOT CAUGHT, AN EQUIVALENT CHANGE (README); exit 0 ['Tests  28 passed (28)']
+== B75 a megabyte of body [api]: CAUGHT; exit 1 ['Tests  1 failed | 27 passed (28)']
+    × chooseScheduleDays reads at most 1 KiB of body, which shuts no valid request out 14ms
+== B76 a refusal isn't answered [matrix]: CAUGHT; exit 1 ['Tests  3 failed | 11 skipped (14)']
+    × answers the author as its account and its row say, and leaks nothing the scanner can find 25708ms
+    × answers the member who joined after the commit (T8) as its account and its row say, and leaks nothing the scanner can find 23225ms
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 24472ms
+== B77 the week read in a writing transaction [api]: CAUGHT; exit 1 ['Tests  1 failed | 27 passed (28)']
+    × reads in a read-only transaction, and answers what it made for the caller alone 12ms
+== B78 the server's instant with its fraction [api]: CAUGHT; exit 1 ['Tests  1 failed | 27 passed (28)']
+    × gives the server's instant in whole seconds, rounded down 8ms
+== B79 a choice routed to the confirmation [matrix]: CAUGHT; exit 1 ['Tests  3 failed | 11 skipped (14)']
+    × answers the author as its account and its row say, and leaks nothing the scanner can find 26609ms
+    × answers the member who joined after the commit (T8) as its account and its row say, and leaks nothing the scanner can find 24614ms
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 25364ms
+restored: '?? tests/migrate-once.mts\n'

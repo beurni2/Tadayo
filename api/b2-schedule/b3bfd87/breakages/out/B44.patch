@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/schedule/command.ts b/packages/domain/src/schedule/command.ts
+index e7c8805e..da838e62 100644
+--- a/packages/domain/src/schedule/command.ts
++++ b/packages/domain/src/schedule/command.ts
+@@ -124,6 +124,7 @@ export async function scheduleCommand(
+   if (!proposal.facts.members.some((member) => member.id === callerId)) throw new Refused("NOT_FOUND");
+ 
+   // 4. A newer proposal.
++  if (proposal.version !== input.expectedVersion) throw new Refused("VERSION_CONFLICT", { current_version: proposal.version });
+   if (proposal.replacedBy !== null) throw new Refused("MEMBERSHIP_CHANGED", { current_id: proposal.replacedBy });
+ 
+   // 5. The version.

@@ -1,0 +1,23 @@
+diff --git a/packages/domain/src/schedule/command.ts b/packages/domain/src/schedule/command.ts
+index e7c8805e..4012d070 100644
+--- a/packages/domain/src/schedule/command.ts
++++ b/packages/domain/src/schedule/command.ts
+@@ -106,7 +106,8 @@ export async function scheduleCommand(
+   };
+ 
+   // 1. The receipt.
+-  const first = await reserveReceipt(tx, receipt, await clock.sample(tx));
++  const EARLY = await clock.sample(tx);
++  const first = await reserveReceipt(tx, receipt, EARLY);
+   if (first !== null) return first.replay;
+ 
+   // 2. The proposal's club, and its row.
+@@ -132,7 +133,7 @@ export async function scheduleCommand(
+   }
+ 
+   // 6. The clock, after the lock.
+-  const at = await clock.sample(tx);
++  const at = EARLY;
+ 
+   // 7. The rule.
+   if (proposal.state !== "open") throw new Refused("NOT_ALLOWED");

@@ -1,0 +1,13 @@
+diff --git a/services/api/src/schedule/routes.ts b/services/api/src/schedule/routes.ts
+index cb896778..480dd0bf 100644
+--- a/services/api/src/schedule/routes.ts
++++ b/services/api/src/schedule/routes.ts
+@@ -129,7 +129,7 @@ function commandHandler(
+     const account = signedIn(request);
+     // The parameters come before the body, the contract's order; nothing here echoes a value.
+     const key = request.headers["idempotency-key"];
+-    if (typeof key !== "string" || !IDEMPOTENCY_KEY.test(key)) {
++    if (typeof key !== "string") {
+       return problem(reply, "INVALID_REQUEST", { field: "Idempotency-Key" });
+     }
+     const parsed = schema.safeParse(request.body);

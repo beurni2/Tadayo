@@ -1,0 +1,12 @@
+diff --git a/db/migrations/0012_schedule_proposals.sql b/db/migrations/0012_schedule_proposals.sql
+index ebe2885d..c67bfdbd 100644
+--- a/db/migrations/0012_schedule_proposals.sql
++++ b/db/migrations/0012_schedule_proposals.sql
+@@ -41,7 +41,6 @@ CREATE TABLE app.schedule_proposals (
+     DEFERRABLE INITIALLY DEFERRED,
+   CHECK ((state = 'open') = (closed_at IS NULL)),
+   CHECK (closed_at IS NULL OR closed_at >= created_at),
+-  CHECK (reason <> 'activation' OR schedule_version_id IS NOT NULL),
+   CHECK (replaced_by IS NULL OR (state = 'superseded' AND replaced_by <> id))
+ );
+ ALTER TABLE app.schedule_proposals ENABLE ROW LEVEL SECURITY;

@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/week.ts b/packages/domain/src/schedule/week.ts
+index 7fd50423..d62b2b27 100644
+--- a/packages/domain/src/schedule/week.ts
++++ b/packages/domain/src/schedule/week.ts
+@@ -250,7 +250,7 @@ export async function loadWeek(
+                      'members',
+                      (SELECT coalesce(pg_catalog.jsonb_agg(pg_catalog.jsonb_build_object(
+                                'person', ${person(sql)},
+-                               'active', s.state = 'active',
++                               'active', true,
+                                'confirmed', pm.confirmed_at IS NOT NULL,
+                                'days',
+                                (SELECT coalesce(pg_catalog.jsonb_agg(pg_catalog.jsonb_build_object(

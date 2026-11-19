@@ -1,0 +1,48 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/tests
+
+ ❯ src/db/schedule-commands.test.ts (50 tests | 1 failed) 1757ms
+   ❯ choosing days (FQ46, FQ48, FQ55; T33) (6)
+     × frees the hold of a member who left, and shows a confirmed member who left by the name they left with (FQ75, FQ102) 39ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 49 passed (50)
+   Start at  00:39:18
+   Duration  2.15s (tests 94%, import 3%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-commands.test.ts > choosing days (FQ46, FQ48, FQ55; T33) > frees the hold of a member who left, and shows a confirmed member who left by the name they left with (FQ75, FQ102)
+AssertionError: expected { weekday: 'thursday', …(3) } to deeply equal { weekday: 'thursday', …(3) }
+
+- Expected
++ Received
+
+@@ -1,9 +1,9 @@
+  {
+    "owner": {
+      "avatarVersion": null,
+-     "displayName": "Sam who left",
++     "displayName": "Sam",
+      "membershipId": "mem_AVVOJd39PulfBEzV7ke4xw",
+    },
+    "state": "taken",
+    "suggested": false,
+    "weekday": "thursday",
+
+ ❯ src/db/schedule-commands.test.ts:590:65
+    588|       // Sam's Thursday stays Sam's, under the name Sam left with, and…
+    589|       const sam = { membershipId: w.members[3], displayName: "Sam who …
+    590|       expect(slot(ben?.proposal as ProposalAnswer, "thursday")).toEqua…
+       |                                                                 ^
+    591|         weekday: "thursday",
+    592|         state: "taken",
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:570:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

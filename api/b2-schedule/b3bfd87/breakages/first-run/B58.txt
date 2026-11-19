@@ -1,0 +1,50 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/tests
+
+ ❯ src/db/schedule-commands.test.ts (50 tests | 1 failed) 2068ms
+   ❯ choosing days (FQ46, FQ48, FQ55; T33) (6)
+     × writes nothing for a choice of the days the caller already holds, and still answers 34ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 49 passed (50)
+   Start at  00:39:01
+   Duration  2.82s (tests 93%, transform 4%, import 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-commands.test.ts > choosing days (FQ46, FQ48, FQ55; T33) > writes nothing for a choice of the days the caller already holds, and still answers
+AssertionError: expected 'day (0,57) {"held": true, "weekday": …' to be 'day (0,56) {"held": true, "weekday": …' // Object.is equality
+
+- Expected
++ Received
+
+- day (0,56) {"held": true, "weekday": "monday", "suggested": true, "interval_id": "mem_1XleMn5t0RwXQzZDt1lBOA", "proposal_id": "spr__KQuczHlgvpgUBrGkvFvhw"}
++ day (0,57) {"held": true, "weekday": "tuesday", "suggested": true, "interval_id": "mem_6Xhr-s1yaAHLpPOpQnZfhg", "proposal_id": "spr__KQuczHlgvpgUBrGkvFvhw"}
+- day (0,57) {"held": true, "weekday": "tuesday", "suggested": true, "interval_id": "mem_6Xhr-s1yaAHLpPOpQnZfhg", "proposal_id": "spr__KQuczHlgvpgUBrGkvFvhw"}
++ day (0,58) {"held": true, "weekday": "wednesday", "suggested": true, "interval_id": "mem_rqItesHNxndgeq026LE1MA", "proposal_id": "spr__KQuczHlgvpgUBrGkvFvhw"}
+- day (0,58) {"held": true, "weekday": "wednesday", "suggested": true, "interval_id": "mem_rqItesHNxndgeq026LE1MA", "proposal_id": "spr__KQuczHlgvpgUBrGkvFvhw"}
++ day (0,59) {"held": true, "weekday": "thursday", "suggested": true, "interval_id": "mem_FQgNF-2Pdc8Zi_1KANfqnA", "proposal_id": "spr__KQuczHlgvpgUBrGkvFvhw"}
+- day (0,59) {"held": true, "weekday": "thursday", "suggested": true, "interval_id": "mem_FQgNF-2Pdc8Zi_1KANfqnA", "proposal_id": "spr__KQuczHlgvpgUBrGkvFvhw"}
++ day (0,60) {"held": true, "weekday": "monday", "suggested": true, "interval_id": "mem_1XleMn5t0RwXQzZDt1lBOA", "proposal_id": "spr__KQuczHlgvpgUBrGkvFvhw"}
+  member (0,45) {"club_id": "club_gMHaup68nyumTIuteGUeUA", "interval_id": "mem_1XleMn5t0RwXQzZDt1lBOA", "proposal_id": "spr__KQuczHlgvpgUBrGkvFvhw", "confirmed_at": null}
+  member (0,46) {"club_id": "club_gMHaup68nyumTIuteGUeUA", "interval_id": "mem_6Xhr-s1yaAHLpPOpQnZfhg", "proposal_id": "spr__KQuczHlgvpgUBrGkvFvhw", "confirmed_at": null}
+  member (0,47) {"club_id": "club_gMHaup68nyumTIuteGUeUA", "interval_id": "mem_rqItesHNxndgeq026LE1MA", "proposal_id": "spr__KQuczHlgvpgUBrGkvFvhw", "confirmed_at": null}
+  member (0,48) {"club_id": "club_gMHaup68nyumTIuteGUeUA", "interval_id": "mem_FQgNF-2Pdc8Zi_1KANfqnA", "proposal_id": "spr__KQuczHlgvpgUBrGkvFvhw", "confirmed_at": null}
+  proposal (0,12) {"id": "spr__KQuczHlgvpgUBrGkvFvhw", "state": "open", "reason": "activation", "club_id": "club_gMHaup68nyumTIuteGUeUA", "version": 1, "closed_at": null, "created_at": "2026-11-02T09:00:00+00:00", "replaced_by": null, "effective_from": "2026-11-02", "days_per_member": 1, "schedule_version_id": "sched_7KXtmXIjBf6Wjy8RJiG1iQ"}
+
+ ❯ src/db/schedule-commands.test.ts:463:39
+    461|       const answer = await choose(tx, clock, w, 0, ["monday"]);
+    462|       expect(answer.myDays).toEqual(["monday"]);
+    463|       expect(await everything(tx, w)).toBe(before);
+       |                                       ^
+    464|       expect(await receipts(tx, w, 0)).toEqual([{ operation: "chooseSc…
+    465|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:457:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

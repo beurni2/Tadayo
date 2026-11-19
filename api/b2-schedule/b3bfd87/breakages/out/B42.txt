@@ -1,0 +1,51 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/tests
+
+ ❯ src/db/schedule-commands.test.ts (50 tests | 2 failed) 1570ms
+   ❯ requests at once, committed (T6, T19; FQ55) (5)
+     × lets a choice and a confirmation of the same day race: exactly one stands, whichever the club's lock took first 94ms
+     × lets every member of a club of six confirm at once: six days, one version move, no deadlock 92ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 48 passed (50)
+   Start at  00:47:11
+   Duration  2.24s (tests 95%, import 3%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-commands.test.ts > requests at once, committed (T6, T19; FQ55) > lets a choice and a confirmation of the same day race: exactly one stands, whichever the club's lock took first
+AssertionError: expected 'PostgresError: app.schedule_proposal_…' to be 'NOT_ALLOWED' // Object.is equality
+
+Expected: "NOT_ALLOWED"
+Received: "PostgresError: app.schedule_proposal_days: monday is confirmed, and a confirmed day is taken (FQ48)"
+
+ ❯ src/db/schedule-commands.test.ts:1024:23
+    1022|       if (confirmed === "ok") {
+    1023|         // The confirmation was first: the day is Ben's, and Maya's ch…
+    1024|         expect(chose).toBe("NOT_ALLOWED");
+       |                       ^
+    1025|         expect(rows.map((each) => each.star_interval_id)).toEqual([w.m…
+    1026|         expect((await proposalFor(world, clock, w, 1)).myDays).toEqual…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > requests at once, committed (T6, T19; FQ55) > lets every member of a club of six confirm at once: six days, one version move, no deadlock
+AssertionError: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/db/schedule-commands.test.ts:1066:92
+    1064|     const answers = results.flatMap((one) => (one.status === "fulfille…
+    1065|     // Exactly one of them was the last, and answered the applied prop…
+    1066|     expect(answers.filter((answer) => answer.state === "applied" && an…
+       |                                                                                            ^
+    1067|     expect(answers.filter((answer) => answer.state === "open" && answe…
+    1068|     expect(await assignments(world, w)).toHaveLength(6);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

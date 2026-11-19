@@ -1,0 +1,63 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/packages/domain
+
+ ❯ src/schedule/decide.test.ts (18 tests | 2 failed) 29ms
+   ❯ a confirmation in the first days (the contract's ScheduleConfirmRequest; book p11; FQ55, FQ99) (8)
+     × refuses a day another member holds too, even by proposal alone (FQ55; G04-confirm-refused) 15ms
+     × refuses both days when one is contested: nobody confirms one day alone (FQ99) 1ms
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  2 failed | 56 passed (58)
+   Start at  00:42:44
+   Duration  1.34s (tests 90%, import 8%, worker 1%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/decide.test.ts > a confirmation in the first days (the contract's ScheduleConfirmRequest; book p11; FQ55, FQ99) > refuses a day another member holds too, even by proposal alone (FQ55; G04-confirm-refused)
+AssertionError: expected { days: [ 'friday' ] } to be 'NOT_ALLOWED' // Object.is equality
+
+- Expected:
+"NOT_ALLOWED"
+
++ Received:
+{
+  "days": [
+    "friday",
+  ],
+}
+
+ ❯ src/schedule/decide.test.ts:99:56
+     97|
+     98|   it("refuses a day another member holds too, even by proposal alone (…
+     99|     expect(judgeConfirmation("ben", FOUR, ["friday"])).toBe("NOT_ALLOW…
+       |                                                        ^
+    100|     expect(judgeConfirmation("debby", FOUR, ["friday"])).toBe("NOT_ALL…
+    101|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/schedule/decide.test.ts > a confirmation in the first days (the contract's ScheduleConfirmRequest; book p11; FQ55, FQ99) > refuses both days when one is contested: nobody confirms one day alone (FQ99)
+AssertionError: expected { days: [ 'monday', 'thursday' ] } to be 'NOT_ALLOWED' // Object.is equality
+
+- Expected:
+"NOT_ALLOWED"
+
++ Received:
+{
+  "days": [
+    "monday",
+    "thursday",
+  ],
+}
+
+ ❯ src/schedule/decide.test.ts:104:68
+    102|
+    103|   it("refuses both days when one is contested: nobody confirms one day…
+    104|     expect(judgeConfirmation("ben", PAIR, ["monday", "thursday"])).toB…
+       |                                                                    ^
+    105|     expect(judgeConfirmation("ben", PAIR, ["monday"])).toBe("NOT_ALLOW…
+    106|     expect(judgeConfirmation("debby", PAIR, ["thursday", "friday"])).t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/week.ts b/packages/domain/src/schedule/week.ts
+index 7fd50423..dab92e0f 100644
+--- a/packages/domain/src/schedule/week.ts
++++ b/packages/domain/src/schedule/week.ts
+@@ -258,7 +258,7 @@ export async function loadWeek(
+                                        '[]'::pg_catalog.jsonb)
+                                   FROM app.schedule_proposal_days d
+                                  WHERE d.proposal_id = pm.proposal_id AND d.interval_id = pm.interval_id))
+-                               ORDER BY s.joined_at, s.interval_id COLLATE "C"),
++                               ORDER BY s.interval_id COLLATE "C" DESC),
+                              '[]'::pg_catalog.jsonb)
+                         FROM app.schedule_proposal_members pm
+                         JOIN app.memberships s ON s.interval_id = pm.interval_id

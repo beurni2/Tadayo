@@ -1,0 +1,66 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/packages/domain
+
+ ❯ src/schedule/propose.test.ts (16 tests | 2 failed) 20ms
+   ❯ the week proposed for a club's first days (spec 05) (16)
+     × gives two days each to two or three members and one to four, five or six (spec 05's table) 6ms
+     × proposes spec 05's example week for three members 2ms
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  2 failed | 56 passed (58)
+   Start at  00:42:19
+   Duration  1.20s (tests 91%, import 7%, transform 1%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/propose.test.ts > the week proposed for a club's first days (spec 05) > gives two days each to two or three members and one to four, five or six (spec 05's table)
+AssertionError: expected [ 2, 1, 1, 1, 1 ] to deeply equal [ 2, 2, 1, 1, 1 ]
+
+- Expected
++ Received
+
+  [
+    2,
+-   2,
++   1,
+    1,
+    1,
+    1,
+  ]
+
+ ❯ src/schedule/propose.test.ts:20:48
+     18|
+     19|   it("gives two days each to two or three members and one to four, fiv…
+     20|     expect([2, 3, 4, 5, 6].map(daysPerMember)).toEqual([2, 2, 1, 1, 1]…
+       |                                                ^
+     21|   });
+     22|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/schedule/propose.test.ts > the week proposed for a club's first days (spec 05) > proposes spec 05's example week for three members
+AssertionError: expected { monday: 'Ben', …(2) } to deeply equal { monday: 'Ben', …(5) }
+
+- Expected
++ Received
+
+  {
+-   "friday": "Debby",
+    "monday": "Ben",
+-   "saturday": "Maya",
+-   "thursday": "Ben",
+    "tuesday": "Debby",
+    "wednesday": "Maya",
+  }
+
+ ❯ src/schedule/propose.test.ts:28:45
+     26|
+     27|   it("proposes spec 05's example week for three members", () => {
+     28|     expect(byDay(["Ben", "Debby", "Maya"])).toEqual({
+       |                                             ^
+     29|       monday: "Ben",
+     30|       tuesday: "Debby",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

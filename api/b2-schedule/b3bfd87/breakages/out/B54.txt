@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/tests
+
+ ❯ src/db/schedule-commands.test.ts (50 tests | 1 failed) 2407ms
+   ❯ opening the first days (spec 04, 05; FQ48) (8)
+     × takes the club's first local date from the server clock's sample in the club's zone (T1, T2) 35ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 49 passed (50)
+   Start at  00:49:01
+   Duration  2.77s (tests 96%, import 2%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-commands.test.ts > opening the first days (spec 04, 05; FQ48) > takes the club's first local date from the server clock's sample in the club's zone (T1, T2)
+AssertionError: expected '2026-11-02' to be '2026-11-03' // Object.is equality
+
+Expected: "2026-11-03"
+Received: "2026-11-02"
+
+ ❯ src/db/schedule-commands.test.ts:319:66
+    317|       const clock = fakeClock("2026-11-02T11:30:00Z");
+    318|       const w = await firstDays(tx, clock, 4, "Pacific/Auckland");
+    319|       expect((await proposalRow(tx, w.proposal)).effective_from).toBe(…
+       |                                                                  ^
+    320|       const [version] = await tx<{ effective_from: string; created_at:…
+    321|         SELECT effective_from::text AS effective_from, created_at FROM…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:315:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

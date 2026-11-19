@@ -1,0 +1,107 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/tests
+
+ ❯ src/db/schedule-commands.test.ts (50 tests | 3 failed) 2131ms
+   ❯ who gets the week (T9, T14; FQ80, FQ100) (2)
+     × gives a stranger, a former member, an account being deleted, a suspended club and a guessed id the same nothing, as Home's days do 66ms
+   ❯ the refusals, in the contract's order (15)
+     × answers a choice NOT_FOUND first: an unknown proposal, a stranger, a former member, an account being deleted and a suspended club alike (T14) 33ms
+     × answers a confirmation NOT_FOUND first: an unknown proposal, a stranger, a former member, an account being deleted and a suspended club alike (T14) 29ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 47 passed (50)
+   Start at  00:47:26
+   Duration  2.52s (tests 95%, import 3%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-commands.test.ts > who gets the week (T9, T14; FQ80, FQ100) > gives a stranger, a former member, an account being deleted, a suspended club and a guessed id the same nothing, as Home's days do
+AssertionError: expected { …(3) } to deeply equal { member: null, week: false, …(1) }
+
+- Expected
++ Received
+
+  {
+    "home": false,
+-   "member": null,
+-   "week": false,
++   "member": "mem_hX4TwIyeQ5nyZTFzGeS5Cg",
++   "week": true,
+  }
+
+ ❯ src/db/schedule-commands.test.ts:392:44
+    390|
+    391|       await tx`UPDATE app.clubs SET suspended_at = ${AT.generated} WHE…
+    392|       expect(await both(w.users[0] ?? "")).toEqual({ member: null, wee…
+       |                                            ^
+    393|     });
+    394|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:364:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > the refusals, in the contract's order > answers a choice NOT_FOUND first: an unknown proposal, a stranger, a former member, an account being deleted and a suspended club alike (T14)
+AssertionError: expected { code: 'MEMBERSHIP_CHANGED', …(1) } to deeply equal { code: 'NOT_FOUND', facts: {} }
+
+- Expected
++ Received
+
+  {
+-   "code": "NOT_FOUND",
+-   "facts": {},
++   "code": "MEMBERSHIP_CHANGED",
++   "facts": {
++     "current_id": "spr_diQkz2sfJNgbpJy43v_UpQ",
++   },
+  }
+
+ ❯ src/db/schedule-commands.test.ts:816:77
+    814|         expect(await refusal(command(tx, clock, w, 3, ["tuesday"], sta…
+    815|         await tx`UPDATE app.clubs SET suspended_at = ${AT.edited} WHER…
+    816|         expect(await refusal(command(tx, clock, w, 0, ["tuesday"], sta…
+       |                                                                             ^
+    817|       });
+    818|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:799:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > the refusals, in the contract's order > answers a confirmation NOT_FOUND first: an unknown proposal, a stranger, a former member, an account being deleted and a suspended club alike (T14)
+AssertionError: expected { code: 'MEMBERSHIP_CHANGED', …(1) } to deeply equal { code: 'NOT_FOUND', facts: {} }
+
+- Expected
++ Received
+
+  {
+-   "code": "NOT_FOUND",
+-   "facts": {},
++   "code": "MEMBERSHIP_CHANGED",
++   "facts": {
++     "current_id": "spr_wBvSkuL63vvSrWNAxT_UiA",
++   },
+  }
+
+ ❯ src/db/schedule-commands.test.ts:816:77
+    814|         expect(await refusal(command(tx, clock, w, 3, ["tuesday"], sta…
+    815|         await tx`UPDATE app.clubs SET suspended_at = ${AT.edited} WHER…
+    816|         expect(await refusal(command(tx, clock, w, 0, ["tuesday"], sta…
+       |                                                                             ^
+    817|       });
+    818|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:799:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/open.ts b/packages/domain/src/schedule/open.ts
+index 84c58bbc..bfa0cbe0 100644
+--- a/packages/domain/src/schedule/open.ts
++++ b/packages/domain/src/schedule/open.ts
+@@ -52,7 +52,7 @@ export async function openFirstDays(tx: QuerySql & ClockSql, clock: Clock, clubI
+   }
+   const members = await bound(tx)`
+     SELECT interval_id FROM app.memberships
+-     WHERE club_id = ${clubId} AND state = 'active' ORDER BY joined_at, interval_id COLLATE "C"`;
++     WHERE club_id = ${clubId} ORDER BY joined_at, interval_id COLLATE "C"`;
+   // Throws for a roster outside two to six (A01).
+   const week = proposedWeek(members.length);
+   const perMember = daysPerMember(members.length);

@@ -1,0 +1,763 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/tests
+
+ ❯ src/db/schedule-commands.test.ts (50 tests | 33 failed) 1671ms
+   ❯ opening the first days (spec 04, 05; FQ48) (8)
+     × proposes spec 05's week to a club of 2: each member holds their days, in the order they joined, at version 1 87ms
+     × proposes spec 05's week to a club of 4: each member holds their days, in the order they joined, at version 1 49ms
+     × proposes spec 05's week to a club of 5: each member holds their days, in the order they joined, at version 1 62ms
+     × proposes spec 05's week to a club of 6: each member holds their days, in the order they joined, at version 1 44ms
+     × leaves out a member who has left before the opening, and counts the club by who is still in it 32ms
+   ❯ who gets the week (T9, T14; FQ80, FQ100) (2)
+     × gives a member who joined after the first days were opened the schedule in force alone, never the proposal (FQ100) 42ms
+   ❯ choosing days (FQ46, FQ48, FQ55; T33) (6)
+     × writes nothing for a choice of the days the caller already holds, and still answers 39ms
+     × keeps a choice of no day, and takes the days back in any order sent (handoff 6's two-day picker) 25ms
+     × shows a contest and moves nobody: its holders see each other in the order they joined, everyone else sees no reveal and no names (T6) 47ms
+     × names a contest's holders in the order they joined, whatever the order of their ids 36ms
+     × frees the hold of a member who left, and shows a confirmed member who left by the name they left with (FQ75, FQ102) 25ms
+   ❯ confirming days (FQ55, FQ57, FQ79, FQ99; T1, T33, T49) (10)
+     × confirms the caller's day from the server clock's sample: its first date is at least 24 hours on, and the version stays 27ms
+     × counts a confirmed day's 24 hours to 7 AM in the club's zone, not in UTC (T2; FQ79) 29ms
+     × takes the confirmation's instant after the club's lock, not when the request began (T1; T3's order) 37ms
+     × applies the first days of a club of 2 on the last confirmation, which alone moves the version (T33) 14ms
+     × applies the first days of a club of 4 on the last confirmation, which alone moves the version (T33) 24ms
+     × applies the first days of a club of 6 on the last confirmation, which alone moves the version (T33) 36ms
+     × confirms nothing while a day is contested: neither holder, in either order, until all but one have chosen another (FQ55) 42ms
+     × confirms both days at once or neither: one contested day holds back the other too, in a club of two (FQ99) 28ms
+     × confirms only the days the caller holds and named, the whole of them (book p11) 25ms
+   ❯ the refusals, in the contract's order (15)
+     × answers a choice after the caller confirmed NOT_ALLOWED: nothing is chosen or confirmed twice (FQ57) 24ms
+     × answers a choice of first days that have applied VERSION_CONFLICT to the version a member read while they were open, and NOT_ALLOWED to the applied one 12ms
+     × answers a confirmation MEMBERSHIP_CHANGED with the newer proposal's id before it looks at the version or the days 22ms
+     × answers a confirmation after the caller confirmed NOT_ALLOWED: nothing is chosen or confirmed twice (FQ57) 14ms
+     × answers a confirmation of first days that have applied VERSION_CONFLICT to the version a member read while they were open, and NOT_ALLOWED to the applied one 8ms
+   ❯ one commit per key (T19) (4)
+     × answers a retry with the first answer as it was, though the week has changed since, and writes nothing again 17ms
+     × answers a retried confirmation the same way, even after the first days have applied 8ms
+     × refuses another request under a used key with IDEMPOTENCY_CONFLICT: other days, another version, another proposal's path, each alone 27ms
+   ❯ requests at once, committed (T6, T19; FQ55) (5)
+     × lets a choice and a confirmation of the same day race: exactly one stands, whichever the club's lock took first 97ms
+     × in both orders, one after the other: the confirmation first refuses the choice, the choice first refuses the confirmation 25ms
+     × confirms neither of two members who hold the same day and confirm it at once: both still see the clash 26ms
+     × lets every member of a club of six confirm at once: six days, one version move, no deadlock 76ms
+     × gives two sends of the same key at once the same answer, and confirms once 26ms
+
+ Test Files  1 failed (1)
+      Tests  33 failed | 17 passed (50)
+   Start at  00:49:04
+   Duration  2.00s (tests 95%, import 3%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 33 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-commands.test.ts > opening the first days (spec 04, 05; FQ48) > proposes spec 05's week to a club of 2: each member holds their days, in the order they joined, at version 1
+AssertionError: expected { …(9) } to match object { …(8) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+@@ -1,12 +1,12 @@
+  {
+    "daysPerMember": 2,
+    "effectiveFrom": "2026-11-02",
+    "id": "spr_XJrjPR-cXDBLt2HCgODa2g",
+    "myDays": [
+-     "monday",
+-     "thursday",
++     "tuesday",
++     "friday",
+    ],
+    "myState": "choosing",
+    "reason": "activation",
+    "state": "open",
+    "version": 1,
+
+ ❯ src/db/schedule-commands.test.ts:277:28
+    275|           });
+    276|           const proposal = sight?.proposal;
+    277|           expect(proposal).toMatchObject({
+       |                            ^
+    278|             id: w.proposal,
+    279|             version: 1,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:254:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/33]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > opening the first days (spec 04, 05; FQ48) > proposes spec 05's week to a club of 4: each member holds their days, in the order they joined, at version 1
+AssertionError: expected { …(9) } to match object { …(8) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+@@ -1,11 +1,11 @@
+  {
+    "daysPerMember": 1,
+    "effectiveFrom": "2026-11-02",
+    "id": "spr_9gZ38pbrgU8ttNXsK32dyA",
+    "myDays": [
+-     "monday",
++     "wednesday",
+    ],
+    "myState": "choosing",
+    "reason": "activation",
+    "state": "open",
+    "version": 1,
+
+ ❯ src/db/schedule-commands.test.ts:277:28
+    275|           });
+    276|           const proposal = sight?.proposal;
+    277|           expect(proposal).toMatchObject({
+       |                            ^
+    278|             id: w.proposal,
+    279|             version: 1,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:254:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/33]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > opening the first days (spec 04, 05; FQ48) > proposes spec 05's week to a club of 5: each member holds their days, in the order they joined, at version 1
+AssertionError: expected { weekday: 'tuesday', …(3) } to deeply equal { weekday: 'tuesday', …(3) }
+
+- Expected
++ Received
+
+  {
+    "heldBy": {
+      "avatarVersion": null,
+-     "displayName": "Maya",
+-     "membershipId": "mem_yjwC7rkWvH6QOedNpg1e1w",
++     "displayName": "Sam",
++     "membershipId": "mem_78j4YBcQLaqn9bsjeXb4ug",
+    },
+    "state": "available",
+    "suggested": false,
+    "weekday": "tuesday",
+  }
+
+ ❯ src/db/schedule-commands.test.ts:301:28
+    299|               expect(each).toEqual({ weekday: each.weekday, state: "av…
+    300|             else {
+    301|               expect(each).toEqual({
+       |                            ^
+    302|                 weekday: each.weekday,
+    303|                 state: "available",
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:254:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/33]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > opening the first days (spec 04, 05; FQ48) > proposes spec 05's week to a club of 6: each member holds their days, in the order they joined, at version 1
+AssertionError: expected { weekday: 'tuesday', …(3) } to deeply equal { weekday: 'tuesday', …(3) }
+
+- Expected
++ Received
+
+  {
+    "heldBy": {
+      "avatarVersion": null,
+-     "displayName": "Maya",
+-     "membershipId": "mem_UAjz6O3yp-s4x31hHZt8Aw",
++     "displayName": "Alex",
++     "membershipId": "mem_NxFyMuoRtl-Z1FBEoiwOVQ",
+    },
+    "state": "available",
+    "suggested": false,
+    "weekday": "tuesday",
+  }
+
+ ❯ src/db/schedule-commands.test.ts:301:28
+    299|               expect(each).toEqual({ weekday: each.weekday, state: "av…
+    300|             else {
+    301|               expect(each).toEqual({
+       |                            ^
+    302|                 weekday: each.weekday,
+    303|                 state: "available",
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:254:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/33]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > opening the first days (spec 04, 05; FQ48) > leaves out a member who has left before the opening, and counts the club by who is still in it
+AssertionError: expected [ 'wednesday', 'saturday' ] to deeply equal [ 'tuesday', 'friday' ]
+
+- Expected
++ Received
+
+  [
+-   "tuesday",
+-   "friday",
++   "wednesday",
++   "saturday",
+  ]
+
+ ❯ src/db/schedule-commands.test.ts:355:59
+    353|       expect((await proposalRow(tx, w.proposal)).days_per_member).toBe…
+    354|       expect((await proposalFor(tx, clock, w, 0)).myDays).toEqual(["mo…
+    355|       expect((await proposalFor(tx, clock, w, 2)).myDays).toEqual(["tu…
+       |                                                           ^
+    356|       expect((await proposalFor(tx, clock, w, 3)).myDays).toEqual(["we…
+    357|       expect(await sees(tx, clock, w, 1)).toBeNull();
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:344:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/33]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > who gets the week (T9, T14; FQ80, FQ100) > gives a member who joined after the first days were opened the schedule in force alone, never the proposal (FQ100)
+Refused: refused: NOT_ALLOWED
+ ❯ ../packages/domain/src/schedule/confirm-days.ts:46:41
+     44|     }
+     45|     const judged = judgeConfirmation(callerId, proposal.facts, input.w…
+     46|     if (judged === "NOT_ALLOWED") throw new Refused("NOT_ALLOWED");
+       |                                         ^
+     47|     await bound(tx)`
+     48|         UPDATE app.schedule_proposal_members SET confirmed_at = ${at}:…
+ ❯ scheduleCommand ../packages/domain/src/schedule/command.ts:139:9
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ request src/db/schedule-commands.test.ts:132:18
+ ❯ src/db/schedule-commands.test.ts:412:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/33]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > choosing days (FQ46, FQ48, FQ55; T33) > writes nothing for a choice of the days the caller already holds, and still answers
+AssertionError: expected 'day (2,10) {"held": true, "weekday": …' to be 'day (2,10) {"held": true, "weekday": …' // Object.is equality
+
+- Expected
++ Received
+
+@@ -1,7 +1,8 @@
+  day (2,10) {"held": true, "weekday": "wednesday", "suggested": true, "interval_id": "mem_bOLsxoc2-9Pofva-CR9EnQ", "proposal_id": "spr_gRI7-0URTZSJ7K3BvNuVnQ"}
+- day (2,11) {"held": true, "weekday": "thursday", "suggested": true, "interval_id": "mem_x3IldvH4YWlAQFfoXs3apA", "proposal_id": "spr_gRI7-0URTZSJ7K3BvNuVnQ"}
++ day (2,12) {"held": false, "weekday": "thursday", "suggested": true, "interval_id": "mem_x3IldvH4YWlAQFfoXs3apA", "proposal_id": "spr_gRI7-0URTZSJ7K3BvNuVnQ"}
++ day (2,6) {"held": true, "weekday": "monday", "suggested": false, "interval_id": "mem_x3IldvH4YWlAQFfoXs3apA", "proposal_id": "spr_gRI7-0URTZSJ7K3BvNuVnQ"}
+  day (2,8) {"held": true, "weekday": "monday", "suggested": true, "interval_id": "mem_0GR8THrROzbNo4I64fq_sg", "proposal_id": "spr_gRI7-0URTZSJ7K3BvNuVnQ"}
+  day (2,9) {"held": true, "weekday": "tuesday", "suggested": true, "interval_id": "mem_3HlPYNqm2wjHhXRLBqbmFg", "proposal_id": "spr_gRI7-0URTZSJ7K3BvNuVnQ"}
+  member (2,10) {"club_id": "club_bVa62mJBiqORi1ZPFfR_SQ", "interval_id": "mem_3HlPYNqm2wjHhXRLBqbmFg", "proposal_id": "spr_gRI7-0URTZSJ7K3BvNuVnQ", "confirmed_at": null}
+  member (2,11) {"club_id": "club_bVa62mJBiqORi1ZPFfR_SQ", "interval_id": "mem_bOLsxoc2-9Pofva-CR9EnQ", "proposal_id": "spr_gRI7-0URTZSJ7K3BvNuVnQ", "confirmed_at": null}
+  member (2,12) {"club_id": "club_bVa62mJBiqORi1ZPFfR_SQ", "interval_id": "mem_x3IldvH4YWlAQFfoXs3apA", "proposal_id": "spr_gRI7-0URTZSJ7K3BvNuVnQ", "confirmed_at": null}
+
+ ❯ src/db/schedule-commands.test.ts:463:39
+    461|       const answer = await choose(tx, clock, w, 0, ["monday"]);
+    462|       expect(answer.myDays).toEqual(["monday"]);
+    463|       expect(await everything(tx, w)).toBe(before);
+       |                                       ^
+    464|       expect(await receipts(tx, w, 0)).toEqual([{ operation: "chooseSc…
+    465|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:457:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/33]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > choosing days (FQ46, FQ48, FQ55; T33) > keeps a choice of no day, and takes the days back in any order sent (handoff 6's two-day picker)
+AssertionError: expected { state: 'available', …(3) } to deeply equal { weekday: 'monday', …(2) }
+
+- Expected
++ Received
+
+  {
++   "heldBy": {
++     "avatarVersion": null,
++     "displayName": "Maya",
++     "membershipId": "mem_0oHKpGK3eH_8zUdSkSHM6Q",
++   },
+    "state": "available",
+-   "suggested": true,
++   "suggested": false,
+    "weekday": "monday",
+  }
+
+ ❯ src/db/schedule-commands.test.ts:475:36
+    473|       const none = await choose(tx, clock, w, 0, []);
+    474|       expect(none.myDays).toEqual([]);
+    475|       expect(slot(none, "monday")).toEqual({ weekday: "monday", state:…
+       |                                    ^
+    476|       expect(slot(none, "thursday")).toEqual({ weekday: "thursday", st…
+    477|       const back = await choose(tx, clock, w, 0, ["thursday", "monday"…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:469:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/33]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > choosing days (FQ46, FQ48, FQ55; T33) > shows a contest and moves nobody: its holders see each other in the order they joined, everyone else sees no reveal and no names (T6)
+AssertionError: expected { weekday: 'monday', …(2) } to deeply equal { weekday: 'monday', …(3) }
+
+- Expected
++ Received
+
+  {
+-   "holders": [
+-     {
+-       "avatarVersion": null,
+-       "displayName": "Ben",
+-       "membershipId": "mem_OjVgqrwA5WQDpyoaGpQ_2A",
+-     },
+-     {
+-       "avatarVersion": null,
+-       "displayName": "Debby",
+-       "membershipId": "mem_MnXW0JrInwKUK0w49bMCmA",
+-     },
+-   ],
+-   "state": "clash",
+-   "suggested": true,
++   "state": "no_reveal",
++   "suggested": false,
+    "weekday": "monday",
+  }
+
+ ❯ src/db/schedule-commands.test.ts:499:35
+    497|       await choose(tx, clock, w, 4, ["monday"]);
+    498|       const two = await proposalFor(tx, clock, w, 0);
+    499|       expect(slot(two, "monday")).toEqual({
+       |                                   ^
+    500|         weekday: "monday",
+    501|         state: "clash",
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:493:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/33]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > choosing days (FQ46, FQ48, FQ55; T33) > names a contest's holders in the order they joined, whatever the order of their ids
+AssertionError: as member 0: expected undefined to deeply equal [ { …(3) }, { …(3) }, { …(3) } ]
+
+- Expected:
+[
+  {
+    "avatarVersion": null,
+    "displayName": "Ben",
+    "membershipId": "mem_YGhAjmSjsPRVPpzDiWipHQ",
+  },
+  {
+    "avatarVersion": null,
+    "displayName": "Maya",
+    "membershipId": "mem_qDzBD3EYOOotHBnST75CrA",
+  },
+  {
+    "avatarVersion": null,
+    "displayName": "Alex",
+    "membershipId": "mem_EyBO44mZO4T2v103Ux5V6Q",
+  },
+]
+
++ Received:
+undefined
+
+ ❯ src/db/schedule-commands.test.ts:564:101
+    562|       const holders = [person(w, first), person(w, second), person(w, …
+    563|       for (const who of three) {
+    564|         expect(slot(await proposalFor(tx, clock, w, who), day).holders…
+       |                                                                                                     ^
+    565|       }
+    566|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:540:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/33]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > choosing days (FQ46, FQ48, FQ55; T33) > frees the hold of a member who left, and shows a confirmed member who left by the name they left with (FQ75, FQ102)
+Refused: refused: NOT_ALLOWED
+ ❯ ../packages/domain/src/schedule/confirm-days.ts:46:41
+     44|     }
+     45|     const judged = judgeConfirmation(callerId, proposal.facts, input.w…
+     46|     if (judged === "NOT_ALLOWED") throw new Refused("NOT_ALLOWED");
+       |                                         ^
+     47|     await bound(tx)`
+     48|         UPDATE app.schedule_proposal_members SET confirmed_at = ${at}:…
+ ❯ scheduleCommand ../packages/domain/src/schedule/command.ts:139:9
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ request src/db/schedule-commands.test.ts:132:18
+ ❯ src/db/schedule-commands.test.ts:576:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/33]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > confirming days (FQ55, FQ57, FQ79, FQ99; T1, T33, T49) > confirms the caller's day from the server clock's sample: its first date is at least 24 hours on, and the version stays
+Refused: refused: NOT_ALLOWED
+ ❯ ../packages/domain/src/schedule/confirm-days.ts:46:41
+     44|     }
+     45|     const judged = judgeConfirmation(callerId, proposal.facts, input.w…
+     46|     if (judged === "NOT_ALLOWED") throw new Refused("NOT_ALLOWED");
+       |                                         ^
+     47|     await bound(tx)`
+     48|         UPDATE app.schedule_proposal_members SET confirmed_at = ${at}:…
+ ❯ scheduleCommand ../packages/domain/src/schedule/command.ts:139:9
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ request src/db/schedule-commands.test.ts:132:18
+ ❯ src/db/schedule-commands.test.ts:611:22
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/33]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > confirming days (FQ55, FQ57, FQ79, FQ99; T1, T33, T49) > counts a confirmed day's 24 hours to 7 AM in the club's zone, not in UTC (T2; FQ79)
+Refused: refused: NOT_ALLOWED
+ ❯ ../packages/domain/src/schedule/confirm-days.ts:46:41
+     44|     }
+     45|     const judged = judgeConfirmation(callerId, proposal.facts, input.w…
+     46|     if (judged === "NOT_ALLOWED") throw new Refused("NOT_ALLOWED");
+       |                                         ^
+     47|     await bound(tx)`
+     48|         UPDATE app.schedule_proposal_members SET confirmed_at = ${at}:…
+ ❯ scheduleCommand ../packages/domain/src/schedule/command.ts:139:9
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ request src/db/schedule-commands.test.ts:132:18
+ ❯ src/db/schedule-commands.test.ts:649:22
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/33]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > confirming days (FQ55, FQ57, FQ79, FQ99; T1, T33, T49) > takes the confirmation's instant after the club's lock, not when the request began (T1; T3's order)
+Refused: refused: NOT_ALLOWED
+ ❯ ../packages/domain/src/schedule/confirm-days.ts:46:41
+     44|     }
+     45|     const judged = judgeConfirmation(callerId, proposal.facts, input.w…
+     46|     if (judged === "NOT_ALLOWED") throw new Refused("NOT_ALLOWED");
+       |                                         ^
+     47|     await bound(tx)`
+     48|         UPDATE app.schedule_proposal_members SET confirmed_at = ${at}:…
+ ❯ scheduleCommand ../packages/domain/src/schedule/command.ts:139:9
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ request src/db/schedule-commands.test.ts:132:18
+ ❯ src/db/schedule-commands.test.ts:673:22
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/33]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > confirming days (FQ55, FQ57, FQ79, FQ99; T1, T33, T49) > applies the first days of a club of 2 on the last confirmation, which alone moves the version (T33)
+ FAIL  src/db/schedule-commands.test.ts > confirming days (FQ55, FQ57, FQ79, FQ99; T1, T33, T49) > applies the first days of a club of 4 on the last confirmation, which alone moves the version (T33)
+ FAIL  src/db/schedule-commands.test.ts > confirming days (FQ55, FQ57, FQ79, FQ99; T1, T33, T49) > applies the first days of a club of 6 on the last confirmation, which alone moves the version (T33)
+Refused: refused: NOT_ALLOWED
+ ❯ ../packages/domain/src/schedule/confirm-days.ts:46:41
+     44|     }
+     45|     const judged = judgeConfirmation(callerId, proposal.facts, input.w…
+     46|     if (judged === "NOT_ALLOWED") throw new Refused("NOT_ALLOWED");
+       |                                         ^
+     47|     await bound(tx)`
+     48|         UPDATE app.schedule_proposal_members SET confirmed_at = ${at}:…
+ ❯ scheduleCommand ../packages/domain/src/schedule/command.ts:139:9
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ request src/db/schedule-commands.test.ts:132:18
+ ❯ src/db/schedule-commands.test.ts:690:26
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/33]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > confirming days (FQ55, FQ57, FQ79, FQ99; T1, T33, T49) > confirms nothing while a day is contested: neither holder, in either order, until all but one have chosen another (FQ55)
+Refused: refused: NOT_ALLOWED
+ ❯ ../packages/domain/src/schedule/confirm-days.ts:46:41
+     44|     }
+     45|     const judged = judgeConfirmation(callerId, proposal.facts, input.w…
+     46|     if (judged === "NOT_ALLOWED") throw new Refused("NOT_ALLOWED");
+       |                                         ^
+     47|     await bound(tx)`
+     48|         UPDATE app.schedule_proposal_members SET confirmed_at = ${at}:…
+ ❯ scheduleCommand ../packages/domain/src/schedule/command.ts:139:9
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ request src/db/schedule-commands.test.ts:132:18
+ ❯ src/db/schedule-commands.test.ts:735:15
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/33]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > confirming days (FQ55, FQ57, FQ79, FQ99; T1, T33, T49) > confirms both days at once or neither: one contested day holds back the other too, in a club of two (FQ99)
+Refused: refused: NOT_ALLOWED
+ ❯ ../packages/domain/src/schedule/confirm-days.ts:46:41
+     44|     }
+     45|     const judged = judgeConfirmation(callerId, proposal.facts, input.w…
+     46|     if (judged === "NOT_ALLOWED") throw new Refused("NOT_ALLOWED");
+       |                                         ^
+     47|     await bound(tx)`
+     48|         UPDATE app.schedule_proposal_members SET confirmed_at = ${at}:…
+ ❯ scheduleCommand ../packages/domain/src/schedule/command.ts:139:9
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ request src/db/schedule-commands.test.ts:132:18
+ ❯ src/db/schedule-commands.test.ts:750:22
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/33]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > confirming days (FQ55, FQ57, FQ79, FQ99; T1, T33, T49) > confirms only the days the caller holds and named, the whole of them (book p11)
+Error: the request wasn't refused
+ ❯ refusal src/db/schedule-commands.test.ts:175:9
+    173|     throw error;
+    174|   }
+    175|   throw new Error("the request wasn't refused");
+       |         ^
+    176| }
+    177|
+ ❯ src/db/schedule-commands.test.ts:761:16
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:756:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/33]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > the refusals, in the contract's order > answers a choice after the caller confirmed NOT_ALLOWED: nothing is chosen or confirmed twice (FQ57)
+ FAIL  src/db/schedule-commands.test.ts > the refusals, in the contract's order > answers a confirmation after the caller confirmed NOT_ALLOWED: nothing is chosen or confirmed twice (FQ57)
+Refused: refused: NOT_ALLOWED
+ ❯ ../packages/domain/src/schedule/confirm-days.ts:46:41
+     44|     }
+     45|     const judged = judgeConfirmation(callerId, proposal.facts, input.w…
+     46|     if (judged === "NOT_ALLOWED") throw new Refused("NOT_ALLOWED");
+       |                                         ^
+     47|     await bound(tx)`
+     48|         UPDATE app.schedule_proposal_members SET confirmed_at = ${at}:…
+ ❯ scheduleCommand ../packages/domain/src/schedule/command.ts:139:9
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ request src/db/schedule-commands.test.ts:132:18
+ ❯ loaded src/db/schedule-commands.test.ts:775:5
+ ❯ src/db/schedule-commands.test.ts:868:19
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/33]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > the refusals, in the contract's order > answers a choice of first days that have applied VERSION_CONFLICT to the version a member read while they were open, and NOT_ALLOWED to the applied one
+ FAIL  src/db/schedule-commands.test.ts > the refusals, in the contract's order > answers a confirmation of first days that have applied VERSION_CONFLICT to the version a member read while they were open, and NOT_ALLOWED to the applied one
+Refused: refused: NOT_ALLOWED
+ ❯ ../packages/domain/src/schedule/confirm-days.ts:46:41
+     44|     }
+     45|     const judged = judgeConfirmation(callerId, proposal.facts, input.w…
+     46|     if (judged === "NOT_ALLOWED") throw new Refused("NOT_ALLOWED");
+       |                                         ^
+     47|     await bound(tx)`
+     48|         UPDATE app.schedule_proposal_members SET confirmed_at = ${at}:…
+ ❯ scheduleCommand ../packages/domain/src/schedule/command.ts:139:9
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ request src/db/schedule-commands.test.ts:132:18
+ ❯ src/db/schedule-commands.test.ts:880:9
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/33]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > the refusals, in the contract's order > answers a confirmation MEMBERSHIP_CHANGED with the newer proposal's id before it looks at the version or the days
+Refused: refused: NOT_ALLOWED
+ ❯ ../packages/domain/src/schedule/confirm-days.ts:46:41
+     44|     }
+     45|     const judged = judgeConfirmation(callerId, proposal.facts, input.w…
+     46|     if (judged === "NOT_ALLOWED") throw new Refused("NOT_ALLOWED");
+       |                                         ^
+     47|     await bound(tx)`
+     48|         UPDATE app.schedule_proposal_members SET confirmed_at = ${at}:…
+ ❯ scheduleCommand ../packages/domain/src/schedule/command.ts:139:9
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ request src/db/schedule-commands.test.ts:132:18
+ ❯ loaded src/db/schedule-commands.test.ts:775:5
+ ❯ src/db/schedule-commands.test.ts:823:19
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/33]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > one commit per key (T19) > answers a retry with the first answer as it was, though the week has changed since, and writes nothing again
+Refused: refused: NOT_ALLOWED
+ ❯ ../packages/domain/src/schedule/confirm-days.ts:46:41
+     44|     }
+     45|     const judged = judgeConfirmation(callerId, proposal.facts, input.w…
+     46|     if (judged === "NOT_ALLOWED") throw new Refused("NOT_ALLOWED");
+       |                                         ^
+     47|     await bound(tx)`
+     48|         UPDATE app.schedule_proposal_members SET confirmed_at = ${at}:…
+ ❯ scheduleCommand ../packages/domain/src/schedule/command.ts:139:9
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ request src/db/schedule-commands.test.ts:132:18
+ ❯ src/db/schedule-commands.test.ts:935:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/33]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > one commit per key (T19) > answers a retried confirmation the same way, even after the first days have applied
+Refused: refused: NOT_ALLOWED
+ ❯ ../packages/domain/src/schedule/confirm-days.ts:46:41
+     44|     }
+     45|     const judged = judgeConfirmation(callerId, proposal.facts, input.w…
+     46|     if (judged === "NOT_ALLOWED") throw new Refused("NOT_ALLOWED");
+       |                                         ^
+     47|     await bound(tx)`
+     48|         UPDATE app.schedule_proposal_members SET confirmed_at = ${at}:…
+ ❯ scheduleCommand ../packages/domain/src/schedule/command.ts:139:9
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ request src/db/schedule-commands.test.ts:132:18
+ ❯ src/db/schedule-commands.test.ts:951:21
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/33]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > one commit per key (T19) > refuses another request under a used key with IDEMPOTENCY_CONFLICT: other days, another version, another proposal's path, each alone
+Refused: refused: NOT_ALLOWED
+ ❯ ../packages/domain/src/schedule/confirm-days.ts:46:41
+     44|     }
+     45|     const judged = judgeConfirmation(callerId, proposal.facts, input.w…
+     46|     if (judged === "NOT_ALLOWED") throw new Refused("NOT_ALLOWED");
+       |                                         ^
+     47|     await bound(tx)`
+     48|         UPDATE app.schedule_proposal_members SET confirmed_at = ${at}:…
+ ❯ scheduleCommand ../packages/domain/src/schedule/command.ts:139:9
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ request src/db/schedule-commands.test.ts:132:18
+ ❯ src/db/schedule-commands.test.ts:972:15
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/33]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > requests at once, committed (T6, T19; FQ55) > lets a choice and a confirmation of the same day race: exactly one stands, whichever the club's lock took first
+AssertionError: expected 'no_reveal' to be 'clash' // Object.is equality
+
+Expected: "clash"
+Received: "no_reveal"
+
+ ❯ src/db/schedule-commands.test.ts:1031:77
+    1029|         expect([confirmed, chose]).toEqual(["NOT_ALLOWED", "ok"]);
+    1030|         expect(rows).toEqual([]);
+    1031|         expect(slot(await proposalFor(world, clock, w, 0), "monday").s…
+       |                                                                             ^
+    1032|       }
+    1033|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[25/33]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > requests at once, committed (T6, T19; FQ55) > in both orders, one after the other: the confirmation first refuses the choice, the choice first refuses the confirmation
+Refused: refused: NOT_ALLOWED
+ ❯ ../packages/domain/src/schedule/confirm-days.ts:46:41
+     44|     }
+     45|     const judged = judgeConfirmation(callerId, proposal.facts, input.w…
+     46|     if (judged === "NOT_ALLOWED") throw new Refused("NOT_ALLOWED");
+       |                                         ^
+     47|     await bound(tx)`
+     48|         UPDATE app.schedule_proposal_members SET confirmed_at = ${at}:…
+ ❯ scheduleCommand ../packages/domain/src/schedule/command.ts:139:9
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ src/db/schedule-commands.test.ts:1040:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[26/33]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > requests at once, committed (T6, T19; FQ55) > confirms neither of two members who hold the same day and confirm it at once: both still see the clash
+AssertionError: expected 'no_reveal' to be 'clash' // Object.is equality
+
+Expected: "clash"
+Received: "no_reveal"
+
+ ❯ src/db/schedule-commands.test.ts:1056:101
+    1054|     expect(codes(results)).toEqual(["NOT_ALLOWED", "NOT_ALLOWED"]);
+    1055|     expect(await assignments(world, w)).toEqual([]);
+    1056|     for (const who of [0, 1]) expect(slot(await proposalFor(world, clo…
+       |                                                                                                     ^
+    1057|   });
+    1058|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[27/33]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > requests at once, committed (T6, T19; FQ55) > lets every member of a club of six confirm at once: six days, one version move, no deadlock
+AssertionError: expected [ 'ok', 'ok', 'ok', …(3) ] to deeply equal [ 'ok', 'ok', 'ok', 'ok', 'ok', 'ok' ]
+
+- Expected
++ Received
+
+  [
+    "ok",
+    "ok",
+    "ok",
+-   "ok",
+-   "ok",
+-   "ok",
++   "NOT_ALLOWED",
++   "NOT_ALLOWED",
++   "NOT_ALLOWED",
+  ]
+
+ ❯ src/db/schedule-commands.test.ts:1063:28
+    1061|     const week = proposedWeek(6);
+    1062|     const results = await Promise.allSettled(week.map((days, who) => a…
+    1063|     expect(codes(results)).toEqual(["ok", "ok", "ok", "ok", "ok", "ok"…
+       |                            ^
+    1064|     const answers = results.flatMap((one) => (one.status === "fulfille…
+    1065|     // Exactly one of them was the last, and answered the applied prop…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[28/33]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > requests at once, committed (T6, T19; FQ55) > gives two sends of the same key at once the same answer, and confirms once
+Refused: refused: NOT_ALLOWED
+ ❯ ../packages/domain/src/schedule/confirm-days.ts:46:41
+     44|     }
+     45|     const judged = judgeConfirmation(callerId, proposal.facts, input.w…
+     46|     if (judged === "NOT_ALLOWED") throw new Refused("NOT_ALLOWED");
+       |                                         ^
+     47|     await bound(tx)`
+     48|         UPDATE app.schedule_proposal_members SET confirmed_at = ${at}:…
+ ❯ scheduleCommand ../packages/domain/src/schedule/command.ts:139:9
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ src/db/schedule-commands.test.ts:1075:24
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[29/33]⎯
+

@@ -1,0 +1,48 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/packages/domain
+
+ ❯ src/schedule/view.test.ts (14 tests | 2 failed) 24ms
+   ❯ what each member sees of the first days (the contract's examples; FQ46, FQ48, FQ55, FQ78) (12)
+     × answers only a member the proposal includes who is still active (FQ100; T14) 9ms
+   ❯ what no view of the first days ever carries (T55, T33; FQ46, FQ48) (2)
+     × holds in every world, for every viewer 2ms
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  2 failed | 56 passed (58)
+   Start at  00:42:36
+   Duration  825ms (tests 79%, import 16%, transform 3%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/view.test.ts > what each member sees of the first days (the contract's examples; FQ46, FQ48, FQ55, FQ78) > answers only a member the proposal includes who is still active (FQ100; T14)
+AssertionError: expected [Function] to throw an error
+
+- Expected:
+null
+
++ Received:
+undefined
+
+ ❯ src/schedule/view.test.ts:224:69
+    222|   it("answers only a member the proposal includes who is still active …
+    223|     expect(() => viewFor("leila", CONFLICT_THREE)).toThrow(/doesn't in…
+    224|     expect(() => viewFor("debby", sundayPeople({}, {}, ["debby"]))).to…
+       |                                                                     ^
+    225|   });
+    226| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/schedule/view.test.ts > what no view of the first days ever carries (T55, T33; FQ46, FQ48) > holds in every world, for every viewer
+AssertionError: expected [Function] to throw an error
+ ❯ src/schedule/view.test.ts:283:51
+    281|       for (const viewer of world.members) {
+    282|         if (!viewer.active) {
+    283|           expect(() => viewFor(viewer.id, world)).toThrow();
+       |                                                   ^
+    284|           continue;
+    285|         }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
