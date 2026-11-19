@@ -425,7 +425,7 @@ final class SignInUITests: XCTestCase {
         ) { _ in }
         if !settled {
             let frames = "the field's frame \(field.frame) stayed under Verify code \(verify.frame)"
-            stuck(app, after: read)
+            stuck(app, field, after: read)
             XCTFail("\(frames) for 2 seconds: \(read)", line: line)
         }
         return read
@@ -436,7 +436,19 @@ final class SignInUITests: XCTestCase {
     /// test log on `evidence` carries, and as a text attachment in the run's result bundle,
     /// which `tools/ci/ios_steps.py` doesn't collect yet, so it goes with the runner. Diagnostics
     /// only: `settle(_:above:in:)` has decided the failure and records it once this returns.
-    @MainActor private func stuck(_ app: XCUIApplication, after read: [String]) {
+    /// First, before the tree is read, the screen: the focus ring as drawn, logged as it is on a
+    /// passing run, so the log says whether the screen or only the frame is where the frame says
+    /// (`ios` run 44447546288 on `main` at `42b828e` kept the tree, whose whole column and scroll
+    /// bar agree with the stuck frame, and no screenshot, the test ending before its first).
+    @MainActor private func stuck(
+        _ app: XCUIApplication, _ field: XCUIElement, after read: [String]
+    ) {
+        let shot = kept(app.screenshot(), as: "stuck-frame")
+        let ring = drawnRing(at: field.frame.midX, high: field.frame.height, on: shot, in: app)
+        XCTContext.runActivity(
+            named: "The code field's focus ring as drawn with its frame stuck at "
+                + "\(field.frame): \(ring.said)"
+        ) { _ in }
         let tree = app.debugDescription
         let whole = XCTAttachment(string: tree)
         whole.name = "testVerifyCodeIsPinnedAboveTheKeyboardAtTheLargestText.stuck-frame.txt"
