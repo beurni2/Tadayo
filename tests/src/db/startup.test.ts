@@ -233,11 +233,30 @@ describe("the worker's entry against the test database", () => {
     async (signal) => {
       const worker = start("worker", "prod", {}, signal);
       expect(await worker.exited, `${worker.output.stdout}${worker.output.stderr}`).toBe(0);
-      expect(worker.output.stdout).toBe(`worker: started, making days every minute\nworker: stopped on ${signal}\n`);
+      // Its first pass still runs, and makes whatever days a club another file left is owed: that line
+      // may come between the two, and nothing else may.
+      expect(worker.output.stdout).toMatch(
+        new RegExp(
+          `^worker: started, making days every minute\\n(worker: made \\d+ days?\\n)?worker: stopped on ${signal}\\n$`,
+        ),
+      );
       expect(worker.output.stderr).toBe("");
     },
     30_000,
   );
+
+  it("finishes its stop when a second signal comes: the handlers stay, so the default action never ends it", async () => {
+    const worker = start("worker", "prod");
+    expect(await waitFor(worker, /worker: started/), worker.output.stderr).not.toBeNull();
+    worker.child.kill("SIGTERM");
+    worker.child.kill("SIGTERM");
+    worker.child.kill("SIGINT");
+    expect(await worker.exited, `${worker.output.stdout}${worker.output.stderr}`).toBe(0);
+    // Signals sent together reach the process in no promised order, so either may be the one it names.
+    expect(worker.output.stdout).toMatch(/worker: stopped on (SIGTERM|SIGINT)\n$/);
+    expect(worker.output.stdout.match(/worker: stopped on/g)).toHaveLength(1);
+    expect(worker.output.stderr).toBe("");
+  }, 30_000);
 
   it("stops with dev, which needs the dev clock this database doesn't have (ADR-013)", async () => {
     const worker = start("worker", "dev");

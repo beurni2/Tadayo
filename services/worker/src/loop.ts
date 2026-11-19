@@ -1,6 +1,7 @@
 // The worker's loop (spec 34; T1): one pass at the start, then one each `everyMs`, never two at once,
-// until it is told to stop. A stop ends the wait at once and lets a pass that is running finish, so no
-// transaction is cut off.
+// until it is told to stop. A stop ends the wait at once and waits for a pass that is running to return,
+// so no transaction is cut off. How soon a running pass returns is the pass's own business: the worker's
+// one job stops after the club it is on (generation.ts), which its lock and statement limits bound.
 //
 // The timer only decides when the worker looks again. What a pass does, and what a day is, comes from
 // the server's clock, sampled inside each job's own transaction (T1): nothing here reads a clock, and a

@@ -4,14 +4,21 @@
 // makes the days (./make-days.ts) gives it the club's facts and the clock's sample, and the database's
 // own guard judges every row again (db/migrations/0005_schedules_and_days.sql, occurrences_insert_guard).
 //
-// - The window is the club's own today at `now` through today plus HORIZON_DAYS, both dates in the club's
-//   zone.
+// - The window is the club's own today at `now` through the Sunday that ends the fourth week after
+//   today's (WEEKS_AHEAD; weeks run Monday to Sunday), both dates in the club's zone. Seen from Friday
+//   6 November 2026 that is every day to Saturday 5 December, the contract's own example
+//   (packages/contracts/src/fixtures/examples-clubs.ts, `ktAnnounced`). The window's end moves once a
+//   week, at the club's Monday midnight, so the first Monday no day is made for yet, the earliest a
+//   changed week can start (FQ61), is the same all week.
 // - A date in it is owed when it isn't a Sunday (T6), the version in force on it (the latest that started
 //   on or before it: FQ61) gives its weekday to a star, the date is on or after that day's first date
 //   (FQ79), and the star is still a member (FQ63).
 // - Its two instants are resolved in the club's zone, each on its own (T2; ../time/civil.ts).
 // - A day is never made late: a date whose 7 AM is at `now` or before it isn't owed. A day made after its
 //   reveal would be born open, with nobody having been able to add to it (spec 04: no instant reveal).
+//   There is no shortest time before 7 AM: a day's first date already comes 24 hours after its
+//   confirmation (FQ79), and after that only a worker that was stopped, or a club that was paused or
+//   suspended, leaves a day to be made on its own morning, with whatever time is left (FQ116).
 // - A club that hasn't started, is suspended (spec 22) or has fewer than two members (FQ16) is owed
 //   nothing. The days it already has stay as they are: this rule only ever adds.
 // - A date that already has a day is not owed again, whoever's day it is.
@@ -20,10 +27,16 @@ import { clubTimeZone, dayInstants } from "../time/civil.ts";
 import { WEEKDAYS, type Weekday } from "./propose.ts";
 
 /**
- * How far ahead days are made, in days after the club's today: four weeks (FQ115), the number the
- * contract's fixtures took (packages/contracts/src/fixtures/world.ts, `changeFrom`).
+ * How far ahead days are made: through the end of this many whole weeks after the club's current week
+ * (FQ115), the number the contract's fixtures took (packages/contracts/src/fixtures/world.ts,
+ * `changeFrom`).
  */
-export const HORIZON_DAYS = 28;
+export const WEEKS_AHEAD = 4;
+
+/** The last local date of the window seen from `today`: the Sunday ending the WEEKS_AHEAD-th week after today's. */
+export function windowEnd(today: Temporal.PlainDate): Temporal.PlainDate {
+  return today.add({ days: 7 - today.dayOfWeek + 7 * WEEKS_AHEAD });
+}
 
 export interface WeekAssignment {
   readonly weekday: Weekday;
@@ -72,8 +85,8 @@ export function daysToMake(facts: GenerationFacts, now: Temporal.Instant): OwedD
   const versions = [...facts.versions].sort((a, b) => (a.effectiveFrom < b.effectiveFrom ? -1 : 1));
   const today = now.toZonedDateTimeISO(zone).toPlainDate();
   const owed: OwedDay[] = [];
-  for (let ahead = 0; ahead <= HORIZON_DAYS; ahead += 1) {
-    const date = today.add({ days: ahead });
+  const last = windowEnd(today);
+  for (let date = today; Temporal.PlainDate.compare(date, last) <= 0; date = date.add({ days: 1 })) {
     const weekday = WEEKDAYS[date.dayOfWeek - 1];
     if (weekday === undefined) continue; // Sunday (T6).
     const localDate = date.toString();

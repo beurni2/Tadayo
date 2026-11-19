@@ -23,6 +23,7 @@ export {
   SUPABASE_ROOT_CA_SHA256,
   supabaseRootCa,
   tlsPinnedTo,
+  isPlainLoopback,
   transportOptions,
 } from "./db/ssl.ts";
 export { clubState, type ClubFacts, type ClubState } from "./clubs/club-state.ts";
@@ -37,7 +38,8 @@ export type { ScheduleCommandInput } from "./schedule/command.ts";
 export { confirmScheduleDays } from "./schedule/confirm-days.ts";
 export {
   daysToMake,
-  HORIZON_DAYS,
+  WEEKS_AHEAD,
+  windowEnd,
   type GenerationFacts,
   type OwedDay,
   type WeekAssignment,

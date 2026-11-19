@@ -107,20 +107,21 @@ describe("Q18: Home's days and the roster's dates with no worker running (T1, T5
     await rolledBack(db, async (tx) => {
       const w = await confirmedWeek(tx, 6, TIMES);
       await tx.savepoint((sp) => makeDays(sp, fakeClock("2026-11-04T14:01:00Z"), w.club));
-      // The last day made on Wednesday the 4th is Wednesday 2 December, four weeks on (FQ115).
-      expect(await sight(tx, w, 0, "2026-12-01T17:00:00Z")).toMatchObject({
-        open: "Maya 2026-12-01 open",
-        next: "Alex 2026-12-02 collecting",
-        nextUp: ["Alex"],
+      // The last day made on Wednesday the 4th is Saturday 5 December, the end of the fourth week after
+      // that one (FQ115).
+      expect(await sight(tx, w, 0, "2026-12-04T17:00:00Z")).toMatchObject({
+        open: "Debby 2026-12-04 open",
+        next: "Nina 2026-12-05 collecting",
+        nextUp: ["Nina"],
       });
-      expect(await sight(tx, w, 0, "2026-12-02T12:00:00Z")).toEqual({
-        open: "Alex 2026-12-02 open",
+      expect(await sight(tx, w, 0, "2026-12-05T12:00:00Z")).toEqual({
+        open: "Nina 2026-12-05 open",
         next: null,
         nextUp: [],
         debbyNext: null,
         ninaNext: null,
       });
-      expect(await sight(tx, w, 0, at("2026-12-03T06:00:00Z").toString())).toMatchObject({ open: null, next: null });
+      expect(await sight(tx, w, 0, at("2026-12-06T06:00:00Z").toString())).toMatchObject({ open: null, next: null });
     });
   });
 });

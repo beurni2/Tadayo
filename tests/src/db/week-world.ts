@@ -9,6 +9,7 @@ import { randomUUID } from "node:crypto";
 import {
   chooseScheduleDays,
   confirmScheduleDays,
+  isPlainLoopback,
   openFirstDays,
   proposedWeek,
   type Json,
@@ -183,20 +184,32 @@ export function counting(at: string): { clock: FakeClock; samples: () => number 
 }
 
 /**
- * Removes every committed day from the test database, as its superuser, with the table's own guards set
- * aside for the one statement (`occurrences_no_delete` refuses everyone else, the API's role included).
+ * Removes every committed day from the test database, as its superuser, with the one trigger that
+ * refuses it (`occurrences_no_delete`, which stops everyone, the API's role included) switched off for
+ * the one transaction. Every other rule stays on, the foreign keys among them: a day anything names
+ * (a drop, a memory) refuses to go, and the whole removal with it.
+ *
+ * It runs only against a database on this machine: the admin URL's host must be a plainly written
+ * loopback one (the domain's `isPlainLoopback`, the check the connections use), so a test run pointed
+ * at a real database by mistake deletes nothing there.
  *
  * A day can't be rolled back once two transactions have to meet over it, and the worker's process
  * commits what it makes, so the files that make days so call this when they end. The ops scripts' tests
  * need a database with no committed day ("no test here may leave one"), in whatever order the files run.
- * Nothing but a test's own day is ever committed here, so all of them go.
+ * Nothing but a test's own day is ever committed here, so all of them go: the worker's process runs a
+ * whole pass, which makes days for whatever committed club another file left, so one file's own clubs
+ * would not be enough.
  */
 export async function forgetCommittedDays(): Promise<void> {
+  if (!isPlainLoopback(process.env.DATABASE_ADMIN_URL ?? "")) {
+    throw new Error("forgetCommittedDays: DATABASE_ADMIN_URL isn't a database on this machine, so no day is removed");
+  }
   const admin = adminSql();
   try {
     await admin.begin(async (tx) => {
-      await tx`SET LOCAL session_replication_role = replica`;
+      await tx`ALTER TABLE app.occurrences DISABLE TRIGGER occurrences_no_delete`;
       await tx`DELETE FROM app.occurrences`;
+      await tx`ALTER TABLE app.occurrences ENABLE TRIGGER occurrences_no_delete`;
     });
   } finally {
     await admin.end();

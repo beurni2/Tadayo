@@ -27,20 +27,23 @@ describe("a failure as the worker reports it (T52, T56)", () => {
 
 describe("the lines of a pass", () => {
   it("says nothing when nothing was made and nothing failed", () => {
-    expect(passLines({ clubs: 3, made: 0, failures: [] })).toEqual([]);
-    expect(passLines({ clubs: 0, made: 0, failures: [] })).toEqual([]);
+    expect(passLines({ clubs: 3, made: 0, failures: [] })).toEqual({ out: [], err: [] });
+    expect(passLines({ clubs: 0, made: 0, failures: [] })).toEqual({ out: [], err: [] });
   });
 
   it("says how many days were made, and nothing of which club or whose", () => {
-    expect(passLines({ clubs: 2, made: 18, failures: [] })).toEqual(["worker: made 18 days"]);
-    expect(passLines({ clubs: 2, made: 1, failures: [] })).toEqual(["worker: made 1 day"]);
+    expect(passLines({ clubs: 2, made: 18, failures: [] })).toEqual({ out: ["worker: made 18 days"], err: [] });
+    expect(passLines({ clubs: 2, made: 1, failures: [] })).toEqual({ out: ["worker: made 1 day"], err: [] });
   });
 
-  it("gives each failed club one line", () => {
-    expect(passLines({ clubs: 3, made: 4, failures: ["PostgresError 23000", "Error"] })).toEqual([
-      "worker: made 4 days",
-      "worker: a club's days failed: PostgresError 23000",
-      "worker: a club's days failed: Error",
-    ]);
+  it("gives each failed club one line, for the error stream, apart from the count", () => {
+    expect(passLines({ clubs: 3, made: 4, failures: ["club_a: PostgresError 23000", "club_b: Error"] })).toEqual({
+      out: ["worker: made 4 days"],
+      err: ["worker: a club's days failed: club_a: PostgresError 23000", "worker: a club's days failed: club_b: Error"],
+    });
+    expect(passLines({ clubs: 1, made: 0, failures: ["club_a: PostgresError 55P03"] })).toEqual({
+      out: [],
+      err: ["worker: a club's days failed: club_a: PostgresError 55P03"],
+    });
   });
 });

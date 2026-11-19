@@ -7,7 +7,7 @@
 
 import { readFileSync } from "node:fs";
 import { SUPABASE_ROOT_CA_PATH } from "@tadayo/domain";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { connect } from "./connection.ts";
 
 const POOLER = "aws-0-us-east-1.pooler.supabase.com";
@@ -24,6 +24,19 @@ async function optionsOf(url: string) {
 }
 
 describe("connect", () => {
+  it("prints no notice Postgres sends: a notice can quote a row's values (T52)", async () => {
+    const sql = connect("postgres://tadayo_app:a-password@127.0.0.1:5432/postgres");
+    const printed = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    try {
+      expect(sql.options.onnotice).not.toBe(console.log);
+      sql.options.onnotice({ severity: "NOTICE", message: "mem_secret's day" });
+      expect(printed).not.toHaveBeenCalled();
+    } finally {
+      printed.mockRestore();
+      await sql.end();
+    }
+  });
+
   it("requires TLS checked against Supabase's root for the pooler, though the string says nothing of it, and the string can't switch it off", async () => {
     expect(await optionsOf(POOLER_URL)).toEqual({ ssl: PINNED, host: [POOLER], port: [5432] });
     expect((await optionsOf(`${POOLER_URL}?sslmode=disable`)).ssl).toEqual(PINNED);

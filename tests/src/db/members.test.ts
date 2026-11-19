@@ -12,7 +12,7 @@ import { membersBody } from "@tadayo/api";
 import { afterAll, describe, expect, it } from "vitest";
 import { rolledBack, worldSql, type Tx, type WorldTx } from "./harness.ts";
 import { chooseOwn, clubOf, confirmedWeek, confirmOwn, NAMES, type ConfirmedWeek } from "./week-world.ts";
-import { leave, newId, newUser } from "./world.ts";
+import { AT, joinByRoster, leave, newId, newUser } from "./world.ts";
 
 const db = worldSql();
 afterAll(async () => {
@@ -79,6 +79,9 @@ describe("the roster in a club's first days (the contract's first_days scene; FQ
         closeAt: at("2026-11-11T06:00:00Z"),
         phase: "collecting",
       });
+      // The route's body of this scene is the contract's `Members` too.
+      if (found === null) throw new Error("refused");
+      expect(Members.safeParse(membersBody(at(THURSDAY), found)).success).toBe(true);
     });
   });
 
@@ -263,7 +266,86 @@ describe("the roster once the week is in force (the contract's sunday_people sce
   });
 });
 
+describe("members who joined at one instant (FQ114)", () => {
+  it("lists them by their membership's id, in byte order, the same for every member and every time", async () => {
+    await rolledBack(db, async (tx) => {
+      const ben = await newUser(plain(tx), "Ben");
+      const club = newId("club");
+      const first = newId("mem");
+      await tx`
+        INSERT INTO app.clubs (id, name, timezone, creator_interval_id, created_at)
+        VALUES (${club}, 'Sunday people', 'America/New_York', ${first}, ${AT.created})`;
+      await tx`
+        INSERT INTO app.memberships (interval_id, club_id, user_id, origin, joined_at)
+        VALUES (${first}, ${club}, ${ben}, 'creator', ${AT.created})`;
+      // One roster brings four in at the same instant.
+      const names = ["Maya", "Alex", "Sam", "Debby"];
+      const users: string[] = [];
+      for (const name of names) users.push(await newUser(plain(tx), name));
+      const joined = await joinByRoster(
+        plain(tx),
+        club,
+        { user: ben, interval: first },
+        users.map((user, index) => ({ user, label: names[index] ?? "" })),
+        AT.joined,
+      );
+      await tx`UPDATE app.clubs SET activated_at = ${new Date(AT.joined.getTime() + 3_600_000)} WHERE id = ${club}`;
+      // Byte order, written without the database's or the language's collation.
+      const bytes = (a: string, b: string) => Buffer.compare(Buffer.from(a), Buffer.from(b));
+      const expected = [first, ...[...joined].sort(bytes)];
+      for (const user of [ben, ...users]) {
+        const found = await roster(tx, user, club, FRIDAY);
+        expect(found?.members.map((member) => member.person.membershipId)).toEqual(expected);
+        expect(found?.members.map((member) => member.position)).toEqual([1, 2, 3, 4, 5]);
+      }
+    });
+  });
+});
+
 describe("who gets the roster (T14)", () => {
+  it("gives nothing to a member who left, and the whole roster again once that person rejoins, on the new membership", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await confirmedWeek(tx, 6, TIMES);
+      const nina = { user: w.users[5] ?? "", interval: w.members[5] ?? "" };
+      await leave(plain(tx), nina, "Nina", new Date("2026-11-06T01:00:00Z"));
+      expect(await roster(tx, nina.user, w.club, FRIDAY)).toBeNull();
+      const [again] = await joinByRoster(
+        plain(tx),
+        w.club,
+        { user: w.users[0] ?? "", interval: w.members[0] ?? "" },
+        [{ user: nina.user, label: "Nina" }],
+        new Date("2026-11-06T02:00:00Z"),
+      );
+      const found = await roster(tx, nina.user, w.club, FRIDAY);
+      expect(found?.club.membershipId).toBe(again);
+      // The old membership isn't in the list; the new one is, once, with no day (Saturday was the old one's).
+      const ids = found?.members.map((member) => member.person.membershipId) ?? [];
+      expect(ids).not.toContain(nina.interval);
+      expect(ids.filter((id) => id === again)).toHaveLength(1);
+      expect(found?.members.find((member) => member.person.membershipId === again)?.nextDay).toBeNull();
+    });
+  });
+
+  it("gives nothing to an account that has asked to be deleted, though its membership hasn't ended yet", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await confirmedWeek(tx, 6, TIMES);
+      expect(await roster(tx, w.users[1] ?? "", w.club, FRIDAY)).not.toBeNull();
+      await tx`
+        UPDATE app.users SET state = 'deleting', deletion_requested_at = '2026-11-06T01:00:00Z'
+         WHERE id = ${w.users[1] ?? ""}`;
+      expect(await roster(tx, w.users[1] ?? "", w.club, FRIDAY)).toBeNull();
+      // The others still get it. Maya's row stays while the membership is active, by name, with no day
+      // (the day is held: T27) and no avatar: FQ117 asks whether it should.
+      const found = await roster(tx, w.users[0] ?? "", w.club, FRIDAY);
+      const maya = found?.members.find((member) => member.person.membershipId === w.members[1]);
+      expect(maya).toMatchObject({
+        person: { displayName: "Maya", avatarVersion: null },
+        nextDay: null,
+        nextUp: false,
+      });
+    });
+  });
+
   it("gives nothing to a stranger, to an id nobody has, to what can't be an id, or of a suspended club", async () => {
     await rolledBack(db, async (tx) => {
       const w = await confirmedWeek(tx, 6, TIMES);

@@ -4,19 +4,34 @@
 // stops no other club's days. The rule, the lock and the clock's sample are the domain's
 // (packages/domain/src/schedule/make-days.ts): nothing here decides what a day is.
 //
-// What it reports carries no content and names nobody (T52, T56): counts, and for a failure the error's
-// class and its code, never its message, which Postgres fills with row values, and never the error itself,
-// whose cause could carry the database URL.
+// No club can hold the others up. Each club's transaction waits at most LOCK_WAIT_MS for a lock (the
+// club's row, which every schedule command takes) and gives each statement at most STATEMENT_MS; past
+// either, that club's run fails, is reported, and the pass goes on to the next club. The club is tried
+// again at the next pass. A pass told to stop finishes the club it is on and visits no other, so a stop
+// takes a few seconds at most, well inside the 30 seconds Fly gives (fly.toml, `kill_timeout`).
+//
+// What it reports carries no content and names nobody (T52, T56): counts, and for a failure the club's
+// opaque id (T52 allows opaque ids, and a failure nobody can trace to its club can't be put right), the
+// error's class and its code, never its message, which Postgres fills with row values, and never the
+// error itself, whose cause could carry the database URL.
 
 import { clubsWithAWeek, makeDays, type Clock } from "@tadayo/domain";
 import type { WorkerSql } from "./connection.ts";
+
+/** The longest a club's run waits for a lock, in milliseconds. */
+export const LOCK_WAIT_MS = 5_000;
+/** The longest one statement of a club's run may take, in milliseconds. */
+export const STATEMENT_MS = 10_000;
+
+/** `app.id`'s pattern (db/migrations/0002_shared_rules.sql). */
+const ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 export interface PassResult {
   /** Clubs visited. */
   readonly clubs: number;
   /** Days made, over all of them. */
   readonly made: number;
-  /** Clubs whose run failed, each reported by `describeFailure` alone. */
+  /** Clubs whose run failed: each one's id, then `describeFailure`'s words. */
   readonly failures: readonly string[];
 }
 
@@ -29,30 +44,40 @@ export function describeFailure(error: unknown): string {
 
 /**
  * One pass over `clubs`' ids (every club with a week, unless given): each club's days, in its own
- * transaction. Throws only when the work list can't be read.
+ * transaction, under the two limits above. Once `stopping` answers true it visits no further club.
+ * Throws only when the work list can't be read.
  */
 export async function generationPass(
   sql: WorkerSql,
   clock: Clock,
   clubs: (sql: WorkerSql) => Promise<readonly string[]> = clubsWithAWeek,
+  stopping: () => boolean = () => false,
 ): Promise<PassResult> {
   const ids = await clubs(sql);
+  let visited = 0;
   let made = 0;
   const failures: string[] = [];
   for (const id of ids) {
+    if (stopping()) break;
+    visited += 1;
     try {
-      made += await sql.begin((tx) => makeDays(tx, clock, id));
+      made += await sql.begin(async (tx) => {
+        await tx`
+          SELECT pg_catalog.set_config('lock_timeout', ${`${String(LOCK_WAIT_MS)}ms`}, true),
+                 pg_catalog.set_config('statement_timeout', ${`${String(STATEMENT_MS)}ms`}, true)`;
+        return makeDays(tx, clock, id);
+      });
     } catch (error) {
-      failures.push(describeFailure(error));
+      // An id is the work list's, from the database; anything else isn't repeated.
+      failures.push(`${ID.test(id) ? id : "a club with no id"}: ${describeFailure(error)}`);
     }
   }
-  return { clubs: ids.length, made, failures };
+  return { clubs: visited, made, failures };
 }
 
-/** The lines a pass writes: nothing when it made nothing and nothing failed. */
-export function passLines(result: PassResult): string[] {
-  const lines: string[] = [];
-  if (result.made > 0) lines.push(`worker: made ${String(result.made)} ${result.made === 1 ? "day" : "days"}`);
-  for (const failure of result.failures) lines.push(`worker: a club's days failed: ${failure}`);
-  return lines;
+/** The lines a pass writes, by where each goes: nothing when it made nothing and nothing failed. */
+export function passLines(result: PassResult): { readonly out: string[]; readonly err: string[] } {
+  const out: string[] = [];
+  if (result.made > 0) out.push(`worker: made ${String(result.made)} ${result.made === 1 ? "day" : "days"}`);
+  return { out, err: result.failures.map((failure) => `worker: a club's days failed: ${failure}`) };
 }

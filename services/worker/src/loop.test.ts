@@ -57,6 +57,28 @@ describe("the worker's loop (spec 34)", () => {
     expect(most).toBe(1);
   });
 
+  it("waits its whole wait between the end of one pass and the start of the next", async () => {
+    const stop = gate<string>();
+    const ended: number[] = [];
+    const began: number[] = [];
+    const done = runLoop({
+      pass: async () => {
+        began.push(performance.now());
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        ended.push(performance.now());
+        if (began.length === 3) stop.open("SIGTERM");
+      },
+      everyMs: 120,
+      stopped: stop.promise,
+      failed: () => undefined,
+    });
+    await done;
+    expect(began).toHaveLength(3);
+    // A timer may fire a millisecond early by its rounding, never by twenty.
+    expect((began[1] ?? 0) - (ended[0] ?? 0)).toBeGreaterThanOrEqual(100);
+    expect((began[2] ?? 0) - (ended[1] ?? 0)).toBeGreaterThanOrEqual(100);
+  });
+
   it("ends a wait at once when it is told to stop: it doesn't sit out the minute", async () => {
     const stop = gate<string>();
     const done = runLoop({

@@ -164,6 +164,8 @@ export function chooseDays(facts: ClubDayFacts | null, now: ServerNow): DayChoic
 /**
  * The next day of the member `starInterval` for the viewer at `now`: `chooseDays`' next, among the days
  * whose star is that member; null for facts that are null or that deny, and when the member has none.
+ * A member whose interval has ended always has none: a day of theirs still to open is held (`placeable`,
+ * the read predicate's rule), which is why `nextDaysByStar` lists a club's active intervals and no other.
  */
 export function chooseNextDayOf(facts: ClubDayFacts | null, starInterval: string, now: ServerNow): ChosenDay | null {
   if (facts === null) return null;

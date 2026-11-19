@@ -4,20 +4,21 @@
 // their weeks as the product gives them (week-world.ts), the time is the tests' fake clock, and the
 // migration's own guard judges every row the command writes (occurrences_insert_guard).
 
-import { clubsWithAWeek, dayInstants, makeDays } from "@tadayo/domain";
+import { clubsWithAWeek, makeDays, WEEKDAYS } from "@tadayo/domain";
 import { fakeClock } from "@tadayo/domain/testing";
 import { afterAll, describe, expect, it } from "vitest";
 import { rolledBack, worldSql, type Tx, type WorldTx } from "./harness.ts";
 import {
   clubOf,
   confirmedWeek,
+  confirmOwn,
   forgetCommittedDays,
   counting,
   holding,
   waitingOn,
   type ConfirmedWeek,
 } from "./week-world.ts";
-import { checkAsAtCommit, leave } from "./world.ts";
+import { AT, checkAsAtCommit, joinByRoster, leave, newId, newUser } from "./world.ts";
 
 const db = worldSql(6);
 afterAll(async () => {
@@ -59,8 +60,9 @@ async function run(tx: WorldTx, club: string, now: string): Promise<number> {
 }
 
 /**
- * The six's days from Friday the 6th at 9:41 AM to Friday 4 December: Friday the 6th has opened, Thursday
- * the 5th was under 24 hours after the confirmation, so Sam's first is the 12th (FQ79).
+ * The six's days from Friday the 6th at 9:41 AM to Saturday 5 December, the last day of the fourth week
+ * after this one (FQ115): Friday the 6th has opened, Thursday the 5th was under 24 hours after the
+ * confirmation, so Sam's first is the 12th (FQ79).
  */
 const SIX_DATES = [
   "2026-11-07",
@@ -87,7 +89,10 @@ const SIX_DATES = [
   "2026-12-02",
   "2026-12-03",
   "2026-12-04",
+  "2026-12-05",
 ];
+/** The date after `date`. */
+const dayAfter = (date: string) => Temporal.PlainDate.from(date).add({ days: 1 }).toString();
 /** Monday is index 0: the six's stars from Monday, by their place in the order they joined. */
 const starOf = (w: ConfirmedWeek, date: string) => w.members[Temporal.PlainDate.from(date).dayOfWeek - 1];
 
@@ -95,15 +100,16 @@ describe("making a club's days (spec 05; FQ115)", () => {
   it("makes each owed day once, for its star, under its version, with its instants, collecting from the sample", async () => {
     await rolledBack(db, async (tx) => {
       const w = await confirmedWeek(tx, 6, TIMES);
-      expect(await run(tx, w.club, NOW)).toBe(24);
+      expect(await run(tx, w.club, NOW)).toBe(25);
       const days = await daysOf(tx, w.club);
       expect(days.map((day) => day.local_date)).toEqual(SIX_DATES);
       for (const day of days) {
         expect(day.star_interval_id).toBe(starOf(w, day.local_date));
         expect(day.schedule_version_id).toBe(w.version);
-        const instants = dayInstants(Temporal.PlainDate.from(day.local_date), NY);
-        expect(day.reveal_at).toEqual(instants.revealAt);
-        expect(day.close_at).toEqual(instants.closeAt);
+        // Every one of these dates is in New York's winter time, five hours behind UTC: 7 AM is 12:00Z
+        // and 1 AM on the next date is 06:00Z.
+        expect(day.reveal_at).toEqual(at(`${day.local_date}T12:00:00Z`));
+        expect(day.close_at).toEqual(at(`${dayAfter(day.local_date)}T06:00:00Z`));
         // The clock's sample, to the microsecond (spec 06: collecting begins when generated).
         expect(day.collecting_from).toEqual(at(NOW));
         expect(day.status).toBe("scheduled");
@@ -111,7 +117,7 @@ describe("making a club's days (spec 05; FQ115)", () => {
     });
   });
 
-  it("makes nothing a second time, and only the new end of the window a day later (spec 34)", async () => {
+  it("makes nothing a second time, and only the new week when the club's Monday comes (spec 34)", async () => {
     await rolledBack(db, async (tx) => {
       const w = await confirmedWeek(tx, 6, TIMES);
       await run(tx, w.club, NOW);
@@ -119,15 +125,25 @@ describe("making a club's days (spec 05; FQ115)", () => {
       expect(await run(tx, w.club, NOW)).toBe(0);
       expect(await run(tx, w.club, "2026-11-06T23:00:00Z")).toBe(0);
       expect(await daysOf(tx, w.club)).toEqual(before);
-      // Saturday the 7th, 9:41 AM: the window now reaches Saturday 5 December.
-      expect(await run(tx, w.club, "2026-11-07T14:41:00Z")).toBe(1);
+      // The rest of the week adds nothing: the window ends on Sunday 6 December all week.
+      expect(await run(tx, w.club, "2026-11-07T14:41:00Z")).toBe(0);
+      expect(await run(tx, w.club, "2026-11-09T04:59:59.999999Z")).toBe(0);
+      // Monday the 9th, midnight in New York: the window now reaches Saturday 12 December.
+      expect(await run(tx, w.club, "2026-11-09T05:00:00Z")).toBe(6);
       const after = await daysOf(tx, w.club);
-      expect(after.at(-1)).toMatchObject({ local_date: "2026-12-05", star_interval_id: w.members[5] });
-      expect(after.at(-1)?.collecting_from).toEqual(at("2026-11-07T14:41:00Z"));
+      expect(after.slice(-6).map((day) => day.local_date)).toEqual([
+        "2026-12-07",
+        "2026-12-08",
+        "2026-12-09",
+        "2026-12-10",
+        "2026-12-11",
+        "2026-12-12",
+      ]);
+      expect(after.at(-1)).toMatchObject({ local_date: "2026-12-12", star_interval_id: w.members[5] });
+      expect(after.at(-1)?.collecting_from).toEqual(at("2026-11-09T05:00:00Z"));
       // Nothing already made moved (FQ61).
-      expect(after.slice(0, -1)).toEqual(before);
-      // A Sunday adds nothing: Sunday 6 December is nobody's day (T6).
-      expect(await run(tx, w.club, "2026-11-08T14:41:00Z")).toBe(0);
+      expect(after.slice(0, -6)).toEqual(before);
+      expect(await run(tx, w.club, "2026-11-10T14:41:00Z")).toBe(0);
     });
   });
 
@@ -246,7 +262,65 @@ describe("making a club's days (spec 05; FQ115)", () => {
       expect(await run(tx, w.club, NOW)).toBe(0);
       expect(await daysOf(tx, w.club)).toEqual([]);
       await tx`UPDATE app.clubs SET suspended_at = NULL WHERE id = ${w.club}`;
-      expect(await run(tx, w.club, NOW)).toBe(24);
+      expect(await run(tx, w.club, NOW)).toBe(25);
+    });
+  });
+
+  it("makes each date under the week in force on it, and a later week's days only from its start (FQ61)", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await confirmedWeek(tx, 6, TIMES);
+      expect(await run(tx, w.club, NOW)).toBe(25);
+      // A second week from Monday 7 December, the first Monday with no day made, as a membership change
+      // will write one: the same six days, the members last first.
+      const next = newId("ver");
+      await tx`
+        INSERT INTO app.schedule_versions (id, club_id, effective_from, created_at)
+        VALUES (${next}, ${w.club}, '2026-12-07', ${new Date("2026-11-06T15:00:00Z")})`;
+      const dates = ["2026-12-07", "2026-12-08", "2026-12-09", "2026-12-10", "2026-12-11", "2026-12-12"];
+      for (const [index, weekday] of WEEKDAYS.entries()) {
+        await tx`
+          INSERT INTO app.schedule_assignments
+            (schedule_version_id, club_id, weekday, star_interval_id, first_date, confirmed_at)
+          VALUES (${next}, ${w.club}, ${weekday}, ${w.members[5 - index] ?? ""}, ${dates[index] ?? ""},
+                  ${new Date("2026-11-06T15:00:00Z")})`;
+      }
+      // Monday the 9th at 9:41 AM in New York: the window reaches Saturday 12 December.
+      expect(await run(tx, w.club, "2026-11-09T14:41:00Z")).toBe(6);
+      const days = await daysOf(tx, w.club);
+      expect(days.slice(0, 25).every((day) => day.schedule_version_id === w.version)).toBe(true);
+      expect(days.slice(25).map((day) => [day.local_date, day.schedule_version_id, day.star_interval_id])).toEqual(
+        dates.map((date, index) => [date, next, w.members[5 - index]]),
+      );
+    });
+  });
+
+  it("makes no day for a club that hasn't started, though its rows hold a week (spec 04)", async () => {
+    await rolledBack(db, async (tx) => {
+      // No command gives a proposed club a week; the rows allow one, so the run reads the club's start itself.
+      const ben = await newUser(plain(tx), "Ben");
+      const maya = await newUser(plain(tx), "Maya");
+      const club = newId("club");
+      const first = newId("mem");
+      await tx`
+        INSERT INTO app.clubs (id, name, timezone, creator_interval_id, created_at)
+        VALUES (${club}, 'Sunday people', ${NY}, ${first}, ${AT.created})`;
+      await tx`
+        INSERT INTO app.memberships (interval_id, club_id, user_id, origin, joined_at)
+        VALUES (${first}, ${club}, ${ben}, 'creator', ${AT.created})`;
+      await joinByRoster(plain(tx), club, { user: ben, interval: first }, [{ user: maya, label: "Maya" }], AT.joined);
+      const week = newId("ver");
+      await tx`
+        INSERT INTO app.schedule_versions (id, club_id, effective_from, created_at)
+        VALUES (${week}, ${club}, '2026-11-02', ${new Date("2026-11-02T14:00:00Z")})`;
+      await tx`
+        INSERT INTO app.schedule_assignments
+          (schedule_version_id, club_id, weekday, star_interval_id, first_date, confirmed_at)
+        VALUES (${week}, ${club}, 'monday', ${first}, '2026-11-09', ${new Date("2026-11-04T14:00:00Z")})`;
+      expect(await run(tx, club, NOW)).toBe(0);
+      expect(await daysOf(tx, club)).toEqual([]);
+      // Started, the same rows make Ben's Mondays: the 9th, 16th, 23rd and 30th.
+      await tx`UPDATE app.clubs SET activated_at = ${new Date("2026-11-02T13:00:00Z")} WHERE id = ${club}`;
+      expect(await run(tx, club, NOW)).toBe(4);
     });
   });
 
@@ -288,9 +362,9 @@ describe("runs at once, committed (spec 34; T1)", () => {
         db.begin((tx) => makeDays(tx, fakeClock(NOW), w.club)),
         db.begin((tx) => makeDays(tx, fakeClock(NOW), w.club)),
       ]);
-      expect(counts.reduce((sum, count) => sum + count, 0)).toBe(24);
+      expect(counts.reduce((sum, count) => sum + count, 0)).toBe(25);
       // The club's row puts them in one order: the first makes all, the others none.
-      expect([...counts].sort((a, b) => a - b)).toEqual([0, 0, 24]);
+      expect([...counts].sort((a, b) => a - b)).toEqual([0, 0, 25]);
       expect((await daysOf(world, w.club)).map((day) => day.local_date)).toEqual(SIX_DATES);
     }
   });
@@ -321,18 +395,44 @@ describe("runs at once, committed (spec 34; T1)", () => {
     },
   );
 
-  it("waits for a confirmation in flight, then makes its day too", { timeout: 20_000 }, async () => {
-    // Maya and Alex have confirmed; the club's row is held as a confirmation holds it.
-    const w = await db.begin((tx) => confirmedWeek(tx, 6, TIMES, { who: [1, 2] }));
-    const hold = await holding(db, w.club);
-    const running = db.begin((tx) => makeDays(tx, fakeClock(NOW), w.club));
-    try {
-      await waitingOn(db, hold.pid);
-      expect(await daysOf(world, w.club)).toEqual([]);
-    } finally {
-      await hold.release();
-      await running.catch(() => undefined);
-    }
-    expect(await running).toBe(8);
-  });
+  it(
+    "waits for a confirmation in flight and reads the week only once it has the club's row: the day confirmed meanwhile is made too (FQ61)",
+    { timeout: 20_000 },
+    async () => {
+      // Maya and Alex have confirmed. Sam's confirmation is in flight: it holds the club's row and hasn't
+      // committed.
+      const w = await db.begin((tx) => confirmedWeek(tx, 6, TIMES, { who: [1, 2] }));
+      let commit = (): void => undefined;
+      const go = new Promise<void>((resolve) => (commit = resolve));
+      let held: (pid: number) => void = () => undefined;
+      const taken = new Promise<number>((resolve) => (held = resolve));
+      const confirming = db.begin(async (tx) => {
+        await confirmOwn(tx, fakeClock(TIMES.confirmed), w, 3);
+        const [row] = await tx<{ pid: number }[]>`SELECT pg_catalog.pg_backend_pid() AS pid`;
+        held(row?.pid ?? -1);
+        await go;
+      });
+      const pid = await Promise.race([taken, confirming.then(() => -1)]);
+      const running = db.begin((tx) => makeDays(tx, fakeClock(NOW), w.club));
+      try {
+        await waitingOn(db, pid);
+        expect(await daysOf(world, w.club)).toEqual([]);
+      } finally {
+        commit();
+        await confirming.catch(() => undefined);
+        await running.catch(() => undefined);
+      }
+      await confirming;
+      // Maya's four Tuesdays, Alex's four Wednesdays and Sam's four Thursdays from the 12th: a run that
+      // had read the week before it had the row would have made eight.
+      expect(await running).toBe(12);
+      const days = await daysOf(world, w.club);
+      expect(days.filter((day) => day.star_interval_id === w.members[3]).map((day) => day.local_date)).toEqual([
+        "2026-11-12",
+        "2026-11-19",
+        "2026-11-26",
+        "2026-12-03",
+      ]);
+    },
+  );
 });
