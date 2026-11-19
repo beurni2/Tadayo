@@ -23,7 +23,7 @@
 // Each role's test prints the cells it ran and the answers it scanned, and asserts both: the cells
 // against the contract's 72 requests a world, the answers against what each step says it sends.
 
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { buildApp, connect, routesOf, sessions, type ApiSql } from "@tadayo/api";
 import { TEST_EMAIL } from "@tadayo/api/testing";
 import { fakeClock, type FakeClock } from "@tadayo/domain/testing";
@@ -62,10 +62,27 @@ import {
   signedOutCount,
   signedOutStep,
   specsFor,
+  type Expected,
   type Spec,
   type Step,
 } from "./harness.ts";
 import { membersExpected, type MembersSeen } from "./members.ts";
+import {
+  IDEMPOTENCY_CONFLICT,
+  genericProposal,
+  genericProposalExpected,
+  linkOutcome,
+  madeLink,
+  proposalOutcome,
+  proposeCases,
+  replayedLink,
+  revisionExpected,
+  revisionFor,
+  revokeExpected,
+  rosterWorldOf,
+  sameAnswer,
+  type RosterSeen,
+} from "./roster.ts";
 import { contractOperations, readDocument } from "./operations.ts";
 import { NONE, ROWS, rowProblems } from "./rows.ts";
 import {
@@ -86,6 +103,7 @@ import {
 } from "./schedule.ts";
 import {
   scan,
+  type Answer,
   type MediaClass,
   type Viewer,
   type WorldAccount,
@@ -138,6 +156,21 @@ async function twoContributors(tx: WorldTx, w: World): Promise<string> {
   return drop;
 }
 
+/**
+ * The world's own roster revision and one of its links: the applied revision that brought Ben and Cleo in,
+ * which lists Ana alone, and the link Ben accepted it with (world.ts's `joinByRoster`).
+ */
+async function rosterTargets(tx: WorldTx, w: World): Promise<{ revision: string; invitation: string }> {
+  const [row] = await tx<{ revision: string; invitation: string | null }[]>`
+    SELECT m.joined_via_revision_id AS revision, rc.accepted_invitation_id AS invitation
+      FROM app.memberships m
+      JOIN app.roster_revision_candidates rc
+        ON rc.revision_id = m.joined_via_revision_id AND rc.candidate_id = m.joined_via_candidate_id
+     WHERE m.interval_id = ${w.ben.interval}`;
+  if (row === undefined || row.invitation === null) throw new Error("the world's author joined by no roster");
+  return { revision: row.revision, invitation: row.invitation };
+}
+
 beforeAll(async () => {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error("set DATABASE_URL, as the ci step privacy does (tools/ci/ci_steps.py)");
@@ -165,6 +198,7 @@ beforeAll(async () => {
       author: w.ben.interval,
       star: w.ana.interval,
       proposal,
+      ...(await rosterTargets(tx, w)),
       avatar: avatar.id,
       subject: subject.auth_subject,
     };
@@ -291,9 +325,19 @@ async function factsOf(
         OR u.id IN ${db(asked)}`;
   // An invitation, its candidate's club and state, the club's name and the inviter's name as members see it.
   const invitationRows = await db<
-    { id: string; bound: string | null; club: string; joined: boolean; club_name: string; inviter: string | null }[]
+    {
+      id: string;
+      bound: string | null;
+      club: string;
+      joined: boolean;
+      club_name: string;
+      inviter: string | null;
+      proposed_by: string;
+      token_sha256: string;
+    }[]
   >`
     SELECT i.id, i.bound_user_id AS bound, c.club_id AS club, c.state = 'joined' AS joined, k.name AS club_name,
+           c.proposed_by_interval_id AS proposed_by, pg_catalog.encode(i.token_sha256, 'hex') AS token_sha256,
            CASE WHEN m.state = 'active' THEN u.display_name ELSE m.ended_display_name END AS inviter
       FROM app.invitations i
       JOIN app.candidates c ON c.id = i.candidate_id
@@ -409,6 +453,8 @@ async function factsOf(
             joined: row.joined,
             clubName: row.club_name,
             inviterName: row.inviter,
+            proposedBy: row.proposed_by,
+            tokenSha256: row.token_sha256,
           },
         ]),
       ),
@@ -490,6 +536,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             author: w.ben.interval,
             star: w.ana.interval,
             proposal,
+            ...(await rosterTargets(tx, w)),
           };
           return { w, targets, viewer, pending: pending.id, ready, photo: photo?.upload_id ?? "" };
         });
@@ -517,11 +564,22 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
         const createdBefore = before?.n ?? 0;
         // Someone of another club, signed in, who asks for each club the viewer makes.
         const outsider = bearer(await keys.signer.token(elsewhere.subject));
-        const load = () =>
-          factsOf(clubs, cell.viewer, {
-            accounts: [cell.w.dan.user],
-            secrets: [authorization.slice("Bearer ".length)],
-          });
+        // The tokens the world keeps back: the viewer's own, and each link's token once its one answer is read.
+        const secrets = [authorization.slice("Bearer ".length)];
+        const load = () => factsOf(clubs, cell.viewer, { accounts: [cell.w.dan.user], secrets: [...secrets] });
+        // Another member of the cell's club with a session, who asks for what the viewer makes; none in a
+        // world that has no such member.
+        const [another] = await db<{ account: string; subject: string }[]>`
+          SELECT u.id AS account, u.auth_subject AS subject
+            FROM app.memberships m JOIN app.users u ON u.id = m.user_id
+           WHERE m.club_id = ${cell.w.club} AND m.state = 'active' AND u.state = 'active'
+             AND u.id <> ${cell.viewer} AND u.auth_subject IS NOT NULL
+           ORDER BY m.joined_at, m.interval_id LIMIT 1`;
+        const other =
+          another === undefined
+            ? undefined
+            : { account: another.account, authorization: bearer(await keys.signer.token(another.subject)) };
+        if (other !== undefined) secrets.push(other.authorization.slice("Bearer ".length));
         let facts = await load();
         // The schedule's rows of the cell's club and the other club, read again after each request that may change them.
         const loadSchedule = () => scheduleWorldOf(db as unknown as WorldTx, [cell.w.club, elsewhere.club, ...made]);
@@ -529,6 +587,9 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
         // The clubs' own rows (club.ts), read again with the schedule's.
         const loadClubRows = () => clubRowsOf(db as unknown as WorldTx, [cell.w.club, elsewhere.club, ...made]);
         let clubRows = await loadClubRows();
+        // The roster's rows (roster.ts), read again after each request that may change them.
+        const loadRoster = () => rosterWorldOf(db as unknown as WorldTx, [cell.w.club, elsewhere.club, ...made]);
+        let rosterWorld = await loadRoster();
         const startVersion = schedule.proposals.get(cell.targets.proposal)?.version ?? -1;
         // A schedule command's generic request carries a body the contract accepts and every rule refuses
         // (schedule.ts's genericBody), so the guessed and malformed ids beside it are judged past the body's check.
@@ -541,7 +602,21 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
                   headers: { ...spec.headers, "content-type": "application/json" },
                   body: JSON.stringify(genericBody(startVersion)),
                 }
-              : spec,
+              : spec.operation.id === "proposeRoster"
+                ? {
+                    // One person at a version no club is at: past the body's check, and never a new revision.
+                    ...spec,
+                    headers: { ...spec.headers, "content-type": "application/json" },
+                    body: JSON.stringify(genericProposal(named(cell.w, "Nobody"))),
+                  }
+                : spec.operation.id === "createInvitation"
+                  ? {
+                      // A candidate nobody has: past the body's check, and never a link.
+                      ...spec,
+                      headers: { ...spec.headers, "content-type": "application/json" },
+                      body: JSON.stringify({ candidate_id: freshId() }),
+                    }
+                  : spec,
           );
         for (const [index, phase] of phases.entries()) {
           const now = PHASES[phase];
@@ -559,21 +634,35 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             rows: clubRows,
             daysOf: (club) => daysOf(facts.world, club, now),
           });
+          const rosterSeen = (): RosterSeen => ({ ...scheduleSeen(), roster: rosterWorld, rows: clubRows });
           for (const spec of specs) {
             const gate = gateOf(session, spec.operation);
             const id = spec.operation.id;
             const expected =
-              gate === undefined && id === "listMembers"
-                ? membersExpected(membersSeen, cell.w.club)
-                : gate === undefined && id === "getClub"
-                  ? clubExpected(clubSeen, cell.w.club)
-                  : gate === undefined && id === "createClub"
-                    ? CREATE_CLUB_NO_BODY
-                    : gate !== undefined || !SCHEDULE_JUDGED.has(id)
-                      ? cellExpected(session, spec.operation, seen)
-                      : id === "getSchedule"
-                        ? weekExpected(scheduleSeen, cell.w.club)
-                        : commandExpected(scheduleSeen, id as ScheduleCommand, cell.targets.proposal, startVersion);
+              gate === undefined && id === "getRosterRevision"
+                ? revisionExpected(rosterSeen, cell.targets.revision)
+                : gate === undefined && id === "revokeInvitation"
+                  ? revokeExpected(rosterSeen, cell.targets.invitation)
+                  : gate === undefined && id === "proposeRoster"
+                    ? genericProposalExpected(rosterSeen, cell.w.club)
+                    : gate === undefined && id === "createInvitation"
+                      ? NEUTRAL
+                      : gate === undefined && id === "listMembers"
+                        ? membersExpected(membersSeen, cell.w.club)
+                        : gate === undefined && id === "getClub"
+                          ? clubExpected(clubSeen, cell.w.club)
+                          : gate === undefined && id === "createClub"
+                            ? CREATE_CLUB_NO_BODY
+                            : gate !== undefined || !SCHEDULE_JUDGED.has(id)
+                              ? cellExpected(session, spec.operation, seen)
+                              : id === "getSchedule"
+                                ? weekExpected(scheduleSeen, cell.w.club)
+                                : commandExpected(
+                                    scheduleSeen,
+                                    id as ScheduleCommand,
+                                    cell.targets.proposal,
+                                    startVersion,
+                                  );
             counted.cells += 1;
             counted.expectedAnswers += 1 + guessCount(spec);
             record(await cellStep(app, spec, expected));
@@ -716,6 +805,211 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             wrong.push(
               `${state.name}, ${phase}: ${String(clubsMade)} clubs in the rows and ${String(made.length)} answered 201, by ${String(tablesThrough)} tables`,
             );
+          // The roster's table (roster.ts): what the contract refuses of a proposal, a stale version, one person
+          // proposed, its retry and another body under its key, each judged from the rows before the request;
+          // then, for the revision a proposal made, who reads it, who makes its candidate's link and who
+          // revokes it. Each request is one answer, counted and scanned.
+          const byId = (id: string): Spec => {
+            const found = specs.find((spec) => spec.operation.id === id);
+            if (found === undefined) throw new Error(`the contract has no ${id}`);
+            return found;
+          };
+          const sendAs = async (spec: Spec, as?: string, key?: string | null): Promise<Answer> => {
+            const request = render(spec);
+            if (as !== undefined) request.headers["authorization"] = as;
+            if (key === null) delete request.headers["idempotency-key"];
+            else if (key !== undefined) request.headers["idempotency-key"] = key;
+            counted.expectedBodies += 1;
+            counted.expectedAnswers += 1;
+            const answer = await answerOf(app, request);
+            counted.bodies += 1;
+            return answer;
+          };
+          // `as` is the account an answer was given to when it isn't the cell's viewer: the answer is scanned
+          // with that account's own facts, read from the world as it is now.
+          const judged = async (
+            spec: Spec,
+            answer: Answer,
+            expected: Expected | string[],
+            note: string,
+            as?: string,
+          ) => {
+            const problems = Array.isArray(expected)
+              ? expected
+              : typeof expected === "function"
+                ? expected(answer)
+                : pinnedProblems(answer, expected);
+            const step = {
+              problems: problems.map((problem) => `${spec.operation.id}: ${problem} (${note})`),
+              answers: [{ spec, answer }],
+            };
+            if (as === undefined) record(step);
+            else {
+              const theirs = await factsOf(clubs, as, { accounts: [cell.w.dan.user], secrets: [...secrets] });
+              scanner(wrong, `${state.name}, ${phase}`, () => theirs, now, counted)(step);
+            }
+          };
+          const json = (spec: Spec, body: unknown): Spec => ({
+            ...spec,
+            headers: { ...spec.headers, "content-type": "application/json" },
+            body: typeof body === "string" ? body : JSON.stringify(body),
+          });
+          const propose = byId("proposeRoster");
+          const rosterGate = gateOf(sessionNow, propose.operation);
+          const rosterVersion = clubRows.get(cell.w.club)?.rosterVersion ?? -1;
+          const label = `${named(cell.w, "Proposed")} ${String(index)}`;
+          let proposalSaid: string | undefined;
+          let revision: string | undefined;
+          for (const one of proposeCases(rosterVersion, label)) {
+            const sent = json(propose, one.body);
+            const outcome = (version: number, people: number) =>
+              proposalOutcome(schedule, clubRows, cell.w.club, cell.viewer, version, people);
+            const before = one.expected === "proposal" ? outcome(rosterVersion, 1) : undefined;
+            const answer = await sendAs(sent, undefined, one.key);
+            const problems: string[] = [];
+            if (rosterGate !== undefined) problems.push(...pinnedProblems(answer, rosterGate));
+            else if (typeof one.expected !== "string") problems.push(...pinnedProblems(answer, one.expected));
+            else if (one.expected === "stale") {
+              const stale = outcome(rosterVersion + 1, 1);
+              if (stale === "created") problems.push("the judge's own stale version is the club's");
+              else problems.push(...pinnedProblems(answer, stale));
+            } else if (one.expected === "proposal") {
+              if (before === undefined) throw new Error("the proposal's outcome wasn't judged before it was sent");
+              if (before !== "created") problems.push(...pinnedProblems(answer, before));
+              else {
+                // The proposal changed the world: the facts and the rows are read again before it is judged.
+                facts = await load();
+                clubRows = await loadClubRows();
+                rosterWorld = await loadRoster();
+                const made = clubRows.get(cell.w.club)?.openRevision ?? "";
+                const want = revisionFor(schedule, rosterWorld, made, cell.viewer, now);
+                const rows = rosterWorld.revisions.get(made);
+                if (want === undefined || rows === undefined)
+                  problems.push("the proposer can't read the revision just made");
+                else {
+                  problems.push(...sameAnswer("the new revision", 201, want)(answer));
+                  // What a new proposal must say whatever the rows say.
+                  const newest = rows.candidates.at(-1);
+                  if (rows.state !== "open" || rows.version !== 1)
+                    problems.push("a new revision isn't open at version 1");
+                  if (newest?.label !== label)
+                    problems.push("a new revision's last candidate isn't the person proposed");
+                  if (want["my_decision"] !== "approved")
+                    problems.push("proposing isn't the proposer's approval (FQ60)");
+                  if (rows.decisions.size !== 1)
+                    problems.push("a new revision holds another decision than its proposer's");
+                  if (clubRows.get(cell.w.club)?.rosterVersion !== rosterVersion + 1)
+                    problems.push("a proposal didn't move the club's roster version by one");
+                  const open = [...rosterWorld.revisions.values()].filter(
+                    (one) => one.club === cell.w.club && one.state === "open",
+                  );
+                  if (open.length !== 1) problems.push(`${String(open.length)} open revisions after a proposal`);
+                  revision = made;
+                }
+              }
+              proposalSaid = said(answer);
+            } else if (one.expected === "replay") {
+              // A retry under its key is the first answer, byte for byte (T19), and makes no second revision.
+              if (proposalSaid === undefined || proposalSaid !== said(answer))
+                problems.push("a retry under its key got another answer than the first (T19)");
+              const after = await loadRoster();
+              if (after.revisions.size !== rosterWorld.revisions.size) problems.push("a retry made a revision");
+            } else if (revision !== undefined) problems.push(...pinnedProblems(answer, IDEMPOTENCY_CONFLICT));
+            else {
+              const two = outcome(rosterVersion, 2);
+              if (two === "created") problems.push("the judge's own second body would change the world");
+              else problems.push(...pinnedProblems(answer, two));
+            }
+            await judged(sent, answer, problems, one.name);
+          }
+          if (revision !== undefined) {
+            const made = revision;
+            const candidate = rosterWorld.revisions.get(made)?.candidates.at(-1)?.id ?? "";
+            const read: Spec = { ...byId("getRosterRevision"), path: { revision_id: made } };
+            const link = json(
+              { ...byId("createInvitation"), path: { club_id: cell.w.club } },
+              { candidate_id: candidate },
+            );
+            // Who reads the revision: its proposer, another member it lists, and nobody of another club.
+            const readByAll = async (note: string) => {
+              await judged(read, await sendAs(read), revisionExpected(rosterSeen, made), `${note}, by its proposer`);
+              await judged(read, await sendAs(read, outsider), NEUTRAL, `${note}, by someone of another club`);
+              if (other !== undefined) {
+                await judged(
+                  read,
+                  await sendAs(read, other.authorization),
+                  revisionExpected(rosterSeen, made, other.account),
+                  `${note}, by another member`,
+                  other.account,
+                );
+              }
+            };
+            await readByAll("the new revision");
+            // Who makes the candidate's link: nobody but the member who proposed the candidate (T14).
+            await judged(link, await sendAs(link, outsider), NEUTRAL, "a link asked for by someone of another club");
+            if (other !== undefined) {
+              const theirs = linkOutcome(schedule, rosterWorld, cell.w.club, candidate, other.account);
+              await judged(
+                link,
+                await sendAs(link, other.authorization),
+                theirs === "made" ? ["the judge lets another member make the link"] : theirs,
+                "a link asked for by another member",
+                other.account,
+              );
+            }
+            const key = randomUUID();
+            const mine = linkOutcome(schedule, rosterWorld, cell.w.club, candidate, cell.viewer);
+            const first = await sendAs(link, undefined, key);
+            rosterWorld = await loadRoster();
+            const linked = madeLink(first, rosterWorld, candidate, now);
+            // The one answer that carries the token is scanned against the world that holds the link, before
+            // the world keeps the token back; every later answer is scanned after.
+            facts = await load();
+            await judged(
+              link,
+              first,
+              mine === "made" ? linked.problems : ["the judge refuses its proposer the link"],
+              "a link",
+            );
+            if (linked.token !== undefined) secrets.push(linked.token);
+            facts = await load();
+            await judged(
+              link,
+              await sendAs(link, undefined, key),
+              replayedLink(first),
+              "the same link request again under its key",
+            );
+            const links = rosterWorld.links.size;
+            if ((await loadRoster()).links.size !== links) wrong.push(`${state.name}, ${phase}: a retry made a link`);
+            await readByAll("the revision with its candidate's link");
+            // Who revokes it: the same member, each time; and the revision then says so to that member alone.
+            const invitation = linked.id ?? freshId();
+            const revoke: Spec = { ...byId("revokeInvitation"), path: { invitation_id: invitation } };
+            await judged(revoke, await sendAs(revoke, outsider), NEUTRAL, "a revoke by someone of another club");
+            if (other !== undefined) {
+              await judged(
+                revoke,
+                await sendAs(revoke, other.authorization),
+                revokeExpected(rosterSeen, invitation, other.account),
+                "a revoke by another member",
+                other.account,
+              );
+            }
+            const revokedOnce = await sendAs(revoke);
+            await judged(revoke, revokedOnce, revokeExpected(rosterSeen, invitation), "a revoke");
+            rosterWorld = await loadRoster();
+            if (rosterWorld.links.get(invitation)?.revoked !== true)
+              wrong.push(`${state.name}, ${phase}: a revoke left the link's row as it was`);
+            const revokedTwice = await sendAs(revoke);
+            await judged(revoke, revokedTwice, revokeExpected(rosterSeen, invitation), "the same revoke again");
+            if (said(revokedOnce) !== said(revokedTwice))
+              wrong.push(`${state.name}, ${phase}: a repeated revoke got another answer`);
+            await readByAll("the revision with its candidate's link revoked");
+            // The club, which now names its open revision and has moved its roster version.
+            const club = byId("getClub");
+            counted.expectedAnswers += 1;
+            record(await cellStep(app, club, clubExpected(clubSeen, cell.w.club)));
+          }
           const last = index === phases.length - 1;
           const scheduleGroups = new Map<string, string>();
           let previous: { key: string; said: string } | undefined;
@@ -843,7 +1137,15 @@ describe("callers without a session, in each state of the drop and phase of the 
         await checkAsAtCommit(plain(tx));
         return {
           w,
-          targets: { club: w.club, drop, day: w.day, author: w.ben.interval, star: w.ana.interval, proposal },
+          targets: {
+            club: w.club,
+            drop,
+            day: w.day,
+            author: w.ben.interval,
+            star: w.ana.interval,
+            proposal,
+            ...(await rosterTargets(tx, w)),
+          },
         };
       });
       const facts = await factsOf([cell.w.club, elsewhere.club], null, { accounts: [cell.w.dan.user], secrets });

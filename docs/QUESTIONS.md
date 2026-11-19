@@ -579,3 +579,12 @@ The founder's addendum (`docs/tadayo-new-direction-addendum-r1.md`, ADR-035) lea
     - The other readings: a cap (a handful of clubs per account, or of clubs still proposed), refused with a code of its own, which needs a contract PR for the code, copy for the refusal (a handoff) and a rule for which clubs count; or a rate limit per account, answered with the contract's existing `RATE_LIMITED`, which needs no contract change (TECH-DESIGN section 5 puts rate limits in the route).
     - The cost of the default: an account can fill the database with empty clubs, one request each, and a club can't be deleted. A club past an account's fiftieth is made and answered, then missing from the list, reachable only by its id. The trial's accounts are the founder's friends; before a wider release, a cap or a rate limit should come.
     - Needed by: B8, or sooner if you prefer a cap.
+
+
+## Raised by B1's second clubs PR (`api/b1-propose`)
+
+- **FQ119. Who can read a roster revision.** The contract's `getRosterRevision` says a revision is the exact roster "every active member approves and each candidate accepts" and names no reader; spec 04 and book p30 show it to the members asked (G03-approve, G05-members) and, through the invitation, to the candidate.
+    - Default: only a member the revision itself lists, while that member is still an active member of the club (`packages/domain/src/clubs/roster-revision.ts`, `readRevision`). A member who joined after the revision was made, a former member, a candidate and anyone else get the neutral NOT_FOUND. A candidate reads the roster through the invitation's preview (B1's next PR), never through this route.
+    - The other readings: every current member of the club reads every revision of it, old ones included, which shows someone who joined later the names proposed and refused before they came; or a candidate who accepted reads the revision too, which needs a rule for what a candidate sees of the members beyond names (T7).
+    - The cost of the default: a member who joins by one revision can't open an older, ended one. No screen asks for that today. It widens later without changing data.
+    - Needed by: B1's next PR (`api/b1-accept`), which builds approving and accepting on it.

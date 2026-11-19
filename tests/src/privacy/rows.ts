@@ -84,6 +84,23 @@
 //   scanned. No member's world here has an open revision or a full roster, so `open_revision_id` and a
 //   false `can_propose` pass through no cell: the read's rule for them is tested on rows built by hand
 //   (tests/src/db/create-club.test.ts) and the serializer's on the contract's `kitchen_table` example;
+// - for the roster's four routes (B1's second slice, done): getRosterRevision's RosterRevision, whole, judged
+//   from the world's rows by roster.ts, for a member the revision itself lists (FQ119), with a candidate's
+//   link only for the member who proposed that candidate, and the neutral not-found to everyone else. The
+//   world's own revision, the applied one that brought Ben and Cleo in, lists Ana alone, and its link is
+//   one Ben accepted with, so in every cell only Ana reads it and only Ana's revoke of that link is
+//   NOT_ALLOWED. Then, in every phase, a table of proposals (what the contract refuses, a stale version,
+//   one person proposed, its retry and another body under its key), and for each revision it makes: the
+//   revision read by its proposer, by another member and by someone of another club; a link made by its
+//   proposer, refused to the other two, and retried; the token held to its row's hash and kept back from
+//   every later answer; the link revoked, twice, and refused to the other two. A proposal changes the
+//   world, so the facts are read again before its answer is scanned; an answer given to the other member is
+//   scanned with that member's own facts. The leak scanner allows a link's id only to the member whose
+//   active interval proposed its candidate, and the `url` only in createInvitation's 201, as the token its
+//   row's hash is of (scanner.ts). Accepting, approving and declining are B1's next slice: Ana reads
+//   `accepted` on the world's own revision, but the state used, a decision other than the proposer's own
+//   and a declined revision pass through no cell here: the read's rule for them is tested on rows built by
+//   hand (tests/src/db/invitation.test.ts, propose-roster.test.ts) and the judge's on roster.test.ts;
 // - for the schedule's routes still to come (the membership change and the first days' roster, B2's later
 //   schedule PRs; getHome, listClubs' `next_day` and a revealed day's `add_target` where a schedule's day
 //   shows), each as a check a row can run:
@@ -107,17 +124,20 @@
 import { JUDGED as ACCOUNT_JUDGED } from "./account.ts";
 import { CLUB_JUDGED } from "./club.ts";
 import { MEMBERS_JUDGED } from "./members.ts";
+import { ROSTER_JUDGED } from "./roster.ts";
 import { SCHEDULE_JUDGED } from "./schedule.ts";
 
 /**
  * The operations some file judges: the account routes (slice 8), the schedule routes (B2's schedule slice),
- * the roster (B2's generation slice) and the club's two routes (B1's first slice).
+ * the roster (B2's generation slice), the club's two routes (B1's first slice) and the roster's four (B1's
+ * second slice).
  */
 export const JUDGED: ReadonlySet<string> = new Set([
   ...ACCOUNT_JUDGED,
   ...SCHEDULE_JUDGED,
   ...MEMBERS_JUDGED,
   ...CLUB_JUDGED,
+  ...ROSTER_JUDGED,
 ]);
 
 const GATE =
@@ -178,6 +198,39 @@ export const CREATE_CLUB = Object.freeze({
     `to another body under that key, to any account the gate lets through (${GATE})`,
 });
 
+/** getRosterRevision (B1's second slice): a roster revision for a member it lists, whole, from the world's rows. */
+export const ROSTER_REVISION = Object.freeze({
+  answer:
+    "200 with the RosterRevision as roster.ts's revisionFor makes it from the world's rows, to an account with an " +
+    "active interval in a club that isn't suspended whose interval the revision lists (FQ119): its members, its " +
+    "candidates by their labels, the viewer's own decision, and a candidate's link only for the member who proposed " +
+    `that candidate, and no other field; the neutral NOT_FOUND to every other role the gate lets through (${GATE})`,
+});
+
+/** proposeRoster (B1's second slice): roster.ts's table of bodies. */
+export const PROPOSE_ROSTER = Object.freeze({
+  answer:
+    "each body of roster.ts's table answered as its proposalOutcome says from the world's rows: INVALID_REQUEST to " +
+    "what the contract refuses, then the neutral NOT_FOUND to anyone who isn't a member, VERSION_CONFLICT with the " +
+    "club's version, CLUB_FULL, or 201 with the new revision as its proposer reads it, the same bytes to its retry " +
+    `and IDEMPOTENCY_CONFLICT to another body under its key (${GATE})`,
+});
+
+/** createInvitation (B1's second slice): a link for the member who proposed the candidate, and nobody else. */
+export const CREATE_INVITATION = Object.freeze({
+  answer:
+    "INVALID_REQUEST to what the contract refuses; 201 with the link, its token once in the url's fragment, to the " +
+    "member who proposed the candidate, and the same answer without the url to its retry; NOT_ALLOWED to that " +
+    `member once an account accepted with the latest link; the neutral NOT_FOUND to everyone else (${GATE})`,
+});
+
+/** revokeInvitation (B1's second slice): roster.ts's revokeOutcome. */
+export const REVOKE_INVITATION = Object.freeze({
+  answer:
+    "200 with the RevokedInvitation to the member who proposed the link's candidate, each time; NOT_ALLOWED to that " +
+    `member once an account accepted with the link; the neutral NOT_FOUND to everyone else (${GATE})`,
+});
+
 /** chooseScheduleDays and confirmScheduleDays (B2's schedule slice): schedule.ts's table of bodies. */
 export const SCHEDULE_COMMAND = Object.freeze({
   answer:
@@ -197,7 +250,7 @@ export const ROWS: Readonly<Record<string, unknown>> = {
   createClub: CREATE_CLUB,
   createComment: NONE,
   createDrop: NONE,
-  createInvitation: NONE,
+  createInvitation: CREATE_INVITATION,
   createReport: NONE,
   createReservation: NONE,
   createUpload: NONE,
@@ -220,7 +273,7 @@ export const ROWS: Readonly<Record<string, unknown>> = {
   getNotificationPreferences: NONE,
   getOccurrence: NONE,
   getOwnDay: NONE,
-  getRosterRevision: NONE,
+  getRosterRevision: ROSTER_REVISION,
   getSchedule: SCHEDULE,
   getUpload: NONE,
   hideDrop: NONE,
@@ -235,14 +288,14 @@ export const ROWS: Readonly<Record<string, unknown>> = {
   previewBlock: NONE,
   previewInvitation: NONE,
   previewInvitationWeb: NONE,
-  proposeRoster: NONE,
+  proposeRoster: PROPOSE_ROSTER,
   registerDevice: NONE,
   releaseReservation: NONE,
   removeDevice: NONE,
   removeDrop: NONE,
   removeFavourite: NONE,
   resolveSource: NONE,
-  revokeInvitation: NONE,
+  revokeInvitation: REVOKE_INVITATION,
   saveFavourite: NONE,
   searchMemories: NONE,
   sendEvents: NONE,

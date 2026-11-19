@@ -116,8 +116,14 @@
 // image, header or key of the never-list in them fails here:
 // - the signed upload URL, which must name its intent's own object with overwriting off, and the
 //   replays of that intent (spike S1's server part, then B3);
-// - the invitation's preview to the person holding it, before they are in the club, and the
-//   proposer's invitation link (B1);
+// - the invitation's preview to the person holding it, before they are in the club (B1);
+// - the proposer's invitation link (B1, api/b1-propose): a link's id, in a revision's candidate
+//   (CandidateInvitation), in createInvitation's answer (InvitationLink) and in revokeInvitation's
+//   (RevokedInvitation), only to a viewer whose active interval proposed the link's candidate (T14,
+//   handoff 1); and createInvitation's `url`, only in its 201, only as `https://tadayo.app/i#` and
+//   the token whose SHA-256 the link's row holds (T7, T52, FQ77). The matrix scans that one answer
+//   before the world keeps the token back, and every later answer after, so a replay that carried
+//   it would fail as any kept-back value does;
 // - listClubs' invitations to the person who accepted one, before they are in the club: the club's
 //   name and the inviter's name of an invitation bound to their account, read from the world's
 //   invitations into their own text, and nothing else of that club (slice 8: Reader.texts);
@@ -128,6 +134,7 @@
 //   provider switches (B7).
 
 import { Buffer } from "node:buffer";
+import { createHash } from "node:crypto";
 import { STATUS_CODES } from "node:http";
 import { ApiError, OPERATIONS, standardErrors, statusOf, type Operation } from "@tadayo/contracts";
 import { isObject, resolve, type ContractOperation, type Json, type JsonObject } from "./operations.ts";
@@ -245,6 +252,10 @@ export interface WorldInvitation {
   /** What listClubs shows of it: the club's name, and the name members see of whoever proposed the person (FQ75). */
   clubName: string;
   inviterName: string | null;
+  /** The membership interval that proposed its candidate: the only one its link is shown to (T14, handoff 1). */
+  proposedBy: string;
+  /** The SHA-256 of its token, in hex, as its row keeps it: the token itself is in no row (T52, FQ77). */
+  tokenSha256: string;
 }
 
 export interface WorldFacts {
@@ -364,6 +375,8 @@ export const NEVER_VALUE = [
  * (a scheme, `www.`, `data:`), which random bytes make now and then, are looked for in a cursor's
  * runs of text of 12 bytes or more (URL_RUN).
  */
+/** A proposer's link as createInvitation answers it: the web page, and the token in the fragment (T52). */
+const LINK_URL = /^https:\/\/tadayo\.app\/i#([A-Za-z0-9_-]{43})$/;
 const LINK_MARKS = [/[a-z][a-z0-9+.-]*:\/\//i, /www\./i, /data:/i];
 
 /**
@@ -1001,6 +1014,23 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
   // world's rows. Each id it judges is recorded, so the values check looks for unseen ids elsewhere.
   const judged = new Set<string>();
   const ownCards = new Set<JsonObject>();
+  // The paths of a link's `url` the world check allowed: createInvitation's, to the link's proposer.
+  const ownLinkUrls = new Set<string>();
+  /** A proposer's link, by its id at `at`: only to a viewer whose active interval proposed its candidate. */
+  const proposersLink = (id: unknown, at: string): WorldInvitation | undefined => {
+    judged.add(at);
+    const invitation = typeof id === "string" ? world.invitations.get(id) : undefined;
+    if (!invitation) {
+      find("world", at, "a link this world doesn't have");
+      return undefined;
+    }
+    const proposer = world.members.get(invitation.proposedBy);
+    if (!context.viewer.intervals.has(invitation.proposedBy) || proposer?.leftAt !== null) {
+      find("world", at, "a link whose candidate no active interval of the viewer proposed (T14, handoff 1)");
+      return undefined;
+    }
+    return invitation;
+  };
   const whoReacted = (node: JsonObject, at: string, drop: WorldDrop) => {
     if (!Array.isArray(node.reactions) || reader.ownActive(drop)) return;
     for (const [index, reaction] of node.reactions.entries()) {
@@ -1123,6 +1153,22 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
         if (node.age_confirmed !== row.ageConfirmed)
           find("world", `${at}.age_confirmed`, "not whether the viewer's age is confirmed (FQ13)");
         if (node.version !== row.version) find("world", `${at}.version`, "not the viewer's own account's version");
+      }
+    }
+    if (kind === "CandidateInvitation") proposersLink(node.id, `${at}.id`);
+    if (kind === "RevokedInvitation") proposersLink(node.invitation_id, `${at}.invitation_id`);
+    if (kind === "InvitationLink") {
+      const invitation = proposersLink(node.invitation_id, `${at}.invitation_id`);
+      if (node.url !== undefined && invitation !== undefined) {
+        // The token, once: in createInvitation's 201 alone, and only this link's own (T7, T52, FQ77).
+        const token = typeof node.url === "string" ? LINK_URL.exec(node.url)?.[1] : undefined;
+        if (operation.id !== "createInvitation" || answer.status !== 201)
+          find("world", `${at}.url`, "a link's URL outside the answer that made the link (FQ77)");
+        else if (token === undefined)
+          find("world", `${at}.url`, "a link's URL that isn't https://tadayo.app/i# and a token (T52)");
+        else if (createHash("sha256").update(token).digest("hex") !== invitation.tokenSha256)
+          find("world", `${at}.url`, "a link's URL whose token isn't this link's own (T7)");
+        else ownLinkUrls.add(`${at}.url`);
       }
     }
     if (kind === "MyInvitation") {
@@ -1290,7 +1336,7 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
     } else if (isObject(value) && !opened(value) && !ownCards.has(value)) {
       for (const [key, child] of Object.entries(value)) {
         const path = `${at}.${key}`;
-        if (NEVER_KEY.test(key) && walked.names.get(path) !== "HighlightPointer")
+        if (NEVER_KEY.test(key) && walked.names.get(path) !== "HighlightPointer" && !ownLinkUrls.has(path))
           find("keys", path, "a key that names a URL, token, provider, dimension, colour or highlight (T10)");
         keys(child, path);
       }
@@ -1322,7 +1368,7 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
       }
       find("values", at, "text people wrote that isn't the viewer's to read");
     } else {
-      noLinks(value, at);
+      if (!ownLinkUrls.has(at)) noLinks(value, at);
       for (const text of reader.hidden) {
         if (text.length >= SHORTEST_TEXT && value.includes(text))
           find("values", at, "text people wrote that the viewer may not read, inside another value");

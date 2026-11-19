@@ -132,6 +132,8 @@ describe("the viewer's clubs and invitations (clubsJudge)", () => {
     joined: false,
     clubName: "Two",
     inviterName: "Ana",
+    proposedBy: "itv_ana",
+    tokenSha256: "00".repeat(32),
     ...over,
   });
   const world: WorldFacts = {

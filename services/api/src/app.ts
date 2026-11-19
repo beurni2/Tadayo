@@ -22,6 +22,12 @@ import { JSON_TYPE, NO_STORE, problem } from "./answers.ts";
 import { listClubsHandler } from "./clubs/list.ts";
 import { createClubHandler, getClubHandler } from "./clubs/club.ts";
 import { listMembersHandler } from "./clubs/members.ts";
+import {
+  createInvitationHandler,
+  getRosterRevisionHandler,
+  proposeRosterHandler,
+  revokeInvitationHandler,
+} from "./clubs/roster.ts";
 import type { Deps, Handler } from "./deps.ts";
 import { getMe, updateMeHandler } from "./identity/me.ts";
 import { chooseScheduleDaysHandler, confirmScheduleDaysHandler, getScheduleHandler } from "./schedule/routes.ts";
@@ -55,11 +61,15 @@ export const BODY_LIMIT = 128 * 1024;
  * a version and at most two weekdays, under 350 bytes with every key and character written as an escape, so
  * its limit is 1 KiB (`schedule/routes.test.ts`). `createClub`'s largest valid body is a name of the same
  * 640 code points and a zone of 64 characters, under 8,500 bytes written the same way, so it takes
- * `updateMe`'s 17 KiB (`clubs/club.test.ts`).
+ * `updateMe`'s 17 KiB (`clubs/club.test.ts`). `proposeRoster`'s is five labels of 640 code points each, under
+ * 40,000 bytes written the same way, so its limit is 80 KiB; `createInvitation`'s is one id of 64 characters,
+ * under 500 bytes, so its limit is 1 KiB (`clubs/roster.test.ts`).
  */
 const ROUTE_BODY_LIMITS: Readonly<Record<string, number>> = {
   updateMe: 17 * 1024,
   createClub: 17 * 1024,
+  proposeRoster: 80 * 1024,
+  createInvitation: 1024,
   chooseScheduleDays: 1024,
   confirmScheduleDays: 1024,
 };
@@ -123,6 +133,10 @@ function handlersOf(deps: Deps): Readonly<Record<string, Handler>> {
     createClub: createClubHandler(deps),
     getClub: getClubHandler(deps),
     listMembers: listMembersHandler(deps),
+    proposeRoster: proposeRosterHandler(deps),
+    getRosterRevision: getRosterRevisionHandler(deps),
+    createInvitation: createInvitationHandler(deps),
+    revokeInvitation: revokeInvitationHandler(deps),
     getSchedule: getScheduleHandler(deps),
     chooseScheduleDays: chooseScheduleDaysHandler(deps),
     confirmScheduleDays: confirmScheduleDaysHandler(deps),
