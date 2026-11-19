@@ -57,6 +57,22 @@ import {
 import { contractOperations, readDocument } from "./operations.ts";
 import { NONE, ROWS, rowProblems } from "./rows.ts";
 import {
+  SCHEDULE_JUDGED,
+  addFirstDays,
+  changeProblems,
+  commandExpected,
+  genericBody,
+  outcomeOf,
+  proposalFor,
+  sameBody,
+  scheduleCases,
+  scheduleWorldOf,
+  viewerIn,
+  weekExpected,
+  type ScheduleCommand,
+  type ScheduleSeen,
+} from "./schedule.ts";
+import {
   scan,
   type MediaClass,
   type Viewer,
@@ -126,6 +142,7 @@ beforeAll(async () => {
   elsewhere = await db.begin(async (tx) => {
     const w = await newWorld(plain(tx), suffix());
     const drop = await twoContributors(tx, w);
+    const proposal = await addFirstDays(tx, w);
     const avatar = await newAvatar(plain(tx), w.ben.user, "ready");
     const [subject] = await tx<{ auth_subject: string }[]>`SELECT auth_subject FROM app.users WHERE id = ${w.ben.user}`;
     if (subject === undefined) throw new Error("the other club's author has no sign-in subject");
@@ -135,6 +152,7 @@ beforeAll(async () => {
       day: w.day,
       author: w.ben.interval,
       star: w.ana.interval,
+      proposal,
       avatar: avatar.id,
       subject: subject.auth_subject,
     };
@@ -444,6 +462,8 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
         const cell = await db.begin(async (tx) => {
           const w = await newWorld(plain(tx), suffix());
           const drop = await twoContributors(tx, w);
+          // The club's first days, before the role changes the club, as a leave or a join would meet them.
+          const proposal = await addFirstDays(tx, w);
           const viewer = await role.make(tx, w);
           await state.make(tx, w, drop);
           // The viewer's own avatars, one not ready and one ready, and the drop's photo, which is no avatar.
@@ -451,7 +471,14 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
           const ready = await newAvatar(plain(tx), viewer, "ready");
           const [photo] = await tx<{ upload_id: string }[]>`SELECT upload_id FROM app.drops WHERE id = ${drop}`;
           await checkAsAtCommit(plain(tx));
-          const targets: Targets = { club: w.club, drop, day: w.day, author: w.ben.interval, star: w.ana.interval };
+          const targets: Targets = {
+            club: w.club,
+            drop,
+            day: w.day,
+            author: w.ben.interval,
+            star: w.ana.interval,
+            proposal,
+          };
           return { w, targets, viewer, pending: pending.id, ready, photo: photo?.upload_id ?? "" };
         });
         const [account] = await db<
@@ -475,15 +502,38 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             secrets: [authorization.slice("Bearer ".length)],
           });
         let facts = await load();
-        const specs = operations.flatMap((operation) => specsFor(operation, cell.targets, authorization));
+        // The schedule's rows of the cell's club and the other club, read again after each request that may change them.
+        const loadSchedule = () => scheduleWorldOf(db as unknown as WorldTx, [cell.w.club, elsewhere.club]);
+        let schedule = await loadSchedule();
+        const startVersion = schedule.proposals.get(cell.targets.proposal)?.version ?? -1;
+        // A schedule command's generic request carries a body the contract accepts and every rule refuses
+        // (schedule.ts's genericBody), so the guessed and malformed ids beside it are judged past the body's check.
+        const specs = operations
+          .flatMap((operation) => specsFor(operation, cell.targets, authorization))
+          .map((spec): Spec =>
+            spec.operation.id === "chooseScheduleDays" || spec.operation.id === "confirmScheduleDays"
+              ? {
+                  ...spec,
+                  headers: { ...spec.headers, "content-type": "application/json" },
+                  body: JSON.stringify(genericBody(startVersion)),
+                }
+              : spec,
+          );
         for (const [index, phase] of phases.entries()) {
           const now = PHASES[phase];
           clock.set(now);
           const seen = () => ({ world: facts.world, viewer: facts.viewer, now });
           const record = scanner(wrong, `${state.name}, ${phase}`, () => facts, now, counted);
+          const scheduleSeen = (): ScheduleSeen => ({ schedule, account: cell.viewer, now });
           for (const spec of specs) {
-            const expected = cellExpected(session, spec.operation, seen);
             const gate = gateOf(session, spec.operation);
+            const id = spec.operation.id;
+            const expected =
+              gate !== undefined || !SCHEDULE_JUDGED.has(id)
+                ? cellExpected(session, spec.operation, seen)
+                : id === "getSchedule"
+                  ? weekExpected(scheduleSeen, cell.w.club)
+                  : commandExpected(scheduleSeen, id as ScheduleCommand, cell.targets.proposal, startVersion);
             counted.cells += 1;
             counted.expectedAnswers += 1 + guessCount(spec);
             record(await cellStep(app, spec, expected));
@@ -532,6 +582,94 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             if (one.mutates) facts = await load();
             record({ ...step, problems: step.problems.map((problem) => `${problem} (${one.name})`) });
           }
+          // The schedule commands' table of bodies (schedule.ts): what the contract refuses, each refusal in
+          // its order, requests that change nothing and, in the last phase, the viewer's own choice and
+          // confirmation. Each answer is judged from the rows before the request and the rows after it.
+          // The gate is read from the account's row again: the viewer's own updates above may have finished
+          // their profile.
+          const [profile] = await db<{ state: string; age_confirmed: boolean; name: string | null }[]>`
+            SELECT state, age_confirmed_at IS NOT NULL AS age_confirmed, display_name AS name
+              FROM app.users WHERE id = ${cell.viewer}`;
+          if (profile === undefined) throw new Error("the role's account is gone");
+          const sessionNow = sessionOf({
+            state: profile.state,
+            ageConfirmed: profile.age_confirmed,
+            name: profile.name,
+          });
+          const last = index === phases.length - 1;
+          const scheduleGroups = new Map<string, string>();
+          let previous: { key: string; said: string } | undefined;
+          for (const one of scheduleCases(cell.targets.proposal, cell.viewer, last)) {
+            const command = specs.find((spec) => spec.operation.id === one.command);
+            if (command === undefined) throw new Error(`the contract has no ${one.command}`);
+            const proposalId =
+              one.proposal === "cell"
+                ? cell.targets.proposal
+                : one.proposal === "elsewhere"
+                  ? elsewhere.proposal
+                  : freshId();
+            const before = schedule;
+            const version = before.proposals.get(cell.targets.proposal)?.version ?? -1;
+            const made = one.body(before, version);
+            const sent: Spec = {
+              ...command,
+              path: { proposal_id: proposalId },
+              body: typeof made === "string" ? made : JSON.stringify(made),
+            };
+            const request = render(sent);
+            if (one.noKey === true) delete request.headers["idempotency-key"];
+            if (one.again === true && previous !== undefined) request.headers["idempotency-key"] = previous.key;
+            counted.expectedBodies += 1;
+            counted.expectedAnswers += 1;
+            const answer = await answerOf(app, request);
+            counted.bodies += 1;
+            schedule = await loadSchedule();
+            const problems: string[] = [];
+            const gate = gateOf(sessionNow, command.operation);
+            if (gate !== undefined) problems.push(...pinnedProblems(answer, gate));
+            else if (one.refused !== undefined) problems.push(...pinnedProblems(answer, one.refused));
+            else if (typeof made === "string") throw new Error(`${one.name}: a raw body needs its refusal`);
+            else {
+              const outcome = outcomeOf(before, one.command, proposalId, cell.viewer, made);
+              if (outcome !== "ok") problems.push(...pinnedProblems(answer, outcome));
+              else {
+                const viewer = viewerIn(schedule, cell.w.club, cell.viewer);
+                if (viewer === undefined) problems.push("the viewer lost the club by their own request");
+                else {
+                  problems.push(
+                    ...sameBody(
+                      "the proposal as the viewer now sees it",
+                      proposalFor(schedule, proposalId, viewer),
+                    )(answer),
+                    ...changeProblems(before, schedule, one.command, proposalId, cell.viewer, made.weekdays),
+                  );
+                }
+              }
+              // A caller the proposal doesn't include gets the same bytes whatever they asked of it (T14). The
+              // pinned neutral answer has already held each of them to one answer, so this can only fail if
+              // that pin is ever loosened: it is kept as the group's own statement, not as the proof.
+              if (one.group !== undefined && outcome !== "ok" && pinnedProblems(answer, NEUTRAL).length === 0) {
+                const first = scheduleGroups.get(one.group);
+                if (first === undefined) scheduleGroups.set(one.group, said(answer));
+                else if (first !== said(answer)) problems.push("another answer than its group's (T14)");
+              }
+            }
+            // A retry under its key is the first answer, byte for byte (T19).
+            if (one.again === true && previous !== undefined && previous.said !== said(answer))
+              problems.push("a retry under its key got another answer than the first (T19)");
+            previous = { key: request.headers["idempotency-key"] ?? "", said: said(answer) };
+            record({
+              problems: problems.map((problem) => `${one.command}: ${problem} (${one.name})`),
+              answers: [{ spec: sent, answer }],
+            });
+          }
+          // And the week again, after whatever the viewer changed.
+          const week = specs.find((spec) => spec.operation.id === "getSchedule");
+          if (week === undefined) throw new Error("the contract has no getSchedule");
+          counted.expectedAnswers += 1;
+          record(
+            await cellStep(app, week, gateOf(sessionNow, week.operation) ?? weekExpected(scheduleSeen, cell.w.club)),
+          );
         }
       }
       console.log(`${role.name}: ${String(counted.cells)} cells run, ${String(counted.answers)} answers scanned`);
@@ -568,9 +706,13 @@ describe("callers without a session, in each state of the drop and phase of the 
       const cell = await db.begin(async (tx) => {
         const w = await newWorld(plain(tx), suffix());
         const drop = await twoContributors(tx, w);
+        const proposal = await addFirstDays(tx, w);
         await state.make(tx, w, drop);
         await checkAsAtCommit(plain(tx));
-        return { w, targets: { club: w.club, drop, day: w.day, author: w.ben.interval, star: w.ana.interval } };
+        return {
+          w,
+          targets: { club: w.club, drop, day: w.day, author: w.ben.interval, star: w.ana.interval, proposal },
+        };
       });
       const facts = await factsOf([cell.w.club, elsewhere.club], null, { accounts: [cell.w.dan.user], secrets });
       const specs = operations.flatMap((operation) => specsFor(operation, cell.targets, "Bearer unused"));

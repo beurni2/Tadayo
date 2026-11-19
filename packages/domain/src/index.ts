@@ -9,6 +9,7 @@ export {
   type DayChoice,
   type DayFacts,
 } from "./authorization/days.ts";
+export { activeMember, activeMemberships } from "./authorization/member.ts";
 export { mayReadDrop, readableDrops, type FragmentSql, type QuerySql } from "./authorization/read-sql.ts";
 export { listClubs, LIST_LIMIT, type ClubListing, type ClubRow, type InvitationRow } from "./clubs/club-list.ts";
 export {
@@ -28,6 +29,14 @@ export { replayOutcome, requestHash, type IdempotentRequest, type Json } from ".
 export { accountById, createAccount, findAccount, type Account } from "./identity/account.ts";
 export { updateMe, type ProfileEdit, type UpdateMeInput } from "./identity/update-me.ts";
 export { newId } from "./ids.ts";
+export { chooseScheduleDays } from "./schedule/choose-days.ts";
+export type { ScheduleCommandInput } from "./schedule/command.ts";
+export { confirmScheduleDays } from "./schedule/confirm-days.ts";
+export { openFirstDays, type OpenedFirstDays } from "./schedule/open.ts";
+export { daysPerMember, proposedWeek, WEEKDAYS, type Weekday } from "./schedule/propose.ts";
+export { readSchedule, type CurrentWeek, type ScheduleSight } from "./schedule/read.ts";
+export { viewFor, type ProposalMember, type SlotState, type WeekFacts } from "./schedule/view.ts";
+export type { ProposalAnswer, SchedulePerson, SlotAnswer } from "./schedule/week.ts";
 export { Refused, type RefusalFacts } from "./refused.ts";
 export {
   CLOSE_TIME,

@@ -11,6 +11,7 @@ export {
   type Verifier,
 } from "./identity/token.ts";
 export { meBody } from "./identity/me.ts";
+export { personBody, proposalBody, scheduleBody, slotBody } from "./schedule/routes.ts";
 export { type LogConfig } from "./logging.ts";
 export { bearerToken, sessions, type Authenticate } from "./session.ts";
 export { startApi, type Started } from "./start.ts";

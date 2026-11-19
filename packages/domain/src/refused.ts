@@ -11,6 +11,8 @@ export interface RefusalFacts {
   readonly field?: string;
   /** The version a stale edit should have sent. */
   readonly current_version?: number;
+  /** The newer revision or proposal that replaced the one the request named. */
+  readonly current_id?: string;
 }
 
 export class Refused extends Error {

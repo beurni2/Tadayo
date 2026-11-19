@@ -22,6 +22,7 @@ import { JSON_TYPE, NO_STORE, problem } from "./answers.ts";
 import { listClubsHandler } from "./clubs/list.ts";
 import type { Deps, Handler } from "./deps.ts";
 import { getMe, updateMeHandler } from "./identity/me.ts";
+import { chooseScheduleDaysHandler, confirmScheduleDaysHandler, getScheduleHandler } from "./schedule/routes.ts";
 import { fastifyLogging, logEachRequest } from "./logging.ts";
 import { installGate } from "./session.ts";
 import { END_SECONDS } from "./shutdown.ts";
@@ -48,9 +49,15 @@ export const BODY_LIMIT = 128 * 1024;
  * A route that takes little is given less: `updateMe`'s largest valid body is under 8,500 bytes (a name of
  * 640 code points, the most the contract keeps, each outside the Basic Multilingual Plane and written as
  * two escapes, every key escaped too, and an avatar's id and the rest), so its limit is 17 KiB, the least
- * whole number of KiB that keeps that body under half of it, as `me.test.ts` asks.
+ * whole number of KiB that keeps that body under half of it, as `me.test.ts` asks. A schedule command's is
+ * a version and at most two weekdays, under 350 bytes with every key and character written as an escape, so
+ * its limit is 1 KiB (`schedule/routes.test.ts`).
  */
-const ROUTE_BODY_LIMITS: Readonly<Record<string, number>> = { updateMe: 17 * 1024 };
+const ROUTE_BODY_LIMITS: Readonly<Record<string, number>> = {
+  updateMe: 17 * 1024,
+  chooseScheduleDays: 1024,
+  confirmScheduleDays: 1024,
+};
 
 /** The most `operation`'s request body may hold, in bytes. */
 export function bodyLimitOf(operation: string): number {
@@ -104,7 +111,14 @@ export function routesOf(app: FastifyInstance): readonly string[] {
 
 /** The routes built so far, by operation id; every other operation answers the neutral not-found. */
 function handlersOf(deps: Deps): Readonly<Record<string, Handler>> {
-  return { getMe, updateMe: updateMeHandler(deps), listClubs: listClubsHandler(deps) };
+  return {
+    getMe,
+    updateMe: updateMeHandler(deps),
+    listClubs: listClubsHandler(deps),
+    getSchedule: getScheduleHandler(deps),
+    chooseScheduleDays: chooseScheduleDaysHandler(deps),
+    confirmScheduleDays: confirmScheduleDaysHandler(deps),
+  };
 }
 
 /** The app, with a route for each operation of the contract. */
