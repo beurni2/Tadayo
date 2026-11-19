@@ -437,9 +437,13 @@ final class SignInUITests: XCTestCase {
     /// which `tools/ci/ios_steps.py` doesn't collect yet, so it goes with the runner. Diagnostics
     /// only: `settle(_:above:in:)` has decided the failure and records it once this returns.
     /// First, before the tree is read, the screen: the focus ring as drawn, logged as it is on a
-    /// passing run, so the log says whether the screen or only the frame is where the frame says
-    /// (`ios` run 44447546288 on `main` at `42b828e` kept the tree, whose whole column and scroll
-    /// bar agree with the stuck frame, and no screenshot, the test ending before its first).
+    /// passing run, so the log says whether the screen or only the frame is where the frame says.
+    /// `ios` run 44447546288 on `main` at `42b828e` kept the tree and no screenshot, the test
+    /// ending before its first: in that tree the column's five elements are 190 points low,
+    /// while their container and the scroll bar's value are a passing run's, so the tree points
+    /// at stale frames; the ring as drawn would say so directly. On iOS 26.5, where every
+    /// failure has been, the log's activity is what reaches `evidence`: the screenshot is
+    /// collected from the snapshot runtime's result bundle alone (`tools/ci/ios_steps.py`).
     @MainActor private func stuck(
         _ app: XCUIApplication, _ field: XCUIElement, after read: [String]
     ) {
