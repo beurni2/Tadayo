@@ -4,9 +4,9 @@ The `ios` workflow's evidence for `42b828eff4f3f2cd38da385eb8b3a2832afd7b87` (ht
 
 - Xcode `27.2`, Swift `6.4.2`, simulator SDK `27.2`
 - iOS `27.2` on `iPhone 17`: tests `passed`, with the snapshot tests
-- iOS `26.5` on `iPhone 17`: tests `failed`, without the snapshot tests
+- iOS `26.5` on `iPhone 17`: tests `passed`, without the snapshot tests
 - References: iOS `27.2` (the ios-version file)
-- Tests: `failed`
+- Tests: `passed`
 - Odd draws: none in `logs/test-27.2.log`
 - Carries the states this branch touches; 222 snapshot(s) not carried
 
