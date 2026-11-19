@@ -247,6 +247,7 @@ final class TabsLayoutTests: XCTestCase {
         XCTAssertGreaterThan(
             ink, Int(50 * pixels.scale * pixels.scale),
             "+ Add's words aren't just under the status bar's area")
+        XCTFail("On purpose, on a check branch that never merges: keeps the scrolled drawing")
     }
 
     // MARK: Helpers
