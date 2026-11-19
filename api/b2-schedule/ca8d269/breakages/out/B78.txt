@@ -1,0 +1,41 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/services/api
+
+ ❯ src/schedule/routes.test.ts (29 tests | 1 failed) 255ms
+   ❯ the serializers against the contract's examples (T55) (4)
+     × gives the server's instant in whole seconds, rounded down 7ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 28 passed (29)
+   Start at  02:06:23
+   Duration  651ms (tests 47%, import 39%, transform 13%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/routes.test.ts > the serializers against the contract's examples (T55) > gives the server's instant in whole seconds, rounded down
+AssertionError: expected { …(2) } to deeply equal { …(2) }
+
+- Expected
++ Received
+
+@@ -3,7 +3,7 @@
+      "id": "club_1",
+      "my_membership_id": "mem_ben",
+      "name": "Sunday people",
+      "timezone": "America/New_York",
+    },
+-   "server_now": "2026-11-03T09:41:07Z",
++   "server_now": "2026-11-03T09:41:07.999999Z",
+  }
+
+ ❯ src/schedule/routes.test.ts:213:18
+    211|       proposal: null,
+    212|     }) as Body;
+    213|     expect(body).toEqual({
+       |                  ^
+    214|       server_now: "2026-11-03T09:41:07Z",
+    215|       club: { id: "club_1", name: "Sunday people", timezone: "America/…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,11 @@
+diff --git a/packages/domain/src/schedule/decide.ts b/packages/domain/src/schedule/decide.ts
+index 7294c96d..042362d8 100644
+--- a/packages/domain/src/schedule/decide.ts
++++ b/packages/domain/src/schedule/decide.ts
+@@ -72,5 +72,5 @@ export function judgeConfirmation(
+  */
+ export function everyoneConfirmed(facts: WeekFacts): boolean {
+   const active = facts.members.filter((member) => member.active);
+-  return active.length > 0 && active.every((member) => member.confirmed);
++  return active.every((member) => member.confirmed);
+ }

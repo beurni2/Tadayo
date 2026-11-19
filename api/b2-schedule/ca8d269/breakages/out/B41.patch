@@ -1,0 +1,12 @@
+diff --git a/db/migrations/0012_schedule_proposals.sql b/db/migrations/0012_schedule_proposals.sql
+index 48ee9548..04969229 100644
+--- a/db/migrations/0012_schedule_proposals.sql
++++ b/db/migrations/0012_schedule_proposals.sql
+@@ -175,7 +175,6 @@ CREATE TABLE app.schedule_proposal_days (
+   FOREIGN KEY (proposal_id, interval_id) REFERENCES app.schedule_proposal_members (proposal_id, interval_id),
+   CHECK (suggested OR held)
+ );
+-ALTER TABLE app.schedule_proposal_days ENABLE ROW LEVEL SECURITY;
+ 
+ -- BEFORE INSERT OR UPDATE OR DELETE: holds change only in an open proposal, only for a member who
+ -- hasn't confirmed (FQ57) and is still in the club (FQ102), and never onto a day already confirmed,

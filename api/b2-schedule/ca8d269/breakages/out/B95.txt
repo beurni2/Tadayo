@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/tests
+
+ ❯ src/db/schedule-proposals.test.ts (31 tests | 1 failed) 652ms
+   ❯ a proposal (spec 05; T33) (9)
+     × changes the days a member takes only while nobody has confirmed and nobody holds more 37ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 30 passed (31)
+   Start at  02:09:57
+   Duration  1.25s (tests 88%, import 7%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-proposals.test.ts > a proposal (spec 05; T33) > changes the days a member takes only while nobody has confirmed and nobody holds more
+PostgresError: app.schedule_proposals: the days a member takes in spr_WUxxs4yO7VEFuyS7CCyxvQ change only while nobody has confirmed or holds more
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ src/db/schedule-proposals.test.ts:299:15
+    297|       );
+    298|       await release(tx, pair.proposal, member(pair, 0), "thursday");
+    299|       await tx`UPDATE app.schedule_proposals SET days_per_member = 1 W…
+       |               ^
+    300|       await checkAsAtCommit(tx);
+    301|       // A member has confirmed one day: the number can't become two u…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

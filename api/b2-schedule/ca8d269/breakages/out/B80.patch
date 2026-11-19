@@ -1,0 +1,22 @@
+diff --git a/packages/domain/src/schedule/command.ts b/packages/domain/src/schedule/command.ts
+index 2bcdf2ab..cd88284a 100644
+--- a/packages/domain/src/schedule/command.ts
++++ b/packages/domain/src/schedule/command.ts
+@@ -107,6 +107,8 @@ export async function scheduleCommand(
+     },
+   };
+ 
++  const first = await reserveReceipt(tx, receipt, await clock.sample(tx));
++  if (first !== null) return first.replay;
+   // 1. The proposal's club, and the caller's membership of it.
+   const [named] = await bound(tx)`SELECT club_id FROM app.schedule_proposals WHERE id = ${proposalId}`;
+   const clubId = named?.["club_id"];
+@@ -118,8 +120,6 @@ export async function scheduleCommand(
+   if (included === undefined) throw new Refused("NOT_FOUND");
+ 
+   // 2. The receipt, then the club's row.
+-  const first = await reserveReceipt(tx, receipt, await clock.sample(tx));
+-  if (first !== null) return first.replay;
+   await bound(tx)`SELECT id FROM app.clubs WHERE id = ${clubId} FOR UPDATE`;
+ 
+   // 3. Who is asking.

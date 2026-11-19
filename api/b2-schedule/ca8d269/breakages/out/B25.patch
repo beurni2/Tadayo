@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0012_schedule_proposals.sql b/db/migrations/0012_schedule_proposals.sql
+index 48ee9548..8a7173dc 100644
+--- a/db/migrations/0012_schedule_proposals.sql
++++ b/db/migrations/0012_schedule_proposals.sql
+@@ -95,7 +95,7 @@ END
+ $$;
+ CREATE TRIGGER schedule_proposals_keep BEFORE UPDATE ON app.schedule_proposals
+   FOR EACH ROW EXECUTE FUNCTION app.keep_columns(
+-    'id', 'club_id', 'reason', 'effective_from', 'schedule_version_id', 'created_at');
++    'id', 'club_id', 'effective_from', 'schedule_version_id', 'created_at');
+ CREATE TRIGGER schedule_proposals_guard BEFORE UPDATE ON app.schedule_proposals
+   FOR EACH ROW EXECUTE FUNCTION app.schedule_proposals_guard();
+ CREATE TRIGGER schedule_proposals_no_delete BEFORE DELETE ON app.schedule_proposals

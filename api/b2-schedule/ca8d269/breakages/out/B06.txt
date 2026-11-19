@@ -1,0 +1,105 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/packages/domain
+
+ ❯ src/schedule/view.test.ts (14 tests | 3 failed) 1110ms
+   ❯ what each member sees of the first days (the contract's examples; FQ46, FQ48, FQ55, FQ78) (12)
+     × G04-contested-other: Sam sees Friday contested, with no names and no count 8ms
+     × chooseScheduleDays' `chosen`: Ben chose Monday, and Friday now has no names for Ben 5ms
+   ❯ what no view of the first days ever carries (T55, T33; FQ46, FQ48) (2)
+     × holds in every world, for every viewer 1089ms
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  3 failed | 55 passed (58)
+   Start at  01:56:49
+   Duration  1.36s (tests 91%, import 6%, transform 1%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/view.test.ts > what each member sees of the first days (the contract's examples; FQ46, FQ48, FQ55, FQ78) > G04-contested-other: Sam sees Friday contested, with no names and no count
+AssertionError: expected { slots: [ { …(3) }, …(5) ], …(2) } to deeply equal { slots: [ { …(3) }, …(5) ], …(2) }
+
+- Expected
++ Received
+
+@@ -24,11 +24,12 @@
+        "state": "yours",
+        "suggested": true,
+        "weekday": "thursday",
+      },
+      {
+-       "state": "no_reveal",
++       "heldBy": "ben",
++       "state": "available",
+        "suggested": false,
+        "weekday": "friday",
+      },
+      {
+        "heldBy": "nina",
+
+ ❯ src/schedule/view.test.ts:77:44
+     75|
+     76|   it("G04-contested-other: Sam sees Friday contested, with no names an…
+     77|     expect(viewFor("sam", CONFLICT_THREE)).toEqual({
+       |                                            ^
+     78|       slots: slots(["thursday"], {
+     79|         monday: ["available"],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/schedule/view.test.ts > what each member sees of the first days (the contract's examples; FQ46, FQ48, FQ55, FQ78) > chooseScheduleDays' `chosen`: Ben chose Monday, and Friday now has no names for Ben
+AssertionError: expected [ { weekday: 'monday', …(2) }, …(5) ] to deeply equal [ { weekday: 'monday', …(2) }, …(5) ]
+
+- Expected
++ Received
+
+@@ -20,11 +20,12 @@
+      "state": "available",
+      "suggested": false,
+      "weekday": "thursday",
+    },
+    {
+-     "state": "no_reveal",
++     "heldBy": "alex",
++     "state": "available",
+      "suggested": false,
+      "weekday": "friday",
+    },
+    {
+      "heldBy": "nina",
+
+ ❯ src/schedule/view.test.ts:107:70
+    105|
+    106|   it("chooseScheduleDays' `chosen`: Ben chose Monday, and Friday now h…
+    107|     expect(viewFor("ben", sundayPeople({ alex: ["friday"] })).slots).t…
+       |                                                                      ^
+    108|       slots(["monday"], {
+    109|         monday: ["yours"],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/schedule/view.test.ts > what no view of the first days ever carries (T55, T33; FQ46, FQ48) > holds in every world, for every viewer
+AssertionError: expected [ …(5) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "monday's state: a in [{\"id\":\"a\",\"suggested\":[\"monday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"b\",\"suggested\":[\"tuesday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"c\",\"suggested\":[\"wednesday\"],\"held\":[\"monday\"],\"confirmed\":false,\"active\":true},{\"id\":\"d\",\"suggested\":[\"monday\"],\"held\":[\"monday\"],\"confirmed\":false,\"active\":true}]",
++   "held_by: a in [{\"id\":\"a\",\"suggested\":[\"monday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"b\",\"suggested\":[\"tuesday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"c\",\"suggested\":[\"wednesday\"],\"held\":[\"monday\"],\"confirmed\":false,\"active\":true},{\"id\":\"d\",\"suggested\":[\"monday\"],\"held\":[\"monday\"],\"confirmed\":false,\"active\":true}]",
++   "a contested day's fields: a in [{\"id\":\"a\",\"suggested\":[\"monday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"b\",\"suggested\":[\"tuesday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"c\",\"suggested\":[\"wednesday\"],\"held\":[\"monday\"],\"confirmed\":false,\"active\":true},{\"id\":\"d\",\"suggested\":[\"monday\"],\"held\":[\"monday\"],\"confirmed\":false,\"active\":true}]",
++   "monday's state: b in [{\"id\":\"a\",\"suggested\":[\"monday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"b\",\"suggested\":[\"tuesday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"c\",\"suggested\":[\"wednesday\"],\"held\":[\"monday\"],\"confirmed\":false,\"active\":true},{\"id\":\"d\",\"suggested\":[\"monday\"],\"held\":[\"monday\"],\"confirmed\":false,\"active\":true}]",
++   "held_by: b in [{\"id\":\"a\",\"suggested\":[\"monday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"b\",\"suggested\":[\"tuesday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"c\",\"suggested\":[\"wednesday\"],\"held\":[\"monday\"],\"confirmed\":false,\"active\":true},{\"id\":\"d\",\"suggested\":[\"monday\"],\"held\":[\"monday\"],\"confirmed\":false,\"active\":true}]",
++ ]
+
+ ❯ src/schedule/view.test.ts:343:22
+    341|       }
+    342|     }
+    343|     expect(problems).toEqual([]);
+       |                      ^
+    344|     expect(views).toBeGreaterThan(10_000);
+    345|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

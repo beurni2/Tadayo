@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/view.ts b/packages/domain/src/schedule/view.ts
+index 650dfb1b..f546a4aa 100644
+--- a/packages/domain/src/schedule/view.ts
++++ b/packages/domain/src/schedule/view.ts
+@@ -100,7 +100,7 @@ export function viewFor(viewerId: string, facts: WeekFacts): ProposalView {
+         ? { weekday, state: "yours", suggested }
+         : { weekday, state: "clash", holders: holders.map((member) => member.id), suggested };
+     }
+-    if (holders.length >= 2) return { weekday, state: "no_reveal", suggested };
++    if (holders.length >= 99) return { weekday, state: "no_reveal", suggested };
+     const [other] = holders;
+     return {
+       weekday,

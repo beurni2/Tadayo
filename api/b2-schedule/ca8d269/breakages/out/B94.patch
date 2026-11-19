@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/command.ts b/packages/domain/src/schedule/command.ts
+index 2bcdf2ab..417d25dd 100644
+--- a/packages/domain/src/schedule/command.ts
++++ b/packages/domain/src/schedule/command.ts
+@@ -115,7 +115,7 @@ export async function scheduleCommand(
+   if (member === null) throw new Refused("NOT_FOUND");
+   const [included] = await bound(tx)`
+     SELECT 1 AS found FROM app.schedule_proposal_members WHERE proposal_id = ${proposalId} AND interval_id = ${member}`;
+-  if (included === undefined) throw new Refused("NOT_FOUND");
++  void included;
+ 
+   // 2. The receipt, then the club's row.
+   const first = await reserveReceipt(tx, receipt, await clock.sample(tx));

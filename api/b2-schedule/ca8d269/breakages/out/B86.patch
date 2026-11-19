@@ -1,0 +1,12 @@
+diff --git a/db/migrations/0012_schedule_proposals.sql b/db/migrations/0012_schedule_proposals.sql
+index 48ee9548..a81d6f89 100644
+--- a/db/migrations/0012_schedule_proposals.sql
++++ b/db/migrations/0012_schedule_proposals.sql
+@@ -340,7 +340,4 @@ BEGIN
+   RETURN NULL;
+ END
+ $$;
+-CREATE CONSTRAINT TRIGGER schedule_assignment_confirmed_guard AFTER INSERT ON app.schedule_assignments
+-  DEFERRABLE INITIALLY DEFERRED
+-  FOR EACH ROW EXECUTE FUNCTION app.schedule_assignment_confirmed_guard();
+ CREATE INDEX schedule_proposals_by_version ON app.schedule_proposals (schedule_version_id);

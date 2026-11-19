@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/decide.ts b/packages/domain/src/schedule/decide.ts
+index 7294c96d..542917a0 100644
+--- a/packages/domain/src/schedule/decide.ts
++++ b/packages/domain/src/schedule/decide.ts
+@@ -57,7 +57,7 @@ export function judgeConfirmation(
+   if (caller.confirmed) return "NOT_ALLOWED";
+   // Exactly the days the caller holds, so a confirmation never confirms days the caller didn't see.
+   const held = WEEKDAYS.filter((weekday) => caller.held.includes(weekday));
+-  if (held.length !== days.length || held.some((weekday, index) => weekday !== days[index])) return "NOT_ALLOWED";
++  
+   if (days.length !== facts.daysPerMember) return "NOT_ALLOWED";
+   for (const weekday of days) {
+     if (confirmerOf(facts, weekday) !== undefined) return "NOT_ALLOWED";

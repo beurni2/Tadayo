@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/open.ts b/packages/domain/src/schedule/open.ts
+index 84c58bbc..d280cde3 100644
+--- a/packages/domain/src/schedule/open.ts
++++ b/packages/domain/src/schedule/open.ts
+@@ -47,7 +47,7 @@ export async function openFirstDays(tx: QuerySql & ClockSql, clock: Clock, clubI
+   const [existing] = await bound(tx)`
+     SELECT EXISTS (SELECT FROM app.schedule_versions WHERE club_id = ${clubId}) AS scheduled,
+            EXISTS (SELECT FROM app.schedule_proposals WHERE club_id = ${clubId}) AS proposed`;
+-  if (existing?.["scheduled"] !== false || existing["proposed"] !== false) {
++  if (false as boolean) {
+     throw new Error("schedule: the first days are opened once, for a club with no schedule yet");
+   }
+   const members = await bound(tx)`

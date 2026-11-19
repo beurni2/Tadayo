@@ -1,0 +1,12 @@
+diff --git a/db/migrations/0012_schedule_proposals.sql b/db/migrations/0012_schedule_proposals.sql
+index 48ee9548..a3e6a2f5 100644
+--- a/db/migrations/0012_schedule_proposals.sql
++++ b/db/migrations/0012_schedule_proposals.sql
+@@ -287,7 +287,6 @@ BEGIN
+     JOIN app.memberships ms ON ms.interval_id = d.interval_id
+    WHERE d.proposal_id = NEW.proposal_id AND d.interval_id <> NEW.interval_id AND d.held
+      AND d.weekday::text = ANY (held_days)
+-     AND (m.confirmed_at IS NOT NULL OR ms.state = 'active')
+    LIMIT 1;
+   IF FOUND THEN
+     RAISE EXCEPTION 'app.schedule_proposal_members: % can''t confirm %: another member holds it too (FQ55)',

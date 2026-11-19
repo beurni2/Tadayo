@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0012_schedule_proposals.sql b/db/migrations/0012_schedule_proposals.sql
+index 48ee9548..5a77e216 100644
+--- a/db/migrations/0012_schedule_proposals.sql
++++ b/db/migrations/0012_schedule_proposals.sql
+@@ -138,7 +138,7 @@ BEGIN
+     RAISE EXCEPTION 'app.schedule_proposal_members: only an open proposal gains a member or a confirmation'
+       USING ERRCODE = 'integrity_constraint_violation';
+   END IF;
+-  IF TG_OP = 'UPDATE' AND NOT EXISTS (SELECT FROM app.memberships
++  IF false AND TG_OP = 'UPDATE' AND NOT EXISTS (SELECT FROM app.memberships
+                                        WHERE interval_id = NEW.interval_id AND state = 'active') THEN
+     RAISE EXCEPTION 'app.schedule_proposal_members: % is no longer a member, and confirms nothing (FQ102)', NEW.interval_id
+       USING ERRCODE = 'integrity_constraint_violation';

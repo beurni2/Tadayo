@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/tests
+
+ ❯ src/db/schedule-commands.test.ts (53 tests | 1 failed) 2083ms
+   ❯ opening the first days (spec 04, 05; FQ48) (8)
+     × leaves out a member who has left before the opening, and counts the club by who is still in it 16ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 52 passed (53)
+   Start at  02:03:24
+   Duration  2.40s (tests 96%, import 2%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-commands.test.ts > opening the first days (spec 04, 05; FQ48) > leaves out a member who has left before the opening, and counts the club by who is still in it
+PostgresError: app.schedule_proposal_days: mem_isnyMlymsv5fjN3_aeZpjw is no longer a member, and holds nothing (FQ102)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ openFirstDays ../packages/domain/src/schedule/open.ts:83:22
+     81|       VALUES (${proposalId}, ${clubId}, ${interval})`;
+     82|     for (const weekday of days) {
+     83|       await bound(tx)`
+       |                      ^
+     84|         INSERT INTO app.schedule_proposal_days (proposal_id, interval_…
+     85|         VALUES (${proposalId}, ${interval}, ${weekday}::app.weekday, t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

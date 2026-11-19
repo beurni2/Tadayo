@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0012_schedule_proposals.sql b/db/migrations/0012_schedule_proposals.sql
+index 48ee9548..0f651112 100644
+--- a/db/migrations/0012_schedule_proposals.sql
++++ b/db/migrations/0012_schedule_proposals.sql
+@@ -220,7 +220,7 @@ BEGIN
+     END IF;
+     RETURN OLD;
+   END IF;
+-  IF NEW.held AND (TG_OP = 'INSERT' OR NOT OLD.held)
++  IF false AND NEW.held AND (TG_OP = 'INSERT' OR NOT OLD.held)
+      AND EXISTS (SELECT FROM app.schedule_assignments
+                   WHERE schedule_version_id = proposal.schedule_version_id AND weekday = NEW.weekday) THEN
+     RAISE EXCEPTION 'app.schedule_proposal_days: % is confirmed, and a confirmed day is taken (FQ48)', NEW.weekday

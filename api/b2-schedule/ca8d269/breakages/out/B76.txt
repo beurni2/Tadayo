@@ -1,0 +1,155 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the author as its account and its row say, and leaks nothing the scanner can find
+author: 2016 cells run, 35077 answers scanned
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+star: 2016 cells run, 35077 answers scanned
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member who joined after the commit (T8) as its account and its row say, and leaks nothing the scanner can find
+member who joined after the commit (T8): 2016 cells run, 35077 answers scanned
+
+ ❯ src/privacy/matrix.test.ts (14 tests | 3 failed | 11 skipped) 72788ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (12)
+     × answers the author as its account and its row say, and leaks nothing the scanner can find 25143ms
+     × answers the star as its account and its row say, and leaks nothing the scanner can find 23880ms
+     × answers the member who joined after the commit (T8) as its account and its row say, and leaks nothing the scanner can find 23591ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 11 skipped (14)
+   Start at  02:05:07
+   Duration  73.68s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the author as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 3658, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 3658,
++   "first": [
++     "active, collecting: chooseScheduleDays: status 500",
++     "active, collecting: chooseScheduleDays: reason \"Internal Server Error\"",
++     "active, collecting: chooseScheduleDays: body \"\"",
++     "active, collecting: chooseScheduleDays: content-type: undefined",
++     "active, collecting: chooseScheduleDays: content-length: 0",
++     "active, collecting, chooseScheduleDays: shape at status: 500 isn't an answer chooseScheduleDays declares",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 500",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"Internal Server Error\"",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"\"",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-type: undefined",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 0",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 500",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"Internal Server Error\"",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"\"",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-type: undefined",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 0",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 500",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"Internal Server Error\"",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"\"",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-type: undefined",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 0",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 500",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"Internal Server Error\"",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"\"",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-type: undefined",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 0",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: status 500",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: reason \"Internal Server Error\"",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: body \"\"",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: content-type: undefined",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: content-length: 0",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: status 500",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: reason \"Internal Server Error\"",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: body \"\"",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: content-type: undefined",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: content-length: 0",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: status 500",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: reason \"Internal Server Error\"",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: body \"\"",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: content-type: undefined",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:676:66
+    674|       }
+    675|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    676|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    677|       // Every cell ran: the contract's 72 requests a world (each oper…
+    678|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member who joined after the commit (T8) as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 4018, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 4018,
++   "first": [
++     "active, collecting: chooseScheduleDays: status 500",
++     "active, collecting: chooseScheduleDays: reason \"Internal Server Error\"",
++     "active, collecting: chooseScheduleDays: body \"\"",
++     "active, collecting: chooseScheduleDays: content-type: undefined",
++     "active, collecting: chooseScheduleDays: content-length: 0",
++     "active, collecting, chooseScheduleDays: shape at status: 500 isn't an answer chooseScheduleDays declares",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 500",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"Internal Server Error\"",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"\"",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-type: undefined",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 0",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 500",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"Internal Server Error\"",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"\"",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-type: undefined",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 0",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 500",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"Internal Server Error\"",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"\"",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-type: undefined",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 0",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: status 500",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: reason \"Internal Server Error\"",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: body \"\"",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-type: undefined",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: content-length: 0",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: status 500",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: reason \"Internal Server Error\"",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: body \"\"",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: content-type: undefined",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: content-length: 0",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: status 500",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: reason \"Internal Server Error\"",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: body \"\"",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: content-type: undefined",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: content-length: 0",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: status 500",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: reason \"Internal Server Error\"",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: body \"\"",
++     "active, collecting: chooseScheduleDays, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: content-type: undefined",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:676:66
+    674|       }
+    675|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    676|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    677|       // Every cell ran: the contract's 72 requests a world (each oper…
+    678|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+

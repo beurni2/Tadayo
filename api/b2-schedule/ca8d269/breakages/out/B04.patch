@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/first-date.ts b/packages/domain/src/schedule/first-date.ts
+index c8b6d598..2bc69c4a 100644
+--- a/packages/domain/src/schedule/first-date.ts
++++ b/packages/domain/src/schedule/first-date.ts
+@@ -8,7 +8,7 @@
+ import { REVEAL_TIME, clubTimeZone, resolveCivilTime } from "../time/civil.ts";
+ import { WEEKDAYS, type Weekday } from "./propose.ts";
+ 
+-const LEAD_NANOSECONDS = 24n * 3_600_000_000_000n;
++const LEAD_NANOSECONDS = 23n * 3_600_000_000_000n;
+ 
+ /** The first local date of `weekday` in `zone` whose 7 AM is at least 24 elapsed hours after `confirmedAt`. */
+ export function firstDate(weekday: Weekday, confirmedAt: Temporal.Instant, zone: string): Temporal.PlainDate {

@@ -1,0 +1,113 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/packages/domain
+
+ ❯ src/schedule/view.test.ts (14 tests | 3 failed) 1012ms
+   ❯ what each member sees of the first days (the contract's examples; FQ46, FQ48, FQ55, FQ78) (12)
+     × getSchedule's `first_days_confirmed`: Maya, who confirmed, sees no name on a day nobody has confirmed 8ms
+     × confirmScheduleDays' `first_day_confirmed`: Ben's Monday has its date, and Friday names nobody 2ms
+   ❯ what no view of the first days ever carries (T55, T33; FQ46, FQ48) (2)
+     × holds in every world, for every viewer 984ms
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  3 failed | 55 passed (58)
+   Start at  01:56:47
+   Duration  1.26s (tests 90%, import 7%, transform 2%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/view.test.ts > what each member sees of the first days (the contract's examples; FQ46, FQ48, FQ55, FQ78) > getSchedule's `first_days_confirmed`: Maya, who confirmed, sees no name on a day nobody has confirmed
+AssertionError: expected { slots: [ { …(4) }, …(5) ], …(2) } to deeply equal { slots: [ { …(3) }, …(5) ], …(2) }
+
+- Expected
++ Received
+
+@@ -3,10 +3,11 @@
+      "tuesday",
+    ],
+    "myState": "confirmed",
+    "slots": [
+      {
++       "heldBy": "ben",
+        "state": "available",
+        "suggested": false,
+        "weekday": "monday",
+      },
+      {
+@@ -28,10 +29,11 @@
+        "state": "taken",
+        "suggested": false,
+        "weekday": "thursday",
+      },
+      {
++       "heldBy": "debby",
+        "state": "available",
+        "suggested": false,
+        "weekday": "friday",
+      },
+      {
+
+ ❯ src/schedule/view.test.ts:143:63
+    141|
+    142|   it("getSchedule's `first_days_confirmed`: Maya, who confirmed, sees …
+    143|     expect(viewFor("maya", sundayPeople({}, FOUR_CONFIRMED))).toEqual({
+       |                                                               ^
+    144|       slots: slots(["tuesday"], {
+    145|         ...TAKEN_FOUR,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/schedule/view.test.ts > what each member sees of the first days (the contract's examples; FQ46, FQ48, FQ55, FQ78) > confirmScheduleDays' `first_day_confirmed`: Ben's Monday has its date, and Friday names nobody
+AssertionError: expected { slots: [ { …(4) }, …(5) ], …(2) } to deeply equal { slots: [ { …(4) }, …(5) ], …(2) }
+
+- Expected
++ Received
+
+@@ -30,10 +30,11 @@
+        "state": "taken",
+        "suggested": false,
+        "weekday": "thursday",
+      },
+      {
++       "heldBy": "debby",
+        "state": "available",
+        "suggested": false,
+        "weekday": "friday",
+      },
+      {
+
+ ❯ src/schedule/view.test.ts:156:88
+    154|
+    155|   it("confirmScheduleDays' `first_day_confirmed`: Ben's Monday has its…
+    156|     expect(viewFor("ben", sundayPeople({}, { ...FOUR_CONFIRMED, ben: "…
+       |                                                                                        ^
+    157|       slots: slots(["monday"], { ...TAKEN_FOUR, monday: ["yours", unde…
+    158|       myDays: ["monday"],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/schedule/view.test.ts > what no view of the first days ever carries (T55, T33; FQ46, FQ48) > holds in every world, for every viewer
+AssertionError: expected [ …(5) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "held_by: d in [{\"id\":\"a\",\"suggested\":[\"monday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"b\",\"suggested\":[\"tuesday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"c\",\"suggested\":[\"wednesday\"],\"held\":[\"monday\"],\"confirmed\":false,\"active\":true},{\"id\":\"d\",\"suggested\":[\"monday\"],\"held\":[\"tuesday\"],\"confirmed\":true,\"active\":true}]",
++   "held_by: d in [{\"id\":\"a\",\"suggested\":[\"monday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"b\",\"suggested\":[\"tuesday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"c\",\"suggested\":[\"wednesday\"],\"held\":[\"monday\"],\"confirmed\":false,\"active\":true},{\"id\":\"d\",\"suggested\":[\"monday\"],\"held\":[\"wednesday\"],\"confirmed\":true,\"active\":true}]",
++   "held_by: c in [{\"id\":\"a\",\"suggested\":[\"monday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"b\",\"suggested\":[\"tuesday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"c\",\"suggested\":[\"wednesday\"],\"held\":[\"monday\"],\"confirmed\":true,\"active\":true},{\"id\":\"d\",\"suggested\":[\"monday\"],\"held\":[\"tuesday\"],\"confirmed\":false,\"active\":true}]",
++   "held_by: c in [{\"id\":\"a\",\"suggested\":[\"monday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"b\",\"suggested\":[\"tuesday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"c\",\"suggested\":[\"wednesday\"],\"held\":[\"monday\"],\"confirmed\":true,\"active\":true},{\"id\":\"d\",\"suggested\":[\"monday\"],\"held\":[\"wednesday\"],\"confirmed\":false,\"active\":true}]",
++   "held_by: d in [{\"id\":\"a\",\"suggested\":[\"monday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"b\",\"suggested\":[\"tuesday\"],\"held\":[],\"confirmed\":false,\"active\":true},{\"id\":\"c\",\"suggested\":[\"wednesday\"],\"held\":[\"tuesday\"],\"confirmed\":false,\"active\":true},{\"id\":\"d\",\"suggested\":[\"monday\"],\"held\":[\"monday\"],\"confirmed\":true,\"active\":true}]",
++ ]
+
+ ❯ src/schedule/view.test.ts:343:22
+    341|       }
+    342|     }
+    343|     expect(problems).toEqual([]);
+       |                      ^
+    344|     expect(views).toBeGreaterThan(10_000);
+    345|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

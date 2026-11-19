@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0012_schedule_proposals.sql b/db/migrations/0012_schedule_proposals.sql
+index 48ee9548..33c3e63b 100644
+--- a/db/migrations/0012_schedule_proposals.sql
++++ b/db/migrations/0012_schedule_proposals.sql
+@@ -82,7 +82,7 @@ BEGIN
+   END IF;
+   IF NEW.days_per_member <> OLD.days_per_member AND (
+        EXISTS (SELECT FROM app.schedule_proposal_members
+-                WHERE proposal_id = NEW.id AND confirmed_at IS NOT NULL)
++                WHERE proposal_id = NEW.id AND false)
+        OR EXISTS (SELECT FROM app.schedule_proposal_days d
+                     JOIN app.memberships ms ON ms.interval_id = d.interval_id
+                    WHERE d.proposal_id = NEW.id AND d.held AND ms.state = 'active'

@@ -1,0 +1,42 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/tests
+
+ ❯ src/db/schedule-proposals.test.ts (31 tests | 2 failed) 11313ms
+   ❯ a hold and a confirmation of the same day, at once (T6; FQ48, FQ55) (3)
+     × puts two changes of one member's holds in one order, so the count at commit sees both (spec 05) 5001ms
+     × refuses the confirmation that waited for the hold: another member holds the day too 5001ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 29 passed (31)
+   Start at  02:09:27
+   Duration  11.93s (tests 99%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-proposals.test.ts > a hold and a confirmation of the same day, at once (T6; FQ48, FQ55) > puts two changes of one member's holds in one order, so the count at commit sees both (spec 05)
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/db/schedule-proposals.test.ts:849:3
+    847|   });
+    848|
+    849|   it("puts two changes of one member's holds in one order, so the coun…
+       |   ^
+    850|     const w = await app.begin(async (tx) => {
+    851|       const made = await firstDays(tx, 4);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/schedule-proposals.test.ts > a hold and a confirmation of the same day, at once (T6; FQ48, FQ55) > refuses the confirmation that waited for the hold: another member holds the day too
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/db/schedule-proposals.test.ts:869:3
+    867|   });
+    868|
+    869|   it("refuses the confirmation that waited for the hold: another membe…
+       |   ^
+    870|     const w = await app.begin((tx) => firstDays(tx, 4));
+    871|     const [taken, confirmed] = await oneBehindTheOther(
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

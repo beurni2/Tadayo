@@ -1,0 +1,55 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/tests
+
+ ❯ src/db/schedule-commands.test.ts (53 tests | 1 failed) 2091ms
+   ❯ choosing days (FQ46, FQ48, FQ55; T33) (6)
+     × frees the hold of a member who left, and shows a confirmed member who left by the name they left with (FQ75, FQ102) 49ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 52 passed (53)
+   Start at  02:04:54
+   Duration  2.46s (tests 95%, import 3%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-commands.test.ts > choosing days (FQ46, FQ48, FQ55; T33) > frees the hold of a member who left, and shows a confirmed member who left by the name they left with (FQ75, FQ102)
+AssertionError: expected { weekday: 'monday', …(3) } to deeply equal { weekday: 'monday', …(2) }
+
+- Expected
++ Received
+
+  {
+-   "state": "yours",
++   "holders": [
++     {
++       "avatarVersion": null,
++       "displayName": "Ben",
++       "membershipId": "mem_WL7E_ZQob5_TbIC_jBUfFQ",
++     },
++     {
++       "avatarVersion": null,
++       "displayName": "Alex",
++       "membershipId": "mem_8t-rVg1U_T20bS97dLPCTg",
++     },
++   ],
++   "state": "clash",
+    "suggested": true,
+    "weekday": "monday",
+  }
+
+ ❯ src/db/schedule-commands.test.ts:588:63
+    586|       const ben = await sees(tx, clock, w, 0);
+    587|       // Alex holds nothing now, so Monday is Ben's alone again.
+    588|       expect(slot(ben?.proposal as ProposalAnswer, "monday")).toEqual({
+       |                                                               ^
+    589|         weekday: "monday",
+    590|         state: "yours",
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:575:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

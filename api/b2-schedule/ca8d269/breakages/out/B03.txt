@@ -1,0 +1,49 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/packages/domain
+
+ ❯ src/schedule/first-date.test.ts (10 tests | 2 failed) 771ms
+   ❯ a confirmed day's first date (FQ79) (10)
+     × opens on a date whose 7 AM is exactly 24 hours after the confirmation 7ms
+     ❯ across a clock change in the 24 hours before a reveal day's 7 AM (Africa/Cairo) (3)
+       × opens when the clocks go back: 7 AM to 7 AM is 25 hours, and 8 AM to 7 AM exactly 24 1ms
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  2 failed | 56 passed (58)
+   Start at  01:56:44
+   Duration  1.19s (tests 91%, import 7%, transform 1%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/first-date.test.ts > a confirmed day's first date (FQ79) > opens on a date whose 7 AM is exactly 24 hours after the confirmation
+AssertionError: expected '2026-11-16' to be '2026-11-09' // Object.is equality
+
+Expected: "2026-11-09"
+Received: "2026-11-16"
+
+ ❯ src/schedule/first-date.test.ts:32:57
+     30|   it("opens on a date whose 7 AM is exactly 24 hours after the confirm…
+     31|     // Sunday 8 November 2026, 7 AM in New York.
+     32|     expect(first("monday", "2026-11-08T12:00:00Z", NY)).toBe("2026-11-…
+       |                                                         ^
+     33|   });
+     34|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/schedule/first-date.test.ts > a confirmed day's first date (FQ79) > across a clock change in the 24 hours before a reveal day's 7 AM (Africa/Cairo) > opens when the clocks go back: 7 AM to 7 AM is 25 hours, and 8 AM to 7 AM exactly 24
+AssertionError: expected '2026-11-06' to be '2026-10-30' // Object.is equality
+
+Expected: "2026-10-30"
+Received: "2026-11-06"
+
+ ❯ src/schedule/first-date.test.ts:63:87
+     61|     it("opens when the clocks go back: 7 AM to 7 AM is 25 hours, and 8…
+     62|       expect(firstDate("friday", thursdayAutumn, CAIRO).toString()).to…
+     63|       expect(firstDate("friday", thursdayAutumn.add({ hours: 1 }), CAI…
+       |                                                                                       ^
+     64|       expect(firstDate("friday", thursdayAutumn.add({ hours: 1, second…
+     65|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

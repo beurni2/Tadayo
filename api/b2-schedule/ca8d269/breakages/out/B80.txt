@@ -1,0 +1,62 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/tests
+
+ ❯ src/db/schedule-commands.test.ts (53 tests | 2 failed) 2225ms
+   ❯ one commit per key (T19) (5)
+     × refuses another request under a used key with IDEMPOTENCY_CONFLICT: other days and another version, another proposal's path, each alone; a path that names no proposal is NOT_FOUND first 45ms
+     × gives a retry no stored answer once its sender has nothing of the club: NOT_FOUND for a former member, an account being deleted and a suspended club, whatever the body (T14; FQ112) 48ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 51 passed (53)
+   Start at  02:07:35
+   Duration  2.59s (tests 96%, import 2%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-commands.test.ts > one commit per key (T19) > refuses another request under a used key with IDEMPOTENCY_CONFLICT: other days and another version, another proposal's path, each alone; a path that names no proposal is NOT_FOUND first
+AssertionError: expected { code: 'IDEMPOTENCY_CONFLICT', …(1) } to deeply equal { code: 'NOT_FOUND', facts: {} }
+
+- Expected
++ Received
+
+  {
+-   "code": "NOT_FOUND",
++   "code": "IDEMPOTENCY_CONFLICT",
+    "facts": {},
+  }
+
+ ❯ src/db/schedule-commands.test.ts:977:99
+    975|       expect(await refusal(choose(tx, clock, w, 0, ["friday"], { key, …
+    976|       // No proposal of the caller's is found before the key is looked…
+    977|       expect(await refusal(choose(tx, clock, w, 0, ["friday"], { key, …
+       |                                                                                                   ^
+    978|         code: "NOT_FOUND",
+    979|         facts: {},
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:968:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > one commit per key (T19) > gives a retry no stored answer once its sender has nothing of the club: NOT_FOUND for a former member, an account being deleted and a suspended club, whatever the body (T14; FQ112)
+Error: the request wasn't refused
+ ❯ refusal src/db/schedule-commands.test.ts:175:9
+    173|     throw error;
+    174|   }
+    175|   throw new Error("the request wasn't refused");
+       |         ^
+    176| }
+    177|
+ ❯ nothing src/db/schedule-commands.test.ts:1030:16
+ ❯ src/db/schedule-commands.test.ts:1037:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:1008:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

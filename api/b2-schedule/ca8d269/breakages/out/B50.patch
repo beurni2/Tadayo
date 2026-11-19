@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/idempotency/receipt.ts b/packages/domain/src/idempotency/receipt.ts
+index 8a124b6e..2e077ea3 100644
+--- a/packages/domain/src/idempotency/receipt.ts
++++ b/packages/domain/src/idempotency/receipt.ts
+@@ -50,7 +50,7 @@ export async function reserveReceipt(
+   if (receipt === undefined || receipt["state"] !== "completed" || typeof receipt["request_hash"] !== "string") {
+     throw new Error("idempotency: the receipt of a replayed key is gone");
+   }
+-  if (replayOutcome(receipt["request_hash"], request) !== "replay") throw new Refused("IDEMPOTENCY_CONFLICT");
++  
+   return { replay: receipt["response_body"] as Json };
+ }
+ 

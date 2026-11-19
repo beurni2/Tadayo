@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/command.ts b/packages/domain/src/schedule/command.ts
+index 2bcdf2ab..c7e2840e 100644
+--- a/packages/domain/src/schedule/command.ts
++++ b/packages/domain/src/schedule/command.ts
+@@ -141,7 +141,7 @@ export async function scheduleCommand(
+   const at = await clock.sample(tx);
+ 
+   // 7. The rule.
+-  if (proposal.state !== "open") throw new Refused("NOT_ALLOWED");
++
+   await rule({ tx, at, week, proposal, callerId });
+ 
+   // 8. The answer.

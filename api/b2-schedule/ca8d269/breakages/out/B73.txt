@@ -1,0 +1,40 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/services/api
+
+ ❯ src/schedule/routes.test.ts (29 tests | 2 failed) 252ms
+   ❯ what the two commands refuse before any transaction (6)
+     × chooseScheduleDays names the Idempotency-Key when it is missing or isn't a UUID, whatever else is wrong 89ms
+     × confirmScheduleDays names the Idempotency-Key when it is missing or isn't a UUID, whatever else is wrong 12ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 27 passed (29)
+   Start at  02:05:04
+   Duration  630ms (tests 49%, import 36%, transform 14%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/routes.test.ts > what the two commands refuse before any transaction > chooseScheduleDays names the Idempotency-Key when it is missing or isn't a UUID, whatever else is wrong
+ FAIL  src/schedule/routes.test.ts > what the two commands refuse before any transaction > confirmScheduleDays names the Idempotency-Key when it is missing or isn't a UUID, whatever else is wrong
+AssertionError: expected { status: 400, …(2) } to match object { status: 400, …(1) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "body": "{\"code\":\"INVALID_REQUEST\",\"field\":\"Idempotency-Key\"}",
++   "body": "{\"code\":\"INVALID_REQUEST\",\"field\":\"expected_version\"}",
+    "status": 400,
+  }
+
+ ❯ src/schedule/routes.test.ts:324:34
+    322|         if (key !== undefined) headers["idempotency-key"] = key;
+    323|         const got = await answer({ method, url, headers, payload: '{"w…
+    324|         expect(got, String(key)).toMatchObject(invalid("Idempotency-Ke…
+       |                                  ^
+    325|         expect(got.headers["cache-control"]).toBe("private, no-store");
+    326|       }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+

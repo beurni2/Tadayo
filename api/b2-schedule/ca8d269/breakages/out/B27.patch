@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0012_schedule_proposals.sql b/db/migrations/0012_schedule_proposals.sql
+index 48ee9548..fa47d5c8 100644
+--- a/db/migrations/0012_schedule_proposals.sql
++++ b/db/migrations/0012_schedule_proposals.sql
+@@ -149,7 +149,7 @@ $$;
+ CREATE TRIGGER schedule_proposal_members_keep BEFORE UPDATE ON app.schedule_proposal_members
+   FOR EACH ROW EXECUTE FUNCTION app.keep_columns('proposal_id', 'club_id', 'interval_id');
+ CREATE TRIGGER schedule_proposal_members_once BEFORE UPDATE ON app.schedule_proposal_members
+-  FOR EACH ROW EXECUTE FUNCTION app.set_once('confirmed_at');
++  FOR EACH ROW EXECUTE FUNCTION app.keep_columns('proposal_id');
+ CREATE TRIGGER schedule_proposal_members_start BEFORE INSERT ON app.schedule_proposal_members
+   FOR EACH ROW WHEN (NEW.confirmed_at IS NOT NULL)
+   EXECUTE FUNCTION app.refuse_change('a member starts unconfirmed (FQ57)');

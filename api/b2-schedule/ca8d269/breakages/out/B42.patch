@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/command.ts b/packages/domain/src/schedule/command.ts
+index 2bcdf2ab..5fc6ac46 100644
+--- a/packages/domain/src/schedule/command.ts
++++ b/packages/domain/src/schedule/command.ts
+@@ -120,7 +120,7 @@ export async function scheduleCommand(
+   // 2. The receipt, then the club's row.
+   const first = await reserveReceipt(tx, receipt, await clock.sample(tx));
+   if (first !== null) return first.replay;
+-  await bound(tx)`SELECT id FROM app.clubs WHERE id = ${clubId} FOR UPDATE`;
++  await bound(tx)`SELECT id FROM app.clubs WHERE id = ${clubId}`;
+ 
+   // 3. Who is asking.
+   const week = await loadWeek(tx, userId, clubId, { id: proposalId });

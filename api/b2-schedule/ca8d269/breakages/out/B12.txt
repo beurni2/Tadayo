@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/packages/domain
+
+ ❯ src/schedule/decide.test.ts (18 tests | 1 failed) 25ms
+   ❯ a choice of days in the first days (the contract's ScheduleChoiceRequest; FQ48, FQ55, FQ57) (8)
+     × refuses more days than days_per_member 8ms
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 57 passed (58)
+   Start at  01:56:59
+   Duration  1.26s (tests 91%, import 7%, transform 1%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/decide.test.ts > a choice of days in the first days (the contract's ScheduleChoiceRequest; FQ48, FQ55, FQ57) > refuses more days than days_per_member
+AssertionError: expected { held: [ 'monday', 'wednesday' ] } to be 'NOT_ALLOWED' // Object.is equality
+
+- Expected:
+"NOT_ALLOWED"
+
++ Received:
+{
+  "held": [
+    "monday",
+    "wednesday",
+  ],
+}
+
+ ❯ src/schedule/decide.test.ts:62:63
+     60|
+     61|   it("refuses more days than days_per_member", () => {
+     62|     expect(judgeChoice("sam", FOUR, ["monday", "wednesday"])).toBe("NO…
+       |                                                               ^
+     63|   });
+     64|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

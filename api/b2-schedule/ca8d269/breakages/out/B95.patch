@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0012_schedule_proposals.sql b/db/migrations/0012_schedule_proposals.sql
+index 48ee9548..49a543f3 100644
+--- a/db/migrations/0012_schedule_proposals.sql
++++ b/db/migrations/0012_schedule_proposals.sql
+@@ -85,7 +85,7 @@ BEGIN
+                 WHERE proposal_id = NEW.id AND confirmed_at IS NOT NULL)
+        OR EXISTS (SELECT FROM app.schedule_proposal_days d
+                     JOIN app.memberships ms ON ms.interval_id = d.interval_id
+-                   WHERE d.proposal_id = NEW.id AND d.held AND ms.state = 'active'
++                   WHERE d.proposal_id = NEW.id AND d.held
+                    GROUP BY d.interval_id HAVING pg_catalog.count(*) > NEW.days_per_member)) THEN
+     RAISE EXCEPTION 'app.schedule_proposals: the days a member takes in % change only while nobody has confirmed or holds more', NEW.id
+       USING ERRCODE = 'integrity_constraint_violation';

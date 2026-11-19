@@ -1,0 +1,13 @@
+diff --git a/services/api/src/app.ts b/services/api/src/app.ts
+index 49450372..29956edd 100644
+--- a/services/api/src/app.ts
++++ b/services/api/src/app.ts
+@@ -116,7 +116,7 @@ function handlersOf(deps: Deps): Readonly<Record<string, Handler>> {
+     updateMe: updateMeHandler(deps),
+     listClubs: listClubsHandler(deps),
+     getSchedule: getScheduleHandler(deps),
+-    chooseScheduleDays: chooseScheduleDaysHandler(deps),
++    chooseScheduleDays: confirmScheduleDaysHandler(deps),
+     confirmScheduleDays: confirmScheduleDaysHandler(deps),
+   };
+ }

@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/confirm-days.ts b/packages/domain/src/schedule/confirm-days.ts
+index c4222ae4..19be6c53 100644
+--- a/packages/domain/src/schedule/confirm-days.ts
++++ b/packages/domain/src/schedule/confirm-days.ts
+@@ -62,7 +62,7 @@ export function confirmScheduleDays(
+         member.id === callerId ? { ...member, confirmed: true } : member,
+       ),
+     };
+-    if (everyoneConfirmed(now)) {
++    if (false as boolean) {
+       await bound(tx)`
+           UPDATE app.schedule_proposals
+              SET state = 'applied', closed_at = ${at}::pg_catalog.timestamptz, version = version + 1

@@ -1,0 +1,13 @@
+diff --git a/services/api/src/app.ts b/services/api/src/app.ts
+index 49450372..66c61158 100644
+--- a/services/api/src/app.ts
++++ b/services/api/src/app.ts
+@@ -55,7 +55,7 @@ export const BODY_LIMIT = 128 * 1024;
+  */
+ const ROUTE_BODY_LIMITS: Readonly<Record<string, number>> = {
+   updateMe: 17 * 1024,
+-  chooseScheduleDays: 1024,
++  chooseScheduleDays: 1048576,
+   confirmScheduleDays: 1024,
+ };
+ 

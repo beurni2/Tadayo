@@ -1,0 +1,35 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/tests
+
+ ❯ src/db/schedule-commands.test.ts (53 tests | 1 failed) 2030ms
+   ❯ who gets the week (T9, T14; FQ80, FQ100) (2)
+     × gives a member who joined after the first days were opened the schedule in force alone, never the proposal (FQ100) 46ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 52 passed (53)
+   Start at  02:01:53
+   Duration  2.33s (tests 96%, import 2%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-commands.test.ts > who gets the week (T9, T14; FQ80, FQ100) > gives a member who joined after the first days were opened the schedule in force alone, never the proposal (FQ100)
+Error: schedule: the proposal doesn't include the viewer as an active member (FQ100, T14)
+ ❯ viewFor ../packages/domain/src/schedule/view.ts:82:11
+     80|   const viewer = facts.members.find((member) => member.id === viewerId…
+     81|   if (viewer === undefined || !viewer.active) {
+     82|     throw new Error("schedule: the proposal doesn't include the viewer…
+       |           ^
+     83|   }
+     84|   const slots = WEEKDAYS.map((weekday): SlotView => {
+ ❯ answerOf ../packages/domain/src/schedule/week.ts:314:16
+ ❯ readSchedule ../packages/domain/src/schedule/read.ts:61:40
+ ❯ src/db/schedule-commands.test.ts:410:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:397:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

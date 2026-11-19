@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/propose.ts b/packages/domain/src/schedule/propose.ts
+index 8fa19084..d7adccea 100644
+--- a/packages/domain/src/schedule/propose.ts
++++ b/packages/domain/src/schedule/propose.ts
+@@ -18,7 +18,7 @@ function checkCount(memberCount: number): void {
+ /** Spec 05's table: the days each member has in a club of `memberCount`. */
+ export function daysPerMember(memberCount: number): 1 | 2 {
+   checkCount(memberCount);
+-  return memberCount <= 3 ? 2 : 1;
++  return memberCount <= 2 ? 2 : 1;
+ }
+ 
+ /** Each member's proposed weekdays, the members in the order they joined, a member's days from Monday. */

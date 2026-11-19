@@ -1,0 +1,154 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/tests
+
+ ❯ src/db/schedule-commands.test.ts (53 tests | 5 failed) 2001ms
+   ❯ opening the first days (spec 04, 05; FQ48) (8)
+     × leaves out a member who has left before the opening, and counts the club by who is still in it 25ms
+   ❯ who gets the week (T9, T14; FQ80, FQ100) (2)
+     × gives a stranger, a former member, an account being deleted, a suspended club and a guessed id the same nothing, as Home's days do 25ms
+   ❯ the refusals, in the contract's order (15)
+     × answers a choice NOT_FOUND first: an unknown proposal, a stranger, a former member, an account being deleted and a suspended club alike (T14) 24ms
+     × answers a confirmation NOT_FOUND first: an unknown proposal, a stranger, a former member, an account being deleted and a suspended club alike (T14) 20ms
+   ❯ one commit per key (T19) (5)
+     × gives a retry no stored answer once its sender has nothing of the club: NOT_FOUND for a former member, an account being deleted and a suspended club, whatever the body (T14; FQ112) 39ms
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 48 passed (53)
+   Start at  02:02:01
+   Duration  2.28s (tests 96%, import 2%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-commands.test.ts > opening the first days (spec 04, 05; FQ48) > leaves out a member who has left before the opening, and counts the club by who is still in it
+AssertionError: expected { club: { …(4) }, current: null, …(1) } to be null
+
+- Expected:
+null
+
++ Received:
+{
+  "club": {
+    "id": "club_6Q3pMeBR8i2-LdkRXNoFtA",
+    "membershipId": "mem_xG3E4O0uDT6Rr5KrM4PLlA",
+    "name": "Sunday people",
+    "timezone": "Europe/London",
+  },
+  "current": null,
+  "proposal": null,
+}
+
+ ❯ src/db/schedule-commands.test.ts:357:43
+    355|       expect((await proposalFor(tx, clock, w, 2)).myDays).toEqual(["tu…
+    356|       expect((await proposalFor(tx, clock, w, 3)).myDays).toEqual(["we…
+    357|       expect(await sees(tx, clock, w, 1)).toBeNull();
+       |                                           ^
+    358|     });
+    359|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:344:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > who gets the week (T9, T14; FQ80, FQ100) > gives a stranger, a former member, an account being deleted, a suspended club and a guessed id the same nothing, as Home's days do
+Error: schedule: the proposal doesn't include the viewer as an active member (FQ100, T14)
+ ❯ viewFor ../packages/domain/src/schedule/view.ts:82:11
+     80|   const viewer = facts.members.find((member) => member.id === viewerId…
+     81|   if (viewer === undefined || !viewer.active) {
+     82|     throw new Error("schedule: the proposal doesn't include the viewer…
+       |           ^
+     83|   }
+     84|   const slots = WEEKDAYS.map((weekday): SlotView => {
+ ❯ answerOf ../packages/domain/src/schedule/week.ts:314:16
+ ❯ readSchedule ../packages/domain/src/schedule/read.ts:61:52
+ ❯ both src/db/schedule-commands.test.ts:376:16
+ ❯ src/db/schedule-commands.test.ts:386:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > the refusals, in the contract's order > answers a choice NOT_FOUND first: an unknown proposal, a stranger, a former member, an account being deleted and a suspended club alike (T14)
+AssertionError: expected { code: 'MEMBERSHIP_CHANGED', …(1) } to deeply equal { code: 'NOT_FOUND', facts: {} }
+
+- Expected
++ Received
+
+  {
+-   "code": "NOT_FOUND",
+-   "facts": {},
++   "code": "MEMBERSHIP_CHANGED",
++   "facts": {
++     "current_id": "spr_pb5d53Eq2-kFb63Uv0YTKQ",
++   },
+  }
+
+ ❯ src/db/schedule-commands.test.ts:819:77
+    817|         expect(await refusal(command(tx, clock, w, 0, ["tuesday"], { .…
+    818|         await leave(plain(tx), { user: w.users[2] ?? "", interval: w.m…
+    819|         expect(await refusal(command(tx, clock, w, 2, ["tuesday"], sta…
+       |                                                                             ^
+    820|         await tx`UPDATE app.users SET state = 'deleting', deletion_req…
+    821|         expect(await refusal(command(tx, clock, w, 3, ["tuesday"], sta…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:806:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > the refusals, in the contract's order > answers a confirmation NOT_FOUND first: an unknown proposal, a stranger, a former member, an account being deleted and a suspended club alike (T14)
+AssertionError: expected { code: 'MEMBERSHIP_CHANGED', …(1) } to deeply equal { code: 'NOT_FOUND', facts: {} }
+
+- Expected
++ Received
+
+  {
+-   "code": "NOT_FOUND",
+-   "facts": {},
++   "code": "MEMBERSHIP_CHANGED",
++   "facts": {
++     "current_id": "spr_c15MP638qatLs__s8w4sPg",
++   },
+  }
+
+ ❯ src/db/schedule-commands.test.ts:819:77
+    817|         expect(await refusal(command(tx, clock, w, 0, ["tuesday"], { .…
+    818|         await leave(plain(tx), { user: w.users[2] ?? "", interval: w.m…
+    819|         expect(await refusal(command(tx, clock, w, 2, ["tuesday"], sta…
+       |                                                                             ^
+    820|         await tx`UPDATE app.users SET state = 'deleting', deletion_req…
+    821|         expect(await refusal(command(tx, clock, w, 3, ["tuesday"], sta…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:806:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > one commit per key (T19) > gives a retry no stored answer once its sender has nothing of the club: NOT_FOUND for a former member, an account being deleted and a suspended club, whatever the body (T14; FQ112)
+Error: the request wasn't refused
+ ❯ refusal src/db/schedule-commands.test.ts:175:9
+    173|     throw error;
+    174|   }
+    175|   throw new Error("the request wasn't refused");
+       |         ^
+    176| }
+    177|
+ ❯ nothing src/db/schedule-commands.test.ts:1030:16
+ ❯ src/db/schedule-commands.test.ts:1037:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:1008:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+

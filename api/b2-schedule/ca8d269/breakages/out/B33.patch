@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0012_schedule_proposals.sql b/db/migrations/0012_schedule_proposals.sql
+index 48ee9548..a9010bd8 100644
+--- a/db/migrations/0012_schedule_proposals.sql
++++ b/db/migrations/0012_schedule_proposals.sql
+@@ -205,7 +205,7 @@ BEGIN
+     RAISE EXCEPTION 'app.schedule_proposal_days: holds change only while their proposal is open'
+       USING ERRCODE = 'integrity_constraint_violation';
+   END IF;
+-  IF member_confirmed_at IS NOT NULL THEN
++  IF false AND member_confirmed_at IS NOT NULL THEN
+     RAISE EXCEPTION 'app.schedule_proposal_days: % has confirmed, and chooses nothing after (FQ57)', the_interval
+       USING ERRCODE = 'integrity_constraint_violation';
+   END IF;

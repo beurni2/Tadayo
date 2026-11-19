@@ -1,0 +1,165 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/services/api
+
+ ❯ src/schedule/routes.test.ts (29 tests | 3 failed) 264ms
+   ❯ the serializers against the contract's examples (T55) (4)
+     × makes each getSchedule scene of the first days, and the week in force alone, field for field 12ms
+     × makes each chooseScheduleDays and confirmScheduleDays scene of the first days, field for field 3ms
+   ❯ each serializer is an explicit field list (T55) (3)
+     × gives a person their interval, their name and their avatar's version when there is one, and nothing else 1ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 26 passed (29)
+   Start at  02:05:01
+   Duration  628ms (tests 51%, import 35%, transform 14%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/routes.test.ts > the serializers against the contract's examples (T55) > makes each getSchedule scene of the first days, and the week in force alone, field for field
+AssertionError: sunday_people: expected { …(3) } to deeply equal { …(3) }
+
+- Expected
++ Received
+
+@@ -10,47 +10,53 @@
+        {
+          "person": {
+            "avatar_version": "av_ben_1",
+            "display_name": "Ben",
+            "membership_id": "mem_sp_ben",
++           "name": "Ben",
+          },
+          "weekday": "monday",
+        },
+        {
+          "person": {
+            "avatar_version": "av_maya_1",
+            "display_name": "Maya",
+            "membership_id": "mem_sp_maya",
++           "name": "Maya",
+          },
+          "weekday": "tuesday",
+        },
+        {
+          "person": {
+            "display_name": "Alex",
+            "membership_id": "mem_sp_alex",
++           "name": "Alex",
+          },
+          "weekday": "wednesday",
+        },
+        {
+          "person": {
+            "display_name": "Sam",
+            "membership_id": "mem_sp_sam",
++           "name": "Sam",
+          },
+          "weekday": "thursday",
+        },
+        {
+          "person": {
+            "avatar_version": "av_debby_1",
+            "display_name": "Debby",
+            "membership_id": "mem_sp_debby",
++           "name": "Debby",
+          },
+          "weekday": "friday",
+        },
+        {
+          "person": {
+            "display_name": "Nina",
+            "membership_id": "mem_sp_nina",
++           "name": "Nina",
+          },
+          "weekday": "saturday",
+        },
+      ],
+      "effective_from": "2026-10-05",
+
+ ❯ src/schedule/routes.test.ts:113:26
+    111|       const now = Temporal.Instant.from(value["server_now"] as string);
+    112|       const body = scheduleBody(now, sight(value));
+    113|       expect(body, name).toEqual(value);
+       |                          ^
+    114|       expect(Schedule.strict().safeParse(body).success, name).toBe(tru…
+    115|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/schedule/routes.test.ts > the serializers against the contract's examples (T55) > makes each chooseScheduleDays and confirmScheduleDays scene of the first days, field for field
+AssertionError: chosen: expected { id: 'spr_sp_1', version: 1, …(7) } to deeply equal { id: 'spr_sp_1', version: 1, …(7) }
+
+- Expected
++ Received
+
+@@ -16,10 +16,11 @@
+      {
+        "held_by": {
+          "avatar_version": "av_maya_1",
+          "display_name": "Maya",
+          "membership_id": "mem_sp_maya",
++         "name": "Maya",
+        },
+        "state": "available",
+        "suggested": false,
+        "weekday": "tuesday",
+      },
+@@ -30,10 +31,11 @@
+      },
+      {
+        "held_by": {
+          "display_name": "Sam",
+          "membership_id": "mem_sp_sam",
++         "name": "Sam",
+        },
+        "state": "available",
+        "suggested": false,
+        "weekday": "thursday",
+      },
+@@ -44,10 +46,11 @@
+      },
+      {
+        "held_by": {
+          "display_name": "Nina",
+          "membership_id": "mem_sp_nina",
++         "name": "Nina",
+        },
+        "state": "available",
+        "suggested": false,
+        "weekday": "saturday",
+      },
+
+ ❯ src/schedule/routes.test.ts:123:26
+    121|     for (const [name, value] of scenes) {
+    122|       const body = proposalBody(proposal(value));
+    123|       expect(body, name).toEqual(value);
+       |                          ^
+    124|       expect(ScheduleProposal.strict().safeParse(body).success, name).…
+    125|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/schedule/routes.test.ts > each serializer is an explicit field list (T55) > gives a person their interval, their name and their avatar's version when there is one, and nothing else
+AssertionError: expected { membership_id: 'mem_ben', …(3) } to deeply equal { membership_id: 'mem_ben', …(2) }
+
+- Expected
++ Received
+
+  {
+    "avatar_version": "v_ben",
+    "display_name": "Ben",
+    "membership_id": "mem_ben",
++   "name": "Ben",
+  }
+
+ ❯ src/schedule/routes.test.ts:225:30
+    223|   it("gives a person their interval, their name and their avatar's ver…
+    224|     const rich = { ...ben, account: "acct_ben", email: "ben@example.in…
+    225|     expect(personBody(rich)).toEqual({ membership_id: "mem_ben", displ…
+       |                              ^
+    226|     expect(personBody({ ...ben, avatarVersion: null })).toEqual({ memb…
+    227|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

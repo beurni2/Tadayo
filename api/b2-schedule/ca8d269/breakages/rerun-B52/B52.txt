@@ -1,0 +1,35 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/tests
+
+ ❯ src/db/schedule-commands.test.ts (54 tests | 1 failed) 2061ms
+   ❯ one commit per key (T19) (6)
+     × asks who is calling again under the club's lock: a member who left and joined again after the first look gets NOT_FOUND, and nothing is written (T14; FQ100) 29ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 53 passed (54)
+   Start at  02:13:13
+   Duration  2.42s (tests 96%, import 2%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-commands.test.ts > one commit per key (T19) > asks who is calling again under the club's lock: a member who left and joined again after the first look gets NOT_FOUND, and nothing is written (T14; FQ100)
+Error: schedule: the proposal doesn't include the caller as an active member (FQ100, T14)
+ ❯ callerOf ../packages/domain/src/schedule/decide.ts:16:11
+     14|   const caller = facts.members.find((member) => member.id === callerId…
+     15|   if (caller === undefined || !caller.active) {
+     16|     throw new Error("schedule: the proposal doesn't include the caller…
+       |           ^
+     17|   }
+     18|   return caller;
+ ❯ judgeChoice ../packages/domain/src/schedule/decide.ts:39:18
+ ❯ ../packages/domain/src/schedule/choose-days.ts:40:20
+ ❯ scheduleCommand ../packages/domain/src/schedule/command.ts:146:9
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ request src/db/schedule-commands.test.ts:132:18
+ ❯ refusal src/db/schedule-commands.test.ts:170:5
+ ❯ src/db/schedule-commands.test.ts:1083:14
+ ❯ src/db/harness.ts:82:25
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

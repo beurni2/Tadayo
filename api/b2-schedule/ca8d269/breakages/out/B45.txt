@@ -1,0 +1,207 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/tests
+
+ ❯ src/db/schedule-commands.test.ts (53 tests | 7 failed) 2092ms
+   ❯ confirming days (FQ55, FQ57, FQ79, FQ99; T1, T33, T49) (10)
+     × applies the first days of a club of 2 on the last confirmation, which alone moves the version (T33) 32ms
+     × applies the first days of a club of 3 on the last confirmation, which alone moves the version (T33) 30ms
+     × applies the first days of a club of 4 on the last confirmation, which alone moves the version (T33) 30ms
+     × applies the first days of a club of 6 on the last confirmation, which alone moves the version (T33) 49ms
+   ❯ the refusals, in the contract's order (15)
+     × answers a choice of first days that have applied VERSION_CONFLICT to the version a member read while they were open, and NOT_ALLOWED to the applied one 23ms
+     × answers a confirmation of first days that have applied VERSION_CONFLICT to the version a member read while they were open, and NOT_ALLOWED to the applied one 15ms
+   ❯ requests at once, committed (T6, T19; FQ55) (7)
+     × lets every member of a club of six confirm at once: six days, one version move, no deadlock 106ms
+
+ Test Files  1 failed (1)
+      Tests  7 failed | 46 passed (53)
+   Start at  02:01:50
+   Duration  2.43s (tests 95%, import 3%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-commands.test.ts > confirming days (FQ55, FQ57, FQ79, FQ99; T1, T33, T49) > applies the first days of a club of 2 on the last confirmation, which alone moves the version (T33)
+AssertionError: expected { …(9) } to match object { version: 2, state: 'applied', …(2) }
+(5 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -2,8 +2,8 @@
+    "myDays": [
+      "tuesday",
+      "friday",
+    ],
+    "myState": "confirmed",
+-   "state": "applied",
+-   "version": 2,
++   "state": "open",
++   "version": 1,
+  }
+
+ ❯ src/db/schedule-commands.test.ts:699:26
+    697|           const answer = await confirm(tx, clock, w, who, days);
+    698|           const last = who === count - 1;
+    699|           expect(answer).toMatchObject({
+       |                          ^
+    700|             version: last ? 2 : 1,
+    701|             state: last ? "applied" : "open",
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:690:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > confirming days (FQ55, FQ57, FQ79, FQ99; T1, T33, T49) > applies the first days of a club of 3 on the last confirmation, which alone moves the version (T33)
+AssertionError: expected { …(9) } to match object { version: 2, state: 'applied', …(2) }
+(5 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -2,8 +2,8 @@
+    "myDays": [
+      "wednesday",
+      "saturday",
+    ],
+    "myState": "confirmed",
+-   "state": "applied",
+-   "version": 2,
++   "state": "open",
++   "version": 1,
+  }
+
+ ❯ src/db/schedule-commands.test.ts:699:26
+    697|           const answer = await confirm(tx, clock, w, who, days);
+    698|           const last = who === count - 1;
+    699|           expect(answer).toMatchObject({
+       |                          ^
+    700|             version: last ? 2 : 1,
+    701|             state: last ? "applied" : "open",
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:690:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > confirming days (FQ55, FQ57, FQ79, FQ99; T1, T33, T49) > applies the first days of a club of 4 on the last confirmation, which alone moves the version (T33)
+AssertionError: expected { …(9) } to match object { version: 2, state: 'applied', …(2) }
+(5 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "myDays": [
+      "thursday",
+    ],
+    "myState": "confirmed",
+-   "state": "applied",
+-   "version": 2,
++   "state": "open",
++   "version": 1,
+  }
+
+ ❯ src/db/schedule-commands.test.ts:699:26
+    697|           const answer = await confirm(tx, clock, w, who, days);
+    698|           const last = who === count - 1;
+    699|           expect(answer).toMatchObject({
+       |                          ^
+    700|             version: last ? 2 : 1,
+    701|             state: last ? "applied" : "open",
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:690:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > confirming days (FQ55, FQ57, FQ79, FQ99; T1, T33, T49) > applies the first days of a club of 6 on the last confirmation, which alone moves the version (T33)
+AssertionError: expected { …(9) } to match object { version: 2, state: 'applied', …(2) }
+(5 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "myDays": [
+      "saturday",
+    ],
+    "myState": "confirmed",
+-   "state": "applied",
+-   "version": 2,
++   "state": "open",
++   "version": 1,
+  }
+
+ ❯ src/db/schedule-commands.test.ts:699:26
+    697|           const answer = await confirm(tx, clock, w, who, days);
+    698|           const last = who === count - 1;
+    699|           expect(answer).toMatchObject({
+       |                          ^
+    700|             version: last ? 2 : 1,
+    701|             state: last ? "applied" : "open",
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:690:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > the refusals, in the contract's order > answers a choice of first days that have applied VERSION_CONFLICT to the version a member read while they were open, and NOT_ALLOWED to the applied one
+ FAIL  src/db/schedule-commands.test.ts > the refusals, in the contract's order > answers a confirmation of first days that have applied VERSION_CONFLICT to the version a member read while they were open, and NOT_ALLOWED to the applied one
+AssertionError: expected { code: 'NOT_ALLOWED', facts: {} } to deeply equal { code: 'VERSION_CONFLICT', …(1) }
+
+- Expected
++ Received
+
+  {
+-   "code": "VERSION_CONFLICT",
+-   "facts": {
+-     "current_version": 2,
+-   },
++   "code": "NOT_ALLOWED",
++   "facts": {},
+  }
+
+ ❯ src/db/schedule-commands.test.ts:889:81
+    887|         await confirm(tx, clock, w, 0, ["monday", "thursday"]);
+    888|         await confirm(tx, clock, w, 1, ["tuesday", "friday"]);
+    889|         expect(await refusal(command(tx, clock, w, 0, ["monday", "thur…
+       |                                                                                 ^
+    890|           code: "VERSION_CONFLICT",
+    891|           facts: { current_version: 2 },
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:884:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > requests at once, committed (T6, T19; FQ55) > lets every member of a club of six confirm at once: six days, one version move, no deadlock
+AssertionError: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/db/schedule-commands.test.ts:1146:92
+    1144|     const answers = results.flatMap((one) => (one.status === "fulfille…
+    1145|     // Exactly one of them was the last, and answered the applied prop…
+    1146|     expect(answers.filter((answer) => answer.state === "applied" && an…
+       |                                                                                            ^
+    1147|     expect(answers.filter((answer) => answer.state === "open" && answe…
+    1148|     expect(await assignments(world, w)).toHaveLength(6);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/7]⎯
+

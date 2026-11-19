@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/view.ts b/packages/domain/src/schedule/view.ts
+index 650dfb1b..8b8d1d1f 100644
+--- a/packages/domain/src/schedule/view.ts
++++ b/packages/domain/src/schedule/view.ts
+@@ -62,7 +62,7 @@ export interface ProposalView {
+ 
+ /** Whether `member` holds `weekday` without having confirmed it: what makes a day held or contested. */
+ function holds(member: ProposalMember, weekday: Weekday): boolean {
+-  return member.active && !member.confirmed && member.held.includes(weekday);
++  return !member.confirmed && member.held.includes(weekday);
+ }
+ 
+ /** The member who confirmed `weekday`, still a member or not. */

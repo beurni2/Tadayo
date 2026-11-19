@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/tests
+
+ ❯ src/db/schedule-proposals.test.ts (31 tests | 1 failed) 710ms
+   ❯ a confirmation (T6; book p11; FQ55, FQ99) (8)
+     × isn't blocked by a member who has left: they hold nothing (FQ102) 13ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 30 passed (31)
+   Start at  02:00:11
+   Duration  1.38s (tests 90%, import 5%, transform 4%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-proposals.test.ts > a confirmation (T6; book p11; FQ55, FQ99) > isn't blocked by a member who has left: they hold nothing (FQ102)
+PostgresError: app.schedule_proposal_members: mem_onF4opaCjLNBmiTfxCoFEg can't confirm tuesday: another member holds it too (FQ55)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ checkAsAtCommit src/db/world.ts:303:11
+    301| /** Runs the checks Postgres runs at COMMIT, now, inside the test's tr…
+    302| export async function checkAsAtCommit(tx: Tx): Promise<void> {
+    303|   await tx`SET CONSTRAINTS ALL IMMEDIATE`;
+       |           ^
+    304|   await tx`SET CONSTRAINTS ALL DEFERRED`;
+    305| }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

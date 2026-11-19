@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/week.ts b/packages/domain/src/schedule/week.ts
+index 7fd50423..f081d573 100644
+--- a/packages/domain/src/schedule/week.ts
++++ b/packages/domain/src/schedule/week.ts
+@@ -83,7 +83,7 @@ function person<F>(sql: FragmentSql<F>): F {
+   return bound(sql)`
+     pg_catalog.jsonb_build_object(
+       'membership_id', s.interval_id,
+-      'name', CASE WHEN s.state = 'active' THEN su.display_name ELSE s.ended_display_name END,
++      'name', su.display_name,
+       'avatar_version',
+       CASE WHEN s.state = 'active' AND su.state = 'active'
+            THEN (SELECT up.content_version FROM app.uploads up

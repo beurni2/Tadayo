@@ -1,0 +1,14 @@
+diff --git a/packages/domain/src/schedule/decide.ts b/packages/domain/src/schedule/decide.ts
+index 7294c96d..f8257aa0 100644
+--- a/packages/domain/src/schedule/decide.ts
++++ b/packages/domain/src/schedule/decide.ts
+@@ -38,8 +38,7 @@ export function judgeChoice(
+ ): "NOT_ALLOWED" | { readonly held: readonly Weekday[] } {
+   const caller = callerOf(callerId, facts);
+   const held = fromMonday(weekdays, 0);
+-  // After confirming, nothing is chosen again (FQ57).
+-  if (caller.confirmed) return "NOT_ALLOWED";
++
+   if (held.length > facts.daysPerMember) return "NOT_ALLOWED";
+   // Only a confirmed day is taken (FQ48), and it stays its owner's even when they have left (FQ102).
+   if (held.some((weekday) => confirmerOf(facts, weekday) !== undefined)) return "NOT_ALLOWED";

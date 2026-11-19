@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/services/api
+
+ ❯ src/schedule/routes.test.ts (29 tests | 1 failed) 252ms
+   ❯ GET /v1/clubs/{club_id}/schedule (2)
+     × reads in a read-only transaction, and answers what it made for the caller alone 10ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 28 passed (29)
+   Start at  02:06:22
+   Duration  636ms (tests 48%, import 38%, transform 14%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/routes.test.ts > GET /v1/clubs/{club_id}/schedule > reads in a read-only transaction, and answers what it made for the caller alone
+AssertionError: expected [ [AsyncFunction] ] to deeply equal [ 'read only' ]
+
+- Expected
++ Received
+
+  [
+-   "read only",
++   [Function anonymous],
+  ]
+
+ ❯ src/schedule/routes.test.ts:474:19
+    472|     expect(got).toMatchObject({ status: 200, body: '{"server_now":"202…
+    473|     expect(got.headers["cache-control"]).toBe("private, no-store");
+    474|     expect(modes).toEqual(["read only"]);
+       |                   ^
+    475|   });
+    476| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

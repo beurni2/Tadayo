@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0012_schedule_proposals.sql b/db/migrations/0012_schedule_proposals.sql
+index 48ee9548..2fb81b6a 100644
+--- a/db/migrations/0012_schedule_proposals.sql
++++ b/db/migrations/0012_schedule_proposals.sql
+@@ -71,7 +71,7 @@ BEGIN
+       USING ERRCODE = 'integrity_constraint_violation';
+   END IF;
+   IF NEW.state = 'applied' AND OLD.state = 'open' AND NEW.reason = 'activation' AND (
+-       NOT EXISTS (SELECT FROM app.schedule_proposal_members m
++       false AND NOT EXISTS (SELECT FROM app.schedule_proposal_members m
+                      JOIN app.memberships ms ON ms.interval_id = m.interval_id
+                     WHERE m.proposal_id = NEW.id AND ms.state = 'active')
+        OR EXISTS (SELECT FROM app.schedule_proposal_members m

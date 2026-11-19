@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/open.ts b/packages/domain/src/schedule/open.ts
+index 84c58bbc..feee382b 100644
+--- a/packages/domain/src/schedule/open.ts
++++ b/packages/domain/src/schedule/open.ts
+@@ -59,7 +59,7 @@ export async function openFirstDays(tx: QuerySql & ClockSql, clock: Clock, clubI
+ 
+   // The clock, after the lock (T1).
+   const at = await clock.sample(tx);
+-  const effectiveFrom = at.toZonedDateTimeISO(clubTimeZone(timezone)).toPlainDate().toString();
++  const effectiveFrom = at.toZonedDateTimeISO("UTC").toPlainDate().toString();
+   const scheduleVersionId = newId("sched");
+   const proposalId = newId("spr");
+   await bound(tx)`

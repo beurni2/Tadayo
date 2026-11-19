@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0012_schedule_proposals.sql b/db/migrations/0012_schedule_proposals.sql
+index 48ee9548..e5a02867 100644
+--- a/db/migrations/0012_schedule_proposals.sql
++++ b/db/migrations/0012_schedule_proposals.sql
+@@ -276,7 +276,7 @@ BEGIN
+   SELECT COALESCE(pg_catalog.array_agg(weekday::text ORDER BY weekday::text), '{}') INTO held_days
+     FROM app.schedule_proposal_days
+    WHERE proposal_id = NEW.proposal_id AND interval_id = NEW.interval_id AND held;
+-  IF pg_catalog.cardinality(held_days) <> proposal.days_per_member THEN
++  IF false THEN
+     RAISE EXCEPTION 'app.schedule_proposal_members: % holds % of the % days a member confirms at once (book p11, FQ99)',
+       NEW.interval_id, pg_catalog.cardinality(held_days), proposal.days_per_member
+       USING ERRCODE = 'integrity_constraint_violation';

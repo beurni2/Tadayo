@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/view.ts b/packages/domain/src/schedule/view.ts
+index 650dfb1b..89bc399e 100644
+--- a/packages/domain/src/schedule/view.ts
++++ b/packages/domain/src/schedule/view.ts
+@@ -85,7 +85,7 @@ export function viewFor(viewerId: string, facts: WeekFacts): ProposalView {
+     const suggested = viewer.suggested.includes(weekday);
+     const confirmer = confirmerOf(facts, weekday);
+     if (confirmer !== undefined) {
+-      const date = confirmer.active ? facts.firstDates[weekday] : undefined;
++      const date = facts.firstDates[weekday];
+       return {
+         weekday,
+         state: confirmer.id === viewer.id ? "yours" : "taken",

@@ -1,0 +1,12 @@
+diff --git a/services/api/src/schedule/routes.ts b/services/api/src/schedule/routes.ts
+index cb896778..1af3db44 100644
+--- a/services/api/src/schedule/routes.ts
++++ b/services/api/src/schedule/routes.ts
+@@ -148,7 +148,6 @@ function commandHandler(
+     try {
+       response = await deps.sql.begin((tx) => command(tx, deps.clock, input, proposalBody));
+     } catch (error) {
+-      if (error instanceof Refused) return refusal(reply, error);
+       throw error;
+     }
+     return ok(reply, response);

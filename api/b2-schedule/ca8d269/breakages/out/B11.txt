@@ -1,0 +1,38 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/packages/domain
+
+ ❯ src/schedule/decide.test.ts (18 tests | 1 failed) 38ms
+   ❯ a choice of days in the first days (the contract's ScheduleChoiceRequest; FQ48, FQ55, FQ57) (8)
+     × refuses any choice after the caller confirmed, their own day too (FQ57) 8ms
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 57 passed (58)
+   Start at  01:56:57
+   Duration  1.22s (tests 91%, import 7%, transform 1%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/decide.test.ts > a choice of days in the first days (the contract's ScheduleChoiceRequest; FQ48, FQ55, FQ57) > refuses any choice after the caller confirmed, their own day too (FQ57)
+AssertionError: expected { held: [ 'monday' ] } to be 'NOT_ALLOWED' // Object.is equality
+
+- Expected:
+"NOT_ALLOWED"
+
++ Received:
+{
+  "held": [
+    "monday",
+  ],
+}
+
+ ❯ src/schedule/decide.test.ts:67:51
+     65|   it("refuses any choice after the caller confirmed, their own day too…
+     66|     expect(judgeChoice("maya", FOUR, ["tuesday"])).toBe("NOT_ALLOWED");
+     67|     expect(judgeChoice("maya", FOUR, ["monday"])).toBe("NOT_ALLOWED");
+       |                                                   ^
+     68|     expect(judgeChoice("maya", FOUR, [])).toBe("NOT_ALLOWED");
+     69|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

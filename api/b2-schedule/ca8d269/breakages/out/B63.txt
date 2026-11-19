@@ -1,0 +1,104 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/tests
+
+ ❯ src/db/schedule-commands.test.ts (53 tests | 2 failed) 2120ms
+   ❯ choosing days (FQ46, FQ48, FQ55; T33) (6)
+     × shows a contest and moves nobody: its holders see each other in the order they joined, everyone else sees no reveal and no names (T6) 47ms
+     × names a contest's holders in the order they joined, whatever the order of their ids 53ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 51 passed (53)
+   Start at  02:04:51
+   Duration  2.48s (tests 96%, import 2%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-commands.test.ts > choosing days (FQ46, FQ48, FQ55; T33) > shows a contest and moves nobody: its holders see each other in the order they joined, everyone else sees no reveal and no names (T6)
+AssertionError: expected { state: 'clash', …(3) } to deeply equal { weekday: 'monday', …(3) }
+
+- Expected
++ Received
+
+@@ -5,17 +5,17 @@
+        "displayName": "Ben",
+        "membershipId": "mem_2JYfREL8Nge20qUYiWmSqQ",
+      },
+      {
+        "avatarVersion": null,
+-       "displayName": "Alex",
+-       "membershipId": "mem_KA-8FSxnk18E4B6nxenRGw",
++       "displayName": "Debby",
++       "membershipId": "mem_HoU82dC6qO0l5eiEfGayQQ",
+      },
+      {
+        "avatarVersion": null,
+-       "displayName": "Debby",
+-       "membershipId": "mem_HoU82dC6qO0l5eiEfGayQQ",
++       "displayName": "Alex",
++       "membershipId": "mem_KA-8FSxnk18E4B6nxenRGw",
+      },
+    ],
+    "state": "clash",
+    "suggested": false,
+    "weekday": "monday",
+
+ ❯ src/db/schedule-commands.test.ts:507:36
+    505|       const alex = await choose(tx, clock, w, 2, ["monday"]);
+    506|       const holders = [person(w, 0), person(w, 2), person(w, 4)];
+    507|       expect(slot(alex, "monday")).toEqual({ weekday: "monday", state:…
+       |                                    ^
+    508|       expect(slot(await proposalFor(tx, clock, w, 4), "monday")).toEqu…
+    509|         weekday: "monday",
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:493:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > choosing days (FQ46, FQ48, FQ55; T33) > names a contest's holders in the order they joined, whatever the order of their ids
+AssertionError: as member 0: expected [ { …(3) }, { …(3) }, { …(3) } ] to deeply equal [ { …(3) }, { …(3) }, { …(3) } ]
+
+- Expected
++ Received
+
+  [
+    {
+      "avatarVersion": null,
++     "displayName": "Alex",
++     "membershipId": "mem_bNOmEL9cXKZQkwm78DDZcw",
++   },
++   {
++     "avatarVersion": null,
+      "displayName": "Ben",
+      "membershipId": "mem_cxAQNv2Ddv_3mLxOICW57A",
+    },
+    {
+      "avatarVersion": null,
+      "displayName": "Maya",
+      "membershipId": "mem_vbaJdeMz-TvqT6MtmkBySQ",
+-   },
+-   {
+-     "avatarVersion": null,
+-     "displayName": "Alex",
+-     "membershipId": "mem_bNOmEL9cXKZQkwm78DDZcw",
+    },
+  ]
+
+ ❯ src/db/schedule-commands.test.ts:567:103
+    565|         const holders = [person(w, first), person(w, second), person(w…
+    566|         for (const who of three) {
+    567|           expect(slot(await proposalFor(tx, clock, w, who), day).holde…
+       |                                                                                                       ^
+    568|         }
+    569|         return true;
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:544:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

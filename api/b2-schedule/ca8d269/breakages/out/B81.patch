@@ -1,0 +1,21 @@
+diff --git a/packages/domain/src/schedule/command.ts b/packages/domain/src/schedule/command.ts
+index 2bcdf2ab..f4dd5fdf 100644
+--- a/packages/domain/src/schedule/command.ts
++++ b/packages/domain/src/schedule/command.ts
+@@ -120,6 +120,7 @@ export async function scheduleCommand(
+   // 2. The receipt, then the club's row.
+   const first = await reserveReceipt(tx, receipt, await clock.sample(tx));
+   if (first !== null) return first.replay;
++  const BEFORE_LOCK = await clock.sample(tx);
+   await bound(tx)`SELECT id FROM app.clubs WHERE id = ${clubId} FOR UPDATE`;
+ 
+   // 3. Who is asking.
+@@ -138,7 +139,7 @@ export async function scheduleCommand(
+   }
+ 
+   // 6. The clock, after the lock.
+-  const at = await clock.sample(tx);
++  const at = BEFORE_LOCK;
+ 
+   // 7. The rule.
+   if (proposal.state !== "open") throw new Refused("NOT_ALLOWED");

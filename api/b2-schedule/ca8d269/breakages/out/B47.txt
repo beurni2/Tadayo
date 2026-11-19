@@ -1,0 +1,128 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/tests
+
+ ❯ src/db/schedule-commands.test.ts (53 tests | 4 failed) 1960ms
+   ❯ who gets the week (T9, T14; FQ80, FQ100) (2)
+     × gives a stranger, a former member, an account being deleted, a suspended club and a guessed id the same nothing, as Home's days do 34ms
+   ❯ the refusals, in the contract's order (15)
+     × answers a choice NOT_FOUND first: an unknown proposal, a stranger, a former member, an account being deleted and a suspended club alike (T14) 20ms
+     × answers a confirmation NOT_FOUND first: an unknown proposal, a stranger, a former member, an account being deleted and a suspended club alike (T14) 22ms
+   ❯ one commit per key (T19) (5)
+     × gives a retry no stored answer once its sender has nothing of the club: NOT_FOUND for a former member, an account being deleted and a suspended club, whatever the body (T14; FQ112) 45ms
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 49 passed (53)
+   Start at  02:01:56
+   Duration  2.33s (tests 95%, import 3%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-commands.test.ts > who gets the week (T9, T14; FQ80, FQ100) > gives a stranger, a former member, an account being deleted, a suspended club and a guessed id the same nothing, as Home's days do
+AssertionError: expected { …(3) } to deeply equal { member: null, week: false, …(1) }
+
+- Expected
++ Received
+
+  {
+    "home": false,
+-   "member": null,
+-   "week": false,
++   "member": "mem_8vgb8Uv30PdKGlLmK2i71w",
++   "week": true,
+  }
+
+ ❯ src/db/schedule-commands.test.ts:392:44
+    390|
+    391|       await tx`UPDATE app.clubs SET suspended_at = ${AT.generated} WHE…
+    392|       expect(await both(w.users[0] ?? "")).toEqual({ member: null, wee…
+       |                                            ^
+    393|     });
+    394|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:364:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > the refusals, in the contract's order > answers a choice NOT_FOUND first: an unknown proposal, a stranger, a former member, an account being deleted and a suspended club alike (T14)
+AssertionError: expected { code: 'MEMBERSHIP_CHANGED', …(1) } to deeply equal { code: 'NOT_FOUND', facts: {} }
+
+- Expected
++ Received
+
+  {
+-   "code": "NOT_FOUND",
+-   "facts": {},
++   "code": "MEMBERSHIP_CHANGED",
++   "facts": {
++     "current_id": "spr_jxlus_fKd5h4xyNQTIj2Cg",
++   },
+  }
+
+ ❯ src/db/schedule-commands.test.ts:823:77
+    821|         expect(await refusal(command(tx, clock, w, 3, ["tuesday"], sta…
+    822|         await tx`UPDATE app.clubs SET suspended_at = ${AT.edited} WHER…
+    823|         expect(await refusal(command(tx, clock, w, 0, ["tuesday"], sta…
+       |                                                                             ^
+    824|       });
+    825|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:806:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > the refusals, in the contract's order > answers a confirmation NOT_FOUND first: an unknown proposal, a stranger, a former member, an account being deleted and a suspended club alike (T14)
+AssertionError: expected { code: 'MEMBERSHIP_CHANGED', …(1) } to deeply equal { code: 'NOT_FOUND', facts: {} }
+
+- Expected
++ Received
+
+  {
+-   "code": "NOT_FOUND",
+-   "facts": {},
++   "code": "MEMBERSHIP_CHANGED",
++   "facts": {
++     "current_id": "spr_AwWlv2I8QzOcyHOU5b42cg",
++   },
+  }
+
+ ❯ src/db/schedule-commands.test.ts:823:77
+    821|         expect(await refusal(command(tx, clock, w, 3, ["tuesday"], sta…
+    822|         await tx`UPDATE app.clubs SET suspended_at = ${AT.edited} WHER…
+    823|         expect(await refusal(command(tx, clock, w, 0, ["tuesday"], sta…
+       |                                                                             ^
+    824|       });
+    825|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:806:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/db/schedule-commands.test.ts > one commit per key (T19) > gives a retry no stored answer once its sender has nothing of the club: NOT_FOUND for a former member, an account being deleted and a suspended club, whatever the body (T14; FQ112)
+Error: the request wasn't refused
+ ❯ refusal src/db/schedule-commands.test.ts:175:9
+    173|     throw error;
+    174|   }
+    175|   throw new Error("the request wasn't refused");
+       |         ^
+    176| }
+    177|
+ ❯ nothing src/db/schedule-commands.test.ts:1030:16
+ ❯ src/db/schedule-commands.test.ts:1052:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-commands.test.ts:1008:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+

@@ -1,0 +1,59 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/tests
+
+ ❯ src/db/schedule-proposals.test.ts (31 tests | 2 failed) 711ms
+   ❯ a confirmation (T6; book p11; FQ55, FQ99) (8)
+     × is refused while another member holds the day too, by choice or by proposal alone (FQ55) 13ms
+   ❯ a hold and a confirmation of the same day, at once (T6; FQ48, FQ55) (3)
+     × refuses the confirmation that waited for the hold: another member holds the day too 44ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 29 passed (31)
+   Start at  01:59:43
+   Duration  1.34s (tests 89%, import 6%, transform 4%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-proposals.test.ts > a confirmation (T6; book p11; FQ55, FQ99) > is refused while another member holds the day too, by choice or by proposal alone (FQ55)
+AssertionError: expected Postgres to refuse with 23000: expected undefined to be an instance of PostgresError
+ ❯ expectRefused src/db/harness.ts:110:62
+    108|     caught = error;
+    109|   }
+    110|   expect(caught, `expected Postgres to refuse with ${code}`).toBeInsta…
+       |                                                              ^
+    111|   const error = caught as postgres.PostgresError;
+    112|   expect(error.code, error.message).toBe(code);
+ ❯ src/db/schedule-proposals.test.ts:625:9
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/schedule-proposals.test.ts > a hold and a confirmation of the same day, at once (T6; FQ48, FQ55) > refuses the confirmation that waited for the hold: another member holds the day too
+AssertionError: expected { status: 'fulfilled', …(1) } to match object { status: 'rejected', …(1) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "reason": {
+-     "code": "23000",
+-   },
+-   "status": "rejected",
++   "status": "fulfilled",
+  }
+
+ ❯ src/db/schedule-proposals.test.ts:876:23
+    874|     );
+    875|     expect(taken?.status).toBe("fulfilled");
+    876|     expect(confirmed).toMatchObject({ status: "rejected", reason: { co…
+       |                       ^
+    877|     expect(String((confirmed as PromiseRejectedResult).reason)).toMatc…
+    878|     const written = await app`SELECT weekday FROM app.schedule_assignm…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0012_schedule_proposals.sql b/db/migrations/0012_schedule_proposals.sql
+index 48ee9548..3b190f0a 100644
+--- a/db/migrations/0012_schedule_proposals.sql
++++ b/db/migrations/0012_schedule_proposals.sql
+@@ -199,7 +199,7 @@ BEGIN
+     the_interval := NEW.interval_id;
+   END IF;
+   SELECT confirmed_at INTO member_confirmed_at FROM app.schedule_proposal_members
+-   WHERE proposal_id = the_proposal AND interval_id = the_interval FOR UPDATE;
++   WHERE proposal_id = the_proposal AND interval_id = the_interval;
+   SELECT * INTO proposal FROM app.schedule_proposals WHERE id = the_proposal FOR SHARE;
+   IF proposal.state IS DISTINCT FROM 'open' THEN
+     RAISE EXCEPTION 'app.schedule_proposal_days: holds change only while their proposal is open'

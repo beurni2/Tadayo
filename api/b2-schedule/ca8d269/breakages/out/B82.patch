@@ -1,0 +1,21 @@
+diff --git a/packages/domain/src/schedule/open.ts b/packages/domain/src/schedule/open.ts
+index 84c58bbc..71ab4391 100644
+--- a/packages/domain/src/schedule/open.ts
++++ b/packages/domain/src/schedule/open.ts
+@@ -40,6 +40,7 @@ export interface OpenedFirstDays {
+ /** Opens the first days of `clubId` in `tx`, a READ COMMITTED transaction. */
+ export async function openFirstDays(tx: QuerySql & ClockSql, clock: Clock, clubId: string): Promise<OpenedFirstDays> {
+   if (typeof clubId !== "string" || !ID.test(clubId)) throw new TypeError("schedule: the club is a club id");
++  const BEFORE_LOCK = await clock.sample(tx);
+   const [club] = await bound(tx)`SELECT timezone FROM app.clubs WHERE id = ${clubId} FOR UPDATE`;
+   if (club === undefined) throw new Error("schedule: no such club to open the first days of");
+   const timezone = club["timezone"];
+@@ -58,7 +59,7 @@ export async function openFirstDays(tx: QuerySql & ClockSql, clock: Clock, clubI
+   const perMember = daysPerMember(members.length);
+ 
+   // The clock, after the lock (T1).
+-  const at = await clock.sample(tx);
++  const at = BEFORE_LOCK;
+   const effectiveFrom = at.toZonedDateTimeISO(clubTimeZone(timezone)).toPlainDate().toString();
+   const scheduleVersionId = newId("sched");
+   const proposalId = newId("spr");

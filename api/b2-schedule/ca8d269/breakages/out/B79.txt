@@ -1,0 +1,214 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2s-mut/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the author as its account and its row say, and leaks nothing the scanner can find
+author: 2016 cells run, 35077 answers scanned
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+star: 2016 cells run, 35077 answers scanned
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member who joined after the commit (T8) as its account and its row say, and leaks nothing the scanner can find
+member who joined after the commit (T8): 2016 cells run, 35077 answers scanned
+
+ ❯ src/privacy/matrix.test.ts (14 tests | 3 failed | 11 skipped) 69739ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (12)
+     × answers the author as its account and its row say, and leaks nothing the scanner can find 24872ms
+     × answers the star as its account and its row say, and leaks nothing the scanner can find 22627ms
+     × answers the member who joined after the commit (T8) as its account and its row say, and leaks nothing the scanner can find 22063ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 11 skipped (14)
+   Start at  02:06:24
+   Duration  70.53s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the author as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 96, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 96,
++   "first": [
++     "active, collecting: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the days the viewer holds, chosen again)",
++     "active, collecting: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the same request again under its key)",
++     "active, open: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the days the viewer holds, chosen again)",
++     "active, open: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the same request again under its key)",
++     "active, past: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the days the viewer holds, chosen again)",
++     "active, past: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the same request again under its key)",
++     "active, past, a year on: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the days the viewer holds, chosen again)",
++     "active, past, a year on: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the same request again under its key)",
++     "active, past, a year on: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the viewer's proposed days, chosen)",
++     "active, past, a year on: chooseScheduleDays: the viewer holds tuesday, wednesday, not tuesday, friday (the viewer's proposed days, chosen)",
++     "withdrawn, collecting: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the days the viewer holds, chosen again)",
++     "withdrawn, collecting: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the same request again under its key)",
++     "withdrawn, open: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the days the viewer holds, chosen again)",
++     "withdrawn, open: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the same request again under its key)",
++     "withdrawn, past: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the days the viewer holds, chosen again)",
++     "withdrawn, past: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the same request again under its key)",
++     "withdrawn, past, a year on: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the days the viewer holds, chosen again)",
++     "withdrawn, past, a year on: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the same request again under its key)",
++     "withdrawn, past, a year on: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the viewer's proposed days, chosen)",
++     "withdrawn, past, a year on: chooseScheduleDays: the viewer holds tuesday, wednesday, not tuesday, friday (the viewer's proposed days, chosen)",
++     "removed by moderation, collecting: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the days the viewer holds, chosen again)",
++     "removed by moderation, collecting: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the same request again under its key)",
++     "removed by moderation, open: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the days the viewer holds, chosen again)",
++     "removed by moderation, open: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the same request again under its key)",
++     "removed by moderation, past: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the days the viewer holds, chosen again)",
++     "removed by moderation, past: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the same request again under its key)",
++     "removed by moderation, past, a year on: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the days the viewer holds, chosen again)",
++     "removed by moderation, past, a year on: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the same request again under its key)",
++     "removed by moderation, past, a year on: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the viewer's proposed days, chosen)",
++     "removed by moderation, past, a year on: chooseScheduleDays: the viewer holds tuesday, wednesday, not tuesday, friday (the viewer's proposed days, chosen)",
++     "held (T29), collecting: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the days the viewer holds, chosen again)",
++     "held (T29), collecting: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the same request again under its key)",
++     "held (T29), open: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the days the viewer holds, chosen again)",
++     "held (T29), open: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the same request again under its key)",
++     "held (T29), past: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the days the viewer holds, chosen again)",
++     "held (T29), past: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the same request again under its key)",
++     "held (T29), past, a year on: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the days the viewer holds, chosen again)",
++     "held (T29), past, a year on: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the same request again under its key)",
++     "held (T29), past, a year on: chooseScheduleDays: status 403, not the proposal as the viewer now sees it (the viewer's proposed days, chosen)",
++     "held (T29), past, a year on: chooseScheduleDays: the viewer holds tuesday, wednesday, not tuesday, friday (the viewer's proposed days, chosen)",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:676:66
+    674|       }
+    675|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    676|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    677|       // Every cell ran: the contract's 72 requests a world (each oper…
+    678|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 36, first: [ …(36) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 36,
++   "first": [
++     "its club suspended, collecting: chooseScheduleDays: status 400 (the days the viewer holds, chosen again)",
++     "its club suspended, collecting: chooseScheduleDays: reason \"Bad Request\" (the days the viewer holds, chosen again)",
++     "its club suspended, collecting: chooseScheduleDays: body \"{\\\"code\\\":\\\"INVALID_REQUEST\\\",\\\"field\\\":\\\"weekdays\\\"}\" (the days the viewer holds, chosen again)",
++     "its club suspended, collecting: chooseScheduleDays: content-length: 45 (the days the viewer holds, chosen again)",
++     "its club suspended, collecting: chooseScheduleDays: status 400 (the same request again under its key)",
++     "its club suspended, collecting: chooseScheduleDays: reason \"Bad Request\" (the same request again under its key)",
++     "its club suspended, collecting: chooseScheduleDays: body \"{\\\"code\\\":\\\"INVALID_REQUEST\\\",\\\"field\\\":\\\"weekdays\\\"}\" (the same request again under its key)",
++     "its club suspended, collecting: chooseScheduleDays: content-length: 45 (the same request again under its key)",
++     "its club suspended, open: chooseScheduleDays: status 400 (the days the viewer holds, chosen again)",
++     "its club suspended, open: chooseScheduleDays: reason \"Bad Request\" (the days the viewer holds, chosen again)",
++     "its club suspended, open: chooseScheduleDays: body \"{\\\"code\\\":\\\"INVALID_REQUEST\\\",\\\"field\\\":\\\"weekdays\\\"}\" (the days the viewer holds, chosen again)",
++     "its club suspended, open: chooseScheduleDays: content-length: 45 (the days the viewer holds, chosen again)",
++     "its club suspended, open: chooseScheduleDays: status 400 (the same request again under its key)",
++     "its club suspended, open: chooseScheduleDays: reason \"Bad Request\" (the same request again under its key)",
++     "its club suspended, open: chooseScheduleDays: body \"{\\\"code\\\":\\\"INVALID_REQUEST\\\",\\\"field\\\":\\\"weekdays\\\"}\" (the same request again under its key)",
++     "its club suspended, open: chooseScheduleDays: content-length: 45 (the same request again under its key)",
++     "its club suspended, past: chooseScheduleDays: status 400 (the days the viewer holds, chosen again)",
++     "its club suspended, past: chooseScheduleDays: reason \"Bad Request\" (the days the viewer holds, chosen again)",
++     "its club suspended, past: chooseScheduleDays: body \"{\\\"code\\\":\\\"INVALID_REQUEST\\\",\\\"field\\\":\\\"weekdays\\\"}\" (the days the viewer holds, chosen again)",
++     "its club suspended, past: chooseScheduleDays: content-length: 45 (the days the viewer holds, chosen again)",
++     "its club suspended, past: chooseScheduleDays: status 400 (the same request again under its key)",
++     "its club suspended, past: chooseScheduleDays: reason \"Bad Request\" (the same request again under its key)",
++     "its club suspended, past: chooseScheduleDays: body \"{\\\"code\\\":\\\"INVALID_REQUEST\\\",\\\"field\\\":\\\"weekdays\\\"}\" (the same request again under its key)",
++     "its club suspended, past: chooseScheduleDays: content-length: 45 (the same request again under its key)",
++     "its club suspended, past, a year on: chooseScheduleDays: status 400 (the days the viewer holds, chosen again)",
++     "its club suspended, past, a year on: chooseScheduleDays: reason \"Bad Request\" (the days the viewer holds, chosen again)",
++     "its club suspended, past, a year on: chooseScheduleDays: body \"{\\\"code\\\":\\\"INVALID_REQUEST\\\",\\\"field\\\":\\\"weekdays\\\"}\" (the days the viewer holds, chosen again)",
++     "its club suspended, past, a year on: chooseScheduleDays: content-length: 45 (the days the viewer holds, chosen again)",
++     "its club suspended, past, a year on: chooseScheduleDays: status 400 (the same request again under its key)",
++     "its club suspended, past, a year on: chooseScheduleDays: reason \"Bad Request\" (the same request again under its key)",
++     "its club suspended, past, a year on: chooseScheduleDays: body \"{\\\"code\\\":\\\"INVALID_REQUEST\\\",\\\"field\\\":\\\"weekdays\\\"}\" (the same request again under its key)",
++     "its club suspended, past, a year on: chooseScheduleDays: content-length: 45 (the same request again under its key)",
++     "its club suspended, past, a year on: chooseScheduleDays: status 400 (the viewer's proposed days, chosen)",
++     "its club suspended, past, a year on: chooseScheduleDays: reason \"Bad Request\" (the viewer's proposed days, chosen)",
++     "its club suspended, past, a year on: chooseScheduleDays: body \"{\\\"code\\\":\\\"INVALID_REQUEST\\\",\\\"field\\\":\\\"weekdays\\\"}\" (the viewer's proposed days, chosen)",
++     "its club suspended, past, a year on: chooseScheduleDays: content-length: 45 (the viewer's proposed days, chosen)",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:676:66
+    674|       }
+    675|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    676|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    677|       // Every cell ran: the contract's 72 requests a world (each oper…
+    678|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the member who joined after the commit (T8) as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 252, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 252,
++   "first": [
++     "active, collecting: chooseScheduleDays: status 400 (the days the viewer holds, chosen again)",
++     "active, collecting: chooseScheduleDays: reason \"Bad Request\" (the days the viewer holds, chosen again)",
++     "active, collecting: chooseScheduleDays: body \"{\\\"code\\\":\\\"INVALID_REQUEST\\\",\\\"field\\\":\\\"weekdays\\\"}\" (the days the viewer holds, chosen again)",
++     "active, collecting: chooseScheduleDays: content-length: 45 (the days the viewer holds, chosen again)",
++     "active, collecting: chooseScheduleDays: status 400 (the same request again under its key)",
++     "active, collecting: chooseScheduleDays: reason \"Bad Request\" (the same request again under its key)",
++     "active, collecting: chooseScheduleDays: body \"{\\\"code\\\":\\\"INVALID_REQUEST\\\",\\\"field\\\":\\\"weekdays\\\"}\" (the same request again under its key)",
++     "active, collecting: chooseScheduleDays: content-length: 45 (the same request again under its key)",
++     "active, open: chooseScheduleDays: status 400 (the days the viewer holds, chosen again)",
++     "active, open: chooseScheduleDays: reason \"Bad Request\" (the days the viewer holds, chosen again)",
++     "active, open: chooseScheduleDays: body \"{\\\"code\\\":\\\"INVALID_REQUEST\\\",\\\"field\\\":\\\"weekdays\\\"}\" (the days the viewer holds, chosen again)",
++     "active, open: chooseScheduleDays: content-length: 45 (the days the viewer holds, chosen again)",
++     "active, open: chooseScheduleDays: status 400 (the same request again under its key)",
++     "active, open: chooseScheduleDays: reason \"Bad Request\" (the same request again under its key)",
++     "active, open: chooseScheduleDays: body \"{\\\"code\\\":\\\"INVALID_REQUEST\\\",\\\"field\\\":\\\"weekdays\\\"}\" (the same request again under its key)",
++     "active, open: chooseScheduleDays: content-length: 45 (the same request again under its key)",
++     "active, past: chooseScheduleDays: status 400 (the days the viewer holds, chosen again)",
++     "active, past: chooseScheduleDays: reason \"Bad Request\" (the days the viewer holds, chosen again)",
++     "active, past: chooseScheduleDays: body \"{\\\"code\\\":\\\"INVALID_REQUEST\\\",\\\"field\\\":\\\"weekdays\\\"}\" (the days the viewer holds, chosen again)",
++     "active, past: chooseScheduleDays: content-length: 45 (the days the viewer holds, chosen again)",
++     "active, past: chooseScheduleDays: status 400 (the same request again under its key)",
++     "active, past: chooseScheduleDays: reason \"Bad Request\" (the same request again under its key)",
++     "active, past: chooseScheduleDays: body \"{\\\"code\\\":\\\"INVALID_REQUEST\\\",\\\"field\\\":\\\"weekdays\\\"}\" (the same request again under its key)",
++     "active, past: chooseScheduleDays: content-length: 45 (the same request again under its key)",
++     "active, past, a year on: chooseScheduleDays: status 400 (the days the viewer holds, chosen again)",
++     "active, past, a year on: chooseScheduleDays: reason \"Bad Request\" (the days the viewer holds, chosen again)",
++     "active, past, a year on: chooseScheduleDays: body \"{\\\"code\\\":\\\"INVALID_REQUEST\\\",\\\"field\\\":\\\"weekdays\\\"}\" (the days the viewer holds, chosen again)",
++     "active, past, a year on: chooseScheduleDays: content-length: 45 (the days the viewer holds, chosen again)",
++     "active, past, a year on: chooseScheduleDays: status 400 (the same request again under its key)",
++     "active, past, a year on: chooseScheduleDays: reason \"Bad Request\" (the same request again under its key)",
++     "active, past, a year on: chooseScheduleDays: body \"{\\\"code\\\":\\\"INVALID_REQUEST\\\",\\\"field\\\":\\\"weekdays\\\"}\" (the same request again under its key)",
++     "active, past, a year on: chooseScheduleDays: content-length: 45 (the same request again under its key)",
++     "active, past, a year on: chooseScheduleDays: status 400 (the viewer's proposed days, chosen)",
++     "active, past, a year on: chooseScheduleDays: reason \"Bad Request\" (the viewer's proposed days, chosen)",
++     "active, past, a year on: chooseScheduleDays: body \"{\\\"code\\\":\\\"INVALID_REQUEST\\\",\\\"field\\\":\\\"weekdays\\\"}\" (the viewer's proposed days, chosen)",
++     "active, past, a year on: chooseScheduleDays: content-length: 45 (the viewer's proposed days, chosen)",
++     "withdrawn, collecting: chooseScheduleDays: status 400 (the days the viewer holds, chosen again)",
++     "withdrawn, collecting: chooseScheduleDays: reason \"Bad Request\" (the days the viewer holds, chosen again)",
++     "withdrawn, collecting: chooseScheduleDays: body \"{\\\"code\\\":\\\"INVALID_REQUEST\\\",\\\"field\\\":\\\"weekdays\\\"}\" (the days the viewer holds, chosen again)",
++     "withdrawn, collecting: chooseScheduleDays: content-length: 45 (the days the viewer holds, chosen again)",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:676:66
+    674|       }
+    675|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    676|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    677|       // Every cell ran: the contract's 72 requests a world (each oper…
+    678|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

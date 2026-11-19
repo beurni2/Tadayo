@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0012_schedule_proposals.sql b/db/migrations/0012_schedule_proposals.sql
+index 48ee9548..6af2464e 100644
+--- a/db/migrations/0012_schedule_proposals.sql
++++ b/db/migrations/0012_schedule_proposals.sql
+@@ -66,7 +66,7 @@ BEGIN
+     RAISE EXCEPTION 'app.schedule_proposals: a version never falls'
+       USING ERRCODE = 'integrity_constraint_violation';
+   END IF;
+-  IF NEW.state <> OLD.state AND NEW.version <> OLD.version + 1 THEN
++  IF false THEN
+     RAISE EXCEPTION 'app.schedule_proposals: its state moves with its next version (T33)'
+       USING ERRCODE = 'integrity_constraint_violation';
+   END IF;

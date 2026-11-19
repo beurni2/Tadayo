@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/schedule/decide.ts b/packages/domain/src/schedule/decide.ts
+index 7294c96d..37b94d39 100644
+--- a/packages/domain/src/schedule/decide.ts
++++ b/packages/domain/src/schedule/decide.ts
+@@ -71,6 +71,6 @@ export function judgeConfirmation(
+  * joiner is never one of them, FQ100), and at least one such member is left.
+  */
+ export function everyoneConfirmed(facts: WeekFacts): boolean {
+-  const active = facts.members.filter((member) => member.active);
++  const active = facts.members;
+   return active.length > 0 && active.every((member) => member.confirmed);
+ }

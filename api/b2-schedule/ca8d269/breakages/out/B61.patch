@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/read.ts b/packages/domain/src/schedule/read.ts
+index 38b6e90f..0e6fc043 100644
+--- a/packages/domain/src/schedule/read.ts
++++ b/packages/domain/src/schedule/read.ts
+@@ -49,7 +49,7 @@ export async function readSchedule(
+   if (week === null) return null;
+   // Dates in ISO form compare as text.
+   const today = now.toZonedDateTimeISO(clubTimeZone(week.club.timezone)).toPlainDate().toString();
+-  const inForce = week.versions.filter((version) => version.effectiveFrom <= today).at(-1);
++  const inForce = week.versions.at(-1);
+   const assignments = (inForce?.assignments ?? []).flatMap((assignment) =>
+     assignment.person === null ? [] : [{ weekday: assignment.weekday, person: assignment.person }],
+   );
