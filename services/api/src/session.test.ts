@@ -90,6 +90,8 @@ const BUILT = new Set([
   "getMe",
   "updateMe",
   "listClubs",
+  "createClub",
+  "getClub",
   "listMembers",
   "getSchedule",
   "chooseScheduleDays",

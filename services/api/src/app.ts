@@ -20,6 +20,7 @@ import Fastify, { type FastifyError, type FastifyInstance, type FastifyReply, ty
 import { OPERATIONS } from "@tadayo/contracts";
 import { JSON_TYPE, NO_STORE, problem } from "./answers.ts";
 import { listClubsHandler } from "./clubs/list.ts";
+import { createClubHandler, getClubHandler } from "./clubs/club.ts";
 import { listMembersHandler } from "./clubs/members.ts";
 import type { Deps, Handler } from "./deps.ts";
 import { getMe, updateMeHandler } from "./identity/me.ts";
@@ -52,10 +53,13 @@ export const BODY_LIMIT = 128 * 1024;
  * two escapes, every key escaped too, and an avatar's id and the rest), so its limit is 17 KiB, the least
  * whole number of KiB that keeps that body under half of it, as `me.test.ts` asks. A schedule command's is
  * a version and at most two weekdays, under 350 bytes with every key and character written as an escape, so
- * its limit is 1 KiB (`schedule/routes.test.ts`).
+ * its limit is 1 KiB (`schedule/routes.test.ts`). `createClub`'s largest valid body is a name of the same
+ * 640 code points and a zone of 64 characters, under 8,500 bytes written the same way, so it takes
+ * `updateMe`'s 17 KiB (`clubs/club.test.ts`).
  */
 const ROUTE_BODY_LIMITS: Readonly<Record<string, number>> = {
   updateMe: 17 * 1024,
+  createClub: 17 * 1024,
   chooseScheduleDays: 1024,
   confirmScheduleDays: 1024,
 };
@@ -116,6 +120,8 @@ function handlersOf(deps: Deps): Readonly<Record<string, Handler>> {
     getMe,
     updateMe: updateMeHandler(deps),
     listClubs: listClubsHandler(deps),
+    createClub: createClubHandler(deps),
+    getClub: getClubHandler(deps),
     listMembers: listMembersHandler(deps),
     getSchedule: getScheduleHandler(deps),
     chooseScheduleDays: chooseScheduleDaysHandler(deps),

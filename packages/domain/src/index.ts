@@ -14,6 +14,8 @@ export {
 export { activeMember, activeMemberships } from "./authorization/member.ts";
 export { mayReadDrop, readableDrops, type FragmentSql, type QuerySql } from "./authorization/read-sql.ts";
 export { listClubs, LIST_LIMIT, type ClubListing, type ClubRow, type InvitationRow } from "./clubs/club-list.ts";
+export { CLUB_SIZE, readClub, type ClubDetail } from "./clubs/club.ts";
+export { createClub, type CreateClubInput, type CreatedClub } from "./clubs/create-club.ts";
 export { listMembers, type MemberRow, type Roster } from "./clubs/members.ts";
 export {
   checkPinnedRoot,
