@@ -108,12 +108,16 @@ final class TabsLayoutTests: XCTestCase {
             XCTAssertGreaterThanOrEqual(header.add.frame.height, 44 - 0.5, "\(size)")
             XCTAssertGreaterThanOrEqual(header.add.frame.width, 44 - 0.5, "\(size)")
             // What the header measures at each size, for the records: no source gives a rule
-            // for + Add's target here (the needs list, item 59).
-            XCTContext.runActivity(
-                named: "The stacked header at \(size): + Add \(header.add.frame), "
-                    + "Account \(header.account.frame), the header "
-                    + "\(header.add.frame.maxY - top) high"
-            ) { _ in }
+            // for + Add's target here (the needs list, item 59). A passing hosted test's
+            // activities aren't in the log, so the measures are an attachment's name, which the
+            // run's attachments manifest on `evidence` lists.
+            let target = header.add.frame
+            let measures = XCTAttachment(string: "\(header)")
+            measures.name =
+                "stacked-header \(size): add \(rounded(target.width)) by "
+                + "\(rounded(target.height)), header \(rounded(target.maxY - top)) high"
+            measures.lifetime = .keepAlways
+            add(measures)
             XCTAssertEqual(
                 header.account.frame.minX, 329, accuracy: 0.5, "\(size): \(header.account)")
             XCTAssertEqual(header.account.frame.width, 44, accuracy: 0.5, "\(size)")
@@ -247,12 +251,18 @@ final class TabsLayoutTests: XCTestCase {
 
     // MARK: Helpers
 
-    /// Keeps the drawing with the run, whether the test passes or fails.
-    private func keep(_ image: UIImage, as name: String) {
+    /// Keeps the drawing for a failure's evidence: named as `tools/ci/ios_steps.py` collects a
+    /// snapshot, and kept only if the test fails, as the UI tests keep theirs.
+    private func keep(_ image: UIImage, as name: String, test: String = #function) {
         let attachment = XCTAttachment(image: image)
-        attachment.name = name
-        attachment.lifetime = .keepAlways
+        attachment.name = "\(test.prefix { $0 != "(" }).\(name).png"
+        attachment.lifetime = .deleteOnSuccess
         add(attachment)
+    }
+
+    /// To a tenth of a point.
+    private func rounded(_ value: CGFloat) -> String {
+        String(format: "%.1f", value)
     }
 
     private func turn(_ seconds: TimeInterval) {
