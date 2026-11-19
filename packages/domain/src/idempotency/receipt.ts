@@ -76,6 +76,31 @@ export async function reservedSince(
 }
 
 /**
+ * Reserves the receipt for a club command whose caller's present membership interval is `interval`: as
+ * `reserveReceipt` does, but a key whose receipt an earlier interval of the account made names nothing to
+ * this one, for the same request and for another alike (FQ112): `Refused` NOT_FOUND, never the stored
+ * answer and never IDEMPOTENCY_CONFLICT, which would say the key was used.
+ */
+export async function reserveAsMember(
+  tx: QuerySql,
+  receipt: ReceiptKey,
+  at: Temporal.Instant,
+  interval: string,
+): Promise<{ readonly replay: Json } | null> {
+  let first: { readonly replay: Json } | null;
+  try {
+    first = await reserveReceipt(tx, receipt, at);
+  } catch (error) {
+    if (error instanceof Refused && error.code === "IDEMPOTENCY_CONFLICT") {
+      if (!(await reservedSince(tx, receipt, interval))) throw new Refused("NOT_FOUND");
+    }
+    throw error;
+  }
+  if (first !== null && !(await reservedSince(tx, receipt, interval))) throw new Refused("NOT_FOUND");
+  return first;
+}
+
+/**
  * Completes the receipt with `body` and returns the answer as the receipt keeps it (jsonb orders a body's
  * keys its own way), so a replay is the first answer byte for byte, not only the same fields. `status` is
  * the contract's success status of the operation, 201 where it makes something.

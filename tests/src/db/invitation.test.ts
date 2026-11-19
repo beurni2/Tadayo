@@ -13,7 +13,7 @@ import { fakeClock, type FakeClock } from "@tadayo/domain/testing";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { rolledBack, worldSql, type WorldTx } from "./harness.ts";
 import { accept, link, plain, propose, read, refusal, revoke, type RevisionBody } from "./roster-world.ts";
-import { clubOf, type WeekClub } from "./week-world.ts";
+import { clubOf, holding, waitingOn, type WeekClub } from "./week-world.ts";
 import { joinByRoster, leave, newId, newUser } from "./world.ts";
 
 const db = worldSql(4);
@@ -266,6 +266,8 @@ describe("a share link for one candidate (T7, FQ71, FQ77)", () => {
       clock.set(FIRST.add({ hours: 3 }));
       const none = { code: "NOT_FOUND", facts: {} };
       expect(await refusal(link(tx, clock, user(s.w, 0), s.w.club, s.sam, key))).toEqual(none);
+      // Another request under that key gets the same, never a conflict, which would say the key was used.
+      expect(await refusal(link(tx, clock, user(s.w, 0), s.w.club, s.debby, key))).toEqual(none);
       // Nor is the earlier interval's link the new one's to revoke.
       const made = first.answer as unknown as LinkAnswer;
       expect(await refusal(revoke(tx, clock, user(s.w, 0), made.invitation_id))).toEqual(none);
@@ -300,6 +302,55 @@ describe("the clock and the club's row (T1)", () => {
     });
   });
 
+  it(
+    "asks who is making the link again once it holds the club's row: a proposer who left while it waited gets the neutral not-found",
+    { timeout: 20_000 },
+    async () => {
+      const s = await db.begin((tx) => world(tx));
+      const hold = await holding(db, s.w.club);
+      const outcome = refusal(
+        db.begin((tx) =>
+          createInvitation(
+            tx,
+            clock,
+            { userId: user(s.w, 0), key: randomUUID(), clubId: s.w.club, candidateId: s.sam },
+            invitationLinkBody,
+          ),
+        ),
+      );
+      try {
+        await waitingOn(db, hold.pid);
+        await db.begin((tx) => leave(plain(tx), { user: user(s.w, 0), interval: member(s.w, 0) }, "Ben", LATER));
+      } finally {
+        await hold.release();
+      }
+      expect(await outcome).toEqual({ code: "NOT_FOUND", facts: {} });
+      expect(await linksOf(db as unknown as WorldTx, s.sam)).toEqual([]);
+    },
+  );
+
+  it(
+    "asks who is revoking again once it holds the club's row: a proposer who left while it waited gets the neutral not-found",
+    { timeout: 20_000 },
+    async () => {
+      const s = await db.begin((tx) => world(tx));
+      const made = await db.begin((tx) => link(tx, clock, user(s.w, 0), s.w.club, s.sam));
+      const id = (made.answer as unknown as LinkAnswer).invitation_id;
+      const hold = await holding(db, s.w.club);
+      const outcome = refusal(
+        db.begin((tx) => revokeInvitation(tx, clock, { userId: user(s.w, 0), invitationId: id })),
+      );
+      try {
+        await waitingOn(db, hold.pid);
+        await db.begin((tx) => leave(plain(tx), { user: user(s.w, 0), interval: member(s.w, 0) }, "Ben", LATER));
+      } finally {
+        await hold.release();
+      }
+      expect(await outcome).toEqual({ code: "NOT_FOUND", facts: {} });
+      expect((await linksOf(db as unknown as WorldTx, s.sam)).map((row) => row.revoked_at)).toEqual([null]);
+    },
+  );
+
   it("keeps one latest link when two requests for one candidate arrive at once, and when a new link races a revoke", async () => {
     const s = await db.begin((tx) => world(tx));
     const create = () =>
@@ -311,7 +362,15 @@ describe("the clock and the club's row (T1)", () => {
           invitationLinkBody,
         ),
       );
-    const [one, two] = await Promise.all([create(), create()]);
+    // Both are past their receipts and waiting for the club's row before either goes on.
+    const hold = await holding(db, s.w.club);
+    const both = Promise.all([create(), create()]);
+    try {
+      await waitingOn(db, hold.pid, 2);
+    } finally {
+      await hold.release();
+    }
+    const [one, two] = await both;
     const ids = [one, two].map((made) => (made.answer as unknown as LinkAnswer).invitation_id);
     expect(new Set(ids).size).toBe(2);
     expect(one.token).not.toBe(two.token);
@@ -325,10 +384,17 @@ describe("the clock and the club's row (T1)", () => {
     // A new link and a revoke of the latest one, at once: whichever goes first, both are answered,
     // the revoked link is revoked, and there is one latest link, the new one.
     const target = latest[0]?.id ?? "";
-    const [made, revoked] = await Promise.all([
+    const again = await holding(db, s.w.club);
+    const raced = Promise.all([
       create(),
       db.begin((tx) => revokeInvitation(tx, clock, { userId: user(s.w, 0), invitationId: target })),
     ]);
+    try {
+      await waitingOn(db, again.pid, 2);
+    } finally {
+      await again.release();
+    }
+    const [made, revoked] = await raced;
     expect(revoked).toEqual({ invitationId: target });
     rows = await linksOf(db as unknown as WorldTx, s.sam);
     expect(rows).toHaveLength(3);

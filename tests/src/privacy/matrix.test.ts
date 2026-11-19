@@ -521,10 +521,12 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
     it(`answers the ${role.name} as its account and its row say, and leaks nothing the scanner can find`, async () => {
       const wrong: string[] = [];
       const counted = { cells: 0, answers: 0, expectedAnswers: 0, bodies: 0, expectedBodies: 0 };
-      // What the roster's table did for this role: the phases its viewer was a member the club answers, the
-      // revisions and links it made, and the answers given to another member. A table that was skipped
+      // What the roster's table did for this role: the proposals it sent, the phases its viewer was a member
+      // the club answers and the states that had one, the proposals the judge said must make a revision,
+      // the revisions and links made, and the answers given to another member. A table that was skipped
       // whole would balance every other count, so these are asserted below.
-      const roster = { memberPhases: 0, revisions: 0, links: 0, otherAnswers: 0 };
+      const roster = { proposals: 0, memberPhases: 0, due: 0, revisions: 0, links: 0, otherAnswers: 0 };
+      const memberStates = new Set<string>();
       const phases = (Object.keys(PHASES) as Phase[]).filter((phase) => !role.phases || role.phases.includes(phase));
       const expectedSession: Session = role.session ?? "active";
       for (const state of STATES) {
@@ -869,8 +871,10 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
           const propose = byId("proposeRoster");
           const rosterGate = gateOf(sessionNow, propose.operation);
           const rosterVersion = clubRows.get(cell.w.club)?.rosterVersion ?? -1;
-          if (rosterGate === undefined && viewerIn(schedule, cell.w.club, cell.viewer) !== undefined)
+          if (rosterGate === undefined && viewerIn(schedule, cell.w.club, cell.viewer) !== undefined) {
             roster.memberPhases += 1;
+            memberStates.add(state.name);
+          }
           const label = `${named(cell.w, "Proposed")} ${String(index)}`;
           let proposalSaid: string | undefined;
           let revision: string | undefined;
@@ -879,6 +883,8 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             const outcome = (version: number, people: number) =>
               proposalOutcome(schedule, clubRows, cell.w.club, cell.viewer, version, people);
             const before = one.expected === "proposal" ? outcome(rosterVersion, 1) : undefined;
+            if (rosterGate === undefined && before === "created") roster.due += 1;
+            roster.proposals += 1;
             const answer = await sendAs(sent, undefined, one.key);
             const problems: string[] = [];
             if (rosterGate !== undefined) problems.push(...pinnedProblems(answer, rosterGate));
@@ -1131,13 +1137,18 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       expect(counted.bodies).toBe(counted.expectedBodies);
       // In every phase of every state: createClub's eight bodies and the roster's eight proposals.
       expect(counted.bodies).toBeGreaterThanOrEqual(7 * phases.length * 16);
-      // The roster's table ran: a viewer who is a member in a phase proposes in the first such phase of each
-      // state at least (a later phase may find the club full of the candidates carried), every revision got
-      // its link, and each was read, linked and revoked by another member too (three reads, one link, one
-      // revoke: five answers a revision).
+      // The roster's table ran, for every role: its eight proposals in every phase of every state. Every
+      // proposal the judge said must make a revision made one. A viewer who is a member the club answers in
+      // some phase of a state proposes in the first such phase at least (a later phase may find the club
+      // full of the candidates carried; a suspended club answers nobody, so it is no such state). Every
+      // revision got its link, and each was read, linked and revoked by another member too (three reads,
+      // one link, one revoke: five answers a revision).
       ROSTER_TABLES.set(role.name, roster);
-      if (roster.memberPhases > 0) expect(roster.revisions).toBeGreaterThanOrEqual(7);
-      else expect(roster.revisions).toBe(0);
+      expect(roster.proposals).toBe(STATES.length * phases.length * proposeCases(0, "x").length);
+      expect(roster.revisions).toBe(roster.due);
+      expect(roster.memberPhases > 0).toBe(memberStates.size > 0);
+      expect(roster.revisions).toBeGreaterThanOrEqual(memberStates.size);
+      if (roster.memberPhases === 0) expect(roster.revisions).toBe(0);
       expect(roster.links).toBe(roster.revisions);
       expect(roster.otherAnswers).toBe(roster.revisions * 5);
       expect(counted.answers).toBe(counted.expectedAnswers);
@@ -1148,7 +1159,9 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
 
 describe("the roster's table ran (tests/src/privacy/roster.ts)", () => {
   it("made revisions and links for the six roles who are members the club answers, and for no other role", () => {
-    // Counted here apart from the judges: a table skipped whole would balance every other count.
+    // Counted here apart from the judges: a table skipped whole would balance every other count. This reads
+    // what the role tests above left, so it holds only when the whole file runs, in its order: under `-t`
+    // for one role, or after a role's test failed before it stored its table, it fails too.
     expect(ROSTER_TABLES.size).toBe(ROLES.length);
     const made = [...ROSTER_TABLES].filter(([, table]) => table.revisions > 0).map(([name]) => name);
     expect(made).toEqual([

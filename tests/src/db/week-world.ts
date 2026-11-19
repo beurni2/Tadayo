@@ -156,13 +156,21 @@ export async function holding(db: Db, club: string): Promise<{ pid: number; rele
   };
 }
 
-/** Waits until some backend is waiting on a lock `pid` holds. */
-export async function waitingOn(db: Db, pid: number): Promise<void> {
+/**
+ * Waits until `count` backends, one unless said, are waiting on a lock `pid` holds, or behind one that
+ * is: a second waiter for a row queues behind the first, not behind the row's holder.
+ */
+export async function waitingOn(db: Db, pid: number, count = 1): Promise<void> {
   for (let tries = 0; tries < 400; tries += 1) {
     const [row] = await db<{ waiting: boolean }[]>`
-      SELECT EXISTS (
-        SELECT FROM pg_catalog.pg_stat_activity a WHERE ${pid}::int4 = ANY (pg_catalog.pg_blocking_pids(a.pid))
-      ) AS waiting`;
+      WITH held AS (
+        SELECT a.pid, pg_catalog.pg_blocking_pids(a.pid) AS behind
+          FROM pg_catalog.pg_stat_activity a WHERE a.wait_event_type = 'Lock'
+      )
+      SELECT (SELECT pg_catalog.count(*) FROM held h
+               WHERE ${pid}::int4 = ANY (h.behind)
+                  OR EXISTS (SELECT FROM held g WHERE g.pid = ANY (h.behind) AND ${pid}::int4 = ANY (g.behind))
+             ) >= ${count}::int4 AS waiting`;
     if (row?.waiting === true) return;
     await new Promise((resolve) => setTimeout(resolve, 25));
   }

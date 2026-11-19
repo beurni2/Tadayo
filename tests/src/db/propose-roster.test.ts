@@ -167,8 +167,9 @@ describe("proposing people (spec 04, 32; T7)", () => {
   it("supersedes the open revision: its candidates carry over at their labels and in their order, their acceptances don't, and its approvals no longer count (T7)", async () => {
     await rolledBack(db, async (tx) => {
       const w = await clubOf(tx, 3);
-      const first = await propose(tx, clock, user(w, 0), w.club, ["Sam"]);
+      const first = await propose(tx, clock, user(w, 0), w.club, ["Sam", "Nina"]);
       const sam = first.candidates[0]?.id ?? "";
+      const nina = first.candidates[1]?.id ?? "";
       const made = await link(tx, clock, user(w, 0), w.club, sam);
       const invitation = (made.answer as { invitation_id: string }).invitation_id;
       await accept(tx, first.id, sam, invitation, LATER, "Sam");
@@ -188,7 +189,8 @@ describe("proposing people (spec 04, 32; T7)", () => {
         candidates: [
           // Maya didn't propose Sam, so Maya's answer has no link of Sam's (handoff 1).
           { id: sam, name: "Sam", proposed_by: person(w, 0) },
-          { id: second.candidates[1]?.id, name: "Debby", proposed_by: person(w, 1) },
+          { id: nina, name: "Nina", proposed_by: person(w, 0) },
+          { id: second.candidates[2]?.id, name: "Debby", proposed_by: person(w, 1) },
         ],
         my_decision: "approved",
       });
@@ -210,7 +212,7 @@ describe("proposing people (spec 04, 32; T7)", () => {
       expect(approvals).toEqual([{ interval_id: member(w, 1), implicit: true }]);
       // One open revision, one candidate row each: nobody is proposed twice.
       const open = await tx`SELECT id FROM app.candidates WHERE club_id = ${w.club} AND state = 'open'`;
-      expect(open).toHaveLength(2);
+      expect(open).toHaveLength(3);
 
       // Ben, who proposed Sam, is asked again, and sees that Sam's link was used on an earlier roster.
       const bens = await read(tx, user(w, 0), second.id, at as ServerNow);
@@ -407,6 +409,74 @@ describe("the clock and the club's row (T1)", () => {
       expect(await receipts(db as unknown as WorldTx, user(w, 2))).toEqual([]);
     },
   );
+
+  it(
+    "proposes nothing for a member who left and joined again while it waited for the club's row: the new interval sends its own request",
+    { timeout: 20_000 },
+    async () => {
+      const w = await db.begin((tx) => clubOf(tx, 3));
+      const expected = await db.begin((tx) => rosterVersion(tx, w.club));
+      // One transaction holds the club's row, and before it lets go the member leaves and a roster brings
+      // the account back: a new interval, begun after the waiting request's receipt.
+      let go = (): void => undefined;
+      const gate = new Promise<void>((resolve) => (go = resolve));
+      let held: (pid: number) => void = () => undefined;
+      const taken = new Promise<number>((resolve) => (held = resolve));
+      const change = db.begin(async (tx) => {
+        const [row] = await tx<{ pid: number }[]>`
+          SELECT pg_catalog.pg_backend_pid() AS pid FROM app.clubs WHERE id = ${w.club} FOR UPDATE`;
+        held(row?.pid ?? 0);
+        await gate;
+        await leave(plain(tx), { user: user(w, 2), interval: member(w, 2) }, "Alex", LATER);
+        const [again] = await joinByRoster(
+          plain(tx),
+          w.club,
+          { user: user(w, 0), interval: member(w, 0) },
+          [{ user: user(w, 2), label: "Alex" }],
+          new Date(LATER.getTime() + 3_600_000),
+        );
+        return again;
+      });
+      const pid = await taken;
+      const key = randomUUID();
+      const send = () =>
+        db.begin((tx) =>
+          proposeRoster(
+            tx,
+            clock,
+            { userId: user(w, 2), key, clubId: w.club, expectedRosterVersion: expected, add: [{ label: "Sam" }] },
+            rosterRevisionBody,
+          ),
+        );
+      const outcome = refusal(send());
+      try {
+        await waitingOn(db, pid);
+      } finally {
+        go();
+      }
+      const again = await change;
+      expect(again).not.toBe(member(w, 2));
+      expect(await outcome).toEqual({ code: "NOT_FOUND", facts: {} });
+      expect(await revisionsOf(db as unknown as WorldTx, w.club)).toEqual([]);
+      expect(await receipts(db as unknown as WorldTx, user(w, 2))).toEqual([]);
+      // The same key again, now the new interval's own first request: it proposes, and its retry is answered.
+      clock.set(FIRST.add({ hours: 3 }));
+      const now = await db.begin((tx) => rosterVersion(tx, w.club));
+      const resend = () =>
+        db.begin((tx) =>
+          proposeRoster(
+            tx,
+            clock,
+            { userId: user(w, 2), key, clubId: w.club, expectedRosterVersion: now, add: [{ label: "Sam" }] },
+            rosterRevisionBody,
+          ),
+        );
+      const made = (await resend()) as unknown as RevisionBody;
+      expect(made.club.my_membership_id).toBe(again);
+      expect(await resend()).toEqual(made);
+      expect(await revisionsOf(db as unknown as WorldTx, w.club)).toHaveLength(1);
+    },
+  );
 });
 
 describe("what a revision's read leaves out (FQ75, FQ114, T7)", () => {
@@ -494,6 +564,27 @@ describe("what a revision's read leaves out (FQ75, FQ114, T7)", () => {
 });
 
 describe("one commit per key (T19)", () => {
+  it("answers a retry of a request made at the very instant its sender's membership began", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await clubOf(tx, 3);
+      const [began] = await tx<{ joined_at: Temporal.Instant }[]>`
+        SELECT joined_at FROM app.memberships WHERE interval_id = ${member(w, 2)}`;
+      if (began === undefined) throw new Error("the member has no interval");
+      clock.set(began.joined_at);
+      const key = randomUUID();
+      const expected = await rosterVersion(tx, w.club);
+      const first = await propose(tx, clock, user(w, 2), w.club, ["Sam"], { key, expected });
+      const [receipt] = await tx<{ same: boolean }[]>`
+        SELECT r.created_at = m.joined_at AS same
+          FROM app.idempotency_receipts r JOIN app.memberships m ON m.interval_id = ${member(w, 2)}
+         WHERE r.actor_user_id = ${user(w, 2)} AND r.operation = 'proposeRoster'`;
+      expect(receipt?.same).toBe(true);
+      clock.advance({ hours: 1 });
+      expect(await propose(tx, clock, user(w, 2), w.club, ["Sam"], { key, expected })).toEqual(first);
+      expect(await revisionsOf(tx, w.club)).toHaveLength(1);
+    });
+  });
+
   it("answers a retry with the first answer, at a later clock and though the roster has changed since, and makes nothing", async () => {
     await rolledBack(db, async (tx) => {
       const w = await clubOf(tx, 2);
@@ -649,6 +740,11 @@ describe("who may propose (T9, T14; FQ80, FQ112)", () => {
       expect(again).not.toBe(member(w, 2));
       clock.set(FIRST.add({ hours: 3 }));
       expect(await refusal(propose(tx, clock, user(w, 2), w.club, ["Sam"], { key, expected }))).toEqual({
+        code: "NOT_FOUND",
+        facts: {},
+      });
+      // Another request under that key gets the same, never a conflict, which would say the key was used.
+      expect(await refusal(propose(tx, clock, user(w, 2), w.club, ["Sam", "Debby"], { key, expected }))).toEqual({
         code: "NOT_FOUND",
         facts: {},
       });

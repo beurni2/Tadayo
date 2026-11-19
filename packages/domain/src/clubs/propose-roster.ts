@@ -12,10 +12,12 @@
 // 2. The receipt (T19): the same request under the same key gets the first revision back, as it was
 //    answered, though the roster has changed since, unless the caller's interval began after the receipt
 //    was made: someone who left and joined again gets NOT_FOUND, not what the earlier interval was
-//    answered (FQ112; ../idempotency/receipt.ts `reservedSince`); another request under it is IDEMPOTENCY_CONFLICT. Then
+//    answered, and so does another request of theirs under that key (FQ112; ../idempotency/receipt.ts
+//    `reserveAsMember`); otherwise another request under a used key is IDEMPOTENCY_CONFLICT. Then
 //    the club's row, `FOR UPDATE`: every command that changes a club's roster takes it first, the lock the
 //    schema's own guards take (db/migrations/0003_people_and_clubs.sql `memberships_guard`, 0004's seal).
-// 3. Who is asking, again, now that nothing of the roster can change under the lock: NOT_FOUND.
+// 3. Who is asking, again, now that nothing of the roster can change under the lock: the same interval
+//    as before the receipt, or NOT_FOUND, so a receipt is never older than the interval it answered.
 // 4. VERSION_CONFLICT with `current_version` when `expected_roster_version` isn't the club's.
 // 5. Six (A01, T6): the active members, the candidates still open and the people proposed now are at most
 //    `CLUB_SIZE`, else CLUB_FULL. It is `can_propose`'s rule (./club.ts), so CLUB_FULL is the answer
@@ -37,7 +39,7 @@
 
 import { activeMember } from "../authorization/member.ts";
 import type { QuerySql } from "../authorization/read-sql.ts";
-import { completeReceipt, reserveReceipt, reservedSince, type ReceiptKey } from "../idempotency/receipt.ts";
+import { completeReceipt, reserveAsMember, type ReceiptKey } from "../idempotency/receipt.ts";
 import type { Json } from "../idempotency/request.ts";
 import { newId } from "../ids.ts";
 import { Refused } from "../refused.ts";
@@ -127,18 +129,16 @@ export async function proposeRoster(
   const asking = await activeMember(tx, userId, clubId);
   if (asking === null) throw new Refused("NOT_FOUND");
 
-  // 2. The receipt, then the club's row. A stored answer is its own interval's: someone who left and
-  // joined again gets none of what the earlier interval was answered (FQ112).
-  const first = await reserveReceipt(tx, receipt, await clock.sample(tx));
-  if (first !== null) {
-    if (!(await reservedSince(tx, receipt, asking))) throw new Refused("NOT_FOUND");
-    return first.replay;
-  }
+  // 2. The receipt, then the club's row. A key is answered only when its receipt was made once the
+  // caller's present interval had begun: someone who left and joined again gets nothing of it (FQ112).
+  const first = await reserveAsMember(tx, receipt, await clock.sample(tx), asking);
+  if (first !== null) return first.replay;
   await bound(tx)`SELECT id FROM app.clubs WHERE id = ${clubId} FOR UPDATE`;
 
-  // 3. Who is asking.
+  // 3. Who is asking: the same interval still. One that ended while this waited, a new one begun since
+  // included, proposes nothing: its receipt would be older than the interval it answered.
   const proposer = await activeMember(tx, userId, clubId);
-  if (proposer === null) throw new Refused("NOT_FOUND");
+  if (proposer !== asking) throw new Refused("NOT_FOUND");
 
   // 4. The version. 5. Six.
   const [roster] = await bound(tx)`

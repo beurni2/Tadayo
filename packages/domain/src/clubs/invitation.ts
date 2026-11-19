@@ -17,9 +17,10 @@
 // `createInvitation`:
 // 1. The caller's membership of the path's club (`activeMember`), before the receipt is looked at:
 //    NOT_FOUND, for a first request and a retry alike (FQ112's default).
-// 2. The receipt (T19): a replay is answered only to the interval that was a member when the receipt was
-//    made; someone who left and joined again gets NOT_FOUND (FQ112; `reservedSince`). Then the club's row,
-//    `FOR UPDATE`, as every command of a club's roster takes it, then who is asking again.
+// 2. The receipt (T19): a key is answered only when its receipt was made once the caller's present
+//    interval had begun; someone who left and joined again gets NOT_FOUND under an earlier key, for the
+//    same request and for another (FQ112; `reserveAsMember`). Then the club's row, `FOR UPDATE`, as every
+//    command of a club's roster takes it, then who is asking again: the same interval, or NOT_FOUND.
 // 3. The candidate: of this club, still open, on the club's open revision, and proposed by the caller's
 //    interval. Anything else is NOT_FOUND.
 // 4. The candidate's latest link: NOT_ALLOWED when an account accepted with it, in this revision or an
@@ -41,7 +42,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { activeMember } from "../authorization/member.ts";
 import type { QuerySql } from "../authorization/read-sql.ts";
-import { completeReceipt, reserveReceipt, reservedSince, type ReceiptKey } from "../idempotency/receipt.ts";
+import { completeReceipt, reserveAsMember, type ReceiptKey } from "../idempotency/receipt.ts";
 import type { Json } from "../idempotency/request.ts";
 import { newId } from "../ids.ts";
 import { Refused } from "../refused.ts";
@@ -136,15 +137,14 @@ export async function createInvitation(
   const asking = await activeMember(tx, userId, clubId);
   if (asking === null) throw new Refused("NOT_FOUND");
 
-  // 2. The receipt, the club's row, and who is asking. A stored answer is its own interval's (FQ112).
-  const first = await reserveReceipt(tx, receipt, await clock.sample(tx));
-  if (first !== null) {
-    if (!(await reservedSince(tx, receipt, asking))) throw new Refused("NOT_FOUND");
-    return { answer: first.replay, token: null };
-  }
+  // 2. The receipt, the club's row, and who is asking. A key is answered only once the caller's present
+  // interval had begun when its receipt was made (FQ112).
+  const first = await reserveAsMember(tx, receipt, await clock.sample(tx), asking);
+  if (first !== null) return { answer: first.replay, token: null };
   await bound(tx)`SELECT id FROM app.clubs WHERE id = ${clubId} FOR UPDATE`;
+  // The same interval still: one that ended while this waited, a new one begun since included, makes nothing.
   const proposer = await activeMember(tx, userId, clubId);
-  if (proposer === null) throw new Refused("NOT_FOUND");
+  if (proposer !== asking) throw new Refused("NOT_FOUND");
 
   // 3. The candidate: the caller's own, still open, on the open revision.
   const [candidate] = await bound(tx)`
