@@ -82,9 +82,9 @@ final class TabsSnapshotTests: XCTestCase {
         XCTAssertEqual(
             elements.first { $0.label == "+ Add" }?.hint,
             "Save a private draft or open private drafts.", "\(elements)")
-        XCTAssertTrue(
-            elements.contains { $0.label == "Account" && $0.traits.contains(.button) },
-            "\(elements)")
+        let account = elements.first { $0.label == "Account" }
+        XCTAssertTrue(account?.traits.contains(.button) ?? false, "\(elements)")
+        XCTAssertEqual(account?.hint, "Open your account.", "\(elements)")
         // The avatar's initial isn't read: Account is.
         XCTAssertFalse(elements.contains { $0.label == "B" }, "\(elements)")
     }
@@ -146,9 +146,19 @@ final class TabsSnapshotTests: XCTestCase {
     }
 
     func testAFailureOffersRetryAndAClubThisBuildCantShowDoesnt() {
-        let failed = AccessibilityElements.of(content(.failed(.network), on: .friends))
-        XCTAssertTrue(
-            failed.contains { $0.label == "Retry" && $0.traits.contains(.button) }, "\(failed)")
+        // Its label is Retry on every tab; its hint names the tab it loads again (handoff 7's
+        // `vo.retryHome.hint` and the other two).
+        let hints: [(ClubTab, String)] = [
+            (.home, "Load Home again."), (.friends, "Load Friends again."),
+            (.memories, "Load Memories again."),
+        ]
+        for (tab, hint) in hints {
+            for failure in [RootModel.Failure.network, .other] {
+                let failed = AccessibilityElements.of(content(.failed(failure), on: tab))
+                let retry = failed.first { $0.label == "Retry" && $0.traits.contains(.button) }
+                XCTAssertEqual(retry?.hint, hint, "\(tab), \(failure): \(failed)")
+            }
+        }
         let other = AccessibilityElements.of(content(.notInThisBuild, on: .home))
         XCTAssertTrue(other.contains { $0.label == "Account" }, "\(other)")
         XCTAssertFalse(other.contains { $0.label == "Retry" }, "\(other)")

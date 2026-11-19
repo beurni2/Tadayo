@@ -595,7 +595,7 @@
         }
     }
 
-    /// The no-club header with Ben's initial (handoff 2's `noClubRootHeader`), across the width
+    /// The no-club header with Ben's initial (handoff 7's `noClubRootHeader`), across the width
     /// as the tabs draw it, and the Private drafts row (`privateDraftsEntry`).
     struct LabHeader: View {
         var body: some View {
@@ -604,7 +604,8 @@
                     NoClubHeader(
                         wordmark: Image("Wordmark"), wordmarkLabel: Text("brand.wordmark"),
                         add: Text("header.add"), addHint: Text("header.add.hint"),
-                        account: Text("header.account"), name: FixtureCast.ben.name,
+                        account: Text("header.account"),
+                        accountHint: Text("header.account.hint"), name: FixtureCast.ben.name,
                         onAdd: {}, onAccount: {})
                 }
                 LabGroup(title: "Private drafts") {

@@ -87,11 +87,13 @@ final class LabSnapshotTests: XCTestCase {
         }
     }
 
-    /// The no-club header's second form, which no screen snapshot reaches, each being 393 points
-    /// wide: at 320 points, the width of a 375-point iPhone with Display Zoom on, and the largest
-    /// accessibility size, + Add and Account don't fit beside the wordmark, so they go on a row
-    /// under it, still trailing (handoff 4: "can stack").
-    func testTheHeaderStacksWhenItsActionsDontFit() {
+    /// The no-club header at 320 points, the width of a 375-point iPhone with Display Zoom on
+    /// (handoff 7's check asks for the header at the default size, the largest and 320 points):
+    /// at the default size it keeps its one row, and at the largest accessibility size it is
+    /// stacked, as at every accessibility size, + Add leading under the wordmark and Account at
+    /// the trailing inset (`noClubRootHeader.largest`).
+    func testTheHeaderAt320Points() {
+        snap(.header, .light, width: 320, named: "Lab-header-320")
         snap(.header, .xl, width: 320, named: "Lab-header-320-xl")
     }
 
