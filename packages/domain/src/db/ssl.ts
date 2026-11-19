@@ -96,7 +96,7 @@ const LOOPBACK_HOSTS: readonly string[] = ["localhost", "127.0.0.1", "[::1]"];
  * get TLS. A string with two `@` in its authority is never plain either, as a second guard: the two
  * parsers start the host at different ones.
  */
-function isPlainLoopback(url: string): boolean {
+export function isPlainLoopback(url: string): boolean {
   const authority = /^[a-z][a-z0-9+.-]*:\/\/([^/?#]*)/i.exec(url)?.[1];
   if (authority === undefined) return false;
   if (authority.indexOf("@") !== authority.lastIndexOf("@")) return false;

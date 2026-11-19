@@ -20,6 +20,7 @@ import Fastify, { type FastifyError, type FastifyInstance, type FastifyReply, ty
 import { OPERATIONS } from "@tadayo/contracts";
 import { JSON_TYPE, NO_STORE, problem } from "./answers.ts";
 import { listClubsHandler } from "./clubs/list.ts";
+import { listMembersHandler } from "./clubs/members.ts";
 import type { Deps, Handler } from "./deps.ts";
 import { getMe, updateMeHandler } from "./identity/me.ts";
 import { chooseScheduleDaysHandler, confirmScheduleDaysHandler, getScheduleHandler } from "./schedule/routes.ts";
@@ -115,6 +116,7 @@ function handlersOf(deps: Deps): Readonly<Record<string, Handler>> {
     getMe,
     updateMe: updateMeHandler(deps),
     listClubs: listClubsHandler(deps),
+    listMembers: listMembersHandler(deps),
     getSchedule: getScheduleHandler(deps),
     chooseScheduleDays: chooseScheduleDaysHandler(deps),
     confirmScheduleDays: confirmScheduleDaysHandler(deps),
