@@ -62,6 +62,8 @@ const BUILT = new Set([
   "getMe",
   "updateMe",
   "listClubs",
+  "createClub",
+  "getClub",
   "listMembers",
   "getSchedule",
   "chooseScheduleDays",
@@ -96,7 +98,7 @@ describe("the skeleton's routes (T14)", () => {
 
   it("answers every operation nobody has built yet with the neutral not-found, and nothing else", async () => {
     const unbuilt = OPERATIONS.filter((operation) => !BUILT.has(operation.id));
-    expect(unbuilt).toHaveLength(60);
+    expect(unbuilt).toHaveLength(58);
     for (const operation of unbuilt) {
       const url = operation.path.replace(/\{[a-z_]+\}/g, "drp_x");
       expect(await answer({ method: operation.method.toUpperCase(), url }), operation.id).toEqual(NEUTRAL);
@@ -157,7 +159,7 @@ describe("what Fastify answers itself, made to say nothing (T14)", () => {
     // own limit holds, since Fastify's not-found context takes no route's: a path the contract hasn't and a
     // method the path hasn't. A route nobody has built answers the neutral not-found once it has read its body.
     for (const [method, url] of [
-      ["POST", "/v1/clubs"],
+      ["POST", "/v1/reports"],
       ["POST", "/v1/nowhere"],
       ["POST", "/v1/me"],
       ["PUT", "/v1/me"],
@@ -171,7 +173,7 @@ describe("what Fastify answers itself, made to say nothing (T14)", () => {
     // Every route has the limit, and none has a higher one: a route with its own is lower.
     for (const operation of OPERATIONS) expect(bodyLimitOf(operation.id), operation.id).toBeLessThanOrEqual(BODY_LIMIT);
     expect(bodyLimitOf("updateMe")).toBe(17 * 1024);
-    expect(bodyLimitOf("createClub")).toBe(BODY_LIMIT);
+    expect(bodyLimitOf("createReport")).toBe(BODY_LIMIT);
   });
 
   it("ends its connection when it closes, giving queries still running END_SECONDS before postgres.js closes it anyway", async () => {

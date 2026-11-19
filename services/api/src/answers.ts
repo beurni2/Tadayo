@@ -49,6 +49,11 @@ export function ok(reply: FastifyReply, body: unknown): FastifyReply {
   return reply.code(200).header("cache-control", NO_STORE).type(JSON_TYPE).send(JSON.stringify(body));
 }
 
+/** A success that made something (the contract's 201): `body` as JSON, which only the caller may keep. */
+export function created(reply: FastifyReply, body: unknown): FastifyReply {
+  return reply.code(201).header("cache-control", NO_STORE).type(JSON_TYPE).send(JSON.stringify(body));
+}
+
 /**
  * The one 401: no session, whatever is wrong with the token or the account behind it (T14, T27). It has
  * no `WWW-Authenticate`, as the contract declares none.

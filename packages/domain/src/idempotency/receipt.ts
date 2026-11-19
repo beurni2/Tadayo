@@ -56,12 +56,18 @@ export async function reserveReceipt(
 
 /**
  * Completes the receipt with `body` and returns the answer as the receipt keeps it (jsonb orders a body's
- * keys its own way), so a replay is the first answer byte for byte, not only the same fields.
+ * keys its own way), so a replay is the first answer byte for byte, not only the same fields. `status` is
+ * the contract's success status of the operation, 201 where it makes something.
  */
-export async function completeReceipt(tx: QuerySql, { userId, key, request }: ReceiptKey, body: Json): Promise<Json> {
+export async function completeReceipt(
+  tx: QuerySql,
+  { userId, key, request }: ReceiptKey,
+  body: Json,
+  status: 200 | 201 = 200,
+): Promise<Json> {
   const [completed] = await bound(tx)`
     UPDATE app.idempotency_receipts
-       SET state = 'completed', response_status = 200,
+       SET state = 'completed', response_status = ${String(status)}::pg_catalog.int2,
            response_body = ${JSON.stringify(body)}::pg_catalog.text::pg_catalog.jsonb
      WHERE actor_user_id = ${userId} AND operation = ${request.operation}
        AND idempotency_key = ${key}::pg_catalog.uuid

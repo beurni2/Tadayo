@@ -75,6 +75,15 @@
 //   `open_revision` yet; and the neutral not-found to everyone else. The matrix asks it in every cell and
 //   again after the viewer's own schedule commands, so a choice is seen to change none of it and the last
 //   confirmation to move the rows once;
+// - for the club's two routes (B1's first slice, done): getClub's ClubDetail for one of the club's members,
+//   whole, judged from the world's rows by club.ts (the state, the active members, the two days, the
+//   roster's version, `can_propose` and the open revision's id), and the neutral not-found to everyone
+//   else; createClub's table of bodies in every cell, where each account the gate lets through makes a
+//   club, reads it, lists it once and retries it under its key, and someone of another club is refused
+//   it. A club the viewer makes changes the world, so the facts are read again before its answer is
+//   scanned. No member's world here has an open revision or a full roster, so `open_revision_id` and a
+//   false `can_propose` pass through no cell: the read's rule for them is tested on rows built by hand
+//   (tests/src/db/create-club.test.ts) and the serializer's on the contract's `kitchen_table` example;
 // - for the schedule's routes still to come (the membership change and the first days' roster, B2's later
 //   schedule PRs; getHome, listClubs' `next_day` and a revealed day's `add_target` where a schedule's day
 //   shows), each as a check a row can run:
@@ -96,14 +105,20 @@
 //     a replaced proposal getting the neutral not-found.
 
 import { JUDGED as ACCOUNT_JUDGED } from "./account.ts";
+import { CLUB_JUDGED } from "./club.ts";
 import { MEMBERS_JUDGED } from "./members.ts";
 import { SCHEDULE_JUDGED } from "./schedule.ts";
 
 /**
- * The operations some file judges: the account routes (slice 8), the schedule routes (B2's schedule slice)
- * and the roster (B2's generation slice).
+ * The operations some file judges: the account routes (slice 8), the schedule routes (B2's schedule slice),
+ * the roster (B2's generation slice) and the club's two routes (B1's first slice).
  */
-export const JUDGED: ReadonlySet<string> = new Set([...ACCOUNT_JUDGED, ...SCHEDULE_JUDGED, ...MEMBERS_JUDGED]);
+export const JUDGED: ReadonlySet<string> = new Set([
+  ...ACCOUNT_JUDGED,
+  ...SCHEDULE_JUDGED,
+  ...MEMBERS_JUDGED,
+  ...CLUB_JUDGED,
+]);
 
 const GATE =
   "the gate's one 401 to an account whose deletion has begun (T27) and to every caller without a session, " +
@@ -146,6 +161,23 @@ export const MEMBERS = Object.freeze({
     `field; the neutral NOT_FOUND to every other role the gate lets through (${GATE})`,
 });
 
+/** getClub (B1's first slice): the club's information for one of its members, whole, from the world's rows. */
+export const CLUB = Object.freeze({
+  answer:
+    "200 with the club's ClubDetail as club.ts's clubFor makes it from the world's rows, to an account with an " +
+    "active interval in a club that isn't suspended: its state, its active members counted, its two days, the " +
+    "roster's version, whether another person can be proposed and the open revision's id, and no other field; " +
+    `the neutral NOT_FOUND to every other role the gate lets through (${GATE})`,
+});
+
+/** createClub (B1's first slice): club.ts's table of bodies. */
+export const CREATE_CLUB = Object.freeze({
+  answer:
+    "each body of club.ts's table answered as it says: INVALID_REQUEST to what the contract refuses, 201 with the " +
+    "new club as its creator reads it, the same bytes to its retry under the same key, and IDEMPOTENCY_CONFLICT " +
+    `to another body under that key, to any account the gate lets through (${GATE})`,
+});
+
 /** chooseScheduleDays and confirmScheduleDays (B2's schedule slice): schedule.ts's table of bodies. */
 export const SCHEDULE_COMMAND = Object.freeze({
   answer:
@@ -162,7 +194,7 @@ export const ROWS: Readonly<Record<string, unknown>> = {
   clearReaction: NONE,
   completeUpload: NONE,
   confirmScheduleDays: SCHEDULE_COMMAND,
-  createClub: NONE,
+  createClub: CREATE_CLUB,
   createComment: NONE,
   createDrop: NONE,
   createInvitation: NONE,
@@ -174,7 +206,7 @@ export const ROWS: Readonly<Record<string, unknown>> = {
   deleteComment: NONE,
   deleteMyAvatar: NONE,
   getAuthorPreview: NONE,
-  getClub: NONE,
+  getClub: CLUB,
   getClubNotificationPreferences: NONE,
   getCommentMedia: NONE,
   getConfig: NONE,
