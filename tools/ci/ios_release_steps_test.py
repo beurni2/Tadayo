@@ -316,6 +316,8 @@ class HelpersTest(unittest.TestCase):
                      member("Tadayo.xcarchive/Products/Applications", tarfile.DIRTYPE)):
             self.assertIsNone(release.unsafe_member(good), good.name)
         for bad in (member("/Tadayo.xcarchive/Info.plist"), member("Other/Info.plist"),
+                    member("Tadayo.xcarchivex/Info.plist"), member("./Tadayo.xcarchive/Info.plist"),
+                    member("Tadayo.xcarchive.tar"), member(""),
                     member("Info.plist"), member("Tadayo.xcarchive/../../tools/ci/x.py"),
                     member("Tadayo.xcarchive/link", tarfile.SYMTYPE),
                     member("Tadayo.xcarchive/hard", tarfile.LNKTYPE),
@@ -527,19 +529,24 @@ class CheckTest(StepsTest):
         def service(app):
             os.makedirs(os.path.join(app, "XPCServices", "Helper.xpc"))
 
+        def capitals(app):
+            self.bundle(os.path.join(app, "PlugIns", "Other.APPEX"), "app.tadayo.other")
+
         def no_extension(app):
-            shutil.rmtree(os.path.join(app, "PlugIns"))
-            self.bundle(os.path.join(app, "PlugIns", "TadayoShare.appex.off"), release.SHARE_ID)
+            os.rename(os.path.join(app, "PlugIns", "TadayoShare.appex"),
+                      os.path.join(app, "PlugIns", "TadayoShare.off"))
         for change, word in ((other_app, "Applications holds ['Other.app', 'Tadayo.app']"),
                              (clip, "the app carries"), (second_extension, "the app carries"),
-                             (service, "the app carries")):
+                             (service, "the app carries"), (capitals, "the app carries"),
+                             (no_extension, "can't be read")):
             with self.subTest(change=change.__name__):
                 shutil.rmtree(self.temp, ignore_errors=True)
                 change(self.archive())
                 code, out = self.check()
                 self.assertEqual(code, 1, out)
                 self.assertIn(word, out)
-        for named in ("Applications/Other.app", "Applications/Tadayo.app/PlugIns/x.app", None):
+        for named in ("Applications/Other.app", "Applications/Tadayo.app/PlugIns/x.app",
+                      "Other/Applications/Tadayo.app", None):
             with self.subTest(named=named):
                 shutil.rmtree(self.temp, ignore_errors=True)
                 self.archive(named=named) if named else self.archive(named=7)
@@ -560,6 +567,26 @@ class CheckTest(StepsTest):
                 self.assertEqual(out.count("doesn't declare"), 1, out)
                 self.assertIn(f"{label}: it holds entitlements the project doesn't declare: "
                               "aps-environment, com.apple.developer.associated-domains", out)
+
+    def test_what_only_an_export_may_hold_fails_in_an_archive(self):
+        self.archive()
+        more = plistlib.loads(entitlements().encode())
+        more["keychain-access-groups"] = [TEAM + ".*"]
+        code, out = self.check(self.shell(signed=signed_as(app=plistlib.dumps(more).decode())))
+        self.assertEqual(code, 1)
+        self.assertIn("the app: it holds entitlements the project doesn't declare: "
+                      "keychain-access-groups", out)
+
+    def test_an_icon_name_that_is_a_path_is_never_opened(self):
+        outside = os.path.join(self.root, "outside@2x.png")
+        with open(outside, "wb") as f:
+            f.write(png(120, 120))
+        self.archive(icon=None, CFBundleIcons={"CFBundlePrimaryIcon": {
+            "CFBundleIconName": "AppIcon",
+            "CFBundleIconFiles": [outside[:-len("@2x.png")], "../../../../../outside"]}})
+        code, out = self.check()
+        self.assertEqual(code, 1)
+        self.assertIn("120-pixel", out)
 
     def test_an_archive_of_another_attempt_fails(self):
         # The sign job re-run alone would be attempt 3 reading attempt 2's archive.
@@ -725,7 +752,11 @@ class PackTest(StepsTest):
 
         def renamed(path):
             shutil.move(path, path + ".gz")
-        for change in (beside, a_link, link_only, a_folder, renamed):
+        def linked_folder(path):
+            folder = os.path.dirname(path)
+            os.rename(folder, folder + "-real")
+            os.symlink(folder + "-real", folder)
+        for change in (beside, a_link, link_only, a_folder, renamed, linked_folder):
             with self.subTest(change=change.__name__):
                 self.tar(lambda packed: None)
                 change(self.incoming())
@@ -733,6 +764,8 @@ class PackTest(StepsTest):
                 self.assertEqual(code, 1)
                 self.assertIn("refused", out)
                 self.assertFalse(os.path.exists(self.steps().archive_path()))
+                folder = os.path.join(self.temp, "ios-release-in")
+                os.remove(folder) if os.path.islink(folder) else None
 
     def test_unpack_never_writes_through_a_link_where_the_archive_goes(self):
         target = os.path.join(self.root, "tools-ci")
@@ -1234,7 +1267,7 @@ class WorkflowFileTest(unittest.TestCase):
         self.assertNotRegex(self.text, r"(?m)^    env:")
 
     def test_every_step_is_only_what_it_is_here(self):
-        # A `run` step holds its command, its time limit and, for four of them, its `env`; an
+        # A `run` step holds its command, its time limit and, for three of them, its `env`; an
         # action holds its `with`. No other key (shell, working-directory, a second run) and no
         # other value can ride on a step, least of all on one that holds the key.
         team = "        env:\n          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}\n"
@@ -1253,9 +1286,15 @@ class WorkflowFileTest(unittest.TestCase):
         def plain(job):
             lines = self.jobs[job].split("\n    steps:\n", 1)[1].splitlines()
             return "\n".join(l for l in lines if l.strip() and not l.lstrip().startswith("#"))
-        build = plain("build")
-        self.assertTrue(build.startswith((checkout + "".join(map(run, self.BUILD))).rstrip("\n")
-                                         + "\n      - if: "), build)
+        self.assertEqual(plain("build"), (
+            checkout + "".join(map(run, self.BUILD))
+            + f"      - if: {self.DEV_UPLOAD}\n"
+              "        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9"
+              "  # v7.0.2\n        with:\n"
+              "          name: archive-${{ github.run_attempt }}\n"
+              "          path: ${{ runner.temp }}/ios-release-out/Tadayo.xcarchive.tar\n"
+              "          if-no-files-found: error\n"
+              "          retention-days: 1").rstrip("\n"))
         self.assertEqual(plain("sign"), (
             checkout
             + "      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333"
@@ -1263,8 +1302,28 @@ class WorkflowFileTest(unittest.TestCase):
               "          name: archive-${{ github.run_attempt }}\n"
               "          path: ${{ runner.temp }}/ios-release-in\n"
             + "".join(map(run, self.SIGN))).rstrip("\n"))
-        self.assertEqual(self.text.count("shell:"), 1)
-        self.assertIn("\ndefaults:\n  run:\n    shell: bash\n", self.text)
+
+    def test_nothing_rides_on_a_job_or_on_the_workflow_either(self):
+        # No working-directory, container, matrix, environment, extra permission or variable:
+        # everything outside the steps is exactly this.
+        def plain(text):
+            return [l for l in text.splitlines() if l.strip() and not l.lstrip().startswith("#")]
+        top = self.text.split("\npermissions: {}\n", 1)[1].split("\njobs:\n", 1)[0]
+        self.assertEqual(plain(top), [
+            "concurrency:", "  group: ios-release", "  cancel-in-progress: false",
+            "defaults:", "  run:", "    shell: bash",
+            "env:", "  RELEASE_ENVIRONMENT: ${{ inputs.environment }}",
+            "  RELEASE_UPLOAD: ${{ inputs.upload }}"])
+        before = self.text.split("\npermissions: {}\n", 1)[0]
+        self.assertEqual(re.findall(r"^([a-z-]+):", before, flags=re.M), ["name", "on"])
+        header = ["    runs-on: xcode-27", "    timeout-minutes: {}", "    permissions:",
+                  "      contents: read"]
+        heads = {name: plain(job.split("\n    steps:\n", 1)[0]) for name, job in self.jobs.items()}
+        self.assertEqual(heads["build"], ["    name: build"]
+                         + [line.format(60) for line in header])
+        self.assertEqual(heads["sign"], ["    name: sign", "    needs: build",
+                                         f"    if: {self.DEV_UPLOAD}"]
+                         + [line.format(45) for line in header])
 
     def test_every_action_is_pinned_to_a_commit_the_other_workflows_use(self):
         uses = re.findall(r"uses: (\S+)", self.text)

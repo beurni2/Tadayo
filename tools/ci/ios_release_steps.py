@@ -39,7 +39,8 @@ takes only the archive, as data, and runs only on a dev upload.
              activation rule is the dictionary apps/ios/project.yml declares, never a predicate
              string; both carry the app group in their entitlements, and no entitlement the
              project doesn't declare; the archive names this app as its own and carries no
-             other app, extension or service than the share extension; and the fixture
+             other app, extension or service bundle (.app, .appex, .xpc) than the share
+             extension, though its frameworks and executables are not read; and the fixture
              photographs are all there in a dev archive and none of them in a prod one (T46;
              TECH-DESIGN section 4, "The Lab").
   pack       Puts the archive in one tar file for the workflow to hand to the sign job. Only
@@ -263,7 +264,7 @@ def nested_code(app):
     found = []
     for folder, names, _ in os.walk(app):
         for name in names:
-            if name.endswith(NESTED_SUFFIXES):
+            if name.lower().endswith(NESTED_SUFFIXES):
                 found.append(os.path.relpath(os.path.join(folder, name), app))
     return sorted(found)
 
@@ -582,6 +583,8 @@ class Steps:
                             f"not {ICON_NAME}")
         sizes = {}
         for name in icon_files(info):
+            if "/" in name:  # a file of the app itself, never a path out of it
+                continue
             path = os.path.join(app, f"{name}@2x.png")
             if os.path.isfile(path):
                 with open(path, "rb") as f:
@@ -633,8 +636,8 @@ class Steps:
             # nothing else; it is unpacked into a folder the artifact never touched.
             held = sorted(os.listdir(self.incoming))
             packed_path = os.path.join(self.incoming, PACKED_NAME)
-            if held != [PACKED_NAME] or os.path.islink(packed_path) \
-                    or not os.path.isfile(packed_path):
+            if held != [PACKED_NAME] or os.path.islink(self.incoming) \
+                    or os.path.islink(packed_path) or not os.path.isfile(packed_path):
                 self.say("unpack", f"refused: the build job's artifact holds {held!r}, not the "
                                    f"one file {PACKED_NAME}")
                 return 1
