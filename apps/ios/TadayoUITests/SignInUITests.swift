@@ -61,6 +61,7 @@ final class SignInUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["What’s your email?"].exists)
         // Return after Send a code starts no send; the code on its way puts the focus back.
         app.typeText("\n")
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
         app.typeText("x")
         XCTAssertEqual(field.value as? String, "ben@example.com")
         XCTAssertTrue(app.keyboards.firstMatch.exists)
@@ -84,6 +85,7 @@ final class SignInUITests: XCTestCase {
         app.typeText("x")
         XCTAssertEqual(field.value as? String, "ben@example.com")
         app.typeText("\n")
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
         app.typeText("x")
         XCTAssertEqual(field.value as? String, "ben@example.com")
         XCTAssertTrue(app.keyboards.firstMatch.exists)

@@ -77,12 +77,14 @@ struct EmailScreen: View {
                         .autocorrectionDisabled()
                         .submitLabel(.next)
                         .onSubmit {
-                            // Only a Return that starts a send, counted, so one made while a
-                            // code is on its way, or as the last send ends, can't end its
-                            // cover. The count is held a moment past the send's end: a send
-                            // that fails at once ends before the field's lost focus reaches
-                            // `onChange(of: focused)`, as A03's save did (`ProfileForm`).
-                            guard model.canSend else { return }
+                            // Only a Return that starts a send or comes during one, counted,
+                            // so no Return ends another's cover. The count is held a moment
+                            // past the send's end, or past a Return made during a send (which
+                            // `sendCode()` ignores): a send can end before the field's lost
+                            // focus reaches `onChange(of: focused)`, as A03's save that failed
+                            // at once did (`ProfileForm`; not seen on this screen, whose
+                            // stand-ins have no failing send).
+                            guard model.canSend || model.isSending else { return }
                             returnSends += 1
                             Task {
                                 await model.sendCode()
@@ -128,8 +130,8 @@ struct EmailScreen: View {
         // whether Return or Send a code started it, so the field keeps it as it does when Send a
         // code is tapped (handoff 7's `busyPrimary.field`: "keep first responder and keyboard if
         // already shown"). `returnSends` covers the moments between Return and the send's start,
-        // and after a send that ends at once; once a code is sent the focus is A02-code's, so
-        // nothing is put back then. Whether the keyboard dips on the way is a device check:
+        // and after a send that ends just as Return is pressed; once a code is sent the focus is
+        // A02-code's, so nothing is put back then. Whether the keyboard dips on the way is a device check:
         // focus set again on Return makes it go down and come back up (Apple's developer forums,
         // thread 770226).
         .onChange(of: focused) { _, now in
