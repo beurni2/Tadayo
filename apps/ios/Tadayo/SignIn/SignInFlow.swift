@@ -133,7 +133,7 @@ struct EmailScreen: View {
         // focus set again on Return makes it go down and come back up (Apple's developer forums,
         // thread 770226).
         .onChange(of: focused) { _, now in
-            if !now, model.step == .email, returnSends > 0 || model.isSending { focused = true }
+            if !now, returnSends > 0 || model.isSending { focused = true }
         }
         .announcing(failure?.words)
         // Said politely, so VoiceOver first says what it says of the screen that just appeared.
