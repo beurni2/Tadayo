@@ -11,8 +11,10 @@
 --
 -- The schedule's commands decide who may choose and confirm what, under the club's row lock
 -- (packages/domain/src/schedule/). These triggers are the last guards behind them: a day is
--- confirmed only by a member who holds it alone, a member who has confirmed changes nothing
--- after, and a proposal that has ended never changes.
+-- confirmed only by a member who holds it alone, and joins the first days' week only as its
+-- holder's confirmation; a member who has confirmed, or who has left, changes nothing after; the
+-- first days apply only once every member still in the club has confirmed; and a proposal that
+-- has ended never changes.
 --
 -- No table, column or row is dropped or rewritten (FQ39).
 
@@ -49,6 +51,9 @@ ALTER TABLE app.schedule_proposals ENABLE ROW LEVEL SECURITY;
 CREATE UNIQUE INDEX schedule_proposals_one_open ON app.schedule_proposals (club_id) WHERE state = 'open';
 
 -- A proposal ends once, with the next version, and never changes after; its version never falls.
+-- The first days apply only when every member they include who is still in the club has confirmed,
+-- and at least one has (packages/domain/src/schedule/decide.ts `everyoneConfirmed`). The days a
+-- member takes change only while nobody has confirmed and nobody holds more than the new number.
 CREATE FUNCTION app.schedule_proposals_guard() RETURNS trigger
   LANGUAGE plpgsql SET search_path = '' AS $$
 BEGIN
@@ -62,6 +67,25 @@ BEGIN
   END IF;
   IF NEW.state <> OLD.state AND NEW.version <> OLD.version + 1 THEN
     RAISE EXCEPTION 'app.schedule_proposals: its state moves with its next version (T33)'
+      USING ERRCODE = 'integrity_constraint_violation';
+  END IF;
+  IF NEW.state = 'applied' AND OLD.state = 'open' AND NEW.reason = 'activation' AND (
+       NOT EXISTS (SELECT FROM app.schedule_proposal_members m
+                     JOIN app.memberships ms ON ms.interval_id = m.interval_id
+                    WHERE m.proposal_id = NEW.id AND ms.state = 'active')
+       OR EXISTS (SELECT FROM app.schedule_proposal_members m
+                    JOIN app.memberships ms ON ms.interval_id = m.interval_id
+                   WHERE m.proposal_id = NEW.id AND ms.state = 'active' AND m.confirmed_at IS NULL)) THEN
+    RAISE EXCEPTION 'app.schedule_proposals: the first days of % apply once every member still in the club has confirmed', NEW.id
+      USING ERRCODE = 'integrity_constraint_violation';
+  END IF;
+  IF NEW.days_per_member <> OLD.days_per_member AND (
+       EXISTS (SELECT FROM app.schedule_proposal_members
+                WHERE proposal_id = NEW.id AND confirmed_at IS NOT NULL)
+       OR EXISTS (SELECT FROM app.schedule_proposal_days
+                   WHERE proposal_id = NEW.id AND held
+                   GROUP BY interval_id HAVING pg_catalog.count(*) > NEW.days_per_member)) THEN
+    RAISE EXCEPTION 'app.schedule_proposals: the days a member takes in % change only while nobody has confirmed or holds more', NEW.id
       USING ERRCODE = 'integrity_constraint_violation';
   END IF;
   RETURN NEW;
@@ -92,7 +116,8 @@ CREATE TABLE app.schedule_proposal_members (
 ALTER TABLE app.schedule_proposal_members ENABLE ROW LEVEL SECURITY;
 CREATE INDEX schedule_proposal_members_by_interval ON app.schedule_proposal_members (interval_id);
 
--- BEFORE INSERT OR UPDATE: only an open proposal gains a member or a confirmation. A confirmation
+-- BEFORE INSERT OR UPDATE: only an open proposal gains a member or a confirmation, and only a
+-- member still in the club confirms (FQ102). A confirmation
 -- takes the proposal's row FOR UPDATE and a change of holds takes it FOR SHARE
 -- (schedule_proposal_days_guard), so neither passes the other's check unseen: a hold on a day
 -- being confirmed waits and is then refused, and a confirmation of a day being taken waits and
@@ -109,6 +134,11 @@ BEGIN
   END IF;
   IF proposal_state IS DISTINCT FROM 'open' THEN
     RAISE EXCEPTION 'app.schedule_proposal_members: only an open proposal gains a member or a confirmation'
+      USING ERRCODE = 'integrity_constraint_violation';
+  END IF;
+  IF TG_OP = 'UPDATE' AND NOT EXISTS (SELECT FROM app.memberships
+                                       WHERE interval_id = NEW.interval_id AND state = 'active') THEN
+    RAISE EXCEPTION 'app.schedule_proposal_members: % is no longer a member, and confirms nothing (FQ102)', NEW.interval_id
       USING ERRCODE = 'integrity_constraint_violation';
   END IF;
   RETURN NEW;
@@ -146,14 +176,18 @@ CREATE TABLE app.schedule_proposal_days (
 ALTER TABLE app.schedule_proposal_days ENABLE ROW LEVEL SECURITY;
 
 -- BEFORE INSERT OR UPDATE OR DELETE: holds change only in an open proposal, only for a member who
--- hasn't confirmed (FQ57), and never onto a day already confirmed, since only a confirmed day is
--- taken (FQ48). It holds the proposal's row against a confirmation (schedule_proposal_members_guard).
+-- hasn't confirmed (FQ57) and is still in the club (FQ102), and never onto a day already confirmed,
+-- since only a confirmed day is taken (FQ48). It takes the member's own row first, FOR UPDATE, so
+-- two changes of one member's holds are in one order and the count at commit sees both
+-- (schedule_proposal_days_count); then it holds the proposal's row against a confirmation
+-- (schedule_proposal_members_guard), which takes the two rows in the same order.
 CREATE FUNCTION app.schedule_proposal_days_guard() RETURNS trigger
   LANGUAGE plpgsql SET search_path = '' AS $$
 DECLARE
   the_proposal app.id;
   the_interval app.id;
   proposal app.schedule_proposals%ROWTYPE;
+  member_confirmed_at timestamptz;
 BEGIN
   IF TG_OP = 'DELETE' THEN
     the_proposal := OLD.proposal_id;
@@ -162,14 +196,19 @@ BEGIN
     the_proposal := NEW.proposal_id;
     the_interval := NEW.interval_id;
   END IF;
+  SELECT confirmed_at INTO member_confirmed_at FROM app.schedule_proposal_members
+   WHERE proposal_id = the_proposal AND interval_id = the_interval FOR UPDATE;
   SELECT * INTO proposal FROM app.schedule_proposals WHERE id = the_proposal FOR SHARE;
   IF proposal.state IS DISTINCT FROM 'open' THEN
     RAISE EXCEPTION 'app.schedule_proposal_days: holds change only while their proposal is open'
       USING ERRCODE = 'integrity_constraint_violation';
   END IF;
-  IF EXISTS (SELECT FROM app.schedule_proposal_members
-              WHERE proposal_id = the_proposal AND interval_id = the_interval AND confirmed_at IS NOT NULL) THEN
+  IF member_confirmed_at IS NOT NULL THEN
     RAISE EXCEPTION 'app.schedule_proposal_days: % has confirmed, and chooses nothing after (FQ57)', the_interval
+      USING ERRCODE = 'integrity_constraint_violation';
+  END IF;
+  IF NOT EXISTS (SELECT FROM app.memberships WHERE interval_id = the_interval AND state = 'active') THEN
+    RAISE EXCEPTION 'app.schedule_proposal_days: % is no longer a member, and holds nothing (FQ102)', the_interval
       USING ERRCODE = 'integrity_constraint_violation';
   END IF;
   IF TG_OP = 'DELETE' THEN
@@ -271,3 +310,35 @@ CREATE CONSTRAINT TRIGGER schedule_confirmation_guard AFTER UPDATE ON app.schedu
   DEFERRABLE INITIALLY DEFERRED
   FOR EACH ROW WHEN (NEW.confirmed_at IS NOT NULL AND OLD.confirmed_at IS NULL)
   EXECUTE FUNCTION app.schedule_confirmation_guard();
+
+-- At commit, for a day written into a first days' week: it is its star's confirmation and nothing
+-- else. The star confirmed at the row's own instant and holds that weekday in the proposal, so no
+-- day joins the week unconfirmed, for a member who doesn't hold it, or after the confirmation
+-- (T6; FQ55, FQ57). schedule_confirmation_guard checks the same from the member's side: with it,
+-- the week's rows for a member are exactly the days they confirmed. A week no first days made
+-- (a membership change's, or a test's own) isn't judged here.
+CREATE FUNCTION app.schedule_assignment_confirmed_guard() RETURNS trigger
+  LANGUAGE plpgsql SET search_path = '' AS $$
+BEGIN
+  IF NOT EXISTS (SELECT FROM app.schedule_proposals
+                  WHERE schedule_version_id = NEW.schedule_version_id AND reason = 'activation') THEN
+    RETURN NULL;
+  END IF;
+  IF NOT EXISTS (SELECT FROM app.schedule_proposals p
+                   JOIN app.schedule_proposal_members m ON m.proposal_id = p.id
+                   JOIN app.schedule_proposal_days d
+                     ON d.proposal_id = m.proposal_id AND d.interval_id = m.interval_id
+                  WHERE p.schedule_version_id = NEW.schedule_version_id AND p.reason = 'activation'
+                    AND m.interval_id = NEW.star_interval_id
+                    AND m.confirmed_at = NEW.confirmed_at AND d.weekday = NEW.weekday AND d.held) THEN
+    RAISE EXCEPTION 'app.schedule_assignments: % joins the first days'' week only as the confirmation of %, who holds it (T6)',
+      NEW.weekday, NEW.star_interval_id
+      USING ERRCODE = 'integrity_constraint_violation';
+  END IF;
+  RETURN NULL;
+END
+$$;
+CREATE CONSTRAINT TRIGGER schedule_assignment_confirmed_guard AFTER INSERT ON app.schedule_assignments
+  DEFERRABLE INITIALLY DEFERRED
+  FOR EACH ROW EXECUTE FUNCTION app.schedule_assignment_confirmed_guard();
+CREATE INDEX schedule_proposals_by_version ON app.schedule_proposals (schedule_version_id);

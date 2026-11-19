@@ -35,7 +35,7 @@ export { confirmScheduleDays } from "./schedule/confirm-days.ts";
 export { openFirstDays, type OpenedFirstDays } from "./schedule/open.ts";
 export { daysPerMember, proposedWeek, WEEKDAYS, type Weekday } from "./schedule/propose.ts";
 export { readSchedule, type CurrentWeek, type ScheduleSight } from "./schedule/read.ts";
-export type { SlotState } from "./schedule/view.ts";
+export { viewFor, type ProposalMember, type SlotState, type WeekFacts } from "./schedule/view.ts";
 export type { ProposalAnswer, SchedulePerson, SlotAnswer } from "./schedule/week.ts";
 export { Refused, type RefusalFacts } from "./refused.ts";
 export {

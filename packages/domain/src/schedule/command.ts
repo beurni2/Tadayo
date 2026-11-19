@@ -3,10 +3,12 @@
 // section 5; T1, T3's order, T9, T14, T19, T33), in one READ COMMITTED transaction the caller opens. A
 // refusal throws `Refused`, which rolls it back, so a refused request leaves nothing, its receipt included.
 //
-// 1. The receipt (T19): the same request under the same key gets the first answer back, as it was, though
-//    the week has changed since; another request under it is IDEMPOTENCY_CONFLICT.
-// 2. The proposal's club, read by the proposal's id with no lock, and the caller's membership of it
-//    (`activeMember`), so someone with nothing of the club never holds its row. Then the club's row,
+// 1. The proposal's club, read by the proposal's id with no lock, and the caller's membership of it
+//    (`activeMember`), so someone with nothing of the club never holds its row and never gets a stored
+//    answer: NOT_FOUND comes before the receipt is looked at (T14; FQ112's default), for a first request
+//    and a retry alike.
+// 2. The receipt (T19): the same request under the same key gets the first answer back, as it was, though
+//    the week has changed since; another request under it is IDEMPOTENCY_CONFLICT. Then the club's row,
 //    `FOR UPDATE`: every schedule command of a club takes it first, so a choice and a confirmation of the
 //    same day are in one order, the one `schedule_versions_insert_guard` and `memberships_guard` take too.
 // 3. Who is asking, again, now that nothing of the club's schedule can change under the lock: the week is
@@ -105,15 +107,15 @@ export async function scheduleCommand(
     },
   };
 
-  // 1. The receipt.
-  const first = await reserveReceipt(tx, receipt, await clock.sample(tx));
-  if (first !== null) return first.replay;
-
-  // 2. The proposal's club, and its row.
+  // 1. The proposal's club, and the caller's membership of it.
   const [named] = await bound(tx)`SELECT club_id FROM app.schedule_proposals WHERE id = ${proposalId}`;
   const clubId = named?.["club_id"];
   if (typeof clubId !== "string") throw new Refused("NOT_FOUND");
   if ((await activeMember(tx, userId, clubId)) === null) throw new Refused("NOT_FOUND");
+
+  // 2. The receipt, then the club's row.
+  const first = await reserveReceipt(tx, receipt, await clock.sample(tx));
+  if (first !== null) return first.replay;
   await bound(tx)`SELECT id FROM app.clubs WHERE id = ${clubId} FOR UPDATE`;
 
   // 3. Who is asking.

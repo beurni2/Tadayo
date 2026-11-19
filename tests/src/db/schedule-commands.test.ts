@@ -537,33 +537,38 @@ describe("choosing days (FQ46, FQ48, FQ55; T33)", () => {
   });
 
   it("names a contest's holders in the order they joined, whatever the order of their ids", async () => {
-    await rolledBack(db, async (tx) => {
-      const clock = fakeClock(OPENED);
-      const w = await firstDays(tx, clock, 6);
-      // Three members whose ids run neither up nor down in the order they joined, so that no order by id
-      // gives theirs. Six random ids have such a three unless they are sorted, one way or the other.
-      const byBytes = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
-      const id = (who: number) => w.members[who] ?? "";
-      let three: [number, number, number] | undefined;
-      for (let a = 0; a < 6 && three === undefined; a += 1) {
-        for (let b = a + 1; b < 6 && three === undefined; b += 1) {
-          for (let c = b + 1; c < 6 && three === undefined; c += 1) {
-            if (byBytes(id(a), id(b)) !== byBytes(id(b), id(c))) three = [a, b, c];
+    // A club whose six random ids happen to be sorted has nothing to tell apart (about one in 360), so
+    // another is made: ten sorted clubs in a row don't happen.
+    let judged = false;
+    for (let attempt = 0; attempt < 10 && !judged; attempt += 1)
+      judged = await rolledBack(db, async (tx) => {
+        const clock = fakeClock(OPENED);
+        const w = await firstDays(tx, clock, 6);
+        // Three members whose ids run neither up nor down in the order they joined, so that no order by id
+        // gives theirs. Six random ids have such a three unless they are sorted, one way or the other.
+        const byBytes = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+        const id = (who: number) => w.members[who] ?? "";
+        let three: [number, number, number] | undefined;
+        for (let a = 0; a < 6 && three === undefined; a += 1) {
+          for (let b = a + 1; b < 6 && three === undefined; b += 1) {
+            for (let c = b + 1; c < 6 && three === undefined; c += 1) {
+              if (byBytes(id(a), id(b)) !== byBytes(id(b), id(c))) three = [a, b, c];
+            }
           }
         }
-      }
-      // About one run in 360 makes six sorted ids: nothing to tell apart then.
-      if (three === undefined) return;
-      const [first, second, third] = three;
-      const day = proposedWeek(6)[first]?.[0];
-      if (day === undefined) throw new Error("the first of the three has no proposed day");
-      await choose(tx, clock, w, third, [day]);
-      await choose(tx, clock, w, second, [day]);
-      const holders = [person(w, first), person(w, second), person(w, third)];
-      for (const who of three) {
-        expect(slot(await proposalFor(tx, clock, w, who), day).holders, `as member ${String(who)}`).toEqual(holders);
-      }
-    });
+        if (three === undefined) return false;
+        const [first, second, third] = three;
+        const day = proposedWeek(6)[first]?.[0];
+        if (day === undefined) throw new Error("the first of the three has no proposed day");
+        await choose(tx, clock, w, third, [day]);
+        await choose(tx, clock, w, second, [day]);
+        const holders = [person(w, first), person(w, second), person(w, third)];
+        for (const who of three) {
+          expect(slot(await proposalFor(tx, clock, w, who), day).holders, `as member ${String(who)}`).toEqual(holders);
+        }
+        return true;
+      });
+    expect(judged).toBe(true);
   });
 
   it("frees the hold of a member who left, and shows a confirmed member who left by the name they left with (FQ75, FQ102)", async () => {
@@ -653,11 +658,13 @@ describe("confirming days (FQ55, FQ57, FQ79, FQ99; T1, T33, T49)", () => {
     });
   });
 
-  it("takes the confirmation's instant after the club's lock, not when the request began (T1; T3's order)", async () => {
+  it("takes the confirmation's instant from the sample after the receipt's, not from when the request began (T1)", async () => {
     await rolledBack(db, async (tx) => {
       const opening = fakeClock(OPENED);
       const w = await firstDays(tx, opening, 6);
       // A clock that moves a day with every sample: the receipt's sample is the first, the rule's the second.
+      // (That the second is taken only once the club's row is held is the committed test "samples the
+      // confirmation's clock only once it holds the club's row", which this one can't see.)
       const start = Temporal.Instant.from("2026-11-03T06:30:00Z");
       let samples = 0;
       const moving: FakeClock = {
@@ -957,7 +964,7 @@ describe("one commit per key (T19)", () => {
     });
   });
 
-  it("refuses another request under a used key with IDEMPOTENCY_CONFLICT: other days, another version, another proposal's path, each alone", async () => {
+  it("refuses another request under a used key with IDEMPOTENCY_CONFLICT: other days and another version, another proposal's path, each alone; a path that names no proposal is NOT_FOUND first", async () => {
     await rolledBack(db, async (tx) => {
       const clock = fakeClock(OPENED);
       const w = await firstDays(tx, clock, 4);
@@ -966,10 +973,64 @@ describe("one commit per key (T19)", () => {
       const conflict = { code: "IDEMPOTENCY_CONFLICT", facts: {} };
       expect(await refusal(choose(tx, clock, w, 0, ["saturday"], { key }))).toEqual(conflict);
       expect(await refusal(choose(tx, clock, w, 0, ["friday"], { key, version: 2 }))).toEqual(conflict);
-      expect(await refusal(choose(tx, clock, w, 0, ["friday"], { key, proposal: newId("spr") }))).toEqual(conflict);
+      // No proposal of the caller's is found before the key is looked at (T14; FQ112).
+      expect(await refusal(choose(tx, clock, w, 0, ["friday"], { key, proposal: newId("spr") }))).toEqual({
+        code: "NOT_FOUND",
+        facts: {},
+      });
       // The key is per operation: the same key confirms, as its own request.
       await choose(tx, clock, w, 0, ["monday"]);
       expect((await confirm(tx, clock, w, 0, ["monday"], { key })).myState).toBe("confirmed");
+      // Another proposal of the same club, as PR 3's revision will make: the same body under the key, at its path.
+      const successor = newId("spr");
+      await tx`
+        UPDATE app.schedule_proposals
+           SET state = 'superseded', version = version + 1, closed_at = ${AT.added}, replaced_by = ${successor}
+         WHERE id = ${w.proposal}`;
+      await tx`
+        INSERT INTO app.schedule_proposals
+          (id, club_id, reason, effective_from, days_per_member, schedule_version_id, created_at)
+        VALUES (${successor}, ${w.club}, 'activation', '2026-11-02', 1, ${w.version}, ${AT.added})`;
+      await checkAsAtCommit(plain(tx));
+      expect(await refusal(choose(tx, clock, w, 0, ["friday"], { key, proposal: successor }))).toEqual(conflict);
+    });
+  });
+
+  it("gives a retry no stored answer once its sender has nothing of the club: NOT_FOUND for a former member, an account being deleted and a suspended club, whatever the body (T14; FQ112)", async () => {
+    await rolledBack(db, async (tx) => {
+      const clock = fakeClock(OPENED);
+      const w = await firstDays(tx, clock, 6);
+      const none = { code: "NOT_FOUND", facts: {} };
+      const alex = randomUUID();
+      const sam = randomUUID();
+      const ben = randomUUID();
+      // Alex, Sam and Ben each choose under a key, and each answer names Maya, who contests Wednesday.
+      await choose(tx, clock, w, 1, ["wednesday"]);
+      for (const [who, key] of [
+        [2, alex],
+        [3, sam],
+        [0, ben],
+      ] as const) {
+        const first = await choose(tx, clock, w, who, ["wednesday"], { key });
+        expect(slot(first, "wednesday").holders).toContainEqual(person(w, 1));
+      }
+      // While its sender is still a member, a retry is the first answer.
+      expect(slot(await choose(tx, clock, w, 2, ["wednesday"], { key: alex }), "wednesday").state).toBe("clash");
+      /** Both retries under `key`, the same body and another, get the same nothing and change nothing. */
+      const nothing = async (who: number, key: string): Promise<void> => {
+        const before = await everything(tx, w);
+        expect(await refusal(choose(tx, clock, w, who, ["wednesday"], { key }))).toEqual(none);
+        // Another body under the key isn't IDEMPOTENCY_CONFLICT, which a stranger never gets.
+        expect(await refusal(choose(tx, clock, w, who, ["saturday"], { key }))).toEqual(none);
+        expect(await everything(tx, w)).toBe(before);
+        expect(await receipts(tx, w, who)).toEqual([{ operation: "chooseScheduleDays", state: "completed" }]);
+      };
+      await leave(plain(tx), { user: w.users[2] ?? "", interval: w.members[2] ?? "" }, "Alex", AT.edited);
+      await nothing(2, alex);
+      await tx`UPDATE app.users SET state = 'deleting', deletion_requested_at = ${AT.edited} WHERE id = ${w.users[3] ?? ""}`;
+      await nothing(3, sam);
+      await tx`UPDATE app.clubs SET suspended_at = ${AT.edited} WHERE id = ${w.club}`;
+      await nothing(0, ben);
     });
   });
 
@@ -1067,6 +1128,99 @@ describe("requests at once, committed (T6, T19; FQ55)", () => {
     expect(answers.filter((answer) => answer.state === "open" && answer.version === 1)).toHaveLength(5);
     expect(await assignments(world, w)).toHaveLength(6);
     expect(await proposalRow(world, w.proposal)).toMatchObject({ state: "applied", version: 2 });
+  });
+
+  /** Holds `club`'s row in another transaction until `release` is called; resolves once it is held. */
+  async function holding(club: string): Promise<{ pid: number; release: () => Promise<void> }> {
+    let release = (): void => undefined;
+    const released = new Promise<void>((resolve) => (release = resolve));
+    let held: (pid: number) => void = () => undefined;
+    const taken = new Promise<number>((resolve) => (held = resolve));
+    const done = db.begin(async (tx) => {
+      const [row] = await tx<{ pid: number }[]>`
+        SELECT pg_catalog.pg_backend_pid() AS pid FROM app.clubs WHERE id = ${club} FOR UPDATE`;
+      if (row === undefined) throw new Error("holding: no such club");
+      held(row.pid);
+      await released;
+    });
+    return {
+      pid: await taken,
+      release: async () => {
+        release();
+        await done;
+      },
+    };
+  }
+
+  /** Waits until some backend is waiting on a lock `pid` holds. */
+  async function waitingOn(pid: number): Promise<void> {
+    for (let tries = 0; tries < 400; tries += 1) {
+      const [row] = await db<{ waiting: boolean }[]>`
+        SELECT EXISTS (
+          SELECT FROM pg_catalog.pg_stat_activity a WHERE ${pid}::int4 = ANY (pg_catalog.pg_blocking_pids(a.pid))
+        ) AS waiting`;
+      if (row?.waiting === true) return;
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    throw new Error("waitingOn: nothing came to wait for the club's row");
+  }
+
+  /** A clock at `at` that counts its samples. */
+  function counting(at: string): { clock: FakeClock; samples: () => number } {
+    const base = fakeClock(at);
+    let samples = 0;
+    const clock: FakeClock = {
+      ...base,
+      async sample(sql) {
+        samples += 1;
+        return base.sample(sql);
+      },
+    };
+    return { clock, samples: () => samples };
+  }
+
+  it("samples the confirmation's clock only once it holds the club's row (T1; T3's order)", async () => {
+    const w = await committed(4);
+    const hold = await holding(w.club);
+    const { clock: counted, samples } = counting(CONFIRMED);
+    const sent = db.begin((tx) =>
+      confirmScheduleDays(
+        tx,
+        counted,
+        {
+          userId: w.users[0] ?? "",
+          key: randomUUID(),
+          proposalId: w.proposal,
+          expectedVersion: 1,
+          weekdays: ["monday"],
+        },
+        render,
+      ),
+    );
+    try {
+      await waitingOn(hold.pid);
+      // Waiting for the row, it has sampled once, for the receipt: the deciding sample hasn't been taken.
+      expect(samples()).toBe(1);
+    } finally {
+      await hold.release();
+    }
+    await sent;
+    expect(samples()).toBe(2);
+  });
+
+  it("samples the clock that dates the first days only once it holds the club's row (T1)", async () => {
+    const made = await db.begin((tx) => clubOf(tx, 4));
+    const hold = await holding(made.club);
+    const { clock: counted, samples } = counting(OPENED);
+    const opened = db.begin((tx) => openFirstDays(tx, counted, made.club));
+    try {
+      await waitingOn(hold.pid);
+      expect(samples()).toBe(0);
+    } finally {
+      await hold.release();
+    }
+    await opened;
+    expect(samples()).toBe(1);
   });
 
   it("gives two sends of the same key at once the same answer, and confirms once", async () => {

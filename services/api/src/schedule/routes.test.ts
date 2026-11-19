@@ -2,20 +2,26 @@
 // The schedule's three routes as the contract has them (spec 05; T14, T19, T33, T55), with no database: each
 // serializer's field list, held against every first-days example the contract gives (the mock's scenes,
 // packages/contracts/src/fixtures/examples-clubs.ts), and everything a route refuses before its command runs.
-// Who sees which name is the domain's view (packages/domain/src/schedule/view.test.ts); the commands, their
+// Who sees which name is the domain's view (packages/domain/src/schedule/view.test.ts), which is also held
+// here against the same examples, read from the contract and not copied by hand; the commands, their
 // refusals' order, their receipts and their races are on Postgres (tests/src/db/schedule-commands.test.ts);
 // and every role's answers are the privacy matrix's (tests/src/privacy/schedule.ts).
 
 import { Schedule, ScheduleProposal, ScheduleSlot } from "@tadayo/contracts";
-import { successExamples } from "@tadayo/contracts/examples";
+// The examples aren't among the contract package's exports, and that package changes only in its own PR
+// (docs/TECH-DESIGN.md section 3), so this test reads the file where it is.
+import { successExamples } from "../../../../packages/contracts/src/fixtures/examples.ts";
 import {
   Refused,
+  viewFor,
   type Account,
   type Clock,
   type ProposalAnswer,
+  type ProposalMember,
   type SchedulePerson,
   type ScheduleSight,
   type SlotAnswer,
+  type WeekFacts,
   type Weekday,
 } from "@tadayo/domain";
 import type { FastifyInstance, InjectOptions } from "fastify";
@@ -116,6 +122,85 @@ describe("the serializers against the contract's examples (T55)", () => {
       const body = proposalBody(proposal(value));
       expect(body, name).toEqual(value);
       expect(ScheduleProposal.strict().safeParse(body).success, name).toBe(true);
+    }
+  });
+
+  it("is what the domain's view makes of each scene's facts: who holds and who confirmed what, read from the scene's own words", () => {
+    // Sunday people in the order they joined, each with the day the first days proposed (the fixture's roster).
+    const roster = [
+      ["Ben", "monday"],
+      ["Maya", "tuesday"],
+      ["Alex", "wednesday"],
+      ["Sam", "thursday"],
+      ["Debby", "friday"],
+      ["Nina", "saturday"],
+    ] as const;
+    type Name = (typeof roster)[number][0];
+    // Each member's membership id, from the example of the week in force, which names all six.
+    const inForce = Object.fromEntries(firstDaysExamples("getSchedule"))["sunday_people"] as {
+      current: { assignments: { person: { membership_id: string; display_name: string } }[] };
+    };
+    const idOf = (name: Name): string => {
+      const found = inForce.current.assignments.find((each) => each.person.display_name === name);
+      if (found === undefined) throw new Error(`the week in force doesn't name ${name}`);
+      return found.person.membership_id;
+    };
+    const facts = (
+      held: Partial<Record<Name, readonly Weekday[]>>,
+      confirmed: Partial<Record<Name, string>> = {},
+    ): WeekFacts => {
+      const firstDates: Partial<Record<Weekday, string>> = {};
+      const members = roster.map(([name, proposed]): ProposalMember => {
+        const days = held[name] ?? [proposed];
+        const date = confirmed[name];
+        if (date !== undefined) for (const day of days) firstDates[day] = date;
+        return { id: idOf(name), active: true, confirmed: date !== undefined, suggested: [proposed], held: days };
+      });
+      return { daysPerMember: 1, members, firstDates };
+    };
+    // Wednesday 4 November, 9 AM: Maya, Alex, Sam and Nina confirmed (the examples' summaries; FQ79's dates).
+    const four = { Maya: "2026-11-10", Alex: "2026-11-11", Sam: "2026-11-12", Nina: "2026-11-07" };
+    const scenes: readonly (readonly [operation: string, name: string, viewer: Name, WeekFacts])[] = [
+      ["getSchedule", "conflict_three", "Ben", facts({ Ben: ["friday"], Alex: ["friday"] })],
+      ["getSchedule", "contested_other", "Sam", facts({ Ben: ["friday"], Alex: ["friday"] })],
+      ["getSchedule", "confirm_refused", "Debby", facts({ Ben: ["friday"] })],
+      ["getSchedule", "first_days", "Ben", facts({}, four)],
+      ["getSchedule", "first_days_confirmed", "Maya", facts({}, four)],
+      ["chooseScheduleDays", "chosen", "Ben", facts({ Alex: ["friday"] })],
+      ["chooseScheduleDays", "joined_contest", "Sam", facts({ Ben: ["friday"], Alex: ["friday"], Sam: ["friday"] })],
+      ["confirmScheduleDays", "first_day_confirmed", "Ben", facts({}, { ...four, Ben: "2026-11-09" })],
+    ];
+    // Every first-days scene the contract gives is one of these.
+    const given = ["getSchedule", "chooseScheduleDays", "confirmScheduleDays"].flatMap((operation) =>
+      firstDaysExamples(operation)
+        .filter(([, value]) => operation !== "getSchedule" || value["proposal"] !== undefined)
+        .map(([name]) => `${operation} ${name}`),
+    );
+    expect(scenes.map(([operation, name]) => `${operation} ${name}`)).toEqual(given);
+    for (const [operation, name, viewer, world] of scenes) {
+      const value = Object.fromEntries(firstDaysExamples(operation))[name];
+      const example = proposal(operation === "getSchedule" ? value?.["proposal"] : value);
+      const view = viewFor(idOf(viewer), world);
+      expect(
+        {
+          slots: view.slots,
+          myDays: view.myDays,
+          myState: view.myState,
+        },
+        `${operation} ${name}`,
+      ).toEqual({
+        slots: example.slots.map((slot) => ({
+          weekday: slot.weekday,
+          state: slot.state,
+          ...(slot.owner === undefined ? {} : { owner: slot.owner.membershipId }),
+          ...(slot.holders === undefined ? {} : { holders: slot.holders.map((each) => each.membershipId) }),
+          ...(slot.heldBy === undefined ? {} : { heldBy: slot.heldBy.membershipId }),
+          ...(slot.firstDate === undefined ? {} : { firstDate: slot.firstDate }),
+          suggested: slot.suggested,
+        })),
+        myDays: example.myDays,
+        myState: example.myState,
+      });
     }
   });
 

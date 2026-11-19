@@ -3,8 +3,16 @@
 // confirmScheduleDays; spec 05; T6, T9, T14, T19, T33, T49, T55; FQ46, FQ48, FQ55, FQ57, FQ75, FQ79, FQ99,
 // FQ100; the contract's `Schedule`, section 1.8 of docs/plans/api-b2-contract.md), as the matrix judges them.
 // Everything here is read from the world's rows, apart from the statement and the rules the routes run
-// (packages/domain/src/schedule/): this file states the contract's rules a second time, on its own, so a
-// change to the domain's view alone fails here and has to be made here too.
+// (packages/domain/src/schedule/): this file states the contract's rules a second time, so a change to the
+// domain's view alone fails here and has to be made here too. `proposalFor` follows the same reading of the
+// contract as the domain's `viewFor`, branch for branch, so a misreading both share passes here: the checks
+// that don't share it are the contract's own examples (services/api/src/schedule/routes.test.ts, which puts
+// `viewFor` against each first-days example read from the contract) and the answers written out by hand in
+// ./schedule.test.ts. No role here is a member still choosing who is outside a contested day (Ana has
+// confirmed; Ben and Cleo both hold Wednesday): that member's `no_reveal`, with no name and no count, is
+// the contract's `contested_other` example in that file and the outsiders of
+// tests/src/db/schedule-commands.test.ts. And every role's rows are made before any request, so a retry
+// by someone who has since lost the club is there too (its "gives a retry no stored answer…" test; FQ112).
 //
 // What a cell must get:
 // - getSchedule: the neutral not-found unless the viewer's account has an active interval in a club that
@@ -28,7 +36,7 @@
 // command would open beside a week in force: a second schedule version from Sunday 8 November, the day
 // after the matrix's one day, and an open `activation` proposal for Ana, Ben and Cleo, two days each (spec
 // 05's table for three). Ana has confirmed Monday and Thursday; Ben holds Tuesday and has taken Wednesday
-// in place of his proposed Friday; Cleo holds Wednesday and Saturday. So Wednesday is contested, Tuesday and
+// in place of Ben's proposed Friday; Cleo holds Wednesday and Saturday. So Wednesday is contested, Tuesday and
 // Saturday are held by one member, Friday is free and still marked as proposed for Ben. The schema accepts
 // these rows, and the migration's guards judge them at commit. The first days as the commands really make
 // them, from their opening to their last confirmation, are on Postgres in
@@ -557,9 +565,15 @@ export interface ScheduleCase {
   body(world: ScheduleWorld, version: number): { expected_version: number; weekdays: readonly Weekday[] } | string;
   /** For a body the contract refuses before any rule: the 400 everyone the gate lets through gets. */
   refused?: Answer;
-  /** Sent with no Idempotency-Key. */
+  /** The request carries no Idempotency-Key. */
   noKey?: boolean;
-  /** Sent again under the key of the case before it: the same bytes (T19). */
+  /**
+   * The request of the case before it once more, under the same key: the same bytes (T19). That case is a
+   * choice of the days already held, so running it twice would answer the same too: this shows only that
+   * every role's retry is answered as its first request was. That a retry is the stored answer and not a
+   * second run is tests/src/db/schedule-commands.test.ts's "answers a retry with the first answer as it
+   * was, though the week has changed since".
+   */
   again?: boolean;
   /** Cases of one group must get the same bytes from a caller the proposal doesn't include (T14). */
   group?: string;

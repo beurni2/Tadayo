@@ -645,7 +645,9 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
                   );
                 }
               }
-              // A caller the proposal doesn't include gets the same bytes whatever they asked of it (T14).
+              // A caller the proposal doesn't include gets the same bytes whatever they asked of it (T14). The
+              // pinned neutral answer has already held each of them to one answer, so this can only fail if
+              // that pin is ever loosened: it is kept as the group's own statement, not as the proof.
               if (one.group !== undefined && outcome !== "ok" && pinnedProblems(answer, NEUTRAL).length === 0) {
                 const first = scheduleGroups.get(one.group);
                 if (first === undefined) scheduleGroups.set(one.group, said(answer));

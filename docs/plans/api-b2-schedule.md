@@ -85,11 +85,13 @@ A choice of the days the caller already holds changes nothing and still answers.
 
 ## 5. The routes, `services/api/src/schedule/`
 
-`getSchedule`, `chooseScheduleDays` and `confirmScheduleDays`, registered in `services/api/src/app.ts` `handlersOf`. Each serializer is an explicit field list (T55). Each body is parsed by the contract's own schema; a bad one gets `INVALID_REQUEST`. The bodies fit the limits the contract PR measured (`tests/src/privacy/body-limits.test.ts`). As built (`routes.ts`): a command checks its `Idempotency-Key` and its body before it looks anything up, so a bad request gets `INVALID_REQUEST` for every caller alike; each command's body limit is 1024 bytes (`app.ts` `ROUTE_BODY_LIMITS`); and `routes.test.ts` reads the contract's examples through the new export `@tadayo/contracts/examples`.
+`getSchedule`, `chooseScheduleDays` and `confirmScheduleDays`, registered in `services/api/src/app.ts` `handlersOf`. Each serializer is an explicit field list (T55). Each body is parsed by the contract's own schema; a bad one gets `INVALID_REQUEST`. The bodies fit the limits the contract PR measured (`tests/src/privacy/body-limits.test.ts`). As built (`routes.ts`): a command checks its `Idempotency-Key` and its body before it looks anything up, so a bad request gets `INVALID_REQUEST` for every caller alike; each command's body limit is 1024 bytes (`app.ts` `ROUTE_BODY_LIMITS`); and `routes.test.ts` reads the contract's examples from `packages/contracts/src/fixtures/examples.ts` by its path, since that package changes only in its own PR (the review's fix: the export this branch first added to `packages/contracts/package.json` is taken back).
 
 ## 6. Tests first
 
 Written before the code they test, and seen to fail.
+
+As built, this held for `propose.test.ts`, `first-date.test.ts`, `view.test.ts` and most of `schedule-proposals.test.ts` only. `decide.test.ts`, the commands' tests, the routes' tests, the matrix's rows and two migration tests were written after the code they test (the journal's entries of 2026-11-18 23:15 and 23:46 and 2026-11-19 00:41 say which), and the deliberate breakages are what shows each of them can fail. Of the eight frames `view.test.ts` was to have a case for, four are there by name (`G04-conflict-three`, `G04-contested-other`, `G04-confirm-refused`, `G04-two-days-one-chosen`); `G04-one-day`, `G04-conflict`, `G04-confirmed-others` and `G04-confirmed-many` have no case of their own, and the contract's other first-days examples (`chosen`, `joined_contest`, `first_days`, `first_days_confirmed`, `first_day_confirmed`) stand where they would. Since the review, `services/api/src/schedule/routes.test.ts` also puts `viewFor` against each first-days example read from the contract itself.
 
 - **`propose.test.ts`**: spec 05's two examples and the pair, name for name; every count from two to six gives each member `days_per_member` days, each weekday at most once, never Sunday; a count of one or seven is refused.
 - **`first-date.test.ts`** (FQ79's list, with fixed instants): exactly 24 hours opens on that date; one second short waits a week; a 23-hour day waits a week and a 25-hour day opens, in a zone whose clock changes in the 24 hours before a reveal day's 7 AM; handoff 6's fixture (confirmed at 9 AM in New York on Wednesday 4 November 2026: Thursday first opens on 12 November); a zone east of the date line and one west of it.
@@ -110,7 +112,7 @@ Written before the code they test, and seen to fail.
 ## 7. Verify
 
 - `python3 tools/ci/ci_steps.py` `guards`, `lint`, `typecheck`, `format`, `copy-lint`, `unit`, `openapi`, `db-bootstrap`, `db-tests` and `privacy`, on a Postgres made like `ci`'s; `journal_check.py --branch` and `--all`.
-- The routes exercised by hand as each role, against a local server, before and after each confirmation.
+- The routes exercised by hand as each role, against a local server, before and after each confirmation. As built: not done by hand. The privacy matrix sends every route as each of its 12 roles through the app (`tests/src/privacy/matrix.test.ts`), and `schedule-commands.test.ts` runs the commands before and after each confirmation.
 - `ci` green on the last push. `ci`'s `swift` step shows the contract unchanged for the Swift client.
 
 ## 8. Review
@@ -127,3 +129,14 @@ Full depth, since the PR decides who sees whose name on which day (T55, T33): fr
 - **A clash can last for ever** (FQ55, noted by Claude Design). The slice builds it as decided and adds nothing to end it.
 - **A confirmed day opens nothing until PR 2.** A club that confirms its days on `dev` between the two merges would see no dates. No club can start on `dev` before B1, so nobody can meet it.
 - **No new question for the founder so far.** If the code meets a case the contract's plan doesn't settle, it is raised as a new FQ with a default (the next free number is FQ112), not decided silently.
+
+### Added by the review of PR #68
+
+- **The replay comes after the membership check** (FQ112): `scheduleCommand` looks up the proposal's club and the caller's membership before the receipt, so someone who has lost the club gets `NOT_FOUND` for a retry too.
+- **The migration's guards, tightened** (`db/migrations/0012_schedule_proposals.sql`): a day joins a first days' week only as its holder's confirmation, at the confirmation's instant (`app.schedule_assignment_confirmed_guard`, at commit); the first days apply only once every member still in the club has confirmed; a member who has left confirms nothing and changes no hold; `days_per_member` changes only while nobody has confirmed and nobody holds more than the new number; and a change of holds takes its member's row `FOR UPDATE` first, so two changes of one member's holds are in one order.
+- **For `api/b2-first-days-roster` (PR 3):**
+    - A leave or an account deletion in a club's first days must take the club's row `FOR UPDATE` and then judge `everyoneConfirmed` itself. Ending an interval takes no lock on `app.clubs` today, so a last confirmation that runs while a leave is uncommitted sees the leaver active and unconfirmed and doesn't apply; once the leave commits, nobody is left to apply the first days.
+    - A leave that leaves one unconfirmed member must supersede the proposal as FQ102 says, or that member's confirmation would apply the first days.
+    - A revision that lowers `days_per_member` must first release what each member holds above the new number; the guard refuses it otherwise.
+    - The order of members who joined at one instant is FQ114's.
+
