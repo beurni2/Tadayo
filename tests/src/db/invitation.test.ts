@@ -7,13 +7,14 @@
 // These tests were written before the code they test.
 
 import { createHash, randomUUID } from "node:crypto";
-import type { ServerNow } from "@tadayo/domain";
-import { fakeClock } from "@tadayo/domain/testing";
+import { invitationLinkBody } from "@tadayo/api";
+import { createInvitation, revokeInvitation, type ServerNow } from "@tadayo/domain";
+import { fakeClock, type FakeClock } from "@tadayo/domain/testing";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { rolledBack, worldSql, type WorldTx } from "./harness.ts";
 import { accept, link, plain, propose, read, refusal, revoke, type RevisionBody } from "./roster-world.ts";
 import { clubOf, type WeekClub } from "./week-world.ts";
-import { leave, newId, newUser } from "./world.ts";
+import { joinByRoster, leave, newId, newUser } from "./world.ts";
 
 const db = worldSql(4);
 afterAll(async () => {
@@ -212,10 +213,13 @@ describe("a share link for one candidate (T7, FQ71, FQ77)", () => {
       const [joined] = await tx<{ id: string }[]>`
         SELECT joined_via_candidate_id AS id FROM app.memberships WHERE interval_id = ${member(s.w, 1)}`;
       expect(await refusal(link(tx, clock, user(s.w, 0), s.w.club, joined?.id ?? ""))).toEqual(none);
-      // A candidate whose proposal ended.
-      await tx`UPDATE app.roster_revisions SET state = 'did_not_go_ahead', version = 2, ended_at = ${LATER} WHERE id = ${s.open.id}`;
+      // A candidate who has ended, on a revision still open; then one still open whose revision has ended.
       await tx`UPDATE app.candidates SET state = 'ended', ended_at = ${LATER} WHERE id = ${s.sam}`;
       expect(await refusal(link(tx, clock, user(s.w, 0), s.w.club, s.sam))).toEqual(none);
+      const r = await world(tx);
+      await tx`UPDATE app.roster_revisions SET state = 'did_not_go_ahead', version = 2, ended_at = ${LATER} WHERE id = ${r.open.id}`;
+      expect(await refusal(link(tx, clock, user(r.w, 0), r.w.club, r.sam))).toEqual(none);
+      expect(await linksOf(tx, r.sam)).toHaveLength(0);
 
       const t = await world(tx);
       await leave(plain(tx), { user: user(t.w, 0), interval: member(t.w, 0) }, "Ben", LATER);
@@ -239,6 +243,99 @@ describe("a share link for one candidate (T7, FQ71, FQ77)", () => {
         facts: {},
       });
     });
+  });
+
+  it("gives a retry by a proposer who left and joined again the neutral not-found: the link was the earlier interval's (FQ112)", async () => {
+    await rolledBack(db, async (tx) => {
+      const s = await world(tx);
+      const key = randomUUID();
+      const first = await link(tx, clock, user(s.w, 0), s.w.club, s.sam, key);
+      // While the interval that made it lasts, the retry is the stored answer, without the token.
+      expect(await link(tx, clock, user(s.w, 0), s.w.club, s.sam, key)).toEqual({ answer: first.answer, token: null });
+      await leave(plain(tx), { user: user(s.w, 0), interval: member(s.w, 0) }, "Ben", LATER);
+      // The open revision ends, so that a roster can bring the account back; Sam's own row stays open.
+      await tx`UPDATE app.roster_revisions SET state = 'did_not_go_ahead', version = 2, ended_at = ${LATER} WHERE id = ${s.open.id}`;
+      const [again] = await joinByRoster(
+        plain(tx),
+        s.w.club,
+        { user: user(s.w, 1), interval: member(s.w, 1) },
+        [{ user: user(s.w, 0), label: "Ben" }],
+        new Date(LATER.getTime() + 3_600_000),
+      );
+      expect(again).not.toBe(member(s.w, 0));
+      clock.set(FIRST.add({ hours: 3 }));
+      const none = { code: "NOT_FOUND", facts: {} };
+      expect(await refusal(link(tx, clock, user(s.w, 0), s.w.club, s.sam, key))).toEqual(none);
+      // Nor is the earlier interval's link the new one's to revoke.
+      const made = first.answer as unknown as LinkAnswer;
+      expect(await refusal(revoke(tx, clock, user(s.w, 0), made.invitation_id))).toEqual(none);
+      expect(await linksOf(tx, s.sam)).toHaveLength(1);
+    });
+  });
+});
+
+describe("the clock and the club's row (T1)", () => {
+  /** A clock that reads a second later at every sample, from the first instant. */
+  function ticking(): FakeClock {
+    const base = fakeClock(AT_FIRST);
+    return {
+      ...base,
+      async sample(sql) {
+        const now = await base.sample(sql);
+        base.advance({ seconds: 1 });
+        return now;
+      },
+    };
+  }
+
+  it("dates a link and its expiry from the sample taken after the lock, not the receipt's", async () => {
+    await rolledBack(db, async (tx) => {
+      const s = await world(tx);
+      const made = (await link(tx, ticking(), user(s.w, 0), s.w.club, s.sam)).answer as unknown as LinkAnswer;
+      const [row] = await linksOf(tx, s.sam);
+      // The second sample, a second after the first: 05:00:01.123456, whose whole second plus seven days is the expiry.
+      expect(row?.created_at.equals(FIRST.add({ seconds: 1 }))).toBe(true);
+      expect(made.expires_at).toBe("2026-11-18T05:00:01Z");
+      expect(row?.expires_at.equals(Temporal.Instant.from("2026-11-18T05:00:01Z"))).toBe(true);
+    });
+  });
+
+  it("keeps one latest link when two requests for one candidate arrive at once, and when a new link races a revoke", async () => {
+    const s = await db.begin((tx) => world(tx));
+    const create = () =>
+      db.begin((tx) =>
+        createInvitation(
+          tx,
+          clock,
+          { userId: user(s.w, 0), key: randomUUID(), clubId: s.w.club, candidateId: s.sam },
+          invitationLinkBody,
+        ),
+      );
+    const [one, two] = await Promise.all([create(), create()]);
+    const ids = [one, two].map((made) => (made.answer as unknown as LinkAnswer).invitation_id);
+    expect(new Set(ids).size).toBe(2);
+    expect(one.token).not.toBe(two.token);
+    let rows = await linksOf(db as unknown as WorldTx, s.sam);
+    expect(rows).toHaveLength(2);
+    const latest = rows.filter((row) => row.replaced_by_id === null);
+    expect(latest).toHaveLength(1);
+    // The other one names the latest as what replaced it.
+    expect(rows.find((row) => row.replaced_by_id !== null)?.replaced_by_id).toBe(latest[0]?.id);
+
+    // A new link and a revoke of the latest one, at once: whichever goes first, both are answered,
+    // the revoked link is revoked, and there is one latest link, the new one.
+    const target = latest[0]?.id ?? "";
+    const [made, revoked] = await Promise.all([
+      create(),
+      db.begin((tx) => revokeInvitation(tx, clock, { userId: user(s.w, 0), invitationId: target })),
+    ]);
+    expect(revoked).toEqual({ invitationId: target });
+    rows = await linksOf(db as unknown as WorldTx, s.sam);
+    expect(rows).toHaveLength(3);
+    expect(rows.find((row) => row.id === target)?.revoked_at).not.toBeNull();
+    expect(rows.filter((row) => row.replaced_by_id === null).map((row) => row.id)).toEqual([
+      (made.answer as unknown as LinkAnswer).invitation_id,
+    ]);
   });
 });
 
@@ -319,13 +416,22 @@ describe("revoking a link (G01-invite-people-revoked; FQ59, handoff 4)", () => {
         invitation_id: first.invitation_id,
         state: "revoked",
       });
-      // The latest link is untouched.
+      // The replaced link's row is revoked at the clock's sample, and the latest link is untouched.
+      let rows = await linksOf(tx, s.sam);
+      expect(rows.find((row) => row.id === first.invitation_id)?.revoked_at?.equals(FIRST)).toBe(true);
+      expect(rows.find((row) => row.id === second.invitation_id)?.revoked_at).toBeNull();
       expect(await stateFor(tx, s)).toMatchObject({ id: second.invitation_id, state: "live" });
-      clock.set(Temporal.Instant.from(EXPIRES).add({ hours: 2 }));
+      // Past its expiry the latest link reads expired; revoked there, its row says so and it reads revoked.
+      const past = Temporal.Instant.from(EXPIRES).add({ hours: 2 });
+      clock.set(past);
+      expect(await stateFor(tx, s, past as ServerNow)).toMatchObject({ state: "expired" });
       expect(await revoke(tx, clock, user(s.w, 0), second.invitation_id)).toEqual({
         invitation_id: second.invitation_id,
         state: "revoked",
       });
+      rows = await linksOf(tx, s.sam);
+      expect(rows.find((row) => row.id === second.invitation_id)?.revoked_at?.equals(past)).toBe(true);
+      expect(await stateFor(tx, s, past as ServerNow)).toMatchObject({ id: second.invitation_id, state: "revoked" });
     });
   });
 
@@ -363,11 +469,16 @@ describe("revoking a link (G01-invite-people-revoked; FQ59, handoff 4)", () => {
       const [row] = await linksOf(tx, s.sam);
       expect(row?.revoked_at).toBeNull();
 
-      // Once the proposer has left, or the club is suspended, the link is nobody's to revoke.
+      // Once the club is suspended, or the proposer has left, the link is nobody's to revoke.
       const t = await world(tx);
       const theirs = (await link(tx, clock, user(t.w, 0), t.w.club, t.sam)).answer as unknown as LinkAnswer;
       await tx`UPDATE app.clubs SET suspended_at = ${LATER} WHERE id = ${t.w.club}`;
       expect(await refusal(revoke(tx, clock, user(t.w, 0), theirs.invitation_id))).toEqual(none);
+      const v = await world(tx);
+      const left = (await link(tx, clock, user(v.w, 0), v.w.club, v.sam)).answer as unknown as LinkAnswer;
+      await leave(plain(tx), { user: user(v.w, 0), interval: member(v.w, 0) }, "Ben", LATER);
+      expect(await refusal(revoke(tx, clock, user(v.w, 0), left.invitation_id))).toEqual(none);
+      expect((await linksOf(tx, v.sam))[0]?.revoked_at).toBeNull();
     });
   });
 });

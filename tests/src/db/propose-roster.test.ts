@@ -10,7 +10,7 @@
 import { randomUUID } from "node:crypto";
 import { rosterRevisionBody } from "@tadayo/api";
 import { proposeRoster, readClub, type ServerNow } from "@tadayo/domain";
-import { fakeClock } from "@tadayo/domain/testing";
+import { fakeClock, type FakeClock } from "@tadayo/domain/testing";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { worldSql, rolledBack, type WorldTx } from "./harness.ts";
 import {
@@ -24,8 +24,8 @@ import {
   rosterVersion,
   type RevisionBody,
 } from "./roster-world.ts";
-import { clubOf, NAMES, type WeekClub } from "./week-world.ts";
-import { AT, leave, newId, newUser } from "./world.ts";
+import { clubOf, holding, NAMES, waitingOn, type WeekClub } from "./week-world.ts";
+import { AT, joinByRoster, leave, newId, newUser } from "./world.ts";
 
 const db = worldSql(8);
 afterAll(async () => {
@@ -264,6 +264,10 @@ describe("six people, the candidates still open counted (A01, T6)", () => {
     [1, 5, 1, true],
     [2, 0, 5, true],
     [2, 0, 4, false],
+    [3, 0, 3, false],
+    [3, 0, 4, true],
+    [3, 2, 1, false],
+    [3, 2, 2, true],
     [4, 1, 1, false],
     [4, 1, 2, true],
     [5, 0, 1, false],
@@ -309,12 +313,182 @@ describe("six people, the candidates still open counted (A01, T6)", () => {
     });
   }
 
-  it("counts a candidate who has ended or joined no longer", async () => {
+  it("counts a candidate who has joined no longer", async () => {
     await rolledBack(db, async (tx) => {
       // Five members, each of the four after Ben joined as a candidate; those candidates aren't open.
       const w = await clubOf(tx, 5);
       const answer = await propose(tx, clock, user(w, 0), w.club, ["Nina"]);
       expect(answer.candidates).toHaveLength(1);
+    });
+  });
+
+  it("counts a candidate who has ended no longer, and carries none but the open ones", async () => {
+    await rolledBack(db, async (tx) => {
+      // Four members and two open candidates: full. One of the two ends, on a revision still open.
+      const w = await clubOf(tx, 4);
+      const full = await propose(tx, clock, user(w, 0), w.club, ["Sam", "Debby"]);
+      expect(await refusal(propose(tx, clock, user(w, 0), w.club, ["Nina"]))).toMatchObject({ code: "CLUB_FULL" });
+      await tx`UPDATE app.candidates SET state = 'ended', ended_at = ${LATER} WHERE id = ${full.candidates[0]?.id ?? ""}`;
+      // Now four members and one open candidate: one more fits, and only Debby is carried, first.
+      const next = await propose(tx, clock, user(w, 0), w.club, ["Nina"]);
+      expect(next.candidates.map((candidate) => candidate.name)).toEqual(["Debby", "Nina"]);
+      expect(next.candidates[0]?.id).toBe(full.candidates[1]?.id);
+      expect(await refusal(propose(tx, clock, user(w, 0), w.club, ["Zoe"]))).toMatchObject({ code: "CLUB_FULL" });
+    });
+  });
+});
+
+describe("the clock and the club's row (T1)", () => {
+  /** A clock that reads a second later at every sample, from the first instant. */
+  function ticking(): FakeClock {
+    const base = fakeClock(AT_FIRST);
+    return {
+      ...base,
+      async sample(sql) {
+        const now = await base.sample(sql);
+        base.advance({ seconds: 1 });
+        return now;
+      },
+    };
+  }
+
+  it("dates the revision, its seal and the proposer's approval at the sample taken after the lock, not the receipt's", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await clubOf(tx, 2);
+      const made = await propose(tx, ticking(), user(w, 0), w.club, ["Alex"]);
+      const [row] = await tx<
+        { created_at: Temporal.Instant; roster_sealed_at: Temporal.Instant; decided_at: Temporal.Instant }[]
+      >`
+        SELECT r.created_at, r.roster_sealed_at, a.decided_at
+          FROM app.roster_revisions r JOIN app.roster_approvals a ON a.revision_id = r.id WHERE r.id = ${made.id}`;
+      const [receipt] = await tx<{ created_at: Temporal.Instant }[]>`
+        SELECT created_at FROM app.idempotency_receipts
+         WHERE actor_user_id = ${user(w, 0)} AND operation = 'proposeRoster'`;
+      // The first sample is the receipt's own; the second, a second later, is the one that dates the change.
+      const second = FIRST.add({ seconds: 1 });
+      expect(receipt?.created_at.equals(FIRST)).toBe(true);
+      expect(row?.created_at.equals(second)).toBe(true);
+      expect(row?.roster_sealed_at.equals(second)).toBe(true);
+      expect(row?.decided_at.equals(second)).toBe(true);
+    });
+  });
+
+  it(
+    "asks who is proposing again once it holds the club's row: a member who left while it waited gets the neutral not-found",
+    { timeout: 20_000 },
+    async () => {
+      const w = await db.begin((tx) => clubOf(tx, 3));
+      const expected = await db.begin((tx) => rosterVersion(tx, w.club));
+      const hold = await holding(db, w.club);
+      const sent = db.begin((tx) =>
+        proposeRoster(
+          tx,
+          clock,
+          {
+            userId: user(w, 2),
+            key: randomUUID(),
+            clubId: w.club,
+            expectedRosterVersion: expected,
+            add: [{ label: "Sam" }],
+          },
+          rosterRevisionBody,
+        ),
+      );
+      const outcome = refusal(sent);
+      try {
+        // It was a member when it asked, and now waits for the row. Meanwhile the member leaves.
+        await waitingOn(db, hold.pid);
+        await db.begin((tx) => leave(plain(tx), { user: user(w, 2), interval: member(w, 2) }, "Alex", LATER));
+      } finally {
+        await hold.release();
+      }
+      expect(await outcome).toEqual({ code: "NOT_FOUND", facts: {} });
+      expect(await revisionsOf(db as unknown as WorldTx, w.club)).toEqual([]);
+      expect(await receipts(db as unknown as WorldTx, user(w, 2))).toEqual([]);
+    },
+  );
+});
+
+describe("what a revision's read leaves out (FQ75, FQ114, T7)", () => {
+  it("serves no revision that isn't sealed", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await clubOf(tx, 2);
+      const revision = newId("rev");
+      await plain(tx)`
+        INSERT INTO app.roster_revisions (id, club_id, origin, proposed_by_interval_id, created_at)
+        VALUES (${revision}, ${w.club}, 'proposal', ${member(w, 0)}, ${AT.created})`;
+      for (const index of [0, 1]) {
+        await plain(tx)`
+          INSERT INTO app.roster_revision_members (revision_id, club_id, interval_id)
+          VALUES (${revision}, ${w.club}, ${member(w, index)})`;
+      }
+      expect(await read(tx, user(w, 0), revision, NOW)).toBeNull();
+      // The same rows, sealed, are read: the seal is all that kept them back.
+      const candidate = newId("cand");
+      await plain(tx)`
+        INSERT INTO app.candidates (id, club_id, proposed_by_interval_id, created_at)
+        VALUES (${candidate}, ${w.club}, ${member(w, 0)}, ${AT.created})`;
+      await plain(tx)`
+        INSERT INTO app.roster_revision_candidates (revision_id, club_id, candidate_id, label, position)
+        VALUES (${revision}, ${w.club}, ${candidate}, 'Alex', 1)`;
+      await plain(tx)`UPDATE app.roster_revisions SET roster_sealed_at = ${AT.created} WHERE id = ${revision}`;
+      expect(await read(tx, user(w, 0), revision, NOW)).toMatchObject({ id: revision, state: "open" });
+    });
+  });
+
+  it("leaves out a member with no name to show, and serves no revision whose proposer or a candidate's proposer has none", async () => {
+    await rolledBack(db, async (tx) => {
+      /** Ends the member's interval as an account's deletion does, with no name kept (T27). */
+      const gone = (w: WeekClub, index: number) => tx`
+        UPDATE app.memberships
+           SET state = 'account_deleted', left_at = ${LATER}, contributions = 'withdraw', ended_display_name = NULL
+         WHERE interval_id = ${member(w, index)}`;
+
+      // A member with no name: Maya, who proposed nothing.
+      const a = await clubOf(tx, 3);
+      const made = await propose(tx, clock, user(a, 0), a.club, ["Sam"]);
+      await gone(a, 1);
+      expect((await read(tx, user(a, 0), made.id, NOW))?.members).toEqual([person(a, 0), person(a, 2)]);
+
+      // The revision's proposer with no name: nobody reads it.
+      const b = await clubOf(tx, 3);
+      const theirs = await propose(tx, clock, user(b, 2), b.club, ["Sam"]);
+      expect(await read(tx, user(b, 0), theirs.id, NOW)).not.toBeNull();
+      await gone(b, 2);
+      expect(await read(tx, user(b, 0), theirs.id, NOW)).toBeNull();
+
+      // A candidate's proposer with no name, on a revision another member proposed: nobody reads it either.
+      const c = await clubOf(tx, 3);
+      await propose(tx, clock, user(c, 2), c.club, ["Sam"]);
+      const carried = await propose(tx, clock, user(c, 0), c.club, ["Debby"]);
+      expect(await read(tx, user(c, 1), carried.id, NOW)).not.toBeNull();
+      await gone(c, 2);
+      expect(await read(tx, user(c, 0), carried.id, NOW)).toBeNull();
+      expect(await read(tx, user(c, 1), carried.id, NOW)).toBeNull();
+    });
+  });
+
+  it("lists members who joined at the same instant by their membership's id, in byte order (FQ114)", async () => {
+    await rolledBack(db, async (tx) => {
+      // Ben alone, then one roster that brings three in at the same instant.
+      const w = await clubOf(tx, 1);
+      const names = ["Maya", "Alex", "Sam"];
+      const users: string[] = [];
+      for (const name of names) users.push(await newUser(plain(tx), name));
+      const joined = await joinByRoster(
+        plain(tx),
+        w.club,
+        { user: user(w, 0), interval: member(w, 0) },
+        users.map((one, index) => ({ user: one, label: names[index] ?? "" })),
+        AT.joined,
+      );
+      const made = await propose(tx, clock, user(w, 0), w.club, ["Debby"]);
+      const byBytes = [...joined].sort((x, y) => (x < y ? -1 : x > y ? 1 : 0));
+      const listed = (await read(tx, user(w, 0), made.id, NOW))?.members.map((one) => one.membership_id);
+      expect(listed).toEqual([member(w, 0), ...byBytes]);
+      // The same for another member, and not merely the order the rows were written in.
+      expect((await read(tx, users[2] ?? "", made.id, NOW))?.members.map((one) => one.membership_id)).toEqual(listed);
+      expect(new Set(joined).size).toBe(3);
     });
   });
 });
@@ -449,6 +623,41 @@ describe("who may propose (T9, T14; FQ80, FQ112)", () => {
         code: "NOT_FOUND",
         facts: {},
       });
+    });
+  });
+
+  it("gives a retry by someone who left and joined again the neutral not-found, and a new key of theirs a new revision (FQ112)", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await clubOf(tx, 3);
+      const key = randomUUID();
+      const expected = await rosterVersion(tx, w.club);
+      const first = await propose(tx, clock, user(w, 2), w.club, ["Sam"], { key, expected });
+      // The same request again, while the interval that made it lasts: the stored answer.
+      expect(await propose(tx, clock, user(w, 2), w.club, ["Sam"], { key, expected })).toEqual(first);
+      await leave(plain(tx), { user: user(w, 2), interval: member(w, 2) }, "Alex", LATER);
+      // The proposal ends, so that a roster can bring the account back.
+      await tx`UPDATE app.roster_revisions SET state = 'did_not_go_ahead', version = 2, ended_at = ${LATER} WHERE id = ${first.id}`;
+      await tx`UPDATE app.candidates SET state = 'ended', ended_at = ${LATER} WHERE id = ${first.candidates[0]?.id ?? ""}`;
+      // Back by a roster of their own, an hour after leaving: a new interval of the same account.
+      const [again] = await joinByRoster(
+        plain(tx),
+        w.club,
+        { user: user(w, 0), interval: member(w, 0) },
+        [{ user: user(w, 2), label: "Alex" }],
+        new Date(LATER.getTime() + 3_600_000),
+      );
+      expect(again).not.toBe(member(w, 2));
+      clock.set(FIRST.add({ hours: 3 }));
+      expect(await refusal(propose(tx, clock, user(w, 2), w.club, ["Sam"], { key, expected }))).toEqual({
+        code: "NOT_FOUND",
+        facts: {},
+      });
+      // Under a key of the new interval's own, the account proposes as any member does, and its retry is answered.
+      const fresh = randomUUID();
+      const now = await rosterVersion(tx, w.club);
+      const second = await propose(tx, clock, user(w, 2), w.club, ["Sam"], { key: fresh, expected: now });
+      expect(second.club.my_membership_id).toBe(again);
+      expect(await propose(tx, clock, user(w, 2), w.club, ["Sam"], { key: fresh, expected: now })).toEqual(second);
     });
   });
 

@@ -126,7 +126,7 @@ export async function rosterWorldOf(db: WorldTx, clubs: readonly string[]): Prom
   >`
     SELECT i.id, i.candidate_id AS candidate, k.club_id AS club, k.proposed_by_interval_id AS proposer, i.expires_at,
            i.revoked_at IS NOT NULL AS revoked, i.replaced_by_id IS NOT NULL AS replaced,
-           i.bound_user_id IS NOT NULL AS bound, encode(i.token_sha256, 'hex') AS hash
+           i.bound_user_id IS NOT NULL AS bound, pg_catalog.encode(i.token_sha256, 'hex') AS hash
       FROM app.invitations i JOIN app.candidates k ON k.id = i.candidate_id
      WHERE k.club_id IN ${db(clubs)}`;
   return {

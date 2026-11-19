@@ -10,7 +10,9 @@
 //    nothing of the club never holds its row and never gets a stored answer, which names other people.
 //    NOT_FOUND, for a first request and a retry alike (T14; FQ112's default).
 // 2. The receipt (T19): the same request under the same key gets the first revision back, as it was
-//    answered, though the roster has changed since; another request under it is IDEMPOTENCY_CONFLICT. Then
+//    answered, though the roster has changed since, unless the caller's interval began after the receipt
+//    was made: someone who left and joined again gets NOT_FOUND, not what the earlier interval was
+//    answered (FQ112; ../idempotency/receipt.ts `reservedSince`); another request under it is IDEMPOTENCY_CONFLICT. Then
 //    the club's row, `FOR UPDATE`: every command that changes a club's roster takes it first, the lock the
 //    schema's own guards take (db/migrations/0003_people_and_clubs.sql `memberships_guard`, 0004's seal).
 // 3. Who is asking, again, now that nothing of the roster can change under the lock: NOT_FOUND.
@@ -35,7 +37,7 @@
 
 import { activeMember } from "../authorization/member.ts";
 import type { QuerySql } from "../authorization/read-sql.ts";
-import { completeReceipt, reserveReceipt, type ReceiptKey } from "../idempotency/receipt.ts";
+import { completeReceipt, reserveReceipt, reservedSince, type ReceiptKey } from "../idempotency/receipt.ts";
 import type { Json } from "../idempotency/request.ts";
 import { newId } from "../ids.ts";
 import { Refused } from "../refused.ts";
@@ -122,11 +124,16 @@ export async function proposeRoster(
   };
 
   // 1. The caller's membership of the club.
-  if ((await activeMember(tx, userId, clubId)) === null) throw new Refused("NOT_FOUND");
+  const asking = await activeMember(tx, userId, clubId);
+  if (asking === null) throw new Refused("NOT_FOUND");
 
-  // 2. The receipt, then the club's row.
+  // 2. The receipt, then the club's row. A stored answer is its own interval's: someone who left and
+  // joined again gets none of what the earlier interval was answered (FQ112).
   const first = await reserveReceipt(tx, receipt, await clock.sample(tx));
-  if (first !== null) return first.replay;
+  if (first !== null) {
+    if (!(await reservedSince(tx, receipt, asking))) throw new Refused("NOT_FOUND");
+    return first.replay;
+  }
   await bound(tx)`SELECT id FROM app.clubs WHERE id = ${clubId} FOR UPDATE`;
 
   // 3. Who is asking.

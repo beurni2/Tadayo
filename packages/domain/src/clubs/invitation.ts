@@ -6,7 +6,9 @@
 //
 // A link grants nothing by being held (T7): it is 256 random bits, returned to its proposer once, for the
 // URL's fragment, and kept only as its SHA-256, so no row, receipt or log holds a usable token (FQ77,
-// T52). The token never goes to the database, not even as a parameter: it is hashed here.
+// T52). The token never goes to the database, not even as a parameter: it is hashed here. The hash is of
+// the token's base64url text as the URL carries it, not of the 32 bytes it spells: accepting hashes the
+// same text.
 //
 // Only the candidate's proposer makes or revokes its link. Anyone else gets NOT_FOUND whatever the link's
 // state, never NOT_ALLOWED, which would tell another member that the candidate accepted (T14, T33,
@@ -15,8 +17,9 @@
 // `createInvitation`:
 // 1. The caller's membership of the path's club (`activeMember`), before the receipt is looked at:
 //    NOT_FOUND, for a first request and a retry alike (FQ112's default).
-// 2. The receipt (T19), then the club's row, `FOR UPDATE`, as every command of a club's roster takes it,
-//    then who is asking again.
+// 2. The receipt (T19): a replay is answered only to the interval that was a member when the receipt was
+//    made; someone who left and joined again gets NOT_FOUND (FQ112; `reservedSince`). Then the club's row,
+//    `FOR UPDATE`, as every command of a club's roster takes it, then who is asking again.
 // 3. The candidate: of this club, still open, on the club's open revision, and proposed by the caller's
 //    interval. Anything else is NOT_FOUND.
 // 4. The candidate's latest link: NOT_ALLOWED when an account accepted with it, in this revision or an
@@ -38,7 +41,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { activeMember } from "../authorization/member.ts";
 import type { QuerySql } from "../authorization/read-sql.ts";
-import { completeReceipt, reserveReceipt, type ReceiptKey } from "../idempotency/receipt.ts";
+import { completeReceipt, reserveReceipt, reservedSince, type ReceiptKey } from "../idempotency/receipt.ts";
 import type { Json } from "../idempotency/request.ts";
 import { newId } from "../ids.ts";
 import { Refused } from "../refused.ts";
@@ -130,11 +133,15 @@ export async function createInvitation(
   };
 
   // 1. The caller's membership of the club.
-  if ((await activeMember(tx, userId, clubId)) === null) throw new Refused("NOT_FOUND");
+  const asking = await activeMember(tx, userId, clubId);
+  if (asking === null) throw new Refused("NOT_FOUND");
 
-  // 2. The receipt, the club's row, and who is asking.
+  // 2. The receipt, the club's row, and who is asking. A stored answer is its own interval's (FQ112).
   const first = await reserveReceipt(tx, receipt, await clock.sample(tx));
-  if (first !== null) return { answer: first.replay, token: null };
+  if (first !== null) {
+    if (!(await reservedSince(tx, receipt, asking))) throw new Refused("NOT_FOUND");
+    return { answer: first.replay, token: null };
+  }
   await bound(tx)`SELECT id FROM app.clubs WHERE id = ${clubId} FOR UPDATE`;
   const proposer = await activeMember(tx, userId, clubId);
   if (proposer === null) throw new Refused("NOT_FOUND");

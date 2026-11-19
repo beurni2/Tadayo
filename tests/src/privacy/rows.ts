@@ -81,9 +81,11 @@
 //   else; createClub's table of bodies in every cell, where each account the gate lets through makes a
 //   club, reads it, lists it once and retries it under its key, and someone of another club is refused
 //   it. A club the viewer makes changes the world, so the facts are read again before its answer is
-//   scanned. No member's world here has an open revision or a full roster, so `open_revision_id` and a
-//   false `can_propose` pass through no cell: the read's rule for them is tested on rows built by hand
-//   (tests/src/db/create-club.test.ts) and the serializer's on the contract's `kitchen_table` example;
+//   scanned. Since the roster's table (below) a member's club has an open revision after its first
+//   proposal and is full once enough candidates are carried, so `open_revision_id` and a false
+//   `can_propose` pass through the cells of the phases after it; the read's rule for them is also tested
+//   on rows built by hand (tests/src/db/create-club.test.ts) and the serializer's on the contract's
+//   `kitchen_table` example;
 // - for the roster's four routes (B1's second slice, done): getRosterRevision's RosterRevision, whole, judged
 //   from the world's rows by roster.ts, for a member the revision itself lists (FQ119), with a candidate's
 //   link only for the member who proposed that candidate, and the neutral not-found to everyone else. The
@@ -97,10 +99,15 @@
 //   world, so the facts are read again before its answer is scanned; an answer given to the other member is
 //   scanned with that member's own facts. The leak scanner allows a link's id only to the member whose
 //   active interval proposed its candidate, and the `url` only in createInvitation's 201, as the token its
-//   row's hash is of (scanner.ts). Accepting, approving and declining are B1's next slice: Ana reads
-//   `accepted` on the world's own revision, but the state used, a decision other than the proposer's own
-//   and a declined revision pass through no cell here: the read's rule for them is tested on rows built by
-//   hand (tests/src/db/invitation.test.ts, propose-roster.test.ts) and the judge's on roster.test.ts;
+//   row's hash is of (scanner.ts). A later phase of a cell may find the club full of the candidates
+//   carried, and then its proposal is CLUB_FULL and the rest of its table isn't run: each role's test
+//   counts the revisions, links and other member's answers its table made and asserts them, and one test
+//   names the six roles that made any (matrix.test.ts, "the roster's table ran"). Accepting, approving and
+//   declining are B1's next slice: Ana reads `accepted` on the world's own revision, but these pass
+//   through no cell here: the states used and expired (a link is revoked before its week is out), a
+//   decision other than the proposer's own, a declined revision, and the read of a superseded revision
+//   (only the newest is read). The read's rule for them is tested on rows built by hand
+//   (tests/src/db/invitation.test.ts, propose-roster.test.ts) and the judge's on roster.test.ts;
 // - for the schedule's routes still to come (the membership change and the first days' roster, B2's later
 //   schedule PRs; getHome, listClubs' `next_day` and a revealed day's `add_target` where a schedule's day
 //   shows), each as a check a row can run:

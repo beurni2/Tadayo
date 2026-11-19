@@ -119,7 +119,8 @@
 // - the invitation's preview to the person holding it, before they are in the club (B1);
 // - the proposer's invitation link (B1, api/b1-propose): a link's id, in a revision's candidate
 //   (CandidateInvitation), in createInvitation's answer (InvitationLink) and in revokeInvitation's
-//   (RevokedInvitation), only to a viewer whose active interval proposed the link's candidate (T14,
+//   (RevokedInvitation), only to a viewer whose active interval proposed the link's candidate, whose
+//   account is active and whose club isn't suspended, and only beside the candidate it is for (T14,
 //   handoff 1); and createInvitation's `url`, only in its 201, only as `https://tadayo.app/i#` and
 //   the token whose SHA-256 the link's row holds (T7, T52, FQ77). The matrix scans that one answer
 //   before the world keeps the token back, and every later answer after, so a replay that carried
@@ -252,6 +253,8 @@ export interface WorldInvitation {
   /** What listClubs shows of it: the club's name, and the name members see of whoever proposed the person (FQ75). */
   clubName: string;
   inviterName: string | null;
+  /** Its candidate, by id. */
+  candidate: string;
   /** The membership interval that proposed its candidate: the only one its link is shown to (T14, handoff 1). */
   proposedBy: string;
   /** The SHA-256 of its token, in hex, as its row keeps it: the token itself is in no row (T52, FQ77). */
@@ -1029,6 +1032,13 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
       find("world", at, "a link whose candidate no active interval of the viewer proposed (T14, handoff 1)");
       return undefined;
     }
+    // As the routes' own rule has it (authorization/member.ts): nothing of a suspended club, and nothing
+    // to an account that isn't active.
+    const account = context.viewer.account === null ? undefined : world.accounts.get(context.viewer.account);
+    if (world.clubs.get(invitation.club)?.suspendedAt !== null || account?.state !== "active") {
+      find("world", at, "a link of a suspended club, or to an account that isn't active (FQ80)");
+      return undefined;
+    }
     return invitation;
   };
   const whoReacted = (node: JsonObject, at: string, drop: WorldDrop) => {
@@ -1156,9 +1166,17 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
       }
     }
     if (kind === "CandidateInvitation") proposersLink(node.id, `${at}.id`);
+    if (kind === "Candidate" && isObject(node.invitation)) {
+      // The link is this candidate's own, never another's shown under it.
+      const invitation = typeof node.invitation.id === "string" ? world.invitations.get(node.invitation.id) : undefined;
+      if (invitation !== undefined && invitation.candidate !== node.id)
+        find("world", `${at}.invitation.id`, "a link shown under a candidate it isn't for");
+    }
     if (kind === "RevokedInvitation") proposersLink(node.invitation_id, `${at}.invitation_id`);
     if (kind === "InvitationLink") {
       const invitation = proposersLink(node.invitation_id, `${at}.invitation_id`);
+      if (invitation !== undefined && node.candidate_id !== invitation.candidate)
+        find("world", `${at}.candidate_id`, "not the candidate the link is for");
       if (node.url !== undefined && invitation !== undefined) {
         // The token, once: in createInvitation's 201 alone, and only this link's own (T7, T52, FQ77).
         const token = typeof node.url === "string" ? LINK_URL.exec(node.url)?.[1] : undefined;

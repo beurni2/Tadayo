@@ -113,8 +113,10 @@ function invitationOf(
   inviterName: string,
   proposedBy: string,
   token = OTHER_TOKEN,
+  candidate = "cand_other",
 ): WorldInvitation {
   return {
+    candidate,
     boundTo,
     club: "clb_sat",
     joined,
@@ -224,7 +226,9 @@ const world: WorldFacts = {
     // Eve's, which Eve used to join: a membership now.
     ["inv_eve", invitationOf(acct(eve), true, "Ana", ana)],
     // A link Ben made for someone Ben proposed, which nobody has used; and one Fay made before Fay left.
-    ["inv_bens", invitationOf(null, false, "Ben", ben, BENS_TOKEN)],
+    ["inv_bens", invitationOf(null, false, "Ben", ben, BENS_TOKEN, "cand_new")],
+    // Another link Ben made, for another candidate Ben proposed.
+    ["inv_bens_other", invitationOf(null, false, "Ben", ben, OTHER_TOKEN, "cand_second")],
     ["inv_fays", invitationOf(null, false, "Fay", fay)],
   ]),
 };
@@ -1702,6 +1706,27 @@ describe("the proposer's invitation link (T7, T14, T52, FQ77; handoff 1)", () =>
     expect(at(madeBy(ben, link({ invitation_id: "inv_made_up" })), "world")).toEqual(["$.invitation_id"]);
   });
 
+  it("catches a link beside a candidate it isn't for, though the viewer proposed both", () => {
+    expect(at(madeBy(ben, link({ invitation_id: "inv_bens_other" })), "world")).toEqual(["$.candidate_id"]);
+    expect(madeBy(ben, link({ invitation_id: "inv_bens_other", candidate_id: "cand_second" }))).toEqual([]);
+    const under = scan(answer(revision({ ...bens, id: "inv_bens_other" })), context("getRosterRevision", ben));
+    expect(at(under, "world")).toEqual(["$.candidates[0].invitation.id"]);
+  });
+
+  it("catches a link of a suspended club, and one shown to an account that isn't active (FQ80)", () => {
+    const clubs = new Map(world.clubs);
+    const sat = clubs.get("clb_sat");
+    if (sat === undefined) throw new Error("clb_sat");
+    clubs.set("clb_sat", { ...sat, suspendedAt: REVEAL });
+    const suspended = { world: { ...world, clubs } };
+    expect(at(scan(answer(link(), 201), context("createInvitation", ben, suspended)), "world")).toContain(
+      "$.invitation_id",
+    );
+    const accounts = new Map(world.accounts).set(acct(ben), accountOf("Ben", 1, { state: "deleting" }));
+    const deleting = { world: { ...world, accounts } };
+    expect(at(scan(answer(revoked), context("revokeInvitation", ben, deleting)), "world")).toContain("$.invitation_id");
+  });
+
   it("catches the link's id anywhere but where the link is judged, to its proposer too", () => {
     const page = scan(answer({ items: [], next_cursor: "inv_bens" }), context("listMyDrops", ben));
     expect(at(page, "values")).toEqual(["$.next_cursor"]);
@@ -1728,6 +1753,12 @@ describe("the proposer's invitation link (T7, T14, T52, FQ77; handoff 1)", () =>
       expect(at(found, "keys")).toEqual(["$.url"]);
       expect(at(found, "values")).toContain("$.url");
     }
+    // In an answer that isn't the 201 that made the link, the link's own URL to its own proposer: the
+    // contract declares no such answer, so nothing there is judged a link, and the key and the URL fail.
+    const ok200 = madeBy(ben, link({ url: url(BENS_TOKEN) }), 200);
+    expect(at(ok200, "shape")).toContain("status");
+    expect(at(ok200, "keys")).toEqual(["$.url"]);
+    expect(at(ok200, "values")).toEqual(["$.invitation_id", "$.url"]);
     // To another member, the link's own URL is the link's id and its token both.
     const toCleo = madeBy(cleo, link({ url: url(BENS_TOKEN) }));
     expect(at(toCleo, "world")).toEqual(["$.invitation_id"]);

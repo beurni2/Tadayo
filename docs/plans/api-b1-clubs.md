@@ -102,7 +102,7 @@ The tests of this PR were written after its code, not before it, against the con
 **`proposeRoster(tx, clock, input, render)`** (`clubs/propose-roster.ts`), in one READ COMMITTED transaction. A refusal rolls everything back, the receipt included.
 
 1. The caller's membership of the path's club (`activeMember`), before the receipt is looked at: someone with nothing of the club gets NOT_FOUND on a first request and on a retry (FQ112).
-2. The receipt (T19), 201. Then the club's row, `FOR UPDATE`: every roster command of a club takes it first, as the schema's guards do.
+2. The receipt (T19), 201. A replay is answered only when the receipt was made once the caller's present interval had begun (`reservedSince`, `packages/domain/src/idempotency/receipt.ts`): someone who left and joined again gets NOT_FOUND, not what the earlier interval was answered (FQ112; review round 1). Then the club's row, `FOR UPDATE`: every roster command of a club takes it first, as the schema's guards do.
 3. Who is asking, again, under the lock: NOT_FOUND.
 4. `expected_roster_version` against `clubs.roster_version`: VERSION_CONFLICT with `current_version`.
 5. Six: the active members, the candidates still open and `add` together are at most `CLUB_SIZE`, else CLUB_FULL. This is `can_propose`'s rule, so CLUB_FULL is answered wherever `can_propose` is false.
@@ -113,7 +113,7 @@ The tests of this PR were written after its code, not before it, against the con
 **`createInvitation(tx, clock, input, render)`** (`clubs/invitation.ts`).
 
 1. The caller's membership of the path's club, before the receipt: NOT_FOUND (FQ112).
-2. The receipt, 201, then the club's row `FOR UPDATE`, then who is asking again.
+2. The receipt, 201, with the same rule for a replay as `proposeRoster`'s (`reservedSince`), then the club's row `FOR UPDATE`, then who is asking again.
 3. The candidate: of this club, still open, on the club's open revision, and proposed by the caller's interval. Anything else is NOT_FOUND, the same for another member's candidate whatever its link's state (T14, handoff 1).
 4. The latest link: when it is bound, NOT_ALLOWED (handoff 4).
 5. The clock, then the new link: 32 random bytes as base64url (43 characters) for the URL's fragment, of which only the SHA-256 is stored; it expires `INVITATION_DAYS` (7) days after the sample's whole second (FQ71), so the expiry the contract's whole-second Instant says is the expiry kept; the token is hashed in the process and never sent to the database, not even as a parameter; the earlier latest link is marked replaced by it.
@@ -125,9 +125,14 @@ The tests of this PR were written after its code, not before it, against the con
 2. A bound link: NOT_ALLOWED.
 3. `revoked_at` is set once, at the clock's sample, if it isn't set. A link already replaced or expired is revoked the same way: it didn't work before and doesn't after. The answer is `{ invitation_id, state: "revoked" }`.
 
-**The routes** (`services/api/src/clubs/roster.ts`) check the key, then the body by the contract's own schema, naming the first bad field and never a value, and serialize by explicit field lists (T55). Body limits (`ROUTE_BODY_LIMITS`, `services/api/src/app.ts`): 80 KiB for `proposeRoster` (five labels of at most 640 UTF-16 units each, escaped) and 1 KiB for `createInvitation`.
+**The routes** (`services/api/src/clubs/roster.ts`) check the key, then the body by the contract's own schema, naming the first bad field and never a value, and serialize by explicit field lists (T55). Body limits (`ROUTE_BODY_LIMITS`, `services/api/src/app.ts`): 80 KiB for `proposeRoster` (five labels of at most 640 code points each, escaped) and 1 KiB for `createInvitation`.
 
-**For PR 3:** `acceptInvitation` must take the club's row too, as `createInvitation` and `revokeInvitation` do, so that accepting can't race a replace or a revoke of the same link.
+**For PR 3 and PR 4** (from review round 1; none is reachable until those PRs, since nothing here ends a membership, a candidate or a revision but a newer proposal):
+
+- `acceptInvitation` must take the club's row too, as `createInvitation` and `revokeInvitation` do, so that accepting can't race a replace or a revoke of the same link. It hashes the token's base64url text, as `createInvitation` does, not the bytes it spells.
+- When a revision ends with no successor (declined, or applied with someone left out), every candidate of it still open must be ended or deliberately carried: six counts every open candidate of the club, while a proposal carries only the open revision's, and a link is made only on the open revision. An open candidate on no open revision would hold one of the six places for good.
+- When a member leaves or an account is deleted, that member's open candidates must be ended in the same transaction: only a candidate's proposer makes its link, so a candidate whose proposer is gone could never be linked, and if the proposer's interval ends with no name to show (`account_deleted`, T27), the revision that carries the candidate can no longer be read by anyone, and the next proposal, which answers with its own new revision, would fail. `tests/src/db/propose-roster.test.ts` ("leaves out a member with no name to show...") pins the read's side of this on rows made by hand.
+- Approving and declining need a rule for a revision nobody can read (its proposer has no name).
 
 ### 3.3 Decisions
 
@@ -135,6 +140,8 @@ The tests of this PR were written after its code, not before it, against the con
 - **`roster_version` moves by one per proposal,** though a proposal both ends a revision and makes one (0003's comment lists what moves it, not by how much).
 - **Labels aren't compared.** No source refuses two candidates with one label, or a label equal to a member's name, so neither is refused.
 - **A link for a candidate whose earlier link was only used in an earlier revision** is NOT_ALLOWED, as the contract says of a link the candidate accepted with "in this revision or an earlier one".
+- **Proposing approves the whole new roster, carried candidates included.** When a member proposes while another revision is open, the new revision holds the earlier candidates too, and the proposer's implicit approval (FQ60) is of that whole roster, though `expected_roster_version` proves only that the proposer read the club after the earlier proposal, not each name. It follows from FQ60 and the contract's carry; no source says otherwise. Raised with the founder in the PR.
+- **`used` on a superseded revision** can mean the candidate accepted the newer revision with the link, not an earlier one. The value is the contract's for "bound, and not accepted on this revision"; nothing shows it yet.
 - **A proposal in any club its member can read:** proposed, active or paused (FQ16, FQ51). A suspended club gives its members nothing (FQ80).
 
 ### 3.4 Tests, written first
@@ -143,7 +150,7 @@ The tests of this PR were written after its code, not before it, against the con
 - **Routes** (`services/api/src/clubs/roster.test.ts`): the serializers against the contract's examples; every refusal before a transaction; the mapping of each refusal; no `url` and no token in any log line.
 - **The privacy matrix** (`tests/src/privacy/roster.ts`, `rows.ts`, `matrix.test.ts`): the four routes for every role, state and phase, judged from the world's rows; `invitation` absent for everyone but the candidate's proposer; no answer with a count or another member's decision. The judges are themselves tested on answers wrong in one way each (`roster.test.ts`).
 - **The leak scanner** (`tests/src/privacy/scanner.ts`, the allowance its header promised to B1): a link's id is shown only where the scanner judges it (`CandidateInvitation`, `InvitationLink`, `RevokedInvitation`) and only to a viewer whose active interval proposed the link's candidate; `url` is allowed only in `createInvitation`'s 201, only as `https://tadayo.app/i#` and the 43-character token whose SHA-256 the link's row holds. The matrix scans that one answer before the world keeps the token back and every later answer after, so a replay that carried it fails. Each allowance has a test that it can fail (`scanner.test.ts`, "the proposer's invitation link").
-- **How the tests were written:** before the code, from this section, but first run after it: the database tests passed on their first run (43 of 43), so there is no red run to show for them. The deliberate breakages are the evidence that they can fail.
+- **How the tests were written:** before the code, from this section, but first run after it: the database tests passed on their first run (43 of 43), so there is no red run to show for them. The deliberate breakages are the evidence that they can fail. After review round 1: 14 more database tests (57 in the two files), among them the two for someone who left and joined again, which were run and failed before `reservedSince` was called and pass with it; a clock that reads later at each sample, so the sample after the lock is the one that dates the change; a member who leaves while the proposal waits for the club's row; two link requests at once, and a link racing a revoke; an unsealed revision, a proposer with no name, members who joined at one instant.
 - **Deliberate breakages** at the PR's last head, on the `evidence` branch under `api/b1-propose/<short-sha>/breakages/`.
 
 ### 3.5 What this PR leaves

@@ -55,6 +55,27 @@ export async function reserveReceipt(
 }
 
 /**
+ * Whether the receipt was reserved once the membership interval `interval` had begun. A club command asks
+ * before it answers a replay: an answer stored for an earlier interval of the same account, which has
+ * since left and joined again, isn't the new interval's to read (FQ112's default), since it names what
+ * that earlier interval could see. The receipt's `created_at` and the interval's `joined_at` are both the
+ * server clock's samples.
+ */
+export async function reservedSince(
+  tx: QuerySql,
+  { userId, key, request }: ReceiptKey,
+  interval: string,
+): Promise<boolean> {
+  const [found] = await bound(tx)`
+    SELECT 1 AS found
+      FROM app.idempotency_receipts r
+      JOIN app.memberships m ON m.interval_id = ${interval} AND m.user_id = r.actor_user_id
+     WHERE r.actor_user_id = ${userId} AND r.operation = ${request.operation}
+       AND r.idempotency_key = ${key}::pg_catalog.uuid AND r.created_at >= m.joined_at`;
+  return found !== undefined;
+}
+
+/**
  * Completes the receipt with `body` and returns the answer as the receipt keeps it (jsonb orders a body's
  * keys its own way), so a replay is the first answer byte for byte, not only the same fields. `status` is
  * the contract's success status of the operation, 201 where it makes something.

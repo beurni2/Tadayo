@@ -126,6 +126,11 @@ const CLAIMED = PHASES.collecting.add({ hours: 24 });
 
 /** The requests each world gets from the contract's operations (specsFor), pinned. */
 const REQUESTS_PER_WORLD = 72;
+/** What the roster's table did for each role (the role's test fills it; the last test reads it). */
+const ROSTER_TABLES = new Map<
+  string,
+  { memberPhases: number; revisions: number; links: number; otherAnswers: number }
+>();
 
 /** A world's own suffix, so its names are no other world's. */
 const suffix = () => ` ${randomBytes(6).toString("hex")}`;
@@ -332,12 +337,13 @@ async function factsOf(
       joined: boolean;
       club_name: string;
       inviter: string | null;
+      candidate: string;
       proposed_by: string;
       token_sha256: string;
     }[]
   >`
     SELECT i.id, i.bound_user_id AS bound, c.club_id AS club, c.state = 'joined' AS joined, k.name AS club_name,
-           c.proposed_by_interval_id AS proposed_by, pg_catalog.encode(i.token_sha256, 'hex') AS token_sha256,
+           c.id AS candidate, c.proposed_by_interval_id AS proposed_by, pg_catalog.encode(i.token_sha256, 'hex') AS token_sha256,
            CASE WHEN m.state = 'active' THEN u.display_name ELSE m.ended_display_name END AS inviter
       FROM app.invitations i
       JOIN app.candidates c ON c.id = i.candidate_id
@@ -453,6 +459,7 @@ async function factsOf(
             joined: row.joined,
             clubName: row.club_name,
             inviterName: row.inviter,
+            candidate: row.candidate,
             proposedBy: row.proposed_by,
             tokenSha256: row.token_sha256,
           },
@@ -514,6 +521,10 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
     it(`answers the ${role.name} as its account and its row say, and leaks nothing the scanner can find`, async () => {
       const wrong: string[] = [];
       const counted = { cells: 0, answers: 0, expectedAnswers: 0, bodies: 0, expectedBodies: 0 };
+      // What the roster's table did for this role: the phases its viewer was a member the club answers, the
+      // revisions and links it made, and the answers given to another member. A table that was skipped
+      // whole would balance every other count, so these are asserted below.
+      const roster = { memberPhases: 0, revisions: 0, links: 0, otherAnswers: 0 };
       const phases = (Object.keys(PHASES) as Phase[]).filter((phase) => !role.phases || role.phases.includes(phase));
       const expectedSession: Session = role.session ?? "active";
       for (const state of STATES) {
@@ -845,6 +856,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             };
             if (as === undefined) record(step);
             else {
+              roster.otherAnswers += 1;
               const theirs = await factsOf(clubs, as, { accounts: [cell.w.dan.user], secrets: [...secrets] });
               scanner(wrong, `${state.name}, ${phase}`, () => theirs, now, counted)(step);
             }
@@ -857,6 +869,8 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
           const propose = byId("proposeRoster");
           const rosterGate = gateOf(sessionNow, propose.operation);
           const rosterVersion = clubRows.get(cell.w.club)?.rosterVersion ?? -1;
+          if (rosterGate === undefined && viewerIn(schedule, cell.w.club, cell.viewer) !== undefined)
+            roster.memberPhases += 1;
           const label = `${named(cell.w, "Proposed")} ${String(index)}`;
           let proposalSaid: string | undefined;
           let revision: string | undefined;
@@ -923,6 +937,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             await judged(sent, answer, problems, one.name);
           }
           if (revision !== undefined) {
+            roster.revisions += 1;
             const made = revision;
             const candidate = rosterWorld.revisions.get(made)?.candidates.at(-1)?.id ?? "";
             const read: Spec = { ...byId("getRosterRevision"), path: { revision_id: made } };
@@ -971,7 +986,10 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
               mine === "made" ? linked.problems : ["the judge refuses its proposer the link"],
               "a link",
             );
-            if (linked.token !== undefined) secrets.push(linked.token);
+            if (linked.token !== undefined) {
+              secrets.push(linked.token);
+              roster.links += 1;
+            }
             facts = await load();
             await judged(
               link,
@@ -1099,6 +1117,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
         }
       }
       console.log(`${role.name}: ${String(counted.cells)} cells run, ${String(counted.answers)} answers scanned`);
+      console.log(`${role.name}, the roster's table: ${JSON.stringify(roster)}`);
       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqual({ count: 0, first: [] });
       // Every cell ran: the contract's 72 requests a world (each operation with each value of a
       // required enum, and again with its optional ids), in each of the 7 states and each phase the
@@ -1110,11 +1129,37 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       expect(specsPerWorld).toBe(REQUESTS_PER_WORLD);
       expect(counted.cells).toBe(7 * phases.length * REQUESTS_PER_WORLD);
       expect(counted.bodies).toBe(counted.expectedBodies);
-      expect(counted.bodies).toBeGreaterThanOrEqual(7 * phases.length * 8);
+      // In every phase of every state: createClub's eight bodies and the roster's eight proposals.
+      expect(counted.bodies).toBeGreaterThanOrEqual(7 * phases.length * 16);
+      // The roster's table ran: a viewer who is a member in a phase proposes in the first such phase of each
+      // state at least (a later phase may find the club full of the candidates carried), every revision got
+      // its link, and each was read, linked and revoked by another member too (three reads, one link, one
+      // revoke: five answers a revision).
+      ROSTER_TABLES.set(role.name, roster);
+      if (roster.memberPhases > 0) expect(roster.revisions).toBeGreaterThanOrEqual(7);
+      else expect(roster.revisions).toBe(0);
+      expect(roster.links).toBe(roster.revisions);
+      expect(roster.otherAnswers).toBe(roster.revisions * 5);
       expect(counted.answers).toBe(counted.expectedAnswers);
       expect(malformed.size).toBeGreaterThan(0);
     });
   }
+});
+
+describe("the roster's table ran (tests/src/privacy/roster.ts)", () => {
+  it("made revisions and links for the six roles who are members the club answers, and for no other role", () => {
+    // Counted here apart from the judges: a table skipped whole would balance every other count.
+    expect(ROSTER_TABLES.size).toBe(ROLES.length);
+    const made = [...ROSTER_TABLES].filter(([, table]) => table.revisions > 0).map(([name]) => name);
+    expect(made).toEqual([
+      "author",
+      "star",
+      "member in the audience",
+      "member who joined after the commit (T8)",
+      "rejoined member, a new interval (T8)",
+      "blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88)",
+    ]);
+  });
 });
 
 describe("callers without a session, in each state of the drop and phase of the day (T14, T27, T53)", () => {
