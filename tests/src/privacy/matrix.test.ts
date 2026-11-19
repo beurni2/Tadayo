@@ -32,7 +32,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { worldSql, type Tx, type WorldTx } from "../db/harness.ts";
 import { AT, checkAsAtCommit, commitDrop, named, newAvatar, newWorld, type World } from "../db/world.ts";
 import { PHASES, REVEAL, ROLES, STATES, type Phase } from "../matrix.ts";
-import { PUBLIC, cellExpected, gateOf, sessionOf, updateMeCases, type Own, type Session } from "./account.ts";
+import { PUBLIC, cellExpected, daysOf, gateOf, sessionOf, updateMeCases, type Own, type Session } from "./account.ts";
 import { freshId, type Targets } from "./bindings.ts";
 import {
   SIGNED_OUT,
@@ -54,6 +54,7 @@ import {
   type Spec,
   type Step,
 } from "./harness.ts";
+import { membersExpected, type MembersSeen } from "./members.ts";
 import { contractOperations, readDocument } from "./operations.ts";
 import { NONE, ROWS, rowProblems } from "./rows.ts";
 import {
@@ -525,15 +526,22 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
           const seen = () => ({ world: facts.world, viewer: facts.viewer, now });
           const record = scanner(wrong, `${state.name}, ${phase}`, () => facts, now, counted);
           const scheduleSeen = (): ScheduleSeen => ({ schedule, account: cell.viewer, now });
+          // The roster's days come from the world's rows as the club list's do (account.ts's daysOf).
+          const membersSeen = (): MembersSeen => ({
+            ...scheduleSeen(),
+            nextOf: (star) => daysOf(facts.world, cell.w.club, now, star).next,
+          });
           for (const spec of specs) {
             const gate = gateOf(session, spec.operation);
             const id = spec.operation.id;
             const expected =
-              gate !== undefined || !SCHEDULE_JUDGED.has(id)
-                ? cellExpected(session, spec.operation, seen)
-                : id === "getSchedule"
-                  ? weekExpected(scheduleSeen, cell.w.club)
-                  : commandExpected(scheduleSeen, id as ScheduleCommand, cell.targets.proposal, startVersion);
+              gate === undefined && id === "listMembers"
+                ? membersExpected(membersSeen, cell.w.club)
+                : gate !== undefined || !SCHEDULE_JUDGED.has(id)
+                  ? cellExpected(session, spec.operation, seen)
+                  : id === "getSchedule"
+                    ? weekExpected(scheduleSeen, cell.w.club)
+                    : commandExpected(scheduleSeen, id as ScheduleCommand, cell.targets.proposal, startVersion);
             counted.cells += 1;
             counted.expectedAnswers += 1 + guessCount(spec);
             record(await cellStep(app, spec, expected));
@@ -663,6 +671,18 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
               answers: [{ spec: sent, answer }],
             });
           }
+          // The roster again, after whatever the viewer changed: a confirmation may have dated nobody's day
+          // (no day is made here), but the last one applies the first days and moves the rows to the week's order.
+          const rosterSpec = specs.find((spec) => spec.operation.id === "listMembers");
+          if (rosterSpec === undefined) throw new Error("the contract has no listMembers");
+          counted.expectedAnswers += 1;
+          record(
+            await cellStep(
+              app,
+              rosterSpec,
+              gateOf(sessionNow, rosterSpec.operation) ?? membersExpected(membersSeen, cell.w.club),
+            ),
+          );
           // And the week again, after whatever the viewer changed.
           const week = specs.find((spec) => spec.operation.id === "getSchedule");
           if (week === undefined) throw new Error("the contract has no getSchedule");

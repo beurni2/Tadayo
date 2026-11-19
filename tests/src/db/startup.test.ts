@@ -11,7 +11,9 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, describe, expect, it } from "vitest";
+import { worldSql } from "./harness.ts";
+import { confirmedWeek, forgetCommittedDays, holding, waitingOn } from "./week-world.ts";
 
 const SERVICES = join(import.meta.dirname, "..", "..", "..", "services");
 const url = process.env.DATABASE_URL ?? "";
@@ -24,6 +26,10 @@ const AT_READY = pathToFileURL(join(import.meta.dirname, "signal-at-ready.ts")).
 afterEach(() => {
   for (const child of running.splice(0)) child.kill("SIGKILL");
 });
+
+// A started worker makes the days of whatever committed club another file left with a week, by the real
+// clock, and commits them: none may stay (week-world.ts, forgetCommittedDays).
+afterAll(forgetCommittedDays);
 
 function start(
   service: "api" | "worker",
@@ -201,9 +207,9 @@ describe("the API's entry against the test database", () => {
 });
 
 describe("the worker's entry against the test database", () => {
-  it("starts with prod and stays up, with no jobs yet, until it is told to stop", async () => {
+  it("starts with prod and stays up, making days, until it is told to stop", async () => {
     const worker = start("worker", "prod");
-    expect(await waitFor(worker, /worker: started, with no jobs yet\n/), worker.output.stderr).not.toBeNull();
+    expect(await waitFor(worker, /worker: started, making days every minute\n/), worker.output.stderr).not.toBeNull();
     // Nothing ends it: a worker that exited would leave its Machine stopped (a clean exit isn't restarted).
     await new Promise((done) => setTimeout(done, 1_500));
     expect(worker.child.exitCode).toBeNull();
@@ -228,11 +234,53 @@ describe("the worker's entry against the test database", () => {
     async (signal) => {
       const worker = start("worker", "prod", {}, signal);
       expect(await worker.exited, `${worker.output.stdout}${worker.output.stderr}`).toBe(0);
-      expect(worker.output.stdout).toBe(`worker: started, with no jobs yet\nworker: stopped on ${signal}\n`);
+      // Its first pass still runs, and makes whatever days a club another file left is owed: that line
+      // may come between the two, and nothing else may.
+      expect(worker.output.stdout).toMatch(
+        new RegExp(
+          `^worker: started, making days every minute\\n(worker: made \\d+ days?\\n)?worker: stopped on ${signal}\\n$`,
+        ),
+      );
       expect(worker.output.stderr).toBe("");
     },
     30_000,
   );
+
+  it("finishes its stop when a second signal comes while a pass is still running: the handlers stay, so the default action never ends it", async () => {
+    // A club whose row is held keeps the worker's first pass waiting, up to its lock limit, so the
+    // signals below arrive one after another while the stop is under way, not together.
+    const db = worldSql();
+    try {
+      const club = await db.begin((tx) =>
+        confirmedWeek(tx, 6, { opened: "2026-11-02T14:00:00Z", confirmed: "2026-11-04T14:00:00Z" }),
+      );
+      const hold = await holding(db, club.club);
+      const worker = start("worker", "prod");
+      try {
+        expect(await waitFor(worker, /worker: started/), worker.output.stderr).not.toBeNull();
+        await waitingOn(db, hold.pid);
+        worker.child.kill("SIGTERM");
+        await new Promise((done) => setTimeout(done, 300));
+        // The first signal is handled and the pass still waits: the worker is up.
+        expect(worker.child.exitCode).toBeNull();
+        expect(worker.child.signalCode).toBeNull();
+        worker.child.kill("SIGTERM");
+        worker.child.kill("SIGINT");
+        await new Promise((done) => setTimeout(done, 300));
+        expect(worker.child.exitCode, "a second signal ended the worker").toBeNull();
+        expect(worker.child.signalCode, "a second signal ended the worker").toBeNull();
+      } finally {
+        await hold.release();
+      }
+      expect(await worker.exited, `${worker.output.stdout}${worker.output.stderr}`).toBe(0);
+      // The first signal's name, once; the held club's days were made once its row was free.
+      expect(worker.output.stdout).toMatch(/worker: stopped on SIGTERM\n$/);
+      expect(worker.output.stdout.match(/worker: stopped on/g)).toHaveLength(1);
+      expect(worker.output.stderr).toBe("");
+    } finally {
+      await db.end();
+    }
+  }, 30_000);
 
   it("stops with dev, which needs the dev clock this database doesn't have (ADR-013)", async () => {
     const worker = start("worker", "dev");

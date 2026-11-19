@@ -68,9 +68,16 @@
 //   and the neutral not-found before any other code to a caller the proposal doesn't include (T9, T14).
 //   The leak scanner can't judge these: it accepts any person of a club the viewer is in (scanner.ts), so
 //   each row judges them.
-// - for the schedule's routes still to come (listMembers and the membership change, B2's later schedule
-//   PRs; getHome, listClubs' `next_day` and a revealed day's `add_target` where a schedule's day shows),
-//   each as a check a row can run:
+// - for listMembers (B2's generation slice, done): the club's roster, whole, judged from the world's rows by
+//   members.ts: the same `members` for every member, in the order they joined while the first days are open
+//   and in the week's order once they have applied (FQ98), each with their own next day (account.ts's
+//   `daysOf`, among that member's days) and `next_up` on the star of the club's next day; no `cover` and no
+//   `open_revision` yet; and the neutral not-found to everyone else. The matrix asks it in every cell and
+//   again after the viewer's own schedule commands, so a choice is seen to change none of it and the last
+//   confirmation to move the rows once;
+// - for the schedule's routes still to come (the membership change and the first days' roster, B2's later
+//   schedule PRs; getHome, listClubs' `next_day` and a revealed day's `add_target` where a schedule's day
+//   shows), each as a check a row can run:
 //   - `held_by` to every member of a membership change; `announced` only in a membership change, never to
 //     its new member, and never in the first days;
 //   - a membership change's answers to a viewer the same before and after any other member's
@@ -89,10 +96,14 @@
 //     a replaced proposal getting the neutral not-found.
 
 import { JUDGED as ACCOUNT_JUDGED } from "./account.ts";
+import { MEMBERS_JUDGED } from "./members.ts";
 import { SCHEDULE_JUDGED } from "./schedule.ts";
 
-/** The operations some file judges: the account routes (slice 8) and the schedule routes (B2's schedule slice). */
-export const JUDGED: ReadonlySet<string> = new Set([...ACCOUNT_JUDGED, ...SCHEDULE_JUDGED]);
+/**
+ * The operations some file judges: the account routes (slice 8), the schedule routes (B2's schedule slice)
+ * and the roster (B2's generation slice).
+ */
+export const JUDGED: ReadonlySet<string> = new Set([...ACCOUNT_JUDGED, ...SCHEDULE_JUDGED, ...MEMBERS_JUDGED]);
 
 const GATE =
   "the gate's one 401 to an account whose deletion has begun (T27) and to every caller without a session, " +
@@ -124,6 +135,15 @@ export const SCHEDULE = Object.freeze({
     "200 with the club's Schedule as schedule.ts's weekFor makes it from the world's rows, to an account with an " +
     "active interval in a club that isn't suspended: `current`, and the open proposal only when it includes that " +
     `interval (FQ100), each slot naming only whom the contract gives that viewer; the neutral NOT_FOUND to every other role the gate lets through (${GATE})`,
+});
+
+/** listMembers (B2's generation slice): the club's roster for one of its members, whole, from the world's rows. */
+export const MEMBERS = Object.freeze({
+  answer:
+    "200 with the club's Members as members.ts's membersFor makes it from the world's rows, to an account with an " +
+    "active interval in a club that isn't suspended: every active member with a name, the same list for each of " +
+    "them, in the roster's order (FQ98), each with their own next day and whether they are next, and no other " +
+    `field; the neutral NOT_FOUND to every other role the gate lets through (${GATE})`,
 });
 
 /** chooseScheduleDays and confirmScheduleDays (B2's schedule slice): schedule.ts's table of bodies. */
@@ -177,7 +197,7 @@ export const ROWS: Readonly<Record<string, unknown>> = {
   listClubs: CLUBS,
   listComments: NONE,
   listFavourites: NONE,
-  listMembers: NONE,
+  listMembers: MEMBERS,
   listMemories: NONE,
   listMyDrops: NONE,
   previewBlock: NONE,
