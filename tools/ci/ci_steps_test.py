@@ -1014,9 +1014,9 @@ class UsageTest(unittest.TestCase):
             self.assertEqual(ci_steps.main(["ci_steps.py", "deploy"]), 2)
         self.assertIn("steps:", out.getvalue())
 
-    def test_slice_12_has_not_turned_targets_on_yet(self):
-        # Until slice 12, a step whose target hasn't arrived passes empty (the B0 plan, slice 2).
-        self.assertFalse(ci_steps.REQUIRE_TARGETS)
+    def test_slice_12_turned_targets_on(self):
+        # Since slice 12, a step whose target is missing fails (the B0 plan, slices 2 and 12).
+        self.assertTrue(ci_steps.REQUIRE_TARGETS)
 
 
 if __name__ == "__main__":

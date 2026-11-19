@@ -1,0 +1,92 @@
+# ios-release: archives the iPhone app, checks what the archive holds, and uploads it to
+# TestFlight (docs/TECH-DESIGN.md sections 2 and 9; the B0 plan's slice 12). Run by hand only, on
+# a chosen branch.
+# Thin on purpose: every step calls tools/ci/ios_release_steps.py, where the logic and its tests
+# live (ios_release_steps_test.py reads this file).
+# The App Store Connect API key reaches three steps alone, and only on a run that uploads: plan,
+# which checks its shape before any build, export and upload. The archive, the one step that
+# runs the packages' build plugins, is built and checked with no key and no account at all.
+# CI configuration: change this file only in its own PR (docs/INVARIANTS.md T58).
+name: ios-release
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: >-
+          dev: a release build that points at dev, with the Lab. prod: built and checked, never
+          uploaded by this workflow
+        type: choice
+        required: true
+        default: dev
+        options:
+          - dev
+          - prod
+      upload:
+        description: >-
+          Sign for App Store Connect and upload to TestFlight. Off: a dry run, which archives and
+          checks and touches nothing at Apple
+        type: boolean
+        required: true
+        default: false
+
+permissions: {}
+
+# One release at a time, and a run that has begun is never cancelled: an upload cut short would
+# leave its build number half used.
+concurrency:
+  group: ios-release
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  RELEASE_ENVIRONMENT: ${{ inputs.environment }}
+  RELEASE_UPLOAD: ${{ inputs.upload }}
+
+jobs:
+  release:
+    name: release
+    # GitHub's Xcode 27 image on its standard arm64 runner, never xcode-27-xlarge, a larger
+    # runner billed apart (tools/ci/toolchain.py; .github/actionlint.yaml).
+    runs-on: xcode-27
+    timeout-minutes: 75
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - run: python3 tools/ci/ios_release_steps.py plan
+        timeout-minutes: 2
+        env:
+          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+          ASC_KEY_ID: ${{ inputs.upload && secrets.ASC_KEY_ID || '' }}
+          ASC_ISSUER_ID: ${{ inputs.upload && secrets.ASC_ISSUER_ID || '' }}
+          ASC_KEY_P8: ${{ inputs.upload && secrets.ASC_KEY_P8 || '' }}
+      - run: python3 tools/ci/ios_release_steps.py toolchain
+        timeout-minutes: 5
+      - run: python3 tools/ci/ios_release_steps.py xcodegen
+        timeout-minutes: 5
+      - run: python3 tools/ci/ios_release_steps.py archive
+        timeout-minutes: 30
+      - run: python3 tools/ci/ios_release_steps.py check
+        timeout-minutes: 5
+      - if: ${{ inputs.upload }}
+        run: python3 tools/ci/ios_release_steps.py export
+        timeout-minutes: 15
+        env:
+          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+      - if: ${{ inputs.upload }}
+        run: python3 tools/ci/ios_release_steps.py upload
+        timeout-minutes: 15
+        env:
+          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}

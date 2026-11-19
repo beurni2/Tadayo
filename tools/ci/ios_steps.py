@@ -16,8 +16,8 @@ The steps:
   gate         The macOS job runs only when the branch has apps/ios/project.yml (PROJECT_SPEC):
                `ios.yml` reached main before the app did (ADR-025), so a push that changes
                packages/contracts/** would otherwise start a macOS run that fails at XcodeGen.
-               Writes build=true or build=false to $GITHUB_OUTPUT. Slice 12 sets REQUIRE_APP, and
-               then a branch without the app fails here instead (T58).
+               Writes build=true or build=false to $GITHUB_OUTPUT. Slice 12 set REQUIRE_APP: the
+               app is on main, so a branch without it fails here instead (T58).
   toolchain    Selects the pinned Xcode (toolchain.XCODE_VERSION, at /Applications/Xcode_<v>.app)
                for every later step, and fails unless `xcodebuild -version` says that Xcode and
                `xcrun swift --version` says toolchain.SWIFT_VERSION, the Swift `ci` tests the
@@ -173,7 +173,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import toolchain  # noqa: E402
 
-REQUIRE_APP = False  # slice 12 turns this on (T58)
+REQUIRE_APP = True  # since slice 12 (T58): the gate fails on a branch without the app
 
 PROJECT_SPEC = "apps/ios/project.yml"
 IOS_DIR = "apps/ios"

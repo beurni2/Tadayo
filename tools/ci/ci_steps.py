@@ -4,9 +4,9 @@
   python3 tools/ci/ci_steps.py <step>
 
 .github/workflows/ci.yml stays thin: each of its steps calls one step here. A step whose target
-arrives in a later slice finds it instead of naming it, and passes while it is absent, so the
-slices that bring the targets turn their steps on without touching tools/ci/ (guard 1). TARGETS
-is the one list of them, and each step reads its own target from it:
+arrived in a later slice finds it instead of naming it, and until slice 12 passed while it was
+absent, so the slices that brought the targets turned their steps on without touching tools/ci/
+(guard 1). TARGETS is the one list of them, and each step reads its own target from it:
 
   step          target (TARGETS)                               arrives in
   openapi       a workspace package's `openapi:check` script     slice 3
@@ -17,8 +17,8 @@ is the one list of them, and each step reads its own target from it:
   privacy       a workspace package's `test:privacy` script      slice 7
   swift         packages/swift/TadayoCore, TadayoAPI's Package.swift   slice 11
 
-Slice 12 sets REQUIRE_TARGETS, and then every one of them fails when its target is missing
-(T58). The ratchet keeps a target from going away once it has arrived: a branch fails when a
+Slice 12 set REQUIRE_TARGETS, and since then every one of them fails when its target is
+missing (T58). The ratchet keeps a target from going away once it has arrived: a branch fails when a
 target present where it left main (`git merge-base origin/main HEAD`) is missing from it. A
 file counts by its path, and a script once per package that has it, by the package's `name`, so
 no package can lose a script that another keeps; the ratchet fails if a workspace package has no
@@ -77,7 +77,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import toolchain  # noqa: E402
 
-REQUIRE_TARGETS = False  # slice 12 turns this on (T58)
+REQUIRE_TARGETS = True  # since slice 12 (T58): a step fails when its target is missing
 
 ADMIN_URL = "postgresql://supabase_admin:postgres@localhost:5432/postgres"
 BOOTSTRAP_URL = "postgresql://postgres:postgres@localhost:5432/postgres"
