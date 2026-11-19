@@ -488,7 +488,7 @@ PR #46 as merged (`888c0fb`), run in the session with Node 26.13.0 before its me
 
 ### 1.3 ios lane
 
-**Updated:** 2026-11-19 00:47 UTC, ios/b0-email-return
+**Updated:** 2026-11-19 01:11 UTC, ios/b0-email-return-check
 
 - **Started:** 2026-11-03 at 11:03 UTC, by the coordinator (ADR-025). Environment: Swift from swift.org's signed release tarball, installed by hand, since the environment has no setup script (6.3.3 from 2026-11-03, 6.4.2 since 2026-11-13 09:58 UTC); the journal hook isn't confirmed to fire in this session, so it runs by hand before each commit (`docs/LIMITATIONS.md`'s row of 2026-11-03 for the ios thread).
 - **This branch:** `ios/b0-email-return`, from `main` at `6026c4b` (#67), no PR yet: A02-email's Return follow-up (Next 2). `EmailScreen` (`apps/ios/Tadayo/SignIn/SignInFlow.swift`) had one flag, `sendingFromReturn`, set by every Return and cleared when that Return's `sendCode()` came back; a Return while a code was on its way, or after Send a code, came back at once (`SignInModel.canSend` is false then), so the flag was clear before the field's lost focus reached `onChange(of: focused)`, and nothing put the focus back. Now, as `ProfileForm` does for A03's save: `onSubmit` counts only a Return that starts a send (`returnSends`, guarded by `model.canSend`) and holds the count 100 milliseconds past the send's end; and the focus is put back while `returnSends > 0` or `model.isSending`, whichever started the send, and only while `model.step == .email`, so that after a code is sent the held count takes no focus from A02-code's field. `SignInUITests.testSendingFromTheReturnKeyKeepsTheFocus` and `testTheAddressIsReadOnlyWhileACodeIsOnItsWay` (`apps/ios/TadayoUITests/SignInUITests.swift`) each press Return again while the send hangs (`-TadayoUITestHangingSend`), type a letter, which fails if no element has the focus, and check the address unchanged and the keyboard up. `docs/LIMITATIONS.md`'s row of 2026-11-11 on Return says so.
@@ -3368,6 +3368,14 @@ A new `docs/LIMITATIONS.md` row too: two database-backed runs at once on the ses
 **Next:** Push, check `ci`, then PR #11's description and the founder (block 1.2's Next steps 1 and 2).
 
 ### 3.3 ios lane
+
+#### 2026-11-19 01:11 UTC · ios · ios/b0-email-return-check · PR none
+**Did:** A control on the check branch `ios/b0-email-return-check`, which never merges: `apps/ios/Tadayo/SignIn/SignInFlow.swift` as `main` has it at `6026c4b` (the one flag `sendingFromReturn`), under `ios/b0-email-return`'s UI tests at `45847a4`.
+**Why:** To see whether the two tests' new step (Return pressed while a send hangs, then a letter typed) fails on the old `EmailScreen`, so that their passing at `45847a4` shows the fix and not a step that passes either way.
+**Verified:** In the session: `git diff 45847a4 --stat` shows `SignInFlow.swift` alone, with this entry; `swift format lint --strict --configuration apps/ios/.swift-format --recursive apps/ios` passes.
+**Not verified:** The result: the `ios` run comes after the push.
+**Decisions and questions:** None.
+**Next:** Read the `ios` run on this commit and record in PR #69 which of the two tests fail, on which runtime.
 
 #### 2026-11-19 00:47 UTC · ios · ios/b0-email-return · PR none
 **Did:** A02-email's Return follow-up (`ios/b0-email-return`, block 1.3's Next 2). `EmailScreen` in `apps/ios/Tadayo/SignIn/SignInFlow.swift`: the flag `sendingFromReturn` is replaced by the count `returnSends`; `onSubmit` returns unless `model.canSend`, counts the Return, sends, waits 100 milliseconds and takes the count down; `onChange(of: focused)` puts the focus back when the field loses it while `model.step == .email` and either `returnSends > 0` or `model.isSending`. `apps/ios/TadayoUITests/SignInUITests.swift`: `testSendingFromTheReturnKeyKeepsTheFocus` and `testTheAddressIsReadOnlyWhileACodeIsOnItsWay` each press Return while the send hangs, type a letter, and check the address unchanged and the keyboard there. Records: `docs/LIMITATIONS.md`'s row of 2026-11-11 on Return; the audit map's T47 row; block 1.3 (this branch; #67's merge with commit C's and `main`'s runs; Next 1 and 2); section 4.2's #67 row finished and this branch's row; `docs/PROGRESS.md`.

@@ -42,9 +42,8 @@ struct EmailScreen: View {
     @Bindable var model: SignInModel
     let focus: Bool?
     @FocusState private var focused: Bool
-    /// Codes sent from the keyboard's return key that are on their way, or just ended
-    /// (`onSubmit`).
-    @State private var returnSends = 0
+    /// A code sent from the keyboard's return key is on its way.
+    @State private var sendingFromReturn = false
 
     var body: some View {
         SetupScroll {
@@ -77,17 +76,10 @@ struct EmailScreen: View {
                         .autocorrectionDisabled()
                         .submitLabel(.next)
                         .onSubmit {
-                            // Only a Return that starts a send, counted, so one made while a
-                            // code is on its way, or as the last send ends, can't end its
-                            // cover. The count is held a moment past the send's end: a send
-                            // that fails at once ends before the field's lost focus reaches
-                            // `onChange(of: focused)`, as A03's save did (`ProfileForm`).
-                            guard model.canSend else { return }
-                            returnSends += 1
+                            sendingFromReturn = true
                             Task {
                                 await model.sendCode()
-                                try? await Task.sleep(for: .milliseconds(100))
-                                returnSends -= 1
+                                sendingFromReturn = false
                             }
                         }
                         .focused($focused)
@@ -124,16 +116,13 @@ struct EmailScreen: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { if focus == nil { focused = true } }
         // Return ends a field's editing, so a code sent from it would leave the address with no
-        // focus and no keyboard while it goes. The focus is put back while a code is on its way,
-        // whether Return or Send a code started it, so the field keeps it as it does when Send a
-        // code is tapped (handoff 7's `busyPrimary.field`: "keep first responder and keyboard if
-        // already shown"). `returnSends` covers the moments between Return and the send's start,
-        // and after a send that ends at once; once a code is sent the focus is A02-code's, so
-        // nothing is put back then. Whether the keyboard dips on the way is a device check:
+        // focus and no keyboard while it goes. The focus is put back, so the field keeps it as it
+        // does when Send a code is tapped (handoff 7's `busyPrimary.field`: "keep first responder
+        // and keyboard if already shown"). Whether the keyboard dips on the way is a device check:
         // focus set again on Return makes it go down and come back up (Apple's developer forums,
         // thread 770226).
         .onChange(of: focused) { _, now in
-            if !now, model.step == .email, returnSends > 0 || model.isSending { focused = true }
+            if !now, sendingFromReturn { focused = true }
         }
         .announcing(failure?.words)
         // Said politely, so VoiceOver first says what it says of the screen that just appeared.
