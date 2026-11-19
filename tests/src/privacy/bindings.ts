@@ -17,6 +17,10 @@ export interface Targets {
   star: string;
   /** The club's open schedule proposal: the matrix's first days (schedule.ts). */
   proposal: string;
+  /** The applied roster revision that brought Ben and Cleo in: it lists Ana alone (roster.ts). */
+  revision: string;
+  /** The link Ben accepted that revision with, which Ana, who proposed Ben, made. */
+  invitation: string;
 }
 
 /** A fresh id that names nothing, in the contract's `Id` shape (T14: a guessed id). */
@@ -35,11 +39,11 @@ export const BINDINGS: Readonly<Record<string, ((targets: Targets) => string) | 
   membership_id: (targets) => targets.author,
   occurrence_id: (targets) => targets.day,
   proposal_id: (targets) => targets.proposal,
+  invitation_id: (targets) => targets.invitation,
+  revision_id: (targets) => targets.revision,
   star: (targets) => targets.star,
   comment_id: "missing",
-  invitation_id: "missing",
   reservation_id: "missing",
-  revision_id: "missing",
   upload_id: "missing",
 };
 

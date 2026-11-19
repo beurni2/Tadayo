@@ -5,6 +5,7 @@
 // rows.
 
 import { Buffer } from "node:buffer";
+import { createHash } from "node:crypto";
 import { STATUS_CODES } from "node:http";
 import Fastify from "fastify";
 import { describe, expect, it } from "vitest";
@@ -101,6 +102,31 @@ function accountOf(name: string | null, version: number, over: Partial<WorldAcco
   return { state: "active", deletionRequestedAt: null, name, avatar: null, ageConfirmed: true, version, ...over };
 }
 
+/** The token of the link Ben made, which its row keeps only the SHA-256 of, and another link's. */
+const BENS_TOKEN = "b".repeat(43);
+const OTHER_TOKEN = "o".repeat(43);
+const sha256 = (token: string) => createHash("sha256").update(token).digest("hex");
+
+function invitationOf(
+  boundTo: string | null,
+  joined: boolean,
+  inviterName: string,
+  proposedBy: string,
+  token = OTHER_TOKEN,
+  candidate = "cand_other",
+): WorldInvitation {
+  return {
+    candidate,
+    boundTo,
+    club: "clb_sat",
+    joined,
+    clubName: "Saturday People",
+    inviterName,
+    proposedBy,
+    tokenSha256: sha256(token),
+  };
+}
+
 const world: WorldFacts = {
   drops: new Map([
     ["drp_ben", drop(ben, "occ_sat", "photo", "From Ben", [ana, ben, cleo])],
@@ -195,13 +221,15 @@ const world: WorldFacts = {
   ]),
   // Mo's, from Ana, which waits on the roster; one Fay accepted, from Hal, who joined after Fay left; and Eve's.
   invitations: new Map<string, WorldInvitation>([
-    ["inv_mo", { boundTo: "acct_mo", club: "clb_sat", joined: false, clubName: "Saturday People", inviterName: "Ana" }],
-    [
-      "inv_fay",
-      { boundTo: acct(fay), club: "clb_sat", joined: false, clubName: "Saturday People", inviterName: "Hal" },
-    ],
+    ["inv_mo", invitationOf("acct_mo", false, "Ana", ana)],
+    ["inv_fay", invitationOf(acct(fay), false, "Hal", hal)],
     // Eve's, which Eve used to join: a membership now.
-    ["inv_eve", { boundTo: acct(eve), club: "clb_sat", joined: true, clubName: "Saturday People", inviterName: "Ana" }],
+    ["inv_eve", invitationOf(acct(eve), true, "Ana", ana)],
+    // A link Ben made for someone Ben proposed, which nobody has used; and one Fay made before Fay left.
+    ["inv_bens", invitationOf(null, false, "Ben", ben, BENS_TOKEN, "cand_new")],
+    // Another link Ben made, for another candidate Ben proposed.
+    ["inv_bens_other", invitationOf(null, false, "Ben", ben, OTHER_TOKEN, "cand_second")],
+    ["inv_fays", invitationOf(null, false, "Fay", fay)],
   ]),
 };
 
@@ -1631,5 +1659,123 @@ describe("the leak scanner holds the account routes to the world's accounts and 
     ]);
     // A club's id is no one's but its members', so an invitation's club is as hidden from Mo as any other.
     expect(at(page(alone("acct_mo"), "clb_sat"), "values")).toEqual(["$.next_cursor"]);
+  });
+});
+
+describe("the proposer's invitation link (T7, T14, T52, FQ77; handoff 1)", () => {
+  const url = (token: string) => `https://tadayo.app/i#${token}`;
+  const link = (over: Record<string, unknown> = {}) => ({
+    invitation_id: "inv_bens",
+    candidate_id: "cand_new",
+    expires_at: "2026-11-14T06:59:59Z",
+    ...over,
+  });
+  const revision = (invitation: unknown, viewer = ben) => ({
+    id: "rev_new",
+    version: 1,
+    club: club(viewer),
+    state: "open",
+    proposed_by: person(ben, "Ben"),
+    members: [person(ana, "Ana"), person(ben, "Ben"), person(cleo, "Cleo")],
+    candidates: [{ id: "cand_new", name: "Mo", proposed_by: person(ben, "Ben"), invitation }],
+    my_decision: "approved",
+  });
+  const bens = { id: "inv_bens", state: "live", expires_at: "2026-11-14T06:59:59Z" };
+  const revoked = { invitation_id: "inv_bens", state: "revoked" };
+  const madeBy = (viewer: string, body: unknown, status = 201) =>
+    scan(answer(body, status), context("createInvitation", viewer));
+
+  it("passes the link's id and, in the answer that made it, its URL, to the member who proposed the candidate", () => {
+    expect(madeBy(ben, link({ url: url(BENS_TOKEN) }))).toEqual([]);
+    expect(madeBy(ben, link())).toEqual([]);
+    expect(scan(answer(revision(bens)), context("getRosterRevision", ben))).toEqual([]);
+    expect(scan(answer(revoked), context("revokeInvitation", ben))).toEqual([]);
+  });
+
+  it("catches the link's id shown to anyone else: another member, a former member who made it, someone outside", () => {
+    for (const viewer of [cleo, ana, stan]) {
+      expect(at(madeBy(viewer, link()), "world")).toEqual(["$.invitation_id"]);
+      expect(at(scan(answer(revoked), context("revokeInvitation", viewer)), "world")).toEqual(["$.invitation_id"]);
+    }
+    expect(at(scan(answer(revision(bens, cleo)), context("getRosterRevision", cleo)), "world")).toEqual([
+      "$.candidates[0].invitation.id",
+    ]);
+    // Fay made a link and has left since: Fay's interval is ended, so the link is no longer shown to Fay.
+    expect(at(madeBy(fay, link({ invitation_id: "inv_fays" })), "world")).toEqual(["$.invitation_id"]);
+    // A link the world doesn't have.
+    expect(at(madeBy(ben, link({ invitation_id: "inv_made_up" })), "world")).toEqual(["$.invitation_id"]);
+  });
+
+  it("catches a link beside a candidate it isn't for, though the viewer proposed both", () => {
+    expect(at(madeBy(ben, link({ invitation_id: "inv_bens_other" })), "world")).toEqual(["$.candidate_id"]);
+    expect(madeBy(ben, link({ invitation_id: "inv_bens_other", candidate_id: "cand_second" }))).toEqual([]);
+    const under = scan(answer(revision({ ...bens, id: "inv_bens_other" })), context("getRosterRevision", ben));
+    expect(at(under, "world")).toEqual(["$.candidates[0].invitation.id"]);
+  });
+
+  it("catches a link of a suspended club, and one shown to an account that isn't active (FQ80)", () => {
+    const clubs = new Map(world.clubs);
+    const sat = clubs.get("clb_sat");
+    if (sat === undefined) throw new Error("clb_sat");
+    clubs.set("clb_sat", { ...sat, suspendedAt: REVEAL });
+    const suspended = { world: { ...world, clubs } };
+    expect(at(scan(answer(link(), 201), context("createInvitation", ben, suspended)), "world")).toContain(
+      "$.invitation_id",
+    );
+    const accounts = new Map(world.accounts).set(acct(ben), accountOf("Ben", 1, { state: "deleting" }));
+    const deleting = { world: { ...world, accounts } };
+    expect(at(scan(answer(revoked), context("revokeInvitation", ben, deleting)), "world")).toContain("$.invitation_id");
+  });
+
+  it("catches the link's id anywhere but where the link is judged, to its proposer too", () => {
+    const page = scan(answer({ items: [], next_cursor: "inv_bens" }), context("listMyDrops", ben));
+    expect(at(page, "values")).toEqual(["$.next_cursor"]);
+    expect(at(madeBy(ben, link({ candidate_id: "inv_bens" })), "values")).toEqual(["$.candidate_id"]);
+  });
+
+  it("catches a URL that isn't this link's own, in another answer, on another host or to someone else", () => {
+    // Another link's token, and a token no link has.
+    const others = madeBy(ben, link({ url: url(OTHER_TOKEN) }));
+    expect(at(others, "world")).toEqual(["$.url"]);
+    expect(at(others, "keys")).toEqual(["$.url"]);
+    expect(at(others, "values")).toEqual(["$.url"]);
+    // Another host, another path, a query, and a token in the path.
+    for (const wrong of [
+      `https://tadayo.app.example/i#${BENS_TOKEN}`,
+      `https://tadayo.app/j#${BENS_TOKEN}`,
+      `https://tadayo.app/i?t=${BENS_TOKEN}`,
+      `https://tadayo.app/i/${BENS_TOKEN}`,
+      `http://tadayo.app/i#${BENS_TOKEN}`,
+      `${url(BENS_TOKEN)}x`,
+    ]) {
+      const found = madeBy(ben, link({ url: wrong }));
+      expect(at(found, "world")).toContain("$.url");
+      expect(at(found, "keys")).toEqual(["$.url"]);
+      expect(at(found, "values")).toContain("$.url");
+    }
+    // In an answer that isn't the 201 that made the link, the link's own URL to its own proposer: the
+    // contract declares no such answer, so nothing there is judged a link, and the key and the URL fail.
+    const ok200 = madeBy(ben, link({ url: url(BENS_TOKEN) }), 200);
+    expect(at(ok200, "shape")).toContain("status");
+    expect(at(ok200, "keys")).toEqual(["$.url"]);
+    expect(at(ok200, "values")).toEqual(["$.invitation_id", "$.url"]);
+    // To another member, the link's own URL is the link's id and its token both.
+    const toCleo = madeBy(cleo, link({ url: url(BENS_TOKEN) }));
+    expect(at(toCleo, "world")).toEqual(["$.invitation_id"]);
+    expect(at(toCleo, "keys")).toEqual(["$.url"]);
+    expect(at(toCleo, "values")).toEqual(["$.url"]);
+    // A URL in a revision's candidate, or in a revoke's answer, is a key the contract doesn't name.
+    const inRevision = scan(answer(revision({ ...bens, url: url(BENS_TOKEN) })), context("getRosterRevision", ben));
+    expect(at(inRevision, "keys")).toEqual(["$.candidates[0].invitation.url"]);
+    expect(at(inRevision, "values")).toEqual(["$.candidates[0].invitation.url"]);
+    const inRevoke = scan(answer({ ...revoked, url: url(BENS_TOKEN) }), context("revokeInvitation", ben));
+    expect(at(inRevoke, "keys")).toEqual(["$.url"]);
+  });
+
+  it("catches the URL once the world keeps the token back: a replay that carried it", () => {
+    const kept = { ...world, canaries: new Map([...world.canaries, [BENS_TOKEN, []]]) };
+    const replay = scan(answer(link({ url: url(BENS_TOKEN) }), 201), context("createInvitation", ben, { world: kept }));
+    expect(at(replay, "values")).toEqual(["$.url"]);
+    expect(scan(answer(link(), 201), context("createInvitation", ben, { world: kept }))).toEqual([]);
   });
 });

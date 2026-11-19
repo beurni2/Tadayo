@@ -16,6 +16,25 @@ export { mayReadDrop, readableDrops, type FragmentSql, type QuerySql } from "./a
 export { listClubs, LIST_LIMIT, type ClubListing, type ClubRow, type InvitationRow } from "./clubs/club-list.ts";
 export { CLUB_SIZE, readClub, type ClubDetail } from "./clubs/club.ts";
 export { createClub, type CreateClubInput, type CreatedClub } from "./clubs/create-club.ts";
+export {
+  createInvitation,
+  INVITATION_DAYS,
+  revokeInvitation,
+  type CreateInvitationInput,
+  type MadeInvitation,
+  type MadeLink,
+  type RevokeInvitationInput,
+} from "./clubs/invitation.ts";
+export { proposeRoster, type ProposeRosterInput } from "./clubs/propose-roster.ts";
+export {
+  readRevision,
+  type LinkState,
+  type RevisionCandidate,
+  type RevisionLink,
+  type RevisionSight,
+  type RevisionState,
+  type RosterDecision,
+} from "./clubs/roster-revision.ts";
 export { listMembers, type MemberRow, type Roster } from "./clubs/members.ts";
 export {
   checkPinnedRoot,
