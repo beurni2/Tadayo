@@ -338,10 +338,10 @@ final class SignInUITests: XCTestCase {
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
         let verify = app.buttons["Verify code"]
         XCTAssertTrue(verify.isEnabled)
-        let typed = settle(code, above: verify)
+        let typed = settle(code, above: verify, in: app)
         assertPinned(
             verify, below: code, on: kept(app.screenshot(), as: "A02-code-typed-xl"), in: app,
-            read: typed)
+            read: typed, ringDrawn: true)
         verify.tap()
 
         let refused = app.staticTexts[
@@ -349,10 +349,10 @@ final class SignInUITests: XCTestCase {
         XCTAssertTrue(refused.waitForExistence(timeout: 5))
         XCTAssertEqual(code.value as? String, "529614")
         XCTAssertTrue(app.keyboards.firstMatch.exists)
-        let error = settle(code, above: verify)
+        let error = settle(code, above: verify, in: app)
         assertPinned(
             verify, below: code, on: kept(app.screenshot(), as: "A02-code-error-xl"), in: app,
-            read: error)
+            read: error, ringDrawn: true)
 
         // Dragged up from the middle of the screen, over the column's text, a few times at most,
         // until Change email address can be tapped; where it went each time is said if it can't,
@@ -366,13 +366,13 @@ final class SignInUITests: XCTestCase {
                     thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.15)))
             went.append("\(change.frame)")
         }
-        let read = settle(code, above: verify)
+        let read = settle(code, above: verify, in: app)
         let scrolled = kept(app.screenshot(), as: "A02-code-error-xl-scrolled")
         XCTAssertTrue(
             change.isHittable,
             "Change email address went \(went); keyboard \(app.keyboards.firstMatch.exists)")
         XCTAssertTrue(app.keyboards.firstMatch.exists)
-        assertPinned(verify, below: code, on: scrolled, in: app, read: read)
+        assertPinned(verify, below: code, on: scrolled, in: app, read: read, ringDrawn: false)
     }
 
     /// Reads where the code field's frame ends against Verify code's top until the field ends 8
@@ -383,28 +383,70 @@ final class SignInUITests: XCTestCase {
     /// drew the field scrolled to the top and Verify code from 476, then read the field's frame
     /// twice, about 0.2 seconds apart, at 399 to 482, its place before the scroll, while Verify
     /// code's frame matched the screen. So this waits for the field's frame to reach what is
-    /// drawn; where the field is drawn isn't measured. The check is unchanged: a field still under
-    /// the button after 2 seconds fails it, with what was read.
-    @MainActor private func settle(_ field: XCUIElement, above verify: XCUIElement) -> [String] {
+    /// drawn. The wait has never been seen to help: in each of the six failures (iOS 26.5 only)
+    /// the frame stayed at 399 to 482 for the whole 2 seconds, and `ios` run 44411795444 read
+    /// once at each of its six settles. So a frame still under the button after 2 seconds is
+    /// stuck, not late. A field still under the button after 2 seconds fails the test, as it
+    /// did, and now it is decided here, at the wait's last read, before the accessibility tree
+    /// is read for `stuck`, since reading the whole tree might itself bring the frame up to
+    /// date: stricter by that one read than `assertPinned`'s own, which comes after the
+    /// screenshot. The tree is logged first and the test failed last, since a failure ends the
+    /// test (`continueAfterFailure` is false).
+    @MainActor private func settle(
+        _ field: XCUIElement, above verify: XCUIElement, in app: XCUIApplication,
+        line: UInt = #line
+    ) -> [String] {
         var read: [String] = []
+        var settled = false
         let until = Date(timeIntervalSinceNow: 2)
         repeat {
             let foot = field.frame.maxY
             let top = verify.frame.minY
             read.append("\(Int(foot.rounded())) over \(Int(top.rounded()))")
-            if foot <= top - 8 + 0.5 { break }
+            settled = foot <= top - 8 + 0.5
+            if settled { break }
             RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.2))
         } while Date() < until
         XCTContext.runActivity(
             named: "The code field's foot over Verify code's top, read \(read.count) "
                 + "times: \(read.joined(separator: ", "))"
         ) { _ in }
+        if !settled {
+            let frames = "the field's frame \(field.frame) stayed under Verify code \(verify.frame)"
+            stuck(app, after: read)
+            XCTFail("\(frames) for 2 seconds: \(read)", line: line)
+        }
         return read
+    }
+
+    /// Keeps the app's accessibility tree when the code field's frame never reached the screen,
+    /// to say what holds it: the whole of `debugDescription`, 25 lines to an activity, which the
+    /// test log on `evidence` carries, and as a text attachment in the run's result bundle,
+    /// which `tools/ci/ios_steps.py` doesn't collect yet, so it goes with the runner. Diagnostics
+    /// only: `settle(_:above:in:)` has decided the failure and records it once this returns.
+    @MainActor private func stuck(_ app: XCUIApplication, after read: [String]) {
+        let tree = app.debugDescription
+        let whole = XCTAttachment(string: tree)
+        whole.name = "testVerifyCodeIsPinnedAboveTheKeyboardAtTheLargestText.stuck-frame.txt"
+        whole.lifetime = .keepAlways
+        add(whole)
+        let lines = tree.split(separator: "\n").map {
+            $0.trimmingCharacters(in: .whitespaces)
+        }
+        let parts = stride(from: 0, to: lines.count, by: 25).map {
+            lines[$0..<min($0 + 25, lines.count)].joined(separator: " | ")
+        }
+        for (index, part) in parts.enumerated() {
+            XCTContext.runActivity(
+                named: "The tree with the code field's frame stuck after \(read.count) reads, "
+                    + "part \(index + 1) of \(parts.count): \(part)"
+            ) { _ in }
+        }
     }
 
     /// Reads `what` every 0.2 seconds until `done`, for 2 seconds at most, and logs the reads as
     /// an activity named for it, so a passing run's log shows whether it had to wait: an
-    /// element's accessibility frame can lag the screen after a scroll (`settle(_:above:)`).
+    /// element's accessibility frame can lag the screen after a scroll (`settle(_:above:in:)`).
     @MainActor private func settle(
         _ what: String, read: () -> String, until done: () -> Bool
     ) -> [String] {
@@ -434,15 +476,33 @@ final class SignInUITests: XCTestCase {
     /// Verify code ends 12 points, within 1, above the keyboard's top as `shot` draws it, and
     /// can be tapped there; the code field ends above the pinned footer, which starts 8 above the
     /// button, so the button covers none of it (handoff 7: "controls are never overlaid on form
-    /// text"; frame 19 scrolls the field under the navigation bar).
+    /// text"; frame 19 scrolls the field under the navigation bar). The field is also checked
+    /// where `shot` draws it, by its focus ring (`drawnRing`): the ring's drawn foot is held to
+    /// the bound the frame's foot is, 8 above Verify code's top, since the ring's outer edge is
+    /// where the frame ends (`ios` runs 44411795444 and 44418156518: ring to 292, frame to 292,
+    /// on both runtimes); and where `ringDrawn`, before any drag, the ring must be found. The frame's
+    /// check stays as it was, and its message now says where the ring is drawn, so a frame
+    /// that disagrees with the screen shows as that.
     @MainActor private func assertPinned(
         _ verify: XCUIElement, below field: XCUIElement, on shot: XCUIScreenshot,
-        in app: XCUIApplication, read: [String], line: UInt = #line
+        in app: XCUIApplication, read: [String], ringDrawn: Bool, line: UInt = #line
     ) {
+        let ring = drawnRing(
+            at: field.frame.midX, high: field.frame.height, on: shot, in: app)
+        XCTContext.runActivity(named: "The code field's focus ring as drawn: \(ring.said)") { _ in }
         XCTAssertLessThanOrEqual(
             field.frame.maxY, verify.frame.minY - 8 + 0.5,
             "the field \(field.frame) above Verify code \(verify.frame); its foot over Verify "
-                + "code's top as it settled: \(read)", line: line)
+                + "code's top as it settled: \(read); its focus ring as drawn: \(ring.said)",
+            line: line)
+        if let drawn = ring.foot {
+            XCTAssertLessThanOrEqual(
+                drawn, verify.frame.minY - 8 + 0.5,
+                "the focus ring is drawn to \(drawn), not 8 above Verify code's top "
+                    + "\(verify.frame.minY): \(ring.said)", line: line)
+        } else if ringDrawn {
+            XCTFail("no focus ring found on the screen: \(ring.said)", line: line)
+        }
         let foot = verify.frame.maxY
         let edge = drawnEdge(below: foot, on: shot, in: app)
         XCTAssertEqual(
@@ -453,21 +513,58 @@ final class SignInUITests: XCTestCase {
         XCTAssertTrue(verify.isHittable, line: line)
     }
 
-    /// Where `shot` draws the keyboard's top below `y`: the first row of points, down the screen's
-    /// middle, whose colour is no longer that of the row a point under `y`, the canvas of the
-    /// pinned footer's last 12 points. The keyboard element's frame doesn't say: on iOS 26.5 it
-    /// began 29 points under the foot of a Verify code the app had pinned 12 above the keyboard
-    /// it was given (the first `ios` run of `ios/b0-adopt-pin`, 43178940741), its keys' top
-    /// rather than the keyboard's. `said` gives the colours read, for a failure's message.
-    @MainActor private func drawnEdge(
-        below y: CGFloat, on shot: XCUIScreenshot, in app: XCUIApplication
-    ) -> (top: CGFloat?, said: String) {
-        guard let image = shot.image.cgImage, app.frame.height > 0 else {
+    /// Where `shot` draws the code field's focus ring, down the whole column at `x` (the field's
+    /// middle, where the ring's top and foot cross it): two runs of the ring's blue, each 1 to 4
+    /// points thick as a 2-point stroke is, that span `high`, the field's height, within 1 from
+    /// the top of one to the foot of the other. `foot` is the end of the lower one, nil when no
+    /// such pair is found, as when the field is scrolled under the navigation bar. The blue is
+    /// `Palette.focusRing`'s in the light appearance, which the simulator runs in; it is also
+    /// `Palette.action`'s, so the caret, a text action's letters and Verify code's fill match
+    /// it too, which is why a pair of thin runs the field's height apart is asked for, not a
+    /// run. `said` gives every run, for a message.
+    @MainActor private func drawnRing(
+        at x: CGFloat, high: CGFloat, on shot: XCUIScreenshot, in app: XCUIApplication
+    ) -> (foot: CGFloat?, said: String) {
+        guard let (pixels, width, height) = bitmap(shot), app.frame.height > 0 else {
             return (nil, "no screenshot")
         }
+        let scale = CGFloat(height) / app.frame.height
+        let column = min(max(Int((x * scale).rounded()), 0), width - 1)
+        // 0x284CDB, with room for the screen's colour space.
+        let blue = [40, 76, 219]
+        func isRing(_ row: Int) -> Bool {
+            let at = (row * width + column) * 4
+            return (0..<3).map { abs(Int(pixels[at + $0]) - blue[$0]) }.reduce(0, +) <= 75
+        }
+        var runs: [(from: CGFloat, to: CGFloat)] = []
+        var row = 0
+        while row < height {
+            guard isRing(row) else {
+                row += 1
+                continue
+            }
+            let from = row
+            while row < height, isRing(row) { row += 1 }
+            runs.append((CGFloat(from) / scale, CGFloat(row) / scale))
+        }
+        let said =
+            "runs of ring blue at x \(x): "
+            + runs.map { "\($0.from) to \($0.to)" }.joined(separator: ", ")
+            + "; a field \(high) high (scale \(scale))"
+        let strokes = runs.filter { $0.to - $0.from >= 1 && $0.to - $0.from <= 4 }
+        for (index, top) in strokes.enumerated() {
+            for foot in strokes[(index + 1)...] where abs(foot.to - top.from - high) <= 1 {
+                return (foot.to, said)
+            }
+        }
+        return (nil, said)
+    }
+
+    /// `shot`'s pixels as RGBA bytes, row by row from the top, with its size in pixels.
+    @MainActor private func bitmap(_ shot: XCUIScreenshot) -> ([UInt8], Int, Int)? {
+        guard let image = shot.image.cgImage else { return nil }
         let width = image.width
         let height = image.height
-        let scale = CGFloat(height) / app.frame.height
         var pixels = [UInt8](repeating: 0, count: width * height * 4)
         let drawn = pixels.withUnsafeMutableBytes { buffer -> Bool in
             guard
@@ -479,8 +576,24 @@ final class SignInUITests: XCTestCase {
             context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
             return true
         }
+        return drawn ? (pixels, width, height) : nil
+    }
+
+    /// Where `shot` draws the keyboard's top below `y`: the first row of points, down the screen's
+    /// middle, whose colour is no longer that of the row a point under `y`, the canvas of the
+    /// pinned footer's last 12 points. The keyboard element's frame doesn't say: on iOS 26.5 it
+    /// began 29 points under the foot of a Verify code the app had pinned 12 above the keyboard
+    /// it was given (the first `ios` run of `ios/b0-adopt-pin`, 43178940741), its keys' top
+    /// rather than the keyboard's. `said` gives the colours read, for a failure's message.
+    @MainActor private func drawnEdge(
+        below y: CGFloat, on shot: XCUIScreenshot, in app: XCUIApplication
+    ) -> (top: CGFloat?, said: String) {
+        guard let (pixels, width, height) = bitmap(shot), app.frame.height > 0 else {
+            return (nil, "no screenshot")
+        }
+        let scale = CGFloat(height) / app.frame.height
         let start = Int(((y + 1) * scale).rounded(.up))
-        guard drawn, start < height else { return (nil, "nothing read under \(y)") }
+        guard start < height else { return (nil, "nothing read under \(y)") }
         let x = width / 2
         func colour(_ row: Int) -> [Int] {
             (0..<3).map { Int(pixels[(row * width + x) * 4 + $0]) }
