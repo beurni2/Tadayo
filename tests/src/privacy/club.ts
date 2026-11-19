@@ -14,6 +14,10 @@
 // - Who makes a club: any account the gate lets through. The answer is 201 with the new club as its
 //   creator reads it, and the table below sends the bodies the contract refuses first.
 //
+// The open candidates and the open revision are read here with their own statement but the route's own
+// meaning of `open` (the rows' `state`): a mistake about which rows count would be shared, so that meaning
+// is pinned on rows built by hand in tests/src/db/create-club.test.ts.
+//
 // The leak scanner reads the same answers for ids and names the viewer may not see; it can't judge a
 // state, a count or a version, so these rows do.
 
@@ -214,11 +218,11 @@ export function createClubCases(clubName: string): CreateClubCase[] {
       key: fresh(),
       expected: invalid(),
     },
-    // This file's own copy of the app's 128 KiB for a route with no limit of its own (app.ts's BODY_LIMIT), so
-    // that raising it fails here. The body is refused before it is read: no field, the connection closed.
+    // This file's own copy of the route's 17 KiB (app.ts's bodyLimitOf), so that raising it fails here. The
+    // body is refused before it is read: no field, the connection closed.
     {
       name: "a body past the limit",
-      body: JSON.stringify({ name: "a".repeat(128 * 1024), timezone: "America/New_York" }),
+      body: JSON.stringify({ name: "a".repeat(17 * 1024), timezone: "America/New_York" }),
       key: fresh(),
       expected: unread(),
     },

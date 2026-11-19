@@ -10,7 +10,10 @@
 //
 // `roster_version` counts neither approvals nor acceptances (T33; db/migrations/0003_people_and_clubs.sql).
 // `can_propose` is false once the active members and the candidates still open make six (A01, T6): it says
-// that the roster is full, never who has accepted. It is one statement, so one snapshot.
+// that the roster is full, never who has accepted. The contract's other reason for false, a club that
+// can't take proposals, is today only a suspended club, which nobody reads (so `suspended` in the row below
+// is always false, kept for the list's parser); `proposeRoster` must refuse exactly where this is false. It is one statement,
+// so one snapshot.
 
 import { daysByClub } from "../authorization/days.ts";
 import { activeMemberships } from "../authorization/member.ts";

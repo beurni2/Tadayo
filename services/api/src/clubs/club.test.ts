@@ -218,21 +218,36 @@ describe("what createClub refuses before any transaction", () => {
     expect(begun).toBe(0);
   });
 
-  it("refuses a body past the app's limit unread, and takes the largest name the contract allows", async () => {
+  it("refuses a body past the route's limit unread, and takes the largest body the contract allows", async () => {
     let reached = 0;
     const answer = await appFor(() => {
       reached += 1;
       return Promise.reject(new Error("no database"));
     });
-    expect(bodyLimitOf("createClub")).toBe(BODY_LIMIT);
-    const padded = `{"name":"Sunday people","timezone":"America/New_York"${" ".repeat(BODY_LIMIT)}}`;
-    expect(await answer(post(padded))).toMatchObject(invalid());
-    expect(reached).toBe(0);
-    // Forty people emoji, each seven code points joined: one name, and well under the limit.
-    const family = "\u{1F468}‍\u{1F469}‍\u{1F467}‍\u{1F466}";
-    const long = JSON.stringify({ name: family.repeat(40), timezone: "America/New_York" });
-    expect(await answer(post(long))).toMatchObject({ status: 500, body: "" });
+    const limit = bodyLimitOf("createClub");
+    expect(limit).toBe(17 * 1024);
+    expect(limit).toBeLessThan(BODY_LIMIT);
+    const good = '{"name":"Sunday people","timezone":"America/New_York"';
+    // A body of exactly the limit is read and reaches the command; one byte more is never read.
+    const sized = (bytes: number) => `${good}${" ".repeat(bytes - good.length - 1)}}`;
+    expect(Buffer.byteLength(sized(limit))).toBe(limit);
+    expect(await answer(post(sized(limit)))).toMatchObject({ status: 500, body: "" });
     expect(reached).toBe(1);
+    for (const bytes of [limit + 1, 70_000, BODY_LIMIT + 1]) {
+      expect(await answer(post(sized(bytes))), String(bytes)).toMatchObject(invalid());
+    }
+    expect(reached).toBe(1);
+    // The largest body the contract allows: a name of forty clusters of sixteen code points, each outside the
+    // Basic Multilingual Plane, and the longest zone's length, every key and code unit written as an escape.
+    const name = `\u{1F3F4}${"\u{E0067}".repeat(15)}`.repeat(40);
+    expect(name).toHaveLength(1280);
+    const escape = (text: string): string =>
+      `"${Array.from({ length: text.length }, (_, index) => `\\u${text.charCodeAt(index).toString(16).padStart(4, "0")}`).join("")}"`;
+    const largest = `{${escape("name")}:${escape(name)},${escape("timezone")}:${escape("America/Argentina/ComodRivadavia")}}`;
+    expect(Buffer.byteLength(largest)).toBeGreaterThan(7 * 1024);
+    expect(Buffer.byteLength(largest)).toBeLessThan(limit / 2);
+    expect(await answer(post(largest))).toMatchObject({ status: 500, body: "" });
+    expect(reached).toBe(2);
   });
 });
 

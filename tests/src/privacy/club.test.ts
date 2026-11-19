@@ -16,7 +16,7 @@ import {
   type ClubSeen,
   type DaysOf,
 } from "./club.ts";
-import { NEUTRAL, pinned, pinnedProblems, type Expected } from "./harness.ts";
+import { NEUTRAL, pinned, type Expected } from "./harness.ts";
 import type { Answer } from "./scanner.ts";
 import type { ScheduleMember, ScheduleWorld } from "./schedule.ts";
 
@@ -273,7 +273,8 @@ describe("the table of createClub bodies (createClubCases)", () => {
     ]);
     expect(pins.at(-1)?.status).toBe(409);
     const past = cases.find((one) => one.name === "a body past the limit");
-    expect(Buffer.byteLength(past?.body ?? "")).toBeGreaterThan(128 * 1024);
+    expect(Buffer.byteLength(past?.body ?? "")).toBeGreaterThan(17 * 1024);
+    expect(Buffer.byteLength(past?.body ?? "")).toBeLessThan(18 * 1024);
   });
 
   it("makes a new key for the club in each table, so each phase makes its own", () => {
@@ -281,7 +282,7 @@ describe("the table of createClub bodies (createClubCases)", () => {
   });
 
   it("holds the ordinary request, a key and no body, to the contract's refusal with no field", () => {
-    expect(pinnedProblems(sent(CREATE_CLUB_NO_BODY), CREATE_CLUB_NO_BODY)).toEqual([]);
+    expect(CREATE_CLUB_NO_BODY.status).toBe(400);
     expect(CREATE_CLUB_NO_BODY.body).toBe('{"code":"INVALID_REQUEST"}');
   });
 

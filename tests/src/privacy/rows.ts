@@ -79,8 +79,11 @@
 //   whole, judged from the world's rows by club.ts (the state, the active members, the two days, the
 //   roster's version, `can_propose` and the open revision's id), and the neutral not-found to everyone
 //   else; createClub's table of bodies in every cell, where each account the gate lets through makes a
-//   club, reads it, lists it once and retries it under its key. A club the viewer makes changes the
-//   world, so the facts are read again before its answer is scanned;
+//   club, reads it, lists it once and retries it under its key, and someone of another club is refused
+//   it. A club the viewer makes changes the world, so the facts are read again before its answer is
+//   scanned. No member's world here has an open revision or a full roster, so `open_revision_id` and a
+//   false `can_propose` pass through no cell: the read's rule for them is tested on rows built by hand
+//   (tests/src/db/create-club.test.ts) and the serializer's on the contract's `kitchen_table` example;
 // - for the schedule's routes still to come (the membership change and the first days' roster, B2's later
 //   schedule PRs; getHome, listClubs' `next_day` and a revealed day's `add_target` where a schedule's day
 //   shows), each as a check a row can run:

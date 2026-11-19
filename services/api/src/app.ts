@@ -53,10 +53,13 @@ export const BODY_LIMIT = 128 * 1024;
  * two escapes, every key escaped too, and an avatar's id and the rest), so its limit is 17 KiB, the least
  * whole number of KiB that keeps that body under half of it, as `me.test.ts` asks. A schedule command's is
  * a version and at most two weekdays, under 350 bytes with every key and character written as an escape, so
- * its limit is 1 KiB (`schedule/routes.test.ts`).
+ * its limit is 1 KiB (`schedule/routes.test.ts`). `createClub`'s largest valid body is a name of the same
+ * 640 code points and a zone of 64 characters, under 8,500 bytes written the same way, so it takes
+ * `updateMe`'s 17 KiB (`clubs/club.test.ts`).
  */
 const ROUTE_BODY_LIMITS: Readonly<Record<string, number>> = {
   updateMe: 17 * 1024,
+  createClub: 17 * 1024,
   chooseScheduleDays: 1024,
   confirmScheduleDays: 1024,
 };

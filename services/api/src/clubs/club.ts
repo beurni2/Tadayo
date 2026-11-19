@@ -82,7 +82,8 @@ function firstBadField(issues: readonly { readonly path: readonly PropertyKey[] 
 export function createClubHandler(deps: Deps): Handler {
   return async (request, reply) => {
     const account = signedIn(request);
-    // The parameters come before the body, the contract's order; nothing here echoes a value.
+    // The key is judged before the body's fields, the contract's order (a body the app couldn't read or
+    // that passed its limit was refused before this handler); nothing here echoes a value.
     const key = request.headers["idempotency-key"];
     if (typeof key !== "string" || !IDEMPOTENCY_KEY.test(key)) {
       return problem(reply, "INVALID_REQUEST", { field: "Idempotency-Key" });

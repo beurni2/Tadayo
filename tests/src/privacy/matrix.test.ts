@@ -511,6 +511,12 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
         const clubs = [...new Set([cell.w.club, elsewhere.club, ...viewerClubs.map((row) => row.club_id)])];
         const made: string[] = [];
         let tablesThrough = 0;
+        // The clubs the viewer had made before this cell's tables: the world's own, for its creator.
+        const [before] = await db<{ n: number }[]>`
+          SELECT count(*)::int AS n FROM app.memberships WHERE user_id = ${cell.viewer} AND origin = 'creator'`;
+        const createdBefore = before?.n ?? 0;
+        // Someone of another club, signed in, who asks for each club the viewer makes.
+        const outsider = bearer(await keys.signer.token(elsewhere.subject));
         const load = () =>
           factsOf(clubs, cell.viewer, {
             accounts: [cell.w.dan.user],
@@ -685,12 +691,31 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
               const list = specs.find((spec) => spec.operation.id === "listClubs");
               if (list === undefined) throw new Error("the contract has no listClubs");
               record(await cellStep(app, list, cellExpected(sessionNow, list.operation, seen)));
+              // Someone of another club asks for the new club: a proposed club of one is nobody else's (T14).
+              const asked = render({ ...read, path: { club_id: club } });
+              asked.headers["authorization"] = outsider;
+              counted.expectedBodies += 1;
+              counted.expectedAnswers += 1;
+              const theirs = await answerOf(app, asked);
+              counted.bodies += 1;
+              record({
+                problems: pinnedProblems(theirs, NEUTRAL).map(
+                  (problem) => `getClub: ${problem} (the new club, asked for by someone of another club)`,
+                ),
+                answers: [{ spec: { ...read, path: { club_id: club } }, answer: theirs }],
+              });
             }
           }
-          // One club for each table the gate let through: the retry and the refused bodies made none.
+          // One club for each table the gate let through, counted from the rows: the retry and the refused
+          // bodies made none.
           if (gateOf(sessionNow, create.operation) === undefined) tablesThrough += 1;
-          if (made.length !== tablesThrough)
-            wrong.push(`${state.name}, ${phase}: ${String(made.length)} clubs made by ${String(tablesThrough)} tables`);
+          const [creations] = await db<{ n: number }[]>`
+            SELECT count(*)::int AS n FROM app.memberships WHERE user_id = ${cell.viewer} AND origin = 'creator'`;
+          const clubsMade = (creations?.n ?? 0) - createdBefore;
+          if (made.length !== tablesThrough || clubsMade !== tablesThrough)
+            wrong.push(
+              `${state.name}, ${phase}: ${String(clubsMade)} clubs in the rows and ${String(made.length)} answered 201, by ${String(tablesThrough)} tables`,
+            );
           const last = index === phases.length - 1;
           const scheduleGroups = new Map<string, string>();
           let previous: { key: string; said: string } | undefined;

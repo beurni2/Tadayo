@@ -12,7 +12,7 @@ import { randomUUID } from "node:crypto";
 import { clubDetailBody } from "@tadayo/api";
 import { createClub, listClubs, readClub, Refused, type CreatedClub, type ServerNow } from "@tadayo/domain";
 import { fakeClock } from "@tadayo/domain/testing";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { invite, PHASES } from "../matrix.ts";
 import { rolledBack, worldSql, type Tx, type WorldTx } from "./harness.ts";
 import { AT, leave, newId, newUnfinishedUser, newUser, newWorld } from "./world.ts";
@@ -28,6 +28,10 @@ const plain = (tx: WorldTx) => tx as unknown as Tx;
 const AT_FIRST = "2026-11-11T05:00:00.123456Z";
 const FIRST = Temporal.Instant.from(AT_FIRST);
 const clock = fakeClock(AT_FIRST);
+// Each test starts at the first instant, whatever the one before left the clock at.
+beforeEach(() => {
+  clock.set(FIRST);
+});
 /** The server's time for the reads, as only a clock makes it: Ana's Saturday collecting. */
 const NOW = PHASES.collecting as ServerNow;
 
@@ -249,6 +253,27 @@ describe("one club per key (T19)", () => {
     });
   });
 
+  it("answers a retry with the first answer to its sender though the club is suspended or its creator has left: it names nobody else (FQ112)", async () => {
+    await rolledBack(db, async (tx) => {
+      const ben = await newUser(plain(tx), "Ben");
+      const key = randomUUID();
+      const first = await request(tx, ben, { key });
+      const { id, my_membership_id: interval } = answerOf(first).club;
+      await tx`UPDATE app.clubs SET suspended_at = ${AT.opened} WHERE id = ${id}`;
+      expect(await readClub(tx, ben, id, NOW)).toBeNull();
+      expect((await request(tx, ben, { key })).answer).toEqual(first.answer);
+      await tx`UPDATE app.clubs SET suspended_at = NULL WHERE id = ${id}`;
+      await tx`
+        UPDATE app.memberships SET state = 'left', left_at = '2026-11-20T00:00:00Z', contributions = 'keep', ended_display_name = 'Ben'
+         WHERE interval_id = ${interval}`;
+      expect(await readClub(tx, ben, id, NOW)).toBeNull();
+      expect((await request(tx, ben, { key })).answer).toEqual(first.answer);
+      // The answer holds the club's own facts and its sender's membership, and no other person.
+      expect(Object.keys(first.answer as object).sort()).toEqual(["can_propose", "club", "roster_version"]);
+      expect(await clubsOf(tx, ben)).toHaveLength(1);
+    });
+  });
+
   it("refuses another name or another zone under a used key, and makes nothing", async () => {
     await rolledBack(db, async (tx) => {
       const ben = await newUser(plain(tx), "Ben");
@@ -285,6 +310,7 @@ describe("one club per key (T19)", () => {
     const clubs = await db<{ id: string }[]>`
       SELECT c.id FROM app.clubs c JOIN app.memberships m ON m.club_id = c.id WHERE m.user_id = ${ben}`;
     expect(clubs).toHaveLength(1);
+    expect(await receiptsOf(db as unknown as WorldTx, ben)).toHaveLength(1);
   });
 });
 
@@ -299,6 +325,46 @@ describe("who may make a club (T27, FQ69)", () => {
     });
   });
 
+  it("waits for a deletion that holds the account's row, and is refused once it commits, with no club and no receipt (T27)", async () => {
+    clock.set(FIRST);
+    const ben = await db.begin((tx) => newUser(plain(tx), `Ben ${newId("n")}`));
+    let finish: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+    let begun: () => void = () => undefined;
+    const started = new Promise<void>((resolve) => {
+      begun = resolve;
+    });
+    const deleting = db.begin(async (tx) => {
+      await tx`UPDATE app.users SET state = 'deleting', deletion_requested_at = ${AT.joined} WHERE id = ${ben}`;
+      begun();
+      await held;
+    });
+    await started;
+    const sent = { userId: ben, key: randomUUID(), name: "Sunday people", timezone: "America/New_York" };
+    const making = db.begin((tx) => createClub(tx, clock, sent, clubDetailBody));
+    // Give the request the time to reach the row's lock: it can't finish while the deletion holds it.
+    const settled = await Promise.race([
+      making.then(
+        () => "finished",
+        () => "finished",
+      ),
+      new Promise<string>((resolve) => {
+        setTimeout(() => {
+          resolve("waiting");
+        }, 300);
+      }),
+    ]);
+    expect(settled).toBe("waiting");
+    finish();
+    await deleting;
+    expect(await refusal(making)).toEqual({ code: "UNAUTHENTICATED", facts: {} });
+    const all = db as unknown as WorldTx;
+    expect(await clubsOf(all, ben)).toEqual([]);
+    expect(await receiptsOf(all, ben)).toEqual([]);
+  });
+
   it("refuses an account with no name yet, as the gate does", async () => {
     await rolledBack(db, async (tx) => {
       const mo = await newUnfinishedUser(plain(tx));
@@ -307,10 +373,40 @@ describe("who may make a club (T27, FQ69)", () => {
     });
   });
 
-  it("refuses an account id nobody has, as no session", async () => {
+  it("refuses a nameless account before it looks at the zone", async () => {
     await rolledBack(db, async (tx) => {
-      // The receipt's own guard refuses an actor who doesn't exist before the command reads the account.
-      await expect(request(tx, newId("acct"))).rejects.toThrow();
+      const mo = await newUnfinishedUser(plain(tx));
+      expect(await refusal(request(tx, mo, { timezone: "Mars/Olympus_Mons" }))).toEqual({
+        code: "PROFILE_INCOMPLETE",
+        facts: {},
+      });
+    });
+  });
+
+  it("fails, with the receipt guard's own error and no refusal, for an account id nobody has: the gate lets none through", async () => {
+    await rolledBack(db, async (tx) => {
+      // The receipt's own guard (0009's idempotency_receipts_actor_guard) raises before the command reads the
+      // account, so this is a failure the route answers with a bare 500, never a club.
+      const nobody = newId("acct");
+      await expect(request(tx, nobody)).rejects.toThrow(/actor|receipt|idempotency/i);
+      await expect(request(tx, nobody)).rejects.not.toBeInstanceOf(Refused);
+      expect(await clubsOf(tx, nobody)).toEqual([]);
+    });
+  });
+
+  it("throws, before any statement, for an input the route would never send: an id, a key or a field that can't be one", async () => {
+    await rolledBack(db, async (tx) => {
+      const ben = await newUser(plain(tx), "Ben");
+      const good = { userId: ben, key: randomUUID(), name: "Sunday people", timezone: "America/New_York" };
+      for (const over of [{ userId: "a b" }, { key: "not-a-uuid" }, { name: 7 }, { timezone: null }]) {
+        const input = { ...good, ...over } as unknown as typeof good;
+        await expect(
+          createClub(plain(tx) as never, clock, input, clubDetailBody),
+          JSON.stringify(over),
+        ).rejects.toThrow(TypeError);
+      }
+      expect(await clubsOf(tx, ben)).toEqual([]);
+      expect(await receiptsOf(tx, ben)).toEqual([]);
     });
   });
 });

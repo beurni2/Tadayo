@@ -10,8 +10,10 @@
 // 2. The receipt (T19): the same request under the same key gets the first club back, as it was answered,
 //    and makes no second one; another request under the key is IDEMPOTENCY_CONFLICT.
 // 3. The account's row, `FOR NO KEY UPDATE` (as `updateMe` takes it: the receipt's insert already holds
-//    `FOR KEY SHARE` on it), so a deletion that has begun is seen: UNAUTHENTICATED (T27). An account with
-//    no name yet is PROFILE_INCOMPLETE, as the gate answers it (FQ69).
+//    `FOR KEY SHARE` on it), so a deletion that has begun is seen: UNAUTHENTICATED (T27). An id nobody
+//    has never reaches this step: the receipt's own guard has failed the request, which the gate rules out. An account with
+//    no name yet is PROFILE_INCOMPLETE, as the gate answers it (FQ69): the gate has refused it already, so
+//    this guards only a caller that didn't pass the gate.
 // 4. The zone, in the one spelling the server resolves (`clubTimeZone`; T2, FQ19): fixed for the club's
 //    life. The contract's `Timezone` has refused one the server can't resolve; one that reaches here
 //    anyway is INVALID_REQUEST.
