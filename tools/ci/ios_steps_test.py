@@ -286,8 +286,8 @@ class GateTest(StepsTest):
         self.repo.write("apps/ios/project.yml", "name: Tadayo\n")
         self.assertEqual(self.gate(require_app=True)[:1], (0,))
 
-    def test_slice_12_has_not_turned_it_on_yet(self):
-        self.assertFalse(ios_steps.REQUIRE_APP)
+    def test_slice_12_turned_it_on(self):
+        self.assertTrue(ios_steps.REQUIRE_APP)
 
 
 class ToolchainTest(StepsTest):
