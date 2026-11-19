@@ -127,6 +127,7 @@ export async function scheduleCommand(
   const proposal = week?.proposal ?? null;
   if (week === null || proposal === null) throw new Refused("NOT_FOUND");
   const callerId = week.membershipId;
+  // Step 1 found a membership the proposal includes; only a leave and a new joining since then give another.
   if (!proposal.facts.members.some((member) => member.id === callerId)) throw new Refused("NOT_FOUND");
 
   // 4. A newer proposal.

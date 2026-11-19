@@ -1053,6 +1053,41 @@ describe("one commit per key (T19)", () => {
     });
   });
 
+  it("asks who is calling again under the club's lock: a member who left and joined again after the first look gets NOT_FOUND, and nothing is written (T14; FQ100)", async () => {
+    await rolledBack(db, async (tx) => {
+      const base = fakeClock(OPENED);
+      const w = await firstDays(tx, base, 6);
+      const before = await everything(tx, w);
+      // The command's first sample comes after its first look at the caller and before the club's lock.
+      // There, Alex leaves and joins again: the proposal included the membership the first look found,
+      // and doesn't include the one the command finds under the lock.
+      let samples = 0;
+      const between: FakeClock = {
+        ...base,
+        async sample(sql) {
+          samples += 1;
+          if (samples === 1) {
+            const now = sql as unknown as Tx;
+            await leave(now, { user: w.users[2] ?? "", interval: w.members[2] ?? "" }, "Alex", AT.edited);
+            await joinByRoster(
+              now,
+              w.club,
+              { user: w.users[0] ?? "", interval: w.members[0] ?? "" },
+              [{ user: w.users[2] ?? "", label: "Alex" }],
+              new Date(AT.edited.getTime() + 60_000),
+            );
+          }
+          return base.sample(sql);
+        },
+      };
+      expect(await refusal(choose(tx, between, w, 2, ["friday"]))).toEqual({ code: "NOT_FOUND", facts: {} });
+      expect(samples).toBe(1);
+      // The refusal took the leave and the joining back with it, as it does the receipt.
+      expect(await everything(tx, w)).toBe(before);
+      expect(await receipts(tx, w, 2)).toEqual([]);
+    });
+  });
+
   it("keeps no receipt of a refused request, so the same key can be tried again", async () => {
     await rolledBack(db, async (tx) => {
       const clock = fakeClock(OPENED);
