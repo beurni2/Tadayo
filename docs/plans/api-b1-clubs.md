@@ -159,3 +159,92 @@ The tests of this PR were written after its code, not before it, against the con
 
 - Accepting, approving and declining (PR 3), so no revision is applied and no club starts.
 - `listMembers`' `open_revision` (the contract's `Members`): it comes with PR 3, where G05-members first has something to approve.
+
+## 4. The third PR: `api/b1-accept`
+
+`previewInvitationWeb`, `previewInvitation`, `acceptInvitation`, `approveRoster` and `declineRoster`; the roster applied; `listMembers`' `open_revision`. No migration (the tables are `db/migrations/0004_rosters.sql`), no contract change and no workflow file. Nothing runs on `dev` but the release `deploy-dev` makes on the merge. The web page that calls `previewInvitationWeb` (`apps/web`, with its CORS rule) comes with its own PR.
+
+### 4.1 Sources
+
+- **The contract:** `packages/contracts/src/schemas/clubs.ts` (`InvitationTokenRequest`, `WebInvitationPreview`, `InvitationPreview` and its seven states, `InvitationRosterEntry`, `AcceptInvitationRequest`, `InvitationAcceptance`, `RosterDecisionRequest`, `Members.open_revision`), `operations-clubs.ts` and the examples.
+- **The spec:** 04 ("A candidate accepts the exact roster they saw"; "Existing members approve any additions, including initial people added after they accepted a smaller roster"; a link is single use and grants nothing by being held), 32.
+- **The book and the handoffs:** G02 (open, changed, expired, full), G03-waiting, G03-approve, G05-members (book p9, p30); handoff 4 (a link an account accepted with can't be revoked or replaced).
+- **The invariants:** T1, T6 and A01, T7, T8, T9, T14, T15, T19, T27, T33, T52, T55.
+- **The questions, at their defaults:** FQ47 (names only), FQ54 and FQ84 (the club starts with its first applied roster), FQ59 (a revoked, replaced or used link is the neutral not-found), FQ60, FQ65 (approval and acceptance in either order), FQ66 (another name makes a new revision), FQ71, FQ75, FQ80, FQ100, FQ112, FQ113, FQ119. One new, FQ120, in 4.3.
+- **What section 3.2 left to this PR:** accepting takes the club's row and hashes the token's text; no open candidate is left on no open revision; a rule for a revision nobody can read; `joined_at` is a sample taken under the club's row.
+
+### 4.2 The rules
+
+**What a token names** (`linkFacts` and `namesNothing`, `packages/domain/src/clubs/invitation-facts.ts`). The token is hashed in the process (SHA-256 of its base64url text) and only the hash goes to the database. One statement reads the link, its candidate, the club, the caller's own membership, the inviter's name (FQ75), whether the caller holds another place in the club's roster, and the club's open revision as it lists the candidate. A token names nothing, the neutral NOT_FOUND, when no link has its hash, when the link was revoked or replaced, when another account accepted with it, and in a suspended club (T14, FQ59, FQ80). The preview and the command read the same facts, so they can't disagree.
+
+**`previewInvitationWeb`**, public: the inviter's name for a link nobody has used, not revoked, replaced or expired, whose candidate is still open, in a club that isn't suspended; anything else is NOT_FOUND. One statement, read only.
+
+**`previewInvitation`** (`invitationStanding`, `clubs/invitation-preview.ts`), read only, never binding or using the token (T7). In order:
+
+1. Nothing, as above.
+2. `joined`, with the club, to a member of the club, whoever the link was for.
+3. Nothing once the link's candidate has joined and the caller is no member (they left).
+4. A candidate whose proposal ended: `did_not_go_ahead` to the account that accepted with the link, nothing to anyone else. Nothing says who declined (T33).
+5. `expired`, with the inviter's name, for a link nobody used, from its expiry (FQ71). A link its account has used doesn't expire for that account: it can't be replaced (handoff 4), so an expiry would leave the candidate no way to accept a changed roster.
+6. Nothing to an account that already holds another place in this club's roster (one account, one place).
+7. Nothing when the inviter, or every member of the roster, has no name to show (FQ75).
+8. `full` at six members. Six count every open candidate when they are proposed, so no command leads here; it is the answer should the rows say so.
+9. The open revision's exact roster, names only (FQ47): its members who have a name, in the order they joined, then its candidates by position, each by the revision's label, the link's own marked `is_you`. `waiting` when the candidate accepted this revision with the link; `changed` when the account accepted an earlier one; else `open`.
+
+**`acceptInvitation(tx, clock, input, render)`** (`clubs/accept-invitation.ts`), one READ COMMITTED transaction; a refusal rolls everything back, the receipt and the binding included.
+
+1. What the token names, with no lock: NOT_FOUND before the receipt is looked at, for a first request and a retry alike.
+2. The receipt (T19; its stored request holds the token's hash, never the token). Then the account's row (UNAUTHENTICATED once a deletion has begun, T27; PROFILE_INCOMPLETE), the club's row `FOR UPDATE`, as every roster command, and the link's row.
+3. The clock, after the lock (T1), and the facts again. NOT_FOUND as in step 1; to a member holding a link that isn't the one they joined with; for an ended candidate the account never accepted; for a revision that doesn't list the link's candidate.
+4. INVITATION_EXPIRED for a link nobody has used, from its expiry.
+5. ROSTER_CHANGED with the newest revision's id (the end of the `superseded_by` chain) when a newer revision replaced the one named; VERSION_CONFLICT with the revision's version. A revision that has ended, named at its last version, takes no acceptance: the account that joined by it is answered `joined`, which changes nothing; anything else is NOT_FOUND.
+6. NOT_FOUND when the account holds another place in the club's roster; CLUB_FULL at six members.
+7. The name (FQ66, FQ84). When the account's profile name isn't the label the revision shows, compared as stored, the server makes a new revision: `origin` rename, proposed by the candidate's proposer, with the club's members, every open candidate carried at their label and this one under the account's name, no acceptance and no approval, so everyone accepts and approves again. The link binds to the account. The answer is `changed`; `roster_version` moves by one.
+8. Otherwise the link binds, the candidate's row on the revision is accepted with it, and the roster is applied if it is ready: `joined` with the club, or `waiting`.
+
+**`approveRoster` and `declineRoster`** (`clubs/decide-roster.ts`).
+
+1. The revision as the caller reads it (`readRevision`, FQ119), before the receipt: anyone else, and a revision nobody can read (its proposer has no name), is NOT_FOUND. This is the rule section 3.2 asked for: what can't be read can't be decided.
+2. The receipt (`reserveAsMember`), the club's row, the caller again under the lock.
+3. ROSTER_CHANGED with the newest revision's id; VERSION_CONFLICT with the revision's version; then the clock.
+4. A member decides once, and only an open revision takes a decision. A request that can change nothing (the revision has ended; the member has decided, by proposing or before) is answered 200 with the revision as it stands: the contract gives these commands no refusal for it.
+5. Approving writes the approval and applies the roster if it is ready. Declining writes the decision, ends the revision as `did_not_go_ahead` at its next version, ends every candidate of it still open, and moves `roster_version` by one.
+
+**The roster applied** (`applyIfReady`, `clubs/apply-roster.ts`), called by `acceptInvitation` and `approveRoster` after their own change, so whichever comes second applies it (FQ65). Ready: open, sealed, its members exactly the club's active members, every one approved, and at least one candidate accepted with a link bound to an active account. Then, at the command's own sample taken under the club's row:
+
+1. Members and joiners are at most six, else CLUB_FULL.
+2. The revision ends as `applied`, its version up by one.
+3. Each candidate who accepted joins, in the revision's order: a new membership interval (`origin` roster, `joined_at` the command's sample) that inherits nothing (T8). A candidate who accepted with an account whose deletion has begun ends instead.
+4. `roster_version` moves by one, once. A club that hadn't started starts, and its first days open in the same transaction (`openFirstDays`). A club that had started gains its members with no day yet: the schedule's own change is B2's next PRs (FQ100).
+5. The candidates who hadn't accepted are carried into a new revision the server makes (FQ120), or end when their proposer is no longer a member.
+
+**`listMembers`' `open_revision`**: the club's open revision as the caller reads it (FQ119), read in the roster's own statement (`readableRevisions`), so one snapshot. The clocks refuse any isolation but READ COMMITTED, so a second statement in a REPEATABLE READ transaction wasn't an option.
+
+**The routes** (`services/api/src/clubs/invitation.ts`, `roster.ts`): the key, then the body by the contract's schema, naming the first bad field and never a value; the token only in a body, never in a path, a query or a log line. Body limits: 1 KiB for the two decisions, 2 KiB for the previews, 3 KiB for `acceptInvitation`.
+
+### 4.3 Decisions
+
+- **FQ120: the candidates who hadn't accepted when a roster is applied.** Spec 04 says existing members approve any additions, "including initial people added after they accepted a smaller roster". So the left candidates are carried into a new revision made by the server: the same proposer, whose approval stands as it did when they proposed (FQ60), the club's members now, the newly joined included, who each approve it. The other readings: end them (the proposer proposes again), or leave them open on no revision, which section 3.2 forbids. Raised with the founder in the PR.
+- **No refusal for a decision that changes nothing.** The contract lists no NOT_ALLOWED for `approveRoster`, `declineRoster` or `acceptInvitation`, so a repeated or late decision is answered with the revision as it stands, and an acceptance of an applied revision by the account that joined by it is answered `joined`.
+- **A used link doesn't expire for its account** (step 5 of the preview). FQ71's seven days are for a link nobody has used.
+- **One account, one place.** An account that accepted for one candidate of a club gets nothing from another link of that club while the first candidate is open. No source says so in words; two places for one person can't be meant.
+- **A member previewing any working link of their own club is told `joined`;** accepting with a link they didn't join with is NOT_FOUND.
+- **Names are compared as stored,** so a difference of case makes the rename revision (FQ66 says "isn't the one the revision showed").
+- **A rename's revision has no implicit approval** (FQ84: never for a name), the proposer approves again.
+- **The matrix's cells apply no roster.** Another member declines at the end of each phase's table, so the club's members stay who the cell's other rows expect. The applied roster goes through the app in its own test, and through the commands on Postgres.
+
+### 4.4 Tests
+
+- **Rules, on Postgres** (`tests/src/db/accept-roster.test.ts`, 36 tests, helpers in `roster-world.ts`): the first roster and the club's start with its first days; FQ120's carry; approval and acceptance in either order; T33; the rename revision; a decline; decisions that change nothing; who may decide; the version and ROSTER_CHANGED with a chain; replays; what a token names; the expiry at its instant; `full` and CLUB_FULL by rows made by hand; the token never stored; an account being deleted; a proposer who is no longer a member; `listMembers`' open revision; four races held behind the club's row.
+- **Routes** (`services/api/src/clubs/invitation.test.ts`, `roster.test.ts`, `members.test.ts`): the serializers against the contract's examples; every refusal before a transaction; the body limits; the mapping of each refusal; the token in no log line.
+- **The privacy matrix** (`tests/src/privacy/invitation.ts`, `roster.ts`, `members.ts`, `rows.ts`, `matrix.test.ts`): the five routes in every cell with a body that changes nothing; in every phase, for the revision the roster's table made, the invitation's table (`rows.ts` describes each step), each step held to the outcome it names and each answer scanned with its own caller's facts; a roster applied through the app. The judges are tested on answers wrong in one way each (`invitation.test.ts`, `roster.test.ts`, `members.test.ts`).
+- **The leak scanner** (`tests/src/privacy/scanner.ts`, the allowance its header promised to B1): a roster's names, the club's name and the inviter's name only to a caller who presented the link's own token, by the rule in its header; the link's id only in such an answer. Each allowance has a test that it can fail (`scanner.test.ts`, "what a link's holder reads through it").
+- **How the tests were written:** after the code, from this section's rules. The deliberate breakages are the evidence that they can fail, on the `evidence` branch under `api/b1-accept/<short-sha>/breakages/`.
+
+### 4.5 What this PR leaves
+
+- **PR 4 (`api/b1-leave`):** a leaver's open candidates and open revision (section 3.2); the matrix's former member on a revision that lists the interval that left.
+- **B2's next PRs:** a day for someone who joins a club that has started (FQ100), and the first days' roster when someone joins or leaves while they are open.
+- **B6:** deleting an account must end its bound open candidates; until then such a candidate ends when its roster is applied, and holds a place meanwhile.
+- **The web page's PR:** `apps/web`'s invitation page and the CORS rule for `previewInvitationWeb`.
+- **Not reachable through a cell of the matrix:** `expired`, `full`, INVITATION_EXPIRED and CLUB_FULL of an acceptance; the database tests and the judges' tests hold them.

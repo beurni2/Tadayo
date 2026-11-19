@@ -135,6 +135,9 @@ describe("the viewer's clubs and invitations (clubsJudge)", () => {
     candidate: "cand_one",
     proposedBy: "itv_ana",
     tokenSha256: "00".repeat(32),
+    dead: false,
+    expiresAt: Temporal.Instant.from("2026-11-13T12:00:00Z"),
+    roster: null,
     ...over,
   });
   const world: WorldFacts = {

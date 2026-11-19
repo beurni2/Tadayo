@@ -1,6 +1,6 @@
 /// <reference lib="esnext.temporal" />
 // The roster's judges, judged (./roster.ts): each branch of what a cell must get from getRosterRevision,
-// proposeRoster, createInvitation and revokeInvitation is shown to refuse an answer that breaks it, on a
+// proposeRoster, createInvitation, revokeInvitation, approveRoster and declineRoster is shown to refuse an answer that breaks it, on a
 // world written out here by hand, with no database.
 
 import { createHash } from "node:crypto";
@@ -11,11 +11,14 @@ import {
   IDEMPOTENCY_CONFLICT,
   NO_SUCH_VERSION,
   ROSTER_JUDGED,
+  decisionOutcome,
+  genericDecisionExpected,
   genericProposal,
   genericProposalExpected,
   invalidRequest,
   linkOutcome,
   madeLink,
+  newestOf,
   proposalOutcome,
   proposeCases,
   replayedLink,
@@ -25,6 +28,7 @@ import {
   revokeOutcome,
   revokedBody,
   sameAnswer,
+  type CandidateRows,
   type LinkRows,
   type RevisionRows,
   type RosterSeen,
@@ -76,6 +80,7 @@ function link(more: Partial<LinkRows> = {}): LinkRows {
     revoked: false,
     replaced: false,
     bound: false,
+    boundTo: null,
     hash: sha256(TOKEN),
     ...more,
   };
@@ -108,6 +113,14 @@ const roster = (
 ): RosterWorld => ({
   revisions: new Map(revisions),
   links: new Map(links.map((one) => [one.id, one])),
+  candidates: new Map(
+    revisions.flatMap(([, rows]) =>
+      rows.candidates.map((one): [string, CandidateRows] => [
+        one.id,
+        { club: rows.club, state: "open", proposer: one.proposer },
+      ]),
+    ),
+  ),
 });
 
 const rows = (rosterVersion = 5, openCandidates = 2): ClubRows =>
@@ -169,9 +182,11 @@ const stateOf = (found: Record<string, unknown> | undefined, index = 0) =>
   )?.["state"];
 
 describe("a revision's RosterRevision from the world's rows (getRosterRevision)", () => {
-  it("judges the four routes of the roster", () => {
+  it("judges the six routes of the roster", () => {
     expect([...ROSTER_JUDGED].sort()).toEqual([
+      "approveRoster",
       "createInvitation",
+      "declineRoster",
       "getRosterRevision",
       "proposeRoster",
       "revokeInvitation",
@@ -383,6 +398,64 @@ describe("what a proposal must get (proposeRoster)", () => {
     expect(JSON.parse(proposal?.body ?? "")).toEqual({ expected_roster_version: 5, add: [{ label: "Mo" }] });
     expect(IDEMPOTENCY_CONFLICT.body).toBe('{"code":"IDEMPOTENCY_CONFLICT"}');
     expect(invalidRequest().status).toBe(400);
+  });
+});
+
+describe("who approves and who declines (approveRoster, declineRoster)", () => {
+  const decide = (account: string | null, rosterRows = roster(), expected = 1) =>
+    decisionOutcome(world(), rosterRows, "rev_1", account, NOW, expected);
+  const code = (outcome: unknown) => JSON.parse((outcome as Answer).body) as Record<string, unknown>;
+
+  it("is the neutral not-found to anyone who can't read the revision, whatever the version (FQ119, T14)", () => {
+    for (const account of ["usr_dee", "usr_eve", "usr_zed", null]) {
+      expect(decide(account)).toBe(NEUTRAL);
+      expect(decide(account, roster(), 9)).toBe(NEUTRAL);
+    }
+    expect(decide("usr_ana", roster([link()], [["rev_1", revision({ sealed: false })]]))).toBe(NEUTRAL);
+    expect(decisionOutcome(world(), roster(), "rev_none", "usr_ana", NOW, 1)).toBe(NEUTRAL);
+  });
+
+  it("names the newest revision once a newer one replaced it, before the version is looked at", () => {
+    const chain = roster(
+      [link()],
+      [
+        ["rev_1", revision({ state: "superseded", version: 2, supersededBy: "rev_2" })],
+        ["rev_2", revision({ state: "superseded", version: 2, supersededBy: "rev_3" })],
+        ["rev_3", revision()],
+      ],
+    );
+    expect(newestOf(chain, "rev_1")).toBe("rev_3");
+    expect(newestOf(chain, "rev_3")).toBe("rev_3");
+    expect(code(decide("usr_ana", chain, 9))).toEqual({ code: "ROSTER_CHANGED", current_id: "rev_3" });
+    expect(code(decide("usr_ana", chain, 2))).toEqual({ code: "ROSTER_CHANGED", current_id: "rev_3" });
+  });
+
+  it("holds the version to the revision's", () => {
+    expect(code(decide("usr_ana", roster(), 2))).toEqual({ code: "VERSION_CONFLICT", current_version: 1 });
+  });
+
+  it("takes a member's own decision once, on an open revision, and answers anything else as it stands", () => {
+    expect(decide("usr_ana")).toBe("decides");
+    // Ben approved by proposing, Cleo declined.
+    expect(decide("usr_ben")).toBe("stands");
+    expect(decide("usr_cleo")).toBe("stands");
+    const ended = roster([link()], [["rev_1", revision({ state: "did_not_go_ahead", version: 2 })]]);
+    expect(decide("usr_ana", ended, 2)).toBe("stands");
+    expect(decide("usr_ana", roster([link()], [["rev_1", revision({ state: "applied", version: 2 })]]), 2)).toBe(
+      "stands",
+    );
+  });
+
+  it("judges the generic request at a version no revision is at, and says so when it would decide", () => {
+    const judge = judging(genericDecisionExpected(seen("usr_ana"), "rev_1"));
+    expect(judge(sent(pinned(409, "Conflict", '{"code":"VERSION_CONFLICT","current_version":1}')))).toEqual([]);
+    expect(judge(NOT_FOUND)).not.toEqual([]);
+    expect(judge(ok(want))).not.toEqual([]);
+    expect(judging(genericDecisionExpected(seen("usr_zed"), "rev_1"))(NOT_FOUND)).toEqual([]);
+    const reached = roster([link()], [["rev_1", revision({ version: NO_SUCH_VERSION })]]);
+    expect(judging(genericDecisionExpected(seen("usr_ana", world(), reached), "rev_1"))(NOT_FOUND)).toEqual([
+      "the judge's own generic decision would be taken",
+    ]);
   });
 });
 

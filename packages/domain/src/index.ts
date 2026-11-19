@@ -25,6 +25,18 @@ export {
   type MadeLink,
   type RevokeInvitationInput,
 } from "./clubs/invitation.ts";
+export { acceptInvitation, type Acceptance, type AcceptInvitationInput } from "./clubs/accept-invitation.ts";
+export { applyIfReady, type AppliedRoster } from "./clubs/apply-roster.ts";
+export { approveRoster, declineRoster, type RosterDecisionInput } from "./clubs/decide-roster.ts";
+export { tokenHash } from "./clubs/invitation-facts.ts";
+export {
+  invitationStanding,
+  previewInvitation,
+  previewInvitationWeb,
+  type InvitationRoster,
+  type InvitationRosterEntry,
+  type InvitationSight,
+} from "./clubs/invitation-preview.ts";
 export { proposeRoster, type ProposeRosterInput } from "./clubs/propose-roster.ts";
 export {
   readRevision,

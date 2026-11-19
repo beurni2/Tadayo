@@ -96,6 +96,7 @@ const seen =
     account,
     now: NOW,
     nextOf,
+    openRevision: () => undefined,
   });
 
 describe("the roster's order (FQ98, FQ114)", () => {
@@ -215,6 +216,21 @@ describe("the club's Members (listMembers)", () => {
     ["a count of anything", { ...want, members: want.members.map((each) => ({ ...each, drops: 2 })) }],
   ])("refuses %s", (_what, body) => {
     expect(judging(membersExpected(seen(world(), "usr_ben"), CLUB))(ok(body))).not.toEqual([]);
+  });
+
+  it("carries the club's open revision as the viewer reads it, when there is one, and refuses an answer without it or with another", () => {
+    const revision = { id: "rev_1", version: 1, state: "open", my_decision: "pending" };
+    const withOne = membersFor(world(), CLUB, "usr_ben", NOW, NEXT, revision);
+    expect(withOne).toEqual({ ...want, open_revision: revision });
+    const judge = judging(
+      membersExpected(
+        () => ({ ...seen(world(), "usr_ben")(), openRevision: (club) => (club === CLUB ? revision : undefined) }),
+        CLUB,
+      ),
+    );
+    expect(judge(ok({ ...want, open_revision: revision }))).toEqual([]);
+    expect(judge(ok(want))).not.toEqual([]);
+    expect(judge(ok({ ...want, open_revision: { ...revision, my_decision: "approved" } }))).not.toEqual([]);
   });
 
   it("holds anyone the club isn't for to the neutral not-found, byte for byte", () => {

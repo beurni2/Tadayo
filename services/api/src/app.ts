@@ -22,8 +22,11 @@ import { JSON_TYPE, NO_STORE, problem } from "./answers.ts";
 import { listClubsHandler } from "./clubs/list.ts";
 import { createClubHandler, getClubHandler } from "./clubs/club.ts";
 import { listMembersHandler } from "./clubs/members.ts";
+import { acceptInvitationHandler, previewInvitationHandler, previewInvitationWebHandler } from "./clubs/invitation.ts";
 import {
+  approveRosterHandler,
   createInvitationHandler,
+  declineRosterHandler,
   getRosterRevisionHandler,
   proposeRosterHandler,
   revokeInvitationHandler,
@@ -63,13 +66,21 @@ export const BODY_LIMIT = 128 * 1024;
  * 640 code points and a zone of 64 characters, under 8,500 bytes written the same way, so it takes
  * `updateMe`'s 17 KiB (`clubs/club.test.ts`). `proposeRoster`'s is five labels of 640 code points each, under
  * 40,000 bytes written the same way, so its limit is 80 KiB; `createInvitation`'s is one id of 64 characters,
- * under 500 bytes, so its limit is 1 KiB (`clubs/roster.test.ts`).
+ * under 500 bytes, so its limit is 1 KiB (`clubs/roster.test.ts`). A roster decision's is one version, under
+ * 150 bytes, so 1 KiB. An invitation's token is at most 128 characters, 768 bytes with each written as an
+ * escape, so a preview's body is under 850 bytes and its limit 2 KiB; accepting adds an id of 64 characters
+ * and a version, under 1,450 bytes in all, so 3 KiB (`clubs/invitation.test.ts`).
  */
 const ROUTE_BODY_LIMITS: Readonly<Record<string, number>> = {
   updateMe: 17 * 1024,
   createClub: 17 * 1024,
   proposeRoster: 80 * 1024,
   createInvitation: 1024,
+  approveRoster: 1024,
+  declineRoster: 1024,
+  previewInvitationWeb: 2 * 1024,
+  previewInvitation: 2 * 1024,
+  acceptInvitation: 3 * 1024,
   chooseScheduleDays: 1024,
   confirmScheduleDays: 1024,
 };
@@ -137,6 +148,11 @@ function handlersOf(deps: Deps): Readonly<Record<string, Handler>> {
     getRosterRevision: getRosterRevisionHandler(deps),
     createInvitation: createInvitationHandler(deps),
     revokeInvitation: revokeInvitationHandler(deps),
+    approveRoster: approveRosterHandler(deps),
+    declineRoster: declineRosterHandler(deps),
+    previewInvitationWeb: previewInvitationWebHandler(deps),
+    previewInvitation: previewInvitationHandler(deps),
+    acceptInvitation: acceptInvitationHandler(deps),
     getSchedule: getScheduleHandler(deps),
     chooseScheduleDays: chooseScheduleDaysHandler(deps),
     confirmScheduleDays: confirmScheduleDaysHandler(deps),
