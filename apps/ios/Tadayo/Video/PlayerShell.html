@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; frame-src https://www.tiktok.com; script-src 'unsafe-inline'; style-src 'unsafe-inline'"
+    />
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #000;
+        overflow: hidden;
+      }
+      iframe {
+        display: block;
+        border: 0;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      // The viewer's shell (docs/TECH-DESIGN.md section 4, "The video viewer"): one frame holding
+      // TikTok's Embed Player, and nothing else. The app sets window.tadayoPlayer before this runs.
+      // Every message from the frame goes to the app with the origin the browser gave it; the app
+      // decides whether it is the player's (TadayoCore's PlayerMessage). Nothing is read from the
+      // frame, and the only thing ever sent to it is "pause".
+      (function () {
+        "use strict";
+        var origin = "https://www.tiktok.com";
+        var app = window.webkit.messageHandlers.player;
+        var address = window.tadayoPlayer;
+        if (typeof address !== "string" || address.indexOf(origin + "/player/v1/") !== 0) {
+          app.postMessage({ shell: "no player address" });
+          return;
+        }
+        var frame = document.createElement("iframe");
+        frame.title = "TikTok video";
+        frame.allow = "fullscreen";
+        frame.src = address;
+        document.body.appendChild(frame);
+        window.addEventListener("message", function (event) {
+          if (event.source !== frame.contentWindow) {
+            return;
+          }
+          var text;
+          try {
+            text = JSON.stringify(event.data);
+          } catch (error) {
+            text = undefined;
+          }
+          app.postMessage({
+            origin: String(event.origin),
+            data: typeof text === "string" ? text.slice(0, 8192) : "",
+          });
+        });
+        window.tadayoPause = function () {
+          frame.contentWindow.postMessage({ "x-tiktok-player": true, type: "pause" }, origin);
+        };
+        app.postMessage({ shell: "frame made" });
+      })();
+    </script>
+  </body>
+</html>
