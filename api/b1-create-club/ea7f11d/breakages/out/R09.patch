@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/club.ts b/packages/domain/src/clubs/club.ts
+index dba1694d..89658b59 100644
+--- a/packages/domain/src/clubs/club.ts
++++ b/packages/domain/src/clubs/club.ts
+@@ -73,7 +73,7 @@ export async function readClub(
+            (SELECT r.id FROM app.roster_revisions r WHERE r.club_id = c.id AND r.state = 'open') AS open_revision_id
+       FROM app.clubs c
+       JOIN (${activeMemberships(sql, userId)}) am ON am.club_id = c.id
+-      LEFT JOIN (${daysByClub(sql, userId, now)}) h ON h.club_id = c.id
++      LEFT JOIN (${daysByClub(sql, userId, new Date().toISOString() as unknown as ServerNow)}) h ON h.club_id = c.id
+      WHERE c.id = ${clubId}::pg_catalog.text`;
+   const [row] = rows;
+   if (row === undefined) return null;

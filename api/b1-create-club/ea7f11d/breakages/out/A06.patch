@@ -1,0 +1,12 @@
+diff --git a/services/api/src/clubs/club.ts b/services/api/src/clubs/club.ts
+index 041b835d..acd7e544 100644
+--- a/services/api/src/clubs/club.ts
++++ b/services/api/src/clubs/club.ts
+@@ -40,6 +40,7 @@ export function clubDetailBody(detail: ClubDetail): { readonly [key: string]: Js
+       ...(club.nextDay === null ? {} : { next_day: occurrenceBody(club.nextDay) }),
+     },
+     roster_version: detail.rosterVersion,
++    suspended: false,
+     can_propose: detail.canPropose,
+     ...(detail.openRevisionId === null ? {} : { open_revision_id: detail.openRevisionId }),
+   };

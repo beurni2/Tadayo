@@ -1,0 +1,31 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/tests
+
+ ❯ src/db/create-club.test.ts (24 tests | 1 failed) 656ms
+   ❯ who may make a club (T27, FQ69) (6)
+     × waits for a deletion that holds the account's row, and is refused once it commits, with no club and no receipt (T27) 31ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 23 passed (24)
+   Start at  08:23:19
+   Duration  1.31s (tests 65%, import 26%, transform 9%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-club.test.ts > who may make a club (T27, FQ69) > waits for a deletion that holds the account's row, and is refused once it commits, with no club and no receipt (T27)
+AssertionError: expected 'finished' to be 'waiting' // Object.is equality
+
+Expected: "waiting"
+Received: "finished"
+
+ ❯ src/db/create-club.test.ts:362:21
+    360|     finish();
+    361|     await deleting;
+    362|     expect(settled).toBe("waiting");
+       |                     ^
+    363|     expect(await refusal(making)).toEqual({ code: "UNAUTHENTICATED", f…
+    364|     const all = db as unknown as WorldTx;
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/tests
+
+ ❯ src/db/create-club.test.ts (24 tests | 1 failed) 948ms
+   ❯ making a club (spec 04, G01-create) (6)
+     × stores the zone in the server's one spelling, whatever case it came in (T2, FQ19) 20ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 23 passed (24)
+   Start at  08:23:21
+   Duration  1.70s (tests 69%, import 23%, transform 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-club.test.ts > making a club (spec 04, G01-create) > stores the zone in the server's one spelling, whatever case it came in (T2, FQ19)
+AssertionError: expected 'europe/LONDON' to be 'Europe/London' // Object.is equality
+
+Expected: "Europe/London"
+Received: "europe/LONDON"
+
+ ❯ src/db/create-club.test.ts:174:39
+    172|       const ben = await newUser(plain(tx), "Ben");
+    173|       const answer = answerOf(await request(tx, ben, { timezone: "euro…
+    174|       expect(answer.club["timezone"]).toBe("Europe/London");
+       |                                       ^
+    175|       const [club] = await tx<{ timezone: string }[]>`SELECT timezone …
+    176|       expect(club?.timezone).toBe("Europe/London");
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:171:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

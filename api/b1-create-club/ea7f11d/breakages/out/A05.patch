@@ -1,0 +1,13 @@
+diff --git a/services/api/src/clubs/club.ts b/services/api/src/clubs/club.ts
+index 041b835d..e1c60060 100644
+--- a/services/api/src/clubs/club.ts
++++ b/services/api/src/clubs/club.ts
+@@ -64,7 +64,7 @@ export function getClubHandler(deps: Deps): Handler {
+       const detail = await readClub(tx, account.id, clubId, now);
+       return detail === null ? null : withServerNow(now, clubDetailBody(detail));
+     });
+-    return body === null ? problem(reply, "NOT_FOUND") : ok(reply, body);
++    return ok(reply, body ?? {});
+   };
+ }
+ 

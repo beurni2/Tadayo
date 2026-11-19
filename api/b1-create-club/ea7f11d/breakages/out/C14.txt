@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/tests
+
+ ❯ src/db/create-club.test.ts (24 tests | 1 failed) 906ms
+   ❯ one club per key (T19) (6)
+     × answers a retry with the first answer to its sender though the club is suspended or its creator has left: it names nobody else (FQ112) 17ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 23 passed (24)
+   Start at  08:23:39
+   Duration  1.56s (tests 73%, import 18%, transform 8%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-club.test.ts > one club per key (T19) > answers a retry with the first answer to its sender though the club is suspended or its creator has left: it names nobody else (FQ112)
+Refused: refused: NOT_FOUND
+ ❯ createClub ../packages/domain/src/clubs/create-club.ts:101:62
+     99|   if (first !== null) {
+    100|     const id = (first.replay as { club: { id: string } }).club.id;
+    101|     if ((await readClub(tx, userId, id, at)) === null) throw new Refus…
+       |                                                              ^
+    102|     return { answer: first.replay, at };
+    103|   }
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/create-club.test.ts:264:15
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:257:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

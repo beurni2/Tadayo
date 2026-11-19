@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/club.ts b/tests/src/privacy/club.ts
+index ba47c1da..d75eeb05 100644
+--- a/tests/src/privacy/club.ts
++++ b/tests/src/privacy/club.ts
+@@ -29,7 +29,7 @@ import type { Answer } from "./scanner.ts";
+ import { canonical, viewerIn, type ScheduleSeen, type ScheduleWorld } from "./schedule.ts";
+ 
+ /** The operations whose rows this file judges. */
+-export const CLUB_JUDGED: ReadonlySet<string> = new Set(["getClub", "createClub"]);
++export const CLUB_JUDGED: ReadonlySet<string> = new Set(["getClub"]);
+ 
+ /** A club holds at most six people, its candidates still open counted (A01, T6). */
+ const SIX = 6;

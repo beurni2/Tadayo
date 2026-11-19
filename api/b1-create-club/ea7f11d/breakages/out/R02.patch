@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/club.ts b/packages/domain/src/clubs/club.ts
+index dba1694d..d16b80c9 100644
+--- a/packages/domain/src/clubs/club.ts
++++ b/packages/domain/src/clubs/club.ts
+@@ -65,7 +65,7 @@ export async function readClub(
+              'id', c.id, 'name', c.name, 'timezone', c.timezone, 'membership_id', am.interval_id,
+              'suspended', c.suspended_at IS NOT NULL, 'activated', c.activated_at IS NOT NULL,
+              'member_count', (SELECT pg_catalog.count(*) FROM app.memberships a
+-                               WHERE a.club_id = c.id AND a.state = 'active'),
++                               WHERE a.club_id = c.id),
+              'open_day', h.open_day, 'next_day', h.next_day) AS club,
+            c.roster_version,
+            (SELECT pg_catalog.count(*)::pg_catalog.int4 FROM app.candidates k

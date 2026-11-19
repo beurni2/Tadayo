@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/club.ts b/tests/src/privacy/club.ts
+index ba47c1da..e5375e12 100644
+--- a/tests/src/privacy/club.ts
++++ b/tests/src/privacy/club.ts
+@@ -71,7 +71,7 @@ export async function clubRowsOf(db: WorldTx, clubs: readonly string[]): Promise
+ /** A club's two days, each the contract's Occurrence or undefined (account.ts's `daysOf`). */
+ export type DaysOf = (club: string) => { open?: unknown; next?: unknown };
+ 
+-const second = (instant: Temporal.Instant) => instant.toString({ smallestUnit: "second", roundingMode: "floor" });
++const second = (instant: Temporal.Instant) => instant.toString({ smallestUnit: "second", roundingMode: "ceil" });
+ 
+ /** The contract's ClubDetail of `club` for the account `account` at `now`, or undefined: the neutral not-found. */
+ export function clubFor(

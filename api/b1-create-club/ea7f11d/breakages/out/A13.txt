@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/services/api
+
+ ❯ src/clubs/club.test.ts (14 tests | 1 failed) 209ms
+   ❯ what createClub refuses before any transaction (3)
+     × refuses a body past the route's limit unread, and takes the largest body the contract allows 11ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 26 passed (27)
+   Start at  08:25:03
+   Duration  794ms (tests 45%, import 42%, transform 12%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/clubs/club.test.ts > what createClub refuses before any transaction > refuses a body past the route's limit unread, and takes the largest body the contract allows
+AssertionError: expected 131072 to be 17408 // Object.is equality
+
+- Expected
++ Received
+
+- 17408
++ 131072
+
+ ❯ src/clubs/club.test.ts:228:19
+    226|     });
+    227|     const limit = bodyLimitOf("createClub");
+    228|     expect(limit).toBe(17 * 1024);
+       |                   ^
+    229|     expect(limit).toBeLessThan(BODY_LIMIT);
+    230|     const good = '{"name":"Sunday people","timezone":"America/New_York…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,13 @@
+diff --git a/services/api/src/clubs/club.ts b/services/api/src/clubs/club.ts
+index 041b835d..9b9489b3 100644
+--- a/services/api/src/clubs/club.ts
++++ b/services/api/src/clubs/club.ts
+@@ -50,7 +50,7 @@ export function withServerNow(now: Temporal.Instant, body: Json): Json {
+   if (typeof body !== "object" || body === null || Array.isArray(body)) {
+     throw new Error("clubs: a club's stored answer isn't an object");
+   }
+-  return { server_now: contractInstant(now), ...(body as { readonly [key: string]: Json }) };
++  return { server_now: now.toString(), ...(body as { readonly [key: string]: Json }) };
+ }
+ 
+ export function getClubHandler(deps: Deps): Handler {

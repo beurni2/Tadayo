@@ -1,0 +1,13 @@
+diff --git a/services/api/src/clubs/club.ts b/services/api/src/clubs/club.ts
+index 041b835d..46dad5bd 100644
+--- a/services/api/src/clubs/club.ts
++++ b/services/api/src/clubs/club.ts
+@@ -85,7 +85,7 @@ export function createClubHandler(deps: Deps): Handler {
+     // The key is judged before the body's fields, the contract's order (a body the app couldn't read or
+     // that passed its limit was refused before this handler); nothing here echoes a value.
+     const key = request.headers["idempotency-key"];
+-    if (typeof key !== "string" || !IDEMPOTENCY_KEY.test(key)) {
++    if (typeof key !== "string") {
+       return problem(reply, "INVALID_REQUEST", { field: "Idempotency-Key" });
+     }
+     const parsed = CreateClubRequest.safeParse(request.body);

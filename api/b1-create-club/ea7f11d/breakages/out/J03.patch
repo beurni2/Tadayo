@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/club.ts b/tests/src/privacy/club.ts
+index ba47c1da..cac3ffad 100644
+--- a/tests/src/privacy/club.ts
++++ b/tests/src/privacy/club.ts
+@@ -101,7 +101,7 @@ export function clubFor(
+       ...(days.next === undefined ? {} : { next_day: days.next }),
+     },
+     roster_version: roster.rosterVersion,
+-    can_propose: members + roster.openCandidates < SIX,
++    can_propose: members + roster.openCandidates <= SIX,
+     ...(roster.openRevision === null ? {} : { open_revision_id: roster.openRevision }),
+   };
+ }

@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/tests
+
+ ❯ src/db/create-club.test.ts (24 tests | 4 failed) 879ms
+   ❯ one club per key (T19) (6)
+     × answers a retry with the first club, as it was answered, makes no second, and gives the clock's sample of the retry (T1) 18ms
+     × answers a retry with the first answer though the club has changed since 15ms
+     × answers a retry with the first answer to its sender though the club is suspended or its creator has left: it names nobody else (FQ112) 15ms
+     × makes one club when the same request arrives eight times at once, and answers each alike 57ms
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 20 passed (24)
+   Start at  08:23:10
+   Duration  1.55s (tests 72%, import 20%, transform 8%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-club.test.ts > one club per key (T19) > answers a retry with the first club, as it was answered, makes no second, and gives the clock's sample of the retry (T1)
+ FAIL  src/db/create-club.test.ts > one club per key (T19) > answers a retry with the first answer though the club has changed since
+ FAIL  src/db/create-club.test.ts > one club per key (T19) > answers a retry with the first answer to its sender though the club is suspended or its creator has left: it names nobody else (FQ112)
+ FAIL  src/db/create-club.test.ts > one club per key (T19) > makes one club when the same request arrives eight times at once, and answers each alike
+PostgresError: app.idempotency_receipts: a completed receipt never changes (T19)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ completeReceipt ../packages/domain/src/idempotency/receipt.ts:68:38
+     66|   status: 200 | 201 = 200,
+     67| ): Promise<Json> {
+     68|   const [completed] = await bound(tx)`
+       |                                      ^
+     69|     UPDATE app.idempotency_receipts
+     70|        SET state = 'completed', response_status = ${String(status)}::p…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+

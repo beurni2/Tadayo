@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/club.ts b/packages/domain/src/clubs/club.ts
+index dba1694d..3db7d4e4 100644
+--- a/packages/domain/src/clubs/club.ts
++++ b/packages/domain/src/clubs/club.ts
+@@ -69,7 +69,7 @@ export async function readClub(
+              'open_day', h.open_day, 'next_day', h.next_day) AS club,
+            c.roster_version,
+            (SELECT pg_catalog.count(*)::pg_catalog.int4 FROM app.candidates k
+-             WHERE k.club_id = c.id AND k.state = 'open') AS open_candidates,
++             WHERE k.club_id = c.id) AS open_candidates,
+            (SELECT r.id FROM app.roster_revisions r WHERE r.club_id = c.id AND r.state = 'open') AS open_revision_id
+       FROM app.clubs c
+       JOIN (${activeMemberships(sql, userId)}) am ON am.club_id = c.id

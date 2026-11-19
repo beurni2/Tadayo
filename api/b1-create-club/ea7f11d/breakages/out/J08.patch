@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/club.ts b/tests/src/privacy/club.ts
+index ba47c1da..564e632f 100644
+--- a/tests/src/privacy/club.ts
++++ b/tests/src/privacy/club.ts
+@@ -85,7 +85,7 @@ export function clubFor(
+   const viewer = viewerIn(world, club, account);
+   const row = world.clubs.get(club);
+   const roster = rows.get(club);
+-  if (viewer === undefined || row === undefined || roster === undefined) return undefined;
++  if (row === undefined || roster === undefined) return undefined;
+   const members = [...world.members.values()].filter((member) => member.club === club && member.active).length;
+   const days = daysOf(club);
+   return {

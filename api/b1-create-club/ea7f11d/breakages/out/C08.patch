@@ -1,0 +1,11 @@
+diff --git a/packages/domain/src/clubs/create-club.ts b/packages/domain/src/clubs/create-club.ts
+index ae682e18..2e1f9e15 100644
+--- a/packages/domain/src/clubs/create-club.ts
++++ b/packages/domain/src/clubs/create-club.ts
+@@ -126,5 +126,5 @@ export async function createClub(
+   // 6. The answer.
+   const detail = await readClub(tx, userId, clubId, at);
+   if (detail === null) throw new Error("clubs: the club its creator just made can't be read");
+-  return { answer: await completeReceipt(tx, receipt, render(detail), 201), at };
++  return { answer: await completeReceipt(tx, receipt, render(detail)), at };
+ }

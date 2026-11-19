@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/services/api
+
+ ❯ src/clubs/club.test.ts (14 tests | 1 failed) 232ms
+   ❯ what getClub answers with no club to read (1)
+     × answers the neutral not-found when the read finds nothing, and never a 200 with an empty body (T14) 12ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 26 passed (27)
+   Start at  08:23:47
+   Duration  890ms (tests 46%, import 40%, transform 13%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/clubs/club.test.ts > what getClub answers with no club to read > answers the neutral not-found when the read finds nothing, and never a 200 with an empty body (T14)
+AssertionError: expected { status: 200, body: '{}', …(1) } to match object { status: 404, …(1) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "body": "{\"code\":\"NOT_FOUND\"}",
+-   "status": 404,
++   "body": "{}",
++   "status": 200,
+  }
+
+ ❯ src/clubs/club.test.ts:307:17
+    305|     const answer = await appFor(() => Promise.resolve(null));
+    306|     const got = await answer({ method: "GET", url: "/v1/clubs/club_1" …
+    307|     expect(got).toMatchObject({ status: 404, body: '{"code":"NOT_FOUND…
+       |                 ^
+    308|     expect(got.headers["cache-control"]).toBe("private, no-store");
+    309|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,267 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/tests
+
+ ❯ src/db/create-club.test.ts (24 tests | 12 failed) 804ms
+   ❯ making a club (spec 04, G01-create) (6)
+     × makes a proposed club of one, its creator, at the server clock's sample, and answers it as its creator reads it (T1, T7) 49ms
+     × keeps the receipt with the club: completed, 201, at the same sample, and without the server's instant (T19) 9ms
+     × stores the zone in the server's one spelling, whatever case it came in (T2, FQ19) 10ms
+     × lists the new club for its creator, proposed, and reads it as it was answered 10ms
+     × makes a club for each key, two of one name included: nothing is unique about a club but its id 9ms
+   ❯ one club per key (T19) (6)
+     × answers a retry with the first club, as it was answered, makes no second, and gives the clock's sample of the retry (T1) 12ms
+     × answers a retry with the first answer though the club has changed since 7ms
+     × answers a retry with the first answer to its sender though the club is suspended or its creator has left: it names nobody else (FQ112) 7ms
+     × refuses another name or another zone under a used key, and makes nothing 7ms
+     × keeps a key the caller's own: the same key from another account makes that account's club 7ms
+     × makes one club when the same request arrives eight times at once, and answers each alike 37ms
+   ❯ who may make a club (T27, FQ69) (6)
+     × fails, with the receipt guard's own error and no refusal, for an account id nobody has: the gate lets none through 6ms
+
+ Test Files  1 failed (1)
+      Tests  12 failed | 12 passed (24)
+   Start at  08:23:36
+   Duration  1.47s (tests 70%, import 23%, transform 7%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 12 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-club.test.ts > making a club (spec 04, G01-create) > makes a proposed club of one, its creator, at the server clock's sample, and answers it as its creator reads it (T1, T7)
+Error: idempotency: the receipt this request reserved is gone
+ ❯ completeReceipt ../packages/domain/src/idempotency/receipt.ts:75:38
+     73|        AND idempotency_key = ${key}::pg_catalog.uuid
+     74|     RETURNING response_body`;
+     75|   if (completed === undefined) throw new Error("idempotency: the recei…
+       |                                      ^
+     76|   return completed["response_body"] as Json;
+     77| }
+ ❯ createClub ../packages/domain/src/clubs/create-club.ts:127:20
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/create-club.test.ts:91:20
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:89:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/12]⎯
+
+ FAIL  src/db/create-club.test.ts > making a club (spec 04, G01-create) > keeps the receipt with the club: completed, 201, at the same sample, and without the server's instant (T19)
+Error: idempotency: the receipt this request reserved is gone
+ ❯ completeReceipt ../packages/domain/src/idempotency/receipt.ts:75:38
+     73|        AND idempotency_key = ${key}::pg_catalog.uuid
+     74|     RETURNING response_body`;
+     75|   if (completed === undefined) throw new Error("idempotency: the recei…
+       |                                      ^
+     76|   return completed["response_body"] as Json;
+     77| }
+ ❯ createClub ../packages/domain/src/clubs/create-club.ts:127:20
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/create-club.test.ts:156:20
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:154:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/12]⎯
+
+ FAIL  src/db/create-club.test.ts > making a club (spec 04, G01-create) > stores the zone in the server's one spelling, whatever case it came in (T2, FQ19)
+Error: idempotency: the receipt this request reserved is gone
+ ❯ completeReceipt ../packages/domain/src/idempotency/receipt.ts:75:38
+     73|        AND idempotency_key = ${key}::pg_catalog.uuid
+     74|     RETURNING response_body`;
+     75|   if (completed === undefined) throw new Error("idempotency: the recei…
+       |                                      ^
+     76|   return completed["response_body"] as Json;
+     77| }
+ ❯ createClub ../packages/domain/src/clubs/create-club.ts:127:20
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/create-club.test.ts:173:31
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:171:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/12]⎯
+
+ FAIL  src/db/create-club.test.ts > making a club (spec 04, G01-create) > lists the new club for its creator, proposed, and reads it as it was answered
+Error: idempotency: the receipt this request reserved is gone
+ ❯ completeReceipt ../packages/domain/src/idempotency/receipt.ts:75:38
+     73|        AND idempotency_key = ${key}::pg_catalog.uuid
+     74|     RETURNING response_body`;
+     75|   if (completed === undefined) throw new Error("idempotency: the recei…
+       |                                      ^
+     76|   return completed["response_body"] as Json;
+     77| }
+ ❯ createClub ../packages/domain/src/clubs/create-club.ts:127:20
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/create-club.test.ts:198:31
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:196:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/12]⎯
+
+ FAIL  src/db/create-club.test.ts > making a club (spec 04, G01-create) > makes a club for each key, two of one name included: nothing is unique about a club but its id
+Error: idempotency: the receipt this request reserved is gone
+ ❯ completeReceipt ../packages/domain/src/idempotency/receipt.ts:75:38
+     73|        AND idempotency_key = ${key}::pg_catalog.uuid
+     74|     RETURNING response_body`;
+     75|   if (completed === undefined) throw new Error("idempotency: the recei…
+       |                                      ^
+     76|   return completed["response_body"] as Json;
+     77| }
+ ❯ createClub ../packages/domain/src/clubs/create-club.ts:127:20
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/create-club.test.ts:220:28
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:218:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/12]⎯
+
+ FAIL  src/db/create-club.test.ts > one club per key (T19) > answers a retry with the first club, as it was answered, makes no second, and gives the clock's sample of the retry (T1)
+Error: idempotency: the receipt this request reserved is gone
+ ❯ completeReceipt ../packages/domain/src/idempotency/receipt.ts:75:38
+     73|        AND idempotency_key = ${key}::pg_catalog.uuid
+     74|     RETURNING response_body`;
+     75|   if (completed === undefined) throw new Error("idempotency: the recei…
+       |                                      ^
+     76|   return completed["response_body"] as Json;
+     77| }
+ ❯ createClub ../packages/domain/src/clubs/create-club.ts:127:20
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/create-club.test.ts:234:21
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:231:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/12]⎯
+
+ FAIL  src/db/create-club.test.ts > one club per key (T19) > answers a retry with the first answer though the club has changed since
+Error: idempotency: the receipt this request reserved is gone
+ ❯ completeReceipt ../packages/domain/src/idempotency/receipt.ts:75:38
+     73|        AND idempotency_key = ${key}::pg_catalog.uuid
+     74|     RETURNING response_body`;
+     75|   if (completed === undefined) throw new Error("idempotency: the recei…
+       |                                      ^
+     76|   return completed["response_body"] as Json;
+     77| }
+ ❯ createClub ../packages/domain/src/clubs/create-club.ts:127:20
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/create-club.test.ts:250:21
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:247:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/12]⎯
+
+ FAIL  src/db/create-club.test.ts > one club per key (T19) > answers a retry with the first answer to its sender though the club is suspended or its creator has left: it names nobody else (FQ112)
+Error: idempotency: the receipt this request reserved is gone
+ ❯ completeReceipt ../packages/domain/src/idempotency/receipt.ts:75:38
+     73|        AND idempotency_key = ${key}::pg_catalog.uuid
+     74|     RETURNING response_body`;
+     75|   if (completed === undefined) throw new Error("idempotency: the recei…
+       |                                      ^
+     76|   return completed["response_body"] as Json;
+     77| }
+ ❯ createClub ../packages/domain/src/clubs/create-club.ts:127:20
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/create-club.test.ts:260:21
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:257:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/12]⎯
+
+ FAIL  src/db/create-club.test.ts > one club per key (T19) > refuses another name or another zone under a used key, and makes nothing
+Error: idempotency: the receipt this request reserved is gone
+ ❯ completeReceipt ../packages/domain/src/idempotency/receipt.ts:75:38
+     73|        AND idempotency_key = ${key}::pg_catalog.uuid
+     74|     RETURNING response_body`;
+     75|   if (completed === undefined) throw new Error("idempotency: the recei…
+       |                                      ^
+     76|   return completed["response_body"] as Json;
+     77| }
+ ❯ createClub ../packages/domain/src/clubs/create-club.ts:127:20
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/create-club.test.ts:281:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:278:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/12]⎯
+
+ FAIL  src/db/create-club.test.ts > one club per key (T19) > keeps a key the caller's own: the same key from another account makes that account's club
+Error: idempotency: the receipt this request reserved is gone
+ ❯ completeReceipt ../packages/domain/src/idempotency/receipt.ts:75:38
+     73|        AND idempotency_key = ${key}::pg_catalog.uuid
+     74|     RETURNING response_body`;
+     75|   if (completed === undefined) throw new Error("idempotency: the recei…
+       |                                      ^
+     76|   return completed["response_body"] as Json;
+     77| }
+ ❯ createClub ../packages/domain/src/clubs/create-club.ts:127:20
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/create-club.test.ts:294:29
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:290:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/12]⎯
+
+ FAIL  src/db/create-club.test.ts > one club per key (T19) > makes one club when the same request arrives eight times at once, and answers each alike
+Error: idempotency: the receipt this request reserved is gone
+ ❯ completeReceipt ../packages/domain/src/idempotency/receipt.ts:75:38
+     73|        AND idempotency_key = ${key}::pg_catalog.uuid
+     74|     RETURNING response_body`;
+     75|   if (completed === undefined) throw new Error("idempotency: the recei…
+       |                                      ^
+     76|   return completed["response_body"] as Json;
+     77| }
+ ❯ createClub ../packages/domain/src/clubs/create-club.ts:127:20
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ src/db/create-club.test.ts:306:21
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/12]⎯
+
+ FAIL  src/db/create-club.test.ts > who may make a club (T27, FQ69) > fails, with the receipt guard's own error and no refusal, for an account id nobody has: the gate lets none through
+AssertionError: expected [Function] to throw error matching /keeps no receipts/ but got 'refused: UNAUTHENTICATED'
+
+- Expected:
+/keeps no receipts/
+
++ Received:
+"refused: UNAUTHENTICATED"
+
+ ❯ src/db/create-club.test.ts:392:40
+    390|       // account, so this is a failure the route answers with a bare 5…
+    391|       const nobody = newId("acct");
+    392|       await expect(request(tx, nobody)).rejects.toThrow(/keeps no rece…
+       |                                        ^
+    393|       await expect(request(tx, nobody)).rejects.not.toBeInstanceOf(Ref…
+    394|       expect(await clubsOf(tx, nobody)).toEqual([]);
+ ❯ src/db/harness.ts:82:31
+ ❯ result ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:261:21
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:24
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:244:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/12]⎯
+

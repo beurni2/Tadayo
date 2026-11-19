@@ -1,0 +1,64 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/tests
+
+ ❯ src/db/create-club.test.ts (24 tests | 2 failed) 920ms
+   ❯ who may make a club (T27, FQ69) (6)
+     × refuses an account with no name yet, as the gate does 9ms
+     × refuses a nameless account before it looks at the zone 9ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 22 passed (24)
+   Start at  08:23:17
+   Duration  1.58s (tests 70%, import 23%, transform 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-club.test.ts > who may make a club (T27, FQ69) > refuses an account with no name yet, as the gate does
+Error: the request wasn't refused
+ ❯ refusal src/db/create-club.test.ts:68:9
+     66|     throw error;
+     67|   }
+     68|   throw new Error("the request wasn't refused");
+       |         ^
+     69| }
+     70|
+ ❯ src/db/create-club.test.ts:372:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:370:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/create-club.test.ts > who may make a club (T27, FQ69) > refuses a nameless account before it looks at the zone
+AssertionError: expected { code: 'INVALID_REQUEST', …(1) } to deeply equal { code: 'PROFILE_INCOMPLETE', …(1) }
+
+- Expected
++ Received
+
+  {
+-   "code": "PROFILE_INCOMPLETE",
+-   "facts": {},
++   "code": "INVALID_REQUEST",
++   "facts": {
++     "field": "timezone",
++   },
+  }
+
+ ❯ src/db/create-club.test.ts:380:81
+    378|     await rolledBack(db, async (tx) => {
+    379|       const mo = await newUnfinishedUser(plain(tx));
+    380|       expect(await refusal(request(tx, mo, { timezone: "Mars/Olympus_M…
+       |                                                                                 ^
+    381|         code: "PROFILE_INCOMPLETE",
+    382|         facts: {},
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:378:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

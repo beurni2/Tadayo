@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/clubs/create-club.ts b/packages/domain/src/clubs/create-club.ts
+index ae682e18..bd16ee1f 100644
+--- a/packages/domain/src/clubs/create-club.ts
++++ b/packages/domain/src/clubs/create-club.ts
+@@ -102,7 +102,6 @@ export async function createClub(
+   const [account] = await bound(tx)`
+     SELECT state, display_name FROM app.users WHERE id = ${userId} FOR NO KEY UPDATE`;
+   if (account === undefined || account["state"] !== "active") throw new Refused("UNAUTHENTICATED");
+-  if (typeof account["display_name"] !== "string") throw new Refused("PROFILE_INCOMPLETE");
+ 
+   // 4. The zone.
+   let timezone: string;

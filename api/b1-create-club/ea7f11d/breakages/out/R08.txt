@@ -1,0 +1,56 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/tests
+
+ ❯ src/db/create-club.test.ts (24 tests | 2 failed) 983ms
+   ❯ making a club (spec 04, G01-create) (6)
+     × makes a club for each key, two of one name included: nothing is unique about a club but its id 18ms
+   ❯ a club's information for its members (G05-club-details; T9, T14, T33) (6)
+     × gives nothing to a stranger, a former member, someone invited, an account being deleted, or for an id nobody has (T14) 69ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 22 passed (24)
+   Start at  08:23:03
+   Duration  1.69s (tests 73%, import 15%, transform 11%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-club.test.ts > making a club (spec 04, G01-create) > makes a club for each key, two of one name included: nothing is unique about a club but its id
+Error: clubs: the club came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/club.ts:46:10
+     44|
+     45| function shape(): Error {
+     46|   return new Error("clubs: the club came back in a shape the schema do…
+       |          ^
+     47| }
+     48|
+ ❯ readClub ../packages/domain/src/clubs/club.ts:81:33
+ ❯ createClub ../packages/domain/src/clubs/create-club.ts:127:18
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/create-club.test.ts:221:28
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/create-club.test.ts > a club's information for its members (G05-club-details; T9, T14, T33) > gives nothing to a stranger, a former member, someone invited, an account being deleted, or for an id nobody has (T14)
+Error: clubs: the club came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/club.ts:46:10
+     44|
+     45| function shape(): Error {
+     46|   return new Error("clubs: the club came back in a shape the schema do…
+       |          ^
+     47| }
+     48|
+ ❯ readClub ../packages/domain/src/clubs/club.ts:81:33
+ ❯ src/db/create-club.test.ts:461:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:456:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

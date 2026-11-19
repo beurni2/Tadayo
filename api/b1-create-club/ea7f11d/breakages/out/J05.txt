@@ -1,0 +1,30 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/tests
+
+ ❯ src/privacy/club.test.ts (35 tests | 1 failed) 24ms
+   ❯ a club's ClubDetail from the world's rows (getClub) (18)
+     × accepts the right answer whatever the order of its keys, and only with private, no-store 6ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 34 passed (35)
+   Start at  08:31:26
+   Duration  488ms (import 67%, transform 20%, tests 11%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/club.test.ts > a club's ClubDetail from the world's rows (getClub) > accepts the right answer whatever the order of its keys, and only with private, no-store
+AssertionError: expected [] to not deeply equal []
+
+Compared values have no visual difference.
+
+ ❯ src/privacy/club.test.ts:149:66
+    147|     expect(judge(ok(want))).toEqual([]);
+    148|     expect(judge(ok(Object.fromEntries(Object.entries(want).reverse())…
+    149|     expect(judge(ok(want, { "cache-control": "no-cache" }))).not.toEqu…
+       |                                                                  ^
+    150|     expect(judge(made(want))).not.toEqual([]);
+    151|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

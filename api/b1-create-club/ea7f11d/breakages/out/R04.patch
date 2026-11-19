@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/club.ts b/packages/domain/src/clubs/club.ts
+index dba1694d..6f0f158b 100644
+--- a/packages/domain/src/clubs/club.ts
++++ b/packages/domain/src/clubs/club.ts
+@@ -84,7 +84,7 @@ export async function readClub(
+   return {
+     club,
+     rosterVersion: count(row["roster_version"]),
+-    canPropose: club.memberCount + count(row["open_candidates"]) < CLUB_SIZE,
++    canPropose: club.memberCount + count(row["open_candidates"]) <= CLUB_SIZE,
+     openRevisionId: open,
+   };
+ }

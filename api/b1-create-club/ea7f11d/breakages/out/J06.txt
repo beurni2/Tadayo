@@ -1,0 +1,47 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/tests
+
+ ❯ src/privacy/club.test.ts (35 tests | 2 failed) 25ms
+   ❯ a club's ClubDetail from the world's rows (getClub) (18)
+     × accepts the right answer whatever the order of its keys, and only with private, no-store 7ms
+   ❯ a new club's answer (createClub) (12)
+     × holds a 201 to the club's rows, value for value, and refuses a 200 with the same body 1ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 33 passed (35)
+   Start at  08:31:27
+   Duration  527ms (import 69%, transform 19%, tests 10%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/club.test.ts > a club's ClubDetail from the world's rows (getClub) > accepts the right answer whatever the order of its keys, and only with private, no-store
+AssertionError: expected [] to not deeply equal []
+
+Compared values have no visual difference.
+
+ ❯ src/privacy/club.test.ts:150:35
+    148|     expect(judge(ok(Object.fromEntries(Object.entries(want).reverse())…
+    149|     expect(judge(ok(want, { "cache-control": "no-cache" }))).not.toEqu…
+    150|     expect(judge(made(want))).not.toEqual([]);
+       |                                   ^
+    151|   });
+    152|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/club.test.ts > a new club's answer (createClub) > holds a 201 to the club's rows, value for value, and refuses a 200 with the same body
+AssertionError: expected [] to not deeply equal []
+
+Compared values have no visual difference.
+
+ ❯ src/privacy/club.test.ts:203:51
+    201|   it("holds a 201 to the club's rows, value for value, and refuses a 2…
+    202|     expect(sameDetail(201, fresh)(made(fresh))).toEqual([]);
+    203|     expect(sameDetail(201, fresh)(ok(fresh))).not.toEqual([]);
+       |                                                   ^
+    204|     expect(sameDetail(201, fresh)(made({ ...fresh, roster_version: 1 }…
+    205|     expect(sameDetail(201, fresh)(made({ ...fresh, creator: "Ben" })))…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

@@ -1,0 +1,30 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/tests
+
+ ❯ src/privacy/club.test.ts (35 tests | 1 failed) 23ms
+   ❯ a club's ClubDetail from the world's rows (getClub) (18)
+     × holds anyone the club isn't for to the neutral not-found, byte for byte 7ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 34 passed (35)
+   Start at  08:31:28
+   Duration  526ms (import 68%, transform 19%, tests 11%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/club.test.ts > a club's ClubDetail from the world's rows (getClub) > holds anyone the club isn't for to the neutral not-found, byte for byte
+AssertionError: expected [] to not deeply equal []
+
+Compared values have no visual difference.
+
+ ❯ src/privacy/club.test.ts:174:33
+    172|     expect(judge(NOT_FOUND)).toEqual([]);
+    173|     expect(judging(clubExpected(seen(world(), null), CLUB))(NOT_FOUND)…
+    174|     expect(judge(ok(want))).not.toEqual([]);
+       |                                 ^
+    175|     expect(judge(sent(pinned(404, "Not Found", '{"code":"NOT_FOUND","c…
+    176|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,75 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+star: 2016 cells run, 35497 answers scanned
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the former member as its account and its row say, and leaks nothing the scanner can find
+former member: 2016 cells run, 35497 answers scanned
+
+ ❯ src/privacy/matrix.test.ts (14 tests | 2 failed | 12 skipped) 63976ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (12)
+     × answers the star as its account and its row say, and leaks nothing the scanner can find 33172ms
+     × answers the former member as its account and its row say, and leaks nothing the scanner can find 30614ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 12 skipped (14)
+   Start at  08:30:16
+   Duration  64.81s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the former member as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 28, first: [ …(28) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 28,
++   "first": [
++     "active, collecting: createClub: a new club's timezone is \"america/new_york\", not \"America/New_York\" (a club)",
++     "active, open: createClub: a new club's timezone is \"america/new_york\", not \"America/New_York\" (a club)",
++     "active, past: createClub: a new club's timezone is \"america/new_york\", not \"America/New_York\" (a club)",
++     "active, past, a year on: createClub: a new club's timezone is \"america/new_york\", not \"America/New_York\" (a club)",
++     "withdrawn, collecting: createClub: a new club's timezone is \"america/new_york\", not \"America/New_York\" (a club)",
++     "withdrawn, open: createClub: a new club's timezone is \"america/new_york\", not \"America/New_York\" (a club)",
++     "withdrawn, past: createClub: a new club's timezone is \"america/new_york\", not \"America/New_York\" (a club)",
++     "withdrawn, past, a year on: createClub: a new club's timezone is \"america/new_york\", not \"America/New_York\" (a club)",
++     "removed by moderation, collecting: createClub: a new club's timezone is \"america/new_york\", not \"America/New_York\" (a club)",
++     "removed by moderation, open: createClub: a new club's timezone is \"america/new_york\", not \"America/New_York\" (a club)",
++     "removed by moderation, past: createClub: a new club's timezone is \"america/new_york\", not \"America/New_York\" (a club)",
++     "removed by moderation, past, a year on: createClub: a new club's timezone is \"america/new_york\", not \"America/New_York\" (a club)",
++     "held (T29), collecting: createClub: a new club's timezone is \"america/new_york\", not \"America/New_York\" (a club)",
++     "held (T29), open: createClub: a new club's timezone is \"america/new_york\", not \"America/New_York\" (a club)",
++     "held (T29), past: createClub: a new club's timezone is \"america/new_york\", not \"America/New_York\" (a club)",
++     "held (T29), past, a year on: createClub: a new club's timezone is \"america/new_york\", not \"America/New_York\" (a club)",
++     "its day suspended, collecting: createClub: a new club's timezone is \"america/new_york\", not \"America/New_York\" (a club)",
++     "its day suspended, open: createClub: a new club's timezone is \"america/new_york\", not \"America/New_York\" (a club)",
++     "its day suspended, past: createClub: a new club's timezone is \"america/new_york\", not \"America/New_York\" (a club)",
++     "its day suspended, past, a year on: createClub: a new club's timezone is \"america/new_york\", not \"America/New_York\" (a club)",
++     "its club suspended, collecting: createClub: a new club's timezone is \"america/new_york\", not \"America/New_York\" (a club)",
++     "its club suspended, open: createClub: a new club's timezone is \"america/new_york\", not \"America/New_York\" (a club)",
++     "its club suspended, past: createClub: a new club's timezone is \"america/new_york\", not \"America/New_York\" (a club)",
++     "its club suspended, past, a year on: createClub: a new club's timezone is \"america/new_york\", not \"America/New_York\" (a club)",
++     "its day cancelled, collecting: createClub: a new club's timezone is \"america/new_york\", not \"America/New_York\" (a club)",
++     "its day cancelled, open: createClub: a new club's timezone is \"america/new_york\", not \"America/New_York\" (a club)",
++     "its day cancelled, past: createClub: a new club's timezone is \"america/new_york\", not \"America/New_York\" (a club)",
++     "its day cancelled, past, a year on: createClub: a new club's timezone is \"america/new_york\", not \"America/New_York\" (a club)",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:808:66
+    806|       }
+    807|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    808|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    809|       // Every cell ran: the contract's 72 requests a world (each oper…
+    810|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+

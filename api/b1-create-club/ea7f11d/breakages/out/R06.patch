@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/club.ts b/packages/domain/src/clubs/club.ts
+index dba1694d..8b539623 100644
+--- a/packages/domain/src/clubs/club.ts
++++ b/packages/domain/src/clubs/club.ts
+@@ -22,7 +22,7 @@ import type { ServerNow } from "../time/clock.ts";
+ import { clubRow, type ClubRow } from "./club-list.ts";
+ 
+ /** A club holds at most six people, its candidates still open counted (A01, T6). */
+-export const CLUB_SIZE = 6;
++export const CLUB_SIZE = 7;
+ 
+ export interface ClubDetail {
+   readonly club: ClubRow;

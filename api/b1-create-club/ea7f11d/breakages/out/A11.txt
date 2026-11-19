@@ -1,0 +1,126 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+star: 2016 cells run, 35497 answers scanned
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the former member as its account and its row say, and leaks nothing the scanner can find
+former member: 2016 cells run, 35497 answers scanned
+
+ ❯ src/privacy/matrix.test.ts (14 tests | 2 failed | 12 skipped) 63881ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (12)
+     × answers the star as its account and its row say, and leaks nothing the scanner can find 34022ms
+     × answers the former member as its account and its row say, and leaks nothing the scanner can find 29637ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 12 skipped (14)
+   Start at  08:23:56
+   Duration  64.93s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 28, first: [ …(28) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 28,
++   "first": [
++     "active, collecting: createClub: the club's server_now is \"2026-11-19T08:24:00Z\", not \"2026-11-07T06:59:59Z\" (a club)",
++     "active, open: createClub: the club's server_now is \"2026-11-19T08:24:01Z\", not \"2026-11-07T07:00:00Z\" (a club)",
++     "active, past: createClub: the club's server_now is \"2026-11-19T08:24:02Z\", not \"2026-11-08T01:00:00Z\" (a club)",
++     "active, past, a year on: createClub: the club's server_now is \"2026-11-19T08:24:03Z\", not \"2027-11-08T01:00:00Z\" (a club)",
++     "withdrawn, collecting: createClub: the club's server_now is \"2026-11-19T08:24:05Z\", not \"2026-11-07T06:59:59Z\" (a club)",
++     "withdrawn, open: createClub: the club's server_now is \"2026-11-19T08:24:06Z\", not \"2026-11-07T07:00:00Z\" (a club)",
++     "withdrawn, past: createClub: the club's server_now is \"2026-11-19T08:24:07Z\", not \"2026-11-08T01:00:00Z\" (a club)",
++     "withdrawn, past, a year on: createClub: the club's server_now is \"2026-11-19T08:24:08Z\", not \"2027-11-08T01:00:00Z\" (a club)",
++     "removed by moderation, collecting: createClub: the club's server_now is \"2026-11-19T08:24:10Z\", not \"2026-11-07T06:59:59Z\" (a club)",
++     "removed by moderation, open: createClub: the club's server_now is \"2026-11-19T08:24:11Z\", not \"2026-11-07T07:00:00Z\" (a club)",
++     "removed by moderation, past: createClub: the club's server_now is \"2026-11-19T08:24:12Z\", not \"2026-11-08T01:00:00Z\" (a club)",
++     "removed by moderation, past, a year on: createClub: the club's server_now is \"2026-11-19T08:24:13Z\", not \"2027-11-08T01:00:00Z\" (a club)",
++     "held (T29), collecting: createClub: the club's server_now is \"2026-11-19T08:24:15Z\", not \"2026-11-07T06:59:59Z\" (a club)",
++     "held (T29), open: createClub: the club's server_now is \"2026-11-19T08:24:16Z\", not \"2026-11-07T07:00:00Z\" (a club)",
++     "held (T29), past: createClub: the club's server_now is \"2026-11-19T08:24:17Z\", not \"2026-11-08T01:00:00Z\" (a club)",
++     "held (T29), past, a year on: createClub: the club's server_now is \"2026-11-19T08:24:18Z\", not \"2027-11-08T01:00:00Z\" (a club)",
++     "its day suspended, collecting: createClub: the club's server_now is \"2026-11-19T08:24:19Z\", not \"2026-11-07T06:59:59Z\" (a club)",
++     "its day suspended, open: createClub: the club's server_now is \"2026-11-19T08:24:20Z\", not \"2026-11-07T07:00:00Z\" (a club)",
++     "its day suspended, past: createClub: the club's server_now is \"2026-11-19T08:24:21Z\", not \"2026-11-08T01:00:00Z\" (a club)",
++     "its day suspended, past, a year on: createClub: the club's server_now is \"2026-11-19T08:24:22Z\", not \"2027-11-08T01:00:00Z\" (a club)",
++     "its club suspended, collecting: createClub: the club's server_now is \"2026-11-19T08:24:24Z\", not \"2026-11-07T06:59:59Z\" (a club)",
++     "its club suspended, open: createClub: the club's server_now is \"2026-11-19T08:24:25Z\", not \"2026-11-07T07:00:00Z\" (a club)",
++     "its club suspended, past: createClub: the club's server_now is \"2026-11-19T08:24:26Z\", not \"2026-11-08T01:00:00Z\" (a club)",
++     "its club suspended, past, a year on: createClub: the club's server_now is \"2026-11-19T08:24:27Z\", not \"2027-11-08T01:00:00Z\" (a club)",
++     "its day cancelled, collecting: createClub: the club's server_now is \"2026-11-19T08:24:28Z\", not \"2026-11-07T06:59:59Z\" (a club)",
++     "its day cancelled, open: createClub: the club's server_now is \"2026-11-19T08:24:29Z\", not \"2026-11-07T07:00:00Z\" (a club)",
++     "its day cancelled, past: createClub: the club's server_now is \"2026-11-19T08:24:30Z\", not \"2026-11-08T01:00:00Z\" (a club)",
++     "its day cancelled, past, a year on: createClub: the club's server_now is \"2026-11-19T08:24:31Z\", not \"2027-11-08T01:00:00Z\" (a club)",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:808:66
+    806|       }
+    807|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    808|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    809|       // Every cell ran: the contract's 72 requests a world (each oper…
+    810|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the former member as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 28, first: [ …(28) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 28,
++   "first": [
++     "active, collecting: createClub: the club's server_now is \"2026-11-19T08:24:33Z\", not \"2026-11-07T06:59:59Z\" (a club)",
++     "active, open: createClub: the club's server_now is \"2026-11-19T08:24:33Z\", not \"2026-11-07T07:00:00Z\" (a club)",
++     "active, past: createClub: the club's server_now is \"2026-11-19T08:24:34Z\", not \"2026-11-08T01:00:00Z\" (a club)",
++     "active, past, a year on: createClub: the club's server_now is \"2026-11-19T08:24:35Z\", not \"2027-11-08T01:00:00Z\" (a club)",
++     "withdrawn, collecting: createClub: the club's server_now is \"2026-11-19T08:24:37Z\", not \"2026-11-07T06:59:59Z\" (a club)",
++     "withdrawn, open: createClub: the club's server_now is \"2026-11-19T08:24:38Z\", not \"2026-11-07T07:00:00Z\" (a club)",
++     "withdrawn, past: createClub: the club's server_now is \"2026-11-19T08:24:39Z\", not \"2026-11-08T01:00:00Z\" (a club)",
++     "withdrawn, past, a year on: createClub: the club's server_now is \"2026-11-19T08:24:40Z\", not \"2027-11-08T01:00:00Z\" (a club)",
++     "removed by moderation, collecting: createClub: the club's server_now is \"2026-11-19T08:24:42Z\", not \"2026-11-07T06:59:59Z\" (a club)",
++     "removed by moderation, open: createClub: the club's server_now is \"2026-11-19T08:24:42Z\", not \"2026-11-07T07:00:00Z\" (a club)",
++     "removed by moderation, past: createClub: the club's server_now is \"2026-11-19T08:24:43Z\", not \"2026-11-08T01:00:00Z\" (a club)",
++     "removed by moderation, past, a year on: createClub: the club's server_now is \"2026-11-19T08:24:44Z\", not \"2027-11-08T01:00:00Z\" (a club)",
++     "held (T29), collecting: createClub: the club's server_now is \"2026-11-19T08:24:46Z\", not \"2026-11-07T06:59:59Z\" (a club)",
++     "held (T29), open: createClub: the club's server_now is \"2026-11-19T08:24:47Z\", not \"2026-11-07T07:00:00Z\" (a club)",
++     "held (T29), past: createClub: the club's server_now is \"2026-11-19T08:24:47Z\", not \"2026-11-08T01:00:00Z\" (a club)",
++     "held (T29), past, a year on: createClub: the club's server_now is \"2026-11-19T08:24:48Z\", not \"2027-11-08T01:00:00Z\" (a club)",
++     "its day suspended, collecting: createClub: the club's server_now is \"2026-11-19T08:24:50Z\", not \"2026-11-07T06:59:59Z\" (a club)",
++     "its day suspended, open: createClub: the club's server_now is \"2026-11-19T08:24:51Z\", not \"2026-11-07T07:00:00Z\" (a club)",
++     "its day suspended, past: createClub: the club's server_now is \"2026-11-19T08:24:52Z\", not \"2026-11-08T01:00:00Z\" (a club)",
++     "its day suspended, past, a year on: createClub: the club's server_now is \"2026-11-19T08:24:52Z\", not \"2027-11-08T01:00:00Z\" (a club)",
++     "its club suspended, collecting: createClub: the club's server_now is \"2026-11-19T08:24:54Z\", not \"2026-11-07T06:59:59Z\" (a club)",
++     "its club suspended, open: createClub: the club's server_now is \"2026-11-19T08:24:55Z\", not \"2026-11-07T07:00:00Z\" (a club)",
++     "its club suspended, past: createClub: the club's server_now is \"2026-11-19T08:24:56Z\", not \"2026-11-08T01:00:00Z\" (a club)",
++     "its club suspended, past, a year on: createClub: the club's server_now is \"2026-11-19T08:24:57Z\", not \"2027-11-08T01:00:00Z\" (a club)",
++     "its day cancelled, collecting: createClub: the club's server_now is \"2026-11-19T08:24:58Z\", not \"2026-11-07T06:59:59Z\" (a club)",
++     "its day cancelled, open: createClub: the club's server_now is \"2026-11-19T08:24:59Z\", not \"2026-11-07T07:00:00Z\" (a club)",
++     "its day cancelled, past: createClub: the club's server_now is \"2026-11-19T08:25:00Z\", not \"2026-11-08T01:00:00Z\" (a club)",
++     "its day cancelled, past, a year on: createClub: the club's server_now is \"2026-11-19T08:25:01Z\", not \"2027-11-08T01:00:00Z\" (a club)",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:808:66
+    806|       }
+    807|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    808|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    809|       // Every cell ran: the contract's 72 requests a world (each oper…
+    810|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

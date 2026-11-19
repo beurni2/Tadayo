@@ -1,0 +1,38 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/services/api
+
+ ❯ src/clubs/club.test.ts (14 tests | 1 failed) 259ms
+   ❯ what createClub refuses before any transaction (3)
+     × names the Idempotency-Key when it is missing or isn't a UUID, whatever else is wrong 125ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 26 passed (27)
+   Start at  08:23:44
+   Duration  840ms (tests 47%, import 41%, transform 12%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/clubs/club.test.ts > what createClub refuses before any transaction > names the Idempotency-Key when it is missing or isn't a UUID, whatever else is wrong
+AssertionError: expected { status: 400, …(2) } to match object { status: 400, …(1) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "body": "{\"code\":\"INVALID_REQUEST\",\"field\":\"Idempotency-Key\"}",
++   "body": "{\"code\":\"INVALID_REQUEST\",\"field\":\"name\"}",
+    "status": 400,
+  }
+
+ ❯ src/clubs/club.test.ts:178:32
+    176|     for (const key of [null, "", "abc", `${KEY}0`, `${KEY}, ${KEY}`]) {
+    177|       const got = await answer(post('{"name":" "}', key));
+    178|       expect(got, String(key)).toMatchObject(invalid("Idempotency-Key"…
+       |                                ^
+    179|       expect(got.headers["cache-control"]).toBe("private, no-store");
+    180|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

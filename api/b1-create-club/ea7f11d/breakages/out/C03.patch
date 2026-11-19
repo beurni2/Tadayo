@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/create-club.ts b/packages/domain/src/clubs/create-club.ts
+index ae682e18..4f3ce168 100644
+--- a/packages/domain/src/clubs/create-club.ts
++++ b/packages/domain/src/clubs/create-club.ts
+@@ -101,7 +101,7 @@ export async function createClub(
+   // 3. The account's row, which a deletion may have changed since the gate read it (T27).
+   const [account] = await bound(tx)`
+     SELECT state, display_name FROM app.users WHERE id = ${userId} FOR NO KEY UPDATE`;
+-  if (account === undefined || account["state"] !== "active") throw new Refused("UNAUTHENTICATED");
++  if (account === undefined) throw new Refused("UNAUTHENTICATED");
+   if (typeof account["display_name"] !== "string") throw new Refused("PROFILE_INCOMPLETE");
+ 
+   // 4. The zone.

@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/clubs/create-club.ts b/packages/domain/src/clubs/create-club.ts
+index ae682e18..45843ae2 100644
+--- a/packages/domain/src/clubs/create-club.ts
++++ b/packages/domain/src/clubs/create-club.ts
+@@ -109,7 +109,6 @@ export async function createClub(
+   try {
+     timezone = clubTimeZone(input.timezone);
+   } catch (error) {
+-    if (error instanceof RangeError) throw new Refused("INVALID_REQUEST", { field: "timezone" });
+     throw error;
+   }
+ 

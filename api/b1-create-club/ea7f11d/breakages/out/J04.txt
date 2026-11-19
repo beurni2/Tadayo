@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/tests
+
+ ❯ src/privacy/club.test.ts (35 tests | 1 failed) 19ms
+   ❯ a club's ClubDetail from the world's rows (getClub) (18)
+     × has room to propose only under six, the candidates still open counted, and names the open revision 7ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 34 passed (35)
+   Start at  08:31:25
+   Duration  496ms (import 71%, transform 19%, tests 9%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/club.test.ts > a club's ClubDetail from the world's rows (getClub) > has room to propose only under six, the candidates still open counted, and names the open revision
+AssertionError: expected { …(4) } to match object { can_propose: false }
+(9 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "can_propose": false,
++   "can_propose": true,
+  }
+
+ ❯ src/privacy/club.test.ts:123:49
+    121|     const detail = (r: ClubRows) => clubFor(world(), r, CLUB, "usr_ana…
+    122|     expect(detail(rows({ openCandidates: 2 }))).toMatchObject({ can_pr…
+    123|     expect(detail(rows({ openCandidates: 3 }))).toMatchObject({ can_pr…
+       |                                                 ^
+    124|     expect(detail(rows({ openRevision: "rev_1" }))).toMatchObject({ op…
+    125|     expect(detail(rows())).not.toHaveProperty("open_revision_id");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

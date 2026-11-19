@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/club.ts b/tests/src/privacy/club.ts
+index ba47c1da..d5e62346 100644
+--- a/tests/src/privacy/club.ts
++++ b/tests/src/privacy/club.ts
+@@ -95,7 +95,7 @@ export function clubFor(
+       name: row.name,
+       timezone: row.timezone,
+       my_membership_id: viewer,
+-      state: !roster.activated ? "proposed" : members < 2 ? "paused" : "active",
++      state: false ? "proposed" : members < 2 ? "paused" : "active",
+       member_count: members,
+       ...(days.open === undefined ? {} : { open_day: days.open }),
+       ...(days.next === undefined ? {} : { next_day: days.next }),

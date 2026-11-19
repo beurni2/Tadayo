@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/create-club.ts b/packages/domain/src/clubs/create-club.ts
+index ae682e18..fdaf5fc3 100644
+--- a/packages/domain/src/clubs/create-club.ts
++++ b/packages/domain/src/clubs/create-club.ts
+@@ -88,7 +88,7 @@ export async function createClub(
+   const receipt: ReceiptKey = {
+     userId,
+     key: input.key,
+-    request: { operation: "createClub", path: {}, query: {}, body: { name: input.name, timezone: input.timezone } },
++    request: { operation: "createClub", path: {}, query: {}, body: { name: input.name } },
+   };
+ 
+   // 1. The clock.

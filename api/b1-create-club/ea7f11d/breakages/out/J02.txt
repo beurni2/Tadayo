@@ -1,0 +1,31 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/tests
+
+ ❯ src/privacy/club.test.ts (35 tests | 1 failed) 34ms
+   ❯ a club's ClubDetail from the world's rows (getClub) (18)
+     × says proposed until the club has started, paused under two active members, and active otherwise (FQ16) 10ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 34 passed (35)
+   Start at  08:31:23
+   Duration  542ms (import 72%, transform 14%, tests 12%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/club.test.ts > a club's ClubDetail from the world's rows (getClub) > says proposed until the club has started, paused under two active members, and active otherwise (FQ16)
+AssertionError: expected 'active' to be 'proposed' // Object.is equality
+
+Expected: "proposed"
+Received: "active"
+
+ ❯ src/privacy/club.test.ts:108:56
+    106|     const state = (w: ScheduleWorld, r: ClubRows) =>
+    107|       (clubFor(w, r, CLUB, "usr_ana", NOW, NO_DAYS)?.["club"] as Recor…
+    108|     expect(state(world(), rows({ activated: false }))).toBe("proposed"…
+       |                                                        ^
+    109|     expect(state(world(), rows())).toBe("active");
+    110|     const two = world();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

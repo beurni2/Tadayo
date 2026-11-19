@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/tests
+
+ ❯ src/db/create-club.test.ts (24 tests | 1 failed) 841ms
+   ❯ making a club (spec 04, G01-create) (6)
+     × makes a proposed club of one, its creator, at the server clock's sample, and answers it as its creator reads it (T1, T7) 58ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 23 passed (24)
+   Start at  08:23:28
+   Duration  1.44s (tests 71%, import 21%, transform 8%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-club.test.ts > making a club (spec 04, G01-create) > makes a proposed club of one, its creator, at the server clock's sample, and answers it as its creator reads it (T1, T7)
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/db/create-club.test.ts:140:51
+    138|         state: "active",
+    139|       });
+    140|       expect(members[0]?.joined_at.equals(FIRST)).toBe(true);
+       |                                                   ^
+    141|       // Nobody is proposed, and no week is opened, by making a club.
+    142|       const [others] = await tx<{ n: number }[]>`
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:89:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

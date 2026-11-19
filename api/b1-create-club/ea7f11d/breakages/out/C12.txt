@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/tests
+
+ ❯ src/db/create-club.test.ts (24 tests | 1 failed) 895ms
+   ❯ one club per key (T19) (6)
+     × refuses another name or another zone under a used key, and makes nothing 13ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 23 passed (24)
+   Start at  08:23:34
+   Duration  1.58s (tests 70%, import 23%, transform 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-club.test.ts > one club per key (T19) > refuses another name or another zone under a used key, and makes nothing
+Error: the request wasn't refused
+ ❯ refusal src/db/create-club.test.ts:68:9
+     66|     throw error;
+     67|   }
+     68|   throw new Error("the request wasn't refused");
+       |         ^
+     69| }
+     70|
+ ❯ src/db/create-club.test.ts:283:16
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:278:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

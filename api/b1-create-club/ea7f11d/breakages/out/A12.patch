@@ -1,0 +1,16 @@
+diff --git a/services/api/src/clubs/club.ts b/services/api/src/clubs/club.ts
+index 041b835d..0af295fa 100644
+--- a/services/api/src/clubs/club.ts
++++ b/services/api/src/clubs/club.ts
+@@ -88,11 +88,6 @@ export function createClubHandler(deps: Deps): Handler {
+     if (typeof key !== "string" || !IDEMPOTENCY_KEY.test(key)) {
+       return problem(reply, "INVALID_REQUEST", { field: "Idempotency-Key" });
+     }
+-    const parsed = CreateClubRequest.safeParse(request.body);
+-    if (!parsed.success) {
+-      const field = firstBadField(parsed.error.issues);
+-      return problem(reply, "INVALID_REQUEST", field === undefined ? {} : { field });
+-    }
+     const input: CreateClubInput = {
+       userId: account.id,
+       key,

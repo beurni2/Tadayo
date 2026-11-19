@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/tests
+
+ ❯ src/privacy/club.test.ts (35 tests | 1 failed) 24ms
+   ❯ the table of createClub bodies (createClubCases) (5)
+     × sends what the contract refuses first, then one club, its retry under the same key and another body under it 7ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 34 passed (35)
+   Start at  08:31:34
+   Duration  542ms (import 68%, transform 21%, tests 10%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/club.test.ts > the table of createClub bodies (createClubCases) > sends what the contract refuses first, then one club, its retry under the same key and another body under it
+AssertionError: expected 2 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 2
+
+ ❯ src/privacy/club.test.ts:248:63
+    246|     expect(retry?.expected).toBe("replay");
+    247|     expect(retry?.body).toBe(club?.body);
+    248|     expect(new Set([club?.key, retry?.key, other?.key]).size).toBe(1);
+       |                                                               ^
+    249|     expect(other?.body).not.toBe(club?.body);
+    250|     // Every refused body has a key of its own, so none meets the club…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

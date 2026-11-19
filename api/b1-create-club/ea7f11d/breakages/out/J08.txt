@@ -1,0 +1,74 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/tests
+
+ ❯ src/privacy/club.test.ts (35 tests | 2 failed) 25ms
+   ❯ a club's ClubDetail from the world's rows (getClub) (18)
+     × is nothing for a stranger, a caller with no account, a former member, a deleting account, a suspended club and a club with no rows 6ms
+     × holds anyone the club isn't for to the neutral not-found, byte for byte 2ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 33 passed (35)
+   Start at  08:31:29
+   Duration  539ms (import 73%, transform 15%, tests 11%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/club.test.ts > a club's ClubDetail from the world's rows (getClub) > is nothing for a stranger, a caller with no account, a former member, a deleting account, a suspended club and a club with no rows
+AssertionError: expected { …(4) } to be undefined
+
+- Expected:
+undefined
+
++ Received:
+{
+  "can_propose": true,
+  "club": {
+    "id": "clb_here",
+    "member_count": 3,
+    "my_membership_id": undefined,
+    "name": "The Saturdays",
+    "next_day": {
+      "id": "occ_next",
+      "star": {
+        "membership_id": "itv_cleo",
+      },
+    },
+    "state": "active",
+    "timezone": "America/New_York",
+  },
+  "roster_version": 5,
+  "server_now": "2026-11-06T14:41:00Z",
+}
+
+ ❯ src/privacy/club.test.ts:130:66
+    128|
+    129|   it("is nothing for a stranger, a caller with no account, a former me…
+    130|     expect(clubFor(world(), rows(), CLUB, "usr_zed", NOW, DAYS)).toBeU…
+       |                                                                  ^
+    131|     expect(clubFor(world(), rows(), CLUB, null, NOW, DAYS)).toBeUndefi…
+    132|     expect(clubFor(world(), rows(), "clb_other", "usr_ben", NOW, DAYS)…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/club.test.ts > a club's ClubDetail from the world's rows (getClub) > holds anyone the club isn't for to the neutral not-found, byte for byte
+AssertionError: expected [ 'status 404, not 200 with the club' ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "status 404, not 200 with the club",
++ ]
+
+ ❯ src/privacy/club.test.ts:172:30
+    170|   it("holds anyone the club isn't for to the neutral not-found, byte f…
+    171|     const judge = judging(clubExpected(seen(world(), "usr_zed"), CLUB)…
+    172|     expect(judge(NOT_FOUND)).toEqual([]);
+       |                              ^
+    173|     expect(judging(clubExpected(seen(world(), null), CLUB))(NOT_FOUND)…
+    174|     expect(judge(ok(want))).not.toEqual([]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

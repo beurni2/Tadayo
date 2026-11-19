@@ -1,0 +1,13 @@
+diff --git a/services/api/src/clubs/club.ts b/services/api/src/clubs/club.ts
+index 041b835d..10a69b43 100644
+--- a/services/api/src/clubs/club.ts
++++ b/services/api/src/clubs/club.ts
+@@ -101,7 +101,7 @@ export function createClubHandler(deps: Deps): Handler {
+     };
+     let made: CreatedClub;
+     try {
+-      made = await deps.sql.begin((tx) => createClub(tx, deps.clock, input, clubDetailBody));
++      made = await deps.sql.begin((tx) => createClub(tx, deps.clock, input, (d) => withServerNow(Temporal.Now.instant(), clubDetailBody(d))));
+     } catch (error) {
+       if (error instanceof Refused) return refusal(reply, error);
+       throw error;

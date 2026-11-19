@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/services/api
+
+ ❯ src/clubs/club.test.ts (14 tests | 1 failed) 201ms
+   ❯ what createClub answers (3)
+     × answers a refusal as the contract's error, with nothing of the request in it 19ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 26 passed (27)
+   Start at  08:23:53
+   Duration  888ms (tests 45%, import 44%, transform 11%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/clubs/club.test.ts > what createClub answers > answers a refusal as the contract's error, with nothing of the request in it
+AssertionError: IDEMPOTENCY_CONFLICT: expected { status: 500, body: '', …(1) } to match object { status: 409, …(1) }
+(3 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "body": "{\"code\":\"IDEMPOTENCY_CONFLICT\"}",
+-   "status": 409,
++   "body": "",
++   "status": 500,
+  }
+
+ ❯ src/clubs/club.test.ts:291:46
+    289|     ] as const) {
+    290|       const answer = await appFor(() => Promise.reject(new Refused(cod…
+    291|       expect(await answer(post(GOOD)), code).toMatchObject({ status, b…
+       |                                              ^
+    292|     }
+    293|     const answer = await appFor(() => Promise.reject(new Refused("INVA…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

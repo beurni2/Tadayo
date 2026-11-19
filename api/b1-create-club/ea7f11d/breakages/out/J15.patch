@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/club.ts b/tests/src/privacy/club.ts
+index ba47c1da..49ca1694 100644
+--- a/tests/src/privacy/club.ts
++++ b/tests/src/privacy/club.ts
+@@ -222,7 +222,7 @@ export function createClubCases(clubName: string): CreateClubCase[] {
+     // body is refused before it is read: no field, the connection closed.
+     {
+       name: "a body past the limit",
+-      body: JSON.stringify({ name: "a".repeat(17 * 1024), timezone: "America/New_York" }),
++      body: JSON.stringify({ name: "a".repeat(64), timezone: "America/New_York" }),
+       key: fresh(),
+       expected: unread(),
+     },

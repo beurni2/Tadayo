@@ -1,0 +1,30 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/tests
+
+ ❯ src/privacy/club.test.ts (35 tests | 1 failed) 26ms
+   ❯ a new club's answer (createClub) (12)
+     × refuses two members 6ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 34 passed (35)
+   Start at  08:31:32
+   Duration  537ms (import 70%, transform 17%, tests 11%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/club.test.ts > a new club's answer (createClub) > refuses two members
+AssertionError: expected [] to not deeply equal []
+
+Compared values have no visual difference.
+
+ ❯ src/privacy/club.test.ts:223:55
+    221|     ["no club at all", { server_now: fresh.server_now }],
+    222|   ])("refuses %s", (_what, body) => {
+    223|     expect(newClubProblems(made(body), "Made 0")).not.toEqual([]);
+       |                                                       ^
+    224|   });
+    225| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

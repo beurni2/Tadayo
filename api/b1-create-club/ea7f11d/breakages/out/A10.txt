@@ -1,0 +1,138 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/services/api
+
+ ❯ src/clubs/club.test.ts (14 tests | 4 failed) 255ms
+   ❯ the club's serializer against the contract's examples (T55) (7)
+     × makes sunday_people field for field 13ms
+     × makes kitchen_table field for field 2ms
+     × makes created field for field 2ms
+     × sends no day and no open revision where there is none, and nothing else of a club 3ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  4 failed | 23 passed (27)
+   Start at  08:23:54
+   Duration  782ms (tests 47%, import 39%, transform 13%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/clubs/club.test.ts > the club's serializer against the contract's examples (T55) > makes sunday_people field for field
+AssertionError: expected { …(4) } to deeply equal { …(4) }
+
+- Expected
++ Received
+
+@@ -1,11 +1,11 @@
+  {
+    "can_propose": false,
+    "club": {
+      "id": "club_sunday_people",
+      "member_count": 6,
+-     "my_membership_id": "mem_sp_ben",
++     "my_membership_id": "club_sunday_people",
+      "name": "Sunday people",
+      "next_day": {
+        "close_at": "2026-11-08T06:00:00Z",
+        "club_id": "club_sunday_people",
+        "id": "occ_sp_nina_2026_11_07",
+
+ ❯ src/clubs/club.test.ts:73:18
+     71|     const value = example.value as Body;
+     72|     const made = withServerNow(Temporal.Instant.from(value["server_now…
+     73|     expect(made).toEqual(value);
+       |                  ^
+     74|     expect(ClubDetailSchema.strict().safeParse(made).success).toBe(tru…
+     75|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/clubs/club.test.ts > the club's serializer against the contract's examples (T55) > makes kitchen_table field for field
+AssertionError: expected { …(5) } to deeply equal { …(5) }
+
+- Expected
++ Received
+
+@@ -1,11 +1,11 @@
+  {
+    "can_propose": false,
+    "club": {
+      "id": "club_kitchen_table",
+      "member_count": 5,
+-     "my_membership_id": "mem_kt_ben",
++     "my_membership_id": "club_kitchen_table",
+      "name": "Kitchen table",
+      "next_day": {
+        "close_at": "2026-11-08T06:00:00Z",
+        "club_id": "club_kitchen_table",
+        "id": "occ_kt_maya_2026_11_07",
+
+ ❯ src/clubs/club.test.ts:73:18
+     71|     const value = example.value as Body;
+     72|     const made = withServerNow(Temporal.Instant.from(value["server_now…
+     73|     expect(made).toEqual(value);
+       |                  ^
+     74|     expect(ClubDetailSchema.strict().safeParse(made).success).toBe(tru…
+     75|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/clubs/club.test.ts > the club's serializer against the contract's examples (T55) > makes created field for field
+AssertionError: expected { …(4) } to deeply equal { …(4) }
+
+- Expected
++ Received
+
+@@ -1,11 +1,11 @@
+  {
+    "can_propose": true,
+    "club": {
+      "id": "club_sunday_people",
+      "member_count": 1,
+-     "my_membership_id": "mem_sp_ben",
++     "my_membership_id": "club_sunday_people",
+      "name": "Sunday people",
+      "state": "proposed",
+      "timezone": "America/New_York",
+    },
+    "roster_version": 0,
+
+ ❯ src/clubs/club.test.ts:73:18
+     71|     const value = example.value as Body;
+     72|     const made = withServerNow(Temporal.Instant.from(value["server_now…
+     73|     expect(made).toEqual(value);
+       |                  ^
+     74|     expect(ClubDetailSchema.strict().safeParse(made).success).toBe(tru…
+     75|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/clubs/club.test.ts > the club's serializer against the contract's examples (T55) > sends no day and no open revision where there is none, and nothing else of a club
+AssertionError: expected { club: { id: 'club_1', …(5) }, …(2) } to deeply equal { club: { id: 'club_1', …(5) }, …(2) }
+
+- Expected
++ Received
+
+@@ -1,11 +1,11 @@
+  {
+    "can_propose": true,
+    "club": {
+      "id": "club_1",
+      "member_count": 1,
+-     "my_membership_id": "mem_1",
++     "my_membership_id": "club_1",
+      "name": "Sunday people",
+      "state": "proposed",
+      "timezone": "America/New_York",
+    },
+    "roster_version": 0,
+
+ ❯ src/clubs/club.test.ts:101:18
+     99|       openRevisionId: null,
+    100|     });
+    101|     expect(made).toEqual({
+       |                  ^
+    102|       club: {
+    103|         id: "club_1",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+

@@ -1,0 +1,152 @@
+== R01 anyone who ever had a membership reads the club [db]: CAUGHT; exit 1 ['Tests  2 failed | 19 passed (21)']
+    × gives nothing of a suspended club, to its members too (FQ80) 46ms
+    × gives nothing to a stranger, a former member, someone invited, an account being deleted, or for an id nobody has (T14) 60ms
+== R02 the members' number counts those who left [db]: CAUGHT; exit 1 ['Tests  1 failed | 20 passed (21)']
+    × says paused under two active members, and counts only the active ones (FQ16) 48ms
+== R03 a candidate no longer open still takes a place [db]: CAUGHT; exit 1 ['Tests  1 failed | 20 passed (21)']
+    × names the open roster revision, and counts its open candidate towards six, never who accepted (A01, T33) 84ms
+== R04 a seventh person can be proposed [db]: CAUGHT; exit 1 ['Tests  1 failed | 20 passed (21)']
+    × names the open roster revision, and counts its open candidate towards six, never who accepted (A01, T33) 88ms
+== R05 open candidates take no place [db]: CAUGHT; exit 1 ['Tests  1 failed | 20 passed (21)']
+    × names the open roster revision, and counts its open candidate towards six, never who accepted (A01, T33) 69ms
+== R06 a club of seven [db]: CAUGHT; exit 1 ['Tests  1 failed | 20 passed (21)']
+    × names the open roster revision, and counts its open candidate towards six, never who accepted (A01, T33) 79ms
+== R07 a closed revision named as open [db]: CAUGHT; exit 1 ['Tests  2 failed | 19 passed (21)']
+    × gives a member the club, its state, its members counted, its next day, the roster's version and room to propose 62ms
+    × names the open roster revision, and counts its open candidate towards six, never who accepted (A01, T33) 47ms
+== R08 any club of the caller's answers for any id [db]: CAUGHT; exit 1 ['Tests  2 failed | 19 passed (21)']
+    × gives nothing to a stranger, a former member, someone invited, an account being deleted, or for an id nobody has (T14) 62ms
+    × makes a club for each key, two of one name included: nothing is unique about a club but its id 18ms
+== R09 the days read at the database's now, not the instant asked [db]: CAUGHT; exit 1 ['Tests  16 failed | 5 passed (21)']
+    × answers a retry with the first answer though the club has changed since 6ms
+    × answers a retry with the first club, as it was answered, makes no second, and gives the clock's sample of the retry (T1) 6ms
+    × gives a member the club, its state, its members counted, its next day, the roster's version and room to propose 42ms
+    × gives nothing of a suspended club, to its members too (FQ80) 30ms
+    × gives nothing to a stranger, a former member, someone invited, an account being deleted, or for an id nobody has (T14) 33ms
+    × gives the open day while it is open, at the instant asked (T1, T5) 40ms
+== R10 the roster's version always 0 [db]: CAUGHT; exit 1 ['Tests  1 failed | 20 passed (21)']
+    × gives a member the club, its state, its members counted, its next day, the roster's version and room to propose 41ms
+== C01 a retry makes a second club [db]: CAUGHT; exit 1 ['Tests  3 failed | 18 passed (21)']
+    × answers a retry with the first answer though the club has changed since 20ms
+    × answers a retry with the first club, as it was answered, makes no second, and gives the clock's sample of the retry (T1) 20ms
+    × makes one club when the same request arrives eight times at once, and answers each alike 72ms
+== C02 a retry answered with the club as it is now [db]: CAUGHT; exit 1 ['Tests  2 failed | 19 passed (21)']
+    × answers a retry with the first answer though the club has changed since 13ms
+    × answers a retry with the first club, as it was answered, makes no second, and gives the clock's sample of the retry (T1) 17ms
+== C03 an account being deleted makes a club [db]: CAUGHT; exit 1 ['Tests  2 failed | 19 passed (21)']
+    × refuses an account whose deletion has begun since the gate read it, as no session, and leaves nothing 20ms
+    × waits for a deletion that holds the account's row, and is refused once it commits, with no club and no receipt (T27) 320ms
+== C04 an account with no name makes a club [db]: CAUGHT; exit 1 ['Tests  1 failed | 20 passed (21)']
+    × refuses an account with no name yet, as the gate does 22ms
+== C05 the account's row read without its lock [db]: CAUGHT; exit 1 ['Tests  1 failed | 20 passed (21)']
+    × waits for a deletion that holds the account's row, and is refused once it commits, with no club and no receipt (T27) 25ms
+== C06 the zone stored as it was sent [db]: CAUGHT; exit 1 ['Tests  1 failed | 20 passed (21)']
+    × stores the zone in the server's one spelling, whatever case it came in (T2, FQ19) 17ms
+== C07 a zone the server can't resolve is a failure, not a refusal [db]: CAUGHT; exit 1 ['Tests  1 failed | 20 passed (21)']
+    × refuses a zone the server can't resolve that reaches the command, naming the field, and leaves nothing 15ms
+== C08 the receipt stored as a 200 [db]: CAUGHT; exit 1 ['Tests  1 failed | 20 passed (21)']
+    × keeps the receipt with the club: completed, 201, at the same sample, and without the server's instant (T19) 16ms
+== C09 the membership dated by the database, not the clock's sample [db]: CAUGHT; exit 1 ['Tests  1 failed | 20 passed (21)']
+    × makes a proposed club of one, its creator, at the server clock's sample, and answers it as its creator reads it (T1, T7) 53ms
+== C10 the club dated by the database, not the clock's sample [db]: CAUGHT; exit 1 ['Tests  1 failed | 20 passed (21)']
+    × makes a proposed club of one, its creator, at the server clock's sample, and answers it as its creator reads it (T1, T7) 81ms
+== C11 another zone under a used key is the same request [db]: CAUGHT; exit 1 ['Tests  1 failed | 20 passed (21)']
+    × refuses another name or another zone under a used key, and makes nothing 13ms
+== C12 another name under a used key is the same request [db]: CAUGHT; exit 1 ['Tests  1 failed | 20 passed (21)']
+    × refuses another name or another zone under a used key, and makes nothing 9ms
+== C13 the receipt reserved after the club is made [db]: CAUGHT; exit 1 ['Tests  10 failed | 11 passed (21)']
+    × answers a retry with the first answer though the club has changed since 7ms
+    × answers a retry with the first club, as it was answered, makes no second, and gives the clock's sample of the retry (T1) 12ms
+    × keeps a key the caller's own: the same key from another account makes that account's club 8ms
+    × keeps the receipt with the club: completed, 201, at the same sample, and without the server's instant (T19) 9ms
+    × lists the new club for its creator, proposed, and reads it as it was answered 9ms
+    × makes a club for each key, two of one name included: nothing is unique about a club but its id 8ms
+== A01 the answer without the server's instant [api]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × answers 201 with the club and the clock's sample of this request, for the caller alone (T1) 18ms
+== A02 a new club answered 200 [api]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × answers 201 with the club and the clock's sample of this request, for the caller alone (T1) 28ms
+== A03 any Idempotency-Key taken [api]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × names the Idempotency-Key when it is missing or isn't a UUID, whatever else is wrong 110ms
+== A04 an unknown key of the body named back [api]: NOT CAUGHT; exit 0 ['Tests  27 passed (27)']
+== A05 a club nobody may read answered 200 [api]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × answers the neutral not-found when the read finds nothing, and never a 200 with an empty body (T14) 17ms
+== A06 a field beyond the contract's [api]: CAUGHT; exit 1 ['Tests  5 failed | 22 passed (27)']
+    × makes created field for field 2ms
+    × makes kitchen_table field for field 2ms
+    × makes sunday_people field for field 13ms
+    × sends no day and no open revision where there is none, and nothing else of a club 2ms
+    × sends the server's instant in whole seconds, rounded down, and keeps it out of what a receipt stores 2ms
+== A07 a day sent as null where there is none [api]: CAUGHT; exit 1 ['Tests  3 failed | 24 passed (27)']
+    × makes created field for field 1ms
+    × makes kitchen_table field for field 8ms
+    × sends no day and no open revision where there is none, and nothing else of a club 1ms
+== A08 the instant with its fraction [api]: CAUGHT; exit 1 ['Tests  2 failed | 25 passed (27)']
+    × answers 201 with the club and the clock's sample of this request, for the caller alone (T1) 16ms
+    × sends the server's instant in whole seconds, rounded down, and keeps it out of what a receipt stores 5ms
+== A09 a refusal becomes a failure [api]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × answers a refusal as the contract's error, with nothing of the request in it 14ms
+== A10 the caller's membership id is the club's id [api]: CAUGHT; exit 1 ['Tests  4 failed | 23 passed (27)']
+    × makes created field for field 1ms
+    × makes kitchen_table field for field 2ms
+    × makes sunday_people field for field 8ms
+    × sends no day and no open revision where there is none, and nothing else of a club 1ms
+== A11 the receipt keeps the server's instant [matrix]: CAUGHT; exit 1 ['Tests  2 failed | 12 skipped (14)']
+    × answers the former member as its account and its row say, and leaks nothing the scanner can find 35868ms
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 32516ms
+== A12 the body read before the key [api]: CAUGHT; exit 1 ['Tests  4 failed | 23 passed (27)']
+    × answers 201 with the club and the clock's sample of this request, for the caller alone (T1) 12ms
+    × answers a refusal as the contract's error, with nothing of the request in it 13ms
+    × names the first bad field in the contract's order, never a value, and reads no database for it 24ms
+    × refuses a body past the app's limit unread, and takes the largest name the contract allows 13ms
+== X01 a former member reads the club [matrix]: CAUGHT; exit 1 ['Tests  2 failed | 12 skipped (14)']
+    × answers the former member as its account and its row say, and leaks nothing the scanner can find 28238ms
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 30205ms
+== X02 a field beyond the contract's, in the matrix [matrix]: CAUGHT; exit 1 ['Tests  2 failed | 12 skipped (14)']
+    × answers the former member as its account and its row say, and leaks nothing the scanner can find 30125ms
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 31017ms
+== X03 a retry makes a second club, in the matrix [matrix]: CAUGHT; exit 1 ['Tests  2 failed | 12 skipped (14)']
+    × answers the former member as its account and its row say, and leaks nothing the scanner can find 30327ms
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 32233ms
+== X04 a new club answered 200, in the matrix [matrix]: CAUGHT; exit 1 ['Tests  2 failed | 12 skipped (14)']
+    × answers the former member as its account and its row say, and leaks nothing the scanner can find 30327ms
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 31676ms
+== X05 the zone stored as it was sent, in the matrix [matrix]: CAUGHT; exit 1 ['Tests  2 failed | 12 skipped (14)']
+    × answers the former member as its account and its row say, and leaks nothing the scanner can find 39710ms
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 30612ms
+== X06 a suspended club's members read it [db]: NOT CAUGHT; exit 0 ['Tests  21 passed (21)']
+== J01 paused only with nobody [judge]: CAUGHT; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × says proposed until the club has started, paused under two active members, and active otherwise (FQ16) 8ms
+== J02 a started club never proposed [judge]: CAUGHT; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × says proposed until the club has started, paused under two active members, and active otherwise (FQ16) 7ms
+== J03 room for a seventh [judge]: CAUGHT; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × has room to propose only under six, the candidates still open counted, and names the open revision 8ms
+== J04 open candidates not counted [judge]: CAUGHT; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × has room to propose only under six, the candidates still open counted, and names the open revision 7ms
+== J05 any Cache-Control accepted [judge]: CAUGHT; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × accepts the right answer whatever the order of its keys, and only with private, no-store 6ms
+== J06 any status accepted [judge]: CAUGHT; exit 1 ['Tests  2 failed | 33 passed (35)']
+    × accepts the right answer whatever the order of its keys, and only with private, no-store 6ms
+    × holds a 201 to the club's rows, value for value, and refuses a 200 with the same body 1ms
+== J07 anything accepted for someone the club isn't for [judge]: CAUGHT; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × holds anyone the club isn't for to the neutral not-found, byte for byte 7ms
+== J08 the club expected for anyone [judge]: CAUGHT; exit 1 ['Tests  2 failed | 33 passed (35)']
+    × holds anyone the club isn't for to the neutral not-found, byte for byte 2ms
+    × is nothing for a stranger, a caller with no account, a former member, a deleting account, a suspended club and a club with no rows 9ms
+== J09 a club's id read from any answer [judge]: CAUGHT; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × reads the new club's id from a 201 and from nothing else 5ms
+== J10 a new club with any number of members [judge]: CAUGHT BY ANOTHER TEST; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × refuses two members 5ms
+== J11 createClub not judged [judge]: CAUGHT; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × judges getClub and createClub and nothing else 6ms
+== J12 the retry under a key of its own [judge]: CAUGHT; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × sends what the contract refuses first, then one club, its retry under the same key and another body under it 8ms
+== J13 the instant rounded up [judge]: CAUGHT; exit 1 ['Tests  3 failed | 32 passed (35)']
+    × accepts the right answer whatever the order of its keys, and only with private, no-store 2ms
+    × is the club for each member, with the viewer's own interval and the instant rounded down 13ms
+    × refuses a wrong instant 1ms
+== J14 the open revision never expected [judge]: CAUGHT; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × has room to propose only under six, the candidates still open counted, and names the open revision 11ms
+== J15 the body past the limit is under it [judge]: CAUGHT; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × pins each refusal byte for byte, the unread body with its connection closed 5ms
+restored: ' M tests/src/db/create-club.test.ts\n'
+finished

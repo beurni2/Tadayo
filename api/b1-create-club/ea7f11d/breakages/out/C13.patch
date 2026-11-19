@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/create-club.ts b/packages/domain/src/clubs/create-club.ts
+index ae682e18..62ffccc7 100644
+--- a/packages/domain/src/clubs/create-club.ts
++++ b/packages/domain/src/clubs/create-club.ts
+@@ -95,8 +95,6 @@ export async function createClub(
+   const at = await clock.sample(tx);
+ 
+   // 2. The receipt.
+-  const first = await reserveReceipt(tx, receipt, at);
+-  if (first !== null) return { answer: first.replay, at };
+ 
+   // 3. The account's row, which a deletion may have changed since the gate read it (T27).
+   const [account] = await bound(tx)`

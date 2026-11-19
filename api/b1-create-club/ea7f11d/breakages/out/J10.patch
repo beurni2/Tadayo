@@ -1,0 +1,12 @@
+diff --git a/tests/src/privacy/club.ts b/tests/src/privacy/club.ts
+index ba47c1da..ff4b802e 100644
+--- a/tests/src/privacy/club.ts
++++ b/tests/src/privacy/club.ts
+@@ -249,7 +249,6 @@ export function newClubProblems(answer: Answer, clubName: string): string[] {
+     ["name", club.name, clubName],
+     ["timezone", club.timezone, "America/New_York"],
+     ["state", club.state, "proposed"],
+-    ["member_count", club.member_count, 1],
+     ["roster_version", body.roster_version, 0],
+     ["can_propose", body.can_propose, true],
+     ["open_revision_id", body.open_revision_id, undefined],

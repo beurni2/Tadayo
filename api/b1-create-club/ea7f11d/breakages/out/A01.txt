@@ -1,0 +1,40 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/services/api
+
+ ❯ src/clubs/club.test.ts (14 tests | 1 failed) 259ms
+   ❯ what createClub answers (3)
+     × answers 201 with the club and the clock's sample of this request, for the caller alone (T1) 24ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 26 passed (27)
+   Start at  08:23:41
+   Duration  877ms (tests 46%, import 41%, transform 12%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/clubs/club.test.ts > what createClub answers > answers 201 with the club and the clock's sample of this request, for the caller alone (T1)
+AssertionError: expected { club: { id: 'club_1', …(5) }, …(2) } to deeply equal { …(4) }
+
+- Expected
++ Received
+
+@@ -7,7 +7,6 @@
+      "name": "Sunday people",
+      "state": "proposed",
+      "timezone": "America/New_York",
+    },
+    "roster_version": 0,
+-   "server_now": "2026-11-06T14:41:00Z",
+  }
+
+ ❯ src/clubs/club.test.ts:276:34
+    274|     const got = await answer(post(GOOD));
+    275|     expect(got.status).toBe(201);
+    276|     expect(JSON.parse(got.body)).toEqual({ server_now: "2026-11-06T14:…
+       |                                  ^
+    277|     expect(ClubDetailSchema.strict().safeParse(JSON.parse(got.body)).s…
+    278|     expect(got.headers).toMatchObject({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

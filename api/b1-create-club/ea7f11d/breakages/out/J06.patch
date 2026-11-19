@@ -1,0 +1,12 @@
+diff --git a/tests/src/privacy/club.ts b/tests/src/privacy/club.ts
+index ba47c1da..c8a9ee68 100644
+--- a/tests/src/privacy/club.ts
++++ b/tests/src/privacy/club.ts
+@@ -117,7 +117,6 @@ function parsed(answer: Answer): unknown {
+ /** An answer of `status` whose body is `want`, value for value; each field that differs is named. */
+ export function sameDetail(status: 200 | 201, want: Record<string, unknown>): (answer: Answer) => string[] {
+   return (answer) => {
+-    if (answer.status !== status) return [`status ${String(answer.status)}, not ${String(status)} with the club`];
+     if (answer.headers["cache-control"] !== "private, no-store") return ["the club without private, no-store"];
+     const body = parsed(answer);
+     if (!isObject(body)) return ["not the club's ClubDetail"];

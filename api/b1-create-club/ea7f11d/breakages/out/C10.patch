@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/create-club.ts b/packages/domain/src/clubs/create-club.ts
+index ae682e18..81c41d6f 100644
+--- a/packages/domain/src/clubs/create-club.ts
++++ b/packages/domain/src/clubs/create-club.ts
+@@ -118,7 +118,7 @@ export async function createClub(
+   const intervalId = newId("mem");
+   await bound(tx)`
+     INSERT INTO app.clubs (id, name, timezone, creator_interval_id, created_at)
+-    VALUES (${clubId}, ${input.name}, ${timezone}, ${intervalId}, ${at}::pg_catalog.timestamptz)`;
++    VALUES (${clubId}, ${input.name}, ${timezone}, ${intervalId}, pg_catalog.clock_timestamp())`;
+   await bound(tx)`
+     INSERT INTO app.memberships (interval_id, club_id, user_id, origin, joined_at)
+     VALUES (${intervalId}, ${clubId}, ${userId}, 'creator', ${at}::pg_catalog.timestamptz)`;

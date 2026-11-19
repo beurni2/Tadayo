@@ -1,0 +1,150 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+star: 2016 cells run, 35497 answers scanned
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the former member as its account and its row say, and leaks nothing the scanner can find
+former member: 2016 cells run, 35497 answers scanned
+
+ ❯ src/privacy/matrix.test.ts (14 tests | 2 failed | 12 skipped) 61461ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (12)
+     × answers the star as its account and its row say, and leaks nothing the scanner can find 31249ms
+     × answers the former member as its account and its row say, and leaks nothing the scanner can find 30008ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 12 skipped (14)
+   Start at  08:27:10
+   Duration  62.32s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 344, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 344,
++   "first": [
++     "active, collecting: getClub: the club's suspended is false, not undefined",
++     "active, collecting, getClub: shape at $.suspended: a key the contract doesn't name",
++     "active, collecting: getClub, manipulated {\"query\":{\"now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: the club's suspended is false, not undefined",
++     "active, collecting: getClub, manipulated {\"query\":{\"at\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: the club's suspended is false, not undefined",
++     "active, collecting: getClub, manipulated {\"query\":{\"as_of\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: the club's suspended is false, not undefined",
++     "active, collecting: getClub, manipulated {\"query\":{\"server_now\":\"2026-11-08T06:59:59Z\"},\"headers\":{}}: the club's suspended is false, not undefined",
++     "active, collecting: getClub, manipulated {\"query\":{\"reveal\":\"true\"},\"headers\":{}}: the club's suspended is false, not undefined",
++     "active, collecting: getClub, manipulated {\"query\":{\"preview\":\"true\"},\"headers\":{}}: the club's suspended is false, not undefined",
++     "active, collecting: getClub, manipulated {\"query\":{\"rendition\":\"full\"},\"headers\":{}}: the club's suspended is false, not undefined",
++     "active, collecting: getClub, manipulated {\"query\":{\"include\":\"media\"},\"headers\":{}}: the club's suspended is false, not undefined",
++     "active, collecting: getClub, manipulated {\"query\":{\"viewer\":\"mem_lEq-4EDDWIzTIJXjlf48DA\"},\"headers\":{}}: the club's suspended is false, not undefined",
++     "active, collecting: getClub, manipulated {\"query\":{},\"headers\":{\"date\":\"Sun, 08 Nov 2026 06:59:59 GMT\"}}: the club's suspended is false, not undefined",
++     "active, collecting: getClub, manipulated {\"query\":{},\"headers\":{\"x-client-time\":\"2026-11-08T06:59:59Z\"}}: the club's suspended is false, not undefined",
++     "active, collecting: getClub, manipulated {\"query\":{},\"headers\":{\"if-none-match\":\"*\"}}: the club's suspended is false, not undefined",
++     "active, collecting: getClub, manipulated {\"query\":{},\"headers\":{\"range\":\"bytes=0-0\"}}: the club's suspended is false, not undefined",
++     "active, collecting, getClub: shape at $.suspended: a key the contract doesn't name",
++     "active, collecting, getClub: shape at $.suspended: a key the contract doesn't name",
++     "active, collecting, getClub: shape at $.suspended: a key the contract doesn't name",
++     "active, collecting, getClub: shape at $.suspended: a key the contract doesn't name",
++     "active, collecting, getClub: shape at $.suspended: a key the contract doesn't name",
++     "active, collecting, getClub: shape at $.suspended: a key the contract doesn't name",
++     "active, collecting, getClub: shape at $.suspended: a key the contract doesn't name",
++     "active, collecting, getClub: shape at $.suspended: a key the contract doesn't name",
++     "active, collecting, getClub: shape at $.suspended: a key the contract doesn't name",
++     "active, collecting, getClub: shape at $.suspended: a key the contract doesn't name",
++     "active, collecting, getClub: shape at $.suspended: a key the contract doesn't name",
++     "active, collecting, getClub: shape at $.suspended: a key the contract doesn't name",
++     "active, collecting, getClub: shape at $.suspended: a key the contract doesn't name",
++     "active, collecting: createClub: the club's suspended is false, not undefined (a club)",
++     "active, collecting, createClub: shape at $.suspended: a key the contract doesn't name",
++     "active, collecting: getClub: the club's suspended is false, not undefined",
++     "active, collecting, getClub: shape at $.suspended: a key the contract doesn't name",
++     "active, collecting, createClub: shape at $.suspended: a key the contract doesn't name",
++     "active, open: getClub: the club's suspended is false, not undefined",
++     "active, open, getClub: shape at $.suspended: a key the contract doesn't name",
++     "active, open: createClub: the club's suspended is false, not undefined (a club)",
++     "active, open, createClub: shape at $.suspended: a key the contract doesn't name",
++     "active, open: getClub: the club's suspended is false, not undefined",
++     "active, open, getClub: shape at $.suspended: a key the contract doesn't name",
++     "active, open, createClub: shape at $.suspended: a key the contract doesn't name",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:808:66
+    806|       }
+    807|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    808|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    809|       // Every cell ran: the contract's 72 requests a world (each oper…
+    810|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the former member as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 140, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 140,
++   "first": [
++     "active, collecting: createClub: the club's suspended is false, not undefined (a club)",
++     "active, collecting, createClub: shape at $.suspended: a key the contract doesn't name",
++     "active, collecting: getClub: the club's suspended is false, not undefined",
++     "active, collecting, getClub: shape at $.suspended: a key the contract doesn't name",
++     "active, collecting, createClub: shape at $.suspended: a key the contract doesn't name",
++     "active, open: createClub: the club's suspended is false, not undefined (a club)",
++     "active, open, createClub: shape at $.suspended: a key the contract doesn't name",
++     "active, open: getClub: the club's suspended is false, not undefined",
++     "active, open, getClub: shape at $.suspended: a key the contract doesn't name",
++     "active, open, createClub: shape at $.suspended: a key the contract doesn't name",
++     "active, past: createClub: the club's suspended is false, not undefined (a club)",
++     "active, past, createClub: shape at $.suspended: a key the contract doesn't name",
++     "active, past: getClub: the club's suspended is false, not undefined",
++     "active, past, getClub: shape at $.suspended: a key the contract doesn't name",
++     "active, past, createClub: shape at $.suspended: a key the contract doesn't name",
++     "active, past, a year on: createClub: the club's suspended is false, not undefined (a club)",
++     "active, past, a year on, createClub: shape at $.suspended: a key the contract doesn't name",
++     "active, past, a year on: getClub: the club's suspended is false, not undefined",
++     "active, past, a year on, getClub: shape at $.suspended: a key the contract doesn't name",
++     "active, past, a year on, createClub: shape at $.suspended: a key the contract doesn't name",
++     "withdrawn, collecting: createClub: the club's suspended is false, not undefined (a club)",
++     "withdrawn, collecting, createClub: shape at $.suspended: a key the contract doesn't name",
++     "withdrawn, collecting: getClub: the club's suspended is false, not undefined",
++     "withdrawn, collecting, getClub: shape at $.suspended: a key the contract doesn't name",
++     "withdrawn, collecting, createClub: shape at $.suspended: a key the contract doesn't name",
++     "withdrawn, open: createClub: the club's suspended is false, not undefined (a club)",
++     "withdrawn, open, createClub: shape at $.suspended: a key the contract doesn't name",
++     "withdrawn, open: getClub: the club's suspended is false, not undefined",
++     "withdrawn, open, getClub: shape at $.suspended: a key the contract doesn't name",
++     "withdrawn, open, createClub: shape at $.suspended: a key the contract doesn't name",
++     "withdrawn, past: createClub: the club's suspended is false, not undefined (a club)",
++     "withdrawn, past, createClub: shape at $.suspended: a key the contract doesn't name",
++     "withdrawn, past: getClub: the club's suspended is false, not undefined",
++     "withdrawn, past, getClub: shape at $.suspended: a key the contract doesn't name",
++     "withdrawn, past, createClub: shape at $.suspended: a key the contract doesn't name",
++     "withdrawn, past, a year on: createClub: the club's suspended is false, not undefined (a club)",
++     "withdrawn, past, a year on, createClub: shape at $.suspended: a key the contract doesn't name",
++     "withdrawn, past, a year on: getClub: the club's suspended is false, not undefined",
++     "withdrawn, past, a year on, getClub: shape at $.suspended: a key the contract doesn't name",
++     "withdrawn, past, a year on, createClub: shape at $.suspended: a key the contract doesn't name",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:808:66
+    806|       }
+    807|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    808|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    809|       // Every cell ran: the contract's 72 requests a world (each oper…
+    810|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

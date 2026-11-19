@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/create-club.ts b/packages/domain/src/clubs/create-club.ts
+index ae682e18..602ac2b3 100644
+--- a/packages/domain/src/clubs/create-club.ts
++++ b/packages/domain/src/clubs/create-club.ts
+@@ -121,7 +121,7 @@ export async function createClub(
+     VALUES (${clubId}, ${input.name}, ${timezone}, ${intervalId}, ${at}::pg_catalog.timestamptz)`;
+   await bound(tx)`
+     INSERT INTO app.memberships (interval_id, club_id, user_id, origin, joined_at)
+-    VALUES (${intervalId}, ${clubId}, ${userId}, 'creator', ${at}::pg_catalog.timestamptz)`;
++    VALUES (${intervalId}, ${clubId}, ${userId}, 'creator', pg_catalog.clock_timestamp())`;
+ 
+   // 6. The answer.
+   const detail = await readClub(tx, userId, clubId, at);

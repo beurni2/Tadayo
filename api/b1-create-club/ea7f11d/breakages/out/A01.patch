@@ -1,0 +1,12 @@
+diff --git a/services/api/src/clubs/club.ts b/services/api/src/clubs/club.ts
+index 041b835d..abe270c7 100644
+--- a/services/api/src/clubs/club.ts
++++ b/services/api/src/clubs/club.ts
+@@ -106,6 +106,6 @@ export function createClubHandler(deps: Deps): Handler {
+       if (error instanceof Refused) return refusal(reply, error);
+       throw error;
+     }
+-    return created(reply, withServerNow(made.at, made.answer));
++    return created(reply, made.answer);
+   };
+ }

@@ -1,0 +1,59 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/services/api
+
+ ❯ src/clubs/club.test.ts (14 tests | 2 failed) 289ms
+   ❯ the club's serializer against the contract's examples (T55) (7)
+     × sends the server's instant in whole seconds, rounded down, and keeps it out of what a receipt stores 8ms
+   ❯ what createClub answers (3)
+     × answers 201 with the club and the clock's sample of this request, for the caller alone (T1) 21ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  2 failed | 25 passed (27)
+   Start at  08:23:51
+   Duration  823ms (tests 47%, import 40%, transform 12%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/clubs/club.test.ts > the club's serializer against the contract's examples (T55) > sends the server's instant in whole seconds, rounded down, and keeps it out of what a receipt stores
+AssertionError: expected '2026-11-06T14:41:00.999999Z' to be '2026-11-06T14:41:00Z' // Object.is equality
+
+Expected: "2026-11-06T14:41:00Z"
+Received: "2026-11-06T14:41:00.999999Z"
+
+ ❯ src/clubs/club.test.ts:82:32
+     80|     expect(Object.keys(stored).sort()).toEqual(["can_propose", "club",…
+     81|     const made = withServerNow(Temporal.Instant.from("2026-11-06T14:41…
+     82|     expect(made["server_now"]).toBe("2026-11-06T14:41:00Z");
+       |                                ^
+     83|   });
+     84|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/clubs/club.test.ts > what createClub answers > answers 201 with the club and the clock's sample of this request, for the caller alone (T1)
+AssertionError: expected { …(4) } to deeply equal { …(4) }
+
+- Expected
++ Received
+
+@@ -7,7 +7,7 @@
+      "name": "Sunday people",
+      "state": "proposed",
+      "timezone": "America/New_York",
+    },
+    "roster_version": 0,
+-   "server_now": "2026-11-06T14:41:00Z",
++   "server_now": "2026-11-06T14:41:00.5Z",
+  }
+
+ ❯ src/clubs/club.test.ts:276:34
+    274|     const got = await answer(post(GOOD));
+    275|     expect(got.status).toBe(201);
+    276|     expect(JSON.parse(got.body)).toEqual({ server_now: "2026-11-06T14:…
+       |                                  ^
+    277|     expect(ClubDetailSchema.strict().safeParse(JSON.parse(got.body)).s…
+    278|     expect(got.headers).toMatchObject({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

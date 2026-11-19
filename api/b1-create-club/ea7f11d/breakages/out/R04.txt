@@ -1,0 +1,46 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/tests
+
+ ❯ src/db/create-club.test.ts (24 tests | 1 failed) 936ms
+   ❯ a club's information for its members (G05-club-details; T9, T14, T33) (6)
+     × names the open roster revision, and counts its open candidate towards six, never who accepted (A01, T33) 70ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 23 passed (24)
+   Start at  08:22:54
+   Duration  1.68s (tests 75%, import 17%, transform 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-club.test.ts > a club's information for its members (G05-club-details; T9, T14, T33) > names the open roster revision, and counts its open candidate towards six, never who accepted (A01, T33)
+AssertionError: expected { club: { …(8) }, …(3) } to match object { club: { memberCount: 3 }, …(2) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "canPropose": false,
++   "canPropose": true,
+    "club": {
+      "memberCount": 3,
+    },
+    "openRevisionId": "rev_xMdbTRonwfDhsG-sYAy_Tg",
+  }
+
+ ❯ src/db/create-club.test.ts:509:22
+    507|       for (const member of [w.ana, w.ben]) {
+    508|         const full = await readClub(tx, member.user, w.club, NOW);
+    509|         expect(full).toMatchObject({ club: { memberCount: 3 }, canProp…
+       |                      ^
+    510|       }
+    511|       // A candidate who is no longer open frees the place.
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:492:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

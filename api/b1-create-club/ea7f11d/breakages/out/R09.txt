@@ -1,0 +1,371 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/tests
+
+ ❯ src/db/create-club.test.ts (24 tests | 17 failed) 788ms
+   ❯ making a club (spec 04, G01-create) (6)
+     × makes a proposed club of one, its creator, at the server clock's sample, and answers it as its creator reads it (T1, T7) 51ms
+     × keeps the receipt with the club: completed, 201, at the same sample, and without the server's instant (T19) 5ms
+     × stores the zone in the server's one spelling, whatever case it came in (T2, FQ19) 5ms
+     × lists the new club for its creator, proposed, and reads it as it was answered 5ms
+     × makes a club for each key, two of one name included: nothing is unique about a club but its id 6ms
+   ❯ one club per key (T19) (6)
+     × answers a retry with the first club, as it was answered, makes no second, and gives the clock's sample of the retry (T1) 5ms
+     × answers a retry with the first answer though the club has changed since 5ms
+     × answers a retry with the first answer to its sender though the club is suspended or its creator has left: it names nobody else (FQ112) 5ms
+     × refuses another name or another zone under a used key, and makes nothing 5ms
+     × keeps a key the caller's own: the same key from another account makes that account's club 6ms
+     × makes one club when the same request arrives eight times at once, and answers each alike 25ms
+   ❯ a club's information for its members (G05-club-details; T9, T14, T33) (6)
+     × gives a member the club, its state, its members counted, its next day, the roster's version and room to propose 41ms
+     × gives the open day while it is open, at the instant asked (T1, T5) 40ms
+     × gives nothing to a stranger, a former member, someone invited, an account being deleted, or for an id nobody has (T14) 48ms
+     × gives nothing of a suspended club, to its members too (FQ80) 46ms
+     × says paused under two active members, and counts only the active ones (FQ16) 50ms
+     × names the open roster revision, and counts its open candidate towards six, never who accepted (A01, T33) 46ms
+
+ Test Files  1 failed (1)
+      Tests  17 failed | 7 passed (24)
+   Start at  08:23:06
+   Duration  1.52s (tests 69%, import 22%, transform 9%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 17 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-club.test.ts > making a club (spec 04, G01-create) > makes a proposed club of one, its creator, at the server clock's sample, and answers it as its creator reads it (T1, T7)
+TypeError: authorization: now is the server's time, a ServerNow
+ ❯ checkNow ../packages/domain/src/authorization/read.ts:127:49
+    125| /** Throws unless `now` is an instant Postgres keeps exactly. */
+    126| export function checkNow(now: unknown): void {
+    127|   if (!(now instanceof Temporal.Instant)) throw new TypeError("authori…
+       |                                                 ^
+    128|   wholeMicroseconds(now, "now");
+    129| }
+ ❯ daysByClub ../packages/domain/src/authorization/days.ts:246:3
+ ❯ readClub ../packages/domain/src/clubs/club.ts:76:20
+ ❯ createClub ../packages/domain/src/clubs/create-club.ts:127:24
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/create-club.test.ts:91:20
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/17]⎯
+
+ FAIL  src/db/create-club.test.ts > making a club (spec 04, G01-create) > keeps the receipt with the club: completed, 201, at the same sample, and without the server's instant (T19)
+TypeError: authorization: now is the server's time, a ServerNow
+ ❯ checkNow ../packages/domain/src/authorization/read.ts:127:49
+    125| /** Throws unless `now` is an instant Postgres keeps exactly. */
+    126| export function checkNow(now: unknown): void {
+    127|   if (!(now instanceof Temporal.Instant)) throw new TypeError("authori…
+       |                                                 ^
+    128|   wholeMicroseconds(now, "now");
+    129| }
+ ❯ daysByClub ../packages/domain/src/authorization/days.ts:246:3
+ ❯ readClub ../packages/domain/src/clubs/club.ts:76:20
+ ❯ createClub ../packages/domain/src/clubs/create-club.ts:127:24
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/create-club.test.ts:156:20
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/17]⎯
+
+ FAIL  src/db/create-club.test.ts > making a club (spec 04, G01-create) > stores the zone in the server's one spelling, whatever case it came in (T2, FQ19)
+TypeError: authorization: now is the server's time, a ServerNow
+ ❯ checkNow ../packages/domain/src/authorization/read.ts:127:49
+    125| /** Throws unless `now` is an instant Postgres keeps exactly. */
+    126| export function checkNow(now: unknown): void {
+    127|   if (!(now instanceof Temporal.Instant)) throw new TypeError("authori…
+       |                                                 ^
+    128|   wholeMicroseconds(now, "now");
+    129| }
+ ❯ daysByClub ../packages/domain/src/authorization/days.ts:246:3
+ ❯ readClub ../packages/domain/src/clubs/club.ts:76:20
+ ❯ createClub ../packages/domain/src/clubs/create-club.ts:127:24
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/create-club.test.ts:173:31
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/17]⎯
+
+ FAIL  src/db/create-club.test.ts > making a club (spec 04, G01-create) > lists the new club for its creator, proposed, and reads it as it was answered
+TypeError: authorization: now is the server's time, a ServerNow
+ ❯ checkNow ../packages/domain/src/authorization/read.ts:127:49
+    125| /** Throws unless `now` is an instant Postgres keeps exactly. */
+    126| export function checkNow(now: unknown): void {
+    127|   if (!(now instanceof Temporal.Instant)) throw new TypeError("authori…
+       |                                                 ^
+    128|   wholeMicroseconds(now, "now");
+    129| }
+ ❯ daysByClub ../packages/domain/src/authorization/days.ts:246:3
+ ❯ readClub ../packages/domain/src/clubs/club.ts:76:20
+ ❯ createClub ../packages/domain/src/clubs/create-club.ts:127:24
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/create-club.test.ts:198:31
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/17]⎯
+
+ FAIL  src/db/create-club.test.ts > making a club (spec 04, G01-create) > makes a club for each key, two of one name included: nothing is unique about a club but its id
+TypeError: authorization: now is the server's time, a ServerNow
+ ❯ checkNow ../packages/domain/src/authorization/read.ts:127:49
+    125| /** Throws unless `now` is an instant Postgres keeps exactly. */
+    126| export function checkNow(now: unknown): void {
+    127|   if (!(now instanceof Temporal.Instant)) throw new TypeError("authori…
+       |                                                 ^
+    128|   wholeMicroseconds(now, "now");
+    129| }
+ ❯ daysByClub ../packages/domain/src/authorization/days.ts:246:3
+ ❯ readClub ../packages/domain/src/clubs/club.ts:76:20
+ ❯ createClub ../packages/domain/src/clubs/create-club.ts:127:24
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/create-club.test.ts:220:28
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/17]⎯
+
+ FAIL  src/db/create-club.test.ts > one club per key (T19) > answers a retry with the first club, as it was answered, makes no second, and gives the clock's sample of the retry (T1)
+TypeError: authorization: now is the server's time, a ServerNow
+ ❯ checkNow ../packages/domain/src/authorization/read.ts:127:49
+    125| /** Throws unless `now` is an instant Postgres keeps exactly. */
+    126| export function checkNow(now: unknown): void {
+    127|   if (!(now instanceof Temporal.Instant)) throw new TypeError("authori…
+       |                                                 ^
+    128|   wholeMicroseconds(now, "now");
+    129| }
+ ❯ daysByClub ../packages/domain/src/authorization/days.ts:246:3
+ ❯ readClub ../packages/domain/src/clubs/club.ts:76:20
+ ❯ createClub ../packages/domain/src/clubs/create-club.ts:127:24
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/create-club.test.ts:234:21
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/17]⎯
+
+ FAIL  src/db/create-club.test.ts > one club per key (T19) > answers a retry with the first answer though the club has changed since
+TypeError: authorization: now is the server's time, a ServerNow
+ ❯ checkNow ../packages/domain/src/authorization/read.ts:127:49
+    125| /** Throws unless `now` is an instant Postgres keeps exactly. */
+    126| export function checkNow(now: unknown): void {
+    127|   if (!(now instanceof Temporal.Instant)) throw new TypeError("authori…
+       |                                                 ^
+    128|   wholeMicroseconds(now, "now");
+    129| }
+ ❯ daysByClub ../packages/domain/src/authorization/days.ts:246:3
+ ❯ readClub ../packages/domain/src/clubs/club.ts:76:20
+ ❯ createClub ../packages/domain/src/clubs/create-club.ts:127:24
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/create-club.test.ts:250:21
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/17]⎯
+
+ FAIL  src/db/create-club.test.ts > one club per key (T19) > answers a retry with the first answer to its sender though the club is suspended or its creator has left: it names nobody else (FQ112)
+TypeError: authorization: now is the server's time, a ServerNow
+ ❯ checkNow ../packages/domain/src/authorization/read.ts:127:49
+    125| /** Throws unless `now` is an instant Postgres keeps exactly. */
+    126| export function checkNow(now: unknown): void {
+    127|   if (!(now instanceof Temporal.Instant)) throw new TypeError("authori…
+       |                                                 ^
+    128|   wholeMicroseconds(now, "now");
+    129| }
+ ❯ daysByClub ../packages/domain/src/authorization/days.ts:246:3
+ ❯ readClub ../packages/domain/src/clubs/club.ts:76:20
+ ❯ createClub ../packages/domain/src/clubs/create-club.ts:127:24
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/create-club.test.ts:260:21
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/17]⎯
+
+ FAIL  src/db/create-club.test.ts > one club per key (T19) > refuses another name or another zone under a used key, and makes nothing
+TypeError: authorization: now is the server's time, a ServerNow
+ ❯ checkNow ../packages/domain/src/authorization/read.ts:127:49
+    125| /** Throws unless `now` is an instant Postgres keeps exactly. */
+    126| export function checkNow(now: unknown): void {
+    127|   if (!(now instanceof Temporal.Instant)) throw new TypeError("authori…
+       |                                                 ^
+    128|   wholeMicroseconds(now, "now");
+    129| }
+ ❯ daysByClub ../packages/domain/src/authorization/days.ts:246:3
+ ❯ readClub ../packages/domain/src/clubs/club.ts:76:20
+ ❯ createClub ../packages/domain/src/clubs/create-club.ts:127:24
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/create-club.test.ts:281:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/17]⎯
+
+ FAIL  src/db/create-club.test.ts > one club per key (T19) > keeps a key the caller's own: the same key from another account makes that account's club
+TypeError: authorization: now is the server's time, a ServerNow
+ ❯ checkNow ../packages/domain/src/authorization/read.ts:127:49
+    125| /** Throws unless `now` is an instant Postgres keeps exactly. */
+    126| export function checkNow(now: unknown): void {
+    127|   if (!(now instanceof Temporal.Instant)) throw new TypeError("authori…
+       |                                                 ^
+    128|   wholeMicroseconds(now, "now");
+    129| }
+ ❯ daysByClub ../packages/domain/src/authorization/days.ts:246:3
+ ❯ readClub ../packages/domain/src/clubs/club.ts:76:20
+ ❯ createClub ../packages/domain/src/clubs/create-club.ts:127:24
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/create-club.test.ts:294:29
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/17]⎯
+
+ FAIL  src/db/create-club.test.ts > one club per key (T19) > makes one club when the same request arrives eight times at once, and answers each alike
+TypeError: authorization: now is the server's time, a ServerNow
+ ❯ checkNow ../packages/domain/src/authorization/read.ts:127:49
+    125| /** Throws unless `now` is an instant Postgres keeps exactly. */
+    126| export function checkNow(now: unknown): void {
+    127|   if (!(now instanceof Temporal.Instant)) throw new TypeError("authori…
+       |                                                 ^
+    128|   wholeMicroseconds(now, "now");
+    129| }
+ ❯ daysByClub ../packages/domain/src/authorization/days.ts:246:3
+ ❯ readClub ../packages/domain/src/clubs/club.ts:76:20
+ ❯ createClub ../packages/domain/src/clubs/create-club.ts:127:24
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ src/db/create-club.test.ts:306:21
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/17]⎯
+
+ FAIL  src/db/create-club.test.ts > a club's information for its members (G05-club-details; T9, T14, T33) > gives a member the club, its state, its members counted, its next day, the roster's version and room to propose
+TypeError: authorization: now is the server's time, a ServerNow
+ ❯ checkNow ../packages/domain/src/authorization/read.ts:127:49
+    125| /** Throws unless `now` is an instant Postgres keeps exactly. */
+    126| export function checkNow(now: unknown): void {
+    127|   if (!(now instanceof Temporal.Instant)) throw new TypeError("authori…
+       |                                                 ^
+    128|   wholeMicroseconds(now, "now");
+    129| }
+ ❯ daysByClub ../packages/domain/src/authorization/days.ts:246:3
+ ❯ readClub ../packages/domain/src/clubs/club.ts:76:20
+ ❯ src/db/create-club.test.ts:420:28
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:417:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/17]⎯
+
+ FAIL  src/db/create-club.test.ts > a club's information for its members (G05-club-details; T9, T14, T33) > gives the open day while it is open, at the instant asked (T1, T5)
+TypeError: authorization: now is the server's time, a ServerNow
+ ❯ checkNow ../packages/domain/src/authorization/read.ts:127:49
+    125| /** Throws unless `now` is an instant Postgres keeps exactly. */
+    126| export function checkNow(now: unknown): void {
+    127|   if (!(now instanceof Temporal.Instant)) throw new TypeError("authori…
+       |                                                 ^
+    128|   wholeMicroseconds(now, "now");
+    129| }
+ ❯ daysByClub ../packages/domain/src/authorization/days.ts:246:3
+ ❯ readClub ../packages/domain/src/clubs/club.ts:76:20
+ ❯ src/db/create-club.test.ts:449:26
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:447:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/17]⎯
+
+ FAIL  src/db/create-club.test.ts > a club's information for its members (G05-club-details; T9, T14, T33) > gives nothing to a stranger, a former member, someone invited, an account being deleted, or for an id nobody has (T14)
+TypeError: authorization: now is the server's time, a ServerNow
+ ❯ checkNow ../packages/domain/src/authorization/read.ts:127:49
+    125| /** Throws unless `now` is an instant Postgres keeps exactly. */
+    126| export function checkNow(now: unknown): void {
+    127|   if (!(now instanceof Temporal.Instant)) throw new TypeError("authori…
+       |                                                 ^
+    128|   wholeMicroseconds(now, "now");
+    129| }
+ ❯ daysByClub ../packages/domain/src/authorization/days.ts:246:3
+ ❯ readClub ../packages/domain/src/clubs/club.ts:76:20
+ ❯ src/db/create-club.test.ts:459:20
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:456:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/17]⎯
+
+ FAIL  src/db/create-club.test.ts > a club's information for its members (G05-club-details; T9, T14, T33) > gives nothing of a suspended club, to its members too (FQ80)
+TypeError: authorization: now is the server's time, a ServerNow
+ ❯ checkNow ../packages/domain/src/authorization/read.ts:127:49
+    125| /** Throws unless `now` is an instant Postgres keeps exactly. */
+    126| export function checkNow(now: unknown): void {
+    127|   if (!(now instanceof Temporal.Instant)) throw new TypeError("authori…
+       |                                                 ^
+    128|   wholeMicroseconds(now, "now");
+    129| }
+ ❯ daysByClub ../packages/domain/src/authorization/days.ts:246:3
+ ❯ readClub ../packages/domain/src/clubs/club.ts:76:20
+ ❯ src/db/create-club.test.ts:477:20
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:474:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/17]⎯
+
+ FAIL  src/db/create-club.test.ts > a club's information for its members (G05-club-details; T9, T14, T33) > says paused under two active members, and counts only the active ones (FQ16)
+TypeError: authorization: now is the server's time, a ServerNow
+ ❯ checkNow ../packages/domain/src/authorization/read.ts:127:49
+    125| /** Throws unless `now` is an instant Postgres keeps exactly. */
+    126| export function checkNow(now: unknown): void {
+    127|   if (!(now instanceof Temporal.Instant)) throw new TypeError("authori…
+       |                                                 ^
+    128|   wholeMicroseconds(now, "now");
+    129| }
+ ❯ daysByClub ../packages/domain/src/authorization/days.ts:246:3
+ ❯ readClub ../packages/domain/src/clubs/club.ts:76:20
+ ❯ src/db/create-club.test.ts:485:21
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:482:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/17]⎯
+
+ FAIL  src/db/create-club.test.ts > a club's information for its members (G05-club-details; T9, T14, T33) > names the open roster revision, and counts its open candidate towards six, never who accepted (A01, T33)
+TypeError: authorization: now is the server's time, a ServerNow
+ ❯ checkNow ../packages/domain/src/authorization/read.ts:127:49
+    125| /** Throws unless `now` is an instant Postgres keeps exactly. */
+    126| export function checkNow(now: unknown): void {
+    127|   if (!(now instanceof Temporal.Instant)) throw new TypeError("authori…
+       |                                                 ^
+    128|   wholeMicroseconds(now, "now");
+    129| }
+ ❯ daysByClub ../packages/domain/src/authorization/days.ts:246:3
+ ❯ readClub ../packages/domain/src/clubs/club.ts:76:20
+ ❯ src/db/create-club.test.ts:498:26
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:492:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/17]⎯
+

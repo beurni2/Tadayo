@@ -1,0 +1,50 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/tests
+
+ ❯ src/db/create-club.test.ts (24 tests | 2 failed) 995ms
+   ❯ who may make a club (T27, FQ69) (6)
+     × refuses an account whose deletion has begun since the gate read it, as no session, and leaves nothing 23ms
+     × waits for a deletion that holds the account's row, and is refused once it commits, with no club and no receipt (T27) 321ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 22 passed (24)
+   Start at  08:23:14
+   Duration  1.67s (tests 72%, import 20%, transform 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-club.test.ts > who may make a club (T27, FQ69) > refuses an account whose deletion has begun since the gate read it, as no session, and leaves nothing
+Error: clubs: the club its creator just made can't be read
+ ❯ createClub ../packages/domain/src/clubs/create-club.ts:128:30
+    126|   // 6. The answer.
+    127|   const detail = await readClub(tx, userId, clubId, at);
+    128|   if (detail === null) throw new Error("clubs: the club its creator ju…
+       |                              ^
+    129|   return { answer: await completeReceipt(tx, receipt, render(detail), …
+    130| }
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ refusal src/db/create-club.test.ts:63:5
+ ❯ src/db/create-club.test.ts:322:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:319:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/create-club.test.ts > who may make a club (T27, FQ69) > waits for a deletion that holds the account's row, and is refused once it commits, with no club and no receipt (T27)
+Error: clubs: the club its creator just made can't be read
+ ❯ createClub ../packages/domain/src/clubs/create-club.ts:128:30
+    126|   // 6. The answer.
+    127|   const detail = await readClub(tx, userId, clubId, at);
+    128|   if (detail === null) throw new Error("clubs: the club its creator ju…
+       |                              ^
+    129|   return { answer: await completeReceipt(tx, receipt, render(detail), …
+    130| }
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

@@ -1,0 +1,68 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/tests
+
+ ❯ src/db/create-club.test.ts (24 tests | 2 failed) 856ms
+   ❯ one club per key (T19) (6)
+     × answers a retry with the first club, as it was answered, makes no second, and gives the clock's sample of the retry (T1) 22ms
+     × answers a retry with the first answer though the club has changed since 16ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 22 passed (24)
+   Start at  08:23:12
+   Duration  1.48s (tests 72%, import 20%, transform 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-club.test.ts > one club per key (T19) > answers a retry with the first club, as it was answered, makes no second, and gives the clock's sample of the retry (T1)
+AssertionError: expected '{"club":{"id":"club_Ej0MTWUfGELPBpjFj…' to be '{"club":{"id":"club_Ej0MTWUfGELPBpjFj…' // Object.is equality
+
+Expected: "{"club":{"id":"club_Ej0MTWUfGELPBpjFjo3-Fw","name":"Sunday people","state":"proposed","timezone":"America/New_York","member_count":1,"my_membership_id":"mem_A3uLtitevZTN3e8U_HrSQQ"},"can_propose":true,"roster_version":0}"
+Received: "{"club":{"id":"club_Ej0MTWUfGELPBpjFjo3-Fw","name":"Sunday people","timezone":"America/New_York","my_membership_id":"mem_A3uLtitevZTN3e8U_HrSQQ","state":"proposed","member_count":1},"roster_version":0,"can_propose":true}"
+
+ ❯ src/db/create-club.test.ts:239:44
+    237|       const again = await request(tx, ben, { key });
+    238|       expect(again.answer).toEqual(first.answer);
+    239|       expect(JSON.stringify(again.answer)).toBe(JSON.stringify(first.a…
+       |                                            ^
+    240|       expect(again.at.equals(later)).toBe(true);
+    241|       expect(await clubsOf(tx, ben)).toHaveLength(1);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:231:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/create-club.test.ts > one club per key (T19) > answers a retry with the first answer though the club has changed since
+AssertionError: expected { club: { …(6) }, …(2) } to deeply equal { club: { …(6) }, …(2) }
+
+- Expected
++ Received
+
+@@ -6,7 +6,7 @@
+      "my_membership_id": "mem_q_lUAELG6iFbFcFa_nr6zA",
+      "name": "Sunday people",
+      "state": "proposed",
+      "timezone": "America/New_York",
+    },
+-   "roster_version": 0,
++   "roster_version": 3,
+  }
+
+ ❯ src/db/create-club.test.ts:252:56
+    250|       const first = await request(tx, ben, { key });
+    251|       await tx`UPDATE app.clubs SET roster_version = 3 WHERE id = ${an…
+    252|       expect((await request(tx, ben, { key })).answer).toEqual(first.a…
+       |                                                        ^
+    253|     });
+    254|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:247:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

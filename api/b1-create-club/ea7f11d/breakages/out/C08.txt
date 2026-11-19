@@ -1,0 +1,43 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/tests
+
+ ❯ src/db/create-club.test.ts (24 tests | 1 failed) 943ms
+   ❯ making a club (spec 04, G01-create) (6)
+     × keeps the receipt with the club: completed, 201, at the same sample, and without the server's instant (T19) 27ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 23 passed (24)
+   Start at  08:23:25
+   Duration  1.62s (tests 71%, import 21%, transform 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-club.test.ts > making a club (spec 04, G01-create) > keeps the receipt with the club: completed, 201, at the same sample, and without the server's instant (T19)
+AssertionError: expected { state: 'completed', …(3) } to match object { state: 'completed', …(1) }
+(5 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "response_status": 201,
++   "response_status": 200,
+    "state": "completed",
+  }
+
+ ❯ src/db/create-club.test.ts:159:27
+    157|       const receipts = await receiptsOf(tx, ben);
+    158|       expect(receipts).toHaveLength(1);
+    159|       expect(receipts[0]).toMatchObject({ state: "completed", response…
+       |                           ^
+    160|       expect(receipts[0]?.created_at.equals(FIRST)).toBe(true);
+    161|       expect(receipts[0]?.response_body).toEqual(made.answer);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:154:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

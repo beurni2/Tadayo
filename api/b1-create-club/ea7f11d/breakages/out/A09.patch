@@ -1,0 +1,12 @@
+diff --git a/services/api/src/clubs/club.ts b/services/api/src/clubs/club.ts
+index 041b835d..5b91f811 100644
+--- a/services/api/src/clubs/club.ts
++++ b/services/api/src/clubs/club.ts
+@@ -103,7 +103,6 @@ export function createClubHandler(deps: Deps): Handler {
+     try {
+       made = await deps.sql.begin((tx) => createClub(tx, deps.clock, input, clubDetailBody));
+     } catch (error) {
+-      if (error instanceof Refused) return refusal(reply, error);
+       throw error;
+     }
+     return created(reply, withServerNow(made.at, made.answer));

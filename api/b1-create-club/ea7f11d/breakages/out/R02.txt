@@ -1,0 +1,43 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/tests
+
+ ❯ src/db/create-club.test.ts (24 tests | 1 failed) 969ms
+   ❯ a club's information for its members (G05-club-details; T9, T14, T33) (6)
+     × says paused under two active members, and counts only the active ones (FQ16) 48ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 23 passed (24)
+   Start at  08:22:50
+   Duration  1.63s (tests 73%, import 19%, transform 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-club.test.ts > a club's information for its members (G05-club-details; T9, T14, T33) > says paused under two active members, and counts only the active ones (FQ16)
+AssertionError: expected { …(8) } to match object { state: 'active', memberCount: 2 }
+(13 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "memberCount": 2,
++   "memberCount": 3,
+    "state": "active",
+  }
+
+ ❯ src/db/create-club.test.ts:485:67
+    483|       const w = await newWorld(plain(tx));
+    484|       await leave(plain(tx), w.cleo, "Cleo", AT.opened);
+    485|       expect((await readClub(tx, w.ana.user, w.club, NOW))?.club).toMa…
+       |                                                                   ^
+    486|       await leave(plain(tx), w.ben, "Ben", AT.opened);
+    487|       expect((await readClub(tx, w.ana.user, w.club, NOW))?.club).toMa…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:482:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

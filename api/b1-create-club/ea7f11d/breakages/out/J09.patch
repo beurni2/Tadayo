@@ -1,0 +1,12 @@
+diff --git a/tests/src/privacy/club.ts b/tests/src/privacy/club.ts
+index ba47c1da..3683b4f8 100644
+--- a/tests/src/privacy/club.ts
++++ b/tests/src/privacy/club.ts
+@@ -149,7 +149,6 @@ export function clubExpected(seen: () => ClubSeen, club: string): Expected {
+ 
+ /** The id of the club a 201 names, or undefined. */
+ export function createdClubId(answer: Answer): string | undefined {
+-  if (answer.status !== 201) return undefined;
+   const body = parsed(answer);
+   return isObject(body) && isObject(body.club) && typeof body.club.id === "string" ? body.club.id : undefined;
+ }

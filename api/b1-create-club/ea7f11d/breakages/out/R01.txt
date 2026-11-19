@@ -1,0 +1,132 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/tests
+
+ ❯ src/db/create-club.test.ts (24 tests | 3 failed) 1034ms
+   ❯ one club per key (T19) (6)
+     × answers a retry with the first answer to its sender though the club is suspended or its creator has left: it names nobody else (FQ112) 22ms
+   ❯ a club's information for its members (G05-club-details; T9, T14, T33) (6)
+     × gives nothing to a stranger, a former member, someone invited, an account being deleted, or for an id nobody has (T14) 69ms
+     × gives nothing of a suspended club, to its members too (FQ80) 53ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 21 passed (24)
+   Start at  08:22:47
+   Duration  1.79s (tests 72%, import 18%, transform 9%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-club.test.ts > one club per key (T19) > answers a retry with the first answer to its sender though the club is suspended or its creator has left: it names nobody else (FQ112)
+AssertionError: expected { club: { …(8) }, …(3) } to be null
+
+- Expected:
+null
+
++ Received:
+{
+  "canPropose": true,
+  "club": {
+    "id": "club_-xwS2kkrafbzr5OUkF0R3Q",
+    "memberCount": 1,
+    "membershipId": "mem_i7R-YMV4Lt88JwbQBcULlA",
+    "name": "Sunday people",
+    "nextDay": null,
+    "openDay": null,
+    "state": "suspended",
+    "timezone": "America/New_York",
+  },
+  "openRevisionId": null,
+  "rosterVersion": 0,
+}
+
+ ❯ src/db/create-club.test.ts:263:48
+    261|       const { id, my_membership_id: interval } = answerOf(first).club;
+    262|       await tx`UPDATE app.clubs SET suspended_at = ${AT.opened} WHERE …
+    263|       expect(await readClub(tx, ben, id, NOW)).toBeNull();
+       |                                                ^
+    264|       expect((await request(tx, ben, { key })).answer).toEqual(first.a…
+    265|       await tx`UPDATE app.clubs SET suspended_at = NULL WHERE id = ${i…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:257:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/db/create-club.test.ts > a club's information for its members (G05-club-details; T9, T14, T33) > gives nothing to a stranger, a former member, someone invited, an account being deleted, or for an id nobody has (T14)
+AssertionError: expected { club: { …(8) }, …(3) } to be null
+
+- Expected:
+null
+
++ Received:
+{
+  "canPropose": true,
+  "club": {
+    "id": "club_IwYVEw4NJQh00-efP0XSoA",
+    "memberCount": 2,
+    "membershipId": "mem_KmmTqiUWKqORy_mRV8Rd6w",
+    "name": "Saturday people",
+    "nextDay": null,
+    "openDay": null,
+    "state": "active",
+    "timezone": "Europe/London",
+  },
+  "openRevisionId": "rev_5AcQHME1n2L1XQrLUr91gQ",
+  "rosterVersion": 0,
+}
+
+ ❯ src/db/create-club.test.ts:466:60
+    464|       }
+    465|       await leave(plain(tx), w.cleo, "Cleo", AT.opened);
+    466|       expect(await readClub(tx, w.cleo.user, w.club, NOW)).toBeNull();
+       |                                                            ^
+    467|       await tx`UPDATE app.users SET state = 'deleting', deletion_reque…
+    468|       expect(await readClub(tx, w.ben.user, w.club, NOW)).toBeNull();
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:456:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/db/create-club.test.ts > a club's information for its members (G05-club-details; T9, T14, T33) > gives nothing of a suspended club, to its members too (FQ80)
+AssertionError: expected { club: { …(8) }, …(3) } to be null
+
+- Expected:
+null
+
++ Received:
+{
+  "canPropose": true,
+  "club": {
+    "id": "club_gkWmZeqNaswy_15m_vWwfQ",
+    "memberCount": 3,
+    "membershipId": "mem_7nxmOPbKu-IfKdtp5p8SuQ",
+    "name": "Saturday people",
+    "nextDay": null,
+    "openDay": null,
+    "state": "suspended",
+    "timezone": "Europe/London",
+  },
+  "openRevisionId": null,
+  "rosterVersion": 0,
+}
+
+ ❯ src/db/create-club.test.ts:477:59
+    475|       const w = await newWorld(plain(tx));
+    476|       await tx`UPDATE app.clubs SET suspended_at = ${AT.opened} WHERE …
+    477|       expect(await readClub(tx, w.ana.user, w.club, NOW)).toBeNull();
+       |                                                           ^
+    478|     });
+    479|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:474:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

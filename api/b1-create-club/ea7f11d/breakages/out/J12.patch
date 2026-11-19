@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/club.ts b/tests/src/privacy/club.ts
+index ba47c1da..112f0f4b 100644
+--- a/tests/src/privacy/club.ts
++++ b/tests/src/privacy/club.ts
+@@ -227,7 +227,7 @@ export function createClubCases(clubName: string): CreateClubCase[] {
+       expected: unread(),
+     },
+     { name: "a club", body: good, key, expected: "created" },
+-    { name: "the same request again under its key", body: good, key, expected: "replay" },
++    { name: "the same request again under its key", body: good, key: fresh(), expected: "replay" },
+     {
+       name: "another body under that key",
+       body: JSON.stringify({ name: `${clubName} two`, timezone: "America/New_York" }),

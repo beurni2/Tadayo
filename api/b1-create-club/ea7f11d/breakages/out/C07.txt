@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/tests
+
+ ❯ src/db/create-club.test.ts (24 tests | 1 failed) 933ms
+   ❯ making a club (spec 04, G01-create) (6)
+     × refuses a zone the server can't resolve that reaches the command, naming the field, and leaves nothing 10ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 23 passed (24)
+   Start at  08:23:23
+   Duration  1.66s (tests 70%, import 22%, transform 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-club.test.ts > making a club (spec 04, G01-create) > refuses a zone the server can't resolve that reaches the command, naming the field, and leaves nothing
+RangeError: Temporal error: Not a valid time zone string
+ ❯ clubTimeZone ../packages/domain/src/time/civil.ts:39:52
+     37| export function clubTimeZone(zone: string): string {
+     38|   const refused = () => new RangeError(`time: ${zone} isn't an IANA ti…
+     39|   const id = Temporal.PlainDate.from("2026-01-01").toZonedDateTime(zon…
+       |                                                    ^
+     40|   if (id.toLowerCase() !== zone.toLowerCase() || /^[+-]/.test(id)) thr…
+     41|   return id;
+ ❯ createClub ../packages/domain/src/clubs/create-club.ts:110:16
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ refusal src/db/create-club.test.ts:63:5
+ ❯ src/db/create-club.test.ts:184:16
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

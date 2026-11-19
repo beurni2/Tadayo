@@ -1,0 +1,13 @@
+diff --git a/services/api/src/clubs/club.ts b/services/api/src/clubs/club.ts
+index 041b835d..291d70a1 100644
+--- a/services/api/src/clubs/club.ts
++++ b/services/api/src/clubs/club.ts
+@@ -33,7 +33,7 @@ export function clubDetailBody(detail: ClubDetail): { readonly [key: string]: Js
+       id: club.id,
+       name: club.name,
+       timezone: club.timezone,
+-      my_membership_id: club.membershipId,
++      my_membership_id: club.id,
+       state: club.state,
+       member_count: club.memberCount,
+       ...(club.openDay === null ? {} : { open_day: occurrenceBody(club.openDay) }),

@@ -1,0 +1,13 @@
+diff --git a/services/api/src/clubs/club.ts b/services/api/src/clubs/club.ts
+index 041b835d..4b00bf6f 100644
+--- a/services/api/src/clubs/club.ts
++++ b/services/api/src/clubs/club.ts
+@@ -74,7 +74,7 @@ const FIELDS: readonly string[] = ["name", "timezone"];
+ function firstBadField(issues: readonly { readonly path: readonly PropertyKey[] }[]): string | undefined {
+   for (const issue of issues) {
+     const field = issue.path[0];
+-    if (typeof field === "string" && FIELDS.includes(field)) return field;
++    if (typeof field === "string") return field;
+   }
+   return undefined;
+ }

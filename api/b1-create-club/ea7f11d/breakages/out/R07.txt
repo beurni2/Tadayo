@@ -1,0 +1,79 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1-mut/tests
+
+ ❯ src/db/create-club.test.ts (24 tests | 2 failed) 904ms
+   ❯ a club's information for its members (G05-club-details; T9, T14, T33) (6)
+     × gives a member the club, its state, its members counted, its next day, the roster's version and room to propose 60ms
+     × names the open roster revision, and counts its open candidate towards six, never who accepted (A01, T33) 63ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 22 passed (24)
+   Start at  08:23:01
+   Duration  1.58s (tests 72%, import 19%, transform 8%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/create-club.test.ts > a club's information for its members (G05-club-details; T9, T14, T33) > gives a member the club, its state, its members counted, its next day, the roster's version and room to propose
+AssertionError: expected { club: { …(8) }, …(3) } to match object { club: { …(7) }, …(3) }
+
+- Expected
++ Received
+
+@@ -7,8 +7,8 @@
+      "name": "Saturday people",
+      "openDay": null,
+      "state": "active",
+      "timezone": "Europe/London",
+    },
+-   "openRevisionId": null,
++   "openRevisionId": "rev_pQins3M7Y5OK5_yMtcUVyQ",
+    "rosterVersion": 4,
+  }
+
+ ❯ src/db/create-club.test.ts:421:22
+    419|       await tx`UPDATE app.clubs SET roster_version = 4 WHERE id = ${w.…
+    420|       const detail = await readClub(tx, w.ben.user, w.club, NOW);
+    421|       expect(detail).toMatchObject({
+       |                      ^
+    422|         club: {
+    423|           id: w.club,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:417:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/create-club.test.ts > a club's information for its members (G05-club-details; T9, T14, T33) > names the open roster revision, and counts its open candidate towards six, never who accepted (A01, T33)
+AssertionError: expected { club: { …(8) }, …(3) } to match object { club: { memberCount: 3 }, …(2) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "canPropose": true,
+    "club": {
+      "memberCount": 3,
+    },
+-   "openRevisionId": "rev_bwS5JB2m3209j0eXvKOFRA",
++   "openRevisionId": "rev__wMCktqM8wfsnV2uodJsaw",
+  }
+
+ ❯ src/db/create-club.test.ts:499:20
+    497|         SELECT id FROM app.roster_revisions WHERE club_id = ${w.club} …
+    498|       const four = await readClub(tx, w.ana.user, w.club, NOW);
+    499|       expect(four).toMatchObject({ club: { memberCount: 3 }, canPropos…
+       |                    ^
+    500|       // Five, and still room; six with the next, and the roster is fu…
+    501|       const propose = () => tx`
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/create-club.test.ts:492:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
