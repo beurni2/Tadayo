@@ -231,16 +231,19 @@ const receipts = (tx: WorldTx, w: Club, who: number) =>
   tx<{ operation: string; state: string }[]>`
     SELECT operation, state FROM app.idempotency_receipts WHERE actor_user_id = ${w.users[who] ?? ""}`;
 
-/** Every schedule row of the club, as text: what a refused request must leave as it was. */
+/**
+ * Every schedule row of the club, as text, each with its `ctid`, which moves when a row is written again
+ * even with the same values: what a refused request, or one that changes nothing, must leave as it was.
+ */
 async function everything(tx: WorldTx, w: FirstDays): Promise<string> {
   const rows = await tx<{ row: string }[]>`
-    SELECT 'proposal ' || pg_catalog.to_jsonb(t)::text AS row FROM app.schedule_proposals t WHERE club_id = ${w.club}
+    SELECT 'proposal ' || t.ctid::text || ' ' || pg_catalog.to_jsonb(t)::text AS row FROM app.schedule_proposals t WHERE club_id = ${w.club}
     UNION ALL
-    SELECT 'member ' || pg_catalog.to_jsonb(t)::text FROM app.schedule_proposal_members t WHERE club_id = ${w.club}
+    SELECT 'member ' || t.ctid::text || ' ' || pg_catalog.to_jsonb(t)::text FROM app.schedule_proposal_members t WHERE club_id = ${w.club}
     UNION ALL
-    SELECT 'day ' || pg_catalog.to_jsonb(t)::text FROM app.schedule_proposal_days t WHERE proposal_id = ${w.proposal}
+    SELECT 'day ' || t.ctid::text || ' ' || pg_catalog.to_jsonb(t)::text FROM app.schedule_proposal_days t WHERE proposal_id = ${w.proposal}
     UNION ALL
-    SELECT 'assignment ' || pg_catalog.to_jsonb(t)::text FROM app.schedule_assignments t WHERE club_id = ${w.club}
+    SELECT 'assignment ' || t.ctid::text || ' ' || pg_catalog.to_jsonb(t)::text FROM app.schedule_assignments t WHERE club_id = ${w.club}
     ORDER BY 1`;
   return rows.map((each) => each.row).join("\n");
 }
@@ -532,6 +535,70 @@ describe("choosing days (FQ46, FQ48, FQ55; T33)", () => {
       expect((await proposalRow(tx, w.proposal)).version).toBe(1);
     });
   });
+
+  it("names a contest's holders in the order they joined, whatever the order of their ids", async () => {
+    await rolledBack(db, async (tx) => {
+      const clock = fakeClock(OPENED);
+      const w = await firstDays(tx, clock, 6);
+      // Three members whose ids run neither up nor down in the order they joined, so that no order by id
+      // gives theirs. Six random ids have such a three unless they are sorted, one way or the other.
+      const byBytes = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+      const id = (who: number) => w.members[who] ?? "";
+      let three: [number, number, number] | undefined;
+      for (let a = 0; a < 6 && three === undefined; a += 1) {
+        for (let b = a + 1; b < 6 && three === undefined; b += 1) {
+          for (let c = b + 1; c < 6 && three === undefined; c += 1) {
+            if (byBytes(id(a), id(b)) !== byBytes(id(b), id(c))) three = [a, b, c];
+          }
+        }
+      }
+      // About one run in 360 makes six sorted ids: nothing to tell apart then.
+      if (three === undefined) return;
+      const [first, second, third] = three;
+      const day = proposedWeek(6)[first]?.[0];
+      if (day === undefined) throw new Error("the first of the three has no proposed day");
+      await choose(tx, clock, w, third, [day]);
+      await choose(tx, clock, w, second, [day]);
+      const holders = [person(w, first), person(w, second), person(w, third)];
+      for (const who of three) {
+        expect(slot(await proposalFor(tx, clock, w, who), day).holders, `as member ${String(who)}`).toEqual(holders);
+      }
+    });
+  });
+
+  it("frees the hold of a member who left, and shows a confirmed member who left by the name they left with (FQ75, FQ102)", async () => {
+    await rolledBack(db, async (tx) => {
+      const clock = fakeClock(OPENED);
+      const w = await firstDays(tx, clock, 6);
+      // Alex contests Ben's Monday; Sam confirms Thursday. Then both leave, Sam under another name.
+      await choose(tx, clock, w, 2, ["monday"]);
+      clock.set(Temporal.Instant.from(CONFIRMED));
+      await confirm(tx, clock, w, 3, ["thursday"]);
+      expect(slot(await proposalFor(tx, clock, w, 0), "monday").state).toBe("clash");
+      await leave(plain(tx), { user: w.users[2] ?? "", interval: w.members[2] ?? "" }, "Alex", AT.edited);
+      await leave(plain(tx), { user: w.users[3] ?? "", interval: w.members[3] ?? "" }, "Sam who left", AT.edited);
+      await checkAsAtCommit(plain(tx));
+      const ben = await sees(tx, clock, w, 0);
+      // Alex holds nothing now, so Monday is Ben's alone again.
+      expect(slot(ben?.proposal as ProposalAnswer, "monday")).toEqual({
+        weekday: "monday",
+        state: "yours",
+        suggested: true,
+      });
+      // Sam's Thursday stays Sam's, under the name Sam left with, and with no date: it won't open (FQ63).
+      const sam = { membershipId: w.members[3], displayName: "Sam who left", avatarVersion: null };
+      expect(slot(ben?.proposal as ProposalAnswer, "thursday")).toEqual({
+        weekday: "thursday",
+        state: "taken",
+        owner: sam,
+        suggested: false,
+      });
+      expect(ben?.current?.assignments).toEqual([{ weekday: "thursday", person: sam }]);
+      // And Ben confirms Monday: nobody who is still a member holds it too.
+      const answer = await confirm(tx, clock, w, 0, ["monday"]);
+      expect(answer).toMatchObject({ myState: "confirmed", state: "open", version: 1 });
+    });
+  });
 });
 
 describe("confirming days (FQ55, FQ57, FQ79, FQ99; T1, T33, T49)", () => {
@@ -569,6 +636,20 @@ describe("confirming days (FQ55, FQ57, FQ79, FQ99; T1, T33, T49)", () => {
         effectiveFrom: "2026-11-02",
         assignments: [{ weekday: "thursday", person: person(w, 3) }],
       });
+    });
+  });
+
+  it("counts a confirmed day's 24 hours to 7 AM in the club's zone, not in UTC (T2; FQ79)", async () => {
+    await rolledBack(db, async (tx) => {
+      const clock = fakeClock(OPENED);
+      const w = await firstDays(tx, clock, 6, "Pacific/Auckland");
+      // 05:00 UTC on Wednesday 4 November is 6 PM in Auckland. Thursday's 7 AM there is 13 hours on, so
+      // Sam's Thursday first opens on the 12th; 7 AM UTC on Thursday the 5th would be 26 hours on.
+      clock.set(Temporal.Instant.from("2026-11-04T05:00:00Z"));
+      const answer = await confirm(tx, clock, w, 3, ["thursday"]);
+      expect(slot(answer, "thursday").firstDate).toBe("2026-11-12");
+      // And Friday's 7 AM in Auckland, 6 PM UTC on Thursday, is 37 hours on: Debby's Friday opens on the 6th.
+      expect(slot(await confirm(tx, clock, w, 4, ["friday"]), "friday").firstDate).toBe("2026-11-06");
     });
   });
 

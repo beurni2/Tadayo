@@ -279,6 +279,14 @@ describe("a proposal (spec 05; T33)", () => {
         UPDATE app.schedule_proposals SET state = 'applied', version = 2, closed_at = ${AT.added}, replaced_by = ${w.proposal}
          WHERE id = ${w.proposal}`,
       );
+      // Another proposal's id, on one that is still open: refused at once, before the deferred key is looked at.
+      const other = await firstDays(tx, 4);
+      await expectRefused(
+        tx,
+        REFUSED.check,
+        (sp) => sp`
+        UPDATE app.schedule_proposals SET replaced_by = ${other.proposal} WHERE id = ${w.proposal}`,
+      );
     });
   });
 });
