@@ -1,0 +1,64 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/db/invitation.test.ts (20 tests | 2 failed) 1511ms
+   ❯ revoking a link (G01-invite-people-revoked; FQ59, handoff 4) (4)
+     × ends the link at the clock's sample and nothing else: the candidate keeps their place, and a repeat answers the same and changes nothing 71ms
+     × revokes a link that was replaced or has expired the same way 35ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 18 passed (20)
+   Start at  14:23:43
+   Duration  2.21s (tests 81%, import 13%, transform 6%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/invitation.test.ts > revoking a link (G01-invite-people-revoked; FQ59, handoff 4) > ends the link at the clock's sample and nothing else: the candidate keeps their place, and a repeat answers the same and changes nothing
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/db/invitation.test.ts:459:43
+    457|       expect(answer).toEqual({ invitation_id: made.invitation_id, stat…
+    458|       const [row] = await linksOf(tx, s.sam);
+    459|       expect(row?.revoked_at?.equals(at)).toBe(true);
+       |                                           ^
+    460|
+    461|       clock.advance({ minutes: 9 });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/invitation.test.ts:451:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/invitation.test.ts > revoking a link (G01-invite-people-revoked; FQ59, handoff 4) > revokes a link that was replaced or has expired the same way
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/db/invitation.test.ts:487:93
+    485|       // The replaced link's row is revoked at the clock's sample, and…
+    486|       let rows = await linksOf(tx, s.sam);
+    487|       expect(rows.find((row) => row.id === first.invitation_id)?.revok…
+       |                                                                                             ^
+    488|       expect(rows.find((row) => row.id === second.invitation_id)?.revo…
+    489|       expect(await stateFor(tx, s)).toMatchObject({ id: second.invitat…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/invitation.test.ts:477:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

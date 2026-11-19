@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/propose-roster.ts b/packages/domain/src/clubs/propose-roster.ts
+index da4350c2..0a4f5ea4 100644
+--- a/packages/domain/src/clubs/propose-roster.ts
++++ b/packages/domain/src/clubs/propose-roster.ts
+@@ -138,7 +138,7 @@ export async function proposeRoster(
+   // 3. Who is asking: the same interval still. One that ended while this waited, a new one begun since
+   // included, proposes nothing: its receipt would be older than the interval it answered.
+   const proposer = await activeMember(tx, userId, clubId);
+-  if (proposer !== asking) throw new Refused("NOT_FOUND");
++  if (proposer === null) throw new Refused("NOT_FOUND");
+ 
+   // 4. The version. 5. Six.
+   const [roster] = await bound(tx)`

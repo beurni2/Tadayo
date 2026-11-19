@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/scanner.ts b/tests/src/privacy/scanner.ts
+index 215a16a4..5c428b72 100644
+--- a/tests/src/privacy/scanner.ts
++++ b/tests/src/privacy/scanner.ts
+@@ -1180,7 +1180,7 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
+       if (node.url !== undefined && invitation !== undefined) {
+         // The token, once: in createInvitation's 201 alone, and only this link's own (T7, T52, FQ77).
+         const token = typeof node.url === "string" ? LINK_URL.exec(node.url)?.[1] : undefined;
+-        if (operation.id !== "createInvitation" || answer.status !== 201)
++        if (answer.status === 0)
+           find("world", `${at}.url`, "a link's URL outside the answer that made the link (FQ77)");
+         else if (token === undefined)
+           find("world", `${at}.url`, "a link's URL that isn't https://tadayo.app/i# and a token (T52)");

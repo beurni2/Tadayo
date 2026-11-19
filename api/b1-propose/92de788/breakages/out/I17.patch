@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/invitation.ts b/packages/domain/src/clubs/invitation.ts
+index 29788216..575297e1 100644
+--- a/packages/domain/src/clubs/invitation.ts
++++ b/packages/domain/src/clubs/invitation.ts
+@@ -180,7 +180,7 @@ export async function createInvitation(
+             ${at}::pg_catalog.timestamptz, ${expiresAt}::pg_catalog.timestamptz)`;
+ 
+   // 6. The answer.
+-  const answer = await completeReceipt(tx, receipt, render({ invitationId, candidateId, expiresAt }), 201);
++  const answer = await completeReceipt(tx, receipt, render({ invitationId, candidateId, expiresAt }));
+   return { answer, token };
+ }
+ 

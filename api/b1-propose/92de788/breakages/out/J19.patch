@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/roster.ts b/tests/src/privacy/roster.ts
+index b80f04e0..6d63f3ff 100644
+--- a/tests/src/privacy/roster.ts
++++ b/tests/src/privacy/roster.ts
+@@ -43,7 +43,7 @@ export const ROSTER_JUDGED: ReadonlySet<string> = new Set([
+ /** A club holds at most six people, its candidates still open counted (A01, T6). */
+ const SIX = 6;
+ /** A link lasts seven days from the second it was made in (FQ71). */
+-const LINK_DAYS = 7;
++const LINK_DAYS = 8;
+ 
+ export interface RevisionRows {
+   club: string;

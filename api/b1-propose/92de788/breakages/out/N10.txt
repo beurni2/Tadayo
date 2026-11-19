@@ -1,0 +1,75 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/privacy/scanner.test.ts (75 tests | 3 failed) 397ms
+   ❯ the proposer's invitation link (T7, T14, T52, FQ77; handoff 1) (7)
+     × passes the link's id and, in the answer that made it, its URL, to the member who proposed the candidate 19ms
+     × catches the link's id shown to anyone else: another member, a former member who made it, someone outside 2ms
+     × catches a link of a suspended club, and one shown to an account that isn't active (FQ80) 3ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 72 passed (75)
+   Start at  14:38:19
+   Duration  1.15s (tests 50%, import 45%, transform 4%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > the proposer's invitation link (T7, T14, T52, FQ77; handoff 1) > passes the link's id and, in the answer that made it, its URL, to the member who proposed the candidate
+AssertionError: expected [ { check: 'values', …(2) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "at": "$.invitation_id",
++     "check": "values",
++     "what": "an id of a drop, day, club, person, reservation, account or invitation the viewer may not see (T14)",
++   },
++ ]
+
+ ❯ src/privacy/scanner.test.ts:1692:69
+    1690|     expect(madeBy(ben, link())).toEqual([]);
+    1691|     expect(scan(answer(revision(bens)), context("getRosterRevision", b…
+    1692|     expect(scan(answer(revoked), context("revokeInvitation", ben))).to…
+       |                                                                     ^
+    1693|   });
+    1694|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the proposer's invitation link (T7, T14, T52, FQ77; handoff 1) > catches the link's id shown to anyone else: another member, a former member who made it, someone outside
+AssertionError: expected [] to deeply equal [ '$.invitation_id' ]
+
+- Expected
++ Received
+
+- [
+-   "$.invitation_id",
+- ]
++ []
+
+ ❯ src/privacy/scanner.test.ts:1698:87
+    1696|     for (const viewer of [cleo, ana, stan]) {
+    1697|       expect(at(madeBy(viewer, link()), "world")).toEqual(["$.invitati…
+    1698|       expect(at(scan(answer(revoked), context("revokeInvitation", view…
+       |                                                                                       ^
+    1699|     }
+    1700|     expect(at(scan(answer(revision(bens, cleo)), context("getRosterRev…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the proposer's invitation link (T7, T14, T52, FQ77; handoff 1) > catches a link of a suspended club, and one shown to an account that isn't active (FQ80)
+AssertionError: expected [] to include '$.invitation_id'
+ ❯ src/privacy/scanner.test.ts:1727:92
+    1725|     const accounts = new Map(world.accounts).set(acct(ben), accountOf(…
+    1726|     const deleting = { world: { ...world, accounts } };
+    1727|     expect(at(scan(answer(revoked), context("revokeInvitation", ben, d…
+       |                                                                                            ^
+    1728|   });
+    1729|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/roster-revision.ts b/packages/domain/src/clubs/roster-revision.ts
+index 2c673837..57e501f0 100644
+--- a/packages/domain/src/clubs/roster-revision.ts
++++ b/packages/domain/src/clubs/roster-revision.ts
+@@ -141,7 +141,7 @@ export async function readRevision(
+              'id', c.id, 'name', c.name, 'timezone', c.timezone, 'membership_id', am.interval_id) AS club,
+            (SELECT ${person(sql)} FROM app.memberships s JOIN app.users su ON su.id = s.user_id
+              WHERE s.interval_id = r.proposed_by_interval_id) AS proposed_by,
+-           (SELECT pg_catalog.jsonb_agg(${person(sql)} ORDER BY s.joined_at, s.interval_id COLLATE "C")
++           (SELECT pg_catalog.jsonb_agg(${person(sql)} ORDER BY s.joined_at, s.interval_id COLLATE "C" DESC)
+               FROM app.roster_revision_members rm
+               JOIN app.memberships s ON s.interval_id = rm.interval_id
+               JOIN app.users su ON su.id = s.user_id

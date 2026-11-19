@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/scanner.ts b/tests/src/privacy/scanner.ts
+index 215a16a4..3af9ae4c 100644
+--- a/tests/src/privacy/scanner.ts
++++ b/tests/src/privacy/scanner.ts
+@@ -1354,7 +1354,7 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
+     } else if (isObject(value) && !opened(value) && !ownCards.has(value)) {
+       for (const [key, child] of Object.entries(value)) {
+         const path = `${at}.${key}`;
+-        if (NEVER_KEY.test(key) && walked.names.get(path) !== "HighlightPointer" && !ownLinkUrls.has(path))
++        if (NEVER_KEY.test(key) && walked.names.get(path) !== "HighlightPointer" && !path.endsWith(".url"))
+           find("keys", path, "a key that names a URL, token, provider, dimension, colour or highlight (T10)");
+         keys(child, path);
+       }

@@ -1,0 +1,12 @@
+diff --git a/tests/src/privacy/roster.ts b/tests/src/privacy/roster.ts
+index b80f04e0..1092fc2e 100644
+--- a/tests/src/privacy/roster.ts
++++ b/tests/src/privacy/roster.ts
+@@ -274,7 +274,6 @@ export function sameAnswer(
+   want: Record<string, unknown>,
+ ): (answer: Answer) => string[] {
+   return (answer) => {
+-    if (answer.status !== status) return [`status ${String(answer.status)}, not ${String(status)} with ${what}`];
+     if (answer.headers["cache-control"] !== "private, no-store") return [`${what} without private, no-store`];
+     const body = parsed(answer);
+     if (!isObject(body)) return [`not ${what}`];

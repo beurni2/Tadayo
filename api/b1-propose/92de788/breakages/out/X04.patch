@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/invitation.ts b/packages/domain/src/clubs/invitation.ts
+index 29788216..932c70ef 100644
+--- a/packages/domain/src/clubs/invitation.ts
++++ b/packages/domain/src/clubs/invitation.ts
+@@ -208,7 +208,7 @@ export async function revokeInvitation(
+   const [link] = await bound(tx)`
+     SELECT i.bound_user_id, i.revoked_at
+       FROM app.invitations i JOIN app.candidates k ON k.id = i.candidate_id
+-     WHERE i.id = ${invitationId} AND k.proposed_by_interval_id = ${proposer}
++     WHERE i.id = ${invitationId}
+        FOR UPDATE OF i`;
+   if (link === undefined) throw new Refused("NOT_FOUND");
+ 

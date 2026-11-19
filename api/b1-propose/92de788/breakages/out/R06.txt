@@ -1,0 +1,43 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/db/invitation.test.ts (20 tests | 1 failed) 1712ms
+   ❯ where a link stands, for its proposer alone (CandidateLinkState) (3)
+     × is accepted once the candidate accepted this revision with it, used on a newer revision, and stays so past its expiry 129ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  14:20:38
+   Duration  2.43s (tests 83%, import 12%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/invitation.test.ts > where a link stands, for its proposer alone (CandidateLinkState) > is accepted once the candidate accepted this revision with it, used on a newer revision, and stays so past its expiry
+AssertionError: expected { …(3) } to deeply equal { …(3) }
+
+- Expected
++ Received
+
+  {
+    "expires_at": "2026-11-18T05:00:00Z",
+    "id": "inv_ufnTat9q8G-_dWs5CQRDww",
+-   "state": "used",
++   "state": "expired",
+  }
+
+ ❯ src/db/invitation.test.ts:432:47
+    430|       const newer = await propose(tx, clock, user(s.w, 2), s.w.club, […
+    431|       const seen = await read(tx, user(s.w, 0), newer.id, long);
+    432|       expect(seen?.candidates[0]?.invitation).toEqual({ id: made.invit…
+       |                                               ^
+    433|     });
+    434|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/invitation.test.ts:423:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/clubs/invitation.ts b/packages/domain/src/clubs/invitation.ts
+index 29788216..0de81da0 100644
+--- a/packages/domain/src/clubs/invitation.ts
++++ b/packages/domain/src/clubs/invitation.ts
+@@ -172,7 +172,6 @@ export async function createInvitation(
+     const earlier = latest["id"];
+     if (typeof earlier !== "string") throw new Error("clubs: a link came back without its id");
+     // Before the new one is written: one link per candidate is the latest (the reference is checked at commit).
+-    await bound(tx)`UPDATE app.invitations SET replaced_by_id = ${invitationId} WHERE id = ${earlier}`;
+   }
+   await bound(tx)`
+     INSERT INTO app.invitations (id, candidate_id, token_sha256, created_at, expires_at)

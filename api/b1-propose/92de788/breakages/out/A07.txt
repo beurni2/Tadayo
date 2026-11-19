@@ -1,0 +1,152 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/services/api
+
+ ❯ src/clubs/roster.test.ts (22 tests | 9 failed) 349ms
+   ❯ the roster revision's serializer against the contract's examples (T55) (10)
+     × makes leila field for field 14ms
+     × makes approve field for field 4ms
+     × makes link_revoked field for field 3ms
+     × makes link_expired field for field 2ms
+     × makes accepted field for field 2ms
+     × makes another_name field for field 2ms
+     × makes another_name_proposer field for field 2ms
+     × makes superseded field for field 2ms
+     × sends a link's expiry in whole seconds, rounded down, and no link, no avatar and no successor where there is none 2ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  9 failed | 26 passed (35)
+   Start at  14:23:58
+   Duration  842ms (tests 50%, import 39%, transform 10%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 9 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/clubs/roster.test.ts > the roster revision's serializer against the contract's examples (T55) > makes leila field for field
+ FAIL  src/clubs/roster.test.ts > the roster revision's serializer against the contract's examples (T55) > makes link_revoked field for field
+ FAIL  src/clubs/roster.test.ts > the roster revision's serializer against the contract's examples (T55) > makes accepted field for field
+ FAIL  src/clubs/roster.test.ts > the roster revision's serializer against the contract's examples (T55) > makes another_name_proposer field for field
+AssertionError: expected { Object (id, version, ...) } to deeply equal { Object (id, version, ...) }
+
+- Expected
++ Received
+
+@@ -1,6 +1,7 @@
+  {
++   "approvals": 1,
+    "candidates": [
+      {
+        "id": "cnd_kt_leila",
+        "invitation": {
+          "expires_at": "2026-11-13T14:41:00Z",
+
+ ❯ src/clubs/roster.test.ts:96:18
+     94|     const value = example.value as Body;
+     95|     const made = rosterRevisionBody(sight(value));
+     96|     expect(made).toEqual(value);
+       |                  ^
+     97|     expect(RosterRevision.strict().safeParse(made).success).toBe(true);
+     98|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/9]⎯
+
+ FAIL  src/clubs/roster.test.ts > the roster revision's serializer against the contract's examples (T55) > makes approve field for field
+ FAIL  src/clubs/roster.test.ts > the roster revision's serializer against the contract's examples (T55) > makes superseded field for field
+AssertionError: expected { Object (id, version, ...) } to deeply equal { Object (id, version, ...) }
+
+- Expected
++ Received
+
+@@ -1,6 +1,7 @@
+  {
++   "approvals": 1,
+    "candidates": [
+      {
+        "id": "cnd_kt_leila",
+        "name": "Leila",
+        "proposed_by": {
+
+ ❯ src/clubs/roster.test.ts:96:18
+     94|     const value = example.value as Body;
+     95|     const made = rosterRevisionBody(sight(value));
+     96|     expect(made).toEqual(value);
+       |                  ^
+     97|     expect(RosterRevision.strict().safeParse(made).success).toBe(true);
+     98|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/9]⎯
+
+ FAIL  src/clubs/roster.test.ts > the roster revision's serializer against the contract's examples (T55) > makes link_expired field for field
+AssertionError: expected { Object (id, version, ...) } to deeply equal { Object (id, version, ...) }
+
+- Expected
++ Received
+
+@@ -1,6 +1,7 @@
+  {
++   "approvals": 1,
+    "candidates": [
+      {
+        "id": "cnd_kt_leila",
+        "invitation": {
+          "expires_at": "2026-11-06T14:00:00Z",
+
+ ❯ src/clubs/roster.test.ts:96:18
+     94|     const value = example.value as Body;
+     95|     const made = rosterRevisionBody(sight(value));
+     96|     expect(made).toEqual(value);
+       |                  ^
+     97|     expect(RosterRevision.strict().safeParse(made).success).toBe(true);
+     98|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/9]⎯
+
+ FAIL  src/clubs/roster.test.ts > the roster revision's serializer against the contract's examples (T55) > makes another_name field for field
+AssertionError: expected { Object (id, version, ...) } to deeply equal { Object (id, version, ...) }
+
+- Expected
++ Received
+
+@@ -1,6 +1,7 @@
+  {
++   "approvals": 1,
+    "candidates": [
+      {
+        "id": "cnd_kt_leila",
+        "name": "Debby",
+        "proposed_by": {
+
+ ❯ src/clubs/roster.test.ts:96:18
+     94|     const value = example.value as Body;
+     95|     const made = rosterRevisionBody(sight(value));
+     96|     expect(made).toEqual(value);
+       |                  ^
+     97|     expect(RosterRevision.strict().safeParse(made).success).toBe(true);
+     98|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/9]⎯
+
+ FAIL  src/clubs/roster.test.ts > the roster revision's serializer against the contract's examples (T55) > sends a link's expiry in whole seconds, rounded down, and no link, no avatar and no successor where there is none
+AssertionError: expected { id: 'rev_1', version: 1, …(7) } to deeply equal { id: 'rev_1', version: 1, …(6) }
+
+- Expected
++ Received
+
+@@ -1,6 +1,7 @@
+  {
++   "approvals": 1,
+    "candidates": [
+      {
+        "id": "cand_1",
+        "invitation": {
+          "expires_at": "2026-11-13T14:41:00Z",
+
+ ❯ src/clubs/roster.test.ts:121:18
+    119|       supersededBy: null,
+    120|     });
+    121|     expect(made).toEqual({
+       |                  ^
+    122|       id: "rev_1",
+    123|       version: 1,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/9]⎯
+

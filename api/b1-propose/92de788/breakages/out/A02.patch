@@ -1,0 +1,13 @@
+diff --git a/services/api/src/clubs/roster.ts b/services/api/src/clubs/roster.ts
+index e93cb656..3f820a0d 100644
+--- a/services/api/src/clubs/roster.ts
++++ b/services/api/src/clubs/roster.ts
+@@ -115,7 +115,7 @@ export function proposeRosterHandler(deps: Deps): Handler {
+     const account = signedIn(request);
+     // The key is judged before the body's fields, the contract's order; nothing here echoes a value.
+     const key = request.headers["idempotency-key"];
+-    if (typeof key !== "string" || !IDEMPOTENCY_KEY.test(key)) {
++    if (typeof key !== "string") {
+       return problem(reply, "INVALID_REQUEST", { field: "Idempotency-Key" });
+     }
+     const parsed = ProposeRosterRequest.safeParse(request.body);

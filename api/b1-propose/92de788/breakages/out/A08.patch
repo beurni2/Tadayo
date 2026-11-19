@@ -1,0 +1,13 @@
+diff --git a/services/api/src/clubs/roster.ts b/services/api/src/clubs/roster.ts
+index e93cb656..685f5be0 100644
+--- a/services/api/src/clubs/roster.ts
++++ b/services/api/src/clubs/roster.ts
+@@ -50,7 +50,7 @@ export function rosterRevisionBody(revision: RevisionSight): { readonly [key: st
+       name: candidate.name,
+       proposed_by: personBody(candidate.proposedBy),
+       ...(candidate.invitation === null
+-        ? {}
++        ? { invitation: null }
+         : {
+             invitation: {
+               id: candidate.invitation.id,

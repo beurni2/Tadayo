@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/roster.ts b/tests/src/privacy/roster.ts
+index b80f04e0..54186ff2 100644
+--- a/tests/src/privacy/roster.ts
++++ b/tests/src/privacy/roster.ts
+@@ -359,7 +359,7 @@ export function revokeOutcome(
+   const link = roster.links.get(id);
+   if (link === undefined) return NEUTRAL;
+   const viewer = viewerIn(world, link.club, account);
+-  if (viewer === undefined || viewer !== link.proposer) return NEUTRAL;
++  if (viewer === undefined) return NEUTRAL;
+   return link.bound ? NOT_ALLOWED : "revoked";
+ }
+ 

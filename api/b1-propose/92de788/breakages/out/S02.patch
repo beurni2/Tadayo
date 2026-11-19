@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/idempotency/receipt.ts b/packages/domain/src/idempotency/receipt.ts
+index 0be587fe..334c2186 100644
+--- a/packages/domain/src/idempotency/receipt.ts
++++ b/packages/domain/src/idempotency/receipt.ts
+@@ -71,7 +71,7 @@ export async function reservedSince(
+       FROM app.idempotency_receipts r
+       JOIN app.memberships m ON m.interval_id = ${interval} AND m.user_id = r.actor_user_id
+      WHERE r.actor_user_id = ${userId} AND r.operation = ${request.operation}
+-       AND r.idempotency_key = ${key}::pg_catalog.uuid AND r.created_at >= m.joined_at`;
++       AND r.idempotency_key = ${key}::pg_catalog.uuid`;
+   return found !== undefined;
+ }
+ 

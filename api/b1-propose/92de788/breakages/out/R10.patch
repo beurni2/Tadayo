@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/roster-revision.ts b/packages/domain/src/clubs/roster-revision.ts
+index 2c673837..f6c1d34a 100644
+--- a/packages/domain/src/clubs/roster-revision.ts
++++ b/packages/domain/src/clubs/roster-revision.ts
+@@ -168,7 +168,7 @@ export async function readRevision(
+               JOIN app.candidates k ON k.id = rc.candidate_id
+              WHERE rc.revision_id = r.id) AS candidates,
+            coalesce((SELECT a.decision FROM app.roster_approvals a
+-                      WHERE a.revision_id = r.id AND a.interval_id = am.interval_id), 'pending') AS my_decision
++                      WHERE a.revision_id = r.id AND a.interval_id = r.proposed_by_interval_id), 'pending') AS my_decision
+       FROM app.roster_revisions r
+       JOIN app.clubs c ON c.id = r.club_id
+       JOIN (${activeMemberships(sql, userId)}) am ON am.club_id = r.club_id

@@ -1,0 +1,13 @@
+diff --git a/services/api/src/clubs/roster.ts b/services/api/src/clubs/roster.ts
+index e93cb656..30c69c28 100644
+--- a/services/api/src/clubs/roster.ts
++++ b/services/api/src/clubs/roster.ts
+@@ -137,7 +137,7 @@ export function proposeRosterHandler(deps: Deps): Handler {
+       if (error instanceof Refused) return refusal(reply, error);
+       throw error;
+     }
+-    return created(reply, response);
++    return ok(reply, response);
+   };
+ }
+ 

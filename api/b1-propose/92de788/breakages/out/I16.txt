@@ -1,0 +1,35 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/db/invitation.test.ts (20 tests | 2 failed) 1745ms
+   ❯ a share link for one candidate (T7, FQ71, FQ77) (9)
+     × answers a retry under the same key with the first answer and no token, and makes nothing (T19, FQ77) 47ms
+     × gives a retry by a proposer who left and joined again the neutral not-found: the link was the earlier interval's (FQ112) 51ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 18 passed (20)
+   Start at  14:23:28
+   Duration  2.45s (tests 82%, import 13%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/invitation.test.ts > a share link for one candidate (T7, FQ71, FQ77) > answers a retry under the same key with the first answer and no token, and makes nothing (T19, FQ77)
+ FAIL  src/db/invitation.test.ts > a share link for one candidate (T7, FQ71, FQ77) > gives a retry by a proposer who left and joined again the neutral not-found: the link was the earlier interval's (FQ112)
+PostgresError: app.idempotency_receipts: a completed receipt never changes (T19)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ completeReceipt ../packages/domain/src/idempotency/receipt.ts:114:38
+    112|   status: 200 | 201 = 200,
+    113| ): Promise<Json> {
+    114|   const [completed] = await bound(tx)`
+       |                                      ^
+    115|     UPDATE app.idempotency_receipts
+    116|        SET state = 'completed', response_status = ${String(status)}::p…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+

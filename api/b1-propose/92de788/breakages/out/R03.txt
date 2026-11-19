@@ -1,0 +1,158 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/db/propose-roster.test.ts (41 tests | 2 failed) 1812ms
+   ❯ who reads a revision, and what of it (T9, T14, T15, T33; FQ119) (6)
+     × gives the neutral not-found to a stranger, a member of another club, a former member, a member who joined after it was made, an account being deleted, a candidate who accepted it, and for an id nobody has or that can't be one 122ms
+     × gives nobody anything of a suspended club's revision (FQ80) 60ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 39 passed (41)
+   Start at  14:20:29
+   Duration  2.54s (tests 82%, import 13%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/propose-roster.test.ts > who reads a revision, and what of it (T9, T14, T15, T33; FQ119) > gives the neutral not-found to a stranger, a member of another club, a former member, a member who joined after it was made, an account being deleted, a candidate who accepted it, and for an id nobody has or that can't be one
+AssertionError: expected { …(8) } to be null
+
+- Expected:
+null
+
++ Received:
+{
+  "candidates": [
+    {
+      "id": "cand__eYSjRSCY7jkmtppzxZ6FA",
+      "name": "Sam",
+      "proposed_by": {
+        "display_name": "Ben",
+        "membership_id": "mem_vn4byREQelfJLcC53wSbUg",
+      },
+    },
+    {
+      "id": "cand_MptcRGBSKgJcmeRM3tHzuQ",
+      "name": "Debby",
+      "proposed_by": {
+        "display_name": "Maya",
+        "membership_id": "mem_AbdywwxrobRlWCEmhtixAQ",
+      },
+    },
+  ],
+  "club": {
+    "id": "club_8d4jYSSS9hmC2C5L4dQ3eQ",
+    "my_membership_id": "mem_GfhU-Tvoz71-jXJY7WI3fA",
+    "name": "Sunday people",
+    "timezone": "America/New_York",
+  },
+  "id": "rev_rhvf67bBjSwe5CQVC9-XAQ",
+  "members": [
+    {
+      "display_name": "Ben",
+      "membership_id": "mem_vn4byREQelfJLcC53wSbUg",
+    },
+    {
+      "display_name": "Maya",
+      "membership_id": "mem_AbdywwxrobRlWCEmhtixAQ",
+    },
+    {
+      "display_name": "Alex",
+      "membership_id": "mem_GfhU-Tvoz71-jXJY7WI3fA",
+    },
+  ],
+  "my_decision": "pending",
+  "proposed_by": {
+    "display_name": "Maya",
+    "membership_id": "mem_AbdywwxrobRlWCEmhtixAQ",
+  },
+  "state": "open",
+  "version": 1,
+}
+
+ ❯ src/db/propose-roster.test.ts:830:56
+    828|
+    829|       await leave(plain(tx), { user: user(w, 2), interval: member(w, 2…
+    830|       expect(await read(tx, user(w, 2), open.id, NOW)).toBeNull();
+       |                                                        ^
+    831|       expect(await read(tx, user(w, 2), first.id, NOW)).toBeNull();
+    832|
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/propose-roster.test.ts:807:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/propose-roster.test.ts > who reads a revision, and what of it (T9, T14, T15, T33; FQ119) > gives nobody anything of a suspended club's revision (FQ80)
+AssertionError: expected { …(8) } to be null
+
+- Expected:
+null
+
++ Received:
+{
+  "candidates": [
+    {
+      "id": "cand_mJOg9_-F0sWd7Pg-3_94bQ",
+      "name": "Sam",
+      "proposed_by": {
+        "display_name": "Ben",
+        "membership_id": "mem_vhMkd5nT09ka3zsCF9aBGw",
+      },
+    },
+    {
+      "id": "cand_BTxNYODg5o5afbmS-tZzFg",
+      "name": "Debby",
+      "proposed_by": {
+        "display_name": "Maya",
+        "membership_id": "mem_mtoK8rJ4PJdoDAmFmveuDA",
+      },
+    },
+  ],
+  "club": {
+    "id": "club_ujD53_w26-qd_0nIqFpOyw",
+    "my_membership_id": "mem_vhMkd5nT09ka3zsCF9aBGw",
+    "name": "Sunday people",
+    "timezone": "America/New_York",
+  },
+  "id": "rev_umnL2WY8FEyaRl9aeqbqdA",
+  "members": [
+    {
+      "display_name": "Ben",
+      "membership_id": "mem_vhMkd5nT09ka3zsCF9aBGw",
+    },
+    {
+      "display_name": "Maya",
+      "membership_id": "mem_mtoK8rJ4PJdoDAmFmveuDA",
+    },
+    {
+      "display_name": "Alex",
+      "membership_id": "mem_cJwW8JjFSBy-mnEjbWay7Q",
+    },
+  ],
+  "my_decision": "pending",
+  "proposed_by": {
+    "display_name": "Maya",
+    "membership_id": "mem_mtoK8rJ4PJdoDAmFmveuDA",
+  },
+  "state": "open",
+  "version": 1,
+}
+
+ ❯ src/db/propose-roster.test.ts:858:91
+    856|       const { w, open } = await world(tx);
+    857|       await tx`UPDATE app.clubs SET suspended_at = ${LATER} WHERE id =…
+    858|       for (const index of [0, 1, 2]) expect(await read(tx, user(w, ind…
+       |                                                                                           ^
+    859|     });
+    860|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/propose-roster.test.ts:855:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

@@ -1,0 +1,13 @@
+diff --git a/services/api/src/clubs/roster.ts b/services/api/src/clubs/roster.ts
+index e93cb656..60d9c63e 100644
+--- a/services/api/src/clubs/roster.ts
++++ b/services/api/src/clubs/roster.ts
+@@ -75,7 +75,7 @@ export function invitationLinkBody(made: MadeLink): { readonly [key: string]: Js
+ 
+ /** The link to share: the token in the fragment, which reaches no server and no log (T7, T52). */
+ export function invitationUrl(token: string): string {
+-  return `https://tadayo.app/i#${token}`;
++  return `https://tadayo.app/i?t=${token}`;
+ }
+ 
+ /** A path's parameter, as Fastify decoded it; anything that isn't a string names nothing. */

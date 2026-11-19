@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/roster-revision.ts b/packages/domain/src/clubs/roster-revision.ts
+index 2c673837..db0e1640 100644
+--- a/packages/domain/src/clubs/roster-revision.ts
++++ b/packages/domain/src/clubs/roster-revision.ts
+@@ -189,7 +189,7 @@ export async function readRevision(
+   if (proposedBy === null) return null;
+   const members = list(row["members"]).flatMap((entry) => {
+     const who = personOf(entry).person;
+-    return who === null ? [] : [who];
++    return [who as SchedulePerson];
+   });
+   // The caller is one of them, and has a name: the gate lets nobody without one this far (FQ69).
+   if (!members.some((member) => member.membershipId === membershipId)) throw shape();

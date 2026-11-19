@@ -1,0 +1,12 @@
+diff --git a/services/api/src/clubs/roster.ts b/services/api/src/clubs/roster.ts
+index e93cb656..a944d615 100644
+--- a/services/api/src/clubs/roster.ts
++++ b/services/api/src/clubs/roster.ts
+@@ -60,6 +60,7 @@ export function rosterRevisionBody(revision: RevisionSight): { readonly [key: st
+           }),
+     })),
+     my_decision: revision.myDecision,
++    approvals: 1,
+     ...(revision.supersededBy === null ? {} : { superseded_by: revision.supersededBy }),
+   };
+ }

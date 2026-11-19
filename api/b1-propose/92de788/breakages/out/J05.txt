@@ -1,0 +1,31 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/privacy/roster.test.ts (23 tests | 1 failed) 61ms
+   ❯ a revision's RosterRevision from the world's rows (getRosterRevision) (7)
+     × says where the candidate's latest link stands: accepted, used, revoked, expired at its instant, live before it 12ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  14:37:34
+   Duration  609ms (import 61%, tests 21%, transform 16%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/roster.test.ts > a revision's RosterRevision from the world's rows (getRosterRevision) > says where the candidate's latest link stands: accepted, used, revoked, expired at its instant, live before it
+AssertionError: expected 'used' to be 'accepted' // Object.is equality
+
+Expected: "accepted"
+Received: "used"
+
+ ❯ src/privacy/roster.test.ts:248:67
+    246|         ),
+    247|       );
+    248|     expect(state(link({ bound: true, revoked: true }), "inv_mo")).toBe…
+       |                                                                   ^
+    249|     expect(state(link({ bound: true, revoked: true }))).toBe("used");
+    250|     expect(state(link({ bound: true }), "inv_other")).toBe("used");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

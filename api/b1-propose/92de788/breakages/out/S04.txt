@@ -1,0 +1,42 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/db/invitation.test.ts (20 tests | 1 failed) 1534ms
+   ❯ a share link for one candidate (T7, FQ71, FQ77) (9)
+     × gives a retry by a proposer who left and joined again the neutral not-found: the link was the earlier interval's (FQ112) 50ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  14:22:24
+   Duration  2.19s (tests 82%, import 12%, transform 6%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/invitation.test.ts > a share link for one candidate (T7, FQ71, FQ77) > gives a retry by a proposer who left and joined again the neutral not-found: the link was the earlier interval's (FQ112)
+AssertionError: expected { code: 'IDEMPOTENCY_CONFLICT', …(1) } to deeply equal { code: 'NOT_FOUND', facts: {} }
+
+- Expected
++ Received
+
+  {
+-   "code": "NOT_FOUND",
++   "code": "IDEMPOTENCY_CONFLICT",
+    "facts": {},
+  }
+
+ ❯ src/db/invitation.test.ts:270:84
+    268|       expect(await refusal(link(tx, clock, user(s.w, 0), s.w.club, s.s…
+    269|       // Another request under that key gets the same, never a conflic…
+    270|       expect(await refusal(link(tx, clock, user(s.w, 0), s.w.club, s.d…
+       |                                                                                    ^
+    271|       // Nor is the earlier interval's link the new one's to revoke.
+    272|       const made = first.answer as unknown as LinkAnswer;
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/invitation.test.ts:249:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

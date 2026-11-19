@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/propose-roster.ts b/packages/domain/src/clubs/propose-roster.ts
+index da4350c2..852d6d2e 100644
+--- a/packages/domain/src/clubs/propose-roster.ts
++++ b/packages/domain/src/clubs/propose-roster.ts
+@@ -146,7 +146,7 @@ export async function proposeRoster(
+            (SELECT pg_catalog.count(*)::pg_catalog.int4 FROM app.memberships m
+              WHERE m.club_id = c.id AND m.state = 'active') AS members,
+            (SELECT pg_catalog.count(*)::pg_catalog.int4 FROM app.candidates k
+-             WHERE k.club_id = c.id AND k.state = 'open') AS open_candidates,
++             WHERE k.club_id = c.id) AS open_candidates,
+            (SELECT r.id FROM app.roster_revisions r WHERE r.club_id = c.id AND r.state = 'open') AS open_revision_id
+       FROM app.clubs c WHERE c.id = ${clubId}`;
+   if (roster === undefined) throw new Error("clubs: the club vanished under its own lock");

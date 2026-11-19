@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/db/invitation.test.ts (20 tests | 1 failed) 1558ms
+   ❯ the clock and the club's row (T1) (4)
+     × dates a link and its expiry from the sample taken after the lock, not the receipt's 34ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  14:23:06
+   Duration  2.51s (tests 76%, import 17%, transform 6%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/invitation.test.ts > the clock and the club's row (T1) > dates a link and its expiry from the sample taken after the lock, not the receipt's
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/db/invitation.test.ts:299:65
+    297|       const [row] = await linksOf(tx, s.sam);
+    298|       // The second sample, a second after the first: 05:00:01.123456,…
+    299|       expect(row?.created_at.equals(FIRST.add({ seconds: 1 }))).toBe(t…
+       |                                                                 ^
+    300|       expect(made.expires_at).toBe("2026-11-18T05:00:01Z");
+    301|       expect(row?.expires_at.equals(Temporal.Instant.from("2026-11-18T…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/invitation.test.ts:294:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

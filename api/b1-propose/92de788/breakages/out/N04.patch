@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/scanner.ts b/tests/src/privacy/scanner.ts
+index 215a16a4..b2346e34 100644
+--- a/tests/src/privacy/scanner.ts
++++ b/tests/src/privacy/scanner.ts
+@@ -1035,7 +1035,7 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
+     // As the routes' own rule has it (authorization/member.ts): nothing of a suspended club, and nothing
+     // to an account that isn't active.
+     const account = context.viewer.account === null ? undefined : world.accounts.get(context.viewer.account);
+-    if (world.clubs.get(invitation.club)?.suspendedAt !== null || account?.state !== "active") {
++    if (world.clubs.get(invitation.club)?.suspendedAt !== null) {
+       find("world", at, "a link of a suspended club, or to an account that isn't active (FQ80)");
+       return undefined;
+     }

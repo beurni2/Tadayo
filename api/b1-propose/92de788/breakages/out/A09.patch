@@ -1,0 +1,13 @@
+diff --git a/services/api/src/clubs/roster.ts b/services/api/src/clubs/roster.ts
+index e93cb656..3e8126f9 100644
+--- a/services/api/src/clubs/roster.ts
++++ b/services/api/src/clubs/roster.ts
+@@ -55,7 +55,7 @@ export function rosterRevisionBody(revision: RevisionSight): { readonly [key: st
+             invitation: {
+               id: candidate.invitation.id,
+               state: candidate.invitation.state,
+-              expires_at: contractInstant(candidate.invitation.expiresAt),
++              expires_at: candidate.invitation.expiresAt.toString(),
+             },
+           }),
+     })),

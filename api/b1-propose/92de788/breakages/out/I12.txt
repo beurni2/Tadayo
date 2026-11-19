@@ -1,0 +1,43 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/db/invitation.test.ts (20 tests | 5 failed) 1578ms
+   ❯ a share link for one candidate (T7, FQ71, FQ77) (9)
+     × makes a different token each time 58ms
+     × replaces the candidate's earlier link with a new one, so one is the latest (FQ71) 39ms
+   ❯ the clock and the club's row (T1) (4)
+     × keeps one latest link when two requests for one candidate arrive at once, and when a new link races a revoke 112ms
+   ❯ revoking a link (G01-invite-people-revoked; FQ59, handoff 4) (4)
+     × ends the link at the clock's sample and nothing else: the candidate keeps their place, and a repeat answers the same and changes nothing 112ms
+     × revokes a link that was replaced or has expired the same way 60ms
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 15 passed (20)
+   Start at  14:23:00
+   Duration  2.28s (tests 81%, import 14%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/invitation.test.ts > a share link for one candidate (T7, FQ71, FQ77) > makes a different token each time
+ FAIL  src/db/invitation.test.ts > a share link for one candidate (T7, FQ71, FQ77) > replaces the candidate's earlier link with a new one, so one is the latest (FQ71)
+ FAIL  src/db/invitation.test.ts > the clock and the club's row (T1) > keeps one latest link when two requests for one candidate arrive at once, and when a new link races a revoke
+ FAIL  src/db/invitation.test.ts > revoking a link (G01-invite-people-revoked; FQ59, handoff 4) > ends the link at the clock's sample and nothing else: the candidate keeps their place, and a repeat answers the same and changes nothing
+ FAIL  src/db/invitation.test.ts > revoking a link (G01-invite-people-revoked; FQ59, handoff 4) > revokes a link that was replaced or has expired the same way
+PostgresError: duplicate key value violates unique constraint "invitations_one_latest"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ createInvitation ../packages/domain/src/clubs/invitation.ts:176:18
+    174|     // Before the new one is written: one link per candidate is the la…
+    175|   }
+    176|   await bound(tx)`
+       |                  ^
+    177|     INSERT INTO app.invitations (id, candidate_id, token_sha256, creat…
+    178|     VALUES (${invitationId}, ${candidateId}, pg_catalog.decode(${hash}…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+

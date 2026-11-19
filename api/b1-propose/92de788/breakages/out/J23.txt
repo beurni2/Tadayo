@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/privacy/roster.test.ts (23 tests | 1 failed) 37ms
+   ❯ a link as it was made, and its replay (createInvitation) (5)
+     × holds a retry to the first answer without its url, and nothing else (FQ77) 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  14:37:58
+   Duration  581ms (import 65%, transform 17%, tests 15%, worker 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/roster.test.ts > a link as it was made, and its replay (createInvitation) > holds a retry to the first answer without its url, and nothing else (FQ77)
+AssertionError: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ src/privacy/roster.test.ts:502:63
+    500|     expect(replay(made(rest))).toEqual([]);
+    501|     expect(replay(made(first))).toEqual(["a retry's answer carries a u…
+    502|     expect(replay(made({ ...rest, invitation_id: "inv_2" }))).toHaveLe…
+       |                                                               ^
+    503|     expect(replay(made({ ...rest, state: "live" }))).toHaveLength(1);
+    504|     expect(replay(ok(rest))).toEqual(["not the first link again"]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

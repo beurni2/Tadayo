@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/roster.ts b/tests/src/privacy/roster.ts
+index b80f04e0..e49a1469 100644
+--- a/tests/src/privacy/roster.ts
++++ b/tests/src/privacy/roster.ts
+@@ -336,7 +336,7 @@ export function proposalOutcome(
+   if (viewerIn(world, club, account) === undefined || roster === undefined) return NEUTRAL;
+   if (roster.rosterVersion !== expected) return versionConflict(roster.rosterVersion);
+   const members = [...world.members.values()].filter((member) => member.club === club && member.active).length;
+-  return members + roster.openCandidates + count > SIX ? FULL : "created";
++  return members + count > SIX ? FULL : "created";
+ }
+ 
+ /** A generic `proposeRoster`'s answer in a cell: never a new revision. */

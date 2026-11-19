@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/propose-roster.ts b/packages/domain/src/clubs/propose-roster.ts
+index da4350c2..52a8f691 100644
+--- a/packages/domain/src/clubs/propose-roster.ts
++++ b/packages/domain/src/clubs/propose-roster.ts
+@@ -152,7 +152,7 @@ export async function proposeRoster(
+   if (roster === undefined) throw new Error("clubs: the club vanished under its own lock");
+   const version = count(roster["roster_version"]);
+   if (version !== input.expectedRosterVersion) throw new Refused("VERSION_CONFLICT", { current_version: version });
+-  if (count(roster["members"]) + count(roster["open_candidates"]) + input.add.length > CLUB_SIZE) {
++  if (count(roster["members"]) + input.add.length > CLUB_SIZE) {
+     throw new Refused("CLUB_FULL");
+   }
+   const earlier = roster["open_revision_id"];

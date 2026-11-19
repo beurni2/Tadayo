@@ -1,0 +1,31 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/privacy/roster.test.ts (23 tests | 1 failed) 48ms
+   ❯ what a proposal must get (proposeRoster) (4)
+     × sends what the contract refuses, a stale version, the proposal, its retry and another body under its key 15ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  14:37:55
+   Duration  628ms (import 63%, tests 19%, transform 17%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/roster.test.ts > what a proposal must get (proposeRoster) > sends what the contract refuses, a stale version, the proposal, its retry and another body under its key
+AssertionError: expected '0cb8ef0e-41e3-48cd-a75a-424896e70707' to be '899c91e1-c5ff-4613-82c7-fac01266cabd' // Object.is equality
+
+Expected: "899c91e1-c5ff-4613-82c7-fac01266cabd"
+Received: "0cb8ef0e-41e3-48cd-a75a-424896e70707"
+
+ ❯ src/privacy/roster.test.ts:377:25
+    375|     expect(cases[0]?.key).toBeNull();
+    376|     const [proposal, replay, other] = cases.slice(5);
+    377|     expect(replay?.key).toBe(proposal?.key);
+       |                         ^
+    378|     expect(other?.key).toBe(proposal?.key);
+    379|     expect(replay?.body).toBe(proposal?.body);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

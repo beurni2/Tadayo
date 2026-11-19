@@ -1,0 +1,72 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/db/invitation.test.ts (20 tests | 2 failed) 1578ms
+   ❯ where a link stands, for its proposer alone (CandidateLinkState) (3)
+     × is revoked once revoked, and stays revoked past its expiry 70ms
+   ❯ revoking a link (G01-invite-people-revoked; FQ59, handoff 4) (4)
+     × revokes a link that was replaced or has expired the same way 49ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 18 passed (20)
+   Start at  14:20:44
+   Duration  2.25s (tests 80%, import 14%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/invitation.test.ts > where a link stands, for its proposer alone (CandidateLinkState) > is revoked once revoked, and stays revoked past its expiry
+AssertionError: expected { …(3) } to match object { state: 'revoked' }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "state": "revoked",
++   "state": "expired",
+  }
+
+ ❯ src/db/invitation.test.ts:442:100
+    440|       await revoke(tx, clock, user(s.w, 0), made.invitation_id);
+    441|       expect(await stateFor(tx, s)).toEqual({ id: made.invitation_id, …
+    442|       expect(await stateFor(tx, s, Temporal.Instant.from(EXPIRES).add(…
+       |                                                                                                    ^
+    443|         state: "revoked",
+    444|       });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/invitation.test.ts:437:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/invitation.test.ts > revoking a link (G01-invite-people-revoked; FQ59, handoff 4) > revokes a link that was replaced or has expired the same way
+AssertionError: expected { …(3) } to match object { …(2) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "id": "inv_gFdF0q1PfEAHpL8todaq5g",
+-   "state": "revoked",
++   "state": "expired",
+  }
+
+ ❯ src/db/invitation.test.ts:500:56
+    498|       rows = await linksOf(tx, s.sam);
+    499|       expect(rows.find((row) => row.id === second.invitation_id)?.revo…
+    500|       expect(await stateFor(tx, s, past as ServerNow)).toMatchObject({…
+       |                                                        ^
+    501|     });
+    502|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/invitation.test.ts:477:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

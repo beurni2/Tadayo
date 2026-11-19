@@ -1,0 +1,61 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+star: 2016 cells run, 36045 answers scanned
+star, the roster's table: {"proposals":224,"memberPhases":24,"due":18,"revisions":18,"links":18,"otherAnswers":90}
+
+ ❯ src/privacy/matrix.test.ts (15 tests | 1 failed | 13 skipped) 73525ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (12)
+     × answers the star as its account and its row say, and leaks nothing the scanner can find 39701ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed | 13 skipped (15)
+   Start at  14:33:31
+   Duration  74.49s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 18, first: [ …(18) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 18,
++   "first": [
++     "active, collecting: proposeRoster: a retry under its key got another answer than the first (T19) (the same request again under its key)",
++     "active, open: proposeRoster: a retry under its key got another answer than the first (T19) (the same request again under its key)",
++     "active, past: proposeRoster: a retry under its key got another answer than the first (T19) (the same request again under its key)",
++     "withdrawn, collecting: proposeRoster: a retry under its key got another answer than the first (T19) (the same request again under its key)",
++     "withdrawn, open: proposeRoster: a retry under its key got another answer than the first (T19) (the same request again under its key)",
++     "withdrawn, past: proposeRoster: a retry under its key got another answer than the first (T19) (the same request again under its key)",
++     "removed by moderation, collecting: proposeRoster: a retry under its key got another answer than the first (T19) (the same request again under its key)",
++     "removed by moderation, open: proposeRoster: a retry under its key got another answer than the first (T19) (the same request again under its key)",
++     "removed by moderation, past: proposeRoster: a retry under its key got another answer than the first (T19) (the same request again under its key)",
++     "held (T29), collecting: proposeRoster: a retry under its key got another answer than the first (T19) (the same request again under its key)",
++     "held (T29), open: proposeRoster: a retry under its key got another answer than the first (T19) (the same request again under its key)",
++     "held (T29), past: proposeRoster: a retry under its key got another answer than the first (T19) (the same request again under its key)",
++     "its day suspended, collecting: proposeRoster: a retry under its key got another answer than the first (T19) (the same request again under its key)",
++     "its day suspended, open: proposeRoster: a retry under its key got another answer than the first (T19) (the same request again under its key)",
++     "its day suspended, past: proposeRoster: a retry under its key got another answer than the first (T19) (the same request again under its key)",
++     "its day cancelled, collecting: proposeRoster: a retry under its key got another answer than the first (T19) (the same request again under its key)",
++     "its day cancelled, open: proposeRoster: a retry under its key got another answer than the first (T19) (the same request again under its key)",
++     "its day cancelled, past: proposeRoster: a retry under its key got another answer than the first (T19) (the same request again under its key)",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:1127:66
+    1125|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    1126|       console.log(`${role.name}, the roster's table: ${JSON.stringify(…
+    1127|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    1128|       // Every cell ran: the contract's 72 requests a world (each oper…
+    1129|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

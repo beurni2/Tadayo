@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/privacy/roster.test.ts (23 tests | 1 failed) 65ms
+   ❯ a link as it was made, and its replay (createInvitation) (5)
+     × refuses a URL that isn't the web page and a token of 43 characters, and a token its row's hash isn't of 15ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  14:37:50
+   Duration  724ms (import 68%, tests 17%, transform 13%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/roster.test.ts > a link as it was made, and its replay (createInvitation) > refuses a URL that isn't the web page and a token of 43 characters, and a token its row's hash isn't of
+AssertionError: expected [] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+- [
+-   "the link's token doesn't hash to its row's hash",
+- ]
++ []
+
+ ❯ src/privacy/roster.test.ts:484:89
+    482|       expect(found.token).toBeUndefined();
+    483|     }
+    484|     expect(judge({ ...first, url: `https://tadayo.app/i#${"u".repeat(4…
+       |                                                                                         ^
+    485|       "the link's token doesn't hash to its row's hash",
+    486|     ]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

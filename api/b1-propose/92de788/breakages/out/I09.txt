@@ -1,0 +1,175 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/db/invitation.test.ts (20 tests | 6 failed) 1401ms
+   ❯ a share link for one candidate (T7, FQ71, FQ77) (9)
+     × returns the token once, 256 random bits for the URL's fragment, and keeps only its SHA-256, with seven days from the clock's sample 134ms
+     × replaces the candidate's earlier link with a new one, so one is the latest (FQ71) 30ms
+   ❯ the clock and the club's row (T1) (4)
+     × dates a link and its expiry from the sample taken after the lock, not the receipt's 31ms
+   ❯ where a link stands, for its proposer alone (CandidateLinkState) (3)
+     × is live until the instant it expires, and expired from then (FQ71), by the server's clock (T1) 40ms
+     × is accepted once the candidate accepted this revision with it, used on a newer revision, and stays so past its expiry 48ms
+     × is revoked once revoked, and stays revoked past its expiry 60ms
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 14 passed (20)
+   Start at  14:22:51
+   Duration  2.11s (tests 77%, import 15%, transform 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/invitation.test.ts > a share link for one candidate (T7, FQ71, FQ77) > returns the token once, 256 random bits for the URL's fragment, and keeps only its SHA-256, with seven days from the clock's sample
+AssertionError: expected { …(3) } to deeply equal { …(3) }
+
+- Expected
++ Received
+
+  {
+    "candidate_id": "cand_7chB-nyiUEiENKUvVzIKlA",
+-   "expires_at": "2026-11-18T05:00:00Z",
++   "expires_at": "2026-11-17T05:00:00Z",
+    "invitation_id": "inv_zgoLBWD6H5Q1GzbT6tx6qg",
+  }
+
+ ❯ src/db/invitation.test.ts:85:22
+     83|       const made = await link(tx, clock, user(s.w, 0), s.w.club, s.sam…
+     84|       const answer = made.answer as unknown as LinkAnswer;
+     85|       expect(answer).toEqual({ invitation_id: answer.invitation_id, ca…
+       |                      ^
+     86|       expect(answer.invitation_id).toMatch(/^inv_[A-Za-z0-9_-]{22}$/);
+     87|       const token = made.token ?? "";
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/invitation.test.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  src/db/invitation.test.ts > a share link for one candidate (T7, FQ71, FQ77) > replaces the candidate's earlier link with a new one, so one is the latest (FQ71)
+AssertionError: expected '2026-11-17T06:00:00Z' to be '2026-11-18T06:00:00Z' // Object.is equality
+
+Expected: "2026-11-18T06:00:00Z"
+Received: "2026-11-17T06:00:00Z"
+
+ ❯ src/db/invitation.test.ts:157:33
+    155|       const second = (await link(tx, clock, user(s.w, 0), s.w.club, s.…
+    156|       expect(second.invitation_id).not.toBe(first.invitation_id);
+    157|       expect(second.expires_at).toBe("2026-11-18T06:00:00Z");
+       |                                 ^
+    158|       const rows = await linksOf(tx, s.sam);
+    159|       expect(rows.map((row) => [row.id, row.replaced_by_id])).toEqual([
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/invitation.test.ts:151:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  src/db/invitation.test.ts > the clock and the club's row (T1) > dates a link and its expiry from the sample taken after the lock, not the receipt's
+AssertionError: expected '2026-11-17T05:00:01Z' to be '2026-11-18T05:00:01Z' // Object.is equality
+
+Expected: "2026-11-18T05:00:01Z"
+Received: "2026-11-17T05:00:01Z"
+
+ ❯ src/db/invitation.test.ts:300:31
+    298|       // The second sample, a second after the first: 05:00:01.123456,…
+    299|       expect(row?.created_at.equals(FIRST.add({ seconds: 1 }))).toBe(t…
+    300|       expect(made.expires_at).toBe("2026-11-18T05:00:01Z");
+       |                               ^
+    301|       expect(row?.expires_at.equals(Temporal.Instant.from("2026-11-18T…
+    302|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/invitation.test.ts:294:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  src/db/invitation.test.ts > where a link stands, for its proposer alone (CandidateLinkState) > is live until the instant it expires, and expired from then (FQ71), by the server's clock (T1)
+AssertionError: expected { …(3) } to match object { state: 'live' }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "state": "live",
++   "state": "expired",
+  }
+
+ ❯ src/db/invitation.test.ts:414:89
+    412|       await link(tx, clock, user(s.w, 0), s.w.club, s.sam);
+    413|       const expires = Temporal.Instant.from(EXPIRES);
+    414|       expect(await stateFor(tx, s, expires.subtract({ microseconds: 1 …
+       |                                                                                         ^
+    415|         state: "live",
+    416|       });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/invitation.test.ts:410:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  src/db/invitation.test.ts > where a link stands, for its proposer alone (CandidateLinkState) > is accepted once the candidate accepted this revision with it, used on a newer revision, and stays so past its expiry
+AssertionError: expected { …(3) } to deeply equal { …(3) }
+
+- Expected
++ Received
+
+  {
+-   "expires_at": "2026-11-18T05:00:00Z",
++   "expires_at": "2026-11-17T05:00:00Z",
+    "id": "inv_1jjZ_pDQKfy_537crhR-5w",
+    "state": "accepted",
+  }
+
+ ❯ src/db/invitation.test.ts:428:37
+    426|       await accept(tx, s.open.id, s.sam, made.invitation_id, LATER, "S…
+    427|       const long = Temporal.Instant.from(EXPIRES).add({ hours: 1 }) as…
+    428|       expect(await stateFor(tx, s)).toEqual({ id: made.invitation_id, …
+       |                                     ^
+    429|       expect(await stateFor(tx, s, long)).toMatchObject({ state: "acce…
+    430|       const newer = await propose(tx, clock, user(s.w, 2), s.w.club, […
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/invitation.test.ts:423:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  src/db/invitation.test.ts > where a link stands, for its proposer alone (CandidateLinkState) > is revoked once revoked, and stays revoked past its expiry
+AssertionError: expected { …(3) } to deeply equal { …(3) }
+
+- Expected
++ Received
+
+  {
+-   "expires_at": "2026-11-18T05:00:00Z",
++   "expires_at": "2026-11-17T05:00:00Z",
+    "id": "inv_A-Gdee51tp_NzxokVNI-Pw",
+    "state": "revoked",
+  }
+
+ ❯ src/db/invitation.test.ts:441:37
+    439|       const made = (await link(tx, clock, user(s.w, 0), s.w.club, s.sa…
+    440|       await revoke(tx, clock, user(s.w, 0), made.invitation_id);
+    441|       expect(await stateFor(tx, s)).toEqual({ id: made.invitation_id, …
+       |                                     ^
+    442|       expect(await stateFor(tx, s, Temporal.Instant.from(EXPIRES).add(…
+    443|         state: "revoked",
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/invitation.test.ts:437:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+

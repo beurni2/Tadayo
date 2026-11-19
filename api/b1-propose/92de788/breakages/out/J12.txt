@@ -1,0 +1,71 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/privacy/roster.test.ts (23 tests | 2 failed) 48ms
+   ❯ what a proposal must get (proposeRoster) (4)
+     × is the neutral not-found to anyone who isn't an active member, whatever the version 13ms
+     × judges the generic request at a version no club is at, and says so when it would change the world 2ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 21 passed (23)
+   Start at  14:37:42
+   Duration  619ms (import 62%, transform 18%, tests 17%, worker 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/roster.test.ts > what a proposal must get (proposeRoster) > is the neutral not-found to anyone who isn't an active member, whatever the version
+AssertionError: expected { status: 409, …(3) } to be { status: 404, …(3) } // Object.is equality
+
+- Expected
++ Received
+
+  {
+-   "body": "{\"code\":\"NOT_FOUND\"}",
++   "body": "{\"code\":\"CLUB_FULL\"}",
+    "headers": {
+      "cache-control": "private, no-store",
+      "connection": "keep-alive",
+      "content-length": "20",
+      "content-type": "application/json; charset=utf-8",
+    },
+-   "reason": "Not Found",
+-   "status": 404,
++   "reason": "Conflict",
++   "status": 409,
+  }
+
+ ❯ src/privacy/roster.test.ts:327:38
+    325|   it("is the neutral not-found to anyone who isn't an active member, w…
+    326|     for (const account of ["usr_eve", "usr_zed", null]) {
+    327|       expect(outcome(account, 5, 1)).toBe(NEUTRAL);
+       |                                      ^
+    328|       expect(outcome(account, 4, 1)).toBe(NEUTRAL);
+    329|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/roster.test.ts > what a proposal must get (proposeRoster) > judges the generic request at a version no club is at, and says so when it would change the world
+AssertionError: expected [ 'status 404', …(3) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "status 404",
++   "reason \"Not Found\"",
++   "body \"{\\\"code\\\":\\\"NOT_FOUND\\\"}\"",
++   "content-length: 20",
++ ]
+
+ ❯ src/privacy/roster.test.ts:355:33
+    353|     expect(judge(made(want))).not.toEqual([]);
+    354|     const outsider = judging(genericProposalExpected(seen("usr_zed"), …
+    355|     expect(outsider(NOT_FOUND)).toEqual([]);
+       |                                 ^
+    356|     expect(outsider(conflict)).not.toEqual([]);
+    357|     const reached = judging(
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

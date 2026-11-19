@@ -1,0 +1,13 @@
+diff --git a/services/api/src/clubs/roster.ts b/services/api/src/clubs/roster.ts
+index e93cb656..923fd8b2 100644
+--- a/services/api/src/clubs/roster.ts
++++ b/services/api/src/clubs/roster.ts
+@@ -145,7 +145,7 @@ export function createInvitationHandler(deps: Deps): Handler {
+   return async (request, reply) => {
+     const account = signedIn(request);
+     const key = request.headers["idempotency-key"];
+-    if (typeof key !== "string" || !IDEMPOTENCY_KEY.test(key)) {
++    if (typeof key !== "string") {
+       return problem(reply, "INVALID_REQUEST", { field: "Idempotency-Key" });
+     }
+     const parsed = CreateInvitationRequest.safeParse(request.body);

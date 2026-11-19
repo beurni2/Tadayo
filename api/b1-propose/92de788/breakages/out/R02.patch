@@ -1,0 +1,15 @@
+diff --git a/packages/domain/src/clubs/roster-revision.ts b/packages/domain/src/clubs/roster-revision.ts
+index 2c673837..23fcec64 100644
+--- a/packages/domain/src/clubs/roster-revision.ts
++++ b/packages/domain/src/clubs/roster-revision.ts
+@@ -173,9 +173,7 @@ export async function readRevision(
+       JOIN app.clubs c ON c.id = r.club_id
+       JOIN (${activeMemberships(sql, userId)}) am ON am.club_id = r.club_id
+      WHERE r.id = ${revisionId}::pg_catalog.text
+-       AND r.roster_sealed_at IS NOT NULL
+-       AND EXISTS (SELECT FROM app.roster_revision_members mine
+-                    WHERE mine.revision_id = r.id AND mine.interval_id = am.interval_id)`;
++       AND r.roster_sealed_at IS NOT NULL`;
+   const [row] = rows;
+   if (row === undefined) return null;
+   const id = text(row["id"]);

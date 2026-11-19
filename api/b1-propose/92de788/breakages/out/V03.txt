@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/db/invitation.test.ts (20 tests | 1 failed) 1766ms
+   ❯ revoking a link (G01-invite-people-revoked; FQ59, handoff 4) (4)
+     × ends the link at the clock's sample and nothing else: the candidate keeps their place, and a repeat answers the same and changes nothing 100ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  14:23:40
+   Duration  2.44s (tests 82%, import 12%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/invitation.test.ts > revoking a link (G01-invite-people-revoked; FQ59, handoff 4) > ends the link at the clock's sample and nothing else: the candidate keeps their place, and a repeat answers the same and changes nothing
+PostgresError: app.invitations.revoked_at is set once and can't change
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ revokeInvitation ../packages/domain/src/clubs/invitation.ts:221:20
+    219|   if (link !== undefined) {
+    220|     const at = await clock.sample(tx);
+    221|     await bound(tx)`UPDATE app.invitations SET revoked_at = ${at}::pg_…
+       |                    ^
+    222|   }
+    223|   return { invitationId };
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,54 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/db/propose-roster.test.ts (41 tests | 1 failed) 2061ms
+   ❯ who may propose (T9, T14; FQ80, FQ112) (4)
+     × gives a retry by someone who left and joined again the neutral not-found, and a new key of theirs a new revision (FQ112) 45ms
+ ❯ src/db/invitation.test.ts (20 tests | 1 failed) 1905ms
+   ❯ a share link for one candidate (T7, FQ71, FQ77) (9)
+     × gives a retry by a proposer who left and joined again the neutral not-found: the link was the earlier interval's (FQ112) 60ms
+
+ Test Files  2 failed (2)
+      Tests  2 failed | 59 passed (61)
+   Start at  14:22:15
+   Duration  5.25s (tests 83%, import 13%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/invitation.test.ts > a share link for one candidate (T7, FQ71, FQ77) > gives a retry by a proposer who left and joined again the neutral not-found: the link was the earlier interval's (FQ112)
+Error: the request wasn't refused
+ ❯ refusal src/db/roster-world.ts:35:9
+     33|     throw error;
+     34|   }
+     35|   throw new Error("the request wasn't refused");
+       |         ^
+     36| }
+     37|
+ ❯ src/db/invitation.test.ts:268:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/invitation.test.ts:249:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/propose-roster.test.ts > who may propose (T9, T14; FQ80, FQ112) > gives a retry by someone who left and joined again the neutral not-found, and a new key of theirs a new revision (FQ112)
+Error: the request wasn't refused
+ ❯ refusal src/db/roster-world.ts:35:9
+     33|     throw error;
+     34|   }
+     35|   throw new Error("the request wasn't refused");
+       |         ^
+     36| }
+     37|
+ ❯ src/db/propose-roster.test.ts:742:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/propose-roster.test.ts:721:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

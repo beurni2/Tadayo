@@ -1,0 +1,113 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/db/propose-roster.test.ts (41 tests | 3 failed) 2789ms
+   ❯ the clock and the club's row (T1) (3)
+     × asks who is proposing again once it holds the club's row: a member who left while it waited gets the neutral not-found 79ms
+     × proposes nothing for a member who left and joined again while it waited for the club's row: the new interval sends its own request 1070ms
+   ❯ one commit per key (T19) (5)
+     × lets one of two members who propose at once on the same version through, and refuses the other with the version now 41ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 38 passed (41)
+     Errors  1 error
+   Start at  14:21:18
+   Duration  3.56s (tests 86%, import 10%, transform 3%)
+
+(node:3161) PromiseRejectionHandledWarning: Promise rejection was handled asynchronously (rejection id: 2)
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/propose-roster.test.ts > the clock and the club's row (T1) > asks who is proposing again once it holds the club's row: a member who left while it waited gets the neutral not-found
+PostgresError: app.roster_approvals: mem_7TAWv6-XrulXI6XcZpd1XQ is no longer a member, so doesn't decide (T7)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ proposeRoster ../packages/domain/src/clubs/propose-roster.ts:206:18
+    204|   await bound(tx)`
+    205|     UPDATE app.roster_revisions SET roster_sealed_at = ${at}::pg_catal…
+    206|   await bound(tx)`
+       |                  ^
+    207|     INSERT INTO app.roster_approvals (revision_id, interval_id, decisi…
+    208|     VALUES (${revisionId}, ${proposer}, 'approved', true, ${at}::pg_ca…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/db/propose-roster.test.ts > the clock and the club's row (T1) > proposes nothing for a member who left and joined again while it waited for the club's row: the new interval sends its own request
+PostgresError: deadlock detected
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ proposeRoster ../packages/domain/src/clubs/propose-roster.ts:175:18
+    173|        WHERE id = ${earlier}`;
+    174|   }
+    175|   await bound(tx)`
+       |                  ^
+    176|     INSERT INTO app.roster_revisions (id, club_id, origin, proposed_by…
+    177|     VALUES (${revisionId}, ${clubId}, 'proposal', ${proposer}, ${at}::…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/db/propose-roster.test.ts > one commit per key (T19) > lets one of two members who propose at once on the same version through, and refuses the other with the version now
+PostgresError: duplicate key value violates unique constraint "roster_revisions_one_open"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ proposeRoster ../packages/domain/src/clubs/propose-roster.ts:175:18
+    173|        WHERE id = ${earlier}`;
+    174|   }
+    175|   await bound(tx)`
+       |                  ^
+    176|     INSERT INTO app.roster_revisions (id, club_id, origin, proposed_by…
+    177|     VALUES (${revisionId}, ${clubId}, 'proposal', ${proposer}, ${at}::…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+PostgresError: deadlock detected
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ Socket.emit node:events:514:20
+ ❯ addChunk node:internal/streams/readable:605:12
+ ❯ readableAddChunkPushByteMode node:internal/streams/readable:556:3
+ ❯ Readable.push node:internal/streams/readable:436:5
+ ❯ TCP.onStreamRead node:internal/stream_base_commons:194:23
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ proposeRoster ../packages/domain/src/clubs/propose-roster.ts:175:18
+    173|        WHERE id = ${earlier}`;
+    174|   }
+    175|   await bound(tx)`
+       |                  ^
+    176|     INSERT INTO app.roster_revisions (id, club_id, origin, proposed_by…
+    177|     VALUES (${revisionId}, ${clubId}, 'proposal', ${proposer}, ${at}::…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { severity_local: 'ERROR', severity: 'ERROR', code: '40P01', detail: 'Process 3174 waits for ShareLock on transaction 12592; blocked by process 3173.
+Process 3173 waits for ShareLock on transaction 12593; blocked by process 3174.', hint: 'See server log for query details.', where: 'while locking tuple (3,120) in relation "clubs"
+SQL statement "SELECT 1 FROM ONLY "app"."clubs" x WHERE "id"::pg_catalog.text OPERATOR(pg_catalog.=) $1::pg_catalog.text FOR KEY SHARE OF x"', file: 'deadlock.c', routine: 'DeadLockReport', query: '
+    INSERT INTO app.roster_revisions (id, club_id, origin, proposed_by_interval_id, created_at)
+    VALUES ($1, $2, 'proposal', $3, $4::pg_catalog.timestamptz)', parameters: [ 'rev_LltQPMRq1hU6Bs3fU9HZVw', 'club_Nbu3PdSsOasaHvFvQCRfUA', 'mem_V1RfO9l0xs7jceK6aDXgpw', '2026-11-11T05:00:00.123456Z' ], args: [ 'rev_LltQPMRq1hU6Bs3fU9HZVw', 'club_Nbu3PdSsOasaHvFvQCRfUA', 'mem_V1RfO9l0xs7jceK6aDXgpw', '2026-11-11T05:00:00.123456Z' ], types: [ 16493, 16493, 16493, 1184 ] }
+This error originated in "src/db/propose-roster.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The last test to run before this error was "proposes nothing for a member who left and joined again while it waited for the club's row: the new interval sends its own request". This means either:
+- the error was thrown while Vitest was running this test, or
+- the error was thrown after the test completed, and this was the most recent test at that point.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+

@@ -1,0 +1,18 @@
+diff --git a/packages/domain/src/clubs/invitation.ts b/packages/domain/src/clubs/invitation.ts
+index 29788216..8e987ed2 100644
+--- a/packages/domain/src/clubs/invitation.ts
++++ b/packages/domain/src/clubs/invitation.ts
+@@ -201,10 +201,10 @@ export async function revokeInvitation(
+      WHERE i.id = ${invitationId}`;
+   const clubId = named?.["club_id"];
+   if (typeof clubId !== "string") throw new Refused("NOT_FOUND");
+-  if ((await activeMember(tx, userId, clubId)) === null) throw new Refused("NOT_FOUND");
++  const asking = await activeMember(tx, userId, clubId);
++  if (asking === null) throw new Refused("NOT_FOUND");
+   await bound(tx)`SELECT id FROM app.clubs WHERE id = ${clubId} FOR UPDATE`;
+-  const proposer = await activeMember(tx, userId, clubId);
+-  if (proposer === null) throw new Refused("NOT_FOUND");
++  const proposer = asking;
+   const [link] = await bound(tx)`
+     SELECT i.bound_user_id, i.revoked_at
+       FROM app.invitations i JOIN app.candidates k ON k.id = i.candidate_id

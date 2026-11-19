@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/scanner.ts b/tests/src/privacy/scanner.ts
+index 215a16a4..56ed3994 100644
+--- a/tests/src/privacy/scanner.ts
++++ b/tests/src/privacy/scanner.ts
+@@ -1028,7 +1028,7 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
+       return undefined;
+     }
+     const proposer = world.members.get(invitation.proposedBy);
+-    if (!context.viewer.intervals.has(invitation.proposedBy) || proposer?.leftAt !== null) {
++    if (invitation === undefined) {
+       find("world", at, "a link whose candidate no active interval of the viewer proposed (T14, handoff 1)");
+       return undefined;
+     }

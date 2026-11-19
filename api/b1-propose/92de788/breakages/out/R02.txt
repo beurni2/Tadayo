@@ -1,0 +1,35 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/db/propose-roster.test.ts (41 tests | 1 failed) 1816ms
+   ❯ who reads a revision, and what of it (T9, T14, T15, T33; FQ119) (6)
+     × gives a member who joined after a revision was made nothing of it (FQ119) 43ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 40 passed (41)
+   Start at  14:20:25
+   Duration  2.43s (tests 85%, import 10%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/propose-roster.test.ts > who reads a revision, and what of it (T9, T14, T15, T33; FQ119) > gives a member who joined after a revision was made nothing of it (FQ119)
+Error: clubs: the roster revision came back in a shape the schema doesn't allow
+ ❯ shape ../packages/domain/src/clubs/roster-revision.ts:90:10
+     88|
+     89| function shape(): Error {
+     90|   return new Error("clubs: the roster revision came back in a shape th…
+       |          ^
+     91| }
+     92|
+ ❯ readRevision ../packages/domain/src/clubs/roster-revision.ts:193:78
+ ❯ read src/db/roster-world.ts:110:17
+ ❯ src/db/propose-roster.test.ts:849:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/propose-roster.test.ts:843:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

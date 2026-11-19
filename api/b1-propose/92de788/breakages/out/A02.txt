@@ -1,0 +1,38 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/services/api
+
+ ❯ src/clubs/roster.test.ts (22 tests | 1 failed) 375ms
+   ❯ what proposeRoster and createInvitation refuse before any transaction (4)
+     × names the Idempotency-Key when it is missing or isn't a UUID, whatever else is wrong 140ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 34 passed (35)
+   Start at  14:23:50
+   Duration  905ms (tests 51%, import 36%, transform 11%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/clubs/roster.test.ts > what proposeRoster and createInvitation refuse before any transaction > names the Idempotency-Key when it is missing or isn't a UUID, whatever else is wrong
+AssertionError: /v1/clubs/club_1/roster : expected { status: 400, …(2) } to match object { status: 400, …(1) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "body": "{\"code\":\"INVALID_REQUEST\",\"field\":\"Idempotency-Key\"}",
++   "body": "{\"code\":\"INVALID_REQUEST\",\"field\":\"expected_roster_version\"}",
+    "status": 400,
+  }
+
+ ❯ src/clubs/roster.test.ts:241:46
+    239|       for (const key of [null, "", "abc", `${KEY}0`, `${KEY}, ${KEY}`]…
+    240|         const got = await answer(post(url, '{"add":7}', key));
+    241|         expect(got, `${url} ${String(key)}`).toMatchObject(invalid("Id…
+       |                                              ^
+    242|         expect(got.headers["cache-control"]).toBe("private, no-store");
+    243|       }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

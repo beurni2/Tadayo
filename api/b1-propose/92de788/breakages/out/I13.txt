@@ -1,0 +1,71 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/db/invitation.test.ts (20 tests | 2 failed) 1609ms
+   ❯ a share link for one candidate (T7, FQ71, FQ77) (9)
+     × answers a retry under the same key with the first answer and no token, and makes nothing (T19, FQ77) 50ms
+     × gives a retry by a proposer who left and joined again the neutral not-found: the link was the earlier interval's (FQ112) 31ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 18 passed (20)
+   Start at  14:23:03
+   Duration  2.26s (tests 83%, import 12%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/invitation.test.ts > a share link for one candidate (T7, FQ71, FQ77) > answers a retry under the same key with the first answer and no token, and makes nothing (T19, FQ77)
+AssertionError: expected 'avU9EYpwmd3gkvd1WN39yIdJsRcSxwvMy0Aem…' to be null
+
+- Expected:
+null
+
++ Received:
+"avU9EYpwmd3gkvd1WN39yIdJsRcSxwvMy0AemaLko7o"
+
+ ❯ src/db/invitation.test.ts:138:27
+    136|       const again = await link(tx, clock, user(s.w, 0), s.w.club, s.sa…
+    137|       expect(again.answer).toEqual(first.answer);
+    138|       expect(again.token).toBeNull();
+       |                           ^
+    139|       expect(await linksOf(tx, s.sam)).toHaveLength(1);
+    140|       // Another candidate under the same key is another request.
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/invitation.test.ts:131:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/invitation.test.ts > a share link for one candidate (T7, FQ71, FQ77) > gives a retry by a proposer who left and joined again the neutral not-found: the link was the earlier interval's (FQ112)
+AssertionError: expected { answer: { …(3) }, …(1) } to deeply equal { answer: { …(3) }, token: null }
+
+- Expected
++ Received
+
+@@ -2,7 +2,7 @@
+    "answer": {
+      "candidate_id": "cand_EtUvrqCBavIHn1IEwR-zuA",
+      "expires_at": "2026-11-18T05:00:00Z",
+      "invitation_id": "inv_mABg4CsglGwxGzle-GhVrA",
+    },
+-   "token": null,
++   "token": "RBy3YkP_9_ZYKmsUi00KqCVb9WzrXJd13TaTpyOh-8M",
+  }
+
+ ❯ src/db/invitation.test.ts:254:73
+    252|       const first = await link(tx, clock, user(s.w, 0), s.w.club, s.sa…
+    253|       // While the interval that made it lasts, the retry is the store…
+    254|       expect(await link(tx, clock, user(s.w, 0), s.w.club, s.sam, key)…
+       |                                                                         ^
+    255|       await leave(plain(tx), { user: user(s.w, 0), interval: member(s.…
+    256|       // The open revision ends, so that a roster can bring the accoun…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/invitation.test.ts:249:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/clubs/invitation.ts b/packages/domain/src/clubs/invitation.ts
+index 29788216..df9cf48b 100644
+--- a/packages/domain/src/clubs/invitation.ts
++++ b/packages/domain/src/clubs/invitation.ts
+@@ -213,7 +213,6 @@ export async function revokeInvitation(
+   if (link === undefined) throw new Refused("NOT_FOUND");
+ 
+   // 2. A link used to accept.
+-  if (link["bound_user_id"] !== null) throw new Refused("NOT_ALLOWED");
+ 
+   // 3. Revoked once.
+   if (link["revoked_at"] === null) {

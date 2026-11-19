@@ -1,0 +1,12 @@
+diff --git a/tests/src/privacy/roster.ts b/tests/src/privacy/roster.ts
+index b80f04e0..1cb89352 100644
+--- a/tests/src/privacy/roster.ts
++++ b/tests/src/privacy/roster.ts
+@@ -190,7 +190,6 @@ function personOf(world: ScheduleWorld, interval: string): Record<string, unknow
+ 
+ /** Where a candidate's latest link stands at `now`, on a revision whose row of the candidate is `acceptedWith`. */
+ function linkState(link: LinkRows, acceptedWith: string | null, now: Temporal.Instant): string {
+-  if (acceptedWith === link.id) return "accepted";
+   if (link.bound) return "used";
+   if (link.revoked) return "revoked";
+   return Temporal.Instant.compare(link.expiresAt, now) <= 0 ? "expired" : "live";

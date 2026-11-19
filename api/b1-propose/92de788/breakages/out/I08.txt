@@ -1,0 +1,95 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/db/invitation.test.ts (20 tests | 3 failed) 1648ms
+   ❯ a share link for one candidate (T7, FQ71, FQ77) (9)
+     × returns the token once, 256 random bits for the URL's fragment, and keeps only its SHA-256, with seven days from the clock's sample 118ms
+   ❯ the clock and the club's row (T1) (4)
+     × dates a link and its expiry from the sample taken after the lock, not the receipt's 33ms
+   ❯ where a link stands, for its proposer alone (CandidateLinkState) (3)
+     × is live until the instant it expires, and expired from then (FQ71), by the server's clock (T1) 42ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 17 passed (20)
+   Start at  14:22:48
+   Duration  2.29s (tests 83%, import 12%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/invitation.test.ts > a share link for one candidate (T7, FQ71, FQ77) > returns the token once, 256 random bits for the URL's fragment, and keeps only its SHA-256, with seven days from the clock's sample
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/db/invitation.test.ts:96:70
+     94|       expect(Buffer.from(row?.token_sha256 ?? []).equals(createHash("s…
+     95|       expect(row?.created_at.equals(FIRST)).toBe(true);
+     96|       expect(row?.expires_at.equals(Temporal.Instant.from(EXPIRES))).t…
+       |                                                                      ^
+     97|       expect(row).toMatchObject({ revoked_at: null, replaced_by_id: nu…
+     98|
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/invitation.test.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/db/invitation.test.ts > the clock and the club's row (T1) > dates a link and its expiry from the sample taken after the lock, not the receipt's
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/db/invitation.test.ts:301:85
+    299|       expect(row?.created_at.equals(FIRST.add({ seconds: 1 }))).toBe(t…
+    300|       expect(made.expires_at).toBe("2026-11-18T05:00:01Z");
+    301|       expect(row?.expires_at.equals(Temporal.Instant.from("2026-11-18T…
+       |                                                                                     ^
+    302|     });
+    303|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/invitation.test.ts:294:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/db/invitation.test.ts > where a link stands, for its proposer alone (CandidateLinkState) > is live until the instant it expires, and expired from then (FQ71), by the server's clock (T1)
+AssertionError: expected { …(3) } to match object { state: 'expired', …(1) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "expires_at": "2026-11-18T05:00:00Z",
+-   "state": "expired",
++   "state": "live",
+  }
+
+ ❯ src/db/invitation.test.ts:417:59
+    415|         state: "live",
+    416|       });
+    417|       expect(await stateFor(tx, s, expires as ServerNow)).toMatchObjec…
+       |                                                           ^
+    418|       expect(await stateFor(tx, s, expires.add({ hours: 400 }) as Serv…
+    419|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/invitation.test.ts:410:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

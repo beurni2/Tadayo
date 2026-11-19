@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/roster.ts b/tests/src/privacy/roster.ts
+index b80f04e0..130da1e7 100644
+--- a/tests/src/privacy/roster.ts
++++ b/tests/src/privacy/roster.ts
+@@ -360,7 +360,7 @@ export function revokeOutcome(
+   if (link === undefined) return NEUTRAL;
+   const viewer = viewerIn(world, link.club, account);
+   if (viewer === undefined || viewer !== link.proposer) return NEUTRAL;
+-  return link.bound ? NOT_ALLOWED : "revoked";
++  return "revoked";
+ }
+ 
+ /** The contract's RevokedInvitation for the link `id`. */

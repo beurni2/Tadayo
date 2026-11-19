@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/db/invitation.test.ts (20 tests | 1 failed) 1624ms
+   ❯ a share link for one candidate (T7, FQ71, FQ77) (9)
+     × refuses a new link once the candidate has accepted with the latest one, in this revision or an earlier one (NOT_ALLOWED, handoff 4) 74ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  14:22:46
+   Duration  2.33s (tests 81%, import 13%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/invitation.test.ts > a share link for one candidate (T7, FQ71, FQ77) > refuses a new link once the candidate has accepted with the latest one, in this revision or an earlier one (NOT_ALLOWED, handoff 4)
+PostgresError: new row for relation "invitations" violates check constraint "invitations_check2"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ createInvitation ../packages/domain/src/clubs/invitation.ts:174:20
+    172|     if (typeof earlier !== "string") throw new Error("clubs: a link ca…
+    173|     // Before the new one is written: one link per candidate is the la…
+    174|     await bound(tx)`UPDATE app.invitations SET replaced_by_id = ${invi…
+       |                    ^
+    175|   }
+    176|   await bound(tx)`
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

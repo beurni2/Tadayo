@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/roster.ts b/tests/src/privacy/roster.ts
+index b80f04e0..63d53682 100644
+--- a/tests/src/privacy/roster.ts
++++ b/tests/src/privacy/roster.ts
+@@ -333,7 +333,7 @@ export function proposalOutcome(
+   count: number,
+ ): Answer | "created" {
+   const roster = rows.get(club);
+-  if (viewerIn(world, club, account) === undefined || roster === undefined) return NEUTRAL;
++  if (roster === undefined) return NEUTRAL;
+   if (roster.rosterVersion !== expected) return versionConflict(roster.rosterVersion);
+   const members = [...world.members.values()].filter((member) => member.club === club && member.active).length;
+   return members + roster.openCandidates + count > SIX ? FULL : "created";

@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/propose-roster.ts b/packages/domain/src/clubs/propose-roster.ts
+index da4350c2..8055fa9c 100644
+--- a/packages/domain/src/clubs/propose-roster.ts
++++ b/packages/domain/src/clubs/propose-roster.ts
+@@ -184,7 +184,7 @@ export async function proposeRoster(
+     const carried = await bound(tx)`
+       INSERT INTO app.roster_revision_candidates (revision_id, club_id, candidate_id, label, position)
+       SELECT ${revisionId}, rc.club_id, rc.candidate_id, rc.label,
+-             (pg_catalog.row_number() OVER (ORDER BY rc.position))::pg_catalog.int2
++             (pg_catalog.row_number() OVER (ORDER BY rc.position DESC))::pg_catalog.int2
+         FROM app.roster_revision_candidates rc
+         JOIN app.candidates k ON k.id = rc.candidate_id
+        WHERE rc.revision_id = ${earlier} AND k.state = 'open'

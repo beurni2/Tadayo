@@ -1,0 +1,83 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+star: 2016 cells run, 36045 answers scanned
+star, the roster's table: {"proposals":224,"memberPhases":24,"due":18,"revisions":18,"links":18,"otherAnswers":90}
+
+ ❯ src/privacy/matrix.test.ts (15 tests | 1 failed | 13 skipped) 75006ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (12)
+     × answers the star as its account and its row say, and leaks nothing the scanner can find 41818ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed | 13 skipped (15)
+   Start at  14:29:41
+   Duration  76.16s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 72, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 72,
++   "first": [
++     "active, collecting: createInvitation: a retry's answer carries a url (FQ77) (the same link request again under its key)",
++     "active, collecting, createInvitation: world at $.url: a link's URL whose token isn't this link's own (T7)",
++     "active, collecting, createInvitation: keys at $.url: a key that names a URL, token, provider, dimension, colour or highlight (T10)",
++     "active, collecting, createInvitation: values at $.url: a URL, storage path or provider host: [a-z][a-z0-9+.-]*:\\/\\/",
++     "active, open: createInvitation: a retry's answer carries a url (FQ77) (the same link request again under its key)",
++     "active, open, createInvitation: world at $.url: a link's URL whose token isn't this link's own (T7)",
++     "active, open, createInvitation: keys at $.url: a key that names a URL, token, provider, dimension, colour or highlight (T10)",
++     "active, open, createInvitation: values at $.url: a URL, storage path or provider host: [a-z][a-z0-9+.-]*:\\/\\/",
++     "active, past: createInvitation: a retry's answer carries a url (FQ77) (the same link request again under its key)",
++     "active, past, createInvitation: world at $.url: a link's URL whose token isn't this link's own (T7)",
++     "active, past, createInvitation: keys at $.url: a key that names a URL, token, provider, dimension, colour or highlight (T10)",
++     "active, past, createInvitation: values at $.url: a URL, storage path or provider host: [a-z][a-z0-9+.-]*:\\/\\/",
++     "withdrawn, collecting: createInvitation: a retry's answer carries a url (FQ77) (the same link request again under its key)",
++     "withdrawn, collecting, createInvitation: world at $.url: a link's URL whose token isn't this link's own (T7)",
++     "withdrawn, collecting, createInvitation: keys at $.url: a key that names a URL, token, provider, dimension, colour or highlight (T10)",
++     "withdrawn, collecting, createInvitation: values at $.url: a URL, storage path or provider host: [a-z][a-z0-9+.-]*:\\/\\/",
++     "withdrawn, open: createInvitation: a retry's answer carries a url (FQ77) (the same link request again under its key)",
++     "withdrawn, open, createInvitation: world at $.url: a link's URL whose token isn't this link's own (T7)",
++     "withdrawn, open, createInvitation: keys at $.url: a key that names a URL, token, provider, dimension, colour or highlight (T10)",
++     "withdrawn, open, createInvitation: values at $.url: a URL, storage path or provider host: [a-z][a-z0-9+.-]*:\\/\\/",
++     "withdrawn, past: createInvitation: a retry's answer carries a url (FQ77) (the same link request again under its key)",
++     "withdrawn, past, createInvitation: world at $.url: a link's URL whose token isn't this link's own (T7)",
++     "withdrawn, past, createInvitation: keys at $.url: a key that names a URL, token, provider, dimension, colour or highlight (T10)",
++     "withdrawn, past, createInvitation: values at $.url: a URL, storage path or provider host: [a-z][a-z0-9+.-]*:\\/\\/",
++     "removed by moderation, collecting: createInvitation: a retry's answer carries a url (FQ77) (the same link request again under its key)",
++     "removed by moderation, collecting, createInvitation: world at $.url: a link's URL whose token isn't this link's own (T7)",
++     "removed by moderation, collecting, createInvitation: keys at $.url: a key that names a URL, token, provider, dimension, colour or highlight (T10)",
++     "removed by moderation, collecting, createInvitation: values at $.url: a URL, storage path or provider host: [a-z][a-z0-9+.-]*:\\/\\/",
++     "removed by moderation, open: createInvitation: a retry's answer carries a url (FQ77) (the same link request again under its key)",
++     "removed by moderation, open, createInvitation: world at $.url: a link's URL whose token isn't this link's own (T7)",
++     "removed by moderation, open, createInvitation: keys at $.url: a key that names a URL, token, provider, dimension, colour or highlight (T10)",
++     "removed by moderation, open, createInvitation: values at $.url: a URL, storage path or provider host: [a-z][a-z0-9+.-]*:\\/\\/",
++     "removed by moderation, past: createInvitation: a retry's answer carries a url (FQ77) (the same link request again under its key)",
++     "removed by moderation, past, createInvitation: world at $.url: a link's URL whose token isn't this link's own (T7)",
++     "removed by moderation, past, createInvitation: keys at $.url: a key that names a URL, token, provider, dimension, colour or highlight (T10)",
++     "removed by moderation, past, createInvitation: values at $.url: a URL, storage path or provider host: [a-z][a-z0-9+.-]*:\\/\\/",
++     "held (T29), collecting: createInvitation: a retry's answer carries a url (FQ77) (the same link request again under its key)",
++     "held (T29), collecting, createInvitation: world at $.url: a link's URL whose token isn't this link's own (T7)",
++     "held (T29), collecting, createInvitation: keys at $.url: a key that names a URL, token, provider, dimension, colour or highlight (T10)",
++     "held (T29), collecting, createInvitation: values at $.url: a URL, storage path or provider host: [a-z][a-z0-9+.-]*:\\/\\/",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:1127:66
+    1125|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    1126|       console.log(`${role.name}, the roster's table: ${JSON.stringify(…
+    1127|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    1128|       // Every cell ran: the contract's 72 requests a world (each oper…
+    1129|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

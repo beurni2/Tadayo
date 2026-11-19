@@ -1,0 +1,66 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/privacy/roster.test.ts (23 tests | 2 failed) 34ms
+   ❯ getRosterRevision's judge in a cell (4)
+     × refuses another status, a body that isn't the revision, and one that may be stored 7ms
+     × names each field that differs (sameAnswer) 1ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 21 passed (23)
+   Start at  14:37:37
+   Duration  490ms (import 64%, transform 19%, tests 15%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/roster.test.ts > getRosterRevision's judge in a cell > refuses another status, a body that isn't the revision, and one that may be stored
+AssertionError: expected [ …(9) ] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+  [
+-   "status 404, not 200 with the roster revision",
++   "the roster revision's candidates is undefined, not [{\"id\":\"cand_mo\",\"invitation\":{\"expires_at\":\"2026-11-13T14:41:00Z\",\"id\":\"inv_mo\",\"state\":\"live\"},\"name\":\"Mo\",\"proposed_by\":{\"display_name\":\"Ben\",\"membership_id\":\"itv_ben\"}},{\"id\":\"cand_lu\",\"name\":\"Lu\",\"proposed_by\":{\"avatar_version\":\"v_ana\",\"display_name\":\"Ana\",\"membership_id\":\"itv_ana\"}}]",
++   "the roster revision's club is undefined, not {\"id\":\"clb_here\",\"my_membership_id\":\"itv_ben\",\"name\":\"The Saturdays\",\"timezone\":\"America/New_York\"}",
++   "the roster revision's code is \"NOT_FOUND\", not undefined",
++   "the roster revision's id is undefined, not \"rev_1\"",
++   "the roster revision's members is undefined, not [{\"avatar_version\":\"v_ana\",\"display_name\":\"Ana\",\"membership_id\":\"itv_ana\"},{\"display_name\":\"Ben\",\"membership_id\":\"itv_ben\"},{\"display_name\":\"Cleo\",\"membership_id\":\"itv_cleo\"}]",
++   "the roster revision's my_decision is undefined, not \"approved\"",
++   "the roster revision's proposed_by is undefined, not {\"display_name\":\"Ben\",\"membership_id\":\"itv_ben\"}",
++   "the roster revision's state is undefined, not \"open\"",
++   "the roster revision's version is undefined, not 1",
+  ]
+
+ ❯ src/privacy/roster.test.ts:290:30
+    288|
+    289|   it("refuses another status, a body that isn't the revision, and one …
+    290|     expect(judge(NOT_FOUND)).toEqual(["status 404, not 200 with the ro…
+       |                              ^
+    291|     expect(judge(made(want))).toEqual(["status 201, not 200 with the r…
+    292|     expect(judge(ok("rev_1"))).toEqual(["not the roster revision"]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/roster.test.ts > getRosterRevision's judge in a cell > names each field that differs (sameAnswer)
+AssertionError: expected [] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+- [
+-   "status 200, not 201 with the thing",
+- ]
++ []
+
+ ❯ src/privacy/roster.test.ts:316:43
+    314|       "the thing's c is null, not undefined",
+    315|     ]);
+    316|     expect(same(ok({ a: 1, b: [1, 2] }))).toEqual(["status 200, not 20…
+       |                                           ^
+    317|   });
+    318| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

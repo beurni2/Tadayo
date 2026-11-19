@@ -1,0 +1,44 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/privacy/roster.test.ts (23 tests | 1 failed) 33ms
+   ❯ who makes and who revokes a link (createInvitation, revokeInvitation) (3)
+     × lets only the member who proposed the candidate make its link, on the open revision (T14) 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  14:37:47
+   Duration  674ms (import 71%, transform 17%, tests 10%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/roster.test.ts > who makes and who revokes a link (createInvitation, revokeInvitation) > lets only the member who proposed the candidate make its link, on the open revision (T14)
+AssertionError: expected 'made' to be { status: 404, …(3) } // Object.is equality
+
+- Expected:
+{
+  "body": "{\"code\":\"NOT_FOUND\"}",
+  "headers": {
+    "cache-control": "private, no-store",
+    "connection": "keep-alive",
+    "content-length": "20",
+    "content-type": "application/json; charset=utf-8",
+  },
+  "reason": "Not Found",
+  "status": 404,
+}
+
++ Received:
+"made"
+
+ ❯ src/privacy/roster.test.ts:395:32
+    393|     expect(outcome("usr_ben")).toBe("made");
+    394|     for (const account of ["usr_ana", "usr_cleo", "usr_dee", "usr_eve"…
+    395|       expect(outcome(account)).toBe(NEUTRAL);
+       |                                ^
+    396|     }
+    397|     expect(outcome("usr_ben", "cand_lu")).toBe(NEUTRAL);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

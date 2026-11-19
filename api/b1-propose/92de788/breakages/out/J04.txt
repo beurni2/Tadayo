@@ -1,0 +1,31 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/privacy/roster.test.ts (23 tests | 1 failed) 41ms
+   ❯ a revision's RosterRevision from the world's rows (getRosterRevision) (7)
+     × says where the candidate's latest link stands: accepted, used, revoked, expired at its instant, live before it 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  14:37:32
+   Duration  572ms (import 66%, transform 16%, tests 16%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/roster.test.ts > a revision's RosterRevision from the world's rows (getRosterRevision) > says where the candidate's latest link stands: accepted, used, revoked, expired at its instant, live before it
+AssertionError: expected 'live' to be 'expired' // Object.is equality
+
+Expected: "expired"
+Received: "live"
+
+ ❯ src/privacy/roster.test.ts:252:40
+    250|     expect(state(link({ bound: true }), "inv_other")).toBe("used");
+    251|     expect(state(link({ revoked: true }), null, LATER)).toBe("revoked"…
+    252|     expect(state(link(), null, LATER)).toBe("expired");
+       |                                        ^
+    253|     expect(state(link(), null, LATER.subtract({ nanoseconds: 1 }))).to…
+    254|     // A replaced link is never the one shown.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

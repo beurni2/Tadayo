@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/roster.ts b/tests/src/privacy/roster.ts
+index b80f04e0..8b60d019 100644
+--- a/tests/src/privacy/roster.ts
++++ b/tests/src/privacy/roster.ts
+@@ -299,7 +299,7 @@ export function revisionExpected(seen: () => RosterSeen, id: string, account?: s
+   return (answer) => {
+     const { schedule, roster, now, account: viewer } = seen();
+     const want = revisionFor(schedule, roster, id, account ?? viewer, now);
+-    return want === undefined ? pinnedProblems(answer, NEUTRAL) : sameAnswer("the roster revision", 200, want)(answer);
++    return want === undefined ? [] : sameAnswer("the roster revision", 200, want)(answer);
+   };
+ }
+ 

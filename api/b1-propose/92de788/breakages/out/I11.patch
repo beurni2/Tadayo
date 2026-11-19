@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/invitation.ts b/packages/domain/src/clubs/invitation.ts
+index 29788216..83fbe714 100644
+--- a/packages/domain/src/clubs/invitation.ts
++++ b/packages/domain/src/clubs/invitation.ts
+@@ -167,7 +167,7 @@ export async function createInvitation(
+   const expiresAt = wholeSecond(at).add({ hours: 24 * INVITATION_DAYS });
+   const invitationId = newId("inv");
+   const token = randomBytes(32).toString("base64url");
+-  const hash = createHash("sha256").update(token).digest("hex");
++  const hash = createHash("sha256").update(Buffer.from(token, "base64url")).digest("hex");
+   if (latest !== undefined) {
+     const earlier = latest["id"];
+     if (typeof earlier !== "string") throw new Error("clubs: a link came back without its id");

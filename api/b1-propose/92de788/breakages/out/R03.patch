@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/roster-revision.ts b/packages/domain/src/clubs/roster-revision.ts
+index 2c673837..b4cc73ad 100644
+--- a/packages/domain/src/clubs/roster-revision.ts
++++ b/packages/domain/src/clubs/roster-revision.ts
+@@ -171,7 +171,7 @@ export async function readRevision(
+                       WHERE a.revision_id = r.id AND a.interval_id = am.interval_id), 'pending') AS my_decision
+       FROM app.roster_revisions r
+       JOIN app.clubs c ON c.id = r.club_id
+-      JOIN (${activeMemberships(sql, userId)}) am ON am.club_id = r.club_id
++      JOIN (SELECT m.club_id, m.interval_id FROM app.memberships m WHERE m.user_id = ${userId}::pg_catalog.text) am ON am.club_id = r.club_id
+      WHERE r.id = ${revisionId}::pg_catalog.text
+        AND r.roster_sealed_at IS NOT NULL
+        AND EXISTS (SELECT FROM app.roster_revision_members mine

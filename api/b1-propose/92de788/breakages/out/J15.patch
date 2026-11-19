@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/roster.ts b/tests/src/privacy/roster.ts
+index b80f04e0..769911f7 100644
+--- a/tests/src/privacy/roster.ts
++++ b/tests/src/privacy/roster.ts
+@@ -389,7 +389,7 @@ export function linkOutcome(
+   if (viewer === undefined) return NEUTRAL;
+   const open = [...roster.revisions.values()].find((revision) => revision.club === club && revision.state === "open");
+   const listed = open?.candidates.find((one) => one.id === candidate);
+-  if (listed === undefined || listed.proposer !== viewer) return NEUTRAL;
++  if (listed === undefined) return NEUTRAL;
+   const latest = [...roster.links.values()].find((link) => link.candidate === candidate && !link.replaced);
+   return latest?.bound === true ? NOT_ALLOWED : "made";
+ }

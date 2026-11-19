@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/invitation.ts b/packages/domain/src/clubs/invitation.ts
+index 29788216..d83903d9 100644
+--- a/packages/domain/src/clubs/invitation.ts
++++ b/packages/domain/src/clubs/invitation.ts
+@@ -216,7 +216,7 @@ export async function revokeInvitation(
+   if (link["bound_user_id"] !== null) throw new Refused("NOT_ALLOWED");
+ 
+   // 3. Revoked once.
+-  if (link["revoked_at"] === null) {
++  if (link !== undefined) {
+     const at = await clock.sample(tx);
+     await bound(tx)`UPDATE app.invitations SET revoked_at = ${at}::pg_catalog.timestamptz WHERE id = ${invitationId}`;
+   }

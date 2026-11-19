@@ -1,0 +1,23 @@
+diff --git a/packages/domain/src/clubs/propose-roster.ts b/packages/domain/src/clubs/propose-roster.ts
+index da4350c2..fd92b983 100644
+--- a/packages/domain/src/clubs/propose-roster.ts
++++ b/packages/domain/src/clubs/propose-roster.ts
+@@ -131,7 +131,8 @@ export async function proposeRoster(
+ 
+   // 2. The receipt, then the club's row. A key is answered only when its receipt was made once the
+   // caller's present interval had begun: someone who left and joined again gets nothing of it (FQ112).
+-  const first = await reserveAsMember(tx, receipt, await clock.sample(tx), asking);
++  const early = await clock.sample(tx);
++  const first = await reserveAsMember(tx, receipt, early, asking);
+   if (first !== null) return first.replay;
+   await bound(tx)`SELECT id FROM app.clubs WHERE id = ${clubId} FOR UPDATE`;
+ 
+@@ -161,7 +162,7 @@ export async function proposeRoster(
+   }
+ 
+   // 6. The clock, after the lock.
+-  const at = await clock.sample(tx);
++  const at = early;
+ 
+   // 7. The change.
+   const revisionId = newId("rev");

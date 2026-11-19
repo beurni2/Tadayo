@@ -1,0 +1,12 @@
+diff --git a/services/api/src/clubs/roster.ts b/services/api/src/clubs/roster.ts
+index e93cb656..d70aa5d5 100644
+--- a/services/api/src/clubs/roster.ts
++++ b/services/api/src/clubs/roster.ts
+@@ -187,6 +187,6 @@ export function revokeInvitationHandler(deps: Deps): Handler {
+       if (error instanceof Refused) return refusal(reply, error);
+       throw error;
+     }
+-    return ok(reply, { invitation_id: revoked.invitationId, state: "revoked" });
++    return ok(reply, { invitation_id: revoked.invitationId, state: "live" });
+   };
+ }

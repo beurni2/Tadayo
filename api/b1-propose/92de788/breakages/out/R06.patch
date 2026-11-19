@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/roster-revision.ts b/packages/domain/src/clubs/roster-revision.ts
+index 2c673837..281d4bdb 100644
+--- a/packages/domain/src/clubs/roster-revision.ts
++++ b/packages/domain/src/clubs/roster-revision.ts
+@@ -157,7 +157,7 @@ export async function readRevision(
+                                  'id', i.id, 'expires_at', i.expires_at,
+                                  'state',
+                                  CASE WHEN rc.accepted_invitation_id = i.id THEN 'accepted'
+-                                      WHEN i.bound_user_id IS NOT NULL THEN 'used'
++                                      WHEN false THEN 'used'
+                                       WHEN i.revoked_at IS NOT NULL THEN 'revoked'
+                                       WHEN i.expires_at <= ${now}::pg_catalog.timestamptz THEN 'expired'
+                                       ELSE 'live' END)

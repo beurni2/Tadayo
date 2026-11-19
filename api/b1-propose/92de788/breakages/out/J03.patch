@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/roster.ts b/tests/src/privacy/roster.ts
+index b80f04e0..3c7ab737 100644
+--- a/tests/src/privacy/roster.ts
++++ b/tests/src/privacy/roster.ts
+@@ -228,7 +228,7 @@ export function revisionFor(
+     const proposer = personOf(world, candidate.proposer);
+     if (proposer === undefined) return undefined;
+     const latest =
+-      candidate.proposer === viewer
++      revision.sealed
+         ? [...roster.links.values()].find((link) => link.candidate === candidate.id && !link.replaced)
+         : undefined;
+     candidates.push({

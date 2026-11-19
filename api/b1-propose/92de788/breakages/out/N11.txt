@@ -1,0 +1,84 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/privacy/scanner.test.ts (75 tests | 3 failed) 460ms
+   ❯ the proposer's invitation link (T7, T14, T52, FQ77; handoff 1) (7)
+     × passes the link's id and, in the answer that made it, its URL, to the member who proposed the candidate 19ms
+     × catches the link's id shown to anyone else: another member, a former member who made it, someone outside 3ms
+     × catches a URL that isn't this link's own, in another answer, on another host or to someone else 3ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 72 passed (75)
+   Start at  14:38:21
+   Duration  1.33s (import 49%, tests 47%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > the proposer's invitation link (T7, T14, T52, FQ77; handoff 1) > passes the link's id and, in the answer that made it, its URL, to the member who proposed the candidate
+AssertionError: expected [ { check: 'values', …(2) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "at": "$.candidates[0].invitation.id",
++     "check": "values",
++     "what": "an id of a drop, day, club, person, reservation, account or invitation the viewer may not see (T14)",
++   },
++ ]
+
+ ❯ src/privacy/scanner.test.ts:1691:77
+    1689|     expect(madeBy(ben, link({ url: url(BENS_TOKEN) }))).toEqual([]);
+    1690|     expect(madeBy(ben, link())).toEqual([]);
+    1691|     expect(scan(answer(revision(bens)), context("getRosterRevision", b…
+       |                                                                             ^
+    1692|     expect(scan(answer(revoked), context("revokeInvitation", ben))).to…
+    1693|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the proposer's invitation link (T7, T14, T52, FQ77; handoff 1) > catches the link's id shown to anyone else: another member, a former member who made it, someone outside
+AssertionError: expected [] to deeply equal [ '$.candidates[0].invitation.id' ]
+
+- Expected
++ Received
+
+- [
+-   "$.candidates[0].invitation.id",
+- ]
++ []
+
+ ❯ src/privacy/scanner.test.ts:1700:97
+    1698|       expect(at(scan(answer(revoked), context("revokeInvitation", view…
+    1699|     }
+    1700|     expect(at(scan(answer(revision(bens, cleo)), context("getRosterRev…
+       |                                                                                                 ^
+    1701|       "$.candidates[0].invitation.id",
+    1702|     ]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/privacy/scanner.test.ts > the proposer's invitation link (T7, T14, T52, FQ77; handoff 1) > catches a URL that isn't this link's own, in another answer, on another host or to someone else
+AssertionError: expected [ …(2) ] to deeply equal [ '$.candidates[0].invitation.url' ]
+
+- Expected
++ Received
+
+  [
++   "$.candidates[0].invitation.id",
+    "$.candidates[0].invitation.url",
+  ]
+
+ ❯ src/privacy/scanner.test.ts:1770:38
+    1768|     const inRevision = scan(answer(revision({ ...bens, url: url(BENS_T…
+    1769|     expect(at(inRevision, "keys")).toEqual(["$.candidates[0].invitatio…
+    1770|     expect(at(inRevision, "values")).toEqual(["$.candidates[0].invitat…
+       |                                      ^
+    1771|     const inRevoke = scan(answer({ ...revoked, url: url(BENS_TOKEN) })…
+    1772|     expect(at(inRevoke, "keys")).toEqual(["$.url"]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

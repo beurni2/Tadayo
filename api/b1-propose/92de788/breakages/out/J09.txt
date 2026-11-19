@@ -1,0 +1,30 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/privacy/roster.test.ts (23 tests | 1 failed) 45ms
+   ❯ getRosterRevision's judge in a cell (4)
+     × holds everyone else to the neutral not-found, byte for byte: another member reads their own, never the proposer's 9ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  14:37:38
+   Duration  687ms (import 64%, transform 19%, tests 14%, worker 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/roster.test.ts > getRosterRevision's judge in a cell > holds everyone else to the neutral not-found, byte for byte: another member reads their own, never the proposer's
+AssertionError: expected [] to not deeply equal []
+
+Compared values have no visual difference.
+
+ ❯ src/privacy/roster.test.ts:300:31
+    298|     const dee = judging(revisionExpected(seen("usr_dee"), "rev_1"));
+    299|     expect(dee(NOT_FOUND)).toEqual([]);
+    300|     expect(dee(ok(want))).not.toEqual([]);
+       |                               ^
+    301|     expect(dee(sent(pinned(403, "Forbidden", '{"code":"NOT_ALLOWED"}')…
+    302|     // Asked for by another account than the cell's viewer.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

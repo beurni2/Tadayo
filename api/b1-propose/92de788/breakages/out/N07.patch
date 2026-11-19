@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/scanner.ts b/tests/src/privacy/scanner.ts
+index 215a16a4..09827424 100644
+--- a/tests/src/privacy/scanner.ts
++++ b/tests/src/privacy/scanner.ts
+@@ -1184,7 +1184,7 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
+           find("world", `${at}.url`, "a link's URL outside the answer that made the link (FQ77)");
+         else if (token === undefined)
+           find("world", `${at}.url`, "a link's URL that isn't https://tadayo.app/i# and a token (T52)");
+-        else if (createHash("sha256").update(token).digest("hex") !== invitation.tokenSha256)
++        else if (token.length === 0)
+           find("world", `${at}.url`, "a link's URL whose token isn't this link's own (T7)");
+         else ownLinkUrls.add(`${at}.url`);
+       }

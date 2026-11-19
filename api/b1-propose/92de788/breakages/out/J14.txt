@@ -1,0 +1,31 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/privacy/roster.test.ts (23 tests | 1 failed) 38ms
+   ❯ who makes and who revokes a link (createInvitation, revokeInvitation) (3)
+     × lets only that member revoke it, whatever its state, and never one an account accepted with 9ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  14:37:45
+   Duration  658ms (import 67%, transform 18%, tests 14%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/roster.test.ts > who makes and who revokes a link (createInvitation, revokeInvitation) > lets only that member revoke it, whatever its state, and never one an account accepted with
+AssertionError: expected 'revoked' to be '{"code":"NOT_ALLOWED"}' // Object.is equality
+
+Expected: "{"code":"NOT_ALLOWED"}"
+Received: "revoked"
+
+ ❯ src/privacy/roster.test.ts:424:51
+    422|     expect(outcome("usr_ben", roster(), "inv_none")).toBe(NEUTRAL);
+    423|     const used = outcome("usr_ben", roster([link({ bound: true })]));
+    424|     expect(used === "revoked" ? used : used.body).toBe('{"code":"NOT_A…
+       |                                                   ^
+    425|   });
+    426|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

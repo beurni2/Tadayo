@@ -1,0 +1,15 @@
+diff --git a/tests/src/privacy/roster.ts b/tests/src/privacy/roster.ts
+index b80f04e0..947a0615 100644
+--- a/tests/src/privacy/roster.ts
++++ b/tests/src/privacy/roster.ts
+@@ -192,8 +192,8 @@ function personOf(world: ScheduleWorld, interval: string): Record<string, unknow
+ function linkState(link: LinkRows, acceptedWith: string | null, now: Temporal.Instant): string {
+   if (acceptedWith === link.id) return "accepted";
+   if (link.bound) return "used";
+-  if (link.revoked) return "revoked";
+-  return Temporal.Instant.compare(link.expiresAt, now) <= 0 ? "expired" : "live";
++  if (Temporal.Instant.compare(link.expiresAt, now) <= 0) return "expired";
++  return link.revoked ? "revoked" : "live";
+ }
+ 
+ /** The contract's RosterRevision `id` for the account `account` at `now`, or undefined: the neutral not-found. */

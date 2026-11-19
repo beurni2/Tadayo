@@ -1,0 +1,12 @@
+diff --git a/tests/src/privacy/roster.ts b/tests/src/privacy/roster.ts
+index b80f04e0..6f7f9b9d 100644
+--- a/tests/src/privacy/roster.ts
++++ b/tests/src/privacy/roster.ts
+@@ -423,7 +423,6 @@ export function madeLink(
+   const rest = withoutUrl(body);
+   const want = { invitation_id: latest.id, candidate_id: candidate, expires_at: expires };
+   if (canonical(rest) !== canonical(want)) problems.push(`the link is ${canonical(rest)}, not ${canonical(want)}`);
+-  if (second(latest.expiresAt) !== expires) problems.push("the link's row expires at another instant than its answer");
+   if (token === undefined) problems.push("the link's url isn't https://tadayo.app/i# and a token of 43 characters");
+   else if (createHash("sha256").update(token).digest("hex") !== latest.hash)
+     problems.push("the link's token doesn't hash to its row's hash");

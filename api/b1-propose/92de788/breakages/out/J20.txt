@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/privacy/roster.test.ts (23 tests | 1 failed) 36ms
+   ❯ a link as it was made, and its replay (createInvitation) (5)
+     × refuses another link, candidate or expiry, a row that expires at another instant, and an answer that may be stored 9ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  14:37:54
+   Duration  571ms (import 66%, transform 18%, tests 14%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/roster.test.ts > a link as it was made, and its replay (createInvitation) > refuses another link, candidate or expiry, a row that expires at another instant, and an answer that may be stored
+AssertionError: expected [] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+- [
+-   "the link's row expires at another instant than its answer",
+- ]
++ []
+
+ ❯ src/privacy/roster.test.ts:460:93
+    458|     expect(judge({ ...first, expires_at: "2026-11-13T14:41:01Z" }).pro…
+    459|     expect(judge({ ...first, token: TOKEN }).problems).toHaveLength(1);
+    460|     expect(judge(first, roster([link({ expiresAt: LATER.add({ seconds:…
+       |                                                                                             ^
+    461|       "the link's row expires at another instant than its answer",
+    462|     ]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

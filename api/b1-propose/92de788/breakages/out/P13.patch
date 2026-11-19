@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/propose-roster.ts b/packages/domain/src/clubs/propose-roster.ts
+index da4350c2..23fab001 100644
+--- a/packages/domain/src/clubs/propose-roster.ts
++++ b/packages/domain/src/clubs/propose-roster.ts
+@@ -205,7 +205,7 @@ export async function proposeRoster(
+     UPDATE app.roster_revisions SET roster_sealed_at = ${at}::pg_catalog.timestamptz WHERE id = ${revisionId}`;
+   await bound(tx)`
+     INSERT INTO app.roster_approvals (revision_id, interval_id, decision, implicit, decided_at)
+-    VALUES (${revisionId}, ${proposer}, 'approved', true, ${at}::pg_catalog.timestamptz)`;
++    VALUES (${revisionId}, ${proposer}, 'approved', false, ${at}::pg_catalog.timestamptz)`;
+   await bound(tx)`UPDATE app.clubs SET roster_version = roster_version + 1 WHERE id = ${clubId}`;
+ 
+   // 8. The answer.

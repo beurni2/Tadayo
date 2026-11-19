@@ -1,0 +1,12 @@
+diff --git a/tests/src/privacy/scanner.ts b/tests/src/privacy/scanner.ts
+index 215a16a4..17693dc4 100644
+--- a/tests/src/privacy/scanner.ts
++++ b/tests/src/privacy/scanner.ts
+@@ -1172,7 +1172,6 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
+       if (invitation !== undefined && invitation.candidate !== node.id)
+         find("world", `${at}.invitation.id`, "a link shown under a candidate it isn't for");
+     }
+-    if (kind === "RevokedInvitation") proposersLink(node.invitation_id, `${at}.invitation_id`);
+     if (kind === "InvitationLink") {
+       const invitation = proposersLink(node.invitation_id, `${at}.invitation_id`);
+       if (invitation !== undefined && node.candidate_id !== invitation.candidate)

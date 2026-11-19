@@ -1,0 +1,12 @@
+diff --git a/tests/src/privacy/roster.ts b/tests/src/privacy/roster.ts
+index b80f04e0..9cbc4c34 100644
+--- a/tests/src/privacy/roster.ts
++++ b/tests/src/privacy/roster.ts
+@@ -416,7 +416,6 @@ export function madeLink(
+     return { problems: [`status ${String(answer.status)}, not 201 with a link`], token: undefined, id: undefined };
+   }
+   const problems: string[] = [];
+-  if (answer.headers["cache-control"] !== "private, no-store") problems.push("a link without private, no-store");
+   const expires = second(Temporal.Instant.from(second(now)).add({ hours: 24 * LINK_DAYS }));
+   const url = typeof body.url === "string" ? body.url : "";
+   const token = /^https:\/\/tadayo\.app\/i#([A-Za-z0-9_-]{43})$/.exec(url)?.[1];

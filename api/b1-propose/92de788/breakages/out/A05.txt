@@ -1,0 +1,38 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/services/api
+
+ ❯ src/clubs/roster.test.ts (22 tests | 1 failed) 337ms
+   ❯ what the roster routes answer (6)
+     × answers a first link with 201 and its URL, a replay without one, and logs the token in neither (T52, FQ77) 34ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 34 passed (35)
+   Start at  14:23:55
+   Duration  837ms (tests 51%, import 38%, transform 9%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/clubs/roster.test.ts > what the roster routes answer > answers a first link with 201 and its URL, a replay without one, and logs the token in neither (T52, FQ77)
+AssertionError: expected { invitation_id: 'inv_1', …(3) } to deeply equal { invitation_id: 'inv_1', …(2) }
+
+- Expected
++ Received
+
+  {
+    "candidate_id": "cand_1",
+    "expires_at": "2026-11-13T14:41:00Z",
+    "invitation_id": "inv_1",
++   "url": "https://tadayo.app/i#again",
+  }
+
+ ❯ src/clubs/roster.test.ts:369:36
+    367|     const again = await (await appFor(() => Promise.resolve(replay), l…
+    368|     expect(again.status).toBe(201);
+    369|     expect(JSON.parse(again.body)).toEqual(stored);
+       |                                    ^
+    370|
+    371|     expect(lines.length).toBeGreaterThan(0);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

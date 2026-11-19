@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/roster.ts b/tests/src/privacy/roster.ts
+index b80f04e0..7806bdd3 100644
+--- a/tests/src/privacy/roster.ts
++++ b/tests/src/privacy/roster.ts
+@@ -208,7 +208,7 @@ export function revisionFor(
+   if (revision === undefined || !revision.sealed) return undefined;
+   const viewer = viewerIn(world, revision.club, account);
+   const club = world.clubs.get(revision.club);
+-  if (viewer === undefined || club === undefined || !revision.members.includes(viewer)) return undefined;
++  if (viewer === undefined || club === undefined) return undefined;
+   const proposedBy = personOf(world, revision.proposer);
+   if (proposedBy === undefined) return undefined;
+   const members = revision.members

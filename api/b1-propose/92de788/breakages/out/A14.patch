@@ -1,0 +1,17 @@
+diff --git a/services/api/src/clubs/roster.ts b/services/api/src/clubs/roster.ts
+index e93cb656..9bc90653 100644
+--- a/services/api/src/clubs/roster.ts
++++ b/services/api/src/clubs/roster.ts
+@@ -148,11 +148,7 @@ export function createInvitationHandler(deps: Deps): Handler {
+     if (typeof key !== "string" || !IDEMPOTENCY_KEY.test(key)) {
+       return problem(reply, "INVALID_REQUEST", { field: "Idempotency-Key" });
+     }
+-    const parsed = CreateInvitationRequest.safeParse(request.body);
+-    if (!parsed.success) {
+-      const field = firstBadField(["candidate_id"], parsed.error.issues);
+-      return problem(reply, "INVALID_REQUEST", field === undefined ? {} : { field });
+-    }
++    const parsed = { data: (request.body ?? {}) as { candidate_id: string } };
+     const input: CreateInvitationInput = {
+       userId: account.id,
+       key,

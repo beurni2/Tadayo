@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/db/invitation.test.ts (20 tests | 1 failed) 1639ms
+   ❯ revoking a link (G01-invite-people-revoked; FQ59, handoff 4) (4)
+     × refuses to revoke a link the candidate accepted with (NOT_ALLOWED), and leaves it as it was 47ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  14:23:37
+   Duration  2.33s (tests 81%, import 13%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/invitation.test.ts > revoking a link (G01-invite-people-revoked; FQ59, handoff 4) > refuses to revoke a link the candidate accepted with (NOT_ALLOWED), and leaves it as it was
+PostgresError: new row for relation "invitations" violates check constraint "invitations_check2"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ revokeInvitation ../packages/domain/src/clubs/invitation.ts:220:20
+    218|   if (link["revoked_at"] === null) {
+    219|     const at = await clock.sample(tx);
+    220|     await bound(tx)`UPDATE app.invitations SET revoked_at = ${at}::pg_…
+       |                    ^
+    221|   }
+    222|   return { invitationId };
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

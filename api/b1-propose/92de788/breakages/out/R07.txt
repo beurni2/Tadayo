@@ -1,0 +1,43 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/db/invitation.test.ts (20 tests | 1 failed) 1452ms
+   ❯ where a link stands, for its proposer alone (CandidateLinkState) (3)
+     × is live until the instant it expires, and expired from then (FQ71), by the server's clock (T1) 51ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  14:20:41
+   Duration  2.11s (tests 82%, import 13%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/invitation.test.ts > where a link stands, for its proposer alone (CandidateLinkState) > is live until the instant it expires, and expired from then (FQ71), by the server's clock (T1)
+AssertionError: expected { …(3) } to match object { state: 'expired', …(1) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "expires_at": "2026-11-18T05:00:00Z",
+-   "state": "expired",
++   "state": "live",
+  }
+
+ ❯ src/db/invitation.test.ts:417:59
+    415|         state: "live",
+    416|       });
+    417|       expect(await stateFor(tx, s, expires as ServerNow)).toMatchObjec…
+       |                                                           ^
+    418|       expect(await stateFor(tx, s, expires.add({ hours: 400 }) as Serv…
+    419|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/invitation.test.ts:410:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

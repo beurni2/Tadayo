@@ -1,0 +1,57 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/db/propose-roster.test.ts (41 tests | 11 failed) 1794ms
+   ❯ proposing people (spec 04, 32; T7) (5)
+     × supersedes the open revision: its candidates carry over at their labels and in their order, their acceptances don't, and its approvals no longer count (T7) 57ms
+   ❯ six people, the candidates still open counted (A01, T6) (15)
+     × 3 members and 2 open candidates, 1 proposed: proposed 18ms
+     × 4 members and 1 open candidates, 1 proposed: proposed 30ms
+     × counts a candidate who has ended no longer, and carries none but the open ones 35ms
+   ❯ what a revision's read leaves out (FQ75, FQ114, T7) (3)
+     × leaves out a member with no name to show, and serves no revision whose proposer or a candidate's proposer has none 95ms
+   ❯ one commit per key (T19) (5)
+     × answers a retry with the first answer, at a later clock and though the roster has changed since, and makes nothing 33ms
+   ❯ who reads a revision, and what of it (T9, T14, T15, T33; FQ119) (6)
+     × gives each member the revision lists the same roster, with their own decision and their own membership 58ms
+     × gives the neutral not-found to a stranger, a member of another club, a former member, a member who joined after it was made, an account being deleted, a candidate who accepted it, and for an id nobody has or that can't be one 56ms
+     × gives nobody anything of a suspended club's revision (FQ80) 59ms
+     × says nothing of another member's decision or of an acceptance to a member who didn't propose the candidate (T15, T33) 50ms
+     × names a member who has since left by the name the membership ended with, with no avatar (FQ75) 27ms
+
+ Test Files  1 failed (1)
+      Tests  11 failed | 30 passed (41)
+   Start at  14:21:41
+   Duration  2.51s (tests 81%, import 14%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 11 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/propose-roster.test.ts > proposing people (spec 04, 32; T7) > supersedes the open revision: its candidates carry over at their labels and in their order, their acceptances don't, and its approvals no longer count (T7)
+ FAIL  src/db/propose-roster.test.ts > six people, the candidates still open counted (A01, T6) > 3 members and 2 open candidates, 1 proposed: proposed
+ FAIL  src/db/propose-roster.test.ts > six people, the candidates still open counted (A01, T6) > 4 members and 1 open candidates, 1 proposed: proposed
+ FAIL  src/db/propose-roster.test.ts > six people, the candidates still open counted (A01, T6) > counts a candidate who has ended no longer, and carries none but the open ones
+ FAIL  src/db/propose-roster.test.ts > what a revision's read leaves out (FQ75, FQ114, T7) > leaves out a member with no name to show, and serves no revision whose proposer or a candidate's proposer has none
+ FAIL  src/db/propose-roster.test.ts > one commit per key (T19) > answers a retry with the first answer, at a later clock and though the roster has changed since, and makes nothing
+ FAIL  src/db/propose-roster.test.ts > who reads a revision, and what of it (T9, T14, T15, T33; FQ119) > gives each member the revision lists the same roster, with their own decision and their own membership
+ FAIL  src/db/propose-roster.test.ts > who reads a revision, and what of it (T9, T14, T15, T33; FQ119) > gives the neutral not-found to a stranger, a member of another club, a former member, a member who joined after it was made, an account being deleted, a candidate who accepted it, and for an id nobody has or that can't be one
+ FAIL  src/db/propose-roster.test.ts > who reads a revision, and what of it (T9, T14, T15, T33; FQ119) > gives nobody anything of a suspended club's revision (FQ80)
+ FAIL  src/db/propose-roster.test.ts > who reads a revision, and what of it (T9, T14, T15, T33; FQ119) > says nothing of another member's decision or of an acceptance to a member who didn't propose the candidate (T15, T33)
+ FAIL  src/db/propose-roster.test.ts > who reads a revision, and what of it (T9, T14, T15, T33; FQ119) > names a member who has since left by the name the membership ended with, with no avatar (FQ75)
+PostgresError: new row for relation "roster_revisions" violates check constraint "roster_revisions_check1"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ proposeRoster ../packages/domain/src/clubs/propose-roster.ts:169:20
+    167|   const revisionId = newId("rev");
+    168|   if (earlier !== null) {
+    169|     await bound(tx)`
+       |                    ^
+    170|       UPDATE app.roster_revisions
+    171|          SET state = 'superseded', version = version + 1,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/11]⎯
+

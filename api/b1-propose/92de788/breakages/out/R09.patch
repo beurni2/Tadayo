@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/roster-revision.ts b/packages/domain/src/clubs/roster-revision.ts
+index 2c673837..08df4f21 100644
+--- a/packages/domain/src/clubs/roster-revision.ts
++++ b/packages/domain/src/clubs/roster-revision.ts
+@@ -162,7 +162,7 @@ export async function readRevision(
+                                       WHEN i.expires_at <= ${now}::pg_catalog.timestamptz THEN 'expired'
+                                       ELSE 'live' END)
+                           FROM app.invitations i
+-                         WHERE i.candidate_id = k.id AND i.replaced_by_id IS NULL)
++                         WHERE i.candidate_id = k.id ORDER BY i.replaced_by_id NULLS LAST LIMIT 1)
+                      END) ORDER BY rc.position)
+               FROM app.roster_revision_candidates rc
+               JOIN app.candidates k ON k.id = rc.candidate_id

@@ -1,0 +1,31 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/privacy/roster.test.ts (23 tests | 1 failed) 45ms
+   ❯ what a proposal must get (proposeRoster) (4)
+     × holds the version to the club's first, then six to its members and open candidates (A01, T6) 12ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  14:37:40
+   Duration  588ms (import 67%, tests 16%, transform 16%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/roster.test.ts > what a proposal must get (proposeRoster) > holds the version to the club's first, then six to its members and open candidates (A01, T6)
+AssertionError: expected 'created' to be '{"code":"CLUB_FULL"}' // Object.is equality
+
+Expected: "{"code":"CLUB_FULL"}"
+Received: "created"
+
+ ❯ src/privacy/roster.test.ts:337:44
+    335|     expect(body(outcome("usr_ben", 4, 1))).toBe('{"code":"VERSION_CONF…
+    336|     expect(body(outcome("usr_ben", 4, 9))).toBe('{"code":"VERSION_CONF…
+    337|     expect(body(outcome("usr_ben", 5, 1))).toBe('{"code":"CLUB_FULL"}'…
+       |                                            ^
+    338|     expect(outcome("usr_ben", 5, 1, rows(5, 1))).toBe("created");
+    339|     expect(body(outcome("usr_ben", 5, 2, rows(5, 1)))).toBe('{"code":"…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

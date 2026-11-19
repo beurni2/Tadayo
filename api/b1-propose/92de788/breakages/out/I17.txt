@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/db/invitation.test.ts (20 tests | 1 failed) 1650ms
+   ❯ a share link for one candidate (T7, FQ71, FQ77) (9)
+     × returns the token once, 256 random bits for the URL's fragment, and keeps only its SHA-256, with seven days from the clock's sample 145ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  14:23:31
+   Duration  2.36s (tests 82%, import 12%, transform 6%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/invitation.test.ts > a share link for one candidate (T7, FQ71, FQ77) > returns the token once, 256 random bits for the URL's fragment, and keeps only its SHA-256, with seven days from the clock's sample
+AssertionError: expected 200 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 200
+
+ ❯ src/db/invitation.test.ts:103:40
+    101|         SELECT response_status, response_body, pg_catalog.row_to_json(…
+    102|           FROM app.idempotency_receipts r WHERE actor_user_id = ${user…
+    103|       expect(receipt?.response_status).toBe(201);
+       |                                        ^
+    104|       expect(receipt?.response_body).toEqual(answer);
+    105|       expect(receipt?.whole).not.toContain(token);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/invitation.test.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

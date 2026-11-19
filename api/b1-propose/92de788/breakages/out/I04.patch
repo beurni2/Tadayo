@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/invitation.ts b/packages/domain/src/clubs/invitation.ts
+index 29788216..11d060f4 100644
+--- a/packages/domain/src/clubs/invitation.ts
++++ b/packages/domain/src/clubs/invitation.ts
+@@ -152,7 +152,7 @@ export async function createInvitation(
+       FROM app.candidates k
+       JOIN app.roster_revision_candidates rc ON rc.candidate_id = k.id
+       JOIN app.roster_revisions r ON r.id = rc.revision_id AND r.state = 'open'
+-     WHERE k.id = ${candidateId} AND k.club_id = ${clubId} AND k.state = 'open'
++     WHERE k.id = ${candidateId} AND k.club_id = ${clubId}
+        AND k.proposed_by_interval_id = ${proposer}`;
+   if (candidate === undefined) throw new Refused("NOT_FOUND");
+ 

@@ -1,0 +1,83 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+star: 2016 cells run, 36045 answers scanned
+star, the roster's table: {"proposals":224,"memberPhases":24,"due":18,"revisions":18,"links":18,"otherAnswers":90}
+
+ ❯ src/privacy/matrix.test.ts (15 tests | 1 failed | 13 skipped) 81289ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (12)
+     × answers the star as its account and its row say, and leaks nothing the scanner can find 43826ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed | 13 skipped (15)
+   Start at  14:26:58
+   Duration  82.60s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 126, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 126,
++   "first": [
++     "active, collecting: createInvitation: status 201 (a link asked for by another member)",
++     "active, collecting: createInvitation: reason \"Created\" (a link asked for by another member)",
++     "active, collecting: createInvitation: body \"{\\\"expires_at\\\":\\\"2026-11-14T06:59:59Z\\\",\\\"candidate_id\\\":\\\"cand_nXpE8YWDFGq54NsL9JJVOQ\\\",\\\"invitation_id\\\":\\\"inv_LUMuLvSd_11KSA5REAY2og\\\",\\\"url\\\":\\\"https://tadayo.app/i#QnmCibEd9ciBfgtzxnyXdBMUv5A8USO7WuFiJ6bquBg\\\"}\" (a link asked for by another member)",
++     "active, collecting: createInvitation: content-length: 200 (a link asked for by another member)",
++     "active, collecting, createInvitation: world at $.invitation_id: a link whose candidate no active interval of the viewer proposed (T14, handoff 1)",
++     "active, collecting, createInvitation: keys at $.url: a key that names a URL, token, provider, dimension, colour or highlight (T10)",
++     "active, collecting, createInvitation: values at $.url: a URL, storage path or provider host: [a-z][a-z0-9+.-]*:\\/\\/",
++     "active, open: createInvitation: status 201 (a link asked for by another member)",
++     "active, open: createInvitation: reason \"Created\" (a link asked for by another member)",
++     "active, open: createInvitation: body \"{\\\"expires_at\\\":\\\"2026-11-14T07:00:00Z\\\",\\\"candidate_id\\\":\\\"cand_MTy24c53egXl0VAKOMDZew\\\",\\\"invitation_id\\\":\\\"inv_HNks48n5495VH9lPEGJXDQ\\\",\\\"url\\\":\\\"https://tadayo.app/i#Ia9o6XtRPv3WWs77pLaRP7uwbGijj8ZvQkgotsbWeJQ\\\"}\" (a link asked for by another member)",
++     "active, open: createInvitation: content-length: 200 (a link asked for by another member)",
++     "active, open, createInvitation: world at $.invitation_id: a link whose candidate no active interval of the viewer proposed (T14, handoff 1)",
++     "active, open, createInvitation: keys at $.url: a key that names a URL, token, provider, dimension, colour or highlight (T10)",
++     "active, open, createInvitation: values at $.url: a URL, storage path or provider host: [a-z][a-z0-9+.-]*:\\/\\/",
++     "active, past: createInvitation: status 201 (a link asked for by another member)",
++     "active, past: createInvitation: reason \"Created\" (a link asked for by another member)",
++     "active, past: createInvitation: body \"{\\\"expires_at\\\":\\\"2026-11-15T01:00:00Z\\\",\\\"candidate_id\\\":\\\"cand_C_LwDGwWfb-UX-T_C86_cA\\\",\\\"invitation_id\\\":\\\"inv_5u6x3IhkenNCk__g9cy-Dg\\\",\\\"url\\\":\\\"https://tadayo.app/i#LT-sVKCFzu1vmpcAgm1GZ5yieS5IuvoGtElSetoAqac\\\"}\" (a link asked for by another member)",
++     "active, past: createInvitation: content-length: 200 (a link asked for by another member)",
++     "active, past, createInvitation: world at $.invitation_id: a link whose candidate no active interval of the viewer proposed (T14, handoff 1)",
++     "active, past, createInvitation: keys at $.url: a key that names a URL, token, provider, dimension, colour or highlight (T10)",
++     "active, past, createInvitation: values at $.url: a URL, storage path or provider host: [a-z][a-z0-9+.-]*:\\/\\/",
++     "withdrawn, collecting: createInvitation: status 201 (a link asked for by another member)",
++     "withdrawn, collecting: createInvitation: reason \"Created\" (a link asked for by another member)",
++     "withdrawn, collecting: createInvitation: body \"{\\\"expires_at\\\":\\\"2026-11-14T06:59:59Z\\\",\\\"candidate_id\\\":\\\"cand_gOEPbkqWpZbUxJ-Z83vnxw\\\",\\\"invitation_id\\\":\\\"inv_Y2VYiHzdAYyUq4wZTaUh_w\\\",\\\"url\\\":\\\"https://tadayo.app/i#tMEbavxwNqU-YiQfl9QIAX1Al5FdXLz4L2IP_61lIjM\\\"}\" (a link asked for by another member)",
++     "withdrawn, collecting: createInvitation: content-length: 200 (a link asked for by another member)",
++     "withdrawn, collecting, createInvitation: world at $.invitation_id: a link whose candidate no active interval of the viewer proposed (T14, handoff 1)",
++     "withdrawn, collecting, createInvitation: keys at $.url: a key that names a URL, token, provider, dimension, colour or highlight (T10)",
++     "withdrawn, collecting, createInvitation: values at $.url: a URL, storage path or provider host: [a-z][a-z0-9+.-]*:\\/\\/",
++     "withdrawn, open: createInvitation: status 201 (a link asked for by another member)",
++     "withdrawn, open: createInvitation: reason \"Created\" (a link asked for by another member)",
++     "withdrawn, open: createInvitation: body \"{\\\"expires_at\\\":\\\"2026-11-14T07:00:00Z\\\",\\\"candidate_id\\\":\\\"cand_jHefa2GTpb0NdM69cZKMkA\\\",\\\"invitation_id\\\":\\\"inv_7th90QCGSjagJBvvD2mcvw\\\",\\\"url\\\":\\\"https://tadayo.app/i#SqjCEBWfPloD3Y66mvtybBd-ISqElWG3RGisOI1Z1C8\\\"}\" (a link asked for by another member)",
++     "withdrawn, open: createInvitation: content-length: 200 (a link asked for by another member)",
++     "withdrawn, open, createInvitation: world at $.invitation_id: a link whose candidate no active interval of the viewer proposed (T14, handoff 1)",
++     "withdrawn, open, createInvitation: keys at $.url: a key that names a URL, token, provider, dimension, colour or highlight (T10)",
++     "withdrawn, open, createInvitation: values at $.url: a URL, storage path or provider host: [a-z][a-z0-9+.-]*:\\/\\/",
++     "withdrawn, past: createInvitation: status 201 (a link asked for by another member)",
++     "withdrawn, past: createInvitation: reason \"Created\" (a link asked for by another member)",
++     "withdrawn, past: createInvitation: body \"{\\\"expires_at\\\":\\\"2026-11-15T01:00:00Z\\\",\\\"candidate_id\\\":\\\"cand_PaRMDXDnDLde3lnl9IUKUw\\\",\\\"invitation_id\\\":\\\"inv_AC-f9J9hsOHqciLuBkwYpw\\\",\\\"url\\\":\\\"https://tadayo.app/i#QGUmZBm7ZIkXfE3y_RSwu5_aGAJJRepAS0B_ToJ3RVQ\\\"}\" (a link asked for by another member)",
++     "withdrawn, past: createInvitation: content-length: 200 (a link asked for by another member)",
++     "withdrawn, past, createInvitation: world at $.invitation_id: a link whose candidate no active interval of the viewer proposed (T14, handoff 1)",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:1127:66
+    1125|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    1126|       console.log(`${role.name}, the roster's table: ${JSON.stringify(…
+    1127|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    1128|       // Every cell ran: the contract's 72 requests a world (each oper…
+    1129|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

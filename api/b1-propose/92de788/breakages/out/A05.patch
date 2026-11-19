@@ -1,0 +1,13 @@
+diff --git a/services/api/src/clubs/roster.ts b/services/api/src/clubs/roster.ts
+index e93cb656..42f231b7 100644
+--- a/services/api/src/clubs/roster.ts
++++ b/services/api/src/clubs/roster.ts
+@@ -172,7 +172,7 @@ export function createInvitationHandler(deps: Deps): Handler {
+     }
+     const stored = answer as Readonly<Record<string, Json>>;
+     // The first answer alone carries the link; a replay is the stored answer, which never held it (FQ77).
+-    return created(reply, token === null ? stored : { ...stored, url: invitationUrl(token) });
++    return created(reply, { ...stored, url: invitationUrl(token ?? "again") });
+   };
+ }
+ 

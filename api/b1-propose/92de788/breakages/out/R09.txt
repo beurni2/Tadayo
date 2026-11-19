@@ -1,0 +1,104 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/db/invitation.test.ts (20 tests | 3 failed) 1461ms
+   ❯ a share link for one candidate (T7, FQ71, FQ77) (9)
+     × replaces the candidate's earlier link with a new one, so one is the latest (FQ71) 43ms
+   ❯ revoking a link (G01-invite-people-revoked; FQ59, handoff 4) (4)
+     × ends the link at the clock's sample and nothing else: the candidate keeps their place, and a repeat answers the same and changes nothing 110ms
+     × revokes a link that was replaced or has expired the same way 39ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 17 passed (20)
+   Start at  14:20:47
+   Duration  2.14s (tests 80%, import 15%, transform 6%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/invitation.test.ts > a share link for one candidate (T7, FQ71, FQ77) > replaces the candidate's earlier link with a new one, so one is the latest (FQ71)
+AssertionError: expected { …(3) } to match object { …(2) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "id": "inv_0vjNc4q-QWqP9JmiLHjr1g",
++   "id": "inv_gTd48vgK5CZ1xJ0r9YecMg",
+    "state": "live",
+  }
+
+ ❯ src/db/invitation.test.ts:163:37
+    161|         [second.invitation_id, null],
+    162|       ]);
+    163|       expect(await stateFor(tx, s)).toMatchObject({ id: second.invitat…
+       |                                     ^
+    164|     });
+    165|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/invitation.test.ts:151:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/db/invitation.test.ts > revoking a link (G01-invite-people-revoked; FQ59, handoff 4) > ends the link at the clock's sample and nothing else: the candidate keeps their place, and a repeat answers the same and changes nothing
+AssertionError: expected { …(3) } to match object { …(2) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "id": "inv_T9CtXeflyZhMf6l7uwzTyA",
+-   "state": "live",
++   "id": "inv_Gl11AreesVpFFgR9JR3BjA",
++   "state": "revoked",
+  }
+
+ ❯ src/db/invitation.test.ts:472:37
+    470|       // And Ben can make a new link, which is then the latest (Create…
+    471|       const next = (await link(tx, clock, user(s.w, 0), s.w.club, s.sa…
+    472|       expect(await stateFor(tx, s)).toMatchObject({ id: next.invitatio…
+       |                                     ^
+    473|     });
+    474|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/invitation.test.ts:451:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/db/invitation.test.ts > revoking a link (G01-invite-people-revoked; FQ59, handoff 4) > revokes a link that was replaced or has expired the same way
+AssertionError: expected { …(3) } to match object { …(2) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "id": "inv_7OzIrQGH0VfynwZ5T7MjiA",
+-   "state": "live",
++   "id": "inv_CRFnFDz2WP7QZVUDg-rITA",
++   "state": "revoked",
+  }
+
+ ❯ src/db/invitation.test.ts:489:37
+    487|       expect(rows.find((row) => row.id === first.invitation_id)?.revok…
+    488|       expect(rows.find((row) => row.id === second.invitation_id)?.revo…
+    489|       expect(await stateFor(tx, s)).toMatchObject({ id: second.invitat…
+       |                                     ^
+    490|       // Past its expiry the latest link reads expired; revoked there,…
+    491|       const past = Temporal.Instant.from(EXPIRES).add({ hours: 2 });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/invitation.test.ts:477:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

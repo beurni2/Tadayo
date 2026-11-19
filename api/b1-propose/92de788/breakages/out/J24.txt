@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/privacy/roster.test.ts (23 tests | 1 failed) 37ms
+   ❯ a link as it was made, and its replay (createInvitation) (5)
+     × refuses another link, candidate or expiry, a row that expires at another instant, and an answer that may be stored 10ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  14:37:59
+   Duration  563ms (import 65%, transform 19%, tests 14%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/roster.test.ts > a link as it was made, and its replay (createInvitation) > refuses another link, candidate or expiry, a row that expires at another instant, and an answer that may be stored
+AssertionError: expected [] to deeply equal [ 'a link without private, no-store' ]
+
+- Expected
++ Received
+
+- [
+-   "a link without private, no-store",
+- ]
++ []
+
+ ❯ src/privacy/roster.test.ts:463:90
+    461|       "the link's row expires at another instant than its answer",
+    462|     ]);
+    463|     expect(judge(first, roster(), made(first, { "cache-control": "priv…
+       |                                                                                          ^
+    464|       "a link without private, no-store",
+    465|     ]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

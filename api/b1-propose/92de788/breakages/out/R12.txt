@@ -1,0 +1,343 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/db/propose-roster.test.ts (41 tests | 10 failed) 1779ms
+   ❯ proposing people (spec 04, 32; T7) (5)
+     × writes an exact, sealed roster at the clock's sample: the club's members, the candidates in order, and its proposer's approval alone (FQ60) 116ms
+     × supersedes the open revision: its candidates carry over at their labels and in their order, their acceptances don't, and its approvals no longer count (T7) 72ms
+   ❯ six people, the candidates still open counted (A01, T6) (15)
+     × 1 members and 0 open candidates, 5 proposed: proposed 27ms
+     × 2 members and 0 open candidates, 4 proposed: proposed 33ms
+     × 3 members and 0 open candidates, 3 proposed: proposed 37ms
+     × 3 members and 2 open candidates, 1 proposed: proposed 44ms
+     × 4 members and 1 open candidates, 1 proposed: proposed 37ms
+     × counts a candidate who has ended no longer, and carries none but the open ones 35ms
+   ❯ who reads a revision, and what of it (T9, T14, T15, T33; FQ119) (6)
+     × gives the neutral not-found to a stranger, a member of another club, a former member, a member who joined after it was made, an account being deleted, a candidate who accepted it, and for an id nobody has or that can't be one 63ms
+     × says nothing of another member's decision or of an acceptance to a member who didn't propose the candidate (T15, T33) 55ms
+
+ Test Files  1 failed (1)
+      Tests  10 failed | 31 passed (41)
+   Start at  14:20:56
+   Duration  2.51s (tests 82%, import 13%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 10 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/propose-roster.test.ts > proposing people (spec 04, 32; T7) > writes an exact, sealed roster at the clock's sample: the club's members, the candidates in order, and its proposer's approval alone (FQ60)
+AssertionError: expected { …(8) } to deeply equal { …(8) }
+
+- Expected
++ Received
+
+@@ -1,18 +1,18 @@
+  {
+    "candidates": [
+      {
+        "id": "cand_FENvDcewmQ0izjWVDJNFlA",
+-       "name": "Alex",
++       "name": "Sam",
+        "proposed_by": {
+          "display_name": "Ben",
+          "membership_id": "mem_teKc92oQO5bhCmIKgRNM3A",
+        },
+      },
+      {
+        "id": "cand_8ASpaYx6scRjRymXpkfJDg",
+-       "name": "Sam",
++       "name": "Alex",
+        "proposed_by": {
+          "display_name": "Ben",
+          "membership_id": "mem_teKc92oQO5bhCmIKgRNM3A",
+        },
+      },
+
+ ❯ src/db/propose-roster.test.ts:65:22
+     63|       const before = await rosterVersion(tx, w.club);
+     64|       const answer = await propose(tx, clock, user(w, 0), w.club, ["Al…
+     65|       expect(answer).toEqual({
+       |                      ^
+     66|         id: answer.id,
+     67|         version: 1,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/propose-roster.test.ts:61:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/10]⎯
+
+ FAIL  src/db/propose-roster.test.ts > proposing people (spec 04, 32; T7) > supersedes the open revision: its candidates carry over at their labels and in their order, their acceptances don't, and its approvals no longer count (T7)
+AssertionError: expected { …(8) } to deeply equal { …(8) }
+
+- Expected
++ Received
+
+@@ -1,29 +1,29 @@
+  {
+    "candidates": [
+      {
+-       "id": "cand_Fd3Aguerx1omngOaeoSSKQ",
+-       "name": "Sam",
++       "id": "cand_sv-6Sw7E98yVHW8kycD7nw",
++       "name": "Debby",
+        "proposed_by": {
+-         "display_name": "Ben",
+-         "membership_id": "mem_TeS84SU_aTmgIR_U8jkR1Q",
++         "display_name": "Maya",
++         "membership_id": "mem_G-rw6p0o75ABzLI_dVd4UQ",
+        },
+      },
+      {
+-       "id": "cand_4bJXoX4Lr7Blem5MnmpQKQ",
++       "id": "cand_Fd3Aguerx1omngOaeoSSKQ",
+        "name": "Nina",
+        "proposed_by": {
+          "display_name": "Ben",
+          "membership_id": "mem_TeS84SU_aTmgIR_U8jkR1Q",
+        },
+      },
+      {
+        "id": "cand_4bJXoX4Lr7Blem5MnmpQKQ",
+-       "name": "Debby",
++       "name": "Sam",
+        "proposed_by": {
+-         "display_name": "Maya",
+-         "membership_id": "mem_G-rw6p0o75ABzLI_dVd4UQ",
++         "display_name": "Ben",
++         "membership_id": "mem_TeS84SU_aTmgIR_U8jkR1Q",
+        },
+      },
+    ],
+    "club": {
+      "id": "club_d9KXdmsKhRp4QVnC8DktOA",
+
+ ❯ src/db/propose-roster.test.ts:182:22
+    180|       const second = await propose(tx, clock, user(w, 1), w.club, ["De…
+    181|       expect(second.id).not.toBe(first.id);
+    182|       expect(second).toEqual({
+       |                      ^
+    183|         id: second.id,
+    184|         version: 1,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/propose-roster.test.ts:168:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/10]⎯
+
+ FAIL  src/db/propose-roster.test.ts > six people, the candidates still open counted (A01, T6) > 1 members and 0 open candidates, 5 proposed: proposed
+AssertionError: expected [ 'New 4', 'New 3', 'New 2', …(2) ] to deeply equal [ 'New 0', 'New 1', 'New 2', …(2) ]
+
+- Expected
++ Received
+
+  [
+-   "New 0",
+-   "New 1",
+-   "New 2",
+-   "New 3",
+    "New 4",
++   "New 3",
++   "New 2",
++   "New 1",
++   "New 0",
+  ]
+
+ ❯ src/db/propose-roster.test.ts:306:72
+    304|           const answer = await propose(tx, clock, user(w, 0), w.club, …
+    305|           expect(answer.candidates).toHaveLength(open + add);
+    306|           expect(answer.candidates.map((candidate) => candidate.name))…
+       |                                                                        ^
+    307|             ...Array.from({ length: open }, (_, index) => `Open ${Stri…
+    308|             ...labels,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/propose-roster.test.ts:281:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/10]⎯
+
+ FAIL  src/db/propose-roster.test.ts > six people, the candidates still open counted (A01, T6) > 2 members and 0 open candidates, 4 proposed: proposed
+AssertionError: expected [ 'New 3', 'New 2', 'New 1', 'New 0' ] to deeply equal [ 'New 0', 'New 1', 'New 2', 'New 3' ]
+
+- Expected
++ Received
+
+  [
+-   "New 0",
+-   "New 1",
+-   "New 2",
+    "New 3",
++   "New 2",
++   "New 1",
++   "New 0",
+  ]
+
+ ❯ src/db/propose-roster.test.ts:306:72
+    304|           const answer = await propose(tx, clock, user(w, 0), w.club, …
+    305|           expect(answer.candidates).toHaveLength(open + add);
+    306|           expect(answer.candidates.map((candidate) => candidate.name))…
+       |                                                                        ^
+    307|             ...Array.from({ length: open }, (_, index) => `Open ${Stri…
+    308|             ...labels,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/propose-roster.test.ts:281:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/10]⎯
+
+ FAIL  src/db/propose-roster.test.ts > six people, the candidates still open counted (A01, T6) > 3 members and 0 open candidates, 3 proposed: proposed
+AssertionError: expected [ 'New 2', 'New 1', 'New 0' ] to deeply equal [ 'New 0', 'New 1', 'New 2' ]
+
+- Expected
++ Received
+
+  [
+-   "New 0",
+-   "New 1",
+    "New 2",
++   "New 1",
++   "New 0",
+  ]
+
+ ❯ src/db/propose-roster.test.ts:306:72
+    304|           const answer = await propose(tx, clock, user(w, 0), w.club, …
+    305|           expect(answer.candidates).toHaveLength(open + add);
+    306|           expect(answer.candidates.map((candidate) => candidate.name))…
+       |                                                                        ^
+    307|             ...Array.from({ length: open }, (_, index) => `Open ${Stri…
+    308|             ...labels,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/propose-roster.test.ts:281:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/10]⎯
+
+ FAIL  src/db/propose-roster.test.ts > six people, the candidates still open counted (A01, T6) > 3 members and 2 open candidates, 1 proposed: proposed
+AssertionError: expected [ 'New 0', 'Open 1', 'Open 0' ] to deeply equal [ 'Open 0', 'Open 1', 'New 0' ]
+
+- Expected
++ Received
+
+  [
+-   "Open 0",
+-   "Open 1",
+    "New 0",
++   "Open 1",
++   "Open 0",
+  ]
+
+ ❯ src/db/propose-roster.test.ts:306:72
+    304|           const answer = await propose(tx, clock, user(w, 0), w.club, …
+    305|           expect(answer.candidates).toHaveLength(open + add);
+    306|           expect(answer.candidates.map((candidate) => candidate.name))…
+       |                                                                        ^
+    307|             ...Array.from({ length: open }, (_, index) => `Open ${Stri…
+    308|             ...labels,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/propose-roster.test.ts:281:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/10]⎯
+
+ FAIL  src/db/propose-roster.test.ts > six people, the candidates still open counted (A01, T6) > 4 members and 1 open candidates, 1 proposed: proposed
+AssertionError: expected [ 'New 0', 'Open 0' ] to deeply equal [ 'Open 0', 'New 0' ]
+
+- Expected
++ Received
+
+  [
+-   "Open 0",
+    "New 0",
++   "Open 0",
+  ]
+
+ ❯ src/db/propose-roster.test.ts:306:72
+    304|           const answer = await propose(tx, clock, user(w, 0), w.club, …
+    305|           expect(answer.candidates).toHaveLength(open + add);
+    306|           expect(answer.candidates.map((candidate) => candidate.name))…
+       |                                                                        ^
+    307|             ...Array.from({ length: open }, (_, index) => `Open ${Stri…
+    308|             ...labels,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/propose-roster.test.ts:281:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/10]⎯
+
+ FAIL  src/db/propose-roster.test.ts > six people, the candidates still open counted (A01, T6) > counts a candidate who has ended no longer, and carries none but the open ones
+AssertionError: expected [ 'Nina', 'Sam' ] to deeply equal [ 'Debby', 'Nina' ]
+
+- Expected
++ Received
+
+  [
+-   "Debby",
+    "Nina",
++   "Sam",
+  ]
+
+ ❯ src/db/propose-roster.test.ts:336:66
+    334|       // Now four members and one open candidate: one more fits, and o…
+    335|       const next = await propose(tx, clock, user(w, 0), w.club, ["Nina…
+    336|       expect(next.candidates.map((candidate) => candidate.name)).toEqu…
+       |                                                                  ^
+    337|       expect(next.candidates[0]?.id).toBe(full.candidates[1]?.id);
+    338|       expect(await refusal(propose(tx, clock, user(w, 0), w.club, ["Zo…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/propose-roster.test.ts:328:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/10]⎯
+
+ FAIL  src/db/propose-roster.test.ts > who reads a revision, and what of it (T9, T14, T15, T33; FQ119) > gives the neutral not-found to a stranger, a member of another club, a former member, a member who joined after it was made, an account being deleted, a candidate who accepted it, and for an id nobody has or that can't be one
+Refused: refused: NOT_FOUND
+ ❯ createInvitation ../packages/domain/src/clubs/invitation.ts:157:38
+    155|      WHERE k.id = ${candidateId} AND k.club_id = ${clubId} AND k.state…
+    156|        AND k.proposed_by_interval_id = ${proposer}`;
+    157|   if (candidate === undefined) throw new Refused("NOT_FOUND");
+       |                                      ^
+    158|
+    159|   // 4. The latest link.
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/propose-roster.test.ts:818:20
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/propose-roster.test.ts:807:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/10]⎯
+
+ FAIL  src/db/propose-roster.test.ts > who reads a revision, and what of it (T9, T14, T15, T33; FQ119) > says nothing of another member's decision or of an acceptance to a member who didn't propose the candidate (T15, T33)
+Refused: refused: NOT_FOUND
+ ❯ createInvitation ../packages/domain/src/clubs/invitation.ts:157:38
+    155|      WHERE k.id = ${candidateId} AND k.club_id = ${clubId} AND k.state…
+    156|        AND k.proposed_by_interval_id = ${proposer}`;
+    157|   if (candidate === undefined) throw new Refused("NOT_FOUND");
+       |                                      ^
+    158|
+    159|   // 4. The latest link.
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ src/db/propose-roster.test.ts:866:20
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/propose-roster.test.ts:863:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/10]⎯
+

@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/roster.ts b/tests/src/privacy/roster.ts
+index b80f04e0..dea9abba 100644
+--- a/tests/src/privacy/roster.ts
++++ b/tests/src/privacy/roster.ts
+@@ -496,7 +496,7 @@ export function proposeCases(version: number, label: string): ProposeCase[] {
+       expected: "stale",
+     },
+     { name: "one person proposed", body: good, key, expected: "proposal" },
+-    { name: "the same request again under its key", body: good, key, expected: "replay" },
++    { name: "the same request again under its key", body: good, key: fresh(), expected: "replay" },
+     {
+       name: "another body under that key",
+       body: JSON.stringify({ expected_roster_version: version, add: [{ label }, { label }] }),

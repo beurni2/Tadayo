@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/db/invitation.test.ts (20 tests | 1 failed) 1555ms
+   ❯ a share link for one candidate (T7, FQ71, FQ77) (9)
+     × returns the token once, 256 random bits for the URL's fragment, and keeps only its SHA-256, with seven days from the clock's sample 152ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  14:22:57
+   Duration  2.24s (tests 79%, import 15%, transform 6%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/invitation.test.ts > a share link for one candidate (T7, FQ71, FQ77) > returns the token once, 256 random bits for the URL's fragment, and keeps only its SHA-256, with seven days from the clock's sample
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/db/invitation.test.ts:94:104
+     92|       const [row] = rows;
+     93|       expect(row?.id).toBe(answer.invitation_id);
+     94|       expect(Buffer.from(row?.token_sha256 ?? []).equals(createHash("s…
+       |                                                                                                        ^
+     95|       expect(row?.created_at.equals(FIRST)).toBe(true);
+     96|       expect(row?.expires_at.equals(Temporal.Instant.from(EXPIRES))).t…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/invitation.test.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

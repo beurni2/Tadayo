@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/idempotency/receipt.ts b/packages/domain/src/idempotency/receipt.ts
+index 0be587fe..cee77c2b 100644
+--- a/packages/domain/src/idempotency/receipt.ts
++++ b/packages/domain/src/idempotency/receipt.ts
+@@ -96,7 +96,6 @@ export async function reserveAsMember(
+     }
+     throw error;
+   }
+-  if (first !== null && !(await reservedSince(tx, receipt, interval))) throw new Refused("NOT_FOUND");
+   return first;
+ }
+ 

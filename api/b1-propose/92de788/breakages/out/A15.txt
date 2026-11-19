@@ -1,0 +1,38 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/services/api
+
+ ❯ src/clubs/roster.test.ts (22 tests | 1 failed) 459ms
+   ❯ the link's serializer against the contract's examples (T55, FQ77) (2)
+     × stores the answer without the link, which is the contract's replay, and adds the link to the first answer alone 12ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 34 passed (35)
+   Start at  14:24:10
+   Duration  1.03s (tests 54%, import 36%, transform 10%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/clubs/roster.test.ts > the link's serializer against the contract's examples (T55, FQ77) > stores the answer without the link, which is the contract's replay, and adds the link to the first answer alone
+AssertionError: expected { invitation_id: 'inv_kt_leila', …(2) } to deeply equal { invitation_id: 'inv_kt_leila', …(2) }
+
+- Expected
++ Received
+
+  {
+    "candidate_id": "cnd_kt_leila",
+-   "expires_at": "2026-11-13T14:41:00Z",
++   "expires_at": "2026-11-13T14:41:00.999Z",
+    "invitation_id": "inv_kt_leila",
+  }
+
+ ❯ src/clubs/roster.test.ts:153:20
+    151|       expiresAt: Temporal.Instant.from(link["expires_at"] as string).a…
+    152|     });
+    153|     expect(stored).toEqual(replayed);
+       |                    ^
+    154|     expect(Object.keys(stored).sort()).toEqual(["candidate_id", "expir…
+    155|     const token = (link["url"] as string).split("#")[1] ?? "";
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

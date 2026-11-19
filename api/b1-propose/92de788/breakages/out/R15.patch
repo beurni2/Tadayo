@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/clubs/roster-revision.ts b/packages/domain/src/clubs/roster-revision.ts
+index 2c673837..d8d07017 100644
+--- a/packages/domain/src/clubs/roster-revision.ts
++++ b/packages/domain/src/clubs/roster-revision.ts
+@@ -198,7 +198,6 @@ export async function readRevision(
+   for (const entry of list(row["candidates"])) {
+     const candidate = record(entry);
+     const proposer = personOf(candidate["proposed_by"]);
+-    if (proposer.person === null) return null;
+     const invitation = linkOf(candidate["invitation"]);
+     // A link is only ever its candidate's proposer's to see.
+     if (invitation !== null && proposer.id !== membershipId) throw shape();

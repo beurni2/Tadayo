@@ -1,0 +1,12 @@
+diff --git a/tests/src/privacy/scanner.ts b/tests/src/privacy/scanner.ts
+index 215a16a4..b1a70784 100644
+--- a/tests/src/privacy/scanner.ts
++++ b/tests/src/privacy/scanner.ts
+@@ -1165,7 +1165,6 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
+         if (node.version !== row.version) find("world", `${at}.version`, "not the viewer's own account's version");
+       }
+     }
+-    if (kind === "CandidateInvitation") proposersLink(node.id, `${at}.id`);
+     if (kind === "Candidate" && isObject(node.invitation)) {
+       // The link is this candidate's own, never another's shown under it.
+       const invitation = typeof node.invitation.id === "string" ? world.invitations.get(node.invitation.id) : undefined;

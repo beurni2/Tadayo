@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/invitation.ts b/packages/domain/src/clubs/invitation.ts
+index 29788216..909eac83 100644
+--- a/packages/domain/src/clubs/invitation.ts
++++ b/packages/domain/src/clubs/invitation.ts
+@@ -140,7 +140,7 @@ export async function createInvitation(
+   // 2. The receipt, the club's row, and who is asking. A key is answered only once the caller's present
+   // interval had begun when its receipt was made (FQ112).
+   const first = await reserveAsMember(tx, receipt, await clock.sample(tx), asking);
+-  if (first !== null) return { answer: first.replay, token: null };
++  if (first !== null) return { answer: first.replay, token: randomBytes(32).toString("base64url") };
+   await bound(tx)`SELECT id FROM app.clubs WHERE id = ${clubId} FOR UPDATE`;
+   // The same interval still: one that ended while this waited, a new one begun since included, makes nothing.
+   const proposer = await activeMember(tx, userId, clubId);

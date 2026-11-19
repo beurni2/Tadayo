@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/privacy/roster.test.ts (23 tests | 1 failed) 33ms
+   ❯ getRosterRevision's judge in a cell (4)
+     × refuses another status, a body that isn't the revision, and one that may be stored 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  14:37:36
+   Duration  627ms (import 68%, transform 18%, tests 12%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/roster.test.ts > getRosterRevision's judge in a cell > refuses another status, a body that isn't the revision, and one that may be stored
+AssertionError: expected [] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+- [
+-   "the roster revision without private, no-store",
+- ]
++ []
+
+ ❯ src/privacy/roster.test.ts:294:61
+    292|     expect(judge(ok("rev_1"))).toEqual(["not the roster revision"]);
+    293|     expect(judge({ ...ok(want), body: "{bad" })).toEqual(["not the ros…
+    294|     expect(judge(ok(want, { "cache-control": "private" }))).toEqual(["…
+       |                                                             ^
+    295|   });
+    296|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

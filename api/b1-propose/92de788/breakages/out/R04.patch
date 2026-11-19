@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/roster-revision.ts b/packages/domain/src/clubs/roster-revision.ts
+index 2c673837..08a42a31 100644
+--- a/packages/domain/src/clubs/roster-revision.ts
++++ b/packages/domain/src/clubs/roster-revision.ts
+@@ -152,7 +152,7 @@ export async function readRevision(
+                      (SELECT ${person(sql)} FROM app.memberships s JOIN app.users su ON su.id = s.user_id
+                        WHERE s.interval_id = k.proposed_by_interval_id),
+                      'invitation',
+-                     CASE WHEN k.proposed_by_interval_id = am.interval_id THEN
++                     CASE WHEN true THEN
+                        (SELECT pg_catalog.jsonb_build_object(
+                                  'id', i.id, 'expires_at', i.expires_at,
+                                  'state',

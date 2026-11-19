@@ -1,0 +1,90 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/services/api
+
+ ❯ src/clubs/roster.test.ts (22 tests | 3 failed) 315ms
+   ❯ the link's serializer against the contract's examples (T55, FQ77) (2)
+     × stores the answer without the link, which is the contract's replay, and adds the link to the first answer alone 12ms
+     × puts the token in the fragment, which reaches no server (T7, T52) 2ms
+   ❯ what the roster routes answer (6)
+     × answers a first link with 201 and its URL, a replay without one, and logs the token in neither (T52, FQ77) 8ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  3 failed | 32 passed (35)
+   Start at  14:23:56
+   Duration  962ms (import 45%, tests 43%, transform 11%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/clubs/roster.test.ts > the link's serializer against the contract's examples (T55, FQ77) > stores the answer without the link, which is the contract's replay, and adds the link to the first answer alone
+AssertionError: expected { invitation_id: 'inv_kt_leila', …(3) } to deeply equal { invitation_id: 'inv_kt_leila', …(3) }
+
+- Expected
++ Received
+
+  {
+    "candidate_id": "cnd_kt_leila",
+    "expires_at": "2026-11-13T14:41:00Z",
+    "invitation_id": "inv_kt_leila",
+-   "url": "https://tadayo.app/i#q7Vb2xKp9LmN4wRt6YsA1cDe8FgH3jZu5oIi0nQvXkM",
++   "url": "https://tadayo.app/i?t=q7Vb2xKp9LmN4wRt6YsA1cDe8FgH3jZu5oIi0nQvXkM",
+  }
+
+ ❯ src/clubs/roster.test.ts:156:54
+    154|     expect(Object.keys(stored).sort()).toEqual(["candidate_id", "expir…
+    155|     const token = (link["url"] as string).split("#")[1] ?? "";
+    156|     expect({ ...stored, url: invitationUrl(token) }).toEqual(link);
+       |                                                      ^
+    157|     expect(InvitationLink.strict().safeParse({ ...stored, url: invitat…
+    158|     expect(InvitationLink.strict().safeParse(stored).success).toBe(tru…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/clubs/roster.test.ts > the link's serializer against the contract's examples (T55, FQ77) > puts the token in the fragment, which reaches no server (T7, T52)
+AssertionError: expected [ 'https://tadayo.app', '/i', …(2) ] to deeply equal [ Array(4) ]
+
+- Expected
++ Received
+
+  [
+    "https://tadayo.app",
+    "/i",
++   "?t=q7Vb2xKp9LmN4wRt6YsA1cDe8FgH3jZu5oIi0nQvXkM",
+    "",
+-   "#q7Vb2xKp9LmN4wRt6YsA1cDe8FgH3jZu5oIi0nQvXkM",
+  ]
+
+ ❯ src/clubs/roster.test.ts:163:62
+    161|   it("puts the token in the fragment, which reaches no server (T7, T52…
+    162|     const url = new URL(invitationUrl("q7Vb2xKp9LmN4wRt6YsA1cDe8FgH3jZ…
+    163|     expect([url.origin, url.pathname, url.search, url.hash]).toEqual([
+       |                                                              ^
+    164|       "https://tadayo.app",
+    165|       "/i",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/clubs/roster.test.ts > what the roster routes answer > answers a first link with 201 and its URL, a replay without one, and logs the token in neither (T52, FQ77)
+AssertionError: expected { invitation_id: 'inv_1', …(3) } to deeply equal { invitation_id: 'inv_1', …(3) }
+
+- Expected
++ Received
+
+  {
+    "candidate_id": "cand_1",
+    "expires_at": "2026-11-13T14:41:00Z",
+    "invitation_id": "inv_1",
+-   "url": "https://tadayo.app/i#q7Vb2xKp9LmN4wRt6YsA1cDe8FgH3jZu5oIi0nQvXkM",
++   "url": "https://tadayo.app/i?t=q7Vb2xKp9LmN4wRt6YsA1cDe8FgH3jZu5oIi0nQvXkM",
+  }
+
+ ❯ src/clubs/roster.test.ts:362:35
+    360|     const made = await (await appFor(() => Promise.resolve(first), lin…
+    361|     expect(made.status).toBe(201);
+    362|     expect(JSON.parse(made.body)).toEqual({ ...stored, url: `https://t…
+       |                                   ^
+    363|     expect(InvitationLink.strict().safeParse(JSON.parse(made.body)).su…
+    364|     expect(made.headers).toMatchObject(headers);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

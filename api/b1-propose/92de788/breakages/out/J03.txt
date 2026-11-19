@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/privacy/roster.test.ts (23 tests | 1 failed) 38ms
+   ❯ a revision's RosterRevision from the world's rows (getRosterRevision) (7)
+     × shows each member only the link of a candidate that member proposed, and that member's own decision (handoff 1, T15) 7ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  14:37:31
+   Duration  589ms (import 64%, transform 18%, tests 14%, worker 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/roster.test.ts > a revision's RosterRevision from the world's rows (getRosterRevision) > shows each member only the link of a candidate that member proposed, and that member's own decision (handoff 1, T15)
+AssertionError: expected 'live' to be undefined
+
+- Expected:
+undefined
+
++ Received:
+"live"
+
+ ❯ src/privacy/roster.test.ts:189:31
+    187|     const both = roster([link(), anas]);
+    188|     const toAna = revisionFor(world(), both, "rev_1", "usr_ana", NOW);
+    189|     expect(stateOf(toAna, 0)).toBeUndefined();
+       |                               ^
+    190|     expect(stateOf(toAna, 1)).toBe("live");
+    191|     expect(toAna?.["my_decision"]).toBe("pending");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,13 @@
+diff --git a/services/api/src/clubs/roster.ts b/services/api/src/clubs/roster.ts
+index e93cb656..6d10e97d 100644
+--- a/services/api/src/clubs/roster.ts
++++ b/services/api/src/clubs/roster.ts
+@@ -106,7 +106,7 @@ export function getRosterRevisionHandler(deps: Deps): Handler {
+       const revision = await readRevision(tx, account.id, revisionId, now);
+       return revision === null ? null : rosterRevisionBody(revision);
+     });
+-    return body === null ? problem(reply, "NOT_FOUND") : ok(reply, body);
++    return ok(reply, body ?? {});
+   };
+ }
+ 

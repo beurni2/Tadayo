@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/invitation.ts b/packages/domain/src/clubs/invitation.ts
+index 29788216..2ba28282 100644
+--- a/packages/domain/src/clubs/invitation.ts
++++ b/packages/domain/src/clubs/invitation.ts
+@@ -49,7 +49,7 @@ import { Refused } from "../refused.ts";
+ import type { Clock, ClockSql } from "../time/clock.ts";
+ 
+ /** How long a link lasts from when it's made: the one server setting (FQ71's default). */
+-export const INVITATION_DAYS = 7;
++export const INVITATION_DAYS = 6;
+ 
+ export interface CreateInvitationInput {
+   /** The account the gate loaded. */

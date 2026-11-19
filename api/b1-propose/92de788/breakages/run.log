@@ -1,0 +1,336 @@
+== R01 a revision not sealed is served [propose]: CAUGHT; exit 1 ['Tests  1 failed | 40 passed (41)']
+    × serves no revision that isn't sealed 33ms
+== R02 a member who joined after it reads a revision [propose]: CAUGHT; exit 1 ['Tests  1 failed | 40 passed (41)']
+    × gives a member who joined after a revision was made nothing of it (FQ119) 43ms
+== R03 anyone who ever had a membership reads a revision [propose]: CAUGHT; exit 1 ['Tests  2 failed | 39 passed (41)']
+    × gives nobody anything of a suspended club's revision (FQ80) 60ms
+    × gives the neutral not-found to a stranger, a member of another club, a former member, a member who joined after it was made, an account being deleted, a candidate who accepted it, and for an id nobody has or that can't be one 122m
+== R04 every member is given a candidate's link [propose]: CAUGHT; exit 1 ['Tests  3 failed | 38 passed (41)']
+    × gives a member who joined after a revision was made nothing of it (FQ119) 49ms
+    × says nothing of another member's decision or of an acceptance to a member who didn't propose the candidate (T15, T33) 68ms
+    × supersedes the open revision: its candidates carry over at their labels and in their order, their acceptances don't, and its approvals no longer count (T7) 72ms
+== R05 a link is never accepted [link]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × is accepted once the candidate accepted this revision with it, used on a newer revision, and stays so past its expiry 57ms
+== R06 a link is never used [link]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × is accepted once the candidate accepted this revision with it, used on a newer revision, and stays so past its expiry 129ms
+== R07 a link is live at the instant it expires [link]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × is live until the instant it expires, and expired from then (FQ71), by the server's clock (T1) 51ms
+== R08 a revoked link is expired past its expiry [link]: CAUGHT; exit 1 ['Tests  2 failed | 18 passed (20)']
+    × is revoked once revoked, and stays revoked past its expiry 70ms
+    × revokes a link that was replaced or has expired the same way 49ms
+== R09 a replaced link is shown for the latest [link]: CAUGHT; exit 1 ['Tests  3 failed | 17 passed (20)']
+    × ends the link at the clock's sample and nothing else: the candidate keeps their place, and a repeat answers the same and changes nothing 110ms
+    × replaces the candidate's earlier link with a new one, so one is the latest (FQ71) 43ms
+    × revokes a link that was replaced or has expired the same way 39ms
+== R10 the proposer's decision given as the caller's [propose]: CAUGHT; exit 1 ['Tests  3 failed | 38 passed (41)']
+    × gives each member the revision lists the same roster, with their own decision and their own membership 59ms
+    × says nothing of another member's decision or of an acceptance to a member who didn't propose the candidate (T15, T33) 105ms
+    × supersedes the open revision: its candidates carry over at their labels and in their order, their acceptances don't, and its approvals no longer count (T7) 85ms
+== R11 members who joined at one instant in the other order [propose]: CAUGHT; exit 1 ['Tests  1 failed | 40 passed (41)']
+    × lists members who joined at the same instant by their membership's id, in byte order (FQ114) 54ms
+== R12 candidates in the other order [propose]: CAUGHT; exit 1 ['Tests  10 failed | 31 passed (41)']
+    × 1 members and 0 open candidates, 5 proposed: proposed 27ms
+    × 2 members and 0 open candidates, 4 proposed: proposed 33ms
+    × 3 members and 0 open candidates, 3 proposed: proposed 37ms
+    × 3 members and 2 open candidates, 1 proposed: proposed 44ms
+    × 4 members and 1 open candidates, 1 proposed: proposed 37ms
+    × counts a candidate who has ended no longer, and carries none but the open ones 35ms
+== R13 a revision whose proposer has no name is served [propose]: NOT CAUGHT, AN EQUIVALENT CHANGE (README); exit 0 ['Tests  41 passed (41)']
+== R14 a member with no name is sent [propose]: CAUGHT; exit 1 ['Tests  1 failed | 40 passed (41)']
+    × leaves out a member with no name to show, and serves no revision whose proposer or a candidate's proposer has none 41ms
+== R15 a revision whose candidate's proposer has no name is served [propose]: CAUGHT; exit 1 ['Tests  1 failed | 40 passed (41)']
+    × leaves out a member with no name to show, and serves no revision whose proposer or a candidate's proposer has none 76ms
+== P01 a retry answered to someone who left and joined again [propose]: CAUGHT; exit 1 ['Tests  1 failed | 40 passed (41)']
+    × gives a retry by someone who left and joined again the neutral not-found, and a new key of theirs a new revision (FQ112) 41ms
+== P02 the proposer not asked again under the club's row [propose]: CAUGHT; exit 1 ['Tests  2 failed | 39 passed (41)']
+    × asks who is proposing again once it holds the club's row: a member who left while it waited gets the neutral not-found 79ms
+    × proposes nothing for a member who left and joined again while it waited for the club's row: the new interval sends its own request 101ms
+== P19 an interval begun while the request waited proposes [propose]: CAUGHT; exit 1 ['Tests  1 failed | 40 passed (41)']
+    × proposes nothing for a member who left and joined again while it waited for the club's row: the new interval sends its own request 89ms
+== P03 the club's row read without its lock [propose]: CAUGHT; exit 1 ['Tests  3 failed | 38 passed (41)']
+    × asks who is proposing again once it holds the club's row: a member who left while it waited gets the neutral not-found 79ms
+    × lets one of two members who propose at once on the same version through, and refuses the other with the version now 41ms
+    × proposes nothing for a member who left and joined again while it waited for the club's row: the new interval sends its own request 1070ms
+== P04 any roster version taken [propose]: CAUGHT; exit 1 ['Tests  3 failed | 38 passed (41)']
+    × lets one of two members who propose at once on the same version through, and refuses the other with the version now 68ms
+    × refuses a proposal made on another roster version with the version now, and leaves nothing (VERSION_CONFLICT) 38ms
+    × refuses a second member's proposal made on the version the first one moved 37ms
+== P05 a seventh person [propose]: CAUGHT; exit 1 ['Tests  8 failed | 33 passed (41)']
+    × 1 members and 5 open candidates, 1 proposed: CLUB_FULL 32ms
+    × 2 members and 0 open candidates, 5 proposed: CLUB_FULL 28ms
+    × 3 members and 0 open candidates, 4 proposed: CLUB_FULL 38ms
+    × 3 members and 2 open candidates, 2 proposed: CLUB_FULL 32ms
+    × 4 members and 1 open candidates, 2 proposed: CLUB_FULL 28ms
+    × 5 members and 1 open candidates, 1 proposed: CLUB_FULL 31ms
+== P06 full at five [propose]: CAUGHT; exit 1 ['Tests  11 failed | 30 passed (41)']
+    × 1 members and 0 open candidates, 5 proposed: proposed 12ms
+    × 1 members and 5 open candidates, 1 proposed: CLUB_FULL 7ms
+    × 2 members and 0 open candidates, 4 proposed: proposed 19ms
+    × 3 members and 0 open candidates, 3 proposed: proposed 35ms
+    × 3 members and 2 open candidates, 1 proposed: proposed 44ms
+    × 4 members and 1 open candidates, 1 proposed: proposed 48ms
+== P07 open candidates take no place [propose]: CAUGHT; exit 1 ['Tests  5 failed | 36 passed (41)']
+    × 1 members and 5 open candidates, 1 proposed: CLUB_FULL 27ms
+    × 3 members and 2 open candidates, 2 proposed: CLUB_FULL 28ms
+    × 4 members and 1 open candidates, 2 proposed: CLUB_FULL 36ms
+    × 5 members and 1 open candidates, 1 proposed: CLUB_FULL 49ms
+    × counts a candidate who has ended no longer, and carries none but the open ones 26ms
+== P08 a candidate who joined or ended still takes a place [propose]: CAUGHT; exit 1 ['Tests  20 failed | 21 passed (41)']
+    × 2 members and 0 open candidates, 4 proposed: proposed 10ms
+    × 3 members and 0 open candidates, 3 proposed: proposed 14ms
+    × 3 members and 2 open candidates, 1 proposed: proposed 20ms
+    × 3 members and 2 open candidates, 2 proposed: CLUB_FULL 24ms
+    × 4 members and 1 open candidates, 1 proposed: proposed 35ms
+    × 4 members and 1 open candidates, 2 proposed: CLUB_FULL 28ms
+== P09 the revision dated at the receipt's sample, before the lock [propose]: CAUGHT; exit 1 ['Tests  1 failed | 40 passed (41)']
+    × dates the revision, its seal and the proposer's approval at the sample taken after the lock, not the receipt's 21ms
+== P10 the earlier revision not told what superseded it [propose]: CAUGHT; exit 1 ['Tests  11 failed | 30 passed (41)']
+    × 3 members and 2 open candidates, 1 proposed: proposed 18ms
+    × 4 members and 1 open candidates, 1 proposed: proposed 30ms
+    × answers a retry with the first answer, at a later clock and though the roster has changed since, and makes nothing 33ms
+    × counts a candidate who has ended no longer, and carries none but the open ones 35ms
+    × gives each member the revision lists the same roster, with their own decision and their own membership 58ms
+    × gives nobody anything of a suspended club's revision (FQ80) 59ms
+== P11 an ended candidate carried over [propose]: CAUGHT; exit 1 ['Tests  1 failed | 40 passed (41)']
+    × counts a candidate who has ended no longer, and carries none but the open ones 38ms
+== P12 carried candidates in the other order [propose]: CAUGHT; exit 1 ['Tests  2 failed | 39 passed (41)']
+    × 3 members and 2 open candidates, 1 proposed: proposed 48ms
+    × supersedes the open revision: its candidates carry over at their labels and in their order, their acceptances don't, and its approvals no longer count (T7) 99ms
+== P13 the proposer's approval not marked as by proposing [propose]: CAUGHT; exit 1 ['Tests  2 failed | 39 passed (41)']
+    × supersedes the open revision: its candidates carry over at their labels and in their order, their acceptances don't, and its approvals no longer count (T7) 73ms
+    × writes an exact, sealed roster at the clock's sample: the club's members, the candidates in order, and its proposer's approval alone (FQ60) 106ms
+== P14 the roster's version not moved [propose]: CAUGHT; exit 1 ['Tests  4 failed | 37 passed (41)']
+    × lets one of two members who propose at once on the same version through, and refuses the other with the version now 77ms
+    × makes one revision when the same request arrives eight times at once, and answers each alike 49ms
+    × refuses a second member's proposal made on the version the first one moved 32ms
+    × writes an exact, sealed roster at the clock's sample: the club's members, the candidates in order, and its proposer's approval alone (FQ60) 110ms
+== P15 the receipt stored as a 200 [propose]: CAUGHT; exit 1 ['Tests  1 failed | 40 passed (41)']
+    × stores the answer in its receipt with 201 33ms
+== P16 other people under a used key are the same request [propose]: CAUGHT; exit 1 ['Tests  1 failed | 40 passed (41)']
+    × refuses another request under a used key: other people, another version, another club (IDEMPOTENCY_CONFLICT) 29ms
+== P17 a retry makes a second revision [propose]: CAUGHT; exit 1 ['Tests  5 failed | 36 passed (41)']
+    × answers a retry of a request made at the very instant its sender's membership began 44ms
+    × answers a retry with the first answer, at a later clock and though the roster has changed since, and makes nothing 32ms
+    × gives a retry by someone who left and joined again the neutral not-found, and a new key of theirs a new revision (FQ112) 25ms
+    × makes one revision when the same request arrives eight times at once, and answers each alike 50ms
+    × proposes nothing for a member who left and joined again while it waited for the club's row: the new interval sends its own request 138ms
+== P18 the earlier revision's version not moved [propose]: CAUGHT; exit 1 ['Tests  11 failed | 30 passed (41)']
+    × 3 members and 2 open candidates, 1 proposed: proposed 38ms
+    × 4 members and 1 open candidates, 1 proposed: proposed 27ms
+    × answers a retry with the first answer, at a later clock and though the roster has changed since, and makes nothing 25ms
+    × counts a candidate who has ended no longer, and carries none but the open ones 64ms
+    × gives each member the revision lists the same roster, with their own decision and their own membership 31ms
+    × gives nobody anything of a suspended club's revision (FQ80) 57ms
+== S01 a receipt made at the instant its interval began isn't its own [propose]: CAUGHT; exit 1 ['Tests  1 failed | 40 passed (41)']
+    × answers a retry of a request made at the very instant its sender's membership began 68ms
+== S02 a receipt made before the caller's interval began is its own [db]: CAUGHT; exit 1 ['Tests  2 failed | 59 passed (61)']
+    × gives a retry by a proposer who left and joined again the neutral not-found: the link was the earlier interval's (FQ112) 60ms
+    × gives a retry by someone who left and joined again the neutral not-found, and a new key of theirs a new revision (FQ112) 45ms
+== S03 another request under an earlier interval's key told the key was used (proposal) [propose]: CAUGHT; exit 1 ['Tests  1 failed | 40 passed (41)']
+    × gives a retry by someone who left and joined again the neutral not-found, and a new key of theirs a new revision (FQ112) 54ms
+== S04 another request under an earlier interval's key told the key was used (link) [link]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × gives a retry by a proposer who left and joined again the neutral not-found: the link was the earlier interval's (FQ112) 50ms
+== I01 a link's retry answered to a proposer who left and joined again [link]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × gives a retry by a proposer who left and joined again the neutral not-found: the link was the earlier interval's (FQ112) 63ms
+== I02 the proposer not asked again under the club's row [link]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × asks who is making the link again once it holds the club's row: a proposer who left while it waited gets the neutral not-found 140ms
+== I03 any member makes a candidate's link [link]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × gives anyone but the candidate's proposer the neutral not-found, whatever the link's state, and leaves nothing (T14, handoff 1) 42ms
+== I04 a link for a candidate who has ended or joined [link]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × gives the proposer the neutral not-found for a candidate who has ended or joined, once the proposer has left, and in a suspended club 64ms
+== I05 a link for another club's candidate, asked through the caller's club [link]: NOT CAUGHT, AN EQUIVALENT CHANGE (README); exit 0 ['Tests  20 passed (20)']
+== I06 a link on a revision that is no longer open [link]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × gives the proposer the neutral not-found for a candidate who has ended or joined, once the proposer has left, and in a suspended club 62ms
+== I07 a new link after the candidate accepted [link]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × refuses a new link once the candidate has accepted with the latest one, in this revision or an earlier one (NOT_ALLOWED, handoff 4) 74ms
+== I08 the expiry keeps the sample's fraction [link]: CAUGHT; exit 1 ['Tests  3 failed | 17 passed (20)']
+    × dates a link and its expiry from the sample taken after the lock, not the receipt's 33ms
+    × is live until the instant it expires, and expired from then (FQ71), by the server's clock (T1) 42ms
+    × returns the token once, 256 random bits for the URL's fragment, and keeps only its SHA-256, with seven days from the clock's sample 118ms
+== I09 six days [link]: CAUGHT; exit 1 ['Tests  6 failed | 14 passed (20)']
+    × dates a link and its expiry from the sample taken after the lock, not the receipt's 31ms
+    × is accepted once the candidate accepted this revision with it, used on a newer revision, and stays so past its expiry 48ms
+    × is live until the instant it expires, and expired from then (FQ71), by the server's clock (T1) 40ms
+    × is revoked once revoked, and stays revoked past its expiry 60ms
+    × replaces the candidate's earlier link with a new one, so one is the latest (FQ71) 30ms
+    × returns the token once, 256 random bits for the URL's fragment, and keeps only its SHA-256, with seven days from the clock's sample 134ms
+== I10 a token of 128 bits [link]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × returns the token once, 256 random bits for the URL's fragment, and keeps only its SHA-256, with seven days from the clock's sample 138ms
+== I11 the hash of the token's bytes, not of its text [link]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × returns the token once, 256 random bits for the URL's fragment, and keeps only its SHA-256, with seven days from the clock's sample 152ms
+== I12 the earlier link not replaced [link]: CAUGHT; exit 1 ['Tests  5 failed | 15 passed (20)']
+    × ends the link at the clock's sample and nothing else: the candidate keeps their place, and a repeat answers the same and changes nothing 112ms
+    × keeps one latest link when two requests for one candidate arrive at once, and when a new link races a revoke 112ms
+    × makes a different token each time 58ms
+    × replaces the candidate's earlier link with a new one, so one is the latest (FQ71) 39ms
+    × revokes a link that was replaced or has expired the same way 60ms
+== I13 a retry given a token [link]: CAUGHT; exit 1 ['Tests  2 failed | 18 passed (20)']
+    × answers a retry under the same key with the first answer and no token, and makes nothing (T19, FQ77) 50ms
+    × gives a retry by a proposer who left and joined again the neutral not-found: the link was the earlier interval's (FQ112) 31ms
+== I14 the link dated at the receipt's sample, before the lock [link]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × dates a link and its expiry from the sample taken after the lock, not the receipt's 34ms
+== I15 the club's row read without its lock, and the latest link too [link]: CAUGHT; exit 1 ['Tests  2 failed | 18 passed (20)']
+    × asks who is making the link again once it holds the club's row: a proposer who left while it waited gets the neutral not-found 10534ms
+    × keeps one latest link when two requests for one candidate arrive at once, and when a new link races a revoke 5002ms
+== I16 a retry makes a second link [link]: CAUGHT; exit 1 ['Tests  2 failed | 18 passed (20)']
+    × answers a retry under the same key with the first answer and no token, and makes nothing (T19, FQ77) 47ms
+    × gives a retry by a proposer who left and joined again the neutral not-found: the link was the earlier interval's (FQ112) 51ms
+== I17 the link's receipt stored as a 200 [link]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × returns the token once, 256 random bits for the URL's fragment, and keeps only its SHA-256, with seven days from the clock's sample 145ms
+== V01 any member revokes a link [link]: CAUGHT; exit 1 ['Tests  2 failed | 18 passed (20)']
+    × gives a retry by a proposer who left and joined again the neutral not-found: the link was the earlier interval's (FQ112) 93ms
+    × gives anyone but the candidate's proposer the neutral not-found, whatever the link's state (T14) 60ms
+== V02 a link the candidate accepted with is revoked [link]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × refuses to revoke a link the candidate accepted with (NOT_ALLOWED), and leaves it as it was 47ms
+== V03 a repeat dates the link again [link]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × ends the link at the clock's sample and nothing else: the candidate keeps their place, and a repeat answers the same and changes nothing 100ms
+== V04 the link revoked at the database's now, not the clock's sample [link]: CAUGHT; exit 1 ['Tests  2 failed | 18 passed (20)']
+    × ends the link at the clock's sample and nothing else: the candidate keeps their place, and a repeat answers the same and changes nothing 71ms
+    × revokes a link that was replaced or has expired the same way 35ms
+== V05 the proposer not asked again under the club's row [link]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × asks who is revoking again once it holds the club's row: a proposer who left while it waited gets the neutral not-found 63ms
+== A01 a revision nobody may read answered 200 [api]: CAUGHT; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × answers the neutral not-found when the read finds no revision, and never a 200 with an empty body (T14) 17ms
+== A02 any Idempotency-Key taken for a proposal [api]: CAUGHT; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × names the Idempotency-Key when it is missing or isn't a UUID, whatever else is wrong 140ms
+== A03 any Idempotency-Key taken for a link [api]: CAUGHT; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × names the Idempotency-Key when it is missing or isn't a UUID, whatever else is wrong 107ms
+== A04 a proposal answered 200 [api]: CAUGHT; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × answers a proposal with 201 and the revision as the command gave it 11ms
+== A05 a replay answered with a URL [api]: CAUGHT; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × answers a first link with 201 and its URL, a replay without one, and logs the token in neither (T52, FQ77) 34ms
+== A06 the token in the query, which reaches the server [api]: CAUGHT; exit 1 ['Tests  3 failed | 32 passed (35)']
+    × answers a first link with 201 and its URL, a replay without one, and logs the token in neither (T52, FQ77) 8ms
+    × puts the token in the fragment, which reaches no server (T7, T52) 2ms
+    × stores the answer without the link, which is the contract's replay, and adds the link to the first answer alone 12ms
+== A07 a field beyond the contract's [api]: CAUGHT; exit 1 ['Tests  9 failed | 26 passed (35)']
+    × makes accepted field for field 2ms
+    × makes another_name field for field 2ms
+    × makes another_name_proposer field for field 2ms
+    × makes approve field for field 4ms
+    × makes leila field for field 14ms
+    × makes link_expired field for field 2ms
+== A08 a link sent as null where there is none [api]: CAUGHT; exit 1 ['Tests  4 failed | 31 passed (35)']
+    × makes another_name field for field 3ms
+    × makes approve field for field 17ms
+    × makes superseded field for field 2ms
+    × sends a link's expiry in whole seconds, rounded down, and no link, no avatar and no successor where there is none 1ms
+== A09 a link's expiry with its fraction [api]: CAUGHT; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × sends a link's expiry in whole seconds, rounded down, and no link, no avatar and no successor where there is none 14ms
+== A10 a proposal's refusal becomes a failure [api]: CAUGHT; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × answers each refusal as the contract's error, with nothing of the request in it 13ms
+== A11 proposeRoster takes the app's general body limit [api]: CAUGHT; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × refuses a body past each route's limit unread, and takes the largest body the contract allows 18ms
+== A12 createInvitation takes the app's general body limit [api]: CAUGHT; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × refuses a body past each route's limit unread, and takes the largest body the contract allows 24ms
+== A13 a revoke answered as live [api]: CAUGHT; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × answers a revoke with 200 and the link's id, with no key and no body 13ms
+== A14 a link's body read before nothing: its fields unchecked [api]: CAUGHT; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × names a link request's bad candidate, never its value, and reads no database for it 21ms
+== A15 a link's stored answer keeps the URL's place: the expiry with its fraction [api]: CAUGHT; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × stores the answer without the link, which is the contract's replay, and adds the link to the first answer alone 12ms
+== X01 a member of a suspended club reads a revision (anyone who ever had a membership does) [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 1 passed | 13 skipped (15)']
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 46548ms
+== X02 every member is given a candidate's link, in the matrix [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 1 passed | 13 skipped (15)']
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 42776ms
+== X03 any member makes a candidate's link, in the matrix [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 1 passed | 13 skipped (15)']
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 43826ms
+== X04 any member revokes a link, in the matrix [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 1 passed | 13 skipped (15)']
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 43672ms
+== X05 a retry given a token, in the matrix [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 1 passed | 13 skipped (15)']
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 41818ms
+== X06 a field beyond the contract's, in the matrix [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 1 passed | 13 skipped (15)']
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 42803ms
+== X07 the hash of the token's bytes, in the matrix [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 1 passed | 13 skipped (15)']
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 39988ms
+== X08 a retry makes a second revision, in the matrix [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 1 passed | 13 skipped (15)']
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 39701ms
+== X09 the token in the query, in the matrix [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 1 passed | 13 skipped (15)']
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 43199ms
+== X10 the proposer's decision given as the caller's, in the matrix [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 1 passed | 13 skipped (15)']
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 44259ms
+== J01 a revision not sealed expected [judge]: CAUGHT; exit 1 ['Tests  1 failed | 22 passed (23)']
+    × is nothing to anyone the revision doesn't list as an active member (FQ119), or of a revision not sealed 8ms
+== J02 a revision expected for a member it doesn't list [judge]: CAUGHT; exit 1 ['Tests  2 failed | 21 passed (23)']
+    × holds everyone else to the neutral not-found, byte for byte: another member reads their own, never the proposer's 3ms
+    × is nothing to anyone the revision doesn't list as an active member (FQ119), or of a revision not sealed 10ms
+== J03 a link expected for every member [judge]: CAUGHT; exit 1 ['Tests  1 failed | 22 passed (23)']
+    × shows each member only the link of a candidate that member proposed, and that member's own decision (handoff 1, T15) 7ms
+== J04 live at the instant of expiry [judge]: CAUGHT; exit 1 ['Tests  1 failed | 22 passed (23)']
+    × says where the candidate's latest link stands: accepted, used, revoked, expired at its instant, live before it 8ms
+== J05 never accepted [judge]: CAUGHT; exit 1 ['Tests  1 failed | 22 passed (23)']
+    × says where the candidate's latest link stands: accepted, used, revoked, expired at its instant, live before it 12ms
+== J06 revoked after expired [judge]: CAUGHT; exit 1 ['Tests  1 failed | 22 passed (23)']
+    × says where the candidate's latest link stands: accepted, used, revoked, expired at its instant, live before it 8ms
+== J07 any Cache-Control accepted [judge]: CAUGHT; exit 1 ['Tests  1 failed | 22 passed (23)']
+    × refuses another status, a body that isn't the revision, and one that may be stored 8ms
+== J08 any status accepted [judge]: CAUGHT; exit 1 ['Tests  2 failed | 21 passed (23)']
+    × names each field that differs (sameAnswer) 1ms
+    × refuses another status, a body that isn't the revision, and one that may be stored 7ms
+== J09 anything accepted for someone the revision isn't for [judge]: CAUGHT; exit 1 ['Tests  1 failed | 22 passed (23)']
+    × holds everyone else to the neutral not-found, byte for byte: another member reads their own, never the proposer's 9ms
+== J10 room for a seventh [judge]: CAUGHT; exit 1 ['Tests  1 failed | 22 passed (23)']
+    × holds the version to the club's first, then six to its members and open candidates (A01, T6) 12ms
+== J11 open candidates not counted [judge]: CAUGHT; exit 1 ['Tests  1 failed | 22 passed (23)']
+    × holds the version to the club's first, then six to its members and open candidates (A01, T6) 9ms
+== J12 a proposal expected of anyone [judge]: CAUGHT; exit 1 ['Tests  2 failed | 21 passed (23)']
+    × is the neutral not-found to anyone who isn't an active member, whatever the version 13ms
+    × judges the generic request at a version no club is at, and says so when it would change the world 2ms
+== J13 any member expected to revoke [judge]: CAUGHT; exit 1 ['Tests  2 failed | 21 passed (23)']
+    × judges a revoke's answer in a cell: the revoked link, or the refusal, byte for byte 4ms
+    × lets only that member revoke it, whatever its state, and never one an account accepted with 12ms
+== J14 an accepted link expected revoked [judge]: CAUGHT; exit 1 ['Tests  1 failed | 22 passed (23)']
+    × lets only that member revoke it, whatever its state, and never one an account accepted with 9ms
+== J15 any member expected to make a link [judge]: CAUGHT; exit 1 ['Tests  1 failed | 22 passed (23)']
+    × lets only the member who proposed the candidate make its link, on the open revision (T14) 8ms
+== J16 a link expected on a revision no longer open [judge]: CAUGHT; exit 1 ['Tests  1 failed | 22 passed (23)']
+    × lets only the member who proposed the candidate make its link, on the open revision (T14) 8ms
+== J17 a token its row's hash isn't of [judge]: CAUGHT; exit 1 ['Tests  1 failed | 22 passed (23)']
+    × refuses a URL that isn't the web page and a token of 43 characters, and a token its row's hash isn't of 15ms
+== J18 a URL on any host [judge]: CAUGHT; exit 1 ['Tests  1 failed | 22 passed (23)']
+    × refuses a URL that isn't the web page and a token of 43 characters, and a token its row's hash isn't of 9ms
+== J19 eight days [judge]: CAUGHT; exit 1 ['Tests  3 failed | 20 passed (23)']
+    × passes the candidate's latest link, seven days from the second it was made in, with the token its row's hash is of 9ms
+    × refuses a URL that isn't the web page and a token of 43 characters, and a token its row's hash isn't of 1ms
+    × refuses another link, candidate or expiry, a row that expires at another instant, and an answer that may be stored 2ms
+== J20 a row that expires at another instant [judge]: CAUGHT; exit 1 ['Tests  1 failed | 22 passed (23)']
+    × refuses another link, candidate or expiry, a row that expires at another instant, and an answer that may be stored 9ms
+== J21 the retry under a key of its own [judge]: CAUGHT; exit 1 ['Tests  1 failed | 22 passed (23)']
+    × sends what the contract refuses, a stale version, the proposal, its retry and another body under its key 15ms
+== J22 revokeInvitation not judged [judge]: CAUGHT; exit 1 ['Tests  1 failed | 22 passed (23)']
+    × judges the four routes of the roster 13ms
+== J23 a retry's link compared with nothing [judge]: CAUGHT; exit 1 ['Tests  1 failed | 22 passed (23)']
+    × holds a retry to the first answer without its url, and nothing else (FQ77) 8ms
+== J24 a link any Cache-Control [judge]: CAUGHT; exit 1 ['Tests  1 failed | 22 passed (23)']
+    × refuses another link, candidate or expiry, a row that expires at another instant, and an answer that may be stored 10ms
+== N01 a link's id passed to anyone [scanner]: CAUGHT; exit 1 ['Tests  2 failed | 73 passed (75)']
+    × catches a URL that isn't this link's own, in another answer, on another host or to someone else 5ms
+    × catches the link's id shown to anyone else: another member, a former member who made it, someone outside 18ms
+== N02 a link's id passed to the former member who made it [scanner]: CAUGHT; exit 1 ['Tests  1 failed | 74 passed (75)']
+    × catches the link's id shown to anyone else: another member, a former member who made it, someone outside 14ms
+== N03 a suspended club's link passed [scanner]: CAUGHT; exit 1 ['Tests  1 failed | 74 passed (75)']
+    × catches a link of a suspended club, and one shown to an account that isn't active (FQ80) 8ms
+== N04 a link passed to an account that isn't active [scanner]: CAUGHT; exit 1 ['Tests  1 failed | 74 passed (75)']
+    × catches a link of a suspended club, and one shown to an account that isn't active (FQ80) 10ms
+== N05 a link passed beside another candidate [scanner]: CAUGHT; exit 1 ['Tests  1 failed | 74 passed (75)']
+    × catches a link beside a candidate it isn't for, though the viewer proposed both 15ms
+== N06 a link's URL passed in any answer [scanner]: NOT CAUGHT, AN EQUIVALENT CHANGE (README); exit 0 ['Tests  75 passed (75)']
+== N07 a URL passed whose token isn't the link's [scanner]: CAUGHT; exit 1 ['Tests  1 failed | 74 passed (75)']
+    × catches a URL that isn't this link's own, in another answer, on another host or to someone else 13ms
+== N08 a URL passed on any host [scanner]: CAUGHT; exit 1 ['Tests  1 failed | 74 passed (75)']
+    × catches a URL that isn't this link's own, in another answer, on another host or to someone else 11ms
+== N09 every url key passed [scanner]: CAUGHT; exit 1 ['Tests  1 failed | 74 passed (75)']
+    × catches a URL that isn't this link's own, in another answer, on another host or to someone else 12ms
+== N10 a revoked link's id not judged as a link [scanner]: CAUGHT; exit 1 ['Tests  3 failed | 72 passed (75)']
+    × catches a link of a suspended club, and one shown to an account that isn't active (FQ80) 3ms
+    × catches the link's id shown to anyone else: another member, a former member who made it, someone outside 2ms
+    × passes the link's id and, in the answer that made it, its URL, to the member who proposed the candidate 19ms
+== N11 a candidate's link's id not judged as a link [scanner]: CAUGHT; exit 1 ['Tests  3 failed | 72 passed (75)']
+    × catches a URL that isn't this link's own, in another answer, on another host or to someone else 3ms
+    × catches the link's id shown to anyone else: another member, a former member who made it, someone outside 3ms
+    × passes the link's id and, in the answer that made it, its URL, to the member who proposed the candidate 19ms
+== N12 a link passed with another candidate's id [scanner]: CAUGHT; exit 1 ['Tests  1 failed | 74 passed (75)']
+    × catches a link beside a candidate it isn't for, though the viewer proposed both 13ms
+== N13 a link in a URL's place passed anywhere [scanner]: CAUGHT; exit 1 ['Tests  1 failed | 74 passed (75)']
+    × catches a URL that isn't this link's own, in another answer, on another host or to someone else 12ms
+restored: ''

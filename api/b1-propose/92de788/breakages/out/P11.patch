@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/propose-roster.ts b/packages/domain/src/clubs/propose-roster.ts
+index da4350c2..0c368266 100644
+--- a/packages/domain/src/clubs/propose-roster.ts
++++ b/packages/domain/src/clubs/propose-roster.ts
+@@ -187,7 +187,7 @@ export async function proposeRoster(
+              (pg_catalog.row_number() OVER (ORDER BY rc.position))::pg_catalog.int2
+         FROM app.roster_revision_candidates rc
+         JOIN app.candidates k ON k.id = rc.candidate_id
+-       WHERE rc.revision_id = ${earlier} AND k.state = 'open'
++       WHERE rc.revision_id = ${earlier}
+       RETURNING candidate_id`;
+     position = carried.length;
+   }

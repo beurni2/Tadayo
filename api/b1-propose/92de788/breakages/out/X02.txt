@@ -1,0 +1,83 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+stdout | src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+star: 2016 cells run, 36045 answers scanned
+star, the roster's table: {"proposals":224,"memberPhases":24,"due":18,"revisions":18,"links":18,"otherAnswers":90}
+
+ ❯ src/privacy/matrix.test.ts (15 tests | 1 failed | 13 skipped) 78262ms
+   ❯ every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) (12)
+     × answers the star as its account and its row say, and leaks nothing the scanner can find 42776ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed | 13 skipped (15)
+   Start at  14:25:38
+   Duration  79.29s (tests 99%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > every cell of the privacy matrix: each role, each state of the drop, each phase of the day (T9, T14, T16, T27; Q05 to Q09) > answers the star as its account and its row say, and leaks nothing the scanner can find
+AssertionError: expected { count: 96, first: [ …(40) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 96,
++   "first": [
++     "active, collecting: getRosterRevision: status 500, not 200 with the roster revision (the revision with its candidate's link, by another member)",
++     "active, collecting, getRosterRevision: shape at status: 500 isn't an answer getRosterRevision declares",
++     "active, collecting: getRosterRevision: status 500, not 200 with the roster revision (the revision with its candidate's link revoked, by another member)",
++     "active, collecting, getRosterRevision: shape at status: 500 isn't an answer getRosterRevision declares",
++     "active, open: getRosterRevision: status 500, not 200 with the roster revision (the new revision, by another member)",
++     "active, open, getRosterRevision: shape at status: 500 isn't an answer getRosterRevision declares",
++     "active, open: getRosterRevision: status 500, not 200 with the roster revision (the revision with its candidate's link, by another member)",
++     "active, open, getRosterRevision: shape at status: 500 isn't an answer getRosterRevision declares",
++     "active, open: getRosterRevision: status 500, not 200 with the roster revision (the revision with its candidate's link revoked, by another member)",
++     "active, open, getRosterRevision: shape at status: 500 isn't an answer getRosterRevision declares",
++     "active, past: getRosterRevision: status 500, not 200 with the roster revision (the new revision, by another member)",
++     "active, past, getRosterRevision: shape at status: 500 isn't an answer getRosterRevision declares",
++     "active, past: getRosterRevision: status 500, not 200 with the roster revision (the revision with its candidate's link, by another member)",
++     "active, past, getRosterRevision: shape at status: 500 isn't an answer getRosterRevision declares",
++     "active, past: getRosterRevision: status 500, not 200 with the roster revision (the revision with its candidate's link revoked, by another member)",
++     "active, past, getRosterRevision: shape at status: 500 isn't an answer getRosterRevision declares",
++     "withdrawn, collecting: getRosterRevision: status 500, not 200 with the roster revision (the revision with its candidate's link, by another member)",
++     "withdrawn, collecting, getRosterRevision: shape at status: 500 isn't an answer getRosterRevision declares",
++     "withdrawn, collecting: getRosterRevision: status 500, not 200 with the roster revision (the revision with its candidate's link revoked, by another member)",
++     "withdrawn, collecting, getRosterRevision: shape at status: 500 isn't an answer getRosterRevision declares",
++     "withdrawn, open: getRosterRevision: status 500, not 200 with the roster revision (the new revision, by another member)",
++     "withdrawn, open, getRosterRevision: shape at status: 500 isn't an answer getRosterRevision declares",
++     "withdrawn, open: getRosterRevision: status 500, not 200 with the roster revision (the revision with its candidate's link, by another member)",
++     "withdrawn, open, getRosterRevision: shape at status: 500 isn't an answer getRosterRevision declares",
++     "withdrawn, open: getRosterRevision: status 500, not 200 with the roster revision (the revision with its candidate's link revoked, by another member)",
++     "withdrawn, open, getRosterRevision: shape at status: 500 isn't an answer getRosterRevision declares",
++     "withdrawn, past: getRosterRevision: status 500, not 200 with the roster revision (the new revision, by another member)",
++     "withdrawn, past, getRosterRevision: shape at status: 500 isn't an answer getRosterRevision declares",
++     "withdrawn, past: getRosterRevision: status 500, not 200 with the roster revision (the revision with its candidate's link, by another member)",
++     "withdrawn, past, getRosterRevision: shape at status: 500 isn't an answer getRosterRevision declares",
++     "withdrawn, past: getRosterRevision: status 500, not 200 with the roster revision (the revision with its candidate's link revoked, by another member)",
++     "withdrawn, past, getRosterRevision: shape at status: 500 isn't an answer getRosterRevision declares",
++     "removed by moderation, collecting: getRosterRevision: status 500, not 200 with the roster revision (the revision with its candidate's link, by another member)",
++     "removed by moderation, collecting, getRosterRevision: shape at status: 500 isn't an answer getRosterRevision declares",
++     "removed by moderation, collecting: getRosterRevision: status 500, not 200 with the roster revision (the revision with its candidate's link revoked, by another member)",
++     "removed by moderation, collecting, getRosterRevision: shape at status: 500 isn't an answer getRosterRevision declares",
++     "removed by moderation, open: getRosterRevision: status 500, not 200 with the roster revision (the new revision, by another member)",
++     "removed by moderation, open, getRosterRevision: shape at status: 500 isn't an answer getRosterRevision declares",
++     "removed by moderation, open: getRosterRevision: status 500, not 200 with the roster revision (the revision with its candidate's link, by another member)",
++     "removed by moderation, open, getRosterRevision: shape at status: 500 isn't an answer getRosterRevision declares",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:1127:66
+    1125|       console.log(`${role.name}: ${String(counted.cells)} cells run, $…
+    1126|       console.log(`${role.name}, the roster's table: ${JSON.stringify(…
+    1127|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    1128|       // Every cell ran: the contract's 72 requests a world (each oper…
+    1129|       // required enum, and again with its optional ids), in each of t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

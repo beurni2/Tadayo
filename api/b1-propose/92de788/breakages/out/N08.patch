@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/scanner.ts b/tests/src/privacy/scanner.ts
+index 215a16a4..b8762a52 100644
+--- a/tests/src/privacy/scanner.ts
++++ b/tests/src/privacy/scanner.ts
+@@ -379,7 +379,7 @@ export const NEVER_VALUE = [
+  * runs of text of 12 bytes or more (URL_RUN).
+  */
+ /** A proposer's link as createInvitation answers it: the web page, and the token in the fragment (T52). */
+-const LINK_URL = /^https:\/\/tadayo\.app\/i#([A-Za-z0-9_-]{43})$/;
++const LINK_URL = /#([A-Za-z0-9_-]{43})$/;
+ const LINK_MARKS = [/[a-z][a-z0-9+.-]*:\/\//i, /www\./i, /data:/i];
+ 
+ /**

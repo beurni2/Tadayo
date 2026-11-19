@@ -1,0 +1,75 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/db/propose-roster.test.ts (41 tests | 5 failed) 1758ms
+   ❯ six people, the candidates still open counted (A01, T6) (15)
+     × 1 members and 5 open candidates, 1 proposed: CLUB_FULL 27ms
+     × 3 members and 2 open candidates, 2 proposed: CLUB_FULL 28ms
+     × 4 members and 1 open candidates, 2 proposed: CLUB_FULL 36ms
+     × 5 members and 1 open candidates, 1 proposed: CLUB_FULL 49ms
+     × counts a candidate who has ended no longer, and carries none but the open ones 26ms
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 36 passed (41)
+   Start at  14:21:32
+   Duration  2.43s (tests 83%, import 12%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/propose-roster.test.ts > six people, the candidates still open counted (A01, T6) > 1 members and 5 open candidates, 1 proposed: CLUB_FULL
+PostgresError: new row for relation "roster_revision_candidates" violates check constraint "roster_revision_candidates_position_check"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ proposeRoster ../packages/domain/src/clubs/propose-roster.ts:200:20
+    198|       INSERT INTO app.candidates (id, club_id, proposed_by_interval_id…
+    199|       VALUES (${candidateId}, ${clubId}, ${proposer}, ${at}::pg_catalo…
+    200|     await bound(tx)`
+       |                    ^
+    201|       INSERT INTO app.roster_revision_candidates (revision_id, club_id…
+    202|       VALUES (${revisionId}, ${clubId}, ${candidateId}, ${label}, ${St…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/db/propose-roster.test.ts > six people, the candidates still open counted (A01, T6) > 3 members and 2 open candidates, 2 proposed: CLUB_FULL
+ FAIL  src/db/propose-roster.test.ts > six people, the candidates still open counted (A01, T6) > 4 members and 1 open candidates, 2 proposed: CLUB_FULL
+ FAIL  src/db/propose-roster.test.ts > six people, the candidates still open counted (A01, T6) > 5 members and 1 open candidates, 1 proposed: CLUB_FULL
+Error: the request wasn't refused
+ ❯ refusal src/db/roster-world.ts:35:9
+     33|     throw error;
+     34|   }
+     35|   throw new Error("the request wasn't refused");
+       |         ^
+     36| }
+     37|
+ ❯ src/db/propose-roster.test.ts:297:18
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/propose-roster.test.ts:281:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/db/propose-roster.test.ts > six people, the candidates still open counted (A01, T6) > counts a candidate who has ended no longer, and carries none but the open ones
+Error: the request wasn't refused
+ ❯ refusal src/db/roster-world.ts:35:9
+     33|     throw error;
+     34|   }
+     35|   throw new Error("the request wasn't refused");
+       |         ^
+     36| }
+     37|
+ ❯ src/db/propose-roster.test.ts:332:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/propose-roster.test.ts:328:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+

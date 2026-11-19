@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/scanner.ts b/tests/src/privacy/scanner.ts
+index 215a16a4..92f05f24 100644
+--- a/tests/src/privacy/scanner.ts
++++ b/tests/src/privacy/scanner.ts
+@@ -1169,7 +1169,7 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
+     if (kind === "Candidate" && isObject(node.invitation)) {
+       // The link is this candidate's own, never another's shown under it.
+       const invitation = typeof node.invitation.id === "string" ? world.invitations.get(node.invitation.id) : undefined;
+-      if (invitation !== undefined && invitation.candidate !== node.id)
++      if (invitation === undefined && node.id === undefined)
+         find("world", `${at}.invitation.id`, "a link shown under a candidate it isn't for");
+     }
+     if (kind === "RevokedInvitation") proposersLink(node.invitation_id, `${at}.invitation_id`);

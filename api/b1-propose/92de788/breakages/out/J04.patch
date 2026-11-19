@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/roster.ts b/tests/src/privacy/roster.ts
+index b80f04e0..516fbfc3 100644
+--- a/tests/src/privacy/roster.ts
++++ b/tests/src/privacy/roster.ts
+@@ -193,7 +193,7 @@ function linkState(link: LinkRows, acceptedWith: string | null, now: Temporal.In
+   if (acceptedWith === link.id) return "accepted";
+   if (link.bound) return "used";
+   if (link.revoked) return "revoked";
+-  return Temporal.Instant.compare(link.expiresAt, now) <= 0 ? "expired" : "live";
++  return Temporal.Instant.compare(link.expiresAt, now) < 0 ? "expired" : "live";
+ }
+ 
+ /** The contract's RosterRevision `id` for the account `account` at `now`, or undefined: the neutral not-found. */

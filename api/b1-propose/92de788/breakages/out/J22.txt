@@ -1,0 +1,38 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/privacy/roster.test.ts (23 tests | 1 failed) 49ms
+   ❯ a revision's RosterRevision from the world's rows (getRosterRevision) (7)
+     × judges the four routes of the roster 13ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  14:37:57
+   Duration  636ms (import 65%, tests 18%, transform 16%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/roster.test.ts > a revision's RosterRevision from the world's rows (getRosterRevision) > judges the four routes of the roster
+AssertionError: expected [ 'createInvitation', …(2) ] to deeply equal [ 'createInvitation', …(3) ]
+
+- Expected
++ Received
+
+  [
+    "createInvitation",
+    "getRosterRevision",
+    "proposeRoster",
+-   "revokeInvitation",
+  ]
+
+ ❯ src/privacy/roster.test.ts:173:39
+    171| describe("a revision's RosterRevision from the world's rows (getRoster…
+    172|   it("judges the four routes of the roster", () => {
+    173|     expect([...ROSTER_JUDGED].sort()).toEqual([
+       |                                       ^
+    174|       "createInvitation",
+    175|       "getRosterRevision",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

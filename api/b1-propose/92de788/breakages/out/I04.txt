@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/db/invitation.test.ts (20 tests | 1 failed) 1692ms
+   ❯ a share link for one candidate (T7, FQ71, FQ77) (9)
+     × gives the proposer the neutral not-found for a candidate who has ended or joined, once the proposer has left, and in a suspended club 64ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  14:22:36
+   Duration  2.42s (tests 81%, import 13%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/invitation.test.ts > a share link for one candidate (T7, FQ71, FQ77) > gives the proposer the neutral not-found for a candidate who has ended or joined, once the proposer has left, and in a suspended club
+Error: the request wasn't refused
+ ❯ refusal src/db/roster-world.ts:35:9
+     33|     throw error;
+     34|   }
+     35|   throw new Error("the request wasn't refused");
+       |         ^
+     36| }
+     37|
+ ❯ src/db/invitation.test.ts:218:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/invitation.test.ts:209:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

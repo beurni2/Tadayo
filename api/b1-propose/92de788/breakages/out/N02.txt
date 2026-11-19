@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/privacy/scanner.test.ts (75 tests | 1 failed) 365ms
+   ❯ the proposer's invitation link (T7, T14, T52, FQ77; handoff 1) (7)
+     × catches the link's id shown to anyone else: another member, a former member who made it, someone outside 14ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 74 passed (75)
+   Start at  14:38:02
+   Duration  1.28s (import 54%, tests 40%, transform 5%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/scanner.test.ts > the proposer's invitation link (T7, T14, T52, FQ77; handoff 1) > catches the link's id shown to anyone else: another member, a former member who made it, someone outside
+AssertionError: expected [ '$.candidate_id' ] to deeply equal [ '$.invitation_id' ]
+
+- Expected
++ Received
+
+  [
+-   "$.invitation_id",
++   "$.candidate_id",
+  ]
+
+ ❯ src/privacy/scanner.test.ts:1704:75
+    1702|     ]);
+    1703|     // Fay made a link and has left since: Fay's interval is ended, so…
+    1704|     expect(at(madeBy(fay, link({ invitation_id: "inv_fays" })), "world…
+       |                                                                           ^
+    1705|     // A link the world doesn't have.
+    1706|     expect(at(madeBy(ben, link({ invitation_id: "inv_made_up" })), "wo…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,132 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/db/propose-roster.test.ts (41 tests | 11 failed) 1960ms
+   ❯ proposing people (spec 04, 32; T7) (5)
+     × supersedes the open revision: its candidates carry over at their labels and in their order, their acceptances don't, and its approvals no longer count (T7) 85ms
+   ❯ six people, the candidates still open counted (A01, T6) (15)
+     × 1 members and 0 open candidates, 5 proposed: proposed 12ms
+     × 1 members and 5 open candidates, 1 proposed: CLUB_FULL 7ms
+     × 2 members and 0 open candidates, 4 proposed: proposed 19ms
+     × 3 members and 0 open candidates, 3 proposed: proposed 35ms
+     × 3 members and 2 open candidates, 1 proposed: proposed 44ms
+     × 4 members and 1 open candidates, 1 proposed: proposed 48ms
+     × 5 members and 0 open candidates, 1 proposed: proposed 45ms
+     × 5 members and 1 open candidates, 1 proposed: CLUB_FULL 41ms
+     × counts a candidate who has joined no longer 46ms
+     × counts a candidate who has ended no longer, and carries none but the open ones 19ms
+
+ Test Files  1 failed (1)
+      Tests  11 failed | 30 passed (41)
+   Start at  14:21:29
+   Duration  2.64s (tests 84%, import 11%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 11 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/propose-roster.test.ts > proposing people (spec 04, 32; T7) > supersedes the open revision: its candidates carry over at their labels and in their order, their acceptances don't, and its approvals no longer count (T7)
+Refused: refused: CLUB_FULL
+ ❯ proposeRoster ../packages/domain/src/clubs/propose-roster.ts:156:11
+    154|   if (version !== input.expectedRosterVersion) throw new Refused("VERS…
+    155|   if (count(roster["members"]) + count(roster["open_candidates"]) + in…
+    156|     throw new Refused("CLUB_FULL");
+       |           ^
+    157|   }
+    158|   const earlier = roster["open_revision_id"];
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ propose src/db/roster-world.ts:86:18
+ ❯ src/db/propose-roster.test.ts:180:22
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/propose-roster.test.ts:168:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/11]⎯
+
+ FAIL  src/db/propose-roster.test.ts > six people, the candidates still open counted (A01, T6) > 1 members and 0 open candidates, 5 proposed: proposed
+ FAIL  src/db/propose-roster.test.ts > six people, the candidates still open counted (A01, T6) > 2 members and 0 open candidates, 4 proposed: proposed
+ FAIL  src/db/propose-roster.test.ts > six people, the candidates still open counted (A01, T6) > 3 members and 0 open candidates, 3 proposed: proposed
+ FAIL  src/db/propose-roster.test.ts > six people, the candidates still open counted (A01, T6) > 3 members and 2 open candidates, 1 proposed: proposed
+ FAIL  src/db/propose-roster.test.ts > six people, the candidates still open counted (A01, T6) > 4 members and 1 open candidates, 1 proposed: proposed
+ FAIL  src/db/propose-roster.test.ts > six people, the candidates still open counted (A01, T6) > 5 members and 0 open candidates, 1 proposed: proposed
+Refused: refused: CLUB_FULL
+ ❯ proposeRoster ../packages/domain/src/clubs/propose-roster.ts:156:11
+    154|   if (version !== input.expectedRosterVersion) throw new Refused("VERS…
+    155|   if (count(roster["members"]) + count(roster["open_candidates"]) + in…
+    156|     throw new Refused("CLUB_FULL");
+       |           ^
+    157|   }
+    158|   const earlier = roster["open_revision_id"];
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ propose src/db/roster-world.ts:86:18
+ ❯ src/db/propose-roster.test.ts:304:26
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/propose-roster.test.ts:281:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/11]⎯
+
+ FAIL  src/db/propose-roster.test.ts > six people, the candidates still open counted (A01, T6) > 1 members and 5 open candidates, 1 proposed: CLUB_FULL
+ FAIL  src/db/propose-roster.test.ts > six people, the candidates still open counted (A01, T6) > 5 members and 1 open candidates, 1 proposed: CLUB_FULL
+Refused: refused: CLUB_FULL
+ ❯ proposeRoster ../packages/domain/src/clubs/propose-roster.ts:156:11
+    154|   if (version !== input.expectedRosterVersion) throw new Refused("VERS…
+    155|   if (count(roster["members"]) + count(roster["open_candidates"]) + in…
+    156|     throw new Refused("CLUB_FULL");
+       |           ^
+    157|   }
+    158|   const earlier = roster["open_revision_id"];
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ propose src/db/roster-world.ts:86:18
+ ❯ src/db/propose-roster.test.ts:284:11
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/propose-roster.test.ts:281:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/11]⎯
+
+ FAIL  src/db/propose-roster.test.ts > six people, the candidates still open counted (A01, T6) > counts a candidate who has joined no longer
+Refused: refused: CLUB_FULL
+ ❯ proposeRoster ../packages/domain/src/clubs/propose-roster.ts:156:11
+    154|   if (version !== input.expectedRosterVersion) throw new Refused("VERS…
+    155|   if (count(roster["members"]) + count(roster["open_candidates"]) + in…
+    156|     throw new Refused("CLUB_FULL");
+       |           ^
+    157|   }
+    158|   const earlier = roster["open_revision_id"];
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ propose src/db/roster-world.ts:86:18
+ ❯ src/db/propose-roster.test.ts:322:22
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/propose-roster.test.ts:319:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/11]⎯
+
+ FAIL  src/db/propose-roster.test.ts > six people, the candidates still open counted (A01, T6) > counts a candidate who has ended no longer, and carries none but the open ones
+Refused: refused: CLUB_FULL
+ ❯ proposeRoster ../packages/domain/src/clubs/propose-roster.ts:156:11
+    154|   if (version !== input.expectedRosterVersion) throw new Refused("VERS…
+    155|   if (count(roster["members"]) + count(roster["open_candidates"]) + in…
+    156|     throw new Refused("CLUB_FULL");
+       |           ^
+    157|   }
+    158|   const earlier = roster["open_revision_id"];
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ propose src/db/roster-world.ts:86:18
+ ❯ src/db/propose-roster.test.ts:331:20
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/propose-roster.test.ts:328:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/11]⎯
+

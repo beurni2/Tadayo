@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/propose-roster.ts b/packages/domain/src/clubs/propose-roster.ts
+index da4350c2..d14999eb 100644
+--- a/packages/domain/src/clubs/propose-roster.ts
++++ b/packages/domain/src/clubs/propose-roster.ts
+@@ -120,7 +120,7 @@ export async function proposeRoster(
+       query: {},
+       body: {
+         expected_roster_version: input.expectedRosterVersion,
+-        add: input.add.map(({ label }) => ({ label })),
++        add: [],
+       },
+     },
+   };

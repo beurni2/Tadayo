@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/services/api
+
+ ❯ src/clubs/roster.test.ts (22 tests | 1 failed) 236ms
+   ❯ what the roster routes answer (6)
+     × answers each refusal as the contract's error, with nothing of the request in it 13ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 34 passed (35)
+   Start at  14:24:02
+   Duration  830ms (tests 46%, import 42%, transform 12%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/clubs/roster.test.ts > what the roster routes answer > answers each refusal as the contract's error, with nothing of the request in it
+AssertionError: proposeRoster NOT_FOUND: expected { status: 500, body: '', …(1) } to match object { status: 404, …(1) }
+(3 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "body": "{\"code\":\"NOT_FOUND\"}",
+-   "status": 404,
++   "body": "",
++   "status": 500,
+  }
+
+ ❯ src/clubs/roster.test.ts:423:63
+    421|       for (const [code, status, body] of refusals) {
+    422|         const answer = await appFor(() => Promise.reject(new Refused(c…
+    423|         expect(await answer(request), `${operation} ${code}`).toMatchO…
+       |                                                               ^
+    424|       }
+    425|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

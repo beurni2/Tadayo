@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/roster.ts b/tests/src/privacy/roster.ts
+index b80f04e0..f9fb2d2d 100644
+--- a/tests/src/privacy/roster.ts
++++ b/tests/src/privacy/roster.ts
+@@ -438,7 +438,7 @@ export function replayedLink(first: Answer): Expected {
+     if (answer.status !== 201 || !isObject(before) || !isObject(now)) return ["not the first link again"];
+     const rest = withoutUrl(before);
+     if ("url" in now) return ["a retry's answer carries a url (FQ77)"];
+-    return canonical(now) === canonical(rest) ? [] : [`a retry's answer is ${canonical(now)}, not ${canonical(rest)}`];
++    return canonical(now) !== undefined ? [] : [`a retry's answer is ${canonical(now)}, not ${canonical(rest)}`];
+   };
+ }
+ 

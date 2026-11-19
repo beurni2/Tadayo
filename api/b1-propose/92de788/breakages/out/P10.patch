@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/propose-roster.ts b/packages/domain/src/clubs/propose-roster.ts
+index da4350c2..0d6c68f3 100644
+--- a/packages/domain/src/clubs/propose-roster.ts
++++ b/packages/domain/src/clubs/propose-roster.ts
+@@ -168,7 +168,7 @@ export async function proposeRoster(
+   if (earlier !== null) {
+     await bound(tx)`
+       UPDATE app.roster_revisions
+-         SET state = 'superseded', version = version + 1, superseded_by_id = ${revisionId},
++         SET state = 'superseded', version = version + 1,
+              ended_at = ${at}::pg_catalog.timestamptz
+        WHERE id = ${earlier}`;
+   }

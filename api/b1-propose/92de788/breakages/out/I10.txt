@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/db/invitation.test.ts (20 tests | 1 failed) 1607ms
+   ❯ a share link for one candidate (T7, FQ71, FQ77) (9)
+     × returns the token once, 256 random bits for the URL's fragment, and keeps only its SHA-256, with seven days from the clock's sample 138ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+   Start at  14:22:54
+   Duration  2.25s (tests 81%, import 13%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/invitation.test.ts > a share link for one candidate (T7, FQ71, FQ77) > returns the token once, 256 random bits for the URL's fragment, and keeps only its SHA-256, with seven days from the clock's sample
+AssertionError: expected 'FDOXMfN8vRw1p-XmYWiJrQ' to match /^[A-Za-z0-9_-]{43}$/
+
+- Expected:
+/^[A-Za-z0-9_-]{43}$/
+
++ Received:
+"FDOXMfN8vRw1p-XmYWiJrQ"
+
+ ❯ src/db/invitation.test.ts:88:21
+     86|       expect(answer.invitation_id).toMatch(/^inv_[A-Za-z0-9_-]{22}$/);
+     87|       const token = made.token ?? "";
+     88|       expect(token).toMatch(/^[A-Za-z0-9_-]{43}$/);
+       |                     ^
+     89|
+     90|       const rows = await linksOf(tx, s.sam);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/invitation.test.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

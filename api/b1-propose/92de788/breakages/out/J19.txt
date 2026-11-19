@@ -1,0 +1,84 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/privacy/roster.test.ts (23 tests | 3 failed) 40ms
+   ❯ a link as it was made, and its replay (createInvitation) (5)
+     × passes the candidate's latest link, seven days from the second it was made in, with the token its row's hash is of 9ms
+     × refuses another link, candidate or expiry, a row that expires at another instant, and an answer that may be stored 2ms
+     × refuses a URL that isn't the web page and a token of 43 characters, and a token its row's hash isn't of 1ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 20 passed (23)
+   Start at  14:37:53
+   Duration  590ms (import 66%, transform 17%, tests 15%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/roster.test.ts > a link as it was made, and its replay (createInvitation) > passes the candidate's latest link, seven days from the second it was made in, with the token its row's hash is of
+AssertionError: expected { problems: [ …(2) ], …(2) } to deeply equal { problems: [], …(2) }
+
+- Expected
++ Received
+
+  {
+    "id": "inv_mo",
+-   "problems": [],
++   "problems": [
++     "the link is {\"candidate_id\":\"cand_mo\",\"expires_at\":\"2026-11-13T14:41:00Z\",\"invitation_id\":\"inv_mo\"}, not {\"candidate_id\":\"cand_mo\",\"expires_at\":\"2026-11-14T14:41:00Z\",\"invitation_id\":\"inv_mo\"}",
++     "the link's row expires at another instant than its answer",
++   ],
+    "token": "ttttttttttttttttttttttttttttttttttttttttttt",
+  }
+
+ ❯ src/privacy/roster.test.ts:452:26
+    450|
+    451|   it("passes the candidate's latest link, seven days from the second i…
+    452|     expect(judge(first)).toEqual({ problems: [], token: TOKEN, id: "in…
+       |                          ^
+    453|   });
+    454|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/privacy/roster.test.ts > a link as it was made, and its replay (createInvitation) > refuses another link, candidate or expiry, a row that expires at another instant, and an answer that may be stored
+AssertionError: expected [ …(2) ] to have a length of 1 but got 2
+
+- Expected
++ Received
+
+- 1
++ 2
+
+ ❯ src/privacy/roster.test.ts:456:66
+    454|
+    455|   it("refuses another link, candidate or expiry, a row that expires at…
+    456|     expect(judge({ ...first, invitation_id: "inv_2" }).problems).toHav…
+       |                                                                  ^
+    457|     expect(judge({ ...first, candidate_id: "cand_lu" }).problems).toHa…
+    458|     expect(judge({ ...first, expires_at: "2026-11-13T14:41:01Z" }).pro…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/privacy/roster.test.ts > a link as it was made, and its replay (createInvitation) > refuses a URL that isn't the web page and a token of 43 characters, and a token its row's hash isn't of
+AssertionError: expected [ …(3) ] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+  [
++   "the link is {\"candidate_id\":\"cand_mo\",\"expires_at\":\"2026-11-13T14:41:00Z\",\"invitation_id\":\"inv_mo\"}, not {\"candidate_id\":\"cand_mo\",\"expires_at\":\"2026-11-14T14:41:00Z\",\"invitation_id\":\"inv_mo\"}",
++   "the link's row expires at another instant than its answer",
+    "the link's url isn't https://tadayo.app/i# and a token of 43 characters",
+  ]
+
+ ❯ src/privacy/roster.test.ts:481:30
+    479|     ]) {
+    480|       const found = judge(url === undefined ? none : { ...first, url }…
+    481|       expect(found.problems).toEqual(["the link's url isn't https://ta…
+       |                              ^
+    482|       expect(found.token).toBeUndefined();
+    483|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

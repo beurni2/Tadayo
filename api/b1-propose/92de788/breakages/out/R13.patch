@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/clubs/roster-revision.ts b/packages/domain/src/clubs/roster-revision.ts
+index 2c673837..d8debc83 100644
+--- a/packages/domain/src/clubs/roster-revision.ts
++++ b/packages/domain/src/clubs/roster-revision.ts
+@@ -186,7 +186,6 @@ export async function readRevision(
+   const membershipId = text(club["membership_id"]);
+ 
+   const proposedBy = personOf(row["proposed_by"]).person;
+-  if (proposedBy === null) return null;
+   const members = list(row["members"]).flatMap((entry) => {
+     const who = personOf(entry).person;
+     return who === null ? [] : [who];

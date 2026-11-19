@@ -1,0 +1,96 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b1p-mut/tests
+
+ ❯ src/db/invitation.test.ts (20 tests | 2 failed) 16737ms
+   ❯ the clock and the club's row (T1) (4)
+     × asks who is making the link again once it holds the club's row: a proposer who left while it waited gets the neutral not-found 10534ms
+     × keeps one latest link when two requests for one candidate arrive at once, and when a new link races a revoke 5002ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 18 passed (20)
+     Errors  2 errors
+   Start at  14:23:10
+   Duration  17.43s (tests 98%, import 2%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/invitation.test.ts > the clock and the club's row (T1) > asks who is making the link again once it holds the club's row: a proposer who left while it waited gets the neutral not-found
+Error: waitingOn: nothing came to wait for the club's row
+ ❯ waitingOn src/db/week-world.ts:177:9
+    175|     await new Promise((resolve) => setTimeout(resolve, 25));
+    176|   }
+    177|   throw new Error("waitingOn: nothing came to wait for the club's row"…
+       |         ^
+    178| }
+    179|
+ ❯ src/db/invitation.test.ts:322:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/invitation.test.ts > the clock and the club's row (T1) > keeps one latest link when two requests for one candidate arrive at once, and when a new link races a revoke
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/db/invitation.test.ts:354:3
+    352|   );
+    353|
+    354|   it("keeps one latest link when two requests for one candidate arrive…
+       |   ^
+    355|     const s = await db.begin((tx) => world(tx));
+    356|     const create = () =>
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 2 unhandled errors during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+Error: the request wasn't refused
+ ❯ refusal src/db/roster-world.ts:35:9
+     33|     throw error;
+     34|   }
+     35|   throw new Error("the request wasn't refused");
+       |         ^
+     36| }
+     37|
+ ❯ process.processTicksAndRejections node:internal/process/task_queues:104:5
+
+This error originated in "src/db/invitation.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The last test to run before this error was "asks who is making the link again once it holds the club's row: a proposer who left while it waited gets the neutral not-found". This means either:
+- the error was thrown while Vitest was running this test, or
+- the error was thrown after the test completed, and this was the most recent test at that point.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+PostgresError: duplicate key value violates unique constraint "invitations_one_latest"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ Socket.emit node:events:514:20
+ ❯ addChunk node:internal/streams/readable:605:12
+ ❯ readableAddChunkPushByteMode node:internal/streams/readable:556:3
+ ❯ Readable.push node:internal/streams/readable:436:5
+ ❯ TCP.onStreamRead node:internal/stream_base_commons:194:23
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ createInvitation ../packages/domain/src/clubs/invitation.ts:176:18
+    174|     await bound(tx)`UPDATE app.invitations SET replaced_by_id = ${invi…
+    175|   }
+    176|   await bound(tx)`
+       |                  ^
+    177|     INSERT INTO app.invitations (id, candidate_id, token_sha256, creat…
+    178|     VALUES (${invitationId}, ${candidateId}, pg_catalog.decode(${hash}…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { severity_local: 'ERROR', severity: 'ERROR', code: '23505', detail: 'Key (candidate_id)=(cand_Q84LHkCUiwvyu2QxlXR1QA) already exists.', schema_name: 'app', table_name: 'invitations', constraint_name: 'invitations_one_latest', file: 'nbtinsert.c', routine: '_bt_check_unique', query: '
+    INSERT INTO app.invitations (id, candidate_id, token_sha256, created_at, expires_at)
+    VALUES ($1, $2, pg_catalog.decode($3, 'hex'),
+            $4::pg_catalog.timestamptz, $5::pg_catalog.timestamptz)', parameters: [ 'inv_oH6xNCPFwO3DR0Vekb7zLQ', 'cand_Q84LHkCUiwvyu2QxlXR1QA', 'a3dd1e9b9377350c9b672abda0fae9f3e5e5d88e7d609c6c26508b68bab8a553', '2026-11-11T05:00:00.123456Z', '2026-11-18T05:00:00.000000Z' ], args: [ 'inv_oH6xNCPFwO3DR0Vekb7zLQ', 'cand_Q84LHkCUiwvyu2QxlXR1QA', 'a3dd1e9b9377350c9b672abda0fae9f3e5e5d88e7d609c6c26508b68bab8a553', '2026-11-11T05:00:00.123456Z', '2026-11-18T05:00:00Z' ], types: [ 16493, 16493, 25, 1184, 1184 ] }
+This error originated in "src/db/invitation.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The last test to run before this error was "keeps one latest link when two requests for one candidate arrive at once, and when a new link races a revoke". This means either:
+- the error was thrown while Vitest was running this test, or
+- the error was thrown after the test completed, and this was the most recent test at that point.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
