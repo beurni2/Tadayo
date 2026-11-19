@@ -2,10 +2,9 @@
 // is an explicit list of the contract's five fields (T55), and the account's id is in no answer but this
 // one (the contract's `Me`): never an email address, which the account doesn't keep.
 
-import { UpdateMeRequest, ERRORS, type ErrorCodeName } from "@tadayo/contracts";
+import { UpdateMeRequest } from "@tadayo/contracts";
 import { Refused, updateMe, type Account, type Json, type ProfileEdit } from "@tadayo/domain";
-import type { FastifyReply } from "fastify";
-import { ok, problem } from "../answers.ts";
+import { IDEMPOTENCY_KEY, ok, problem, refusal } from "../answers.ts";
 import type { Deps, Handler } from "../deps.ts";
 import { signedIn } from "../deps.ts";
 
@@ -22,7 +21,6 @@ export function meBody(account: Account): Json {
 
 export const getMe: Handler = (request, reply) => ok(reply, meBody(signedIn(request)));
 
-const KEY = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const FIELDS: readonly string[] = Object.keys(UpdateMeRequest.shape);
 
 /**
@@ -38,22 +36,12 @@ export function firstBadField(issues: readonly { readonly path: readonly Propert
   return undefined;
 }
 
-function isErrorCode(code: string): code is ErrorCodeName {
-  return Object.hasOwn(ERRORS, code);
-}
-
-/** A refusal as the contract's answer; a code that isn't the contract's is a bug, which is a 500. */
-function refusal(reply: FastifyReply, refused: Refused): FastifyReply {
-  if (!isErrorCode(refused.code)) throw refused;
-  return problem(reply, refused.code, refused.facts);
-}
-
 export function updateMeHandler(deps: Deps): Handler {
   return async (request, reply) => {
     const account = signedIn(request);
     // The parameters come before the body, the contract's order; nothing here echoes a value.
     const key = request.headers["idempotency-key"];
-    if (typeof key !== "string" || !KEY.test(key))
+    if (typeof key !== "string" || !IDEMPOTENCY_KEY.test(key))
       return problem(reply, "INVALID_REQUEST", { field: "Idempotency-Key" });
     const parsed = UpdateMeRequest.safeParse(request.body);
     if (!parsed.success) {

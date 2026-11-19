@@ -7,7 +7,7 @@
 // version from the club's first local date (the date of the clock's sample, taken after the lock, in the
 // club's zone), the proposal at version 1, a row for each active member, and their proposed days, each
 // held by proposal until they choose (FQ48). Members are in the order they joined, two who joined at the
-// same instant by their interval's id, the order `loadWeek` reads them in.
+// same instant by their interval's id, byte by byte, the order `loadWeek` reads them in.
 //
 // It refuses by throwing an Error, never `Refused`: no caller of the API reaches it with a request, so a
 // club it can't open is the calling command's bug.
@@ -52,7 +52,7 @@ export async function openFirstDays(tx: QuerySql & ClockSql, clock: Clock, clubI
   }
   const members = await bound(tx)`
     SELECT interval_id FROM app.memberships
-     WHERE club_id = ${clubId} AND state = 'active' ORDER BY joined_at, interval_id`;
+     WHERE club_id = ${clubId} AND state = 'active' ORDER BY joined_at, interval_id COLLATE "C"`;
   // Throws for a roster outside two to six (A01).
   const week = proposedWeek(members.length);
   const perMember = daysPerMember(members.length);

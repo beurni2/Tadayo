@@ -86,7 +86,7 @@ async function appWith(authenticate: Authenticate) {
 
 /** An operation's own path, with a made-up id where it takes one. */
 const urlOf = (path: string) => path.replace(/\{[a-z_]+\}/g, "drp_x");
-const BUILT = new Set(["getMe", "updateMe", "listClubs"]);
+const BUILT = new Set(["getMe", "updateMe", "listClubs", "getSchedule", "chooseScheduleDays", "confirmScheduleDays"]);
 const unbuilt = OPERATIONS.filter((operation) => !BUILT.has(operation.id));
 const unbuiltPublic = unbuilt.filter((operation) => operation.public === true);
 const unbuiltBeforeProfile = unbuilt.filter(

@@ -15,7 +15,7 @@ B2's schedule work is too large for one reviewable PR, so it goes in four, in th
 
 Home's route, reservations and the allowance transaction are B2's other half and have their own plans.
 
-**What nothing in production calls yet.** B1's activation opens a club's first days (spec 04: "On activation, propose the appropriate calendar and let each member confirm their days"). B1 isn't built, so this PR's `openFirstDays` is called only by its tests and by the privacy matrix's world; B1's activation command calls it in the same transaction that starts the club. Until then no club on `dev` has a proposal, and the three routes answer the neutral not-found or a schedule with neither `current` nor `proposal`.
+**What nothing in production calls yet.** B1's activation opens a club's first days (spec 04: "On activation, propose the appropriate calendar and let each member confirm their days"). B1 isn't built, so this PR's `openFirstDays` is called only by its tests (as built, the privacy matrix's world writes its first days' rows itself, `tests/src/privacy/schedule.ts` `addFirstDays`, so that every kind of slot is in front of every role); B1's activation command calls it in the same transaction that starts the club. Until then no club on `dev` has a proposal, and the three routes answer the neutral not-found or a schedule with neither `current` nor `proposal`.
 
 **What a confirmed day does here.** It writes its row in `app.schedule_assignments` with its first date (FQ79). No day is made from it until PR 2's generation, so nothing opens on `dev` from this PR alone.
 
@@ -85,7 +85,7 @@ A choice of the days the caller already holds changes nothing and still answers.
 
 ## 5. The routes, `services/api/src/schedule/`
 
-`getSchedule`, `chooseScheduleDays` and `confirmScheduleDays`, registered in `services/api/src/app.ts` `handlersOf`. Each serializer is an explicit field list (T55). Each body is parsed by the contract's own schema; a bad one gets `INVALID_REQUEST`. The bodies fit the limits the contract PR measured (`tests/src/privacy/body-limits.test.ts`).
+`getSchedule`, `chooseScheduleDays` and `confirmScheduleDays`, registered in `services/api/src/app.ts` `handlersOf`. Each serializer is an explicit field list (T55). Each body is parsed by the contract's own schema; a bad one gets `INVALID_REQUEST`. The bodies fit the limits the contract PR measured (`tests/src/privacy/body-limits.test.ts`). As built (`routes.ts`): a command checks its `Idempotency-Key` and its body before it looks anything up, so a bad request gets `INVALID_REQUEST` for every caller alike; each command's body limit is 1024 bytes (`app.ts` `ROUTE_BODY_LIMITS`); and `routes.test.ts` reads the contract's examples through the new export `@tadayo/contracts/examples`.
 
 ## 6. Tests first
 

@@ -10,6 +10,9 @@
 // the account's name while the interval is active, the name it ended with once it has ended; the avatar's
 // version only while both the interval and the account are active.
 //
+// Members are in the order they joined, two who joined at the same instant by their interval's id, byte by
+// byte (`COLLATE "C"`), so the order is the same on every database whatever its locale.
+//
 // `answerOf` then makes the proposal one viewer sees: `viewFor` decides which slot carries whom (./view.ts,
 // T55), and this only puts the person in the place of the id `viewFor` gave. It never adds a name.
 
@@ -255,7 +258,7 @@ export async function loadWeek(
                                        '[]'::pg_catalog.jsonb)
                                   FROM app.schedule_proposal_days d
                                  WHERE d.proposal_id = pm.proposal_id AND d.interval_id = pm.interval_id))
-                               ORDER BY s.joined_at, s.interval_id),
+                               ORDER BY s.joined_at, s.interval_id COLLATE "C"),
                              '[]'::pg_catalog.jsonb)
                         FROM app.schedule_proposal_members pm
                         JOIN app.memberships s ON s.interval_id = pm.interval_id
