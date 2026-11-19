@@ -3,8 +3,8 @@ import TadayoCore
 import TadayoDesign
 
 /// The three tabs of the product (spec 03, D04), each with what it says while the club list
-/// loads or fails. Home's words are delivered; Friends' and Memories' are FQ90's defaults, until
-/// handoff 7 gives them (its items 15 and 16).
+/// loads or fails: handoff 7's words (`home.loading`, `friends.error.title` and the rest), which
+/// are FQ90's defaults word for word.
 enum ClubTab: Hashable, CaseIterable {
     case home, friends, memories
 
@@ -27,6 +27,16 @@ enum ClubTab: Hashable, CaseIterable {
         }
     }
 
+    /// Retry's hint after a failure, naming the tab it loads again (handoff 7's
+    /// `vo.retryHome.hint` and the other two; the label stays Retry).
+    var retryHint: LocalizedStringResource {
+        switch self {
+        case .home: "tabs.retry.home.hint"
+        case .friends: "tabs.retry.friends.hint"
+        case .memories: "tabs.retry.memories.hint"
+        }
+    }
+
     /// A failure as VoiceOver reads it, the title then the line, as one group (handoff 6's
     /// `denied.group.vo`, "{titleText}. {bodyText}", whose full stop the title already ends
     /// with), and as it's said when it shows.
@@ -46,7 +56,7 @@ extension RootModel.Failure {
     }
 }
 
-/// The header every tab shares while the account has no club (handoff 2's `noClubRootHeader`),
+/// The header every tab shares while the account has no club (handoff 7's `noClubRootHeader`),
 /// with the account's initial. + Add and Account show and do nothing yet (FQ85, ADR-029): Add's
 /// picker and the account screen come in later stages.
 struct TabHeader: View {
@@ -56,7 +66,8 @@ struct TabHeader: View {
         NoClubHeader(
             wordmark: Image("Wordmark"), wordmarkLabel: Text("brand.wordmark"),
             add: Text("header.add"), addHint: Text("header.add.hint"),
-            account: Text("header.account"), name: name, onAdd: {}, onAccount: {})
+            account: Text("header.account"), accountHint: Text("header.account.hint"),
+            name: name, onAdd: {}, onAccount: {})
     }
 }
 
@@ -64,6 +75,11 @@ struct TabHeader: View {
 /// FM-02), the content 20 points in from each edge, on `canvas`. Gaps are `handoff6.spacing`'s
 /// where it names one, and otherwise book p35's step nearest the frame's, or past its largest
 /// step a sum of its steps (`TabGap`); the PR and INVENTORY.md list each.
+///
+/// The status bar's safe area stays opaque `canvas` over what scrolls (handoff 7's
+/// `noClubRootHeader.scroll`: "Status-bar safe area remains opaque canvas", "no custom glass or
+/// extra scroll-edge effect"): a band exactly as high as that safe area, drawn over the scroll
+/// view, which the header scrolls away under. It is no bar and carries nothing.
 ///
 /// One column holds every state of a tab, so the header stays the same view as the club list
 /// changes, and VoiceOver's focus on + Add or Account survives it (handoff 3's
@@ -94,6 +110,14 @@ struct TabScroll<Content: View>: View {
             .scrollBounceBehavior(.basedOnSize)
         }
         .background { Palette.canvas.ignoresSafeArea() }
+        .overlay(alignment: .top) {
+            // No height of its own: all of it is the safe area it reaches into.
+            Palette.canvas
+                .ignoresSafeArea(edges: .top)
+                .frame(height: 0)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
     }
 }
 
@@ -101,8 +125,9 @@ struct TabScroll<Content: View>: View {
 /// steps, nearest the frame's (handoff 4's `G06-no-club`, handoff 2's `F01-no-club` and
 /// `M01-no-club`), measured between line boxes as `handoff6.spacing` measures.
 enum TabGap {
-    /// From the header to Friends' and Memories' page titles: 22 in the frames.
-    static let pageTitle = Spacing.xxl
+    /// From the header to Friends' and Memories' page titles, as to Home's: 32 (handoff 7's
+    /// `noClubRootHeader.contentStart`, `homeContentTopAfterHeader`).
+    static let pageTitle = Spacing.xxxl
     /// From G06's lines to Create a club: 70 in the frame.
     static let homeActions = Spacing.xxxl + Spacing.xxxl + Spacing.s
     /// From I have an invite to Private drafts on G06: 54 in the frame.
@@ -162,6 +187,7 @@ struct TabContent: View {
                         Text("common.retry")
                     }
                     .buttonStyle(.tadayoPrimary)
+                    .accessibilityHint(Text(tab.retryHint))
                 }
             }
         }
@@ -211,9 +237,11 @@ struct TabContent: View {
             .accessibilityLabel(Text(tab.spoken(failure)))
             .accessibilityAddTraits(.isHeader)
             .accessibilityFocused($focus, equals: .heading)
+            .padding(.top, Spacing.xxxl)
         case .notInThisBuild:
             title("tabs.notInThisBuild")
                 .accessibilityFocused($focus, equals: .heading)
+                .padding(.top, Spacing.xxxl)
         }
     }
 
@@ -244,14 +272,14 @@ struct TabContent: View {
         .frame(maxWidth: .infinity)
     }
 
-    /// A state's title: handoff 6's denial screens' `emptyTitle` 25/30, as a heading, 32 points
-    /// under the header (`homeContentTopAfterHeader`).
+    /// A state's title: handoff 6's denial screens' `emptyTitle` 25/30, as a heading. Each state
+    /// sets it 32 points under the header (`homeContentTopAfterHeader`), outside what VoiceOver
+    /// takes as the element, so the element starts where its words do.
     private func title(_ words: LocalizedStringResource) -> some View {
         Text(words)
             .textRole(.emptyTitle)
             .foregroundStyle(Palette.primaryText)
             .accessibilityAddTraits(.isHeader)
             .fixedSize(horizontal: false, vertical: true)
-            .padding(.top, Spacing.xxxl)
     }
 }

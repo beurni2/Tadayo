@@ -139,6 +139,24 @@ public enum Size {
     /// The wordmark's width in the no-club header (handoff 2's `noClubRootHeader`: "outlined
     /// wordmark, width 96"; revision 1.1's `minimumWidth`).
     public static let headerWordmark: CGFloat = 96
+    /// The wordmark's top, from the header's (handoff 7's `noClubRootHeader.wordmarkRect`,
+    /// [20, 64, 96, 30.43] in a header that starts at 56).
+    public static let headerWordmarkTop: CGFloat = 8
+    /// The wordmark's band when the header stacks: the actions' row starts 48 under the header's
+    /// top (handoff 7's `noClubRootHeader.largest`, `addTarget` [20, 104, 249, 76]).
+    public static let headerWordmarkBand: CGFloat = 48
+    /// "+ Add"'s least width in the header's one row (handoff 7's
+    /// `noClubRootHeader.addTarget`, [241, 56, 80, 44]).
+    public static let headerAddMinWidth: CGFloat = 80
+    /// "+ Add"'s words from its target's leading edge in that row (the frames draw them from
+    /// 249).
+    public static let headerAddLabelInset: CGFloat = 8
+    /// Between "+ Add"'s target and Account's (handoff 7: 321 to 329).
+    public static let headerActionGap: CGFloat = 8
+    /// The Private drafts row's folder box from the row's leading edge (handoff 7's `G06-no-club`
+    /// and `F01-no-club`, and its sheet's Private drafts specimen: the box at 36 in a row that
+    /// starts at 20).
+    public static let draftsLeadingInset: CGFloat = 16
 }
 
 /// The avatar's sizes (1.1: 68 on the profile, 36 in rows, 28 on cards, 18 on the rail).

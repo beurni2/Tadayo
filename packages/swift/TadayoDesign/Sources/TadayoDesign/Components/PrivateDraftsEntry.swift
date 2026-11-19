@@ -6,11 +6,12 @@ import SwiftUI
 /// `secondaryText`, and `chevron.right` in `secondaryText` (handoff 2's `privateDraftsEntry`, with
 /// handoff 4's inks; handoff 6 keeps it).
 ///
-/// Its geometry is handoff 4's `G06-no-club` frame's: the folder centred in a 24-point box 12 in
-/// from the leading edge, the title 16 after it, the chevron centred in a 20-point box 12 in from
-/// the trailing edge, each symbol at the size whose glyph matches the drawn one (the folder 20 by
-/// 15, the chevron 6 by 12), growing with the text. No delivery draws it pressed: it looks the
-/// same (the ios lane's needs list).
+/// The folder is centred in a 24-point box 16 in from the leading edge, as handoff 7's
+/// `G06-no-club` and `F01-no-club` and its sheet's Private drafts specimen draw it (handoffs 4 to
+/// 6 drew 12), and the title starts 16 after the box. The rest is handoff 4's `G06-no-club`
+/// frame's: the chevron centred in a 20-point box 12 in from the trailing edge, each symbol at the
+/// size whose glyph matches the drawn one (the folder 20 by 15, the chevron 6 by 12), growing with
+/// the text. No delivery draws it pressed: it looks the same (the ios lane's needs list).
 ///
 /// VoiceOver finds one button, its title as its label and its subtitle as its hint (handoff 5's
 /// `a11y.drafts` and `a11y.drafts.hint`).
@@ -53,7 +54,8 @@ public struct PrivateDraftsEntry: View {
                     .foregroundStyle(Palette.secondaryText)
                     .frame(width: chevronBox)
             }
-            .padding(.horizontal, Spacing.m)
+            .padding(.leading, Size.draftsLeadingInset)
+            .padding(.trailing, Spacing.m)
             .padding(.vertical, Spacing.m)
             .frame(maxWidth: .infinity, minHeight: Size.draftsRowMinHeight)
             .background(Palette.surface, in: RoundedRectangle(cornerRadius: Radius.surface))
