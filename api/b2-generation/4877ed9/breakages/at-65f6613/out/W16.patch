@@ -1,0 +1,13 @@
+diff --git a/services/worker/src/main.ts b/services/worker/src/main.ts
+index 56bfffa1..94e34a3e 100644
+--- a/services/worker/src/main.ts
++++ b/services/worker/src/main.ts
+@@ -23,7 +23,7 @@ try {
+   let stopping = false;
+   const stopped = new Promise<string>((resolve) => {
+     for (const signal of ["SIGTERM", "SIGINT"] as const) {
+-      process.on(signal, () => {
++      process.once(signal, () => {
+         stopping = true;
+         resolve(signal);
+       });

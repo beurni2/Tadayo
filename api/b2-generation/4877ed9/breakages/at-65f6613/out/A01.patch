@@ -1,0 +1,13 @@
+diff --git a/services/api/src/clubs/members.ts b/services/api/src/clubs/members.ts
+index 1953efe4..9f844de8 100644
+--- a/services/api/src/clubs/members.ts
++++ b/services/api/src/clubs/members.ts
+@@ -33,7 +33,7 @@ export function membersBody(now: Temporal.Instant, roster: Roster): Json {
+       },
+       position: member.position,
+       ...(member.nextDay === null ? {} : { next_day: occurrenceBody(member.nextDay) }),
+-      next_up: member.nextUp,
++      next_up: false,
+     })),
+   };
+ }

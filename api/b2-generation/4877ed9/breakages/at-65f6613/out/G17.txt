@@ -1,0 +1,446 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/packages/domain
+
+ ❯ src/schedule/generate.test.ts (23 tests | 19 failed) 39ms
+   ❯ the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) (16)
+     × owes every assigned date from today to the window's end, in date order, and no Sunday 7ms
+     × owes, seen from Friday 6 November at 9:41 AM, the 25 dates the contract's example announces 4ms
+     × names each day's star, its version and its two instants, each resolved in the club's zone 4ms
+     × takes today and the horizon from the club's zone, not from UTC 1ms
+     × owes nothing before a day's first date (FQ79) 1ms
+     × owes no day to a star who has left, and still owes everyone else's (FQ63) 1ms
+     × owes nothing to a club under two members, one not started, or a suspended one (FQ16; spec 04, 22) 2ms
+     × doesn't owe a date already made, whoever's it was 1ms
+     × gives a club of three its six days a week 1ms
+     × makes each date under the version in force on it: the latest that started on or before it (FQ61) 1ms
+     × finds the version in force among three given in any order (FQ61) 1ms
+     × goes on across the year's end 1ms
+     × owes nothing before the first version starts 1ms
+   ❯ a made day's instants across a clock change (T2; ADR-008) (7)
+     × New York's autumn change: Saturday 31 October 2026 closes at the first 01:00 of 1 November, still in EDT 1ms
+     × New York's spring change: Saturday 7 March 2026 closes at 01:00 EST, before the clocks jump at 02:00 1ms
+     × London's spring change: Saturday 28 March 2026 closes at the jump, since 01:00 on the 29th doesn't exist 0ms
+     × London's autumn change: Saturday 24 October 2026 closes at the first 01:00 of the 25th, still in BST 0ms
+     × Santiago's changes: a day of 19 hours and one of 17, so a close is never the reveal plus 18 hours 3ms
+     × Auckland's spring change, Kolkata's half hour and Cairo's change, each by the zone's own rules 1ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  19 failed | 12 passed (31)
+   Start at  05:36:02
+   Duration  276ms (transform 42%, tests 30%, import 20%, worker 8%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 19 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > owes every assigned date from today to the window's end, in date order, and no Sunday
+AssertionError: expected '2026-12-06' to be '2026-12-05' // Object.is equality
+
+Expected: "2026-12-05"
+Received: "2026-12-06"
+
+ ❯ src/schedule/generate.test.ts:65:25
+     63|     // Today's own 7 AM has passed, so the first is Saturday the 7th; …
+     64|     expect(owed[0]).toBe("2026-11-07");
+     65|     expect(owed.at(-1)).toBe("2026-12-05");
+       |                         ^
+     66|     expect(owed).toHaveLength(25);
+     67|     expect(owed).toEqual([...owed].sort());
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/19]⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > owes, seen from Friday 6 November at 9:41 AM, the 25 dates the contract's example announces
+AssertionError: expected [ '2026-11-07', '2026-11-08', …(28) ] to deeply equal [ '2026-11-07', '2026-11-09', …(23) ]
+
+- Expected
++ Received
+
+  [
+    "2026-11-07",
++   "2026-11-08",
+    "2026-11-09",
+    "2026-11-10",
+    "2026-11-11",
+    "2026-11-12",
+    "2026-11-13",
+    "2026-11-14",
++   "2026-11-15",
+    "2026-11-16",
+    "2026-11-17",
+    "2026-11-18",
+    "2026-11-19",
+    "2026-11-20",
+    "2026-11-21",
++   "2026-11-22",
+    "2026-11-23",
+    "2026-11-24",
+    "2026-11-25",
+    "2026-11-26",
+    "2026-11-27",
+    "2026-11-28",
++   "2026-11-29",
+    "2026-11-30",
+    "2026-12-01",
+    "2026-12-02",
+    "2026-12-03",
+    "2026-12-04",
+    "2026-12-05",
++   "2026-12-06",
+  ]
+
+ ❯ src/schedule/generate.test.ts:76:51
+     74|     // 5 December without the Sundays, written out here by hand; the c…
+     75|     // 7 December (world.ts, `changeFrom`), the day after the window's…
+     76|     expect(dates(club(), "2026-11-06T14:41:00Z")).toEqual([
+       |                                                   ^
+     77|       "2026-11-07",
+     78|       "2026-11-09",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/19]⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > names each day's star, its version and its two instants, each resolved in the club's zone
+AssertionError: expected { localDate: '2026-11-07', …(4) } to deeply equal { localDate: '2026-11-07', …(4) }
+
+- Expected
++ Received
+
+  {
+    "closeAt": "2026-11-08T06:00:00Z",
+    "localDate": "2026-11-07",
+    "revealAt": "2026-11-07T12:00:00Z",
+-   "starInterval": "nina",
++   "starInterval": "ben",
+    "versionId": "ver_1",
+  }
+
+ ❯ src/schedule/generate.test.ts:107:19
+    105|   it("names each day's star, its version and its two instants, each re…
+    106|     const [first] = daysToMake(club(), at(NOW));
+    107|     expect(first).toEqual({
+       |                   ^
+    108|       localDate: "2026-11-07",
+    109|       versionId: "ver_1",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/19]⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > takes today and the horizon from the club's zone, not from UTC
+AssertionError: expected '2026-12-06' to be '2026-12-05' // Object.is equality
+
+Expected: "2026-12-05"
+Received: "2026-12-06"
+
+ ❯ src/schedule/generate.test.ts:118:58
+    116|   it("takes today and the horizon from the club's zone, not from UTC",…
+    117|     // 04:30Z on Monday the 9th is still Sunday the 8th, 11:30 PM, in …
+    118|     expect(dates(club(), "2026-11-09T04:30:00Z").at(-1)).toBe("2026-12…
+       |                                                          ^
+    119|     // 05:00Z is Monday the 9th at midnight there: the window moves on…
+    120|     expect(dates(club(), "2026-11-09T05:00:00Z").at(-1)).toBe("2026-12…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/19]⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > owes nothing before a day's first date (FQ79)
+AssertionError: expected [ '2026-11-13', '2026-11-18', …(5) ] to deeply equal [ '2026-11-07', '2026-11-12', …(7) ]
+
+- Expected
++ Received
+
+  [
+-   "2026-11-07",
+-   "2026-11-12",
+-   "2026-11-14",
+-   "2026-11-19",
+-   "2026-11-21",
+-   "2026-11-26",
+-   "2026-11-28",
+-   "2026-12-03",
+-   "2026-12-05",
++   "2026-11-13",
++   "2026-11-18",
++   "2026-11-20",
++   "2026-11-25",
++   "2026-11-27",
++   "2026-12-02",
++   "2026-12-04",
+  ]
+
+ ❯ src/schedule/generate.test.ts:144:18
+    142|     ]);
+    143|     const owed = dates(club({ versions: [late] }), "2026-11-04T14:00:0…
+    144|     expect(owed).toEqual([
+       |                  ^
+    145|       "2026-11-07",
+    146|       "2026-11-12",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/19]⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > owes no day to a star who has left, and still owes everyone else's (FQ63)
+AssertionError: expected [ 'ben', 'ben', 'ben', 'ben', 'ben' ] to deeply equal [ 'ben', 'ben', 'ben', 'ben' ]
+
+- Expected
++ Received
+
+  [
+    "ben",
+    "ben",
+    "ben",
+    "ben",
++   "ben",
+  ]
+
+ ❯ src/schedule/generate.test.ts:175:49
+    173|       at(NOW),
+    174|     );
+    175|     expect(owed.map((day) => day.starInterval)).toEqual(["ben", "ben",…
+       |                                                 ^
+    176|   });
+    177|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/19]⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > owes nothing to a club under two members, one not started, or a suspended one (FQ16; spec 04, 22)
+AssertionError: expected [ '2026-11-07', '2026-11-08', …(28) ] to have a length of 25 but got 30
+
+- Expected
++ Received
+
+- 25
++ 30
+
+ ❯ src/schedule/generate.test.ts:180:52
+    178|   it("owes nothing to a club under two members, one not started, or a …
+    179|     expect(dates(club({ activeMembers: 1 }), NOW)).toEqual([]);
+    180|     expect(dates(club({ activeMembers: 2 }), NOW)).toHaveLength(25);
+       |                                                    ^
+    181|     expect(dates(club({ activated: false }), NOW)).toEqual([]);
+    182|     expect(dates(club({ suspended: true }), NOW)).toEqual([]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/19]⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > doesn't owe a date already made, whoever's it was
+AssertionError: expected [ '2026-11-08', '2026-11-09', …(26) ] to have a length of 23 but got 28
+
+- Expected
++ Received
+
+- 23
++ 28
+
+ ❯ src/schedule/generate.test.ts:192:18
+    190|   it("doesn't owe a date already made, whoever's it was", () => {
+    191|     const owed = dates(club({ made: new Set(["2026-11-07", "2026-11-10…
+    192|     expect(owed).toHaveLength(23);
+       |                  ^
+    193|     expect(owed).not.toContain("2026-11-07");
+    194|     expect(owed).not.toContain("2026-11-10");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/19]⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > gives a club of three its six days a week
+AssertionError: expected [ …(28) ] to have a length of 24 but got 28
+
+- Expected
++ Received
+
+- 24
++ 28
+
+ ❯ src/schedule/generate.test.ts:210:18
+    208|     const owed = daysToMake(club({ activeMembers: 3, versions: [three]…
+    209|     // Sunday the 8th: Monday the 9th to Saturday 5 December are four …
+    210|     expect(owed).toHaveLength(24);
+       |                  ^
+    211|     expect(owed.slice(0, 6).map((day) => day.starInterval)).toEqual(["…
+    212|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/19]⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > makes each date under the version in force on it: the latest that started on or before it (FQ61)
+AssertionError: expected [ '2026-11-07', '2026-11-08', …(7) ] to deeply equal [ '2026-11-07', '2026-11-09', …(5) ]
+
+- Expected
++ Received
+
+  [
+    "2026-11-07",
++   "2026-11-08",
+    "2026-11-09",
+    "2026-11-10",
+    "2026-11-11",
+    "2026-11-12",
+    "2026-11-13",
+    "2026-11-14",
++   "2026-11-15",
+  ]
+
+ ❯ src/schedule/generate.test.ts:224:48
+    222|     const after = owed.filter((day) => day.localDate >= "2026-11-16");
+    223|     expect(new Set(before.map((day) => day.versionId))).toEqual(new Se…
+    224|     expect(before.map((day) => day.localDate)).toEqual([
+       |                                                ^
+    225|       "2026-11-07",
+    226|       "2026-11-09",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/19]⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > finds the version in force among three given in any order (FQ61)
+AssertionError: expected [ [ '2026-11-07', 'ver_1' ], …(4) ] to deeply equal [ [ '2026-11-09', 'ver_1' ], …(3) ]
+
+- Expected
++ Received
+
+  [
+    [
+-     "2026-11-09",
++     "2026-11-07",
+      "ver_1",
+    ],
+    [
+-     "2026-11-16",
++     "2026-11-14",
++     "ver_1",
++   ],
++   [
++     "2026-11-21",
+      "ver_2",
+    ],
+    [
+-     "2026-11-23",
++     "2026-11-28",
+      "ver_2",
+    ],
+    [
+-     "2026-12-01",
++     "2026-12-06",
+      "ver_3",
+    ],
+  ]
+
+ ❯ src/schedule/generate.test.ts:261:65
+    259|     ]) {
+    260|       const owed = daysToMake(club({ versions }), at(NOW));
+    261|       expect(owed.map((day) => [day.localDate, day.versionId])).toEqua…
+       |                                                                 ^
+    262|     }
+    263|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/19]⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > goes on across the year's end
+AssertionError: expected '2027-01-31' to be '2027-01-30' // Object.is equality
+
+Expected: "2027-01-30"
+Received: "2027-01-31"
+
+ ❯ src/schedule/generate.test.ts:271:25
+    269|     expect(owed).toContain("2026-12-31");
+    270|     expect(owed).toContain("2027-01-01");
+    271|     expect(owed.at(-1)).toBe("2027-01-30");
+       |                         ^
+    272|     expect(owed).toHaveLength(29);
+    273|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/19]⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > owes nothing before the first version starts
+AssertionError: expected [ '2026-11-21', '2026-11-28', …(1) ] to deeply equal [ '2026-11-16', '2026-11-23', …(1) ]
+
+- Expected
++ Received
+
+  [
+-   "2026-11-16",
+-   "2026-11-23",
+-   "2026-11-30",
++   "2026-11-21",
++   "2026-11-28",
++   "2026-12-05",
+  ]
+
+ ❯ src/schedule/generate.test.ts:277:53
+    275|   it("owes nothing before the first version starts", () => {
+    276|     const later = version("ver_1", "2026-11-16", [["monday", "ben", "2…
+    277|     expect(dates(club({ versions: [later] }), NOW)).toEqual(["2026-11-…
+       |                                                     ^
+    278|   });
+    279| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/19]⎯
+
+ FAIL  src/schedule/generate.test.ts > a made day's instants across a clock change (T2; ADR-008) > New York's autumn change: Saturday 31 October 2026 closes at the first 01:00 of 1 November, still in EDT
+Error: no day on 2026-10-31
+ ❯ saturday src/schedule/generate.test.ts:287:34
+    285|     const week = version("ver_1", "2026-01-05", [["saturday", "nina", …
+    286|     const day = daysToMake(club({ zone, versions: [week] }), at(now)).…
+    287|     if (day === undefined) throw new Error(`no day on ${date}`);
+       |                                  ^
+    288|     return day;
+    289|   };
+ ❯ src/schedule/generate.test.ts:292:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/19]⎯
+
+ FAIL  src/schedule/generate.test.ts > a made day's instants across a clock change (T2; ADR-008) > New York's spring change: Saturday 7 March 2026 closes at 01:00 EST, before the clocks jump at 02:00
+Error: no day on 2026-03-07
+ ❯ saturday src/schedule/generate.test.ts:287:34
+    285|     const week = version("ver_1", "2026-01-05", [["saturday", "nina", …
+    286|     const day = daysToMake(club({ zone, versions: [week] }), at(now)).…
+    287|     if (day === undefined) throw new Error(`no day on ${date}`);
+       |                                  ^
+    288|     return day;
+    289|   };
+ ❯ src/schedule/generate.test.ts:300:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/19]⎯
+
+ FAIL  src/schedule/generate.test.ts > a made day's instants across a clock change (T2; ADR-008) > London's spring change: Saturday 28 March 2026 closes at the jump, since 01:00 on the 29th doesn't exist
+Error: no day on 2026-03-28
+ ❯ saturday src/schedule/generate.test.ts:287:34
+    285|     const week = version("ver_1", "2026-01-05", [["saturday", "nina", …
+    286|     const day = daysToMake(club({ zone, versions: [week] }), at(now)).…
+    287|     if (day === undefined) throw new Error(`no day on ${date}`);
+       |                                  ^
+    288|     return day;
+    289|   };
+ ❯ src/schedule/generate.test.ts:306:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/19]⎯
+
+ FAIL  src/schedule/generate.test.ts > a made day's instants across a clock change (T2; ADR-008) > London's autumn change: Saturday 24 October 2026 closes at the first 01:00 of the 25th, still in BST
+Error: no day on 2026-10-24
+ ❯ saturday src/schedule/generate.test.ts:287:34
+    285|     const week = version("ver_1", "2026-01-05", [["saturday", "nina", …
+    286|     const day = daysToMake(club({ zone, versions: [week] }), at(now)).…
+    287|     if (day === undefined) throw new Error(`no day on ${date}`);
+       |                                  ^
+    288|     return day;
+    289|   };
+ ❯ src/schedule/generate.test.ts:313:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/19]⎯
+
+ FAIL  src/schedule/generate.test.ts > a made day's instants across a clock change (T2; ADR-008) > Santiago's changes: a day of 19 hours and one of 17, so a close is never the reveal plus 18 hours
+Error: no day on 2026-04-04
+ ❯ saturday src/schedule/generate.test.ts:287:34
+    285|     const week = version("ver_1", "2026-01-05", [["saturday", "nina", …
+    286|     const day = daysToMake(club({ zone, versions: [week] }), at(now)).…
+    287|     if (day === undefined) throw new Error(`no day on ${date}`);
+       |                                  ^
+    288|     return day;
+    289|   };
+ ❯ src/schedule/generate.test.ts:323:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/19]⎯
+
+ FAIL  src/schedule/generate.test.ts > a made day's instants across a clock change (T2; ADR-008) > Auckland's spring change, Kolkata's half hour and Cairo's change, each by the zone's own rules
+Error: no day on 2026-09-26
+ ❯ saturday src/schedule/generate.test.ts:287:34
+    285|     const week = version("ver_1", "2026-01-05", [["saturday", "nina", …
+    286|     const day = daysToMake(club({ zone, versions: [week] }), at(now)).…
+    287|     if (day === undefined) throw new Error(`no day on ${date}`);
+       |                                  ^
+    288|     return day;
+    289|   };
+ ❯ src/schedule/generate.test.ts:337:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/19]⎯
+

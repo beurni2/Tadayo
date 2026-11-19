@@ -1,0 +1,60 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/tests
+
+ ❯ src/db/worker-generation.test.ts (8 tests | 1 failed) 17526ms
+   ❯ a generation pass (spec 05, 34) (7)
+     × visits no further club once it is told to stop, and finishes the one it is on 141ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 7 passed (8)
+   Start at  06:11:17
+   Duration  17.92s (tests 99%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-generation.test.ts [ src/db/worker-generation.test.ts ]
+PostgresError: update or delete on table "occurrences" violates foreign key constraint "contribution_counters_occurrence_id_club_id_fkey" on table "contribution_counters"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ src/db/week-world.ts:211:15
+    209|     await admin.begin(async (tx) => {
+    210|       await tx`ALTER TABLE app.occurrences DISABLE TRIGGER occurrences…
+    211|       await tx`DELETE FROM app.occurrences`;
+       |               ^
+    212|       await tx`ALTER TABLE app.occurrences ENABLE TRIGGER occurrences_…
+    213|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-generation.test.ts > a generation pass (spec 05, 34) > visits no further club once it is told to stop, and finishes the one it is on
+AssertionError: expected { clubs: 2, made: 50, failures: [] } to deeply equal { clubs: 1, made: 25, failures: [] }
+
+- Expected
++ Received
+
+  {
+-   "clubs": 1,
++   "clubs": 2,
+    "failures": [],
+-   "made": 25,
++   "made": 50,
+  }
+
+ ❯ src/db/worker-generation.test.ts:136:20
+    134|     const stopping = () => (asked += 1) > 1;
+    135|     const result = await generationPass(worker, fakeClock(NOW), only(f…
+    136|     expect(result).toEqual({ clubs: 1, made: 25, failures: [] });
+       |                    ^
+    137|     expect(await count(first.club)).toBe(25);
+    138|     expect(await count(second.club)).toBe(0);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

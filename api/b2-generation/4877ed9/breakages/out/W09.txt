@@ -1,0 +1,170 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/tests
+
+ ❯ src/db/worker-generation.test.ts (8 tests | 7 failed) 81311ms
+   ❯ a generation pass (spec 05, 34) (7)
+     × goes on to the next club when one fails, and reports the failure by the error's class alone 149ms
+     × gives up on a club whose row stays held, names it by its id and Postgres's code, and makes the next club's days 30002ms
+     × gives up on a club when one statement of its run takes too long, with Postgres's code, and makes the next club's days 15262ms
+     × visits no further club once it is told to stop, and finishes the one it is on 158ms
+     × commits each club on its own: a club made before one that waits is already there 195ms
+     × visits every club with a week when it is given no list 5002ms
+   ❯ the worker's process (T1) (1)
+     × makes a club's days by the server's clock soon after it starts, says only how many, and stops cleanly 20274ms
+
+ Test Files  1 failed (1)
+      Tests  7 failed | 1 passed (8)
+   Start at  06:08:46
+   Duration  81.71s (tests 100%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-generation.test.ts [ src/db/worker-generation.test.ts ]
+Error: Hook timed out in 10000ms.
+If this is a long-running hook, pass a timeout value as the last argument or configure it globally with "hookTimeout".
+ ❯ src/db/worker-generation.test.ts:22:1
+     20|
+     21| const db = worldSql(6);
+     22| afterAll(async () => {
+       | ^
+     23|   await db.end();
+     24|   // The committed runs below leave days no rollback takes away.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-generation.test.ts > a generation pass (spec 05, 34) > goes on to the next club when one fails, and reports the failure by the error's class alone
+TypeError: schedule: the club is a club id
+ ❯ makeDays ../packages/domain/src/schedule/make-days.ts:98:61
+     96|  */
+     97| export async function makeDays(tx: QuerySql & ClockSql, clock: Clock, …
+     98|   if (typeof clubId !== "string" || !ID.test(clubId)) throw new TypeEr…
+       |                                                             ^
+     99|
+    100|   // 1. The club's row.
+ ❯ ../services/worker/src/generation.ts:67:21
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ generationPass ../services/worker/src/generation.ts:64:3
+ ❯ src/db/worker-generation.test.ts:64:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+
+ FAIL  src/db/worker-generation.test.ts > a generation pass (spec 05, 34) > gives up on a club whose row stays held, names it by its id and Postgres's code, and makes the next club's days
+Error: Test timed out in 30000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/db/worker-generation.test.ts:71:3
+     69|   });
+     70|
+     71|   it(
+       |   ^
+     72|     "gives up on a club whose row stays held, names it by its id and P…
+     73|     { timeout: 30_000 },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+
+ FAIL  src/db/worker-generation.test.ts > a generation pass (spec 05, 34) > gives up on a club when one statement of its run takes too long, with Postgres's code, and makes the next club's days
+AssertionError: expected { clubs: 2, made: 50, failures: [] } to deeply equal { clubs: 2, made: 25, …(1) }
+
+- Expected
++ Received
+
+  {
+    "clubs": 2,
+-   "failures": [
+-     "club_6Iwv4UkhgvL2WzYazysPyQ: PostgresError 57014",
+-   ],
+-   "made": 25,
++   "failures": [],
++   "made": 50,
+  }
+
+ ❯ src/db/worker-generation.test.ts:122:22
+    120|       const result = await generationPass(worker, clock, only(slow.clu…
+    121|       // 57014 is query_canceled: the statement limit ran out.
+    122|       expect(result).toEqual({ clubs: 2, made: 25, failures: [`${slow.…
+       |                      ^
+    123|       expect(performance.now() - began).toBeLessThan(STATEMENT_MS + 4_…
+    124|       expect(await count(slow.club)).toBe(0);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯
+
+ FAIL  src/db/worker-generation.test.ts > a generation pass (spec 05, 34) > visits no further club once it is told to stop, and finishes the one it is on
+AssertionError: expected { clubs: 2, made: 50, failures: [] } to deeply equal { clubs: 1, made: 25, failures: [] }
+
+- Expected
++ Received
+
+  {
+-   "clubs": 1,
++   "clubs": 2,
+    "failures": [],
+-   "made": 25,
++   "made": 50,
+  }
+
+ ❯ src/db/worker-generation.test.ts:136:20
+    134|     const stopping = () => (asked += 1) > 1;
+    135|     const result = await generationPass(worker, fakeClock(NOW), only(f…
+    136|     expect(result).toEqual({ clubs: 1, made: 25, failures: [] });
+       |                    ^
+    137|     expect(await count(first.club)).toBe(25);
+    138|     expect(await count(second.club)).toBe(0);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯
+
+ FAIL  src/db/worker-generation.test.ts > a generation pass (spec 05, 34) > commits each club on its own: a club made before one that waits is already there
+AssertionError: expected +0 to be 25 // Object.is equality
+
+- Expected
++ Received
+
+- 25
++ 0
+
+ ❯ src/db/worker-generation.test.ts:157:41
+    155|       try {
+    156|         await waitingOn(db, hold.pid);
+    157|         expect(await count(first.club)).toBe(25);
+       |                                         ^
+    158|         expect(await count(second.club)).toBe(0);
+    159|       } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯
+
+ FAIL  src/db/worker-generation.test.ts > a generation pass (spec 05, 34) > visits every club with a week when it is given no list
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/db/worker-generation.test.ts:167:3
+    165|   );
+    166|
+    167|   it("visits every club with a week when it is given no list", async (…
+       |   ^
+    168|     const mine = await db.begin((tx) => confirmedWeek(tx, 6, TIMES));
+    169|     const bare = await db.begin((tx) => clubOf(tx, 4));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/8]⎯
+
+ FAIL  src/db/worker-generation.test.ts > the worker's process (T1) > makes a club's days by the server's clock soon after it starts, says only how many, and stops cleanly
+AssertionError: expected 'worker: started, making days every mi…' to match /^worker: started, making days every m…/
+
+- Expected:
+/^worker: started, making days every minute\nworker: made \d+ days?\n$/
+
++ Received:
+"worker: started, making days every minute
+"
+
+ ❯ src/db/worker-generation.test.ts:213:32
+    211|           await new Promise((resolve) => setTimeout(resolve, 50));
+    212|         }
+    213|         expect(stdout, stderr).toMatch(/^worker: started, making days …
+       |                                ^
+    214|       } finally {
+    215|         child.kill("SIGTERM");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/8]⎯
+

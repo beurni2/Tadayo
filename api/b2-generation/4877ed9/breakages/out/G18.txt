@@ -1,0 +1,177 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/packages/domain
+
+ ❯ src/schedule/generate.test.ts (23 tests | 8 failed) 30ms
+   ❯ the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) (16)
+     × owes every assigned date from today to the window's end, in date order, and no Sunday 6ms
+     × owes, seen from Friday 6 November at 9:41 AM, every date to Saturday 5 December, where the contract's example ends 3ms
+     × takes today and the horizon from the club's zone, not from UTC 2ms
+     × owes nothing before a day's first date (FQ79) 1ms
+     × owes nothing to a club under two members, one not started, or a suspended one (FQ16; spec 04, 22) 2ms
+     × doesn't owe a date already made, whoever's it was 1ms
+     × gives a club of three its six days a week 1ms
+     × goes on across the year's end 1ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  8 failed | 23 passed (31)
+   Start at  06:02:14
+   Duration  258ms (transform 34%, tests 31%, import 27%, worker 8%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > owes every assigned date from today to the window's end, in date order, and no Sunday
+AssertionError: expected '2026-12-04' to be '2026-12-05' // Object.is equality
+
+Expected: "2026-12-05"
+Received: "2026-12-04"
+
+ ❯ src/schedule/generate.test.ts:65:25
+     63|     // Today's own 7 AM has passed, so the first is Saturday the 7th; …
+     64|     expect(owed[0]).toBe("2026-11-07");
+     65|     expect(owed.at(-1)).toBe("2026-12-05");
+       |                         ^
+     66|     expect(owed).toHaveLength(25);
+     67|     expect(owed).toEqual([...owed].sort());
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > owes, seen from Friday 6 November at 9:41 AM, every date to Saturday 5 December, where the contract's example ends
+AssertionError: expected [ '2026-11-07', '2026-11-09', …(22) ] to deeply equal [ '2026-11-07', '2026-11-09', …(23) ]
+
+- Expected
++ Received
+
+@@ -21,7 +21,6 @@
+    "2026-11-30",
+    "2026-12-01",
+    "2026-12-02",
+    "2026-12-03",
+    "2026-12-04",
+-   "2026-12-05",
+  ]
+
+ ❯ src/schedule/generate.test.ts:77:51
+     75|     // the day after the window's end. For a week of six days that spa…
+     76|     // hand; the example's own club has no Friday, and its 21 are belo…
+     77|     expect(dates(club(), "2026-11-06T14:41:00Z")).toEqual([
+       |                                                   ^
+     78|       "2026-11-07",
+     79|       "2026-11-09",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > takes today and the horizon from the club's zone, not from UTC
+AssertionError: expected '2026-12-04' to be '2026-12-05' // Object.is equality
+
+Expected: "2026-12-05"
+Received: "2026-12-04"
+
+ ❯ src/schedule/generate.test.ts:150:58
+    148|   it("takes today and the horizon from the club's zone, not from UTC",…
+    149|     // 04:30Z on Monday the 9th is still Sunday the 8th, 11:30 PM, in …
+    150|     expect(dates(club(), "2026-11-09T04:30:00Z").at(-1)).toBe("2026-12…
+       |                                                          ^
+    151|     // 05:00Z is Monday the 9th at midnight there: the window moves on…
+    152|     expect(dates(club(), "2026-11-09T05:00:00Z").at(-1)).toBe("2026-12…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > owes nothing before a day's first date (FQ79)
+AssertionError: expected [ '2026-11-07', '2026-11-12', …(6) ] to deeply equal [ '2026-11-07', '2026-11-12', …(7) ]
+
+- Expected
++ Received
+
+@@ -5,7 +5,6 @@
+    "2026-11-19",
+    "2026-11-21",
+    "2026-11-26",
+    "2026-11-28",
+    "2026-12-03",
+-   "2026-12-05",
+  ]
+
+ ❯ src/schedule/generate.test.ts:176:18
+    174|     ]);
+    175|     const owed = dates(club({ versions: [late] }), "2026-11-04T14:00:0…
+    176|     expect(owed).toEqual([
+       |                  ^
+    177|       "2026-11-07",
+    178|       "2026-11-12",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > owes nothing to a club under two members, one not started, or a suspended one (FQ16; spec 04, 22)
+AssertionError: expected [ '2026-11-07', '2026-11-09', …(22) ] to have a length of 25 but got 24
+
+- Expected
++ Received
+
+- 25
++ 24
+
+ ❯ src/schedule/generate.test.ts:212:52
+    210|   it("owes nothing to a club under two members, one not started, or a …
+    211|     expect(dates(club({ activeMembers: 1 }), NOW)).toEqual([]);
+    212|     expect(dates(club({ activeMembers: 2 }), NOW)).toHaveLength(25);
+       |                                                    ^
+    213|     expect(dates(club({ activated: false }), NOW)).toEqual([]);
+    214|     expect(dates(club({ suspended: true }), NOW)).toEqual([]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > doesn't owe a date already made, whoever's it was
+AssertionError: expected [ '2026-11-09', '2026-11-11', …(20) ] to have a length of 23 but got 22
+
+- Expected
++ Received
+
+- 23
++ 22
+
+ ❯ src/schedule/generate.test.ts:224:18
+    222|   it("doesn't owe a date already made, whoever's it was", () => {
+    223|     const owed = dates(club({ made: new Set(["2026-11-07", "2026-11-10…
+    224|     expect(owed).toHaveLength(23);
+       |                  ^
+    225|     expect(owed).not.toContain("2026-11-07");
+    226|     expect(owed).not.toContain("2026-11-10");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > gives a club of three its six days a week
+AssertionError: expected [ …(23) ] to have a length of 24 but got 23
+
+- Expected
++ Received
+
+- 24
++ 23
+
+ ❯ src/schedule/generate.test.ts:242:18
+    240|     const owed = daysToMake(club({ activeMembers: 3, versions: [three]…
+    241|     // Sunday the 8th: Monday the 9th to Saturday 5 December are four …
+    242|     expect(owed).toHaveLength(24);
+       |                  ^
+    243|     expect(owed.slice(0, 6).map((day) => day.starInterval)).toEqual(["…
+    244|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/8]⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > goes on across the year's end
+AssertionError: expected '2027-01-29' to be '2027-01-30' // Object.is equality
+
+Expected: "2027-01-30"
+Received: "2027-01-29"
+
+ ❯ src/schedule/generate.test.ts:303:25
+    301|     expect(owed).toContain("2026-12-31");
+    302|     expect(owed).toContain("2027-01-01");
+    303|     expect(owed.at(-1)).toBe("2027-01-30");
+       |                         ^
+    304|     expect(owed).toHaveLength(29);
+    305|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/8]⎯
+

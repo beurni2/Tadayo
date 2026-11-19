@@ -1,0 +1,13 @@
+diff --git a/services/worker/src/main.ts b/services/worker/src/main.ts
+index 56bfffa1..2e0b6754 100644
+--- a/services/worker/src/main.ts
++++ b/services/worker/src/main.ts
+@@ -22,7 +22,7 @@ try {
+   const { sql, clock } = await startWorker(process.env);
+   let stopping = false;
+   const stopped = new Promise<string>((resolve) => {
+-    for (const signal of ["SIGTERM", "SIGINT"] as const) {
++    for (const signal of ["SIGTERM"] as const) {
+       process.on(signal, () => {
+         stopping = true;
+         resolve(signal);

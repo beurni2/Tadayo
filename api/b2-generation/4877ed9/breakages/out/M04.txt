@@ -1,0 +1,58 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/tests
+
+ ❯ src/db/make-days.test.ts (15 tests | 13 failed) 1026ms
+   ❯ making a club's days (spec 05; FQ115) (12)
+     × makes each owed day once, for its star, under its version, with its instants, collecting from the sample 205ms
+     × makes nothing a second time, and only the new week when the club's Monday comes (spec 34) 88ms
+     × never makes a day at or after its 7 AM 86ms
+     × makes the days of the members who have confirmed while the others still choose (FQ55) 50ms
+     × gives a club of two its four days a week, two each 29ms
+     × makes no day for a member who has left, and goes on making everyone else's (FQ63) 73ms
+     × makes no day for a club left with one member (FQ16), and keeps the days it had 22ms
+     × makes no day for a suspended club (spec 22), and makes them again once it is lifted 76ms
+     × makes each date under the week in force on it, and a later week's days only from its start (FQ61) 80ms
+     × makes no day for a club that hasn't started, though its rows hold a week (spec 04) 13ms
+   ❯ runs at once, committed (spec 34; T1) (3)
+     × makes each day once when two runs meet, and each run counts only its own 63ms
+     × samples its clock only once it holds the club's row, and dates its days from that sample (T1; T3's order) 70ms
+     × waits for a confirmation in flight and reads the week only once it has the club's row: the day confirmed meanwhile is made too (FQ61) 87ms
+
+ Test Files  1 failed (1)
+      Tests  13 failed | 2 passed (15)
+   Start at  06:02:38
+   Duration  1.37s (tests 91%, import 5%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 13 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/make-days.test.ts > making a club's days (spec 05; FQ115) > makes each owed day once, for its star, under its version, with its instants, collecting from the sample
+ FAIL  src/db/make-days.test.ts > making a club's days (spec 05; FQ115) > makes nothing a second time, and only the new week when the club's Monday comes (spec 34)
+ FAIL  src/db/make-days.test.ts > making a club's days (spec 05; FQ115) > never makes a day at or after its 7 AM
+ FAIL  src/db/make-days.test.ts > making a club's days (spec 05; FQ115) > makes the days of the members who have confirmed while the others still choose (FQ55)
+ FAIL  src/db/make-days.test.ts > making a club's days (spec 05; FQ115) > gives a club of two its four days a week, two each
+ FAIL  src/db/make-days.test.ts > making a club's days (spec 05; FQ115) > makes no day for a member who has left, and goes on making everyone else's (FQ63)
+ FAIL  src/db/make-days.test.ts > making a club's days (spec 05; FQ115) > makes no day for a club left with one member (FQ16), and keeps the days it had
+ FAIL  src/db/make-days.test.ts > making a club's days (spec 05; FQ115) > makes no day for a suspended club (spec 22), and makes them again once it is lifted
+ FAIL  src/db/make-days.test.ts > making a club's days (spec 05; FQ115) > makes each date under the week in force on it, and a later week's days only from its start (FQ61)
+ FAIL  src/db/make-days.test.ts > making a club's days (spec 05; FQ115) > makes no day for a club that hasn't started, though its rows hold a week (spec 04)
+ FAIL  src/db/make-days.test.ts > runs at once, committed (spec 34; T1) > makes each day once when two runs meet, and each run counts only its own
+ FAIL  src/db/make-days.test.ts > runs at once, committed (spec 34; T1) > samples its clock only once it holds the club's row, and dates its days from that sample (T1; T3's order)
+ FAIL  src/db/make-days.test.ts > runs at once, committed (spec 34; T1) > waits for a confirmation in flight and reads the week only once it has the club's row: the day confirmed meanwhile is made too (FQ61)
+PostgresError: new row for relation "occurrences" violates check constraint "occurrences_check1"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ makeDays ../packages/domain/src/schedule/make-days.ts:145:37
+    143|   let made = 0;
+    144|   for (const day of daysToMake(facts, now)) {
+    145|     const inserted = await bound(tx)`
+       |                                     ^
+    146|       INSERT INTO app.occurrences
+    147|         (id, club_id, star_interval_id, schedule_version_id, local_dat…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/13]⎯
+

@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/members.ts b/packages/domain/src/clubs/members.ts
+index 27380487..8c936f5e 100644
+--- a/packages/domain/src/clubs/members.ts
++++ b/packages/domain/src/clubs/members.ts
+@@ -160,7 +160,7 @@ export async function listMembers(
+     .map(versionOf)
+     .filter((version) => version.effectiveFrom <= today)
+     .sort((a, b) => (a.effectiveFrom < b.effectiveFrom ? -1 : 1))
+-    .at(-1);
++    .at(0);
+   const order = rosterOrder({
+     joined: shown.map((member) => member.id),
+     firstDaysOpen,

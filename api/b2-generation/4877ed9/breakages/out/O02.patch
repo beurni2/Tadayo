@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/order.ts b/packages/domain/src/schedule/order.ts
+index f64e5f4c..f54087a0 100644
+--- a/packages/domain/src/schedule/order.ts
++++ b/packages/domain/src/schedule/order.ts
+@@ -32,7 +32,7 @@ export function rosterOrder(facts: OrderFacts): string[] {
+     const index = WEEKDAYS.indexOf(day.weekday);
+     if (index < 0) throw new RangeError(`schedule: ${day.weekday} can't be someone's day (T6)`);
+     const known = earliest.get(day.starInterval);
+-    if (known === undefined || index < known) earliest.set(day.starInterval, index);
++    if (known === undefined || index > known) earliest.set(day.starInterval, index);
+   }
+   // A stable sort: members with a day by their earliest weekday (no two share one), the rest after,
+   // kept in join order.

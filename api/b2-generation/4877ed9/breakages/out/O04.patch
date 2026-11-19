@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/schedule/order.ts b/packages/domain/src/schedule/order.ts
+index f64e5f4c..4019ac88 100644
+--- a/packages/domain/src/schedule/order.ts
++++ b/packages/domain/src/schedule/order.ts
+@@ -25,7 +25,6 @@ export interface OrderFacts {
+ /** The members' intervals in roster order: position 1 first. */
+ export function rosterOrder(facts: OrderFacts): string[] {
+   const joined = [...facts.joined];
+-  if (new Set(joined).size !== joined.length) throw new Error("schedule: a member is in the roster twice");
+   if (facts.firstDaysOpen || facts.inForce === null) return joined;
+   const earliest = new Map<string, number>();
+   for (const day of facts.inForce) {

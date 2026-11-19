@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/authorization/days.ts b/packages/domain/src/authorization/days.ts
+index 38ff0f57..08f19231 100644
+--- a/packages/domain/src/authorization/days.ts
++++ b/packages/domain/src/authorization/days.ts
+@@ -183,7 +183,7 @@ function bound<F>(sql: FragmentSql<F>): Bound<F> {
+  * day of that kind whose star is the outer statement's membership `sm`.
+  */
+ function oneDay<F>(sql: FragmentSql<F>, now: ServerNow, phase: ChosenPhase, ofMember = false): F {
+-  const whose = ofMember ? bound(sql)`o.star_interval_id = sm.interval_id` : bound(sql)`TRUE`;
++  const whose = ofMember ? bound(sql)`TRUE` : bound(sql)`TRUE`;
+   const when =
+     phase === "open"
+       ? bound(sql)`o.reveal_at <= ${now}::pg_catalog.timestamptz AND ${now}::pg_catalog.timestamptz < o.close_at`

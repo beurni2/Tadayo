@@ -1,0 +1,504 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/tests
+
+ ❯ src/db/members.test.ts (15 tests | 9 failed) 1539ms
+   ❯ the roster in a club's first days (the contract's first_days scene; FQ98, T49) (3)
+     × lists every member in the order they joined, the confirmed with their first date, the others with none 192ms
+   ❯ the roster once the week is in force (the contract's sunday_people scene; FQ26, FQ98) (8)
+     × is the contract's Friday: Debby's day is open, so Debby's next is the 13th, and Nina is next up 96ms
+     × orders the members by the week from Monday, not by when they joined 113ms
+     × places a member of a club of three by the earlier of their two days, with the earlier date next 64ms
+     × drops a member who has left from the list, keeps everyone else's position without a gap, and names no day of theirs as next 125ms
+     × skips a day an operator has suspended: the member's next is the one after it (T5, T9) 114ms
+     × has nobody next and no dates when no day has been made (T49: nothing is invented) 77ms
+     × lists a club with no week at all in the order its members joined 13ms
+   ❯ members who joined at one instant (FQ114) (1)
+     × lists them by their membership's id, in byte order, the same for every member and every time 19ms
+
+ Test Files  1 failed (1)
+      Tests  9 failed | 6 passed (15)
+   Start at  05:37:14
+   Duration  2.20s (tests 83%, import 13%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 9 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/members.test.ts > the roster in a club's first days (the contract's first_days scene; FQ98, T49) > lists every member in the order they joined, the confirmed with their first date, the others with none
+AssertionError: expected [ [ 'Ben', +0, null, false ], …(5) ] to deeply equal [ [ 'Ben', 1, null, false ], …(5) ]
+
+- Expected
++ Received
+
+  [
+    [
+      "Ben",
+-     1,
++     0,
+      null,
+      false,
+    ],
+    [
+      "Maya",
+-     2,
++     1,
+      "2026-11-10",
+      false,
+    ],
+    [
+      "Alex",
+-     3,
++     2,
+      "2026-11-11",
+      false,
+    ],
+    [
+      "Sam",
+-     4,
++     3,
+      "2026-11-12",
+      false,
+    ],
+    [
+      "Debby",
+-     5,
++     4,
+      null,
+      false,
+    ],
+    [
+      "Nina",
+-     6,
++     5,
+      "2026-11-07",
+      true,
+    ],
+  ]
+
+ ❯ src/db/members.test.ts:57:27
+     55|       await days(tx, w, "2026-11-04T14:01:00Z");
+     56|       const found = await roster(tx, w.users[0] ?? "", w.club, THURSDA…
+     57|       expect(rows(found)).toEqual([
+       |                           ^
+     58|         ["Ben", 1, null, false],
+     59|         ["Maya", 2, "2026-11-10", false],
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/members.test.ts:52:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/9]⎯
+
+ FAIL  src/db/members.test.ts > the roster once the week is in force (the contract's sunday_people scene; FQ26, FQ98) > is the contract's Friday: Debby's day is open, so Debby's next is the 13th, and Nina is next up
+AssertionError: expected [ …(6) ] to deeply equal [ …(6) ]
+
+- Expected
++ Received
+
+  [
+    [
+      "Ben",
+-     1,
++     0,
+      "2026-11-09",
+      false,
+    ],
+    [
+      "Maya",
+-     2,
++     1,
+      "2026-11-10",
+      false,
+    ],
+    [
+      "Alex",
+-     3,
++     2,
+      "2026-11-11",
+      false,
+    ],
+    [
+      "Sam",
+-     4,
++     3,
+      "2026-11-12",
+      false,
+    ],
+    [
+      "Debby",
+-     5,
++     4,
+      "2026-11-13",
+      false,
+    ],
+    [
+      "Nina",
+-     6,
++     5,
+      "2026-11-07",
+      true,
+    ],
+  ]
+
+ ❯ src/db/members.test.ts:124:27
+    122|       await days(tx, w, "2026-11-04T14:01:00Z");
+    123|       const found = await roster(tx, w.users[0] ?? "", w.club, FRIDAY);
+    124|       expect(rows(found)).toEqual([
+       |                           ^
+    125|         ["Ben", 1, "2026-11-09", false],
+    126|         ["Maya", 2, "2026-11-10", false],
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/members.test.ts:120:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/9]⎯
+
+ FAIL  src/db/members.test.ts > the roster once the week is in force (the contract's sunday_people scene; FQ26, FQ98) > orders the members by the week from Monday, not by when they joined
+AssertionError: expected [ …(6) ] to deeply equal [ …(6) ]
+
+- Expected
++ Received
+
+  [
+    [
+      "Nina",
+-     1,
++     0,
+      "2026-11-09",
+      false,
+    ],
+    [
+      "Maya",
+-     2,
++     1,
+      "2026-11-10",
+      false,
+    ],
+    [
+      "Alex",
+-     3,
++     2,
+      "2026-11-11",
+      false,
+    ],
+    [
+      "Sam",
+-     4,
++     3,
+      "2026-11-12",
+      false,
+    ],
+    [
+      "Debby",
+-     5,
++     4,
+      "2026-11-06",
+      true,
+    ],
+    [
+      "Ben",
+-     6,
++     5,
+      "2026-11-07",
+      false,
+    ],
+  ]
+
+ ❯ src/db/members.test.ts:157:74
+    155|       expect(await order()).toEqual(["Nina", "Maya", "Alex", "Sam", "D…
+    156|       await days(tx, w, "2026-11-04T14:01:00Z");
+    157|       expect(rows(await roster(tx, w.users[2] ?? "", w.club, THURSDAY)…
+       |                                                                          ^
+    158|         ["Nina", 1, "2026-11-09", false],
+    159|         ["Maya", 2, "2026-11-10", false],
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/members.test.ts:140:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/9]⎯
+
+ FAIL  src/db/members.test.ts > the roster once the week is in force (the contract's sunday_people scene; FQ26, FQ98) > places a member of a club of three by the earlier of their two days, with the earlier date next
+AssertionError: expected [ …(3) ] to deeply equal [ …(3) ]
+
+- Expected
++ Received
+
+  [
+    [
+      "Ben",
+-     1,
++     0,
+      "2026-11-09",
+      false,
+    ],
+    [
+      "Maya",
+-     2,
++     1,
+      "2026-11-10",
+      false,
+    ],
+    [
+      "Alex",
+-     3,
++     2,
+      "2026-11-07",
+      true,
+    ],
+  ]
+
+ ❯ src/db/members.test.ts:173:72
+    171|       await days(tx, w, "2026-11-04T14:01:00Z");
+    172|       // Ben has Monday and Thursday, Maya Tuesday and Friday, Alex We…
+    173|       expect(rows(await roster(tx, w.users[1] ?? "", w.club, FRIDAY)))…
+       |                                                                        ^
+    174|         ["Ben", 1, "2026-11-09", false],
+    175|         ["Maya", 2, "2026-11-10", false],
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/members.test.ts:169:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/9]⎯
+
+ FAIL  src/db/members.test.ts > the roster once the week is in force (the contract's sunday_people scene; FQ26, FQ98) > drops a member who has left from the list, keeps everyone else's position without a gap, and names no day of theirs as next
+AssertionError: expected [ …(5) ] to deeply equal [ …(5) ]
+
+- Expected
++ Received
+
+  [
+    [
+      "Ben",
+-     1,
++     0,
+      "2026-11-09",
+      true,
+    ],
+    [
+      "Maya",
+-     2,
++     1,
+      "2026-11-10",
+      false,
+    ],
+    [
+      "Alex",
+-     3,
++     2,
+      "2026-11-11",
+      false,
+    ],
+    [
+      "Sam",
+-     4,
++     3,
+      "2026-11-12",
+      false,
+    ],
+    [
+      "Debby",
+-     5,
++     4,
+      "2026-11-13",
+      false,
+    ],
+  ]
+
+ ❯ src/db/members.test.ts:192:72
+    190|         new Date("2026-11-06T01:00:00Z"),
+    191|       );
+    192|       expect(rows(await roster(tx, w.users[0] ?? "", w.club, FRIDAY)))…
+       |                                                                        ^
+    193|         ["Ben", 1, "2026-11-09", true],
+    194|         ["Maya", 2, "2026-11-10", false],
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/members.test.ts:182:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/9]⎯
+
+ FAIL  src/db/members.test.ts > the roster once the week is in force (the contract's sunday_people scene; FQ26, FQ98) > skips a day an operator has suspended: the member's next is the one after it (T5, T9)
+AssertionError: expected [ 'Nina', 5, '2026-11-14', false ] to deeply equal [ 'Nina', 6, '2026-11-14', false ]
+
+- Expected
++ Received
+
+  [
+    "Nina",
+-   6,
++   5,
+    "2026-11-14",
+    false,
+  ]
+
+ ❯ src/db/members.test.ts:210:24
+    208|       await tx`UPDATE app.occurrences SET status = 'suspended' WHERE c…
+    209|       const found = rows(await roster(tx, w.users[0] ?? "", w.club, FR…
+    210|       expect(found[5]).toEqual(["Nina", 6, "2026-11-14", false]);
+       |                        ^
+    211|       expect(found[0]).toEqual(["Ben", 1, "2026-11-09", true]);
+    212|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/members.test.ts:205:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/9]⎯
+
+ FAIL  src/db/members.test.ts > the roster once the week is in force (the contract's sunday_people scene; FQ26, FQ98) > has nobody next and no dates when no day has been made (T49: nothing is invented)
+AssertionError: expected [ [ 'Ben', +0, null, false ], …(5) ] to deeply equal [ [ 'Ben', 1, null, false ], …(5) ]
+
+- Expected
++ Received
+
+  [
+    [
+      "Ben",
+-     1,
++     0,
+      null,
+      false,
+    ],
+    [
+      "Maya",
+-     2,
++     1,
+      null,
+      false,
+    ],
+    [
+      "Alex",
+-     3,
++     2,
+      null,
+      false,
+    ],
+    [
+      "Sam",
+-     4,
++     3,
+      null,
+      false,
+    ],
+    [
+      "Debby",
+-     5,
++     4,
+      null,
+      false,
+    ],
+    [
+      "Nina",
+-     6,
++     5,
+      null,
+      false,
+    ],
+  ]
+
+ ❯ src/db/members.test.ts:245:72
+    243|     await rolledBack(db, async (tx) => {
+    244|       const w = await confirmedWeek(tx, 6, TIMES);
+    245|       expect(rows(await roster(tx, w.users[0] ?? "", w.club, FRIDAY)))…
+       |                                                                        ^
+    246|         ["Ben", 1, null, false],
+    247|         ["Maya", 2, null, false],
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/members.test.ts:243:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/9]⎯
+
+ FAIL  src/db/members.test.ts > the roster once the week is in force (the contract's sunday_people scene; FQ26, FQ98) > lists a club with no week at all in the order its members joined
+AssertionError: expected [ [ 'Ben', +0, null, false ], …(3) ] to deeply equal [ [ 'Ben', 1, null, false ], …(3) ]
+
+- Expected
++ Received
+
+  [
+    [
+      "Ben",
+-     1,
++     0,
+      null,
+      false,
+    ],
+    [
+      "Maya",
+-     2,
++     1,
+      null,
+      false,
+    ],
+    [
+      "Alex",
+-     3,
++     2,
+      null,
+      false,
+    ],
+    [
+      "Sam",
+-     4,
++     3,
+      null,
+      false,
+    ],
+  ]
+
+ ❯ src/db/members.test.ts:259:78
+    257|     await rolledBack(db, async (tx) => {
+    258|       const bare = await clubOf(tx, 4);
+    259|       expect(rows(await roster(tx, bare.users[3] ?? "", bare.club, FRI…
+       |                                                                              ^
+    260|         ["Ben", 1, null, false],
+    261|         ["Maya", 2, null, false],
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/members.test.ts:257:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/9]⎯
+
+ FAIL  src/db/members.test.ts > members who joined at one instant (FQ114) > lists them by their membership's id, in byte order, the same for every member and every time
+AssertionError: expected [ +0, 1, 2, 3, 4 ] to deeply equal [ 1, 2, 3, 4, 5 ]
+
+- Expected
++ Received
+
+  [
++   0,
+    1,
+    2,
+    3,
+    4,
+-   5,
+  ]
+
+ ❯ src/db/members.test.ts:299:65
+    297|         const found = await roster(tx, user, club, FRIDAY);
+    298|         expect(found?.members.map((member) => member.person.membership…
+    299|         expect(found?.members.map((member) => member.position)).toEqua…
+       |                                                                 ^
+    300|       }
+    301|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/members.test.ts:271:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/9]⎯
+

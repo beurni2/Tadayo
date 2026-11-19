@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/packages/domain
+
+ ❯ src/schedule/order.test.ts (8 tests | 1 failed) 15ms
+   ❯ the roster's order (spec 09; FQ26, FQ98, FQ114) (8)
+     × places a member with two days by the earlier (FQ26) 8ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 30 passed (31)
+   Start at  06:02:27
+   Duration  183ms (tests 47%, import 25%, transform 19%, worker 8%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/order.test.ts > the roster's order (spec 09; FQ26, FQ98, FQ114) > places a member with two days by the earlier (FQ26)
+AssertionError: expected [ 'debby', 'ben' ] to deeply equal [ 'ben', 'debby' ]
+
+- Expected
++ Received
+
+  [
+-   "ben",
+    "debby",
++   "ben",
+  ]
+
+ ❯ src/schedule/order.test.ts:64:93
+     62|     // By the earlier day, not the later: Ben's Monday is before Debby…
+     63|     const apart = days(["monday", "ben"], ["tuesday", "debby"], ["wedn…
+     64|     expect(rosterOrder({ joined: ["debby", "ben"], firstDaysOpen: fals…
+       |                                                                                             ^
+     65|     expect(rosterOrder({ joined: ["debby", "ben"], firstDaysOpen: fals…
+     66|       "ben",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

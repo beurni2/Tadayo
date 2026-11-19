@@ -1,0 +1,72 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/packages/domain
+
+ ❯ src/schedule/generate.test.ts (23 tests | 2 failed) 46ms
+   ❯ the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) (16)
+     × makes each date under the version in force on it: the latest that started on or before it (FQ61) 8ms
+     × finds the version in force among three given in any order (FQ61) 3ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  2 failed | 29 passed (31)
+   Start at  05:35:59
+   Duration  255ms (transform 37%, tests 36%, import 21%, worker 6%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > makes each date under the version in force on it: the latest that started on or before it (FQ61)
+AssertionError: expected Set{} to deeply equal Set{ 'ver_1' }
+
+- Expected
++ Received
+
+- Set {
+-   "ver_1",
+- }
++ Set {}
+
+ ❯ src/schedule/generate.test.ts:223:57
+    221|     const before = owed.filter((day) => day.localDate < "2026-11-16");
+    222|     const after = owed.filter((day) => day.localDate >= "2026-11-16");
+    223|     expect(new Set(before.map((day) => day.versionId))).toEqual(new Se…
+       |                                                         ^
+    224|     expect(before.map((day) => day.localDate)).toEqual([
+    225|       "2026-11-07",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > finds the version in force among three given in any order (FQ61)
+AssertionError: expected [ [ '2026-12-01', 'ver_3' ] ] to deeply equal [ [ '2026-11-09', 'ver_1' ], …(3) ]
+
+- Expected
++ Received
+
+  [
+    [
+-     "2026-11-09",
+-     "ver_1",
+-   ],
+-   [
+-     "2026-11-16",
+-     "ver_2",
+-   ],
+-   [
+-     "2026-11-23",
+-     "ver_2",
+-   ],
+-   [
+      "2026-12-01",
+      "ver_3",
+    ],
+  ]
+
+ ❯ src/schedule/generate.test.ts:261:65
+    259|     ]) {
+    260|       const owed = daysToMake(club({ versions }), at(NOW));
+    261|       expect(owed.map((day) => [day.localDate, day.versionId])).toEqua…
+       |                                                                 ^
+    262|     }
+    263|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

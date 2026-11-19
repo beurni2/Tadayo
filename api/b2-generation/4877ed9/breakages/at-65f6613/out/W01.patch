@@ -1,0 +1,13 @@
+diff --git a/services/worker/src/loop.ts b/services/worker/src/loop.ts
+index 7dc53622..a3e6dbff 100644
+--- a/services/worker/src/loop.ts
++++ b/services/worker/src/loop.ts
+@@ -42,7 +42,7 @@ export async function runLoop(loop: Loop): Promise<void> {
+     const tick = new Promise<void>((resolve) => {
+       timer = setTimeout(resolve, loop.everyMs);
+     });
+-    await Promise.race([tick, stop]);
++    await tick;
+     clearTimeout(timer);
+   }
+ }

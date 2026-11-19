@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/generate.ts b/packages/domain/src/schedule/generate.ts
+index 0120086a..a82694da 100644
+--- a/packages/domain/src/schedule/generate.ts
++++ b/packages/domain/src/schedule/generate.ts
+@@ -78,7 +78,7 @@ export interface OwedDay {
+ 
+ /** The days the club is owed at `now`, in date order. */
+ export function daysToMake(facts: GenerationFacts, now: Temporal.Instant): OwedDay[] {
+-  const zone = clubTimeZone(facts.zone);
++  const zone = facts.zone;
+   // A fact that is missing makes no day: `!(n >= 2)` is true of a number that isn't one.
+   if (!facts.activated || facts.suspended || !(facts.activeMembers >= 2)) return [];
+   // ISO dates compare as text.

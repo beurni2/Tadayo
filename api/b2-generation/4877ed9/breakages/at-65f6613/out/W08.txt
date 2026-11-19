@@ -1,0 +1,72 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/tests
+
+ ❯ src/db/worker-generation.test.ts (7 tests | 2 failed) 10040ms
+   ❯ a generation pass (spec 05, 34) (6)
+     × goes on to the next club when one fails, and reports the failure by the error's class alone 133ms
+     × gives up on a club whose row stays held, names it by its id and Postgres's code, and makes the next club's days 5122ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 5 passed (7)
+   Start at  05:42:18
+   Duration  10.44s (tests 99%, transform 1%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-generation.test.ts [ src/db/worker-generation.test.ts ]
+PostgresError: update or delete on table "occurrences" violates foreign key constraint "contribution_counters_occurrence_id_club_id_fkey" on table "contribution_counters"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ src/db/week-world.ts:211:15
+    209|     await admin.begin(async (tx) => {
+    210|       await tx`ALTER TABLE app.occurrences DISABLE TRIGGER occurrences…
+    211|       await tx`DELETE FROM app.occurrences`;
+       |               ^
+    212|       await tx`ALTER TABLE app.occurrences ENABLE TRIGGER occurrences_…
+    213|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-generation.test.ts > a generation pass (spec 05, 34) > goes on to the next club when one fails, and reports the failure by the error's class alone
+TypeError: schedule: the club is a club id
+ ❯ makeDays ../packages/domain/src/schedule/make-days.ts:98:61
+     96|  */
+     97| export async function makeDays(tx: QuerySql & ClockSql, clock: Clock, …
+     98|   if (typeof clubId !== "string" || !ID.test(clubId)) throw new TypeEr…
+       |                                                             ^
+     99|
+    100|   // 1. The club's row.
+ ❯ ../services/worker/src/generation.ts:68:16
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ generationPass ../services/worker/src/generation.ts:64:15
+ ❯ src/db/worker-generation.test.ts:64:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/db/worker-generation.test.ts > a generation pass (spec 05, 34) > gives up on a club whose row stays held, names it by its id and Postgres's code, and makes the next club's days
+PostgresError: canceling statement due to lock timeout
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ makeDays ../packages/domain/src/schedule/make-days.ts:101:33
+     99|
+    100|   // 1. The club's row.
+    101|   const [club] = await bound(tx)`SELECT timezone FROM app.clubs WHERE …
+       |                                 ^
+    102|   if (club === undefined) return 0;
+    103|   const zone = clubTimeZone(text(club["timezone"]));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

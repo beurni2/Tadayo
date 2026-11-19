@@ -1,0 +1,47 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/tests
+
+ ❯ src/db/members.test.ts (15 tests | 1 failed) 1380ms
+   ❯ members who joined at one instant (FQ114) (1)
+     × lists them by their membership's id, in byte order, the same for every member and every time 18ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 passed (15)
+   Start at  05:37:27
+   Duration  1.98s (tests 81%, import 13%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/members.test.ts > members who joined at one instant (FQ114) > lists them by their membership's id, in byte order, the same for every member and every time
+AssertionError: expected [ 'mem_-zbmIGQDQRrw0Ppa-ChwzA', …(4) ] to deeply equal [ 'mem_-zbmIGQDQRrw0Ppa-ChwzA', …(4) ]
+
+- Expected
++ Received
+
+  [
+    "mem_-zbmIGQDQRrw0Ppa-ChwzA",
+-   "mem_9hMidv5LdQHCIYCU6v6FTg",
+-   "mem_D4vpmP5KIF0mGMpdiKURcw",
+-   "mem_EjjptTW8TG3QA_XFaQCJKA",
+    "mem_lKh8axjo0bIa9XMOqLrzgw",
++   "mem_EjjptTW8TG3QA_XFaQCJKA",
++   "mem_D4vpmP5KIF0mGMpdiKURcw",
++   "mem_9hMidv5LdQHCIYCU6v6FTg",
+  ]
+
+ ❯ src/db/members.test.ts:298:76
+    296|       for (const user of [ben, ...users]) {
+    297|         const found = await roster(tx, user, club, FRIDAY);
+    298|         expect(found?.members.map((member) => member.person.membership…
+       |                                                                            ^
+    299|         expect(found?.members.map((member) => member.position)).toEqua…
+    300|       }
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/members.test.ts:271:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

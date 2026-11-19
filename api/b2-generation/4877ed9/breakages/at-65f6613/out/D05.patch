@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/authorization/days.ts b/packages/domain/src/authorization/days.ts
+index 38ff0f57..e41d9f63 100644
+--- a/packages/domain/src/authorization/days.ts
++++ b/packages/domain/src/authorization/days.ts
+@@ -230,7 +230,7 @@ export function nextDaysByStar<F>(sql: FragmentSql<F>, viewer: string, now: Serv
+      WHERE c.suspended_at IS NULL
+        AND EXISTS (SELECT FROM app.memberships m JOIN app.users u ON u.id = m.user_id
+                     WHERE m.club_id = c.id AND m.user_id = ${viewer}::pg_catalog.text
+-                      AND m.state = 'active' AND u.state = 'active')`;
++                      AND u.state = 'active')`;
+ }
+ 
+ /**

@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/make-days.ts b/packages/domain/src/schedule/make-days.ts
+index 4abbba73..60825bf9 100644
+--- a/packages/domain/src/schedule/make-days.ts
++++ b/packages/domain/src/schedule/make-days.ts
+@@ -110,7 +110,7 @@ export async function makeDays(tx: QuerySql & ClockSql, clock: Clock, clubId: st
+   const [row] = await bound(tx)`
+     SELECT c.activated_at IS NOT NULL AS activated, c.suspended_at IS NOT NULL AS suspended,
+            (SELECT pg_catalog.count(*)::pg_catalog.int4 FROM app.memberships m
+-             WHERE m.club_id = c.id AND m.state = 'active') AS active_members,
++             WHERE m.club_id = c.id) AS active_members,
+            (SELECT coalesce(pg_catalog.jsonb_agg(pg_catalog.jsonb_build_object(
+                      'id', v.id, 'effective_from', v.effective_from,
+                      'assignments',

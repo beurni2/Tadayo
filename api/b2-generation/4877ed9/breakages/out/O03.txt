@@ -1,0 +1,40 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/packages/domain
+
+ ❯ src/schedule/order.test.ts (8 tests | 1 failed) 13ms
+   ❯ the roster's order (spec 09; FQ26, FQ98, FQ114) (8)
+     × puts anyone with no day in force last, in the order they joined 7ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 30 passed (31)
+   Start at  06:02:28
+   Duration  193ms (tests 49%, import 23%, transform 21%, worker 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/order.test.ts > the roster's order (spec 09; FQ26, FQ98, FQ114) > puts anyone with no day in force last, in the order they joined
+AssertionError: expected [ 'leila', 'omar', 'sam', 'alex' ] to deeply equal [ 'sam', 'alex', 'leila', 'omar' ]
+
+- Expected
++ Received
+
+  [
+-   "sam",
+-   "alex",
+    "leila",
+    "omar",
++   "sam",
++   "alex",
+  ]
+
+ ❯ src/schedule/order.test.ts:74:32
+     72|     const week = days(["wednesday", "alex"], ["monday", "sam"]);
+     73|     const facts: OrderFacts = { joined: ["leila", "alex", "omar", "sam…
+     74|     expect(rosterOrder(facts)).toEqual(["sam", "alex", "leila", "omar"…
+       |                                ^
+     75|   });
+     76|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

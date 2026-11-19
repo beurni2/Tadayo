@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/generate.ts b/packages/domain/src/schedule/generate.ts
+index 0120086a..b3d72b11 100644
+--- a/packages/domain/src/schedule/generate.ts
++++ b/packages/domain/src/schedule/generate.ts
+@@ -82,7 +82,7 @@ export function daysToMake(facts: GenerationFacts, now: Temporal.Instant): OwedD
+   // A fact that is missing makes no day: `!(n >= 2)` is true of a number that isn't one.
+   if (!facts.activated || facts.suspended || !(facts.activeMembers >= 2)) return [];
+   // ISO dates compare as text.
+-  const versions = [...facts.versions].sort((a, b) => (a.effectiveFrom < b.effectiveFrom ? -1 : 1));
++  const versions = [...facts.versions].sort((a, b) => (a.effectiveFrom < b.effectiveFrom ? 1 : -1));
+   const today = now.toZonedDateTimeISO(zone).toPlainDate();
+   const owed: OwedDay[] = [];
+   const last = windowEnd(today);

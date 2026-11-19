@@ -1,0 +1,60 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/packages/domain
+
+ ❯ src/schedule/generate.test.ts (23 tests | 1 failed) 41ms
+   ❯ the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) (16)
+     × owes nothing to a club under two members, one not started, or a suspended one (FQ16; spec 04, 22) 9ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 30 passed (31)
+   Start at  06:02:18
+   Duration  210ms (tests 38%, transform 35%, import 22%, worker 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > owes nothing to a club under two members, one not started, or a suspended one (FQ16; spec 04, 22)
+AssertionError: expected [ '2026-11-07', '2026-11-09', …(23) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "2026-11-07",
++   "2026-11-09",
++   "2026-11-10",
++   "2026-11-11",
++   "2026-11-12",
++   "2026-11-13",
++   "2026-11-14",
++   "2026-11-16",
++   "2026-11-17",
++   "2026-11-18",
++   "2026-11-19",
++   "2026-11-20",
++   "2026-11-21",
++   "2026-11-23",
++   "2026-11-24",
++   "2026-11-25",
++   "2026-11-26",
++   "2026-11-27",
++   "2026-11-28",
++   "2026-11-30",
++   "2026-12-01",
++   "2026-12-02",
++   "2026-12-03",
++   "2026-12-04",
++   "2026-12-05",
++ ]
+
+ ❯ src/schedule/generate.test.ts:211:52
+    209|
+    210|   it("owes nothing to a club under two members, one not started, or a …
+    211|     expect(dates(club({ activeMembers: 1 }), NOW)).toEqual([]);
+       |                                                    ^
+    212|     expect(dates(club({ activeMembers: 2 }), NOW)).toHaveLength(25);
+    213|     expect(dates(club({ activated: false }), NOW)).toEqual([]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

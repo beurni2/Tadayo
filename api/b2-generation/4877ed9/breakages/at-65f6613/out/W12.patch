@@ -1,0 +1,21 @@
+diff --git a/services/worker/src/main.ts b/services/worker/src/main.ts
+index 56bfffa1..f8df98a6 100644
+--- a/services/worker/src/main.ts
++++ b/services/worker/src/main.ts
+@@ -21,6 +21,8 @@ const PASS_EVERY_MS = 60_000;
+ try {
+   const { sql, clock } = await startWorker(process.env);
+   let stopping = false;
++  process.stdout.write("worker: started, making days every minute\n");
++  await new Promise((resolve) => setTimeout(resolve, 300));
+   const stopped = new Promise<string>((resolve) => {
+     for (const signal of ["SIGTERM", "SIGINT"] as const) {
+       process.on(signal, () => {
+@@ -29,7 +31,6 @@ try {
+       });
+     }
+   });
+-  process.stdout.write("worker: started, making days every minute\n");
+   await runLoop({
+     pass: async () => {
+       const lines = passLines(await generationPass(sql, clock, undefined, () => stopping));

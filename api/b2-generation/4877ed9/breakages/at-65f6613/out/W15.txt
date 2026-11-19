@@ -1,0 +1,77 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/tests
+
+ ❯ src/db/worker-generation.test.ts (7 tests | 2 failed) 26499ms
+   ❯ a generation pass (spec 05, 34) (6)
+     × visits every club with a week when it is given no list 80ms
+   ❯ the worker's process (T1) (1)
+     × makes a club's days by the server's clock soon after it starts, says only how many, and stops cleanly 20201ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 5 passed (7)
+   Start at  05:44:18
+   Duration  26.88s (tests 100%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-generation.test.ts [ src/db/worker-generation.test.ts ]
+PostgresError: update or delete on table "occurrences" violates foreign key constraint "contribution_counters_occurrence_id_club_id_fkey" on table "contribution_counters"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ src/db/week-world.ts:211:15
+    209|     await admin.begin(async (tx) => {
+    210|       await tx`ALTER TABLE app.occurrences DISABLE TRIGGER occurrences…
+    211|       await tx`DELETE FROM app.occurrences`;
+       |               ^
+    212|       await tx`ALTER TABLE app.occurrences ENABLE TRIGGER occurrences_…
+    213|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-generation.test.ts > a generation pass (spec 05, 34) > visits every club with a week when it is given no list
+AssertionError: expected +0 to be 251 // Object.is equality
+
+- Expected
++ Received
+
+- 251
++ 0
+
+ ❯ src/db/worker-generation.test.ts:146:26
+    144|     // The pass with no list, as the worker runs it: every listed club…
+    145|     const result = await generationPass(worker, fakeClock(NOW));
+    146|     expect(result.clubs).toBe(listed.length);
+       |                          ^
+    147|     expect(result.failures).toEqual([]);
+    148|     expect(await count(mine.club)).toBe(25);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/db/worker-generation.test.ts > the worker's process (T1) > makes a club's days by the server's clock soon after it starts, says only how many, and stops cleanly
+AssertionError: expected 'worker: started, making days every mi…' to match /^worker: started, making days every m…/
+
+- Expected:
+/^worker: started, making days every minute\nworker: made \d+ days?\n$/
+
++ Received:
+"worker: started, making days every minute
+"
+
+ ❯ src/db/worker-generation.test.ts:184:32
+    182|           await new Promise((resolve) => setTimeout(resolve, 50));
+    183|         }
+    184|         expect(stdout, stderr).toMatch(/^worker: started, making days …
+       |                                ^
+    185|       } finally {
+    186|         child.kill("SIGTERM");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

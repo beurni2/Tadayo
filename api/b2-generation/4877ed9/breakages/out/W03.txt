@@ -1,0 +1,28 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/services/worker
+
+ ❯ src/loop.test.ts (8 tests | 1 failed) 5353ms
+   ❯ the worker's loop (spec 34) (8)
+     × refuses a wait that isn't positive, which would spin 5003ms
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 19 passed (20)
+   Start at  06:08:07
+   Duration  5.51s (tests 97%, import 1%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/loop.test.ts > the worker's loop (spec 34) > refuses a wait that isn't positive, which would spin
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/loop.test.ts:157:3
+    155|   });
+    156|
+    157|   it("refuses a wait that isn't positive, which would spin", async () …
+       |   ^
+    158|     const options = { pass: () => Promise.resolve(), stopped: new Prom…
+    159|     await expect(runLoop({ ...options, everyMs: 0 })).rejects.toThrow(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

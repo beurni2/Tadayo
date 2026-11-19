@@ -1,0 +1,21 @@
+diff --git a/packages/domain/src/schedule/make-days.ts b/packages/domain/src/schedule/make-days.ts
+index 4abbba73..a218ebcf 100644
+--- a/packages/domain/src/schedule/make-days.ts
++++ b/packages/domain/src/schedule/make-days.ts
+@@ -136,7 +136,7 @@ export async function makeDays(tx: QuerySql & ClockSql, clock: Clock, clubId: st
+     suspended: flag(row["suspended"]),
+     activeMembers: members,
+     versions: list(row["versions"]).map(versionOf),
+-    made: new Set(list(row["made"]).map(date)),
++    made: new Set(),
+   };
+ 
+   // 4. The days.
+@@ -148,7 +148,6 @@ export async function makeDays(tx: QuerySql & ClockSql, clock: Clock, clubId: st
+       VALUES (${newId("occ")}, ${clubId}, ${day.starInterval}, ${day.versionId}, ${day.localDate}::pg_catalog.date,
+               ${day.revealAt}::pg_catalog.timestamptz, ${day.closeAt}::pg_catalog.timestamptz,
+               ${now}::pg_catalog.timestamptz)
+-      ON CONFLICT (club_id, local_date) DO NOTHING
+       RETURNING id`;
+     made += inserted.length;
+   }

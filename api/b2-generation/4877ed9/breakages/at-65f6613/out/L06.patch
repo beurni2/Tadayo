@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/members.ts b/packages/domain/src/clubs/members.ts
+index 27380487..4bafceec 100644
+--- a/packages/domain/src/clubs/members.ts
++++ b/packages/domain/src/clubs/members.ts
+@@ -120,7 +120,7 @@ export async function listMembers(
+              WHERE s.club_id = c.id AND s.state = 'active') AS members,
+            h.next_day AS club_next,
+            EXISTS (SELECT FROM app.schedule_proposals p
+-                    WHERE p.club_id = c.id AND p.reason = 'activation' AND p.state = 'open') AS first_days_open,
++                    WHERE p.club_id = c.id AND p.reason = 'activation' AND p.state = 'applied') AS first_days_open,
+            (SELECT coalesce(pg_catalog.jsonb_agg(pg_catalog.jsonb_build_object(
+                      'effective_from', v.effective_from,
+                      'days',

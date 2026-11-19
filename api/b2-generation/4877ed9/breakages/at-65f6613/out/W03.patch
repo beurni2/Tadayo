@@ -1,0 +1,13 @@
+diff --git a/services/worker/src/loop.ts b/services/worker/src/loop.ts
+index 7dc53622..ac276c13 100644
+--- a/services/worker/src/loop.ts
++++ b/services/worker/src/loop.ts
+@@ -23,7 +23,7 @@ export interface Loop {
+ 
+ /** Runs passes until `stopped` settles; resolves once the last pass has finished. */
+ export async function runLoop(loop: Loop): Promise<void> {
+-  if (!Number.isFinite(loop.everyMs) || loop.everyMs <= 0) throw new RangeError("worker: the loop's wait is positive");
++  if (!Number.isFinite(loop.everyMs)) throw new RangeError("worker: the loop's wait is positive");
+   let told = false;
+   const stopNow = () => {
+     told = true;

@@ -1,0 +1,69 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/tests
+
+ ❯ src/db/members.test.ts (15 tests | 2 failed) 1666ms
+   ❯ the roster once the week is in force (the contract's sunday_people scene; FQ26, FQ98) (8)
+     × drops a member who has left from the list, keeps everyone else's position without a gap, and names no day of theirs as next 186ms
+   ❯ who gets the roster (T14) (3)
+     × gives nothing to a member who left, and the whole roster again once that person rejoins, on the new membership 106ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 13 passed (15)
+   Start at  05:37:09
+   Duration  2.32s (tests 85%, import 10%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/members.test.ts > the roster once the week is in force (the contract's sunday_people scene; FQ26, FQ98) > drops a member who has left from the list, keeps everyone else's position without a gap, and names no day of theirs as next
+AssertionError: expected [ …(6) ] to deeply equal [ …(5) ]
+
+- Expected
++ Received
+
+@@ -27,6 +27,12 @@
+      "Debby",
+      5,
+      "2026-11-13",
+      false,
+    ],
++   [
++     "Nina",
++     6,
++     null,
++     false,
++   ],
+  ]
+
+ ❯ src/db/members.test.ts:192:72
+    190|         new Date("2026-11-06T01:00:00Z"),
+    191|       );
+    192|       expect(rows(await roster(tx, w.users[0] ?? "", w.club, FRIDAY)))…
+       |                                                                        ^
+    193|         ["Ben", 1, "2026-11-09", true],
+    194|         ["Maya", 2, "2026-11-10", false],
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/members.test.ts:182:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/members.test.ts > who gets the roster (T14) > gives nothing to a member who left, and the whole roster again once that person rejoins, on the new membership
+AssertionError: expected [ 'mem_XTYDhuUK7YUX5LV-_7XE9w', …(6) ] to not include 'mem_j4RH9EZDqgSyY1GwR4Dv1A'
+ ❯ src/db/members.test.ts:323:23
+    321|       // The old membership isn't in the list; the new one is, once, w…
+    322|       const ids = found?.members.map((member) => member.person.members…
+    323|       expect(ids).not.toContain(nina.interval);
+       |                       ^
+    324|       expect(ids.filter((id) => id === again)).toHaveLength(1);
+    325|       expect(found?.members.find((member) => member.person.membershipI…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/members.test.ts:307:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

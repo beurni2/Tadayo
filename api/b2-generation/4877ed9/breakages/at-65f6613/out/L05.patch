@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/members.ts b/packages/domain/src/clubs/members.ts
+index 27380487..42316c4b 100644
+--- a/packages/domain/src/clubs/members.ts
++++ b/packages/domain/src/clubs/members.ts
+@@ -112,7 +112,7 @@ export async function listMembers(
+     SELECT c.id, c.name, c.timezone, am.interval_id AS membership_id,
+            (SELECT coalesce(pg_catalog.jsonb_agg(pg_catalog.jsonb_build_object(
+                      'person', ${person(sql)}, 'next_day', nd.next_day)
+-                     ORDER BY s.joined_at, s.interval_id COLLATE "C"), '[]'::pg_catalog.jsonb)
++                     ORDER BY s.interval_id COLLATE "C"), '[]'::pg_catalog.jsonb)
+               FROM app.memberships s
+               JOIN app.users su ON su.id = s.user_id
+               LEFT JOIN (${nextDaysByStar(sql, userId, now)}) nd

@@ -1,0 +1,31 @@
+diff --git a/services/worker/src/generation.ts b/services/worker/src/generation.ts
+index 6ce9a37b..20b5506e 100644
+--- a/services/worker/src/generation.ts
++++ b/services/worker/src/generation.ts
+@@ -61,21 +61,12 @@ export async function generationPass(
+   let visited = 0;
+   let made = 0;
+   const failures: string[] = [];
+-  for (const id of ids) {
+-    if (stopping()) break;
+-    visited += 1;
+-    try {
+-      made += await sql.begin(async (tx) => {
+-        await tx`
+-          SELECT pg_catalog.set_config('lock_timeout', ${`${String(LOCK_WAIT_MS)}ms`}, true),
+-                 pg_catalog.set_config('statement_timeout', ${`${String(STATEMENT_MS)}ms`}, true)`;
+-        return makeDays(tx, clock, id);
+-      });
+-    } catch (error) {
+-      // An id is the work list's, from the database; anything else isn't repeated.
+-      failures.push(`${ID.test(id) ? id : "a club with no id"}: ${describeFailure(error)}`);
++  await sql.begin(async (tx) => {
++    for (const id of ids) {
++      visited += 1;
++      made += await makeDays(tx, clock, id);
+     }
+-  }
++  });
+   return { clubs: visited, made, failures };
+ }
+ 

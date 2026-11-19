@@ -1,0 +1,176 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/tests
+
+ ❯ src/db/make-days.test.ts (15 tests | 1 failed) 2253ms
+   ❯ making a club's days (spec 05; FQ115) (12)
+     × lists the clubs that have a week, in id order, and no club without one 78ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 passed (15)
+   Start at  05:36:32
+   Duration  2.63s (tests 96%, import 2%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/make-days.test.ts > making a club's days (spec 05; FQ115) > lists the clubs that have a week, in id order, and no club without one
+AssertionError: expected [ Array(69) ] to deeply equal [ Array(69) ]
+
+- Expected
++ Received
+
+  [
+-   "club_-9fgm1aZWDDFd4B79RatNg",
+-   "club_3TIqEEwXAHoZh04-rm0LuA",
+-   "club_3k92KFAo_4dwjhG0A5aHPg",
+-   "club_7KHnITt7RtAjnNdkcOXzPQ",
+-   "club_9KgKCbAyltCXHNyYvRe3Gg",
+-   "club_9MRUt0UIU52zV_Rf-TOTWw",
+-   "club_AcipMKNuwZYmHLP22Vzhdg",
+-   "club_Av6PnPwDcIqUf4JE-cmvHw",
+-   "club_CC1v_q_k6bpYofUXC6aKog",
+-   "club_GWFE65sKAmGRTGcjFCICBg",
+-   "club_GjtVzts18BcS6OIc6QxNwA",
+-   "club_HpRLMIUadJDFH_3-YfPRAw",
+-   "club_HtYwiX5vrAeMxHI0vWSWYg",
+-   "club_IBr1KHYtjR_-xX7uQo93uQ",
+-   "club_KP3UCqOtYn85SKKagIKRGQ",
+-   "club_Ko5dh2WAy5G5Q-fIQcSSXw",
+-   "club_L_bIiIr6W7XWNSkj9VBOoQ",
+-   "club_MZXD75P9JNcOkX1oZqnBVQ",
+-   "club_Mi3-zIhgOaFmykBieOPXpQ",
+-   "club_Mw5lljllqYRCdSIxTUK4Ow",
+-   "club_NFdZbJcvd8LamEKBCscdqg",
+-   "club_OZ-IBiXCVxb_GgkP94QRyw",
+-   "club_OeYPoD9uTbl4DD5E8tfo4g",
+-   "club_OkfIm3Wpe24PDUObp3eS5g",
+-   "club_Pu-zJ3euw_wHccOaoLcbcA",
+-   "club_Qv-WV-ji8Vt4-H79sB2AlA",
+-   "club_SSrXIhsEuG8IH-5DB1ihbw",
+-   "club_SVmhGA-eTJkVg7WpVvcVAA",
+-   "club_SfVOR_Wlw4LrAdx8r6KITA",
+-   "club_UxbCwQwzDbN2ZtKBp9utUA",
+-   "club_VMcKDUqMYRC0Geb2a58S-Q",
+-   "club_Yt0qBcUwhkTyIs42qlxwDA",
+-   "club_ZB5vbm1OfWCIV__H_kXX3g",
+-   "club_Zf1YeGp4i2kRuR0CCjIoAQ",
+-   "club__QbN1iQ85ZfQTY6rgsbrcg",
+-   "club__YUjpSargGjc_yUZVAUpYw",
+-   "club__pAK6k2nqCbHgmgm1mWHWQ",
+-   "club__y3g6o8nphJ9iYu2mnmyyg",
+-   "club_a4cvabIKhkdnO5TJZWrVhw",
+-   "club_aCYKx8fARFzbVrJXjzH6pQ",
+-   "club_aH5sR4xHfQdGDkvI1Vnhsw",
+-   "club_c2FKt-x8m1-nVOL_aGk1Ww",
+-   "club_cOwfGJ238zLqbjlL3EbJhw",
+-   "club_cSUuJzbp13vjWxyBX2EuKg",
+-   "club_dvrt_B1fj6-cPQ6QAVOgIA",
+-   "club_fkd97-slrSjhNrHBpVhPyg",
+-   "club_fnieIi6ixQ6U4-qGviMT0g",
+-   "club_hYF4goN9S2x9mwfk8fPm3w",
+-   "club_hscWZjMuSW86av9Nxd6WxQ",
+-   "club_hvDYTPlfGrPdEnYr4ANuvA",
+-   "club_i2PLKQaznd3KENqMqkUmUA",
+-   "club_iUl5dxXwMpQwoq2qq1b1vQ",
+-   "club_itwP_yp5qtiHaxtbm9GKMw",
+-   "club_mKe-OLb9tWWpnp3f2NQ4iA",
+-   "club_oPhFW1Ec_oIFtXaWTS4QjQ",
+-   "club_pTZ79iuO7iCjF0Z3JNuglQ",
+-   "club_qLun2TIZcCrvtKWrOeBeJg",
+-   "club_qrOcq2OOMg-nPplz7Wrb0Q",
+-   "club_rObEL4bIoxc-MN4iudAyHg",
+-   "club_t5wgekxlaNkxM_7eLKr3Dg",
+-   "club_u78XSFw7T7hYCN5JCGhGdQ",
+-   "club_uTstmSNYbBMdEr36zDZCrQ",
+-   "club_vJcZldrLw7nrtQ1_PrzKtw",
+-   "club_vriefn88398k8HzumsEnuQ",
+-   "club_wyG-xbvKHL-EwYDkMqEqng",
+-   "club_xHi13fSPxkwRyl3dP5Qopg",
+-   "club_xyu_z7F6peI7XQ0Dq04tCA",
+-   "club_yBcISUL7Bley9TGnMQQLKw",
+    "club_yQcxcikUWrcP9bBuQ7po7Q",
++   "club_yBcISUL7Bley9TGnMQQLKw",
++   "club_xyu_z7F6peI7XQ0Dq04tCA",
++   "club_xHi13fSPxkwRyl3dP5Qopg",
++   "club_wyG-xbvKHL-EwYDkMqEqng",
++   "club_vriefn88398k8HzumsEnuQ",
++   "club_vJcZldrLw7nrtQ1_PrzKtw",
++   "club_uTstmSNYbBMdEr36zDZCrQ",
++   "club_u78XSFw7T7hYCN5JCGhGdQ",
++   "club_t5wgekxlaNkxM_7eLKr3Dg",
++   "club_rObEL4bIoxc-MN4iudAyHg",
++   "club_qrOcq2OOMg-nPplz7Wrb0Q",
++   "club_qLun2TIZcCrvtKWrOeBeJg",
++   "club_pTZ79iuO7iCjF0Z3JNuglQ",
++   "club_oPhFW1Ec_oIFtXaWTS4QjQ",
++   "club_mKe-OLb9tWWpnp3f2NQ4iA",
++   "club_itwP_yp5qtiHaxtbm9GKMw",
++   "club_iUl5dxXwMpQwoq2qq1b1vQ",
++   "club_i2PLKQaznd3KENqMqkUmUA",
++   "club_hvDYTPlfGrPdEnYr4ANuvA",
++   "club_hscWZjMuSW86av9Nxd6WxQ",
++   "club_hYF4goN9S2x9mwfk8fPm3w",
++   "club_fnieIi6ixQ6U4-qGviMT0g",
++   "club_fkd97-slrSjhNrHBpVhPyg",
++   "club_dvrt_B1fj6-cPQ6QAVOgIA",
++   "club_cSUuJzbp13vjWxyBX2EuKg",
++   "club_cOwfGJ238zLqbjlL3EbJhw",
++   "club_c2FKt-x8m1-nVOL_aGk1Ww",
++   "club_aH5sR4xHfQdGDkvI1Vnhsw",
++   "club_aCYKx8fARFzbVrJXjzH6pQ",
++   "club_a4cvabIKhkdnO5TJZWrVhw",
++   "club__y3g6o8nphJ9iYu2mnmyyg",
++   "club__pAK6k2nqCbHgmgm1mWHWQ",
++   "club__YUjpSargGjc_yUZVAUpYw",
++   "club__QbN1iQ85ZfQTY6rgsbrcg",
++   "club_Zf1YeGp4i2kRuR0CCjIoAQ",
++   "club_ZB5vbm1OfWCIV__H_kXX3g",
++   "club_Yt0qBcUwhkTyIs42qlxwDA",
++   "club_VMcKDUqMYRC0Geb2a58S-Q",
++   "club_UxbCwQwzDbN2ZtKBp9utUA",
++   "club_SfVOR_Wlw4LrAdx8r6KITA",
++   "club_SVmhGA-eTJkVg7WpVvcVAA",
++   "club_SSrXIhsEuG8IH-5DB1ihbw",
++   "club_Qv-WV-ji8Vt4-H79sB2AlA",
++   "club_Pu-zJ3euw_wHccOaoLcbcA",
++   "club_OkfIm3Wpe24PDUObp3eS5g",
++   "club_OeYPoD9uTbl4DD5E8tfo4g",
++   "club_OZ-IBiXCVxb_GgkP94QRyw",
++   "club_NFdZbJcvd8LamEKBCscdqg",
++   "club_Mw5lljllqYRCdSIxTUK4Ow",
++   "club_Mi3-zIhgOaFmykBieOPXpQ",
++   "club_MZXD75P9JNcOkX1oZqnBVQ",
++   "club_L_bIiIr6W7XWNSkj9VBOoQ",
++   "club_Ko5dh2WAy5G5Q-fIQcSSXw",
++   "club_KP3UCqOtYn85SKKagIKRGQ",
++   "club_IBr1KHYtjR_-xX7uQo93uQ",
++   "club_HtYwiX5vrAeMxHI0vWSWYg",
++   "club_HpRLMIUadJDFH_3-YfPRAw",
++   "club_GjtVzts18BcS6OIc6QxNwA",
++   "club_GWFE65sKAmGRTGcjFCICBg",
++   "club_CC1v_q_k6bpYofUXC6aKog",
++   "club_Av6PnPwDcIqUf4JE-cmvHw",
++   "club_AcipMKNuwZYmHLP22Vzhdg",
++   "club_9MRUt0UIU52zV_Rf-TOTWw",
++   "club_9KgKCbAyltCXHNyYvRe3Gg",
++   "club_7KHnITt7RtAjnNdkcOXzPQ",
++   "club_3k92KFAo_4dwjhG0A5aHPg",
++   "club_3TIqEEwXAHoZh04-rm0LuA",
++   "club_-9fgm1aZWDDFd4B79RatNg",
+  ]
+
+ ❯ src/db/make-days.test.ts:347:22
+    345|       expect(listed).toContain(two.club);
+    346|       expect(listed).not.toContain(bare.club);
+    347|       expect(listed).toEqual([...listed].sort((a, b) => (a < b ? -1 : …
+       |                      ^
+    348|       expect(new Set(listed).size).toBe(listed.length);
+    349|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/make-days.test.ts:338:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

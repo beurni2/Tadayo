@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/make-days.ts b/packages/domain/src/schedule/make-days.ts
+index 4abbba73..4e9f8ead 100644
+--- a/packages/domain/src/schedule/make-days.ts
++++ b/packages/domain/src/schedule/make-days.ts
+@@ -116,7 +116,7 @@ export async function makeDays(tx: QuerySql & ClockSql, clock: Clock, clubId: st
+                      'assignments',
+                      (SELECT coalesce(pg_catalog.jsonb_agg(pg_catalog.jsonb_build_object(
+                                'weekday', a.weekday, 'star_interval_id', a.star_interval_id,
+-                               'first_date', a.first_date, 'star_active', s.state = 'active')),
++                               'first_date', a.first_date, 'star_active', true)),
+                              '[]'::pg_catalog.jsonb)
+                         FROM app.schedule_assignments a
+                         JOIN app.memberships s ON s.interval_id = a.star_interval_id

@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/make-days.ts b/packages/domain/src/schedule/make-days.ts
+index 4abbba73..43be3daf 100644
+--- a/packages/domain/src/schedule/make-days.ts
++++ b/packages/domain/src/schedule/make-days.ts
+@@ -122,7 +122,7 @@ export async function makeDays(tx: QuerySql & ClockSql, clock: Clock, clubId: st
+                         JOIN app.memberships s ON s.interval_id = a.star_interval_id
+                        WHERE a.schedule_version_id = v.id))),
+                    '[]'::pg_catalog.jsonb)
+-              FROM app.schedule_versions v WHERE v.club_id = c.id) AS versions,
++              FROM app.schedule_versions v WHERE v.club_id = c.id AND v.effective_from <= ${today}::pg_catalog.date) AS versions,
+            (SELECT coalesce(pg_catalog.jsonb_agg(o.local_date), '[]'::pg_catalog.jsonb)
+               FROM app.occurrences o
+              WHERE o.club_id = c.id AND o.local_date >= ${today}::pg_catalog.date) AS made

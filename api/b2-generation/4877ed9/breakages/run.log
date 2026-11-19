@@ -1,0 +1,282 @@
+== G01 three weeks ahead [rule]: CAUGHT; exit 1 ['Tests  13 failed | 18 passed (31)']
+    × doesn't owe a date already made, whoever's it was 2ms
+    × finds the version in force among three given in any order (FQ61) 1ms
+    × gives a club of three its six days a week 2ms
+    × goes on across the year's end 2ms
+    × looks four whole weeks past the club's current week (FQ115) 12ms
+    × makes each date under the version in force on it: the latest that started on or before it (FQ61) 2ms
+== G02 the window by days, 28 after today, as the first commit had it [rule]: CAUGHT; exit 1 ['Tests  8 failed | 23 passed (31)']
+    × doesn't owe a date already made, whoever's it was 1ms
+    × goes on across the year's end 1ms
+    × looks four whole weeks past the club's current week (FQ115) 10ms
+    × owes every assigned date from today to the window's end, in date order, and no Sunday 2ms
+    × owes nothing before a day's first date (FQ79) 1ms
+    × owes nothing to a club under two members, one not started, or a suspended one (FQ16; spec 04, 22) 2ms
+== G18 the window stops before its last week's Saturday [rule]: CAUGHT; exit 1 ['Tests  8 failed | 23 passed (31)']
+    × doesn't owe a date already made, whoever's it was 1ms
+    × gives a club of three its six days a week 1ms
+    × goes on across the year's end 1ms
+    × owes every assigned date from today to the window's end, in date order, and no Sunday 6ms
+    × owes nothing before a day's first date (FQ79) 1ms
+    × owes nothing to a club under two members, one not started, or a suspended one (FQ16; spec 04, 22) 2ms
+== G03 today is UTC's date [rule]: CAUGHT; exit 1 ['Tests  1 failed | 30 passed (31)']
+    × takes today and the horizon from the club's zone, not from UTC 10ms
+== G04 a day made at its 7 AM [rule]: CAUGHT; exit 1 ['Tests  2 failed | 29 passed (31)']
+    × never makes a day late: one whose 7 AM is now or past isn't owed, one a microsecond ahead is 2ms
+    × takes today and the horizon from the club's zone, not from UTC 11ms
+== G05 a day made after its 7 AM [rule]: CAUGHT; exit 1 ['Tests  9 failed | 22 passed (31)']
+    × doesn't owe a date already made, whoever's it was 1ms
+    × goes on across the year's end 1ms
+    × makes each date under the version in force on it: the latest that started on or before it (FQ61) 1ms
+    × names each day's star, its version and its two instants, each resolved in the club's zone 4ms
+    × never makes a day late: one whose 7 AM is now or past isn't owed, one a microsecond ahead is 2ms
+    × owes every assigned date from today to the window's end, in date order, and no Sunday 7ms
+== G06 a day before its first date [rule]: CAUGHT; exit 1 ['Tests  1 failed | 30 passed (31)']
+    × owes nothing before a day's first date (FQ79) 7ms
+== G07 a day for a star who left [rule]: CAUGHT; exit 1 ['Tests  1 failed | 30 passed (31)']
+    × owes no day to a star who has left, and still owes everyone else's (FQ63) 6ms
+== G08 a club of one gets days [rule]: CAUGHT; exit 1 ['Tests  1 failed | 30 passed (31)']
+    × owes nothing to a club under two members, one not started, or a suspended one (FQ16; spec 04, 22) 9ms
+== G09 a club that hasn't started gets days [rule]: CAUGHT; exit 1 ['Tests  1 failed | 30 passed (31)']
+    × owes nothing to a club under two members, one not started, or a suspended one (FQ16; spec 04, 22) 9ms
+== G10 a suspended club gets days [rule]: CAUGHT; exit 1 ['Tests  1 failed | 30 passed (31)']
+    × owes nothing to a club under two members, one not started, or a suspended one (FQ16; spec 04, 22) 10ms
+== G11 a made date owed again [rule]: CAUGHT; exit 1 ['Tests  1 failed | 30 passed (31)']
+    × doesn't owe a date already made, whoever's it was 8ms
+== G12 the first version stays in force [rule]: CAUGHT; exit 1 ['Tests  2 failed | 29 passed (31)']
+    × finds the version in force among three given in any order (FQ61) 2ms
+    × makes each date under the version in force on it: the latest that started on or before it (FQ61) 12ms
+== G13 a version in force before it starts [rule]: CAUGHT; exit 1 ['Tests  2 failed | 29 passed (31)']
+    × finds the version in force among three given in any order (FQ61) 2ms
+    × makes each date under the version in force on it: the latest that started on or before it (FQ61) 7ms
+== G14 the versions in the order given [rule]: CAUGHT; exit 1 ['Tests  2 failed | 29 passed (31)']
+    × finds the version in force among three given in any order (FQ61) 2ms
+    × makes each date under the version in force on it: the latest that started on or before it (FQ61) 9ms
+== G15 the instants in UTC [rule]: CAUGHT; exit 1 ['Tests  8 failed | 23 passed (31)']
+    × Auckland's spring change, Kolkata's half hour and Cairo's change, each by the zone's own rules 4ms
+    × London's autumn change: Saturday 24 October 2026 closes at the first 01:00 of the 25th, still in BST 2ms
+    × New York's autumn change: Saturday 31 October 2026 closes at the first 01:00 of 1 November, still in EDT 1ms
+    × New York's spring change: Saturday 7 March 2026 closes at 01:00 EST, before the clocks jump at 02:00 1ms
+    × Santiago's changes: a day of 19 hours and one of 17, so a close is never the reveal plus 18 hours 1ms
+    × names each day's star, its version and its two instants, each resolved in the club's zone 12ms
+== G16 any zone Temporal takes [rule]: CAUGHT; exit 1 ['Tests  1 failed | 30 passed (31)']
+    × refuses a zone that isn't an IANA name, instead of guessing one (FQ19) 8ms
+== G17 Sunday is someone's day [rule]: CAUGHT; exit 1 ['Tests  19 failed | 12 passed (31)']
+    × Auckland's spring change, Kolkata's half hour and Cairo's change, each by the zone's own rules 1ms
+    × London's autumn change: Saturday 24 October 2026 closes at the first 01:00 of the 25th, still in BST 3ms
+    × London's spring change: Saturday 28 March 2026 closes at the jump, since 01:00 on the 29th doesn't exist 0ms
+    × New York's autumn change: Saturday 31 October 2026 closes at the first 01:00 of 1 November, still in EDT 1ms
+    × New York's spring change: Saturday 7 March 2026 closes at 01:00 EST, before the clocks jump at 02:00 1ms
+    × Santiago's changes: a day of 19 hours and one of 17, so a close is never the reveal plus 18 hours 1ms
+== O01 the first days ordered by the week [rule]: CAUGHT; exit 1 ['Tests  1 failed | 30 passed (31)']
+    × is the order they joined while the first days are open, whoever has confirmed (FQ98) 8ms
+== O02 two days placed by the later [rule]: CAUGHT; exit 1 ['Tests  1 failed | 30 passed (31)']
+    × places a member with two days by the earlier (FQ26) 8ms
+== O03 a member with no day first [rule]: CAUGHT; exit 1 ['Tests  1 failed | 30 passed (31)']
+    × puts anyone with no day in force last, in the order they joined 7ms
+== O04 a member twice [rule]: CAUGHT; exit 1 ['Tests  1 failed | 30 passed (31)']
+    × lists every member once, and refuses a roster that names one twice 4ms
+== M01 no lock on the club [makedays]: CAUGHT; exit 1 ['Tests  2 failed | 13 passed (15)']
+    × samples its clock only once it holds the club's row, and dates its days from that sample (T1; T3's order) 84ms
+    × waits for a confirmation in flight and reads the week only once it has the club's row: the day confirmed meanwhile is made too (FQ61) 76ms
+== M02 the clock before the lock [makedays]: CAUGHT; exit 1 ['Tests  1 failed | 14 passed (15)']
+    × samples its clock only once it holds the club's row, and dates its days from that sample (T1; T3's order) 99ms
+== M03 no ON CONFLICT [makedays]: NOT CAUGHT, AN EQUIVALENT CHANGE (README); exit 0 ['Tests  15 passed (15)']
+== M04 collecting from the database's own now [makedays]: CAUGHT; exit 1 ['Tests  13 failed | 2 passed (15)']
+    × gives a club of two its four days a week, two each 29ms
+    × makes each date under the week in force on it, and a later week's days only from its start (FQ61) 80ms
+    × makes each day once when two runs meet, and each run counts only its own 63ms
+    × makes each owed day once, for its star, under its version, with its instants, collecting from the sample 205ms
+    × makes no day for a club left with one member (FQ16), and keeps the days it had 22ms
+    × makes no day for a club that hasn't started, though its rows hold a week (spec 04) 13ms
+== M05 former members counted [makedays]: CAUGHT; exit 1 ['Tests  1 failed | 14 passed (15)']
+    × makes no day for a club left with one member (FQ16), and keeps the days it had 46ms
+== M06 every star taken as a member [makedays]: CAUGHT; exit 1 ['Tests  1 failed | 14 passed (15)']
+    × makes no day for a member who has left, and goes on making everyone else's (FQ63) 65ms
+== M07 a suspended club's days made [makedays]: CAUGHT; exit 1 ['Tests  1 failed | 14 passed (15)']
+    × makes no day for a suspended club (spec 22), and makes them again once it is lifted 69ms
+== M08 anything taken as a club's id [makedays]: CAUGHT; exit 1 ['Tests  1 failed | 14 passed (15)']
+    × makes nothing for a club with no week, for an id nobody has, and refuses what can't be an id 36ms
+== M09 every club listed [makedays]: CAUGHT; exit 1 ['Tests  1 failed | 14 passed (15)']
+    × lists the clubs that have a week, in id order, and no club without one 57ms
+== M10 the list in reverse [makedays]: CAUGHT; exit 1 ['Tests  1 failed | 14 passed (15)']
+    × lists the clubs that have a week, in id order, and no club without one 74ms
+== M11 a made date not read [makedays]: NOT CAUGHT, AN EQUIVALENT CHANGE (README); exit 0 ['Tests  15 passed (15)']
+== M13 neither the read of made dates nor ON CONFLICT [makedays]: CAUGHT; exit 1 ['Tests  3 failed | 12 passed (15)']
+    × makes each date under the week in force on it, and a later week's days only from its start (FQ61) 86ms
+    × makes each day once when two runs meet, and each run counts only its own 66ms
+    × makes nothing a second time, and only the new week when the club's Monday comes (spec 34) 111ms
+== M14 the week read before the club's row is held [makedays]: CAUGHT; exit 1 ['Tests  2 failed | 13 passed (15)']
+    × samples its clock only once it holds the club's row, and dates its days from that sample (T1; T3's order) 94ms
+    × waits for a confirmation in flight and reads the week only once it has the club's row: the day confirmed meanwhile is made too (FQ61) 82ms
+== M15 no lock on the club, with a confirmation in flight [makedays]: CAUGHT; exit 1 ['Tests  2 failed | 13 passed (15)']
+    × samples its clock only once it holds the club's row, and dates its days from that sample (T1; T3's order) 104ms
+    × waits for a confirmation in flight and reads the week only once it has the club's row: the day confirmed meanwhile is made too (FQ61) 69ms
+== M16 every club taken as started [makedays]: CAUGHT; exit 1 ['Tests  1 failed | 14 passed (15)']
+    × makes no day for a club that hasn't started, though its rows hold a week (spec 04) 18ms
+== M17 only the weeks already in force are read [makedays]: CAUGHT; exit 1 ['Tests  1 failed | 14 passed (15)']
+    × makes each date under the week in force on it, and a later week's days only from its start (FQ61) 86ms
+== M12 a day made late by the command [makedays]: CAUGHT; exit 1 ['Tests  2 failed | 13 passed (15)']
+    × makes nothing a second time, and only the new week when the club's Monday comes (spec 34) 111ms
+    × never makes a day at or after its 7 AM 76ms
+== D01 every member's next is the club's [members]: CAUGHT; exit 1 ['Tests  8 failed | 7 passed (15)']
+    × drops a member who has left from the list, keeps everyone else's position without a gap, and names no day of theirs as next 62ms
+    × gives every member the same list, whoever asks (T55) 70ms
+    × is the contract's Friday: Debby's day is open, so Debby's next is the 13th, and Nina is next up 129ms
+    × keeps the order they joined whichever days are confirmed, so no row moves when a member confirms 78ms
+    × lists every member in the order they joined, the confirmed with their first date, the others with none 232ms
+    × orders the members by the week from Monday, not by when they joined 112ms
+== D02 the same, with no worker [q18]: CAUGHT; exit 1 ['Tests  2 failed (2)']
+    × goes on for as long as days were made, then shows no next date instead of inventing one (T49) 98ms
+    × moves from Debby's Friday to Nina's Saturday at 7 AM and 1 AM by the clock alone 229ms
+== D03 a former member's next day listed [homedays]: CAUGHT; exit 1 ['Tests  9 failed | 11 passed (20)']
+    × gives a rejoined member the club's days on the new interval 17ms
+    × gives a stranger, a former member, an account being deleted, an account with no club and an unknown account nothing 39ms
+    × gives nothing in a suspended club, and a paused club's days as its rows hold them (FQ50) 18ms
+    × holds a day whose star asked to delete their account a microsecond before its reveal, whether the interval has ended or not (T27) 20ms
+    × holds a day whose star left a microsecond before its reveal, by leaving, a block or a deletion: never open, never next (FQ63) 12ms
+    × keeps a day open to its close when its star leaves or asks to delete at its reveal or a microsecond after 7ms
+== D04 a suspended club's next days [homedays]: CAUGHT; exit 1 ['Tests  2 failed | 18 passed (20)']
+    × gives nothing in a suspended club, and a paused club's days as its rows hold them (FQ50) 20ms
+    × never mixes them: each club's days carry its own id, star and date, whatever the other's hold 38ms
+== D05 a former member reads next days [homedays]: CAUGHT; exit 1 ['Tests  2 failed | 18 passed (20)']
+    × gives a rejoined member the club's days on the new interval 15ms
+    × gives a stranger, a former member, an account being deleted, an account with no club and an unknown account nothing 41ms
+== D06 the policy's next is the club's [homedays]: CAUGHT; exit 1 ['Tests  12 failed | 8 passed (20)']
+    × closes London's Saturdays at the jump over the missing 01:00 and at the first of the two 01:00s, and Santiago's after 19 and 17 hours 19ms
+    × gives a rejoined member the club's days on the new interval 19ms
+    × gives a stranger, a former member, an account being deleted, an account with no club and an unknown account nothing 18ms
+    × holds a day whose star asked to delete their account a microsecond before its reveal, whether the interval has ended or not (T27) 17ms
+    × in Africa/Ouagadougou, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 25ms
+    × in America/New_York, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 28ms
+== L01 the roster for any membership row [members]: CAUGHT; exit 1 ['Tests  4 failed | 11 passed (15)']
+    × drops a member who has left from the list, keeps everyone else's position without a gap, and names no day of theirs as next 69ms
+    × gives nothing to a member who left, and the whole roster again once that person rejoins, on the new membership 50ms
+    × gives nothing to a stranger, to an id nobody has, to what can't be an id, or of a suspended club 67ms
+    × gives nothing to an account that has asked to be deleted, though its membership hasn't ended yet 53ms
+== L02 a member who left stays listed [members]: CAUGHT; exit 1 ['Tests  2 failed | 13 passed (15)']
+    × drops a member who has left from the list, keeps everyone else's position without a gap, and names no day of theirs as next 95ms
+    × gives nothing to a member who left, and the whole roster again once that person rejoins, on the new membership 56ms
+== L03 everyone is next up [members]: CAUGHT; exit 1 ['Tests  6 failed | 9 passed (15)']
+    × drops a member who has left from the list, keeps everyone else's position without a gap, and names no day of theirs as next 52ms
+    × is the contract's Friday: Debby's day is open, so Debby's next is the 13th, and Nina is next up 92ms
+    × lists every member in the order they joined, the confirmed with their first date, the others with none 207ms
+    × orders the members by the week from Monday, not by when they joined 95ms
+    × places a member of a club of three by the earlier of their two days, with the earlier date next 47ms
+    × skips a day an operator has suspended: the member's next is the one after it (T5, T9) 66ms
+== L04 positions from 0 [members]: CAUGHT; exit 1 ['Tests  9 failed | 6 passed (15)']
+    × drops a member who has left from the list, keeps everyone else's position without a gap, and names no day of theirs as next 82ms
+    × has nobody next and no dates when no day has been made (T49: nothing is invented) 89ms
+    × is the contract's Friday: Debby's day is open, so Debby's next is the 13th, and Nina is next up 76ms
+    × lists a club with no week at all in the order its members joined 17ms
+    × lists every member in the order they joined, the confirmed with their first date, the others with none 239ms
+    × lists them by their membership's id, in byte order, the same for every member and every time 18ms
+== L05 the members by id, not by joining [members]: CAUGHT; exit 1 ['Tests  5 failed | 10 passed (15)']
+    × keeps the order they joined whichever days are confirmed, so no row moves when a member confirms 38ms
+    × lists a club with no week at all in the order its members joined 18ms
+    × lists every member in the order they joined, the confirmed with their first date, the others with none 187ms
+    × lists them by their membership's id, in byte order, the same for every member and every time 20ms
+    × orders the members by the week from Monday, not by when they joined 86ms
+== L06 the first days never open [members]: CAUGHT; exit 1 ['Tests  4 failed | 11 passed (15)']
+    × follows the week in force on the club's own date: a later week moves the rows only from its start (FQ61) 76ms
+    × keeps the order they joined whichever days are confirmed, so no row moves when a member confirms 54ms
+    × lists every member in the order they joined, the confirmed with their first date, the others with none 183ms
+    × orders the members by the week from Monday, not by when they joined 83ms
+== L07 a week in force before it starts [members]: CAUGHT; exit 1 ['Tests  1 failed | 14 passed (15)']
+    × follows the week in force on the club's own date: a later week moves the rows only from its start (FQ61) 117ms
+== L08 the earliest week stays in force [members]: CAUGHT; exit 1 ['Tests  1 failed | 14 passed (15)']
+    × follows the week in force on the club's own date: a later week moves the rows only from its start (FQ61) 78ms
+== L11 same-instant joiners in the reverse order [members]: CAUGHT; exit 1 ['Tests  1 failed | 14 passed (15)']
+    × lists them by their membership's id, in byte order, the same for every member and every time 20ms
+== L09 the roster for any membership row, in the matrix [matrix]: CAUGHT; exit 1 ['Tests  3 failed | 11 skipped (14)']
+    × answers the author as its account and its row say, and leaks nothing the scanner can find 28470ms
+    × answers the member who joined after the commit (T8) as its account and its row say, and leaks nothing the scanner can find 25117ms
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 25294ms
+== L10 everyone is next up, in the matrix [matrix]: CAUGHT; exit 1 ['Tests  3 failed | 11 skipped (14)']
+    × answers the author as its account and its row say, and leaks nothing the scanner can find 29235ms
+    × answers the member who joined after the commit (T8) as its account and its row say, and leaks nothing the scanner can find 25344ms
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 26006ms
+== A01 nobody next up in the body [api]: CAUGHT; exit 1 ['Tests  3 failed | 23 passed (26)']
+    × makes first_days field for field, but for the cover and the open revision 4ms
+    × makes kitchen_table field for field, but for the cover and the open revision 4ms
+    × makes sunday_people field for field, but for the cover and the open revision 15ms
+== A02 the instant with its fraction [api]: CAUGHT; exit 1 ['Tests  1 failed | 25 passed (26)']
+    × sends the server's instant in whole seconds, rounded down 5ms
+== A03 a null avatar sent [api]: CAUGHT; exit 1 ['Tests  4 failed | 22 passed (26)']
+    × makes first_days field for field, but for the cover and the open revision 2ms
+    × makes kitchen_table field for field, but for the cover and the open revision 3ms
+    × makes sunday_people field for field, but for the cover and the open revision 12ms
+    × sends no next day and no avatar where there is none, and nothing else of a member 1ms
+== A04 a field outside the list [api]: CAUGHT; exit 1 ['Tests  4 failed | 22 passed (26)']
+    × makes first_days field for field, but for the cover and the open revision 3ms
+    × makes kitchen_table field for field, but for the cover and the open revision 3ms
+    × makes sunday_people field for field, but for the cover and the open revision 13ms
+    × sends no next day and no avatar where there is none, and nothing else of a member 2ms
+== A05 the body's field outside the list, in the matrix [matrix]: CAUGHT; exit 1 ['Tests  3 failed | 11 skipped (14)']
+    × answers the author as its account and its row say, and leaks nothing the scanner can find 27875ms
+    × answers the member who joined after the commit (T8) as its account and its row say, and leaks nothing the scanner can find 24342ms
+    × answers the star as its account and its row say, and leaks nothing the scanner can find 26382ms
+== W01 a stop sits out the wait [worker]: CAUGHT; exit 1 ['Tests  2 failed | 18 passed (20)']
+    × ends a wait at once when it is told to stop: it doesn't sit out the minute 5001ms
+    × runs a pass at the start, before any wait 5012ms
+== W02 a pass that throws ends the loop [worker]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × reports a pass that throws and goes on to the next 4ms
+== W03 a wait of zero [worker]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × refuses a wait that isn't positive, which would spin 5003ms
+== W04 no first pass before a wait [worker]: CAUGHT; exit 1 ['Tests  2 failed | 18 passed (20)']
+    × ends a wait at once when it is told to stop: it doesn't sit out the minute 5002ms
+    × runs a pass at the start, before any wait 9ms
+== W05 a failure's message reported [worker]: CAUGHT; exit 1 ['Tests  3 failed | 17 passed (20)']
+    × drops a code that isn't a plain word, which could carry anything 1ms
+    × is the error's class and its code, never what it says 6ms
+    × names nothing of a value that isn't an error 1ms
+== W06 any code reported [worker]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × drops a code that isn't a plain word, which could carry anything 6ms
+== W07 a line for a pass that made nothing [worker]: CAUGHT; exit 1 ['Tests  2 failed | 18 passed (20)']
+    × gives each failed club one line, for the error stream, apart from the count 1ms
+    × says nothing when nothing was made and nothing failed 10ms
+== W08 one club's failure ends the pass [wgen]: CAUGHT; exit 1 ['Tests  3 failed | 5 passed (8)']
+    × gives up on a club when one statement of its run takes too long, with Postgres's code, and makes the next club's days 10186ms
+    × gives up on a club whose row stays held, names it by its id and Postgres's code, and makes the next club's days 5129ms
+    × goes on to the next club when one fails, and reports the failure by the error's class alone 145ms
+== W09 the whole pass in one transaction [wgen]: CAUGHT; exit 1 ['Tests  7 failed | 1 passed (8)']
+    × commits each club on its own: a club made before one that waits is already there 195ms
+    × gives up on a club when one statement of its run takes too long, with Postgres's code, and makes the next club's days 15262ms
+    × gives up on a club whose row stays held, names it by its id and Postgres's code, and makes the next club's days 30002ms
+    × goes on to the next club when one fails, and reports the failure by the error's class alone 149ms
+    × makes a club's days by the server's clock soon after it starts, says only how many, and stops cleanly 20274ms
+    × visits every club with a week when it is given no list 5002ms
+== W10 the line names the club [worker]: CAUGHT; exit 1 ['Tests  2 failed | 18 passed (20)']
+    × gives each failed club one line, for the error stream, apart from the count 1ms
+    × says how many days were made, and nothing of which club or whose 7ms
+== W11 SIGINT not handled [startup]: CAUGHT; exit 1 ['Tests  3 failed | 12 passed (15)']
+    × finishes its stop when a second signal comes while a pass is still running: the handlers stay, so the default action never ends it 1165ms
+    × stops cleanly on a SIGINT that comes as it writes its started line: its handlers are in place first 167ms
+    × stops on SIGINT with exit code 0, and says which 214ms
+== W12 the started line before the handlers [startup]: CAUGHT; exit 1 ['Tests  4 failed | 11 passed (15)']
+    × stops cleanly on a SIGINT that comes as it writes its started line: its handlers are in place first 152ms
+    × stops cleanly on a SIGTERM that comes as it writes its started line: its handlers are in place first 143ms
+    × stops on SIGINT with exit code 0, and says which 157ms
+    × stops on SIGTERM with exit code 0, and says which 162ms
+== W13 a lock limit of twenty seconds [wgen]: CAUGHT; exit 1 ['Tests  1 failed | 7 passed (8)']
+    × gives up on a club whose row stays held, names it by its id and Postgres's code, and makes the next club's days 10185ms
+== W21 no statement limit [wgen]: CAUGHT; exit 1 ['Tests  1 failed | 7 passed (8)']
+    × gives up on a club when one statement of its run takes too long, with Postgres's code, and makes the next club's days 15227ms
+== W14 a stop not seen between clubs [wgen]: CAUGHT; exit 1 ['Tests  1 failed | 7 passed (8)']
+    × visits no further club once it is told to stop, and finishes the one it is on 141ms
+== W15 no club visited when no list is given [wgen]: CAUGHT; exit 1 ['Tests  2 failed | 6 passed (8)']
+    × makes a club's days by the server's clock soon after it starts, says only how many, and stops cleanly 20202ms
+    × visits every club with a week when it is given no list 95ms
+== W16 the handlers taken down after one signal [startup]: CAUGHT; exit 1 ['Tests  1 failed | 14 passed (15)']
+    × finishes its stop when a second signal comes while a pass is still running: the handlers stay, so the default action never ends it 1349ms
+== W17 Postgres's notices printed [worker]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × prints no notice Postgres sends: a notice can quote a row's values (T52) 8ms
+== W18 a failed club's line on stdout [worker]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × gives each failed club one line, for the error stream, apart from the count 7ms
+== W19 a failed club not named [wgen]: CAUGHT; exit 1 ['Tests  3 failed | 5 passed (8)']
+    × gives up on a club when one statement of its run takes too long, with Postgres's code, and makes the next club's days 10270ms
+    × gives up on a club whose row stays held, names it by its id and Postgres's code, and makes the next club's days 5142ms
+    × goes on to the next club when one fails, and reports the failure by the error's class alone 167ms
+== W20 the pass's wait cut short [worker]: CAUGHT; exit 1 ['Tests  1 failed | 19 passed (20)']
+    × waits its whole wait between the end of one pass and the start of the next 63ms
+restored: ''

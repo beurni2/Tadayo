@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/generate.ts b/packages/domain/src/schedule/generate.ts
+index 0120086a..7a64a844 100644
+--- a/packages/domain/src/schedule/generate.ts
++++ b/packages/domain/src/schedule/generate.ts
+@@ -31,7 +31,7 @@ import { WEEKDAYS, type Weekday } from "./propose.ts";
+  * (FQ115), the number the contract's fixtures took (packages/contracts/src/fixtures/world.ts,
+  * `changeFrom`).
+  */
+-export const WEEKS_AHEAD = 4;
++export const WEEKS_AHEAD = 3;
+ 
+ /** The last local date of the window seen from `today`: the Sunday ending the WEEKS_AHEAD-th week after today's. */
+ export function windowEnd(today: Temporal.PlainDate): Temporal.PlainDate {

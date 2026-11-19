@@ -1,0 +1,13 @@
+diff --git a/services/api/src/clubs/members.ts b/services/api/src/clubs/members.ts
+index 1953efe4..3c92ac4e 100644
+--- a/services/api/src/clubs/members.ts
++++ b/services/api/src/clubs/members.ts
+@@ -18,7 +18,7 @@ import { occurrenceBody } from "./list.ts";
+ /** The contract's `Members`: `now` is the clock's sample, whole seconds, rounded down. */
+ export function membersBody(now: Temporal.Instant, roster: Roster): Json {
+   return {
+-    server_now: contractInstant(now),
++    server_now: now.toString(),
+     club: {
+       id: roster.club.id,
+       name: roster.club.name,

@@ -1,0 +1,29 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/services/worker
+
+ ❯ src/loop.test.ts (8 tests | 1 failed) 356ms
+   ❯ the worker's loop (spec 34) (8)
+     × reports a pass that throws and goes on to the next 4ms
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 19 passed (20)
+   Start at  06:08:05
+   Duration  1.50s (tests 90%, import 6%, transform 4%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/loop.test.ts > the worker's loop (spec 34) > reports a pass that throws and goes on to the next
+Error: the database is away
+ ❯ Object.pass src/loop.test.ts:129:49
+    127|       pass: () => {
+    128|         passes += 1;
+    129|         if (passes === 1) return Promise.reject(new Error("the databas…
+       |                                                 ^
+    130|         stop.open("SIGTERM");
+    131|         return Promise.resolve();
+ ❯ runLoop src/loop.ts:36:18
+ ❯ src/loop.test.ts:126:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

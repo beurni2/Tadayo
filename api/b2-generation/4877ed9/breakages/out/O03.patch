@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/order.ts b/packages/domain/src/schedule/order.ts
+index f64e5f4c..b2740327 100644
+--- a/packages/domain/src/schedule/order.ts
++++ b/packages/domain/src/schedule/order.ts
+@@ -36,7 +36,7 @@ export function rosterOrder(facts: OrderFacts): string[] {
+   }
+   // A stable sort: members with a day by their earliest weekday (no two share one), the rest after,
+   // kept in join order.
+-  const rank = (id: string) => earliest.get(id) ?? WEEKDAYS.length;
++  const rank = (id: string) => earliest.get(id) ?? -1;
+   return joined
+     .map((id, at) => ({ id, at }))
+     .sort((a, b) => rank(a.id) - rank(b.id) || a.at - b.at)

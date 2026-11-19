@@ -1,0 +1,66 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/services/worker
+
+ ❯ src/generation.test.ts (6 tests | 2 failed) 16ms
+   ❯ the lines of a pass (3)
+     × says nothing when nothing was made and nothing failed 10ms
+     × gives each failed club one line, for the error stream, apart from the count 1ms
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  2 failed | 18 passed (20)
+   Start at  06:08:24
+   Duration  1.49s (tests 88%, import 6%, transform 5%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/generation.test.ts > the lines of a pass > says nothing when nothing was made and nothing failed
+AssertionError: expected { Object (out, err) } to deeply equal { out: [], err: [] }
+
+- Expected
++ Received
+
+  {
+    "err": [],
+-   "out": [],
++   "out": [
++     "worker: made 0 days",
++   ],
+  }
+
+ ❯ src/generation.test.ts:30:60
+     28| describe("the lines of a pass", () => {
+     29|   it("says nothing when nothing was made and nothing failed", () => {
+     30|     expect(passLines({ clubs: 3, made: 0, failures: [] })).toEqual({ o…
+       |                                                            ^
+     31|     expect(passLines({ clubs: 0, made: 0, failures: [] })).toEqual({ o…
+     32|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/generation.test.ts > the lines of a pass > gives each failed club one line, for the error stream, apart from the count
+AssertionError: expected { Object (out, err) } to deeply equal { out: [], …(1) }
+
+- Expected
++ Received
+
+  {
+    "err": [
+      "worker: a club's days failed: club_a: PostgresError 55P03",
+    ],
+-   "out": [],
++   "out": [
++     "worker: made 0 days",
++   ],
+  }
+
+ ❯ src/generation.test.ts:44:89
+     42|       err: ["worker: a club's days failed: club_a: PostgresError 23000…
+     43|     });
+     44|     expect(passLines({ clubs: 1, made: 0, failures: ["club_a: Postgres…
+       |                                                                                         ^
+     45|       out: [],
+     46|       err: ["worker: a club's days failed: club_a: PostgresError 55P03…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

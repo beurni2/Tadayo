@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/members.ts b/packages/domain/src/clubs/members.ts
+index 27380487..199c10ee 100644
+--- a/packages/domain/src/clubs/members.ts
++++ b/packages/domain/src/clubs/members.ts
+@@ -176,7 +176,7 @@ export async function listMembers(
+         person: member.person,
+         position: index + 1,
+         nextDay: member.nextDay,
+-        nextUp: clubNext !== null && clubNext.star.membershipId === memberId,
++        nextUp: clubNext !== null,
+       };
+     }),
+   };

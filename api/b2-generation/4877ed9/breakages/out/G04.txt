@@ -1,0 +1,44 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/packages/domain
+
+ ❯ src/schedule/generate.test.ts (23 tests | 2 failed) 37ms
+   ❯ the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) (16)
+     × takes today and the horizon from the club's zone, not from UTC 11ms
+     × never makes a day late: one whose 7 AM is now or past isn't owed, one a microsecond ahead is 2ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  2 failed | 29 passed (31)
+   Start at  06:02:15
+   Duration  231ms (transform 39%, tests 32%, import 21%, worker 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > takes today and the horizon from the club's zone, not from UTC
+AssertionError: expected '2026-11-07' to be '2026-11-09' // Object.is equality
+
+Expected: "2026-11-09"
+Received: "2026-11-07"
+
+ ❯ src/schedule/generate.test.ts:159:82
+    157|     // whose Saturday hasn't opened; in New York Friday has, and Satur…
+    158|     expect(dates(club({ zone: "Pacific/Auckland" }), NOW)[0]).toBe("20…
+    159|     expect(dates(club({ zone: "Pacific/Auckland" }), "2026-11-06T18:00…
+       |                                                                                  ^
+    160|     expect(dates(club(), "2026-11-06T18:00:00Z")[0]).toBe("2026-11-07"…
+    161|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > never makes a day late: one whose 7 AM is now or past isn't owed, one a microsecond ahead is
+AssertionError: expected [ '2026-11-07', '2026-11-09', …(23) ] to not include '2026-11-07'
+ ❯ src/schedule/generate.test.ts:165:55
+    163|   it("never makes a day late: one whose 7 AM is now or past isn't owed…
+    164|     // Saturday the 7th opens at 12:00Z.
+    165|     expect(dates(club(), "2026-11-07T12:00:00Z")).not.toContain("2026-…
+       |                                                       ^
+    166|     expect(dates(club(), "2026-11-07T11:59:59.999999Z")).toContain("20…
+    167|     expect(dates(club(), "2026-11-07T12:00:00.000001Z")).not.toContain…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

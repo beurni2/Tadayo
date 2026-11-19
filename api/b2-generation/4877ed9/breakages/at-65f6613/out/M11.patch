@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/make-days.ts b/packages/domain/src/schedule/make-days.ts
+index 4abbba73..3fc7f64e 100644
+--- a/packages/domain/src/schedule/make-days.ts
++++ b/packages/domain/src/schedule/make-days.ts
+@@ -136,7 +136,7 @@ export async function makeDays(tx: QuerySql & ClockSql, clock: Clock, clubId: st
+     suspended: flag(row["suspended"]),
+     activeMembers: members,
+     versions: list(row["versions"]).map(versionOf),
+-    made: new Set(list(row["made"]).map(date)),
++    made: new Set(),
+   };
+ 
+   // 4. The days.

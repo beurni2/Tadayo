@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/generate.ts b/packages/domain/src/schedule/generate.ts
+index 0120086a..72947d8e 100644
+--- a/packages/domain/src/schedule/generate.ts
++++ b/packages/domain/src/schedule/generate.ts
+@@ -87,7 +87,7 @@ export function daysToMake(facts: GenerationFacts, now: Temporal.Instant): OwedD
+   const owed: OwedDay[] = [];
+   const last = windowEnd(today);
+   for (let date = today; Temporal.PlainDate.compare(date, last) <= 0; date = date.add({ days: 1 })) {
+-    const weekday = WEEKDAYS[date.dayOfWeek - 1];
++    const weekday = WEEKDAYS[date.dayOfWeek % 6];
+     if (weekday === undefined) continue; // Sunday (T6).
+     const localDate = date.toString();
+     if (facts.made.has(localDate)) continue;

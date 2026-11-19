@@ -1,0 +1,96 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/tests
+
+ ❯ src/db/startup.test.ts (15 tests | 3 failed) 9101ms
+   ❯ the worker's entry against the test database (7)
+     × stops on SIGINT with exit code 0, and says which 214ms
+     × stops cleanly on a SIGINT that comes as it writes its started line: its handlers are in place first 167ms
+     × finishes its stop when a second signal comes while a pass is still running: the handlers stay, so the default action never ends it 1165ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 12 passed (15)
+   Start at  06:10:10
+   Duration  9.61s (tests 98%, transform 1%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/startup.test.ts [ src/db/startup.test.ts ]
+PostgresError: update or delete on table "occurrences" violates foreign key constraint "contribution_counters_occurrence_id_club_id_fkey" on table "contribution_counters"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ src/db/week-world.ts:211:15
+    209|     await admin.begin(async (tx) => {
+    210|       await tx`ALTER TABLE app.occurrences DISABLE TRIGGER occurrences…
+    211|       await tx`DELETE FROM app.occurrences`;
+       |               ^
+    212|       await tx`ALTER TABLE app.occurrences ENABLE TRIGGER occurrences_…
+    213|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/startup.test.ts > the worker's entry against the test database > stops on SIGINT with exit code 0, and says which
+AssertionError: expected null to be +0 // Object.is equality
+
+- Expected:
+0
+
++ Received:
+null
+
+ ❯ src/db/startup.test.ts:225:46
+    223|       const worker = start("worker", "prod");
+    224|       expect(await waitFor(worker, /worker: started/), worker.output.s…
+    225|       expect(await stopWith(worker, signal)).toBe(0);
+       |                                              ^
+    226|       expect(worker.output.stdout).toMatch(new RegExp(`worker: stopped…
+    227|       expect(worker.output.stderr).toBe("");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/db/startup.test.ts > the worker's entry against the test database > stops cleanly on a SIGINT that comes as it writes its started line: its handlers are in place first
+AssertionError: worker: started, making days every minute
+: expected null to be +0 // Object.is equality
+
+- Expected:
+0
+
++ Received:
+null
+
+ ❯ src/db/startup.test.ts:236:85
+    234|     async (signal) => {
+    235|       const worker = start("worker", "prod", {}, signal);
+    236|       expect(await worker.exited, `${worker.output.stdout}${worker.out…
+       |                                                                                     ^
+    237|       // Its first pass still runs, and makes whatever days a club ano…
+    238|       // may come between the two, and nothing else may.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/db/startup.test.ts > the worker's entry against the test database > finishes its stop when a second signal comes while a pass is still running: the handlers stay, so the default action never ends it
+AssertionError: a second signal ended the worker: expected 'SIGINT' to be null
+
+- Expected:
+null
+
++ Received:
+"SIGINT"
+
+ ❯ src/db/startup.test.ts:271:77
+    269|         await new Promise((done) => setTimeout(done, 300));
+    270|         expect(worker.child.exitCode, "a second signal ended the worke…
+    271|         expect(worker.child.signalCode, "a second signal ended the wor…
+       |                                                                             ^
+    272|       } finally {
+    273|         await hold.release();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+

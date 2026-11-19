@@ -1,0 +1,27 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/services/worker
+
+ ❯ src/loop.test.ts (8 tests | 1 failed) 150ms
+   ❯ the worker's loop (spec 34) (8)
+     × waits its whole wait between the end of one pass and the start of the next 63ms
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 19 passed (20)
+   Start at  06:12:45
+   Duration  1.43s (tests 90%, import 6%, transform 3%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/loop.test.ts > the worker's loop (spec 34) > waits its whole wait between the end of one pass and the start of the next
+AssertionError: expected 12.185993000000025 to be greater than or equal to 100
+ ❯ src/loop.test.ts:78:47
+     76|     expect(began).toHaveLength(3);
+     77|     // A timer may fire a millisecond early by its rounding, never by …
+     78|     expect((began[1] ?? 0) - (ended[0] ?? 0)).toBeGreaterThanOrEqual(1…
+       |                                               ^
+     79|     expect((began[2] ?? 0) - (ended[1] ?? 0)).toBeGreaterThanOrEqual(1…
+     80|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

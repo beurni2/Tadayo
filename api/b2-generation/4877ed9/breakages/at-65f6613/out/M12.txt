@@ -1,0 +1,58 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/tests
+
+ ❯ src/db/make-days.test.ts (15 tests | 2 failed) 1656ms
+   ❯ making a club's days (spec 05; FQ115) (12)
+     × makes nothing a second time, and only the new week when the club's Monday comes (spec 34) 114ms
+     × never makes a day at or after its 7 AM 67ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 13 passed (15)
+   Start at  05:36:52
+   Duration  1.98s (tests 94%, import 3%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/make-days.test.ts > making a club's days (spec 05; FQ115) > makes nothing a second time, and only the new week when the club's Monday comes (spec 34)
+AssertionError: expected +0 to be 6 // Object.is equality
+
+- Expected
++ Received
+
+- 6
++ 0
+
+ ❯ src/db/make-days.test.ts:132:61
+    130|       expect(await run(tx, w.club, "2026-11-09T04:59:59.999999Z")).toB…
+    131|       // Monday the 9th, midnight in New York: the window now reaches …
+    132|       expect(await run(tx, w.club, "2026-11-09T05:00:00Z")).toBe(6);
+       |                                                             ^
+    133|       const after = await daysOf(tx, w.club);
+    134|       expect(after.slice(-6).map((day) => day.local_date)).toEqual([
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/make-days.test.ts:121:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/make-days.test.ts > making a club's days (spec 05; FQ115) > never makes a day at or after its 7 AM
+PostgresError: new row for relation "occurrences" violates check constraint "occurrences_check1"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ makeDays ../packages/domain/src/schedule/make-days.ts:145:37
+    143|   let made = 0;
+    144|   for (const day of daysToMake(facts, now.subtract({ hours: 1 }))) {
+    145|     const inserted = await bound(tx)`
+       |                                     ^
+    146|       INSERT INTO app.occurrences
+    147|         (id, club_id, star_interval_id, schedule_version_id, local_dat…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

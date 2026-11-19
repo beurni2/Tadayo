@@ -1,0 +1,67 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/services/worker
+
+ ❯ src/generation.test.ts (6 tests | 2 failed) 14ms
+   ❯ the lines of a pass (3)
+     × says how many days were made, and nothing of which club or whose 7ms
+     × gives each failed club one line, for the error stream, apart from the count 1ms
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  2 failed | 18 passed (20)
+   Start at  06:10:08
+   Duration  1.51s (tests 90%, import 5%, transform 3%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/generation.test.ts > the lines of a pass > says how many days were made, and nothing of which club or whose
+AssertionError: expected { …(2) } to deeply equal { …(2) }
+
+- Expected
++ Received
+
+  {
+    "err": [],
+    "out": [
+-     "worker: made 18 days",
++     "worker: made 18 days in 2 clubs",
+    ],
+  }
+
+ ❯ src/generation.test.ts:35:61
+     33|
+     34|   it("says how many days were made, and nothing of which club or whose…
+     35|     expect(passLines({ clubs: 2, made: 18, failures: [] })).toEqual({ …
+       |                                                             ^
+     36|     expect(passLines({ clubs: 2, made: 1, failures: [] })).toEqual({ o…
+     37|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/generation.test.ts > the lines of a pass > gives each failed club one line, for the error stream, apart from the count
+AssertionError: expected { …(2) } to deeply equal { Object (out, err) }
+
+- Expected
++ Received
+
+@@ -2,8 +2,8 @@
+    "err": [
+      "worker: a club's days failed: club_a: PostgresError 23000",
+      "worker: a club's days failed: club_b: Error",
+    ],
+    "out": [
+-     "worker: made 4 days",
++     "worker: made 4 days in 3 clubs",
+    ],
+  }
+
+ ❯ src/generation.test.ts:40:106
+     38|
+     39|   it("gives each failed club one line, for the error stream, apart fro…
+     40|     expect(passLines({ clubs: 3, made: 4, failures: ["club_a: Postgres…
+       |                                                                                                          ^
+     41|       out: ["worker: made 4 days"],
+     42|       err: ["worker: a club's days failed: club_a: PostgresError 23000…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

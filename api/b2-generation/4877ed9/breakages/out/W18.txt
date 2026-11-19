@@ -1,0 +1,44 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/services/worker
+
+ ❯ src/generation.test.ts (6 tests | 1 failed) 12ms
+   ❯ the lines of a pass (3)
+     × gives each failed club one line, for the error stream, apart from the count 7ms
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 19 passed (20)
+   Start at  06:12:25
+   Duration  1.40s (tests 88%, import 6%, transform 5%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/generation.test.ts > the lines of a pass > gives each failed club one line, for the error stream, apart from the count
+AssertionError: expected { out: [ …(3) ], err: [] } to deeply equal { Object (out, err) }
+
+- Expected
++ Received
+
+  {
+-   "err": [
+-     "worker: a club's days failed: club_a: PostgresError 23000",
+-     "worker: a club's days failed: club_b: Error",
+-   ],
++   "err": [],
+    "out": [
+      "worker: made 4 days",
++     "club_a: PostgresError 23000",
++     "club_b: Error",
+    ],
+  }
+
+ ❯ src/generation.test.ts:40:106
+     38|
+     39|   it("gives each failed club one line, for the error stream, apart fro…
+     40|     expect(passLines({ clubs: 3, made: 4, failures: ["club_a: Postgres…
+       |                                                                                                          ^
+     41|       out: ["worker: made 4 days"],
+     42|       err: ["worker: a club's days failed: club_a: PostgresError 23000…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

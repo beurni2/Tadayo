@@ -1,0 +1,40 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/tests
+
+ ❯ src/db/make-days.test.ts (15 tests | 1 failed) 1705ms
+   ❯ making a club's days (spec 05; FQ115) (12)
+     × makes nothing for a club with no week, for an id nobody has, and refuses what can't be an id 36ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 passed (15)
+   Start at  06:02:48
+   Duration  2.04s (tests 95%, import 3%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/make-days.test.ts > making a club's days (spec 05; FQ115) > makes nothing for a club with no week, for an id nobody has, and refuses what can't be an id
+AssertionError: promise resolved "+0" instead of rejecting
+
+- Expected:
+Error {
+  "message": "rejected promise",
+}
+
++ Received:
+0
+
+ ❯ src/db/make-days.test.ts:332:62
+    330|       expect(await run(tx, bare.club, NOW)).toBe(0);
+    331|       expect(await run(tx, "club_nobody_has_this", NOW)).toBe(0);
+    332|       await expect(makeDays(tx, fakeClock(NOW), "not an id")).rejects.…
+       |                                                              ^
+    333|       expect(await daysOf(tx, bare.club)).toEqual([]);
+    334|     });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

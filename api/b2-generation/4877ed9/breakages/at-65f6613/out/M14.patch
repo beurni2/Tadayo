@@ -1,0 +1,21 @@
+diff --git a/packages/domain/src/schedule/make-days.ts b/packages/domain/src/schedule/make-days.ts
+index 4abbba73..43188810 100644
+--- a/packages/domain/src/schedule/make-days.ts
++++ b/packages/domain/src/schedule/make-days.ts
+@@ -98,7 +98,7 @@ export async function makeDays(tx: QuerySql & ClockSql, clock: Clock, clubId: st
+   if (typeof clubId !== "string" || !ID.test(clubId)) throw new TypeError("schedule: the club is a club id");
+ 
+   // 1. The club's row.
+-  const [club] = await bound(tx)`SELECT timezone FROM app.clubs WHERE id = ${clubId} FOR UPDATE`;
++  const [club] = await bound(tx)`SELECT timezone FROM app.clubs WHERE id = ${clubId}`;
+   if (club === undefined) return 0;
+   const zone = clubTimeZone(text(club["timezone"]));
+ 
+@@ -139,6 +139,7 @@ export async function makeDays(tx: QuerySql & ClockSql, clock: Clock, clubId: st
+     made: new Set(list(row["made"]).map(date)),
+   };
+ 
++  await bound(tx)`SELECT FROM app.clubs WHERE id = ${clubId} FOR UPDATE`;
+   // 4. The days.
+   let made = 0;
+   for (const day of daysToMake(facts, now)) {

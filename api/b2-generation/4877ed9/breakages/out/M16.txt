@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/tests
+
+ ❯ src/db/make-days.test.ts (15 tests | 1 failed) 1638ms
+   ❯ making a club's days (spec 05; FQ115) (12)
+     × makes no day for a club that hasn't started, though its rows hold a week (spec 04) 18ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 passed (15)
+   Start at  06:03:06
+   Duration  2.01s (tests 94%, import 4%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/make-days.test.ts > making a club's days (spec 05; FQ115) > makes no day for a club that hasn't started, though its rows hold a week (spec 04)
+AssertionError: expected 4 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 4
+
+ ❯ src/db/make-days.test.ts:319:40
+    317|           (schedule_version_id, club_id, weekday, star_interval_id, fi…
+    318|         VALUES (${week}, ${club}, 'monday', ${first}, '2026-11-09', ${…
+    319|       expect(await run(tx, club, NOW)).toBe(0);
+       |                                        ^
+    320|       expect(await daysOf(tx, club)).toEqual([]);
+    321|       // Started, the same rows make Ben's Mondays: the 9th, 16th, 23r…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/make-days.test.ts:298:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

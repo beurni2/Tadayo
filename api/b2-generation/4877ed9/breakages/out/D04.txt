@@ -1,0 +1,98 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/tests
+
+ ❯ src/db/home-days.test.ts (20 tests | 2 failed) 913ms
+   ❯ only the viewer's clubs, and only a scheduled day that isn't held, on Postgres (T9, T14, T27; FQ50, FQ63; spec 22) (7)
+     × gives nothing in a suspended club, and a paused club's days as its rows hold them (FQ50) 20ms
+   ❯ a viewer of two clubs in two zones gets each club's own days (T14) (1)
+     × never mixes them: each club's days carry its own id, star and date, whatever the other's hold 38ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 18 passed (20)
+   Start at  06:03:19
+   Duration  1.25s (tests 90%, import 5%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/home-days.test.ts > only the viewer's clubs, and only a scheduled day that isn't held, on Postgres (T9, T14, T27; FQ50, FQ63; spec 22) > gives nothing in a suspended club, and a paused club's days as its rows hold them (FQ50)
+AssertionError: each member's next day, the SQL and the policy, at 2026-11-07T06:59:59.999999Z: expected Map{ …(1) } to deeply equal Map{}
+
+- Expected
++ Received
+
+- Map {}
++ Map {
++   "mem_n4Fo_ArBZB2v0eQU1orPQA" => {
++     "closeAt": "2026-11-08T01:00:00Z",
++     "clubId": "club_JXpBiD3sj4cTeBwmbMDHyw",
++     "id": "occ_9EZ3Z6so1crNcIicN_YQrQ",
++     "localDate": "2026-11-07",
++     "phase": "collecting",
++     "revealAt": "2026-11-07T07:00:00Z",
++     "star": {
++       "avatarVersion": null,
++       "displayName": "Ana",
++       "membershipId": "mem_n4Fo_ArBZB2v0eQU1orPQA",
++     },
++   },
++ }
+
+ ❯ both src/db/home-days.test.ts:239:96
+    237|   const starsSql = await byStarSql(tx, viewer, club, now);
+    238|   const starsPolicy = await byStarPolicy(tx, facts, club, now);
+    239|   expect(starsSql, `each member's next day, the SQL and the policy, at…
+       |                                                                                                ^
+    240|   // The club's next day is the earliest of its members' next days, or…
+    241|   const earliest = [...starsSql.values()]
+ ❯ src/db/home-days.test.ts:393:44
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:386:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/home-days.test.ts > a viewer of two clubs in two zones gets each club's own days (T14) > never mixes them: each club's days carry its own id, star and date, whatever the other's hold
+AssertionError: each member's next day, the SQL and the policy, at 2026-11-07T08:00:00Z: expected Map{ …(3) } to deeply equal Map{}
+
+- Expected
++ Received
+
+- Map {}
++ Map {
++   "mem_BWMa7vNdjpB4POKf-cIbvg" => null,
++   "mem_Ek2M9tjbKtk1ef-cdkVmMw" => null,
++   "mem_y-ZQ00R4vfY3M1JlzifLBA" => {
++     "closeAt": "2026-11-08T06:00:00Z",
++     "clubId": "club_n9Y-AxELW4QCUYicndNezw",
++     "id": "occ_3tf3tzRjuliQgmq8EuC9aw",
++     "localDate": "2026-11-07",
++     "phase": "collecting",
++     "revealAt": "2026-11-07T12:00:00Z",
++     "star": {
++       "avatarVersion": null,
++       "displayName": "Ana 6YZlpw",
++       "membershipId": "mem_y-ZQ00R4vfY3M1JlzifLBA",
++     },
++   },
++ }
+
+ ❯ both src/db/home-days.test.ts:239:96
+    237|   const starsSql = await byStarSql(tx, viewer, club, now);
+    238|   const starsPolicy = await byStarPolicy(tx, facts, club, now);
+    239|   expect(starsSql, `each member's next day, the SQL and the policy, at…
+       |                                                                                                ^
+    240|   // The club's next day is the earliest of its members' next days, or…
+    241|   const earliest = [...starsSql.values()]
+ ❯ both2 src/db/home-days.test.ts:558:13
+ ❯ src/db/home-days.test.ts:583:15
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:543:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

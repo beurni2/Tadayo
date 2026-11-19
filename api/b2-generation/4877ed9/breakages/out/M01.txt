@@ -1,0 +1,54 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/tests
+
+ ❯ src/db/make-days.test.ts (15 tests | 2 failed) 1576ms
+   ❯ runs at once, committed (spec 34; T1) (3)
+     × samples its clock only once it holds the club's row, and dates its days from that sample (T1; T3's order) 84ms
+     × waits for a confirmation in flight and reads the week only once it has the club's row: the day confirmed meanwhile is made too (FQ61) 76ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 13 passed (15)
+   Start at  06:02:29
+   Duration  2.38s (tests 94%, transform 3%, import 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/make-days.test.ts > runs at once, committed (spec 34; T1) > samples its clock only once it holds the club's row, and dates its days from that sample (T1; T3's order)
+AssertionError: expected 1 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ ❯ src/db/make-days.test.ts:382:27
+    380|       try {
+    381|         await waitingOn(db, hold.pid);
+    382|         expect(samples()).toBe(0);
+       |                           ^
+    383|         // The time moves while it waits: Saturday the 7th, 9:41 AM, w…
+    384|         clock.set(at("2026-11-07T14:41:00Z"));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/make-days.test.ts > runs at once, committed (spec 34; T1) > waits for a confirmation in flight and reads the week only once it has the club's row: the day confirmed meanwhile is made too (FQ61)
+AssertionError: expected 8 to be 12 // Object.is equality
+
+- Expected
++ Received
+
+- 12
++ 8
+
+ ❯ src/db/make-days.test.ts:428:29
+    426|       // Maya's four Tuesdays, Alex's four Wednesdays and Sam's four T…
+    427|       // had read the week before it had the row would have made eight.
+    428|       expect(await running).toBe(12);
+       |                             ^
+    429|       const days = await daysOf(world, w.club);
+    430|       expect(days.filter((day) => day.star_interval_id === w.members[3…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

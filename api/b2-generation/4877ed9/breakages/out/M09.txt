@@ -1,0 +1,32 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/tests
+
+ ❯ src/db/make-days.test.ts (15 tests | 1 failed) 1754ms
+   ❯ making a club's days (spec 05; FQ115) (12)
+     × lists the clubs that have a week, in id order, and no club without one 57ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 14 passed (15)
+   Start at  06:02:50
+   Duration  2.10s (tests 95%, import 2%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/make-days.test.ts > making a club's days (spec 05; FQ115) > lists the clubs that have a week, in id order, and no club without one
+AssertionError: expected [ Array(62) ] to not include 'club_nfLKXwOxnRvlB78iW3IK_g'
+ ❯ src/db/make-days.test.ts:346:26
+    344|       // A week nobody has confirmed a day in is still listed: it is o…
+    345|       expect(listed).toContain(two.club);
+    346|       expect(listed).not.toContain(bare.club);
+       |                          ^
+    347|       expect(listed).toEqual([...listed].sort((a, b) => (a < b ? -1 : …
+    348|       expect(new Set(listed).size).toBe(listed.length);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/make-days.test.ts:338:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,27 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/packages/domain
+
+ ❯ src/schedule/order.test.ts (8 tests | 1 failed) 10ms
+   ❯ the roster's order (spec 09; FQ26, FQ98, FQ114) (8)
+     × lists every member once, and refuses a roster that names one twice 4ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 30 passed (31)
+   Start at  06:02:29
+   Duration  175ms (tests 51%, import 27%, transform 14%, worker 8%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/order.test.ts > the roster's order (spec 09; FQ26, FQ98, FQ114) > lists every member once, and refuses a roster that names one twice
+AssertionError: expected [Function] to throw an error
+ ❯ src/schedule/order.test.ts:88:95
+     86|   it("lists every member once, and refuses a roster that names one twi…
+     87|     expect(rosterOrder({ joined: [], firstDaysOpen: false, inForce: []…
+     88|     expect(() => rosterOrder({ joined: ["ben", "ben"], firstDaysOpen: …
+       |                                                                                               ^
+     89|   });
+     90| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

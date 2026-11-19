@@ -1,0 +1,13 @@
+diff --git a/services/worker/src/generation.ts b/services/worker/src/generation.ts
+index 955abd97..1c11a932 100644
+--- a/services/worker/src/generation.ts
++++ b/services/worker/src/generation.ts
+@@ -69,7 +69,7 @@ export async function generationPass(
+       });
+     } catch (error) {
+       // An id is the work list's, from the database; anything else isn't repeated.
+-      failures.push(`${ID.test(id) ? id : "a club with no id"}: ${describeFailure(error)}`);
++      throw error;
+     }
+   }
+   return { clubs: visited, made, failures };

@@ -1,0 +1,175 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/packages/domain
+
+ ❯ src/schedule/generate.test.ts (23 tests | 2 failed) 48ms
+   ❯ the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) (16)
+     × makes each date under the version in force on it: the latest that started on or before it (FQ61) 12ms
+     × finds the version in force among three given in any order (FQ61) 2ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  2 failed | 29 passed (31)
+   Start at  06:02:22
+   Duration  218ms (tests 41%, transform 27%, import 26%, worker 6%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > makes each date under the version in force on it: the latest that started on or before it (FQ61)
+AssertionError: expected [ …(18) ] to deeply equal [ …(6) ]
+
+- Expected
++ Received
+
+  [
+    [
+      "2026-11-16",
+-     "ver_2",
+-     "leila",
++     "ver_1",
++     "ben",
+    ],
+    [
+      "2026-11-17",
+-     "ver_2",
+-     "ben",
++     "ver_1",
++     "maya",
++   ],
++   [
++     "2026-11-18",
++     "ver_1",
++     "alex",
++   ],
++   [
++     "2026-11-19",
++     "ver_1",
++     "sam",
++   ],
++   [
++     "2026-11-20",
++     "ver_1",
++     "debby",
++   ],
++   [
++     "2026-11-21",
++     "ver_1",
++     "nina",
+    ],
+    [
+      "2026-11-23",
+-     "ver_2",
+-     "leila",
++     "ver_1",
++     "ben",
+    ],
+    [
+      "2026-11-24",
+-     "ver_2",
+-     "ben",
++     "ver_1",
++     "maya",
++   ],
++   [
++     "2026-11-25",
++     "ver_1",
++     "alex",
++   ],
++   [
++     "2026-11-26",
++     "ver_1",
++     "sam",
++   ],
++   [
++     "2026-11-27",
++     "ver_1",
++     "debby",
++   ],
++   [
++     "2026-11-28",
++     "ver_1",
++     "nina",
+    ],
+    [
+      "2026-11-30",
+-     "ver_2",
+-     "leila",
++     "ver_1",
++     "ben",
+    ],
+    [
+      "2026-12-01",
+-     "ver_2",
+-     "ben",
++     "ver_1",
++     "maya",
++   ],
++   [
++     "2026-12-02",
++     "ver_1",
++     "alex",
++   ],
++   [
++     "2026-12-03",
++     "ver_1",
++     "sam",
++   ],
++   [
++     "2026-12-04",
++     "ver_1",
++     "debby",
++   ],
++   [
++     "2026-12-05",
++     "ver_1",
++     "nina",
+    ],
+  ]
+
+ ❯ src/schedule/generate.test.ts:266:82
+    264|     ]);
+    265|     // From its start only the new week's days: nothing of the old one…
+    266|     expect(after.map((day) => [day.localDate, day.versionId, day.starI…
+       |                                                                                  ^
+    267|       ["2026-11-16", "ver_2", "leila"],
+    268|       ["2026-11-17", "ver_2", "ben"],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/schedule/generate.test.ts > the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ115) > finds the version in force among three given in any order (FQ61)
+AssertionError: expected [ [ '2026-11-09', 'ver_1' ], …(3) ] to deeply equal [ [ '2026-11-09', 'ver_1' ], …(3) ]
+
+- Expected
++ Received
+
+@@ -3,16 +3,16 @@
+      "2026-11-09",
+      "ver_1",
+    ],
+    [
+      "2026-11-16",
+-     "ver_2",
++     "ver_1",
+    ],
+    [
+      "2026-11-23",
+-     "ver_2",
++     "ver_1",
+    ],
+    [
+-     "2026-12-01",
+-     "ver_3",
++     "2026-11-30",
++     "ver_1",
+    ],
+  ]
+
+ ❯ src/schedule/generate.test.ts:293:65
+    291|     ]) {
+    292|       const owed = daysToMake(club({ versions }), at(NOW));
+    293|       expect(owed.map((day) => [day.localDate, day.versionId])).toEqua…
+       |                                                                 ^
+    294|     }
+    295|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

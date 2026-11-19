@@ -1,0 +1,13 @@
+diff --git a/services/worker/src/generation.ts b/services/worker/src/generation.ts
+index 955abd97..96effe6e 100644
+--- a/services/worker/src/generation.ts
++++ b/services/worker/src/generation.ts
+@@ -50,7 +50,7 @@ export function describeFailure(error: unknown): string {
+ export async function generationPass(
+   sql: WorkerSql,
+   clock: Clock,
+-  clubs: (sql: WorkerSql) => Promise<readonly string[]> = clubsWithAWeek,
++  clubs: (sql: WorkerSql) => Promise<readonly string[]> = () => Promise.resolve([]),
+   stopping: () => boolean = () => false,
+ ): Promise<PassResult> {
+   const ids = await clubs(sql);

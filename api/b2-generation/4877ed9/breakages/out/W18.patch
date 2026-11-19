@@ -1,0 +1,11 @@
+diff --git a/services/worker/src/generation.ts b/services/worker/src/generation.ts
+index 6ce9a37b..848852b7 100644
+--- a/services/worker/src/generation.ts
++++ b/services/worker/src/generation.ts
+@@ -83,5 +83,5 @@ export async function generationPass(
+ export function passLines(result: PassResult): { readonly out: string[]; readonly err: string[] } {
+   const out: string[] = [];
+   if (result.made > 0) out.push(`worker: made ${String(result.made)} ${result.made === 1 ? "day" : "days"}`);
+-  return { out, err: result.failures.map((failure) => `worker: a club's days failed: ${failure}`) };
++  return { out: [...out, ...result.failures], err: [] };
+ }

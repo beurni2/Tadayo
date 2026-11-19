@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/clubs/members.ts b/packages/domain/src/clubs/members.ts
+index 27380487..2df0dc72 100644
+--- a/packages/domain/src/clubs/members.ts
++++ b/packages/domain/src/clubs/members.ts
+@@ -131,7 +131,7 @@ export async function listMembers(
+                    '[]'::pg_catalog.jsonb)
+               FROM app.schedule_versions v WHERE v.club_id = c.id) AS versions
+       FROM app.clubs c
+-      JOIN (${activeMemberships(sql, userId)}) am ON am.club_id = c.id
++      JOIN (SELECT m.club_id, m.interval_id FROM app.memberships m WHERE m.user_id = ${userId}) am ON am.club_id = c.id
+       LEFT JOIN (${daysByClub(sql, userId, now)}) h ON h.club_id = c.id
+      WHERE c.id = ${clubId}::pg_catalog.text`;
+   const [row] = rows;

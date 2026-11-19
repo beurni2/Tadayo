@@ -1,0 +1,31 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/services/worker
+
+ ❯ src/generation.test.ts (6 tests | 1 failed) 10ms
+   ❯ a failure as the worker reports it (T52, T56) (3)
+     × drops a code that isn't a plain word, which could carry anything 5ms
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 19 passed (20)
+   Start at  05:42:14
+   Duration  1.53s (tests 88%, import 6%, transform 5%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/generation.test.ts > a failure as the worker reports it (T52, T56) > drops a code that isn't a plain word, which could carry anything
+AssertionError: expected 'Error postgres://u:p@h' to be 'Error' // Object.is equality
+
+Expected: "Error"
+Received: "Error postgres://u:p@h"
+
+ ❯ src/generation.test.ts:16:90
+     14|
+     15|   it("drops a code that isn't a plain word, which could carry anything…
+     16|     expect(describeFailure(Object.assign(new Error("x"), { code: "post…
+       |                                                                                          ^
+     17|     expect(describeFailure(Object.assign(new Error("x"), { code: 42 })…
+     18|     expect(describeFailure(Object.assign(new Error("x"), { code: "ECON…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

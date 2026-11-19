@@ -1,0 +1,61 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/tests
+
+ ❯ src/db/worker-generation.test.ts (7 tests | 1 failed) 12596ms
+   ❯ a generation pass (spec 05, 34) (6)
+     × gives up on a club whose row stays held, names it by its id and Postgres's code, and makes the next club's days 10191ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  05:43:56
+   Duration  13.03s (tests 99%, transform 1%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-generation.test.ts [ src/db/worker-generation.test.ts ]
+PostgresError: update or delete on table "occurrences" violates foreign key constraint "contribution_counters_occurrence_id_club_id_fkey" on table "contribution_counters"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ src/db/week-world.ts:211:15
+    209|     await admin.begin(async (tx) => {
+    210|       await tx`ALTER TABLE app.occurrences DISABLE TRIGGER occurrences…
+    211|       await tx`DELETE FROM app.occurrences`;
+       |               ^
+    212|       await tx`ALTER TABLE app.occurrences ENABLE TRIGGER occurrences_…
+    213|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/worker-generation.test.ts > a generation pass (spec 05, 34) > gives up on a club whose row stays held, names it by its id and Postgres's code, and makes the next club's days
+AssertionError: expected { clubs: 2, made: 25, …(1) } to deeply equal { clubs: 2, made: 25, …(1) }
+
+- Expected
++ Received
+
+  {
+    "clubs": 2,
+    "failures": [
+-     "club_VTidcxDKYOycevJOQJsHLw: PostgresError 55P03",
++     "club_VTidcxDKYOycevJOQJsHLw: PostgresError 57014",
+    ],
+    "made": 25,
+  }
+
+ ❯ src/db/worker-generation.test.ts:82:24
+     80|         const result = await generationPass(worker, fakeClock(NOW), on…
+     81|         // 55P03 is lock_not_available: the wait for the club's row ra…
+     82|         expect(result).toEqual({ clubs: 2, made: 25, failures: [`${stu…
+       |                        ^
+     83|         const waited = performance.now() - began;
+     84|         expect(waited).toBeGreaterThanOrEqual(LOCK_WAIT_MS - 100);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

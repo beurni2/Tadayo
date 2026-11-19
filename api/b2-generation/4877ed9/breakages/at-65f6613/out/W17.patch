@@ -1,0 +1,11 @@
+diff --git a/services/worker/src/connection.ts b/services/worker/src/connection.ts
+index 51c564f6..8205be1d 100644
+--- a/services/worker/src/connection.ts
++++ b/services/worker/src/connection.ts
+@@ -11,5 +11,5 @@ import postgres from "postgres";
+ export type WorkerSql = postgres.Sql<{ instant: Temporal.Instant }>;
+ 
+ export function connect(url: string): WorkerSql {
+-  return postgres(url, { types: { instant: INSTANT_TYPE }, onnotice: () => undefined, ...transportOptions(url) });
++  return postgres(url, { types: { instant: INSTANT_TYPE }, ...transportOptions(url) });
+ }

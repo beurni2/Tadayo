@@ -1,0 +1,27 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/services/worker
+
+ ❯ src/connection.test.ts (3 tests | 1 failed) 13ms
+   ❯ connect (3)
+     × prints no notice Postgres sends: a notice can quote a row's values (T52) 8ms
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 19 passed (20)
+   Start at  06:12:23
+   Duration  1.44s (tests 91%, import 5%, transform 3%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/connection.test.ts > connect > prints no notice Postgres sends: a notice can quote a row's values (T52)
+TypeError: sql.options.onnotice is not a function
+ ❯ src/connection.test.ts:32:19
+     30|     try {
+     31|       expect(sql.options.onnotice).not.toBe(console.log);
+     32|       sql.options.onnotice({ severity: "NOTICE", message: "mem_secret'…
+       |                   ^
+     33|       expect(printed).not.toHaveBeenCalled();
+     34|     } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

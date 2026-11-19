@@ -1,0 +1,42 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/services/worker
+
+ ❯ src/loop.test.ts (8 tests | 2 failed) 10367ms
+   ❯ the worker's loop (spec 34) (8)
+     × runs a pass at the start, before any wait 5015ms
+     × ends a wait at once when it is told to stop: it doesn't sit out the minute 5001ms
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  2 failed | 18 passed (20)
+   Start at  05:41:46
+   Duration  10.57s (tests 97%, transform 2%, import 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/loop.test.ts > the worker's loop (spec 34) > runs a pass at the start, before any wait
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/loop.test.ts:17:3
+     15|
+     16| describe("the worker's loop (spec 34)", () => {
+     17|   it("runs a pass at the start, before any wait", async () => {
+       |   ^
+     18|     const stop = gate<string>();
+     19|     let passes = 0;
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/loop.test.ts > the worker's loop (spec 34) > ends a wait at once when it is told to stop: it doesn't sit out the minute
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/loop.test.ts:82:3
+     80|   });
+     81|
+     82|   it("ends a wait at once when it is told to stop: it doesn't sit out …
+       |   ^
+     83|     const stop = gate<string>();
+     84|     const done = runLoop({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

@@ -1,0 +1,13 @@
+diff --git a/services/worker/src/generation.ts b/services/worker/src/generation.ts
+index 955abd97..6b2aeca7 100644
+--- a/services/worker/src/generation.ts
++++ b/services/worker/src/generation.ts
+@@ -63,7 +63,7 @@ export async function generationPass(
+     try {
+       made += await sql.begin(async (tx) => {
+         await tx`
+-          SELECT pg_catalog.set_config('lock_timeout', ${`${String(LOCK_WAIT_MS)}ms`}, true),
++          SELECT pg_catalog.set_config('lock_timeout', ${"20000ms"}, true),
+                  pg_catalog.set_config('statement_timeout', ${`${String(STATEMENT_MS)}ms`}, true)`;
+         return makeDays(tx, clock, id);
+       });

@@ -1,0 +1,27 @@
+
+ RUN  v5.0.5 /home/user/tadayo-gen-mut/packages/domain
+
+ ❯ src/schedule/generate.test.ts (23 tests | 1 failed) 35ms
+   ❯ a made day's instants across a clock change (T2; ADR-008) (7)
+     × refuses a zone that isn't an IANA name, instead of guessing one (FQ19) 4ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 30 passed (31)
+   Start at  05:36:01
+   Duration  211ms (transform 38%, tests 34%, import 21%, worker 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/generate.test.ts > a made day's instants across a clock change (T2; ADR-008) > refuses a zone that isn't an IANA name, instead of guessing one (FQ19)
+AssertionError: expected function to throw an error, but it didn't
+ ❯ src/schedule/generate.test.ts:354:98
+    352|     expect(() => daysToMake(club({ zone: "+05:00" }), at("2026-11-06T1…
+    353|     // Whether or not the club is owed a day: the zone is checked befo…
+    354|     expect(() => daysToMake(club({ zone: "+05:00", versions: [] }), at…
+       |                                                                                                  ^
+    355|     expect(() => daysToMake(club({ zone: "+05:00", activated: false })…
+    356|       RangeError,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

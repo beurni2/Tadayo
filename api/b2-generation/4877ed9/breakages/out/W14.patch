@@ -1,0 +1,12 @@
+diff --git a/services/worker/src/generation.ts b/services/worker/src/generation.ts
+index 6ce9a37b..c9893c45 100644
+--- a/services/worker/src/generation.ts
++++ b/services/worker/src/generation.ts
+@@ -62,7 +62,6 @@ export async function generationPass(
+   let made = 0;
+   const failures: string[] = [];
+   for (const id of ids) {
+-    if (stopping()) break;
+     visited += 1;
+     try {
+       made += await sql.begin(async (tx) => {
