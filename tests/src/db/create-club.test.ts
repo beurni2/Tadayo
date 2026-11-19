@@ -356,9 +356,10 @@ describe("who may make a club (T27, FQ69)", () => {
         }, 300);
       }),
     ]);
-    expect(settled).toBe("waiting");
+    // The deletion is let go whatever was seen, so a failure here can't leave its transaction open.
     finish();
     await deleting;
+    expect(settled).toBe("waiting");
     expect(await refusal(making)).toEqual({ code: "UNAUTHENTICATED", facts: {} });
     const all = db as unknown as WorldTx;
     expect(await clubsOf(all, ben)).toEqual([]);
@@ -388,13 +389,13 @@ describe("who may make a club (T27, FQ69)", () => {
       // The receipt's own guard (0009's idempotency_receipts_actor_guard) raises before the command reads the
       // account, so this is a failure the route answers with a bare 500, never a club.
       const nobody = newId("acct");
-      await expect(request(tx, nobody)).rejects.toThrow(/actor|receipt|idempotency/i);
+      await expect(request(tx, nobody)).rejects.toThrow(/keeps no receipts/);
       await expect(request(tx, nobody)).rejects.not.toBeInstanceOf(Refused);
       expect(await clubsOf(tx, nobody)).toEqual([]);
     });
   });
 
-  it("throws, before any statement, for an input the route would never send: an id, a key or a field that can't be one", async () => {
+  it("throws, and writes nothing, for an input the route would never send: an id, a key or a field that can't be one", async () => {
     await rolledBack(db, async (tx) => {
       const ben = await newUser(plain(tx), "Ben");
       const good = { userId: ben, key: randomUUID(), name: "Sunday people", timezone: "America/New_York" };

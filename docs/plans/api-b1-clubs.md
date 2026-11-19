@@ -19,6 +19,8 @@ Each starts from `main` once the one before has merged.
 
 Then `api/b2-first-days-roster` and `api/b2-membership-change`, as the schedule's plan has them.
 
+`getMemberAvatar`, the one other clubs operation still unbuilt, is in none of the four: it serves an avatar's image, which needs the upload and the media route (spike S1's server part, then B3).
+
 ## 2. This PR: `createClub` and `getClub`
 
 ### 2.1 Sources
@@ -36,7 +38,7 @@ Then `api/b2-first-days-roster` and `api/b2-membership-change`, as the schedule'
 
 - Who: `activeMemberships`, the authorization module's one rule for something of a club that isn't a drop. The account is active, it has an active interval there, and the club isn't suspended. Anyone else, and an id that can't be one, gets null, which the route answers with the neutral not-found (T9, T14, FQ80).
 - What: the club exactly as `listClubs` gives it (the same `clubRow`: its state, its members' number, Home's two days at `now`), `roster_version`, `can_propose` and the open roster revision's id when there is one.
-- `can_propose` is true while the active members and the candidates still open are under six (`CLUB_SIZE`; A01). It says the roster is full, never who has accepted (T33).
+- `can_propose` is true while the active members and the candidates still open are under six (`CLUB_SIZE`; A01). It says the roster is full, never who has accepted (T33). The contract's other reason for false, "the club can't take proposals", is today only a suspended club, which nobody reads; PR 2's `proposeRoster` must answer `CLUB_FULL` exactly where this is false.
 - One statement, so one snapshot.
 
 **`createClub(tx, clock, input, render)`** (`packages/domain/src/clubs/create-club.ts`), in one READ COMMITTED transaction. A refusal rolls everything back, the receipt included.
@@ -50,11 +52,12 @@ Then `api/b2-first-days-roster` and `api/b2-membership-change`, as the schedule'
 
 **The route** (`services/api/src/clubs/club.ts`) checks the key, then the body by the contract's own `CreateClubRequest`, and names the first bad field among `name` and `timezone`, never a value and never an unknown key. Both routes serialize by one explicit field list, `clubDetailBody` (T55).
 
-### 2.3 Two decisions
+### 2.3 Decisions
 
 - **`server_now` on a replay.** T19 says the same key and body get the original result. T1 says a countdown runs from `server_now`, so an old instant in a replayed answer would start a countdown in the past. The receipt therefore keeps the `ClubDetail` without `server_now`, and the route adds the instant of each request's own transaction. A replay is the first answer in every other field. A new club has no day, so nothing in the stored part depends on the clock.
-- **A replay after the club has changed.** A retry under the same key gets the first answer even when its sender has since left the club or the club has been suspended. FQ112's default (the neutral not-found for someone who has lost the club) is for answers that name other people. This one holds only what its sender sent, the club's id and the sender's own membership id, and it reaches only its sender (`tests/src/db/create-club.test.ts`, "answers a retry with the first answer though the club has changed since").
-- **How many clubs one account may make: FQ118.** No source gives a number. The default is no cap in the closed trial: the list shows an account's first 50 clubs (`LIST_LIMIT`), and a cap, if the founder wants one, comes with a contract PR that gives its refusal a code. `createClub` keeps the app's general 128 KiB body limit.
+- **A replay after the club has changed.** A retry under the same key gets the first answer even when its sender has since left the club or the club has been suspended. FQ112's default (the neutral not-found for someone who has lost the club) is for answers that name other people. This one names nobody else: it holds what its sender sent, the club's id, the sender's own membership id and the new club's first facts (proposed, one member, version 0, room to propose), and it reaches only its sender (`tests/src/db/create-club.test.ts`, "answers a retry with the first answer to its sender though the club is suspended or its creator has left: it names nobody else (FQ112)"). A replay doesn't read the account's state again either, as `updateMe`'s doesn't: the gate read it one request earlier. The founder is told under FQ112.
+- **How many clubs one account may make: FQ118.** No source gives a number. The default is no cap in the closed trial: the list shows an account's first 50 clubs (`LIST_LIMIT`), and a cap, if the founder wants one, comes with a contract PR that gives its refusal a code; a rate limit needs none, since every operation already has `RATE_LIMITED`. A club past an account's fiftieth is made and then missing from the list.
+- **The body limit.** As first pushed, `createClub` kept the app's general 128 KiB. After the review it takes `updateMe`'s 17 KiB (`services/api/src/app.ts` `ROUTE_BODY_LIMITS`): its largest valid body is under half of that.
 
 ### 2.4 Tests
 
@@ -62,9 +65,9 @@ The tests of this PR were written after its code, not before it, against the con
 
 - **Rules, on Postgres** (`tests/src/db/create-club.test.ts`): the rows a creation writes; the zone's spelling; the replay at a later clock; the conflict; eight requests at once under one key make one club; an account being deleted, and a request that waits for a deletion holding the account's row; an account with no name; `readClub` for a member, a former member, a stranger and a malformed id; a club under two members; a suspended club; six people with the open candidates counted.
 - **Routes** (`services/api/src/clubs/club.test.ts`): the serializer against the contract's three examples; every refusal that comes before a transaction; the 201; the mapping of each refusal; `getClub`'s 404.
-- **The privacy matrix** (`tests/src/privacy/club.ts`, `rows.ts`, `matrix.test.ts`): `getClub` judged for every role in every phase from the world's rows, apart from the statements the route runs, with a field beyond the contract's failing the row. `createClub` sent eleven requests per role and phase: eight the contract refuses, one club made, its replay and a conflict. Then the new club read by its creator and listed. `tests/src/privacy/club.test.ts` tests the judges themselves on answers that are wrong in one way each.
+- **The privacy matrix** (`tests/src/privacy/club.ts`, `rows.ts`, `matrix.test.ts`): `getClub` judged for every role, state and phase from the world's rows, apart from the statements the route runs, with a field beyond the contract's failing the row. `createClub` sent eleven requests per role, state and phase: seven the contract refuses and one past the route's body limit, then one club made, its replay and a conflict. Then the new club read by its creator, listed, and refused to someone of another club; and the creator's clubs counted in the rows after each table, so that a refused body or a retry that made a club fails. `tests/src/privacy/club.test.ts` tests the judges themselves on answers that are wrong in one way each.
 - **The leak scanner** reads the same answers.
-- **Deliberate breakages** of the rules, the routes and the judges, each of which a test must catch, published on the `evidence` branch under `api/b1-create-club/<short-sha>/breakages/`.
+- **Deliberate breakages**, run after the tests were written and again at the PR's last head: one-place changes of the rules, the routes and the judges, each of which a test must catch, published on the `evidence` branch under `api/b1-create-club/<short-sha>/breakages/`.
 
 ### 2.5 What this PR leaves
 
