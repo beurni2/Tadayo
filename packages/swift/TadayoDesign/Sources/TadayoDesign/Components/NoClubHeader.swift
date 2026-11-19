@@ -17,7 +17,8 @@ import SwiftUI
 /// then "+ Add" with its words at the leading inset and Account at the trailing one, centred in
 /// the row. "+ Add"'s target there is its words, at least 44 high: the contract's [20, 104, 249,
 /// 76] at the largest size follows from no stated rule (the ios lane's needs list, item 59), so
-/// the header is about 11 points shorter there than the contract's 124. Below the accessibility
+/// the header measures 100 points high there, with a target of 120 by 52, where the contract
+/// has 124 (`TabsLayoutTests`' stacked test attaches the measures). Below the accessibility
 /// sizes the header stacks the same way only when the row doesn't fit (handoff 4: "can stack its
 /// wordmark and actions when necessary"). The wordmark and the avatar keep their size; "+ Add"
 /// grows with the text. The screen puts the header at the top of its scrolling content.
