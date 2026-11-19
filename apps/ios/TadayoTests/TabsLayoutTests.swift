@@ -194,24 +194,33 @@ final class TabsLayoutTests: XCTestCase {
         scroll.setContentOffset(CGPoint(x: rest.x, y: rest.y + 68), animated: false)
         turn(0.3)
 
+        // Read pixel for pixel at the window's own scale: scaled down to a pixel a point, the
+        // words' edge just under the band rings into its last row (`ios` 44464008020: row 61 of
+        // 62 came out lighter than the canvas beside the words, on both runtimes).
         let band = 20.0
-        let pixels = try XCTUnwrap(
-            drawn(window, rows: Int(top + band)), "the window couldn't be drawn")
-        let canvas = pixels.at(2, Int(top) + 2)
+        let pixels = try XCTUnwrap(drawn(window, points: top + band), "the window wasn't drawn")
+        let edge = Int((top * pixels.scale).rounded(.down))
+        let canvas = pixels.at(2, edge + 4)
         var odd: [String] = []
-        for y in 0..<Int(top) {
+        for y in 0..<edge {
             for x in 0..<pixels.width where pixels.differs(pixels.at(x, y), canvas) {
                 if odd.count < 5 { odd.append("(\(x), \(y)) \(pixels.at(x, y))") }
             }
         }
-        XCTAssertEqual(odd, [], "the status bar's area isn't the canvas \(canvas) throughout")
+        XCTAssertEqual(
+            odd, [],
+            "the status bar's area, \(edge) rows of pixels, isn't the canvas \(canvas) throughout")
         // The same rows without the band would hold + Add's words: they are there just below,
         // so the scroll moved them and the drawing shows what's on the screen.
         var ink = 0
-        for y in Int(top)..<Int(top + band) {
-            for x in 20..<200 where pixels.differs(pixels.at(x, y), canvas) { ink += 1 }
+        let left = Int(20 * pixels.scale)
+        let right = Int(200 * pixels.scale)
+        for y in edge..<pixels.height {
+            for x in left..<right where pixels.differs(pixels.at(x, y), canvas) { ink += 1 }
         }
-        XCTAssertGreaterThan(ink, 50, "+ Add's words aren't just under the status bar's area")
+        XCTAssertGreaterThan(
+            ink, Int(50 * pixels.scale * pixels.scale),
+            "+ Add's words aren't just under the status bar's area")
     }
 
     // MARK: Helpers
@@ -232,6 +241,9 @@ final class TabsLayoutTests: XCTestCase {
     private struct Pixels {
         let bytes: [UInt8]
         let width: Int
+        let height: Int
+        /// Pixels to a point.
+        let scale: CGFloat
 
         func at(_ x: Int, _ y: Int) -> [UInt8] {
             let start = (y * width + x) * 4
@@ -244,30 +256,33 @@ final class TabsLayoutTests: XCTestCase {
         }
     }
 
-    /// The window's top `rows` points as drawn, a pixel a point, in sRGB.
-    private func drawn(_ window: UIWindow, rows: Int) -> Pixels? {
-        let width = Int(window.bounds.width)
+    /// The window's top `points` as drawn, pixel for pixel at the window's scale, in sRGB.
+    private func drawn(_ window: UIWindow, points: CGFloat) -> Pixels? {
+        let scale = window.traitCollection.displayScale
         let format = UIGraphicsImageRendererFormat()
-        format.scale = 1
+        format.scale = scale
         format.opaque = true
         format.preferredRange = .standard
-        let size = CGSize(width: width, height: rows)
+        let size = CGSize(width: window.bounds.width, height: points)
         let image = UIGraphicsImageRenderer(size: size, format: format).image { _ in
             window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
         }
         guard let cgImage = image.cgImage, let space = CGColorSpace(name: CGColorSpace.sRGB)
         else { return nil }
-        var bytes = [UInt8](repeating: 0, count: width * rows * 4)
+        let width = cgImage.width
+        let height = cgImage.height
+        var bytes = [UInt8](repeating: 0, count: width * height * 4)
         let made = bytes.withUnsafeMutableBytes { buffer -> Bool in
             guard
                 let context = CGContext(
-                    data: buffer.baseAddress, width: width, height: rows, bitsPerComponent: 8,
+                    data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8,
                     bytesPerRow: width * 4, space: space,
                     bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
             else { return false }
-            context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: rows))
+            context.interpolationQuality = .none
+            context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
             return true
         }
-        return made ? Pixels(bytes: bytes, width: width) : nil
+        return made ? Pixels(bytes: bytes, width: width, height: height, scale: scale) : nil
     }
 }
