@@ -151,9 +151,11 @@ const membersOf = (tx: WorldTx, club: string) =>
 const candidateState = async (tx: WorldTx, id: string): Promise<string | undefined> =>
   (await tx<{ state: string }[]>`SELECT state FROM app.candidates WHERE id = ${id}`)[0]?.state;
 
+// In the order of the ids' bytes, whatever the database's collation, so a test can sort what it expects the same way.
 const approvalsOf = (tx: WorldTx, revision: string) =>
   tx<{ interval_id: string; decision: string; implicit: boolean }[]>`
-    SELECT interval_id, decision, implicit FROM app.roster_approvals WHERE revision_id = ${revision} ORDER BY interval_id`;
+    SELECT interval_id, decision, implicit FROM app.roster_approvals
+    WHERE revision_id = ${revision} ORDER BY interval_id COLLATE "C"`;
 
 const clubRow = async (tx: WorldTx, club: string) =>
   (
