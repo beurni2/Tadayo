@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { everyoneConfirmed, judgeChangeConfirmation, judgeChoice, judgeConfirmation } from "./decide.ts";
+import { everyoneConfirmed, judgeChoice, judgeConfirmation } from "./decide.ts";
 import type { Weekday } from "./propose.ts";
-import type { ProposalMember, WeekFacts } from "./view.ts";
+import { pickWeekFacts, type ProposalMember, type WeekFacts } from "./view.ts";
 
 const member = (
   id: string,
@@ -177,41 +177,45 @@ describe("when the first days apply (the contract's ScheduleProposal; FQ100, FQ1
   });
 });
 
-describe("a membership change's confirmation (the contract's ScheduleConfirmRequest; FQ56, FQ81)", () => {
-  /** A change for three, two days each, proposed and held; Maya has confirmed. */
-  const CHANGE: WeekFacts = {
-    daysPerMember: 2,
-    members: [
-      member("ben", ["monday", "thursday"]),
-      member("debby", ["tuesday", "friday"]),
-      member("maya", ["wednesday", "saturday"], { confirmed: true }),
-    ],
-    firstDates: {},
-  };
+describe("a new member's choice and confirmation in a membership change, on the pick's facts (FQ125, FQ127)", () => {
+  // Three members already in the week, one day each after a fourth joined; Sam and Nina pick.
+  const LATEST = [
+    { weekday: "monday" as const, star: "ben", starActive: true, firstDate: "2026-09-07" },
+    { weekday: "tuesday" as const, star: "debby", starActive: true, firstDate: "2026-09-08" },
+    { weekday: "wednesday" as const, star: "maya", starActive: false, firstDate: "2026-09-09" },
+  ];
+  const PICK = pickWeekFacts(
+    1,
+    [member("sam", ["thursday"]), member("nina", ["thursday"], { suggested: ["friday"] })],
+    LATEST,
+  );
 
-  it("takes exactly the days the change proposes for the caller, in any order", () => {
-    expect(judgeChangeConfirmation("ben", CHANGE, ["monday", "thursday"])).toBeNull();
-    expect(judgeChangeConfirmation("ben", CHANGE, ["thursday", "monday"])).toBeNull();
-    expect(judgeChangeConfirmation("debby", CHANGE, ["tuesday", "friday"])).toBeNull();
+  it("never takes a day of the week in force, and takes a free one, a leaver's too", () => {
+    expect(judgeChoice("sam", PICK, ["monday"])).toBe("NOT_ALLOWED");
+    expect(judgeChoice("sam", PICK, ["tuesday"])).toBe("NOT_ALLOWED");
+    expect(judgeChoice("sam", PICK, ["wednesday"])).toEqual({ held: ["wednesday"] });
+    expect(judgeChoice("sam", PICK, ["saturday"])).toEqual({ held: ["saturday"] });
+    expect(judgeChoice("sam", PICK, [])).toEqual({ held: [] });
+    expect(judgeChoice("sam", PICK, ["friday", "saturday"])).toBe("NOT_ALLOWED");
   });
 
-  it("refuses any other days: another member's, one of each, too few", () => {
-    expect(judgeChangeConfirmation("ben", CHANGE, ["tuesday", "friday"])).toBe("NOT_ALLOWED");
-    expect(judgeChangeConfirmation("ben", CHANGE, ["monday", "friday"])).toBe("NOT_ALLOWED");
-    expect(judgeChangeConfirmation("ben", CHANGE, ["monday"])).toBe("NOT_ALLOWED");
+  it("confirms only exactly the days held, none contested, and nothing for a member already in the week", () => {
+    expect(judgeConfirmation("sam", PICK, ["thursday"])).toBe("NOT_ALLOWED");
+    const apart = pickWeekFacts(1, [member("sam", ["thursday"]), member("nina", ["friday"])], LATEST);
+    expect(judgeConfirmation("sam", apart, ["thursday"])).toEqual({ days: ["thursday"] });
+    expect(judgeConfirmation("sam", apart, ["friday"])).toBe("NOT_ALLOWED");
+    expect(() => judgeConfirmation("ben", apart, ["monday"])).toThrow();
+    expect(() => judgeChoice("debby", apart, ["friday"])).toThrow();
   });
 
-  it("throws on what the contract's schema refuses before any rule: none, three, a day twice", () => {
-    expect(() => judgeChangeConfirmation("ben", CHANGE, [])).toThrow(RangeError);
-    expect(() => judgeChangeConfirmation("ben", CHANGE, ["monday", "tuesday", "thursday"])).toThrow(RangeError);
-    expect(() => judgeChangeConfirmation("ben", CHANGE, ["monday", "monday"])).toThrow(RangeError);
-  });
-
-  it("refuses a second confirmation, though the days are the caller's own", () => {
-    expect(judgeChangeConfirmation("maya", CHANGE, ["wednesday", "saturday"])).toBe("NOT_ALLOWED");
-  });
-
-  it("refuses a caller the change doesn't include, as the first days do", () => {
-    expect(() => judgeChangeConfirmation("alex", CHANGE, ["monday", "thursday"])).toThrow();
+  it("applies once every member it includes who is still a member has confirmed", () => {
+    expect(everyoneConfirmed(pickWeekFacts(1, [member("sam", ["thursday"], { confirmed: true })], LATEST))).toBe(true);
+    expect(
+      everyoneConfirmed(
+        pickWeekFacts(1, [member("sam", ["thursday"], { confirmed: true }), member("nina", ["friday"])], LATEST),
+      ),
+    ).toBe(false);
+    // Nobody it includes is left: nothing applies, whoever is in the week.
+    expect(everyoneConfirmed(pickWeekFacts(1, [member("sam", ["thursday"], { active: false })], LATEST))).toBe(false);
   });
 });

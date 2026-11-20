@@ -12,9 +12,12 @@
 //   - a day two or more others hold says only that it has no reveal: no names, no count (FQ46).
 // Nothing here says who chose and who holds by proposal, and nothing counts anyone (T33).
 //
-// A membership change is one week everyone confirms as a whole (FQ56), and `changeViewFor` is its view: a
-// day is the viewer's, or names the member the change proposes it for, the same for every viewer whoever
-// has confirmed (FQ81). It reads nobody's confirmation but the viewer's own.
+// A membership change is a new member's pick of the free days (FQ125 to FQ127, FQ131), and the first days'
+// view is its view too, on facts `pickWeekFacts` makes: every day of the club's latest week whose member is
+// still in the club is a confirmed day of that member, so it is taken (yours, for a new member who has
+// confirmed it), and a member who left, of the week or of the pick, holds nothing, so their days are free.
+// `pickViewFor` then shows a first date only on the viewer's own confirmed day (FQ130): a day of the week in
+// force first opened long ago, and its date says nothing to a new member.
 
 import { WEEKDAYS, type Weekday } from "./propose.ts";
 
@@ -38,6 +41,11 @@ export interface WeekFacts {
   readonly members: readonly ProposalMember[];
   /** Each confirmed day's first local date (FQ79), for the days whose owner is still a member. */
   readonly firstDates: Readonly<Partial<Record<Weekday, string>>>;
+  /**
+   * The members the proposal includes, where `members` lists others too: a membership change's facts list
+   * every member with a day in the week, and only these are asked anything (`pickWeekFacts`).
+   */
+  readonly asked?: readonly string[];
 }
 
 export type SlotState = "yours" | "taken" | "available" | "clash" | "no_reveal";
@@ -79,10 +87,17 @@ export function holdersOf(facts: WeekFacts, weekday: Weekday): readonly Proposal
   return facts.members.filter((member) => holds(member, weekday));
 }
 
+/** The active member `id` the proposal includes, or undefined (FQ100, T14). */
+export function includedMember(facts: WeekFacts, id: string): ProposalMember | undefined {
+  if (facts.asked !== undefined && !facts.asked.includes(id)) return undefined;
+  const found = facts.members.find((member) => member.id === id);
+  return found?.active === true ? found : undefined;
+}
+
 /** The first days as the member `viewerId` sees them. Throws for anyone the proposal doesn't include. */
 export function viewFor(viewerId: string, facts: WeekFacts): ProposalView {
-  const viewer = facts.members.find((member) => member.id === viewerId);
-  if (viewer === undefined || !viewer.active) {
+  const viewer = includedMember(facts, viewerId);
+  if (viewer === undefined) {
     throw new Error("schedule: the proposal doesn't include the viewer as an active member (FQ100, T14)");
   }
   const slots = WEEKDAYS.map((weekday): SlotView => {
@@ -120,34 +135,72 @@ export function viewFor(viewerId: string, facts: WeekFacts): ProposalView {
   };
 }
 
+/** One day of the club's latest week, for a membership change's facts. */
+export interface LatestDay {
+  readonly weekday: Weekday;
+  readonly star: string;
+  /** Whether the star's membership is still active. */
+  readonly starActive: boolean;
+  readonly firstDate: string;
+}
+
 /**
- * A membership change as the member `viewerId` sees it (the contract's `ScheduleSlotState`: "only yours
- * (the change proposes it for the caller) and available (it doesn't)"): each other day names the member it
- * is proposed for, and no day says who has confirmed (FQ81, T33). Throws for anyone it doesn't include.
+ * A membership change's facts: the members it includes, as their rows say (`members`, in the order they
+ * joined), one who has left holding nothing; then each other active member with a day in the club's latest
+ * week (`latest`), confirmed on those days, whom it doesn't include (`asked`); and every first date of the
+ * latest week.
  */
-export function changeViewFor(viewerId: string, facts: WeekFacts): ProposalView {
-  const viewer = facts.members.find((member) => member.id === viewerId);
-  if (viewer === undefined || !viewer.active) {
-    throw new Error("schedule: the change doesn't include the viewer as an active member (FQ100, T14)");
+export function pickWeekFacts(
+  daysPerMember: 1 | 2,
+  members: readonly ProposalMember[],
+  latest: readonly LatestDay[],
+): WeekFacts {
+  const listed = new Set(members.map((member) => member.id));
+  const stars = new Map<string, Weekday[]>();
+  const firstDates: Partial<Record<Weekday, string>> = {};
+  for (const day of latest) {
+    if (!day.starActive) continue;
+    firstDates[day.weekday] = day.firstDate;
+    if (listed.has(day.star)) continue;
+    stars.set(day.star, [...(stars.get(day.star) ?? []), day.weekday]);
   }
-  const slots = WEEKDAYS.map((weekday): SlotView => {
-    if (viewer.held.includes(weekday)) return { weekday, state: "yours", suggested: true };
-    const other = facts.members.find((member) => member.active && member.held.includes(weekday));
-    return { weekday, state: "available", ...(other === undefined ? {} : { heldBy: other.id }), suggested: false };
-  });
   return {
-    slots,
-    myDays: WEEKDAYS.filter((weekday) => viewer.held.includes(weekday)),
-    myState: viewer.confirmed ? "confirmed" : "choosing",
+    daysPerMember,
+    members: [
+      ...members.map((member) => (member.active ? member : { ...member, held: [] })),
+      ...[...stars].map(([id, days]): ProposalMember => ({
+        id,
+        active: true,
+        confirmed: true,
+        suggested: [],
+        held: WEEKDAYS.filter((weekday) => days.includes(weekday)),
+      })),
+    ],
+    firstDates,
+    asked: members.map((member) => member.id),
   };
 }
 
 /**
- * Whether a membership change comes with its `announced` days for `viewerId`: only for a member with a day
- * in the club's latest week, whose stars are `latestWeekStars` (the contract's `ScheduleProposal.announced`;
- * G04-change). Someone the change gives a first day to has no announced day to keep: the new member, several
- * of them, or a member who joined once a day was confirmed (FQ100).
+ * A membership change as the member `viewerId` sees it: the first days' view of `pickWeekFacts`' facts,
+ * with a first date only on the viewer's own confirmed day (FQ130). Throws for anyone it doesn't include.
  */
-export function seesAnnounced(viewerId: string, latestWeekStars: readonly string[]): boolean {
-  return latestWeekStars.includes(viewerId);
+export function pickViewFor(viewerId: string, facts: WeekFacts): ProposalView {
+  const view = viewFor(viewerId, facts);
+  return {
+    ...view,
+    // Every field but the date, by name, on any day not the viewer's.
+    slots: view.slots.map((slot): SlotView =>
+      slot.state === "yours"
+        ? slot
+        : {
+            weekday: slot.weekday,
+            state: slot.state,
+            ...(slot.owner === undefined ? {} : { owner: slot.owner }),
+            ...(slot.holders === undefined ? {} : { holders: slot.holders }),
+            ...(slot.heldBy === undefined ? {} : { heldBy: slot.heldBy }),
+            suggested: slot.suggested,
+          },
+    ),
+  };
 }

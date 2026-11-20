@@ -598,7 +598,8 @@ describe("choosing days (FQ46, FQ48, FQ55; T33)", () => {
         owner: sam,
         suggested: false,
       });
-      expect(ben?.current?.assignments).toEqual([{ weekday: "thursday", person: sam }]);
+      // The club's week lists only members still in the club, so Sam's Thursday isn't in it (Schedule.current).
+      expect(ben?.current).toBeNull();
       // And Ben confirms Monday: nobody who is still a member holds it too.
       const answer = await confirm(tx, clock, w, 0, ["monday"]);
       expect(answer).toMatchObject({ myState: "confirmed", state: "open", version: 1 });
@@ -784,8 +785,9 @@ describe("the refusals, in the contract's order", () => {
   }
 
   /**
-   * Replaces the world's proposal with a newer one, as a membership change does (settle-change.ts `settleChange`):
-   * rows this test writes. A revision of the first days keeps its proposal (./first-days-roster.test.ts).
+   * Replaces the world's proposal with a newer one that includes Ben alone, as a new member's pick is
+   * replaced for the members then without a day (settle-change.ts `settleChange`, FQ131): rows this test
+   * writes. A revision of the first days keeps its proposal (./first-days-roster.test.ts).
    */
   async function replaced(tx: WorldTx, w: FirstDays): Promise<string> {
     const successor = newId("spr");
@@ -797,6 +799,9 @@ describe("the refusals, in the contract's order", () => {
       INSERT INTO app.schedule_proposals
         (id, club_id, reason, effective_from, days_per_member, schedule_version_id, created_at)
       VALUES (${successor}, ${w.club}, 'activation', '2026-11-02', 1, ${w.version}, ${AT.added})`;
+    await tx`
+      INSERT INTO app.schedule_proposal_members (proposal_id, club_id, interval_id)
+      VALUES (${successor}, ${w.club}, ${w.members[0] ?? ""})`;
     await checkAsAtCommit(plain(tx));
     return successor;
   }
@@ -841,6 +846,15 @@ describe("the refusals, in the contract's order", () => {
         expect(await refusal(command(tx, clock, w, 0, ["monday"], { version: 2 }))).toEqual({
           code: "MEMBERSHIP_CHANGED",
           facts: { current_id: successor },
+        });
+        // To a member the newer one doesn't include, the earlier one has ended like any other.
+        expect(await refusal(command(tx, clock, w, 2, ["thursday"], { version: 7 }))).toEqual({
+          code: "VERSION_CONFLICT",
+          facts: { current_version: 2 },
+        });
+        expect(await refusal(command(tx, clock, w, 2, ["thursday"], { version: 2 }))).toEqual({
+          code: "NOT_ALLOWED",
+          facts: {},
         });
         expect(await everything(tx, w)).toBe(before);
       });
@@ -984,7 +998,7 @@ describe("one commit per key (T19)", () => {
       // The key is per operation: the same key confirms, as its own request.
       await choose(tx, clock, w, 0, ["monday"]);
       expect((await confirm(tx, clock, w, 0, ["monday"], { key })).myState).toBe("confirmed");
-      // Another proposal of the same club, as a membership change will make: the same body under the key, at its path.
+      // Another proposal of the same club, as a new member's pick makes: the same body under the key, at its path.
       const successor = newId("spr");
       await tx`
         UPDATE app.schedule_proposals

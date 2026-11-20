@@ -51,8 +51,8 @@
 //   whole Occurrence the world's rows and the time give, or none: in a suspended club, on a suspended or
 //   cancelled day, after the day closes (account.ts: daysOf). A state where the day's star leaves or asks to
 //   delete their account is still to come with B6's leaving; the held day is proved on Postgres meanwhile
-//   (tests/src/db/home-days.test.ts), and the schedule's checks below keep `next_day` for B2's
-//   membership changes;
+//   (tests/src/db/home-days.test.ts), and the schedule's checks below keep `next_day` for a new member's
+//   pick and the days a fourth member's join frees;
 // - for a route that changes the world (a commit, a reservation, a leave, a block), the facts each
 //   answer is scanned against, read from the world after it (scanner.ts, its header);
 // - for the schedule's routes built by B2's schedule slice (getSchedule, chooseScheduleDays and
@@ -128,16 +128,15 @@
 //   same club; a link whose candidate joined and then left; ROSTER_CHANGED of an acceptance; an inviter
 //   with no name; an ended proposal's link nobody used; and an account that changed its name after
 //   accepting;
-// - for the schedule's routes still to come (the membership change and the first days' roster, B2's later
-//   schedule PRs; getHome, listClubs' `next_day` and a revealed day's `add_target` where a schedule's day
-//   shows), each as a check a row can run:
-//   - `held_by` to every member of a membership change; `announced` only in a membership change, never to
-//     its new member, and never in the first days;
-//   - a membership change's answers to a viewer the same before and after any other member's
-//     confirmation at the same server time: only `my_state` changes, on the viewer's own, and `announced`
-//     only as its days close; and before its start no member's `position`, `next_day` or `next_up` in
-//     listMembers changes, and no day it adds shows in getHome, listClubs' `next_day` or a revealed day's
-//     `add_target`, so nobody learns that everyone has confirmed (FQ81, FQ101);
+// - for the schedule's routes still to come (the first days' roster, B2's later schedule PRs; getHome,
+//   listClubs' `next_day` and a revealed day's `add_target` where a schedule's day shows), each as a check a
+//   row can run:
+//   - in a new member's pick (`api/b2-new-member-day`), the latest week's days shown as their members'
+//     confirmed days to every member it includes, a confirmation's days in the club's week from the next
+//     week on, and nobody else's day moved: judged here by schedule.ts and, through the app, by matrix.test.ts's
+//     "a new member's pick through the app"; what a fourth member's join frees and cancels, and the days a
+//     confirmation makes, on Postgres in tests/src/db/membership-change.test.ts. Still to come: no freed
+//     day, and no leaver's cancelled day, in getHome, listClubs' `next_day` or a revealed day's `add_target`;
 //   - listMembers' `members` the same for every member; in the first days a choice changes none of them,
 //     and a confirmation that leaves the first days open changes only the confirmer's `next_day` (once
 //     their day is dated, FQ79) and `next_up`, which marks whoever's next day opens first; `position`
@@ -201,9 +200,9 @@ export const SCHEDULE = Object.freeze({
   answer:
     "200 with the club's Schedule as schedule.ts's weekFor makes it from the world's rows, to an account with an " +
     "active interval in a club that isn't suspended: `current`, and the open proposal only when it includes that " +
-    "interval (FQ100), each slot naming only whom the contract gives that viewer, and for a membership change the " +
-    "member each day is proposed for whoever has confirmed (FQ81), with `announced`, the club's days not yet " +
-    `closed, only for a caller with a day in the club's latest week; the neutral NOT_FOUND to every other role the gate lets through (${GATE})`,
+    "interval (FQ100), each slot naming only whom the contract gives that viewer, and in a new member's pick each " +
+    "day of the club's latest week whose member is still in the club as that member's confirmed day, dated only " +
+    `on the viewer's own (FQ125 to FQ127, FQ129 to FQ131); the neutral NOT_FOUND to every other role the gate lets through (${GATE})`,
 });
 
 /** listMembers (B2's generation slice): the club's roster for one of its members, whole, from the world's rows. */
@@ -318,8 +317,9 @@ export const SCHEDULE_COMMAND = Object.freeze({
   answer:
     "each body of schedule.ts's table answered as its outcomeOf says from the world's rows: INVALID_REQUEST to " +
     "what the contract refuses, then the neutral NOT_FOUND to anyone the proposal doesn't include, MEMBERSHIP_CHANGED, " +
-    "VERSION_CONFLICT, NOT_ALLOWED, or 200 with the proposal as the viewer sees it after the change; a membership " +
-    `change takes only its confirmation, of exactly the days it proposes for the caller, and moves no version (FQ81) (${GATE})`,
+    "VERSION_CONFLICT, NOT_ALLOWED, or 200 with the proposal as the viewer sees it after the change; a new " +
+    "member's pick takes choices and confirmations of free days, and moves its version only with its state: its " +
+    `last confirmation applies it at the next version (T33) (${GATE})`,
 });
 
 export const ROWS: Readonly<Record<string, unknown>> = {

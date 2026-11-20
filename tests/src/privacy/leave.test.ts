@@ -740,7 +740,7 @@ describe("what a leave does to the club's first days (firstDaysProblems; FQ102, 
           ["spr_next", next],
         ]),
       ).toEqual(["a join changed a proposal that wasn't open first days"]);
-      // First days that applied aren't restarted: the week for the new member is a membership change.
+      // First days that applied aren't restarted: the new member gets a pick of the free days.
       const applied = days(["itv_ana", "itv_ben"], { state: "applied", version: 2 }, ["itv_ana", "itv_ben"]);
       expect(restart([[P, applied]], applied)).toEqual([]);
       expect(

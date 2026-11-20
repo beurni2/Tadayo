@@ -4,7 +4,7 @@
 // their weeks as the product gives them (week-world.ts), the time is the tests' fake clock, and the
 // migration's own guard judges every row the command writes (occurrences_insert_guard).
 
-import { clubsWithAWeek, makeDays, WEEKDAYS } from "@tadayo/domain";
+import { clubsWithAWeek, makeDays } from "@tadayo/domain";
 import { fakeClock } from "@tadayo/domain/testing";
 import { afterAll, describe, expect, it } from "vitest";
 import { rolledBack, worldSql, type Tx, type WorldTx } from "./harness.ts";
@@ -270,26 +270,25 @@ describe("making a club's days (spec 05; FQ115)", () => {
     await rolledBack(db, async (tx) => {
       const w = await confirmedWeek(tx, 6, TIMES);
       expect(await run(tx, w.club, NOW)).toBe(25);
-      // A second week from Monday 7 December, the first Monday with no day made, as a membership change
-      // will write one: the same six days, the members last first.
+      // A second week from Monday 7 December, the first Monday with no day made. Nobody's day moves in a
+      // later week (FQ125, FQ126; db/migrations/0015_new_member_day.sql): it holds the six days as they were.
       const next = newId("ver");
       await tx`
         INSERT INTO app.schedule_versions (id, club_id, effective_from, created_at)
         VALUES (${next}, ${w.club}, '2026-12-07', ${new Date("2026-11-06T15:00:00Z")})`;
+      await tx`
+        INSERT INTO app.schedule_assignments
+          (schedule_version_id, club_id, weekday, star_interval_id, first_date, confirmed_at)
+        SELECT ${next}, club_id, weekday, star_interval_id, first_date, confirmed_at
+          FROM app.schedule_assignments WHERE schedule_version_id = ${w.version}`;
+      await checkAsAtCommit(plain(tx));
       const dates = ["2026-12-07", "2026-12-08", "2026-12-09", "2026-12-10", "2026-12-11", "2026-12-12"];
-      for (const [index, weekday] of WEEKDAYS.entries()) {
-        await tx`
-          INSERT INTO app.schedule_assignments
-            (schedule_version_id, club_id, weekday, star_interval_id, first_date, confirmed_at)
-          VALUES (${next}, ${w.club}, ${weekday}, ${w.members[5 - index] ?? ""}, ${dates[index] ?? ""},
-                  ${new Date("2026-11-06T15:00:00Z")})`;
-      }
       // Monday the 9th at 9:41 AM in New York: the window reaches Saturday 12 December.
       expect(await run(tx, w.club, "2026-11-09T14:41:00Z")).toBe(6);
       const days = await daysOf(tx, w.club);
       expect(days.slice(0, 25).every((day) => day.schedule_version_id === w.version)).toBe(true);
       expect(days.slice(25).map((day) => [day.local_date, day.schedule_version_id, day.star_interval_id])).toEqual(
-        dates.map((date, index) => [date, next, w.members[5 - index]]),
+        dates.map((date, index) => [date, next, w.members[index]]),
       );
     });
   });

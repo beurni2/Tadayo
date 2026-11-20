@@ -15,21 +15,18 @@
 // Members are in the order they joined, two who joined at the same instant by their interval's id, byte by
 // byte (`COLLATE "C"`), so the order is the same on every database whatever its locale.
 //
-// `answerOf` then makes the proposal one viewer sees: `viewFor`, or `changeViewFor` for a membership change,
+// A membership change's facts are its members' rows and the club's latest week, whose days are each its
+// member's while that member is still in the club (./view.ts `pickWeekFacts`; FQ125, FQ127): one statement
+// reads both, so a new member's confirmation, which writes a new week, is in both or in neither.
+//
+// `answerOf` then makes the proposal one viewer sees: `viewFor`, or `pickViewFor` for a membership change,
 // decides which slot carries whom (./view.ts, T55), and this only puts the person in the place of the id
 // the view gave. It never adds a name.
-//
-// A membership change's `announced` (FQ61; G04-change) are the club's days not yet closed at the caller's
-// `now`, placed by the authorization module's day rule in the same statement (`daysAheadByClub`, T9), for
-// every member but one with no day in the club's latest week: the new member, or a late joiner of the
-// first days (FQ100).
 
-import { chosenDays, daysAheadByClub, type ChosenDay } from "../authorization/days.ts";
 import { activeMemberships } from "../authorization/member.ts";
 import type { FragmentSql, QuerySql } from "../authorization/read-sql.ts";
-import type { ServerNow } from "../time/clock.ts";
 import { WEEKDAYS, type Weekday } from "./propose.ts";
-import { changeViewFor, seesAnnounced, viewFor, type ProposalMember, type SlotState, type WeekFacts } from "./view.ts";
+import { pickViewFor, pickWeekFacts, viewFor, type ProposalMember, type SlotState, type WeekFacts } from "./view.ts";
 
 /** The contract's Person. */
 export interface SchedulePerson {
@@ -43,6 +40,8 @@ export interface LoadedAssignment {
   readonly weekday: Weekday;
   readonly firstDate: string;
   readonly starInterval: string;
+  /** Whether the star's membership is still active. */
+  readonly starActive: boolean;
   /** Null when the star has no name to show: an account deleted, whose interval kept none (FQ75). */
   readonly person: SchedulePerson | null;
 }
@@ -66,13 +65,11 @@ export interface LoadedProposal {
   readonly scheduleVersionId: string | null;
   readonly replacedBy: string | null;
   readonly facts: WeekFacts;
-  /** Each member's person, by membership interval; a member with no name to show has no entry. */
-  readonly people: ReadonlyMap<string, SchedulePerson>;
   /**
-   * For a membership change read with the caller's `now`, by a caller with a day in the club's latest week:
-   * the club's days not yet closed, in the order they open (FQ61). Null otherwise.
+   * Each member's person, by membership interval, and in a membership change each star's of the latest
+   * week; a member with no name to show has no entry.
    */
-  readonly announced: readonly ChosenDay[] | null;
+  readonly people: ReadonlyMap<string, SchedulePerson>;
 }
 
 export interface LoadedWeek {
@@ -177,6 +174,7 @@ function versionOf(value: unknown): LoadedVersion {
           weekday: weekday(assignment["weekday"]),
           firstDate: date(assignment["first_date"]),
           starInterval: star.id,
+          starActive: flag(assignment["star_active"]),
           person: star.person,
         };
       }),
@@ -184,12 +182,7 @@ function versionOf(value: unknown): LoadedVersion {
   };
 }
 
-function proposalOf(
-  value: unknown,
-  versions: readonly LoadedVersion[],
-  callerId: string,
-  daysAhead: readonly ChosenDay[] | null,
-): LoadedProposal {
+function proposalOf(value: unknown, versions: readonly LoadedVersion[]): LoadedProposal {
   const row = record(value);
   const reason = row["reason"];
   const state = row["state"];
@@ -219,10 +212,30 @@ function proposalOf(
     };
   });
   const scheduleVersionId = optionalText(row["schedule_version_id"]);
-  // A confirmed day's first date is its assignment's, in the version the proposal's days join.
-  const firstDates: Partial<Record<Weekday, string>> = {};
-  for (const assignment of versions.find((each) => each.id === scheduleVersionId)?.assignments ?? []) {
-    firstDates[assignment.weekday] = assignment.firstDate;
+  let facts: WeekFacts;
+  if (reason === "membership_change") {
+    // The club's latest week, the last of `versions`: its days are taken, and a confirmed one's date is there.
+    const latest = versions.at(-1)?.assignments ?? [];
+    for (const assignment of latest) {
+      if (assignment.starActive && assignment.person !== null) people.set(assignment.starInterval, assignment.person);
+    }
+    facts = pickWeekFacts(
+      perMember,
+      members,
+      latest.map((assignment) => ({
+        weekday: assignment.weekday,
+        star: assignment.starInterval,
+        starActive: assignment.starActive,
+        firstDate: assignment.firstDate,
+      })),
+    );
+  } else {
+    // A confirmed day's first date is its assignment's, in the version the proposal's days join.
+    const firstDates: Partial<Record<Weekday, string>> = {};
+    for (const assignment of versions.find((each) => each.id === scheduleVersionId)?.assignments ?? []) {
+      firstDates[assignment.weekday] = assignment.firstDate;
+    }
+    facts = { daysPerMember: perMember, members, firstDates };
   }
   return {
     id: text(row["id"]),
@@ -233,48 +246,35 @@ function proposalOf(
     effectiveFrom: date(row["effective_from"]),
     scheduleVersionId,
     replacedBy: optionalText(row["replaced_by"]),
-    facts: { daysPerMember: perMember, members, firstDates },
+    facts,
     people,
-    announced:
-      reason === "membership_change" &&
-      seesAnnounced(
-        callerId,
-        (versions.at(-1)?.assignments ?? []).map((assignment) => assignment.starInterval),
-      )
-        ? daysAhead
-        : null,
   };
 }
 
 /**
  * The week of `clubId` for the account `userId`, with the club's open proposal (`which` is `open`) or the
  * one proposal `which.id` names, if it is the club's. Null when the authorization module gives `userId`
- * nothing of the club, or no club has that id (T14). With `now`, the caller's sample of the clock, a
- * membership change comes with its `announced` days.
+ * nothing of the club, or no club has that id (T14).
  */
 export async function loadWeek(
   tx: QuerySql,
   userId: string,
   clubId: string,
   which: "open" | { readonly id: string },
-  now: ServerNow | null = null,
 ): Promise<LoadedWeek | null> {
   if (typeof clubId !== "string" || !ID.test(clubId)) return null;
   if (which !== "open" && !ID.test(which.id)) return null;
   // postgres.js's tagged template is a fragment inside another query.
   const sql = tx;
   const chosen = which === "open" ? bound(sql)`p.state = 'open'` : bound(sql)`p.id = ${which.id}::pg_catalog.text`;
-  const ahead =
-    now === null
-      ? bound(sql)`NULL::pg_catalog.jsonb`
-      : bound(sql)`(SELECT d.days FROM (${daysAheadByClub(sql, userId, now)}) d WHERE d.club_id = c.id)`;
   const rows = await bound(sql)`
     SELECT c.id, c.name, c.timezone, am.interval_id AS membership_id,
            (SELECT coalesce(pg_catalog.jsonb_agg(pg_catalog.jsonb_build_object(
                      'id', v.id, 'effective_from', v.effective_from,
                      'assignments',
                      (SELECT coalesce(pg_catalog.jsonb_agg(pg_catalog.jsonb_build_object(
-                               'weekday', a.weekday, 'first_date', a.first_date, 'person', ${person(sql)})),
+                               'weekday', a.weekday, 'first_date', a.first_date,
+                               'star_active', s.state = 'active', 'person', ${person(sql)})),
                              '[]'::pg_catalog.jsonb)
                         FROM app.schedule_assignments a
                         JOIN app.memberships s ON s.interval_id = a.star_interval_id
@@ -305,8 +305,7 @@ export async function loadWeek(
                         JOIN app.memberships s ON s.interval_id = pm.interval_id
                         JOIN app.users su ON su.id = s.user_id
                        WHERE pm.proposal_id = p.id))
-              FROM app.schedule_proposals p WHERE p.club_id = c.id AND ${chosen}) AS proposal,
-           ${ahead} AS days_ahead
+              FROM app.schedule_proposals p WHERE p.club_id = c.id AND ${chosen}) AS proposal
       FROM app.clubs c
       JOIN (${activeMemberships(sql, userId)}) am ON am.club_id = c.id
      WHERE c.id = ${clubId}::pg_catalog.text`;
@@ -314,12 +313,11 @@ export async function loadWeek(
   if (row === undefined) return null;
   const versions = list(row["versions"]).map(versionOf);
   const membershipId = text(row["membership_id"]);
-  const daysAhead = row["days_ahead"] === null ? null : chosenDays(row["days_ahead"]);
   return {
     club: { id: text(row["id"]), name: text(row["name"]), timezone: text(row["timezone"]) },
     membershipId,
     versions,
-    proposal: row["proposal"] === null ? null : proposalOf(row["proposal"], versions, membershipId, daysAhead),
+    proposal: row["proposal"] === null ? null : proposalOf(row["proposal"], versions),
   };
 }
 
@@ -345,8 +343,6 @@ export interface ProposalAnswer {
   readonly myDays: readonly Weekday[];
   readonly myState: "choosing" | "confirmed";
   readonly state: "open" | "applied" | "superseded";
-  /** A membership change's days already made and not yet closed; absent where the contract leaves it out. */
-  readonly announced?: readonly ChosenDay[];
 }
 
 /**
@@ -355,7 +351,7 @@ export interface ProposalAnswer {
  */
 export function answerOf(proposal: LoadedProposal, viewerId: string): ProposalAnswer {
   const view =
-    proposal.reason === "activation" ? viewFor(viewerId, proposal.facts) : changeViewFor(viewerId, proposal.facts);
+    proposal.reason === "activation" ? viewFor(viewerId, proposal.facts) : pickViewFor(viewerId, proposal.facts);
   // Someone who holds a day is an active member, and an active member has a name (spec 23).
   const named = (id: string): SchedulePerson => {
     const found = proposal.people.get(id);
@@ -384,6 +380,5 @@ export function answerOf(proposal: LoadedProposal, viewerId: string): ProposalAn
     myDays: view.myDays,
     myState: view.myState,
     state: proposal.state,
-    ...(proposal.announced === null ? {} : { announced: proposal.announced }),
   };
 }

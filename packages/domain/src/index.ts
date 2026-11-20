@@ -1,11 +1,8 @@
 export { READS, type ReadWhat } from "./authorization/read.ts";
 export {
   chooseDays,
-  chooseDaysAhead,
   chooseNextDayOf,
   chosenDay,
-  chosenDays,
-  daysAheadByClub,
   daysByClub,
   nextDaysByStar,
   type ChosenDay,
@@ -89,15 +86,25 @@ export { daysPerMember, proposedWeek, WEEKDAYS, type Weekday } from "./schedule/
 export { readSchedule, type CurrentWeek, type ScheduleSight } from "./schedule/read.ts";
 export { settleChange } from "./schedule/settle-change.ts";
 export {
-  changeAfter,
-  changeStart,
-  changeWeek,
-  type ChangeFacts,
-  type ProposedWeek,
-  type WeekChange,
+  newMemberFirstDate,
+  nextMonday,
+  nextWeekStart,
+  pickAfter,
+  type PickChange,
+  type PickFacts,
+  type PickMember,
+  type PickProposal,
   type WeekDay,
 } from "./schedule/change.ts";
-export { changeViewFor, viewFor, type ProposalMember, type SlotState, type WeekFacts } from "./schedule/view.ts";
+export {
+  pickViewFor,
+  pickWeekFacts,
+  viewFor,
+  type LatestDay,
+  type ProposalMember,
+  type SlotState,
+  type WeekFacts,
+} from "./schedule/view.ts";
 export type { ProposalAnswer, SchedulePerson, SlotAnswer } from "./schedule/week.ts";
 export { Refused, type RefusalFacts } from "./refused.ts";
 export {

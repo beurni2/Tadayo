@@ -215,7 +215,7 @@ describe("the roster once the week is in force (the contract's sunday_people sce
   it("follows the week in force on the club's own date: a later week moves the rows only from its start (FQ61)", async () => {
     await rolledBack(db, async (tx) => {
       const w = await confirmedWeek(tx, 6, TIMES);
-      // A second week from Monday 16 November, as a membership change will write one: the same days, last first.
+      // A second week from Monday 16 November, as a later week may start: the same days, the last written first.
       const next = newId("ver");
       await tx`
         INSERT INTO app.schedule_versions (id, club_id, effective_from, created_at)

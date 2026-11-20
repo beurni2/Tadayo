@@ -23,9 +23,10 @@
 //    club that had started, ../schedule/settle.ts says what the people who joined do to its first days:
 //    they are included while no day is confirmed (FQ55, FQ102); once one is, they join with no day; and
 //    a club whose first days ended with nobody to confirm them opens new ones. Then
-//    ../schedule/settle-change.ts proposes the membership change (FQ100, FQ125, FQ126): in a club whose
-//    first days have applied, a week with days for the people who joined, for every member to confirm,
-//    replacing an open change.
+//    ../schedule/settle-change.ts settles a new member's pick (FQ100, FQ125, FQ126, FQ131): in a club
+//    whose first days have applied, the people who joined with no day pick free days, in a new pick or
+//    added to the open one, and nobody else is asked anything; where the free days are too few, as when a
+//    fourth member joins three, the others' second days are freed now.
 // 5. The candidates who hadn't accepted, or whose acceptance no longer stands, are carried into a new revision the server makes (FQ120's
 //    default): the same proposer, whose approval of them stands as it did when they proposed (FQ60), the
 //    club's members now, the people who just joined included, and the carried candidates at their own

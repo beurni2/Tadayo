@@ -1,6 +1,6 @@
 /// <reference lib="esnext.temporal" />
 // A club made the way the product makes one, for the tests that need a week the commands wrote
-// (tests/src/db/membership-change.test.ts, and the privacy matrix's membership change): `createClub`,
+// (tests/src/db/membership-change.test.ts, and the privacy matrix's new member's pick through the app): `createClub`,
 // `proposeRoster`, `approveRoster`, `createInvitation`, `acceptInvitation`, `leaveClub` and
 // `confirmScheduleDays`, each as its route runs it (./roster-world.ts), at the instant the caller's clock
 // says. Members are in the order they joined (FQ98), so a caller moves its clock between two joins.
@@ -26,13 +26,14 @@ export async function foundedBy(tx: WorldTx, clock: FakeClock, name: string): Pr
   return { club: made.club, user: { [name]: made.user }, member: { [name]: made.interval } };
 }
 
-/** `proposer` proposes `name`, every other member approves, and a new account of that name accepts. */
+/** `proposer` proposes `name`, every other member approves, and `account` (else a new account of that name) accepts. */
 export async function joinAs(
   tx: WorldTx,
   clock: FakeClock,
   c: MadeClub,
   name: string,
   proposer: string,
+  account?: string,
 ): Promise<void> {
   const by = c.user[proposer] ?? "";
   const open = await propose(tx, clock, by, c.club, [name]);
@@ -43,10 +44,10 @@ export async function joinAs(
     if (other !== by) await approve(tx, clock, other, open.id, open.version);
   }
   const made = await linkFor(tx, clock, by, c.club, candidate);
-  const account = await newUser(plain(tx), name);
-  const answer = await acceptWith(tx, clock, account, made.token, open.id, open.version);
+  const accepting = account ?? (await newUser(plain(tx), name));
+  const answer = await acceptWith(tx, clock, accepting, made.token, open.id, open.version);
   if (answer.state !== "joined" || answer.club === undefined) throw new Error(`joinAs: ${name} is ${answer.state}`);
-  c.user[name] = account;
+  c.user[name] = accepting;
   c.member[name] = answer.club.my_membership_id;
 }
 

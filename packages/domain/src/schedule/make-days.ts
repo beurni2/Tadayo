@@ -1,6 +1,6 @@
 /// <reference lib="esnext.temporal" />
 // Making a club's days (spec 05: "Generate upcoming occurrences several weeks ahead"; spec 06, 34; T1, T2,
-// T6; FQ16, FQ61, FQ63, FQ79, FQ115). The worker's first job runs it for every club
+// T6; FQ16, FQ61, FQ63, FQ79, FQ115, FQ129). The worker's first job runs it for every club
 // (services/worker/src/generation.ts); the rule is ./generate.ts, and the database judges every row again
 // (db/migrations/0005_schedules_and_days.sql, occurrences_insert_guard).
 //
@@ -12,11 +12,12 @@
 //    from the time it got it.
 // 3. The club's facts, in one statement: its zone, whether it has started or is suspended, its active
 //    members, every version with its days and whether each star is still a member, the dates from
-//    the club's today on that already have a day, and the start of an open membership change, from
-//    which no day is made (FQ127: the change still has a start it can take).
+//    the club's today on that already have a day not cancelled, and those whose day was cancelled, with
+//    whose day it was (FQ129).
 // 4. One row for each day the rule owes, `collecting_from` the sample (spec 06: collecting begins when
-//    generated), `ON CONFLICT (club_id, local_date) DO NOTHING`: a retry, or a second worker, makes
-//    nothing twice (spec 34).
+//    generated), `ON CONFLICT (club_id, local_date) WHERE status <> 'cancelled' DO NOTHING` (the one live
+//    day a date has, db/migrations/0015_new_member_day.sql): a retry, or a second worker, makes nothing
+//    twice (spec 34).
 //
 // It writes nothing else: no event and no push. It reads nothing of anyone's drops, and returns only how
 // many days it made.
@@ -126,13 +127,23 @@ export async function makeDays(tx: QuerySql & ClockSql, clock: Clock, clubId: st
               FROM app.schedule_versions v WHERE v.club_id = c.id) AS versions,
            (SELECT coalesce(pg_catalog.jsonb_agg(o.local_date), '[]'::pg_catalog.jsonb)
               FROM app.occurrences o
-             WHERE o.club_id = c.id AND o.local_date >= ${today}::pg_catalog.date) AS made,
-           (SELECT p.effective_from::pg_catalog.text FROM app.schedule_proposals p
-             WHERE p.club_id = c.id AND p.state = 'open' AND p.reason = 'membership_change') AS change_from
+             WHERE o.club_id = c.id AND o.local_date >= ${today}::pg_catalog.date
+               AND o.status <> 'cancelled') AS made,
+           (SELECT coalesce(pg_catalog.jsonb_agg(pg_catalog.jsonb_build_object(
+                     'local_date', o.local_date, 'star_interval_id', o.star_interval_id)), '[]'::pg_catalog.jsonb)
+              FROM app.occurrences o
+             WHERE o.club_id = c.id AND o.local_date >= ${today}::pg_catalog.date
+               AND o.status = 'cancelled') AS cancelled
       FROM app.clubs c WHERE c.id = ${clubId}`;
   if (row === undefined) throw shape();
   const members = row["active_members"];
   if (typeof members !== "number" || !Number.isInteger(members) || members < 0) throw shape();
+  const cancelled = new Map<string, string[]>();
+  for (const entry of list(row["cancelled"])) {
+    const day = record(entry);
+    const localDate = date(day["local_date"]);
+    cancelled.set(localDate, [...(cancelled.get(localDate) ?? []), text(day["star_interval_id"])]);
+  }
   const facts: GenerationFacts = {
     zone,
     activated: flag(row["activated"]),
@@ -140,7 +151,7 @@ export async function makeDays(tx: QuerySql & ClockSql, clock: Clock, clubId: st
     activeMembers: members,
     versions: list(row["versions"]).map(versionOf),
     made: new Set(list(row["made"]).map(date)),
-    changeFrom: row["change_from"] === null ? null : date(row["change_from"]),
+    cancelled,
   };
 
   // 4. The days.
@@ -152,7 +163,7 @@ export async function makeDays(tx: QuerySql & ClockSql, clock: Clock, clubId: st
       VALUES (${newId("occ")}, ${clubId}, ${day.starInterval}, ${day.versionId}, ${day.localDate}::pg_catalog.date,
               ${day.revealAt}::pg_catalog.timestamptz, ${day.closeAt}::pg_catalog.timestamptz,
               ${now}::pg_catalog.timestamptz)
-      ON CONFLICT (club_id, local_date) DO NOTHING
+      ON CONFLICT (club_id, local_date) WHERE status <> 'cancelled' DO NOTHING
       RETURNING id`;
     made += inserted.length;
   }
