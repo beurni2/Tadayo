@@ -164,12 +164,15 @@ struct PlayerWebView: UIViewRepresentable {
             .deny
         }
 
+        /// WebKit gives this one no async form (its handler is a `decisionHandler` with no
+        /// async name in `WKUIDelegate.h`), so an `async` method here answered to nothing.
         func webView(
             _ webView: WKWebView,
             requestDeviceOrientationAndMotionPermissionFor origin: WKSecurityOrigin,
-            initiatedByFrame frame: WKFrameInfo
-        ) async -> WKPermissionDecision {
-            .deny
+            initiatedByFrame frame: WKFrameInfo,
+            decisionHandler: @escaping @MainActor (WKPermissionDecision) -> Void
+        ) {
+            decisionHandler(.deny)
         }
 
         func webView(
