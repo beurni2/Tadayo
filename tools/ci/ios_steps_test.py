@@ -517,6 +517,7 @@ class SimulatorTest(StepsTest):
     def shell(self, runtimes=RUNTIMES, after_download=None, devices=None, create=None,
               download_code=0, works_with=None, sdk=(0, "27.2\n", ""), listed_under=None, boot_code=0,
               cache_code=0, bundles=(BUNDLE,), imports=True, imported=None, import_code=0, deletes=True,
+              import_needs_sudo=False,
               delete_code=30, images_code=0, images=None, after_delete=None, mounts=MOUNTS):
         """after_download: the runtimes once a download that works has run; works_with: the
         download only works with these extra arguments (by default, any download works);
@@ -524,7 +525,9 @@ class SimulatorTest(StepsTest):
         answers, when not a new device, which is listed under the runtime it was made on (or
         listed_under, when given). A download that works registers COPY and writes `bundles`
         to its -exportPath; an import then registers `imported` (IMPORTED by default) unless
-        `imports` is false, and COPY becomes unusable, as on the runner; `simctl runtime delete`
+        `imports` is false, and COPY becomes unusable, as on the runner; with import_needs_sudo,
+        an import that isn't run through sudo registers nothing and exits 70, as on the runner
+        image of 2026-11-19; `simctl runtime delete`
         takes an image off the list when `deletes`, exiting delete_code either way (30, as on
         the runner); images_code is `simctl runtime list -j`'s exit code, and `images` the
         image's own images (IMAGES by default); after_delete, when given, is what that list
@@ -544,6 +547,8 @@ class SimulatorTest(StepsTest):
             return download_code
 
         def import_platform(cmd):
+            if import_needs_sudo and cmd[0] != "sudo":
+                return 70
             if imports and state["downloaded"]:
                 state["imported"] = True
             return import_code
@@ -684,11 +689,53 @@ class SimulatorTest(StepsTest):
                               "that is Ready", out)
                 self.assertIn("actions/runner-images#14946", out)
                 self.assertEqual(self.downloads(shell), [self.download()])
-                self.assertEqual(len(self.imports(shell)), 1 if kwargs.get("bundles") == (BUNDLE,) or "imports" in kwargs else 0)
+                # An import that left no image is tried once more, with sudo.
+                self.assertEqual(len(self.imports(shell)), 2 if kwargs.get("bundles") == (BUNDLE,) or "imports" in kwargs else 0)
                 # The copy is the only image of it, so it is kept.
                 self.assertEqual(self.deletes(shell), [])
                 self.assertFalse(any("dyld_shared_cache" in c or "bootstatus" in c for c in shell.commands))
                 self.assertFalse(os.path.isfile(os.path.join(self.repo.out, "run.json")))
+
+    def sudo_import(self):
+        return ["sudo", "-n", "-H", "env", f"DEVELOPER_DIR={DEVELOPER_DIR}", "xcodebuild", "-importPlatform",
+                os.path.join(self.export(), BUNDLE)]
+
+    def test_an_import_the_runner_refuses_is_run_once_more_with_sudo(self):
+        # The runner image of 2026-11-19: "Requires elevated privileges: Copying a directory
+        # source requires sudo". The plain import comes first, as on the image before it; only
+        # when simctl lists no imported image is it run again as root, never asking for a
+        # password, with the pinned Xcode named on the line, since sudo drops the environment,
+        # and with root's own home (-H), so root leaves nothing in the runner user's Library.
+        shell = self.shell(after_download=WITH_26_5, import_needs_sudo=True)
+        code, out = self.step("simulator", shell)
+        self.assertEqual(code, 0, out)
+        plain = ["xcodebuild", "-importPlatform", os.path.join(self.export(), BUNDLE)]
+        self.assertEqual(self.imports(shell), [plain, self.sudo_import()])
+        self.assertIn("ios: simulator: the import left no imported image of iOS 26.5; importing again with sudo", out)
+        self.assertEqual(self.deletes(shell), [["xcrun", "simctl", "runtime", "delete", COPY_ID]])
+        # Both imports' exit codes are logged: the refusal's 70, then 0.
+        self.assertIn(f"exported: {BUNDLE}\n(exit 70)\n", self.simulators_log())
+        self.assert_pinned(shell)
+        # Nothing else in the step runs as root.
+        self.assertEqual([c for c in shell.commands if c[0] == "sudo"], [self.sudo_import()])
+
+    def test_an_import_that_worked_is_never_run_with_sudo(self):
+        for kwargs in ({}, {"import_code": 1}):
+            shell = self.shell(after_download=WITH_26_5, **kwargs)
+            self.assertEqual(self.step("simulator", shell)[0], 0)
+            self.assertEqual([c for c in shell.commands if c[0] == "sudo"], [])
+
+    def test_an_import_sudo_doesn_t_make_work_fails_as_before(self):
+        shell = self.shell(after_download=WITH_26_5, imports=False)
+        code, out = self.step("simulator", shell)
+        self.assertEqual(code, 1)
+        self.assertEqual(len(self.imports(shell)), 2)
+        self.assertEqual(self.imports(shell)[1], self.sudo_import())
+        self.assertIn("simctl lists no imported image of iOS 26.5", out)
+        # When simctl's list can't be read, nothing is run as root on a guess.
+        shell = self.shell(after_download=WITH_26_5, images_code=1)
+        self.assertEqual(self.step("simulator", shell)[0], 1)
+        self.assertEqual([c for c in shell.commands if c[0] == "sudo"], [])
 
     def test_the_import_s_exit_code_doesn_t_decide(self):
         # As for the download: simctl's list is believed, whatever xcodebuild exits.
@@ -951,16 +998,47 @@ class SimulatorTest(StepsTest):
         self.assert_pinned(shell)
 
     def test_a_failed_shared_cache_update_is_logged_and_said_but_not_fatal(self):
-        # Nothing has shown that simctl takes the runtime's identifier there: when it doesn't, the
-        # run goes on, and the first boot of iOS 26.5 builds the cache, in the test step's time.
-        code, out = self.step("simulator", self.shell(after_download=WITH_26_5, cache_code=1))
+        # When neither the plain update nor the one with sudo builds the cache, the run goes on,
+        # and the first boot of iOS 26.5 builds it, in the test step's time. The line says the
+        # last update's exit code, and the log has both.
+        update = ["xcrun", "simctl", "runtime", "dyld_shared_cache", "update", IOS_26_5["identifier"]]
+        again = ["sudo", "-n", "-H", "env", f"DEVELOPER_DIR={DEVELOPER_DIR}"] + update
+        shell = self.shell(after_download=WITH_26_5, cache_code=lambda cmd: 1 if cmd[0] == "sudo" else 25)
+        code, out = self.step("simulator", shell)
         self.assertEqual(code, 0, out)
+        self.assertEqual([c for c in shell.commands if "dyld_shared_cache" in c], [update, again])
         self.assertIn("updating iOS 26.5's shared cache exited 1, so its first boot builds it", out)
-        with open(os.path.join(self.repo.out, "logs", "simulators.txt")) as f:
-            self.assertEqual(f.read().count("(exit 1)"), 1)
+        text = self.simulators_log()
+        self.assertEqual((text.count("(exit 25)"), text.count("(exit 1)")), (1, 1))
+        self.assertLess(text.index("(exit 25)"), text.index("(exit 1)"))
         code, out = self.step("simulator", self.shell(after_download=WITH_26_5))
         self.assertEqual(code, 0, out)
         self.assertNotIn("shared cache", out)
+
+    def test_a_failed_shared_cache_update_is_run_once_more_with_sudo(self):
+        # The runner image of 2026-11-19, after the import as root: the update exited 25 for the
+        # runner's user and built the cache as root. Never asking for a password, with the
+        # pinned Xcode named on the line.
+        update = ["xcrun", "simctl", "runtime", "dyld_shared_cache", "update", IOS_26_5["identifier"]]
+        again = ["sudo", "-n", "-H", "env", f"DEVELOPER_DIR={DEVELOPER_DIR}"] + update
+        shell = self.shell(after_download=WITH_26_5, cache_code=lambda cmd: 0 if cmd[0] == "sudo" else 25)
+        code, out = self.step("simulator", shell)
+        self.assertEqual(code, 0, out)
+        self.assertEqual([c for c in shell.commands if "dyld_shared_cache" in c], [update, again])
+        self.assertIn("updating iOS 26.5's shared cache exited 25; updating it again with sudo", out)
+        self.assertNotIn("so its first boot builds it", out)
+        # Both updates' exit codes are logged, the plain one's first, the one with sudo's last.
+        text = self.simulators_log()
+        self.assertEqual(text.count("(exit 25)"), 1)
+        self.assertIn("(exit 25)\n(exit 0)\n", text)
+        self.assert_pinned(shell)
+        # Nothing else in the step runs as root.
+        self.assertEqual([c for c in shell.commands if c[0] == "sudo"], [again])
+
+    def test_a_shared_cache_update_that_worked_is_never_run_with_sudo(self):
+        shell = self.shell(after_download=WITH_26_5)
+        self.assertEqual(self.step("simulator", shell)[0], 0)
+        self.assertEqual([c for c in shell.commands if c[0] == "sudo"], [])
 
     def test_the_download_s_exit_code_doesn_t_decide(self):
         # Xcode can fall back to another runtime and exit 0, or fail a proxy and say "not
