@@ -40,9 +40,12 @@ public enum PlayerMessage: Sendable, Equatable {
     case volume(Double)
     /// `onImageChange`: the picture an image post shows, counted from 0.
     case image(Int)
-    /// `onPlayerError` with its `errorCode`, or the deprecated `onError`, whose number is the
-    /// browser's `MediaError.code` and no code of TikTok's, so it is read with none.
+    /// `onPlayerError` with its `errorCode`, when it carries one.
     case error(code: Int?)
+    /// The deprecated `onError`, whose number is the browser's `MediaError.code` and no code of
+    /// TikTok's. The player sends it just before `onPlayerError` (seen from CI's simulator on
+    /// 2026-11-20: `onError` 1, then `onPlayerError` 1001), so it is read apart from it.
+    case mediaError
 
     /// The longest message read, in UTF-8 bytes.
     public static let limit = 4096
@@ -91,7 +94,7 @@ public enum PlayerMessage: Sendable, Equatable {
             }
             return .success(.error(code: fields["errorCode"].flatMap { Int(exactly: $0) }))
         case "onError":
-            return .success(.error(code: nil))
+            return .success(.mediaError)
         default:
             return .failure(.type)
         }

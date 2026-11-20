@@ -47,7 +47,7 @@ The documentation's sample posts to the frame with the target `'*'`; the shell p
 
 ## 4. Tests
 
-On Linux (`swift test --package-path packages/swift/TadayoCore`), written from the rules before the code they test: `TikTokPostTests` (3 tests, 23 refused links), `PlayerMessageTests` (7: each documented message; the origin, 10 others refused; the shape; the type; the value; the length), `VideoNavigationTests` (7: the page is the shell alone; `https` asked; other schemes stopped; no new window; the player's frame and an empty one allowed; 18 other frames stopped), `VideoViewerModelTests` (11: nothing before the tap; the loading shell's end; refusals logged; each failure; the autoplay error; Retry; Close; one question; the log holds hosts only).
+On Linux (`swift test --package-path packages/swift/TadayoCore`), written from the rules before the code they test: `TikTokPostTests` (3 tests, 23 refused links), `PlayerMessageTests` (8: each documented message; the deprecated `onError` read apart; the origin, 10 others refused; the shape; the type; the value; the length), `VideoNavigationTests` (7: the page is the shell alone; `https` asked; other schemes stopped; no new window; the player's frame and an empty one allowed; 18 other frames stopped), `VideoViewerModelTests` (13: nothing before the tap; the loading shell's end; another origin's message changes nothing; a refused message from the player's origin ends the loading shell, 4 shapes; the deprecated error waits for the player's own; each failure; the autoplay error; Retry; Close; one question; the log holds hosts only).
 
 Hosted, on both iOS versions each `ios` run tests (`apps/ios/TadayoTests/PlayerWebViewTests.swift`), with every web view's data store given a proxy at a closed local port, so nothing reaches TikTok: the store isn't persistent, holds no cookie when the app's own storage holds one for `www.tiktok.com`, and is a new one for each web view; the settings above; the shell makes one frame with the post's player; it loads under `https://tadayo.app/` with that origin; a script's navigation of the page is stopped and asked about, another app's scheme is stopped with nothing asked, and neither changes the page or fails the viewer; the bridge moves the viewer only on a player's message; the shell ignores a message that isn't its frame's; `release` leaves an empty page with no handler.
 
@@ -58,6 +58,15 @@ No snapshot: the Lab screen is a workbench whose content is the live player.
 ## 5. The probe on CI
 
 `www.tiktok.com` can't be reached from the session, and CI's simulators can reach it. So a branch that never merges, `ios/b0-spike-video-probe`, made from this one, adds one hosted test without the closed proxy, which loads the documentation's own post under each shell address and fails on purpose with what it saw: whether `onPlayerReady` came and after how long, each message type and refusal, each navigation stopped, and, from a resource-timing reader the test alone puts in every frame, the hosts the player loaded from. That reader is in the probe only; the app never puts a script in TikTok's frame.
+
+**What it saw** (`ios` run 44666542447, started by hand at `d3e9fe5`, iOS 27.2 on the simulator, 03:30 UTC on 2026-11-20; `ios/b0-spike-video-probe/d3e9fe5/ios-full/logs/test-27.2.log` on `evidence`, from the line `S3-PROBE`):
+
+- **The player loads under both shell addresses,** the same way. Its frame's text after 12 seconds: "Scout, Suki & Stella scout2015 00:00/00:10 35.2K 5837 1531". Under no address TikTok's frame sees no referrer and an ancestor of `null`; under `https://tadayo.app/` it sees that address as referrer and ancestor. So no address tells TikTok less, and is tried first on the iPhone.
+- **`onPlayerReady` never came** in 30 seconds, nor after a `play` message, and the frame held no `video` element (the simulator, with no tap; whether an iPhone differs is a device step). The only message was the string `"[tea-sdk]ready"`, refused as `shape`. As built at commit A the viewer would have given up after 20 seconds on a player that had drawn itself. So anything TikTok's origin posts now ends the loading shell (`VideoViewerModel.answered`), still refused.
+- **A post that doesn't exist** (`/video/1`): TikTok's page says "Video currently unavailable", and the player sent, in order, `{"type":"onError","value":1,…}`, then `{"type":"onPlayerError","value":{"errorCode":1001,"errorType":"INVALID_VIDEO"},…}`, then a string of JSON with a width and height. Commit A failed on the first as "cannot play" and never read the second. So `onError` is now read apart (`PlayerMessage.mediaError`) and decides nothing, and 1001 gives "unavailable", 4.8 seconds after the load began.
+- **Hosts the player's frame loaded from:** `www.tiktok.com`, `lf16-tiktok-web.tiktokcdn-us.com`, `lf16-cdn-tos.tiktokcdn-us.com`, `p16-common-sign.tiktokcdn-us.com`, `p19-common-sign.tiktokcdn-us.com`, `vmweb.us.tiktok.com`, `mon16-normal-useast5.tiktokv.us`, `mcs.tiktokw.us`, `mssdk-ttp2.tiktokw.us` (from a runner in the United States; the names carry the region, so another region's will differ).
+- **Frames inside the player's frame:** six `about:blank` frames, all allowed by `VideoNavigation`; no other frame, no navigation of the page, no new window.
+- **Cookies** in the web view's store after each load: none.
 
 What the probe can't say: whether the video plays with sound on an iPhone, what a signed-out person on a home network is shown, and how Close and the background feel. Those are the founder's steps.
 
@@ -77,4 +86,7 @@ They go to the founder with the TestFlight build made from this branch by `ios-r
 - Open original opens the original at once, because the person asked for it; every other way out is asked about first (T39).
 - A second address while one question shows is stopped, not queued.
 - The Lab screen's words are plain labels, as the Lab's are; E01's words come with its design in B7.
+- Any message from `https://www.tiktok.com` ends the loading shell, not `onPlayerReady` alone, since the simulator's player never sent it (section 5). The timeout still covers a frame that never answers.
+- The deprecated `onError` decides nothing; `onPlayerError` does.
+- No address for the shell first; `https://tadayo.app/` stays in the Lab as the other choice.
 - No new FQ or ADR.

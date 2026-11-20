@@ -22,7 +22,7 @@ import Observation
     public enum Phase: Sendable, Equatable {
         /// Before the tap, and after Close: no web view exists.
         case idle
-        /// The fixed-size shell with Close, until the player says it is ready.
+        /// The fixed-size shell with Close, until the player's page answers.
         case loading
         /// The player is in place, with its own controls.
         case ready(PlayerMessage.Playback)
@@ -101,11 +101,27 @@ import Observation
     public func received(origin: String, json: String, attempt: Int) {
         guard attempt == self.attempt, showsPlayer else { return }
         switch PlayerMessage.read(origin: origin, json: json) {
+        case .failure(.origin):
+            note("message refused: \(PlayerMessage.Refusal.origin.rawValue)")
         case .failure(let refusal):
             note("message refused: \(refusal.rawValue)")
+            answered()
         case .success(let message):
             apply(message)
+            if showsPlayer { answered() }
         }
+    }
+
+    /// Anything TikTok's origin posts from the player's frame, whatever its shape, says the
+    /// player's page is there, so it ends the loading shell as `onPlayerReady` does. From CI's
+    /// simulator on 2026-11-20 the player drew itself and never sent `onPlayerReady`, only a
+    /// message of another shape (`docs/plans/ios-b0-spike-video.md`, section 5); without this
+    /// the timeout would take a player that works off the screen. Such a message is still
+    /// refused and still moves nothing else.
+    private func answered() {
+        guard phase == .loading else { return }
+        phase = .ready(.initial)
+        note("player page answered")
     }
 
     private func apply(_ message: PlayerMessage) {
@@ -124,6 +140,10 @@ import Observation
             case ErrorCode.invalidVideo: fail(.unavailable)
             default: fail(.cannotPlay)
             }
+        case .mediaError:
+            // The deprecated message comes just before `onPlayerError`, which says which
+            // failure it is, so it is logged and decides nothing.
+            note("message onError")
         case .time, .muted, .volume, .image:
             // Too frequent to log, and nothing the viewer shows.
             break

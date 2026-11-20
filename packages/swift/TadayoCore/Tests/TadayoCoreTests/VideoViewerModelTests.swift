@@ -64,17 +64,70 @@ import Testing
         #expect(viewer.phase == .ready(.buffering))
     }
 
-    @Test func aRefusedMessageChangesNothingAndIsLogged() {
+    @Test func aMessageFromAnotherOriginChangesNothingAndIsLogged() {
         let viewer = model()
         viewer.open()
         viewer.received(origin: "https://example.com", json: ready, attempt: 1)
-        viewer.received(origin: origin, json: #"{"type":"onPlayerReady"}"#, attempt: 1)
-        viewer.received(origin: origin, json: #"{"x-tiktok-player":true,"type":"x"}"#, attempt: 1)
+        viewer.received(origin: "https://example.com", json: #""[tea-sdk]ready""#, attempt: 1)
+        viewer.received(origin: "null", json: state(1), attempt: 1)
         #expect(viewer.phase == .loading)
         #expect(
             viewer.log.suffix(3) == [
-                "message refused: origin", "message refused: shape", "message refused: type",
+                "message refused: origin", "message refused: origin", "message refused: origin",
             ])
+        viewer.timedOut(attempt: 1)
+        #expect(viewer.phase == .failed(.timeout))
+    }
+
+    /// What CI's simulator saw of the real player on 2026-11-20: it drew itself and sent no
+    /// `onPlayerReady`, only `"[tea-sdk]ready"`, a string. Anything from TikTok's origin says
+    /// the player's page is there, so the loading shell ends and the timeout no longer applies;
+    /// the message is still refused, and a refused message moves nothing once the player shows.
+    @Test(arguments: [
+        (#""[tea-sdk]ready""#, "shape"), (#"{"type":"onPlayerReady"}"#, "shape"),
+        (#"{"x-tiktok-player":true,"type":"x"}"#, "type"),
+        (#"{"x-tiktok-player":true,"type":"onStateChange","value":9}"#, "value"),
+    ])
+    func aRefusedMessageFromThePlayersOriginEndsTheLoadingShell(json: String, refusal: String) {
+        let viewer = model()
+        viewer.open()
+        viewer.received(origin: origin, json: json, attempt: 1)
+        #expect(viewer.phase == .ready(.initial))
+        #expect(viewer.log.suffix(2) == ["message refused: \(refusal)", "player page answered"])
+        viewer.timedOut(attempt: 1)
+        #expect(viewer.phase == .ready(.initial))
+        viewer.received(origin: origin, json: state(1), attempt: 1)
+        viewer.received(origin: origin, json: json, attempt: 1)
+        #expect(viewer.phase == .ready(.playing))
+        #expect(viewer.log.last == "message refused: \(refusal)")
+    }
+
+    /// The real player's words for a post that doesn't exist, as CI's simulator read them on
+    /// 2026-11-20, in their order: the deprecated `onError` first, which decides nothing, then
+    /// `onPlayerError` 1001.
+    @Test func theDeprecatedErrorWaitsForThePlayersOwn() {
+        let viewer = model()
+        viewer.open()
+        viewer.received(origin: origin, json: #""[tea-sdk]ready""#, attempt: 1)
+        viewer.received(
+            origin: origin, json: #"{"type":"onError","value":1,"x-tiktok-player":true}"#,
+            attempt: 1)
+        #expect(viewer.phase == .ready(.initial))
+        #expect(viewer.log.last == "message onError")
+        viewer.received(
+            origin: origin,
+            json:
+                #"{"type":"onPlayerError","value":{"errorCode":1001,"errorType":"INVALID_VIDEO"},"x-tiktok-player":true}"#,
+            attempt: 1)
+        #expect(viewer.phase == .failed(.unavailable))
+        // And alone, while loading: it ends the loading shell like any word of the player's,
+        // and fails nothing.
+        let other = model()
+        other.open()
+        other.received(
+            origin: origin, json: #"{"type":"onError","value":4,"x-tiktok-player":true}"#,
+            attempt: 1)
+        #expect(other.phase == .ready(.initial))
     }
 
     @Test func eachFailureHasItsState() {

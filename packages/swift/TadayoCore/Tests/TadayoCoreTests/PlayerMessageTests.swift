@@ -42,8 +42,8 @@ import Testing
                 == .success(.image(2)))
     }
 
-    /// TikTok's documented error: `{errorCode, errorType}`. An error without a readable code,
-    /// and the deprecated `onError` (a `MediaError.code`, no code of TikTok's), are still errors.
+    /// TikTok's documented error: `{errorCode, errorType}`. An error without a readable code
+    /// is still an error.
     @Test func anErrorIsReadWithOrWithoutItsCode() {
         #expect(
             read(
@@ -58,9 +58,16 @@ import Testing
         #expect(
             read(#"{"x-tiktok-player":true,"type":"onPlayerError"}"#)
                 == .success(.error(code: nil)))
+    }
+
+    /// The deprecated `onError` (a `MediaError.code`, no code of TikTok's) is read apart from
+    /// `onPlayerError`, whatever its value.
+    @Test func theDeprecatedErrorIsItsOwnMessage() {
         #expect(
-            read(#"{"x-tiktok-player":true,"type":"onError","value":4}"#)
-                == .success(.error(code: nil)))
+            read(#"{"x-tiktok-player":true,"type":"onError","value":4}"#) == .success(.mediaError))
+        #expect(
+            read(#"{"type":"onError","value":1,"x-tiktok-player":true}"#) == .success(.mediaError))
+        #expect(read(#"{"x-tiktok-player":true,"type":"onError"}"#) == .success(.mediaError))
     }
 
     @Test(arguments: [
