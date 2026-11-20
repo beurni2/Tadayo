@@ -57,6 +57,7 @@ const revision = (over: Partial<RevisionRows>): RevisionRows => ({
   club: CLUB,
   state: "open",
   version: 1,
+  origin: "proposal",
   proposer: "itv_ana",
   sealed: true,
   supersededBy: null,
@@ -353,6 +354,47 @@ describe("what a leave changes (leaveProblems)", () => {
     expect(judge(rows)).toEqual([]);
     ended(rows).state = "superseded";
     expect(judge(rows)).toContain("the revision is superseded, not did_not_go_ahead");
+  });
+
+  it("asks a name's revision to stay one, with no approval, and a proposal to keep its proposer's alone (FQ84)", () => {
+    const named = (): { before: LeaveRows; after: LeaveRows } => {
+      const rows = carried();
+      const open = rows.before.roster.revisions.get("rev_open");
+      if (open === undefined) throw new Error("no open revision");
+      open.origin = "rename";
+      open.decisions = new Map([["itv_cleo", "approved"]]);
+      ended(rows).origin = "rename";
+      next(rows).origin = "rename";
+      next(rows).decisions = new Map();
+      return rows;
+    };
+    expect(judge(named())).toEqual([]);
+    const approved = named();
+    next(approved).decisions = new Map([["itv_ana", "approved"]]);
+    expect(judge(approved)).toEqual(["the new revision of a name nobody approved starts with an approval (FQ84)"]);
+    const relabelled = named();
+    next(relabelled).origin = "proposal";
+    next(relabelled).decisions = new Map([["itv_ana", "approved"]]);
+    // What the first build did: the name's revision relabelled as its proposer's own proposal.
+    expect(judge(relabelled)).toEqual([
+      "the new revision is a proposal, not a rename",
+      "the new revision of a name nobody approved starts with an approval (FQ84)",
+    ]);
+    const proposal = carried();
+    next(proposal).origin = "rename";
+    expect(judge(proposal)).toEqual(["the new revision is a rename, not a proposal"]);
+  });
+
+  it("carries nothing for a proposer who was no member before the leave, and none of the candidates ended before it", () => {
+    // Ana, the proposer, had left already (by a block or a deletion, later): nothing is carried.
+    const gone = carried();
+    gone.before.schedule = schedule(["itv_ana"]);
+    gone.after.schedule = schedule(["itv_ana", "itv_ben"]);
+    expect(judge(gone)).toContain("the revision is superseded, not did_not_go_ahead");
+    // Sam had ended before the leave: the new revision must not list Sam.
+    const before = carried();
+    before.before.roster.candidates.set("cnd_sam", { club: CLUB, proposer: "itv_ana", state: "ended" });
+    expect(judge(before)).toContain("the revision is superseded, not did_not_go_ahead");
   });
 
   it("says so when the open revision's rows are gone", () => {

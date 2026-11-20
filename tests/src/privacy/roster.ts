@@ -55,6 +55,8 @@ export interface RevisionRows {
   club: string;
   state: string;
   version: number;
+  /** `proposal`, a member's, or `rename`, a name nobody has approved yet (FQ84). */
+  origin: string;
   proposer: string;
   sealed: boolean;
   supersededBy: string | null;
@@ -108,12 +110,13 @@ export async function rosterWorldOf(db: WorldTx, clubs: readonly string[]): Prom
       club: string;
       state: string;
       version: number;
+      origin: string;
       proposer: string;
       sealed: boolean;
       superseded_by: string | null;
     }[]
   >`
-    SELECT id, club_id AS club, state, version, proposed_by_interval_id AS proposer,
+    SELECT id, club_id AS club, state, version, origin, proposed_by_interval_id AS proposer,
            roster_sealed_at IS NOT NULL AS sealed, superseded_by_id AS superseded_by
       FROM app.roster_revisions WHERE club_id IN ${db(clubs)}`;
   const memberRows = await db<{ revision: string; interval: string }[]>`
@@ -163,6 +166,7 @@ export async function rosterWorldOf(db: WorldTx, clubs: readonly string[]): Prom
           club: row.club,
           state: row.state,
           version: row.version,
+          origin: row.origin,
           proposer: row.proposer,
           sealed: row.sealed,
           supersededBy: row.superseded_by,

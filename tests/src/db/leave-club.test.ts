@@ -5,11 +5,20 @@
 // what the person who left can read afterwards, the club's proposals, the receipt, and every refusal.
 //
 // These tests were written after the command, from the plan's section 5, so none was seen to fail before
-// its rule existed. The deliberate breakages are the evidence that they can fail.
+// its rule existed. The deliberate breakages, run at the PR's last head, are what shows they can fail. The
+// last describe holds the tests the review of PR #78 asked for.
 
 import { randomUUID } from "node:crypto";
-import { leftClubBody } from "@tadayo/api";
-import { leaveClub, listClubs, listMembers, readClub, type Json, type ServerNow } from "@tadayo/domain";
+import { invitationAcceptanceBody, leftClubBody } from "@tadayo/api";
+import {
+  acceptInvitation,
+  leaveClub,
+  listClubs,
+  listMembers,
+  readClub,
+  type Json,
+  type ServerNow,
+} from "@tadayo/domain";
 import { fakeClock, type FakeClock } from "@tadayo/domain/testing";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { rolledBack, worldSql, type WorldTx } from "./harness.ts";
@@ -27,7 +36,7 @@ import {
   type RevisionBody,
 } from "./roster-world.ts";
 import { clubOf, holding, waitingOn, type WeekClub } from "./week-world.ts";
-import { newUser } from "./world.ts";
+import { joinByRoster, newUser } from "./world.ts";
 
 const db = worldSql(6);
 afterAll(async () => {
@@ -172,9 +181,14 @@ describe("leaving a club (leaveClub)", () => {
       // The revision that listed them, and the one made without them.
       expect(await read(tx, user(w, 1), open.id, NOW)).toBeNull();
       const next = await openOf(tx, w.club);
+      expect(next).not.toBeNull();
       expect(await read(tx, user(w, 1), next?.id ?? "", NOW)).toBeNull();
       const [club] = (await listClubs(tx, user(w, 0), NOW)).clubs;
       expect(club).toMatchObject({ id: w.club, state: "active", memberCount: 2 });
+      const roster = JSON.stringify(await listMembers(tx, user(w, 0), w.club, NOW));
+      expect(roster).toContain(member(w, 0));
+      expect(roster).toContain(member(w, 2));
+      expect(roster).not.toContain(member(w, 1));
     });
   });
 
@@ -208,6 +222,11 @@ describe("leaving a club (leaveClub)", () => {
       expect((await candidateState(tx, candidate(open, 0)))?.state).toBe("ended");
       expect((await candidateState(tx, candidate(open, 1)))?.state).toBe("ended");
       expect(await openOf(tx, ben.club)).toBeNull();
+      // The club stays as it was, proposed and never started, with nobody in it.
+      expect(await membership(tx, ben.interval)).toMatchObject({ state: "left", contributions: "keep" });
+      const [club] = await plain(tx)<{ activated: boolean }[]>`
+        SELECT activated_at IS NOT NULL AS activated FROM app.clubs WHERE id = ${ben.club}`;
+      expect(club).toEqual({ activated: false });
       // The unused link of an ended proposal names nothing to anyone.
       const maya = await newUser(plain(tx), "Maya");
       expect(await preview(tx, maya, made.token, NOW)).toBeNull();
@@ -238,8 +257,11 @@ describe("what a leave does to the club's open proposal (FQ121)", () => {
 
       // Ben leaves: Sam and Debby were Ben's to invite; Nina is Maya's, and Maya proposed the revision.
       await leaving(tx, user(s.w, 0), s.w.club);
-      expect(await candidateState(tx, s.sam)).toMatchObject({ state: "ended" });
-      expect(await candidateState(tx, s.debby)).toMatchObject({ state: "ended" });
+      for (const one of [s.sam, s.debby]) {
+        const ended = await candidateState(tx, one);
+        expect(ended?.state).toBe("ended");
+        expect(String(ended?.ended_at)).toBe("2026-11-11T05:30:00.123456Z");
+      }
       expect(await candidateState(tx, s.nina)).toMatchObject({ state: "open", ended_at: null });
       const next = await openOf(tx, s.w.club);
       expect(next).toEqual({
@@ -260,8 +282,12 @@ describe("what a leave does to the club's open proposal (FQ121)", () => {
         code: "ROSTER_CHANGED",
         facts: { current_id: next?.id },
       });
-      // Sam's link names nothing now.
+      // Sam's link shows only that it didn't go ahead, and accepting with it is told nothing of the roster
+      // that went on without Sam: not its id, not a version.
       expect(await preview(tx, sam, samLink.token, NOW)).toEqual({ state: "did_not_go_ahead" });
+      expect(await refusal(acceptWith(tx, clock, sam, samLink.token, s.open.id, 1))).toEqual(NONE);
+      expect(await refusal(acceptWith(tx, clock, sam, samLink.token, s.open.id, 7))).toEqual(NONE);
+      expect(await refusal(acceptWith(tx, clock, sam, samLink.token, next?.id ?? "", 1))).toEqual(NONE);
     });
   });
 
@@ -305,7 +331,13 @@ describe("what a leave does to the club's open proposal (FQ121)", () => {
         version: 2,
         superseded_by_id: null,
       });
-      for (const one of [s.sam, s.debby, s.nina]) expect((await candidateState(tx, one))?.state).toBe("ended");
+      // Ben stays, and Ben's Sam and Debby end too: they were on Maya's proposal.
+      for (const one of [s.sam, s.debby, s.nina]) {
+        const ended = await candidateState(tx, one);
+        expect(ended?.state).toBe("ended");
+        expect(String(ended?.ended_at)).toBe(AT_FIRST);
+      }
+      expect(String((await revisionRow(tx, s.open.id))?.ended_at)).toBe(AT_FIRST);
       expect(await openOf(tx, s.w.club)).toBeNull();
       expect(await rosterVersion(tx, s.w.club)).toBe(before + 1);
       // Nobody holds a place on no revision: Ben can propose five people again.
@@ -314,7 +346,7 @@ describe("what a leave does to the club's open proposal (FQ121)", () => {
     });
   });
 
-  it("ends a proposal that held only the leaver's candidates, and leaves the earlier ones as they ended", async () => {
+  it("ends a proposal of the leaver's own with its one candidate, and leaves the earlier ones as they ended", async () => {
     await rolledBack(db, async (tx) => {
       const w = await clubOf(tx, 3);
       const open = await propose(tx, clock, user(w, 0), w.club, ["Sam"]);
@@ -446,24 +478,11 @@ describe("who may leave (T9, T14)", () => {
 });
 
 describe("a leave behind the club's row (T1)", () => {
-  /** A clock that reads a second later at every sample, from the first instant. */
-  function ticking(): FakeClock {
-    const base = fakeClock(AT_FIRST);
-    return {
-      ...base,
-      async sample(sql) {
-        const at = await base.sample(sql);
-        base.advance({ seconds: 1 });
-        return at;
-      },
-    };
-  }
-
-  const leavingAlone = (account: string, club: string, key: string = randomUUID(), with_: FakeClock = clock) =>
+  const leavingAlone = (account: string, club: string, key: string = randomUUID()) =>
     db.begin((tx) =>
       leaveClub(
         tx as unknown as WorldTx,
-        with_,
+        clock,
         { userId: account, key, clubId: club, contributions: "keep" },
         leftClubBody,
       ),
@@ -471,18 +490,20 @@ describe("a leave behind the club's row (T1)", () => {
 
   it("dates the leave by the clock as it reads once the row is the leave's", { timeout: 30_000 }, async () => {
     const w = await db.begin((tx) => clubOf(tx as unknown as WorldTx, 3));
+    const moved = FIRST.add({ hours: 3 });
     const hold = await holding(db, w.club);
-    // The receipt takes the first sample, at :00; the leave's own comes after the lock.
-    const waiting = leavingAlone(user(w, 1), w.club, randomUUID(), ticking());
+    // The leave waits for the row, and the clock moves while it waits.
+    const waiting = leavingAlone(user(w, 1), w.club);
     try {
       await waitingOn(db, hold.pid, 1);
+      clock.set(moved);
     } finally {
       await hold.release();
     }
     const answer = (await waiting) as { left_at: string };
-    expect(answer.left_at).toBe("2026-11-11T05:00:01Z");
+    expect(answer.left_at).toBe("2026-11-11T08:00:00Z");
     const row = await membership(db as unknown as WorldTx, member(w, 1));
-    expect(String(row?.left_at)).toBe("2026-11-11T05:00:01.123456Z");
+    expect(String(row?.left_at)).toBe("2026-11-11T08:00:00.123456Z");
   });
 
   it("ends one interval once when eight sends of one leave arrive at once", { timeout: 30_000 }, async () => {
@@ -566,4 +587,253 @@ describe("a leave behind the club's row (T1)", () => {
       expect(await openOf(tx, s.w.club)).toBeNull();
     },
   );
+});
+
+describe("found in the review of PR #78", () => {
+  const originOf = async (tx: WorldTx, id: string): Promise<string | undefined> =>
+    (await plain(tx)<{ origin: string }[]>`SELECT origin FROM app.roster_revisions WHERE id = ${id}`)[0]?.origin;
+  const alone = <T>(command: (tx: WorldTx) => Promise<T>): Promise<T> =>
+    db.begin((tx) => command(tx as unknown as WorldTx)) as Promise<T>;
+  const leavingAlone = (account: string, club: string, key: string = randomUUID()) =>
+    alone((tx) => leaveClub(tx, clock, { userId: account, key, clubId: club, contributions: "keep" }, leftClubBody));
+
+  it("carries a name nobody has approved as that, with no approval: every member who stays approves it (FQ84)", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await clubOf(tx, 3);
+      const first = await propose(tx, clock, user(w, 0), w.club, ["Sam"]);
+      const made = await linkFor(tx, clock, user(w, 0), w.club, candidate(first, 0));
+      // The account that accepts is named Samuel: a revision for the name, which nobody has approved.
+      const samuel = await newUser(plain(tx), "Samuel");
+      expect((await acceptWith(tx, clock, samuel, made.token, first.id, 1)).state).toBe("changed");
+      const named = await openOf(tx, w.club);
+      expect(await originOf(tx, named?.id ?? "")).toBe("rename");
+      expect(named?.approvals).toEqual([]);
+
+      // Alex leaves. Ben, who proposed Sam, has not approved Samuel, and the new revision doesn't say so.
+      await leaving(tx, user(w, 2), w.club);
+      const next = await openOf(tx, w.club);
+      expect(next?.id).not.toBe(named?.id);
+      expect(await originOf(tx, next?.id ?? "")).toBe("rename");
+      expect(next).toMatchObject({
+        proposer: member(w, 0),
+        members: [member(w, 0), member(w, 1)],
+        candidates: [{ id: candidate(first, 0), label: "Samuel", accepted: false }],
+        approvals: [],
+      });
+      // Samuel accepts it and waits; Maya's approval alone joins nobody; Ben's, the last, does.
+      expect((await acceptWith(tx, clock, samuel, made.token, next?.id ?? "", 1)).state).toBe("waiting");
+      expect((await approve(tx, clock, user(w, 1), next?.id ?? "", 1)).state).toBe("open");
+      expect((await candidateState(tx, candidate(first, 0)))?.state).toBe("open");
+      expect((await approve(tx, clock, user(w, 0), next?.id ?? "", 1)).state).toBe("applied");
+      expect((await candidateState(tx, candidate(first, 0)))?.state).toBe("joined");
+    });
+  });
+
+  it("tells someone who joined by a link and left nothing through that link, and keeps no receipt (T14)", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await clubOf(tx, 3);
+      const open = await propose(tx, clock, user(w, 0), w.club, ["Sam"]);
+      const made = await linkFor(tx, clock, user(w, 0), w.club, candidate(open, 0));
+      const sam = await newUser(plain(tx), "Sam");
+      await acceptWith(tx, clock, sam, made.token, open.id, 1);
+      await approve(tx, clock, user(w, 1), open.id, 1);
+      expect((await approve(tx, clock, user(w, 2), open.id, 1)).state).toBe("applied");
+      await leaving(tx, sam, w.club);
+      // The revision Sam joined by, at a version it never had, at its own, and one that isn't.
+      const [applied] = await plain(tx)<{ version: number }[]>`
+        SELECT version FROM app.roster_revisions WHERE id = ${open.id}`;
+      for (const version of [0, applied?.version ?? -1, 9]) {
+        expect(await refusal(acceptWith(tx, clock, sam, made.token, open.id, version))).toEqual(NONE);
+      }
+      expect(await preview(tx, sam, made.token, NOW)).toBeNull();
+      const receipts = await plain(tx)<{ state: string }[]>`
+        SELECT state FROM app.idempotency_receipts WHERE actor_user_id = ${sam} AND operation = 'acceptInvitation'`;
+      expect(receipts).toEqual([{ state: "completed" }]);
+    });
+  });
+
+  it("doesn't answer the key of an earlier leave to someone who joined again, once the club is suspended (FQ112)", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await clubOf(tx, 3);
+      const key = randomUUID();
+      await leaving(tx, user(w, 1), w.club, "keep", key);
+      clock.set(FIRST.add({ hours: 1 }));
+      const open = await propose(tx, clock, user(w, 0), w.club, ["Maya"]);
+      const made = await linkFor(tx, clock, user(w, 0), w.club, candidate(open, 0));
+      await acceptWith(tx, clock, user(w, 1), made.token, open.id, 1);
+      await approve(tx, clock, user(w, 2), open.id, 1);
+      expect(await refusal(leaving(tx, user(w, 1), w.club, "keep", key))).toEqual(NONE);
+      await tx`UPDATE app.clubs SET suspended_at = ${LATER} WHERE id = ${w.club}`;
+      expect(await refusal(leaving(tx, user(w, 1), w.club, "keep", key))).toEqual(NONE);
+      expect(await refusal(leaving(tx, user(w, 1), w.club, "withdraw", key))).toEqual(NONE);
+    });
+  });
+
+  it("keeps the club in the receipt: the key of a leave leaves no other club", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await clubOf(tx, 3);
+      const other = await clubOf(tx, 2);
+      // Maya is in both clubs, and joined the second before leaving the first.
+      const [second] = await joinByRoster(
+        plain(tx),
+        other.club,
+        { user: user(other, 0), interval: member(other, 0) },
+        [{ user: user(w, 1), label: "Maya" }],
+        new Date("2026-11-10T00:00:00Z"),
+      );
+      const key = randomUUID();
+      await leaving(tx, user(w, 1), w.club, "keep", key);
+      expect(await refusal(leaving(tx, user(w, 1), other.club, "keep", key))).toEqual({
+        code: "IDEMPOTENCY_CONFLICT",
+        facts: {},
+      });
+      expect(await membership(tx, second ?? "")).toMatchObject({ state: "active", left_at: null });
+    });
+  });
+
+  it("ends a proposal with nothing left to carry, though its proposer stays", async () => {
+    await rolledBack(db, async (tx) => {
+      const w = await clubOf(tx, 3);
+      // Ben proposes Sam; Maya proposes nobody new beside Sam, so the open revision is Maya's and holds
+      // only Ben's candidate.
+      const first = await propose(tx, clock, user(w, 0), w.club, ["Sam"]);
+      const open = await propose(tx, clock, user(w, 1), w.club, ["Nina"]);
+      await plain(tx)`
+        UPDATE app.candidates SET state = 'ended', ended_at = ${LATER} WHERE id = ${candidate(open, 1)}`;
+      await leaving(tx, user(w, 0), w.club);
+      expect(await revisionRow(tx, open.id)).toMatchObject({ state: "did_not_go_ahead", superseded_by_id: null });
+      expect((await candidateState(tx, candidate(first, 0)))?.state).toBe("ended");
+      expect(await openOf(tx, w.club)).toBeNull();
+    });
+  });
+
+  it(
+    "gives the neutral not-found to a second leave behind the first, and keeps no receipt of it",
+    { timeout: 30_000 },
+    async () => {
+      const w = await alone((tx) => clubOf(tx, 3));
+      const before = await rosterVersion(db as unknown as WorldTx, w.club);
+      const hold = await holding(db, w.club);
+      let first: Promise<unknown>;
+      let second: Promise<unknown>;
+      try {
+        first = outcome(leavingAlone(user(w, 1), w.club));
+        await waitingOn(db, hold.pid, 1);
+        second = outcome(leavingAlone(user(w, 1), w.club));
+        await waitingOn(db, hold.pid, 2);
+      } finally {
+        await hold.release();
+      }
+      expect(await first).toMatchObject({ club_id: w.club });
+      expect(await second).toBe("NOT_FOUND");
+      expect(await rosterVersion(db as unknown as WorldTx, w.club)).toBe(before + 1);
+      expect(await receiptsOf(db as unknown as WorldTx, user(w, 1))).toEqual([{ state: "completed" }]);
+    },
+  );
+
+  it(
+    "lets two members leave one after the other behind the row, each ending the proposal as it stands",
+    { timeout: 30_000 },
+    async () => {
+      const s = await alone(async (tx) => {
+        const w = await clubOf(tx, 4);
+        const open = await propose(tx, clock, user(w, 0), w.club, ["Sam"]);
+        return { w, open };
+      });
+      const before = await rosterVersion(db as unknown as WorldTx, s.w.club);
+      const hold = await holding(db, s.w.club);
+      let one: Promise<unknown>;
+      let two: Promise<unknown>;
+      try {
+        one = outcome(leavingAlone(user(s.w, 2), s.w.club));
+        await waitingOn(db, hold.pid, 1);
+        two = outcome(leavingAlone(user(s.w, 3), s.w.club));
+        await waitingOn(db, hold.pid, 2);
+      } finally {
+        await hold.release();
+      }
+      expect(await one).toMatchObject({ club_id: s.w.club });
+      expect(await two).toMatchObject({ club_id: s.w.club });
+      const tx = db as unknown as WorldTx;
+      expect(await rosterVersion(tx, s.w.club)).toBe(before + 2);
+      const next = await openOf(tx, s.w.club);
+      expect(next?.members).toEqual([member(s.w, 0), member(s.w, 1)]);
+      expect(next?.candidates).toEqual([{ id: candidate(s.open, 0), label: "Sam", accepted: false }]);
+      expect((await revisionsOf(tx, s.w.club)).filter((row) => row.state === "superseded")).toHaveLength(2);
+    },
+  );
+
+  it(
+    "answers an acceptance behind a leave with the roster that replaced the one it named",
+    { timeout: 30_000 },
+    async () => {
+      const s = await alone(async (tx) => {
+        const w = await clubOf(tx, 3);
+        const open = await propose(tx, clock, user(w, 0), w.club, ["Sam"]);
+        const made = await linkFor(tx, clock, user(w, 0), w.club, candidate(open, 0));
+        return { w, open, made, sam: await newUser(plain(tx), "Sam") };
+      });
+      const accepting = () =>
+        alone((tx) =>
+          acceptInvitation(
+            tx,
+            clock,
+            { userId: s.sam, key: randomUUID(), token: s.made.token, revisionId: s.open.id, expectedVersion: 1 },
+            invitationAcceptanceBody,
+          ),
+        );
+      const hold = await holding(db, s.w.club);
+      let left: Promise<unknown>;
+      let accepted: Promise<unknown>;
+      try {
+        left = outcome(leavingAlone(user(s.w, 2), s.w.club));
+        await waitingOn(db, hold.pid, 1);
+        accepted = refusal(accepting());
+        await waitingOn(db, hold.pid, 2);
+      } finally {
+        await hold.release();
+      }
+      expect(await left).toMatchObject({ club_id: s.w.club });
+      const tx = db as unknown as WorldTx;
+      const next = await openOf(tx, s.w.club);
+      expect(await accepted).toEqual({ code: "ROSTER_CHANGED", facts: { current_id: next?.id } });
+      expect(next?.candidates).toEqual([{ id: candidate(s.open, 0), label: "Sam", accepted: false }]);
+    },
+  );
+
+  it("carries no acceptance that came just before the leave", { timeout: 30_000 }, async () => {
+    const s = await alone(async (tx) => {
+      const w = await clubOf(tx, 3);
+      const open = await propose(tx, clock, user(w, 0), w.club, ["Sam"]);
+      const made = await linkFor(tx, clock, user(w, 0), w.club, candidate(open, 0));
+      return { w, open, made, sam: await newUser(plain(tx), "Sam") };
+    });
+    const hold = await holding(db, s.w.club);
+    let left: Promise<unknown>;
+    let accepted: Promise<unknown>;
+    try {
+      accepted = outcome(
+        alone((tx) =>
+          acceptInvitation(
+            tx,
+            clock,
+            { userId: s.sam, key: randomUUID(), token: s.made.token, revisionId: s.open.id, expectedVersion: 1 },
+            invitationAcceptanceBody,
+          ),
+        ),
+      );
+      await waitingOn(db, hold.pid, 1);
+      left = outcome(leavingAlone(user(s.w, 2), s.w.club));
+      await waitingOn(db, hold.pid, 2);
+    } finally {
+      await hold.release();
+    }
+    expect(await accepted).toMatchObject({ state: "waiting" });
+    expect(await left).toMatchObject({ club_id: s.w.club });
+    const tx = db as unknown as WorldTx;
+    const next = await openOf(tx, s.w.club);
+    expect(next?.members).toEqual([member(s.w, 0), member(s.w, 1)]);
+    expect(next?.candidates).toEqual([{ id: candidate(s.open, 0), label: "Sam", accepted: false }]);
+    expect((await candidateState(tx, candidate(s.open, 0)))?.state).toBe("open");
+  });
 });

@@ -139,6 +139,8 @@ const ROSTER_TABLES = new Map<
 >();
 /** The states each role's viewer left the cell's club in (the role's test fills it; a later test reads it). */
 const LEAVES = new Map<string, number>();
+/** By role: the leaves after which the leaver lost a revision that listed them, read until then. */
+const REVISIONS_LOST = new Map<string, number>();
 /**
  * The answers the invitation's table gives someone other than the cell's viewer, for each revision: the
  * signed-out page twice, the link's holder ten times, another member three times.
@@ -607,7 +609,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       };
       const memberStates = new Set<string>();
       // What the leave's step did for this role: the states it asked in, and those the judge said it left in.
-      const left = { asked: 0, left: 0 };
+      const left = { asked: 0, left: 0, revisions: 0 };
       const phases = (Object.keys(PHASES) as Phase[]).filter((phase) => !role.phases || role.phases.includes(phase));
       const expectedSession: Session = role.session ?? "active";
       for (const state of STATES) {
@@ -1508,6 +1510,12 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
             const leaveGate = gateOf(sessionNow, leave.operation);
             const outcome = leaveGate ?? leaveOutcome(schedule, cell.w.club, cell.viewer);
             const before = { schedule, roster: rosterWorld, clubs: clubRows };
+            // Whether the viewer reads the cell's revision now: its judge refuses the neutral not-found.
+            const revisionNow = revisionExpected(rosterSeen, cell.targets.revision);
+            const readRevision =
+              (typeof revisionNow === "function" ? revisionNow(NEUTRAL) : pinnedProblems(NEUTRAL, revisionNow)).filter(
+                (problem) => !problem.startsWith("the headers in another order"),
+              ).length > 0;
             const key = randomUUID();
             const first = await ask(key);
             left.asked += 1;
@@ -1520,8 +1528,11 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
               tell(first, pinnedProblems(first, outcome), "a leave by someone the club answers nothing");
               if (canonical(after.clubs.get(cell.w.club)) !== canonical(before.clubs.get(cell.w.club)))
                 wrong.push(`${state.name}, ${phase}: a refused leave changed the club's rows`);
+              if (canonical([...after.schedule.members]) !== canonical([...before.schedule.members]))
+                wrong.push(`${state.name}, ${phase}: a refused leave changed a membership`);
             } else {
               left.left += 1;
+              if (readRevision) left.revisions += 1;
               const [row] = await db<
                 { state: string; left_at: Temporal.Instant | null; contributions: string | null; name: string | null }[]
               >`
@@ -1602,6 +1613,7 @@ describe("every cell of the privacy matrix: each role, each state of the drop, e
       // The leave ran once in every state, and the roles it left for are named in the test below.
       expect(left.asked).toBe(STATES.length);
       LEAVES.set(role.name, left.left);
+      REVISIONS_LOST.set(role.name, left.revisions);
       console.log(`${role.name}, the leave: ${JSON.stringify(left)}`);
       expect(roster.proposals).toBe(STATES.length * phases.length * proposeCases(0, "x").length);
       expect(roster.revisions).toBe(roster.due);
@@ -1647,6 +1659,8 @@ describe("the leave ran (tests/src/privacy/leave.ts)", () => {
       ["rejoined member, a new interval (T8)", 6],
       ["blocked: the author blocked Cleo as the day opened, leaving by the block and keeping the drop (FQ88)", 6],
     ]);
+    // The world's revision lists the star alone: the star read it until the leave, and nothing after.
+    expect([...REVISIONS_LOST].filter(([, states]) => states > 0)).toEqual([["star", 6]]);
   });
 });
 

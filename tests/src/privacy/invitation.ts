@@ -213,12 +213,20 @@ export function acceptOutcome(
   const viewer = viewerIn(world, link.club, account);
   if (viewer !== undefined && !(mine && state === "joined")) return NEUTRAL;
   if (state === "ended" && !mine) return NEUTRAL;
+  // Someone who joined by the link and has left is a former member (T14).
+  if (state === "joined" && viewer === undefined) return NEUTRAL;
   const rows = roster.revisions.get(revision);
   const listed = rows?.candidates.find((candidate) => candidate.id === link.candidate);
   if (rows === undefined || rows.club !== link.club || !rows.sealed || listed === undefined) return NEUTRAL;
   if (!mine && Temporal.Instant.compare(link.expiresAt, now) <= 0) return EXPIRED;
   if (holdsAnother(roster, link, account)) return NEUTRAL;
-  if (rows.state === "superseded") return rosterChanged(newestOf(roster, revision));
+  if (rows.state === "superseded") {
+    // Told of the newest revision only while it lists the candidate: a leave may have ended them and
+    // carried the others on.
+    const newest = newestOf(roster, revision);
+    const still = roster.revisions.get(newest)?.candidates.some((candidate) => candidate.id === link.candidate);
+    return still === true ? rosterChanged(newest) : NEUTRAL;
+  }
   if (rows.version !== expected) return versionConflict(rows.version);
   if (rows.state !== "open") return rows.state === "applied" && viewer !== undefined ? "joined again" : NEUTRAL;
   if (state !== "open" || viewer !== undefined) return NEUTRAL;

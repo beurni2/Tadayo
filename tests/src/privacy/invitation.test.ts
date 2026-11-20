@@ -77,6 +77,7 @@ function revision(more: Partial<RevisionRows> = {}): RevisionRows {
     club: CLUB,
     state: "open",
     version: 1,
+    origin: "proposal",
     proposer: "itv_ben",
     sealed: true,
     supersededBy: null,
@@ -403,6 +404,28 @@ describe("what accepting must get (acceptInvitation)", () => {
     });
     // A link its account has used doesn't expire for that account.
     expect(accept("usr_mo", "Mo", roster([bound()]), { now: LATER })).toBe("waiting");
+  });
+
+  it("tells a candidate nothing of a newer revision that doesn't list them, and a person who left nothing at all", () => {
+    // A leave ended Mo and carried Lu on: the chain's newest revision lists Lu alone.
+    const carried = roster(
+      [bound()],
+      [
+        ["rev_1", revision({ state: "superseded", version: 2, supersededBy: "rev_2" })],
+        ["rev_2", revision({ candidates: [{ id: "cand_lu", label: "Lu", proposer: "itv_ana", acceptedWith: null }] })],
+      ],
+      [["cand_mo", { state: "ended" }]],
+    );
+    expect(accept("usr_mo", "Mo", carried)).toBe(NEUTRAL);
+    expect(accept("usr_mo", "Mo", carried, { expected: 9 })).toBe(NEUTRAL);
+    // Mo joined by the link and has left since: no interval of Mo's is active.
+    const joined = roster(
+      [bound()],
+      [["rev_1", revision({ state: "applied", version: 2 })]],
+      [["cand_mo", { state: "joined" }]],
+    );
+    expect(accept("usr_mo", "Mo", joined, { expected: 2 })).toBe(NEUTRAL);
+    expect(accept("usr_mo", "Mo", joined, { expected: 9 })).toBe(NEUTRAL);
   });
 
   it("takes no acceptance of a revision that has ended, but tells the account that joined by it so", () => {

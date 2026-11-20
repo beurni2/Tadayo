@@ -168,7 +168,7 @@ describe("what the leave route answers", () => {
   const left = successExamples("leaveClub")?.["kept"]?.value as Body;
   const headers = { "cache-control": "private, no-store", "content-type": "application/json; charset=utf-8" };
 
-  it("answers a leave with 200 and the answer as the command gave it, a replay with the same bytes", async () => {
+  it("answers a leave with 200 and the answer as the command gave it, twice alike", async () => {
     const answer = await appFor(() => Promise.resolve(left));
     const first = await answer(post(KEEP));
     expect(first).toMatchObject({ status: 200, body: JSON.stringify(left), headers });

@@ -8,7 +8,8 @@
 //    isn't suspended (FQ122).
 // 2. The receipt (T19). For a member, the rule every club command has (`reserveAsMember`, FQ112). For
 //    anyone else, the receipt of this same request is answered as it was stored: a retry of a leave that
-//    went through, whose first answer is still the caller's. With no such receipt, NOT_FOUND, and nothing
+//    went through, whose first answer is still the caller's; not to an account that holds a later interval
+//    in the club, suspended since (FQ112). With no such receipt, NOT_FOUND, and nothing
 //    is kept: a stranger, a former member with a new key, an account being deleted, a suspended club and
 //    an id nobody has all read alike (T14).
 // 3. The club's row, `FOR UPDATE`. Then who is asking, again: the same interval, or NOT_FOUND.
@@ -18,7 +19,9 @@
 // 6. The club's proposals (FQ121): the leaver's own open candidates end; the open revision ends, since it
 //    lists the leaver; its other open candidates are carried into a revision the server makes
 //    (./apply-roster.ts `writeRevision`), which supersedes it, when its proposer is still a member; else
-//    it ends as did-not-go-ahead and its open candidates end with it.
+//    it ends as did-not-go-ahead and its open candidates end with it. The new revision is what the ended
+//    one was: a member's proposal keeps its proposer's approval by proposing (FQ60), and the revision of
+//    a name nobody has approved (`rename`, FQ84) starts with no approval at all.
 // 7. The club's `roster_version`, up by one.
 // 8. The answer, stored in the receipt and answered as the receipt keeps it.
 //
@@ -106,6 +109,13 @@ export async function leaveClub(
   // 1. Who is asking. 2. The receipt.
   const asking = await activeMember(tx, userId, clubId);
   if (asking === null) {
+    // An interval the account still holds there (the club is suspended) can't have left: a key that an
+    // earlier interval left with names nothing to it, the same body or another, as it names nothing while
+    // the club isn't suspended (FQ112, FQ122).
+    const [held] = await bound(tx)`
+      SELECT 1 AS found FROM app.memberships m
+       WHERE m.club_id = ${clubId} AND m.user_id = ${userId} AND m.state = 'active'`;
+    if (held !== undefined) throw new Refused("NOT_FOUND");
     const stored = await reserveReceipt(tx, receipt, await clock.sample(tx));
     if (stored !== null) return stored.replay;
     // The reservation goes with the refusal.
@@ -136,7 +146,7 @@ export async function leaveClub(
     UPDATE app.candidates SET state = 'ended', ended_at = ${at}::pg_catalog.timestamptz
      WHERE club_id = ${clubId} AND proposed_by_interval_id = ${asking} AND state = 'open'`;
   const [open] = await bound(tx)`
-    SELECT r.id, r.proposed_by_interval_id,
+    SELECT r.id, r.origin, r.proposed_by_interval_id,
            (SELECT pm.state = 'active' FROM app.memberships pm
              WHERE pm.interval_id = r.proposed_by_interval_id) AS proposer_active
       FROM app.roster_revisions r
@@ -149,6 +159,8 @@ export async function leaveClub(
         JOIN app.candidates k ON k.id = rc.candidate_id
        WHERE rc.revision_id = ${revisionId} AND k.state = 'open'
        ORDER BY rc.position`;
+    const origin: unknown = open["origin"];
+    if (origin !== "proposal" && origin !== "rename") throw new Error("clubs: a leave read a row it can't use");
     if (carried.length > 0 && open["proposer_active"] === true) {
       const next = newId("rev");
       await bound(tx)`
@@ -159,11 +171,12 @@ export async function leaveClub(
       await writeRevision(tx, {
         id: next,
         clubId,
-        origin: "proposal",
+        // What the ended revision was: a name nobody has approved yet stays one (FQ84).
+        origin,
         proposer: text(open["proposed_by_interval_id"]),
         at,
         candidates: carried.map((row) => ({ candidateId: text(row["candidate_id"]), label: text(row["label"]) })),
-        implicit: true,
+        implicit: origin === "proposal",
       });
     } else {
       await bound(tx)`

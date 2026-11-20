@@ -13,8 +13,9 @@
 //   instant, with the choice and the name they had; nobody else's does; the club's roster version moves
 //   by one; no candidate the leaver proposed is still open; and the club's open revision, which listed
 //   them, has ended: superseded by one the server made for the members who stay, carrying its other open
-//   candidates at their labels and in their order with only its proposer's approval and no acceptance,
-//   or, when its proposer left or nothing is left to carry, ended with every candidate it held (FQ121).
+//   candidates at their labels and in their order with only its proposer's approval and no acceptance
+//   (no approval at all when it was the revision of a name nobody had approved, FQ84), or, when its
+//   proposer is no member now or nothing is left to carry, ended with every candidate it held (FQ121).
 //
 // The leak scanner reads the same answer for the club's id (scanner.ts's BARE: a club the caller has an
 // interval in); it can't judge an instant, a choice or a row, so this file does.
@@ -114,7 +115,8 @@ export function leaveProblems(
     (one) => one.proposer !== interval && before.roster.candidates.get(one.id)?.state === "open",
   );
   if (ended.version !== was.version + 1) problems.push("the ended revision's version didn't move by one");
-  if (carried.length === 0 || was.proposer === interval) {
+  // Carried only by a proposer who stays: one who isn't a member any more stands behind nothing.
+  if (carried.length === 0 || !stayed.includes(was.proposer)) {
     if (ended.state !== "did_not_go_ahead") problems.push(`the revision is ${ended.state}, not did_not_go_ahead`);
     if (openAfter !== null) problems.push("a revision is open though nothing could be carried (FQ121)");
     for (const one of was.candidates) {
@@ -139,8 +141,13 @@ export function leaveProblems(
     problems.push("the new revision's candidates aren't the ones carried, at their labels and in their order");
   if (next.candidates.some((one) => one.acceptedWith !== null))
     problems.push("the new revision carries an acceptance of another roster (T7)");
-  if (next.decisions.size !== 1 || next.decisions.get(was.proposer) !== "approved")
-    problems.push("the new revision's approvals aren't its proposer's alone (FQ60)");
+  if (next.origin !== was.origin) problems.push(`the new revision is a ${next.origin}, not a ${was.origin}`);
+  if (was.origin === "proposal") {
+    if (next.decisions.size !== 1 || next.decisions.get(was.proposer) !== "approved")
+      problems.push("the new revision's approvals aren't its proposer's alone (FQ60)");
+  } else if (next.decisions.size !== 0) {
+    problems.push("the new revision of a name nobody approved starts with an approval (FQ84)");
+  }
   for (const one of carried) {
     if (after.roster.candidates.get(one.id)?.state !== "open")
       problems.push(`the carried candidate ${one.id} was ended`);
