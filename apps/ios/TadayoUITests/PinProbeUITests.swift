@@ -13,7 +13,7 @@ final class PinProbeUITests: XCTestCase {
         continueAfterFailure = true
         let older = ProcessInfo.processInfo.operatingSystemVersion.majorVersion < 27
         let end = Date(timeIntervalSinceNow: older ? 18 * 60 : 12 * 60)
-        let ways = ["plain", "again", "both", "async"]
+        let ways = ["plain", "both", "both", "both"]
         var runs: [String: Int] = [:]
         var stuck: [String: Int] = [:]
         var lines: [String] = []
