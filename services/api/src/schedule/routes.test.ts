@@ -1,6 +1,6 @@
 /// <reference lib="esnext.temporal" />
 // The schedule's three routes as the contract has them (spec 05; T14, T19, T33, T55), with no database: each
-// serializer's field list, held against every first-days example the contract gives (the mock's scenes,
+// serializer's field list, held against every first-days and new member's pick example the contract gives (the mock's scenes,
 // packages/contracts/src/fixtures/examples-clubs.ts), and everything a route refuses before its command runs.
 // Who sees which name is the domain's view (packages/domain/src/schedule/view.test.ts), which is also held
 // here against the same examples, read from the contract and not copied by hand; the commands, their
@@ -13,10 +13,12 @@ import { Schedule, ScheduleProposal, ScheduleSlot } from "@tadayo/contracts";
 import { successExamples } from "../../../../packages/contracts/src/fixtures/examples.ts";
 import {
   Refused,
+  pickViewFor,
+  pickWeekFacts,
   viewFor,
   type Account,
-  type ChosenDay,
   type Clock,
+  type LatestDay,
   type ProposalAnswer,
   type ProposalMember,
   type SchedulePerson,
@@ -64,20 +66,6 @@ function proposal(value: unknown): ProposalAnswer {
     myDays: body["my_days"] as Weekday[],
     myState: body["my_state"] as "choosing" | "confirmed",
     state: body["state"] as "open",
-    ...(body["announced"] === undefined ? {} : { announced: (body["announced"] as Body[]).map(announcedDay) }),
-  };
-}
-
-/** A contract example's Occurrence as the domain holds a chosen day. */
-function announcedDay(value: Body): ChosenDay {
-  return {
-    id: value["id"] as string,
-    clubId: value["club_id"] as string,
-    star: person(value["star"]),
-    localDate: value["local_date"] as string,
-    revealAt: Temporal.Instant.from(value["reveal_at"] as string),
-    closeAt: Temporal.Instant.from(value["close_at"] as string),
-    phase: value["phase"] as ChosenDay["phase"],
   };
 }
 
@@ -140,26 +128,68 @@ describe("the serializers against the contract's examples (T55)", () => {
     }
   });
 
-  it("makes each scene of a membership change, field for field, with the days announced until its start", () => {
-    const read = Object.entries(successExamples("getSchedule") ?? {}).filter(
-      ([, example]) => ((example.value as Body)["proposal"] as Body | undefined)?.["reason"] === "membership_change",
-    );
-    expect(read.map(([name]) => name)).toEqual(["change", "change_confirmed"]);
-    for (const [name, example] of read) {
-      const value = example.value as Body;
+  it("makes each scene of a new member's pick, field for field, and is what the domain's pick view makes of its facts", () => {
+    const pickOf = (operation: string): [string, Body][] =>
+      Object.entries(successExamples(operation) ?? {})
+        .map(([name, example]): [string, Body] => [name, example.value as Body])
+        .filter(([, value]) => {
+          const found = (operation === "getSchedule" ? value["proposal"] : value) as Body | undefined;
+          return found?.["reason"] === "membership_change";
+        });
+    const read = pickOf("getSchedule");
+    expect(read.map(([name]) => name)).toEqual(["new_member"]);
+    for (const [name, value] of read) {
       const body = scheduleBody(Temporal.Instant.from(value["server_now"] as string), sight(value));
       expect(body, name).toEqual(value);
       expect(Schedule.strict().safeParse(body).success, name).toBe(true);
-      expect(((value["proposal"] as Body)["announced"] as unknown[]).length, name).toBeGreaterThan(0);
     }
-    const confirmed = Object.entries(successExamples("confirmScheduleDays") ?? {}).filter(
-      ([, example]) => (example.value as Body)["reason"] === "membership_change",
-    );
+    const confirmed = pickOf("confirmScheduleDays");
     expect(confirmed.map(([name]) => name)).toEqual(["confirmed"]);
-    for (const [name, example] of confirmed) {
-      const body = proposalBody(proposal(example.value));
-      expect(body, name).toEqual(example.value);
+    for (const [name, value] of confirmed) {
+      const body = proposalBody(proposal(value));
+      expect(body, name).toEqual(value);
       expect(ScheduleProposal.strict().safeParse(body).success, name).toBe(true);
+    }
+    expect(pickOf("chooseScheduleDays")).toEqual([]);
+
+    // The facts, from the scene's own words: Kitchen table's week in force names the five who keep their
+    // days, and Leila is the one member the pick includes, proposed Friday, the one free day.
+    const [, scene] = read[0] ?? ["", {}];
+    const week = (scene["current"] as { assignments: { weekday: Weekday; person: Body }[] }).assignments;
+    const leila = (scene["club"] as Body)["my_membership_id"] as string;
+    const latest = (leilasFriday?: string): LatestDay[] => [
+      ...week.map((each) => ({
+        weekday: each.weekday,
+        star: each.person["membership_id"] as string,
+        starActive: true,
+        firstDate: "2026-10-05",
+      })),
+      ...(leilasFriday === undefined
+        ? []
+        : [{ weekday: "friday" as const, star: leila, starActive: true, firstDate: leilasFriday }]),
+    ];
+    const asked = (isConfirmed: boolean): ProposalMember[] => [
+      { id: leila, active: true, confirmed: isConfirmed, suggested: ["friday"], held: ["friday"] },
+    ];
+    const pairs: readonly (readonly [string, Body, WeekFacts])[] = [
+      ["getSchedule new_member", scene["proposal"] as Body, pickWeekFacts(1, asked(false), latest())],
+      // Confirmed on Friday 6 November: a new week from that day holds Leila's Friday from 13 November (FQ130).
+      ["confirmScheduleDays confirmed", confirmed[0]?.[1] ?? {}, pickWeekFacts(1, asked(true), latest("2026-11-13"))],
+    ];
+    for (const [name, value, facts] of pairs) {
+      const example = proposal(value);
+      const view = pickViewFor(leila, facts);
+      expect({ slots: view.slots, myDays: view.myDays, myState: view.myState }, name).toEqual({
+        slots: example.slots.map((slot) => ({
+          weekday: slot.weekday,
+          state: slot.state,
+          ...(slot.owner === undefined ? {} : { owner: slot.owner.membershipId }),
+          ...(slot.firstDate === undefined ? {} : { firstDate: slot.firstDate }),
+          suggested: slot.suggested,
+        })),
+        myDays: example.myDays,
+        myState: example.myState,
+      });
     }
   });
 
@@ -274,7 +304,7 @@ describe("each serializer is an explicit field list (T55)", () => {
     expect(JSON.stringify(body)).not.toMatch(/mem_ben|Ben|3|confirmedAt|chosenBy/);
   });
 
-  it("gives a proposal the contract's nine fields, and never `announced` in the first days", () => {
+  it("gives a proposal the contract's nine fields, and nothing else", () => {
     const answer = {
       id: "spr_1",
       version: 1,

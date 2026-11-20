@@ -103,8 +103,24 @@ describe("the other keys a double tap meets", () => {
           INSERT INTO app.occurrences (id, club_id, star_interval_id, schedule_version_id, local_date, reveal_at, close_at, collecting_from)
           VALUES (${newId("occ")}, ${w.club}, ${w.ana.interval}, ${w.version}, '2026-11-07', ${AT.reveal}, ${AT.close}, ${AT.generated})
         `,
-        /occurrences_club_id_local_date_key/,
+        /occurrences_one_live_day/,
       );
+    });
+  });
+
+  it("leaves a cancelled day's date to one other day, and keeps the cancelled one (FQ129)", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await newWorld(tx);
+      await tx`UPDATE app.occurrences SET status = 'cancelled' WHERE id = ${w.day}`;
+      const another = (sp: Tx) => sp`
+        INSERT INTO app.occurrences (id, club_id, star_interval_id, schedule_version_id, local_date, reveal_at, close_at, collecting_from)
+        VALUES (${newId("occ")}, ${w.club}, ${w.ana.interval}, ${w.version}, '2026-11-07', ${AT.reveal}, ${AT.close}, ${AT.generated})
+      `;
+      await another(tx);
+      await expectRefused(tx, REFUSED.unique, another, /occurrences_one_live_day/);
+      const [kept] = await tx<{ n: number }[]>`
+        SELECT count(*)::int AS n FROM app.occurrences WHERE club_id = ${w.club} AND local_date = '2026-11-07'`;
+      expect(kept?.n).toBe(2);
     });
   });
 

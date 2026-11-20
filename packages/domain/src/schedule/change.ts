@@ -1,28 +1,36 @@
 /// <reference lib="esnext.temporal" />
-// The membership change: the week every active member confirms when a club's members change after its
-// first days have applied (spec 05: "Changing membership from three to four requires the one day cadence
-// next week; four to three requires two. Existing announced reveal times remain fixed"; FQ16, FQ56, FQ61,
-// FQ100, FQ102, FQ115, FQ125 to FQ127; docs/plans/api-b2-membership-change.md, section 2). Pure rules:
-// they read no clock and no database. ./settle-change.ts reads the facts under the club's row and writes
-// what they say, for every command that starts or ends a membership and when the first days apply.
+// A new member's days once a club's first days have applied: the membership change (spec 05; FQ16, FQ79,
+// FQ100, FQ102, the founder's answers to FQ125 to FQ127 and to the three-to-four card, FQ129 to FQ131;
+// docs/plans/api-b2-new-member-day.md, section 1). Pure rules: they read no clock and no database.
+// ./settle-change.ts reads the facts under the club's row and writes what `pickAfter` says, for every
+// command that starts or ends a membership and when the first days apply; ./confirm-days.ts dates a new
+// member's confirmed day by `newMemberFirstDate` and starts the week it writes on `nextWeekStart`.
 //
-// - When (`changeAfter`). While the first days are open their own rule decides (./roster-change.ts), and a
-//   club that never had a confirmed week gets new first days, not a change (FQ102, FQ123). With fewer than
-//   two members the club is paused (FQ16): an open change ends and none is proposed. When the active
-//   members are exactly the stars of the club's latest week, each with spec 05's days, there is nothing to
-//   change, and an open change ends. Otherwise a change is proposed for the active members, in place of an
-//   open one for other members (FQ126): everyone confirms the new one.
-// - Which week (`changeWeek`; FQ125). Where spec 05's table keeps the days each member has, every member
-//   who stays keeps their days, a leaver's are free, and a member who lacks days (someone new, or a late
-//   joiner of the first days: FQ100) is proposed days nobody keeps: the table's days for their place in the
-//   order they joined when free, else the first free days from Monday. Where the table changes the days
-//   each (between three and four members), the table's whole week in the order they joined, as a revision
-//   of the first days does (FQ102).
-// - From when (`changeStart`; FQ61, FQ115). The first Monday after every day already made and after the
-//   days' window seen from today (./generate.ts `windowEnd`). A change that replaces an open one keeps its
-//   start while that is still ahead: no day was made from it on (FQ127), so it is still the first free week.
+// - Nobody already in the week is asked anything, and nobody moves (FQ125, FQ126): a member who stays
+//   keeps exactly their days through any join or leave, even where spec 05's table would give a smaller
+//   club two days each (FQ131).
+// - One exception, the founder's answer on three to four members: when the free days can't give each new
+//   member spec 05's number (three who hold all six days, and a fourth joins), a day is freed now
+//   (`freed`): each member already in the week keeps their first day from Monday, and their other days
+//   leave the week, their days announced from the next week on cancelled. The new member picks from them
+//   and starts next week. Where enough days are free (two members and a third who hasn't confirmed, and a
+//   fourth; two who join at once), nobody's day is freed: the new members pick from the free ones.
+// - A free day is one no active member has in the club's latest week: one nobody had, a member's who left,
+//   or one just freed.
+// - The members with no day in the latest week (someone who joined since, or a late joiner of the first
+//   days, FQ100) pick free days in one proposal per club, each spec 05's number for the club's size
+//   (FQ131), holding at first the table's days for their place in the order they joined when those are
+//   free and nobody it includes holds them, else the first such days from Monday (FQ48). A member who joins
+//   while it is open is added to it; when the club's size changes the number of days each, a new pick takes
+//   its place for the members then without a day, each keeping first the free days they held in the earlier
+//   one, up to the new number from Monday, and the earlier one's id answers MEMBERSHIP_CHANGED. It
+//   applies when every member it includes who is still active has confirmed, and ends with no successor
+//   when nobody it includes is still a member or the club is paused (FQ16).
+// - A new member's confirmed day first opens on that weekday in the week after the confirmation, the
+//   first such date whose 7 AM is at least 24 elapsed hours after it (FQ79, FQ130), after the last day of
+//   that weekday announced for a member still in the club, and on or after the start of the week it joins.
 
-import { windowEnd } from "./generate.ts";
+import { firstDate } from "./first-date.ts";
 import { daysPerMember, proposedWeek, WEEKDAYS, type Weekday } from "./propose.ts";
 import type { ProposedDays } from "./roster-change.ts";
 
@@ -32,107 +40,191 @@ export interface WeekDay {
   readonly star: string;
 }
 
-export interface ChangeFacts {
+/** One member the open pick includes, as its rows say. Whether they are still a member is `active`'s. */
+export interface PickMember {
+  readonly id: string;
+  readonly confirmed: boolean;
+  /** The days they hold in it. */
+  readonly held: readonly Weekday[];
+}
+
+export interface PickFacts {
   /** The club's active members, by membership interval, in the order they joined (FQ98, FQ114). */
   readonly active: readonly string[];
   /** The club's first days are open. */
   readonly firstDaysOpen: boolean;
-  /** The days of the club's latest week, or null when no day was ever confirmed. */
+  /** The days of the club's latest week, or null when its first days never applied. */
   readonly week: readonly WeekDay[] | null;
-  /** The open change, with the membership intervals it includes, or null. */
-  readonly open: null | { readonly members: readonly string[] };
+  /** The open pick, or null. */
+  readonly open: null | { readonly daysPerMember: 1 | 2; readonly members: readonly PickMember[] };
 }
 
-export interface ProposedWeek {
-  readonly daysPerMember: 1 | 2;
-  /** Every active member, in the order they joined, each with spec 05's number of days from Monday. */
-  readonly proposed: readonly ProposedDays[];
-}
-
-export type WeekChange =
+export type PickProposal =
   | { readonly kind: "nothing" }
-  /** The open change ends with no successor. */
+  /** The open pick ends with no successor. */
   | { readonly kind: "drop" }
-  /** A change for the active members; `replaces` when it takes an open change's place. */
-  | ({ readonly kind: "propose"; readonly replaces: boolean } & ProposedWeek);
+  /** The open pick applies: everyone it includes who is still a member has confirmed. */
+  | { readonly kind: "apply" }
+  /** Members who joined while it is open, each with the days they hold at first. */
+  | { readonly kind: "add"; readonly members: readonly ProposedDays[] }
+  /** A pick for the members with no day; `replaces` when it takes an open pick's place. */
+  | {
+      readonly kind: "open";
+      readonly replaces: boolean;
+      readonly daysPerMember: 1 | 2;
+      readonly proposed: readonly ProposedDays[];
+    };
 
-const fromMonday = (days: readonly Weekday[]): Weekday[] => WEEKDAYS.filter((weekday) => days.includes(weekday));
+export interface PickChange {
+  /** Days of members already in the week that leave it now, by member in the order they joined, from Monday. */
+  readonly freed: readonly WeekDay[];
+  readonly proposal: PickProposal;
+}
+
+const NOTHING: PickChange = { freed: [], proposal: { kind: "nothing" } };
 
 function check(active: readonly string[]): void {
   if (active.length > 6) throw new RangeError("schedule: a club has at most six members (A01)");
   if (new Set(active).size !== active.length) throw new Error("schedule: each active member is listed once");
 }
 
-/** The week a change proposes for `active`, given the days of the club's latest `week` (FQ125). */
-export function changeWeek(active: readonly string[], week: readonly WeekDay[]): ProposedWeek {
-  check(active);
-  // Throws for a roster outside two to six (A01).
-  const per = daysPerMember(active.length);
+const fromMonday = (days: readonly Weekday[]): Weekday[] => WEEKDAYS.filter((weekday) => days.includes(weekday));
+
+/**
+ * The days each of `ids` holds at first: `per` days, the table's for their place among the `active` when
+ * free and not in `taken`, else the first such from Monday. A member a replaced pick included keeps first
+ * the days they held in it (`earlier`) that aren't in `taken`, up to `per` from Monday, the earlier joiner's
+ * where two held the same day. `taken` gains what each is given.
+ */
+function firstHolds(
+  ids: readonly string[],
+  active: readonly string[],
+  per: 1 | 2,
+  taken: Set<Weekday>,
+  earlier: ReadonlyMap<string, readonly Weekday[]> = new Map(),
+): ProposedDays[] {
   const table = proposedWeek(active.length);
+  // Everyone's kept days first, so that filling an earlier joiner's never takes a later one's.
   const kept = new Map(
-    active.map((id) => [id, fromMonday(week.filter((day) => day.star === id).map((day) => day.weekday))]),
+    ids.map((id) => {
+      const days = fromMonday(earlier.get(id) ?? [])
+        .filter((weekday) => !taken.has(weekday))
+        .slice(0, per);
+      for (const weekday of days) taken.add(weekday);
+      return [id, days] as const;
+    }),
   );
-  const most = Math.max(0, ...[...kept.values()].map((days) => days.length));
-  if (most !== 0 && most !== per) {
-    // The table changes the days each member has: its whole week, in the order they joined.
-    return { daysPerMember: per, proposed: active.map((id, place) => ({ id, days: table[place] ?? [] })) };
-  }
-  const taken = new Set<Weekday>([...kept.values()].flat());
-  const proposed = active.map((id, place): ProposedDays => {
-    const days = [...(kept.get(id) ?? [])];
-    // The table's days for their place that nobody keeps, then the first free days from Monday.
-    const wanted = (table[place] ?? []).filter((weekday) => !taken.has(weekday));
+  return ids.map((id): ProposedDays => {
+    const days: Weekday[] = [...(kept.get(id) ?? [])];
+    const wanted = table[active.indexOf(id)] ?? [];
     for (const weekday of [...wanted, ...WEEKDAYS]) {
       if (days.length === per) break;
       if (taken.has(weekday)) continue;
       taken.add(weekday);
       days.push(weekday);
     }
-    if (days.length !== per) throw new Error("schedule: the week has no free day left for a member");
+    // Spec 05's numbers leave enough free days: two each for up to three members, one each for up to six.
+    if (days.length !== per) throw new Error("schedule: the week has no free day left for a new member");
     return { id, days: fromMonday(days) };
   });
-  return { daysPerMember: per, proposed };
 }
 
-/** What a change of the club's members, or the first days applying, does to its week. */
-export function changeAfter(facts: ChangeFacts): WeekChange {
+/** What a change of the club's members, or its first days applying, does to its week and its pick. */
+export function pickAfter(facts: PickFacts): PickChange {
   const { active, week, open } = facts;
   check(active);
-  if (facts.firstDaysOpen || week === null) return { kind: "nothing" };
-  if (active.length < 2) return open === null ? { kind: "nothing" } : { kind: "drop" };
+  if (facts.firstDaysOpen || week === null) return NOTHING;
+  if (active.length < 2) return open === null ? NOTHING : { freed: [], proposal: { kind: "drop" } };
   const per = daysPerMember(active.length);
-  const asTheWeek =
-    week.every((day) => active.includes(day.star)) &&
-    active.every((id) => week.filter((day) => day.star === id).length === per);
-  if (asTheWeek) return open === null ? { kind: "nothing" } : { kind: "drop" };
-  if (open !== null && open.members.length === active.length && open.members.every((id) => active.includes(id))) {
-    return { kind: "nothing" };
+
+  // Each active member's days in the week, from Monday. The members with none are new: each needs `per`
+  // free days. Only when the free days can't give them that (three who hold all six days, and a fourth)
+  // does the founder's answer free a day now: each member keeps their first `per` days, and the rest are
+  // freed. Otherwise everyone keeps exactly their days, and nothing is cancelled (FQ125, FQ131).
+  const daysOf = new Map(
+    active.map((id) => [id, fromMonday(week.filter((day) => day.star === id).map((day) => day.weekday))] as const),
+  );
+  const fresh = active.filter((id) => daysOf.get(id)?.length === 0);
+  const held = active.reduce((count, id) => count + (daysOf.get(id)?.length ?? 0), 0);
+  const freeing = WEEKDAYS.length - held < per * fresh.length;
+  const freed: WeekDay[] = [];
+  const kept: WeekDay[] = [];
+  for (const id of active) {
+    (daysOf.get(id) ?? []).forEach((weekday, nth) =>
+      (freeing && nth >= per ? freed : kept).push({ weekday, star: id }),
+    );
   }
-  return { kind: "propose", replaces: open !== null, ...changeWeek(active, week) };
+  const inWeek = new Set(kept.map((day) => day.weekday));
+
+  if (open === null) {
+    if (fresh.length === 0) return { freed, proposal: { kind: "nothing" } };
+    return {
+      freed,
+      proposal: { kind: "open", replaces: false, daysPerMember: per, proposed: firstHolds(fresh, active, per, inWeek) },
+    };
+  }
+  const included = open.members.filter((member) => active.includes(member.id));
+  const everyoneConfirmed = included.length > 0 && included.every((member) => member.confirmed);
+  if (open.daysPerMember !== per) {
+    // A member it includes who hasn't confirmed has no day, so is among `fresh`: none means all confirmed.
+    if (fresh.length === 0) return { freed, proposal: { kind: everyoneConfirmed ? "apply" : "drop" } };
+    // Nobody's choice is thrown away: each member it includes keeps what they held, as far as the new
+    // number allows (FQ125, FQ126, FQ131).
+    const earlier = new Map(included.map((member) => [member.id, member.held] as const));
+    return {
+      freed,
+      proposal: {
+        kind: "open",
+        replaces: true,
+        daysPerMember: per,
+        proposed: firstHolds(fresh, active, per, inWeek, earlier),
+      },
+    };
+  }
+  const listed = new Set(open.members.map((member) => member.id));
+  const joining = fresh.filter((id) => !listed.has(id));
+  if (joining.length > 0) {
+    const taken = new Set(inWeek);
+    for (const member of included) if (!member.confirmed) for (const weekday of member.held) taken.add(weekday);
+    return { freed, proposal: { kind: "add", members: firstHolds(joining, active, per, taken) } };
+  }
+  if (included.length === 0) return { freed, proposal: { kind: "drop" } };
+  if (everyoneConfirmed) return { freed, proposal: { kind: "apply" } };
+  return { freed, proposal: { kind: "nothing" } };
+}
+
+/** The Monday after the week of `today`, weeks running Monday to Sunday: where "next week" starts. */
+export function nextMonday(today: Temporal.PlainDate): Temporal.PlainDate {
+  return today.add({ days: 8 - today.dayOfWeek });
 }
 
 /**
- * The local date a change proposed on `today` starts: the first Monday after the days' window seen from
- * `today` and after `lastMade`, the last local date a day was made for (FQ61, FQ115). `replacedStart` is
- * the start of the open change it replaces, kept while it is still ahead of `today` and of every day made
- * (FQ126, FQ127).
+ * The local date a week written on `today` starts: today, or the day after the start of the club's latest
+ * week, `latestStart`, when that is today or later (a club has one week per start date).
  */
-export function changeStart(
-  today: Temporal.PlainDate,
-  lastMade: Temporal.PlainDate | null,
-  replacedStart: Temporal.PlainDate | null,
+export function nextWeekStart(today: Temporal.PlainDate, latestStart: Temporal.PlainDate | null): Temporal.PlainDate {
+  if (latestStart !== null && Temporal.PlainDate.compare(latestStart, today) >= 0) return latestStart.add({ days: 1 });
+  return today;
+}
+
+/**
+ * The first local date of a new member's `weekday` confirmed at `confirmedAt` (FQ130): in the week after
+ * the confirmation's, on or after `weekStart`, the start of the week it joins, after `lastAnnounced`, the
+ * last day of that weekday announced for a member still in the club, if any, and the first such date whose
+ * 7 AM in `zone` is at least 24 elapsed hours after the confirmation (FQ79).
+ */
+export function newMemberFirstDate(
+  weekday: Weekday,
+  confirmedAt: Temporal.Instant,
+  zone: string,
+  weekStart: Temporal.PlainDate,
+  lastAnnounced: Temporal.PlainDate | null,
 ): Temporal.PlainDate {
-  // Still ahead, and still after every day made: generation makes none from an open change's start (FQ127).
-  if (
-    replacedStart !== null &&
-    Temporal.PlainDate.compare(replacedStart, today) > 0 &&
-    (lastMade === null || Temporal.PlainDate.compare(lastMade, replacedStart) < 0)
-  ) {
-    return replacedStart;
+  const today = confirmedAt.toZonedDateTimeISO(zone).toPlainDate();
+  let notBefore = nextMonday(today);
+  if (Temporal.PlainDate.compare(weekStart, notBefore) > 0) notBefore = weekStart;
+  if (lastAnnounced !== null && Temporal.PlainDate.compare(lastAnnounced, notBefore) >= 0) {
+    notBefore = lastAnnounced.add({ days: 1 });
   }
-  let start = windowEnd(today).add({ days: 1 });
-  if (lastMade !== null && Temporal.PlainDate.compare(lastMade, start) >= 0) {
-    start = lastMade.add({ days: 8 - lastMade.dayOfWeek });
-  }
-  return start;
+  return firstDate(weekday, confirmedAt, zone, notBefore);
 }

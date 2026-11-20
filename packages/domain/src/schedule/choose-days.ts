@@ -1,12 +1,12 @@
 /// <reference lib="esnext.temporal" />
-// Choosing the caller's days in a club's first days (the contract's `chooseScheduleDays`; spec 05; T6,
-// T33; FQ46, FQ48, FQ55, FQ57): the weekdays the caller holds from now on, in place of what they held,
-// none to `days_per_member`. ./command.ts has the steps; this is its rule (./decide.ts `judgeChoice`) and
-// its change.
+// Choosing the caller's days in a club's first days, or a new member's in a membership change (the
+// contract's `chooseScheduleDays`; spec 05; T6, T33; FQ46, FQ48, FQ55, FQ57, FQ127): the weekdays the
+// caller holds from now on, in place of what they held, none to `days_per_member`. ./command.ts has the
+// steps; this is its rule (./decide.ts `judgeChoice`) and its change.
 //
-// - A membership change has no choosing: NOT_ALLOWED.
 // - After the caller confirmed, for more days than `days_per_member`, or for a day another member has
-//   confirmed: NOT_ALLOWED.
+//   confirmed: NOT_ALLOWED. In a membership change every day of the week in force is such a day: its
+//   member's (./view.ts `pickWeekFacts`).
 // - Otherwise the caller's rows become the choice: a proposed day they set aside stays as proposed and not
 //   held (only they see it so, FQ48), a day that wasn't proposed for them is a row while they hold it. A
 //   day another member holds too is then contested, and nobody is moved (FQ55).
@@ -39,7 +39,6 @@ export function chooseScheduleDays(
   render: (proposal: ProposalAnswer) => Json,
 ): Promise<Json> {
   return scheduleCommand(tx, clock, "chooseScheduleDays", input, render, async ({ proposal, callerId }) => {
-    if (proposal.reason !== "activation") throw new Refused("NOT_ALLOWED");
     const judged = judgeChoice(callerId, proposal.facts, input.weekdays);
     if (judged === "NOT_ALLOWED") throw new Refused("NOT_ALLOWED");
     const caller = proposal.facts.members.find((member) => member.id === callerId);

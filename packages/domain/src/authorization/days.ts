@@ -162,21 +162,6 @@ export function chooseDays(facts: ClubDayFacts | null, now: ServerNow): DayChoic
 }
 
 /**
- * Every day of the club not yet closed at `now` for the viewer, in the order they open: the day open now,
- * if any, then every day still to open, by the rule above. None for facts that are null or that deny.
- */
-export function chooseDaysAhead(facts: ClubDayFacts | null, now: ServerNow): readonly ChosenDay[] {
-  checkNow(now);
-  if (facts === null) return [];
-  if (!(facts.viewerAccount === "active" && facts.viewerInterval === "active" && facts.clubSuspendedAt === null))
-    return [];
-  return facts.days
-    .filter((day) => placeable(day) && before(now, day.closeAt))
-    .sort((a, b) => Temporal.Instant.compare(a.revealAt, b.revealAt) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
-    .map((day) => chosen(day, before(now, day.revealAt) ? "collecting" : "open"));
-}
-
-/**
  * The next day of the member `starInterval` for the viewer at `now`: `chooseDays`' next, among the days
  * whose star is that member; null for facts that are null or that deny, and when the member has none.
  * A member whose interval has ended always has none: a day of theirs still to open is held (`placeable`,
@@ -194,11 +179,15 @@ function bound<F>(sql: FragmentSql<F>): Bound<F> {
 }
 
 /**
- * The days of the outer statement's club `c` that can be placed, at the times `when` allows, as rows
- * `(day, reveal_at, id)`; with `ofMember`, only those whose star is the outer statement's membership `sm`.
+ * One of a club's two days, as a scalar subquery on the outer statement's club `c`; with `ofMember`, the
+ * day of that kind whose star is the outer statement's membership `sm`.
  */
-function placedDays<F>(sql: FragmentSql<F>, when: F, ofMember = false): F {
+function oneDay<F>(sql: FragmentSql<F>, now: ServerNow, phase: ChosenPhase, ofMember = false): F {
   const whose = ofMember ? bound(sql)`o.star_interval_id = sm.interval_id` : bound(sql)`TRUE`;
+  const when =
+    phase === "open"
+      ? bound(sql)`o.reveal_at <= ${now}::pg_catalog.timestamptz AND ${now}::pg_catalog.timestamptz < o.close_at`
+      : bound(sql)`o.reveal_at > ${now}::pg_catalog.timestamptz`;
   return bound(sql)`
     SELECT pg_catalog.jsonb_build_object(
              'id', o.id, 'club_id', o.club_id, 'local_date', o.local_date,
@@ -208,8 +197,7 @@ function placedDays<F>(sql: FragmentSql<F>, when: F, ofMember = false): F {
              'star_avatar_version',
              CASE WHEN s.state = 'active' AND su.state = 'active'
                   THEN (SELECT up.content_version FROM app.uploads up
-                         WHERE up.id = su.avatar_upload_id AND up.state = 'ready') END) AS day,
-           o.reveal_at, o.id
+                         WHERE up.id = su.avatar_upload_id AND up.state = 'ready') END)
       FROM app.occurrences o
       JOIN app.memberships s ON s.interval_id = o.star_interval_id
       JOIN app.users su ON su.id = s.user_id
@@ -218,45 +206,9 @@ function placedDays<F>(sql: FragmentSql<F>, when: F, ofMember = false): F {
        AND ${starKeepsDay(sql)}
        AND (CASE WHEN s.state = 'active' THEN su.display_name ELSE s.ended_display_name END) IS NOT NULL
        AND ${when}
-       AND ${whose}`;
-}
-
-/**
- * One of a club's two days, as a scalar subquery on the outer statement's club `c`; with `ofMember`, the
- * day of that kind whose star is the outer statement's membership `sm`.
- */
-function oneDay<F>(sql: FragmentSql<F>, now: ServerNow, phase: ChosenPhase, ofMember = false): F {
-  const when =
-    phase === "open"
-      ? bound(sql)`o.reveal_at <= ${now}::pg_catalog.timestamptz AND ${now}::pg_catalog.timestamptz < o.close_at`
-      : bound(sql)`o.reveal_at > ${now}::pg_catalog.timestamptz`;
-  return bound(sql)`
-    SELECT d.day FROM (${placedDays(sql, when, ofMember)}) d ORDER BY d.reveal_at, d.id LIMIT 1`;
-}
-
-/**
- * Each club of `viewer`'s with every day of it not yet closed at `now`, as a subquery of rows `(club_id,
- * days)`: `days` a jsonb array in the order they open, each for `chosenDays` to read. They are the days a
- * membership change leaves as they are (the contract's `ScheduleProposal.announced`; FQ61), placed by the
- * rule above: scheduled, not held, with a star to name; the day open now, if any, then every day still to
- * open. It lists only the clubs `daysByClub` lists, by the same three conditions (T9, T14).
- */
-export function daysAheadByClub<F>(sql: FragmentSql<F>, viewer: string, now: ServerNow): F {
-  checkViewer(viewer);
-  checkNow(now);
-  const when = bound(sql)`${now}::pg_catalog.timestamptz < o.close_at`;
-  return bound(sql)`
-    SELECT c.id AS club_id,
-           (SELECT coalesce(pg_catalog.jsonb_agg(
-                     d.day || pg_catalog.jsonb_build_object(
-                       'phase', CASE WHEN d.reveal_at <= ${now}::pg_catalog.timestamptz THEN 'open' ELSE 'collecting' END)
-                     ORDER BY d.reveal_at, d.id), '[]'::pg_catalog.jsonb)
-              FROM (${placedDays(sql, when)}) d) AS days
-      FROM app.clubs c
-     WHERE c.suspended_at IS NULL
-       AND EXISTS (SELECT FROM app.memberships m JOIN app.users u ON u.id = m.user_id
-                    WHERE m.club_id = c.id AND m.user_id = ${viewer}::pg_catalog.text
-                      AND m.state = 'active' AND u.state = 'active')`;
+       AND ${whose}
+     ORDER BY o.reveal_at, o.id
+     LIMIT 1`;
 }
 
 /**
@@ -350,16 +302,4 @@ export function chosenDay(value: unknown, phase: ChosenPhase): ChosenDay | null 
     closeAt,
     phase,
   };
-}
-
-/** The days `daysAheadByClub` gave in its `days` column, each with the phase the statement gave it. */
-export function chosenDays(value: unknown): readonly ChosenDay[] {
-  if (!Array.isArray(value)) throw shape();
-  return (value as unknown[]).map((item) => {
-    const phase = (item as Record<string, unknown> | null)?.["phase"];
-    if (phase !== "open" && phase !== "collecting") throw shape();
-    const day = chosenDay(item, phase);
-    if (day === null) throw shape();
-    return day;
-  });
 }

@@ -44,8 +44,24 @@ import Testing
     let named = account(name: "Ben", age: true, version: 3)
 
     func clubs(empty: Bool) -> ClubList {
-        ClubList(
-            serverClock: ServerClock(serverNow: start, receivedAt: .now), isEmpty: empty)
+        let waiting = MyInvitation(
+            invitationID: "inv_kt_leila", clubName: "Kitchen table", inviterName: "Ben",
+            state: .waiting)
+        return ClubList(
+            serverClock: ServerClock(serverNow: start, receivedAt: .now), clubs: [],
+            invitations: empty ? [] : [waiting])
+    }
+
+    /// A list with one club Ben belongs to, and no invitation.
+    var aClub: ClubList {
+        let kitchenTable = ClubSummary(
+            ref: ClubRef(
+                id: "club_kitchen_table", name: "Kitchen table", timezone: "America/New_York",
+                myMembershipID: "mem_kt_ben"),
+            state: .active, memberCount: 5, openDay: nil, nextDay: nil)
+        return ClubList(
+            serverClock: ServerClock(serverNow: start, receivedAt: .now), clubs: [kitchenTable],
+            invitations: [])
     }
 
     func root(
@@ -163,11 +179,13 @@ import Testing
     }
 
     @Test func clubsB0CantDrawAreNeitherEmptyNorAFailure() async {
-        let root = root(
-            FakeAccounts(me: [.success(named)], clubs: [.success(clubs(empty: false))]),
-            store: InMemorySessionStore(stored))
-        await root.start()
-        #expect(root.clubs == .notInThisBuild)
+        for list in [clubs(empty: false), aClub] {
+            let root = root(
+                FakeAccounts(me: [.success(named)], clubs: [.success(list)]),
+                store: InMemorySessionStore(stored))
+            await root.start()
+            #expect(root.clubs == .notInThisBuild)
+        }
     }
 
     @Test func aListThatDidntComeIsTheFailureUntilRetried() async {

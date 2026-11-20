@@ -111,7 +111,7 @@ export async function settleFirstDays(
   if (row === undefined) throw new Error("schedule: no such club to settle the first days of");
   const active = list(row["active"]).map(text);
   const found = row["open"] === null ? null : record(row["open"]);
-  // An open membership change is `api/b2-membership-change`'s: nothing of the first days is open then.
+  // An open new member's pick is ./settle-change.ts's: nothing of the first days is open then.
   if (found === null && flag(row["any_open"])) return "nothing";
   const perMember = found?.["days_per_member"];
   if (found !== null && perMember !== 1 && perMember !== 2) throw shape();

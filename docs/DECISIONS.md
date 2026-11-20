@@ -390,3 +390,20 @@ Consequences:
 - Gate B's and Gate C's checks change.
 - Four stage handoffs carry the new states.
 Links: the addendum; ADR-006, ADR-007; T3, T17, T35, T63 to T65; FQ104 to FQ110; ND01 to ND15.
+
+## ADR-036 · A new member picks a free day, and a fourth member frees one (FQ125 to FQ127, FQ131) · 2026-11-20 · decided
+Context: PR #84 built a membership change as one week every member confirms as a whole, spec 05's whole week again between three and four members, everyone confirming again at each join or leave, and a start four to five weeks out (FQ125 to FQ127's defaults). The founder answered in the api thread at 12:06 UTC on 20 November 2026, approving PR #84: "FQ125 : no reshuffling everyone keeps their day, FQ126 : no need to confirm again everyone keeps what they already had. FQ127: a new approved member just takes an available day and everything keeps going. A new approved doesn't need to wait four to five weeks for a first, once the new member picks his available day the next week of that on day is his day." Asked on a card in the same thread how a fourth member joins three who hold all six days, the founder chose "Free a day now" at 12:40 UTC: "The three keep their first day; their announced second days from next week are cancelled (anything added for them stays hidden), and the new member starts next week."
+Decision:
+- Once a club's first days have applied, nobody already in the club's week is asked anything or moves: every member who stays keeps exactly their days through any join or leave.
+- A member with no day in the club's latest week picks spec 05's number of free days for the club's size and chooses and confirms them as in the first days; each confirmed day is theirs from that weekday in the week after the confirmation, at least 24 hours on (FQ130), in a new week written at once.
+- Where the free days can't give each such member that number, as with three who hold all six days and a fourth, each member already in the week keeps their first day from Monday, and their other days leave the week; their days on those weekdays from the next Monday on are cancelled, and what was added for them stays hidden with its authors. Where enough days are free, nobody's day is freed (Claude Code's reading, from PR #87's review: FQ131).
+- A leaver's held days on a weekday a new member picks are cancelled from the new member's first date (FQ129).
+- Built in PR #87 (`api/b2-new-member-day`): `packages/domain/src/schedule/change.ts`, `settle-change.ts`, `confirm-days.ts`, and `db/migrations/0015_new_member_day.sql`.
+Alternatives:
+- PR #84's flow (the defaults the founder replaced).
+- For three to four, keeping the three's days and the fourth waiting for a day to come free, or spec 05's whole week again: the founder chose to free a day now.
+Consequences:
+- The first commands that cancel a day: the freed days from the next week on, and a leaver's held days on a picked weekday. A cancelled day denies everything (T9) and never opens again.
+- G04-change, a week every member confirms, no longer applies; the new member's pick is the first days' day picker with the others' days taken (design follow-up, through the coordinator).
+- `api/b2-change-start` and FQ128 are dropped.
+Links: FQ125 to FQ131; FQ63, FQ79, FQ100; T6, T9, T33; spec 05; PR #84, PR #87; `docs/plans/api-b2-new-member-day.md`.

@@ -22,8 +22,8 @@ export const ERRORS = {
   NOT_ALLOWED: [
     403,
     "Something the caller can see but can't do now: reacting to their own drop (spec 16); in a schedule " +
-      "proposal, choosing after confirming, in a membership change, more days than the club gives each " +
-      "member or a day another member has confirmed, or confirming days the caller doesn't hold, too few of " +
+      "proposal, choosing after confirming, more days than the club gives each member, a day of the club's " +
+      "latest week in a membership change or a day another member has confirmed, or confirming days the caller doesn't hold, too few of " +
       "them, or one another member holds too (FQ55, FQ57); or, for the candidate's proposer alone, revoking " +
       "or replacing a link the candidate has accepted with (handoff 4).",
   ],
@@ -63,8 +63,8 @@ export const ERRORS = {
   MEMBERSHIP_CHANGED: [
     409,
     "A membership changed since the action started: the person's, so `target`, the day asked for, must be chosen again (T4, " +
-      "spec 32); the club's, so a newer schedule proposal (`current_id`) replaced this one, as when a " +
-      "membership change's start passed before everyone confirmed (FQ49); or the clubs a block would leave.",
+      "spec 32); the club's, so a newer schedule proposal (`current_id`) replaced this one; or the clubs a " +
+      "block would leave.",
   ],
   ROSTER_CHANGED: [
     409,

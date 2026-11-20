@@ -876,7 +876,7 @@ describe("the examples", () => {
   const PROPOSAL_VIEWERS: Record<string, string> = {
     "chooseScheduleDays.chosen": "mem_sp_ben",
     "chooseScheduleDays.joined_contest": "mem_sp_sam",
-    "confirmScheduleDays.confirmed": "mem_kt_ben",
+    "confirmScheduleDays.confirmed": "mem_kt_leila",
     "confirmScheduleDays.first_day_confirmed": "mem_sp_ben",
   };
   // The order each club's members joined in: the fixture's rosters, then Leila in Kitchen table.
@@ -954,11 +954,13 @@ describe("the examples", () => {
           expect(order, at).toEqual([...order].sort((a, b) => a - b));
           if (ids.length >= 3) seen.three += 1;
         }
-        // A membership change is one week everyone confirms: no day is taken or contested on its own,
-        // and Kitchen table's gives every weekday to someone, so each of the others' days names them.
+        // A new member's days: every day of the week in force is taken by its member, and nobody else is
+        // asked anything, so a day a member already has is never yours, available or contested (FQ125).
         if (change) {
-          expect(["yours", "available"], at).toContain(state);
-          if (state === "available") expect("held_by" in slot, at).toBe(true);
+          const holder = rosters.kitchenTable.find(([, day]) => day === slot.weekday);
+          if (holder === undefined) expect(["yours", "available", "clash", "no_reveal"], at).toContain(state);
+          else
+            expect([state, idOf(slot.owner)], at).toEqual(["taken", member("kitchenTable", holder[0]).membership_id]);
         }
       }
     }
@@ -1069,15 +1071,16 @@ describe("the examples", () => {
     expect(checked).toBeGreaterThan(0);
   });
 
-  it("date only a day confirmed in the first days, on its own weekday (T49, FQ79)", () => {
+  it("date only a day confirmed in the first days, or a new member's own confirmed day, on its own weekday (T49, FQ79, FQ130)", () => {
     const weekdays = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
     let dated = 0;
     for (const { where, proposal } of reads()) {
       const firstDays = proposal.reason === "activation";
       for (const slot of slotsOf(proposal)) {
         const at = `${where}: ${asText(slot.weekday)}`;
-        const confirmed = slot.state === "taken" || (slot.state === "yours" && proposal.my_state === "confirmed");
-        expect("first_date" in slot, at).toBe(firstDays && confirmed);
+        const own = slot.state === "yours" && proposal.my_state === "confirmed";
+        // In a new member's days the others' days are the week in force's, with no date to show (FQ130).
+        expect("first_date" in slot, at).toBe(firstDays ? slot.state === "taken" || own : own);
         if (typeof slot.first_date === "string") {
           dated += 1;
           expect(weekdays[new Date(`${slot.first_date}T12:00:00Z`).getUTCDay()], at).toBe(slot.weekday);
@@ -1087,31 +1090,16 @@ describe("the examples", () => {
     expect(dated).toBeGreaterThan(0);
   });
 
-  it("list a change's announced days in date order, every one before it starts, and nowhere else (spec 05, FQ61)", () => {
-    let listed = 0;
-    for (const { where, proposal } of reads()) {
-      if (proposal.reason !== "membership_change") {
-        expect("announced" in proposal, where).toBe(false);
-        continue;
-      }
-      const dates = ((proposal.announced ?? []) as JsonObject[]).map((day) => asText(day.local_date));
-      expect(dates, where).toEqual([...dates].sort());
-      for (const date of dates) expect(date < asText(proposal.effective_from), `${where}: ${date}`).toBe(true);
-      listed += dates.length;
-    }
-    expect(listed).toBeGreaterThan(0);
-  });
-
-  it("agree on one state, version and start for each proposal, whoever reads it and whatever anyone has chosen or confirmed, but the first days' answer that applies them, one version on (T33)", () => {
+  it("agree on one state, version and start for each proposal, whoever reads it and whatever anyone has chosen or confirmed, but the answer that applies it, one version on (T33)", () => {
     // A proposal's version moves only with its state or a new revision of its week, so it never tells a
-    // member that someone else has chosen or confirmed; its start moves only with a new proposal (FQ49).
-    // The one read that may differ is the answer that applies the first days: `applied`, at the open
-    // reads' version plus one, from the same start.
+    // member that someone else has chosen or confirmed; its start moves only with a new proposal. The one
+    // read that may differ is the answer that applies it: `applied`, at the open reads' version plus one,
+    // from the same start.
     const facts = new Map<string, string>();
     const applying: { where: string; id: string; version: Json | undefined; start: Json | undefined }[] = [];
     for (const { where, proposal } of reads()) {
       const id = asText(proposal.id);
-      if (proposal.reason === "activation" && proposal.state === "applied") {
+      if (proposal.state === "applied") {
         applying.push({ where, id, version: proposal.version, start: proposal.effective_from });
         continue;
       }
@@ -1128,12 +1116,24 @@ describe("the examples", () => {
     expect(facts.size).toBeGreaterThan(1);
   });
 
-  it("show a membership change the same before and after the viewer confirms it, as the confirmation answers (FQ81)", () => {
-    const before = (examples.getSchedule?.change?.value as JsonObject).proposal as JsonObject;
-    const after = (examples.getSchedule?.change_confirmed?.value as JsonObject).proposal as JsonObject;
-    expect([before.my_state, after.my_state]).toEqual(["choosing", "confirmed"]);
-    expect({ ...after, my_state: "choosing" }).toEqual(before);
-    expect(examples.confirmScheduleDays?.confirmed?.value).toEqual(after);
+  it("give a new member's confirmed day its first date in the week after, at least 24 hours on, and apply the proposal (FQ130)", () => {
+    const read = examples.getSchedule?.new_member?.value as JsonObject;
+    const before = read.proposal as JsonObject;
+    const after = examples.confirmScheduleDays?.confirmed?.value as JsonObject;
+    expect([before.state, after.state, Number(after.version)]).toEqual(["open", "applied", Number(before.version) + 1]);
+    // The same week, but the caller's own day, which now has its date.
+    const others = (proposal: JsonObject) => slotsOf(proposal).filter((slot) => slot.state !== "yours");
+    expect(others(after)).toEqual(others(before));
+    const [own] = slotsOf(after).filter((slot) => slot.state === "yours");
+    const now = Temporal.Instant.from(asText(read.server_now));
+    const today = now.toZonedDateTimeISO(asText((read.club as JsonObject).timezone)).toPlainDate();
+    const first = Temporal.PlainDate.from(asText(own?.first_date));
+    // A Friday, in the week after the one the confirmation is in, whose 7 AM is at least 24 hours away.
+    expect(first.dayOfWeek).toBe(5);
+    expect(first.since(today.subtract({ days: today.dayOfWeek - 1 })).days).toBeGreaterThanOrEqual(7);
+    expect(first.since(today.subtract({ days: today.dayOfWeek - 1 })).days).toBeLessThan(14);
+    const reveal = first.toZonedDateTime({ timeZone: asText((read.club as JsonObject).timezone), plainTime: "07:00" });
+    expect(reveal.toInstant().since(now).total("hours")).toBeGreaterThanOrEqual(24);
   });
 
   it("place every member once, and in the first days by the order they joined (spec 09, FQ98)", () => {

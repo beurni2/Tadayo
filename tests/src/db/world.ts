@@ -304,6 +304,16 @@ export async function checkAsAtCommit(tx: Tx): Promise<void> {
   await tx`SET CONSTRAINTS ALL DEFERRED`;
 }
 
+/**
+ * Runs one deferred guard's checks now, as commit would, for a test of that guard where another guard
+ * would refuse the same rows too: `constraint` is the constraint trigger's name in the app schema.
+ */
+export async function checkOneAsAtCommit(tx: Tx, constraint: string): Promise<void> {
+  if (!/^[a-z_]+$/.test(constraint)) throw new Error(`checkOneAsAtCommit: not a constraint name: ${constraint}`);
+  await tx.unsafe(`SET CONSTRAINTS app.${constraint} IMMEDIATE`);
+  await tx`SET CONSTRAINTS ALL DEFERRED`;
+}
+
 /** Ends a member's interval as leaving does (spec 22). */
 export async function leave(tx: Tx, member: Member, name: string, at: Date): Promise<void> {
   await tx`
