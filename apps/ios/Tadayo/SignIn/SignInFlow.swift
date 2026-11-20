@@ -232,6 +232,9 @@ struct CodeScreen: View {
                             main.asyncAfter(deadline: .now() + 0.4) {
                                 scroll.scrollTo(Self.field, anchor: .top)
                             }
+                        case "both":
+                            scroll.scrollTo(Self.field, anchor: .top)
+                            main.async { scroll.scrollTo(Self.field, anchor: .top) }
                         case "late":
                             scroll.scrollTo(Self.field, anchor: .top)
                             main.asyncAfter(deadline: .now() + 0.6) {

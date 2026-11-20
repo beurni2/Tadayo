@@ -2,18 +2,18 @@ import XCTest
 
 /// Probe only (`ios/b0-pin-tree-probe`, never to merge): the first part of
 /// `SignInUITests.testVerifyCodeIsPinnedAboveTheKeyboardAtTheLargestText`, again and again for a
-/// set time on iOS 26, in four ways in turn (`-TadayoPinProbe`): as it is; the app's scroll a
-/// turn of the run loop later; the scroll again 0.4 seconds later; `layoutChanged` 0.6 seconds
-/// later. It counts how often the field's accessibility frame stays under Verify code for 2
+/// set time on each iOS, in four ways in turn (`-TadayoPinProbe`): as it is; the scroll again
+/// 0.4 seconds later; the scroll and again a turn of the run loop later; the scroll a turn
+/// later alone. It counts how often the field's accessibility frame stays under Verify code for 2
 /// seconds, drags the column a little when it does and reads again, and fails on purpose with
 /// the tally, so the log carries it.
 final class PinProbeUITests: XCTestCase {
 
     @MainActor func testProbeTheStuckFrame() {
         continueAfterFailure = true
-        guard ProcessInfo.processInfo.operatingSystemVersion.majorVersion < 27 else { return }
-        let end = Date(timeIntervalSinceNow: 26 * 60)
-        let ways = ["plain", "async"]
+        let older = ProcessInfo.processInfo.operatingSystemVersion.majorVersion < 27
+        let end = Date(timeIntervalSinceNow: older ? 18 * 60 : 12 * 60)
+        let ways = ["plain", "again", "both", "async"]
         var runs: [String: Int] = [:]
         var stuck: [String: Int] = [:]
         var lines: [String] = []
