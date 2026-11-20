@@ -128,15 +128,17 @@ export const CandidateLabel = named(
 
 export const CandidateLinkState = named(
   "CandidateLinkState",
-  "Where the candidate's latest link stands, for its proposer only, never for another member (handoff 1). " +
-    "live: it works and hasn't been used. accepted: the candidate has accepted this revision with it " +
-    "(Accepted). used: the candidate accepted an earlier revision with it and hasn't accepted this one yet, " +
-    "as after a roster change or a new revision for their name (they see G02-changed, and their proposer's " +
-    "row offers Share again only, G01-invite-people-accept-again). revoked: Link revoked, with Create new " +
-    "link. expired: it expired before anyone used it (FQ71). A link used to accept can't be revoked or " +
-    "replaced, since accepting isn't undone by revoking a link (handoff 4). Whether a live link is Not " +
-    "shared or Shared is the app's own record of a completed share activity for that link, a copy included " +
-    "(FQ67), kept with the link in its per-account store (FQ77): the server never knows which.",
+  "Where the candidate's latest link stands, for its proposer only, never for another member (handoff " +
+    "1). live: it works and hasn't been used. accepted: the candidate has accepted this revision with it " +
+    "(Accepted). used: the candidate accepted an earlier revision with it and hasn't accepted this one " +
+    "yet, as after a roster change or a new revision for their name (they see G02-changed); in the " +
+    "proposer's list, the candidate's row offers Share again only while the app holds the link, and " +
+    "otherwise handoff 8's two lines and no action (G01-invite-people-accept-again, InvitationLink). " +
+    "revoked: Link revoked, with Create new link. expired: it expired before anyone used it (FQ71). A " +
+    "link used to accept can't be revoked or replaced, since accepting isn't undone by revoking a link " +
+    "(handoff 4). Whether a live link is Not shared or Shared is the app's own record of a completed " +
+    "share activity for that link, a copy included (FQ67), kept with the link in its per-account store " +
+    "(FQ77): the server never knows which.",
   z.enum(["live", "accepted", "used", "revoked", "expired"]),
 );
 
@@ -258,15 +260,19 @@ export const CreateInvitationRequest = named(
 export const InvitationLink = named(
   "InvitationLink",
   "The link to share, returned to its proposer once: the token rides in the URL's fragment, so it never " +
-    "reaches a server log (T7, T52), and the server keeps only its hash (the contract's choice, FQ77). The " +
-    "app keeps the link for Share again, in its per-account store, while its candidate's proposal is open, " +
-    "through the link's states live, accepted and used (CandidateLinkState). It purges the link when the " +
-    "candidate joins, when the invitation ends, when the server says the link no longer works (revoked, " +
-    "replaced or expired), at logout and at an account switch (FQ77, ADR-037). A retry with the same key " +
-    "returns this same answer without `url`, as an upload's replay does once it's complete (TECH-DESIGN " +
-    "section 6), and changes nothing (T19). Where the app doesn't hold the link, it offers Create new link, " +
-    "under a new key, except for a used link, which the server neither replaces nor revokes. `expires_at` " +
-    "is the server's setting (FQ71).",
+    "reaches a server log (T7, T52), and the server keeps only its hash (the contract's choice, FQ77). " +
+    "The app keeps the link in the account's own store on the device, never in a URL it builds, a log, a " +
+    "crash or breadcrumb record, analytics or a snapshot (T52), and only while the club's `open_revision` " +
+    "names its candidate with this link as their `invitation`, by its id, in the state live, accepted or " +
+    "used (CandidateLinkState). It purges the link otherwise: when the candidate joins, when their " +
+    "proposal ends, when the server says the link no longer works (revoked, expired, or replaced by a " +
+    "newer link, whose id differs), and at logout and at an account switch (FQ77, ADR-037). Share again " +
+    "shares that copy on a live or used row; an accepted row offers neither Share again nor Revoke link " +
+    "(handoff 8). A retry with the same key returns this same answer without `url`, as an upload's replay " +
+    "does once it's complete (TECH-DESIGN section 6), and changes nothing (T19). Where the app doesn't " +
+    "hold a live link, it offers Create new link, under a new key; a link the candidate has accepted with " +
+    "(accepted or used) the server neither replaces nor revokes, so it offers none. `expires_at` is the " +
+    "server's setting (FQ71).",
   z.object({
     invitation_id: Id,
     candidate_id: Id,
