@@ -1,6 +1,6 @@
 # Design handoff 8: the check
 
-*20 November 2026, by the ios lane. This checks Claude Design's answer to handoff 8's brief (`docs/design/handoff-8/handoff-8-brief.md`, and the text pasted, `handoff-8-brief.txt`). The lane read every frame at full size beside the frame it builds on, the written answers (`IMPLEMENTATION.md`, `component-contracts.json` and `copy-contracts.json` under `handoff8`) and the files' own checks, against the brief, the spec, the book, the addendum, the invariants and the open questions. One fresh reviewer then read the branch (the journal's log entry for the review commit, and the PR).*
+*20 November 2026, by the ios lane. This checks Claude Design's answer to handoff 8's brief (`docs/design/handoff-8/handoff-8-brief.md`, and the text pasted, `handoff-8-brief.txt`). The lane read every frame at full size beside the frame it builds on, the written answers (`IMPLEMENTATION.md`, `component-contracts.json` and `copy-contracts.json` under `handoff8`) and the files' own checks, against the brief, the spec, the book, the addendum, the invariants and the open questions. One fresh reviewer then read the branch (section 7).*
 
 ## The answer
 
@@ -46,14 +46,14 @@
 | 11 | G05-club-details-failed | "Couldn’t load club details." and "Check your connection and try again." with Retry at the foot; no rows and no member count. |
 | 12 | G01-invite-people-accept-again | Ben's list for Sunday people: Sam "Needs to accept again" with a circular arrow and Share again only; Maya Shared, Alex and Nina Not shared, Debby Accepted. |
 | 13 | G01-pending-approve | "Review the updated members", "Review and approve the updated roster before Sunday people can start.", the Private drafts row, and Review members. |
-| 14 | G05-members-invite | "Nina’s invitation" for Sunday people (five members): Nina "Proposed by Ben" with the Proposed tag, a Shared card, "New members need everyone’s approval. Nina will see only drops shared after joining.", Share again and More options. |
+| 14 | G05-members-invite | "Nina’s invitation" for Sunday people (five members): Nina "Proposed by Ben" with the Proposed tag, a Shared card, "New members need everyone’s approval. Nina will see only drops shared after joining.", Share again and More options. Nina, the book's Saturday member, is the candidate here, and frame 16 leaves Nina out of Sunday people's five, because the brief asked for a later addition to a club the book fills; nobody new is invented. |
 | 15 | G02-changed-name | "Review the updated roster", "Ben invited you to Kitchen table.", "The invitation was made for Leila. The updated roster now shows your name.", then "Kitchen table · 5 current members" over Debby · You (Proposed by Ben, Proposed), Ben and Maya, and Accept this roster. |
 | 16 | G05-club-details-active | Sunday people's Club details with five members: Members, Invite someone, Schedule, Notifications, Widget, Private drafts, Leave club. |
 
 ## 3. The written answers
 
 The brief's seven questions:
-1. **Welcome's example** stays a friend's drop: Maya's card for Debby's Friday beside the chair, labelled "An example · before and on the day" (FQ20). The chair stays a stand-in for the founder's own photograph (FQ23). It is local to the app and never club data.
+1. **Welcome's example** stays a friend's drop: Maya's card for Debby's Friday beside the chair, labelled "An example · before and on the day" (FQ20). The chair stays a stand-in for the founder's own photograph (FQ23). It is local to the app and never club data. The example's sender avatar is Maya's portrait, also one of book p50's photographs, which no answer mentions: `docs/QUESTIONS.md` now records it under FQ23, with the same default as the chair (a fixture in builds that point at `dev`, the brand's avatar fallback in a build that points at `prod`).
 2. **The brand line** sits under the wordmark on Welcome, in the day title's role, and after the inviter's heading on the signed-out page, in the caption role. Nowhere else. The page for a revoked or unknown link (`G02-web-revoked`) doesn't carry it: it stays a neutral recovery page.
 3. **The in-app invitation's explanation** (`G02-invitation`) doesn't change, and takes no brand line: it explains joining and the exact roster, which the new direction keeps. So no frame came for it.
 4. **The failure words** (frames 7, 9, 10 and 11): "Couldn’t create the club." / "Couldn’t accept this roster." / "Couldn’t approve {name}." / "Couldn’t decline this invitation.", each followed by "Check your connection and try again." or, for a refusal, "Try again.", as handoff 7's lines are. VoiceOver reads the line once, politely, with the focus left on the button, and skips the warning glyph. The approval's own outcomes are native alerts:
@@ -75,8 +75,8 @@ Also answered, for the four points kept for this stage:
 
 ## 4. Where the app keeps the earlier frames or the data
 
-1. **Welcome keeps "Already here? Sign in".** 2.1's Welcome has it under I have an invite. The three new Welcome frames leave it out, and nothing in the answers says why: `handoff8.replaces.welcome` says the redraw changes the "Headline and explanation only". Without it, someone with an account who is signed out, on a new phone or after a reinstall, reaches sign-in only through Create a club, whose route ends at `G01-create`. The app keeps the link below the two routes until the next brief asks.
-2. **Club details keeps Leave club at the leading edge** under the list, as 2.1's `G05-club-details` and handoff 6's `G05-club-details-paused` draw it, and as handoff 7 put text actions. Frame 16 centres it near the foot, with no answer saying why. Leaving is stage B6's.
+1. **Welcome keeps "Already here? Sign in".** 2.1's Welcome has it under I have an invite. The three new Welcome frames leave it out, and nothing in the answers says why: `handoff8.replaces.welcome` says the redraw changes the "Headline and explanation only". Without it, someone with an account who is signed out, on a new phone or after a reinstall, reaches sign-in only through Create a club, whose route ends at `G01-create`. The app keeps the link below the two routes until the next brief asks. That isn't a product choice for the founder: 2.1 gives a returning person this way to sign in, and handoff 8 says it changed only Welcome's headline and explanation. Where the link sits in the redrawn layout, at the largest text too, is design's: `docs/design/handoff-7/ios-lane-needs.md` item 61 asks it for the next brief.
+2. **Club details keeps Leave club at the leading edge** under the list, as 2.1's `G05-club-details` and handoff 6's `G05-club-details-paused` draw it, and as handoff 7 put text actions. Frame 16 centres it near the foot, with no answer saying why. Leaving is stage B6's. Item 62 of the needs list asks which place holds.
 3. **The changed-name roster lists every member.** Frame 15 draws Debby · You, Ben and Maya under "Kitchen table · 5 current members", because the brief named only Ben and Maya of Kitchen table's five, and Claude Design invented none. The frame's own note says the app lists every name the server sends, which it does.
 
 The inventory records all three under Known differences, "Handoff 8". Taken as drawn, since no rule speaks against them: the viewer first in the invitation roster (spec 09's stable roster order is Friends'), the selected club's header, the joined link, and sign-in with no new object.
@@ -87,9 +87,9 @@ The server returns a link once and keeps only a hash of its token, so Share agai
 
 Handoff 8 asks for a longer keep (`handoff8.linkRetention`): while the person's proposal is open, through "accepted" and "used" too, and purged when the person joins, the invitation ends, the server says the link no longer works, at logout or at an account switch. That way Ben can share Sam's link again when Sam must accept a newer roster (frame 12).
 
-- **With the default:** Sam's row says "Needs to accept again", then "This invitation link isn’t saved on this device." and "Sam can reopen the invitation already received.", with no action: the server won't make a new link or revoke one already used to accept. Sam still has the link in Messages.
+- **With the default:** Sam's row says "Needs to accept again", then "This invitation link isn’t saved on this device." and "Sam can reopen the invitation already received.", with no action: the server won't make a new link or revoke one already used to accept. Sam still has the link in Messages. Since the default lets the copy go when the link is used, every used row reads this way, so the line names the device for what is the default's own choice. It is also the one exception to the default's "the row offers Create new link", which the contract makes, not the app.
 - **With the longer keep:** Sam's row has Share again, as frame 12 draws it. The phone holds the link longer, but a used link only opens the roster for the account that accepted with it (the contract's `InvitationPreview`: any other account gets the neutral not found), so passing it on can't let someone else in.
-- **What changes:** only the app's store, built later in B1 (`ios/b1-create`), and the contract's words for `InvitationLink`. No stored data.
+- **What changes:** only the app's store, built later in B1 (`ios/b1-create`), and the contract's words for `InvitationLink`, which are the api lane's: if the founder chooses the longer keep, this lane asks for them under "Needs from the other lane" in `docs/PROGRESS.md`. No stored data.
 
 The lane recommends the longer keep: it is what the design draws, and the token it holds can admit only the person it was used by. The default stands until the founder answers. `docs/QUESTIONS.md` records the ask under FQ77.
 
@@ -104,6 +104,10 @@ The lane recommends the longer keep: it is what the design draws, and the token 
 - **`H01-awaiting-activation`** (Home before the club starts, `ios/b1-clubs-root`): frame 13's words when the creator must approve.
 - **The signed-out page** (`G02-web`, its dark and 200% frames) is the api lane's, in `apps/web`: `docs/PROGRESS.md` tells it the frames are in `screens/`.
 
-## 7. Review
+## 7. The pictures, and the review
 
-The review commit's log entry in `docs/JOURNAL.md` and the PR's Review section record what the fresh reviewer found and what was done with it.
+**The pictures** are on the `evidence` branch under `ios/b1-design-handoff-8/fef7877/check/` (its `index.md` lists them): the 16 frames on three contact sheets (`frames-1-6.png`, `frames-7-11.png`, `frames-12-16.png`), and eight frames each beside the frame it builds on (`before-after-<state>.png`).
+
+**The review:** one fresh reviewer read the whole branch at `fef7877` (the export against its checksums, every frame beside the frames it builds on, this check's claims, the inventory's rows and counts, and the records). No must-fix; 3 should-fix and 8 notes, all taken in the review commit, whose log entry in `docs/JOURNAL.md` lists them:
+- **Should-fix:** `docs/plans/ios-b1-clubs.md` lacked three of section 6's changes (the relaunch line and the viewer first, in `ios/b1-invitation`; frame 13's words on `H01-awaiting-activation`, in `ios/b1-clubs-root`), now written in; Welcome's example also shows Maya's portrait, a book p50 photograph, now recorded under FQ23 and on the `A01-welcome` row; the kept sign-in link and Leave club's place had no ask for the next brief, now the needs list's items 61 and 62.
+- **Notes:** "Proposed by" on frame 15 can come only from `inviter_name`, for the viewer's own row (plan, `ios/b1-invitation`); the FQ77 default's exception for a used link, and the api lane's words if the longer keep is chosen (section 5); Nina's place in frames 14 and 16 (section 2); the journal's count of provenance sources, 30 not 31 (corrected in the review commit's entry); a stale sentence in `docs/PROGRESS.md`; four inventory wording slips; a state name of its own for the used row under the default (plan, `ios/b1-create`); the pictures' path, above.

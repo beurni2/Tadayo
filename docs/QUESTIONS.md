@@ -130,6 +130,7 @@ Each question has a default. Claude Code builds on the default until the founder
 - **FQ23. The Welcome example photograph.** `A01-welcome` shows a labelled example with the chair photograph, an Unsplash image listed on book p50. Spec 04 allows a labelled example; T46 and book p50 keep stock imagery out of the product.
     - Default: the founder supplies one of his own photographs before Gate D, and it ships as the labelled example.
     - Until then, builds that point at `dev` show the chair fixture, which never reaches a build that points at `prod`.
+    - Handoff 8's check (2026-11-20): Welcome's example also shows its sender's avatar, Maya's portrait, one of book p50's photographs (FQ24), as 2.1's `A01-welcome` does and handoff 8's frames 1 to 3 keep. Default: the same rule as the chair. Builds that point at `dev` show the fixture; a build that points at `prod` shows the brand's avatar fallback, the initial, for the example's sender, unless the founder supplies a photograph for it too.
     - Needed by: Gate D.
 - **FQ24. Test fixture photographs.** The renders use the ten Unsplash photographs listed on book p50.
     - Default: Claude Code downloads those exact images as test fixtures for the snapshot tests and the Lab: only in tests and in builds that point at `dev`, never in a build that points at `prod`. They sit in their own asset catalog, left out of prod builds (`docs/TECH-DESIGN.md` section 4). This needs `images.unsplash.com` in the environment's allowed domains; if that host is blocked, the founder attaches the files.
