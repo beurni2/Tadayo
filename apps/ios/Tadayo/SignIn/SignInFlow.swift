@@ -219,18 +219,30 @@ struct CodeScreen: View {
                 // Frame 19 is scrolled so, the field under the navigation bar and the error
                 // continuing behind the button.
                 .onChange(of: pinsVerify) { _, pinned in
-                    if pinned {
-                        scroll.scrollTo(Self.field, anchor: .top)
-                        #if DEBUG
-                            // Probe only (`ios/b0-pin-tree-probe`, never to merge).
-                            if ProcessInfo.processInfo.arguments.contains("-TadayoPinProbeFix") {
-                                DispatchQueue.main.async {
-                                    UIAccessibility.post(
-                                        notification: .layoutChanged, argument: nil)
-                                }
+                    guard pinned else { return }
+                    #if DEBUG
+                        // Probe only (`ios/b0-pin-tree-probe`, never to merge).
+                        let way = UserDefaults.standard.string(forKey: "TadayoPinProbe")
+                        let main = DispatchQueue.main
+                        switch way {
+                        case "async":
+                            main.async { scroll.scrollTo(Self.field, anchor: .top) }
+                        case "again":
+                            scroll.scrollTo(Self.field, anchor: .top)
+                            main.asyncAfter(deadline: .now() + 0.4) {
+                                scroll.scrollTo(Self.field, anchor: .top)
                             }
-                        #endif
-                    }
+                        case "late":
+                            scroll.scrollTo(Self.field, anchor: .top)
+                            main.asyncAfter(deadline: .now() + 0.6) {
+                                UIAccessibility.post(notification: .layoutChanged, argument: nil)
+                            }
+                        default:
+                            scroll.scrollTo(Self.field, anchor: .top)
+                        }
+                    #else
+                        scroll.scrollTo(Self.field, anchor: .top)
+                    #endif
                 }
                 // Each time the keyboard comes up or goes, the held foot starts from the region
                 // as it is.

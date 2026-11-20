@@ -2,25 +2,18 @@ import XCTest
 
 /// Probe only (`ios/b0-pin-tree-probe`, never to merge): the first part of
 /// `SignInUITests.testVerifyCodeIsPinnedAboveTheKeyboardAtTheLargestText`, again and again for a
-/// set time, in four ways in turn: with and without the candidate fix (the app posts
-/// `layoutChanged` after its scroll), and with and without reading the code field's frame in a
-/// tight loop while the screen arrives. It counts how often the field's accessibility frame stays
-/// under Verify code for 2 seconds, and fails on purpose with the tally, so the log carries it.
+/// set time on iOS 26, in four ways in turn (`-TadayoPinProbe`): as it is; the app's scroll a
+/// turn of the run loop later; the scroll again 0.4 seconds later; `layoutChanged` 0.6 seconds
+/// later. It counts how often the field's accessibility frame stays under Verify code for 2
+/// seconds, drags the column a little when it does and reads again, and fails on purpose with
+/// the tally, so the log carries it.
 final class PinProbeUITests: XCTestCase {
-    private struct Way {
-        let fix: Bool
-        let poll: Bool
-        var name: String { "\(fix ? "fix" : "plain")+\(poll ? "poll" : "quiet")" }
-    }
 
     @MainActor func testProbeTheStuckFrame() {
         continueAfterFailure = true
-        let older = ProcessInfo.processInfo.operatingSystemVersion.majorVersion < 27
-        let end = Date(timeIntervalSinceNow: older ? 14 * 60 : 4 * 60)
-        let ways = [
-            Way(fix: false, poll: false), Way(fix: false, poll: true),
-            Way(fix: true, poll: false), Way(fix: true, poll: true),
-        ]
+        guard ProcessInfo.processInfo.operatingSystemVersion.majorVersion < 27 else { return }
+        let end = Date(timeIntervalSinceNow: 26 * 60)
+        let ways = ["plain", "async", "again", "late"]
         var runs: [String: Int] = [:]
         var stuck: [String: Int] = [:]
         var lines: [String] = []
@@ -30,13 +23,13 @@ final class PinProbeUITests: XCTestCase {
             count += 1
             let began = Date()
             let (said, wasStuck) = once(way)
-            runs[way.name, default: 0] += 1
-            if wasStuck { stuck[way.name, default: 0] += 1 }
+            runs[way, default: 0] += 1
+            if wasStuck { stuck[way, default: 0] += 1 }
             let took = String(format: "%.1f", Date().timeIntervalSince(began))
-            lines.append("\(count) \(way.name) \(wasStuck ? "STUCK" : "ok") \(took)s \(said)")
+            lines.append("\(count) \(way) \(wasStuck ? "STUCK" : "ok") \(took)s \(said)")
         }
         let tally = ways.map {
-            "\($0.name) \(stuck[$0.name, default: 0])/\(runs[$0.name, default: 0])"
+            "\($0) \(stuck[$0, default: 0])/\(runs[$0, default: 0])"
         }
         let version = ProcessInfo.processInfo.operatingSystemVersionString
         XCTFail(
@@ -45,13 +38,12 @@ final class PinProbeUITests: XCTestCase {
     }
 
     /// One launch to the typed code: what was read, and whether the frame stayed stuck.
-    @MainActor private func once(_ way: Way) -> (String, Bool) {
+    @MainActor private func once(_ way: String) -> (String, Bool) {
         let app = XCUIApplication()
-        app.launchArguments =
-            [
-                "-TadayoUITestFakes", "-UIPreferredContentSizeCategoryName",
-                "UICTContentSizeCategoryAccessibilityXXXL",
-            ] + (way.fix ? ["-TadayoPinProbeFix"] : [])
+        app.launchArguments = [
+            "-TadayoUITestFakes", "-UIPreferredContentSizeCategoryName",
+            "UICTContentSizeCategoryAccessibilityXXXL", "-TadayoPinProbe", way,
+        ]
         app.launch()
         defer { app.terminate() }
         guard app.textFields["Email address"].waitForExistence(timeout: 10) else {
@@ -60,13 +52,6 @@ final class PinProbeUITests: XCTestCase {
         app.typeText("ben@example.com\n")
         let code = app.textFields["Six-digit code"]
         let verify = app.buttons["Verify code"]
-        var early: [String] = []
-        if way.poll {
-            let until = Date(timeIntervalSinceNow: 1.5)
-            while Date() < until {
-                early.append(code.exists ? "\(Int(code.frame.maxY.rounded()))" : "-")
-            }
-        }
         guard code.waitForExistence(timeout: 5) else { return ("no code field", false) }
         app.typeText("529614")
         guard app.keyboards.firstMatch.waitForExistence(timeout: 5) else {
@@ -83,7 +68,17 @@ final class PinProbeUITests: XCTestCase {
             if settled { break }
             RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.2))
         } while Date() < until
-        let before = early.isEmpty ? "" : " early \(early.joined(separator: ","))"
-        return ("\(read.joined(separator: ","))\(before)", !settled)
+        var after = ""
+        if !settled {
+            // A small drag of the column, then the frames again: whether a scroll of the
+            // person's own brings the tree back to the screen.
+            let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3))
+            from.press(forDuration: 0.1, thenDragTo: from.withOffset(CGVector(dx: 0, dy: -12)))
+            RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.6))
+            after =
+                " after a drag \(Int(code.frame.maxY.rounded()))/"
+                + "\(Int(verify.frame.minY.rounded()))"
+        }
+        return ("\(read.joined(separator: ","))\(after)", !settled)
     }
 }
