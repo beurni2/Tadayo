@@ -193,6 +193,7 @@ class FakeShell:
     def __init__(self, answers=None, codes=None, effects=None):
         self.commands, self.envs, self.logs = [], [], []
         self.timeouts = {}  # each captured command's timeout, by the command
+        self.calls = []  # each captured command with its timeout, in order
         self.answers = answers or []
         self.codes = codes or []
         self.effects = effects or []
@@ -214,6 +215,7 @@ class FakeShell:
         self.envs.append(env)
         self.logs.append(None)
         self.timeouts[tuple(cmd)] = timeout
+        self.calls.append((tuple(cmd), timeout))
         for matches, result in self.answers:
             if matches(cmd):
                 return result(cmd) if callable(result) else result
@@ -1120,6 +1122,9 @@ class SimulatorTest(StepsTest):
         # The hardware once, first, then a sample; every command with the pinned Xcode.
         self.assertEqual(shell.commands[:2], [ios_steps.RUNNER_HOST, ios_steps.RUNNER_SAMPLE])
         self.assertEqual(shell.commands.count(ios_steps.RUNNER_HOST), 1)
+        # Both stopped after DIAG_TIMEOUT, so the first sample costs the step 40 seconds at most.
+        self.assertEqual(shell.calls[:2], [(tuple(ios_steps.RUNNER_HOST), ios_steps.DIAG_TIMEOUT),
+                                           (tuple(ios_steps.RUNNER_SAMPLE), ios_steps.DIAG_TIMEOUT)])
         self.assert_pinned(shell)
         text = self.runner_log()
         self.assertEqual(SAMPLE_LABEL.findall(text), [
@@ -1218,11 +1223,14 @@ class SimulatorTest(StepsTest):
         self.assertIn("so its first boot builds it", out)
         text = self.simulators_log()
         self.assertNotIn("never copied", text)
+        self.assertNotIn("elsewhere.txt (", text)
         for said in [f"--- {folder}/update_dyld_sim_shared_cache-stderr.txt: not there\n",
                      f"--- {outside}: not under {cache}, so not read\n",
                      f"--- {climbing}: not under {cache}, so not read\n",
                      f"--- {linked}: a link or under one, so not read\n",
                      f"--- {under}: a link or under one, so not read\n",
+                     # The linked folder isn't listed either: scandir would follow the link.
+                     f"--- {os.path.dirname(under)}: a link or under one, so not listed\n",
                      f"--- {folder}:\nNo such file or directory\n",
                      f"--- {' '.join(ios_steps.cache_log(2))} (exit 0): 0 lines\n"]:
             # After each of the two failed updates.
@@ -1728,6 +1736,11 @@ class BuildAndTestSteps(StepsTest):
         self.assertEqual(ios_steps.SAMPLE_EVERY, 60)
         self.assertEqual(ios_steps.Steps(self.repo.root, FakeShell()).sample_every, 60)
         self.assertIn("runner.txt", ios_steps.LOG_NAMES)
+        # The costs the module's text gives: about 40 seconds at a part's start and 45 at its end.
+        self.assertEqual(2 * ios_steps.DIAG_TIMEOUT, 40)
+        self.assertEqual(ios_steps.JOIN_TIMEOUT + ios_steps.DIAG_TIMEOUT, 45)
+        # A sample beside the work is given longer than the slowest seen, about 104 seconds.
+        self.assertGreater(ios_steps.SAMPLE_TIMEOUT, 104)
 
     def test_the_build_is_sampled_as_it_starts_and_ends_and_says_how_long_it_took(self):
         shell = self.sample_shell(effects=[(has("build-for-testing"), lambda cmd: self.products())])
@@ -1770,6 +1783,42 @@ class BuildAndTestSteps(StepsTest):
         self.assertIn(", the build: start\n", seen["during"])
         self.assertGreaterEqual(seen["during"].count(", the build\n"), 2)
         self.assertEqual(SAMPLE_LABEL.findall(self.runner_log())[-1][:22], "the build: end, after ")
+        # The first and last samples are stopped after DIAG_TIMEOUT; those beside the work, which
+        # cost it nothing, after SAMPLE_TIMEOUT.
+        limits = [t for cmd, t in shell.calls if cmd == tuple(ios_steps.RUNNER_SAMPLE)]
+        self.assertGreaterEqual(len(limits), 4)
+        self.assertEqual((limits[0], limits[-1]), (ios_steps.DIAG_TIMEOUT, ios_steps.DIAG_TIMEOUT))
+        self.assertEqual(set(limits[1:-1]), {ios_steps.SAMPLE_TIMEOUT})
+
+    def test_a_sample_still_running_as_the_work_ends_holds_it_up_join_timeout_at_most(self):
+        began, release, tops = threading.Event(), threading.Event(), []
+
+        def top(cmd):
+            tops.append(cmd)
+            if len(tops) == 2:  # the first sample beside the work hangs until released
+                began.set()
+                release.wait(10)
+            return 0, TOP, ""
+
+        def build(cmd):
+            began.wait(10)
+            self.products()
+        shell = self.sample_shell(top=top, effects=[(has("build-for-testing"), build)])
+        self.addCleanup(release.set)
+        started = time.monotonic()
+        with mock.patch.object(ios_steps, "JOIN_TIMEOUT", 0.2):
+            code, out = self.step("build", shell, sample_every=0.01)
+        # Not held up until the hung sample ends, 10 seconds on.
+        self.assertLess(time.monotonic() - started, 5)
+        self.assertEqual(code, 0, out)
+        self.assertTrue(began.is_set())
+        self.assertEqual(SAMPLE_LABEL.findall(self.runner_log()), ["the build: start", "the build: end, after 0 s"])
+        # Released, the hung sample is written after the last.
+        release.set()
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline and len(SAMPLE_LABEL.findall(self.runner_log())) < 3:
+            time.sleep(0.01)
+        self.assertEqual(SAMPLE_LABEL.findall(self.runner_log())[2:], ["the build"])
 
     def test_each_pass_is_sampled_and_its_device_s_boot_timed(self):
         shell = self.sample_shell()
@@ -1813,6 +1862,11 @@ class BuildAndTestSteps(StepsTest):
             [sys.executable, "-c", "import time; time.sleep(30)"], timeout=0.5)
         self.assertLess(time.monotonic() - started, 10)
         self.assertEqual((code, out), (124, ""))
+        self.assertIn("didn't finish in 0.5 s, so it was stopped", err)
+        # What it wrote before it was stopped is kept, as text.
+        code, out, err = ios_steps.Shell(self.repo.root).capture(
+            [sys.executable, "-c", "import time; print('so far', flush=True); time.sleep(30)"], timeout=0.5)
+        self.assertEqual((code, out), (124, "so far\n"))
         self.assertIn("didn't finish in 0.5 s, so it was stopped", err)
         self.assertEqual(ios_steps.Shell(self.repo.root).capture([sys.executable, "-c", "print('ok')"], timeout=30),
                          (0, "ok\n", ""))

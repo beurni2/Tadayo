@@ -71,7 +71,8 @@ The steps:
   sample the runner as they start, every SAMPLE_EVERY seconds, and as they end, in
   logs/runner.txt, the simulator step with the runner's hardware first, and say how long each
   took and the load averages then (Steps.sampling); each boot's log says how long it took. None
-  of it decides a step: each diagnostic command is stopped after DIAG_TIMEOUT seconds.
+  of it decides a step, and each diagnostic command is stopped at a limit, so the samples cost
+  a part at most about 40 seconds at its start and 45 at its end.
   collect      Lists every snapshot in snapshots.json, with its state and status (below), and
                copies the images this run drew into OUT/snapshots/, a reference the run wrote
                itself included. The new ones come from the snapshot runtime's result bundle:
@@ -259,11 +260,17 @@ RUNNER_IMAGES_ISSUE = "actions/runner-images#14946"
 # (RUNNER_HOST). Only logged, never what decides a step: since about 13:25 UTC on 2026-11-20
 # every step has run slower on both runner images, the build 2 to 4 times and iOS 26.5's pass
 # more (docs/LIMITATIONS.md, 2026-11-20), and the logs didn't say what the runner was doing.
-# Every diagnostic command is given DIAG_TIMEOUT seconds and is then stopped, so a slow or hung
-# `top` costs a step at most that much at its start and its end: in a saturated runner one took
-# up to about 70 seconds (`ios` 44794160395).
+# Each command of the first and the last sample is given DIAG_TIMEOUT seconds and is then
+# stopped, and the last waits JOIN_TIMEOUT at most for a sample in progress. So the samples cost
+# a part at most DIAG_TIMEOUT at its start (twice that for the simulator step's first, with
+# RUNNER_HOST) and JOIN_TIMEOUT + DIAG_TIMEOUT at its end. The samples in between run beside the
+# work and cost it nothing, so each is given SAMPLE_TIMEOUT: in a saturated runner one took
+# about 104 seconds (`ios` 44794160395), and a shorter limit would lose the samples where the
+# runner first saturates. One still running when its part ends is written after the last.
 SAMPLE_EVERY = 60
 DIAG_TIMEOUT = 20
+JOIN_TIMEOUT = DIAG_TIMEOUT + 5
+SAMPLE_TIMEOUT = 120
 RUNNER_SAMPLE = ["top", "-l", "2", "-s", "1", "-n", "8", "-o", "cpu", "-stats",
                  "pid,command,cpu,mem"]
 RUNNER_HOST = ["sysctl", "hw.model", "machdep.cpu.brand_string", "hw.ncpu", "hw.memsize"]
@@ -416,15 +423,20 @@ class Shell:
 
     def capture(self, cmd, env=None, cwd=None, timeout=None):
         """Runs cmd and answers its exit code, output and errors. With a timeout, a command
-        still running then is stopped and answers 124, as `timeout(1)` does."""
+        still running then is stopped and answers 124, as `timeout(1)` does, with the output it
+        wrote before."""
         try:
             result = subprocess.run(cmd, cwd=cwd or self.root, env=self._env(env),
                                     capture_output=True, text=True, errors="replace",
                                     timeout=timeout)
         except FileNotFoundError:
             return 127, "", f"{cmd[0]} isn't installed"
-        except subprocess.TimeoutExpired:
-            return 124, "", f"{cmd[0]} didn't finish in {timeout} s, so it was stopped"
+        except subprocess.TimeoutExpired as stopped:
+            # On POSIX the output so far comes as bytes, even with text=True.
+            out = stopped.stdout or ""
+            if isinstance(out, bytes):
+                out = out.decode("utf-8", "replace")
+            return 124, out, f"{cmd[0]} didn't finish in {timeout} s, so it was stopped"
         return result.returncode, result.stdout, result.stderr
 
     @staticmethod
@@ -793,17 +805,17 @@ class Steps:
         except OSError:
             return 0
 
-    def runner_sample(self, label, host=False):
+    def runner_sample(self, label, host=False, timeout=DIAG_TIMEOUT):
         """Appends one sample of the runner (RUNNER_SAMPLE) to logs/runner.txt, headed by the time
-        and `label`, and with the runner's hardware (RUNNER_HOST) first when `host`. Returns its
-        load averages, as text, or None when the sample doesn't show them."""
+        it ended and `label`, and with the runner's hardware (RUNNER_HOST) first when `host`, each
+        command given `timeout` seconds. Returns its load averages, as text, or None when the
+        sample doesn't show them."""
         lines = []
         if host:
             code, out, err = self.shell.capture(RUNNER_HOST, env=self.xcode_env(),
-                                                timeout=DIAG_TIMEOUT)
+                                                timeout=timeout)
             lines.append((out + err).strip() or f"({RUNNER_HOST[0]} exited {code})")
-        code, out, err = self.shell.capture(RUNNER_SAMPLE, env=self.xcode_env(),
-                                            timeout=DIAG_TIMEOUT)
+        code, out, err = self.shell.capture(RUNNER_SAMPLE, env=self.xcode_env(), timeout=timeout)
         parts = out.split("Processes:")
         sample = "Processes:" + parts[-1] if code == 0 and len(parts) > 2 else out + err
         lines.append(sample.strip() or f"({RUNNER_SAMPLE[0]} exited {code})")
@@ -819,9 +831,10 @@ class Steps:
         seconds while it runs, and as it ends, which the step's output says, with how long the
         work took and the load averages then. Each sample is written as it's taken, so a step
         stopped by its timeout keeps those taken. The samples in between are taken beside the
-        work; the first and the last cost it each at most DIAG_TIMEOUT, and waiting for a sample
-        in progress at the end the same. Off when self.sample_every is None, as in the tests that
-        check a step's commands."""
+        work, each given SAMPLE_TIMEOUT; the first costs it at most DIAG_TIMEOUT a command, and
+        the end at most JOIN_TIMEOUT, waiting for a sample in progress, and DIAG_TIMEOUT for the
+        last. A sample still running then is written when it ends, after the last. Off when
+        self.sample_every is None, as in the tests that check a step's commands."""
         if self.sample_every is None:
             yield
             return
@@ -831,14 +844,14 @@ class Steps:
 
         def every():
             while not stop.wait(self.sample_every):
-                self.runner_sample(label)
+                self.runner_sample(label, timeout=SAMPLE_TIMEOUT)
         thread = threading.Thread(target=every, daemon=True)
         thread.start()
         try:
             yield
         finally:
             stop.set()
-            thread.join(DIAG_TIMEOUT + 5)  # a sample in progress ends within DIAG_TIMEOUT
+            thread.join(JOIN_TIMEOUT)
             took = duration(self.clock() - started)
             load = self.runner_sample(f"{label}: end, after {took}")
             print(f"ios: {step}: {label} took {took}; the runner's load averages then: "
@@ -864,11 +877,12 @@ class Steps:
         whose output simulators.txt holds from byte `since`: the end of each of the builder's
         output files that simctl's error names (CACHE_FILE), when it's under CACHE_FOLDER and
         neither it nor any folder above it is a link, read as root when the runner's user can't
-        (where root resolves the path first); what that folder holds; and the system log's lines
-        from simdiskimaged and the builder since a minute before the update started
-        (cache_log). Each at most CACHE_LINES lines, appended to simulators.txt. Only logged: why
-        the update fails for the runner's user, and now and then as root too, isn't known
-        (docs/LIMITATIONS.md, 2026-11-19 and 2026-11-20)."""
+        (where root resolves the path first); what that folder holds, under the same rule; and
+        the system log's lines from simdiskimaged and the builder since a minute before the
+        update started (cache_log). Each at most CACHE_LINES lines, appended to simulators.txt;
+        each command as root is given DIAG_TIMEOUT seconds, and the system log
+        CACHE_LOG_TIMEOUT. Only logged: why the update fails for the runner's user, and now and
+        then as root too, isn't known (docs/LIMITATIONS.md, 2026-11-19 and 2026-11-20)."""
         try:
             with open(self.log("simulators.txt"), "rb") as f:
                 f.seek(since)
@@ -919,6 +933,11 @@ class Steps:
                 continue
             self.write_log("simulators.txt", last_lines(text.splitlines(), path))
         for folder in sorted({os.path.dirname(p) for p in readable}):
+            if os.path.realpath(folder) != folder:
+                # scandir would follow the link, to a folder outside CACHE_FOLDER.
+                self.write_log("simulators.txt",
+                               f"--- {folder}: a link or under one, so not listed")
+                continue
             try:
                 found = sorted((e.name, e.stat(follow_symlinks=False).st_size)
                                for e in os.scandir(folder))
