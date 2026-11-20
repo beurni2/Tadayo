@@ -1854,6 +1854,8 @@ describe("what a link's holder reads through it (T7, T14, FQ47, FQ59, FQ80; api/
     expect(accepted(theirs)).toEqual([]);
     expect(at(accepted(held()), "world")).toEqual(["$.invitation_id"]);
     expect(at(accepted(theirs, null), "world")).toEqual(["$.invitation_id"]);
+    // The account's own link, once it is revoked or replaced, shows nothing.
+    expect(at(accepted(held({ boundTo: acct(stan), dead: true })), "world")).toEqual(["$.invitation_id"]);
     expect(at(previewed(roster("waiting"), held()), "world")).toEqual(["$.invitation_id"]);
     expect(at(previewed(roster("changed"), held()), "world")).toEqual(["$.invitation_id"]);
     // An open roster is a link nobody has used.

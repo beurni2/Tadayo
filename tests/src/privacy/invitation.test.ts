@@ -293,6 +293,16 @@ describe("the invitation for the account holding its link (previewInvitation)", 
       state: "changed",
     });
     expect(preview("usr_mo", roster([bound()]))).toEqual({ ...open, state: "changed" });
+    // Every member has approved, and the acceptance joined nobody: nothing to wait for, so accept again.
+    const approved = revision({
+      candidates: accepted.candidates,
+      decisions: new Map([
+        ["itv_ana", "approved"],
+        ["itv_ben", "approved"],
+        ["itv_cleo", "approved"],
+      ]),
+    });
+    expect(preview("usr_mo", roster([bound()], [["rev_1", approved]]))).toEqual({ ...open, state: "changed" });
   });
 
   it("passes the preview, and refuses each field that differs, a decision, an acceptance or a person's id", () => {

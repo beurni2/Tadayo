@@ -8,7 +8,7 @@
 // another name, a decline, and every refusal.
 //
 // These tests were written after the code, from the plan's section 4, so none was seen to fail before its
-// rule existed. The tests of the last describe came from the review, each for a change the reviewers
+// rule existed. The tests of the last four describes came from the review, each for a change the reviewers
 // showed no test would catch.
 
 import { createHash, randomUUID } from "node:crypto";
@@ -1352,6 +1352,42 @@ describe("found in review: an acceptance stands for the name the members read (F
     });
   });
 
+  it("shows the roster to accept again, and joins on that, when the name was changed back after the last approval applied nothing", async () => {
+    await rolledBack(db, async (tx) => {
+      const s = await laterRoster(tx);
+      const account = await newUser(plain(tx), "Sam");
+      await acceptWith(tx, clock, account, s.sam.token, s.open.id, 1);
+      await rename(tx, account, "Mallory");
+      await approve(tx, clock, user(s.w, 1), s.open.id, 1);
+      expect((await approve(tx, clock, user(s.w, 2), s.open.id, 1)).state).toBe("open");
+      await rename(tx, account, "Sam");
+      // Every member has approved and the acceptance stands, so nobody is left to act but the account:
+      // never `waiting`, which would wait for nothing.
+      expect((await preview(tx, account, s.sam.token, NOW))?.state).toBe("changed");
+      expect((await acceptWith(tx, clock, account, s.sam.token, s.open.id, 1)).state).toBe("joined");
+      await checkAsAtCommit(plain(tx));
+      expect(await membersOf(tx, s.w.club)).toHaveLength(4);
+    });
+  });
+
+  it("ends an accepted candidate whose account is being deleted when the roster is applied, whatever its name now", async () => {
+    await rolledBack(db, async (tx) => {
+      const s = await laterRoster(tx, ["Sam", "Debby"]);
+      const debbyLink = await linkFor(tx, clock, user(s.w, 0), s.w.club, candidate(s.open, 1));
+      const [sam, debby] = [await newUser(plain(tx), "Sam"), await newUser(plain(tx), "Debby")];
+      await acceptWith(tx, clock, sam, s.sam.token, s.open.id, 1);
+      await rename(tx, sam, "Samuel");
+      await tx`UPDATE app.users SET state = 'deleting', deletion_requested_at = ${LATER} WHERE id = ${sam}`;
+      await acceptWith(tx, clock, debby, debbyLink.token, s.open.id, 1);
+      await approve(tx, clock, user(s.w, 1), s.open.id, 1);
+      expect((await approve(tx, clock, user(s.w, 2), s.open.id, 1)).state).toBe("applied");
+      expect(await candidateState(tx, s.sam.candidate)).toBe("ended");
+      // Nobody is carried: no revision is open, and no place of the six is held for an account that is going.
+      expect(await openRevision(tx, s.w.club)).toBeNull();
+      expect(await membersOf(tx, s.w.club)).toHaveLength(4);
+    });
+  });
+
   it("stands again when the name is changed back before the last approval", async () => {
     await rolledBack(db, async (tx) => {
       const s = await laterRoster(tx);
@@ -1442,7 +1478,7 @@ describe("found in review: what names nothing is refused before the receipt and 
     });
   });
 
-  it("says a link nobody used has expired before it says anything of the revision or its version", async () => {
+  it("says a link nobody used has expired before it says anything of the revision's state or its version", async () => {
     await rolledBack(db, async (tx) => {
       const s = await laterRoster(tx);
       const sam = await newUser(plain(tx), "Sam");

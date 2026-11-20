@@ -15,9 +15,10 @@
 //   when its candidate ended, nothing to anyone else; `expired` with the inviter's name for a link nobody
 //   used, past its expiry; nothing to an account that holds another place in the club's roster; `full` at
 //   six members; then the exact roster of the club's open revision, names only: `waiting` when the
-//   candidate accepted it with this link and the account's profile name is still the label it shows,
-//   `changed` when the account accepted an earlier roster with it or has changed its name since, else
-//   `open`. No id of a person, no decision and no acceptance of anyone (T7, T33).
+//   candidate accepted it with this link, the account's profile name is still the label it shows and a
+//   member's approval is still to come; `changed` when the account accepted an earlier roster with it,
+//   has changed its name since, or accepted a roster every member has since approved without joining;
+//   else `open`. No id of a person, no decision and no acceptance of anyone (T7, T33).
 // - Accepting (`acceptInvitation`), in order: the neutral not-found as above, to a member holding a link
 //   they didn't join with, for an ended candidate's link nobody of this account accepted, and for a
 //   revision that doesn't list the candidate; INVITATION_EXPIRED; the neutral not-found to an account
@@ -163,7 +164,14 @@ export function previewFor(
   if (activeMembers(world, link.club) >= SIX) return { state: "full" };
   // An acceptance stands while the account's profile name is the label the members read (FQ66).
   const listed = open.rows.candidates.find((candidate) => candidate.id === link.candidate);
-  const accepted = listed?.acceptedWith === link.id && link.boundName === listed.label;
+  // And there is something to wait for only while the roster isn't ready but for the acceptance: every
+  // listed member approved, the listed members exactly the club's active ones.
+  const active = [...world.members].filter(([, member]) => member.club === link.club && member.active);
+  const ready =
+    open.rows.members.every((interval) => open.rows.decisions.get(interval) === "approved") &&
+    active.length === open.rows.members.length &&
+    active.every(([interval]) => open.rows.members.includes(interval));
+  const accepted = listed?.acceptedWith === link.id && link.boundName === listed.label && !ready;
   return {
     state: accepted ? "waiting" : mine ? "changed" : "open",
     invitation_id: link.id,

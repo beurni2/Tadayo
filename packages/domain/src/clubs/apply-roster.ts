@@ -194,6 +194,8 @@ export async function applyIfReady(
   // (FQ66, FQ84). An account that changed its name since joins nobody: it accepts again, which makes the
   // rename's revision, and until then it is carried like someone who hasn't accepted.
   const standing = (candidate: (typeof candidates)[number]) => candidate.open && candidate.accepted && candidate.named;
+  // An account that accepted and is no longer active (a deletion has begun, T27) ends, whatever its name.
+  const gone = (candidate: (typeof candidates)[number]) => candidate.open && candidate.accepted && !candidate.active;
   const joining = candidates.filter((candidate) => standing(candidate) && candidate.active);
   if (!flag(row["approved"]) || !flag(row["exact"]) || joining.length === 0) return null;
 
@@ -223,7 +225,7 @@ export async function applyIfReady(
     joined.push({ userId, candidateId: candidate.candidateId, intervalId });
   }
   for (const candidate of candidates) {
-    if (standing(candidate) && !candidate.active) {
+    if (gone(candidate)) {
       await bound(tx)`
         UPDATE app.candidates SET state = 'ended', ended_at = ${at}::pg_catalog.timestamptz
          WHERE id = ${candidate.candidateId}`;
@@ -241,7 +243,7 @@ export async function applyIfReady(
   if (started) await openFirstDays(tx, { sample: () => Promise.resolve(at) }, clubId);
 
   // 5. The candidates who hadn't accepted go on, in a new revision (FQ120).
-  const left = candidates.filter((candidate) => candidate.open && !standing(candidate));
+  const left = candidates.filter((candidate) => candidate.open && !standing(candidate) && !gone(candidate));
   let carriedInto: string | null = null;
   if (left.length > 0) {
     if (row["proposer_active"] === true) {

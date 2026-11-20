@@ -42,6 +42,11 @@ export interface OpenRoster {
    * the label it shows: an acceptance stands only for the name the members read (FQ66).
    */
   readonly accepted: boolean;
+  /**
+   * Every member it lists has approved it, and its members are exactly the club's active members: what
+   * `applyIfReady` asks before anyone joins (./apply-roster.ts). The acceptance is all it still needs.
+   */
+  readonly ready: boolean;
   /** The label it shows for the link's candidate (FQ66). */
   readonly label: string;
   /** Its members who have a name to show, in the order they joined (FQ114). */
@@ -140,6 +145,7 @@ function rosterOf(value: unknown): OpenRoster | null {
     id: text(row["id"]),
     version,
     accepted: flag(row["accepted"]),
+    ready: flag(row["ready"]),
     label: text(row["label"]),
     members: list(row["members"]).map((name) => ({ name: text(name) })),
     candidates: list(row["candidates"]).map((entry) => {
@@ -180,6 +186,19 @@ export async function linkFacts(
                      'accepted', rc.accepted_invitation_id IS NOT DISTINCT FROM i.id
                                  AND EXISTS (SELECT FROM app.users bu
                                               WHERE bu.id = i.bound_user_id AND bu.display_name = rc.label),
+                     'ready',
+                     NOT EXISTS (SELECT FROM app.roster_revision_members rm
+                                  WHERE rm.revision_id = r.id
+                                    AND NOT EXISTS (SELECT FROM app.roster_approvals a
+                                                     WHERE a.revision_id = rm.revision_id
+                                                       AND a.interval_id = rm.interval_id AND a.decision = 'approved'))
+                       AND NOT EXISTS (SELECT FROM app.memberships m
+                                        WHERE m.club_id = r.club_id AND m.state = 'active'
+                                          AND NOT EXISTS (SELECT FROM app.roster_revision_members rm
+                                                           WHERE rm.revision_id = r.id AND rm.interval_id = m.interval_id))
+                       AND NOT EXISTS (SELECT FROM app.roster_revision_members rm
+                                         JOIN app.memberships m ON m.interval_id = rm.interval_id
+                                        WHERE rm.revision_id = r.id AND m.state <> 'active'),
                      'members',
                      (SELECT pg_catalog.jsonb_agg(su.display_name ORDER BY s.joined_at, s.interval_id COLLATE "C")
                         FROM app.roster_revision_members rm

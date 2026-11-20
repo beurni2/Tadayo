@@ -23,9 +23,11 @@
 // 8. `full`: the club has six members already (A01). The six count every open candidate, so no command
 //    leads here; it is the answer should the rows ever say so.
 // 9. The exact roster of the club's open revision: `waiting` when the candidate accepted it with this link
-//    and the account's profile name is still the label it shows; `changed` when the account accepted an
-//    earlier roster with it, or has changed its name since it accepted (FQ66: it accepts again, which
-//    makes the name's revision); else `open`.
+//    and the account's profile name is still the label it shows, while a member's approval is still to
+//    come; `changed` when the account accepted an earlier roster with it, has changed its name since it
+//    accepted (FQ66: it accepts again, which makes the name's revision), or accepted a roster every
+//    member has since approved without it being applied (a name changed away and back around the last
+//    approval: it accepts again, and joins); else `open`.
 //
 // The roster is names only (FQ47): each member of the revision who has a name, by their profile name, in
 // the order they joined; then its candidates by their position, each by the label the revision shows, the
@@ -119,7 +121,10 @@ export function invitationStanding(facts: LinkFacts | null, userId: string): Inv
       })),
     ],
   };
-  if (roster.accepted) return { state: "waiting", ...shown };
+  // An acceptance that stands on a roster every member has approved would have joined its candidate, but
+  // for a name changed and changed back around the last approval, which applied nothing. Then there is
+  // nothing to wait for: the account is shown the roster to accept again, and that acceptance joins it.
+  if (roster.accepted && !roster.ready) return { state: "waiting", ...shown };
   return { state: mine ? "changed" : "open", ...shown, expiresAt: facts.expiresAt };
 }
 
