@@ -22,8 +22,8 @@ export const ERRORS = {
   NOT_ALLOWED: [
     403,
     "Something the caller can see but can't do now: reacting to their own drop (spec 16); in a schedule " +
-      "proposal, choosing after confirming, more days than the club gives each member, a day of the week in " +
-      "force in a membership change or a day another member has confirmed, or confirming days the caller doesn't hold, too few of " +
+      "proposal, choosing after confirming, more days than the club gives each member, a day of the club's " +
+      "latest week in a membership change or a day another member has confirmed, or confirming days the caller doesn't hold, too few of " +
       "them, or one another member holds too (FQ55, FQ57); or, for the candidate's proposer alone, revoking " +
       "or replacing a link the candidate has accepted with (handoff 4).",
   ],

@@ -9,7 +9,9 @@
 //
 // Under the club's row nothing of its schedule changes meanwhile (./command.ts). So the facts are read
 // once, the rule says what follows (./change.ts `pickAfter`), and this writes it:
-// - days freed (a join that lowers spec 05's days each, the founder's answer on three to four members): a
+// - days freed (where the free days can't give each member with no day spec 05's number, as when a fourth
+//   member joins three who hold all six, or the first days apply with a late joiner; the founder's answer
+//   on three to four members): a
 //   new week from the club's local date at `at` (or the day after the latest week's start, if that is
 //   today or later: ./change.ts `nextWeekStart`) holding each active member's days but those, as they were,
 //   with their own first dates; and the freed days' days announced from the next week on cancelled, which
@@ -19,7 +21,7 @@
 //   `at`, spec 05's days each, no week of its own), with a row for each member it includes and the days
 //   each holds at first, proposed and held; in place of an open one (superseded at its next `version`,
 //   `replaced_by` the new one, whose id the earlier one then answers MEMBERSHIP_CHANGED with) when the
-//   club's size changed the days each;
+//   club's size changed the days each, each member it carries over holding first what they held in it;
 // - members added to the open pick, with the days each holds at first; nothing else of it moves (T33);
 // - the open pick applied, or ended with no successor, at its next `version`.
 // When the rule says nothing, nothing is written and no version moves (T33).

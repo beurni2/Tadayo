@@ -22,7 +22,8 @@
 //   (FQ131), holding at first the table's days for their place in the order they joined when those are
 //   free and nobody it includes holds them, else the first such days from Monday (FQ48). A member who joins
 //   while it is open is added to it; when the club's size changes the number of days each, a new pick takes
-//   its place for the members then without a day, and the earlier one's id answers MEMBERSHIP_CHANGED. It
+//   its place for the members then without a day, each keeping first the free days they held in the earlier
+//   one, up to the new number from Monday, and the earlier one's id answers MEMBERSHIP_CHANGED. It
 //   applies when every member it includes who is still active has confirmed, and ends with no successor
 //   when nobody it includes is still a member or the club is paused (FQ16).
 // - A new member's confirmed day first opens on that weekday in the week after the confirmation, the
@@ -91,17 +92,30 @@ const fromMonday = (days: readonly Weekday[]): Weekday[] => WEEKDAYS.filter((wee
 
 /**
  * The days each of `ids` holds at first: `per` days, the table's for their place among the `active` when
- * free and not in `taken`, else the first such from Monday. `taken` gains what each is given.
+ * free and not in `taken`, else the first such from Monday. A member a replaced pick included keeps first
+ * the days they held in it (`earlier`) that aren't in `taken`, up to `per` from Monday, the earlier joiner's
+ * where two held the same day. `taken` gains what each is given.
  */
 function firstHolds(
   ids: readonly string[],
   active: readonly string[],
   per: 1 | 2,
   taken: Set<Weekday>,
+  earlier: ReadonlyMap<string, readonly Weekday[]> = new Map(),
 ): ProposedDays[] {
   const table = proposedWeek(active.length);
+  // Everyone's kept days first, so that filling an earlier joiner's never takes a later one's.
+  const kept = new Map(
+    ids.map((id) => {
+      const days = fromMonday(earlier.get(id) ?? [])
+        .filter((weekday) => !taken.has(weekday))
+        .slice(0, per);
+      for (const weekday of days) taken.add(weekday);
+      return [id, days] as const;
+    }),
+  );
   return ids.map((id): ProposedDays => {
-    const days: Weekday[] = [];
+    const days: Weekday[] = [...(kept.get(id) ?? [])];
     const wanted = table[active.indexOf(id)] ?? [];
     for (const weekday of [...wanted, ...WEEKDAYS]) {
       if (days.length === per) break;
@@ -154,9 +168,17 @@ export function pickAfter(facts: PickFacts): PickChange {
   if (open.daysPerMember !== per) {
     // A member it includes who hasn't confirmed has no day, so is among `fresh`: none means all confirmed.
     if (fresh.length === 0) return { freed, proposal: { kind: everyoneConfirmed ? "apply" : "drop" } };
+    // Nobody's choice is thrown away: each member it includes keeps what they held, as far as the new
+    // number allows (FQ125, FQ126, FQ131).
+    const earlier = new Map(included.map((member) => [member.id, member.held] as const));
     return {
       freed,
-      proposal: { kind: "open", replaces: true, daysPerMember: per, proposed: firstHolds(fresh, active, per, inWeek) },
+      proposal: {
+        kind: "open",
+        replaces: true,
+        daysPerMember: per,
+        proposed: firstHolds(fresh, active, per, inWeek, earlier),
+      },
     };
   }
   const listed = new Set(open.members.map((member) => member.id));

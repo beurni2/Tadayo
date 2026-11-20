@@ -2309,7 +2309,8 @@ describe("a new member's pick through the app (spec 05; T9, T14, T19, T33; FQ125
     ).toBe(404);
 
     // Maya leaves during the open day: three members take two days each again. Nobody's days come back; Alex
-    // and Sam pick two each in a third pick.
+    // and Sam pick two each in a third pick, each holding first the day they held in the second: Alex's
+    // Wednesday and Sam's Saturday (FQ125, FQ126; FQ131's reading of a replaced pick).
     const stayed = schedule;
     await ask(
       account(maya),
@@ -2332,13 +2333,17 @@ describe("a new member's pick through the app (spec 05; T9, T14, T19, T33; FQ125
       expect(JSON.parse(named.body)).toEqual({ code: "MEMBERSHIP_CHANGED", current_id: third });
     }
     const alexNow = proposalIn(await week(account(alex), "the week, after the leave"));
-    expect(alexNow).toMatchObject({ id: third, version: 1, my_days: ["tuesday", "friday"] });
+    expect(alexNow).toMatchObject({ id: third, version: 1, my_days: ["tuesday", "wednesday"] });
+    expect(proposalIn(await week(samsAccount, "the week, by the fourth member, after the leave"))).toMatchObject({
+      id: third,
+      my_days: ["friday", "saturday"],
+    });
     // Nothing of the third pick names Maya.
     expect(JSON.stringify(alexNow)).not.toContain(c.member[maya] ?? "none");
 
-    // Alex and Sam confirm: each a new week, Alex's days from Tuesday 17 and Friday 20 November; Sam's
+    // Alex and Sam confirm: each a new week, Alex's days from Tuesday 17 and Wednesday 18 November; Sam's
     // confirmation applies the pick.
-    const alexsNew = { expected_version: 1, weekdays: ["tuesday", "friday"] } as const;
+    const alexsNew = { expected_version: 1, weekdays: ["tuesday", "wednesday"] } as const;
     const alexConfirmed = await command(
       account(alex),
       "confirmScheduleDays",
@@ -2347,15 +2352,16 @@ describe("a new member's pick through the app (spec 05; T9, T14, T19, T33; FQ125
       "the new member's confirmation",
     );
     expect(JSON.parse(alexConfirmed.body)).toMatchObject({ state: "open", version: 1, my_state: "confirmed" });
-    const samsNew = { expected_version: 1, weekdays: ["wednesday", "saturday"] } as const;
+    const samsNew = { expected_version: 1, weekdays: ["friday", "saturday"] } as const;
     const samConfirmed = await command(samsAccount, "confirmScheduleDays", third, samsNew, "the last confirmation");
     expect(JSON.parse(samConfirmed.body)).toMatchObject({ state: "applied", version: 2, my_state: "confirmed" });
     await week(account(ben), "the week, once the pick applied");
     await clubsOf(account(alex), "the clubs, by a new member");
 
     // Ben, Alex and Sam hold all six days. Omar joins: no day is free for a fourth, so each keeps their first
-    // day from Monday, and the others leave the week from next week, their days then cancelled (the founder's
-    // answer on three to four members, FQ131). Ben's Thursdays were made at the start, four weeks ahead.
+    // day from Monday (Ben's Monday, Alex's Tuesday, Sam's Friday), and the others leave the week from next
+    // week, their days then cancelled (the founder's answer on three to four members, FQ131). Ben's Thursdays
+    // were made at the start, four weeks ahead.
     const beforeOmar = schedule;
     await db.begin(async (tx) => {
       await joinAs(tx, clock, c, omar, ben, omarsAccount);
@@ -2427,7 +2433,7 @@ describe("a new member's pick through the app (spec 05; T9, T14, T19, T33; FQ125
     ).toBe(404);
 
     expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqual({ count: 0, first: [] });
-    expect(counted.answers).toBe(43);
+    expect(counted.answers).toBe(44);
   });
 });
 

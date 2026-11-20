@@ -1526,6 +1526,18 @@ describe("a new member's pick (0015; spec 05; FQ48, FQ55, FQ57, FQ125 to FQ127, 
         },
         leftOut,
       );
+      // Nina joins too: four members take one day each, but the two free days are enough for Sam and Nina, so
+      // nothing is freed, and a week without Ben's Thursday is still refused (FQ131 frees only where too few are free).
+      await joinLater(tx, w, ["Nina"]);
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        async (sp) => {
+          await copy(sp, w.club, "2026-11-06", (weekday) => weekday !== "thursday");
+          await checkAsAtCommit(sp);
+        },
+        leftOut,
+      );
       // Maya leaves: a week without Maya's days is kept.
       await leave(tx, { user: "", interval: member(w, 1) }, "Maya", AT.edited);
       await copy(tx, w.club, "2026-11-06", () => true);
@@ -1630,7 +1642,8 @@ describe("a new member's pick (0015; spec 05; FQ48, FQ55, FQ57, FQ125 to FQ127, 
       const put = (sp: Tx, version: string, weekday: string, star: string, firstDate: string, at: Date) => sp`
         INSERT INTO app.schedule_assignments (schedule_version_id, club_id, weekday, star_interval_id, first_date, confirmed_at)
         VALUES (${version}, ${w.club}, ${weekday}, ${star}, ${firstDate}, ${at})`;
-      const moved = /neither a day its member had in the week before, as it was, nor their confirmation/;
+      const moved =
+        /neither a day its member, still in the club, had in the week before, as it was, nor their confirmation/;
       // Each week below also leaves out days of the week before, which schedule_version_keeps_members
       // refuses (its own test): this guard is run alone.
       const check = (sp: Tx) => checkOneAsAtCommit(sp, "schedule_assignment_follows_week");
@@ -1691,6 +1704,22 @@ describe("a new member's pick (0015; spec 05; FQ48, FQ55, FQ57, FQ125 to FQ127, 
             INSERT INTO app.schedule_versions (id, club_id, effective_from, created_at)
             VALUES (${later}, ${w.club}, '2026-11-08', ${AT.added})`;
           await put(sp, later, "saturday", w.sam, "2026-11-21", AT.edited);
+          await check(sp);
+        },
+        moved,
+      );
+      // Maya leaves: Maya's days, even as they were, are copied into no later week, whose weekday is free.
+      await leave(tx, { user: "", interval: maya }, "Maya", AT.edited);
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        async (sp) => {
+          const later = await week(sp, "2026-11-09");
+          await sp`
+            INSERT INTO app.schedule_assignments (schedule_version_id, club_id, weekday, star_interval_id, first_date, confirmed_at)
+            SELECT ${later}, a.club_id, a.weekday, a.star_interval_id, a.first_date, a.confirmed_at
+              FROM app.schedule_assignments a JOIN app.schedule_versions v ON v.id = a.schedule_version_id
+             WHERE v.club_id = ${w.club} AND v.effective_from = '2026-11-07' AND a.star_interval_id = ${maya}`;
           await check(sp);
         },
         moved,

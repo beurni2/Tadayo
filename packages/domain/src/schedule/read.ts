@@ -5,9 +5,11 @@
 // taken first.
 //
 // - `current` is the latest version in force on the club's local date at `now`, with the days confirmed
-//   in it of members still in the club, from Monday. A member who left is in it no more: their days won't
-//   open (FQ63), they are free for a new member's pick, and a member who joined since never shared the
-//   club with them. A version with no such day, as the first days' is before anyone confirms, gives no
+//   in it of members still in the club, from Monday. A member who left is in it no more: their days that
+//   haven't opened won't (FQ63), they are free for a new member's pick, and a member who joined since never
+//   shared the club with them. (A day of theirs already open stays open until it closes, and Home's day
+//   choice names it meanwhile: FQ132.) It can trail the club's latest week, which a pick's taken days
+//   follow, by a day or more. A version with no such day, as the first days' is before anyone confirms, gives no
 //   `current`. A day whose star has no name to show is left out, never sent nameless (FQ75, as Home's
 //   days are: ../authorization/days.ts).
 // - `proposal` is the club's open one as the caller sees it (`answerOf`), only when it includes the

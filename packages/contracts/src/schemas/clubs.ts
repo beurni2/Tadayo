@@ -102,7 +102,8 @@ export const Member = named(
     "chooses or confirms, and the order shows no proposed day (FQ98); afterwards, the schedule in force " +
     "today from Monday, a member with two days by the earlier, then anyone with no day in force in the order " +
     "they joined (FQ26). So rows move only when the first days end, when a week that a new member's " +
-    "confirmation or a fourth member's join writes comes into force (`ScheduleProposal`, FQ130, FQ131), and, " +
+    "confirmation, or days freed for members with none, writes comes into force (`ScheduleProposal`, FQ130, " +
+    "FQ131), and, " +
     "in a club whose first days were opened again with a week of their own, on the day that " +
     "week starts (FQ124). `cover` is the colour of this member's folded cards (FQ41). `next_day` is their next day to " +
     "open, the one an Add for them targets (spec 05), absent while they have none, as before their first " +
@@ -422,14 +423,21 @@ export const CurrentSchedule = named(
   "CurrentSchedule",
   "The schedule in force today: each member's weekday or two (spec 05's table), from a local date in the " +
     "club's zone. It holds only the days of members still in the club: a member who leaves is in it no " +
-    "more, since their days won't open (FQ63), and is absent when nobody's day is left. In the club's first " +
+    "more, since their days that haven't opened won't (FQ63), though one already open when they leave " +
+    "stays open, under their name, until it closes (FQ132); it is absent when nobody's day is left. It can " +
+    "trail the club's latest week by a day or more: a week that a confirmation or freed days write starts " +
+    "on the club's local date that day, or the day after the latest week's start when that is today or " +
+    "later, so a member's just-confirmed days may be in neither this nor the proposal until it starts, and " +
+    "a membership change's taken days follow the latest week (`ScheduleProposal`). In the club's first " +
     "days it holds the days confirmed so far, from the club's first local date, and each first opens on " +
     "its own date (`ScheduleSlot.first_date`; FQ55, FQ79). In a club whose first days were opened again " +
     "with a week of their own (`ScheduleProposal`; FQ102, FQ123), it stays the earlier week, with none " +
     "confirmed since, until the new week starts; from that start it holds the days confirmed in the new " +
     "week, from the new week's start, and is absent while there are none (FQ124). Members change it only " +
-    "by confirming their first days (FQ57) or, once those have applied, by a new member's confirmation or " +
-    "a fourth member's join, each of which writes a new week at once (`ScheduleProposal`; FQ130, FQ131): " +
+    "by confirming their first days (FQ57), by leaving, or, once those have applied, by a new member's " +
+    "confirmation or a join, or late joiner, that leaves too few days free for the members with none, as " +
+    "when a fourth member joins three who hold all six, each of which writes a new week at once " +
+    "(`ScheduleProposal`; FQ130, FQ131): " +
     "from its start, a new member's days show in it, each first opening in the week after the " +
     "confirmation, and freed days leave it, though their days this week still open.",
   z.object({ effective_from: LocalDate, assignments: z.array(ScheduleAssignment).min(1).max(6) }),
@@ -444,8 +452,9 @@ export const ScheduleSlotState = named(
     "hold it, so none of them can confirm it until all but one have chosen another day, FQ55); or no_reveal " +
     "(two or more other members hold it and the caller doesn't: Contested and No reveal scheduled, with no " +
     "names and no count, FQ46; a caller still choosing may choose it, and then holds it too, FQ48). In a " +
-    "membership change, a new member's days, the same, where a day of the week in force is taken by its " +
-    "member and only the free days can be anyone's choice (FQ125, FQ127).",
+    "membership change, a new member's days, the same, where a day of the club's latest week whose member " +
+    "is still in the club is taken by its member and only the free days can be anyone's choice (FQ125, " +
+    "FQ127).",
   z.enum(["yours", "taken", "available", "clash", "no_reveal"]),
 );
 
@@ -520,10 +529,14 @@ export const ScheduleProposal = named(
     "(the founder's answer on three to four members; FQ63, FQ131). A club has one; it includes only " +
     "those members: a member who joins while it is open is added to it, one who leaves drops out, and it " +
     "ends with no successor when nobody it includes is still a member or the club is paused (FQ16). When a " +
-    "join changes the days each, a new one takes its place for the members then without a day, and the " +
+    "join or a leave changes the days each, a new one takes its place for the members then without a day, " +
+    "each holding first the free days they held in the earlier one, up to the new number from Monday, the " +
+    "earlier joiner's where two held one (FQ125, FQ126), and the " +
     "earlier one's id answers MEMBERSHIP_CHANGED with the new one's to a member the new one includes; to " +
     "anyone else it answers as any ended proposal does (FQ126). A day " +
-    "of the week in force is taken by its member; a free day, one no active member has in the latest week, " +
+    "of the club's latest week whose member is still in the club is taken by its member, though that week " +
+    "can start after today, so `current` may not show it yet (`CurrentSchedule`); a free day, one no " +
+    "active member has in the latest week, " +
     "is available, or held or contested by the members it includes as in the first days (FQ48, FQ55). Each " +
     "holds spec 05's number of days for the club's size (`days_per_member`, FQ131), chooses and confirms as " +
     "in the first days, and each confirmed day goes ahead at once: the caller's from its first date, that " +
@@ -568,8 +581,9 @@ export const Schedule = named(
     "those first days have applied, nowhere until that start: FQ124) and every slot's state, with `owner` and `first_date` on a taken " +
     "day, `holders` on a day they hold with others, and `held_by` on a day one other member holds; a member " +
     "who has confirmed in the first days, the same with `first_date` on their own days and no `held_by`; a " +
-    "member a membership change includes, a new member, `current` and the change, the days of the week in " +
-    "force taken by their members with no `first_date`, a free day with `holders` and `held_by` as in the " +
+    "member a membership change includes, a new member, `current` and the change, the days of the club's " +
+    "latest week taken by their members with no `first_date` (`current` can trail that week by a day or " +
+    "more: `CurrentSchedule`), a free day with `holders` and `held_by` as in the " +
     "first days, and `first_date` only on the caller's own confirmed days; every member already in the week, `current` alone, " +
     "since nobody else is asked anything (FQ126); a member the " +
     "open proposal doesn't include, one who joined after the first days' first confirmation and gets a day " +
@@ -610,7 +624,8 @@ export const ScheduleChoiceRequest = named(
     "weekdays they hold from now on, replacing what they held, none to `days_per_member`, from slots that " +
     "are yours, clash (a contested day they may keep, since nobody is asked to give way, FQ55), no_reveal " +
     "(joining a contested day, FQ46, FQ48) or available (which another member's hold makes contested); " +
-    "never a taken day, a day of the week in force in a membership change, never Sunday (T6). A proposed " +
+    "never a taken day, a day of the club's latest week in a membership change, never Sunday (T6). A " +
+    "proposed " +
     "day the caller sets aside is free (FQ48).",
   z.strictObject({ expected_version: Version, weekdays: ChosenWeekdays }),
 );

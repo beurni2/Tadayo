@@ -656,6 +656,34 @@ describe("a new member's pick as one member sees it (FQ125, FQ127, FQ130)", () =
     expect(anaJudge(ok(ana))).toEqual([]);
     expect(anaJudge(ok({ ...ana, proposal: cleo?.["proposal"] })).join(" ")).toMatch(/proposal/);
   });
+
+  it("leaves a member who left out of the club's week, by day and by name, for every member (FQ102, FQ124)", () => {
+    // Ben has left: Ben's Tuesday and Friday are in no member's `current`, and Ben's name with them.
+    const w = setActive(pickWorld([]), "itv_ben", false);
+    const cleos = weekFor(w, CLUB, "usr_cleo", NOW);
+    expect(cleos?.["current"]).toEqual({
+      effective_from: "2026-11-02",
+      assignments: [
+        { weekday: "monday", person: ANA },
+        { weekday: "thursday", person: ANA },
+      ],
+    });
+    expect(weekFor(w, CLUB, "usr_ana", NOW)?.["current"]).toEqual(cleos?.["current"]);
+    const cleoJudge = judging(weekExpected(() => ({ schedule: w, account: "usr_cleo", now: NOW }), CLUB));
+    expect(cleoJudge(ok(cleos))).toEqual([]);
+    const named = {
+      ...cleos,
+      current: {
+        effective_from: "2026-11-02",
+        assignments: [
+          { weekday: "monday", person: ANA },
+          { weekday: "tuesday", person: { ...BEN, avatar_version: null } },
+          { weekday: "thursday", person: ANA },
+        ],
+      },
+    };
+    expect(cleoJudge(ok(named))).not.toEqual([]);
+  });
 });
 
 describe("what a command must get in a pick (FQ55, FQ99, FQ125, FQ127, FQ131)", () => {
@@ -923,6 +951,23 @@ describe("what a join or a leave must leave of the club's week and pick, row by 
     };
     expect(judge(four(), joined("saturday"))).toEqual([]);
     expect(judge(four(), joined("friday")).join(" ")).toMatch(/the open pick is/);
+    // Eve set the proposed Friday aside and holds Saturday: Friday is free, so Fay is given it (FQ48).
+    const aside = () => {
+      const w = four();
+      pickOf(w).days = [day("itv_eve", "friday", true, false), day("itv_eve", "saturday", false, true)];
+      return w;
+    };
+    const asideJoined = (fays: Weekday) => {
+      const w = setActive(aside(), "itv_fay", true);
+      const rows = pickOf(w);
+      Object.assign(rows, {
+        members: [...rows.members, { interval: "itv_fay", confirmed: false }],
+        days: [...rows.days, day("itv_fay", fays, true, true)],
+      });
+      return w;
+    };
+    expect(judge(aside(), asideJoined("friday"))).toEqual([]);
+    expect(judge(aside(), asideJoined("saturday")).join(" ")).toMatch(/the open pick is/);
     expect(judge(four(), joined("saturday", { version: 2 })).join(" ")).toMatch(/the open pick is/);
     // Fay leaves again: Eve still picks. Eve confirmed and Fay leaves: it applies.
     expect(judge(joined("saturday"), setActive(joined("saturday"), "itv_fay", false))).toEqual([]);
@@ -966,6 +1011,32 @@ describe("what a join or a leave must leave of the club's week and pick, row by 
     expect(judge(pickWorld(), replaced(null)).join(" ")).toMatch(/the pick that was open is/);
     expect(judge(pickWorld(), replaced("spr_next", "thursday")).join(" ")).toMatch(
       /itv_dee holds thursday at first, not saturday/,
+    );
+    // Cleo chose only Saturday: the new pick keeps it Cleo's, and Dee is given Wednesday (FQ125, FQ126).
+    const chose = [day("itv_cleo", "wednesday", true, false), day("itv_cleo", "saturday", true, true)];
+    const choosing = pickWorld([[PICK, pickRows({ days: chose })]]);
+    const kept = (cleos: Weekday, dees: Weekday) => {
+      const w = setActive(
+        pickWorld([[PICK, pickRows({ days: chose, state: "superseded", version: 2, replacedBy: "spr_next" })]]),
+        "itv_dee",
+        true,
+      );
+      w.proposals.set(
+        "spr_next",
+        pickRows({
+          daysPerMember: 1,
+          members: [
+            { interval: "itv_cleo", confirmed: false },
+            { interval: "itv_dee", confirmed: false },
+          ],
+          days: [day("itv_cleo", cleos, true, true), day("itv_dee", dees, true, true)],
+        }),
+      );
+      return w;
+    };
+    expect(judge(choosing, kept("saturday", "wednesday"))).toEqual([]);
+    expect(judge(choosing, kept("wednesday", "saturday")).join(" ")).toMatch(
+      /itv_cleo holds wednesday at first, not saturday/,
     );
     const freedAnyway = replaced("spr_next");
     withWeek(freedAnyway, "sched_four", TODAY, [

@@ -10,14 +10,16 @@
 //
 // Once a club's first days have applied, nobody already in the week is asked anything or moves (FQ125,
 // FQ126); a member with no day picks free ones and confirms them as in the first days, and each is theirs
-// from that weekday in the week after (FQ127, FQ130), no four-to-five-week wait. A fourth member's join
-// frees the others' second days now (the founder's answer on three to four).
+// from that weekday in the week after (FQ127, FQ130), no four-to-five-week wait. Where the free days can't
+// give each member with no day spec 05's number, as when a fourth member joins three who hold all six, the
+// others' second days are freed now (the founder's answer on three to four).
 
 import { randomUUID } from "node:crypto";
 import { leftClubBody } from "@tadayo/api";
 import {
   chooseScheduleDays,
   confirmScheduleDays,
+  isPlainLoopback,
   leaveClub,
   listClubs,
   makeDays,
@@ -32,15 +34,30 @@ import {
 } from "@tadayo/domain";
 import { fakeClock } from "@tadayo/domain/testing";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { expectRefused, REFUSED, rolledBack, worldSql, type WorldTx } from "./harness.ts";
+import { adminSql, expectRefused, REFUSED, rolledBack, worldSql, type WorldTx } from "./harness.ts";
 import { foundedBy, joinAs, leaveAs, type MadeClub } from "./club-world.ts";
 import { plain, refusal } from "./roster-world.ts";
-import { holding, waitingOn } from "./week-world.ts";
-import { checkAsAtCommit, commitDrop, newUser, type World } from "./world.ts";
+import { forgetCommittedDays, holding, waitingOn } from "./week-world.ts";
+import { checkAsAtCommit, commitDrop, newId, newUser, type World } from "./world.ts";
 
 const db = worldSql(6);
+/** The clubs whose days the races on a cancelled day commit, with a photo counter and a reservation. */
+const raced: string[] = [];
 afterAll(async () => {
   await db.end();
+  // No rollback takes those away, and the ops scripts' tests need a database with no committed day: the
+  // reservations and counters go first, as the superuser, on this machine only, then every committed day.
+  if (raced.length === 0) return;
+  if (!isPlainLoopback(process.env.DATABASE_ADMIN_URL ?? "")) throw new Error("not a database on this machine");
+  const admin = adminSql();
+  try {
+    await admin`DELETE FROM app.reservations r USING app.occurrences o
+                 WHERE o.id = r.occurrence_id AND o.club_id IN ${admin(raced)}`;
+    await admin`DELETE FROM app.contribution_counters WHERE club_id IN ${admin(raced)}`;
+  } finally {
+    await admin.end();
+  }
+  await forgetCommittedDays();
 });
 
 // Wednesday 11 November 2026, midnight in New York. The days are made to Sunday 13 December (the last one
@@ -396,6 +413,29 @@ describe("when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131)", () => {
     });
   });
 
+  it("takes today and next week from the club's own date: a fourth member who joins on Sunday evening in New York, Monday by UTC, frees from the next day (T1)", async () => {
+    await rolledBack(db, async (tx) => {
+      const c = await three(tx);
+      // Sunday 15 November at 22:00 in New York, which is 03:00 on Monday the 16th by UTC.
+      current = Temporal.Instant.from("2026-11-16T03:00:00.123456Z");
+      clock.set(current);
+      await make(tx, c);
+      await join(tx, c, "Sam", "Ben");
+      // The freed week starts on the club's Sunday, and the cancellations on the Monday after it, the next
+      // day: Thursday 19 November is next week's, so it is cancelled already (by UTC's date it would be
+      // this week's, kept, and the 26th the first cancelled).
+      expect((await weeks(tx, c)).at(-1)?.effective_from).toBe("2026-11-15");
+      const thursdays = await daysOn(tx, c, ["thursday"]);
+      expect(thursdays[0]).toEqual(["2026-11-19", "Ben", "cancelled"]);
+      expect(thursdays.filter((day) => day[2] === "scheduled")).toEqual([]);
+      // Sam confirms Thursday at once: the 19th, in the week after the club's Sunday, is Sam's first.
+      expect(await confirmOwn(tx, c, "Sam")).toMatchObject({ state: "applied", myState: "confirmed" });
+      const sams = await weeks(tx, c);
+      expect(sams.at(-1)?.effective_from).toBe("2026-11-16");
+      expect(sams.at(-1)?.days.find((day) => day[0] === "thursday")).toEqual(["thursday", "Sam", "2026-11-19"]);
+    });
+  });
+
   it("keeps what was added for a freed day hidden from everyone, its caption too, and never on the new member's day (T9, FQ131)", async () => {
     await rolledBack(db, async (tx) => {
       const c = await three(tx);
@@ -444,6 +484,13 @@ describe("when a pick opens (FQ100, FQ102, FQ125, FQ126, FQ131)", () => {
             at: new Date(current.epochMilliseconds),
           }),
         /is a cancelled day, and takes nothing new \(T9\)/,
+      );
+      // Nor a photo: its reservation, the first thing a photo writes, is refused (T9).
+      await expectRefused(
+        plain(tx),
+        REFUSED.integrity,
+        (sp) => commitDrop(sp, where, alex, { media: "photo", at: new Date(current.epochMilliseconds) }),
+        /app\.reservations: \S+ is a cancelled day, and takes nothing new \(T9\)/,
       );
       // Sam takes Thursday: Sam's own day on the 19th is another day, which holds nothing of Maya's.
       await confirmOwn(tx, c, "Sam");
@@ -565,6 +612,20 @@ describe("a pick added to, replaced, dropped, and a club paused (FQ16, FQ131)", 
       // Sam, whom the earlier pick never included, and Ben, whom neither does, get the neutral answer (T14).
       expect(await refusal(confirm(tx, c, "Sam", pick.id, 2, ["thursday"]))).toMatchObject({ code: "NOT_FOUND" });
       expect(await refusal(confirm(tx, c, "Ben", pick.id, 2, ["monday"]))).toMatchObject({ code: "NOT_FOUND" });
+    });
+  });
+
+  it("keeps what a member held when a new pick takes the place of theirs: Alex's chosen Saturday stays Alex's (FQ125, FQ126)", async () => {
+    await rolledBack(db, async (tx) => {
+      const { c, pick } = await withAlex(tx);
+      // Alex chooses only Saturday of the two, and Sam joins: one day each now. Alex keeps Saturday, and Sam
+      // gets the other free day, Wednesday; nobody is given a day someone chose.
+      await choose(tx, c, "Alex", pick.id, 1, ["saturday"]);
+      await join(tx, c, "Sam", "Ben");
+      const [, second] = await picks(tx, c);
+      expect(second).toMatchObject({ state: "open", days_per_member: 1 });
+      expect(await heldAtFirst(tx, c, second?.id ?? "")).toEqual({ Alex: ["saturday"], Sam: ["wednesday"] });
+      expect(await proposalOf(tx, c, "Alex")).toMatchObject({ id: second?.id, myDays: ["saturday"] });
     });
   });
 
@@ -1108,6 +1169,100 @@ describe("confirmations, joins and leaves at once, on connections of their own",
       const [next] = await db<{ id: string }[]>`
         SELECT id FROM app.schedule_proposals WHERE state = 'open' AND club_id = ${s.c.club}`;
       expect(next?.id).not.toBe(s.pick.id);
+    },
+  );
+
+  /** A transaction on a connection of its own that runs `first`, then waits, not committed, until released. */
+  async function openWith(
+    first: (tx: WorldTx) => Promise<unknown>,
+  ): Promise<{ pid: number; release: () => Promise<void> }> {
+    let release = (): void => undefined;
+    const released = new Promise<void>((resolve) => (release = resolve));
+    let ready: (pid: number) => void = () => undefined;
+    let failed: (error: unknown) => void = () => undefined;
+    const started = new Promise<number>((resolve, reject) => ((ready = resolve), (failed = reject)));
+    const done = db.begin(async (raw) => {
+      const tx = raw as unknown as WorldTx;
+      const [row] = await tx<{ pid: number }[]>`SELECT pg_catalog.pg_backend_pid() AS pid`;
+      await first(tx);
+      ready(row?.pid ?? 0);
+      await released;
+    });
+    done.catch(failed);
+    return {
+      pid: await started,
+      release: async () => {
+        release();
+        await done;
+      },
+    };
+  }
+
+  /** Ben's Thursday 19 November, in `three`'s club with its days made, and Maya's photo counter for it, committed. */
+  async function thursdayOfBen(): Promise<{ c: Club; day: string; maya: string }> {
+    return db.begin(async (raw) => {
+      const tx = raw as unknown as WorldTx;
+      const c = await three(tx);
+      raced.push(c.club);
+      await make(tx, c);
+      const [thursday] = await tx<{ id: string }[]>`
+        SELECT id FROM app.occurrences WHERE club_id = ${c.club} AND local_date = '2026-11-19' AND status = 'scheduled'`;
+      const day = thursday?.id ?? "";
+      const maya = c.member["Maya"] ?? "";
+      await tx`INSERT INTO app.contribution_counters (occurrence_id, interval_id, club_id) VALUES (${day}, ${maya}, ${c.club})`;
+      return { c, day, maya };
+    });
+  }
+  /** Maya's photo slot for the day, as a reservation and its counter. */
+  const reserving = async (tx: WorldTx, day: string, maya: string): Promise<void> => {
+    await tx`
+      INSERT INTO app.reservations (id, occurrence_id, interval_id, media_class, request_key, created_at, expires_at)
+      VALUES (${newId("rsv")}, ${day}, ${maya}, 'photo', ${randomUUID()}, ${new Date(current.epochMilliseconds)},
+              ${new Date("2026-11-19T12:00:00Z")})`;
+    await tx`
+      UPDATE app.contribution_counters SET reserved_total = reserved_total + 1
+       WHERE occurrence_id = ${day} AND interval_id = ${maya}`;
+  };
+  const cancelling = (tx: WorldTx, day: string) =>
+    tx`UPDATE app.occurrences SET status = 'cancelled' WHERE id = ${day}`;
+  const reservationsOf = async (day: string) =>
+    (await db<{ n: number }[]>`SELECT count(*)::int AS n FROM app.reservations WHERE occurrence_id = ${day}`)[0]?.n;
+
+  it(
+    "refuses a reservation that waits on a cancellation in progress, once it commits (T9)",
+    { timeout: 30_000 },
+    async () => {
+      const { day, maya } = await thursdayOfBen();
+      const cancel = await openWith((tx) => cancelling(tx, day));
+      let reserved: Promise<unknown>;
+      try {
+        reserved = outcome(db.begin((raw) => reserving(raw as unknown as WorldTx, day, maya)));
+        await waitingOn(db, cancel.pid, 1);
+      } finally {
+        await cancel.release();
+      }
+      expect(await reserved).toBe("23000");
+      expect(await reservationsOf(day)).toBe(0);
+    },
+  );
+
+  it(
+    "lets a cancellation wait on a reservation in progress, which then stays as it was (T9, FQ63)",
+    { timeout: 30_000 },
+    async () => {
+      const { day, maya } = await thursdayOfBen();
+      const reserve = await openWith((tx) => reserving(tx, day, maya));
+      let cancelled: Promise<unknown>;
+      try {
+        cancelled = outcome(db.begin((raw) => cancelling(raw as unknown as WorldTx, day)));
+        await waitingOn(db, reserve.pid, 1);
+      } finally {
+        await reserve.release();
+      }
+      await cancelled;
+      const [row] = await db<{ status: string }[]>`SELECT status FROM app.occurrences WHERE id = ${day}`;
+      expect(row?.status).toBe("cancelled");
+      expect(await reservationsOf(day)).toBe(1);
     },
   );
 });

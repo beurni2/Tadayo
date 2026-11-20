@@ -9,7 +9,8 @@
 -- after (packages/domain/src/schedule/change.ts, settle-change.ts, confirm-days.ts). Each new
 -- member's confirmation writes a new week from the club's local date that day, which holds every
 -- day of the latest week whose member is still in the club, as it was, and the new member's days;
--- a fourth member's join frees the others' second days in a new week the same way. Days are made
+-- where the free days are too few for the members with none (three who hold all six, and a fourth),
+-- a join frees each member's days beyond their first in a new week the same way. Days are made
 -- four weeks ahead (FQ115), so a week now starts before days already made, and the rule that
 -- refused that (0005's schedule_versions_insert_guard, FQ61) is said again of the days themselves:
 -- an announced day never goes to someone else.
@@ -43,6 +44,17 @@
 -- five functions are replaced (0005's schedule_versions_insert_guard, 0014's schedule_proposals_guard,
 -- schedule_change_start_guard and schedule_proposal_days_guard, and 0013's schedule_confirmation_guard),
 -- and five are added.
+
+-- 0014's membership change isn't carried over: this migration's rules would read an open one as a
+-- pick, whose members already have days. None has been opened anywhere (the app calls no schedule
+-- operation yet), and this refuses to apply over one rather than assume it.
+DO $$
+BEGIN
+  IF EXISTS (SELECT FROM app.schedule_proposals WHERE reason = 'membership_change' AND state = 'open') THEN
+    RAISE EXCEPTION '0015: an open membership change of 0014''s exists, which this migration would read as a pick';
+  END IF;
+END
+$$;
 
 -- 1. One live day per club and date. The plain index serves what reads every day of a club, the
 -- cancelled ones too (the days' generation, and a restart's last day made).
@@ -102,10 +114,11 @@ CREATE CONSTRAINT TRIGGER schedule_assignment_keeps_announced AFTER INSERT ON ap
   FOR EACH ROW EXECUTE FUNCTION app.schedule_assignment_keeps_announced();
 
 -- At commit, for a day written into a week after the club's first days applied, as 0012's guard is for
--- the first days' own week: it is a day its star had in the week before, as it was (FQ125, FQ126), or
--- that star's confirmation in the club's pick, of a day they hold, in the week the confirmation wrote
--- at its own instant (FQ127, FQ130). Nobody already in the week moves, and nobody gains a day they
--- didn't confirm. Which days a week must keep is schedule_version_keeps_members's, below.
+-- the first days' own week: it is a day its star, still in the club, had in the week before, as it was
+-- (FQ125, FQ126), or that star's confirmation in the club's pick, of a day they hold, in the week the
+-- confirmation wrote at its own instant (FQ127, FQ130). Nobody already in the week moves, nobody gains a
+-- day they didn't confirm, and a member who left is never copied into a later week, whose weekday is
+-- free (FQ129). Which days a week must keep is schedule_version_keeps_members's, below.
 CREATE FUNCTION app.schedule_assignment_follows_week() RETURNS trigger
   LANGUAGE plpgsql SET search_path = '' AS $$
 DECLARE
@@ -123,6 +136,7 @@ BEGIN
    WHERE club_id = NEW.club_id AND effective_from < starts
    ORDER BY effective_from DESC LIMIT 1;
   IF EXISTS (SELECT FROM app.schedule_assignments a
+               JOIN app.memberships ms ON ms.interval_id = a.star_interval_id AND ms.state = 'active'
               WHERE a.schedule_version_id = before AND a.weekday = NEW.weekday
                 AND a.star_interval_id = NEW.star_interval_id AND a.first_date = NEW.first_date
                 AND a.confirmed_at = NEW.confirmed_at)
@@ -137,7 +151,7 @@ BEGIN
                                 WHERE v.id = NEW.schedule_version_id AND v.created_at = NEW.confirmed_at)) THEN
     RETURN NULL;
   END IF;
-  RAISE EXCEPTION 'app.schedule_assignments: % for % is neither a day its member had in the week before, as it was, nor their confirmation (FQ126, T6)',
+  RAISE EXCEPTION 'app.schedule_assignments: % for % is neither a day its member, still in the club, had in the week before, as it was, nor their confirmation (FQ126, T6)',
     NEW.weekday, NEW.star_interval_id
     USING ERRCODE = 'integrity_constraint_violation';
 END
@@ -457,7 +471,9 @@ $$;
 -- 4. A cancelled day takes nothing new (T9): no reservation and no drop, so a reservation made before
 -- a cancellation never commits after it. FOR SHARE waits for a cancellation in progress, and then reads
 -- its outcome; a cancellation waits in turn for an add in progress, whose drop then stays hidden with
--- its author. What was added before stays as it was.
+-- its author. What was added before stays as it was. The lock order this needs of every writer: the
+-- club's row before a day's (a cancellation's, as settle-change.ts takes them), and an add's lock on
+-- its day (T3's, B3) before it inserts a reservation or a drop, never the club's row after.
 CREATE FUNCTION app.day_not_cancelled_guard() RETURNS trigger
   LANGUAGE plpgsql SET search_path = '' AS $$
 DECLARE

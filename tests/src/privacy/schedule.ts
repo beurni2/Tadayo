@@ -961,9 +961,11 @@ export function commandExpected(
  *   still a member confirmed, it ends applied, each at its next version. One with another number ends the
  *   same way when nobody is left without a day, and otherwise is superseded naming a new one. A new pick is
  *   at version 1 in its one week, with no week of its own, for exactly the members with no day kept, each
- *   holding spec 05's number of days, each proposed and held: in the order they joined, the table's days
- *   for their place when nobody keeps them or was given them, else the first such from Monday. A member
- *   added to an open pick is given days the same way, apart from those its unconfirmed members hold.
+ *   holding spec 05's number of days, each proposed and held: in the order they joined, first the days a
+ *   member held in the pick it replaces that nobody keeps, up to that number from Monday, an earlier
+ *   joiner's where two held one, then the table's days for their place when nobody keeps them or was given
+ *   them, else the first such from Monday. A member added to an open pick is given days the same way,
+ *   apart from those its unconfirmed members hold.
  * The days a freed day cancels are the database tests' (tests/src/db/membership-change.test.ts): the world
  * here has no days.
  */
@@ -1071,11 +1073,20 @@ export function weekChangeProblems(
   const taken = new Set<Weekday>(kept.map((each) => each.weekday));
   const table = (place: number): Weekday[] =>
     (per === 2 ? [WEEK[place], WEEK[place + 3]] : [WEEK[place]]).filter((weekday) => weekday !== undefined);
-  /** The days each of `ids` holds at first, given in order, apart from `gone`, which they join. */
-  const holds = (ids: readonly string[], gone: Set<Weekday>) =>
-    new Map(
+  /** The days each of `ids` holds at first, given in order, apart from `gone`, which they join; first what `earlier` says each held. */
+  const holds = (ids: readonly string[], gone: Set<Weekday>, earlier = new Map<string, readonly Weekday[]>()) => {
+    const first = new Map(
       ids.map((interval) => {
-        const mine: Weekday[] = [];
+        const mine = WEEK.filter(
+          (weekday) => (earlier.get(interval) ?? []).includes(weekday) && !gone.has(weekday),
+        ).slice(0, per);
+        for (const weekday of mine) gone.add(weekday);
+        return [interval, mine];
+      }),
+    );
+    return new Map(
+      ids.map((interval) => {
+        const mine: Weekday[] = [...(first.get(interval) ?? [])];
         for (const weekday of [...table(active.indexOf(interval)), ...WEEK]) {
           if (mine.length === per) break;
           if (gone.has(weekday)) continue;
@@ -1085,8 +1096,10 @@ export function weekChangeProblems(
         return [interval, WEEK.filter((weekday) => mine.includes(weekday))];
       }),
     );
+  };
+  /** The days `interval` holds in `rows`: a day proposed and set aside is free (FQ48). */
   const daysOf = (rows: ScheduleProposalRows, interval: string) =>
-    WEEK.filter((weekday) => rows.days.some((day) => day.interval === interval && day.weekday === weekday));
+    WEEK.filter((weekday) => rows.days.some((day) => day.interval === interval && day.weekday === weekday && day.held));
   /** The pick that was open ended at its next version, `state`, naming `successor` or nothing. */
   const ended = (state: "applied" | "superseded", successor: string | null) => {
     if (was === undefined) return;
@@ -1095,7 +1108,7 @@ export function weekChangeProblems(
     if (text(rows) !== text(want)) problems.push(`the pick that was open is ${text(rows)}, not ${text(want)}`);
   };
   /** `rows` is a new pick for exactly `fresh`, as the rule gives it. */
-  const isNew = (id: string, rows: ScheduleProposalRows) => {
+  const isNew = (id: string, rows: ScheduleProposalRows, earlier = new Map<string, readonly Weekday[]>()) => {
     if (before.proposals.has(id)) problems.push("the open pick isn't a new one");
     if (rows.version !== 1 || rows.weekRevision !== 1 || rows.scheduleVersion !== null || rows.replacedBy !== null)
       problems.push("a new pick isn't at version 1, in its one week, with no week of its own");
@@ -1109,7 +1122,7 @@ export function weekChangeProblems(
       problems.push(`the pick includes ${included.join(", ")}, not the members with no day`);
     if (rows.days.some((day) => !(day.suggested && day.held)))
       problems.push("a pick's day isn't both proposed and held");
-    const due = holds(fresh, new Set(taken));
+    const due = holds(fresh, new Set(taken), earlier);
     for (const interval of fresh) {
       const want = due.get(interval) ?? [];
       const got = daysOf(rows, interval);
@@ -1144,7 +1157,7 @@ export function weekChangeProblems(
     if (now === undefined || now[0] === was[0])
       return [...problems, "the pick wasn't replaced though its days each changed"];
     ended("superseded", now[0]);
-    isNew(now[0], now[1]);
+    isNew(now[0], now[1], new Map(included.map((member) => [member.interval, daysOf(was[1], member.interval)])));
     return problems;
   }
   const joining = fresh.filter((interval) => !listed.includes(interval));

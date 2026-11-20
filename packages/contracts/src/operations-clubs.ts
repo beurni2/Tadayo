@@ -227,7 +227,8 @@ export const CLUB_OPERATIONS: Operation[] = [
       "VERSION_CONFLICT when its week " +
       "changed or it ended (`current_version`); NOT_ALLOWED once it has ended with no successor (applied, or " +
       "superseded: `ScheduleProposal`), after the caller confirmed, for more than `days_per_member` days, " +
-      "for a day of the week in force in a membership change, or for a day another member has confirmed " +
+      "for a day of the club's latest week in a membership change, or for a day another member has " +
+      "confirmed " +
       "meanwhile, whose owner the app " +
       "reads from the schedule (FQ78). The answer is the proposal as the caller now sees it, with the same " +
       "`version` (T33).",

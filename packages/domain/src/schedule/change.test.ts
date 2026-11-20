@@ -282,6 +282,86 @@ describe("pickAfter: an open pick through joins and leaves", () => {
     });
   });
 
+  it("keeps what each member held when a new pick takes the place of theirs, as far as the new number allows (FQ125, FQ126)", () => {
+    // Maya chose only Saturday of Maya's two in a club of three, and Alex joins: one day each, and Maya's is
+    // the Saturday Maya chose, never the newcomer's; Alex gets the other free day.
+    expect(
+      pickAfter(
+        facts({ active: ["ben", "debby", "maya", "alex"], week: TWO, open: open([member("maya", ["saturday"])], 2) }),
+      ),
+    ).toEqual({
+      freed: [],
+      proposal: {
+        kind: "open",
+        replaces: true,
+        daysPerMember: 1,
+        proposed: [
+          { id: "maya", days: ["saturday"] },
+          { id: "alex", days: ["wednesday"] },
+        ],
+      },
+    });
+    // Ben leaves a club of four where Debby kept Tuesday, and Alex and Sam were picking a day each: two days
+    // each for three. Each keeps the day they held and gets one more, the table's for their place if free.
+    const debbys = week(["monday", "ben"], ["tuesday", "debby"]);
+    const three = ["debby", "alex", "sam"];
+    expect(
+      pickAfter(
+        facts({ active: three, week: debbys, open: open([member("alex", ["friday"]), member("sam", ["thursday"])]) }),
+      ),
+    ).toEqual({
+      freed: [],
+      proposal: {
+        kind: "open",
+        replaces: true,
+        daysPerMember: 2,
+        proposed: [
+          { id: "alex", days: ["monday", "friday"] },
+          { id: "sam", days: ["wednesday", "thursday"] },
+        ],
+      },
+    });
+    // Both held Saturday, a contest (FQ55): Alex, who joined first, keeps it, and Sam's two are other days.
+    expect(
+      pickAfter(
+        facts({ active: three, week: debbys, open: open([member("alex", ["saturday"]), member("sam", ["saturday"])]) }),
+      ),
+    ).toEqual({
+      freed: [],
+      proposal: {
+        kind: "open",
+        replaces: true,
+        daysPerMember: 2,
+        proposed: [
+          { id: "alex", days: ["friday", "saturday"] },
+          { id: "sam", days: ["monday", "wednesday"] },
+        ],
+      },
+    });
+    // Maya held Wednesday and Saturday, and Alex joins: one day each, so Maya keeps the first from Monday,
+    // and Saturday is free for Alex.
+    expect(
+      pickAfter(
+        facts({
+          active: ["ben", "debby", "maya", "alex"],
+          week: TWO,
+          open: open([member("maya", ["wednesday", "saturday"])], 2),
+        }),
+      ),
+    ).toEqual({
+      freed: [],
+      proposal: {
+        kind: "open",
+        replaces: true,
+        daysPerMember: 1,
+        proposed: [
+          { id: "maya", days: ["wednesday"] },
+          { id: "alex", days: ["saturday"] },
+        ],
+      },
+    });
+  });
+
   it("applies in place of a new pick when those it includes have all confirmed and the size changes", () => {
     const sams = [...FOUR, { weekday: "friday" as const, star: "sam" }];
     // Sam confirmed Friday, Nina hadn't and left, and Maya and Alex left too: three members, two days each
@@ -325,6 +405,24 @@ describe("newMemberFirstDate: the picked day in the week after (FQ130)", () => {
     expect(newMemberFirstDate("monday", friday, NEW_YORK, D("2026-11-06"), null).toString()).toBe("2026-11-09");
     // Tomorrow is a Saturday this week: the new member's first Saturday is the next one.
     expect(newMemberFirstDate("saturday", friday, NEW_YORK, D("2026-11-06"), null).toString()).toBe("2026-11-14");
+    // Confirmed on a Monday morning, this week's Thursday is three days on, well past 24 hours: the first
+    // Thursday is still next week's, never this week's.
+    const monday = at("2026-11-09T09:00");
+    expect(newMemberFirstDate("thursday", monday, NEW_YORK, D("2026-11-09"), null).toString()).toBe("2026-11-19");
+  });
+
+  it("takes this week and next from the club's own date, not UTC's (T1)", () => {
+    // Sunday 8 November at 22:00 in New York is Monday the 9th by UTC: next week starts the next day, so
+    // the first Tuesday is the 10th, not the 17th.
+    const sunday = at("2026-11-08T22:00");
+    expect(newMemberFirstDate("tuesday", sunday, NEW_YORK, D("2026-11-08"), null).toString()).toBe("2026-11-10");
+    // Monday 9 November at 08:00 in Auckland is still Sunday the 8th by UTC: this week is the club's, so
+    // the first Wednesday is the 18th, not the 11th.
+    const auckland = Temporal.PlainDateTime.from("2026-11-09T08:00").toZonedDateTime("Pacific/Auckland").toInstant();
+    expect(auckland.toString()).toBe("2026-11-08T19:00:00Z");
+    expect(newMemberFirstDate("wednesday", auckland, "Pacific/Auckland", D("2026-11-09"), null).toString()).toBe(
+      "2026-11-18",
+    );
   });
 
   it("waits a week where the week after's date is less than 24 hours on (FQ79)", () => {
@@ -342,7 +440,8 @@ describe("newMemberFirstDate: the picked day in the week after (FQ130)", () => {
   });
 
   it("comes after the last day of that weekday announced for a member still in the club", () => {
-    // Ben's Thursdays were made to 3 December before a fourth member freed them: the new member follows.
+    // A Thursday still announced for a member in the club, to 3 December, comes first: a backstop, since a
+    // freed day or a leaver's on the picked weekday is cancelled and so never counts (FQ129, FQ131).
     const tuesday = at("2026-11-10T09:00");
     expect(newMemberFirstDate("thursday", tuesday, NEW_YORK, D("2026-11-10"), D("2026-12-03")).toString()).toBe(
       "2026-12-10",
