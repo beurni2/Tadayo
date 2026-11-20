@@ -35,19 +35,27 @@ final class PlayerWebViewTests: XCTestCase {
             ProxyConfiguration(httpCONNECTProxy: .hostPort(host: "127.0.0.1", port: 9))
         ]
         PlayerWebView.load(webView, base: base)
-        try await wait("the shell makes its frame") { model.log.contains("shell: frame made") }
+        // A load's own wait is longer than the others': the first load of a test run starts
+        // WebKit's three processes, and on a slow runner that alone outran 10 seconds (`ios`
+        // run 44715668431, attempt 1, iOS 26.5: the processes took 2.7 to 3.2 seconds each to
+        // launch, the web process was reported unresponsive, and the frame came about a second
+        // after the wait ended; every later load of that run took under 5 seconds). What is
+        // checked once the frame is made is unchanged.
+        try await wait("the shell makes its frame", seconds: 60) {
+            model.log.contains("shell: frame made")
+        }
         return (webView, coordinator)
     }
 
     private func wait(
-        _ what: String, file: StaticString = #filePath, line: UInt = #line,
+        _ what: String, seconds: Int = 10, file: StaticString = #filePath, line: UInt = #line,
         until met: () -> Bool
     ) async throws {
-        for _ in 0..<200 {
+        for _ in 0..<(seconds * 20) {
             if met() { return }
             try await Task.sleep(for: .milliseconds(50))
         }
-        XCTFail("waited 10 seconds for: \(what)", file: file, line: line)
+        XCTFail("waited \(seconds) seconds for: \(what)", file: file, line: line)
     }
 
     private func post(_ body: String, to webView: WKWebView) async throws {
