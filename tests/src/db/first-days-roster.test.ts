@@ -150,6 +150,7 @@ async function confirmOwn(tx: WorldTx, c: Club, name: string): Promise<ProposalA
 
 interface ProposalRow {
   id: string;
+  reason: string;
   state: string;
   version: number;
   week_revision: number;
@@ -162,7 +163,7 @@ interface ProposalRow {
 /** The club's proposals, the earliest first. */
 const proposals = (tx: WorldTx, c: Club): Promise<ProposalRow[]> =>
   tx<ProposalRow[]>`
-    SELECT id, state, version, week_revision, days_per_member, replaced_by, schedule_version_id, closed_at
+    SELECT id, reason, state, version, week_revision, days_per_member, replaced_by, schedule_version_id, closed_at
       FROM app.schedule_proposals WHERE club_id = ${c.club} ORDER BY created_at, id`;
 
 const includedIn = async (tx: WorldTx, proposal: string): Promise<string[]> =>
@@ -399,9 +400,15 @@ describe("a leave before any day is confirmed (FQ102)", () => {
       expect((await proposalOf(tx, c, "Sam")).myDays).toEqual(["tuesday", "friday"]);
       await confirmOwn(tx, c, "Maya");
       expect(await confirmOwn(tx, c, "Sam")).toMatchObject({ state: "applied", version: 2 });
-      // A third first days is never opened over an applied one.
+      // A third first days is never opened over an applied one: the week for the three is a membership
+      // change (tests/src/db/membership-change.test.ts).
       await join(tx, c, "Debby", "Maya");
-      expect(await proposals(tx, c)).toHaveLength(2);
+      const after = await proposals(tx, c);
+      expect(after.map((each) => [each.reason, each.state])).toEqual([
+        ["activation", "superseded"],
+        ["activation", "applied"],
+        ["membership_change", "open"],
+      ]);
     });
   });
 });
@@ -429,7 +436,10 @@ describe("a leave once a day is confirmed (FQ102)", () => {
       expect(await proposals(tx, c)).toMatchObject([{ state: "applied", version: 2 }]);
       // The join that follows opens no first days: the week for the two is a membership change.
       await join(tx, c, "Sam", "Ben");
-      expect(await proposals(tx, c)).toHaveLength(1);
+      expect((await proposals(tx, c)).map((each) => [each.reason, each.state])).toEqual([
+        ["activation", "applied"],
+        ["membership_change", "open"],
+      ]);
     });
   });
 
@@ -569,6 +579,46 @@ describe("a leave once a day is confirmed (FQ102)", () => {
         SELECT effective_from::text AS effective_from FROM app.schedule_versions
          WHERE club_id = ${c.club} ORDER BY effective_from`;
       expect(versions).toEqual([{ effective_from: "2026-11-11" }, { effective_from: "2026-12-21" }]);
+    });
+  });
+
+  it("uses a restarted club's own week again when nobody confirmed in it and the club restarts a second time", async () => {
+    await rolledBack(db, async (tx) => {
+      const c = await started(tx);
+      // The first restart, with a week of its own: Ben confirmed in the first week and left (FQ124).
+      await confirmOwn(tx, c, "Ben");
+      await leaving(tx, c, "Ben");
+      await join(tx, c, "Sam", "Maya");
+      const second = await proposalOf(tx, c, "Maya");
+      expect(second.effectiveFrom).toBe("2026-11-12");
+      // Nobody confirms in it, and Sam leaves: the club is paused, its second first days ended.
+      tick(1);
+      await leaving(tx, c, "Sam");
+      expect((await sight(tx, c, "Maya"))?.proposal).toBeNull();
+      // The second restart, a day later: no day was confirmed in the club's latest week, so it is used again.
+      tick(24);
+      await join(tx, c, "Alex", "Maya");
+      const all = await proposals(tx, c);
+      expect(all.map((each) => [each.reason, each.state, each.replaced_by])).toEqual([
+        ["activation", "superseded", null],
+        ["activation", "superseded", null],
+        ["activation", "open", null],
+      ]);
+      expect(all[1]?.id).toBe(second.id);
+      expect(all[2]?.schedule_version_id).toBe(all[1]?.schedule_version_id);
+      expect(all[2]?.schedule_version_id).not.toBe(all[0]?.schedule_version_id);
+      expect(await tx`SELECT FROM app.schedule_versions WHERE club_id = ${c.club}`).toHaveLength(2);
+      const third = await proposalOf(tx, c, "Maya");
+      expect(third).toMatchObject({ effectiveFrom: "2026-11-12", version: 1, myDays: ["monday", "thursday"] });
+      expect(third.slots.filter((each) => each.state === "taken")).toEqual([]);
+      expect(await includedIn(tx, third.id)).toEqual([c.member["Alex"], c.member["Maya"]].sort());
+      // The days confirmed in it join that week, and apply it.
+      const maya = await confirmOwn(tx, c, "Maya");
+      expect(slot(maya, "monday")).toMatchObject({ state: "yours", firstDate: "2026-11-16" });
+      expect(await confirmOwn(tx, c, "Alex")).toMatchObject({ state: "applied" });
+      expect(
+        await tx`SELECT FROM app.schedule_assignments WHERE schedule_version_id = ${all[2]?.schedule_version_id ?? ""}`,
+      ).toHaveLength(4);
     });
   });
 

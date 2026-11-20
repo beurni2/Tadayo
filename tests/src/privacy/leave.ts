@@ -269,9 +269,14 @@ export function firstDaysProblems(
     [...world.proposals].filter(([, proposal]) => proposal.club === club).sort(([a], [b]) => (a < b ? -1 : 1));
   const open = of(before).find(([, proposal]) => proposal.state === "open" && proposal.reason === "activation");
   if (open === undefined) {
-    return of(after).map(whole).join("\n") === of(before).map(whole).join("\n")
-      ? []
-      : ["a leave changed the club's proposals though no first days were open"];
+    // A membership change is another judge's (./schedule.ts `weekChangeProblems`): a leave proposes,
+    // replaces or ends one in a club whose first days have applied.
+    const first = (world: ScheduleWorld) =>
+      of(world)
+        .filter(([, proposal]) => proposal.reason === "activation")
+        .map(whole)
+        .join("\n");
+    return first(after) === first(before) ? [] : ["a leave changed the club's first days though none were open"];
   }
   const [id, was] = open;
   const now = after.proposals.get(id);

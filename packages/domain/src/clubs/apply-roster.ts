@@ -37,6 +37,7 @@ import type { QuerySql } from "../authorization/read-sql.ts";
 import { newId } from "../ids.ts";
 import { Refused } from "../refused.ts";
 import { openFirstDays } from "../schedule/open.ts";
+import { settleChange } from "../schedule/settle-change.ts";
 import { settleFirstDays } from "../schedule/settle.ts";
 import type { ClockSql, ServerNow } from "../time/clock.ts";
 import { CLUB_SIZE } from "./club.ts";
@@ -244,8 +245,12 @@ export async function applyIfReady(
      WHERE id = ${clubId}`;
   // The first days are dated by the command's own sample, the one `activated_at` and `joined_at` hold.
   if (started) await openFirstDays(tx, { sample: () => Promise.resolve(at) }, clubId);
-  // A club that had started: what the people who joined do to its first days (FQ55, FQ100, FQ102).
-  else await settleFirstDays(tx, at, clubId);
+  // A club that had started: what the people who joined do to its first days (FQ55, FQ100, FQ102), and,
+  // once those have applied, to its week: a membership change (FQ56, FQ125).
+  else {
+    await settleFirstDays(tx, at, clubId);
+    await settleChange(tx, at, clubId);
+  }
 
   // 5. The candidates who hadn't accepted go on, in a new revision (FQ120).
   const left = candidates.filter((candidate) => candidate.open && !standing(candidate) && !gone(candidate));

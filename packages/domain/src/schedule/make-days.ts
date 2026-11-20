@@ -11,8 +11,9 @@
 // 2. The clock, sampled after the lock (T1; T3's order): a run that waited for the lock dates its days
 //    from the time it got it.
 // 3. The club's facts, in one statement: its zone, whether it has started or is suspended, its active
-//    members, every version with its days and whether each star is still a member, and the dates from
-//    the club's today on that already have a day.
+//    members, every version with its days and whether each star is still a member, the dates from
+//    the club's today on that already have a day, and the start of an open membership change, from
+//    which no day is made (FQ127: the change still has a start it can take).
 // 4. One row for each day the rule owes, `collecting_from` the sample (spec 06: collecting begins when
 //    generated), `ON CONFLICT (club_id, local_date) DO NOTHING`: a retry, or a second worker, makes
 //    nothing twice (spec 34).
@@ -125,7 +126,9 @@ export async function makeDays(tx: QuerySql & ClockSql, clock: Clock, clubId: st
               FROM app.schedule_versions v WHERE v.club_id = c.id) AS versions,
            (SELECT coalesce(pg_catalog.jsonb_agg(o.local_date), '[]'::pg_catalog.jsonb)
               FROM app.occurrences o
-             WHERE o.club_id = c.id AND o.local_date >= ${today}::pg_catalog.date) AS made
+             WHERE o.club_id = c.id AND o.local_date >= ${today}::pg_catalog.date) AS made,
+           (SELECT p.effective_from::pg_catalog.text FROM app.schedule_proposals p
+             WHERE p.club_id = c.id AND p.state = 'open' AND p.reason = 'membership_change') AS change_from
       FROM app.clubs c WHERE c.id = ${clubId}`;
   if (row === undefined) throw shape();
   const members = row["active_members"];
@@ -137,6 +140,7 @@ export async function makeDays(tx: QuerySql & ClockSql, clock: Clock, clubId: st
     activeMembers: members,
     versions: list(row["versions"]).map(versionOf),
     made: new Set(list(row["made"]).map(date)),
+    changeFrom: row["change_from"] === null ? null : date(row["change_from"]),
   };
 
   // 4. The days.

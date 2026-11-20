@@ -6,6 +6,8 @@
 // refused. A confirmation is of exactly the days the caller holds, `days_per_member` of them, and of none
 // that anyone else holds too, so a contested day is confirmed by nobody until all but one have chosen
 // another, and in a club of two or three a member whose one day is contested confirms neither (FQ99).
+//
+// A membership change has no choosing (FQ56): its confirmation is of the days it proposes for the caller.
 
 import { WEEKDAYS, type Weekday } from "./propose.ts";
 import { confirmerOf, holdersOf, type ProposalMember, type WeekFacts } from "./view.ts";
@@ -64,6 +66,26 @@ export function judgeConfirmation(
     if (holdersOf(facts, weekday).some((member) => member.id !== caller.id)) return "NOT_ALLOWED";
   }
   return { days };
+}
+
+/**
+ * The refusal of a membership change's confirmation, or null: the weekdays are exactly the days the change
+ * proposes for the caller, who hasn't confirmed it before (the contract's `ScheduleConfirmRequest`; FQ56).
+ */
+export function judgeChangeConfirmation(
+  callerId: string,
+  facts: WeekFacts,
+  weekdays: readonly Weekday[],
+): "NOT_ALLOWED" | null {
+  const caller = callerOf(callerId, facts);
+  const days = fromMonday(weekdays, 1);
+  if (caller.confirmed) return "NOT_ALLOWED";
+  const proposed = WEEKDAYS.filter((weekday) => caller.held.includes(weekday));
+  if (proposed.length !== facts.daysPerMember) return "NOT_ALLOWED";
+  if (proposed.length !== days.length || proposed.some((weekday, index) => weekday !== days[index])) {
+    return "NOT_ALLOWED";
+  }
+  return null;
 }
 
 /**

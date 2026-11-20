@@ -42,6 +42,7 @@ import { completeReceipt, reserveAsMember, reserveReceipt, type ReceiptKey } fro
 import type { Json } from "../idempotency/request.ts";
 import { Refused } from "../refused.ts";
 import type { Clock, ClockSql } from "../time/clock.ts";
+import { settleChange } from "../schedule/settle-change.ts";
 import { settleFirstDays } from "../schedule/settle.ts";
 import { writeRevision } from "./apply-roster.ts";
 
@@ -210,8 +211,9 @@ export async function leaveClub(
   // 7. The club's roster version.
   await bound(tx)`UPDATE app.clubs SET roster_version = roster_version + 1 WHERE id = ${clubId}`;
 
-  // 8. The club's first days.
+  // 8. The club's first days, and, once they have applied, its week: a membership change (FQ56, FQ125).
   await settleFirstDays(tx, at, clubId);
+  await settleChange(tx, at, clubId);
 
   // 9. The answer.
   return completeReceipt(tx, receipt, render({ clubId, leftAt: at, contributions }));

@@ -21,7 +21,8 @@
 // 7. The rule, which the command passes in: NOT_ALLOWED, or the change. A proposal that has ended with no
 //    successor (applied, or superseded: the club paused, or nobody it includes still a member, FQ123) takes no change: NOT_ALLOWED.
 // 8. The answer: the proposal as the caller now sees it, read again after the change and made by the same
-//    `answerOf` the read uses, stored in the receipt and answered as the receipt keeps it.
+//    `answerOf` the read uses, stored in the receipt and answered as the receipt keeps it. A membership
+//    change's announced days are those not yet closed at step 6's sample.
 
 import { activeMember } from "../authorization/member.ts";
 import type { QuerySql } from "../authorization/read-sql.ts";
@@ -146,7 +147,7 @@ export async function scheduleCommand(
   await rule({ tx, at, week, proposal, callerId });
 
   // 8. The answer.
-  const after = (await loadWeek(tx, userId, clubId, { id: proposalId }))?.proposal ?? null;
+  const after = (await loadWeek(tx, userId, clubId, { id: proposalId }, at))?.proposal ?? null;
   if (after === null) throw new Error("schedule: the proposal vanished under its club's lock");
   return completeReceipt(tx, receipt, render(answerOf(after, callerId)));
 }

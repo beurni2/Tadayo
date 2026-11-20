@@ -15,6 +15,7 @@ import {
   Refused,
   viewFor,
   type Account,
+  type ChosenDay,
   type Clock,
   type ProposalAnswer,
   type ProposalMember,
@@ -48,7 +49,7 @@ function proposal(value: unknown): ProposalAnswer {
   return {
     id: body["id"] as string,
     version: body["version"] as number,
-    reason: body["reason"] as "activation",
+    reason: body["reason"] as ProposalAnswer["reason"],
     effectiveFrom: body["effective_from"] as string,
     daysPerMember: body["days_per_member"] as 1 | 2,
     slots: body.slots.map((slot): SlotAnswer => ({
@@ -63,6 +64,20 @@ function proposal(value: unknown): ProposalAnswer {
     myDays: body["my_days"] as Weekday[],
     myState: body["my_state"] as "choosing" | "confirmed",
     state: body["state"] as "open",
+    ...(body["announced"] === undefined ? {} : { announced: (body["announced"] as Body[]).map(announcedDay) }),
+  };
+}
+
+/** A contract example's Occurrence as the domain holds a chosen day. */
+function announcedDay(value: Body): ChosenDay {
+  return {
+    id: value["id"] as string,
+    clubId: value["club_id"] as string,
+    star: person(value["star"]),
+    localDate: value["local_date"] as string,
+    revealAt: Temporal.Instant.from(value["reveal_at"] as string),
+    closeAt: Temporal.Instant.from(value["close_at"] as string),
+    phase: value["phase"] as ChosenDay["phase"],
   };
 }
 
@@ -121,6 +136,29 @@ describe("the serializers against the contract's examples (T55)", () => {
     for (const [name, value] of scenes) {
       const body = proposalBody(proposal(value));
       expect(body, name).toEqual(value);
+      expect(ScheduleProposal.strict().safeParse(body).success, name).toBe(true);
+    }
+  });
+
+  it("makes each scene of a membership change, field for field, with the days announced until its start", () => {
+    const read = Object.entries(successExamples("getSchedule") ?? {}).filter(
+      ([, example]) => ((example.value as Body)["proposal"] as Body | undefined)?.["reason"] === "membership_change",
+    );
+    expect(read.map(([name]) => name)).toEqual(["change", "change_confirmed"]);
+    for (const [name, example] of read) {
+      const value = example.value as Body;
+      const body = scheduleBody(Temporal.Instant.from(value["server_now"] as string), sight(value));
+      expect(body, name).toEqual(value);
+      expect(Schedule.strict().safeParse(body).success, name).toBe(true);
+      expect(((value["proposal"] as Body)["announced"] as unknown[]).length, name).toBeGreaterThan(0);
+    }
+    const confirmed = Object.entries(successExamples("confirmScheduleDays") ?? {}).filter(
+      ([, example]) => (example.value as Body)["reason"] === "membership_change",
+    );
+    expect(confirmed.map(([name]) => name)).toEqual(["confirmed"]);
+    for (const [name, example] of confirmed) {
+      const body = proposalBody(proposal(example.value));
+      expect(body, name).toEqual(example.value);
       expect(ScheduleProposal.strict().safeParse(body).success, name).toBe(true);
     }
   });
