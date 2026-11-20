@@ -124,10 +124,55 @@ final class PlayerWebViewTests: XCTestCase {
 
         _ = try await webView.evaluateJavaScript(
             "window.location.href = 'snssdk1233://aweme/detail/1'; true")
-        try await wait("the scheme is stopped") { model.log.contains("page stopped: aweme") }
+        try await wait("the scheme is stopped") {
+            model.log.contains("page stopped: snssdk1233")
+        }
         XCTAssertNil(model.leaving)
         XCTAssertEqual(webView.url?.absoluteString, "about:blank")
         XCTAssertEqual(model.phase, .loading, "a stopped load is no failure")
+        withExtendedLifetime(coordinator) {}
+    }
+
+    /// The shell loads once: its own address a second time is stopped with nothing asked, and
+    /// the shell's frame is still there. Under no address that is an empty page over the
+    /// shell; under `https://tadayo.app/` it would be the real site.
+    func testTheShellsOwnAddressNeverLoadsASecondTime() async throws {
+        for base in [nil, URL(string: "https://tadayo.app/")] {
+            let model = viewer()
+            let (webView, coordinator) = try await loaded(model, base: base)
+            let address = base?.absoluteString ?? "about:blank"
+            let host = base?.host ?? "about"
+            _ = try await webView.evaluateJavaScript("window.location.href = '\(address)'; true")
+            try await wait("the second load is stopped (\(address))") {
+                model.log.contains("page stopped: \(host)")
+            }
+            XCTAssertNil(model.leaving)
+            let frames = try await webView.evaluateJavaScript(
+                "document.querySelectorAll('iframe').length")
+            XCTAssertEqual(frames as? Int, 1, "the shell is still the page (\(address))")
+            XCTAssertEqual(model.log.filter { $0 == "page allowed: \(host)" }.count, 1)
+            withExtendedLifetime(coordinator) {}
+        }
+    }
+
+    /// A frame inside the page can reach the app's handler too, the player's among them, and
+    /// its word about its own origin is worth nothing: only the page's own messages are read.
+    func testAFramesOwnWordToTheAppIsRefused() async throws {
+        let model = viewer()
+        let (webView, coordinator) = try await loaded(model)
+        let text = PlayerWebView.literal(ready)
+        _ = try await webView.evaluateJavaScript(
+            """
+            var frame = document.createElement('iframe');
+            document.body.appendChild(frame);
+            frame.contentWindow.webkit.messageHandlers.player.postMessage(
+              { origin: 'https://www.tiktok.com', data: \(text) });
+            true
+            """)
+        try await wait("the frame's word is refused") {
+            model.log.contains("message refused: frame")
+        }
+        XCTAssertEqual(model.phase, .loading)
         withExtendedLifetime(coordinator) {}
     }
 

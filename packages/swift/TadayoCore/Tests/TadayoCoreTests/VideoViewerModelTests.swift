@@ -249,13 +249,23 @@ import Testing
         viewer.decided(.stop, for: .init(url: secret, mainFrame: false))
         viewer.decided(.allow, for: .init(url: viewer.post.player, mainFrame: false))
         viewer.decided(.ask(secret), for: .init(url: secret, mainFrame: false, newWindow: true))
-        viewer.decided(.stop, for: .init(url: URL(string: "tiktok://video/1"), mainFrame: true))
+        // Another scheme's "host" is whatever the page wrote, an id here: the scheme alone is
+        // logged. A host and a scheme are cut short.
+        viewer.decided(
+            .stop, for: .init(url: URL(string: "tiktok://6718335390845095173/x"), mainFrame: true))
+        let long = String(repeating: "a", count: 400)
+        viewer.decided(
+            .stop, for: .init(url: URL(string: "https://\(long).example/"), mainFrame: false))
+        viewer.decided(.stop, for: .init(url: URL(string: "\(long)://x"), mainFrame: true))
         #expect(
             viewer.log == [
                 "load 1", "frame stopped: example.com", "frame allowed: www.tiktok.com",
-                "new window asked: example.com", "page stopped: video",
+                "new window asked: example.com", "page stopped: tiktok",
+                "frame stopped: " + String(repeating: "a", count: VideoViewerModel.hostLimit),
+                "page stopped: " + String(repeating: "a", count: VideoViewerModel.schemeLimit),
             ])
         #expect(!viewer.log.joined().contains("token"))
+        #expect(!viewer.log.joined().contains("6718335390845095173"))
         for index in 0..<(VideoViewerModel.logLimit + 10) { viewer.note("line \(index)") }
         #expect(viewer.log.count == VideoViewerModel.logLimit)
         #expect(viewer.log.last == "line \(VideoViewerModel.logLimit + 9)")

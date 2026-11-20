@@ -21,11 +21,16 @@ public struct VideoNavigation: Sendable, Equatable {
         public var mainFrame: Bool
         /// The request asks for a new window (`target="_blank"`, `window.open`).
         public var newWindow: Bool
+        /// The web view's page has already been given the shell: it loads once.
+        public var shellLoaded: Bool
 
-        public init(url: URL?, mainFrame: Bool, newWindow: Bool = false) {
+        public init(
+            url: URL?, mainFrame: Bool, newWindow: Bool = false, shellLoaded: Bool = false
+        ) {
             self.url = url
             self.mainFrame = mainFrame
             self.newWindow = newWindow
+            self.shellLoaded = shellLoaded
         }
     }
 
@@ -38,18 +43,21 @@ public struct VideoNavigation: Sendable, Equatable {
         self.post = post
     }
 
-    /// - The web view's own page is the shell and nothing else, ever. Any other top-level load,
-    ///   and any new window, is stopped; when it is an `https` address the person is asked
+    /// - The web view's own page is the shell and nothing else, ever, and the shell loads once:
+    ///   a second load of its own address (the real `https://tadayo.app/`, or an empty page
+    ///   over the shell) is stopped with nothing asked. Any other top-level load, and any new
+    ///   window, is stopped; when it is an `https` address the person is asked
     ///   before leaving, and any other scheme (an app's own, `itms-apps`, `javascript`, `data`,
     ///   `file`) is stopped with nothing asked, so no page can open another app on its own.
     /// - A frame inside the shell loads only this post's player at `https://www.tiktok.com`, or
     ///   an empty document (`about:blank`, `about:srcdoc`), which a player may make for itself.
     ///   Every other frame is stopped: another host, another TikTok page (its login), another
-    ///   post.
+    ///   post, and the same post's player with other options than the viewer gave it
+    ///   (`autoplay=0&rel=0`).
     public func decide(_ request: Request) -> Decision {
         guard let url = request.url else { return .stop }
         if request.mainFrame && !request.newWindow {
-            if url == shell { return .allow }
+            if url == shell { return request.shellLoaded ? .stop : .allow }
             return Self.leaving(to: url)
         }
         if request.newWindow { return Self.leaving(to: url) }
@@ -59,7 +67,10 @@ public struct VideoNavigation: Sendable, Equatable {
         guard let parts = URLComponents(url: url, resolvingAgainstBaseURL: false),
             parts.scheme == "https", parts.host == TikTokPost.host, parts.port == nil,
             parts.user == nil, parts.password == nil,
-            parts.percentEncodedPath == "/player/v1/\(post.id)"
+            parts.percentEncodedPath == "/player/v1/\(post.id)",
+            parts.percentEncodedQuery
+                == URLComponents(
+                    url: post.player, resolvingAgainstBaseURL: false)?.percentEncodedQuery
         else { return .stop }
         return .allow
     }

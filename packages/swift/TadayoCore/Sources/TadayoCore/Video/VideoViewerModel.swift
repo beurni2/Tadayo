@@ -48,6 +48,9 @@ import Observation
     /// and message types only, never a whole address.
     public private(set) var log: [String] = []
     public static let logLimit = 200
+    /// The longest host and scheme a log line holds (a DNS name is at most 253 characters).
+    public static let hostLimit = 253
+    public static let schemeLimit = 32
 
     public init(post: TikTokPost) {
         self.post = post
@@ -173,7 +176,14 @@ import Observation
     /// while one is asked is stopped.
     public func decided(_ decision: VideoNavigation.Decision, for request: VideoNavigation.Request)
     {
-        let host = request.url?.host ?? request.url?.scheme ?? "nothing"
+        // A host only for `https`, where it names a web site; for any other scheme the "host"
+        // is whatever the page wrote there, so the scheme alone is logged. Both are cut short.
+        let host: String =
+            if let url = request.url, url.scheme == "https", let host = url.host {
+                String(host.prefix(Self.hostLimit))
+            } else {
+                String((request.url?.scheme ?? "nothing").prefix(Self.schemeLimit))
+            }
         let frame = request.newWindow ? "new window" : request.mainFrame ? "page" : "frame"
         switch decision {
         case .allow:

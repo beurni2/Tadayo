@@ -47,11 +47,13 @@ The documentation's sample posts to the frame with the target `'*'`; the shell p
 
 ## 4. Tests
 
-On Linux (`swift test --package-path packages/swift/TadayoCore`), written from the rules before the code they test: `TikTokPostTests` (3 tests, 23 refused links), `PlayerMessageTests` (8: each documented message; the deprecated `onError` read apart; the origin, 10 others refused; the shape; the type; the value; the length), `VideoNavigationTests` (7: the page is the shell alone; `https` asked; other schemes stopped; no new window; the player's frame and an empty one allowed; 18 other frames stopped), `VideoViewerModelTests` (13: nothing before the tap; the loading shell's end; another origin's message changes nothing; a refused message from the player's origin ends the loading shell, 4 shapes; the deprecated error waits for the player's own; each failure; the autoplay error; Retry; Close; one question; the log holds hosts only).
+On Linux (`swift test --package-path packages/swift/TadayoCore`), written from the rules before the code they test: `TikTokPostTests` (3 tests, 23 refused links), `PlayerMessageTests` (8: each documented message; the deprecated `onError` read apart; the origin, 10 others refused; the shape; the type; the value; the length), `VideoNavigationTests` (8: the page is the shell alone; the shell loads once, under each address; `https` asked; other schemes stopped; no new window; the player's frame with the viewer's own options and an empty one allowed; 25 other frames stopped, the player with other options among them), `VideoViewerModelTests` (13: nothing before the tap; the loading shell's end; another origin's message changes nothing; a refused message from the player's origin ends the loading shell, 4 shapes; the deprecated error waits for the player's own; each failure; the autoplay error; Retry; Close; one question; the log holds hosts only).
 
 Hosted, on both iOS versions each `ios` run tests (`apps/ios/TadayoTests/PlayerWebViewTests.swift`), with every web view's data store given a proxy at a closed local port, so nothing reaches TikTok: the store isn't persistent, holds no cookie when the app's own storage holds one for `www.tiktok.com`, and is a new one for each web view; the settings above; the shell makes one frame with the post's player; it loads under `https://tadayo.app/` with that origin; a script's navigation of the page is stopped and asked about, another app's scheme is stopped with nothing asked, and neither changes the page or fails the viewer; the bridge moves the viewer only on a player's message; the shell ignores a message that isn't its frame's; `release` leaves an empty page with no handler.
 
-Not tested on CI, and why: a message arriving from inside a frame (`message.frameInfo.isMainFrame`), because a test can't load a frame with a script while nothing reaches the network; a new window (`target="_blank"`), because a script can't open one without the person's tap. Both are in the device steps.
+Added with the review (section 9): the shell's own address never loads a second time, under either address; a frame's own word to the app's handler is refused (an empty frame the test makes in the page, which needs no network).
+
+Not tested on CI, and why: a new window (`target="_blank"`, `window.open`), because a script can't open one without the person's tap. It is in the device steps.
 
 No snapshot: the Lab screen is a workbench whose content is the live player.
 
@@ -72,12 +74,14 @@ What the probe can't say: whether the video plays with sound on an iPhone, what 
 
 ## 6. The founder's device steps
 
-They go to the founder with the TestFlight build made from this branch by `ios-release` (an upload, so on the founder's yes), once the probe has shown which shell address to try first. In outline: TikTok signed out, and once with the TikTok app absent; Lab, Video (S3), Load video; the player appears and plays on a tap, with sound; Close; the app to the background while it plays, and back (paused); Open original; a tap on TikTok's own links inside the player (the question before leaving; Stay; Open); a deleted post's link and a private one; aeroplane mode; Copy log after each, pasted into the thread.
+They go to the founder with the TestFlight build made from this branch by `ios-release` (an upload, so on the founder's yes). Written out in full: `docs/plans/ios-b0-spike-video-device-steps.md`. In outline: TikTok signed out, and once with the TikTok app absent; Lab, Video (S3), Load video; the player appears and plays on a tap, with sound; Close; the app to the background while it plays, and back (paused); Open original; a tap on TikTok's own links inside the player (the question before leaving; Stay; Open); a deleted post's link and a private one; aeroplane mode; Copy log after each, pasted into the thread.
 
 ## 7. What stays open after this branch
 
 - **The hosts the player loads from.** The navigation delegate sees frames, not the scripts, pictures and video a frame loads. T39's "allowlisted hosts" holds for frames here. Limiting the rest needs a content rule list made from the hosts the probe finds; whether TikTok's hosts are stable enough for that is for the spike's report.
 - **A login or consent wall** inside the frame can't be read by the app (nothing is read from the frame). The spike records what a signed-out person is shown and which navigations it brings.
+- **What "ready" means.** Since any message from TikTok's origin ends the loading shell, a login or consent wall, or an error page that posts something and no `onPlayerError`, shows as ready, and the timeout no longer catches it. The device steps ask what is on the screen; B7 decides with that.
+- **The question can come back.** After Stay, another tap inside the player can raise "Leave Tadayo?" again (WebKit asks for a tap in the frame before a frame may move the page). The device step that taps Stay and then Open needs that; B7 limits it if the device shows it abused.
 - **The spike's report**, `docs/spikes/S3-video.md`, with the measured times, after the founder's steps.
 
 ## 8. Decisions in this branch
@@ -89,4 +93,26 @@ They go to the founder with the TestFlight build made from this branch by `ios-r
 - Any message from `https://www.tiktok.com` ends the loading shell, not `onPlayerReady` alone, since the simulator's player never sent it (section 5). The timeout still covers a frame that never answers.
 - The deprecated `onError` decides nothing; `onPlayerError` does.
 - No address for the shell first; `https://tadayo.app/` stays in the Lab as the other choice.
+- The player's frame loads with the viewer's own options only (`autoplay=0&rel=0`); the same post with others is stopped.
 - No new FQ or ADR.
+
+## 9. The review
+
+One fresh reviewer of the whole branch at commit B, at the depth the video viewer asks for (privacy and security). No must-fix: no way found for the frame or a crafted link to reach the app's credentials, to make an address that isn't TikTok's, to inject through the user script, or to forge an origin.
+
+Fixed in commit C:
+
+1. The shell's own address could load again (the real `https://tadayo.app/` in the viewer's page, or an empty page over the shell): the shell loads once (`VideoNavigation.Request.shellLoaded`; a Linux test and a hosted one, under both addresses).
+2. The log could hold more than hosts (another scheme's "host" is the page's own text, an id for instance): a host is logged for `https` alone, the scheme otherwise, both cut short.
+3. The guard on a frame's own word to the app had no test: `testAFramesOwnWordToTheAppIsRefused`.
+4. A script's `window.open` may reach `createWebViewWith` without `decidePolicyFor`: the request is decided there too, so the person is asked either way.
+5. Pause relied on TikTok's page obeying a message: the web view's media is paused too (`pauseAllMediaPlayback`), on pause and on release.
+- Notes taken: the shell's policy gains `base-uri 'none'; form-action 'none'`; the player's frame is held to the viewer's options; the camera, the microphone and motion are refused in the web view's delegate.
+
+Answered, not changed:
+
+6. The question can be raised again after Stay: section 7, for B7.
+- A script hash in place of `'unsafe-inline'`: nothing reaches the shell's markup, and a hash must be remade by hand at each edit of the shell; for B7 if the shell stays.
+- `JSON.stringify` runs on a whole message before the cut: the cost stays in the web view's own process.
+- Link forms whose reading differs between Linux and iOS (a percent-encoded or full-width host, an empty port): each can at worst be read as the same TikTok post, since both addresses are rebuilt from constants and the id's digits; `TikTokPostTests` runs on Linux only, so pinning them there would say nothing of iOS.
+- The cookie assertion in `testTheWebViewSharesNothing…` is nearly trivial with nothing reaching the network: the store's `isPersistent == false` and the new store for each web view carry that test, and the probe read no cookie after the real player loaded.

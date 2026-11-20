@@ -89,6 +89,7 @@ struct PlayerWebView: UIViewRepresentable {
     /// and navigation, then released").
     @MainActor static func release(_ webView: WKWebView) {
         webView.evaluateJavaScript(PlayerHandle.pause, completionHandler: nil)
+        webView.pauseAllMediaPlayback(completionHandler: nil)
         webView.stopLoading()
         webView.configuration.userContentController.removeScriptMessageHandler(forName: handler)
         webView.configuration.userContentController.removeAllUserScripts()
@@ -112,6 +113,8 @@ struct PlayerWebView: UIViewRepresentable {
         let model: VideoViewerModel
         let attempt: Int
         let policy: VideoNavigation
+        /// The page has been given the shell, which loads once (`VideoNavigation`).
+        private var shellLoaded = false
 
         init(model: VideoViewerModel, attempt: Int, shell: URL) {
             self.model = model
@@ -125,19 +128,45 @@ struct PlayerWebView: UIViewRepresentable {
             let request = VideoNavigation.Request(
                 url: navigationAction.request.url,
                 mainFrame: navigationAction.targetFrame?.isMainFrame ?? false,
-                newWindow: navigationAction.targetFrame == nil)
+                newWindow: navigationAction.targetFrame == nil, shellLoaded: shellLoaded)
             let decision = policy.decide(request)
             model.decided(decision, for: request)
+            if decision == .allow && request.mainFrame && !request.newWindow {
+                shellLoaded = true
+            }
             return decision == .allow ? .allow : .cancel
         }
 
-        /// A new window is never made. `decidePolicyFor` has already stopped the request and
-        /// asked the person where that applies; this is the second lock on the same door.
+        /// A new window is never made. Whether WebKit asks `decidePolicyFor` first for a
+        /// script's `window.open` isn't relied on: the request is decided here too, so the
+        /// person is asked before leaving either way (T39). The model keeps one question at a
+        /// time, so being asked twice about one window shows one.
         func webView(
             _ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration,
             for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures
         ) -> WKWebView? {
-            nil
+            let request = VideoNavigation.Request(
+                url: navigationAction.request.url, mainFrame: false, newWindow: true,
+                shellLoaded: shellLoaded)
+            model.decided(policy.decide(request), for: request)
+            return nil
+        }
+
+        /// The camera, the microphone and the device's motion are never the player's to ask
+        /// for, whatever the shell's frame allows.
+        func webView(
+            _ webView: WKWebView, requestMediaCapturePermissionFor origin: WKSecurityOrigin,
+            initiatedByFrame frame: WKFrameInfo, type: WKMediaCaptureType
+        ) async -> WKPermissionDecision {
+            .deny
+        }
+
+        func webView(
+            _ webView: WKWebView,
+            requestDeviceOrientationAndMotionPermissionFor origin: WKSecurityOrigin,
+            initiatedByFrame frame: WKFrameInfo
+        ) async -> WKPermissionDecision {
+            .deny
         }
 
         func webView(
@@ -207,7 +236,11 @@ struct PlayerWebView: UIViewRepresentable {
     /// Calls the shell's `tadayoPause`, where the shell has made it.
     static let pause = "if (typeof window.tadayoPause === 'function') { window.tadayoPause(); }"
 
+    /// Asks the player to pause, in its own words, and pauses the web view's media whatever
+    /// the page does with that: a wall or a changed player may not listen. Neither puts
+    /// anything in TikTok's frame.
     func pause() {
         webView?.evaluateJavaScript(Self.pause, completionHandler: nil)
+        webView?.pauseAllMediaPlayback(completionHandler: nil)
     }
 }
