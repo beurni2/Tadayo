@@ -1,12 +1,12 @@
 # ios/b0-ci-runtime-import/e2fac57/ios-full
 
-The `ios` workflow's evidence for `e2fac57139f1e5267ed47f03af14a8c3b6892968` (https://github.com/beurni2/Tadayo/actions/runs/44652523957).
+The `ios` workflow's evidence for `e2fac57139f1e5267ed47f03af14a8c3b6892968` (https://github.com/beurni2/Tadayo/actions/runs/44655516106).
 
 - Xcode `27.2`, Swift `6.4.2`, simulator SDK `27.2`
 - iOS `27.2` on `iPhone 17`: tests `passed`, with the snapshot tests
-- iOS `26.5` on `iPhone 17`: tests `passed`, without the snapshot tests
+- iOS `26.5` on `iPhone 17`: tests `failed`, without the snapshot tests
 - References: iOS `27.2` (the ios-version file)
-- Tests: `passed`
+- Tests: `failed`
 - Odd draws: none in `logs/test-27.2.log`
 - Carries every snapshot (a run by hand, for a gate); 0 snapshot(s) not carried
 
