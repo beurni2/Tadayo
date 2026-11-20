@@ -285,9 +285,28 @@ describe("the site in public/", () => {
     }
   });
 
-  it("claims no app and no path yet: the slice that adds the invitation page adds them, with its team ID", () => {
+  it("claims one app, Tadayo's, for one path, an invitation link's /i, so no other page of tadayo.app opens the app", () => {
     const text = readFileSync(join(SOURCE, ASSOCIATION), "utf8");
-    expect(JSON.parse(text)).toEqual({ applinks: { details: [] } });
+    expect(checkAssociation(text)).toEqual([]);
+    expect(JSON.parse(text)).toEqual({
+      applinks: {
+        details: [
+          { appIDs: ["62N556GMFP.app.tadayo"], components: [{ "/": "/i", comment: expect.any(String) as unknown }] },
+        ],
+      },
+    });
+  });
+
+  it("claims the path of the invitation link the contract gives, with the token in its fragment, never in its path", () => {
+    // The contract's example of createInvitation's link (InvitationLink.url), as the server makes it.
+    const contract = readFileSync(join(SOURCE, "..", "..", "..", "packages", "contracts", "openapi.yaml"), "utf8");
+    const links = [...contract.matchAll(/url: (https:\/\/tadayo\.app\/\S*)/g)].map((match) => new URL(match[1] ?? ""));
+    expect(links.length).toBeGreaterThan(0);
+    for (const link of links) {
+      expect(link.pathname).toBe("/i");
+      expect(link.search).toBe("");
+      expect(link.hash.length).toBeGreaterThan(1);
+    }
   });
 
   it("makes no request, and carries no script, so a page of it can't send anything anywhere", () => {
