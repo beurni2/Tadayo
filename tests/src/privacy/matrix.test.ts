@@ -2361,7 +2361,11 @@ describe("a new member's pick through the app (spec 05; T9, T14, T19, T33; FQ125
     // Ben, Alex and Sam hold all six days. Omar joins: no day is free for a fourth, so each keeps their first
     // day from Monday (Ben's Monday, Alex's Tuesday, Sam's Friday), and the others leave the week from next
     // week, their days then cancelled (the founder's answer on three to four members, FQ131). Ben's Thursdays
-    // were made at the start, four weeks ahead.
+    // were made at the start, four weeks ahead. Omar joins a minute after the others' confirmations, so after
+    // Sam by the clock, not by their ids: the fourth to join is the fourth in spec 05's table, whose day is
+    // Thursday, one of the three freed.
+    now = now.add({ minutes: 1 });
+    clock.set(now);
     const beforeOmar = schedule;
     await db.begin(async (tx) => {
       await joinAs(tx, clock, c, omar, ben, omarsAccount);
