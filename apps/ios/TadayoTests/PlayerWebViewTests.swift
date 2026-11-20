@@ -155,6 +155,20 @@ final class PlayerWebViewTests: XCTestCase {
         }
     }
 
+    /// WebKit asks these two of the web view's delegate only if it answers to them, and a
+    /// method whose Swift name is a little off compiles and never does. Both refuse.
+    func testTheDelegateAnswersWebKitsTwoPermissionQuestions() {
+        let model = viewer()
+        let coordinator = PlayerWebView.Coordinator(
+            model: model, attempt: model.attempt, shell: PlayerWebView.shell(base: nil))
+        for name in [
+            "webView:requestMediaCapturePermissionForOrigin:initiatedByFrame:type:decisionHandler:",
+            "webView:requestDeviceOrientationAndMotionPermissionForOrigin:initiatedByFrame:decisionHandler:",
+        ] {
+            XCTAssertTrue(coordinator.responds(to: NSSelectorFromString(name)), name)
+        }
+    }
+
     /// A frame inside the page can reach the app's handler too, the player's among them, and
     /// its word about its own origin is worth nothing: only the page's own messages are read.
     func testAFramesOwnWordToTheAppIsRefused() async throws {

@@ -74,7 +74,7 @@ What the probe can't say: whether the video plays with sound on an iPhone, what 
 
 ## 6. The founder's device steps
 
-They go to the founder with the TestFlight build made from this branch by `ios-release` (an upload, so on the founder's yes). Written out in full: `docs/plans/ios-b0-spike-video-device-steps.md`. In outline: TikTok signed out, and once with the TikTok app absent; Lab, Video (S3), Load video; the player appears and plays on a tap, with sound; Close; the app to the background while it plays, and back (paused); Open original; a tap on TikTok's own links inside the player (the question before leaving; Stay; Open); a deleted post's link and a private one; aeroplane mode; Copy log after each, pasted into the thread.
+They go to the founder with the TestFlight build made from this branch by `ios-release` (an upload, so on the founder's yes). Written out in full: `docs/plans/ios-b0-spike-video-device-steps.md`. In outline: the player appears and plays on a tap, with sound; Close; the app to the background while it plays, and back (paused); Open original; a tap on TikTok's own links inside the player (the question before leaving; Stay; Open); a post that doesn't exist; aeroplane mode; the other shell address; once with the TikTok app absent; Copy log after each, pasted into the thread. A private post and a signed-out TikTok aren't in the steps: the founder has no private post to hand, and the web view shares nothing with a signed-in TikTok, so it is always signed out.
 
 ## 7. What stays open after this branch
 
@@ -107,6 +107,8 @@ Fixed in commit C:
 3. The guard on a frame's own word to the app had no test: `testAFramesOwnWordToTheAppIsRefused`.
 4. A script's `window.open` may reach `createWebViewWith` without `decidePolicyFor`: the request is decided there too, so the person is asked either way.
 5. Pause relied on TikTok's page obeying a message: the web view's media is paused too (`pauseAllMediaPlayback`), on pause and on release.
+Round 2, one fresh reviewer of commit C's diff, found one must-fix, fixed in commit D: the refusal of the camera and microphone was misnamed (WebKit's async name is `decideMediaCapturePermissionsFor`), so it compiled and would never have been called; `testTheDelegateAnswersWebKitsTwoPermissionQuestions` now holds both refusals to their selectors. Its should-fixes: two device steps named Copy log before Close (corrected, and the steps say where Copy log is); the wait with no connection (the step says about 20 seconds, since a frame's failed load isn't reported to the web view's delegate, so "No connection." may never show: for B7); and the frame's exact options, untested against the real player after the pin: the probe's log, read again, has one frame load of `www.tiktok.com` for each viewing, and the frames inside it name the player's address with `?autoplay=0&rel=0` as their referrer, so the player kept the viewer's options and made no second load. Its note for B7: `setAllMediaPlaybackSuspended` holds media stopped where `pauseAllMediaPlayback` pauses once.
+
 - Notes taken: the shell's policy gains `base-uri 'none'; form-action 'none'`; the player's frame is held to the viewer's options; the camera, the microphone and motion are refused in the web view's delegate.
 
 Answered, not changed:

@@ -153,10 +153,13 @@ struct PlayerWebView: UIViewRepresentable {
         }
 
         /// The camera, the microphone and the device's motion are never the player's to ask
-        /// for, whatever the shell's frame allows.
+        /// for, whatever the shell's frame allows. The first method's name is WebKit's own
+        /// for the async form (`WKUIDelegate.h`: `decideMediaCapturePermissionsFor`); a hosted
+        /// test holds both to their selectors, since a misnamed one compiles and is never
+        /// called.
         func webView(
-            _ webView: WKWebView, requestMediaCapturePermissionFor origin: WKSecurityOrigin,
-            initiatedByFrame frame: WKFrameInfo, type: WKMediaCaptureType
+            _ webView: WKWebView, decideMediaCapturePermissionsFor origin: WKSecurityOrigin,
+            initiatedBy frame: WKFrameInfo, type: WKMediaCaptureType
         ) async -> WKPermissionDecision {
             .deny
         }
