@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/decide.test.ts (23 tests | 1 failed) 27ms
+   ❯ a membership change's confirmation (the contract's ScheduleConfirmRequest; FQ56, FQ81) (5)
+     × refuses any other days: another member's, one of each, too few 8ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  1 failed | 156 passed (157)
+   Start at  11:07:15
+   Duration  1.79s (tests 88%, import 9%, worker 2%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/decide.test.ts > a membership change's confirmation (the contract's ScheduleConfirmRequest; FQ56, FQ81) > refuses any other days: another member's, one of each, too few
+AssertionError: expected null to be 'NOT_ALLOWED' // Object.is equality
+
+- Expected:
+"NOT_ALLOWED"
+
++ Received:
+null
+
+ ❯ src/schedule/decide.test.ts:199:75
+    197|
+    198|   it("refuses any other days: another member's, one of each, too few",…
+    199|     expect(judgeChangeConfirmation("ben", CHANGE, ["tuesday", "friday"…
+       |                                                                           ^
+    200|     expect(judgeChangeConfirmation("ben", CHANGE, ["monday", "friday"]…
+    201|     expect(judgeChangeConfirmation("ben", CHANGE, ["monday"])).toBe("N…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

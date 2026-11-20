@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/change.ts b/packages/domain/src/schedule/change.ts
+index df446af8..f5639980 100644
+--- a/packages/domain/src/schedule/change.ts
++++ b/packages/domain/src/schedule/change.ts
+@@ -131,7 +131,7 @@ export function changeStart(
+     return replacedStart;
+   }
+   let start = windowEnd(today).add({ days: 1 });
+-  if (lastMade !== null && Temporal.PlainDate.compare(lastMade, start) >= 0) {
++  if (false) {
+     start = lastMade.add({ days: 8 - lastMade.dayOfWeek });
+   }
+   return start;

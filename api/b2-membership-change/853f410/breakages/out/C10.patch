@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/schedule/confirm-days.ts b/packages/domain/src/schedule/confirm-days.ts
+index d799587b..7ce52595 100644
+--- a/packages/domain/src/schedule/confirm-days.ts
++++ b/packages/domain/src/schedule/confirm-days.ts
+@@ -50,7 +50,6 @@ export function confirmScheduleDays(
+ ): Promise<Json> {
+   return scheduleCommand(tx, clock, "confirmScheduleDays", input, render, async ({ at, week, proposal, callerId }) => {
+     if (proposal.reason === "membership_change") {
+-      if (judgeChangeConfirmation(callerId, proposal.facts, input.weekdays) !== null) throw new Refused("NOT_ALLOWED");
+       await bound(tx)`
+           UPDATE app.schedule_proposal_members SET confirmed_at = ${at}::pg_catalog.timestamptz
+            WHERE proposal_id = ${proposal.id} AND interval_id = ${callerId}`;

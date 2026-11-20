@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/settle-change.ts b/packages/domain/src/schedule/settle-change.ts
+index be963d53..4648e533 100644
+--- a/packages/domain/src/schedule/settle-change.ts
++++ b/packages/domain/src/schedule/settle-change.ts
+@@ -127,7 +127,7 @@ export async function settleChange(tx: QuerySql, at: ServerNow, clubId: string):
+   if (change.kind === "drop") {
+     await bound(tx)`
+       UPDATE app.schedule_proposals
+-         SET state = 'superseded', closed_at = ${at}::pg_catalog.timestamptz, version = version + 1
++         SET state = 'superseded', closed_at = ${at}::pg_catalog.timestamptz
+        WHERE id = ${openId ?? ""}`;
+     return change.kind;
+   }

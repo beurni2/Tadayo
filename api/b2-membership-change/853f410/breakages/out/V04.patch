@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/schedule/decide.ts b/packages/domain/src/schedule/decide.ts
+index 99a8763e..b2ee401d 100644
+--- a/packages/domain/src/schedule/decide.ts
++++ b/packages/domain/src/schedule/decide.ts
+@@ -79,7 +79,6 @@ export function judgeChangeConfirmation(
+ ): "NOT_ALLOWED" | null {
+   const caller = callerOf(callerId, facts);
+   const days = fromMonday(weekdays, 1);
+-  if (caller.confirmed) return "NOT_ALLOWED";
+   const proposed = WEEKDAYS.filter((weekday) => caller.held.includes(weekday));
+   if (proposed.length !== facts.daysPerMember) return "NOT_ALLOWED";
+   if (proposed.length !== days.length || proposed.some((weekday, index) => weekday !== days[index])) {

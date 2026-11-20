@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/change.ts b/packages/domain/src/schedule/change.ts
+index df446af8..aa410097 100644
+--- a/packages/domain/src/schedule/change.ts
++++ b/packages/domain/src/schedule/change.ts
+@@ -126,7 +126,7 @@ export function changeStart(
+   if (
+     replacedStart !== null &&
+     Temporal.PlainDate.compare(replacedStart, today) > 0 &&
+-    (lastMade === null || Temporal.PlainDate.compare(lastMade, replacedStart) < 0)
++    true
+   ) {
+     return replacedStart;
+   }

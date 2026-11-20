@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/authorization/days.ts b/packages/domain/src/authorization/days.ts
+index c2e62a65..04447306 100644
+--- a/packages/domain/src/authorization/days.ts
++++ b/packages/domain/src/authorization/days.ts
+@@ -171,7 +171,7 @@ export function chooseDaysAhead(facts: ClubDayFacts | null, now: ServerNow): rea
+   if (!(facts.viewerAccount === "active" && facts.viewerInterval === "active" && facts.clubSuspendedAt === null))
+     return [];
+   return facts.days
+-    .filter((day) => placeable(day) && before(now, day.closeAt))
++    .filter((day) => placeable(day))
+     .sort((a, b) => Temporal.Instant.compare(a.revealAt, b.revealAt) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+     .map((day) => chosen(day, before(now, day.revealAt) ? "collecting" : "open"));
+ }

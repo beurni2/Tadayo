@@ -1,0 +1,131 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/view.test.ts (21 tests | 3 failed) 1603ms
+   ❯ a membership change's view (FQ56, FQ81; the contract's `change` scene) (5)
+     × gives the viewer their own day, and names for every other day the member it is proposed for 11ms
+     × gives no day a state that needs a choice: never taken, clash or no_reveal, and no first date 1ms
+     × leaves a free day with no name, in a week of fewer than six days 1ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  3 failed | 154 passed (157)
+   Start at  11:07:10
+   Duration  1.94s (tests 88%, import 8%, transform 3%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/view.test.ts > a membership change's view (FQ56, FQ81; the contract's `change` scene) > gives the viewer their own day, and names for every other day the member it is proposed for
+AssertionError: expected { slots: [ { …(3) }, …(5) ], …(2) } to deeply equal { slots: [ { …(3) }, …(5) ], …(2) }
+
+- Expected
++ Received
+
+@@ -8,35 +8,30 @@
+        "state": "yours",
+        "suggested": true,
+        "weekday": "monday",
+      },
+      {
+-       "heldBy": "alex",
+        "state": "available",
+        "suggested": false,
+        "weekday": "tuesday",
+      },
+      {
+-       "heldBy": "sam",
+        "state": "available",
+        "suggested": false,
+        "weekday": "wednesday",
+      },
+      {
+-       "heldBy": "nina",
+        "state": "available",
+        "suggested": false,
+        "weekday": "thursday",
+      },
+      {
+-       "heldBy": "leila",
+        "state": "available",
+        "suggested": false,
+        "weekday": "friday",
+      },
+      {
+-       "heldBy": "maya",
+        "state": "available",
+        "suggested": false,
+        "weekday": "saturday",
+      },
+    ],
+
+ ❯ src/schedule/view.test.ts:371:44
+    369|
+    370|   it("gives the viewer their own day, and names for every other day th…
+    371|     expect(changeViewFor("ben", change())).toEqual({
+       |                                            ^
+    372|       slots: [
+    373|         { weekday: "monday", state: "yours", suggested: true },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/schedule/view.test.ts > a membership change's view (FQ56, FQ81; the contract's `change` scene) > gives no day a state that needs a choice: never taken, clash or no_reveal, and no first date
+AssertionError: expected [ 'state', 'suggested', 'weekday' ] to deeply equal [ Array(4) ]
+
+- Expected
++ Received
+
+  [
+-   "heldBy",
+    "state",
+    "suggested",
+    "weekday",
+  ]
+
+ ❯ src/schedule/view.test.ts:398:42
+    396|       for (const slot of changeViewFor(viewer, change(["ben", "maya"])…
+    397|         expect(["yours", "available"]).toContain(slot.state);
+    398|         expect(Object.keys(slot).sort()).toEqual(
+       |                                          ^
+    399|           slot.state === "yours" ? ["state", "suggested", "weekday"] :…
+    400|         );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/schedule/view.test.ts > a membership change's view (FQ56, FQ81; the contract's `change` scene) > leaves a free day with no name, in a week of fewer than six days
+AssertionError: expected [ { weekday: 'monday', …(2) }, …(3) ] to deeply equal [ Array(2) ]
+
+- Expected
++ Received
+
+@@ -1,10 +1,20 @@
+  [
+    {
+      "state": "available",
+      "suggested": false,
++     "weekday": "monday",
++   },
++   {
++     "state": "available",
++     "suggested": false,
+      "weekday": "wednesday",
++   },
++   {
++     "state": "available",
++     "suggested": false,
++     "weekday": "thursday",
+    },
+    {
+      "state": "available",
+      "suggested": false,
+      "weekday": "saturday",
+
+ ❯ src/schedule/view.test.ts:417:98
+    415|     const view = changeViewFor("debby", pair);
+    416|     expect(view.myDays).toEqual(["tuesday", "friday"]);
+    417|     expect(view.slots.filter((slot) => slot.state === "available" && s…
+       |                                                                                                  ^
+    418|       { weekday: "wednesday", state: "available", suggested: false },
+    419|       { weekday: "saturday", state: "available", suggested: false },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

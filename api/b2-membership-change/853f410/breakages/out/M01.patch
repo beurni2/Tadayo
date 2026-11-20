@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0014_membership_change.sql b/db/migrations/0014_membership_change.sql
+index 672cbf88..39c0c686 100644
+--- a/db/migrations/0014_membership_change.sql
++++ b/db/migrations/0014_membership_change.sql
+@@ -42,7 +42,7 @@ BEGIN
+     RAISE EXCEPTION 'app.schedule_proposals: its state moves with its next version (T33)'
+       USING ERRCODE = 'integrity_constraint_violation';
+   END IF;
+-  IF NEW.state = 'applied' AND NEW.reason = 'membership_change' THEN
++  IF false THEN
+     RAISE EXCEPTION 'app.schedule_proposals: the membership change % applies only at its start (FQ101)', NEW.id
+       USING ERRCODE = 'integrity_constraint_violation';
+   END IF;

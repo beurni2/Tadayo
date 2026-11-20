@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/change.ts b/packages/domain/src/schedule/change.ts
+index df446af8..355c8eca 100644
+--- a/packages/domain/src/schedule/change.ts
++++ b/packages/domain/src/schedule/change.ts
+@@ -73,7 +73,7 @@ export function changeWeek(active: readonly string[], week: readonly WeekDay[]):
+     active.map((id) => [id, fromMonday(week.filter((day) => day.star === id).map((day) => day.weekday))]),
+   );
+   const most = Math.max(0, ...[...kept.values()].map((days) => days.length));
+-  if (most !== 0 && most !== per) {
++  if (false) {
+     // The table changes the days each member has: its whole week, in the order they joined.
+     return { daysPerMember: per, proposed: active.map((id, place) => ({ id, days: table[place] ?? [] })) };
+   }

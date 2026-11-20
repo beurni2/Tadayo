@@ -1,0 +1,44 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (27 tests | 2 failed) 62ms
+   ❯ changeStart: the first week after every day already made (FQ61, FQ115) (7)
+     × is the Monday after the last day made when a day was made beyond the window 18ms
+     × is always a Monday after today and after the last day made, whichever branch decides 6ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  2 failed | 155 passed (157)
+   Start at  11:06:54
+   Duration  1.78s (tests 87%, import 8%, transform 4%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > changeStart: the first week after every day already made (FQ61, FQ115) > is the Monday after the last day made when a day was made beyond the window
+AssertionError: expected '2026-12-07' to be '2026-12-14' // Object.is equality
+
+Expected: "2026-12-14"
+Received: "2026-12-07"
+
+ ❯ src/schedule/change.test.ts:241:76
+    239|
+    240|   it("is the Monday after the last day made when a day was made beyond…
+    241|     expect(changeStart(D("2026-11-06"), D("2026-12-09"), null).toStrin…
+       |                                                                            ^
+    242|     // A day made on a Saturday: the Monday two days on.
+    243|     expect(changeStart(D("2026-11-06"), D("2026-12-12"), null).toStrin…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/schedule/change.test.ts > changeStart: the first week after every day already made (FQ61, FQ115) > is always a Monday after today and after the last day made, whichever branch decides
+AssertionError: expected 0 to be greater than 0
+ ❯ src/schedule/change.test.ts:272:63
+    270|         expect(Temporal.PlainDate.compare(start, today)).toBeGreaterTh…
+    271|         if (lastMade !== null) {
+    272|           expect(Temporal.PlainDate.compare(start, lastMade)).toBeGrea…
+       |                                                               ^
+    273|           expect(start.since(lastMade).days <= 7 || start.equals(chang…
+    274|           if (!start.equals(changeStart(today, null, null))) beyond +=…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

@@ -1,0 +1,7 @@
+== R02 a new member takes the first free day, not the day of their place [unit]: CAUGHT; exit 1 ['Tests  1 failed | 156 passed (157)']
+    × gives the table's days to members none of whom has a day in the week 15ms
+== N02 the day before a change's start isn't made [unit]: CAUGHT; exit 1 ['Tests  1 failed | 156 passed (157)']
+    × makes nothing once a change's start is today or has passed, until the change ends (FQ127) 20ms
+== C13 a change is read with the first days' view [db]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × writes the member's confirmation at the clock's instant and nothing else: the same version, state and answer for everyone 87ms
+restored: ''

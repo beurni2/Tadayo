@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0014_membership_change.sql b/db/migrations/0014_membership_change.sql
+index 672cbf88..101f6dc5 100644
+--- a/db/migrations/0014_membership_change.sql
++++ b/db/migrations/0014_membership_change.sql
+@@ -165,7 +165,7 @@ BEGIN
+         USING ERRCODE = 'integrity_constraint_violation';
+     END IF;
+     IF EXISTS (SELECT FROM app.schedule_proposal_days
+-                WHERE proposal_id = NEW.proposal_id AND weekday = NEW.weekday) THEN
++                WHERE false) THEN
+       RAISE EXCEPTION 'app.schedule_proposal_days: a membership change proposes % for one member (T6)', NEW.weekday
+         USING ERRCODE = 'integrity_constraint_violation';
+     END IF;

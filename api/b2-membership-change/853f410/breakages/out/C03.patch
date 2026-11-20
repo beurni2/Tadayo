@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/schedule/confirm-days.ts b/packages/domain/src/schedule/confirm-days.ts
+index d799587b..9baec057 100644
+--- a/packages/domain/src/schedule/confirm-days.ts
++++ b/packages/domain/src/schedule/confirm-days.ts
+@@ -85,7 +85,6 @@ export function confirmScheduleDays(
+           UPDATE app.schedule_proposals
+              SET state = 'applied', closed_at = ${at}::pg_catalog.timestamptz, version = version + 1
+            WHERE id = ${proposal.id}`;
+-      await settleChange(tx, at, week.club.id);
+     }
+   });
+ }

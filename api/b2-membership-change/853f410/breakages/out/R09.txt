@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (27 tests | 1 failed) 84ms
+   ❯ changeAfter: when a change is proposed, replaced or dropped (10)
+     × proposes a change for a join, a leave, and a leaver's day still in the week 14ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  1 failed | 156 passed (157)
+   Start at  11:06:37
+   Duration  1.97s (tests 88%, import 7%, transform 3%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > changeAfter: when a change is proposed, replaced or dropped > proposes a change for a join, a leave, and a leaver's day still in the week
+AssertionError: expected { kind: 'nothing' } to match object { kind: 'propose', replaces: false }
+
+- Expected
++ Received
+
+  {
+-   "kind": "propose",
+-   "replaces": false,
++   "kind": "nothing",
+  }
+
+ ❯ src/schedule/change.test.ts:183:18
+    181|     const five = [...FOUR, { weekday: "friday" as const, star: "sam" }…
+    182|     const left = changeAfter(facts({ week: five }));
+    183|     expect(left).toMatchObject({ kind: "propose", replaces: false });
+       |                  ^
+    184|     if (left.kind !== "propose") throw new Error("unreachable");
+    185|     expect(left.proposed.flatMap((member) => member.days)).toEqual(["m…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

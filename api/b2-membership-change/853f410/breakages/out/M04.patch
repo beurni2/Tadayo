@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0014_membership_change.sql b/db/migrations/0014_membership_change.sql
+index 672cbf88..50a7c61a 100644
+--- a/db/migrations/0014_membership_change.sql
++++ b/db/migrations/0014_membership_change.sql
+@@ -95,7 +95,7 @@ BEGIN
+     RAISE EXCEPTION 'app.schedule_proposals: a membership change is proposed open, at version 1, in its one week'
+       USING ERRCODE = 'integrity_constraint_violation';
+   END IF;
+-  IF NEW.schedule_version_id IS NOT NULL THEN
++  IF false THEN
+     RAISE EXCEPTION 'app.schedule_proposals: a membership change has no week of its own until it applies (FQ101)'
+       USING ERRCODE = 'integrity_constraint_violation';
+   END IF;

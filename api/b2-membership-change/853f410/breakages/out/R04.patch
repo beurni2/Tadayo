@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/schedule/change.ts b/packages/domain/src/schedule/change.ts
+index df446af8..4b2bb3d7 100644
+--- a/packages/domain/src/schedule/change.ts
++++ b/packages/domain/src/schedule/change.ts
+@@ -85,7 +85,6 @@ export function changeWeek(active: readonly string[], week: readonly WeekDay[]):
+     for (const weekday of [...wanted, ...WEEKDAYS]) {
+       if (days.length === per) break;
+       if (taken.has(weekday)) continue;
+-      taken.add(weekday);
+       days.push(weekday);
+     }
+     if (days.length !== per) throw new Error("schedule: the week has no free day left for a member");

@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/schedule-proposals.test.ts (45 tests | 1 failed) 1336ms
+   ❯ a membership change (0014; spec 05; FQ56, FQ61, FQ81, FQ101, FQ126) (8)
+     × is proposed only once the club's first days have applied 19ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 44 passed (45)
+   Start at  11:10:03
+   Duration  2.30s (tests 90%, import 5%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-proposals.test.ts > a membership change (0014; spec 05; FQ56, FQ61, FQ81, FQ101, FQ126) > is proposed only once the club's first days have applied
+AssertionError: duplicate key value violates unique constraint "schedule_proposals_one_open": expected '23505' to be '23000' // Object.is equality
+
+Expected: "23000"
+Received: "23505"
+
+ ❯ expectRefused src/db/harness.ts:112:37
+    110|   expect(caught, `expected Postgres to refuse with ${code}`).toBeInsta…
+    111|   const error = caught as postgres.PostgresError;
+    112|   expect(error.code, error.message).toBe(code);
+       |                                     ^
+    113|   if (message) expect(error.message).toMatch(message);
+    114| }
+ ❯ src/db/schedule-proposals.test.ts:1172:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-proposals.test.ts:1169:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

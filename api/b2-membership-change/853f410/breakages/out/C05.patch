@@ -1,0 +1,14 @@
+diff --git a/packages/domain/src/schedule/settle-change.ts b/packages/domain/src/schedule/settle-change.ts
+index be963d53..927c52ed 100644
+--- a/packages/domain/src/schedule/settle-change.ts
++++ b/packages/domain/src/schedule/settle-change.ts
+@@ -140,8 +140,7 @@ export async function settleChange(tx: QuerySql, at: ServerNow, clubId: string):
+     // The open change first: a club has one open proposal. `replaced_by` is checked at commit.
+     await bound(tx)`
+       UPDATE app.schedule_proposals
+-         SET state = 'superseded', closed_at = ${at}::pg_catalog.timestamptz, version = version + 1,
+-             replaced_by = ${proposalId}
++         SET state = 'superseded', closed_at = ${at}::pg_catalog.timestamptz, version = version + 1
+        WHERE id = ${openId}`;
+   }
+   await bound(tx)`

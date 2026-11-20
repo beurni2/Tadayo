@@ -1,0 +1,54 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (27 tests | 1 failed) 73ms
+   ❯ changeAfter: when a change is proposed, replaced or dropped (10)
+     × leaves the first days to their own rule while they are open 10ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  1 failed | 156 passed (157)
+   Start at  11:06:31
+   Duration  1.81s (tests 85%, import 8%, transform 6%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > changeAfter: when a change is proposed, replaced or dropped > leaves the first days to their own rule while they are open
+AssertionError: expected { kind: 'propose', …(3) } to deeply equal { kind: 'nothing' }
+
+- Expected
++ Received
+
+  {
+-   "kind": "nothing",
++   "daysPerMember": 2,
++   "kind": "propose",
++   "proposed": [
++     {
++       "days": [
++         "monday",
++         "thursday",
++       ],
++       "id": "ben",
++     },
++     {
++       "days": [
++         "tuesday",
++         "friday",
++       ],
++       "id": "debby",
++     },
++   ],
++   "replaces": false,
+  }
+
+ ❯ src/schedule/change.test.ts:165:83
+    163| describe("changeAfter: when a change is proposed, replaced or dropped"…
+    164|   it("leaves the first days to their own rule while they are open", ()…
+    165|     expect(changeAfter(facts({ firstDaysOpen: true, active: ["ben", "d…
+       |                                                                                   ^
+    166|   });
+    167|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

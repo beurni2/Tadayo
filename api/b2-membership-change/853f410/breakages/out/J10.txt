@@ -1,0 +1,31 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/privacy/schedule.test.ts (36 tests | 1 failed) 65ms
+   ❯ what a command must get for a membership change (FQ56) (3)
+     × keeps the contract's order: not found, MEMBERSHIP_CHANGED, the version, NOT_ALLOWED 12ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 35 passed (36)
+   Start at  11:08:24
+   Duration  623ms (import 61%, tests 23%, transform 14%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/schedule.test.ts > what a command must get for a membership change (FQ56) > keeps the contract's order: not found, MEMBERSHIP_CHANGED, the version, NOT_ALLOWED
+AssertionError: expected '{"code":"VERSION_CONFLICT","current_v…' to be '{"code":"MEMBERSHIP_CHANGED","current…' // Object.is equality
+
+Expected: "{"code":"MEMBERSHIP_CHANGED","current_id":"spr_last"}"
+Received: "{"code":"VERSION_CONFLICT","current_version":2}"
+
+ ❯ src/privacy/schedule.test.ts:684:68
+    682|       ["spr_last", changeRows()],
+    683|     ]);
+    684|     expect(code(ask(twice, "confirmScheduleDays", ["monday"], 1))).toB…
+       |                                                                    ^
+    685|       '{"code":"MEMBERSHIP_CHANGED","current_id":"spr_last"}',
+    686|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

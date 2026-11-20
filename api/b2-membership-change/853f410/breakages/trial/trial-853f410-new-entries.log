@@ -1,0 +1,25 @@
+== R16 a replacement takes a new start [unit]: CAUGHT; exit 1 ['Tests  1 failed | 156 passed (157)']
+    × keeps the start of the change it replaces while that start is still ahead (FQ126, FQ127) 8ms
+== R17 a replacement keeps a start that has passed [unit]: CAUGHT; exit 1 ['Tests  1 failed | 156 passed (157)']
+    × takes a new start when the replaced change's start is today or has passed 11ms
+== R18 a replacement keeps a start a day was made on or after [unit]: CAUGHT; exit 1 ['Tests  1 failed | 156 passed (157)']
+    × takes a new start when a day was made on or after the replaced change's start 11ms
+== C11 the new member gets the announced days [db]: CAUGHT; exit 1 ['Tests  17 failed | 10 passed (27)']
+    × answers MEMBERSHIP_CHANGED to a confirmation that comes after the leave that replaced the change 215ms
+    × answers a retry under the same key with the first answer, once, and another request under it IDEMPOTENCY_CONFLICT (T19) 80ms
+    × answers a retry with the first answer after the change was replaced, and nothing once the caller has left (T19, T14) 80ms
+    × drops an open change when a leave brings the club back to its week, and its id then answers as an ended one 53ms
+    × gives a member who stays their days, each other day with the member it is proposed for, and the days announced 88ms
+    × gives the new member the same week and no announced days 81ms
+== C23 the pure rule gives the announced days to anyone [unit]: CAUGHT; exit 1 ['Tests  1 failed | 156 passed (157)']
+    × gives none to a member with no day in it: a new member, each of several, a late joiner 7ms
+== C24 a replaced id names the change that replaced it, one hop [db]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × names the club's open change to an id replaced more than once, and treats it as ended once none is open (FQ126) 151ms
+== C25 a replaced id with none open answers MEMBERSHIP_CHANGED with any open one [db]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × names the club's open change to an id replaced more than once, and treats it as ended once none is open (FQ126) 137ms
+== J10 the judge names the change that replaced it, one hop [judge]: CAUGHT; exit 1 ['Tests  1 failed | 35 passed (36)']
+    × keeps the contract's order: not found, MEMBERSHIP_CHANGED, the version, NOT_ALLOWED 12ms
+== C17 through the app: the new member gets the announced days [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 18 skipped (19)']
+    × answers each caller the change as the rows say, takes a confirmation that moves nothing, and replaces the change at a leave 326ms
+restored: ''
+done

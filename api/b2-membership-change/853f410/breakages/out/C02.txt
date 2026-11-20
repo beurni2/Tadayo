@@ -1,0 +1,372 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/membership-change.test.ts (27 tests | 10 failed) 3448ms
+   ❯ when a change is proposed (FQ56, FQ100, FQ102, FQ125) (6)
+     × proposes one when a leave applies the first days and the leaver's confirmed day is in the week (FQ102) 159ms
+     × frees a leaver's days and moves nobody, where the days each stay (three to two) 86ms
+   ❯ a change replaced, dropped, and a club paused (FQ16, FQ126, FQ127) (7)
+     × names the club's open change to an id replaced more than once, and treats it as ended once none is open (FQ126) 110ms
+     × drops an open change when a leave brings the club back to its week, and its id then answers as an ended one 82ms
+     × drops an open change when the club is paused, proposes none, and proposes one when it has two members again (FQ16, FQ116) 92ms
+   ❯ the days made while a change is open (FQ61, FQ127) (2)
+     × makes no day from the change's start on, whatever the date, and every day before it as before 91ms
+   ❯ reading a change (the contract's ScheduleProposal; FQ61, FQ81; G04-change) (4)
+     × names nobody on a day the change proposes for nobody, and leaves a leaver's made days out of the announced 106ms
+   ❯ confirmations and a leave at once, on connections of their own (4)
+     × refuses a confirmation that comes after the leave that dropped the change 184ms
+     × takes a confirmation that comes before the leave, which then drops the change 162ms
+     × answers MEMBERSHIP_CHANGED to a confirmation that comes after the leave that replaced the change 290ms
+
+ Test Files  1 failed (1)
+      Tests  10 failed | 17 passed (27)
+   Start at  11:07:24
+   Duration  4.25s (tests 90%, import 7%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 10 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/membership-change.test.ts > when a change is proposed (FQ56, FQ100, FQ102, FQ125) > proposes one when a leave applies the first days and the leaver's confirmed day is in the week (FQ102)
+AssertionError: expected undefined to match object { state: 'open', days_per_member: 2 }
+
+- Expected:
+{
+  "days_per_member": 2,
+  "state": "open",
+}
+
++ Received:
+undefined
+
+ ❯ src/db/membership-change.test.ts:249:22
+    247|       // Two members, two days each, where the week gave one: spec 05'…
+    248|       const [change] = await changes(tx, c);
+    249|       expect(change).toMatchObject({ state: "open", days_per_member: 2…
+       |                      ^
+    250|       expect(await proposedIn(tx, c, change?.id ?? "")).toEqual({
+    251|         Maya: ["monday", "thursday"],
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:234:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/10]⎯
+
+ FAIL  src/db/membership-change.test.ts > when a change is proposed (FQ56, FQ100, FQ102, FQ125) > frees a leaver's days and moves nobody, where the days each stay (three to two)
+AssertionError: expected undefined to match object { state: 'open', …(2) }
+
+- Expected:
+{
+  "days_per_member": 2,
+  "effective_from": "2026-12-14",
+  "state": "open",
+}
+
++ Received:
+undefined
+
+ ❯ src/db/membership-change.test.ts:266:22
+    264|       await leaving(tx, c, "Maya");
+    265|       const [change] = await changes(tx, c);
+    266|       expect(change).toMatchObject({ state: "open", days_per_member: 2…
+       |                      ^
+    267|       expect(await proposedIn(tx, c, change?.id ?? "")).toEqual({
+    268|         Ben: ["monday", "thursday"],
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:258:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/10]⎯
+
+ FAIL  src/db/membership-change.test.ts > a change replaced, dropped, and a club paused (FQ16, FQ126, FQ127) > names the club's open change to an id replaced more than once, and treats it as ended once none is open (FQ126)
+AssertionError: expected { …(10) } to match object { state: 'superseded', …(2) }
+(7 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "replaced_by": undefined,
+-   "state": "superseded",
+-   "version": 2,
++   "replaced_by": null,
++   "state": "open",
++   "version": 1,
+  }
+
+ ❯ src/db/membership-change.test.ts:341:22
+    339|       const [first, second, third] = await changes(tx, c);
+    340|       expect(first).toMatchObject({ id: change.id, state: "superseded"…
+    341|       expect(second).toMatchObject({ state: "superseded", version: 2, …
+       |                      ^
+    342|       expect(third).toMatchObject({ state: "open", version: 1, effecti…
+    343|       // The id two replacements back answers with the open change, ne…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:334:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/10]⎯
+
+ FAIL  src/db/membership-change.test.ts > a change replaced, dropped, and a club paused (FQ16, FQ126, FQ127) > drops an open change when a leave brings the club back to its week, and its id then answers as an ended one
+AssertionError: expected { …(10) } to match object { …(4) }
+(6 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "id": "spr_W9GZL-TkiPMyaljA4xJhYQ",
+    "replaced_by": null,
+-   "state": "superseded",
+-   "version": 2,
++   "state": "open",
++   "version": 1,
+  }
+
+ ❯ src/db/membership-change.test.ts:420:22
+    418|       const all = await changes(tx, c);
+    419|       expect(all).toHaveLength(1);
+    420|       expect(all[0]).toMatchObject({ id: change.id, state: "superseded…
+       |                      ^
+    421|       expect(String(all[0]?.closed_at)).toBe(current.toString());
+    422|       expect((await sight(tx, c, "Maya"))?.proposal).toBeNull();
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:413:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/10]⎯
+
+ FAIL  src/db/membership-change.test.ts > a change replaced, dropped, and a club paused (FQ16, FQ126, FQ127) > drops an open change when the club is paused, proposes none, and proposes one when it has two members again (FQ16, FQ116)
+AssertionError: expected 'spr_PfsgfHllt7KpptPHlNItMw' not to be 'spr_PfsgfHllt7KpptPHlNItMw' // Object.is equality
+ ❯ src/db/membership-change.test.ts:440:30
+    438|       await leaving(tx, c, "Maya");
+    439|       const second = (await changes(tx, c)).at(-1);
+    440|       expect(second?.id).not.toBe(change.id);
+       |                              ^
+    441|       // The new change is proposed from the week in force, not from t…
+    442|       // are free, and Alex, second of the two, is proposed the table'…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:435:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/10]⎯
+
+ FAIL  src/db/membership-change.test.ts > the days made while a change is open (FQ61, FQ127) > makes no day from the change's start on, whatever the date, and every day before it as before
+AssertionError: expected '2026-12-11' to be '2026-12-25' // Object.is equality
+
+Expected: "2026-12-25"
+Received: "2026-12-11"
+
+ ❯ src/db/membership-change.test.ts:500:28
+    498|       await leaving(tx, c, "Alex");
+    499|       await tx.savepoint((sp) => makeDays(sp, clock, c.club));
+    500|       expect(await last()).toBe("2026-12-25");
+       |                            ^
+    501|     });
+    502|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:480:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/10]⎯
+
+ FAIL  src/db/membership-change.test.ts > reading a change (the contract's ScheduleProposal; FQ61, FQ81; G04-change) > names nobody on a day the change proposes for nobody, and leaves a leaver's made days out of the announced
+Error: Ben sees no proposal
+ ❯ proposalOf src/db/membership-change.test.ts:81:29
+     79| async function proposalOf(tx: WorldTx, c: Club, name: string): Promise…
+     80|   const found = (await sight(tx, c, name))?.proposal ?? null;
+     81|   if (found === null) throw new Error(`${name} sees no proposal`);
+       |                             ^
+     82|   return found;
+     83| }
+ ❯ src/db/membership-change.test.ts:604:20
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:596:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/10]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirmations and a leave at once, on connections of their own > refuses a confirmation that comes after the leave that dropped the change
+AssertionError: expected { …(10) } to be 'VERSION_CONFLICT' // Object.is equality
+
+- Expected:
+"VERSION_CONFLICT"
+
++ Received:
+{
+  "announced": [],
+  "daysPerMember": 2,
+  "effectiveFrom": "2026-12-14",
+  "id": "spr_oh-xXJgHON-YwYM04ORsww",
+  "myDays": [
+    "monday",
+    "thursday",
+  ],
+  "myState": "confirmed",
+  "reason": "membership_change",
+  "slots": [
+    {
+      "state": "yours",
+      "suggested": true,
+      "weekday": "monday",
+    },
+    {
+      "heldBy": {
+        "avatarVersion": null,
+        "displayName": "Maya",
+        "membershipId": "mem_16ZeHbaojc9TP00RaqDH2A",
+      },
+      "state": "available",
+      "suggested": false,
+      "weekday": "tuesday",
+    },
+    {
+      "state": "available",
+      "suggested": false,
+      "weekday": "wednesday",
+    },
+    {
+      "state": "yours",
+      "suggested": true,
+      "weekday": "thursday",
+    },
+    {
+      "heldBy": {
+        "avatarVersion": null,
+        "displayName": "Maya",
+        "membershipId": "mem_16ZeHbaojc9TP00RaqDH2A",
+      },
+      "state": "available",
+      "suggested": false,
+      "weekday": "friday",
+    },
+    {
+      "state": "available",
+      "suggested": false,
+      "weekday": "saturday",
+    },
+  ],
+  "state": "open",
+  "version": 1,
+}
+
+ ❯ src/db/membership-change.test.ts:818:23
+    816|     }
+    817|     expect(await left).toMatchObject({ club_id: s.c.club });
+    818|     expect(await ben).toBe("VERSION_CONFLICT");
+       |                       ^
+    819|     expect(await rowOf(s.change.id)).toEqual({ state: "superseded", ve…
+    820|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/10]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirmations and a leave at once, on connections of their own > takes a confirmation that comes before the leave, which then drops the change
+AssertionError: expected { state: 'open', version: 1, …(1) } to deeply equal { state: 'superseded', …(2) }
+
+- Expected
++ Received
+
+  {
+    "confirmed": 1,
+-   "state": "superseded",
+-   "version": 2,
++   "state": "open",
++   "version": 1,
+  }
+
+ ❯ src/db/membership-change.test.ts:837:38
+    835|     expect(await ben).toMatchObject({ state: "open", version: 1, mySta…
+    836|     expect(await left).toMatchObject({ club_id: s.c.club });
+    837|     expect(await rowOf(s.change.id)).toEqual({ state: "superseded", ve…
+       |                                      ^
+    838|   });
+    839|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/10]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirmations and a leave at once, on connections of their own > answers MEMBERSHIP_CHANGED to a confirmation that comes after the leave that replaced the change
+AssertionError: expected { …(10) } to be 'MEMBERSHIP_CHANGED' // Object.is equality
+
+- Expected:
+"MEMBERSHIP_CHANGED"
+
++ Received:
+{
+  "announced": [],
+  "daysPerMember": 1,
+  "effectiveFrom": "2026-12-14",
+  "id": "spr_g-htXNetgKzj20KyzOUToA",
+  "myDays": [
+    "monday",
+  ],
+  "myState": "confirmed",
+  "reason": "membership_change",
+  "slots": [
+    {
+      "state": "yours",
+      "suggested": true,
+      "weekday": "monday",
+    },
+    {
+      "heldBy": {
+        "avatarVersion": null,
+        "displayName": "Maya",
+        "membershipId": "mem_PPfhZEJjdAKnfzIT_a4KFw",
+      },
+      "state": "available",
+      "suggested": false,
+      "weekday": "tuesday",
+    },
+    {
+      "heldBy": {
+        "avatarVersion": null,
+        "displayName": "Alex",
+        "membershipId": "mem_OgCDvZdZaXgn5Zt_WIFEww",
+      },
+      "state": "available",
+      "suggested": false,
+      "weekday": "wednesday",
+    },
+    {
+      "state": "available",
+      "suggested": false,
+      "weekday": "thursday",
+    },
+    {
+      "state": "available",
+      "suggested": false,
+      "weekday": "friday",
+    },
+    {
+      "state": "available",
+      "suggested": false,
+      "weekday": "saturday",
+    },
+  ],
+  "state": "open",
+  "version": 1,
+}
+
+ ❯ src/db/membership-change.test.ts:865:25
+    863|       }
+    864|       expect(await left).toMatchObject({ club_id: s.c.club });
+    865|       expect(await ben).toBe("MEMBERSHIP_CHANGED");
+       |                         ^
+    866|       expect(await rowOf(s.change.id)).toEqual({ state: "superseded", …
+    867|       const [next] = await db<{ id: string; state: string }[]>`
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/10]⎯
+

@@ -1,0 +1,44 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (27 tests | 1 failed) 98ms
+   ❯ changeWeek: which week a change proposes (FQ125) (10)
+     × gives two who join at once different days, in the order they joined 13ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  1 failed | 156 passed (157)
+   Start at  11:06:23
+   Duration  2.02s (tests 84%, import 9%, transform 5%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > changeWeek: which week a change proposes (FQ125) > gives two who join at once different days, in the order they joined
+AssertionError: expected [ …(2) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+@@ -5,10 +5,10 @@
+      ],
+      "id": "sam",
+    },
+    {
+      "days": [
+-       "thursday",
++       "monday",
+      ],
+      "id": "nina",
+    },
+  ]
+
+ ❯ src/schedule/change.test.ts:126:97
+    124|     // Neither place is free (Friday and Saturday are kept): the first…
+    125|     const four = week(["tuesday", "ben"], ["wednesday", "debby"], ["fr…
+    126|     expect(changeWeek(["ben", "debby", "maya", "alex", "sam", "nina"],…
+       |                                                                                                 ^
+    127|       { id: "sam", days: ["monday"] },
+    128|       { id: "nina", days: ["thursday"] },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

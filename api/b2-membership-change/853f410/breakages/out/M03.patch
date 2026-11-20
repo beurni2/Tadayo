@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0014_membership_change.sql b/db/migrations/0014_membership_change.sql
+index 672cbf88..673f75a0 100644
+--- a/db/migrations/0014_membership_change.sql
++++ b/db/migrations/0014_membership_change.sql
+@@ -91,7 +91,7 @@ $$;
+ CREATE FUNCTION app.schedule_change_start_guard() RETURNS trigger
+   LANGUAGE plpgsql SET search_path = '' AS $$
+ BEGIN
+-  IF NEW.state <> 'open' OR NEW.version <> 1 OR NEW.week_revision <> 1 OR NEW.replaced_by IS NOT NULL THEN
++  IF false THEN
+     RAISE EXCEPTION 'app.schedule_proposals: a membership change is proposed open, at version 1, in its one week'
+       USING ERRCODE = 'integrity_constraint_violation';
+   END IF;

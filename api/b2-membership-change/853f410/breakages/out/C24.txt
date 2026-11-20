@@ -1,0 +1,44 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/membership-change.test.ts (27 tests | 1 failed) 3483ms
+   ❯ a change replaced, dropped, and a club paused (FQ16, FQ126, FQ127) (7)
+     × names the club's open change to an id replaced more than once, and treats it as ended once none is open (FQ126) 114ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+   Start at  11:08:14
+   Duration  4.22s (tests 90%, import 7%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/membership-change.test.ts > a change replaced, dropped, and a club paused (FQ16, FQ126, FQ127) > names the club's open change to an id replaced more than once, and treats it as ended once none is open (FQ126)
+AssertionError: expected { code: 'MEMBERSHIP_CHANGED', …(1) } to deeply equal { code: 'MEMBERSHIP_CHANGED', …(1) }
+
+- Expected
++ Received
+
+  {
+    "code": "MEMBERSHIP_CHANGED",
+    "facts": {
+-     "current_id": "spr_u8oOyBM3AixTovnAov5IPg",
++     "current_id": "spr_TpWtchU1zbpQp2qc6jAlZg",
+    },
+  }
+
+ ❯ src/db/membership-change.test.ts:345:92
+    343|       // The id two replacements back answers with the open change, ne…
+    344|       for (const command of [confirm, choose]) {
+    345|         expect(await refusal(command(tx, c, "Ben", change.id, 1, ["mon…
+       |                                                                                            ^
+    346|           code: "MEMBERSHIP_CHANGED",
+    347|           facts: { current_id: third?.id },
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:334:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

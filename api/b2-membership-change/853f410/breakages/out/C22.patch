@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/authorization/days.ts b/packages/domain/src/authorization/days.ts
+index c2e62a65..53999350 100644
+--- a/packages/domain/src/authorization/days.ts
++++ b/packages/domain/src/authorization/days.ts
+@@ -215,7 +215,6 @@ function placedDays<F>(sql: FragmentSql<F>, when: F, ofMember = false): F {
+       JOIN app.users su ON su.id = s.user_id
+      WHERE o.club_id = c.id
+        AND o.status = 'scheduled'
+-       AND ${starKeepsDay(sql)}
+        AND (CASE WHEN s.state = 'active' THEN su.display_name ELSE s.ended_display_name END) IS NOT NULL
+        AND ${when}
+        AND ${whose}`;

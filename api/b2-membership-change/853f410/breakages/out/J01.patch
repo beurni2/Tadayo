@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/schedule.ts b/tests/src/privacy/schedule.ts
+index e23e3745..f2ea8ab3 100644
+--- a/tests/src/privacy/schedule.ts
++++ b/tests/src/privacy/schedule.ts
+@@ -957,7 +957,7 @@ export function weekChangeProblems(
+     ended(null);
+     return problems;
+   }
+-  if (now === undefined) return [...problems, "no change is open though the club's members aren't its week's"];
++  if (now === undefined) return problems;
+   const [id, rows] = now;
+   const included = rows.members.map((member) => member.interval).sort(byBytes);
+   if (canonical(included) !== canonical([...active].sort(byBytes)))

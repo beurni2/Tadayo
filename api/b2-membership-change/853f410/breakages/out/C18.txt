@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/privacy/matrix.test.ts (19 tests | 1 failed | 18 skipped) 991ms
+   ❯ a membership change through the app (spec 05; T14, T19, T33; FQ56, FQ61, FQ81, FQ125, FQ126) (1)
+     × answers each caller the change as the rows say, takes a confirmation that moves nothing, and replaces the change at a leave 725ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 skipped (19)
+   Start at  11:08:50
+   Duration  2.20s (tests 54%, import 37%, transform 9%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > a membership change through the app (spec 05; T14, T19, T33; FQ56, FQ61, FQ81, FQ125, FQ126) > answers each caller the change as the rows say, takes a confirmation that moves nothing, and replaces the change at a leave
+AssertionError: expected { …(10) } to match object { my_state: 'confirmed', …(2) }
+(7 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "my_state": "confirmed",
+    "state": "open",
+-   "version": 1,
++   "version": 2,
+  }
+
+ ❯ src/privacy/matrix.test.ts:2211:82
+    2209|     const key = randomUUID();
+    2210|     const confirmed = await command(account(ben), "confirmScheduleDays…
+    2211|     expect(proposalOf({ ...confirmed, body: `{"proposal":${confirmed.b…
+       |                                                                                  ^
+    2212|       my_state: "confirmed",
+    2213|       version: 1,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

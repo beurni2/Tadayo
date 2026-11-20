@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/schedule/change.ts b/packages/domain/src/schedule/change.ts
+index df446af8..aa7ab210 100644
+--- a/packages/domain/src/schedule/change.ts
++++ b/packages/domain/src/schedule/change.ts
+@@ -84,7 +84,6 @@ export function changeWeek(active: readonly string[], week: readonly WeekDay[]):
+     const wanted = (table[place] ?? []).filter((weekday) => !taken.has(weekday));
+     for (const weekday of [...wanted, ...WEEKDAYS]) {
+       if (days.length === per) break;
+-      if (taken.has(weekday)) continue;
+       taken.add(weekday);
+       days.push(weekday);
+     }

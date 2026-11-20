@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/view.ts b/packages/domain/src/schedule/view.ts
+index 74e7d6bb..7e99e645 100644
+--- a/packages/domain/src/schedule/view.ts
++++ b/packages/domain/src/schedule/view.ts
+@@ -132,7 +132,7 @@ export function changeViewFor(viewerId: string, facts: WeekFacts): ProposalView
+   }
+   const slots = WEEKDAYS.map((weekday): SlotView => {
+     if (viewer.held.includes(weekday)) return { weekday, state: "yours", suggested: true };
+-    const other = facts.members.find((member) => member.active && member.held.includes(weekday));
++    const other = facts.members.find((member) => member.active && !member.confirmed && member.held.includes(weekday));
+     return { weekday, state: "available", ...(other === undefined ? {} : { heldBy: other.id }), suggested: false };
+   });
+   return {

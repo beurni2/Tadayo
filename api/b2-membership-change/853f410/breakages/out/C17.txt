@@ -1,0 +1,28 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/privacy/matrix.test.ts (19 tests | 1 failed | 18 skipped) 577ms
+   ❯ a membership change through the app (spec 05; T14, T19, T33; FQ56, FQ61, FQ81, FQ125, FQ126) (1)
+     × answers each caller the change as the rows say, takes a confirmation that moves nothing, and replaces the change at a leave 344ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 skipped (19)
+   Start at  11:08:48
+   Duration  1.66s (import 47%, tests 42%, transform 10%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > a membership change through the app (spec 05; T14, T19, T33; FQ56, FQ61, FQ81, FQ125, FQ126) > answers each caller the change as the rows say, takes a confirmation that moves nothing, and replaces the change at a leave
+SyntaxError: Unexpected end of JSON input
+ ❯ proposalOf src/privacy/matrix.test.ts:2135:13
+    2133|       );
+    2134|     const proposalOf = (answer: Answer) =>
+    2135|       (JSON.parse(answer.body) as { proposal?: Record<string, unknown>…
+       |             ^
+    2136|     // A command, judged by `outcomeOf` on the rows before it; an acce…
+    2137|     const command = async (
+ ❯ src/privacy/matrix.test.ts:2171:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

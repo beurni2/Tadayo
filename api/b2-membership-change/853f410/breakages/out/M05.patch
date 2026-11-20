@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0014_membership_change.sql b/db/migrations/0014_membership_change.sql
+index 672cbf88..34418c71 100644
+--- a/db/migrations/0014_membership_change.sql
++++ b/db/migrations/0014_membership_change.sql
+@@ -99,7 +99,7 @@ BEGIN
+     RAISE EXCEPTION 'app.schedule_proposals: a membership change has no week of its own until it applies (FQ101)'
+       USING ERRCODE = 'integrity_constraint_violation';
+   END IF;
+-  IF pg_catalog.date_part('isodow', NEW.effective_from) <> 1 THEN
++  IF false THEN
+     RAISE EXCEPTION 'app.schedule_proposals: a membership change starts on a Monday, not on % (FQ61)', NEW.effective_from
+       USING ERRCODE = 'integrity_constraint_violation';
+   END IF;

@@ -1,0 +1,27 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/privacy/matrix.test.ts (19 tests | 1 failed | 18 skipped) 1122ms
+   ❯ a membership change through the app (spec 05; T14, T19, T33; FQ56, FQ61, FQ81, FQ125, FQ126) (1)
+     × answers each caller the change as the rows say, takes a confirmation that moves nothing, and replaces the change at a leave 896ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 18 skipped (19)
+   Start at  11:08:53
+   Duration  2.25s (tests 59%, import 33%, transform 8%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > a membership change through the app (spec 05; T14, T19, T33; FQ56, FQ61, FQ81, FQ125, FQ126) > answers each caller the change as the rows say, takes a confirmation that moves nothing, and replaces the change at a leave
+AssertionError: expected 'spr_64J991UdPuutx0FyynzXqw' not to be 'spr_64J991UdPuutx0FyynzXqw' // Object.is equality
+ ❯ src/privacy/matrix.test.ts:2278:24
+    2276|     );
+    2277|     const second = openChange()?.[0] ?? "";
+    2278|     expect(second).not.toBe(first);
+       |                        ^
+    2279|     expect(schedule.proposals.get(first)).toMatchObject({ state: "supe…
+    2280|     // The member who left gets nothing of either; a member who stays …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/settle-change.ts b/packages/domain/src/schedule/settle-change.ts
+index be963d53..3eb3a4a1 100644
+--- a/packages/domain/src/schedule/settle-change.ts
++++ b/packages/domain/src/schedule/settle-change.ts
+@@ -134,7 +134,7 @@ export async function settleChange(tx: QuerySql, at: ServerNow, clubId: string):
+ 
+   const today = at.toZonedDateTimeISO(clubTimeZone(text(row["timezone"]))).toPlainDate();
+   const lastMade = row["last_made"] === null ? null : date(row["last_made"]);
+-  const start = changeStart(today, lastMade, found === null ? null : date(found["effective_from"])).toString();
++  const start = changeStart(today, lastMade, null).toString();
+   const proposalId = newId("spr");
+   if (openId !== null) {
+     // The open change first: a club has one open proposal. `replaced_by` is checked at commit.

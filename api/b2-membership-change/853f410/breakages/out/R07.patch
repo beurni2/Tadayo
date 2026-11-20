@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/change.ts b/packages/domain/src/schedule/change.ts
+index df446af8..45cae788 100644
+--- a/packages/domain/src/schedule/change.ts
++++ b/packages/domain/src/schedule/change.ts
+@@ -98,7 +98,7 @@ export function changeWeek(active: readonly string[], week: readonly WeekDay[]):
+ export function changeAfter(facts: ChangeFacts): WeekChange {
+   const { active, week, open } = facts;
+   check(active);
+-  if (facts.firstDaysOpen || week === null) return { kind: "nothing" };
++  if (week === null) return { kind: "nothing" };
+   if (active.length < 2) return open === null ? { kind: "nothing" } : { kind: "drop" };
+   const per = daysPerMember(active.length);
+   const asTheWeek =

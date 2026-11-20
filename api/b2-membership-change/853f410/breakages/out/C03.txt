@@ -1,0 +1,44 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/membership-change.test.ts (27 tests | 1 failed) 3501ms
+   ❯ when a change is proposed (FQ56, FQ100, FQ102, FQ125) (6)
+     × proposes one with the last confirmation of the first days, for a member who joined after a day was confirmed (FQ100) 136ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+   Start at  11:07:29
+   Duration  4.23s (tests 89%, import 8%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/membership-change.test.ts > when a change is proposed (FQ56, FQ100, FQ102, FQ125) > proposes one with the last confirmation of the first days, for a member who joined after a day was confirmed (FQ100)
+AssertionError: expected undefined to match object { state: 'open', version: 1, …(2) }
+
+- Expected:
+{
+  "days_per_member": 2,
+  "effective_from": "2026-12-14",
+  "state": "open",
+  "version": 1,
+}
+
++ Received:
+undefined
+
+ ❯ src/db/membership-change.test.ts:220:22
+    218|       expect(await confirmOwn(tx, c, "Maya")).toMatchObject({ state: "…
+    219|       const [change] = await changes(tx, c);
+    220|       expect(change).toMatchObject({ state: "open", version: 1, days_p…
+       |                      ^
+    221|       expect(await proposedIn(tx, c, change?.id ?? "")).toEqual({
+    222|         Ben: ["monday", "thursday"],
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:209:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

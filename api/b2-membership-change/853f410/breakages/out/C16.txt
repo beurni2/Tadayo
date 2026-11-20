@@ -1,0 +1,306 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/services/api
+
+ ❯ src/schedule/routes.test.ts (30 tests | 1 failed) 329ms
+   ❯ the serializers against the contract's examples (T55) (5)
+     × makes each scene of a membership change, field for field, with the days announced until its start 15ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 29 passed (30)
+   Start at  11:08:46
+   Duration  948ms (tests 42%, import 35%, transform 22%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/routes.test.ts > the serializers against the contract's examples (T55) > makes each scene of a membership change, field for field, with the days announced until its start
+AssertionError: change: expected { …(4) } to deeply equal { …(4) }
+
+- Expected
++ Received
+
+@@ -46,273 +46,10 @@
+        },
+      ],
+      "effective_from": "2026-10-05",
+    },
+    "proposal": {
+-     "announced": [
+-       {
+-         "close_at": "2026-11-08T06:00:00Z",
+-         "club_id": "club_kitchen_table",
+-         "id": "occ_kt_maya_2026_11_07",
+-         "local_date": "2026-11-07",
+-         "phase": "collecting",
+-         "reveal_at": "2026-11-07T12:00:00Z",
+-         "star": {
+-           "avatar_version": "av_maya_1",
+-           "display_name": "Maya",
+-           "membership_id": "mem_kt_maya",
+-         },
+-       },
+-       {
+-         "close_at": "2026-11-10T06:00:00Z",
+-         "club_id": "club_kitchen_table",
+-         "id": "occ_kt_ben_2026_11_09",
+-         "local_date": "2026-11-09",
+-         "phase": "collecting",
+-         "reveal_at": "2026-11-09T12:00:00Z",
+-         "star": {
+-           "avatar_version": "av_ben_1",
+-           "display_name": "Ben",
+-           "membership_id": "mem_kt_ben",
+-         },
+-       },
+-       {
+-         "close_at": "2026-11-11T06:00:00Z",
+-         "club_id": "club_kitchen_table",
+-         "id": "occ_kt_alex_2026_11_10",
+-         "local_date": "2026-11-10",
+-         "phase": "collecting",
+-         "reveal_at": "2026-11-10T12:00:00Z",
+-         "star": {
+-           "display_name": "Alex",
+-           "membership_id": "mem_kt_alex",
+-         },
+-       },
+-       {
+-         "close_at": "2026-11-12T06:00:00Z",
+-         "club_id": "club_kitchen_table",
+-         "id": "occ_kt_sam_2026_11_11",
+-         "local_date": "2026-11-11",
+-         "phase": "collecting",
+-         "reveal_at": "2026-11-11T12:00:00Z",
+-         "star": {
+-           "display_name": "Sam",
+-           "membership_id": "mem_kt_sam",
+-         },
+-       },
+-       {
+-         "close_at": "2026-11-13T06:00:00Z",
+-         "club_id": "club_kitchen_table",
+-         "id": "occ_kt_nina_2026_11_12",
+-         "local_date": "2026-11-12",
+-         "phase": "collecting",
+-         "reveal_at": "2026-11-12T12:00:00Z",
+-         "star": {
+-           "display_name": "Nina",
+-           "membership_id": "mem_kt_nina",
+-         },
+-       },
+-       {
+-         "close_at": "2026-11-15T06:00:00Z",
+-         "club_id": "club_kitchen_table",
+-         "id": "occ_kt_maya_2026_11_14",
+-         "local_date": "2026-11-14",
+-         "phase": "collecting",
+-         "reveal_at": "2026-11-14T12:00:00Z",
+-         "star": {
+-           "avatar_version": "av_maya_1",
+-           "display_name": "Maya",
+-           "membership_id": "mem_kt_maya",
+-         },
+-       },
+-       {
+-         "close_at": "2026-11-17T06:00:00Z",
+-         "club_id": "club_kitchen_table",
+-         "id": "occ_kt_ben_2026_11_16",
+-         "local_date": "2026-11-16",
+-         "phase": "collecting",
+-         "reveal_at": "2026-11-16T12:00:00Z",
+-         "star": {
+-           "avatar_version": "av_ben_1",
+-           "display_name": "Ben",
+-           "membership_id": "mem_kt_ben",
+-         },
+-       },
+-       {
+-         "close_at": "2026-11-18T06:00:00Z",
+-         "club_id": "club_kitchen_table",
+-         "id": "occ_kt_alex_2026_11_17",
+-         "local_date": "2026-11-17",
+-         "phase": "collecting",
+-         "reveal_at": "2026-11-17T12:00:00Z",
+-         "star": {
+-           "display_name": "Alex",
+-           "membership_id": "mem_kt_alex",
+-         },
+-       },
+-       {
+-         "close_at": "2026-11-19T06:00:00Z",
+-         "club_id": "club_kitchen_table",
+-         "id": "occ_kt_sam_2026_11_18",
+-         "local_date": "2026-11-18",
+-         "phase": "collecting",
+-         "reveal_at": "2026-11-18T12:00:00Z",
+-         "star": {
+-           "display_name": "Sam",
+-           "membership_id": "mem_kt_sam",
+-         },
+-       },
+-       {
+-         "close_at": "2026-11-20T06:00:00Z",
+-         "club_id": "club_kitchen_table",
+-         "id": "occ_kt_nina_2026_11_19",
+-         "local_date": "2026-11-19",
+-         "phase": "collecting",
+-         "reveal_at": "2026-11-19T12:00:00Z",
+-         "star": {
+-           "display_name": "Nina",
+-           "membership_id": "mem_kt_nina",
+-         },
+-       },
+-       {
+-         "close_at": "2026-11-22T06:00:00Z",
+-         "club_id": "club_kitchen_table",
+-         "id": "occ_kt_maya_2026_11_21",
+-         "local_date": "2026-11-21",
+-         "phase": "collecting",
+-         "reveal_at": "2026-11-21T12:00:00Z",
+-         "star": {
+-           "avatar_version": "av_maya_1",
+-           "display_name": "Maya",
+-           "membership_id": "mem_kt_maya",
+-         },
+-       },
+-       {
+-         "close_at": "2026-11-24T06:00:00Z",
+-         "club_id": "club_kitchen_table",
+-         "id": "occ_kt_ben_2026_11_23",
+-         "local_date": "2026-11-23",
+-         "phase": "collecting",
+-         "reveal_at": "2026-11-23T12:00:00Z",
+-         "star": {
+-           "avatar_version": "av_ben_1",
+-           "display_name": "Ben",
+-           "membership_id": "mem_kt_ben",
+-         },
+-       },
+-       {
+-         "close_at": "2026-11-25T06:00:00Z",
+-         "club_id": "club_kitchen_table",
+-         "id": "occ_kt_alex_2026_11_24",
+-         "local_date": "2026-11-24",
+-         "phase": "collecting",
+-         "reveal_at": "2026-11-24T12:00:00Z",
+-         "star": {
+-           "display_name": "Alex",
+-           "membership_id": "mem_kt_alex",
+-         },
+-       },
+-       {
+-         "close_at": "2026-11-26T06:00:00Z",
+-         "club_id": "club_kitchen_table",
+-         "id": "occ_kt_sam_2026_11_25",
+-         "local_date": "2026-11-25",
+-         "phase": "collecting",
+-         "reveal_at": "2026-11-25T12:00:00Z",
+-         "star": {
+-           "display_name": "Sam",
+-           "membership_id": "mem_kt_sam",
+-         },
+-       },
+-       {
+-         "close_at": "2026-11-27T06:00:00Z",
+-         "club_id": "club_kitchen_table",
+-         "id": "occ_kt_nina_2026_11_26",
+-         "local_date": "2026-11-26",
+-         "phase": "collecting",
+-         "reveal_at": "2026-11-26T12:00:00Z",
+-         "star": {
+-           "display_name": "Nina",
+-           "membership_id": "mem_kt_nina",
+-         },
+-       },
+-       {
+-         "close_at": "2026-11-29T06:00:00Z",
+-         "club_id": "club_kitchen_table",
+-         "id": "occ_kt_maya_2026_11_28",
+-         "local_date": "2026-11-28",
+-         "phase": "collecting",
+-         "reveal_at": "2026-11-28T12:00:00Z",
+-         "star": {
+-           "avatar_version": "av_maya_1",
+-           "display_name": "Maya",
+-           "membership_id": "mem_kt_maya",
+-         },
+-       },
+-       {
+-         "close_at": "2026-12-01T06:00:00Z",
+-         "club_id": "club_kitchen_table",
+-         "id": "occ_kt_ben_2026_11_30",
+-         "local_date": "2026-11-30",
+-         "phase": "collecting",
+-         "reveal_at": "2026-11-30T12:00:00Z",
+-         "star": {
+-           "avatar_version": "av_ben_1",
+-           "display_name": "Ben",
+-           "membership_id": "mem_kt_ben",
+-         },
+-       },
+-       {
+-         "close_at": "2026-12-02T06:00:00Z",
+-         "club_id": "club_kitchen_table",
+-         "id": "occ_kt_alex_2026_12_01",
+-         "local_date": "2026-12-01",
+-         "phase": "collecting",
+-         "reveal_at": "2026-12-01T12:00:00Z",
+-         "star": {
+-           "display_name": "Alex",
+-           "membership_id": "mem_kt_alex",
+-         },
+-       },
+-       {
+-         "close_at": "2026-12-03T06:00:00Z",
+-         "club_id": "club_kitchen_table",
+-         "id": "occ_kt_sam_2026_12_02",
+-         "local_date": "2026-12-02",
+-         "phase": "collecting",
+-         "reveal_at": "2026-12-02T12:00:00Z",
+-         "star": {
+-           "display_name": "Sam",
+-           "membership_id": "mem_kt_sam",
+-         },
+-       },
+-       {
+-         "close_at": "2026-12-04T06:00:00Z",
+-         "club_id": "club_kitchen_table",
+-         "id": "occ_kt_nina_2026_12_03",
+-         "local_date": "2026-12-03",
+-         "phase": "collecting",
+-         "reveal_at": "2026-12-03T12:00:00Z",
+-         "star": {
+-           "display_name": "Nina",
+-           "membership_id": "mem_kt_nina",
+-         },
+-       },
+-       {
+-         "close_at": "2026-12-06T06:00:00Z",
+-         "club_id": "club_kitchen_table",
+-         "id": "occ_kt_maya_2026_12_05",
+-         "local_date": "2026-12-05",
+-         "phase": "collecting",
+-         "reveal_at": "2026-12-05T12:00:00Z",
+-         "star": {
+-           "avatar_version": "av_maya_1",
+-           "display_name": "Maya",
+-           "membership_id": "mem_kt_maya",
+-         },
+-       },
+-     ],
+      "days_per_member": 1,
+      "effective_from": "2026-12-07",
+      "id": "spr_kt_2",
+      "my_days": [
+        "monday",
+
+ ❯ src/schedule/routes.test.ts:151:26
+    149|       const value = example.value as Body;
+    150|       const body = scheduleBody(Temporal.Instant.from(value["server_no…
+    151|       expect(body, name).toEqual(value);
+       |                          ^
+    152|       expect(Schedule.strict().safeParse(body).success, name).toBe(tru…
+    153|       expect(((value["proposal"] as Body)["announced"] as unknown[]).l…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

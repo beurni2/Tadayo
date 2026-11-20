@@ -1,0 +1,30 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (27 tests | 1 failed) 74ms
+   ❯ changeAfter: when a change is proposed, replaced or dropped (10)
+     × drops an open change, and proposes none, with fewer than two members (FQ16) 9ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  1 failed | 156 passed (157)
+   Start at  11:06:34
+   Duration  2.13s (tests 87%, import 9%, transform 3%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > changeAfter: when a change is proposed, replaced or dropped > drops an open change, and proposes none, with fewer than two members (FQ16)
+RangeError: schedule: a week is proposed for two to six members, not 1 (A01)
+ ❯ checkCount src/schedule/propose.ts:14:11
+     12| function checkCount(memberCount: number): void {
+     13|   if (!Number.isInteger(memberCount) || memberCount < 2 || memberCount…
+     14|     throw new RangeError(`schedule: a week is proposed for two to six …
+       |           ^
+     15|   }
+     16| }
+ ❯ daysPerMember src/schedule/propose.ts:20:3
+ ❯ changeAfter src/schedule/change.ts:102:15
+ ❯ src/schedule/change.test.ts:216:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

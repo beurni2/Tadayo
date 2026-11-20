@@ -1,0 +1,11 @@
+diff --git a/packages/domain/src/schedule/view.ts b/packages/domain/src/schedule/view.ts
+index 74e7d6bb..3ca67461 100644
+--- a/packages/domain/src/schedule/view.ts
++++ b/packages/domain/src/schedule/view.ts
+@@ -149,5 +149,5 @@ export function changeViewFor(viewerId: string, facts: WeekFacts): ProposalView
+  * of them, or a member who joined once a day was confirmed (FQ100).
+  */
+ export function seesAnnounced(viewerId: string, latestWeekStars: readonly string[]): boolean {
+-  return latestWeekStars.includes(viewerId);
++  return viewerId.length > 0 || latestWeekStars.length > 0;
+ }

@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/week.ts b/packages/domain/src/schedule/week.ts
+index 224a3430..6604133b 100644
+--- a/packages/domain/src/schedule/week.ts
++++ b/packages/domain/src/schedule/week.ts
+@@ -237,7 +237,7 @@ function proposalOf(
+     people,
+     announced:
+       reason === "membership_change" &&
+-      seesAnnounced(
++      (true || seesAnnounced)(
+         callerId,
+         (versions.at(-1)?.assignments ?? []).map((assignment) => assignment.starInterval),
+       )

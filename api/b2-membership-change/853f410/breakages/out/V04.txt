@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/decide.test.ts (23 tests | 1 failed) 22ms
+   ❯ a membership change's confirmation (the contract's ScheduleConfirmRequest; FQ56, FQ81) (5)
+     × refuses a second confirmation, though the days are the caller's own 9ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  1 failed | 156 passed (157)
+   Start at  11:07:18
+   Duration  2.29s (tests 90%, import 7%, worker 1%, transform 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/decide.test.ts > a membership change's confirmation (the contract's ScheduleConfirmRequest; FQ56, FQ81) > refuses a second confirmation, though the days are the caller's own
+AssertionError: expected null to be 'NOT_ALLOWED' // Object.is equality
+
+- Expected:
+"NOT_ALLOWED"
+
++ Received:
+null
+
+ ❯ src/schedule/decide.test.ts:211:80
+    209|
+    210|   it("refuses a second confirmation, though the days are the caller's …
+    211|     expect(judgeChangeConfirmation("maya", CHANGE, ["wednesday", "satu…
+       |                                                                                ^
+    212|   });
+    213|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

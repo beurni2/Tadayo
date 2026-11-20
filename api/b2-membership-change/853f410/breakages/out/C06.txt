@@ -1,0 +1,85 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/membership-change.test.ts (27 tests | 6 failed) 3112ms
+   ❯ a change replaced, dropped, and a club paused (FQ16, FQ126, FQ127) (7)
+     × names the club's open change to an id replaced more than once, and treats it as ended once none is open (FQ126) 125ms
+     × drops an open change when a leave brings the club back to its week, and its id then answers as an ended one 85ms
+     × drops an open change when the club is paused, proposes none, and proposes one when it has two members again (FQ16, FQ116) 83ms
+   ❯ the days made while a change is open (FQ61, FQ127) (2)
+     × makes no day from the change's start on, whatever the date, and every day before it as before 102ms
+   ❯ confirmations and a leave at once, on connections of their own (4)
+     × refuses a confirmation that comes after the leave that dropped the change 158ms
+     × takes a confirmation that comes before the leave, which then drops the change 137ms
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 21 passed (27)
+   Start at  11:07:44
+   Duration  3.87s (tests 87%, import 9%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/membership-change.test.ts > a change replaced, dropped, and a club paused (FQ16, FQ126, FQ127) > names the club's open change to an id replaced more than once, and treats it as ended once none is open (FQ126)
+ FAIL  src/db/membership-change.test.ts > a change replaced, dropped, and a club paused (FQ16, FQ126, FQ127) > drops an open change when a leave brings the club back to its week, and its id then answers as an ended one
+ FAIL  src/db/membership-change.test.ts > a change replaced, dropped, and a club paused (FQ16, FQ126, FQ127) > drops an open change when the club is paused, proposes none, and proposes one when it has two members again (FQ16, FQ116)
+ FAIL  src/db/membership-change.test.ts > the days made while a change is open (FQ61, FQ127) > makes no day from the change's start on, whatever the date, and every day before it as before
+PostgresError: app.schedule_proposals: its state moves with its next version (T33)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ settleChange ../packages/domain/src/schedule/settle-change.ts:128:20
+    126|   const openId = found === null ? null : text(found["id"]);
+    127|   if (change.kind === "drop") {
+    128|     await bound(tx)`
+       |                    ^
+    129|       UPDATE app.schedule_proposals
+    130|          SET state = 'superseded', closed_at = ${at}::pg_catalog.times…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirmations and a leave at once, on connections of their own > refuses a confirmation that comes after the leave that dropped the change
+AssertionError: expected '23000' to match object { Object (club_id) }
+
+- Expected:
+{
+  "club_id": "club_TYnJBLtENjTLjv3SRlcD9w",
+}
+
++ Received:
+"23000"
+
+ ❯ src/db/membership-change.test.ts:817:24
+    815|       await hold.release();
+    816|     }
+    817|     expect(await left).toMatchObject({ club_id: s.c.club });
+       |                        ^
+    818|     expect(await ben).toBe("VERSION_CONFLICT");
+    819|     expect(await rowOf(s.change.id)).toEqual({ state: "superseded", ve…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirmations and a leave at once, on connections of their own > takes a confirmation that comes before the leave, which then drops the change
+AssertionError: expected '23000' to match object { Object (club_id) }
+
+- Expected:
+{
+  "club_id": "club_E0SMJWfVENNF037XbbrPzw",
+}
+
++ Received:
+"23000"
+
+ ❯ src/db/membership-change.test.ts:836:24
+    834|     }
+    835|     expect(await ben).toMatchObject({ state: "open", version: 1, mySta…
+    836|     expect(await left).toMatchObject({ club_id: s.c.club });
+       |                        ^
+    837|     expect(await rowOf(s.change.id)).toEqual({ state: "superseded", ve…
+    838|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+

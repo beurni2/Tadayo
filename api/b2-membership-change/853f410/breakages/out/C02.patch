@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/clubs/leave-club.ts b/packages/domain/src/clubs/leave-club.ts
+index 6dfc2697..7bc22854 100644
+--- a/packages/domain/src/clubs/leave-club.ts
++++ b/packages/domain/src/clubs/leave-club.ts
+@@ -216,7 +216,6 @@ export async function leaveClub(
+ 
+   // 8. The club's first days, and, once they have applied, its week: a membership change (FQ56, FQ125).
+   await settleFirstDays(tx, at, clubId);
+-  await settleChange(tx, at, clubId);
+ 
+   // 9. The answer.
+   return completeReceipt(tx, receipt, render({ clubId, leftAt: at, contributions }));

@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/week.ts b/packages/domain/src/schedule/week.ts
+index 224a3430..890cb99e 100644
+--- a/packages/domain/src/schedule/week.ts
++++ b/packages/domain/src/schedule/week.ts
+@@ -355,7 +355,7 @@ export interface ProposalAnswer {
+  */
+ export function answerOf(proposal: LoadedProposal, viewerId: string): ProposalAnswer {
+   const view =
+-    proposal.reason === "activation" ? viewFor(viewerId, proposal.facts) : changeViewFor(viewerId, proposal.facts);
++    viewFor(viewerId, proposal.facts);
+   // Someone who holds a day is an active member, and an active member has a name (spec 23).
+   const named = (id: string): SchedulePerson => {
+     const found = proposal.people.get(id);

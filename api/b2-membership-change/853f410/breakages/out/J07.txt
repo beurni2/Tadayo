@@ -1,0 +1,54 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/privacy/schedule.test.ts (36 tests | 2 failed) 59ms
+   ❯ what a join or a leave must leave of the club's change, row by row (weekChangeProblems; FQ125 to FQ127) (5)
+     × wants an open change dropped, with no successor, when a leave brings the club back to its week 10ms
+     × wants nothing made or moved while the first days are open, where none ever applied, and for the same members 2ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 34 passed (36)
+   Start at  11:10:56
+   Duration  666ms (import 55%, transform 27%, tests 17%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/schedule.test.ts > what a join or a leave must leave of the club's change, row by row (weekChangeProblems; FQ125 to FQ127) > wants an open change dropped, with no successor, when a leave brings the club back to its week
+AssertionError: expected 'the change that was open is {"club":"…' to match /a change is open in a club/
+
+- Expected:
+/a change is open in a club/
+
++ Received:
+"the change that was open is {\"club\":\"clb_here\",\"days\":[\"itv_ana monday true true\",\"itv_ana thursday true true\",\"itv_ben friday true true\",\"itv_ben tuesday true true\",\"itv_cleo saturday true true\",\"itv_cleo wednesday true true\"],\"daysPerMember\":2,\"earlier\":[],\"effectiveFrom\":\"2026-12-14\",\"members\":[\"itv_ana false\",\"itv_ben false\",\"itv_cleo false\"],\"reason\":\"membership_change\",\"replacedBy\":null,\"scheduleVersion\":null,\"state\":\"open\",\"version\":1,\"weekRevision\":1}, not {\"club\":\"clb_here\",\"days\":[\"itv_ana monday true true\",\"itv_ana thursday true true\",\"itv_ben friday true true\",\"itv_ben tuesday true true\",\"itv_cleo saturday true true\",\"itv_cleo wednesday true true\"],\"daysPerMember\":2,\"earlier\":[],\"effectiveFrom\":\"2026-12-14\",\"members\":[\"itv_ana false\",\"itv_ben false\",\"itv_cleo false\"],\"reason\":\"membership_change\",\"replacedBy\":null,\"scheduleVersion\":null,\"state\":\"superseded\",\"version\":2,\"weekRevision\":1}"
+
+ ❯ src/privacy/schedule.test.ts:788:73
+    786|     const dropped = withCleoGone(changeWorld([[CHANGE, changeRows({ st…
+    787|     expect(judge(changeWorld(), dropped)).toEqual([]);
+    788|     expect(judge(changeWorld(), withCleoGone(changeWorld())).join(" ")…
+       |                                                                         ^
+    789|     const named = withCleoGone(
+    790|       changeWorld([[CHANGE, changeRows({ state: "superseded", version:…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/schedule.test.ts > what a join or a leave must leave of the club's change, row by row (weekChangeProblems; FQ125 to FQ127) > wants nothing made or moved while the first days are open, where none ever applied, and for the same members
+AssertionError: expected '' to match /a change is open in a club/
+
+- Expected:
+/a change is open in a club/
+
++ Received:
+""
+
+ ❯ src/privacy/schedule.test.ts:866:59
+    864|     };
+    865|     expect(judge(none(), alone(none()))).toEqual([]);
+    866|     expect(judge(none(), alone(changeWorld())).join(" ")).toMatch(/a c…
+       |                                                           ^
+    867|   });
+    868| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

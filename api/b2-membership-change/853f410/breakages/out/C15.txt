@@ -1,0 +1,215 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/home-days.test.ts (20 tests | 5 failed) 1199ms
+   ❯ only the viewer's clubs, and only a scheduled day that isn't held, on Postgres (T9, T14, T27; FQ50, FQ63; spec 22) (7)
+     × never chooses a suspended or cancelled day, and moves next on to the day after it 27ms
+     × holds a day whose star left a microsecond before its reveal, by leaving, a block or a deletion: never open, never next (FQ63) 14ms
+     × holds a day whose star asked to delete their account a microsecond before its reveal, whether the interval has ended or not (T27) 13ms
+   ❯ the star as the club sees them, on Postgres (FQ75) (4)
+     × leaves out an open day whose star has no name to show, and still gives the next day (B6, docs/LIMITATIONS.md) 21ms
+   ❯ a viewer of two clubs in two zones gets each club's own days (T14) (1)
+     × never mixes them: each club's days carry its own id, star and date, whatever the other's hold 59ms
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 15 passed (20)
+   Start at  11:08:38
+   Duration  1.70s (tests 89%, import 6%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/home-days.test.ts > only the viewer's clubs, and only a scheduled day that isn't held, on Postgres (T9, T14, T27; FQ50, FQ63; spec 22) > never chooses a suspended or cancelled day, and moves next on to the day after it
+AssertionError: the days ahead, the SQL and the policy, at 2026-11-07T06:59:59.999999Z: expected [ { …(7) } ] to deeply equal [ { …(7) }, { …(7) } ]
+
+- Expected
++ Received
+
+@@ -1,20 +1,7 @@
+  [
+    {
+-     "closeAt": "2026-11-08T01:00:00Z",
+-     "clubId": "club_dPDjUcT3HLJksfbkOd9XVA",
+-     "id": "occ_GU66CWtQWNwnSYQ_lEBfKw",
+-     "localDate": "2026-11-07",
+-     "phase": "collecting",
+-     "revealAt": "2026-11-07T07:00:00Z",
+-     "star": {
+-       "avatarVersion": null,
+-       "displayName": "Ana 2uoADw",
+-       "membershipId": "mem_LpsuDRitnYpunYj6dq2XNg",
+-     },
+-   },
+-   {
+      "closeAt": "2026-11-10T01:00:00Z",
+      "clubId": "club_dPDjUcT3HLJksfbkOd9XVA",
+      "id": "occ_YdfjHeRil9CUQLo79mFdpw",
+      "localDate": "2026-11-09",
+      "phase": "collecting",
+
+ ❯ both src/db/home-days.test.ts:249:85
+    247|   if (aheadRows.length > 1) throw new Error("daysAheadByClub listed a …
+    248|   const ahead = aheadRows[0] === undefined ? [] : chosenDays(aheadRows…
+    249|   expect(ahead, `the days ahead, the SQL and the policy, at ${instant.…
+       |                                                                                     ^
+    250|     chooseDaysAhead(facts, now),
+    251|   );
+ ❯ ids src/db/home-days.test.ts:267:18
+ ❯ src/db/home-days.test.ts:417:16
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:412:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/db/home-days.test.ts > only the viewer's clubs, and only a scheduled day that isn't held, on Postgres (T9, T14, T27; FQ50, FQ63; spec 22) > holds a day whose star left a microsecond before its reveal, by leaving, a block or a deletion: never open, never next (FQ63)
+AssertionError: the days ahead, the SQL and the policy, at 2026-11-07T06:59:59.999999Z: expected [ { …(7) } ] to deeply equal [ { …(7) }, { …(7) } ]
+
+- Expected
++ Received
+
+@@ -1,20 +1,7 @@
+  [
+    {
+-     "closeAt": "2026-11-08T01:00:00Z",
+-     "clubId": "club_G0zw42govHt4GLeYPGDc_A",
+-     "id": "occ_qHSQafvL3iXQlnImqDp_eA",
+-     "localDate": "2026-11-07",
+-     "phase": "collecting",
+-     "revealAt": "2026-11-07T07:00:00Z",
+-     "star": {
+-       "avatarVersion": null,
+-       "displayName": "Ana",
+-       "membershipId": "mem_q2_wdEVMMl_1rzoJczFVeQ",
+-     },
+-   },
+-   {
+      "closeAt": "2026-11-10T01:00:00Z",
+      "clubId": "club_G0zw42govHt4GLeYPGDc_A",
+      "id": "occ_Fs-oghuj1ZG0kScq-0M99g",
+      "localDate": "2026-11-09",
+      "phase": "collecting",
+
+ ❯ both src/db/home-days.test.ts:249:85
+    247|   if (aheadRows.length > 1) throw new Error("daysAheadByClub listed a …
+    248|   const ahead = aheadRows[0] === undefined ? [] : chosenDays(aheadRows…
+    249|   expect(ahead, `the days ahead, the SQL and the policy, at ${instant.…
+       |                                                                                     ^
+    250|     chooseDaysAhead(facts, now),
+    251|   );
+ ❯ ids src/db/home-days.test.ts:267:18
+ ❯ src/db/home-days.test.ts:433:18
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:425:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/db/home-days.test.ts > only the viewer's clubs, and only a scheduled day that isn't held, on Postgres (T9, T14, T27; FQ50, FQ63; spec 22) > holds a day whose star asked to delete their account a microsecond before its reveal, whether the interval has ended or not (T27)
+AssertionError: the days ahead, the SQL and the policy, at 2026-11-07T06:59:59.999999Z: expected [ { …(7) } ] to deeply equal [ { …(7) }, { …(7) } ]
+
+- Expected
++ Received
+
+@@ -1,20 +1,7 @@
+  [
+    {
+-     "closeAt": "2026-11-08T01:00:00Z",
+-     "clubId": "club_cx4zYWe4v8mLEqh-g0hn8w",
+-     "id": "occ_Tr3jSU35bnTLDfrcLD48FQ",
+-     "localDate": "2026-11-07",
+-     "phase": "collecting",
+-     "revealAt": "2026-11-07T07:00:00Z",
+-     "star": {
+-       "avatarVersion": null,
+-       "displayName": "Ana 1ldTCw",
+-       "membershipId": "mem_K0BwQ4P0dExQ135vVafwzw",
+-     },
+-   },
+-   {
+      "closeAt": "2026-11-10T01:00:00Z",
+      "clubId": "club_cx4zYWe4v8mLEqh-g0hn8w",
+      "id": "occ_iqtbllt7X5lQd936vwJPjw",
+      "localDate": "2026-11-09",
+      "phase": "collecting",
+
+ ❯ both src/db/home-days.test.ts:249:85
+    247|   if (aheadRows.length > 1) throw new Error("daysAheadByClub listed a …
+    248|   const ahead = aheadRows[0] === undefined ? [] : chosenDays(aheadRows…
+    249|   expect(ahead, `the days ahead, the SQL and the policy, at ${instant.…
+       |                                                                                     ^
+    250|     chooseDaysAhead(facts, now),
+    251|   );
+ ❯ ids src/db/home-days.test.ts:267:18
+ ❯ src/db/home-days.test.ts:457:18
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:449:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/db/home-days.test.ts > the star as the club sees them, on Postgres (FQ75) > leaves out an open day whose star has no name to show, and still gives the next day (B6, docs/LIMITATIONS.md)
+Error: authorization: a day with no star to name was chosen
+ ❯ chosen ../packages/domain/src/authorization/days.ts:128:28
+    126| function chosen(day: DayFacts, phase: ChosenPhase): ChosenDay {
+    127|   const name = starNameOf(day);
+    128|   if (name === null) throw new Error("authorization: a day with no sta…
+       |                            ^
+    129|   return {
+    130|     id: day.id,
+ ❯ ../packages/domain/src/authorization/days.ts:176:19
+ ❯ chooseDaysAhead ../packages/domain/src/authorization/days.ts:176:6
+ ❯ both src/db/home-days.test.ts:250:5
+ ❯ ids src/db/home-days.test.ts:267:18
+ ❯ src/db/home-days.test.ts:549:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/db/home-days.test.ts > a viewer of two clubs in two zones gets each club's own days (T14) > never mixes them: each club's days carry its own id, star and date, whatever the other's hold
+AssertionError: the days ahead, the SQL and the policy, at 2026-11-07T08:00:00Z: expected [] to deeply equal [ { …(7) } ]
+
+- Expected
++ Received
+
+- [
+-   {
+-     "closeAt": "2026-11-08T01:00:00Z",
+-     "clubId": "club_tdgX_6kAtrJs1EPpzNbPLA",
+-     "id": "occ_q2BboIhFdAfCxe0c7g4xIw",
+-     "localDate": "2026-11-07",
+-     "phase": "open",
+-     "revealAt": "2026-11-07T07:00:00Z",
+-     "star": {
+-       "avatarVersion": null,
+-       "displayName": "Ana",
+-       "membershipId": "mem_a7LZgQcxQGCYiMOhQi-WSQ",
+-     },
+-   },
+- ]
++ []
+
+ ❯ both src/db/home-days.test.ts:249:85
+    247|   if (aheadRows.length > 1) throw new Error("daysAheadByClub listed a …
+    248|   const ahead = aheadRows[0] === undefined ? [] : chosenDays(aheadRows…
+    249|   expect(ahead, `the days ahead, the SQL and the policy, at ${instant.…
+       |                                                                                     ^
+    250|     chooseDaysAhead(facts, now),
+    251|   );
+ ❯ both2 src/db/home-days.test.ts:570:17
+ ❯ src/db/home-days.test.ts:592:21
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/home-days.test.ts:556:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+

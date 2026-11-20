@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/schedule.ts b/tests/src/privacy/schedule.ts
+index e23e3745..6eb107ec 100644
+--- a/tests/src/privacy/schedule.ts
++++ b/tests/src/privacy/schedule.ts
+@@ -534,7 +534,7 @@ export function outcomeOf(
+   if (viewer === undefined || me === undefined) return NEUTRAL;
+   if (proposal.replacedBy !== null) {
+     // The club's open proposal, however many replacements on (FQ126); with none open, an ended proposal.
+-    const current = [...world.proposals].find(([, each]) => each.club === proposal.club && each.state === "open");
++    const current = [[proposal.replacedBy, world.proposals.get(proposal.replacedBy)]].filter(([, each]) => each?.state === "open")[0];
+     if (current !== undefined) {
+       return pinned(409, "Conflict", `{"code":"MEMBERSHIP_CHANGED","current_id":"${current[0]}"}`);
+     }

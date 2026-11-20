@@ -1,0 +1,137 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (27 tests | 8 failed) 62ms
+   ❯ changeWeek: which week a change proposes (FQ125) (10)
+     × keeps every member's day and gives a fifth member the table's day for their place, which is free 16ms
+     × gives a new member the first free day from Monday when the day of their place is kept by someone 1ms
+     × frees the days of a member who left and moves nobody, where the table keeps the days each 0ms
+     × gives a member with no day in the week the days they lack, as it does a new member (FQ100) 0ms
+     × gives two who join at once different days, in the order they joined 0ms
+     × proposes a day once and every member the table's number, for every size and every member who leaves 4ms
+   ❯ changeAfter: when a change is proposed, replaced or dropped (10)
+     × proposes a change for a join, a leave, and a leaver's day still in the week 0ms
+     × replaces an open change when the members it includes are no longer the club's (FQ126) 1ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  8 failed | 149 passed (157)
+   Start at  11:06:14
+   Duration  2.04s (tests 88%, import 8%, transform 3%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > changeWeek: which week a change proposes (FQ125) > keeps every member's day and gives a fifth member the table's day for their place, which is free
+Error: schedule: the week has no free day left for a member
+ ❯ src/schedule/change.ts:91:36
+     89|       days.push(weekday);
+     90|     }
+     91|     if (days.length !== per) throw new Error("schedule: the week has n…
+       |                                    ^
+     92|     return { id, days: fromMonday(days) };
+     93|   });
+ ❯ changeWeek src/schedule/change.ts:81:27
+ ❯ src/schedule/change.test.ts:33:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+ FAIL  src/schedule/change.test.ts > changeWeek: which week a change proposes (FQ125) > gives a new member the first free day from Monday when the day of their place is kept by someone
+Error: schedule: the week has no free day left for a member
+ ❯ src/schedule/change.ts:91:36
+     89|       days.push(weekday);
+     90|     }
+     91|     if (days.length !== per) throw new Error("schedule: the week has n…
+       |                                    ^
+     92|     return { id, days: fromMonday(days) };
+     93|   });
+ ❯ changeWeek src/schedule/change.ts:81:27
+ ❯ src/schedule/change.test.ts:55:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+
+ FAIL  src/schedule/change.test.ts > changeWeek: which week a change proposes (FQ125) > frees the days of a member who left and moves nobody, where the table keeps the days each
+Error: schedule: the week has no free day left for a member
+ ❯ src/schedule/change.ts:91:36
+     89|       days.push(weekday);
+     90|     }
+     91|     if (days.length !== per) throw new Error("schedule: the week has n…
+       |                                    ^
+     92|     return { id, days: fromMonday(days) };
+     93|   });
+ ❯ changeWeek src/schedule/change.ts:81:27
+ ❯ src/schedule/change.test.ts:69:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+
+ FAIL  src/schedule/change.test.ts > changeWeek: which week a change proposes (FQ125) > gives a member with no day in the week the days they lack, as it does a new member (FQ100)
+Error: schedule: the week has no free day left for a member
+ ❯ src/schedule/change.ts:91:36
+     89|       days.push(weekday);
+     90|     }
+     91|     if (days.length !== per) throw new Error("schedule: the week has n…
+       |                                    ^
+     92|     return { id, days: fromMonday(days) };
+     93|   });
+ ❯ changeWeek src/schedule/change.ts:81:27
+ ❯ src/schedule/change.test.ts:111:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯
+
+ FAIL  src/schedule/change.test.ts > changeWeek: which week a change proposes (FQ125) > gives two who join at once different days, in the order they joined
+Error: schedule: the week has no free day left for a member
+ ❯ src/schedule/change.ts:91:36
+     89|       days.push(weekday);
+     90|     }
+     91|     if (days.length !== per) throw new Error("schedule: the week has n…
+       |                                    ^
+     92|     return { id, days: fromMonday(days) };
+     93|   });
+ ❯ changeWeek src/schedule/change.ts:81:27
+ ❯ src/schedule/change.test.ts:119:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯
+
+ FAIL  src/schedule/change.test.ts > changeWeek: which week a change proposes (FQ125) > proposes a day once and every member the table's number, for every size and every member who leaves
+Error: schedule: the week has no free day left for a member
+ ❯ src/schedule/change.ts:91:36
+     89|       days.push(weekday);
+     90|     }
+     91|     if (days.length !== per) throw new Error("schedule: the week has n…
+       |                                    ^
+     92|     return { id, days: fromMonday(days) };
+     93|   });
+ ❯ changeWeek src/schedule/change.ts:81:27
+ ❯ src/schedule/change.test.ts:148:24
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯
+
+ FAIL  src/schedule/change.test.ts > changeAfter: when a change is proposed, replaced or dropped > proposes a change for a join, a leave, and a leaver's day still in the week
+Error: schedule: the week has no free day left for a member
+ ❯ src/schedule/change.ts:91:36
+     89|       days.push(weekday);
+     90|     }
+     91|     if (days.length !== per) throw new Error("schedule: the week has n…
+       |                                    ^
+     92|     return { id, days: fromMonday(days) };
+     93|   });
+ ❯ changeWeek src/schedule/change.ts:81:27
+ ❯ changeAfter src/schedule/change.ts:111:57
+ ❯ src/schedule/change.test.ts:178:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/8]⎯
+
+ FAIL  src/schedule/change.test.ts > changeAfter: when a change is proposed, replaced or dropped > replaces an open change when the members it includes are no longer the club's (FQ126)
+Error: schedule: the week has no free day left for a member
+ ❯ src/schedule/change.ts:91:36
+     89|       days.push(weekday);
+     90|     }
+     91|     if (days.length !== per) throw new Error("schedule: the week has n…
+       |                                    ^
+     92|     return { id, days: fromMonday(days) };
+     93|   });
+ ❯ changeWeek src/schedule/change.ts:81:27
+ ❯ changeAfter src/schedule/change.ts:111:57
+ ❯ src/schedule/change.test.ts:199:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/8]⎯
+

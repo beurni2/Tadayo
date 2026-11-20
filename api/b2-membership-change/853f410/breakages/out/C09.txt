@@ -1,0 +1,188 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/membership-change.test.ts (27 tests | 6 failed) 3069ms
+   ❯ a change replaced, dropped, and a club paused (FQ16, FQ126, FQ127) (7)
+     × replaces an open change at the next join: the same start, everyone confirms again, and the old id answers MEMBERSHIP_CHANGED 130ms
+     × drops an open change when a leave brings the club back to its week, and its id then answers as an ended one 69ms
+   ❯ confirming a change (FQ56, FQ81; T1, T19, T33) (4)
+     × writes the member's confirmation at the clock's instant and nothing else: the same version, state and answer for everyone 111ms
+     × refuses, in the contract's order: VERSION_CONFLICT, then NOT_ALLOWED for other days, a choice and a second confirmation 77ms
+   ❯ confirmations and a leave at once, on connections of their own (4)
+     × takes two members' confirmations one after the other, and moves no version 148ms
+     × takes a confirmation that comes before the leave, which then drops the change 136ms
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 21 passed (27)
+   Start at  11:07:59
+   Duration  3.77s (tests 90%, import 7%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/membership-change.test.ts > a change replaced, dropped, and a club paused (FQ16, FQ126, FQ127) > replaces an open change at the next join: the same start, everyone confirms again, and the old id answers MEMBERSHIP_CHANGED
+AssertionError: expected { …(10) } to match object { …(4) }
+(6 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "id": "spr_uABYd06pgeXHQF1BRjaXHw",
+    "replaced_by": "spr_FCe-u6ififLVYir-i4n5UQ",
+    "state": "superseded",
+-   "version": 2,
++   "version": 3,
+  }
+
+ ❯ src/db/membership-change.test.ts:312:21
+    310|       await join(tx, c, "Sam", "Ben");
+    311|       const [first, second] = await changes(tx, c);
+    312|       expect(first).toMatchObject({ id: change.id, state: "superseded"…
+       |                     ^
+    313|       expect(String(first?.closed_at)).toBe(current.toString());
+    314|       expect(second).toMatchObject({ state: "open", version: 1, days_p…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:305:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  src/db/membership-change.test.ts > a change replaced, dropped, and a club paused (FQ16, FQ126, FQ127) > drops an open change when a leave brings the club back to its week, and its id then answers as an ended one
+AssertionError: expected { …(10) } to match object { …(4) }
+(6 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "id": "spr_ilsRxSeUU8rqtKAflzEFHg",
+    "replaced_by": null,
+    "state": "superseded",
+-   "version": 2,
++   "version": 3,
+  }
+
+ ❯ src/db/membership-change.test.ts:420:22
+    418|       const all = await changes(tx, c);
+    419|       expect(all).toHaveLength(1);
+    420|       expect(all[0]).toMatchObject({ id: change.id, state: "superseded…
+       |                      ^
+    421|       expect(String(all[0]?.closed_at)).toBe(current.toString());
+    422|       expect((await sight(tx, c, "Maya"))?.proposal).toBeNull();
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:413:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirming a change (FQ56, FQ81; T1, T19, T33) > writes the member's confirmation at the clock's instant and nothing else: the same version, state and answer for everyone
+AssertionError: expected { …(10) } to deeply equal { …(10) }
+
+- Expected
++ Received
+
+@@ -295,7 +295,7 @@
+        "suggested": false,
+        "weekday": "saturday",
+      },
+    ],
+    "state": "open",
+-   "version": 1,
++   "version": 2,
+  }
+
+ ❯ src/db/membership-change.test.ts:656:22
+    654|       const answer = await confirm(tx, c, "Ben", seen.id, seen.version…
+    655|       // Ben's own answer: the same week, confirmed.
+    656|       expect(answer).toEqual(JSON.parse(JSON.stringify({ ...seen, mySt…
+       |                      ^
+    657|       expect(await proposalOf(tx, c, "Ben")).toEqual({ ...seen, myStat…
+    658|       // Everyone else's is as it was, to the last field (FQ81, T33).
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:645:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirming a change (FQ56, FQ81; T1, T19, T33) > refuses, in the contract's order: VERSION_CONFLICT, then NOT_ALLOWED for other days, a choice and a second confirmation
+AssertionError: expected { code: 'VERSION_CONFLICT', …(1) } to match object { code: 'NOT_ALLOWED' }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "code": "NOT_ALLOWED",
++   "code": "VERSION_CONFLICT",
+  }
+
+ ❯ notAllowed src/db/membership-change.test.ts:695:78
+    693|       });
+    694|       const notAllowed = async (weekdays: readonly Weekday[]) => {
+    695|         expect(await refusal(confirm(tx, c, "Ben", change.id, 1, weekd…
+       |                                                                              ^
+    696|       };
+    697|       // One of Ben's two days, Maya's days, one of each, and a day pr…
+ ❯ src/db/membership-change.test.ts:709:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirmations and a leave at once, on connections of their own > takes two members' confirmations one after the other, and moves no version
+AssertionError: expected { …(10) } to match object { state: 'open', version: 1, …(1) }
+(7 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "myState": "confirmed",
+    "state": "open",
+-   "version": 1,
++   "version": 2,
+  }
+
+ ❯ src/db/membership-change.test.ts:799:23
+    797|       await hold.release();
+    798|     }
+    799|     expect(await ben).toMatchObject({ state: "open", version: 1, mySta…
+       |                       ^
+    800|     expect(await maya).toMatchObject({ state: "open", version: 1, mySt…
+    801|     expect(await rowOf(s.change.id)).toEqual({ state: "open", version:…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirmations and a leave at once, on connections of their own > takes a confirmation that comes before the leave, which then drops the change
+AssertionError: expected { …(10) } to match object { state: 'open', version: 1, …(1) }
+(7 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "myState": "confirmed",
+    "state": "open",
+-   "version": 1,
++   "version": 2,
+  }
+
+ ❯ src/db/membership-change.test.ts:835:23
+    833|       await hold.release();
+    834|     }
+    835|     expect(await ben).toMatchObject({ state: "open", version: 1, mySta…
+       |                       ^
+    836|     expect(await left).toMatchObject({ club_id: s.c.club });
+    837|     expect(await rowOf(s.change.id)).toEqual({ state: "superseded", ve…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+

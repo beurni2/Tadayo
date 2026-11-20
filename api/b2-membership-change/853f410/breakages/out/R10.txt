@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (27 tests | 1 failed) 104ms
+   ❯ changeAfter: when a change is proposed, replaced or dropped (10)
+     × proposes a change when a member has fewer days than the table's, though the stars are the members 15ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  1 failed | 156 passed (157)
+   Start at  11:06:40
+   Duration  2.18s (tests 88%, import 7%, transform 3%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > changeAfter: when a change is proposed, replaced or dropped > proposes a change when a member has fewer days than the table's, though the stars are the members
+AssertionError: expected { kind: 'nothing' } to match object { kind: 'propose', daysPerMember: 2 }
+
+- Expected
++ Received
+
+  {
+-   "daysPerMember": 2,
+-   "kind": "propose",
++   "kind": "nothing",
+  }
+
+ ❯ src/schedule/change.test.ts:191:81
+    189|     // Three members hold one day each, as the first days of four left…
+    190|     const one = week(["monday", "ben"], ["tuesday", "debby"], ["wednes…
+    191|     expect(changeAfter(facts({ active: ["ben", "debby", "maya"], week:…
+       |                                                                                 ^
+    192|       kind: "propose",
+    193|       daysPerMember: 2,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (27 tests | 1 failed) 100ms
+   ❯ changeAfter: when a change is proposed, replaced or dropped (10)
+     × replaces an open change when the members it includes are no longer the club's (FQ126) 17ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  1 failed | 156 passed (157)
+   Start at  11:06:49
+   Duration  1.84s (tests 87%, import 8%, transform 3%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > changeAfter: when a change is proposed, replaced or dropped > replaces an open change when the members it includes are no longer the club's (FQ126)
+AssertionError: expected { kind: 'nothing' } to match object { kind: 'propose', replaces: true }
+
+- Expected
++ Received
+
+  {
+-   "kind": "propose",
+-   "replaces": true,
++   "kind": "nothing",
+  }
+
+ ❯ src/schedule/change.test.ts:200:19
+    198|     const open = { members: ["ben", "debby", "maya", "alex", "sam"] };
+    199|     const again = changeAfter(facts({ active: ["ben", "debby", "maya",…
+    200|     expect(again).toMatchObject({ kind: "propose", replaces: true });
+       |                   ^
+    201|   });
+    202|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

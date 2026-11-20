@@ -1,0 +1,200 @@
+== R01 a member who stays loses their days [unit]: CAUGHT; exit 1 ['Tests  8 failed | 149 passed (157)']
+    × frees the days of a member who left and moves nobody, where the table keeps the days each 0ms
+    × gives a member with no day in the week the days they lack, as it does a new member (FQ100) 0ms
+    × gives a new member the first free day from Monday when the day of their place is kept by someone 1ms
+    × gives two who join at once different days, in the order they joined 0ms
+    × keeps every member's day and gives a fifth member the table's day for their place, which is free 16ms
+    × proposes a change for a join, a leave, and a leaver's day still in the week 0ms
+== R02 a new member takes the first free day, not the day of their place [unit]: CAUGHT BY ANOTHER TEST; exit 1 ['Tests  1 failed | 156 passed (157)']
+    × gives the table's days to members none of whom has a day in the week 14ms
+== R03 a new member may take a day someone keeps [unit]: CAUGHT; exit 1 ['Tests  2 failed | 155 passed (157)']
+    × gives a new member the first free day from Monday when the day of their place is kept by someone 9ms
+    × gives two who join at once different days, in the order they joined 6ms
+== R04 two who join take the same day [unit]: CAUGHT; exit 1 ['Tests  1 failed | 156 passed (157)']
+    × gives two who join at once different days, in the order they joined 13ms
+== R05 the table's whole week is never proposed [unit]: CAUGHT; exit 1 ['Tests  2 failed | 155 passed (157)']
+    × proposes the table's whole week when a fourth member joins three: one day each (spec 05) 5ms
+    × proposes the table's whole week when four become three: two days each (spec 05) 10ms
+== R06 the table's whole week is always proposed [unit]: CAUGHT; exit 1 ['Tests  3 failed | 154 passed (157)']
+    × frees the days of a member who left and moves nobody, where the table keeps the days each 3ms
+    × gives a new member the first free day from Monday when the day of their place is kept by someone 14ms
+    × gives two who join at once different days, in the order they joined 17ms
+== R07 a change is proposed while the first days are open [unit]: CAUGHT; exit 1 ['Tests  1 failed | 156 passed (157)']
+    × leaves the first days to their own rule while they are open 10ms
+== R08 a paused club is proposed a change [unit]: CAUGHT; exit 1 ['Tests  1 failed | 156 passed (157)']
+    × drops an open change, and proposes none, with fewer than two members (FQ16) 9ms
+== R09 a leaver's day in the week is no reason for a change [unit]: CAUGHT; exit 1 ['Tests  1 failed | 156 passed (157)']
+    × proposes a change for a join, a leave, and a leaver's day still in the week 14ms
+== R10 a member short of days is no reason for a change [unit]: CAUGHT; exit 1 ['Tests  1 failed | 156 passed (157)']
+    × proposes a change when a member has fewer days than the table's, though the stars are the members 15ms
+== R11 an open change isn't dropped when the club is back at its week [unit]: CAUGHT; exit 1 ['Tests  1 failed | 156 passed (157)']
+    × drops an open change when the club is back at the week's own members 16ms
+== R12 an open change for the same members is replaced [unit]: CAUGHT; exit 1 ['Tests  1 failed | 156 passed (157)']
+    × changes nothing when the open change already includes exactly the club's members 11ms
+== R13 an open change for other members stays [unit]: CAUGHT; exit 1 ['Tests  1 failed | 156 passed (157)']
+    × replaces an open change when the members it includes are no longer the club's (FQ126) 17ms
+== R14 a change starts a week early [unit]: CAUGHT; exit 1 ['Tests  4 failed | 153 passed (157)']
+    × is Monday 7 December 2026 seen from Friday 6 November, the contract's own example 10ms
+    × is the same Monday from every day of a week, and a week later from the next Monday 1ms
+    × takes a new start when a day was made on or after the replaced change's start 0ms
+    × takes a new start when the replaced change's start is today or has passed 0ms
+== R15 a change starts before a day already made [unit]: CAUGHT; exit 1 ['Tests  2 failed | 155 passed (157)']
+    × is always a Monday after today and after the last day made, whichever branch decides 6ms
+    × is the Monday after the last day made when a day was made beyond the window 18ms
+== R16 a replacement takes a new start [unit]: CAUGHT; exit 1 ['Tests  1 failed | 156 passed (157)']
+    × keeps the start of the change it replaces while that start is still ahead (FQ126, FQ127) 11ms
+== R17 a replacement keeps a start that has passed [unit]: CAUGHT; exit 1 ['Tests  1 failed | 156 passed (157)']
+    × takes a new start when the replaced change's start is today or has passed 10ms
+== R18 a replacement keeps a start a day was made on or after [unit]: CAUGHT; exit 1 ['Tests  1 failed | 156 passed (157)']
+    × takes a new start when a day was made on or after the replaced change's start 9ms
+== N01 days are made from a change's start on [unit]: CAUGHT; exit 1 ['Tests  2 failed | 155 passed (157)']
+    × makes no day from the start of a change waiting to start, and every day before it (FQ127) 22ms
+    × makes nothing once a change's start is today or has passed, until the change ends (FQ127) 8ms
+== N02 the day before a change's start isn't made [unit]: CAUGHT BY ANOTHER TEST; exit 1 ['Tests  1 failed | 156 passed (157)']
+    × makes nothing once a change's start is today or has passed, until the change ends (FQ127) 16ms
+== V01 a change's view names nobody [unit]: CAUGHT; exit 1 ['Tests  3 failed | 154 passed (157)']
+    × gives no day a state that needs a choice: never taken, clash or no_reveal, and no first date 1ms
+    × gives the viewer their own day, and names for every other day the member it is proposed for 11ms
+    × leaves a free day with no name, in a week of fewer than six days 1ms
+== V02 a change's view hides the days of a member who has confirmed [unit]: CAUGHT; exit 1 ['Tests  2 failed | 155 passed (157)']
+    × gives no day a state that needs a choice: never taken, clash or no_reveal, and no first date 2ms
+    × is the same for a viewer whoever else has confirmed, and changes only `myState` at their own (FQ81) 18ms
+== V03 a confirmation of other days is taken [unit]: CAUGHT; exit 1 ['Tests  1 failed | 156 passed (157)']
+    × refuses any other days: another member's, one of each, too few 8ms
+== V04 a second confirmation of a change is taken [unit]: CAUGHT; exit 1 ['Tests  1 failed | 156 passed (157)']
+    × refuses a second confirmation, though the days are the caller's own 9ms
+== C01 a join proposes no change [db]: CAUGHT; exit 1 ['Tests  21 failed | 6 passed (27)']
+    × answers MEMBERSHIP_CHANGED to a confirmation that comes after the leave that replaced the change 60ms
+    × answers a retry under the same key with the first answer, once, and another request under it IDEMPOTENCY_CONFLICT (T19) 96ms
+    × answers a retry with the first answer after the change was replaced, and nothing once the caller has left (T19, T14) 75ms
+    × drops an open change when a leave brings the club back to its week, and its id then answers as an ended one 59ms
+    × drops an open change when the club is paused, proposes none, and proposes one when it has two members again (FQ16, FQ116) 57ms
+    × gives a member who stays their days, each other day with the member it is proposed for, and the days announced 78ms
+== C02 a leave proposes no change [db]: CAUGHT; exit 1 ['Tests  10 failed | 17 passed (27)']
+    × answers MEMBERSHIP_CHANGED to a confirmation that comes after the leave that replaced the change 290ms
+    × drops an open change when a leave brings the club back to its week, and its id then answers as an ended one 82ms
+    × drops an open change when the club is paused, proposes none, and proposes one when it has two members again (FQ16, FQ116) 92ms
+    × frees a leaver's days and moves nobody, where the days each stay (three to two) 86ms
+    × makes no day from the change's start on, whatever the date, and every day before it as before 91ms
+    × names nobody on a day the change proposes for nobody, and leaves a leaver's made days out of the announced 106ms
+== C03 the last confirmation of the first days proposes no change [db]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × proposes one with the last confirmation of the first days, for a member who joined after a day was confirmed (FQ100) 136ms
+== C04 a club with no applied first days is given its week [db]: NOT CAUGHT, AN EQUIVALENT CHANGE (README); exit 0 ['Tests  27 passed (27)']
+== C05 a replaced change names no successor [db]: CAUGHT; exit 1 ['Tests  3 failed | 24 passed (27)']
+    × answers MEMBERSHIP_CHANGED to a confirmation that comes after the leave that replaced the change 316ms
+    × names the club's open change to an id replaced more than once, and treats it as ended once none is open (FQ126) 101ms
+    × replaces an open change at the next join: the same start, everyone confirms again, and the old id answers MEMBERSHIP_CHANGED 125ms
+== C06 a dropped change keeps its version [db]: CAUGHT; exit 1 ['Tests  6 failed | 21 passed (27)']
+    × drops an open change when a leave brings the club back to its week, and its id then answers as an ended one 85ms
+    × drops an open change when the club is paused, proposes none, and proposes one when it has two members again (FQ16, FQ116) 83ms
+    × makes no day from the change's start on, whatever the date, and every day before it as before 102ms
+    × names the club's open change to an id replaced more than once, and treats it as ended once none is open (FQ126) 125ms
+    × refuses a confirmation that comes after the leave that dropped the change 158ms
+    × takes a confirmation that comes before the leave, which then drops the change 137ms
+== C07 a change's start ignores the days made [db]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × starts a change after a day already made beyond the window 90ms
+== C08 a replacement takes a new start [db]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × replaces an open change at the next join: the same start, everyone confirms again, and the old id answers MEMBERSHIP_CHANGED 144ms
+== C09 a change's confirmation moves its version [db]: CAUGHT; exit 1 ['Tests  6 failed | 21 passed (27)']
+    × drops an open change when a leave brings the club back to its week, and its id then answers as an ended one 69ms
+    × refuses, in the contract's order: VERSION_CONFLICT, then NOT_ALLOWED for other days, a choice and a second confirmation 77ms
+    × replaces an open change at the next join: the same start, everyone confirms again, and the old id answers MEMBERSHIP_CHANGED 130ms
+    × takes a confirmation that comes before the leave, which then drops the change 136ms
+    × takes two members' confirmations one after the other, and moves no version 148ms
+    × writes the member's confirmation at the clock's instant and nothing else: the same version, state and answer for everyone 111ms
+== C10 a change's confirmation of other days is taken [db]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × refuses, in the contract's order: VERSION_CONFLICT, then NOT_ALLOWED for other days, a choice and a second confirmation 75ms
+== C11 the new member gets the announced days [db]: CAUGHT; exit 1 ['Tests  17 failed | 10 passed (27)']
+    × answers MEMBERSHIP_CHANGED to a confirmation that comes after the leave that replaced the change 203ms
+    × answers a retry under the same key with the first answer, once, and another request under it IDEMPOTENCY_CONFLICT (T19) 63ms
+    × answers a retry with the first answer after the change was replaced, and nothing once the caller has left (T19, T14) 74ms
+    × drops an open change when a leave brings the club back to its week, and its id then answers as an ended one 65ms
+    × gives a member who stays their days, each other day with the member it is proposed for, and the days announced 67ms
+    × gives the new member the same week and no announced days 74ms
+== C23 the pure rule gives the announced days to anyone [unit]: CAUGHT; exit 1 ['Tests  1 failed | 156 passed (157)']
+    × gives none to a member with no day in it: a new member, each of several, a late joiner 9ms
+== C24 a replaced id names the change that replaced it, one hop [db]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × names the club's open change to an id replaced more than once, and treats it as ended once none is open (FQ126) 114ms
+== C25 a replaced id with none open answers MEMBERSHIP_CHANGED with any open one [db]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × names the club's open change to an id replaced more than once, and treats it as ended once none is open (FQ126) 155ms
+== J10 the judge names the change that replaced it, one hop [judge]: CAUGHT; exit 1 ['Tests  1 failed | 35 passed (36)']
+    × keeps the contract's order: not found, MEMBERSHIP_CHANGED, the version, NOT_ALLOWED 12ms
+== C12 nobody gets the announced days [db]: CAUGHT; exit 1 ['Tests  3 failed | 24 passed (27)']
+    × gives a member who stays their days, each other day with the member it is proposed for, and the days announced 83ms
+    × names nobody on a day the change proposes for nobody, and leaves a leaver's made days out of the announced 104ms
+    × works a change out from a restarted club's own week, not the week before it, and gives its members the announced days (FQ124) 103ms
+== C13 a change is read with the first days' view [db]: CAUGHT BY ANOTHER TEST; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × writes the member's confirmation at the clock's instant and nothing else: the same version, state and answer for everyone 110ms
+== C14 the announced days include a closed day [home]: CAUGHT; exit 1 ['Tests  9 failed | 11 passed (20)']
+    × closes London's Saturdays at the jump over the missing 01:00 and at the first of the two 01:00s, and Santiago's after 19 and 17 hours 36ms
+    × gives a stranger, a former member, an account being deleted, an account with no club and an unknown account nothing 91ms
+    × in Africa/Ouagadougou, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 35ms
+    × in America/New_York, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 38ms
+    × in America/Santiago, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 48ms
+    × in Antarctica/Troll, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 31ms
+== C15 the announced days include a held day [home]: CAUGHT; exit 1 ['Tests  5 failed | 15 passed (20)']
+    × holds a day whose star asked to delete their account a microsecond before its reveal, whether the interval has ended or not (T27) 13ms
+    × holds a day whose star left a microsecond before its reveal, by leaving, a block or a deletion: never open, never next (FQ63) 14ms
+    × leaves out an open day whose star has no name to show, and still gives the next day (B6, docs/LIMITATIONS.md) 21ms
+    × never chooses a suspended or cancelled day, and moves next on to the day after it 27ms
+    × never mixes them: each club's days carry its own id, star and date, whatever the other's hold 59ms
+== C21 the database lists closed days as announced [home]: CAUGHT; exit 1 ['Tests  9 failed | 11 passed (20)']
+    × closes London's Saturdays at the jump over the missing 01:00 and at the first of the two 01:00s, and Santiago's after 19 and 17 hours 42ms
+    × gives a stranger, a former member, an account being deleted, an account with no club and an unknown account nothing 72ms
+    × in Africa/Ouagadougou, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 32ms
+    × in America/New_York, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 35ms
+    × in America/Santiago, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 42ms
+    × in Antarctica/Troll, opens each day at its 7 AM exactly and closes it at its 1 AM exactly, and gives the next in date order 33ms
+== C22 the database lists a held day as announced [db]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × names nobody on a day the change proposes for nobody, and leaves a leaver's made days out of the announced 88ms
+== C16 the route leaves the announced days out [api]: CAUGHT; exit 1 ['Tests  1 failed | 29 passed (30)']
+    × makes each scene of a membership change, field for field, with the days announced until its start 15ms
+== C17 through the app: the new member gets the announced days [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 18 skipped (19)']
+    × answers each caller the change as the rows say, takes a confirmation that moves nothing, and replaces the change at a leave 344ms
+== C18 through the app: a confirmation moves the version [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 18 skipped (19)']
+    × answers each caller the change as the rows say, takes a confirmation that moves nothing, and replaces the change at a leave 725ms
+== C19 through the app: a leave replaces no change [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 18 skipped (19)']
+    × answers each caller the change as the rows say, takes a confirmation that moves nothing, and replaces the change at a leave 896ms
+== C20 through the app: a change's view hides a confirmed member's days [matrix]: CAUGHT; exit 1 ['Tests  1 failed | 18 skipped (19)']
+    × answers each caller the change as the rows say, takes a confirmation that moves nothing, and replaces the change at a leave 688ms
+== M01 a change may end applied [mig]: CAUGHT; exit 1 ['Tests  1 failed | 44 passed (45)'] (database made again: 0 0)
+    × never ends applied before its start, even with every member confirmed 31ms
+== M02 a change's week may be proposed again [mig]: CAUGHT; exit 1 ['Tests  1 failed | 44 passed (45)'] (database made again: 0 0)
+    × never has its week proposed again, or its days each changed 21ms
+== M03 a change may start at any version or state [mig]: CAUGHT; exit 1 ['Tests  1 failed | 44 passed (45)'] (database made again: 0 0)
+    × is proposed open, at version 1, in its one week, with no week of its own, from a Monday 24ms
+== M04 a change may start with a week of its own [mig]: CAUGHT; exit 1 ['Tests  1 failed | 44 passed (45)'] (database made again: 0 0)
+    × is proposed open, at version 1, in its one week, with no week of its own, from a Monday 31ms
+== M05 a change may start on any weekday [mig]: CAUGHT; exit 1 ['Tests  1 failed | 44 passed (45)'] (database made again: 0 0)
+    × is proposed open, at version 1, in its one week, with no week of its own, from a Monday 35ms
+== M06 a change may be proposed before the first days apply [mig]: CAUGHT; exit 1 ['Tests  1 failed | 44 passed (45)'] (database made again: 0 0)
+    × is proposed only once the club's first days have applied 19ms
+== M07 a change's days may be changed [mig]: CAUGHT; exit 1 ['Tests  1 failed | 44 passed (45)'] (database made again: 0 0)
+    × has its days written once, each proposed and held, a weekday for one member 23ms
+== M08 a change's day may be written not held [mig]: CAUGHT; exit 1 ['Tests  1 failed | 44 passed (45)'] (database made again: 0 0)
+    × has its days written once, each proposed and held, a weekday for one member 32ms
+== M09 a change may propose a weekday for two members [mig]: CAUGHT; exit 1 ['Tests  1 failed | 44 passed (45)'] (database made again: 0 0)
+    × has its days written once, each proposed and held, a weekday for one member 20ms
+== J01 the judge takes no change where one is due [judge]: CAUGHT; exit 1 ['Tests  1 failed | 35 passed (36)']
+    × refuses no change, a change for other members, a member moved, a weekday twice, a day not held and the wrong days each 9ms
+== J02 the judge takes a change for other members [judge]: CAUGHT; exit 1 ['Tests  1 failed | 35 passed (36)']
+    × refuses no change, a change for other members, a member moved, a weekday twice, a day not held and the wrong days each 8ms
+== J03 the judge takes a member moved [judge]: CAUGHT; exit 1 ['Tests  1 failed | 35 passed (36)']
+    × refuses no change, a change for other members, a member moved, a weekday twice, a day not held and the wrong days each 11ms
+== J04 the judge takes a weekday twice [judge]: CAUGHT; exit 1 ['Tests  1 failed | 35 passed (36)']
+    × refuses no change, a change for other members, a member moved, a weekday twice, a day not held and the wrong days each 11ms
+== J05 the judge takes a day that isn't held [judge]: CAUGHT; exit 1 ['Tests  1 failed | 35 passed (36)']
+    × refuses no change, a change for other members, a member moved, a weekday twice, a day not held and the wrong days each 8ms
+== J06 the judge takes any start [judge]: CAUGHT; exit 1 ['Tests  2 failed | 34 passed (36)']
+    × accepts a new change for the active members, and each start the dates give 10ms
+    × wants an open change for other members replaced by a new one that names it and keeps its start while that is ahead 2ms
+== J07 the judge takes an open change in a club back at its week [judge]: CAUGHT; exit 1 ['Tests  2 failed | 34 passed (36)']
+    × wants an open change dropped, with no successor, when a leave brings the club back to its week 10ms
+    × wants nothing made or moved while the first days are open, where none ever applied, and for the same members 2ms
+== J08 the judge takes a replaced change that names no successor [judge]: CAUGHT; exit 1 ['Tests  2 failed | 34 passed (36)']
+    × wants an open change dropped, with no successor, when a leave brings the club back to its week 7ms
+    × wants an open change for other members replaced by a new one that names it and keeps its start while that is ahead 2ms
+== J09 the judge takes a new change that starts with a confirmation [judge]: CAUGHT; exit 1 ['Tests  1 failed | 35 passed (36)']
+    × refuses no change, a change for other members, a member moved, a weekday twice, a day not held and the wrong days each 8ms
+restored: ''
+exit 0

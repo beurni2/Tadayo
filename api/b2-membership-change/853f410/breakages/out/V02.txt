@@ -1,0 +1,92 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/view.test.ts (21 tests | 2 failed) 1445ms
+   ❯ a membership change's view (FQ56, FQ81; the contract's `change` scene) (5)
+     × is the same for a viewer whoever else has confirmed, and changes only `myState` at their own (FQ81) 18ms
+     × gives no day a state that needs a choice: never taken, clash or no_reveal, and no first date 2ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  2 failed | 155 passed (157)
+   Start at  11:07:13
+   Duration  1.79s (tests 88%, import 8%, transform 3%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/view.test.ts > a membership change's view (FQ56, FQ81; the contract's `change` scene) > is the same for a viewer whoever else has confirmed, and changes only `myState` at their own (FQ81)
+AssertionError: expected { slots: [ { …(3) }, …(5) ], …(2) } to deeply equal { slots: [ { …(3) }, …(5) ], …(2) }
+
+- Expected
++ Received
+
+@@ -8,35 +8,30 @@
+        "state": "yours",
+        "suggested": true,
+        "weekday": "monday",
+      },
+      {
+-       "heldBy": "alex",
+        "state": "available",
+        "suggested": false,
+        "weekday": "tuesday",
+      },
+      {
+-       "heldBy": "sam",
+        "state": "available",
+        "suggested": false,
+        "weekday": "wednesday",
+      },
+      {
+-       "heldBy": "nina",
+        "state": "available",
+        "suggested": false,
+        "weekday": "thursday",
+      },
+      {
+-       "heldBy": "leila",
+        "state": "available",
+        "suggested": false,
+        "weekday": "friday",
+      },
+      {
+-       "heldBy": "maya",
+        "state": "available",
+        "suggested": false,
+        "weekday": "saturday",
+      },
+    ],
+
+ ❯ src/schedule/view.test.ts:389:53
+    387|       const before = changeViewFor(viewer, change());
+    388|       const others = KITCHEN.map(([id]) => id).filter((id) => id !== v…
+    389|       expect(changeViewFor(viewer, change(others))).toEqual(before);
+       |                                                     ^
+    390|       expect(changeViewFor(viewer, change([viewer]))).toEqual({ ...bef…
+    391|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/schedule/view.test.ts > a membership change's view (FQ56, FQ81; the contract's `change` scene) > gives no day a state that needs a choice: never taken, clash or no_reveal, and no first date
+AssertionError: expected [ 'state', 'suggested', 'weekday' ] to deeply equal [ Array(4) ]
+
+- Expected
++ Received
+
+  [
+-   "heldBy",
+    "state",
+    "suggested",
+    "weekday",
+  ]
+
+ ❯ src/schedule/view.test.ts:398:42
+    396|       for (const slot of changeViewFor(viewer, change(["ben", "maya"])…
+    397|         expect(["yours", "available"]).toContain(slot.state);
+    398|         expect(Object.keys(slot).sort()).toEqual(
+       |                                          ^
+    399|           slot.state === "yours" ? ["state", "suggested", "weekday"] :…
+    400|         );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

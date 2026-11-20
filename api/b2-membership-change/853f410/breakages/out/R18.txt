@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (27 tests | 1 failed) 81ms
+   ❯ changeStart: the first week after every day already made (FQ61, FQ115) (7)
+     × takes a new start when a day was made on or after the replaced change's start 9ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  1 failed | 156 passed (157)
+   Start at  11:07:02
+   Duration  2.13s (tests 90%, import 8%, worker 2%, transform 1%)
+
+    Isolate  8 workers spawned · ~154ms startup each (spawn + environment, per file)
+             at least ~256ms faster with isolate: false — reuses workers across files instead of one per file
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > changeStart: the first week after every day already made (FQ61, FQ115) > takes a new start when a day was made on or after the replaced change's start
+AssertionError: expected '2026-12-07' to be '2026-12-21' // Object.is equality
+
+Expected: "2026-12-21"
+Received: "2026-12-07"
+
+ ❯ src/schedule/change.test.ts:257:87
+    255|   it("takes a new start when a day was made on or after the replaced c…
+    256|     // Generation makes no such day while the change is open (FQ127); …
+    257|     expect(changeStart(D("2026-11-20"), D("2026-12-07"), D("2026-12-07…
+       |                                                                                       ^
+    258|     expect(changeStart(D("2026-11-20"), D("2026-12-09"), D("2026-12-07…
+    259|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

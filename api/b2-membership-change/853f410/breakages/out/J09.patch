@@ -1,0 +1,12 @@
+diff --git a/tests/src/privacy/schedule.ts b/tests/src/privacy/schedule.ts
+index e23e3745..bac14712 100644
+--- a/tests/src/privacy/schedule.ts
++++ b/tests/src/privacy/schedule.ts
+@@ -977,7 +977,6 @@ export function weekChangeProblems(
+   if (rows.daysPerMember !== per)
+     problems.push(`the change gives ${String(rows.daysPerMember)} days each, not ${String(per)}`);
+   if (rows.earlier.length > 0) problems.push("a new change has rows of an earlier week");
+-  if (rows.members.some((member) => member.confirmed)) problems.push("a new change starts with a confirmation");
+   if (rows.days.some((day) => !(day.suggested && day.held)))
+     problems.push("a change's day isn't both proposed and held");
+   const weekdays = rows.days.map((day) => day.weekday);

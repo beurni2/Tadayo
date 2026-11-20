@@ -1,0 +1,88 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/membership-change.test.ts (27 tests | 1 failed) 3105ms
+   ❯ confirming a change (FQ56, FQ81; T1, T19, T33) (4)
+     × writes the member's confirmation at the clock's instant and nothing else: the same version, state and answer for everyone 87ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+   Start at  11:11:29
+   Duration  3.79s (tests 89%, import 8%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/membership-change.test.ts > confirming a change (FQ56, FQ81; T1, T19, T33) > writes the member's confirmation at the clock's instant and nothing else: the same version, state and answer for everyone
+AssertionError: expected { …(10) } to deeply equal { …(10) }
+
+- Expected
++ Received
+
+@@ -249,50 +249,30 @@
+        "state": "yours",
+        "suggested": true,
+        "weekday": "monday",
+      },
+      {
+-       "heldBy": {
+-         "avatarVersion": null,
+-         "displayName": "Maya",
+-         "membershipId": "mem_y-IaGAaOXsxqGACB7hAJ7A",
+-       },
+        "state": "available",
+        "suggested": false,
+        "weekday": "tuesday",
+      },
+      {
+-       "heldBy": {
+-         "avatarVersion": null,
+-         "displayName": "Alex",
+-         "membershipId": "mem_spznhn_NnJEkodsptxqLOw",
+-       },
+        "state": "available",
+        "suggested": false,
+        "weekday": "wednesday",
+      },
+      {
+        "state": "yours",
+        "suggested": true,
+        "weekday": "thursday",
+      },
+      {
+-       "heldBy": {
+-         "avatarVersion": null,
+-         "displayName": "Maya",
+-         "membershipId": "mem_y-IaGAaOXsxqGACB7hAJ7A",
+-       },
+        "state": "available",
+        "suggested": false,
+        "weekday": "friday",
+      },
+      {
+-       "heldBy": {
+-         "avatarVersion": null,
+-         "displayName": "Alex",
+-         "membershipId": "mem_spznhn_NnJEkodsptxqLOw",
+-       },
+        "state": "available",
+        "suggested": false,
+        "weekday": "saturday",
+      },
+    ],
+
+ ❯ src/db/membership-change.test.ts:656:22
+    654|       const answer = await confirm(tx, c, "Ben", seen.id, seen.version…
+    655|       // Ben's own answer: the same week, confirmed.
+    656|       expect(answer).toEqual(JSON.parse(JSON.stringify({ ...seen, mySt…
+       |                      ^
+    657|       expect(await proposalOf(tx, c, "Ben")).toEqual({ ...seen, myStat…
+    658|       // Everyone else's is as it was, to the last field (FQ81, T33).
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:645:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

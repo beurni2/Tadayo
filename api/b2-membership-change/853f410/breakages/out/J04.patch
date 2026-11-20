@@ -1,0 +1,12 @@
+diff --git a/tests/src/privacy/schedule.ts b/tests/src/privacy/schedule.ts
+index e23e3745..3b32b86f 100644
+--- a/tests/src/privacy/schedule.ts
++++ b/tests/src/privacy/schedule.ts
+@@ -981,7 +981,6 @@ export function weekChangeProblems(
+   if (rows.days.some((day) => !(day.suggested && day.held)))
+     problems.push("a change's day isn't both proposed and held");
+   const weekdays = rows.days.map((day) => day.weekday);
+-  if (new Set(weekdays).size !== weekdays.length) problems.push("a change proposes one weekday for two members (T6)");
+   for (const interval of active) {
+     const proposed = WEEK.filter((weekday) =>
+       rows.days.some((day) => day.interval === interval && day.weekday === weekday),

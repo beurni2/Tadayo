@@ -1,0 +1,449 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/membership-change.test.ts (27 tests | 21 failed) 2360ms
+   ❯ when a change is proposed (FQ56, FQ100, FQ102, FQ125) (6)
+     × proposes one for a join in a club with a week: everyone keeps their days, the new member gets free ones 253ms
+     × proposes spec 05's whole week when a fourth member joins three, and when one of four leaves 66ms
+   ❯ a change replaced, dropped, and a club paused (FQ16, FQ126, FQ127) (7)
+     × replaces an open change at the next join: the same start, everyone confirms again, and the old id answers MEMBERSHIP_CHANGED 71ms
+     × names the club's open change to an id replaced more than once, and treats it as ended once none is open (FQ126) 72ms
+     × works a change out from a restarted club's own week, not the week before it, and gives its members the announced days (FQ124) 101ms
+     × takes a new start for a replacement once the replaced change's start is today 56ms
+     × drops an open change when a leave brings the club back to its week, and its id then answers as an ended one 59ms
+     × drops an open change when the club is paused, proposes none, and proposes one when it has two members again (FQ16, FQ116) 57ms
+   ❯ the days made while a change is open (FQ61, FQ127) (2)
+     × makes no day from the change's start on, whatever the date, and every day before it as before 82ms
+     × starts a change after a day already made beyond the window 76ms
+   ❯ reading a change (the contract's ScheduleProposal; FQ61, FQ81; G04-change) (4)
+     × gives a member who stays their days, each other day with the member it is proposed for, and the days announced 78ms
+     × gives the new member the same week and no announced days 79ms
+     × gives someone who left, a stranger and a member of another club nothing of it (T14) 58ms
+   ❯ confirming a change (FQ56, FQ81; T1, T19, T33) (4)
+     × writes the member's confirmation at the clock's instant and nothing else: the same version, state and answer for everyone 91ms
+     × refuses, in the contract's order: VERSION_CONFLICT, then NOT_ALLOWED for other days, a choice and a second confirmation 68ms
+     × answers a retry under the same key with the first answer, once, and another request under it IDEMPOTENCY_CONFLICT (T19) 96ms
+     × answers a retry with the first answer after the change was replaced, and nothing once the caller has left (T19, T14) 75ms
+   ❯ confirmations and a leave at once, on connections of their own (4)
+     × takes two members' confirmations one after the other, and moves no version 79ms
+     × refuses a confirmation that comes after the leave that dropped the change 77ms
+     × takes a confirmation that comes before the leave, which then drops the change 53ms
+     × answers MEMBERSHIP_CHANGED to a confirmation that comes after the leave that replaced the change 60ms
+
+ Test Files  1 failed (1)
+      Tests  21 failed | 6 passed (27)
+   Start at  11:07:21
+   Duration  3.18s (tests 85%, import 10%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 21 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/membership-change.test.ts > when a change is proposed (FQ56, FQ100, FQ102, FQ125) > proposes one for a join in a club with a week: everyone keeps their days, the new member gets free ones
+Error: withAlex: no change was proposed
+ ❯ withAlex src/db/membership-change.test.ts:173:35
+    171|   await join(tx, c, "Alex", "Ben");
+    172|   const [change] = await changes(tx, c);
+    173|   if (change === undefined) throw new Error("withAlex: no change was p…
+       |                                   ^
+    174|   return { c, change };
+    175| }
+ ❯ src/db/membership-change.test.ts:180:29
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:179:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/21]⎯
+
+ FAIL  src/db/membership-change.test.ts > when a change is proposed (FQ56, FQ100, FQ102, FQ125) > proposes spec 05's whole week when a fourth member joins three, and when one of four leaves
+Error: withAlex: no change was proposed
+ ❯ withAlex src/db/membership-change.test.ts:173:35
+    171|   await join(tx, c, "Alex", "Ben");
+    172|   const [change] = await changes(tx, c);
+    173|   if (change === undefined) throw new Error("withAlex: no change was p…
+       |                                   ^
+    174|   return { c, change };
+    175| }
+ ❯ src/db/membership-change.test.ts:276:21
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:275:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/21]⎯
+
+ FAIL  src/db/membership-change.test.ts > a change replaced, dropped, and a club paused (FQ16, FQ126, FQ127) > replaces an open change at the next join: the same start, everyone confirms again, and the old id answers MEMBERSHIP_CHANGED
+Error: withAlex: no change was proposed
+ ❯ withAlex src/db/membership-change.test.ts:173:35
+    171|   await join(tx, c, "Alex", "Ben");
+    172|   const [change] = await changes(tx, c);
+    173|   if (change === undefined) throw new Error("withAlex: no change was p…
+       |                                   ^
+    174|   return { c, change };
+    175| }
+ ❯ src/db/membership-change.test.ts:306:29
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:305:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/21]⎯
+
+ FAIL  src/db/membership-change.test.ts > a change replaced, dropped, and a club paused (FQ16, FQ126, FQ127) > names the club's open change to an id replaced more than once, and treats it as ended once none is open (FQ126)
+Error: withAlex: no change was proposed
+ ❯ withAlex src/db/membership-change.test.ts:173:35
+    171|   await join(tx, c, "Alex", "Ben");
+    172|   const [change] = await changes(tx, c);
+    173|   if (change === undefined) throw new Error("withAlex: no change was p…
+       |                                   ^
+    174|   return { c, change };
+    175| }
+ ❯ src/db/membership-change.test.ts:335:29
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:334:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/21]⎯
+
+ FAIL  src/db/membership-change.test.ts > a change replaced, dropped, and a club paused (FQ16, FQ126, FQ127) > works a change out from a restarted club's own week, not the week before it, and gives its members the announced days (FQ124)
+AssertionError: expected undefined to match object { state: 'open', days_per_member: 2 }
+
+- Expected:
+{
+  "days_per_member": 2,
+  "state": "open",
+}
+
++ Received:
+undefined
+
+ ❯ src/db/membership-change.test.ts:391:22
+    389|       await join(tx, c, "Debby", "Maya");
+    390|       const [change] = await changes(tx, c);
+    391|       expect(change).toMatchObject({ state: "open", days_per_member: 2…
+       |                      ^
+    392|       const free = WEEK.filter((weekday) => ![...mayas, ...sams].inclu…
+    393|       expect(await proposedIn(tx, c, change?.id ?? "")).toEqual({ Maya…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:372:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/21]⎯
+
+ FAIL  src/db/membership-change.test.ts > a change replaced, dropped, and a club paused (FQ16, FQ126, FQ127) > takes a new start for a replacement once the replaced change's start is today
+Error: withAlex: no change was proposed
+ ❯ withAlex src/db/membership-change.test.ts:173:35
+    171|   await join(tx, c, "Alex", "Ben");
+    172|   const [change] = await changes(tx, c);
+    173|   if (change === undefined) throw new Error("withAlex: no change was p…
+       |                                   ^
+    174|   return { c, change };
+    175| }
+ ❯ src/db/membership-change.test.ts:403:21
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:402:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/21]⎯
+
+ FAIL  src/db/membership-change.test.ts > a change replaced, dropped, and a club paused (FQ16, FQ126, FQ127) > drops an open change when a leave brings the club back to its week, and its id then answers as an ended one
+Error: withAlex: no change was proposed
+ ❯ withAlex src/db/membership-change.test.ts:173:35
+    171|   await join(tx, c, "Alex", "Ben");
+    172|   const [change] = await changes(tx, c);
+    173|   if (change === undefined) throw new Error("withAlex: no change was p…
+       |                                   ^
+    174|   return { c, change };
+    175| }
+ ❯ src/db/membership-change.test.ts:414:29
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:413:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/21]⎯
+
+ FAIL  src/db/membership-change.test.ts > a change replaced, dropped, and a club paused (FQ16, FQ126, FQ127) > drops an open change when the club is paused, proposes none, and proposes one when it has two members again (FQ16, FQ116)
+Error: withAlex: no change was proposed
+ ❯ withAlex src/db/membership-change.test.ts:173:35
+    171|   await join(tx, c, "Alex", "Ben");
+    172|   const [change] = await changes(tx, c);
+    173|   if (change === undefined) throw new Error("withAlex: no change was p…
+       |                                   ^
+    174|   return { c, change };
+    175| }
+ ❯ src/db/membership-change.test.ts:436:29
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:435:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/21]⎯
+
+ FAIL  src/db/membership-change.test.ts > the days made while a change is open (FQ61, FQ127) > makes no day from the change's start on, whatever the date, and every day before it as before
+AssertionError: expected undefined to match object { effective_from: '2026-12-14' }
+
+- Expected:
+{
+  "effective_from": "2026-12-14",
+}
+
++ Received:
+undefined
+
+ ❯ src/db/membership-change.test.ts:492:41
+    490|       expect(await last()).toBe("2026-12-11");
+    491|       await join(tx, c, "Alex", "Ben");
+    492|       expect((await changes(tx, c))[0]).toMatchObject({ effective_from…
+       |                                         ^
+    493|       // Two weeks on the window runs to Sunday 27 December; the chang…
+    494|       tick(14 * 24);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:480:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/21]⎯
+
+ FAIL  src/db/membership-change.test.ts > the days made while a change is open (FQ61, FQ127) > starts a change after a day already made beyond the window
+AssertionError: expected undefined to match object { effective_from: '2026-12-21' }
+
+- Expected:
+{
+  "effective_from": "2026-12-21",
+}
+
++ Received:
+undefined
+
+ ❯ src/db/membership-change.test.ts:513:41
+    511|       tick(-7 * 24);
+    512|       await join(tx, c, "Alex", "Ben");
+    513|       expect((await changes(tx, c))[0]).toMatchObject({ effective_from…
+       |                                         ^
+    514|     });
+    515|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:505:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/21]⎯
+
+ FAIL  src/db/membership-change.test.ts > reading a change (the contract's ScheduleProposal; FQ61, FQ81; G04-change) > gives a member who stays their days, each other day with the member it is proposed for, and the days announced
+AssertionError: expected null to match object { reason: 'membership_change', …(6) }
+
+- Expected:
+{
+  "daysPerMember": 2,
+  "effectiveFrom": "2026-12-14",
+  "myDays": [
+    "monday",
+    "thursday",
+  ],
+  "myState": "choosing",
+  "reason": "membership_change",
+  "state": "open",
+  "version": 1,
+}
+
++ Received:
+null
+
+ ❯ src/db/membership-change.test.ts:527:22
+    525|       const ben = await sight(tx, c, "Ben");
+    526|       const change = ben?.proposal;
+    527|       expect(change).toMatchObject({
+       |                      ^
+    528|         reason: "membership_change",
+    529|         version: 1,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:520:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/21]⎯
+
+ FAIL  src/db/membership-change.test.ts > reading a change (the contract's ScheduleProposal; FQ61, FQ81; G04-change) > gives the new member the same week and no announced days
+Error: Alex sees no proposal
+ ❯ proposalOf src/db/membership-change.test.ts:81:29
+     79| async function proposalOf(tx: WorldTx, c: Club, name: string): Promise…
+     80|   const found = (await sight(tx, c, name))?.proposal ?? null;
+     81|   if (found === null) throw new Error(`${name} sees no proposal`);
+       |                             ^
+     82|   return found;
+     83| }
+ ❯ src/db/membership-change.test.ts:581:20
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:576:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/21]⎯
+
+ FAIL  src/db/membership-change.test.ts > reading a change (the contract's ScheduleProposal; FQ61, FQ81; G04-change) > gives someone who left, a stranger and a member of another club nothing of it (T14)
+Error: withAlex: no change was proposed
+ ❯ withAlex src/db/membership-change.test.ts:173:35
+    171|   await join(tx, c, "Alex", "Ben");
+    172|   const [change] = await changes(tx, c);
+    173|   if (change === undefined) throw new Error("withAlex: no change was p…
+       |                                   ^
+    174|   return { c, change };
+    175| }
+ ❯ src/db/membership-change.test.ts:615:29
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:614:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/21]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirming a change (FQ56, FQ81; T1, T19, T33) > writes the member's confirmation at the clock's instant and nothing else: the same version, state and answer for everyone
+Error: Ben sees no proposal
+ ❯ proposalOf src/db/membership-change.test.ts:81:29
+     79| async function proposalOf(tx: WorldTx, c: Club, name: string): Promise…
+     80|   const found = (await sight(tx, c, name))?.proposal ?? null;
+     81|   if (found === null) throw new Error(`${name} sees no proposal`);
+       |                             ^
+     82|   return found;
+     83| }
+ ❯ src/db/membership-change.test.ts:651:20
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:645:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/21]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirming a change (FQ56, FQ81; T1, T19, T33) > refuses, in the contract's order: VERSION_CONFLICT, then NOT_ALLOWED for other days, a choice and a second confirmation
+Error: withAlex: no change was proposed
+ ❯ withAlex src/db/membership-change.test.ts:173:35
+    171|   await join(tx, c, "Alex", "Ben");
+    172|   const [change] = await changes(tx, c);
+    173|   if (change === undefined) throw new Error("withAlex: no change was p…
+       |                                   ^
+    174|   return { c, change };
+    175| }
+ ❯ src/db/membership-change.test.ts:689:29
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:688:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/21]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirming a change (FQ56, FQ81; T1, T19, T33) > answers a retry under the same key with the first answer, once, and another request under it IDEMPOTENCY_CONFLICT (T19)
+Error: withAlex: no change was proposed
+ ❯ withAlex src/db/membership-change.test.ts:173:35
+    171|   await join(tx, c, "Alex", "Ben");
+    172|   const [change] = await changes(tx, c);
+    173|   if (change === undefined) throw new Error("withAlex: no change was p…
+       |                                   ^
+    174|   return { c, change };
+    175| }
+ ❯ src/db/membership-change.test.ts:715:29
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:714:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/21]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirming a change (FQ56, FQ81; T1, T19, T33) > answers a retry with the first answer after the change was replaced, and nothing once the caller has left (T19, T14)
+Error: withAlex: no change was proposed
+ ❯ withAlex src/db/membership-change.test.ts:173:35
+    171|   await join(tx, c, "Alex", "Ben");
+    172|   const [change] = await changes(tx, c);
+    173|   if (change === undefined) throw new Error("withAlex: no change was p…
+       |                                   ^
+    174|   return { c, change };
+    175| }
+ ❯ src/db/membership-change.test.ts:735:29
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:734:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/21]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirmations and a leave at once, on connections of their own > takes two members' confirmations one after the other, and moves no version
+Error: withAlex: no change was proposed
+ ❯ withAlex src/db/membership-change.test.ts:173:35
+    171|   await join(tx, c, "Alex", "Ben");
+    172|   const [change] = await changes(tx, c);
+    173|   if (change === undefined) throw new Error("withAlex: no change was p…
+       |                                   ^
+    174|   return { c, change };
+    175| }
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ src/db/membership-change.test.ts:787:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/21]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirmations and a leave at once, on connections of their own > refuses a confirmation that comes after the leave that dropped the change
+Error: withAlex: no change was proposed
+ ❯ withAlex src/db/membership-change.test.ts:173:35
+    171|   await join(tx, c, "Alex", "Ben");
+    172|   const [change] = await changes(tx, c);
+    173|   if (change === undefined) throw new Error("withAlex: no change was p…
+       |                                   ^
+    174|   return { c, change };
+    175| }
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ src/db/membership-change.test.ts:805:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/21]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirmations and a leave at once, on connections of their own > takes a confirmation that comes before the leave, which then drops the change
+Error: withAlex: no change was proposed
+ ❯ withAlex src/db/membership-change.test.ts:173:35
+    171|   await join(tx, c, "Alex", "Ben");
+    172|   const [change] = await changes(tx, c);
+    173|   if (change === undefined) throw new Error("withAlex: no change was p…
+       |                                   ^
+    174|   return { c, change };
+    175| }
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ src/db/membership-change.test.ts:823:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/21]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirmations and a leave at once, on connections of their own > answers MEMBERSHIP_CHANGED to a confirmation that comes after the leave that replaced the change
+Error: withAlex: no change was proposed
+ ❯ withAlex src/db/membership-change.test.ts:173:35
+    171|   await join(tx, c, "Alex", "Ben");
+    172|   const [change] = await changes(tx, c);
+    173|   if (change === undefined) throw new Error("withAlex: no change was p…
+       |                                   ^
+    174|   return { c, change };
+    175| }
+ ❯ src/db/membership-change.test.ts:847:22
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ src/db/membership-change.test.ts:845:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/21]⎯
+

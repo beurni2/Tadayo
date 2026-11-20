@@ -1,0 +1,40 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/schedule-proposals.test.ts (45 tests | 1 failed) 1372ms
+   ❯ a membership change (0014; spec 05; FQ56, FQ61, FQ81, FQ101, FQ126) (8)
+     × has its days written once, each proposed and held, a weekday for one member 23ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 44 passed (45)
+   Start at  11:10:14
+   Duration  2.33s (tests 90%, import 5%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-proposals.test.ts > a membership change (0014; spec 05; FQ56, FQ61, FQ81, FQ101, FQ126) > has its days written once, each proposed and held, a weekday for one member
+AssertionError: expected 'app.schedule_proposal_days: a members…' to match /written once/
+
+- Expected:
+/written once/
+
++ Received:
+"app.schedule_proposal_days: a membership change's day is proposed and held (FQ56)"
+
+ ❯ expectRefused src/db/harness.ts:113:38
+    111|   const error = caught as postgres.PostgresError;
+    112|   expect(error.code, error.message).toBe(code);
+    113|   if (message) expect(error.message).toMatch(message);
+       |                                      ^
+    114| }
+    115|
+ ❯ src/db/schedule-proposals.test.ts:1206:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/schedule-proposals.test.ts:1190:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

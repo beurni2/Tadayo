@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/authorization/days.ts b/packages/domain/src/authorization/days.ts
+index c2e62a65..0f27056b 100644
+--- a/packages/domain/src/authorization/days.ts
++++ b/packages/domain/src/authorization/days.ts
+@@ -244,7 +244,7 @@ function oneDay<F>(sql: FragmentSql<F>, now: ServerNow, phase: ChosenPhase, ofMe
+ export function daysAheadByClub<F>(sql: FragmentSql<F>, viewer: string, now: ServerNow): F {
+   checkViewer(viewer);
+   checkNow(now);
+-  const when = bound(sql)`${now}::pg_catalog.timestamptz < o.close_at`;
++  const when = bound(sql)`TRUE`;
+   return bound(sql)`
+     SELECT c.id AS club_id,
+            (SELECT coalesce(pg_catalog.jsonb_agg(

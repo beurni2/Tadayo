@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/view.test.ts (21 tests | 1 failed) 1369ms
+   ❯ who gets a membership change's announced days (the contract's `announced`; FQ100) (2)
+     × gives none to a member with no day in it: a new member, each of several, a late joiner 9ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  1 failed | 156 passed (157)
+   Start at  11:08:12
+   Duration  1.64s (tests 89%, import 8%, transform 2%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/view.test.ts > who gets a membership change's announced days (the contract's `announced`; FQ100) > gives none to a member with no day in it: a new member, each of several, a late joiner
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/schedule/view.test.ts:436:67
+    434|
+    435|   it("gives none to a member with no day in it: a new member, each of …
+    436|     expect(seesAnnounced("alex", ["ben", "maya", "ben", "maya"])).toBe…
+       |                                                                   ^
+    437|     expect(seesAnnounced("sam", ["ben", "maya"])).toBe(false);
+    438|     // A club whose latest week has no day at all.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

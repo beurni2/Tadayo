@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/change.ts b/packages/domain/src/schedule/change.ts
+index df446af8..1fe45798 100644
+--- a/packages/domain/src/schedule/change.ts
++++ b/packages/domain/src/schedule/change.ts
+@@ -82,7 +82,7 @@ export function changeWeek(active: readonly string[], week: readonly WeekDay[]):
+     const days = [...(kept.get(id) ?? [])];
+     // The table's days for their place that nobody keeps, then the first free days from Monday.
+     const wanted = (table[place] ?? []).filter((weekday) => !taken.has(weekday));
+-    for (const weekday of [...wanted, ...WEEKDAYS]) {
++    for (const weekday of WEEKDAYS) {
+       if (days.length === per) break;
+       if (taken.has(weekday)) continue;
+       taken.add(weekday);

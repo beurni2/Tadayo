@@ -1,0 +1,70 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (27 tests | 1 failed) 71ms
+   ❯ changeAfter: when a change is proposed, replaced or dropped (10)
+     × changes nothing when the open change already includes exactly the club's members 11ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  1 failed | 156 passed (157)
+   Start at  11:06:46
+   Duration  1.99s (tests 88%, import 8%, transform 4%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > changeAfter: when a change is proposed, replaced or dropped > changes nothing when the open change already includes exactly the club's members
+AssertionError: expected { kind: 'propose', …(3) } to deeply equal { kind: 'nothing' }
+
+- Expected
++ Received
+
+  {
+-   "kind": "nothing",
++   "daysPerMember": 1,
++   "kind": "propose",
++   "proposed": [
++     {
++       "days": [
++         "monday",
++       ],
++       "id": "ben",
++     },
++     {
++       "days": [
++         "tuesday",
++       ],
++       "id": "debby",
++     },
++     {
++       "days": [
++         "wednesday",
++       ],
++       "id": "maya",
++     },
++     {
++       "days": [
++         "thursday",
++       ],
++       "id": "alex",
++     },
++     {
++       "days": [
++         "friday",
++       ],
++       "id": "sam",
++     },
++   ],
++   "replaces": true,
+  }
+
+ ❯ src/schedule/change.test.ts:205:91
+    203|   it("changes nothing when the open change already includes exactly th…
+    204|     const open = { members: ["sam", "ben", "debby", "maya", "alex"] };
+    205|     expect(changeAfter(facts({ active: ["ben", "debby", "maya", "alex"…
+       |                                                                                           ^
+    206|       kind: "nothing",
+    207|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

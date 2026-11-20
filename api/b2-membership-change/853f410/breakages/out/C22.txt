@@ -1,0 +1,42 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/membership-change.test.ts (27 tests | 1 failed) 3209ms
+   ❯ reading a change (the contract's ScheduleProposal; FQ61, FQ81; G04-change) (4)
+     × names nobody on a day the change proposes for nobody, and leaves a leaver's made days out of the announced 88ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+   Start at  11:08:42
+   Duration  3.94s (tests 89%, import 8%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/membership-change.test.ts > reading a change (the contract's ScheduleProposal; FQ61, FQ81; G04-change) > names nobody on a day the change proposes for nobody, and leaves a leaver's made days out of the announced
+AssertionError: expected Set{ 'Ben', 'Maya', 'Alex' } to deeply equal Set{ 'Ben', 'Alex' }
+
+- Expected
++ Received
+
+  Set {
+    "Alex",
+    "Ben",
++   "Maya",
+  }
+
+ ❯ src/db/membership-change.test.ts:609:21
+    607|       // Maya's days are held (FQ63): none is announced.
+    608|       const stars = new Set((seen.announced ?? []).map((day) => day.st…
+    609|       expect(stars).toEqual(new Set(["Ben", "Alex"]));
+       |                     ^
+    610|     });
+    611|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:596:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

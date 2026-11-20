@@ -1,0 +1,45 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/membership-change.test.ts (27 tests | 1 failed) 3223ms
+   ❯ a change replaced, dropped, and a club paused (FQ16, FQ126, FQ127) (7)
+     × replaces an open change at the next join: the same start, everyone confirms again, and the old id answers MEMBERSHIP_CHANGED 144ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+   Start at  11:07:54
+   Duration  4.01s (tests 88%, import 9%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/membership-change.test.ts > a change replaced, dropped, and a club paused (FQ16, FQ126, FQ127) > replaces an open change at the next join: the same start, everyone confirms again, and the old id answers MEMBERSHIP_CHANGED
+AssertionError: expected { …(10) } to match object { state: 'open', version: 1, …(2) }
+(6 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "days_per_member": 1,
+-   "effective_from": "2026-12-14",
++   "effective_from": "2026-12-28",
+    "state": "open",
+    "version": 1,
+  }
+
+ ❯ src/db/membership-change.test.ts:314:22
+    312|       expect(first).toMatchObject({ id: change.id, state: "superseded"…
+    313|       expect(String(first?.closed_at)).toBe(current.toString());
+    314|       expect(second).toMatchObject({ state: "open", version: 1, days_p…
+       |                      ^
+    315|       // Ben's confirmation was of the earlier week, and stays on its …
+    316|       expect(await proposalOf(tx, c, "Ben")).toMatchObject({ id: secon…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:305:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

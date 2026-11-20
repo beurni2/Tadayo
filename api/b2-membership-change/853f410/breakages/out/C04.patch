@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/settle-change.ts b/packages/domain/src/schedule/settle-change.ts
+index be963d53..3c75a614 100644
+--- a/packages/domain/src/schedule/settle-change.ts
++++ b/packages/domain/src/schedule/settle-change.ts
+@@ -107,7 +107,7 @@ export async function settleChange(tx: QuerySql, at: ServerNow, clubId: string):
+   if (row === undefined) throw new Error("schedule: no such club to settle the week of");
+   const found = row["open"] === null ? null : record(row["open"]);
+   // A club whose first days never applied has no week to change: new first days are its next week (FQ102).
+-  const week = flag(row["applied"])
++  const week = true
+     ? list(row["week"]).map((item): WeekDay => {
+         const day = record(item);
+         return { weekday: weekday(day["weekday"]), star: text(day["star"]) };

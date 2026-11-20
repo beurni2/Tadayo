@@ -1,0 +1,42 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/membership-change.test.ts (27 tests | 1 failed) 3395ms
+   ❯ the days made while a change is open (FQ61, FQ127) (2)
+     × starts a change after a day already made beyond the window 90ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+   Start at  11:07:49
+   Duration  4.20s (tests 88%, import 8%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/membership-change.test.ts > the days made while a change is open (FQ61, FQ127) > starts a change after a day already made beyond the window
+AssertionError: expected { …(10) } to match object { effective_from: '2026-12-21' }
+(9 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "effective_from": "2026-12-21",
++   "effective_from": "2026-12-14",
+  }
+
+ ❯ src/db/membership-change.test.ts:513:41
+    511|       tick(-7 * 24);
+    512|       await join(tx, c, "Alex", "Ben");
+    513|       expect((await changes(tx, c))[0]).toMatchObject({ effective_from…
+       |                                         ^
+    514|     });
+    515|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:505:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

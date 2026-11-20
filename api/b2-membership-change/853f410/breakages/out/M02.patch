@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0014_membership_change.sql b/db/migrations/0014_membership_change.sql
+index 672cbf88..3090b7e9 100644
+--- a/db/migrations/0014_membership_change.sql
++++ b/db/migrations/0014_membership_change.sql
+@@ -57,7 +57,7 @@ BEGIN
+       USING ERRCODE = 'integrity_constraint_violation';
+   END IF;
+   IF NEW.week_revision <> OLD.week_revision THEN
+-    IF NEW.reason = 'membership_change' THEN
++    IF false THEN
+       RAISE EXCEPTION 'app.schedule_proposals: the week of the membership change % is never proposed again: another change replaces it (FQ126)', NEW.id
+         USING ERRCODE = 'integrity_constraint_violation';
+     END IF;

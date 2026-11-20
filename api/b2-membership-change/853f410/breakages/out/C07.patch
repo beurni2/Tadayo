@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/settle-change.ts b/packages/domain/src/schedule/settle-change.ts
+index be963d53..3dd8cbf6 100644
+--- a/packages/domain/src/schedule/settle-change.ts
++++ b/packages/domain/src/schedule/settle-change.ts
+@@ -133,7 +133,7 @@ export async function settleChange(tx: QuerySql, at: ServerNow, clubId: string):
+   }
+ 
+   const today = at.toZonedDateTimeISO(clubTimeZone(text(row["timezone"]))).toPlainDate();
+-  const lastMade = row["last_made"] === null ? null : date(row["last_made"]);
++  const lastMade = null;
+   const start = changeStart(today, lastMade, found === null ? null : date(found["effective_from"])).toString();
+   const proposalId = newId("spr");
+   if (openId !== null) {

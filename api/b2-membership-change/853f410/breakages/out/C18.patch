@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/schedule/confirm-days.ts b/packages/domain/src/schedule/confirm-days.ts
+index d799587b..2286c9c7 100644
+--- a/packages/domain/src/schedule/confirm-days.ts
++++ b/packages/domain/src/schedule/confirm-days.ts
+@@ -54,6 +54,7 @@ export function confirmScheduleDays(
+       await bound(tx)`
+           UPDATE app.schedule_proposal_members SET confirmed_at = ${at}::pg_catalog.timestamptz
+            WHERE proposal_id = ${proposal.id} AND interval_id = ${callerId}`;
++      await bound(tx)`UPDATE app.schedule_proposals SET version = version + 1 WHERE id = ${proposal.id}`;
+       return;
+     }
+     if (proposal.scheduleVersionId === null) throw new Error("schedule: the first days have no week of their own");

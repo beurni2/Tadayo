@@ -1,0 +1,82 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (27 tests | 4 failed) 71ms
+   ❯ changeStart: the first week after every day already made (FQ61, FQ115) (7)
+     × is Monday 7 December 2026 seen from Friday 6 November, the contract's own example 10ms
+     × is the same Monday from every day of a week, and a week later from the next Monday 1ms
+     × takes a new start when the replaced change's start is today or has passed 0ms
+     × takes a new start when a day was made on or after the replaced change's start 0ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  4 failed | 153 passed (157)
+   Start at  11:06:51
+   Duration  1.68s (tests 88%, import 8%, transform 2%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > changeStart: the first week after every day already made (FQ61, FQ115) > is Monday 7 December 2026 seen from Friday 6 November, the contract's own example
+AssertionError: expected '2026-11-30' to be '2026-12-07' // Object.is equality
+
+Expected: "2026-12-07"
+Received: "2026-11-30"
+
+ ❯ src/schedule/change.test.ts:230:65
+    228|   it("is Monday 7 December 2026 seen from Friday 6 November, the contr…
+    229|     expect(changeStart(D("2026-11-06"), D("2026-12-05"), null).toStrin…
+    230|     expect(changeStart(D("2026-11-06"), null, null).toString()).toBe("…
+       |                                                                 ^
+    231|   });
+    232|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/schedule/change.test.ts > changeStart: the first week after every day already made (FQ61, FQ115) > is the same Monday from every day of a week, and a week later from the next Monday
+AssertionError: expected '2026-11-30' to be '2026-12-07' // Object.is equality
+
+Expected: "2026-12-07"
+Received: "2026-11-30"
+
+ ❯ src/schedule/change.test.ts:235:58
+    233|   it("is the same Monday from every day of a week, and a week later fr…
+    234|     for (const day of ["2026-11-02", "2026-11-04", "2026-11-07", "2026…
+    235|       expect(changeStart(D(day), null, null).toString()).toBe("2026-12…
+       |                                                          ^
+    236|     }
+    237|     expect(changeStart(D("2026-11-09"), null, null).toString()).toBe("…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/schedule/change.test.ts > changeStart: the first week after every day already made (FQ61, FQ115) > takes a new start when the replaced change's start is today or has passed
+AssertionError: expected '2027-01-04' to be '2027-01-11' // Object.is equality
+
+Expected: "2027-01-11"
+Received: "2027-01-04"
+
+ ❯ src/schedule/change.test.ts:251:87
+    249|
+    250|   it("takes a new start when the replaced change's start is today or h…
+    251|     expect(changeStart(D("2026-12-07"), D("2026-12-05"), D("2026-12-07…
+       |                                                                                       ^
+    252|     expect(changeStart(D("2026-12-09"), D("2026-12-05"), D("2026-12-07…
+    253|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/schedule/change.test.ts > changeStart: the first week after every day already made (FQ61, FQ115) > takes a new start when a day was made on or after the replaced change's start
+AssertionError: expected '2026-12-14' to be '2026-12-21' // Object.is equality
+
+Expected: "2026-12-21"
+Received: "2026-12-14"
+
+ ❯ src/schedule/change.test.ts:257:87
+    255|   it("takes a new start when a day was made on or after the replaced c…
+    256|     // Generation makes no such day while the change is open (FQ127); …
+    257|     expect(changeStart(D("2026-11-20"), D("2026-12-07"), D("2026-12-07…
+       |                                                                                       ^
+    258|     expect(changeStart(D("2026-11-20"), D("2026-12-09"), D("2026-12-07…
+    259|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+

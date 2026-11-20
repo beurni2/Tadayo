@@ -1,0 +1,75 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (27 tests | 2 failed) 66ms
+   ❯ changeWeek: which week a change proposes (FQ125) (10)
+     × proposes the table's whole week when a fourth member joins three: one day each (spec 05) 5ms
+     × proposes the table's whole week when four become three: two days each (spec 05) 10ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  2 failed | 155 passed (157)
+   Start at  11:06:26
+   Duration  1.82s (tests 87%, import 8%, transform 4%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > changeWeek: which week a change proposes (FQ125) > proposes the table's whole week when a fourth member joins three: one day each (spec 05)
+Error: schedule: the week has no free day left for a member
+ ❯ src/schedule/change.ts:91:36
+     89|       days.push(weekday);
+     90|     }
+     91|     if (days.length !== per) throw new Error("schedule: the week has n…
+       |                                    ^
+     92|     return { id, days: fromMonday(days) };
+     93|   });
+ ❯ changeWeek src/schedule/change.ts:81:27
+ ❯ src/schedule/change.test.ts:86:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/schedule/change.test.ts > changeWeek: which week a change proposes (FQ125) > proposes the table's whole week when four become three: two days each (spec 05)
+AssertionError: expected { Object (daysPerMember, proposed) } to deeply equal { Object (daysPerMember, proposed) }
+
+- Expected
++ Received
+
+@@ -2,24 +2,24 @@
+    "daysPerMember": 2,
+    "proposed": [
+      {
+        "days": [
+          "monday",
+-         "thursday",
++         "tuesday",
+        ],
+        "id": "ben",
+      },
+      {
+        "days": [
+-         "tuesday",
++         "wednesday",
+          "friday",
+        ],
+        "id": "maya",
+      },
+      {
+        "days": [
+-         "wednesday",
++         "thursday",
+          "saturday",
+        ],
+        "id": "alex",
+      },
+    ],
+
+ ❯ src/schedule/change.test.ts:98:55
+     96|
+     97|   it("proposes the table's whole week when four become three: two days…
+     98|     expect(changeWeek(["ben", "maya", "alex"], FOUR)).toEqual({
+       |                                                       ^
+     99|       daysPerMember: 2,
+    100|       proposed: [
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

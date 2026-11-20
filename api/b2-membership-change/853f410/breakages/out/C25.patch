@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/command.ts b/packages/domain/src/schedule/command.ts
+index b67d394d..749ace9e 100644
+--- a/packages/domain/src/schedule/command.ts
++++ b/packages/domain/src/schedule/command.ts
+@@ -140,7 +140,7 @@ export async function scheduleCommand(
+     // includes every active member, so the caller too.
+     const [current] = await bound(tx)`
+       SELECT id FROM app.schedule_proposals WHERE club_id = ${clubId} AND state = 'open'`;
+-    if (current !== undefined) throw new Refused("MEMBERSHIP_CHANGED", { current_id: String(current["id"]) });
++    throw new Refused("MEMBERSHIP_CHANGED", { current_id: String(current?.["id"] ?? proposal.replacedBy) });
+   }
+ 
+   // 5. The version.

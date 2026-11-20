@@ -1,0 +1,54 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/privacy/schedule.test.ts (36 tests | 2 failed) 43ms
+   ❯ what a join or a leave must leave of the club's change, row by row (weekChangeProblems; FQ125 to FQ127) (5)
+     × wants an open change dropped, with no successor, when a leave brings the club back to its week 7ms
+     × wants an open change for other members replaced by a new one that names it and keeps its start while that is ahead 2ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 34 passed (36)
+   Start at  11:10:58
+   Duration  781ms (import 55%, transform 32%, tests 11%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/schedule.test.ts > what a join or a leave must leave of the club's change, row by row (weekChangeProblems; FQ125 to FQ127) > wants an open change dropped, with no successor, when a leave brings the club back to its week
+AssertionError: expected '' to match /the change that was open is/
+
+- Expected:
+/the change that was open is/
+
++ Received:
+""
+
+ ❯ src/privacy/schedule.test.ts:792:51
+    790|       changeWorld([[CHANGE, changeRows({ state: "superseded", version:…
+    791|     );
+    792|     expect(judge(changeWorld(), named).join(" ")).toMatch(/the change …
+       |                                                   ^
+    793|   });
+    794|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/schedule.test.ts > what a join or a leave must leave of the club's change, row by row (weekChangeProblems; FQ125 to FQ127) > wants an open change for other members replaced by a new one that names it and keeps its start while that is ahead
+AssertionError: expected '' to match /the change that was open is/
+
+- Expected:
+/the change that was open is/
+
++ Received:
+""
+
+ ❯ src/privacy/schedule.test.ts:841:65
+    839|     const unnamed = four("2026-12-14");
+    840|     change(unnamed).replacedBy = null;
+    841|     expect(judge(changeWorld(), unnamed, twoWeeksOn).join(" ")).toMatc…
+       |                                                                 ^
+    842|   });
+    843|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

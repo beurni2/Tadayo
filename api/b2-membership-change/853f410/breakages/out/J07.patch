@@ -1,0 +1,12 @@
+diff --git a/tests/src/privacy/schedule.ts b/tests/src/privacy/schedule.ts
+index e23e3745..fb4adbfc 100644
+--- a/tests/src/privacy/schedule.ts
++++ b/tests/src/privacy/schedule.ts
+@@ -953,7 +953,6 @@ export function weekChangeProblems(
+     if (text(rows) !== text(want)) problems.push(`the change that was open is ${text(rows)}, not ${text(want)}`);
+   };
+   if (active.length < 2 || asTheWeek) {
+-    if (now !== undefined) problems.push("a change is open in a club whose members are its week's, or that is paused");
+     ended(null);
+     return problems;
+   }

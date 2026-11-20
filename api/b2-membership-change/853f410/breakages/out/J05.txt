@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/privacy/schedule.test.ts (36 tests | 1 failed) 44ms
+   ❯ what a join or a leave must leave of the club's change, row by row (weekChangeProblems; FQ125 to FQ127) (5)
+     × refuses no change, a change for other members, a member moved, a weekday twice, a day not held and the wrong days each 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 35 passed (36)
+   Start at  11:10:53
+   Duration  673ms (import 52%, transform 33%, tests 13%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/schedule.test.ts > what a join or a leave must leave of the club's change, row by row (weekChangeProblems; FQ125 to FQ127) > refuses no change, a change for other members, a member moved, a weekday twice, a day not held and the wrong days each
+AssertionError: expected '' to match /proposed and held/
+
+- Expected:
+/proposed and held/
+
++ Received:
+""
+
+ ❯ src/privacy/schedule.test.ts:773:98
+    771|     expect(judge(withCleoGone(none()), swap("monday", "wednesday")).jo…
+    772|     expect(judge(withCleoGone(none()), swap("monday", "wednesday")).jo…
+    773|     expect(judge(withCleoGone(none()), swap("saturday", "saturday", { …
+       |                                                                                                  ^
+    774|       /proposed and held/,
+    775|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

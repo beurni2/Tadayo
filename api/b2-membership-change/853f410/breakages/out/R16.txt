@@ -1,0 +1,31 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (27 tests | 1 failed) 72ms
+   ❯ changeStart: the first week after every day already made (FQ61, FQ115) (7)
+     × keeps the start of the change it replaces while that start is still ahead (FQ126, FQ127) 11ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  1 failed | 156 passed (157)
+   Start at  11:06:56
+   Duration  1.89s (tests 89%, import 8%, transform 1%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > changeStart: the first week after every day already made (FQ61, FQ115) > keeps the start of the change it replaces while that start is still ahead (FQ126, FQ127)
+AssertionError: expected '2026-12-21' to be '2026-12-07' // Object.is equality
+
+Expected: "2026-12-07"
+Received: "2026-12-21"
+
+ ❯ src/schedule/change.test.ts:247:87
+    245|
+    246|   it("keeps the start of the change it replaces while that start is st…
+    247|     expect(changeStart(D("2026-11-20"), D("2026-12-05"), D("2026-12-07…
+       |                                                                                       ^
+    248|   });
+    249|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

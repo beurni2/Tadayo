@@ -1,0 +1,54 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/privacy/schedule.test.ts (36 tests | 2 failed) 49ms
+   ❯ what a join or a leave must leave of the club's change, row by row (weekChangeProblems; FQ125 to FQ127) (5)
+     × accepts a new change for the active members, and each start the dates give 10ms
+     × wants an open change for other members replaced by a new one that names it and keeps its start while that is ahead 2ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 34 passed (36)
+   Start at  11:10:55
+   Duration  768ms (import 55%, transform 30%, tests 13%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/schedule.test.ts > what a join or a leave must leave of the club's change, row by row (weekChangeProblems; FQ125 to FQ127) > accepts a new change for the active members, and each start the dates give
+AssertionError: expected '' to match /starts on 2026-12-21, not 2026-12-14/
+
+- Expected:
+/starts on 2026-12-21, not 2026-12-14/
+
++ Received:
+""
+
+ ❯ src/privacy/schedule.test.ts:750:58
+    748|     const later = changeWorld([[CHANGE, changeRows({ effectiveFrom: "2…
+    749|     expect(judge(withCleoGone(none()), later, { today: "2026-11-11", l…
+    750|     expect(judge(withCleoGone(none()), later).join(" ")).toMatch(/star…
+       |                                                          ^
+    751|     // No day made at all.
+    752|     expect(judge(withCleoGone(none()), changeWorld(), { today: "2026-1…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/schedule.test.ts > what a join or a leave must leave of the club's change, row by row (weekChangeProblems; FQ125 to FQ127) > wants an open change for other members replaced by a new one that names it and keeps its start while that is ahead
+AssertionError: expected '' to match /starts on 2026-12-28, not 2026-12-14/
+
+- Expected:
+/starts on 2026-12-28, not 2026-12-14/
+
++ Received:
+""
+
+ ❯ src/privacy/schedule.test.ts:820:76
+    818|     const twoWeeksOn = { today: "2026-11-25", lastMade: "2026-12-11" };
+    819|     expect(judge(changeWorld(), four("2026-12-14"), twoWeeksOn)).toEqu…
+    820|     expect(judge(changeWorld(), four("2026-12-28"), twoWeeksOn).join("…
+       |                                                                            ^
+    821|       /starts on 2026-12-28, not 2026-12-14/,
+    822|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

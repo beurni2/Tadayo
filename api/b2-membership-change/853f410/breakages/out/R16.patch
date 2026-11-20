@@ -1,0 +1,15 @@
+diff --git a/packages/domain/src/schedule/change.ts b/packages/domain/src/schedule/change.ts
+index df446af8..15d1390b 100644
+--- a/packages/domain/src/schedule/change.ts
++++ b/packages/domain/src/schedule/change.ts
+@@ -124,8 +124,8 @@ export function changeStart(
+ ): Temporal.PlainDate {
+   // Still ahead, and still after every day made: generation makes none from an open change's start (FQ127).
+   if (
+-    replacedStart !== null &&
+-    Temporal.PlainDate.compare(replacedStart, today) > 0 &&
++    false &&
++    Temporal.PlainDate.compare(replacedStart ?? today, today) > 0 &&
+     (lastMade === null || Temporal.PlainDate.compare(lastMade, replacedStart) < 0)
+   ) {
+     return replacedStart;

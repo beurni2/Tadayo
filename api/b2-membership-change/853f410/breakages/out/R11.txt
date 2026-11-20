@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (27 tests | 1 failed) 74ms
+   ❯ changeAfter: when a change is proposed, replaced or dropped (10)
+     × drops an open change when the club is back at the week's own members 16ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  1 failed | 156 passed (157)
+   Start at  11:06:43
+   Duration  2.37s (tests 89%, import 7%, transform 3%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > changeAfter: when a change is proposed, replaced or dropped > drops an open change when the club is back at the week's own members
+AssertionError: expected { kind: 'nothing' } to deeply equal { kind: 'drop' }
+
+- Expected
++ Received
+
+  {
+-   "kind": "drop",
++   "kind": "nothing",
+  }
+
+ ❯ src/schedule/change.test.ts:212:42
+    210|   it("drops an open change when the club is back at the week's own mem…
+    211|     const open = { members: ["ben", "debby", "maya", "alex", "sam"] };
+    212|     expect(changeAfter(facts({ open }))).toEqual({ kind: "drop" });
+       |                                          ^
+    213|   });
+    214|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,93 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/tests
+
+ ❯ src/db/membership-change.test.ts (27 tests | 3 failed) 3490ms
+   ❯ a change replaced, dropped, and a club paused (FQ16, FQ126, FQ127) (7)
+     × replaces an open change at the next join: the same start, everyone confirms again, and the old id answers MEMBERSHIP_CHANGED 125ms
+     × names the club's open change to an id replaced more than once, and treats it as ended once none is open (FQ126) 101ms
+   ❯ confirmations and a leave at once, on connections of their own (4)
+     × answers MEMBERSHIP_CHANGED to a confirmation that comes after the leave that replaced the change 316ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 24 passed (27)
+   Start at  11:07:39
+   Duration  4.32s (tests 89%, import 8%, transform 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/membership-change.test.ts > a change replaced, dropped, and a club paused (FQ16, FQ126, FQ127) > replaces an open change at the next join: the same start, everyone confirms again, and the old id answers MEMBERSHIP_CHANGED
+AssertionError: expected { …(10) } to match object { …(4) }
+(6 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "id": "spr_ac8TKEQ-4Wb_NVm4vpGgow",
+-   "replaced_by": "spr_CtRwzzK8bE6KLA3qXL9x-w",
++   "replaced_by": null,
+    "state": "superseded",
+    "version": 2,
+  }
+
+ ❯ src/db/membership-change.test.ts:312:21
+    310|       await join(tx, c, "Sam", "Ben");
+    311|       const [first, second] = await changes(tx, c);
+    312|       expect(first).toMatchObject({ id: change.id, state: "superseded"…
+       |                     ^
+    313|       expect(String(first?.closed_at)).toBe(current.toString());
+    314|       expect(second).toMatchObject({ state: "open", version: 1, days_p…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:305:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/db/membership-change.test.ts > a change replaced, dropped, and a club paused (FQ16, FQ126, FQ127) > names the club's open change to an id replaced more than once, and treats it as ended once none is open (FQ126)
+AssertionError: expected { …(10) } to match object { …(3) }
+(7 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "id": "spr_11rfRPy1AMI13pZQeLE5rA",
+-   "replaced_by": "spr_lNvscidSJG3pYye3rKXMOQ",
++   "replaced_by": null,
+    "state": "superseded",
+  }
+
+ ❯ src/db/membership-change.test.ts:340:21
+    338|       await leaving(tx, c, "Sam");
+    339|       const [first, second, third] = await changes(tx, c);
+    340|       expect(first).toMatchObject({ id: change.id, state: "superseded"…
+       |                     ^
+    341|       expect(second).toMatchObject({ state: "superseded", version: 2, …
+    342|       expect(third).toMatchObject({ state: "open", version: 1, effecti…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/membership-change.test.ts:334:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/db/membership-change.test.ts > confirmations and a leave at once, on connections of their own > answers MEMBERSHIP_CHANGED to a confirmation that comes after the leave that replaced the change
+AssertionError: expected 'VERSION_CONFLICT' to be 'MEMBERSHIP_CHANGED' // Object.is equality
+
+Expected: "MEMBERSHIP_CHANGED"
+Received: "VERSION_CONFLICT"
+
+ ❯ src/db/membership-change.test.ts:865:25
+    863|       }
+    864|       expect(await left).toMatchObject({ club_id: s.c.club });
+    865|       expect(await ben).toBe("MEMBERSHIP_CHANGED");
+       |                         ^
+    866|       expect(await rowOf(s.change.id)).toEqual({ state: "superseded", …
+    867|       const [next] = await db<{ id: string; state: string }[]>`
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

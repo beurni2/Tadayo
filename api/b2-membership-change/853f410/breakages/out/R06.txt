@@ -1,0 +1,110 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (27 tests | 3 failed) 74ms
+   ❯ changeWeek: which week a change proposes (FQ125) (10)
+     × gives a new member the first free day from Monday when the day of their place is kept by someone 14ms
+     × frees the days of a member who left and moves nobody, where the table keeps the days each 3ms
+     × gives two who join at once different days, in the order they joined 17ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  3 failed | 154 passed (157)
+   Start at  11:06:29
+   Duration  2.04s (tests 87%, import 8%, transform 3%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > changeWeek: which week a change proposes (FQ125) > gives a new member the first free day from Monday when the day of their place is kept by someone
+AssertionError: expected { id: 'nina', days: [ 'saturday' ] } to deeply equal { id: 'nina', days: [ 'tuesday' ] }
+
+- Expected
++ Received
+
+  {
+    "days": [
+-     "tuesday",
++     "saturday",
+    ],
+    "id": "nina",
+  }
+
+ ❯ src/schedule/change.test.ts:56:36
+     54|     );
+     55|     const change = changeWeek(["ben", "debby", "maya", "alex", "sam", …
+     56|     expect(change.proposed.at(-1)).toEqual({ id: "nina", days: ["tuesd…
+       |                                    ^
+     57|     expect(change.proposed.slice(0, 5).map((member) => member.days)).t…
+     58|       ["monday"],
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/schedule/change.test.ts > changeWeek: which week a change proposes (FQ125) > frees the days of a member who left and moves nobody, where the table keeps the days each
+AssertionError: expected [ …(4) ] to deeply equal [ …(4) ]
+
+- Expected
++ Received
+
+@@ -11,16 +11,16 @@
+      ],
+      "id": "debby",
+    },
+    {
+      "days": [
+-       "thursday",
++       "wednesday",
+      ],
+      "id": "alex",
+    },
+    {
+      "days": [
+-       "friday",
++       "thursday",
+      ],
+      "id": "sam",
+    },
+  ]
+
+ ❯ src/schedule/change.test.ts:69:72
+     67|     // Five to four: one day each before and after.
+     68|     const five = [...FOUR, { weekday: "friday" as const, star: "sam" }…
+     69|     expect(changeWeek(["ben", "debby", "alex", "sam"], five).proposed)…
+       |                                                                        ^
+     70|       { id: "ben", days: ["monday"] },
+     71|       { id: "debby", days: ["tuesday"] },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/schedule/change.test.ts > changeWeek: which week a change proposes (FQ125) > gives two who join at once different days, in the order they joined
+AssertionError: expected [ …(2) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+    {
+      "days": [
+-       "monday",
++       "friday",
+      ],
+      "id": "sam",
+    },
+    {
+      "days": [
+-       "thursday",
++       "saturday",
+      ],
+      "id": "nina",
+    },
+  ]
+
+ ❯ src/schedule/change.test.ts:126:97
+    124|     // Neither place is free (Friday and Saturday are kept): the first…
+    125|     const four = week(["tuesday", "ben"], ["wednesday", "debby"], ["fr…
+    126|     expect(changeWeek(["ben", "debby", "maya", "alex", "sam", "nina"],…
+       |                                                                                                 ^
+    127|       { id: "sam", days: ["monday"] },
+    128|       { id: "nina", days: ["thursday"] },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

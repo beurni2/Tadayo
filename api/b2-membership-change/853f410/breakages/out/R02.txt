@@ -1,0 +1,51 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2m-mut/packages/domain
+
+ ❯ src/schedule/change.test.ts (27 tests | 1 failed) 78ms
+   ❯ changeWeek: which week a change proposes (FQ125) (10)
+     × gives the table's days to members none of whom has a day in the week 15ms
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  1 failed | 156 passed (157)
+   Start at  11:11:25
+   Duration  1.76s (tests 90%, import 8%, transform 1%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/change.test.ts > changeWeek: which week a change proposes (FQ125) > gives the table's days to members none of whom has a day in the week
+AssertionError: expected [ { id: 'sam', …(1) }, …(1) ] to deeply equal [ { id: 'sam', …(1) }, …(1) ]
+
+- Expected
++ Received
+
+  [
+    {
+      "days": [
+        "monday",
+-       "thursday",
++       "tuesday",
+      ],
+      "id": "sam",
+    },
+    {
+      "days": [
+-       "tuesday",
+-       "friday",
++       "wednesday",
++       "thursday",
+      ],
+      "id": "nina",
+    },
+  ]
+
+ ❯ src/schedule/change.test.ts:134:56
+    132|   it("gives the table's days to members none of whom has a day in the …
+    133|     // Everyone who confirmed has left; the two who remain joined late…
+    134|     expect(changeWeek(["sam", "nina"], FOUR).proposed).toEqual([
+       |                                                        ^
+    135|       { id: "sam", days: ["monday", "thursday"] },
+    136|       { id: "nina", days: ["tuesday", "friday"] },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

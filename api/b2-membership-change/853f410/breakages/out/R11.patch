@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/change.ts b/packages/domain/src/schedule/change.ts
+index df446af8..7efd995f 100644
+--- a/packages/domain/src/schedule/change.ts
++++ b/packages/domain/src/schedule/change.ts
+@@ -104,7 +104,7 @@ export function changeAfter(facts: ChangeFacts): WeekChange {
+   const asTheWeek =
+     week.every((day) => active.includes(day.star)) &&
+     active.every((id) => week.filter((day) => day.star === id).length === per);
+-  if (asTheWeek) return open === null ? { kind: "nothing" } : { kind: "drop" };
++  if (asTheWeek) return { kind: "nothing" };
+   if (open !== null && open.members.length === active.length && open.members.every((id) => active.includes(id))) {
+     return { kind: "nothing" };
+   }
