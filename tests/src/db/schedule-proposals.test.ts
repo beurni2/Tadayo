@@ -8,8 +8,8 @@
 //
 // Since db/migrations/0013_first_days_revision.sql (FQ102), a proposal's week can be proposed again: its
 // `week_revision` moves, the earlier week's rows stay as they were and nothing reads them. The describe
-// "a proposal's week, proposed again" was written before that migration, and each of its tests was seen
-// to fail without it.
+// "a proposal's week, proposed again" was written before that migration, where its tests fail for want of
+// the column. Which of 0013's lines each one holds is shown by the PR's deliberate breakages.
 
 import { afterAll, describe, expect, it } from "vitest";
 import { appSql, expectRefused, REFUSED, rolledBack, type Tx } from "./harness.ts";
@@ -1007,6 +1007,7 @@ describe("a proposal's week, proposed again (0013; FQ102)", () => {
         (sp) => sp`
           UPDATE app.schedule_proposal_days SET week_revision = 2
            WHERE proposal_id = ${w.proposal} AND interval_id = ${member(w, 0)} AND weekday = 'monday'`,
+        stale,
       );
       // The current week takes the same weekday for the same member again: the key has the week in it.
       await holdIn(tx, w.proposal, member(w, 0), "monday", 2);
@@ -1044,13 +1045,26 @@ describe("a proposal's week, proposed again (0013; FQ102)", () => {
       await holdIn(tx, w.proposal, member(w, 1), "monday", 2);
       await confirm(tx, w, member(w, 0), ["tuesday"]);
       await checkAsAtCommit(tx);
+      // Monday, which Member 1 held in the first week, doesn't join the week as part of that confirmation:
+      // the week's own guard reads the current week's rows too.
+      await expectRefused(
+        tx,
+        REFUSED.integrity,
+        async (sp) => {
+          await sp`
+            INSERT INTO app.schedule_assignments (schedule_version_id, club_id, weekday, star_interval_id, first_date, confirmed_at)
+            VALUES (${w.version}, ${w.club}, 'monday', ${member(w, 0)}, ${FIRST.monday}, ${AT.added})`;
+          await checkAsAtCommit(sp);
+        },
+        /only as the confirmation of/,
+      );
     });
     await rolledBack(app, async (tx) => {
       const w = await firstDays(tx, 4);
       await next(tx, w.proposal);
       // Member 1 holds nothing in the second week: Monday, held in the first, isn't theirs to confirm.
       await confirm(tx, w, member(w, 0), ["monday"]);
-      await expectRefused(tx, REFUSED.integrity, (sp) => checkAsAtCommit(sp));
+      await expectRefused(tx, REFUSED.integrity, (sp) => checkAsAtCommit(sp), /holds 0 of the 1/);
     });
     await rolledBack(app, async (tx) => {
       const w = await firstDays(tx, 4);
@@ -1063,12 +1077,19 @@ describe("a proposal's week, proposed again (0013; FQ102)", () => {
     });
   });
 
-  it("takes no day another member confirmed, in whichever week they held it", async () => {
+  it("takes no day another member confirmed in a later week, as in the first", async () => {
     await rolledBack(app, async (tx) => {
       const w = await firstDays(tx, 4);
-      await confirm(tx, w, member(w, 0), ["monday"]);
+      await next(tx, w.proposal);
+      // In the second week Member 1 holds Tuesday alone and confirms it. Member 2, who held Tuesday in the
+      // first week, can't take it in the second, and nor can anyone else.
+      await holdIn(tx, w.proposal, member(w, 0), "tuesday", 2);
+      await holdIn(tx, w.proposal, member(w, 1), "monday", 2);
+      await confirm(tx, w, member(w, 0), ["tuesday"]);
       await checkAsAtCommit(tx);
-      await expectRefused(tx, REFUSED.integrity, (sp) => hold(sp, w.proposal, member(w, 1), "monday"), /is taken/);
+      const taken = /is taken/;
+      await expectRefused(tx, REFUSED.integrity, (sp) => holdIn(sp, w.proposal, member(w, 1), "tuesday", 2), taken);
+      await expectRefused(tx, REFUSED.integrity, (sp) => holdIn(sp, w.proposal, member(w, 2), "tuesday", 2), taken);
     });
   });
 });

@@ -252,7 +252,7 @@ describe("a change of members once a day is confirmed (FQ100, FQ102)", () => {
 });
 
 describe("a club with no open first days", () => {
-  it("opens new first days when the last ended with no successor and the club has two members again", () => {
+  it("opens new first days when all before them ended with no successor and the club has two members again", () => {
     expect(firstDaysAfter(facts(["maya", "sam"], null, true))).toEqual({ kind: "open" });
     expect(firstDaysAfter(facts(["maya"], null, true))).toEqual({ kind: "nothing" });
     expect(firstDaysAfter(facts([], null, true))).toEqual({ kind: "nothing" });

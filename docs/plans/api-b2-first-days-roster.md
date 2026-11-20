@@ -103,3 +103,14 @@ Written before the code they test and seen to fail; the journal says for each fi
 - **A guard replaced.** Five functions of 0012 are rewritten in 0013. Each of 0012's refusals is run again against 0013 by `schedule-proposals.test.ts`, which already holds them, and each new line has its own breakage.
 - **The restart's second version is rare** (a member confirms, leaves, the other hadn't confirmed, and someone joins later) and is the only path that makes a version outside a club's start before PR 4. It is tested through the commands and the generation's own rule (`daysToMake`).
 - **The size of the first days after a late join.** A club of three with a day confirmed that gains a fourth member keeps two days each among the three until the first days apply (FQ100, FQ102); PR 4 proposes the week for four.
+
+## 8. After the review (round 1)
+
+Corrections to this plan, kept here so that the sections above stay as they were written before the code.
+
+- **Section 0, "No contract change".** No file under `packages/contracts/` changes, and the shapes stand. Three of the contract's descriptions are no longer true of a restarted club (FQ124 lists them), and a contract PR corrects them before the ios lane builds from them.
+- **Section 0's table, "Ended with no successor, none open: a leave, nothing".** The rule would open new first days for any call in that state with two or more members. A leave can't reach it: first days end with no successor only when one member is left, or when new ones open in the same transaction.
+- **Section 3, step 1 and `open`.** "The last first days ended with no successor" is, in the code, every proposal the club has had being first days that ended so (`settle.ts`, `open.ts`). And the restart's week starts on the latest of three dates, not two: the day after the earlier week's start is the third (`open.ts`), which FQ124 now says.
+- **Section 4, the privacy matrix.** The matrix's own world has a day confirmed, so its leaves change nothing in the first days. After the review the applied-roster test of `tests/src/privacy/matrix.test.ts` runs a second time with first days nobody has confirmed: the join and a leave after it each revise them through the routes, judged row by row (`firstDaysJoinProblems`, `firstDaysProblems`) and scanned.
+- **Section 5.** `openapi` and `db-bootstrap` are part of every run named there; the journal's entry for the review's commit records them.
+- **Section 6, FQ123 and FQ124.** Their costs were understated: `docs/QUESTIONS.md` now lists them (the week in force until the restart's week starts, the name of a member who left shown to later members, Friends' order, a start on any weekday).

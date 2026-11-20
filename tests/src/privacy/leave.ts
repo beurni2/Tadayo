@@ -162,9 +162,98 @@ export function leaveProblems(
   return problems;
 }
 
+type ProposalRows = ScheduleWorld["proposals"] extends Map<string, infer Rows> ? Rows : never;
+
+/** Spec 05's table: two days each up to three members, one each from four. */
+const perFor = (count: number): number => (count <= 3 ? 2 : 1);
+const lines = (rows: readonly object[]): string =>
+  rows
+    .map((row) => JSON.stringify(row))
+    .sort()
+    .join("\n");
+
+/**
+ * What is wrong with the members and the days of first days that stayed one proposal across a change of
+ * the club's members: `now` against `was`, for the club's `active` members after it. `revised` says the
+ * week was to be revised (nobody had confirmed; FQ55, FQ102), and `added` names who it gains.
+ *
+ * - Not revised: its members, their confirmations, its week and every row are as they were (FQ100, T33).
+ * - Revised, the days each member has unchanged: nobody is moved (T6). Every row there was is as it was,
+ *   and each new member holds that many days, proposed, which no active member held.
+ * - Revised, the days each member has changed (between three and four members): a new week. The week
+ *   before is kept whole among the earlier ones, and in the new one each active member, and nobody
+ *   else, holds their proposed days, no day twice.
+ * - Always: a confirmation is nobody's but the member's own, so none moves; an earlier week's row never
+ *   changes.
+ */
+function weekProblems(
+  was: ProposalRows,
+  now: ProposalRows,
+  active: readonly string[],
+  added: readonly string[],
+  revised: boolean,
+): string[] {
+  const problems: string[] = [];
+  const gains = revised ? added : [];
+  const members = [...was.members.map((member) => member.interval), ...gains].sort();
+  if (
+    now.members
+      .map((member) => member.interval)
+      .sort()
+      .join() !== members.join()
+  ) {
+    problems.push("the first days' members aren't those they had, with exactly the members a revision adds (FQ100)");
+  }
+  for (const member of now.members) {
+    const before = was.members.find((one) => one.interval === member.interval)?.confirmed ?? false;
+    if (member.confirmed !== before) problems.push(`the confirmation of ${member.interval} moved`);
+  }
+  const per = revised ? perFor(active.length) : was.daysPerMember;
+  const newWeek = per !== was.daysPerMember;
+  if (now.daysPerMember !== per) problems.push(`each member has ${String(now.daysPerMember)} days, not ${String(per)}`);
+  if (now.weekRevision !== was.weekRevision + (newWeek ? 1 : 0)) {
+    problems.push(
+      `the first days are on week ${String(now.weekRevision)}, not week ${String(was.weekRevision + (newWeek ? 1 : 0))}`,
+    );
+  }
+  if (!newWeek) {
+    if (lines(now.earlier) !== lines(was.earlier)) problems.push("an earlier week's rows changed");
+    const kept = now.days.filter((day) => !gains.includes(day.interval));
+    if (lines(kept) !== lines(was.days)) problems.push("a member's days changed though nobody is moved (T6)");
+    const held = new Set(was.days.filter((day) => day.held && active.includes(day.interval)).map((day) => day.weekday));
+    for (const interval of gains) {
+      const mine = now.days.filter((day) => day.interval === interval);
+      if (mine.length !== per || mine.some((day) => !day.suggested || !day.held)) {
+        problems.push(`the new member ${interval} doesn't hold ${String(per)} proposed days`);
+      }
+      for (const day of mine) {
+        if (held.has(day.weekday)) problems.push(`the new member ${interval} was given ${day.weekday}, which is held`);
+        held.add(day.weekday);
+      }
+    }
+    return problems;
+  }
+  const kept = [...was.earlier, ...was.days.map((day) => ({ ...day, weekRevision: was.weekRevision }))];
+  if (lines(now.earlier) !== lines(kept)) problems.push("the week before isn't kept as it was");
+  if (now.days.some((day) => !active.includes(day.interval))) {
+    problems.push("the new week gives a day to someone who isn't an active member");
+  }
+  for (const interval of active) {
+    const mine = now.days.filter((day) => day.interval === interval);
+    if (mine.length !== per || mine.some((day) => !day.suggested || !day.held)) {
+      problems.push(`${interval} doesn't hold ${String(per)} proposed days in the new week`);
+    }
+  }
+  if (new Set(now.days.map((day) => day.weekday)).size !== now.days.length) {
+    problems.push("the new week proposes a day twice");
+  }
+  return problems;
+}
+
 /**
  * What is wrong with the club's schedule proposals after `interval` left `club`, given the schedule's
- * rows before and after. Empty when the first days are what FQ102 and FQ123 make of the leave.
+ * rows before and after. Empty when the first days are what FQ102 and FQ123 make of the leave: their
+ * state and version, and their members, confirmations and days row by row (`weekProblems`).
  */
 export function firstDaysProblems(
   before: ScheduleWorld,
@@ -206,9 +295,7 @@ export function firstDaysProblems(
   }
   if (now.replacedBy !== null) problems.push("the first days name a successor");
   const revised = state === "open" && moved;
-  if (!revised && now.daysPerMember !== was.daysPerMember) {
-    problems.push("the days each member has moved though the week wasn't proposed again");
-  }
+  problems.push(...weekProblems(was, now, stayed, [], revised));
   const fresh = of(after).filter(([one]) => !before.proposals.has(one));
   const again = nobodyLeft && stayed.length >= 2;
   if (!again && fresh.length > 0) {
@@ -225,5 +312,72 @@ export function firstDaysProblems(
       problems.push("no new first days are open for exactly the members who remain (FQ123)");
     }
   }
+  return problems;
+}
+
+/**
+ * What is wrong with the club's schedule proposals after `joined` became members of `club`, a club that
+ * had started, given the schedule's rows before and after. Empty when the first days are what FQ55, FQ100
+ * and FQ102 make of the join: revised to include them while nobody has confirmed, untouched once a day
+ * is confirmed, and opened anew when the club's earlier ones all ended with no successor.
+ */
+export function firstDaysJoinProblems(
+  before: ScheduleWorld,
+  after: ScheduleWorld,
+  club: string,
+  joined: readonly string[],
+): string[] {
+  const of = (world: ScheduleWorld) =>
+    [...world.proposals].filter(([, proposal]) => proposal.club === club).sort(([a], [b]) => (a < b ? -1 : 1));
+  const whole = ([id, rows]: [string, ProposalRows]) =>
+    JSON.stringify([
+      id,
+      { ...rows, members: lines(rows.members), days: lines(rows.days), earlier: lines(rows.earlier) },
+    ]);
+  const active = activeOf(after, club);
+  const fresh = of(after).filter(([one]) => !before.proposals.has(one));
+  const open = of(before).find(([, proposal]) => proposal.state === "open" && proposal.reason === "activation");
+  if (open === undefined) {
+    const problems: string[] = [];
+    const old = of(after).filter(([one]) => before.proposals.has(one));
+    if (old.map(whole).join("\n") !== of(before).map(whole).join("\n")) {
+      problems.push("a join changed a proposal that wasn't open first days");
+    }
+    const ended =
+      of(before).length > 0 &&
+      of(before).every(
+        ([, proposal]) =>
+          proposal.reason === "activation" && proposal.state === "superseded" && proposal.replacedBy === null,
+      );
+    if (!ended || active.length < 2) {
+      return fresh.length === 0 ? problems : [...problems, "a join opened first days the club has no call for"];
+    }
+    const [next] = fresh;
+    const members = (next?.[1].members ?? []).map((member) => member.interval).sort();
+    if (
+      fresh.length !== 1 ||
+      next?.[1].state !== "open" ||
+      next[1].reason !== "activation" ||
+      members.join() !== active.join() ||
+      next[1].members.some((member) => member.confirmed)
+    ) {
+      problems.push("the join that restarts the club opened no new first days for exactly its members (FQ102)");
+    }
+    return problems;
+  }
+  const [id, was] = open;
+  const now = after.proposals.get(id);
+  if (now === undefined) return ["the first days' rows are gone"];
+  const problems: string[] = [];
+  const revised = !was.members.some((member) => member.confirmed);
+  const version = was.version + (revised ? 1 : 0);
+  if (now.state !== "open" || now.version !== version) {
+    problems.push(
+      `the first days are ${now.state} at version ${String(now.version)}, not open at version ${String(version)} (FQ100, FQ102)`,
+    );
+  }
+  if (now.replacedBy !== null) problems.push("the first days name a successor");
+  problems.push(...weekProblems(was, now, active, joined, revised));
+  if (fresh.length > 0) problems.push("a join opened new first days beside the open ones");
   return problems;
 }

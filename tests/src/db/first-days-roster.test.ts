@@ -305,7 +305,7 @@ describe("a join once a day is confirmed (FQ100)", () => {
         code: "NOT_FOUND",
         facts: {},
       });
-      // Maya still sees the same version, and her confirmation applies the first days: Alex isn't waited for.
+      // Maya still sees the same version, and Maya's confirmation applies the first days: Alex isn't waited for.
       expect((await proposalOf(tx, c, "Maya")).version).toBe(1);
       expect(await confirmOwn(tx, c, "Maya")).toMatchObject({ state: "applied", version: 2 });
     });
@@ -421,7 +421,7 @@ describe("a leave once a day is confirmed (FQ102)", () => {
       expect(await proposals(tx, c)).toMatchObject([
         { id: before.id, state: "open", version: before.version, week_revision: 1, days_per_member: 2 },
       ]);
-      // Alex's days are free, with no name, and Maya's request with the version she read still stands.
+      // Alex's days are free, with no name, and Maya's request with the version Maya read still stands.
       const maya = await proposalOf(tx, c, "Maya");
       expect(maya.version).toBe(before.version);
       expect(slot(maya, "wednesday")).toEqual({ weekday: "wednesday", state: "available", suggested: false });
@@ -455,7 +455,7 @@ describe("a leave once a day is confirmed (FQ102)", () => {
   it("ends the first days when the one member left hasn't confirmed, and starts the next after the days already made (FQ124)", async () => {
     await rolledBack(db, async (tx) => {
       const c = await started(tx);
-      // Ben confirms Monday and Thursday at midnight on Wednesday the 11th; his days are made four weeks ahead.
+      // Ben confirms Monday and Thursday at midnight on Wednesday the 11th; Ben's days are made four weeks ahead.
       await confirmOwn(tx, c, "Ben");
       tick(1);
       await tx.savepoint((sp) => makeDays(sp, clock, c.club));
@@ -490,6 +490,15 @@ describe("a leave once a day is confirmed (FQ102)", () => {
       expect(slot(answer, "monday")).toMatchObject({ state: "yours", firstDate: "2026-12-14" });
       expect(slot(answer, "thursday")).toMatchObject({ state: "yours", firstDate: "2026-12-17" });
       expect(await confirmOwn(tx, c, "Sam")).toMatchObject({ state: "applied" });
+      // FQ124's cost, as it is: until the new week starts, the week in force is the earlier one, which
+      // holds Ben's two days alone, named, and none of Maya's or Sam's, to Sam who never met Ben too.
+      const waiting = await sight(tx, c, "Sam");
+      expect(waiting?.proposal).toBeNull();
+      expect(waiting?.current?.effectiveFrom).toBe("2026-11-11");
+      expect(waiting?.current?.assignments.map((each) => [each.weekday, each.person.membershipId])).toEqual([
+        ["monday", c.member["Ben"]],
+        ["thursday", c.member["Ben"]],
+      ]);
       // The days made afterwards follow the ones already made, and none is Ben's.
       tick(7 * 24);
       await tx.savepoint((sp) => makeDays(sp, clock, c.club));
@@ -498,6 +507,16 @@ describe("a leave once a day is confirmed (FQ102)", () => {
          WHERE club_id = ${c.club} AND star_interval_id <> ${c.member["Ben"] ?? ""}`;
       // Sam's Friday is the week's own first day.
       expect(made).toEqual([{ first: "2026-12-11" }]);
+      // From that day the week in force is the new one: Maya's and Sam's days, and none of Ben's.
+      tick(23 * 24);
+      const inForce = await sight(tx, c, "Sam");
+      expect(inForce?.current?.effectiveFrom).toBe("2026-12-11");
+      expect(inForce?.current?.assignments.map((each) => [each.weekday, each.person.membershipId])).toEqual([
+        ["monday", c.member["Maya"]],
+        ["tuesday", c.member["Sam"]],
+        ["thursday", c.member["Maya"]],
+        ["friday", c.member["Sam"]],
+      ]);
     });
   });
 
@@ -511,6 +530,23 @@ describe("a leave once a day is confirmed (FQ102)", () => {
         SELECT effective_from::text AS effective_from FROM app.schedule_versions
          WHERE club_id = ${c.club} ORDER BY effective_from`;
       expect(versions).toEqual([{ effective_from: "2026-11-11" }, { effective_from: "2026-11-12" }]);
+    });
+  });
+
+  it("starts a restarted club's week today when every day already made is past", async () => {
+    await rolledBack(db, async (tx) => {
+      const c = await started(tx);
+      await confirmOwn(tx, c, "Ben");
+      tick(1);
+      await tx.savepoint((sp) => makeDays(sp, clock, c.club));
+      await leaving(tx, c, "Ben");
+      // Forty days on, Monday 21 December: Ben's last made day, 10 December, is behind.
+      tick(40 * 24);
+      await join(tx, c, "Sam", "Maya");
+      const versions = await tx<{ effective_from: string }[]>`
+        SELECT effective_from::text AS effective_from FROM app.schedule_versions
+         WHERE club_id = ${c.club} ORDER BY effective_from`;
+      expect(versions).toEqual([{ effective_from: "2026-11-11" }, { effective_from: "2026-12-21" }]);
     });
   });
 
@@ -537,6 +573,9 @@ describe("a leave once a day is confirmed (FQ102)", () => {
       });
       expect(all[1]).toMatchObject({ state: "open", version: 1, days_per_member: 2 });
       expect(await includedIn(tx, all[1]?.id ?? "")).toEqual([c.member["Alex"], c.member["Sam"]].sort());
+      // Ben had confirmed, so the new first days have a week of their own (FQ124): here the day after the
+      // first week's start, since none of Ben's days was made; after the last of them when they were.
+      expect((await proposalOf(tx, c, "Alex")).effectiveFrom).toBe("2026-11-12");
       expect((await proposalOf(tx, c, "Alex")).myDays).toEqual(["monday", "thursday"]);
       expect((await proposalOf(tx, c, "Sam")).myDays).toEqual(["tuesday", "friday"]);
     });

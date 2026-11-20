@@ -13,8 +13,9 @@
 //   first days when it leaves only confirmed members among those they include; ends them when the club's
 //   one member left hasn't confirmed, or when nobody they include is left (FQ123); else changes nothing,
 //   and then no version moves (T33).
-// - No first days are open: new ones open when the last ended with no successor and the club has two
-//   members again (FQ102: "the join that restarts the club opens new first days").
+// - No first days are open: new ones open when every proposal the club has had is first days that ended
+//   with no successor, and the club has two members again (FQ102: "the join that restarts the club opens
+//   new first days").
 
 import { daysPerMember, proposedWeek, WEEKDAYS, type Weekday } from "./propose.ts";
 
@@ -34,7 +35,7 @@ export interface RosterChangeFacts {
   readonly active: readonly string[];
   /** The club's open first days, or null. */
   readonly open: null | { readonly daysPerMember: 1 | 2; readonly members: readonly FirstDaysMember[] };
-  /** With none open: the club's last proposal is first days that ended superseded, with nothing after them. */
+  /** With none open: every proposal the club has had is first days that ended superseded, with no successor. */
   readonly endedWithoutSuccessor: boolean;
 }
 

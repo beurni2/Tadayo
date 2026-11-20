@@ -15,6 +15,13 @@
 // - the first days ended, superseded with no successor;
 // - new first days (./open.ts).
 // When the rule says nothing, nothing is written and no version moves (T33).
+//
+// Two things this leans on, which a new caller must keep:
+// - It is called only after a membership started or ended. With nobody confirmed the rule answers a
+//   revision whatever the facts, so a call with no change would move a version for nothing (T33).
+// - The club's row is held. A revision writes the proposal's row and then its days, whose guard locks
+//   the member's row: the reverse of a confirmation's order (member, then proposal; migration 0012). Only
+//   the club's row, which every writer of a proposal takes first, keeps the two from a deadlock.
 
 import type { QuerySql } from "../authorization/read-sql.ts";
 import type { ClockSql, ServerNow } from "../time/clock.ts";
