@@ -1,15 +1,28 @@
 /// <reference lib="esnext.temporal" />
-// What the roster tests share (docs/plans/api-b1-clubs.md, section 3): each command as its route runs
-// it, and the rows of the steps no command makes yet, a candidate's acceptance and a member's decision,
-// which are PR 3's (`acceptInvitation`, `approveRoster`, `declineRoster`).
+// What the roster tests share (docs/plans/api-b1-clubs.md, sections 3 and 4): each command as its route
+// runs it. `accept` and `decide` write a candidate's acceptance and a member's decision by their rows,
+// for the tests of the reads that were written before the commands were (PR 2's); `acceptWith`, `approve`
+// and `decline` run the commands.
 //
 // A refused request throws `Refused`, which the route's transaction rolls back, so a request here is a
 // savepoint inside the test's own transaction: a refusal leaves exactly what the route's would.
 
 import { randomUUID } from "node:crypto";
-import { invitationLinkBody, rosterRevisionBody } from "@tadayo/api";
 import {
+  clubDetailBody,
+  invitationAcceptanceBody,
+  invitationLinkBody,
+  invitationPreviewBody,
+  rosterRevisionBody,
+} from "@tadayo/api";
+import {
+  acceptInvitation,
+  approveRoster,
+  createClub,
   createInvitation,
+  declineRoster,
+  previewInvitation,
+  previewInvitationWeb,
   proposeRoster,
   readRevision,
   Refused,
@@ -162,3 +175,104 @@ export async function decide(
     INSERT INTO app.roster_approvals (revision_id, interval_id, decision, implicit, decided_at)
     VALUES (${revisionId}, ${intervalId}, ${decision}, false, ${at})`;
 }
+
+/** A club its creator has just made with `createClub`: proposed, with nobody else. */
+export async function founded(
+  tx: WorldTx,
+  clock: FakeClock,
+  name = "Ben",
+): Promise<{ user: string; club: string; interval: string }> {
+  const user = await newUser(plain(tx), name);
+  const made = await tx.savepoint((sp) =>
+    createClub(
+      sp,
+      clock,
+      { userId: user, key: randomUUID(), name: "Sunday people", timezone: "America/New_York" },
+      clubDetailBody,
+    ),
+  );
+  const { club } = made.answer as unknown as { club: { id: string; my_membership_id: string } };
+  return { user, club: club.id, interval: club.my_membership_id };
+}
+
+/** A link for the candidate, made by its proposer: its id and its token. */
+export async function linkFor(
+  tx: WorldTx,
+  clock: FakeClock,
+  userId: string,
+  clubId: string,
+  candidateId: string,
+): Promise<{ id: string; token: string }> {
+  const made = await link(tx, clock, userId, clubId, candidateId);
+  return { id: (made.answer as unknown as { invitation_id: string }).invitation_id, token: made.token ?? "" };
+}
+
+export interface PreviewBody {
+  state: string;
+  invitation_id?: string;
+  inviter_name?: string;
+  club_name?: string;
+  revision_id?: string;
+  revision_version?: number;
+  roster?: { name: string; kind: string; is_you: boolean }[];
+  expires_at?: string;
+  club?: { id: string; name: string; timezone: string; my_membership_id: string };
+}
+
+/** `previewInvitation` as its route runs it: the body, or null for the neutral not-found. */
+export async function preview(tx: WorldTx, userId: string, token: string, now: ServerNow): Promise<PreviewBody | null> {
+  const sight = await previewInvitation(tx, userId, token, now);
+  return sight === null ? null : (invitationPreviewBody(sight) as unknown as PreviewBody);
+}
+
+/** `previewInvitationWeb` as its route runs it. */
+export async function webPreview(tx: WorldTx, token: string, now: ServerNow): Promise<Json | null> {
+  const found = await previewInvitationWeb(tx, token, now);
+  return found === null ? null : { inviter_name: found.inviterName };
+}
+
+export interface AcceptanceBody {
+  invitation_id: string;
+  state: string;
+  club?: { id: string; name: string; timezone: string; my_membership_id: string };
+}
+
+/** `acceptInvitation` as its route runs it. */
+export const acceptWith = (
+  tx: WorldTx,
+  clock: FakeClock,
+  userId: string,
+  token: string,
+  revisionId: string,
+  expectedVersion: number,
+  key: string = randomUUID(),
+): Promise<AcceptanceBody> =>
+  tx.savepoint((sp) =>
+    acceptInvitation(sp, clock, { userId, key, token, revisionId, expectedVersion }, invitationAcceptanceBody),
+  ) as unknown as Promise<AcceptanceBody>;
+
+/** `approveRoster` as its route runs it. */
+export const approve = (
+  tx: WorldTx,
+  clock: FakeClock,
+  userId: string,
+  revisionId: string,
+  expectedVersion: number,
+  key: string = randomUUID(),
+): Promise<RevisionBody> =>
+  tx.savepoint((sp) =>
+    approveRoster(sp, clock, { userId, key, revisionId, expectedVersion }, rosterRevisionBody),
+  ) as unknown as Promise<RevisionBody>;
+
+/** `declineRoster` as its route runs it. */
+export const decline = (
+  tx: WorldTx,
+  clock: FakeClock,
+  userId: string,
+  revisionId: string,
+  expectedVersion: number,
+  key: string = randomUUID(),
+): Promise<RevisionBody> =>
+  tx.savepoint((sp) =>
+    declineRoster(sp, clock, { userId, key, revisionId, expectedVersion }, rosterRevisionBody),
+  ) as unknown as Promise<RevisionBody>;

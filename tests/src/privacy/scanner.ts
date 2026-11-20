@@ -116,7 +116,17 @@
 // image, header or key of the never-list in them fails here:
 // - the signed upload URL, which must name its intent's own object with overwriting off, and the
 //   replays of that intent (spike S1's server part, then B3);
-// - the invitation's preview to the person holding it, before they are in the club (B1);
+// - the invitation's preview to the person holding it, before they are in the club (B1, api/b1-accept):
+//   a caller who presents a link's own token, in `previewInvitationWeb`, `previewInvitation` or
+//   `acceptInvitation` (the context's `presented`, held to the SHA-256 the link's row keeps), may read
+//   through it, while the link isn't revoked or replaced and its club isn't suspended (FQ59, FQ80):
+//   signed out, the inviter's name alone, of a link nobody has used, before its expiry, whose candidate
+//   is still open (T7); signed in, only when no other account accepted with the link and while the
+//   candidate is on the club's open revision, the inviter's name, and, when the link is the account's
+//   own or not yet expired, the club's name and that revision's names: its members' and its candidates'
+//   labels (FQ47). The link's id is shown only in such an answer, as the link the caller presented: in
+//   an acceptance only once it is the account's own. Nothing else of the club: no person's id, no
+//   avatar, and no other revision's label (heldLink, Reader.texts);
 // - the proposer's invitation link (B1, api/b1-propose): a link's id, in a revision's candidate
 //   (CandidateInvitation), in createInvitation's answer (InvitationLink) and in revokeInvitation's
 //   (RevokedInvitation), only to a viewer whose active interval proposed the link's candidate, whose
@@ -259,6 +269,15 @@ export interface WorldInvitation {
   proposedBy: string;
   /** The SHA-256 of its token, in hex, as its row keeps it: the token itself is in no row (T52, FQ77). */
   tokenSha256: string;
+  /** It was revoked, or a newer link replaced it: it names nothing to anyone holding it (FQ59). */
+  dead: boolean;
+  expiresAt: Temporal.Instant;
+  /**
+   * What the club's open revision shows the link's candidate, while that candidate is still open on it:
+   * the names of its members who are still members and the labels of its candidates (FQ47). Null when
+   * the candidate is on no open revision.
+   */
+  roster: readonly string[] | null;
 }
 
 export interface WorldFacts {
@@ -300,6 +319,8 @@ export interface ScanContext {
   world: WorldFacts;
   /** The server's time of the answer, the cell's instant. */
   now: Temporal.Instant;
+  /** The invitation token the request presented in its body, if it did (T7): what a link's holder holds. */
+  presented?: string;
 }
 
 const NEUTRAL_BODY = '{"code":"NOT_FOUND"}';
@@ -591,6 +612,39 @@ function untaggedOf(id: string): Untagged | undefined {
   return { text, bytes: bytes.toString("base64url") === text ? bytes : undefined };
 }
 
+/** The operations that take a link's token: what its holder may read comes through them alone. */
+const HOLDER_OPERATIONS = new Set(["previewInvitationWeb", "previewInvitation", "acceptInvitation"]);
+
+/**
+ * The link the request presented the token of, with what its holder may read through it (the header's
+ * rule): `shown`, the link's own id in an acceptance; `inviter`, the inviter's name; `roster`, the club's
+ * name and the open revision's names too.
+ * Undefined when the request presented no token of the world's, or isn't one of the holder's operations.
+ */
+function heldLink(
+  context: ScanContext,
+): { id: string; invitation: WorldInvitation; shown: boolean; inviter: boolean; roster: boolean } | undefined {
+  const { world, viewer, now, presented } = context;
+  if (presented === undefined || !HOLDER_OPERATIONS.has(context.operation.id)) return undefined;
+  const hash = createHash("sha256").update(presented).digest("hex");
+  const found = [...world.invitations].find(([, invitation]) => invitation.tokenSha256 === hash);
+  if (found === undefined) return undefined;
+  const [id, invitation] = found;
+  const names = !invitation.dead && world.clubs.get(invitation.club)?.suspendedAt === null;
+  const unexpired = before(now, invitation.expiresAt);
+  if (context.operation.id === "previewInvitationWeb" || viewer.account === null) {
+    const live = names && invitation.boundTo === null && unexpired && invitation.roster !== null;
+    return { id, invitation, shown: live, inviter: live, roster: false };
+  }
+  const theirs = invitation.boundTo === viewer.account;
+  // The link shows something to this account: its id in an acceptance, as when the account has joined by it.
+  const shown = names && (invitation.boundTo === null || theirs);
+  // Signed in too, a name is read only while the candidate is on an open revision: once the proposal has
+  // ended the answer is nothing, or `did_not_go_ahead`, which names nobody.
+  const readable = shown && invitation.roster !== null;
+  return { id, invitation, shown, inviter: readable, roster: readable && (theirs || unexpired) };
+}
+
 function readerOf(context: ScanContext): Reader {
   const { world, viewer, now } = context;
   const clubs = new Set<string>();
@@ -655,6 +709,13 @@ function readerOf(context: ScanContext): Reader {
     if (viewer.account === null || found.boundTo !== viewer.account) continue;
     texts.add(found.clubName);
     if (found.inviterName !== null) texts.add(found.inviterName);
+  }
+  // What a link's holder reads through it: the inviter's name, and the exact roster's names (T7, FQ47).
+  const held = heldLink(context);
+  if (held?.inviter === true && held.invitation.inviterName !== null) texts.add(held.invitation.inviterName);
+  if (held?.roster === true) {
+    texts.add(held.invitation.clubName);
+    for (const name of held.invitation.roster ?? []) texts.add(name);
   }
   const hidden = new Set([...written].filter((text) => !texts.has(text)));
   const unseen = new Set<string>();
@@ -1188,6 +1249,25 @@ export function scan(answer: Answer, context: ScanContext): Finding[] {
           find("world", `${at}.url`, "a link's URL whose token isn't this link's own (T7)");
         else ownLinkUrls.add(`${at}.url`);
       }
+    }
+    if (
+      kind === "InvitationOpen" ||
+      kind === "InvitationChanged" ||
+      kind === "InvitationWaiting" ||
+      kind === "InvitationAcceptance"
+    ) {
+      // Only the link whose token the caller presented, while it reads the roster through it; an
+      // acceptance, a roster waited for and a changed one only as the account's own link (T7, T14).
+      judged.add(`${at}.invitation_id`);
+      const held = heldLink(context);
+      if (held === undefined || node.invitation_id !== held.id)
+        find("world", `${at}.invitation_id`, "an invitation whose token the caller didn't present (T7, T14)");
+      else if (!(kind === "InvitationAcceptance" ? held.shown : held.roster))
+        find("world", `${at}.invitation_id`, "an invitation its link no longer shows to this caller (FQ59, FQ80)");
+      else if (kind === "InvitationOpen" && held.invitation.boundTo !== null)
+        find("world", `${at}.invitation_id`, "an open invitation whose link an account has accepted with (T7)");
+      else if (kind !== "InvitationOpen" && held.invitation.boundTo !== context.viewer.account)
+        find("world", `${at}.invitation_id`, "an invitation the account didn't accept with this link (T7)");
     }
     if (kind === "MyInvitation") {
       // Only an invitation the viewer accepted, with the club's name and the inviter's it holds (T7, T33).

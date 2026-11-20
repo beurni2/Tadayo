@@ -97,6 +97,11 @@ const BUILT = new Set([
   "getRosterRevision",
   "createInvitation",
   "revokeInvitation",
+  "previewInvitationWeb",
+  "previewInvitation",
+  "acceptInvitation",
+  "approveRoster",
+  "declineRoster",
   "getSchedule",
   "chooseScheduleDays",
   "confirmScheduleDays",
@@ -110,7 +115,7 @@ const unbuiltOther = unbuilt.filter((operation) => operation.public !== true && 
 
 describe("the route classes the gate tells apart (the contract's public and beforeProfile)", () => {
   it("has each class among the operations nobody has built, so each is tried below", () => {
-    expect([unbuiltPublic.length, unbuiltBeforeProfile.length > 0, unbuiltOther.length > 0]).toEqual([2, true, true]);
+    expect([unbuiltPublic.length, unbuiltBeforeProfile.length > 0, unbuiltOther.length > 0]).toEqual([1, true, true]);
     // The contract's seven flagged operations beside the two public ones.
     expect(
       OPERATIONS.filter((operation) => operation.public === true)
@@ -126,12 +131,12 @@ describe("a caller with no session (T14)", () => {
     for (const operation of [
       ...unbuiltBeforeProfile,
       ...unbuiltOther,
-      ...OPERATIONS.filter((op) => BUILT.has(op.id)),
+      ...OPERATIONS.filter((op) => BUILT.has(op.id) && op.public !== true),
     ]) {
       const got = await answer({ method: operation.method.toUpperCase(), url: urlOf(operation.path) });
       expect(got, operation.id).toEqual(UNAUTHENTICATED);
     }
-    expect(asked.count).toBe(OPERATIONS.length - unbuiltPublic.length);
+    expect(asked.count).toBe(OPERATIONS.filter((op) => op.public !== true).length);
   });
 
   it("is judged before the body is read: a body Fastify couldn't read is still a 401, never a 400", async () => {

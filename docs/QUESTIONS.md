@@ -588,3 +588,12 @@ The founder's addendum (`docs/tadayo-new-direction-addendum-r1.md`, ADR-035) lea
     - The other readings: every current member of the club reads every revision of it, old ones included, which shows someone who joined later the names proposed and refused before they came; or a candidate who accepted reads the revision too, which needs a rule for what a candidate sees of the members beyond names (T7).
     - The cost of the default: a member who joins by one revision can't open an older, ended one. No screen asks for that today. It widens later without changing data.
     - Needed by: B1's next PR (`api/b1-accept`), which builds approving and accepting on it.
+
+
+## Raised by B1's third clubs PR (`api/b1-accept`)
+
+- **FQ120. The candidates who hadn't accepted when a roster is applied.** A roster is applied when every member has approved it and at least one candidate has accepted (FQ65). Spec 04 says "Existing members approve any additions, including initial people added after they accepted a smaller roster", and doesn't say what holds the people who haven't accepted yet.
+    - Default: the server carries them into a new revision (`packages/domain/src/clubs/apply-roster.ts`, `applyIfReady`): the same proposer, whose approval of them stands as it did when they proposed (FQ60); the club's members now, the people who just joined included; the carried candidates at their own labels, with no acceptance. Every other member approves it again, the newly joined too, and each carried candidate accepts it. Should the proposer no longer be a member, the carried candidates end.
+    - The other readings: end them, so the proposer has to propose them again and make new links; or keep the earlier members' approvals, which would let people join a larger club than the newly joined ever approved.
+    - The cost of the default: after a first person joins, everyone approves once more for the people still to come, though nothing about those people changed.
+    - Needed by: B1's close, before the trial's first club invites more than one person at a time.
