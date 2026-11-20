@@ -31,19 +31,6 @@ public enum AccountChange: Sendable, Equatable {
     case name(String, expectedVersion: Int)
 }
 
-/// The caller's clubs and accepted invitations, as `GET /v1/clubs` answers. B0 draws only the
-/// account with neither (G06-no-club); the lists grow into this type with B1.
-public struct ClubList: Sendable, Equatable {
-    public let serverClock: ServerClock
-    /// No club and no invitation waiting on its members.
-    public let isEmpty: Bool
-
-    public init(serverClock: ServerClock, isEmpty: Bool) {
-        self.serverClock = serverClock
-        self.isEmpty = isEmpty
-    }
-}
-
 /// Why an API call failed, in the terms the screens need. It carries no body, header or token,
 /// so nothing it says can hold an address or a name (T52).
 public enum APIFailure: Error, Sendable, Equatable {
@@ -54,8 +41,22 @@ public enum APIFailure: Error, Sendable, Equatable {
     case signedOut
     /// `PROFILE_INCOMPLETE`: the account must confirm its age and give a name first.
     case profileIncomplete
-    /// `VERSION_CONFLICT`: the account changed first; read it again.
+    /// `VERSION_CONFLICT`: what the person saw changed first (the account, a club's roster or a
+    /// roster revision); read it again.
     case versionConflict
+    /// `NOT_FOUND`: the same answer whatever the reason, so it tells nobody whether the thing
+    /// exists (T14). For an invitation link: unknown, revoked, replaced, or used by another
+    /// account.
+    case notFound
+    /// `NOT_ALLOWED`: the caller may not do this, as making a new link for, or revoking, a link
+    /// already used to accept.
+    case notAllowed
+    /// `ROSTER_CHANGED`: a newer roster replaced the one the person saw; read it again.
+    case rosterChanged
+    /// `CLUB_FULL`: the club already has six.
+    case clubFull
+    /// `INVITATION_EXPIRED`: the link expired before it was used.
+    case invitationExpired
     /// The server is busy or failing (429, 5xx): try again later.
     case unavailable
     /// Any other answer, including one that doesn't match the contract.
