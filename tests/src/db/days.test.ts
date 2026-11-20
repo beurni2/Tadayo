@@ -82,18 +82,78 @@ describe("T6 and FQ61: a day for the right star, from the week in force", () => 
     });
   });
 
-  it("refuses a new week that would move a day already announced", async () => {
+  // Since db/migrations/0015_new_member_day.sql a new week may start before days already made (a new
+  // member's, FQ130), and the rule is said of the days: none goes to someone else. It is checked at commit.
+  /** A week from Tuesday 3 November that gives Saturday to `star` from `firstDate`, or to nobody. */
+  async function weekFrom(tx: Tx, w: World, star: string | null, firstDate = "2026-11-07"): Promise<string> {
+    const version = newId("sched");
+    await tx`
+      INSERT INTO app.schedule_versions (id, club_id, effective_from, created_at)
+      VALUES (${version}, ${w.club}, '2026-11-03', ${AT.added})
+    `;
+    if (star !== null) {
+      await tx`
+        INSERT INTO app.schedule_assignments (schedule_version_id, club_id, weekday, star_interval_id, first_date, confirmed_at)
+        VALUES (${version}, ${w.club}, 'saturday', ${star}, ${firstDate}, ${AT.added})
+      `;
+    }
+    return version;
+  }
+
+  it("refuses a new week that would give a day already announced to someone else (FQ61, 0015)", async () => {
     await rolledBack(app, async (tx) => {
       const w = await newWorld(tx);
       await expectRefused(
         tx,
         REFUSED.integrity,
-        (sp) => sp`
-          INSERT INTO app.schedule_versions (id, club_id, effective_from, created_at)
-          VALUES (${newId("sched")}, ${w.club}, '2026-11-07', ${AT.added})
-        `,
-        /would move a day already announced \(FQ61\)/,
+        async (sp) => {
+          await weekFrom(sp, w, w.ben.interval);
+          await sp`SET CONSTRAINTS ALL IMMEDIATE`;
+        },
+        /saturday from 2026-11-07 would give 2026-11-07, a day already announced, to someone else \(FQ61, T6\)/,
       );
+    });
+  });
+
+  it("takes a new week over days already made that keeps them, starts its day after them, or leaves the weekday", async () => {
+    for (const [star, firstDate] of [
+      ["ana", "2026-11-07"],
+      ["ben", "2026-11-14"],
+      [null, "2026-11-07"],
+    ] as const) {
+      await rolledBack(app, async (tx) => {
+        const w = await newWorld(tx);
+        await weekFrom(tx, w, star === null ? null : w[star].interval, firstDate);
+        await tx`SET CONSTRAINTS ALL IMMEDIATE`;
+      });
+    }
+  });
+
+  it("takes a new week whose day is a date with a cancelled day, which then takes the new star's (FQ129)", async () => {
+    await rolledBack(app, async (tx) => {
+      const w = await newWorld(tx);
+      await tx`UPDATE app.occurrences SET status = 'cancelled' WHERE id = ${w.day}`;
+      const version = await weekFrom(tx, w, w.ben.interval);
+      await day(tx, w, w.ben.interval, "2026-11-07", version);
+      await tx`SET CONSTRAINTS ALL IMMEDIATE`;
+    });
+  });
+
+  it("refuses a new week that starts on or before an earlier week of its club (0015)", async () => {
+    // "The week before" and the week in force on a date are what the weeks' starts say, so they come in order.
+    await rolledBack(app, async (tx) => {
+      const w = await newWorld(tx);
+      for (const starts of ["2026-11-02", "2026-10-26"]) {
+        await expectRefused(
+          tx,
+          REFUSED.integrity,
+          (sp) => sp`
+            INSERT INTO app.schedule_versions (id, club_id, effective_from, created_at)
+            VALUES (${newId("sched")}, ${w.club}, ${starts}, ${AT.added})
+          `,
+          new RegExp(`a week starts after every earlier week of its club, after 2026-11-02, not on ${starts}`),
+        );
+      }
     });
   });
 

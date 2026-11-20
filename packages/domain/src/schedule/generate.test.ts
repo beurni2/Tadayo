@@ -43,7 +43,7 @@ function club(over: Partial<GenerationFacts> = {}): GenerationFacts {
     activeMembers: 6,
     versions: [SIX],
     made: new Set(),
-    changeFrom: null,
+    cancelled: new Map(),
     ...over,
   };
 }
@@ -78,11 +78,9 @@ describe("the days a club is owed (spec 05; T2, T6; FQ16, FQ61, FQ63, FQ79, FQ11
     expect(owed).not.toContain("2026-12-07");
   });
 
-  it("owes, seen from Friday 6 November at 9:41 AM, every date to Saturday 5 December, where the contract's example ends", () => {
-    // packages/contracts/src/fixtures/examples-clubs.ts, `ktAnnounced`, runs from Saturday 7 November to
-    // Saturday 5 December, and the change it shows starts on Monday 7 December (world.ts, `changeFrom`),
-    // the day after the window's end. For a week of six days that span is these 25 dates, written out by
-    // hand; the example's own club has no Friday, and its 21 are below.
+  it("owes, seen from Friday 6 November at 9:41 AM, every date to Saturday 5 December", () => {
+    // For a week of six days that span is these 25 dates, written out by hand; Kitchen table, the
+    // contract's club with no Friday, has 21, below.
     expect(dates(club(), "2026-11-06T14:41:00Z")).toEqual([
       "2026-11-07",
       "2026-11-09",
@@ -399,29 +397,42 @@ describe("a made day's instants across a clock change (T2; ADR-008)", () => {
   });
 });
 
-describe("a membership change waiting to start (FQ61, FQ127)", () => {
+describe("a date whose day was cancelled (FQ129, FQ130)", () => {
   // Friday 6 November 2026, 9:41 AM in New York.
   const NOW = "2026-11-06T14:41:00Z";
+  // Debby left, and Leila picked Friday on Friday 6 November: a week from that day gives Friday to Leila
+  // from 13 November, and Debby's Fridays from then on were cancelled.
+  const LEILAS = version("ver_2", "2026-11-06", [
+    ["monday", "ben", "2026-11-02"],
+    ["tuesday", "maya", "2026-11-03"],
+    ["wednesday", "alex", "2026-11-04"],
+    ["thursday", "sam", "2026-11-05"],
+    ["friday", "leila", "2026-11-13"],
+    ["saturday", "nina", "2026-11-07"],
+  ]);
+  const debbys = ["2026-11-13", "2026-11-20", "2026-11-27", "2026-12-04"];
+  const made = new Set(dates(club(), NOW).filter((date) => !debbys.includes(date)));
+  const cancelled = new Map(debbys.map((date) => [date, ["debby"]]));
 
-  it("makes no day from the start of a change waiting to start, and every day before it (FQ127)", () => {
-    // Seen from Monday 9 November the window ends Sunday 13 December; the change starts Monday 7 December.
-    const monday = "2026-11-09T14:41:00Z";
-    const all = dates(club(), monday);
-    expect(all.at(-1)).toBe("2026-12-12");
-    const held = dates(club({ changeFrom: "2026-12-07" }), monday);
-    expect(held.at(-1)).toBe("2026-12-05");
-    expect(held).toEqual(all.filter((day) => day < "2026-12-07"));
+  it("owes a cancelled date to the star the week in force now gives it: the new member's first days", () => {
+    expect(
+      daysToMake(club({ versions: [SIX, LEILAS], made, cancelled }), at(NOW)).map((day) => [
+        day.localDate,
+        day.starInterval,
+        day.versionId,
+      ]),
+    ).toEqual(debbys.map((date) => [date, "leila", "ver_2"]));
   });
 
-  it("makes nothing once a change's start is today or has passed, until the change ends (FQ127)", () => {
-    expect(dates(club({ changeFrom: "2026-11-06" }), NOW)).toEqual([]);
-    expect(dates(club({ changeFrom: "2026-11-02" }), NOW)).toEqual([]);
-    // The day before the start is still made.
-    expect(dates(club({ changeFrom: "2026-11-08" }), NOW)).toEqual(["2026-11-07"]);
+  it("never owes a cancelled date again to the star whose day was cancelled", () => {
+    // The same week as before, no new member: Debby's cancelled Fridays stay cancelled.
+    expect(dates(club({ made, cancelled }), NOW)).toEqual([]);
+    // A date cancelled for one star and given to another, cancelled again in turn, is owed to neither.
+    const twice = new Map(debbys.map((date) => [date, ["debby", "leila"]]));
+    expect(dates(club({ versions: [SIX, LEILAS], made, cancelled: twice }), NOW)).toEqual([]);
   });
 
-  it("is held by nothing when no change is open, and makes no day for a fact that is missing", () => {
-    expect(dates(club({ changeFrom: null }), NOW)).toEqual(dates(club(), NOW));
-    expect(dates({ ...club(), changeFrom: undefined } as unknown as GenerationFacts, NOW)).toEqual([]);
+  it("makes no day for a fact that is missing", () => {
+    expect(dates({ ...club(), cancelled: undefined } as unknown as GenerationFacts, NOW)).toEqual([]);
   });
 });

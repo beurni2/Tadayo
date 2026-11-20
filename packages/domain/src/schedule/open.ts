@@ -15,8 +15,8 @@
 // Again, for a club whose every first days ended with no successor (FQ102: "the join that restarts the
 // club opens new first days"; FQ123): the club's latest week is used again when no day was confirmed in
 // it. When one was, by a member who has left since, that day's dates are made weeks ahead and stay as
-// they are (FQ63), and a new week starts only after every day already made (FQ61,
-// `schedule_versions_insert_guard`): the new week starts on the latest of the club's local date, the day
+// they are (FQ63), and the new week starts only after every day already made (FQ61, kept here since
+// migration 0015): it starts on the latest of the club's local date, the day
 // after the last day made, and the day after the earlier week's start (FQ124). A day confirmed in it
 // first opens no earlier (./confirm-days.ts).
 //

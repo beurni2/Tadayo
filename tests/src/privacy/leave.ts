@@ -256,8 +256,8 @@ function weekProblems(
 
 /**
  * What is wrong with the club's first-days proposals after `interval` left `club`, given the schedule's
- * rows before and after. A membership change the leave proposes, replaces or ends is judged by
- * ./schedule.ts `weekChangeProblems`, which the matrix asks beside this at every leave. Empty when the first days are what FQ102 and FQ123 make of the leave: their
+ * rows before and after. A new member's pick (a `membership_change` proposal) the leave ends or replaces is judged
+ * by ./schedule.ts `weekChangeProblems`, which the matrix asks beside this at every leave. Empty when the first days are what FQ102 and FQ123 make of the leave: their
  * state and version, and their members, confirmations and days row by row (`weekProblems`).
  */
 export function firstDaysProblems(
@@ -270,8 +270,8 @@ export function firstDaysProblems(
     [...world.proposals].filter(([, proposal]) => proposal.club === club).sort(([a], [b]) => (a < b ? -1 : 1));
   const open = of(before).find(([, proposal]) => proposal.state === "open" && proposal.reason === "activation");
   if (open === undefined) {
-    // A membership change is another judge's (./schedule.ts `weekChangeProblems`): a leave proposes,
-    // replaces or ends one in a club whose first days have applied.
+    // A new member's pick is another judge's (./schedule.ts `weekChangeProblems`): a leave replaces or ends
+    // one in a club whose first days have applied.
     const first = (world: ScheduleWorld) =>
       of(world)
         .filter(([, proposal]) => proposal.reason === "activation")
@@ -306,7 +306,7 @@ export function firstDaysProblems(
   if (now.replacedBy !== null) problems.push("the first days name a successor");
   const revised = state === "open" && moved;
   problems.push(...weekProblems(was, now, stayed, [], revised));
-  // New first days only: a membership change the same command proposes is `weekChangeProblems`' (./schedule.ts).
+  // New first days only: a new member's pick the same command opens is `weekChangeProblems`' (./schedule.ts).
   const fresh = of(after).filter(([one, each]) => !before.proposals.has(one) && each.reason === "activation");
   const again = nobodyLeft && stayed.length >= 2;
   if (!again && fresh.length > 0) {
@@ -347,7 +347,7 @@ export function firstDaysJoinProblems(
   const of = (world: ScheduleWorld) =>
     [...world.proposals].filter(([, proposal]) => proposal.club === club).sort(([a], [b]) => (a < b ? -1 : 1));
   const active = activeOf(after, club);
-  // New first days only: a membership change the same command proposes is `weekChangeProblems`' (./schedule.ts).
+  // New first days only: a new member's pick the same command opens is `weekChangeProblems`' (./schedule.ts).
   const fresh = of(after).filter(([one, each]) => !before.proposals.has(one) && each.reason === "activation");
   const open = of(before).find(([, proposal]) => proposal.state === "open" && proposal.reason === "activation");
   if (open === undefined) {

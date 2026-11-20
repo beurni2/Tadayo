@@ -29,9 +29,10 @@
 //    open: with no day confirmed, a revision of the proposed week without the leaver, or their end with
 //    one member left; with one confirmed, they apply when only confirmed members stay among those they
 //    include, and end when the one member left hasn't confirmed or nobody they include is left. Then the
-//    membership change (../schedule/settle-change.ts; FQ16, FQ125, FQ126): in a club whose first days
-//    have applied, a week without the leaver's days is proposed to the members who stay, replacing an
-//    open change; an open change ends when the members are back to the week's own, or under two.
+//    new member's pick (../schedule/settle-change.ts; FQ16, FQ125, FQ126, FQ131): in a club whose first
+//    days have applied, nobody is asked anything and nobody moves, and the leaver's days are free; an open
+//    pick loses the leaver, is replaced when the club's size changes the days each, applies when everyone
+//    it still includes has confirmed, and ends when nobody it includes is left or the club is paused.
 // 9. The answer, stored in the receipt and answered as the receipt keeps it.
 //
 // Nothing else is written. A club under two members is paused by its members' count (./club-state.ts,

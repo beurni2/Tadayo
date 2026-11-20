@@ -15,8 +15,10 @@
 //    read through the authorization module (./week.ts). No proposal, no membership, a suspended club, or a
 //    membership the proposal doesn't include (FQ100): NOT_FOUND, each the same answer (T14).
 // 4. MEMBERSHIP_CHANGED with `current_id` when a newer proposal replaced this one: the id of the club's
-//    open proposal, which may be several replacements on (FQ126), never an id that has itself ended. When
-//    the changes that replaced it have all ended and none is open, it is an ended proposal like any other:
+//    open proposal, which may be several replacements on, never an id that has itself ended, and only when
+//    that one includes the caller. A new member's pick is replaced when the club's size changes the days
+//    each (FQ131), and the new one includes only the members then without a day: to anyone else, as when
+//    the picks that replaced it have all ended and none is open, it is an ended proposal like any other:
 //    steps 5 and 7.
 // 5. VERSION_CONFLICT with `current_version` when `expected_version` isn't the proposal's.
 // 6. The clock, sampled after the lock (T1; T3's order). The receipt's own `created_at` is an earlier
@@ -24,8 +26,7 @@
 // 7. The rule, which the command passes in: NOT_ALLOWED, or the change. A proposal that has ended with no
 //    successor (applied, or superseded: the club paused, or nobody it includes still a member, FQ123) takes no change: NOT_ALLOWED.
 // 8. The answer: the proposal as the caller now sees it, read again after the change and made by the same
-//    `answerOf` the read uses, stored in the receipt and answered as the receipt keeps it. A membership
-//    change's announced days are those not yet closed at step 6's sample.
+//    `answerOf` the read uses, stored in the receipt and answered as the receipt keeps it.
 
 import { activeMember } from "../authorization/member.ts";
 import type { QuerySql } from "../authorization/read-sql.ts";
@@ -34,6 +35,7 @@ import type { Json } from "../idempotency/request.ts";
 import { Refused } from "../refused.ts";
 import type { Clock, ClockSql, ServerNow } from "../time/clock.ts";
 import type { Weekday } from "./propose.ts";
+import { includedMember } from "./view.ts";
 import { answerOf, loadWeek, type LoadedProposal, type LoadedWeek, type ProposalAnswer } from "./week.ts";
 
 export interface ScheduleCommandInput {
@@ -132,14 +134,16 @@ export async function scheduleCommand(
   if (week === null || proposal === null) throw new Refused("NOT_FOUND");
   const callerId = week.membershipId;
   // Step 1 found a membership the proposal includes; only a leave and a new joining since then give another.
-  if (!proposal.facts.members.some((member) => member.id === callerId)) throw new Refused("NOT_FOUND");
+  if (includedMember(proposal.facts, callerId) === undefined) throw new Refused("NOT_FOUND");
 
   // 4. A newer proposal.
   if (proposal.replacedBy !== null) {
-    // Under the club's row a club has at most one open proposal (`schedule_proposals_one_open`), and it
-    // includes every active member, so the caller too.
+    // Under the club's row a club has at most one open proposal (`schedule_proposals_one_open`).
     const [current] = await bound(tx)`
-      SELECT id FROM app.schedule_proposals WHERE club_id = ${clubId} AND state = 'open'`;
+      SELECT p.id FROM app.schedule_proposals p
+       WHERE p.club_id = ${clubId} AND p.state = 'open'
+         AND EXISTS (SELECT FROM app.schedule_proposal_members pm
+                      WHERE pm.proposal_id = p.id AND pm.interval_id = ${callerId})`;
     if (current !== undefined) throw new Refused("MEMBERSHIP_CHANGED", { current_id: String(current["id"]) });
   }
 
@@ -156,7 +160,7 @@ export async function scheduleCommand(
   await rule({ tx, at, week, proposal, callerId });
 
   // 8. The answer.
-  const after = (await loadWeek(tx, userId, clubId, { id: proposalId }, at))?.proposal ?? null;
+  const after = (await loadWeek(tx, userId, clubId, { id: proposalId }))?.proposal ?? null;
   if (after === null) throw new Error("schedule: the proposal vanished under its club's lock");
   return completeReceipt(tx, receipt, render(answerOf(after, callerId)));
 }
