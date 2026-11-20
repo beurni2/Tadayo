@@ -8,8 +8,9 @@
 //   not-found, byte for byte.
 // - What: the server's instant in whole seconds, the club with the viewer's own interval, and every active
 //   member who has a name to show, the same list for every member (T55): the contract's Person, the
-//   position from 1 with no gap, the member's next day and whether they are next. Nothing else: no `cover`
-//   (FQ41, B4) and no `open_revision` (B1) yet, so a field beyond these fails the row.
+//   position from 1 with no gap, the member's next day and whether they are next; and `open_revision`, the
+//   club's open roster revision as the viewer reads it (roster.ts's `revisionFor`, FQ119), when there is
+//   one that lists the viewer. Nothing else: no `cover` (FQ41, B4) yet, so a field beyond these fails the row.
 // - The order (FQ98, FQ114): while a first-days proposal is open, or no week is in force today, the order
 //   they joined, then their interval ids byte by byte; otherwise the week in force today from Monday, a
 //   member with two days by the earlier, then anyone with no day in it, in the order they joined.
@@ -66,6 +67,7 @@ export function membersFor(
   account: string | null,
   now: Temporal.Instant,
   nextOf: NextOf,
+  openRevision?: Record<string, unknown>,
 ): Record<string, unknown> | undefined {
   const viewer = viewerIn(world, club, account);
   const row = world.clubs.get(club);
@@ -89,19 +91,25 @@ export function membersFor(
         next_up: nextStar === interval,
       };
     }),
+    ...(openRevision === undefined ? {} : { open_revision: openRevision }),
   };
 }
 
 /** What the roster's judge knows of a cell: the schedule's rows, the viewer, the instant and the days. */
 export interface MembersSeen extends ScheduleSeen {
   nextOf: NextOf;
+  /**
+   * The club's open roster revision as the viewer reads it (roster.ts's `revisionFor`, FQ119), or undefined
+   * when there is none or it isn't the viewer's to read.
+   */
+  openRevision: (club: string) => Record<string, unknown> | undefined;
 }
 
 /** listMembers' answer for `club` in a cell. */
 export function membersExpected(seen: () => MembersSeen, club: string): Expected {
   return (answer) => {
-    const { schedule, account, now, nextOf } = seen();
-    const want = membersFor(schedule, club, account, now, nextOf);
+    const { schedule, account, now, nextOf, openRevision } = seen();
+    const want = membersFor(schedule, club, account, now, nextOf, openRevision(club));
     return want === undefined ? pinnedProblems(answer, NEUTRAL) : sameBody("the club's Members", want)(answer);
   };
 }

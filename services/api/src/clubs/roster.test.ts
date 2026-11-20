@@ -10,66 +10,15 @@ import { InvitationLink, RevokedInvitation, RosterRevision } from "@tadayo/contr
 // The examples aren't among the contract package's exports, and that package changes only in its own PR
 // (docs/TECH-DESIGN.md section 3), so this test reads the file where it is.
 import { successExamples } from "../../../../packages/contracts/src/fixtures/examples.ts";
-import {
-  Refused,
-  type Account,
-  type Clock,
-  type MadeInvitation,
-  type RevisionSight,
-  type SchedulePerson,
-} from "@tadayo/domain";
+import { Refused, type Account, type Clock, type MadeInvitation } from "@tadayo/domain";
 import type { FastifyInstance, InjectOptions } from "fastify";
 import { afterEach, describe, expect, it } from "vitest";
 import { BODY_LIMIT, bodyLimitOf, buildApp, type Deps } from "../app.ts";
 import type { ApiSql } from "../connection.ts";
+import { revisionSight } from "./revision-example.ts";
 import { invitationLinkBody, invitationUrl, rosterRevisionBody } from "./roster.ts";
 
 type Body = Record<string, unknown>;
-interface PersonBody {
-  membership_id: string;
-  display_name: string;
-  avatar_version?: string;
-}
-
-const personOf = (body: PersonBody): SchedulePerson => ({
-  membershipId: body.membership_id,
-  displayName: body.display_name,
-  avatarVersion: body.avatar_version ?? null,
-});
-
-/** A contract example's RosterRevision as the domain's read would hold it: the serializer's input. */
-function sight(value: Body): RevisionSight {
-  const club = value["club"] as Body;
-  const candidates = value["candidates"] as (Body & { proposed_by: PersonBody; invitation?: Body })[];
-  return {
-    id: value["id"] as string,
-    version: value["version"] as number,
-    club: {
-      id: club["id"] as string,
-      name: club["name"] as string,
-      timezone: club["timezone"] as string,
-      membershipId: club["my_membership_id"] as string,
-    },
-    state: value["state"] as RevisionSight["state"],
-    proposedBy: personOf(value["proposed_by"] as PersonBody),
-    members: (value["members"] as PersonBody[]).map(personOf),
-    candidates: candidates.map((candidate) => ({
-      id: candidate["id"] as string,
-      name: candidate["name"] as string,
-      proposedBy: personOf(candidate.proposed_by),
-      invitation:
-        candidate.invitation === undefined
-          ? null
-          : {
-              id: candidate.invitation["id"] as string,
-              state: candidate.invitation["state"] as "live",
-              expiresAt: Temporal.Instant.from(candidate.invitation["expires_at"] as string),
-            },
-    })),
-    myDecision: value["my_decision"] as RevisionSight["myDecision"],
-    supersededBy: (value["superseded_by"] as string | undefined) ?? null,
-  };
-}
 
 describe("the roster revision's serializer against the contract's examples (T55)", () => {
   const examples = [
@@ -92,7 +41,7 @@ describe("the roster revision's serializer against the contract's examples (T55)
 
   it.each(examples)("makes %s field for field", (_name, example) => {
     const value = example.value as Body;
-    const made = rosterRevisionBody(sight(value));
+    const made = rosterRevisionBody(revisionSight(value));
     expect(made).toEqual(value);
     expect(RosterRevision.strict().safeParse(made).success).toBe(true);
   });

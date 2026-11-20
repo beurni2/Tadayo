@@ -31,7 +31,7 @@
 // It is one statement, so one snapshot, at the caller's `now`, the clock's sample taken first.
 
 import { activeMemberships } from "../authorization/member.ts";
-import type { QuerySql } from "../authorization/read-sql.ts";
+import type { FragmentSql, QuerySql } from "../authorization/read-sql.ts";
 import { person, personOf, type SchedulePerson } from "../schedule/week.ts";
 import type { ServerNow } from "../time/clock.ts";
 
@@ -126,17 +126,14 @@ function linkOf(value: unknown): RevisionLink | null {
   return { id: text(row["id"]), state: oneOf(LINK_STATES, row["state"]), expiresAt: instant(row["expires_at"]) };
 }
 
-/** The revision `revisionId` as the account `userId` gets it at `now`, or null (T14). */
-export async function readRevision(
-  sql: QuerySql,
-  userId: string,
-  revisionId: string,
-  now: ServerNow,
-): Promise<RevisionSight | null> {
-  // An id that can't be one names no revision, as one nobody has.
-  if (typeof revisionId !== "string" || !ID.test(revisionId)) return null;
-  const rows = await bound(sql)`
-    SELECT r.id, r.version, r.state, r.superseded_by_id,
+/**
+ * Every revision the account `userId` may read at `now`, as a subquery of one row each (FQ119): the
+ * caller filters it by `id`, or by `club_id` and `state` for a club's open one (./members.ts), and reads
+ * each row with `sightOf`.
+ */
+export function readableRevisions<F>(sql: FragmentSql<F>, userId: string, now: ServerNow): F {
+  return bound(sql)`
+    SELECT r.id, r.club_id, r.version, r.state, r.superseded_by_id,
            pg_catalog.jsonb_build_object(
              'id', c.id, 'name', c.name, 'timezone', c.timezone, 'membership_id', am.interval_id) AS club,
            (SELECT ${person(sql)} FROM app.memberships s JOIN app.users su ON su.id = s.user_id
@@ -172,14 +169,35 @@ export async function readRevision(
       FROM app.roster_revisions r
       JOIN app.clubs c ON c.id = r.club_id
       JOIN (${activeMemberships(sql, userId)}) am ON am.club_id = r.club_id
-     WHERE r.id = ${revisionId}::pg_catalog.text
-       AND r.roster_sealed_at IS NOT NULL
+     WHERE r.roster_sealed_at IS NOT NULL
        AND EXISTS (SELECT FROM app.roster_revision_members mine
                     WHERE mine.revision_id = r.id AND mine.interval_id = am.interval_id)`;
+}
+
+/** The revision `revisionId` as the account `userId` gets it at `now`, or null (T14). */
+export async function readRevision(
+  sql: QuerySql,
+  userId: string,
+  revisionId: string,
+  now: ServerNow,
+): Promise<RevisionSight | null> {
+  // An id that can't be one names no revision, as one nobody has.
+  if (typeof revisionId !== "string" || !ID.test(revisionId)) return null;
+  const rows = await bound(sql)`
+    SELECT v.* FROM (${readableRevisions(sql, userId, now)}) v WHERE v.id = ${revisionId}::pg_catalog.text`;
   const [row] = rows;
   if (row === undefined) return null;
+  const sight = sightOf(row);
+  if (sight !== null && sight.id !== revisionId) throw shape();
+  return sight;
+}
+
+/**
+ * One row of `readableRevisions` as the contract's revision, or null when its proposer, or a candidate's
+ * proposer, has no name to show (FQ75). The row may have passed through `to_jsonb`.
+ */
+export function sightOf(row: Readonly<Record<string, unknown>>): RevisionSight | null {
   const id = text(row["id"]);
-  if (id !== revisionId) throw shape();
   const version = row["version"];
   if (typeof version !== "number" || !Number.isInteger(version) || version < 1) throw shape();
   const club = record(row["club"]);

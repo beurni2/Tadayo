@@ -124,6 +124,9 @@ function invitationOf(
     inviterName,
     proposedBy,
     tokenSha256: sha256(token),
+    dead: false,
+    expiresAt: instant("2026-11-13T12:00:00Z"),
+    roster: null,
   };
 }
 
@@ -1777,5 +1780,197 @@ describe("the proposer's invitation link (T7, T14, T52, FQ77; handoff 1)", () =>
     const replay = scan(answer(link({ url: url(BENS_TOKEN) }), 201), context("createInvitation", ben, { world: kept }));
     expect(at(replay, "values")).toEqual(["$.url"]);
     expect(scan(answer(link(), 201), context("createInvitation", ben, { world: kept }))).toEqual([]);
+  });
+});
+
+describe("what a link's holder reads through it (T7, T14, FQ47, FQ59, FQ80; api/b1-accept)", () => {
+  /** Ben's link, for Mo, on the club's open revision: Ana, Ben and Cleo, and the candidates Mo and Lu. */
+  const names = ["Ana", "Ben", "Cleo", "Mo", "Lu"];
+  const held = (over: Partial<WorldInvitation> = {}): WorldFacts => {
+    const bens = world.invitations.get("inv_bens");
+    if (bens === undefined) throw new Error("the world has no link of Ben's");
+    return {
+      ...world,
+      clubs: new Map([
+        ...world.clubs,
+        [
+          "clb_sat",
+          {
+            name: "Saturday People",
+            suspendedAt: null,
+            labels: new Map([...(world.clubs.get("clb_sat")?.labels ?? []), ["Lu", instant("2026-11-06T22:30:00Z")]]),
+          },
+        ],
+      ]),
+      invitations: new Map([...world.invitations, ["inv_bens", { ...bens, roster: names, ...over }]]),
+    };
+  };
+  const roster = (state: string, over: Record<string, unknown> = {}) => ({
+    state,
+    invitation_id: "inv_bens",
+    inviter_name: "Ben",
+    club_name: "Saturday People",
+    revision_id: "rev_new",
+    revision_version: 1,
+    roster: [
+      { name: "Ana", kind: "member", is_you: false },
+      { name: "Ben", kind: "member", is_you: false },
+      { name: "Cleo", kind: "member", is_you: false },
+      { name: "Mo", kind: "candidate", is_you: true },
+      { name: "Lu", kind: "candidate", is_you: false },
+    ],
+    ...(state === "waiting" ? {} : { expires_at: "2026-11-13T12:00:00Z" }),
+    ...over,
+  });
+  const signedOut: Viewer = { account: null, intervals: new Set(), texts: new Set() };
+  // Stan, of another club, holds the link; `token` is what the request presented.
+  const previewed = (body: unknown, facts: WorldFacts, token: string | null = BENS_TOKEN, over = {}) =>
+    scan(answer(body), {
+      ...context("previewInvitation", stan, { world: facts, ...over }),
+      ...(token === null ? {} : { presented: token }),
+    });
+  const web = (body: unknown, facts: WorldFacts, token: string | null = BENS_TOKEN, over = {}) =>
+    scan(answer(body), {
+      ...context("previewInvitationWeb", stan, { world: facts, viewer: signedOut, ...over }),
+      ...(token === null ? {} : { presented: token }),
+    });
+
+  it("passes the exact roster, by names, to an account that presented the link's own token", () => {
+    expect(previewed(roster("open"), held())).toEqual([]);
+    expect(previewed({ state: "expired", inviter_name: "Ben" }, held(), BENS_TOKEN, { now: OPEN })).toEqual([]);
+    expect(previewed({ state: "full" }, held())).toEqual([]);
+    expect(previewed({ state: "did_not_go_ahead" }, held({ boundTo: acct(stan), roster: null }))).toEqual([]);
+  });
+
+  it("passes a waiting and a changed roster, and an acceptance, only as the account's own link", () => {
+    const theirs = held({ boundTo: acct(stan) });
+    expect(previewed(roster("waiting"), theirs)).toEqual([]);
+    expect(previewed(roster("changed"), theirs)).toEqual([]);
+    const accepted = (facts: WorldFacts, token: string | null = BENS_TOKEN) =>
+      scan(answer({ invitation_id: "inv_bens", state: "waiting" }), {
+        ...context("acceptInvitation", stan, { world: facts }),
+        ...(token === null ? {} : { presented: token }),
+      });
+    expect(accepted(theirs)).toEqual([]);
+    expect(at(accepted(held()), "world")).toEqual(["$.invitation_id"]);
+    expect(at(accepted(theirs, null), "world")).toEqual(["$.invitation_id"]);
+    // The account's own link, once it is revoked or replaced, shows nothing.
+    expect(at(accepted(held({ boundTo: acct(stan), dead: true })), "world")).toEqual(["$.invitation_id"]);
+    expect(at(previewed(roster("waiting"), held()), "world")).toEqual(["$.invitation_id"]);
+    expect(at(previewed(roster("changed"), held()), "world")).toEqual(["$.invitation_id"]);
+    // An open roster is a link nobody has used.
+    expect(at(previewed(roster("open"), theirs), "world")).toEqual(["$.invitation_id"]);
+  });
+
+  it("passes the inviter's name alone to the signed-out page, for a live link", () => {
+    expect(web({ inviter_name: "Ben" }, held())).toEqual([]);
+    expect(at(web({ inviter_name: "Ana" }, held()), "values")).toEqual(["$.inviter_name"]);
+    expect(at(web({ inviter_name: "Saturday People" }, held()), "values")).toEqual(["$.inviter_name"]);
+  });
+
+  it("catches the roster shown with no token, or with another link's", () => {
+    for (const token of [null, OTHER_TOKEN, "x".repeat(43)]) {
+      const found = previewed(roster("open"), held(), token);
+      expect(at(found, "world")).toEqual(["$.invitation_id"]);
+      expect(at(found, "values")).toEqual(
+        expect.arrayContaining(["$.inviter_name", "$.club_name", "$.roster[0].name", "$.roster[4].name"]),
+      );
+      expect(at(web({ inviter_name: "Ben" }, held(), token), "values")).toEqual(["$.inviter_name"]);
+    }
+  });
+
+  it("catches it through an operation that takes no token, whatever the request presented", () => {
+    const found = scan(answer({ inviter_name: "Ben" }), {
+      ...context("previewInvitationWeb", stan, { world: held(), viewer: signedOut }),
+      presented: BENS_TOKEN,
+    });
+    expect(found).toEqual([]);
+    const clubs = scan(
+      answer({
+        clubs: [],
+        invitations: [
+          { invitation_id: "inv_bens", club_name: "Saturday People", inviter_name: "Ben", state: "waiting" },
+        ],
+      }),
+      { ...context("listClubs", stan, { world: held() }), presented: BENS_TOKEN },
+    );
+    expect(at(clubs, "values")).toEqual(expect.arrayContaining(["$.invitations[0].inviter_name"]));
+  });
+
+  it.each([
+    ["revoked or replaced", { dead: true }],
+    ["used by another account", { boundTo: "acct_mo" }],
+  ])("catches the roster, and the inviter's name, through a link %s (FQ59)", (_what, over) => {
+    const found = previewed(roster("open"), held(over));
+    expect(at(found, "world")).toEqual(["$.invitation_id"]);
+    expect(at(found, "values")).toEqual(expect.arrayContaining(["$.inviter_name", "$.roster[0].name"]));
+    expect(at(previewed({ state: "expired", inviter_name: "Ben" }, held(over)), "values")).toEqual(["$.inviter_name"]);
+    expect(at(web({ inviter_name: "Ben" }, held(over)), "values")).toEqual(["$.inviter_name"]);
+  });
+
+  it("catches it of a suspended club (FQ80)", () => {
+    const facts = held();
+    const suspended: WorldFacts = {
+      ...facts,
+      clubs: new Map([
+        ...facts.clubs,
+        [
+          "clb_sat",
+          {
+            name: "Saturday People",
+            suspendedAt: instant("2026-11-06T00:00:00Z"),
+            labels: new Map<string, Temporal.Instant>(),
+          },
+        ],
+      ]),
+    };
+    expect(at(previewed(roster("open"), suspended), "values")).toEqual(
+      expect.arrayContaining(["$.inviter_name", "$.roster[0].name"]),
+    );
+    expect(at(web({ inviter_name: "Ben" }, suspended), "values")).toEqual(["$.inviter_name"]);
+  });
+
+  it("catches the roster through an unused link from its expiry, and the page's name; the account's own link keeps it", () => {
+    const late = { now: instant("2026-11-13T12:00:00Z") };
+    const found = previewed(roster("open"), held(), BENS_TOKEN, late);
+    expect(at(found, "world")).toEqual(["$.invitation_id"]);
+    expect(at(found, "values")).toEqual(expect.arrayContaining(["$.club_name", "$.roster[0].name"]));
+    expect(at(web({ inviter_name: "Ben" }, held(), BENS_TOKEN, late), "values")).toEqual(["$.inviter_name"]);
+    expect(previewed(roster("changed"), held({ boundTo: acct(stan) }), BENS_TOKEN, late)).toEqual([]);
+    const justBefore = { now: instant("2026-11-13T11:59:59.999999Z") };
+    expect(previewed(roster("open"), held(), BENS_TOKEN, justBefore)).toEqual([]);
+  });
+
+  it("catches the page's name, and the roster, once the candidate is on no open revision", () => {
+    expect(at(web({ inviter_name: "Ben" }, held({ roster: null })), "values")).toEqual(["$.inviter_name"]);
+    expect(at(previewed(roster("open"), held({ roster: null })), "values")).toEqual(
+      expect.arrayContaining(["$.club_name", "$.roster[0].name"]),
+    );
+  });
+
+  it("catches the inviter's name told in the app for a link nobody used, once the candidate is on no open revision", () => {
+    const expired = { state: "expired", inviter_name: "Ben" };
+    expect(previewed(expired, held())).toEqual([]);
+    expect(at(previewed(expired, held({ roster: null })), "values")).toEqual(["$.inviter_name"]);
+    // An account's own used link names its inviter to that account anywhere, as `getMe` lists it (slice 8's
+    // rule, not this one's): that isn't the holder's allowance, and it stays.
+    expect(previewed(expired, held({ roster: null, boundTo: acct(stan) }))).toEqual([]);
+  });
+
+  it("catches a name the revision doesn't show: another member's, another revision's label, the holder's club's", () => {
+    for (const name of ["Eve", "Gus", "Stan"]) {
+      const body = roster("open");
+      body.roster[1] = { name, kind: "member", is_you: false };
+      // Stan's own club's people are Stan's to read anywhere; the others aren't on this roster.
+      expect(at(previewed(body, held()), "values")).toEqual(name === "Stan" ? [] : ["$.roster[1].name"]);
+    }
+  });
+
+  it("catches a person's id, an avatar or a decision in a roster entry as a key the contract doesn't name", () => {
+    for (const more of [{ membership_id: ana }, { avatar_version: "v_avatar_cleo" }, { approved: true }]) {
+      const body = roster("open");
+      body.roster[0] = { ...body.roster[0], ...more } as (typeof body.roster)[number];
+      expect(checks(previewed(body, held()))).toContain("shape");
+    }
   });
 });

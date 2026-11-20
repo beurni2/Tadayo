@@ -6,7 +6,7 @@
 // own tests (identity/token.test.ts, session.test.ts, identity.test.ts, update-me.test.ts); these prove
 // they fit: the acceptance of slice 8 (docs/plans/B0.md).
 
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { buildApp, connect, KeysUnavailable, sessions, verifierFor, type KeySet } from "@tadayo/api";
 import { testSigner, TEST_EMAIL, type TestSigner } from "@tadayo/api/testing";
 import { ClubList, Me } from "@tadayo/contracts";
@@ -234,13 +234,18 @@ describe("a token that is no session (T14, T53)", () => {
   it("isn't asked for on a public route: no header is read there, so a good token makes no account and a bad one changes nothing", async () => {
     const subject = randomUUID();
     const good = await signer.token(subject);
-    for (const url of ["/v1/device-removals", "/v1/invitations/web-preview"]) {
+    // One route that isn't built yet, and the web preview with a token nobody made: each is the neutral
+    // not-found, the same for a good session token, a bad one and none (never the gate's 401).
+    const unmade = randomBytes(32).toString("base64url");
+    for (const [url, payload] of [
+      ["/v1/device-removals", {}],
+      ["/v1/invitations/web-preview", { token: unmade }],
+    ] as const) {
       const answers = await Promise.all(
         [good, "garbage", undefined].map((token) =>
-          call(token, { method: "POST", url, headers: JSON_HEADERS, payload: {} }),
+          call(token, { method: "POST", url, headers: JSON_HEADERS, payload }),
         ),
       );
-      // Not built yet: the neutral not-found, the same for a good token, a bad one and none (never the gate's 401).
       expect(
         answers.map((answer) => [answer.statusCode, answer.body]),
         url,
