@@ -24,8 +24,8 @@
 //    one was: a member's proposal keeps its proposer's approval by proposing (FQ60), and the revision of
 //    a name nobody has approved (`rename`, FQ84) starts with no approval at all.
 // 7. The club's `roster_version`, up by one.
-// 8. The club's first days (../schedule/settle.ts, FQ102, FQ123), asked on every leave; when none is
-//    open the rule changes nothing. While they are open: with no day
+// 8. The club's first days (../schedule/settle.ts, FQ102, FQ123), asked on every leave; with none
+//    open a leave changes nothing, since the club it leaves has no first days to restart. While they are open: with no day
 //    confirmed, a revision of the proposed week without the leaver, or their end with one member left;
 //    with one confirmed, they apply when only confirmed members stay among those they include, and end
 //    when the one member left hasn't confirmed or nobody they include is left.

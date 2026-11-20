@@ -494,6 +494,18 @@ describe("what a leave does to the club's first days (firstDaysProblems; FQ102, 
     expect(judged(was, ended, "itv_ben", ["itv_ana"], [["spr_next", next]])).toEqual([
       "new first days opened for fewer than two members",
     ]);
+    // The first days include Ana alone, who confirmed and leaves; Ben and Cleo, who joined later, remain.
+    const alone = days(["itv_ana"], {}, ["itv_ana"]);
+    const over = { ...alone, state: "superseded" as const, version: 2 };
+    const missing = ["no new first days are open for exactly the members who remain (FQ123)"];
+    const pair = ["itv_ben", "itv_cleo"];
+    expect(judged(alone, over, "itv_ana", [], [["spr_next", days([], {}, pair)]])).toEqual([]);
+    expect(judged(alone, over, "itv_ana")).toEqual(missing);
+    expect(judged(alone, over, "itv_ana", [], [["spr_next", days(["itv_ben"], {}, pair)]])).toEqual(missing);
+    expect(judged(alone, over, "itv_ana", [], [["spr_next", days([], { reason: "membership" }, pair)]])).toEqual(
+      missing,
+    );
+    expect(judged(alone, over, "itv_ana", [], [["spr_next", days([], {}, ["itv_ben"])]])).toEqual(missing);
   });
 
   it("catches an ended proposal given a successor, and one whose days per member moved without a revision", () => {

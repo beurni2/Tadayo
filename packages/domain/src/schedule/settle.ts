@@ -18,7 +18,7 @@
 //
 // Two things this leans on, which a new caller must keep:
 // - It is called only after a membership started or ended. With nobody confirmed the rule answers a
-//   revision whatever the facts, so a call with no change would move a version for nothing (T33).
+//   revision, or an end with fewer than two members, whatever else the facts say, so a call with no change would move a version for nothing (T33).
 // - The club's row is held. A revision writes the proposal's row and then its days, whose guard locks
 //   the member's row: the reverse of a confirmation's order (member, then proposal; migration 0012). Only
 //   the club's row, which every writer of a proposal takes first, keeps the two from a deadlock.

@@ -168,7 +168,7 @@ const proposals = (tx: WorldTx, c: Club): Promise<ProposalRow[]> =>
 const includedIn = async (tx: WorldTx, proposal: string): Promise<string[]> =>
   (
     await tx<{ interval_id: string }[]>`
-      SELECT interval_id FROM app.schedule_proposal_members WHERE proposal_id = ${proposal} ORDER BY interval_id`
+      SELECT interval_id FROM app.schedule_proposal_members WHERE proposal_id = ${proposal} ORDER BY interval_id COLLATE "C"`
   ).map((row) => row.interval_id);
 
 const dayRows = (tx: WorldTx, proposal: string, week: number) =>
@@ -284,6 +284,28 @@ describe("a join before any day is confirmed (FQ55, FQ102)", () => {
       await confirmOwn(tx, c, "Ben");
       await confirmOwn(tx, c, "Maya");
       expect(await confirmOwn(tx, c, "Alex")).toMatchObject({ state: "applied", version: 5 });
+    });
+  });
+
+  it("reads and writes the current week alone once the week was proposed again: a choice, then a fifth member", async () => {
+    await rolledBack(db, async (tx) => {
+      const c = await started(tx);
+      await join(tx, c, "Alex", "Ben");
+      await join(tx, c, "Sam", "Ben");
+      // The second week, one day each. Maya takes Saturday, a day nobody was proposed: a new row, in that week.
+      const four = await proposalOf(tx, c, "Maya");
+      expect(four).toMatchObject({ version: 3, myDays: ["tuesday"] });
+      await choose(tx, c, "Maya", four.id, four.version, ["saturday"]);
+      expect((await proposalOf(tx, c, "Maya")).myDays).toEqual(["saturday"]);
+      // Debby joins as the fifth. In the first week, of three members, every day but Sunday was held; in the
+      // current one Tuesday and Friday are free, and Friday is the fifth place's day.
+      await join(tx, c, "Debby", "Ben");
+      expect(await proposals(tx, c)).toMatchObject([
+        { id: four.id, state: "open", version: 4, week_revision: 2, days_per_member: 1 },
+      ]);
+      expect((await proposalOf(tx, c, "Debby")).myDays).toEqual(["friday"]);
+      expect((await proposalOf(tx, c, "Maya")).myDays).toEqual(["saturday"]);
+      expect(await dayRows(tx, four.id, 2)).toHaveLength(6);
     });
   });
 });

@@ -172,6 +172,10 @@ const lines = (rows: readonly object[]): string =>
     .sort()
     .join("\n");
 
+/** A proposal's rows as one text, whatever order its members and days were read in. */
+const whole = ([id, rows]: [string, ProposalRows]): string =>
+  JSON.stringify([id, { ...rows, members: lines(rows.members), days: lines(rows.days), earlier: lines(rows.earlier) }]);
+
 /**
  * What is wrong with the members and the days of first days that stayed one proposal across a change of
  * the club's members: `now` against `was`, for the club's `active` members after it. `revised` says the
@@ -265,7 +269,7 @@ export function firstDaysProblems(
     [...world.proposals].filter(([, proposal]) => proposal.club === club).sort(([a], [b]) => (a < b ? -1 : 1));
   const open = of(before).find(([, proposal]) => proposal.state === "open" && proposal.reason === "activation");
   if (open === undefined) {
-    return JSON.stringify(of(after)) === JSON.stringify(of(before))
+    return of(after).map(whole).join("\n") === of(before).map(whole).join("\n")
       ? []
       : ["a leave changed the club's proposals though no first days were open"];
   }
@@ -308,7 +312,13 @@ export function firstDaysProblems(
   if (again) {
     const [next] = fresh;
     const members = (next?.[1].members ?? []).map((member) => member.interval).sort();
-    if (fresh.length !== 1 || next?.[1].state !== "open" || members.join() !== stayed.join()) {
+    if (
+      fresh.length !== 1 ||
+      next?.[1].state !== "open" ||
+      next[1].reason !== "activation" ||
+      members.join() !== stayed.join() ||
+      next[1].members.some((member) => member.confirmed)
+    ) {
       problems.push("no new first days are open for exactly the members who remain (FQ123)");
     }
   }
@@ -329,11 +339,6 @@ export function firstDaysJoinProblems(
 ): string[] {
   const of = (world: ScheduleWorld) =>
     [...world.proposals].filter(([, proposal]) => proposal.club === club).sort(([a], [b]) => (a < b ? -1 : 1));
-  const whole = ([id, rows]: [string, ProposalRows]) =>
-    JSON.stringify([
-      id,
-      { ...rows, members: lines(rows.members), days: lines(rows.days), earlier: lines(rows.earlier) },
-    ]);
   const active = activeOf(after, club);
   const fresh = of(after).filter(([one]) => !before.proposals.has(one));
   const open = of(before).find(([, proposal]) => proposal.state === "open" && proposal.reason === "activation");

@@ -57,17 +57,30 @@ describe("a join before any day is confirmed (FQ55, FQ102)", () => {
   });
 
   it("counts a contested day as held, and a day only someone who left held as free", () => {
-    // Ben and Maya both hold Monday; Sam held Thursday and left. Nina joins a club of five as its fifth.
+    // Ben and Maya both hold Monday; Sam held Tuesday and left. Nina joins a club of five as its fifth.
     const members = [
       member("ben", ["monday"]),
       member("maya", ["monday"]),
       member("alex", ["wednesday"]),
-      member("sam", ["thursday"], { active: false }),
+      member("sam", ["tuesday"], { active: false }),
       member("debby", ["friday"]),
     ];
     const change = firstDaysAfter(facts(["ben", "maya", "alex", "debby", "nina"], { daysPerMember: 1, members }));
-    // The fifth place's day is Friday, which Debby holds: the first free day from Monday is Tuesday.
+    // The fifth place's day is Friday, which Debby holds: the first free day from Monday is Tuesday, which
+    // only Sam held.
     expect(change.kind === "revise" && change.proposed).toEqual([{ id: "nina", days: ["tuesday"] }]);
+  });
+
+  it("keeps the new member's place in the table when its day is free, though an earlier day is free too", () => {
+    // Sam set Thursday aside for Saturday. Debby joins as the fifth: Friday, the fifth place's day, not Thursday.
+    const members = [
+      member("ben", ["monday"]),
+      member("maya", ["tuesday"]),
+      member("alex", ["wednesday"]),
+      member("sam", ["saturday"]),
+    ];
+    const change = firstDaysAfter(facts(["ben", "maya", "alex", "sam", "debby"], { daysPerMember: 1, members }));
+    expect(change.kind === "revise" && change.proposed).toEqual([{ id: "debby", days: ["friday"] }]);
   });
 
   it("gives two who join at once different days, in the order they joined", () => {
