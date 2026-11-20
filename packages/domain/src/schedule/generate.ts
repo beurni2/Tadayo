@@ -22,6 +22,9 @@
 // - A club that hasn't started, is suspended (spec 22) or has fewer than two members (FQ16) is owed
 //   nothing. The days it already has stay as they are: this rule only ever adds.
 // - A date that already has a day is not owed again, whoever's day it is.
+// - While a membership change is open, no date on or after its start is owed (FQ127): the change starts
+//   from the first week after every day made (FQ61), and stays that week only if no day is made in it.
+//   The days before the start are made as ever, so the days announced are those before it.
 
 import { clubTimeZone, dayInstants } from "../time/civil.ts";
 import { WEEKDAYS, type Weekday } from "./propose.ts";
@@ -66,6 +69,8 @@ export interface GenerationFacts {
   readonly versions: readonly WeekVersion[];
   /** The local dates that already have a day. */
   readonly made: ReadonlySet<string>;
+  /** The local date an open membership change starts on, or null with none open (FQ127). */
+  readonly changeFrom: string | null;
 }
 
 export interface OwedDay {
@@ -81,6 +86,9 @@ export function daysToMake(facts: GenerationFacts, now: Temporal.Instant): OwedD
   const zone = clubTimeZone(facts.zone);
   // A fact that is missing makes no day: `!(n >= 2)` is true of a number that isn't one.
   if (!facts.activated || facts.suspended || !(facts.activeMembers >= 2)) return [];
+  // A change waiting to start: only `null` says there is none.
+  const changeFrom = facts.changeFrom;
+  if (changeFrom !== null && typeof changeFrom !== "string") return [];
   // ISO dates compare as text.
   const versions = [...facts.versions].sort((a, b) => (a.effectiveFrom < b.effectiveFrom ? -1 : 1));
   const today = now.toZonedDateTimeISO(zone).toPlainDate();
@@ -90,6 +98,7 @@ export function daysToMake(facts: GenerationFacts, now: Temporal.Instant): OwedD
     const weekday = WEEKDAYS[date.dayOfWeek - 1];
     if (weekday === undefined) continue; // Sunday (T6).
     const localDate = date.toString();
+    if (changeFrom !== null && !(localDate < changeFrom)) break;
     if (facts.made.has(localDate)) continue;
     const inForce = versions.filter((version) => version.effectiveFrom <= localDate).at(-1);
     const day = inForce?.assignments.find((assignment) => assignment.weekday === weekday);

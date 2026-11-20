@@ -13,6 +13,7 @@ import {
   PUBLIC,
   cellExpected,
   clubsJudge,
+  announcedOf,
   daysOf,
   gateOf,
   sessionOf,
@@ -340,6 +341,26 @@ describe("each club's open day and next day, from the rows and the time alone (d
     expect(days(world, µs(CLOSE, -1))).toEqual({ open: "occ_sat", next: "occ_mon" });
     expect(days(world, CLOSE)).toEqual({ open: undefined, next: "occ_mon" });
     expect(days(world, monday.closeAt)).toEqual({ open: undefined, next: undefined });
+  });
+
+  it("lists every day not yet closed, in the order they open, the open one first (announcedOf; FQ61)", () => {
+    const world = worldWith();
+    expect(announcedOf(world, "clb_one", µs(REVEAL, -1))).toEqual([
+      occurrence("occ_sat", saturday, "collecting"),
+      occurrence("occ_mon", monday, "collecting"),
+    ]);
+    expect(announcedOf(world, "clb_one", µs(CLOSE, -1))).toEqual([
+      occurrence("occ_sat", saturday, "open"),
+      occurrence("occ_mon", monday, "collecting"),
+    ]);
+    expect(announcedOf(world, "clb_one", CLOSE)).toEqual([occurrence("occ_mon", monday, "collecting")]);
+    expect(announcedOf(world, "clb_one", monday.closeAt)).toEqual([]);
+    // The same days as the club's two: none held, suspended or in a suspended club.
+    expect(announcedOf(worldWith({ suspended: true }), "clb_one", REVEAL)).toEqual([]);
+    expect(announcedOf(worldWith({ ana: { leftAt: µs(REVEAL, -1) } }), "clb_one", µs(REVEAL, -1))).toEqual([]);
+    expect(announcedOf(worldWith({ day: { status: "cancelled" } }), "clb_one", µs(REVEAL, -1))).toEqual([
+      occurrence("occ_mon", monday, "collecting"),
+    ]);
   });
 
   it("gives none in a suspended club or a club it doesn't know, and never a suspended or cancelled day", () => {

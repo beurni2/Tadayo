@@ -201,7 +201,9 @@ export const SCHEDULE = Object.freeze({
   answer:
     "200 with the club's Schedule as schedule.ts's weekFor makes it from the world's rows, to an account with an " +
     "active interval in a club that isn't suspended: `current`, and the open proposal only when it includes that " +
-    `interval (FQ100), each slot naming only whom the contract gives that viewer; the neutral NOT_FOUND to every other role the gate lets through (${GATE})`,
+    "interval (FQ100), each slot naming only whom the contract gives that viewer, and for a membership change the " +
+    "member each day is proposed for whoever has confirmed (FQ81), with `announced`, the club's days not yet " +
+    `closed, only for a caller with a day in the club's latest week; the neutral NOT_FOUND to every other role the gate lets through (${GATE})`,
 });
 
 /** listMembers (B2's generation slice): the club's roster for one of its members, whole, from the world's rows. */
@@ -316,7 +318,8 @@ export const SCHEDULE_COMMAND = Object.freeze({
   answer:
     "each body of schedule.ts's table answered as its outcomeOf says from the world's rows: INVALID_REQUEST to " +
     "what the contract refuses, then the neutral NOT_FOUND to anyone the proposal doesn't include, MEMBERSHIP_CHANGED, " +
-    `VERSION_CONFLICT, NOT_ALLOWED, or 200 with the proposal as the viewer sees it after the change (${GATE})`,
+    "VERSION_CONFLICT, NOT_ALLOWED, or 200 with the proposal as the viewer sees it after the change; a membership " +
+    `change takes only its confirmation, of exactly the days it proposes for the caller, and moves no version (FQ81) (${GATE})`,
 });
 
 export const ROWS: Readonly<Record<string, unknown>> = {

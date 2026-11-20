@@ -446,7 +446,7 @@ describe("what a leave does to the club's first days (firstDaysProblems; FQ102, 
     const applied = days(["itv_ana", "itv_ben", "itv_cleo"], { state: "applied", version: 2 });
     expect(judged(applied, applied)).toEqual([]);
     expect(firstDaysProblems(world([], []), world(["itv_ben"], [[P, days([])]]), CLUB, "itv_ben")).toEqual([
-      "a leave changed the club's proposals though no first days were open",
+      "a leave changed the club's first days though none were open",
     ]);
   });
 

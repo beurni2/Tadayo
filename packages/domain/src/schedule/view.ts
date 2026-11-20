@@ -11,6 +11,10 @@
 //     (FQ48); a viewer who has confirmed sees it with no name, as the club's week shows it;
 //   - a day two or more others hold says only that it has no reveal: no names, no count (FQ46).
 // Nothing here says who chose and who holds by proposal, and nothing counts anyone (T33).
+//
+// A membership change is one week everyone confirms as a whole (FQ56), and `changeViewFor` is its view: a
+// day is the viewer's, or names the member the change proposes it for, the same for every viewer whoever
+// has confirmed (FQ81). It reads nobody's confirmation but the viewer's own.
 
 import { WEEKDAYS, type Weekday } from "./propose.ts";
 
@@ -114,4 +118,36 @@ export function viewFor(viewerId: string, facts: WeekFacts): ProposalView {
     myDays: WEEKDAYS.filter((weekday) => viewer.held.includes(weekday)),
     myState: viewer.confirmed ? "confirmed" : "choosing",
   };
+}
+
+/**
+ * A membership change as the member `viewerId` sees it (the contract's `ScheduleSlotState`: "only yours
+ * (the change proposes it for the caller) and available (it doesn't)"): each other day names the member it
+ * is proposed for, and no day says who has confirmed (FQ81, T33). Throws for anyone it doesn't include.
+ */
+export function changeViewFor(viewerId: string, facts: WeekFacts): ProposalView {
+  const viewer = facts.members.find((member) => member.id === viewerId);
+  if (viewer === undefined || !viewer.active) {
+    throw new Error("schedule: the change doesn't include the viewer as an active member (FQ100, T14)");
+  }
+  const slots = WEEKDAYS.map((weekday): SlotView => {
+    if (viewer.held.includes(weekday)) return { weekday, state: "yours", suggested: true };
+    const other = facts.members.find((member) => member.active && member.held.includes(weekday));
+    return { weekday, state: "available", ...(other === undefined ? {} : { heldBy: other.id }), suggested: false };
+  });
+  return {
+    slots,
+    myDays: WEEKDAYS.filter((weekday) => viewer.held.includes(weekday)),
+    myState: viewer.confirmed ? "confirmed" : "choosing",
+  };
+}
+
+/**
+ * Whether a membership change comes with its `announced` days for `viewerId`: only for a member with a day
+ * in the club's latest week, whose stars are `latestWeekStars` (the contract's `ScheduleProposal.announced`;
+ * G04-change). Someone the change gives a first day to has no announced day to keep: the new member, several
+ * of them, or a member who joined once a day was confirmed (FQ100).
+ */
+export function seesAnnounced(viewerId: string, latestWeekStars: readonly string[]): boolean {
+  return latestWeekStars.includes(viewerId);
 }

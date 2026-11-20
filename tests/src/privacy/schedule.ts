@@ -30,6 +30,15 @@
 //   proposal as the viewer sees it after the change, read from the rows after it, and the rows themselves
 //   changed as the request said (`changeProblems`).
 //
+// - A membership change (since `api/b2-membership-change`; FQ56, FQ61, FQ81, FQ125 to FQ127): as one viewer
+//   sees it, the viewer's proposed days are `yours` and every other day `available`, with `held_by` the
+//   member it is proposed for, whoever has confirmed; `announced` is the club's days not yet closed, only
+//   for a viewer with a day in the club's latest week (`proposalFor`, with ./account.ts's `announcedOf`). A
+//   choice is NOT_ALLOWED; a confirmation is of exactly the days it proposes for the viewer, and leaves
+//   every row but the viewer's confirmation as it was (`outcomeOf`, `changeProblems`). What a join or a
+//   leave does to it is judged row by row (`weekChangeProblems`). The matrix meets one in a club made by
+//   the commands themselves (matrix.test.ts, "a membership change through the app").
+//
 // The matrix's world (`addFirstDays`). The matrix's club already has its week in force (db/world.ts: Ana's
 // Saturday, Ben's Friday, Cleo's Thursday), which is what `current` shows and what its roles are built on.
 // To put every kind of slot, with real names, in front of every role, the world also gets first days no
@@ -315,8 +324,17 @@ function personOf(world: ScheduleWorld, interval: string): Record<string, unknow
 /** Ids as the database orders them byte by byte: every character of an id is ASCII. */
 const byBytes = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 
-/** The proposal `id` as the member `viewer` (an interval it includes) must get it: the contract's ScheduleProposal. */
-export function proposalFor(world: ScheduleWorld, id: string, viewer: string): Record<string, unknown> {
+/**
+ * The proposal `id` as the member `viewer` (an interval it includes) must get it: the contract's
+ * ScheduleProposal. `announced` are the club's days not yet closed (./account.ts's `announcedOf`), which a
+ * membership change carries for a viewer with a day in the club's latest week.
+ */
+export function proposalFor(
+  world: ScheduleWorld,
+  id: string,
+  viewer: string,
+  announced?: readonly unknown[],
+): Record<string, unknown> {
   const proposal = world.proposals.get(id);
   if (proposal === undefined) throw new Error("the judge was asked about a proposal the world doesn't hold");
   const joined = (interval: string) =>
@@ -331,6 +349,35 @@ export function proposalFor(world: ScheduleWorld, id: string, viewer: string): R
     proposal.days.find((day) => day.interval === interval && day.weekday === weekday);
   const active = (interval: string) => world.members.get(interval)?.active === true;
   const dates = world.versions.find((version) => version.id === proposal.scheduleVersion)?.assignments ?? [];
+  if (proposal.reason === "membership_change") {
+    // One week, the same for every viewer but for whose days are `yours`; nobody's confirmation shows (FQ81).
+    const week = WEEK.map((weekday) => {
+      if (row(viewer, weekday)?.held === true) return { weekday, state: "yours", suggested: true };
+      const other = members.find(
+        (member) => member.interval !== viewer && active(member.interval) && row(member.interval, weekday)?.held,
+      );
+      const person = other === undefined ? undefined : personOf(world, other.interval);
+      return { weekday, state: "available", ...(person === undefined ? {} : { held_by: person }), suggested: false };
+    });
+    const latest = world.versions
+      .filter((version) => version.club === proposal.club)
+      .sort((a, b) => byBytes(a.effectiveFrom, b.effectiveFrom))
+      .at(-1);
+    const stays = latest?.assignments.some((each) => each.star === viewer) === true;
+    if (stays && announced === undefined) throw new Error("the judge needs the club's days for a change's announced");
+    return {
+      id,
+      version: proposal.version,
+      reason: proposal.reason,
+      effective_from: proposal.effectiveFrom,
+      days_per_member: proposal.daysPerMember,
+      slots: week,
+      my_days: WEEK.filter((weekday) => row(viewer, weekday)?.held === true),
+      my_state: me.confirmed ? "confirmed" : "choosing",
+      state: proposal.state,
+      ...(stays ? { announced } : {}),
+    };
+  }
   const slots = WEEK.map((weekday) => {
     const suggested = row(viewer, weekday)?.suggested === true;
     const confirmer = members.find((member) => member.confirmed && row(member.interval, weekday)?.held === true);
@@ -384,6 +431,7 @@ export function weekFor(
   club: string,
   account: string | null,
   now: Temporal.Instant,
+  announced?: readonly unknown[],
 ): Record<string, unknown> | undefined {
   const viewer = viewerIn(world, club, account);
   const row = world.clubs.get(club);
@@ -410,7 +458,7 @@ export function weekFor(
     ...(inForce === undefined || assignments.length === 0
       ? {}
       : { current: { effective_from: inForce.effectiveFrom, assignments } }),
-    ...(open === undefined ? {} : { proposal: proposalFor(world, open[0], viewer) }),
+    ...(open === undefined ? {} : { proposal: proposalFor(world, open[0], viewer, announced) }),
   };
 }
 
@@ -454,13 +502,15 @@ export interface ScheduleSeen {
   schedule: ScheduleWorld;
   account: string | null;
   now: Temporal.Instant;
+  /** The club's days not yet closed (./account.ts's `announcedOf`), where the cell's club may have a change. */
+  announced?: readonly unknown[];
 }
 
 /** getSchedule's answer for `club` in a cell. */
 export function weekExpected(seen: () => ScheduleSeen, club: string): Expected {
   return (answer) => {
-    const { schedule, account, now } = seen();
-    const want = weekFor(schedule, club, account, now);
+    const { schedule, account, now, announced } = seen();
+    const want = weekFor(schedule, club, account, now, announced);
     return want === undefined ? pinnedProblems(answer, NEUTRAL) : sameBody("the club's Schedule", want)(answer);
   };
 }
@@ -483,7 +533,11 @@ export function outcomeOf(
   const me = proposal.members.find((member) => member.interval === viewer);
   if (viewer === undefined || me === undefined) return NEUTRAL;
   if (proposal.replacedBy !== null) {
-    return pinned(409, "Conflict", `{"code":"MEMBERSHIP_CHANGED","current_id":"${proposal.replacedBy}"}`);
+    // The club's open proposal, however many replacements on (FQ126); with none open, an ended proposal.
+    const current = [...world.proposals].find(([, each]) => each.club === proposal.club && each.state === "open");
+    if (current !== undefined) {
+      return pinned(409, "Conflict", `{"code":"MEMBERSHIP_CHANGED","current_id":"${current[0]}"}`);
+    }
   }
   if (proposal.version !== body.expected_version) {
     return pinned(409, "Conflict", `{"code":"VERSION_CONFLICT","current_version":${String(proposal.version)}}`);
@@ -491,6 +545,13 @@ export function outcomeOf(
   if (proposal.state !== "open" || me.confirmed) return NOT_ALLOWED;
   const holds = (interval: string, weekday: Weekday) =>
     proposal.days.some((day) => day.interval === interval && day.weekday === weekday && day.held);
+  if (proposal.reason === "membership_change") {
+    // No choosing (FQ56), and a confirmation of exactly the days the change proposes for the viewer.
+    if (command === "chooseScheduleDays") return NOT_ALLOWED;
+    const proposed = WEEK.filter((weekday) => holds(viewer, weekday));
+    const asked = WEEK.filter((weekday) => body.weekdays.includes(weekday));
+    return proposed.length === proposal.daysPerMember && canonical(proposed) === canonical(asked) ? "ok" : NOT_ALLOWED;
+  }
   // A day is confirmed once a member who has confirmed holds it.
   const confirmed = (weekday: Weekday) =>
     proposal.members.some((member) => member.confirmed && holds(member.interval, weekday));
@@ -553,6 +614,32 @@ export function changeProblems(
     return problems;
   }
   if (me?.confirmed !== true) problems.push("the viewer isn't confirmed after their confirmation");
+  if (now.reason === "membership_change") {
+    // The viewer's confirmation and nothing else (FQ81, T33): no version, no state, nobody else's
+    // confirmation, no day in any week.
+    if (now.state !== was.state || now.version !== was.version)
+      problems.push(`a change's confirmation left it ${now.state} at version ${String(now.version)} (FQ81, T33)`);
+    const othersConfirmed = (rows: ScheduleProposalRows) =>
+      canonical(
+        rows.members
+          .filter((member) => member.interval !== viewer)
+          .map((member) => `${member.interval} ${String(member.confirmed)}`)
+          .sort(),
+      );
+    if (othersConfirmed(was) !== othersConfirmed(now)) problems.push("another member's confirmation changed");
+    const weeks = (world: ScheduleWorld) =>
+      canonical(
+        world.versions
+          .filter((version) => version.club === now.club)
+          .map((version) => ({
+            ...version,
+            assignments: version.assignments.map((each) => `${each.weekday} ${each.star} ${each.firstDate}`).sort(),
+          }))
+          .sort((a, b) => byBytes(a.id, b.id)),
+      );
+    if (weeks(before) !== weeks(after)) problems.push("a change's confirmation wrote a day into a week (FQ81)");
+    return problems;
+  }
   const dated = after.versions.find((version) => version.id === now.scheduleVersion)?.assignments ?? [];
   for (const weekday of asked) {
     const day = dated.find((each) => each.weekday === weekday);
@@ -780,4 +867,180 @@ export function commandExpected(
     if (outcome === "ok") return ["the judge's own generic request would change the world"];
     return pinnedProblems(answer, outcome);
   };
+}
+
+/** The local date `days` after `date`. */
+const plusDays = (date: string, days: number) => Temporal.PlainDate.from(date).add({ days }).toString();
+
+/**
+ * What a join, a leave or the first days applying must have left of the club's membership change, row by
+ * row, from the rows before and after it (spec 05; FQ16, FQ56, FQ61, FQ102, FQ115, FQ125 to FQ127), stated
+ * here apart from packages/domain/src/schedule/change.ts:
+ * - while the first days are open, or in a club where none ever applied, no change is made or moved;
+ * - with fewer than two active members, or when the active members are exactly the stars of the club's
+ *   latest week, each with spec 05's days, none is open, and one that was is superseded at its next
+ *   version with no successor;
+ * - otherwise one is open for exactly the active members. One already open for them is untouched. A new one
+ *   is at version 1 with no week of its own; every member has spec 05's number of days, each proposed and
+ *   held, no weekday twice, a member who has that number in the latest week keeps exactly them, and every
+ *   member's days are the ones FQ125's rule gives (the table's whole week between three and four members;
+ *   otherwise, for a member who lacks days, the table's days for their place when free, else the first
+ *   free from Monday); it
+ *   starts on the first Monday after the fourth week past `today`'s and after `lastMade`, or on the start
+ *   of the open change it replaces while that is still ahead; and the change it replaces is superseded at
+ *   its next version, naming it.
+ */
+export function weekChangeProblems(
+  before: ScheduleWorld,
+  after: ScheduleWorld,
+  club: string,
+  at: { today: string; lastMade: string | null },
+): string[] {
+  const changes = (world: ScheduleWorld) =>
+    [...world.proposals].filter(([, each]) => each.club === club && each.reason === "membership_change");
+  const openIn = (world: ScheduleWorld) => changes(world).find(([, each]) => each.state === "open");
+  const text = (rows: ScheduleProposalRows | undefined) =>
+    rows === undefined
+      ? "nothing"
+      : canonical({
+          ...rows,
+          members: rows.members.map((member) => `${member.interval} ${String(member.confirmed)}`).sort(),
+          days: rows.days
+            .map((day) => `${day.interval} ${day.weekday} ${String(day.suggested)} ${String(day.held)}`)
+            .sort(),
+        });
+  const problems: string[] = [];
+  const was = openIn(before);
+  const now = openIn(after);
+  // A change that had ended is as it was.
+  for (const [id, rows] of changes(before)) {
+    if (rows.state !== "open" && text(after.proposals.get(id)) !== text(rows))
+      problems.push(`the ended change ${id} moved`);
+  }
+  const untouched = () => {
+    if (
+      canonical(changes(before).map(([id, rows]) => [id, text(rows)])) !==
+      canonical(changes(after).map(([id, rows]) => [id, text(rows)]))
+    )
+      problems.push("a change was made or moved where none is due");
+    return problems;
+  };
+  const proposals = [...after.proposals.values()].filter((each) => each.club === club);
+  if (proposals.some((each) => each.reason === "activation" && each.state === "open")) return untouched();
+  if (!proposals.some((each) => each.state === "applied")) return untouched();
+
+  const joined = (interval: string) =>
+    after.members.get(interval)?.joinedAt ?? Temporal.Instant.fromEpochMilliseconds(0);
+  const active = [...after.members]
+    .filter(([, member]) => member.club === club && member.active)
+    .map(([interval]) => interval)
+    .sort((a, b) => Temporal.Instant.compare(joined(a), joined(b)) || byBytes(a, b));
+  const week =
+    after.versions
+      .filter((version) => version.club === club)
+      .sort((a, b) => byBytes(a.effectiveFrom, b.effectiveFrom))
+      .at(-1)?.assignments ?? [];
+  const per = active.length <= 3 ? 2 : 1;
+  const inWeek = (interval: string) =>
+    WEEK.filter((weekday) => week.some((each) => each.star === interval && each.weekday === weekday));
+  const asTheWeek =
+    week.every((each) => active.includes(each.star)) && active.every((interval) => inWeek(interval).length === per);
+  /** The change that was open ended, superseded at its next version, naming `successor` or nothing. */
+  const ended = (successor: string | null) => {
+    if (was === undefined) return;
+    const rows = after.proposals.get(was[0]);
+    const want = { ...was[1], state: "superseded" as const, version: was[1].version + 1, replacedBy: successor };
+    if (text(rows) !== text(want)) problems.push(`the change that was open is ${text(rows)}, not ${text(want)}`);
+  };
+  if (active.length < 2 || asTheWeek) {
+    if (now !== undefined) problems.push("a change is open in a club whose members are its week's, or that is paused");
+    ended(null);
+    return problems;
+  }
+  if (now === undefined) return [...problems, "no change is open though the club's members aren't its week's"];
+  const [id, rows] = now;
+  const included = rows.members.map((member) => member.interval).sort(byBytes);
+  if (canonical(included) !== canonical([...active].sort(byBytes)))
+    problems.push(`the open change includes ${included.join(", ")}, not the club's active members`);
+  const same =
+    was !== undefined &&
+    canonical(was[1].members.map((member) => member.interval).sort(byBytes)) === canonical(included);
+  if (same) {
+    if (was[0] !== id || text(was[1]) !== text(rows))
+      problems.push("a change open for the same members was replaced or moved");
+    return problems;
+  }
+  if (before.proposals.has(id)) problems.push("the open change isn't a new one");
+  ended(id);
+  if (rows.version !== 1 || rows.weekRevision !== 1 || rows.scheduleVersion !== null || rows.replacedBy !== null)
+    problems.push("a new change isn't at version 1, in its one week, with no week of its own");
+  if (rows.daysPerMember !== per)
+    problems.push(`the change gives ${String(rows.daysPerMember)} days each, not ${String(per)}`);
+  if (rows.earlier.length > 0) problems.push("a new change has rows of an earlier week");
+  if (rows.members.some((member) => member.confirmed)) problems.push("a new change starts with a confirmation");
+  if (rows.days.some((day) => !(day.suggested && day.held)))
+    problems.push("a change's day isn't both proposed and held");
+  const weekdays = rows.days.map((day) => day.weekday);
+  if (new Set(weekdays).size !== weekdays.length) problems.push("a change proposes one weekday for two members (T6)");
+  for (const interval of active) {
+    const proposed = WEEK.filter((weekday) =>
+      rows.days.some((day) => day.interval === interval && day.weekday === weekday),
+    );
+    if (proposed.length !== per)
+      problems.push(`${interval} is proposed ${String(proposed.length)} days, not ${String(per)}`);
+    const kept = inWeek(interval);
+    if (kept.length === per && canonical(kept) !== canonical(proposed))
+      problems.push(`${interval} has ${kept.join(", ")} and is proposed ${proposed.join(", ")}: moved (FQ125)`);
+  }
+  // Which days, whole (FQ125). Spec 05's table gives the member in place n (from 0, in join order) the nth
+  // weekday, and with two days each the one three days on. Where the most days any active member has in
+  // the latest week is neither none nor the table's number, the change proposes the table. Otherwise each
+  // member keeps their days, and one who lacks days takes, in join order, the table's days for their place
+  // that nobody keeps or has taken, then the first such days from Monday.
+  const table = (place: number) => (per === 2 ? [WEEK[place], WEEK[place + 3]] : [WEEK[place]]);
+  const most = Math.max(0, ...active.map((interval) => inWeek(interval).length));
+  const due = new Map<string, Weekday[]>();
+  if (most !== 0 && most !== per) {
+    for (const [place, interval] of active.entries()) {
+      due.set(
+        interval,
+        table(place).filter((weekday) => weekday !== undefined),
+      );
+    }
+  } else {
+    const gone = new Set<Weekday>(active.flatMap(inWeek));
+    for (const [place, interval] of active.entries()) {
+      const mine = inWeek(interval);
+      for (const weekday of [...table(place), ...WEEK]) {
+        if (mine.length === per) break;
+        if (weekday === undefined || gone.has(weekday)) continue;
+        gone.add(weekday);
+        mine.push(weekday);
+      }
+      due.set(interval, mine);
+    }
+  }
+  for (const interval of active) {
+    const want = WEEK.filter((weekday) => due.get(interval)?.includes(weekday) === true);
+    const proposed = WEEK.filter((weekday) =>
+      rows.days.some((day) => day.interval === interval && day.weekday === weekday),
+    );
+    if (canonical(want) !== canonical(proposed))
+      problems.push(`${interval} is proposed ${proposed.join(", ")}, not ${want.join(", ")} (FQ125)`);
+  }
+  // The start: the first Monday after four whole weeks past today's (FQ115) and after every day made (FQ61).
+  const today = Temporal.PlainDate.from(at.today);
+  let start = plusDays(at.today, 36 - today.dayOfWeek);
+  if (at.lastMade !== null && at.lastMade >= start) {
+    start = plusDays(at.lastMade, 8 - Temporal.PlainDate.from(at.lastMade).dayOfWeek);
+  }
+  // A replacement keeps the replaced change's start while it is ahead of today and of every day made.
+  if (
+    was !== undefined &&
+    was[1].effectiveFrom > at.today &&
+    (at.lastMade === null || at.lastMade < was[1].effectiveFrom)
+  )
+    start = was[1].effectiveFrom;
+  if (rows.effectiveFrom !== start) problems.push(`the change starts on ${rows.effectiveFrom}, not ${start}`);
+  return problems;
 }

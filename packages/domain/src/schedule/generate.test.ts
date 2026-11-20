@@ -36,7 +36,16 @@ const SIX = version("ver_1", "2026-11-02", [
 ]);
 
 function club(over: Partial<GenerationFacts> = {}): GenerationFacts {
-  return { zone: NY, activated: true, suspended: false, activeMembers: 6, versions: [SIX], made: new Set(), ...over };
+  return {
+    zone: NY,
+    activated: true,
+    suspended: false,
+    activeMembers: 6,
+    versions: [SIX],
+    made: new Set(),
+    changeFrom: null,
+    ...over,
+  };
 }
 
 const dates = (facts: GenerationFacts, now: string) => daysToMake(facts, at(now)).map((day) => day.localDate);
@@ -387,5 +396,32 @@ describe("a made day's instants across a clock change (T2; ADR-008)", () => {
     expect(() => daysToMake(club({ zone: "+05:00", activated: false }), at("2026-11-06T14:41:00Z"))).toThrow(
       RangeError,
     );
+  });
+});
+
+describe("a membership change waiting to start (FQ61, FQ127)", () => {
+  // Friday 6 November 2026, 9:41 AM in New York.
+  const NOW = "2026-11-06T14:41:00Z";
+
+  it("makes no day from the start of a change waiting to start, and every day before it (FQ127)", () => {
+    // Seen from Monday 9 November the window ends Sunday 13 December; the change starts Monday 7 December.
+    const monday = "2026-11-09T14:41:00Z";
+    const all = dates(club(), monday);
+    expect(all.at(-1)).toBe("2026-12-12");
+    const held = dates(club({ changeFrom: "2026-12-07" }), monday);
+    expect(held.at(-1)).toBe("2026-12-05");
+    expect(held).toEqual(all.filter((day) => day < "2026-12-07"));
+  });
+
+  it("makes nothing once a change's start is today or has passed, until the change ends (FQ127)", () => {
+    expect(dates(club({ changeFrom: "2026-11-06" }), NOW)).toEqual([]);
+    expect(dates(club({ changeFrom: "2026-11-02" }), NOW)).toEqual([]);
+    // The day before the start is still made.
+    expect(dates(club({ changeFrom: "2026-11-08" }), NOW)).toEqual(["2026-11-07"]);
+  });
+
+  it("is held by nothing when no change is open, and makes no day for a fact that is missing", () => {
+    expect(dates(club({ changeFrom: null }), NOW)).toEqual(dates(club(), NOW));
+    expect(dates({ ...club(), changeFrom: undefined } as unknown as GenerationFacts, NOW)).toEqual([]);
   });
 });

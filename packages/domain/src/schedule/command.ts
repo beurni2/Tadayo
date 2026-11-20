@@ -14,14 +14,18 @@
 // 3. Who is asking, again, now that nothing of the club's schedule can change under the lock: the week is
 //    read through the authorization module (./week.ts). No proposal, no membership, a suspended club, or a
 //    membership the proposal doesn't include (FQ100): NOT_FOUND, each the same answer (T14).
-// 4. MEMBERSHIP_CHANGED with `current_id` when a newer proposal replaced this one.
+// 4. MEMBERSHIP_CHANGED with `current_id` when a newer proposal replaced this one: the id of the club's
+//    open proposal, which may be several replacements on (FQ126), never an id that has itself ended. When
+//    the changes that replaced it have all ended and none is open, it is an ended proposal like any other:
+//    steps 5 and 7.
 // 5. VERSION_CONFLICT with `current_version` when `expected_version` isn't the proposal's.
 // 6. The clock, sampled after the lock (T1; T3's order). The receipt's own `created_at` is an earlier
 //    sample, which decides nothing.
 // 7. The rule, which the command passes in: NOT_ALLOWED, or the change. A proposal that has ended with no
 //    successor (applied, or superseded: the club paused, or nobody it includes still a member, FQ123) takes no change: NOT_ALLOWED.
 // 8. The answer: the proposal as the caller now sees it, read again after the change and made by the same
-//    `answerOf` the read uses, stored in the receipt and answered as the receipt keeps it.
+//    `answerOf` the read uses, stored in the receipt and answered as the receipt keeps it. A membership
+//    change's announced days are those not yet closed at step 6's sample.
 
 import { activeMember } from "../authorization/member.ts";
 import type { QuerySql } from "../authorization/read-sql.ts";
@@ -131,7 +135,13 @@ export async function scheduleCommand(
   if (!proposal.facts.members.some((member) => member.id === callerId)) throw new Refused("NOT_FOUND");
 
   // 4. A newer proposal.
-  if (proposal.replacedBy !== null) throw new Refused("MEMBERSHIP_CHANGED", { current_id: proposal.replacedBy });
+  if (proposal.replacedBy !== null) {
+    // Under the club's row a club has at most one open proposal (`schedule_proposals_one_open`), and it
+    // includes every active member, so the caller too.
+    const [current] = await bound(tx)`
+      SELECT id FROM app.schedule_proposals WHERE club_id = ${clubId} AND state = 'open'`;
+    if (current !== undefined) throw new Refused("MEMBERSHIP_CHANGED", { current_id: String(current["id"]) });
+  }
 
   // 5. The version.
   if (proposal.version !== input.expectedVersion) {
@@ -146,7 +156,7 @@ export async function scheduleCommand(
   await rule({ tx, at, week, proposal, callerId });
 
   // 8. The answer.
-  const after = (await loadWeek(tx, userId, clubId, { id: proposalId }))?.proposal ?? null;
+  const after = (await loadWeek(tx, userId, clubId, { id: proposalId }, at))?.proposal ?? null;
   if (after === null) throw new Error("schedule: the proposal vanished under its club's lock");
   return completeReceipt(tx, receipt, render(answerOf(after, callerId)));
 }

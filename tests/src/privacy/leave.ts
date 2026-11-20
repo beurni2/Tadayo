@@ -255,8 +255,9 @@ function weekProblems(
 }
 
 /**
- * What is wrong with the club's schedule proposals after `interval` left `club`, given the schedule's
- * rows before and after. Empty when the first days are what FQ102 and FQ123 make of the leave: their
+ * What is wrong with the club's first-days proposals after `interval` left `club`, given the schedule's
+ * rows before and after. A membership change the leave proposes, replaces or ends is judged by
+ * ./schedule.ts `weekChangeProblems`, which the matrix asks beside this at every leave. Empty when the first days are what FQ102 and FQ123 make of the leave: their
  * state and version, and their members, confirmations and days row by row (`weekProblems`).
  */
 export function firstDaysProblems(
@@ -269,9 +270,14 @@ export function firstDaysProblems(
     [...world.proposals].filter(([, proposal]) => proposal.club === club).sort(([a], [b]) => (a < b ? -1 : 1));
   const open = of(before).find(([, proposal]) => proposal.state === "open" && proposal.reason === "activation");
   if (open === undefined) {
-    return of(after).map(whole).join("\n") === of(before).map(whole).join("\n")
-      ? []
-      : ["a leave changed the club's proposals though no first days were open"];
+    // A membership change is another judge's (./schedule.ts `weekChangeProblems`): a leave proposes,
+    // replaces or ends one in a club whose first days have applied.
+    const first = (world: ScheduleWorld) =>
+      of(world)
+        .filter(([, proposal]) => proposal.reason === "activation")
+        .map(whole)
+        .join("\n");
+    return first(after) === first(before) ? [] : ["a leave changed the club's first days though none were open"];
   }
   const [id, was] = open;
   const now = after.proposals.get(id);
@@ -300,7 +306,8 @@ export function firstDaysProblems(
   if (now.replacedBy !== null) problems.push("the first days name a successor");
   const revised = state === "open" && moved;
   problems.push(...weekProblems(was, now, stayed, [], revised));
-  const fresh = of(after).filter(([one]) => !before.proposals.has(one));
+  // New first days only: a membership change the same command proposes is `weekChangeProblems`' (./schedule.ts).
+  const fresh = of(after).filter(([one, each]) => !before.proposals.has(one) && each.reason === "activation");
   const again = nobodyLeft && stayed.length >= 2;
   if (!again && fresh.length > 0) {
     problems.push(
@@ -340,7 +347,8 @@ export function firstDaysJoinProblems(
   const of = (world: ScheduleWorld) =>
     [...world.proposals].filter(([, proposal]) => proposal.club === club).sort(([a], [b]) => (a < b ? -1 : 1));
   const active = activeOf(after, club);
-  const fresh = of(after).filter(([one]) => !before.proposals.has(one));
+  // New first days only: a membership change the same command proposes is `weekChangeProblems`' (./schedule.ts).
+  const fresh = of(after).filter(([one, each]) => !before.proposals.has(one) && each.reason === "activation");
   const open = of(before).find(([, proposal]) => proposal.state === "open" && proposal.reason === "activation");
   if (open === undefined) {
     const problems: string[] = [];

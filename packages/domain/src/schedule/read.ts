@@ -10,6 +10,8 @@
 //   days are: ../authorization/days.ts).
 // - `proposal` is the club's open one as the caller sees it (`answerOf`), only when it includes the
 //   caller's own membership: a member who joined after it gets `current` alone (FQ100).
+//   A membership change includes every active member, and comes with the club's days not yet closed at
+//   `now` (`announced`, FQ61) for a caller with a day in the club's week (./week.ts).
 //
 // Anyone the authorization module gives nothing of the club gets null, the neutral not-found (T14).
 
@@ -45,7 +47,7 @@ export async function readSchedule(
   clubId: string,
   now: ServerNow,
 ): Promise<ScheduleSight | null> {
-  const week = await loadWeek(tx, userId, clubId, "open");
+  const week = await loadWeek(tx, userId, clubId, "open", now);
   if (week === null) return null;
   // Dates in ISO form compare as text.
   const today = now.toZonedDateTimeISO(clubTimeZone(week.club.timezone)).toPlainDate().toString();

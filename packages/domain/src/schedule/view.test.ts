@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { WEEKDAYS, type Weekday } from "./propose.ts";
-import { viewFor, type ProposalMember, type SlotView, type WeekFacts } from "./view.ts";
+import { changeViewFor, seesAnnounced, viewFor, type ProposalMember, type SlotView, type WeekFacts } from "./view.ts";
 
 // Sunday people, in the order they joined, each with the weekday the first days proposed for them
 // (the contract's fixture, packages/contracts/src/fixtures/world.ts; F01-friends-first-days).
@@ -342,5 +342,100 @@ describe("what no view of the first days ever carries (T55, T33; FQ46, FQ48)", (
     }
     expect(problems).toEqual([]);
     expect(views).toBeGreaterThan(10_000);
+  });
+});
+
+describe("a membership change's view (FQ56, FQ81; the contract's `change` scene)", () => {
+  // Kitchen table's change after Leila joins: one day each, proposed and held, as settle-change.ts writes it.
+  const KITCHEN: readonly (readonly [string, Weekday])[] = [
+    ["ben", "monday"],
+    ["alex", "tuesday"],
+    ["sam", "wednesday"],
+    ["nina", "thursday"],
+    ["leila", "friday"],
+    ["maya", "saturday"],
+  ];
+  const change = (confirmed: readonly string[] = [], left: readonly string[] = []): WeekFacts => ({
+    daysPerMember: 1,
+    members: KITCHEN.map(([id, day]) => ({
+      id,
+      active: !left.includes(id),
+      confirmed: confirmed.includes(id),
+      suggested: [day],
+      held: [day],
+    })),
+    firstDates: {},
+  });
+
+  it("gives the viewer their own day, and names for every other day the member it is proposed for", () => {
+    expect(changeViewFor("ben", change())).toEqual({
+      slots: [
+        { weekday: "monday", state: "yours", suggested: true },
+        { weekday: "tuesday", state: "available", heldBy: "alex", suggested: false },
+        { weekday: "wednesday", state: "available", heldBy: "sam", suggested: false },
+        { weekday: "thursday", state: "available", heldBy: "nina", suggested: false },
+        { weekday: "friday", state: "available", heldBy: "leila", suggested: false },
+        { weekday: "saturday", state: "available", heldBy: "maya", suggested: false },
+      ],
+      myDays: ["monday"],
+      myState: "choosing",
+    });
+  });
+
+  it("is the same for a viewer whoever else has confirmed, and changes only `myState` at their own (FQ81)", () => {
+    for (const [viewer] of KITCHEN) {
+      const before = changeViewFor(viewer, change());
+      const others = KITCHEN.map(([id]) => id).filter((id) => id !== viewer);
+      expect(changeViewFor(viewer, change(others))).toEqual(before);
+      expect(changeViewFor(viewer, change([viewer]))).toEqual({ ...before, myState: "confirmed" });
+    }
+  });
+
+  it("gives no day a state that needs a choice: never taken, clash or no_reveal, and no first date", () => {
+    for (const [viewer] of KITCHEN) {
+      for (const slot of changeViewFor(viewer, change(["ben", "maya"])).slots) {
+        expect(["yours", "available"]).toContain(slot.state);
+        expect(Object.keys(slot).sort()).toEqual(
+          slot.state === "yours" ? ["state", "suggested", "weekday"] : ["heldBy", "state", "suggested", "weekday"],
+        );
+        expect(slot.heldBy).not.toBe(viewer);
+      }
+    }
+  });
+
+  it("leaves a free day with no name, in a week of fewer than six days", () => {
+    const pair: WeekFacts = {
+      daysPerMember: 2,
+      members: [
+        { id: "ben", active: true, confirmed: false, suggested: ["monday", "thursday"], held: ["monday", "thursday"] },
+        { id: "debby", active: true, confirmed: false, suggested: ["tuesday", "friday"], held: ["tuesday", "friday"] },
+      ],
+      firstDates: {},
+    };
+    const view = changeViewFor("debby", pair);
+    expect(view.myDays).toEqual(["tuesday", "friday"]);
+    expect(view.slots.filter((slot) => slot.state === "available" && slot.heldBy === undefined)).toEqual([
+      { weekday: "wednesday", state: "available", suggested: false },
+      { weekday: "saturday", state: "available", suggested: false },
+    ]);
+  });
+
+  it("refuses a viewer the change doesn't include, or who has left (T14)", () => {
+    expect(() => changeViewFor("debby", change())).toThrow();
+    expect(() => changeViewFor("ben", change([], ["ben"]))).toThrow();
+  });
+});
+
+describe("who gets a membership change's announced days (the contract's `announced`; FQ100)", () => {
+  it("gives them to a member with a day in the club's latest week, however many days", () => {
+    expect(seesAnnounced("ben", ["ben", "maya", "ben", "maya"])).toBe(true);
+    expect(seesAnnounced("maya", ["ben", "maya"])).toBe(true);
+  });
+
+  it("gives none to a member with no day in it: a new member, each of several, a late joiner", () => {
+    expect(seesAnnounced("alex", ["ben", "maya", "ben", "maya"])).toBe(false);
+    expect(seesAnnounced("sam", ["ben", "maya"])).toBe(false);
+    // A club whose latest week has no day at all.
+    expect(seesAnnounced("ben", [])).toBe(false);
   });
 });

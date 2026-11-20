@@ -15,13 +15,21 @@
 // Members are in the order they joined, two who joined at the same instant by their interval's id, byte by
 // byte (`COLLATE "C"`), so the order is the same on every database whatever its locale.
 //
-// `answerOf` then makes the proposal one viewer sees: `viewFor` decides which slot carries whom (./view.ts,
-// T55), and this only puts the person in the place of the id `viewFor` gave. It never adds a name.
+// `answerOf` then makes the proposal one viewer sees: `viewFor`, or `changeViewFor` for a membership change,
+// decides which slot carries whom (./view.ts, T55), and this only puts the person in the place of the id
+// the view gave. It never adds a name.
+//
+// A membership change's `announced` (FQ61; G04-change) are the club's days not yet closed at the caller's
+// `now`, placed by the authorization module's day rule in the same statement (`daysAheadByClub`, T9), for
+// every member but one with no day in the club's latest week: the new member, or a late joiner of the
+// first days (FQ100).
 
+import { chosenDays, daysAheadByClub, type ChosenDay } from "../authorization/days.ts";
 import { activeMemberships } from "../authorization/member.ts";
 import type { FragmentSql, QuerySql } from "../authorization/read-sql.ts";
+import type { ServerNow } from "../time/clock.ts";
 import { WEEKDAYS, type Weekday } from "./propose.ts";
-import { viewFor, type ProposalMember, type SlotState, type WeekFacts } from "./view.ts";
+import { changeViewFor, seesAnnounced, viewFor, type ProposalMember, type SlotState, type WeekFacts } from "./view.ts";
 
 /** The contract's Person. */
 export interface SchedulePerson {
@@ -60,6 +68,11 @@ export interface LoadedProposal {
   readonly facts: WeekFacts;
   /** Each member's person, by membership interval; a member with no name to show has no entry. */
   readonly people: ReadonlyMap<string, SchedulePerson>;
+  /**
+   * For a membership change read with the caller's `now`, by a caller with a day in the club's latest week:
+   * the club's days not yet closed, in the order they open (FQ61). Null otherwise.
+   */
+  readonly announced: readonly ChosenDay[] | null;
 }
 
 export interface LoadedWeek {
@@ -171,7 +184,12 @@ function versionOf(value: unknown): LoadedVersion {
   };
 }
 
-function proposalOf(value: unknown, versions: readonly LoadedVersion[]): LoadedProposal {
+function proposalOf(
+  value: unknown,
+  versions: readonly LoadedVersion[],
+  callerId: string,
+  daysAhead: readonly ChosenDay[] | null,
+): LoadedProposal {
   const row = record(value);
   const reason = row["reason"];
   const state = row["state"];
@@ -217,25 +235,39 @@ function proposalOf(value: unknown, versions: readonly LoadedVersion[]): LoadedP
     replacedBy: optionalText(row["replaced_by"]),
     facts: { daysPerMember: perMember, members, firstDates },
     people,
+    announced:
+      reason === "membership_change" &&
+      seesAnnounced(
+        callerId,
+        (versions.at(-1)?.assignments ?? []).map((assignment) => assignment.starInterval),
+      )
+        ? daysAhead
+        : null,
   };
 }
 
 /**
  * The week of `clubId` for the account `userId`, with the club's open proposal (`which` is `open`) or the
  * one proposal `which.id` names, if it is the club's. Null when the authorization module gives `userId`
- * nothing of the club, or no club has that id (T14).
+ * nothing of the club, or no club has that id (T14). With `now`, the caller's sample of the clock, a
+ * membership change comes with its `announced` days.
  */
 export async function loadWeek(
   tx: QuerySql,
   userId: string,
   clubId: string,
   which: "open" | { readonly id: string },
+  now: ServerNow | null = null,
 ): Promise<LoadedWeek | null> {
   if (typeof clubId !== "string" || !ID.test(clubId)) return null;
   if (which !== "open" && !ID.test(which.id)) return null;
   // postgres.js's tagged template is a fragment inside another query.
   const sql = tx;
   const chosen = which === "open" ? bound(sql)`p.state = 'open'` : bound(sql)`p.id = ${which.id}::pg_catalog.text`;
+  const ahead =
+    now === null
+      ? bound(sql)`NULL::pg_catalog.jsonb`
+      : bound(sql)`(SELECT d.days FROM (${daysAheadByClub(sql, userId, now)}) d WHERE d.club_id = c.id)`;
   const rows = await bound(sql)`
     SELECT c.id, c.name, c.timezone, am.interval_id AS membership_id,
            (SELECT coalesce(pg_catalog.jsonb_agg(pg_catalog.jsonb_build_object(
@@ -273,18 +305,21 @@ export async function loadWeek(
                         JOIN app.memberships s ON s.interval_id = pm.interval_id
                         JOIN app.users su ON su.id = s.user_id
                        WHERE pm.proposal_id = p.id))
-              FROM app.schedule_proposals p WHERE p.club_id = c.id AND ${chosen}) AS proposal
+              FROM app.schedule_proposals p WHERE p.club_id = c.id AND ${chosen}) AS proposal,
+           ${ahead} AS days_ahead
       FROM app.clubs c
       JOIN (${activeMemberships(sql, userId)}) am ON am.club_id = c.id
      WHERE c.id = ${clubId}::pg_catalog.text`;
   const [row] = rows;
   if (row === undefined) return null;
   const versions = list(row["versions"]).map(versionOf);
+  const membershipId = text(row["membership_id"]);
+  const daysAhead = row["days_ahead"] === null ? null : chosenDays(row["days_ahead"]);
   return {
     club: { id: text(row["id"]), name: text(row["name"]), timezone: text(row["timezone"]) },
-    membershipId: text(row["membership_id"]),
+    membershipId,
     versions,
-    proposal: row["proposal"] === null ? null : proposalOf(row["proposal"], versions),
+    proposal: row["proposal"] === null ? null : proposalOf(row["proposal"], versions, membershipId, daysAhead),
   };
 }
 
@@ -303,24 +338,24 @@ export interface SlotAnswer {
 export interface ProposalAnswer {
   readonly id: string;
   readonly version: number;
-  readonly reason: "activation";
+  readonly reason: "activation" | "membership_change";
   readonly effectiveFrom: string;
   readonly daysPerMember: 1 | 2;
   readonly slots: readonly SlotAnswer[];
   readonly myDays: readonly Weekday[];
   readonly myState: "choosing" | "confirmed";
   readonly state: "open" | "applied" | "superseded";
+  /** A membership change's days already made and not yet closed; absent where the contract leaves it out. */
+  readonly announced?: readonly ChosenDay[];
 }
 
 /**
- * The first days as the member `viewerId` sees them. Throws for a membership change, which
- * `api/b2-membership-change` builds, and for a viewer the proposal doesn't include (./view.ts).
+ * The proposal as the member `viewerId` sees it: the caller the week was loaded for. Throws for a viewer
+ * the proposal doesn't include (./view.ts).
  */
 export function answerOf(proposal: LoadedProposal, viewerId: string): ProposalAnswer {
-  if (proposal.reason !== "activation") {
-    throw new Error("schedule: a membership change is read once api/b2-membership-change has built it");
-  }
-  const view = viewFor(viewerId, proposal.facts);
+  const view =
+    proposal.reason === "activation" ? viewFor(viewerId, proposal.facts) : changeViewFor(viewerId, proposal.facts);
   // Someone who holds a day is an active member, and an active member has a name (spec 23).
   const named = (id: string): SchedulePerson => {
     const found = proposal.people.get(id);
@@ -349,5 +384,6 @@ export function answerOf(proposal: LoadedProposal, viewerId: string): ProposalAn
     myDays: view.myDays,
     myState: view.myState,
     state: proposal.state,
+    ...(proposal.announced === null ? {} : { announced: proposal.announced }),
   };
 }

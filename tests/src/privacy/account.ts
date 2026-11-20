@@ -138,9 +138,26 @@ export function daysOf(
   now: Temporal.Instant,
   star?: string,
 ): { open?: unknown; next?: unknown } {
-  if (world.clubs.get(club)?.suspendedAt !== null) return {};
-  const before = (a: Temporal.Instant, b: Temporal.Instant) => Temporal.Instant.compare(a, b) < 0;
-  const only = star;
+  const placed = placedDays(world, club, star);
+  if (placed === undefined) return {};
+  const { days, occurrence } = placed;
+  return {
+    open: occurrence(
+      days.find(({ day }) => !before(now, day.revealAt) && before(now, day.closeAt)),
+      "open",
+    ),
+    next: occurrence(
+      days.find(({ day }) => before(now, day.revealAt)),
+      "collecting",
+    ),
+  };
+}
+
+const before = (a: Temporal.Instant, b: Temporal.Instant) => Temporal.Instant.compare(a, b) < 0;
+
+/** The days of `club` that can be placed at all, in the order they open, and how one is written; none in a suspended club. */
+function placedDays(world: WorldFacts, club: string, only?: string) {
+  if (world.clubs.get(club)?.suspendedAt !== null) return undefined;
   const days = [...world.days]
     .map(([id, day]) => ({ id, day, star: world.members.get(day.star) }))
     .filter(({ day, star }) => {
@@ -172,16 +189,21 @@ export function daysOf(
       phase,
     };
   };
-  return {
-    open: occurrence(
-      days.find(({ day }) => !before(now, day.revealAt) && before(now, day.closeAt)),
-      "open",
-    ),
-    next: occurrence(
-      days.find(({ day }) => before(now, day.revealAt)),
-      "collecting",
-    ),
-  };
+  return { days, occurrence };
+}
+
+/**
+ * The club's days not yet closed at `now`, in the order they open, each the whole Occurrence: what a
+ * membership change's `announced` must be for a member with a day in the club's week (the contract's
+ * ScheduleProposal; FQ61). The same days by the same rule as `daysOf`: the open day, if any, then every
+ * day still to open.
+ */
+export function announcedOf(world: WorldFacts, club: string, now: Temporal.Instant): unknown[] {
+  const placed = placedDays(world, club);
+  if (placed === undefined) return [];
+  return placed.days
+    .filter(({ day }) => before(now, day.closeAt))
+    .map((found) => placed.occurrence(found, before(now, found.day.revealAt) ? "collecting" : "open"));
 }
 
 /** A JSON value with its keys sorted, so two values compare as text whatever order their keys came in. */

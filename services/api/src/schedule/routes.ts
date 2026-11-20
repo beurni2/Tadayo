@@ -24,6 +24,7 @@ import {
   type SlotAnswer,
 } from "@tadayo/domain";
 import { IDEMPOTENCY_KEY, ok, problem, refusal } from "../answers.ts";
+import { occurrenceBody } from "../clubs/list.ts";
 import type { Deps, Handler } from "../deps.ts";
 import { signedIn } from "../deps.ts";
 
@@ -49,7 +50,7 @@ export function slotBody(slot: SlotAnswer): Json {
   };
 }
 
-/** The contract's `ScheduleProposal` for the first days, as the caller sees them. */
+/** The contract's `ScheduleProposal`, as the caller sees it; `announced` only where the domain gave it. */
 export function proposalBody(proposal: ProposalAnswer): Json {
   return {
     id: proposal.id,
@@ -61,6 +62,7 @@ export function proposalBody(proposal: ProposalAnswer): Json {
     my_days: [...proposal.myDays],
     my_state: proposal.myState,
     state: proposal.state,
+    ...(proposal.announced === undefined ? {} : { announced: proposal.announced.map(occurrenceBody) }),
   };
 }
 

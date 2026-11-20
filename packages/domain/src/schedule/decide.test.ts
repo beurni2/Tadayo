@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { everyoneConfirmed, judgeChoice, judgeConfirmation } from "./decide.ts";
+import { everyoneConfirmed, judgeChangeConfirmation, judgeChoice, judgeConfirmation } from "./decide.ts";
 import type { Weekday } from "./propose.ts";
 import type { ProposalMember, WeekFacts } from "./view.ts";
 
@@ -174,5 +174,44 @@ describe("when the first days apply (the contract's ScheduleProposal; FQ100, FQ1
       firstDates: {},
     };
     expect(everyoneConfirmed(nobody)).toBe(false);
+  });
+});
+
+describe("a membership change's confirmation (the contract's ScheduleConfirmRequest; FQ56, FQ81)", () => {
+  /** A change for three, two days each, proposed and held; Maya has confirmed. */
+  const CHANGE: WeekFacts = {
+    daysPerMember: 2,
+    members: [
+      member("ben", ["monday", "thursday"]),
+      member("debby", ["tuesday", "friday"]),
+      member("maya", ["wednesday", "saturday"], { confirmed: true }),
+    ],
+    firstDates: {},
+  };
+
+  it("takes exactly the days the change proposes for the caller, in any order", () => {
+    expect(judgeChangeConfirmation("ben", CHANGE, ["monday", "thursday"])).toBeNull();
+    expect(judgeChangeConfirmation("ben", CHANGE, ["thursday", "monday"])).toBeNull();
+    expect(judgeChangeConfirmation("debby", CHANGE, ["tuesday", "friday"])).toBeNull();
+  });
+
+  it("refuses any other days: another member's, one of each, too few", () => {
+    expect(judgeChangeConfirmation("ben", CHANGE, ["tuesday", "friday"])).toBe("NOT_ALLOWED");
+    expect(judgeChangeConfirmation("ben", CHANGE, ["monday", "friday"])).toBe("NOT_ALLOWED");
+    expect(judgeChangeConfirmation("ben", CHANGE, ["monday"])).toBe("NOT_ALLOWED");
+  });
+
+  it("throws on what the contract's schema refuses before any rule: none, three, a day twice", () => {
+    expect(() => judgeChangeConfirmation("ben", CHANGE, [])).toThrow(RangeError);
+    expect(() => judgeChangeConfirmation("ben", CHANGE, ["monday", "tuesday", "thursday"])).toThrow(RangeError);
+    expect(() => judgeChangeConfirmation("ben", CHANGE, ["monday", "monday"])).toThrow(RangeError);
+  });
+
+  it("refuses a second confirmation, though the days are the caller's own", () => {
+    expect(judgeChangeConfirmation("maya", CHANGE, ["wednesday", "saturday"])).toBe("NOT_ALLOWED");
+  });
+
+  it("refuses a caller the change doesn't include, as the first days do", () => {
+    expect(() => judgeChangeConfirmation("alex", CHANGE, ["monday", "thursday"])).toThrow();
   });
 });

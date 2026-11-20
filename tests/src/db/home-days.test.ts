@@ -14,9 +14,12 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   chooseDays,
+  chooseDaysAhead,
   chooseNextDayOf,
   chosenDay,
+  chosenDays,
   dayInstants,
+  daysAheadByClub,
   daysByClub,
   listClubs,
   nextDaysByStar,
@@ -237,6 +240,16 @@ async function both(tx: WorldTx, viewer: string, club: string, instant: Temporal
   const starsSql = await byStarSql(tx, viewer, club, now);
   const starsPolicy = await byStarPolicy(tx, facts, club, now);
   expect(starsSql, `each member's next day, the SQL and the policy, at ${instant.toString()}`).toEqual(starsPolicy);
+  // Every day not yet closed (a membership change's `announced`): the two paths again, and the open day
+  // and the next day are its first days.
+  const aheadRows = await tx<{ days: unknown }[]>`
+    SELECT d.days FROM (${daysAheadByClub(tx, viewer, now)}) d WHERE d.club_id = ${club}`;
+  if (aheadRows.length > 1) throw new Error("daysAheadByClub listed a club twice");
+  const ahead = aheadRows[0] === undefined ? [] : chosenDays(aheadRows[0].days);
+  expect(ahead, `the days ahead, the SQL and the policy, at ${instant.toString()}`).toEqual(
+    chooseDaysAhead(facts, now),
+  );
+  expect(ahead.slice(0, sql.open === null ? 1 : 2)).toEqual([sql.open, sql.next].filter((day) => day !== null));
   // The club's next day is the earliest of its members' next days, or one whose star is no longer active.
   const earliest = [...starsSql.values()]
     .filter((day) => day !== null)
