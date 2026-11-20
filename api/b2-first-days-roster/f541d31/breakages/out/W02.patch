@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/choose-days.ts b/packages/domain/src/schedule/choose-days.ts
+index 65192e00..44282232 100644
+--- a/packages/domain/src/schedule/choose-days.ts
++++ b/packages/domain/src/schedule/choose-days.ts
+@@ -57,7 +57,7 @@ export function chooseScheduleDays(
+       } else if (wanted) {
+         await bound(tx)`
+           INSERT INTO app.schedule_proposal_days (proposal_id, interval_id, weekday, suggested, held, week_revision)
+-          VALUES (${proposal.id}, ${callerId}, ${weekday}::app.weekday, false, true, ${week}::pg_catalog.int2)`;
++          VALUES (${proposal.id}, ${callerId}, ${weekday}::app.weekday, false, true, 1::pg_catalog.int2)`;
+       } else {
+         await bound(tx)`
+           DELETE FROM app.schedule_proposal_days

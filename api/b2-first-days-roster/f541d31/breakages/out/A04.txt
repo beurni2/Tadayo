@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/privacy/matrix.test.ts (18 tests | 1 failed | 16 skipped) 1005ms
+   ❯ a roster applied through the app (spec 04; T7, T8, T33; FQ65) (2)
+     × joins the person who accepted once the last member approves, and answers each caller as the rows say, and revises the open first days for t… 310ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed | 16 skipped (18)
+   Start at  06:21:38
+   Duration  2.04s (tests 58%, import 35%, transform 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > a roster applied through the app (spec 04; T7, T8, T33; FQ65) > joins the person who accepted once the last member approves, and answers each caller as the rows say, and revises the open first days for t…
+AssertionError: expected { …(9) } to match object { version: 3 }
+(8 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "version": 3,
++   "version": 2,
+  }
+
+ ❯ src/privacy/matrix.test.ts:1954:29
+    1952|         await ask(leaver, spec("getSchedule", { club_id: w.club }), ()…
+    1953|         const again = await ask(joiner, spec("getSchedule", { club_id:…
+    1954|         expect(mine(again)).toMatchObject({ version: 3 });
+       |                             ^
+    1955|         expect((mine(again)?.my_days as unknown[]).length).toBe(2);
+    1956|         // The world's week in force keeps the leaver's day, named (FQ…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/leave.ts b/tests/src/privacy/leave.ts
+index 617855a3..709e402c 100644
+--- a/tests/src/privacy/leave.ts
++++ b/tests/src/privacy/leave.ts
+@@ -374,7 +374,7 @@ export function firstDaysJoinProblems(
+   const now = after.proposals.get(id);
+   if (now === undefined) return ["the first days' rows are gone"];
+   const problems: string[] = [];
+-  const revised = !was.members.some((member) => member.confirmed);
++  const revised = true;
+   const version = was.version + (revised ? 1 : 0);
+   if (now.state !== "open" || now.version !== version) {
+     problems.push(

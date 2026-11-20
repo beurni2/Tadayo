@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0013_first_days_revision.sql b/db/migrations/0013_first_days_revision.sql
+index 76d0bd9e..ab236316 100644
+--- a/db/migrations/0013_first_days_revision.sql
++++ b/db/migrations/0013_first_days_revision.sql
+@@ -60,7 +60,7 @@ BEGIN
+       RAISE EXCEPTION 'app.schedule_proposals: the week of % is proposed again one week at a time, never back', NEW.id
+         USING ERRCODE = 'integrity_constraint_violation';
+     END IF;
+-    IF NEW.version <> OLD.version + 1 THEN
++    IF false THEN
+       RAISE EXCEPTION 'app.schedule_proposals: a new week of % comes with its next version (T33)', NEW.id
+         USING ERRCODE = 'integrity_constraint_violation';
+     END IF;

@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/open.ts b/packages/domain/src/schedule/open.ts
+index 2c432d6a..d7320565 100644
+--- a/packages/domain/src/schedule/open.ts
++++ b/packages/domain/src/schedule/open.ts
+@@ -124,7 +124,7 @@ export async function openFirstDays(tx: QuerySql & ClockSql, clock: Clock, clubI
+     let start = today;
+     if (latest !== null) {
+       // After every day already made, and after the earlier week's own start.
+-      for (const taken of [latest.effectiveFrom, latest.lastMade]) {
++      for (const taken of [latest.effectiveFrom]) {
+         if (taken === null) continue;
+         const next = Temporal.PlainDate.from(taken).add({ days: 1 });
+         if (Temporal.PlainDate.compare(next, start) > 0) start = next;

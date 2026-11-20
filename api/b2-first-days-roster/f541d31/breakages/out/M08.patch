@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0013_first_days_revision.sql b/db/migrations/0013_first_days_revision.sql
+index 76d0bd9e..50bfbf14 100644
+--- a/db/migrations/0013_first_days_revision.sql
++++ b/db/migrations/0013_first_days_revision.sql
+@@ -153,7 +153,7 @@ DECLARE
+ BEGIN
+   SELECT days_per_member, week_revision INTO most, week FROM app.schedule_proposals WHERE id = NEW.proposal_id;
+   SELECT pg_catalog.count(*) INTO holds FROM app.schedule_proposal_days
+-   WHERE proposal_id = NEW.proposal_id AND interval_id = NEW.interval_id AND week_revision = week AND held;
++   WHERE proposal_id = NEW.proposal_id AND interval_id = NEW.interval_id AND held;
+   IF holds > most THEN
+     RAISE EXCEPTION 'app.schedule_proposal_days: % holds at most % days in % (spec 05)',
+       NEW.interval_id, most, NEW.proposal_id

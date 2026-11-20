@@ -1,0 +1,12 @@
+diff --git a/tests/src/privacy/leave.ts b/tests/src/privacy/leave.ts
+index 617855a3..88971bd9 100644
+--- a/tests/src/privacy/leave.ts
++++ b/tests/src/privacy/leave.ts
+@@ -297,7 +297,6 @@ export function firstDaysProblems(
+       `the first days are ${now.state} at version ${String(now.version)}, not ${state} at version ${String(version)} (FQ102)`,
+     );
+   }
+-  if (now.replacedBy !== null) problems.push("the first days name a successor");
+   const revised = state === "open" && moved;
+   problems.push(...weekProblems(was, now, stayed, [], revised));
+   const fresh = of(after).filter(([one]) => !before.proposals.has(one));

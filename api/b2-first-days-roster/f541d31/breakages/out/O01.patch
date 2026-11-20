@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/open.ts b/packages/domain/src/schedule/open.ts
+index 2c432d6a..76c07c80 100644
+--- a/packages/domain/src/schedule/open.ts
++++ b/packages/domain/src/schedule/open.ts
+@@ -117,7 +117,7 @@ export async function openFirstDays(tx: QuerySql & ClockSql, clock: Clock, clubI
+   const latest = first ? null : await latestWeek(tx, clubId);
+   let effectiveFrom: string;
+   let scheduleVersionId: string;
+-  if (latest !== null && !latest.confirmed) {
++  if (latest !== null) {
+     // No day was confirmed in the club's latest week: the new first days use it.
+     ({ id: scheduleVersionId, effectiveFrom } = latest);
+   } else {

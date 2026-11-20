@@ -1,0 +1,51 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/db/schedule-proposals.test.ts (37 tests | 2 failed) 943ms
+   ❯ a proposal (spec 05; T33) (9)
+     × changes the days a member takes only with a new week, while nobody has confirmed (0013; FQ102) 33ms
+   ❯ a proposal's week, proposed again (0013; FQ102) (6)
+     × moves only while the proposal stays open and nobody it includes has confirmed 24ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 35 passed (37)
+   Start at  06:22:46
+   Duration  1.73s (tests 89%, import 6%, transform 5%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-proposals.test.ts > a proposal (spec 05; T33) > changes the days a member takes only with a new week, while nobody has confirmed (0013; FQ102)
+AssertionError: expected Postgres to refuse with 23000: expected undefined to be an instance of PostgresError
+ ❯ expectRefused src/db/harness.ts:110:62
+    108|     caught = error;
+    109|   }
+    110|   expect(caught, `expected Postgres to refuse with ${code}`).toBeInsta…
+       |                                                              ^
+    111|   const error = caught as postgres.PostgresError;
+    112|   expect(error.code, error.message).toBe(code);
+ ❯ src/db/schedule-proposals.test.ts:306:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/schedule-proposals.test.ts > a proposal's week, proposed again (0013; FQ102) > moves only while the proposal stays open and nobody it includes has confirmed
+AssertionError: expected Postgres to refuse with 23000: expected undefined to be an instance of PostgresError
+ ❯ expectRefused src/db/harness.ts:110:62
+    108|     caught = error;
+    109|   }
+    110|   expect(caught, `expected Postgres to refuse with ${code}`).toBeInsta…
+       |                                                              ^
+    111|   const error = caught as postgres.PostgresError;
+    112|   expect(error.code, error.message).toBe(code);
+ ❯ src/db/schedule-proposals.test.ts:951:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

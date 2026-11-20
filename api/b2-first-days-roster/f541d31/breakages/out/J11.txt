@@ -1,0 +1,59 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/privacy/leave.test.ts (27 tests | 2 failed) 32ms
+   ❯ what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) (12)
+     × catches a leave that adds a member, moves a confirmation or changes a day, whatever it does to the state 9ms
+     ❯ a join that moves nobody (firstDaysJoinProblems; FQ55, FQ102) (2)
+       × asks the new member two proposed days nobody holds, and every other row as it was 1ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 25 passed (27)
+   Start at  06:24:22
+   Duration  580ms (import 67%, transform 17%, tests 14%, worker 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) > catches a leave that adds a member, moves a confirmation or changes a day, whatever it does to the state
+AssertionError: expected [] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+- [
+-   "a member's days changed though nobody is moved (T6)",
+- ]
++ []
+
+ ❯ src/privacy/leave.test.ts:550:98
+    548|       }),
+    549|     ).toEqual(["the confirmation of itv_cleo moved"]);
+    550|     expect(judged(was, { ...was, days: was.days.filter((day) => day.in…
+       |                                                                                                  ^
+    551|       "a member's days changed though nobody is moved (T6)",
+    552|     ]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) > a join that moves nobody (firstDaysJoinProblems; FQ55, FQ102) > asks the new member two proposed days nobody holds, and every other row as it was
+AssertionError: expected [] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+- [
+-   "a member's days changed though nobody is moved (T6)",
+- ]
++ []
+
+ ❯ src/privacy/leave.test.ts:706:9
+    704|           }),
+    705|         ),
+    706|       ).toEqual(["a member's days changed though nobody is moved (T6)"…
+       |         ^
+    707|       expect(
+    708|         join(after([row("itv_cleo", "wednesday"), row("itv_cleo", "sat…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

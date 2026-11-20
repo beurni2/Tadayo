@@ -1,0 +1,12 @@
+diff --git a/tests/src/privacy/leave.ts b/tests/src/privacy/leave.ts
+index 617855a3..854111d3 100644
+--- a/tests/src/privacy/leave.ts
++++ b/tests/src/privacy/leave.ts
+@@ -221,7 +221,6 @@ function weekProblems(
+     );
+   }
+   if (!newWeek) {
+-    if (lines(now.earlier) !== lines(was.earlier)) problems.push("an earlier week's rows changed");
+     const kept = now.days.filter((day) => !gains.includes(day.interval));
+     if (lines(kept) !== lines(was.days)) problems.push("a member's days changed though nobody is moved (T6)");
+     const held = new Set(was.days.filter((day) => day.held && active.includes(day.interval)).map((day) => day.weekday));

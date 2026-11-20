@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/settle.ts b/packages/domain/src/schedule/settle.ts
+index 49992524..4e53ba2f 100644
+--- a/packages/domain/src/schedule/settle.ts
++++ b/packages/domain/src/schedule/settle.ts
+@@ -93,7 +93,7 @@ export async function settleFirstDays(
+                                (SELECT coalesce(pg_catalog.jsonb_agg(d.weekday), '[]'::pg_catalog.jsonb)
+                                   FROM app.schedule_proposal_days d
+                                  WHERE d.proposal_id = pm.proposal_id AND d.interval_id = pm.interval_id
+-                                   AND d.week_revision = p.week_revision AND d.held))),
++                                   AND d.held))),
+                              '[]'::pg_catalog.jsonb)
+                         FROM app.schedule_proposal_members pm
+                         JOIN app.memberships s ON s.interval_id = pm.interval_id

@@ -1,0 +1,12 @@
+diff --git a/db/migrations/0013_first_days_revision.sql b/db/migrations/0013_first_days_revision.sql
+index 76d0bd9e..21d57d87 100644
+--- a/db/migrations/0013_first_days_revision.sql
++++ b/db/migrations/0013_first_days_revision.sql
+@@ -225,7 +225,6 @@ BEGIN
+                    JOIN app.schedule_proposal_members m ON m.proposal_id = p.id
+                    JOIN app.schedule_proposal_days d
+                      ON d.proposal_id = m.proposal_id AND d.interval_id = m.interval_id
+-                    AND d.week_revision = p.week_revision
+                   WHERE p.schedule_version_id = NEW.schedule_version_id AND p.reason = 'activation'
+                     AND m.interval_id = NEW.star_interval_id
+                     AND m.confirmed_at = NEW.confirmed_at AND d.weekday = NEW.weekday AND d.held) THEN

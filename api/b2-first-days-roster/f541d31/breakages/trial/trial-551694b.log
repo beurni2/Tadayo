@@ -1,0 +1,195 @@
+== C01 a club that never had first days end opens them on any join [unit]: CAUGHT; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × does nothing once the first days have applied, or before any were opened 7ms
+== C02 new first days open for one member [unit]: CAUGHT; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × opens new first days when all before them ended with no successor and the club has two members again 8ms
+== C03 first days nobody is left in reopen for one member [unit]: CAUGHT; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × ends them when nobody they include is left, and opens new ones at once for two or more (FQ123) 8ms
+== C04 first days nobody is left in apply [unit]: CAUGHT; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × ends them when nobody they include is left, and opens new ones at once for two or more (FQ123) 11ms
+== C05 one confirmed member who stays applies the first days [unit]: CAUGHT; exit 1 ['Tests  2 failed | 33 passed (35)']
+    × changes nothing when a leave leaves a member who hasn't confirmed, in a club of two or more 1ms
+    × includes no new member and changes nothing on a join 11ms
+== C06 one unconfirmed member left keeps the first days open [unit]: CAUGHT; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × ends the first days when the club's one member left hasn't confirmed 8ms
+== C07 a leaver's confirmation doesn't count as a confirmed day [unit]: CAUGHT; exit 1 ['Tests  2 failed | 33 passed (35)']
+    × changes nothing when a leave leaves a member who hasn't confirmed, in a club of two or more 8ms
+    × ends them when nobody they include is left, and opens new ones at once for two or more (FQ123) 2ms
+== C08 a revision is made for one member [unit]: CAUGHT; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × ends the first days with no successor when one member is left, or none 6ms
+== C09 the week is never proposed again [unit]: CAUGHT; exit 1 ['Tests  4 failed | 31 passed (35)']
+    × leaves a club of 3 with each member holding the right number of days, none proposed twice 2ms
+    × leaves a club of 4 with each member holding the right number of days, none proposed twice 2ms
+    × proposes the whole week again when a club of four loses a member: two days each 4ms
+    × proposes the whole week again when a fourth member joins three: one day each (spec 05) 14ms
+== C10 a new member may be given a held day [unit]: CAUGHT; exit 1 ['Tests  2 failed | 33 passed (35)']
+    × counts a contested day as held, and a day only someone who left held as free 1ms
+    × gives the new member the first free days from Monday when someone holds the days of their place 9ms
+== C11 a leaver's days stay held [unit]: NOT CAUGHT; exit 0 ['Tests  35 passed (35)']
+== C12 two who join at once may be given the same day [unit]: CAUGHT BY ANOTHER TEST; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × gives the new member the first free days from Monday when someone holds the days of their place 8ms
+== C13 a new member's place in the table is ignored [unit]: NOT CAUGHT; exit 0 ['Tests  35 passed (35)']
+== S01 the facts read every week's holds [db]: NOT CAUGHT; exit 0 ['Tests  17 passed (17)']
+== S02 the facts count a day set aside as held [db]: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × gives a new member the first free days when someone holds the days of their place 70ms
+== S03 the first days applied by a leave are written as superseded [db]: CAUGHT; exit 1 ['Tests  2 failed | 15 passed (17)']
+    × applies the first days by the leave when the last other confirmation came first 120ms
+    × applies the first days when only confirmed members stay, at the leave's own instant 71ms
+== S04 first days nobody is left in end without new ones [db]: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × ends the first days when nobody they include is left, and opens new ones at once for those who remain (FQ123) 91ms
+== S05 a revision keeps the version [db]: CAUGHT; exit 1 ['Tests  5 failed | 12 passed (17)']
+    × answers a request made with the earlier version VERSION_CONFLICT and the new one, then takes it 87ms
+    × applies the first days when only confirmed members stay, at the leave's own instant 64ms
+    × frees the leaver's days in the same week, at the next version 57ms
+    × includes the new member in the same proposal, at its next version, and moves nobody 212ms
+    × proposes the whole week again when a fourth member joins three, and again when one of four leaves 69ms
+== S06 a revision doesn't add the new member [db]: CAUGHT; exit 1 ['Tests  11 failed | 6 passed (17)']
+    × answers a request made with the earlier version VERSION_CONFLICT and the new one, then takes it 89ms
+    × applies the first days by the leave when the last other confirmation came first 37ms
+    × applies the first days when only confirmed members stay, at the leave's own instant 46ms
+    × applies them by the confirmation when the leave came first 30ms
+    × changes nothing, and no version, when someone who hasn't confirmed stays in a club of two or more 33ms
+    × frees the leaver's days in the same week, at the next version 69ms
+== S07 the restart doesn't open new first days [db]: CAUGHT; exit 1 ['Tests  4 failed | 13 passed (17)']
+    × ends the first days of a club of two with no successor, and opens new ones at the next join 74ms
+    × ends the first days when the one member left hasn't confirmed, and starts the next after the days already made (FQ124) 60ms
+    × starts a restarted club's week the day after its first when nothing was made and the day is the same 50ms
+    × starts a restarted club's week today when every day already made is past 44ms
+== S08 first days that applied count as ended with no successor [db]: CAUGHT; exit 1 ['Tests  2 failed | 15 passed (17)']
+    × applies the first days when only confirmed members stay, at the leave's own instant 113ms
+    × ends the first days of a club of two with no successor, and opens new ones at the next join 124ms
+== S09 the facts read a member who left as active [db]: CAUGHT; exit 1 ['Tests  13 failed | 4 passed (17)']
+    × applies the first days by the leave when the last other confirmation came first 113ms
+    × applies the first days when only confirmed members stay, at the leave's own instant 45ms
+    × applies them by the confirmation when the leave came first 209ms
+    × changes nothing, and no version, when someone who hasn't confirmed stays in a club of two or more 40ms
+    × ends the first days of a club of two with no successor, and opens new ones at the next join 22ms
+    × ends the first days when nobody they include is left, and opens new ones at once for those who remain (FQ123) 50ms
+== A01 a join doesn't settle the first days [db]: CAUGHT; exit 1 ['Tests  12 failed | 5 passed (17)']
+    × answers a request made with the earlier version VERSION_CONFLICT and the new one, then takes it 98ms
+    × applies the first days by the leave when the last other confirmation came first 106ms
+    × applies the first days when only confirmed members stay, at the leave's own instant 41ms
+    × ends the first days of a club of two with no successor, and opens new ones at the next join 60ms
+    × ends the first days when the one member left hasn't confirmed, and starts the next after the days already made (FQ124) 69ms
+    × frees the leaver's days in the same week, at the next version 65ms
+== A02 a leave doesn't settle the first days [db]: CAUGHT; exit 1 ['Tests  9 failed | 8 passed (17)']
+    × applies the first days by the leave when the last other confirmation came first 143ms
+    × applies the first days when only confirmed members stay, at the leave's own instant 55ms
+    × ends the first days of a club of two with no successor, and opens new ones at the next join 19ms
+    × ends the first days when nobody they include is left, and opens new ones at once for those who remain (FQ123) 69ms
+    × ends the first days when the one member left hasn't confirmed, and starts the next after the days already made (FQ124) 44ms
+    × frees the leaver's days in the same week, at the next version 53ms
+== A03 a join doesn't settle the first days, through the routes [applied]: CAUGHT BY ANOTHER TEST; exit 1 ['Tests  1 failed | 1 passed | 16 skipped (18)']
+    × joins the person who accepted once the last member approves, and answers each caller as the rows say, and revises the open first days for t… 441ms
+== A04 a leave doesn't settle the first days, through the routes [applied]: CAUGHT BY ANOTHER TEST; exit 1 ['Tests  1 failed | 1 passed | 16 skipped (18)']
+    × joins the person who accepted once the last member approves, and answers each caller as the rows say, and revises the open first days for t… 505ms
+== O01 the restart uses a week a day was confirmed in [db]: CAUGHT; exit 1 ['Tests  4 failed | 13 passed (17)']
+    × ends the first days when nobody they include is left, and opens new ones at once for those who remain (FQ123) 63ms
+    × ends the first days when the one member left hasn't confirmed, and starts the next after the days already made (FQ124) 55ms
+    × starts a restarted club's week the day after its first when nothing was made and the day is the same 43ms
+    × starts a restarted club's week today when every day already made is past 53ms
+== O02 the restart's week ignores the days already made [db]: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × ends the first days when the one member left hasn't confirmed, and starts the next after the days already made (FQ124) 69ms
+== O03 the restart's week ignores the earlier week's start [db]: CAUGHT; exit 1 ['Tests  2 failed | 15 passed (17)']
+    × ends the first days when nobody they include is left, and opens new ones at once for those who remain (FQ123) 97ms
+    × starts a restarted club's week the day after its first when nothing was made and the day is the same 65ms
+== O04 the restart's week never starts today [db]: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × starts a restarted club's week today when every day already made is past 76ms
+== O05 first days open again though some applied [cmd]: CAUGHT BY ANOTHER TEST; exit 1 ['Tests  1 failed | 53 passed (54)']
+    × opens them once: a second opening, a club of one and a club that isn't there are the caller's bugs, and write nothing 46ms
+== F01 a first date ignores its week's start [unit]: CAUGHT; exit 1 ['Tests  1 failed | 34 passed (35)']
+    × is the first such weekday on or after the week's start when that is later 6ms
+== F02 a confirmation doesn't pass its week's start [db]: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × ends the first days when the one member left hasn't confirmed, and starts the next after the days already made (FQ124) 93ms
+== W01 the week is read with every week's rows [db]: CAUGHT; exit 1 ['Tests  1 failed | 16 passed (17)']
+    × proposes the whole week again when a fourth member joins three, and again when one of four leaves 114ms
+== W02 a choice writes its day into the first week [db]: NOT CAUGHT; exit 0 ['Tests  17 passed (17)']
+== M01 a week may move by more than one, or back [mig]: CAUGHT; exit 1 ['Tests  1 failed | 36 passed (37)'] (database made again: 0 0)
+    × moves to its next week by one, with the next version, and never back 15ms
+== M02 a week may move without the version [mig]: CAUGHT; exit 1 ['Tests  1 failed | 36 passed (37)'] (database made again: 0 0)
+    × moves to its next week by one, with the next version, and never back 16ms
+== M03 a week may move as the proposal ends [mig]: CAUGHT; exit 1 ['Tests  1 failed | 36 passed (37)'] (database made again: 0 0)
+    × moves only while the proposal stays open and nobody it includes has confirmed 17ms
+== M04 a week may move after a confirmation [mig]: CAUGHT; exit 1 ['Tests  2 failed | 35 passed (37)'] (database made again: 0 0)
+    × changes the days a member takes only with a new week, while nobody has confirmed (0013; FQ102) 31ms
+    × moves only while the proposal stays open and nobody it includes has confirmed 25ms
+== M05 the days a member takes change without a new week [mig]: CAUGHT; exit 1 ['Tests  1 failed | 36 passed (37)'] (database made again: 0 0)
+    × changes the days a member takes only with a new week, while nobody has confirmed (0013; FQ102) 14ms
+== M06 a row is written into any week [mig]: CAUGHT; exit 1 ['Tests  1 failed | 36 passed (37)'] (database made again: 0 0)
+    × writes, changes and deletes a member's days only in the current week 24ms
+== M07 an earlier week's row may be changed [mig]: CAUGHT; exit 1 ['Tests  1 failed | 36 passed (37)'] (database made again: 0 0)
+    × writes, changes and deletes a member's days only in the current week 21ms
+== M08 a member's days are counted across weeks [mig]: CAUGHT; exit 1 ['Tests  4 failed | 33 passed (37)'] (database made again: 0 0)
+    × confirms the days a member holds in the current week, whoever held them in an earlier one 14ms
+    × counts a member's days in the current week alone 18ms
+    × takes no day another member confirmed in a later week, as in the first 11ms
+    × writes, changes and deletes a member's days only in the current week 26ms
+== M09 a confirmation reads the days held in every week [mig]: CAUGHT; exit 1 ['Tests  2 failed | 35 passed (37)'] (database made again: 0 0)
+    × confirms the days a member holds in the current week, whoever held them in an earlier one 23ms
+    × takes no day another member confirmed in a later week, as in the first 18ms
+== M10 a contest is read across weeks [mig]: CAUGHT; exit 1 ['Tests  2 failed | 35 passed (37)'] (database made again: 0 0)
+    × confirms the days a member holds in the current week, whoever held them in an earlier one 19ms
+    × takes no day another member confirmed in a later week, as in the first 18ms
+== M11 a day joins the week as a hold of an earlier week [mig]: CAUGHT; exit 1 ['Tests  1 failed | 36 passed (37)'] (database made again: 0 0)
+    × confirms the days a member holds in the current week, whoever held them in an earlier one 28ms
+== J01 the judge takes any state and version after a leave [judge]: CAUGHT; exit 1 ['Tests  3 failed | 24 passed (27)']
+    × asks a revision at the next version when nobody had confirmed, and their end with one member left 11ms
+    × asks nothing to move once a day is confirmed and someone who hasn't confirmed stays (T33) 1ms
+    × asks them applied when only confirmed members stay, and ended when the one left hasn't confirmed 1ms
+== J02 the judge asks a version to move though nothing changed [judge]: CAUGHT; exit 1 ['Tests  4 failed | 23 passed (27)']
+    × asks nothing to move once a day is confirmed and someone who hasn't confirmed stays (T33) 10ms
+    × catches a leave that adds a member, moves a confirmation or changes a day, whatever it does to the state 2ms
+    × catches an earlier week's row that changed, and a week before that isn't kept (0013) 1ms
+    × catches an ended proposal given a successor, and one whose days per member moved without a revision 1ms
+== J03 the judge asks first days nobody is left in to apply [judge]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × asks them ended when nobody they include is left, with new ones for two or more who remain (FQ123) 11ms
+== J04 the judge takes a successor [judge]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × catches an ended proposal given a successor, and one whose days per member moved without a revision 12ms
+== J05 the judge takes new first days for one member [judge]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × asks them ended when nobody they include is left, with new ones for two or more who remain (FQ123) 9ms
+== J06 the judge takes any members [judge]: CAUGHT; exit 1 ['Tests  2 failed | 25 passed (27)']
+    × asks a join for the same, the other way, and for the new member in it (firstDaysJoinProblems) 2ms
+    × catches a leave that adds a member, moves a confirmation or changes a day, whatever it does to the state 10ms
+== J07 the judge takes a confirmation that moved [judge]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × catches a leave that adds a member, moves a confirmation or changes a day, whatever it does to the state 10ms
+== J08 the judge takes any number of days each [judge]: CAUGHT; exit 1 ['Tests  2 failed | 25 passed (27)']
+    × asks a leave for a new week for the three who stay, with the week of four kept whole 2ms
+    × catches an ended proposal given a successor, and one whose days per member moved without a revision 10ms
+== J09 the judge takes any week [judge]: CAUGHT; exit 1 ['Tests  2 failed | 25 passed (27)']
+    × asks a leave for a new week for the three who stay, with the week of four kept whole 2ms
+    × catches a leave that adds a member, moves a confirmation or changes a day, whatever it does to the state 9ms
+== J10 the judge takes a changed earlier week [judge]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × catches an earlier week's row that changed, and a week before that isn't kept (0013) 9ms
+== J11 the judge takes a member's days changed by a revision that moves nobody [judge]: CAUGHT; exit 1 ['Tests  2 failed | 25 passed (27)']
+    × asks the new member two proposed days nobody holds, and every other row as it was 1ms
+    × catches a leave that adds a member, moves a confirmation or changes a day, whatever it does to the state 13ms
+== J12 the judge takes a new member with the wrong days [judge]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × asks the new member two proposed days nobody holds, and every other row as it was 8ms
+== J13 the judge takes a new member given a held day [judge]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × asks the new member two proposed days nobody holds, and every other row as it was 10ms
+== J14 the judge takes a week before that isn't kept [judge]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × asks a leave for a new week for the three who stay, with the week of four kept whole 8ms
+== J15 the judge takes a new week's day for someone who left [judge]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × asks a leave for a new week for the three who stay, with the week of four kept whole 12ms
+== J16 the judge takes a member short of days in a new week [judge]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × asks a leave for a new week for the three who stay, with the week of four kept whole 9ms
+== J17 the judge takes a day proposed twice [judge]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × asks a leave for a new week for the three who stay, with the week of four kept whole 10ms
+== J18 the judge takes any version after a join [judge]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × asks a join for the same, the other way, and for the new member in it (firstDaysJoinProblems) 9ms
+== J19 the judge revises for a join once a day is confirmed [judge]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × asks a join for the same, the other way, and for the new member in it (firstDaysJoinProblems) 11ms
+== J20 the judge takes new first days beside open ones [judge]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × asks the new member two proposed days nobody holds, and every other row as it was 9ms
+== J21 the judge asks no new first days of a restart [judge]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × asks new first days of the join that restarts a club whose first days ended, and of no other 8ms
+== J22 the judge takes any new first days for a restart [judge]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × asks new first days of the join that restarts a club whose first days ended, and of no other 8ms
+== J23 the judge takes a join that changed an ended proposal [judge]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × asks new first days of the join that restarts a club whose first days ended, and of no other 8ms
+== J24 the judge restarts a club whose first days applied [judge]: CAUGHT; exit 1 ['Tests  1 failed | 26 passed (27)']
+    × asks new first days of the join that restarts a club whose first days ended, and of no other 8ms
+== P01 the world reads no earlier week [applied]: CAUGHT BY ANOTHER TEST; exit 1 ['Tests  1 failed | 1 passed | 16 skipped (18)']
+    × joins the person who accepted once the last member approves, and answers each caller as the rows say, and revises the open first days for t… 264ms
+== P02 the world reads every week as the current one [applied]: CAUGHT BY ANOTHER TEST; exit 1 ['Tests  1 failed | 1 passed | 16 skipped (18)']
+    × joins the person who accepted once the last member approves, and answers each caller as the rows say, and revises the open first days for t… 260ms
+restored: ''

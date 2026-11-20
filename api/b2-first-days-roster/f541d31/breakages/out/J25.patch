@@ -1,0 +1,14 @@
+diff --git a/tests/src/privacy/leave.ts b/tests/src/privacy/leave.ts
+index 617855a3..054c2181 100644
+--- a/tests/src/privacy/leave.ts
++++ b/tests/src/privacy/leave.ts
+@@ -316,8 +316,7 @@ export function firstDaysProblems(
+       fresh.length !== 1 ||
+       next?.[1].state !== "open" ||
+       next[1].reason !== "activation" ||
+-      members.join() !== stayed.join() ||
+-      next[1].members.some((member) => member.confirmed)
++      members.join() !== stayed.join()
+     ) {
+       problems.push("no new first days are open for exactly the members who remain (FQ123)");
+     }

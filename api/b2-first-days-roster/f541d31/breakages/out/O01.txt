@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/db/first-days-roster.test.ts (18 tests | 4 failed) 1685ms
+   ❯ a leave once a day is confirmed (FQ102) (7)
+     × ends the first days when the one member left hasn't confirmed, and starts the next after the days already made (FQ124) 64ms
+     × starts a restarted club's week the day after its first when nothing was made and the day is the same 47ms
+     × starts a restarted club's week today when every day already made is past 44ms
+     × ends the first days when nobody they include is left, and opens new ones at once for those who remain (FQ123) 59ms
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 14 passed (18)
+   Start at  06:21:40
+   Duration  2.35s (tests 83%, import 12%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a leave once a day is confirmed (FQ102) > ends the first days when the one member left hasn't confirmed, and starts the next after the days already made (FQ124)
+ FAIL  src/db/first-days-roster.test.ts > a leave once a day is confirmed (FQ102) > starts a restarted club's week the day after its first when nothing was made and the day is the same
+ FAIL  src/db/first-days-roster.test.ts > a leave once a day is confirmed (FQ102) > starts a restarted club's week today when every day already made is past
+ FAIL  src/db/first-days-roster.test.ts > a leave once a day is confirmed (FQ102) > ends the first days when nobody they include is left, and opens new ones at once for those who remain (FQ123)
+PostgresError: app.schedule_proposal_days: monday is confirmed, and a confirmed day is taken (FQ48)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ openFirstDays ../packages/domain/src/schedule/open.ts:155:22
+    153|       VALUES (${proposalId}, ${clubId}, ${interval})`;
+    154|     for (const weekday of days) {
+    155|       await bound(tx)`
+       |                      ^
+    156|         INSERT INTO app.schedule_proposal_days (proposal_id, interval_…
+    157|         VALUES (${proposalId}, ${interval}, ${weekday}::app.weekday, t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+

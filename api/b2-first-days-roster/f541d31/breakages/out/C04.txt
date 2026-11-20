@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/packages/domain
+
+ ❯ src/schedule/roster-change.test.ts (23 tests | 1 failed) 30ms
+   ❯ a change of members once a day is confirmed (FQ100, FQ102) (5)
+     × ends them when nobody they include is left, and opens new ones at once for two or more (FQ123) 10ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 35 passed (36)
+   Start at  06:20:47
+   Duration  852ms (tests 93%, import 4%, transform 2%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/roster-change.test.ts > a change of members once a day is confirmed (FQ100, FQ102) > ends them when nobody they include is left, and opens new ones at once for two or more (FQ123)
+AssertionError: expected { kind: 'apply' } to deeply equal { kind: 'end', reopen: true }
+
+- Expected
++ Received
+
+  {
+-   "kind": "end",
+-   "reopen": true,
++   "kind": "apply",
+  }
+
+ ❯ src/schedule/roster-change.test.ts:258:90
+    256|       member("maya", ["tuesday", "friday"], { active: false }),
+    257|     ];
+    258|     expect(firstDaysAfter(facts(["sam", "debby"], { daysPerMember: 2, …
+       |                                                                                          ^
+    259|       kind: "end",
+    260|       reopen: true,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

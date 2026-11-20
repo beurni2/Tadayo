@@ -1,0 +1,293 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/db/first-days-roster.test.ts (18 tests | 13 failed) 1798ms
+   ❯ a join before any day is confirmed (FQ55, FQ102) (5)
+     × proposes the whole week again when a fourth member joins three, and again when one of four leaves 139ms
+   ❯ a leave before any day is confirmed (FQ102) (2)
+     × frees the leaver's days in the same week, at the next version 61ms
+     × ends the first days of a club of two with no successor, and opens new ones at the next join 35ms
+   ❯ a leave once a day is confirmed (FQ102) (7)
+     × applies the first days when only confirmed members stay, at the leave's own instant 66ms
+     × changes nothing, and no version, when someone who hasn't confirmed stays in a club of two or more 78ms
+     × keeps the leaver's confirmed day taken, with their name and no first date 60ms
+     × ends the first days when the one member left hasn't confirmed, and starts the next after the days already made (FQ124) 42ms
+     × starts a restarted club's week the day after its first when nothing was made and the day is the same 37ms
+     × starts a restarted club's week today when every day already made is past 45ms
+     × ends the first days when nobody they include is left, and opens new ones at once for those who remain (FQ123) 115ms
+   ❯ a confirmation and a leave at once (T1; docs/plans/api-b2-schedule.md, for PR 3) (3)
+     × applies the first days by the leave when the last other confirmation came first 134ms
+     × applies them by the confirmation when the leave came first 219ms
+     × refuses the confirmation of someone whose leave came first 163ms
+
+ Test Files  1 failed (1)
+      Tests  13 failed | 5 passed (18)
+   Start at  06:21:26
+   Duration  2.45s (tests 84%, import 11%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 13 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a join before any day is confirmed (FQ55, FQ102) > proposes the whole week again when a fourth member joins three, and again when one of four leaves
+Error: schedule: a member the proposal has as active isn't among the club's active members
+ ❯ firstDaysAfter ../packages/domain/src/schedule/roster-change.ts:80:11
+     78|   const included = open.members.filter((member) => member.active);
+     79|   if (included.some((member) => !active.includes(member.id))) {
+     80|     throw new Error("schedule: a member the proposal has as active isn…
+       |           ^
+     81|   }
+     82|
+ ❯ settleFirstDays ../packages/domain/src/schedule/settle.ts:130:18
+ ❯ leaveClub ../packages/domain/src/clubs/leave-club.ts:214:3
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ leaving src/db/first-days-roster.test.ts:98:3
+ ❯ src/db/first-days-roster.test.ts:273:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/13]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a leave before any day is confirmed (FQ102) > frees the leaver's days in the same week, at the next version
+Error: schedule: a member the proposal has as active isn't among the club's active members
+ ❯ firstDaysAfter ../packages/domain/src/schedule/roster-change.ts:80:11
+     78|   const included = open.members.filter((member) => member.active);
+     79|   if (included.some((member) => !active.includes(member.id))) {
+     80|     throw new Error("schedule: a member the proposal has as active isn…
+       |           ^
+     81|   }
+     82|
+ ❯ settleFirstDays ../packages/domain/src/schedule/settle.ts:130:18
+ ❯ leaveClub ../packages/domain/src/clubs/leave-club.ts:214:3
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ leaving src/db/first-days-roster.test.ts:98:3
+ ❯ src/db/first-days-roster.test.ts:344:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/13]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a leave before any day is confirmed (FQ102) > ends the first days of a club of two with no successor, and opens new ones at the next join
+Error: schedule: a member the proposal has as active isn't among the club's active members
+ ❯ firstDaysAfter ../packages/domain/src/schedule/roster-change.ts:80:11
+     78|   const included = open.members.filter((member) => member.active);
+     79|   if (included.some((member) => !active.includes(member.id))) {
+     80|     throw new Error("schedule: a member the proposal has as active isn…
+       |           ^
+     81|   }
+     82|
+ ❯ settleFirstDays ../packages/domain/src/schedule/settle.ts:130:18
+ ❯ leaveClub ../packages/domain/src/clubs/leave-club.ts:214:3
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ leaving src/db/first-days-roster.test.ts:98:3
+ ❯ src/db/first-days-roster.test.ts:367:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/13]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a leave once a day is confirmed (FQ102) > applies the first days when only confirmed members stay, at the leave's own instant
+Error: schedule: a member the proposal has as active isn't among the club's active members
+ ❯ firstDaysAfter ../packages/domain/src/schedule/roster-change.ts:80:11
+     78|   const included = open.members.filter((member) => member.active);
+     79|   if (included.some((member) => !active.includes(member.id))) {
+     80|     throw new Error("schedule: a member the proposal has as active isn…
+       |           ^
+     81|   }
+     82|
+ ❯ settleFirstDays ../packages/domain/src/schedule/settle.ts:130:18
+ ❯ leaveClub ../packages/domain/src/clubs/leave-club.ts:214:3
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ leaving src/db/first-days-roster.test.ts:98:3
+ ❯ src/db/first-days-roster.test.ts:418:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/13]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a leave once a day is confirmed (FQ102) > changes nothing, and no version, when someone who hasn't confirmed stays in a club of two or more
+Error: schedule: a member the proposal has as active isn't among the club's active members
+ ❯ firstDaysAfter ../packages/domain/src/schedule/roster-change.ts:80:11
+     78|   const included = open.members.filter((member) => member.active);
+     79|   if (included.some((member) => !active.includes(member.id))) {
+     80|     throw new Error("schedule: a member the proposal has as active isn…
+       |           ^
+     81|   }
+     82|
+ ❯ settleFirstDays ../packages/domain/src/schedule/settle.ts:130:18
+ ❯ leaveClub ../packages/domain/src/clubs/leave-club.ts:214:3
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ leaving src/db/first-days-roster.test.ts:98:3
+ ❯ src/db/first-days-roster.test.ts:442:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/13]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a leave once a day is confirmed (FQ102) > keeps the leaver's confirmed day taken, with their name and no first date
+Error: schedule: a member the proposal has as active isn't among the club's active members
+ ❯ firstDaysAfter ../packages/domain/src/schedule/roster-change.ts:80:11
+     78|   const included = open.members.filter((member) => member.active);
+     79|   if (included.some((member) => !active.includes(member.id))) {
+     80|     throw new Error("schedule: a member the proposal has as active isn…
+       |           ^
+     81|   }
+     82|
+ ❯ settleFirstDays ../packages/domain/src/schedule/settle.ts:130:18
+ ❯ leaveClub ../packages/domain/src/clubs/leave-club.ts:214:3
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ leaving src/db/first-days-roster.test.ts:98:3
+ ❯ src/db/first-days-roster.test.ts:465:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/13]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a leave once a day is confirmed (FQ102) > ends the first days when the one member left hasn't confirmed, and starts the next after the days already made (FQ124)
+Error: schedule: a member the proposal has as active isn't among the club's active members
+ ❯ firstDaysAfter ../packages/domain/src/schedule/roster-change.ts:80:11
+     78|   const included = open.members.filter((member) => member.active);
+     79|   if (included.some((member) => !active.includes(member.id))) {
+     80|     throw new Error("schedule: a member the proposal has as active isn…
+       |           ^
+     81|   }
+     82|
+ ❯ settleFirstDays ../packages/domain/src/schedule/settle.ts:130:18
+ ❯ leaveClub ../packages/domain/src/clubs/leave-club.ts:214:3
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ leaving src/db/first-days-roster.test.ts:98:3
+ ❯ src/db/first-days-roster.test.ts:487:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/13]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a leave once a day is confirmed (FQ102) > starts a restarted club's week the day after its first when nothing was made and the day is the same
+Error: schedule: a member the proposal has as active isn't among the club's active members
+ ❯ firstDaysAfter ../packages/domain/src/schedule/roster-change.ts:80:11
+     78|   const included = open.members.filter((member) => member.active);
+     79|   if (included.some((member) => !active.includes(member.id))) {
+     80|     throw new Error("schedule: a member the proposal has as active isn…
+       |           ^
+     81|   }
+     82|
+ ❯ settleFirstDays ../packages/domain/src/schedule/settle.ts:130:18
+ ❯ leaveClub ../packages/domain/src/clubs/leave-club.ts:214:3
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ leaving src/db/first-days-roster.test.ts:98:3
+ ❯ src/db/first-days-roster.test.ts:549:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/13]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a leave once a day is confirmed (FQ102) > starts a restarted club's week today when every day already made is past
+Error: schedule: a member the proposal has as active isn't among the club's active members
+ ❯ firstDaysAfter ../packages/domain/src/schedule/roster-change.ts:80:11
+     78|   const included = open.members.filter((member) => member.active);
+     79|   if (included.some((member) => !active.includes(member.id))) {
+     80|     throw new Error("schedule: a member the proposal has as active isn…
+       |           ^
+     81|   }
+     82|
+ ❯ settleFirstDays ../packages/domain/src/schedule/settle.ts:130:18
+ ❯ leaveClub ../packages/domain/src/clubs/leave-club.ts:214:3
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ leaving src/db/first-days-roster.test.ts:98:3
+ ❯ src/db/first-days-roster.test.ts:564:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/13]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a leave once a day is confirmed (FQ102) > ends the first days when nobody they include is left, and opens new ones at once for those who remain (FQ123)
+Error: schedule: a member the proposal has as active isn't among the club's active members
+ ❯ firstDaysAfter ../packages/domain/src/schedule/roster-change.ts:80:11
+     78|   const included = open.members.filter((member) => member.active);
+     79|   if (included.some((member) => !active.includes(member.id))) {
+     80|     throw new Error("schedule: a member the proposal has as active isn…
+       |           ^
+     81|   }
+     82|
+ ❯ settleFirstDays ../packages/domain/src/schedule/settle.ts:130:18
+ ❯ leaveClub ../packages/domain/src/clubs/leave-club.ts:214:3
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ leaving src/db/first-days-roster.test.ts:98:3
+ ❯ src/db/first-days-roster.test.ts:583:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/13]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a confirmation and a leave at once (T1; docs/plans/api-b2-schedule.md, for PR 3) > applies the first days by the leave when the last other confirmation came first
+AssertionError: expected 'Error: schedule: a member the proposa…' to match object { Object (club_id) }
+
+- Expected:
+{
+  "club_id": "club_nYVgk8drariiB31mR-IekA",
+}
+
++ Received:
+"Error: schedule: a member the proposal has as active isn't among the club's active members"
+
+ ❯ src/db/first-days-roster.test.ts:668:26
+    666|       // Maya's confirmation saw Alex still choosing, and left the fir…
+    667|       expect(await confirmed).toMatchObject({ state: "open", myState: …
+    668|       expect(await left).toMatchObject({ club_id: s.c.club });
+       |                          ^
+    669|       expect(await stateOf(s.proposal)).toEqual({ state: "applied", ve…
+    670|     },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/13]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a confirmation and a leave at once (T1; docs/plans/api-b2-schedule.md, for PR 3) > applies them by the confirmation when the leave came first
+AssertionError: expected 'Error: schedule: a member the proposa…' to match object { Object (club_id) }
+
+- Expected:
+{
+  "club_id": "club_yruC0zWfJ6b0c1bIVt_GUw",
+}
+
++ Received:
+"Error: schedule: a member the proposal has as active isn't among the club's active members"
+
+ ❯ src/db/first-days-roster.test.ts:686:24
+    684|       await hold.release();
+    685|     }
+    686|     expect(await left).toMatchObject({ club_id: s.c.club });
+       |                        ^
+    687|     // The leave moved no version (Maya hadn't confirmed), so Maya's r…
+    688|     expect(await confirmed).toMatchObject({ state: "applied", myState:…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/13]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a confirmation and a leave at once (T1; docs/plans/api-b2-schedule.md, for PR 3) > refuses the confirmation of someone whose leave came first
+AssertionError: expected 'Error: schedule: a member the proposa…' to match object { Object (club_id) }
+
+- Expected:
+{
+  "club_id": "club_JvAgLCwdoEaV8EntkwLL4A",
+}
+
++ Received:
+"Error: schedule: a member the proposal has as active isn't among the club's active members"
+
+ ❯ src/db/first-days-roster.test.ts:705:24
+    703|       await hold.release();
+    704|     }
+    705|     expect(await left).toMatchObject({ club_id: s.c.club });
+       |                        ^
+    706|     expect(await confirmed).toBe("NOT_FOUND");
+    707|     expect(await stateOf(s.proposal)).toEqual({ state: "open", version…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/13]⎯
+

@@ -1,0 +1,64 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/privacy/leave.test.ts (27 tests | 2 failed) 38ms
+   ❯ what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) (12)
+     × catches a leave that adds a member, moves a confirmation or changes a day, whatever it does to the state 9ms
+     ❯ across four members and three, where the days each member has change (FQ102) (2)
+       × asks a leave for a new week for the three who stay, with the week of four kept whole 2ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 25 passed (27)
+   Start at  06:24:19
+   Duration  557ms (import 65%, tests 17%, transform 16%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) > catches a leave that adds a member, moves a confirmation or changes a day, whatever it does to the state
+AssertionError: expected [] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+- [
+-   "the first days are on week 2, not week 1",
+- ]
++ []
+
+ ❯ src/privacy/leave.test.ts:566:68
+    564|       }),
+    565|     ).toEqual(["a member's days changed though nobody is moved (T6)"]);
+    566|     expect(judged(open, { ...open, version: 2, weekRevision: 2 })).toE…
+       |                                                                    ^
+    567|       "the first days are on week 2, not week 1",
+    568|     ]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) > across four members and three, where the days each member has change (FQ102) > asks a leave for a new week for the three who stay, with the week of four kept whole
+AssertionError: expected [ …(6) ] to deeply equal [ …(7) ]
+
+- Expected
++ Received
+
+@@ -1,8 +1,7 @@
+  [
+    "each member has 1 days, not 2",
+-   "the first days are on week 1, not week 2",
+    "the week before isn't kept as it was",
+    "the new week gives a day to someone who isn't an active member",
+    "itv_ana doesn't hold 2 proposed days in the new week",
+    "itv_ben doesn't hold 2 proposed days in the new week",
+    "itv_cleo doesn't hold 2 proposed days in the new week",
+
+ ❯ src/privacy/leave.test.ts:630:45
+    628|         }),
+    629|       ).toEqual(["the new week proposes a day twice"]);
+    630|       expect(leave({ ...was, version: 2 })).toEqual([
+       |                                             ^
+    631|         "each member has 1 days, not 2",
+    632|         "the first days are on week 1, not week 2",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

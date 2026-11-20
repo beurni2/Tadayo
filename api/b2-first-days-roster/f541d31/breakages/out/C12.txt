@@ -1,0 +1,41 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/packages/domain
+
+ ❯ src/schedule/roster-change.test.ts (23 tests | 1 failed) 24ms
+   ❯ a join before any day is confirmed (FQ55, FQ102) (6)
+     × gives the new member the first free days from Monday when someone holds the days of their place 9ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 35 passed (36)
+   Start at  06:20:59
+   Duration  946ms (tests 93%, import 4%, transform 2%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/roster-change.test.ts > a join before any day is confirmed (FQ55, FQ102) > gives the new member the first free days from Monday when someone holds the days of their place
+AssertionError: expected [ { id: 'alex', …(1) } ] to deeply equal [ { id: 'alex', days: [ …(2) ] } ]
+
+- Expected
++ Received
+
+  [
+    {
+      "days": [
+        "wednesday",
+-       "friday",
+      ],
+      "id": "alex",
+    },
+  ]
+
+ ❯ src/schedule/roster-change.test.ts:56:53
+     54|     const one = [member("ben", ["monday", "thursday"]), member("maya",…
+     55|     const kept = firstDaysAfter(facts(["ben", "maya", "alex"], { daysP…
+     56|     expect(kept.kind === "revise" && kept.proposed).toEqual([{ id: "al…
+       |                                                     ^
+     57|   });
+     58|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

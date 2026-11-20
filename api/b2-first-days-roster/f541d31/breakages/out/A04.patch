@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/clubs/leave-club.ts b/packages/domain/src/clubs/leave-club.ts
+index 1a94494e..a5a6dbc5 100644
+--- a/packages/domain/src/clubs/leave-club.ts
++++ b/packages/domain/src/clubs/leave-club.ts
+@@ -211,7 +211,6 @@ export async function leaveClub(
+   await bound(tx)`UPDATE app.clubs SET roster_version = roster_version + 1 WHERE id = ${clubId}`;
+ 
+   // 8. The club's first days.
+-  await settleFirstDays(tx, at, clubId);
+ 
+   // 9. The answer.
+   return completeReceipt(tx, receipt, render({ clubId, leftAt: at, contributions }));

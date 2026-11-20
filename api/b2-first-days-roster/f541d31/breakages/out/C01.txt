@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/packages/domain
+
+ ❯ src/schedule/roster-change.test.ts (23 tests | 1 failed) 25ms
+   ❯ a club with no open first days (2)
+     × does nothing once the first days have applied, or before any were opened 7ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 35 passed (36)
+   Start at  06:20:42
+   Duration  991ms (tests 93%, import 4%, transform 2%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/roster-change.test.ts > a club with no open first days > does nothing once the first days have applied, or before any were opened
+AssertionError: expected { kind: 'open' } to deeply equal { kind: 'nothing' }
+
+- Expected
++ Received
+
+  {
+-   "kind": "nothing",
++   "kind": "open",
+  }
+
+ ❯ src/schedule/roster-change.test.ts:275:65
+    273|
+    274|   it("does nothing once the first days have applied, or before any wer…
+    275|     expect(firstDaysAfter(facts(["ben", "maya", "sam"], null))).toEqua…
+       |                                                                 ^
+    276|     expect(firstDaysAfter(facts(["ben"], null))).toEqual({ kind: "noth…
+    277|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

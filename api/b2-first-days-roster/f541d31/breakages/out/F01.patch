@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/schedule/first-date.ts b/packages/domain/src/schedule/first-date.ts
+index ad1d1843..f7ca1ed6 100644
+--- a/packages/domain/src/schedule/first-date.ts
++++ b/packages/domain/src/schedule/first-date.ts
+@@ -30,7 +30,6 @@ export function firstDate(
+   // The weekday's first date on or after the confirmation's own local date, then week by week. Its
+   // 7 AM is past the lead by the third at the latest: two weeks is more than 24 hours and any clock change.
+   let date = confirmedAt.toZonedDateTimeISO(club).toPlainDate();
+-  if (notBefore !== undefined && Temporal.PlainDate.compare(notBefore, date) > 0) date = notBefore;
+   date = date.add({ days: (isoDay - date.dayOfWeek + 7) % 7 });
+   for (let week = 0; week < 3; week += 1) {
+     if (resolveCivilTime(date, REVEAL_TIME, club).epochNanoseconds >= earliest) return date;

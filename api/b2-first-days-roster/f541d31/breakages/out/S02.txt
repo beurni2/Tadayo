@@ -1,0 +1,34 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/db/first-days-roster.test.ts (18 tests | 1 failed) 1791ms
+   ❯ a join before any day is confirmed (FQ55, FQ102) (5)
+     × gives a new member the first free days when someone holds the days of their place 71ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+   Start at  06:21:05
+   Duration  2.46s (tests 83%, import 11%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a join before any day is confirmed (FQ55, FQ102) > gives a new member the first free days when someone holds the days of their place
+Error: schedule: the week has no free day left for a new member
+ ❯ ../packages/domain/src/schedule/roster-change.ts:114:36
+    112|       days.push(weekday);
+    113|     }
+    114|     if (days.length !== per) throw new Error("schedule: the week has n…
+       |                                    ^
+    115|     return { id, days: fromMonday(days) };
+    116|   });
+ ❯ firstDaysAfter ../packages/domain/src/schedule/roster-change.ts:104:26
+ ❯ settleFirstDays ../packages/domain/src/schedule/settle.ts:130:18
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:248:8
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:300:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ join src/db/first-days-roster.test.ts:90:18
+ ❯ src/db/first-days-roster.test.ts:234:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,59 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/privacy/leave.test.ts (27 tests | 2 failed) 36ms
+   ❯ what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) (12)
+     × catches a leave that adds a member, moves a confirmation or changes a day, whatever it does to the state 8ms
+     ❯ across four members and three, where the days each member has change (FQ102) (2)
+       × asks a join for the same, the other way, and for the new member in it (firstDaysJoinProblems) 1ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 25 passed (27)
+   Start at  06:24:15
+   Duration  568ms (import 66%, transform 17%, tests 16%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) > catches a leave that adds a member, moves a confirmation or changes a day, whatever it does to the state
+AssertionError: expected [] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+- [
+-   "the first days' members aren't those they had, with exactly the members a revision adds (FQ100)",
+- ]
++ []
+
+ ❯ src/privacy/leave.test.ts:541:108
+    539|     const was = days(["itv_ana"], { days: WEEK_OF_THREE });
+    540|     expect(judged(was, was)).toEqual([]);
+    541|     expect(judged(was, { ...was, members: [...was.members, { interval:…
+       |                                                                                                            ^
+    542|       "the first days' members aren't those they had, with exactly the…
+    543|     ]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) > across four members and three, where the days each member has change (FQ102) > asks a join for the same, the other way, and for the new member in it (firstDaysJoinProblems)
+AssertionError: expected [] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+- [
+-   "the first days' members aren't those they had, with exactly the members a revision adds (FQ100)",
+- ]
++ []
+
+ ❯ src/privacy/leave.test.ts:652:25
+    650|       });
+    651|       expect(join(withDan(now))).toEqual([]);
+    652|       expect(join(now)).toEqual([
+       |                         ^
+    653|         "the first days' members aren't those they had, with exactly t…
+    654|       ]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

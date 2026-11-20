@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/privacy/matrix.test.ts (18 tests | 1 failed | 16 skipped) 1019ms
+   ❯ a roster applied through the app (spec 04; T7, T8, T33; FQ65) (2)
+     × joins the person who accepted once the last member approves, and answers each caller as the rows say, and revises the open first days for t… 301ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed | 16 skipped (18)
+   Start at  06:21:35
+   Duration  2.03s (tests 59%, import 33%, transform 8%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > a roster applied through the app (spec 04; T7, T8, T33; FQ65) > joins the person who accepted once the last member approves, and answers each caller as the rows say, and revises the open first days for t…
+AssertionError: expected undefined to match object { version: 2 }
+
+- Expected:
+{
+  "version": 2,
+}
+
++ Received:
+undefined
+
+ ❯ src/privacy/matrix.test.ts:1936:31
+    1934|           (JSON.parse(answer.body) as { proposal?: { version?: unknown…
+    1935|         const revised = await ask(joiner, spec("getSchedule", { club_i…
+    1936|         expect(mine(revised)).toMatchObject({ version: 2 });
+       |                               ^
+    1937|         expect((mine(revised)?.my_days as unknown[]).length).toBe(1);
+    1938|         await ask(proposer, spec("getSchedule", { club_id: w.club }), …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

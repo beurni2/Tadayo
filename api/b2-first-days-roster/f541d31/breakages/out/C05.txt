@@ -1,0 +1,58 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/packages/domain
+
+ ❯ src/schedule/roster-change.test.ts (23 tests | 2 failed) 38ms
+   ❯ a change of members once a day is confirmed (FQ100, FQ102) (5)
+     × includes no new member and changes nothing on a join 10ms
+     × changes nothing when a leave leaves a member who hasn't confirmed, in a club of two or more 2ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  2 failed | 34 passed (36)
+   Start at  06:20:48
+   Duration  825ms (tests 93%, import 4%, transform 2%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/roster-change.test.ts > a change of members once a day is confirmed (FQ100, FQ102) > includes no new member and changes nothing on a join
+AssertionError: expected { kind: 'apply' } to deeply equal { kind: 'nothing' }
+
+- Expected
++ Received
+
+  {
+-   "kind": "nothing",
++   "kind": "apply",
+  }
+
+ ❯ src/schedule/roster-change.test.ts:209:91
+    207|   it("includes no new member and changes nothing on a join", () => {
+    208|     const members = [confirmed("ben", ["monday", "thursday"]), member(…
+    209|     expect(firstDaysAfter(facts(["ben", "maya", "alex"], { daysPerMemb…
+       |                                                                                           ^
+    210|   });
+    211|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/schedule/roster-change.test.ts > a change of members once a day is confirmed (FQ100, FQ102) > changes nothing when a leave leaves a member who hasn't confirmed, in a club of two or more
+AssertionError: expected { kind: 'apply' } to deeply equal { kind: 'nothing' }
+
+- Expected
++ Received
+
+  {
+-   "kind": "nothing",
++   "kind": "apply",
+  }
+
+ ❯ src/schedule/roster-change.test.ts:232:83
+    230|       member("alex", ["wednesday", "saturday"], { active: false }),
+    231|     ];
+    232|     expect(firstDaysAfter(facts(["ben", "maya"], { daysPerMember: 2, m…
+       |                                                                                   ^
+    233|     // The confirmed member is the one who left: Maya and Alex go on, …
+    234|     const left = [
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

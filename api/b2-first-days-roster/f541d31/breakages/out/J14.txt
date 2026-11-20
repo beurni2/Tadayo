@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/privacy/leave.test.ts (27 tests | 1 failed) 31ms
+   ❯ what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) (12)
+     ❯ across four members and three, where the days each member has change (FQ102) (2)
+       × asks a leave for a new week for the three who stay, with the week of four kept whole 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+   Start at  06:24:25
+   Duration  635ms (import 72%, transform 15%, tests 11%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) > across four members and three, where the days each member has change (FQ102) > asks a leave for a new week for the three who stay, with the week of four kept whole
+AssertionError: expected [] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+- [
+-   "the week before isn't kept as it was",
+- ]
++ []
+
+ ❯ src/privacy/leave.test.ts:617:57
+    615|         firstDaysProblems(four([], [[P, was]]), four(["itv_dan"], [[P,…
+    616|       expect(leave(now)).toEqual([]);
+    617|       expect(leave({ ...now, earlier: kept.slice(1) })).toEqual(["the …
+       |                                                         ^
+    618|       expect(leave({ ...now, days: [...NEW_WEEK_OF_THREE, row("itv_dan…
+    619|         "the new week gives a day to someone who isn't an active membe…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

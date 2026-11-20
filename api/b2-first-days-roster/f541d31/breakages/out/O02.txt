@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/db/first-days-roster.test.ts (18 tests | 1 failed) 1759ms
+   ❯ a leave once a day is confirmed (FQ102) (7)
+     × ends the first days when the one member left hasn't confirmed, and starts the next after the days already made (FQ124) 50ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+   Start at  06:21:43
+   Duration  2.39s (tests 83%, import 12%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a leave once a day is confirmed (FQ102) > ends the first days when the one member left hasn't confirmed, and starts the next after the days already made (FQ124)
+PostgresError: app.schedule_versions: a version from 2026-11-12 would move a day already announced (FQ61)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ openFirstDays ../packages/domain/src/schedule/open.ts:135:20
+    133|     effectiveFrom = start.toString();
+    134|     scheduleVersionId = newId("sched");
+    135|     await bound(tx)`
+       |                    ^
+    136|       INSERT INTO app.schedule_versions (id, club_id, effective_from, …
+    137|       VALUES (${scheduleVersionId}, ${clubId}, ${effectiveFrom}::pg_ca…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

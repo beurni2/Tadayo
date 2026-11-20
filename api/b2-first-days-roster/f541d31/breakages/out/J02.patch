@@ -1,0 +1,12 @@
+diff --git a/tests/src/privacy/leave.ts b/tests/src/privacy/leave.ts
+index 617855a3..58bb5e6c 100644
+--- a/tests/src/privacy/leave.ts
++++ b/tests/src/privacy/leave.ts
+@@ -289,7 +289,6 @@ export function firstDaysProblems(
+   else if (stayed.length < 2) state = "superseded";
+   else {
+     state = "open";
+-    moved = false;
+   }
+   const version = was.version + (moved ? 1 : 0);
+   if (now.state !== state || now.version !== version) {

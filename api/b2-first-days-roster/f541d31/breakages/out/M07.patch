@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0013_first_days_revision.sql b/db/migrations/0013_first_days_revision.sql
+index 76d0bd9e..ab0a1770 100644
+--- a/db/migrations/0013_first_days_revision.sql
++++ b/db/migrations/0013_first_days_revision.sql
+@@ -107,7 +107,7 @@ BEGIN
+     RAISE EXCEPTION 'app.schedule_proposal_days: holds change only while their proposal is open'
+       USING ERRCODE = 'integrity_constraint_violation';
+   END IF;
+-  IF the_week <> proposal.week_revision OR (TG_OP = 'UPDATE' AND OLD.week_revision <> proposal.week_revision) THEN
++  IF the_week <> proposal.week_revision AND TG_OP <> 'UPDATE' THEN
+     RAISE EXCEPTION 'app.schedule_proposal_days: a day is written, changed or deleted only in its proposal''s current week, % (FQ102)',
+       proposal.week_revision
+       USING ERRCODE = 'integrity_constraint_violation';

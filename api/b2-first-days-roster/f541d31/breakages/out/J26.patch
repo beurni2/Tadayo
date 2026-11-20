@@ -1,0 +1,12 @@
+diff --git a/tests/src/privacy/leave.ts b/tests/src/privacy/leave.ts
+index 617855a3..f1146d03 100644
+--- a/tests/src/privacy/leave.ts
++++ b/tests/src/privacy/leave.ts
+@@ -315,7 +315,6 @@ export function firstDaysProblems(
+     if (
+       fresh.length !== 1 ||
+       next?.[1].state !== "open" ||
+-      next[1].reason !== "activation" ||
+       members.join() !== stayed.join() ||
+       next[1].members.some((member) => member.confirmed)
+     ) {

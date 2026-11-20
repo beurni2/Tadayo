@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/schedule/settle.ts b/packages/domain/src/schedule/settle.ts
+index 49992524..3014628a 100644
+--- a/packages/domain/src/schedule/settle.ts
++++ b/packages/domain/src/schedule/settle.ts
+@@ -152,7 +152,6 @@ export async function settleFirstDays(
+       UPDATE app.schedule_proposals
+          SET state = 'superseded', closed_at = ${at}::pg_catalog.timestamptz, version = version + 1
+        WHERE id = ${proposalId}`;
+-    if (change.reopen) await openFirstDays(tx, { sample: () => Promise.resolve(at) }, clubId);
+     return change.kind;
+   }
+ 

@@ -1,0 +1,46 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/db/first-days-roster.test.ts (18 tests | 1 failed) 2003ms
+   ❯ a leave once a day is confirmed (FQ102) (7)
+     × starts a restarted club's week today when every day already made is past 69ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+   Start at  06:21:50
+   Duration  2.66s (tests 85%, import 11%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a leave once a day is confirmed (FQ102) > starts a restarted club's week today when every day already made is past
+AssertionError: expected [ …(2) ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+    {
+      "effective_from": "2026-11-11",
+    },
+    {
+-     "effective_from": "2026-12-21",
++     "effective_from": "2026-12-11",
+    },
+  ]
+
+ ❯ src/db/first-days-roster.test.ts:571:24
+    569|         SELECT effective_from::text AS effective_from FROM app.schedul…
+    570|          WHERE club_id = ${c.club} ORDER BY effective_from`;
+    571|       expect(versions).toEqual([{ effective_from: "2026-11-11" }, { ef…
+       |                        ^
+    572|     });
+    573|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/first-days-roster.test.ts:559:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/privacy/leave.test.ts (27 tests | 1 failed) 37ms
+   ❯ what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) (12)
+     ❯ a join that moves nobody (firstDaysJoinProblems; FQ55, FQ102) (2)
+       × asks new first days of the join that restarts a club whose first days ended, and of no other 9ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+   Start at  06:24:36
+   Duration  654ms (import 70%, transform 15%, tests 13%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) > a join that moves nobody (firstDaysJoinProblems; FQ55, FQ102) > asks new first days of the join that restarts a club whose first days ended, and of no other
+AssertionError: expected [] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+- [
+-   "a join changed a proposal that wasn't open first days",
+- ]
++ []
+
+ ❯ src/privacy/leave.test.ts:742:9
+    740|           ["spr_next", next],
+    741|         ]),
+    742|       ).toEqual(["a join changed a proposal that wasn't open first day…
+       |         ^
+    743|       // First days that applied aren't restarted: the week for the ne…
+    744|       const applied = days(["itv_ana", "itv_ben"], { state: "applied",…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

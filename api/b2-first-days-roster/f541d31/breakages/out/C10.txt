@@ -1,0 +1,70 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/packages/domain
+
+ ❯ src/schedule/roster-change.test.ts (23 tests | 2 failed) 27ms
+   ❯ a join before any day is confirmed (FQ55, FQ102) (6)
+     × gives the new member the first free days from Monday when someone holds the days of their place 9ms
+     × counts a contested day as held, and a day only someone who left held as free 2ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  2 failed | 34 passed (36)
+   Start at  06:20:56
+   Duration  956ms (tests 94%, import 3%, transform 1%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/roster-change.test.ts > a join before any day is confirmed (FQ55, FQ102) > gives the new member the first free days from Monday when someone holds the days of their place
+AssertionError: expected [ { id: 'alex', days: [ …(2) ] } ] to deeply equal [ { id: 'alex', …(1) } ]
+
+- Expected
++ Received
+
+  [
+    {
+      "days": [
+-       "tuesday",
+-       "friday",
++       "wednesday",
++       "saturday",
+      ],
+      "id": "alex",
+    },
+  ]
+
+ ❯ src/schedule/roster-change.test.ts:52:57
+     50|     const change = firstDaysAfter(facts(["ben", "maya", "alex"], { day…
+     51|     expect(change).toMatchObject({ kind: "revise", newWeek: false });
+     52|     expect(change.kind === "revise" && change.proposed).toEqual([{ id:…
+       |                                                         ^
+     53|     // One of the two is held: the free one is kept, the other is the …
+     54|     const one = [member("ben", ["monday", "thursday"]), member("maya",…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/schedule/roster-change.test.ts > a join before any day is confirmed (FQ55, FQ102) > counts a contested day as held, and a day only someone who left held as free
+AssertionError: expected [ { id: 'nina', days: [ 'friday' ] } ] to deeply equal [ { id: 'nina', days: [ 'tuesday' ] } ]
+
+- Expected
++ Received
+
+  [
+    {
+      "days": [
+-       "tuesday",
++       "friday",
+      ],
+      "id": "nina",
+    },
+  ]
+
+ ❯ src/schedule/roster-change.test.ts:71:57
+     69|     // The fifth place's day is Friday, which Debby holds: the first f…
+     70|     // only Sam held.
+     71|     expect(change.kind === "revise" && change.proposed).toEqual([{ id:…
+       |                                                         ^
+     72|   });
+     73|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

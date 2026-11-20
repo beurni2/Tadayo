@@ -1,0 +1,41 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/packages/domain
+
+ ❯ src/schedule/roster-change.test.ts (23 tests | 1 failed) 29ms
+   ❯ a join before any day is confirmed (FQ55, FQ102) (6)
+     × counts a contested day as held, and a day only someone who left held as free 9ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 35 passed (36)
+   Start at  06:20:57
+   Duration  849ms (tests 93%, import 3%, transform 2%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/roster-change.test.ts > a join before any day is confirmed (FQ55, FQ102) > counts a contested day as held, and a day only someone who left held as free
+AssertionError: expected [ Array(1) ] to deeply equal [ { id: 'nina', days: [ 'tuesday' ] } ]
+
+- Expected
++ Received
+
+  [
+    {
+      "days": [
+-       "tuesday",
++       "thursday",
+      ],
+      "id": "nina",
+    },
+  ]
+
+ ❯ src/schedule/roster-change.test.ts:71:57
+     69|     // The fifth place's day is Friday, which Debby holds: the first f…
+     70|     // only Sam held.
+     71|     expect(change.kind === "revise" && change.proposed).toEqual([{ id:…
+       |                                                         ^
+     72|   });
+     73|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/settle.ts b/packages/domain/src/schedule/settle.ts
+index 49992524..8d41df31 100644
+--- a/packages/domain/src/schedule/settle.ts
++++ b/packages/domain/src/schedule/settle.ts
+@@ -143,7 +143,7 @@ export async function settleFirstDays(
+   if (change.kind === "apply") {
+     await bound(tx)`
+       UPDATE app.schedule_proposals
+-         SET state = 'applied', closed_at = ${at}::pg_catalog.timestamptz, version = version + 1
++         SET state = 'superseded', closed_at = ${at}::pg_catalog.timestamptz, version = version + 1
+        WHERE id = ${proposalId}`;
+     return change.kind;
+   }

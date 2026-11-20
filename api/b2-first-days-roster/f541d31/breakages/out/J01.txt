@@ -1,0 +1,80 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/privacy/leave.test.ts (27 tests | 3 failed) 32ms
+   ❯ what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) (12)
+     × asks a revision at the next version when nobody had confirmed, and their end with one member left 10ms
+     × asks nothing to move once a day is confirmed and someone who hasn't confirmed stays (T33) 1ms
+     × asks them applied when only confirmed members stay, and ended when the one left hasn't confirmed 1ms
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 24 passed (27)
+   Start at  06:24:09
+   Duration  1.01s (import 69%, transform 16%, tests 13%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) > asks a revision at the next version when nobody had confirmed, and their end with one member left
+AssertionError: expected [] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+- [
+-   "the first days are open at version 1, not open at version 2 (FQ102)",
+- ]
++ []
+
+ ❯ src/privacy/leave.test.ts:455:40
+    453|   it("asks a revision at the next version when nobody had confirmed, a…
+    454|     expect(judged(days([]), days([], { version: 2 }))).toEqual([]);
+    455|     expect(judged(days([]), days([]))).toEqual(["the first days are op…
+       |                                        ^
+    456|     expect(judged(days([]), days([], { version: 2, state: "superseded"…
+    457|       "the first days are superseded at version 2, not open at version…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) > asks nothing to move once a day is confirmed and someone who hasn't confirmed stays (T33)
+AssertionError: expected [] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+- [
+-   "the first days are open at version 2, not open at version 1 (FQ102)",
+- ]
++ []
+
+ ❯ src/privacy/leave.test.ts:468:74
+    466|   it("asks nothing to move once a day is confirmed and someone who has…
+    467|     expect(judged(days(["itv_ana"]), days(["itv_ana"]))).toEqual([]);
+    468|     expect(judged(days(["itv_ana"]), days(["itv_ana"], { version: 2 })…
+       |                                                                          ^
+    469|       "the first days are open at version 2, not open at version 1 (FQ…
+    470|     ]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) > asks them applied when only confirmed members stay, and ended when the one left hasn't confirmed
+AssertionError: expected [] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+- [
+-   "the first days are open at version 1, not applied at version 2 (FQ102)",
+- ]
++ []
+
+ ❯ src/privacy/leave.test.ts:478:30
+    476|     const was = days(["itv_ana", "itv_cleo"]);
+    477|     expect(judged(was, { ...was, state: "applied", version: 2 })).toEq…
+    478|     expect(judged(was, was)).toEqual(["the first days are open at vers…
+       |                              ^
+    479|     // Cleo had left; Ana confirmed and leaves; Ben, who hasn't, is al…
+    480|     const pair = days(["itv_ana"]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+

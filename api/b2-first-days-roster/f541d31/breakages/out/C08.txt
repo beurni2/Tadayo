@@ -1,0 +1,30 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/packages/domain
+
+ ❯ src/schedule/roster-change.test.ts (23 tests | 1 failed) 25ms
+   ❯ a leave before any day is confirmed (FQ102) (3)
+     × ends the first days with no successor when one member is left, or none 8ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 35 passed (36)
+   Start at  06:20:53
+   Duration  854ms (tests 92%, import 5%, transform 2%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/roster-change.test.ts > a leave before any day is confirmed (FQ102) > ends the first days with no successor when one member is left, or none
+RangeError: schedule: a week is proposed for two to six members, not 1 (A01)
+ ❯ checkCount src/schedule/propose.ts:14:11
+     12| function checkCount(memberCount: number): void {
+     13|   if (!Number.isInteger(memberCount) || memberCount < 2 || memberCount…
+     14|     throw new RangeError(`schedule: a week is proposed for two to six …
+       |           ^
+     15|   }
+     16| }
+ ❯ daysPerMember src/schedule/propose.ts:20:3
+ ❯ firstDaysAfter src/schedule/roster-change.ts:90:15
+ ❯ src/schedule/roster-change.test.ts:157:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

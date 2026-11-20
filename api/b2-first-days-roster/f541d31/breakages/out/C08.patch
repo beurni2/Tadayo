@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/schedule/roster-change.ts b/packages/domain/src/schedule/roster-change.ts
+index b0b85f0b..93c01133 100644
+--- a/packages/domain/src/schedule/roster-change.ts
++++ b/packages/domain/src/schedule/roster-change.ts
+@@ -87,7 +87,6 @@ export function firstDaysAfter(facts: RosterChangeFacts): FirstDaysChange {
+   }
+ 
+   // Nobody has confirmed: a revision for the club's members as they now are.
+-  if (active.length < 2) return { kind: "end", reopen: false };
+   const per = daysPerMember(active.length);
+   const week = proposedWeek(active.length);
+   const added = active.filter((id) => !open.members.some((member) => member.id === id));

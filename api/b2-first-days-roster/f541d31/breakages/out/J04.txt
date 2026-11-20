@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/privacy/leave.test.ts (27 tests | 1 failed) 32ms
+   ❯ what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) (12)
+     × catches an ended proposal given a successor, and one whose days per member moved without a revision 10ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+   Start at  06:24:13
+   Duration  579ms (import 67%, transform 17%, tests 13%, worker 3%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) > catches an ended proposal given a successor, and one whose days per member moved without a revision
+AssertionError: expected [] to deeply equal [ 'the first days name a successor' ]
+
+- Expected
++ Received
+
+- [
+-   "the first days name a successor",
+- ]
++ []
+
+ ❯ src/privacy/leave.test.ts:513:92
+    511|   it("catches an ended proposal given a successor, and one whose days …
+    512|     const was = days(["itv_ana", "itv_cleo"]);
+    513|     expect(judged(was, { ...was, state: "applied", version: 2, replace…
+       |                                                                                            ^
+    514|       "the first days name a successor",
+    515|     ]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

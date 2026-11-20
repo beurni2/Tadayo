@@ -1,0 +1,127 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/db/first-days-roster.test.ts (18 tests | 4 failed) 1773ms
+   ❯ a leave before any day is confirmed (FQ102) (2)
+     × ends the first days of a club of two with no successor, and opens new ones at the next join 66ms
+   ❯ a leave once a day is confirmed (FQ102) (7)
+     × ends the first days when the one member left hasn't confirmed, and starts the next after the days already made (FQ124) 52ms
+     × starts a restarted club's week the day after its first when nothing was made and the day is the same 44ms
+     × starts a restarted club's week today when every day already made is past 48ms
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 14 passed (18)
+   Start at  06:21:20
+   Duration  2.45s (tests 82%, import 13%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a leave before any day is confirmed (FQ102) > ends the first days of a club of two with no successor, and opens new ones at the next join
+AssertionError: expected [ { …(8) } ] to have a length of 2 but got 1
+
+- Expected
++ Received
+
+- 2
++ 1
+
+ ❯ src/db/first-days-roster.test.ts:388:19
+    386|       await join(tx, c, "Sam", "Maya");
+    387|       const all = await proposals(tx, c);
+    388|       expect(all).toHaveLength(2);
+       |                   ^
+    389|       expect(all[1]).toMatchObject({
+    390|         state: "open",
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/first-days-roster.test.ts:363:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a leave once a day is confirmed (FQ102) > ends the first days when the one member left hasn't confirmed, and starts the next after the days already made (FQ124)
+AssertionError: expected [ { …(8) } ] to have a length of 2 but got 1
+
+- Expected
++ Received
+
+- 2
++ 1
+
+ ❯ src/db/first-days-roster.test.ts:495:19
+    493|       await join(tx, c, "Sam", "Maya");
+    494|       const all = await proposals(tx, c);
+    495|       expect(all).toHaveLength(2);
+       |                   ^
+    496|       expect(all[1]).toMatchObject({ state: "open", version: 1, days_p…
+    497|       expect(all[1]?.schedule_version_id).not.toBe(ended?.schedule_ver…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/first-days-roster.test.ts:478:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a leave once a day is confirmed (FQ102) > starts a restarted club's week the day after its first when nothing was made and the day is the same
+AssertionError: expected [ { effective_from: '2026-11-11' } ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+    {
+      "effective_from": "2026-11-11",
+    },
+-   {
+-     "effective_from": "2026-11-12",
+-   },
+  ]
+
+ ❯ src/db/first-days-roster.test.ts:554:24
+    552|         SELECT effective_from::text AS effective_from FROM app.schedul…
+    553|          WHERE club_id = ${c.club} ORDER BY effective_from`;
+    554|       expect(versions).toEqual([{ effective_from: "2026-11-11" }, { ef…
+       |                        ^
+    555|     });
+    556|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/first-days-roster.test.ts:546:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a leave once a day is confirmed (FQ102) > starts a restarted club's week today when every day already made is past
+AssertionError: expected [ { effective_from: '2026-11-11' } ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+    {
+      "effective_from": "2026-11-11",
+    },
+-   {
+-     "effective_from": "2026-12-21",
+-   },
+  ]
+
+ ❯ src/db/first-days-roster.test.ts:571:24
+    569|         SELECT effective_from::text AS effective_from FROM app.schedul…
+    570|          WHERE club_id = ${c.club} ORDER BY effective_from`;
+    571|       expect(versions).toEqual([{ effective_from: "2026-11-11" }, { ef…
+       |                        ^
+    572|     });
+    573|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/first-days-roster.test.ts:559:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+

@@ -1,0 +1,78 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/db/first-days-roster.test.ts (18 tests | 2 failed) 1838ms
+   ❯ a join before any day is confirmed (FQ55, FQ102) (5)
+     × proposes the whole week again when a fourth member joins three, and again when one of four leaves 129ms
+     × reads and writes the current week alone once the week was proposed again: a choice, then a fifth member 90ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 16 passed (18)
+   Start at  06:22:01
+   Duration  2.52s (tests 84%, import 12%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a join before any day is confirmed (FQ55, FQ102) > proposes the whole week again when a fourth member joins three, and again when one of four leaves
+AssertionError: expected { …(9) } to match object { version: 3, daysPerMember: 1, …(2) }
+(5 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "daysPerMember": 1,
+    "myDays": [
+      "monday",
++     "thursday",
+    ],
+    "myState": "choosing",
+    "version": 3,
+  }
+
+ ❯ src/db/first-days-roster.test.ts:262:22
+    260|       ] as const) {
+    261|         const seen = await proposalOf(tx, c, name);
+    262|         expect(seen).toMatchObject({ version: 3, daysPerMember: 1, myD…
+       |                      ^
+    263|         expect(suggestedOf(seen)).toEqual([day]);
+    264|         expect(seen.slots.filter((each) => each.state === "clash" || e…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/first-days-roster.test.ts:242:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a join before any day is confirmed (FQ55, FQ102) > reads and writes the current week alone once the week was proposed again: a choice, then a fifth member
+AssertionError: expected { …(9) } to match object { version: 3, myDays: [ 'tuesday' ] }
+(7 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "myDays": [
+      "tuesday",
++     "friday",
+    ],
+    "version": 3,
+  }
+
+ ❯ src/db/first-days-roster.test.ts:297:20
+    295|       // The second week, one day each. Maya takes Saturday, a day nob…
+    296|       const four = await proposalOf(tx, c, "Maya");
+    297|       expect(four).toMatchObject({ version: 3, myDays: ["tuesday"] });
+       |                    ^
+    298|       await choose(tx, c, "Maya", four.id, four.version, ["saturday"]);
+    299|       expect((await proposalOf(tx, c, "Maya")).myDays).toEqual(["satur…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/first-days-roster.test.ts:291:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

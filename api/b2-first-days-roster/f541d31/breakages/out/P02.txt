@@ -1,0 +1,53 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/privacy/matrix.test.ts (18 tests | 1 failed | 16 skipped) 962ms
+   ❯ a roster applied through the app (spec 04; T7, T8, T33; FQ65) (2)
+     × joins the person who accepted once the last member approves, and answers each caller as the rows say, and revises the open first days for t… 282ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed | 16 skipped (18)
+   Start at  06:24:45
+   Duration  1.98s (tests 56%, import 36%, transform 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > a roster applied through the app (spec 04; T7, T8, T33; FQ65) > joins the person who accepted once the last member approves, and answers each caller as the rows say, and revises the open first days for t…
+AssertionError: expected { count: 14, first: [ …(14) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 14,
++   "first": [
++     "the join: mem_2DdaUj5fi3RJcV7eYMYoZw doesn't hold 1 proposed days in the new week",
++     "the join: mem_LR4chf9hKEMd2AUqHyjc6A doesn't hold 1 proposed days in the new week",
++     "the join: mem_r4Q2hTFNfEfuhi4susKIkQ doesn't hold 1 proposed days in the new week",
++     "the join: the new week proposes a day twice",
++     "the week, joined: getSchedule: the club's Schedule's proposal is {\"days_per_member\":1,\"effective_from\":\"2026-11-08\",\"id\":\"spr_8ZkQxZvxf4Dd_klJ-febgQ\",\"my_days\":[\"thursday\"],\"my_state\":\"choosing\",\"reason\":\"activation\",\"slots\":[{\"held_by\":{\"display_name\":\"Ana 79cbc8149a8d\",\"membership_id\":\"mem_2DdaUj5fi3RJcV7eYMYoZw\"},\"state\":\"available\",\"suggested\":false,\"weekday\":\"monday\"},{\"held_by\":{\"display_name\":\"Ben 79cbc8149a8d\",\"membership_id\":\"mem_LR4chf9hKEMd2AUqHyjc6A, not {\"days_per_member\":1,\"effective_from\":\"2026-11-08\",\"id\":\"spr_8ZkQxZvxf4Dd_klJ-febgQ\",\"my_days\":[\"thursday\"],\"my_state\":\"choosing\",\"reason\":\"activation\",\"slots\":[{\"held_by\":{\"display_name\":\"Ana 79cbc8149a8d\",\"membership_id\":\"mem_2DdaUj5fi3RJcV7eYMYoZw\"},\"state\":\"available\",\"suggested\":false,\"weekday\":\"monday\"},{\"held_by\":{\"display_name\":\"Ben 79cbc8149a8d\",\"membership_id\":\"mem_LR4chf9hKEMd2AUqHyjc6A",
++     "the week, by its proposer: getSchedule: the club's Schedule's proposal is {\"days_per_member\":1,\"effective_from\":\"2026-11-08\",\"id\":\"spr_8ZkQxZvxf4Dd_klJ-febgQ\",\"my_days\":[\"monday\"],\"my_state\":\"choosing\",\"reason\":\"activation\",\"slots\":[{\"state\":\"yours\",\"suggested\":true,\"weekday\":\"monday\"},{\"held_by\":{\"display_name\":\"Ben 79cbc8149a8d\",\"membership_id\":\"mem_LR4chf9hKEMd2AUqHyjc6A\"},\"state\":\"available\",\"suggested\":false,\"weekday\":\"tuesday\"},{\"held_by\":{\"display_name\":\"Cleo 79c, not {\"days_per_member\":1,\"effective_from\":\"2026-11-08\",\"id\":\"spr_8ZkQxZvxf4Dd_klJ-febgQ\",\"my_days\":[\"monday\",\"thursday\"],\"my_state\":\"choosing\",\"reason\":\"activation\",\"slots\":[{\"state\":\"yours\",\"suggested\":true,\"weekday\":\"monday\"},{\"held_by\":{\"display_name\":\"Ben 79cbc8149a8d\",\"membership_id\":\"mem_LR4chf9hKEMd2AUqHyjc6A\"},\"state\":\"available\",\"suggested\":false,\"weekday\":\"tuesday\"},{\"state\":\"no_reveal\",\"sug",
++     "the leave: the week before isn't kept as it was",
++     "the leave: the new week gives a day to someone who isn't an active member",
++     "the leave: mem_2DdaUj5fi3RJcV7eYMYoZw doesn't hold 2 proposed days in the new week",
++     "the leave: mem_ezUezQIib0islqWHcm1GEw doesn't hold 2 proposed days in the new week",
++     "the leave: mem_r4Q2hTFNfEfuhi4susKIkQ doesn't hold 2 proposed days in the new week",
++     "the leave: the new week proposes a day twice",
++     "the week, after it: getSchedule: the club's Schedule's proposal is {\"days_per_member\":2,\"effective_from\":\"2026-11-08\",\"id\":\"spr_8ZkQxZvxf4Dd_klJ-febgQ\",\"my_days\":[\"wednesday\",\"saturday\"],\"my_state\":\"choosing\",\"reason\":\"activation\",\"slots\":[{\"held_by\":{\"display_name\":\"Ana 79cbc8149a8d\",\"membership_id\":\"mem_2DdaUj5fi3RJcV7eYMYoZw\"},\"state\":\"available\",\"suggested\":false,\"weekday\":\"monday\"},{\"held_by\":{\"display_name\":\"Cleo 79cbc8149a8d\",\"membership_id\":\"mem_r4Q2hTFNf, not {\"days_per_member\":2,\"effective_from\":\"2026-11-08\",\"id\":\"spr_8ZkQxZvxf4Dd_klJ-febgQ\",\"my_days\":[\"wednesday\",\"thursday\",\"saturday\"],\"my_state\":\"choosing\",\"reason\":\"activation\",\"slots\":[{\"held_by\":{\"display_name\":\"Ana 79cbc8149a8d\",\"membership_id\":\"mem_2DdaUj5fi3RJcV7eYMYoZw\"},\"state\":\"available\",\"suggested\":false,\"weekday\":\"monday\"},{\"held_by\":{\"display_name\":\"Cleo 79cbc8149a8d\",\"membership_id\":\"me",
++     "the proposer's week, after it: getSchedule: the club's Schedule's proposal is {\"days_per_member\":2,\"effective_from\":\"2026-11-08\",\"id\":\"spr_8ZkQxZvxf4Dd_klJ-febgQ\",\"my_days\":[\"monday\",\"thursday\"],\"my_state\":\"choosing\",\"reason\":\"activation\",\"slots\":[{\"state\":\"yours\",\"suggested\":true,\"weekday\":\"monday\"},{\"held_by\":{\"display_name\":\"Cleo 79cbc8149a8d\",\"membership_id\":\"mem_r4Q2hTFNfEfuhi4susKIkQ\"},\"state\":\"available\",\"suggested\":false,\"weekday\":\"tuesday\"},{\"held_by\":{\"display_nam, not {\"days_per_member\":2,\"effective_from\":\"2026-11-08\",\"id\":\"spr_8ZkQxZvxf4Dd_klJ-febgQ\",\"my_days\":[\"monday\",\"thursday\"],\"my_state\":\"choosing\",\"reason\":\"activation\",\"slots\":[{\"state\":\"yours\",\"suggested\":true,\"weekday\":\"monday\"},{\"held_by\":{\"display_name\":\"Cleo 79cbc8149a8d\",\"membership_id\":\"mem_r4Q2hTFNfEfuhi4susKIkQ\"},\"state\":\"available\",\"suggested\":false,\"weekday\":\"tuesday\"},{\"state\":\"no_reveal\",\"su",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:1966:66
+    1964|       }
+    1965|
+    1966|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    1967|       expect(counted.answers).toBe(13 + others.length + (firstDays ? 6…
+    1968|     },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

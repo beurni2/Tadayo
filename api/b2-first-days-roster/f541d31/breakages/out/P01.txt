@@ -1,0 +1,41 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/privacy/matrix.test.ts (18 tests | 1 failed | 16 skipped) 958ms
+   ❯ a roster applied through the app (spec 04; T7, T8, T33; FQ65) (2)
+     × joins the person who accepted once the last member approves, and answers each caller as the rows say, and revises the open first days for t… 320ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed | 16 skipped (18)
+   Start at  06:24:43
+   Duration  1.97s (tests 57%, import 36%, transform 7%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/matrix.test.ts > a roster applied through the app (spec 04; T7, T8, T33; FQ65) > joins the person who accepted once the last member approves, and answers each caller as the rows say, and revises the open first days for t…
+AssertionError: expected { count: 2, first: [ …(2) ] } to deeply equal { count: +0, first: [] }
+
+- Expected
++ Received
+
+  {
+-   "count": 0,
+-   "first": [],
++   "count": 2,
++   "first": [
++     "the join: the week before isn't kept as it was",
++     "the leave: the week before isn't kept as it was",
++   ],
+  }
+
+ ❯ src/privacy/matrix.test.ts:1966:66
+    1964|       }
+    1965|
+    1966|       expect({ count: wrong.length, first: wrong.slice(0, 40) }).toEqu…
+       |                                                                  ^
+    1967|       expect(counted.answers).toBe(13 + others.length + (firstDays ? 6…
+    1968|     },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

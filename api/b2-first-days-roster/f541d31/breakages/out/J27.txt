@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/privacy/leave.test.ts (27 tests | 1 failed) 36ms
+   ❯ what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) (12)
+     × passes a club with no first days, and catches a proposal that appears or changes there 11ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+   Start at  06:24:41
+   Duration  612ms (import 63%, transform 24%, tests 11%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) > passes a club with no first days, and catches a proposal that appears or changes there
+AssertionError: expected [] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+- [
+-   "a leave changed the club's proposals though no first days were open",
+- ]
++ []
+
+ ❯ src/privacy/leave.test.ts:448:100
+    446|     const applied = days(["itv_ana", "itv_ben", "itv_cleo"], { state: …
+    447|     expect(judged(applied, applied)).toEqual([]);
+    448|     expect(firstDaysProblems(world([], []), world(["itv_ben"], [[P, da…
+       |                                                                                                    ^
+    449|       "a leave changed the club's proposals though no first days were …
+    450|     ]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,12 @@
+diff --git a/tests/src/privacy/leave.ts b/tests/src/privacy/leave.ts
+index 617855a3..bd065a06 100644
+--- a/tests/src/privacy/leave.ts
++++ b/tests/src/privacy/leave.ts
+@@ -284,7 +284,6 @@ export function firstDaysProblems(
+   let state: string;
+   let moved = true;
+   if (!confirmedDay) state = stayed.length < 2 ? "superseded" : "open";
+-  else if (nobodyLeft) state = "superseded";
+   else if (included.every((member) => member.confirmed)) state = "applied";
+   else if (stayed.length < 2) state = "superseded";
+   else {

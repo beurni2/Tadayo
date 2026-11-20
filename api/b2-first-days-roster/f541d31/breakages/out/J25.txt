@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/privacy/leave.test.ts (27 tests | 1 failed) 35ms
+   ❯ what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) (12)
+     × asks them ended when nobody they include is left, with new ones for two or more who remain (FQ123) 10ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+   Start at  06:24:39
+   Duration  565ms (import 68%, transform 16%, tests 15%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) > asks them ended when nobody they include is left, with new ones for two or more who remain (FQ123)
+AssertionError: expected [] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+- [
+-   "no new first days are open for exactly the members who remain (FQ123)",
+- ]
++ []
+
+ ❯ src/privacy/leave.test.ts:504:93
+    502|     expect(judged(alone, over, "itv_ana", [], [["spr_next", days([], {…
+    503|     expect(judged(alone, over, "itv_ana")).toEqual(missing);
+    504|     expect(judged(alone, over, "itv_ana", [], [["spr_next", days(["itv…
+       |                                                                                             ^
+    505|     expect(judged(alone, over, "itv_ana", [], [["spr_next", days([], {…
+    506|       missing,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

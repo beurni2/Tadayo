@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/roster-change.ts b/packages/domain/src/schedule/roster-change.ts
+index b0b85f0b..485b1cb1 100644
+--- a/packages/domain/src/schedule/roster-change.ts
++++ b/packages/domain/src/schedule/roster-change.ts
+@@ -83,7 +83,7 @@ export function firstDaysAfter(facts: RosterChangeFacts): FirstDaysChange {
+   if (open.members.some((member) => member.confirmed)) {
+     if (included.length === 0) return { kind: "end", reopen: active.length >= 2 };
+     if (included.every((member) => member.confirmed)) return { kind: "apply" };
+-    return active.length < 2 ? { kind: "end", reopen: false } : { kind: "nothing" };
++    return { kind: "nothing" };
+   }
+ 
+   // Nobody has confirmed: a revision for the club's members as they now are.

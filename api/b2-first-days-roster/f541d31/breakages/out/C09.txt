@@ -1,0 +1,150 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/packages/domain
+
+ ❯ src/schedule/roster-change.test.ts (23 tests | 4 failed) 29ms
+   ❯ a join before any day is confirmed (FQ55, FQ102) (6)
+     × proposes the whole week again when a fourth member joins three: one day each (spec 05) 9ms
+   ❯ a leave before any day is confirmed (FQ102) (3)
+     × proposes the whole week again when a club of four loses a member: two days each 3ms
+   ❯ every club size, through a join and a leave with nobody confirmed (5)
+     × leaves a club of 3 with each member holding the right number of days, none proposed twice 1ms
+     × leaves a club of 4 with each member holding the right number of days, none proposed twice 2ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  4 failed | 32 passed (36)
+   Start at  06:20:54
+   Duration  857ms (tests 93%, import 4%, transform 2%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/roster-change.test.ts > a join before any day is confirmed (FQ55, FQ102) > proposes the whole week again when a fourth member joins three: one day each (spec 05)
+AssertionError: expected { kind: 'revise', …(4) } to deeply equal { kind: 'revise', …(4) }
+
+- Expected
++ Received
+
+@@ -2,30 +2,12 @@
+    "added": [
+      "sam",
+    ],
+    "daysPerMember": 1,
+    "kind": "revise",
+-   "newWeek": true,
++   "newWeek": false,
+    "proposed": [
+-     {
+-       "days": [
+-         "monday",
+-       ],
+-       "id": "ben",
+-     },
+-     {
+-       "days": [
+-         "tuesday",
+-       ],
+-       "id": "maya",
+-     },
+-     {
+-       "days": [
+-         "wednesday",
+-       ],
+-       "id": "alex",
+-     },
+      {
+        "days": [
+          "thursday",
+        ],
+        "id": "sam",
+
+ ❯ src/schedule/roster-change.test.ts:107:98
+    105|       member("alex", ["friday", "saturday"]),
+    106|     ];
+    107|     expect(firstDaysAfter(facts(["ben", "maya", "alex", "sam"], { days…
+       |                                                                                                  ^
+    108|       kind: "revise",
+    109|       daysPerMember: 1,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/schedule/roster-change.test.ts > a leave before any day is confirmed (FQ102) > proposes the whole week again when a club of four loses a member: two days each
+AssertionError: expected { kind: 'revise', …(4) } to deeply equal { kind: 'revise', …(4) }
+
+- Expected
++ Received
+
+  {
+    "added": [],
+    "daysPerMember": 2,
+    "kind": "revise",
+-   "newWeek": true,
+-   "proposed": [
+-     {
+-       "days": [
+-         "monday",
+-         "thursday",
+-       ],
+-       "id": "ben",
+-     },
+-     {
+-       "days": [
+-         "tuesday",
+-         "friday",
+-       ],
+-       "id": "alex",
+-     },
+-     {
+-       "days": [
+-         "wednesday",
+-         "saturday",
+-       ],
+-       "id": "sam",
+-     },
+-   ],
++   "newWeek": false,
++   "proposed": [],
+  }
+
+ ❯ src/schedule/roster-change.test.ts:142:80
+    140|   it("proposes the whole week again when a club of four loses a member…
+    141|     const members = opened(4).map((each) => (each.id === "maya" ? { ..…
+    142|     expect(firstDaysAfter(facts(ids(members), { daysPerMember: 1, memb…
+       |                                                                                ^
+    143|       kind: "revise",
+    144|       daysPerMember: 2,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/schedule/roster-change.test.ts > every club size, through a join and a leave with nobody confirmed > leaves a club of 3 with each member holding the right number of days, none proposed twice
+Error: schedule: the week has no free day left for a new member
+ ❯ src/schedule/roster-change.ts:114:36
+    112|       days.push(weekday);
+    113|     }
+    114|     if (days.length !== per) throw new Error("schedule: the week has n…
+       |                                    ^
+    115|     return { id, days: fromMonday(days) };
+    116|   });
+ ❯ firstDaysAfter src/schedule/roster-change.ts:104:26
+ ❯ src/schedule/roster-change.test.ts:182:24
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/schedule/roster-change.test.ts > every club size, through a join and a leave with nobody confirmed > leaves a club of 4 with each member holding the right number of days, none proposed twice
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/schedule/roster-change.test.ts:186:32
+    184|         const per = daysPerMember(given.active.length);
+    185|         expect(change.daysPerMember).toBe(per);
+    186|         expect(change.newWeek).toBe(per !== given.open?.daysPerMember);
+       |                                ^
+    187|         // What each active member holds afterwards.
+    188|         const held = new Map<string, readonly Weekday[]>();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+

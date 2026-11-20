@@ -1,0 +1,90 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/db/schedule-proposals.test.ts (37 tests | 4 failed) 953ms
+   ❯ a proposal's week, proposed again (0013; FQ102) (6)
+     × writes, changes and deletes a member's days only in the current week 31ms
+     × counts a member's days in the current week alone 21ms
+     × confirms the days a member holds in the current week, whoever held them in an earlier one 15ms
+     × takes no day another member confirmed in a later week, as in the first 18ms
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 33 passed (37)
+   Start at  06:23:27
+   Duration  1.69s (tests 89%, import 6%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-proposals.test.ts > a proposal's week, proposed again (0013; FQ102) > writes, changes and deletes a member's days only in the current week
+PostgresError: app.schedule_proposal_days: mem_q8sF3-0fIJM4oQFz9b0FWg holds at most 1 days in spr_w7ZEOAyev99H4XBMk6ovsw (spec 05)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ checkAsAtCommit src/db/world.ts:303:11
+    301| /** Runs the checks Postgres runs at COMMIT, now, inside the test's tr…
+    302| export async function checkAsAtCommit(tx: Tx): Promise<void> {
+    303|   await tx`SET CONSTRAINTS ALL IMMEDIATE`;
+       |           ^
+    304|   await tx`SET CONSTRAINTS ALL DEFERRED`;
+    305| }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/db/schedule-proposals.test.ts > a proposal's week, proposed again (0013; FQ102) > counts a member's days in the current week alone
+PostgresError: app.schedule_proposal_days: mem_mxwU1Nhhrr888Tf4TDAnTA holds at most 2 days in spr_0jCZZIpFqA0vIhgN8NVCfQ (spec 05)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ checkAsAtCommit src/db/world.ts:303:11
+    301| /** Runs the checks Postgres runs at COMMIT, now, inside the test's tr…
+    302| export async function checkAsAtCommit(tx: Tx): Promise<void> {
+    303|   await tx`SET CONSTRAINTS ALL IMMEDIATE`;
+       |           ^
+    304|   await tx`SET CONSTRAINTS ALL DEFERRED`;
+    305| }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/db/schedule-proposals.test.ts > a proposal's week, proposed again (0013; FQ102) > confirms the days a member holds in the current week, whoever held them in an earlier one
+PostgresError: app.schedule_proposal_days: mem_zha5JpUKE2RRuw0srxlGJQ holds at most 1 days in spr_6O3ZYZ19nFpJuPUK96cMSA (spec 05)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ checkAsAtCommit src/db/world.ts:303:11
+    301| /** Runs the checks Postgres runs at COMMIT, now, inside the test's tr…
+    302| export async function checkAsAtCommit(tx: Tx): Promise<void> {
+    303|   await tx`SET CONSTRAINTS ALL IMMEDIATE`;
+       |           ^
+    304|   await tx`SET CONSTRAINTS ALL DEFERRED`;
+    305| }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/db/schedule-proposals.test.ts > a proposal's week, proposed again (0013; FQ102) > takes no day another member confirmed in a later week, as in the first
+PostgresError: app.schedule_proposal_days: mem_FaWuAkpc55kJEg-b45kJpw holds at most 1 days in spr_ylnMsprJjptDw4lks2KaCQ (spec 05)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ checkAsAtCommit src/db/world.ts:303:11
+    301| /** Runs the checks Postgres runs at COMMIT, now, inside the test's tr…
+    302| export async function checkAsAtCommit(tx: Tx): Promise<void> {
+    303|   await tx`SET CONSTRAINTS ALL IMMEDIATE`;
+       |           ^
+    304|   await tx`SET CONSTRAINTS ALL DEFERRED`;
+    305| }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+

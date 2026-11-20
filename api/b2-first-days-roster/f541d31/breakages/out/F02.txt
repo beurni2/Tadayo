@@ -1,0 +1,43 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/db/first-days-roster.test.ts (18 tests | 1 failed) 1829ms
+   ❯ a leave once a day is confirmed (FQ102) (7)
+     × ends the first days when the one member left hasn't confirmed, and starts the next after the days already made (FQ124) 73ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+   Start at  06:21:58
+   Duration  2.45s (tests 84%, import 11%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a leave once a day is confirmed (FQ102) > ends the first days when the one member left hasn't confirmed, and starts the next after the days already made (FQ124)
+AssertionError: expected { state: 'yours', …(3) } to match object { state: 'yours', …(1) }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "firstDate": "2026-12-14",
++   "firstDate": "2026-11-16",
+    "state": "yours",
+  }
+
+ ❯ src/db/first-days-roster.test.ts:512:38
+    510|       const answer = await confirmOwn(tx, c, "Maya");
+    511|       // No first date before the week's start: the Monday and the Thu…
+    512|       expect(slot(answer, "monday")).toMatchObject({ state: "yours", f…
+       |                                      ^
+    513|       expect(slot(answer, "thursday")).toMatchObject({ state: "yours",…
+    514|       expect(await confirmOwn(tx, c, "Sam")).toMatchObject({ state: "a…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/first-days-roster.test.ts:478:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

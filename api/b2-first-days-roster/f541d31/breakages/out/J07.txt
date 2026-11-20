@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/privacy/leave.test.ts (27 tests | 1 failed) 31ms
+   ❯ what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) (12)
+     × catches a leave that adds a member, moves a confirmation or changes a day, whatever it does to the state 8ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+   Start at  06:24:17
+   Duration  525ms (import 70%, transform 16%, tests 13%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) > catches a leave that adds a member, moves a confirmation or changes a day, whatever it does to the state
+AssertionError: expected [] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+- [
+-   "the confirmation of itv_cleo moved",
+- ]
++ []
+
+ ❯ src/privacy/leave.test.ts:549:7
+    547|         members: was.members.map((one) => (one.interval === "itv_cleo"…
+    548|       }),
+    549|     ).toEqual(["the confirmation of itv_cleo moved"]);
+       |       ^
+    550|     expect(judged(was, { ...was, days: was.days.filter((day) => day.in…
+    551|       "a member's days changed though nobody is moved (T6)",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/roster-change.ts b/packages/domain/src/schedule/roster-change.ts
+index b0b85f0b..b78a6c35 100644
+--- a/packages/domain/src/schedule/roster-change.ts
++++ b/packages/domain/src/schedule/roster-change.ts
+@@ -91,7 +91,7 @@ export function firstDaysAfter(facts: RosterChangeFacts): FirstDaysChange {
+   const per = daysPerMember(active.length);
+   const week = proposedWeek(active.length);
+   const added = active.filter((id) => !open.members.some((member) => member.id === id));
+-  if (per !== open.daysPerMember) {
++  if (per !== open.daysPerMember && active.length > 6) {
+     return {
+       kind: "revise",
+       daysPerMember: per,

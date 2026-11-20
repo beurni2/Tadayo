@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/leave.ts b/tests/src/privacy/leave.ts
+index 617855a3..3d4285f7 100644
+--- a/tests/src/privacy/leave.ts
++++ b/tests/src/privacy/leave.ts
+@@ -354,7 +354,7 @@ export function firstDaysJoinProblems(
+         ([, proposal]) =>
+           proposal.reason === "activation" && proposal.state === "superseded" && proposal.replacedBy === null,
+       );
+-    if (!ended || active.length < 2) {
++    if (true) {
+       return fresh.length === 0 ? problems : [...problems, "a join opened first days the club has no call for"];
+     }
+     const [next] = fresh;

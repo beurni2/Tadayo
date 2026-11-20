@@ -1,0 +1,31 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/packages/domain
+
+ ❯ src/schedule/first-date.test.ts (13 tests | 1 failed) 712ms
+   ❯ a first date in a week that starts later (FQ61, FQ124) (3)
+     × is the first such weekday on or after the week's start when that is later 6ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 35 passed (36)
+   Start at  06:21:57
+   Duration  867ms (tests 93%, import 4%, transform 2%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/first-date.test.ts > a first date in a week that starts later (FQ61, FQ124) > is the first such weekday on or after the week's start when that is later
+AssertionError: expected '2026-11-06' to be '2026-11-13' // Object.is equality
+
+Expected: "2026-11-13"
+Received: "2026-11-06"
+
+ ❯ src/schedule/first-date.test.ts:112:79
+    110|
+    111|   it("is the first such weekday on or after the week's start when that…
+    112|     expect(firstDate("friday", confirmed, NY, from("2026-11-07")).toSt…
+       |                                                                               ^
+    113|     // Four weeks on, the day after the last day already made: a Frida…
+    114|     expect(firstDate("friday", confirmed, NY, from("2026-12-04")).toSt…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

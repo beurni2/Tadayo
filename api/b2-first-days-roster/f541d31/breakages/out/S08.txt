@@ -1,0 +1,57 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/db/first-days-roster.test.ts (18 tests | 2 failed) 1902ms
+   ❯ a leave before any day is confirmed (FQ102) (2)
+     × ends the first days of a club of two with no successor, and opens new ones at the next join 105ms
+   ❯ a leave once a day is confirmed (FQ102) (7)
+     × applies the first days when only confirmed members stay, at the leave's own instant 112ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 16 passed (18)
+   Start at  06:21:23
+   Duration  2.59s (tests 83%, import 12%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a leave before any day is confirmed (FQ102) > ends the first days of a club of two with no successor, and opens new ones at the next join
+Error: schedule: the first days are opened once, for a club with no schedule yet, or again once all before them ended
+ ❯ openFirstDays ../packages/domain/src/schedule/open.ts:103:11
+    101|   const again = existing?.["scheduled"] === true && existing["proposed…
+    102|   if (!first && !again) {
+    103|     throw new Error(
+       |           ^
+    104|       "schedule: the first days are opened once, for a club with no sc…
+    105|     );
+ ❯ settleFirstDays ../packages/domain/src/schedule/settle.ts:137:5
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:248:8
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:300:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ join src/db/first-days-roster.test.ts:90:18
+ ❯ src/db/first-days-roster.test.ts:403:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a leave once a day is confirmed (FQ102) > applies the first days when only confirmed members stay, at the leave's own instant
+Error: schedule: the first days are opened once, for a club with no schedule yet, or again once all before them ended
+ ❯ openFirstDays ../packages/domain/src/schedule/open.ts:103:11
+    101|   const again = existing?.["scheduled"] === true && existing["proposed…
+    102|   if (!first && !again) {
+    103|     throw new Error(
+       |           ^
+    104|       "schedule: the first days are opened once, for a club with no sc…
+    105|     );
+ ❯ settleFirstDays ../packages/domain/src/schedule/settle.ts:137:5
+ ❯ applyIfReady ../packages/domain/src/clubs/apply-roster.ts:248:8
+ ❯ acceptInvitation ../packages/domain/src/clubs/accept-invitation.ts:300:19
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ join src/db/first-days-roster.test.ts:90:18
+ ❯ src/db/first-days-roster.test.ts:431:7
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

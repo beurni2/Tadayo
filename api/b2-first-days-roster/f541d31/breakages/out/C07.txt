@@ -1,0 +1,85 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/packages/domain
+
+ ❯ src/schedule/roster-change.test.ts (23 tests | 2 failed) 37ms
+   ❯ a change of members once a day is confirmed (FQ100, FQ102) (5)
+     × changes nothing when a leave leaves a member who hasn't confirmed, in a club of two or more 14ms
+     × ends them when nobody they include is left, and opens new ones at once for two or more (FQ123) 2ms
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  2 failed | 34 passed (36)
+   Start at  06:20:51
+   Duration  917ms (tests 93%, import 4%, transform 1%, worker 1%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/schedule/roster-change.test.ts > a change of members once a day is confirmed (FQ100, FQ102) > changes nothing when a leave leaves a member who hasn't confirmed, in a club of two or more
+AssertionError: expected { kind: 'revise', …(4) } to deeply equal { kind: 'nothing' }
+
+- Expected
++ Received
+
+  {
+-   "kind": "nothing",
++   "added": [],
++   "daysPerMember": 2,
++   "kind": "revise",
++   "newWeek": false,
++   "proposed": [],
+  }
+
+ ❯ src/schedule/roster-change.test.ts:239:90
+    237|       member("alex", ["wednesday", "saturday"]),
+    238|     ];
+    239|     expect(firstDaysAfter(facts(["maya", "alex"], { daysPerMember: 2, …
+       |                                                                                          ^
+    240|     // One included member left unconfirmed, beside a late joiner: the…
+    241|     const late = [confirmed("ben", ["monday", "thursday"], false), mem…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/schedule/roster-change.test.ts > a change of members once a day is confirmed (FQ100, FQ102) > ends them when nobody they include is left, and opens new ones at once for two or more (FQ123)
+AssertionError: expected { kind: 'revise', …(4) } to deeply equal { kind: 'end', reopen: true }
+
+- Expected
++ Received
+
+  {
+-   "kind": "end",
+-   "reopen": true,
++   "added": [
++     "sam",
++     "debby",
++   ],
++   "daysPerMember": 2,
++   "kind": "revise",
++   "newWeek": false,
++   "proposed": [
++     {
++       "days": [
++         "monday",
++         "thursday",
++       ],
++       "id": "sam",
++     },
++     {
++       "days": [
++         "tuesday",
++         "friday",
++       ],
++       "id": "debby",
++     },
++   ],
+  }
+
+ ❯ src/schedule/roster-change.test.ts:258:90
+    256|       member("maya", ["tuesday", "friday"], { active: false }),
+    257|     ];
+    258|     expect(firstDaysAfter(facts(["sam", "debby"], { daysPerMember: 2, …
+       |                                                                                          ^
+    259|       kind: "end",
+    260|       reopen: true,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

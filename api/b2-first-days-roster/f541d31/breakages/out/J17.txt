@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/privacy/leave.test.ts (27 tests | 1 failed) 34ms
+   ❯ what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) (12)
+     ❯ across four members and three, where the days each member has change (FQ102) (2)
+       × asks a leave for a new week for the three who stay, with the week of four kept whole 9ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+   Start at  06:24:29
+   Duration  548ms (import 71%, transform 15%, tests 13%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) > across four members and three, where the days each member has change (FQ102) > asks a leave for a new week for the three who stay, with the week of four kept whole
+AssertionError: expected [] to deeply equal [ 'the new week proposes a day twice' ]
+
+- Expected
++ Received
+
+- [
+-   "the new week proposes a day twice",
+- ]
++ []
+
+ ❯ src/privacy/leave.test.ts:629:9
+    627|           days: NEW_WEEK_OF_THREE.map((day) => (day.weekday === "satur…
+    628|         }),
+    629|       ).toEqual(["the new week proposes a day twice"]);
+       |         ^
+    630|       expect(leave({ ...was, version: 2 })).toEqual([
+    631|         "each member has 1 days, not 2",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/settle.ts b/packages/domain/src/schedule/settle.ts
+index 49992524..ff606154 100644
+--- a/packages/domain/src/schedule/settle.ts
++++ b/packages/domain/src/schedule/settle.ts
+@@ -104,7 +104,7 @@ export async function settleFirstDays(
+            EXISTS (SELECT FROM app.schedule_proposals p WHERE p.club_id = c.id)
+              AND NOT EXISTS (SELECT FROM app.schedule_proposals p
+                               WHERE p.club_id = c.id
+-                                AND (p.reason <> 'activation' OR p.state <> 'superseded'
++                                AND (p.reason <> 'activation' OR p.state = 'open'
+                                      OR p.replaced_by IS NOT NULL)) AS ended
+       FROM app.clubs c
+      WHERE c.id = ${clubId}`;

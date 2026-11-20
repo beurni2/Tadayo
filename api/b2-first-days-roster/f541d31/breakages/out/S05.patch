@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/settle.ts b/packages/domain/src/schedule/settle.ts
+index 49992524..cd35f70f 100644
+--- a/packages/domain/src/schedule/settle.ts
++++ b/packages/domain/src/schedule/settle.ts
+@@ -162,7 +162,7 @@ export async function settleFirstDays(
+   const week = String(change.newWeek ? before + 1 : before);
+   await bound(tx)`
+     UPDATE app.schedule_proposals
+-       SET version = version + 1, week_revision = ${week}::pg_catalog.int2,
++       SET version = version, week_revision = ${week}::pg_catalog.int2,
+            days_per_member = ${String(change.daysPerMember)}::pg_catalog.int2
+      WHERE id = ${proposalId}`;
+   for (const interval of change.added) {

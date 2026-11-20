@@ -1,0 +1,58 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/db/first-days-roster.test.ts (18 tests | 12 failed) 1315ms
+   ❯ a join before any day is confirmed (FQ55, FQ102) (5)
+     × includes the new member in the same proposal, at its next version, and moves nobody 194ms
+     × answers a request made with the earlier version VERSION_CONFLICT and the new one, then takes it 82ms
+     × gives a new member the first free days when someone holds the days of their place 68ms
+     × proposes the whole week again when a fourth member joins three, and again when one of four leaves 62ms
+     × reads and writes the current week alone once the week was proposed again: a choice, then a fifth member 59ms
+   ❯ a leave before any day is confirmed (FQ102) (2)
+     × frees the leaver's days in the same week, at the next version 52ms
+   ❯ a leave once a day is confirmed (FQ102) (7)
+     × applies the first days when only confirmed members stay, at the leave's own instant 37ms
+     × changes nothing, and no version, when someone who hasn't confirmed stays in a club of two or more 45ms
+     × keeps the leaver's confirmed day taken, with their name and no first date 47ms
+   ❯ a confirmation and a leave at once (T1; docs/plans/api-b2-schedule.md, for PR 3) (3)
+     × applies the first days by the leave when the last other confirmation came first 50ms
+     × applies them by the confirmation when the leave came first 50ms
+     × refuses the confirmation of someone whose leave came first 38ms
+
+ Test Files  1 failed (1)
+      Tests  12 failed | 6 passed (18)
+   Start at  06:21:17
+   Duration  1.92s (tests 80%, import 14%, transform 6%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 12 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a join before any day is confirmed (FQ55, FQ102) > includes the new member in the same proposal, at its next version, and moves nobody
+ FAIL  src/db/first-days-roster.test.ts > a join before any day is confirmed (FQ55, FQ102) > answers a request made with the earlier version VERSION_CONFLICT and the new one, then takes it
+ FAIL  src/db/first-days-roster.test.ts > a join before any day is confirmed (FQ55, FQ102) > gives a new member the first free days when someone holds the days of their place
+ FAIL  src/db/first-days-roster.test.ts > a join before any day is confirmed (FQ55, FQ102) > proposes the whole week again when a fourth member joins three, and again when one of four leaves
+ FAIL  src/db/first-days-roster.test.ts > a join before any day is confirmed (FQ55, FQ102) > reads and writes the current week alone once the week was proposed again: a choice, then a fifth member
+ FAIL  src/db/first-days-roster.test.ts > a leave before any day is confirmed (FQ102) > frees the leaver's days in the same week, at the next version
+ FAIL  src/db/first-days-roster.test.ts > a leave once a day is confirmed (FQ102) > applies the first days when only confirmed members stay, at the leave's own instant
+ FAIL  src/db/first-days-roster.test.ts > a leave once a day is confirmed (FQ102) > changes nothing, and no version, when someone who hasn't confirmed stays in a club of two or more
+ FAIL  src/db/first-days-roster.test.ts > a leave once a day is confirmed (FQ102) > keeps the leaver's confirmed day taken, with their name and no first date
+ FAIL  src/db/first-days-roster.test.ts > a confirmation and a leave at once (T1; docs/plans/api-b2-schedule.md, for PR 3) > applies the first days by the leave when the last other confirmation came first
+ FAIL  src/db/first-days-roster.test.ts > a confirmation and a leave at once (T1; docs/plans/api-b2-schedule.md, for PR 3) > applies them by the confirmation when the leave came first
+ FAIL  src/db/first-days-roster.test.ts > a confirmation and a leave at once (T1; docs/plans/api-b2-schedule.md, for PR 3) > refuses the confirmation of someone whose leave came first
+PostgresError: insert or update on table "schedule_proposal_days" violates foreign key constraint "schedule_proposal_days_proposal_id_interval_id_fkey"
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ settleFirstDays ../packages/domain/src/schedule/settle.ts:175:22
+    173|   for (const member of change.proposed) {
+    174|     for (const day of member.days) {
+    175|       await bound(tx)`
+       |                      ^
+    176|         INSERT INTO app.schedule_proposal_days (proposal_id, interval_…
+    177|         VALUES (${proposalId}, ${member.id}, ${day}::app.weekday, true…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/12]⎯
+

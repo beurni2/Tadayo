@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/roster-change.ts b/packages/domain/src/schedule/roster-change.ts
+index b0b85f0b..04599a7a 100644
+--- a/packages/domain/src/schedule/roster-change.ts
++++ b/packages/domain/src/schedule/roster-change.ts
+@@ -100,7 +100,7 @@ export function firstDaysAfter(facts: RosterChangeFacts): FirstDaysChange {
+       proposed: active.map((id, place) => ({ id, days: week[place] ?? [] })),
+     };
+   }
+-  const taken = new Set<Weekday>(included.flatMap((member) => member.held));
++  const taken = new Set<Weekday>(open.members.flatMap((member) => member.held));
+   const proposed = added.map((id): ProposedDays => {
+     const days: Weekday[] = [];
+     // The table's days for their place that nobody holds, then the first free days from Monday.

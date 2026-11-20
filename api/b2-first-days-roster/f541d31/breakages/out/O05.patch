@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/open.ts b/packages/domain/src/schedule/open.ts
+index 2c432d6a..96b45ab1 100644
+--- a/packages/domain/src/schedule/open.ts
++++ b/packages/domain/src/schedule/open.ts
+@@ -98,7 +98,7 @@ export async function openFirstDays(tx: QuerySql & ClockSql, clock: Clock, clubI
+                       AND (reason <> 'activation' OR state <> 'superseded' OR replaced_by IS NOT NULL)) AS standing`;
+   const first = existing?.["scheduled"] === false && existing["proposed"] === false;
+   // Again only when every proposal the club has had is first days that ended with no successor.
+-  const again = existing?.["scheduled"] === true && existing["proposed"] === true && existing["standing"] === false;
++  const again = existing?.["scheduled"] === true && existing["proposed"] === true;
+   if (!first && !again) {
+     throw new Error(
+       "schedule: the first days are opened once, for a club with no schedule yet, or again once all before them ended",

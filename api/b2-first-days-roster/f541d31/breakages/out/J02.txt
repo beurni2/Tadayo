@@ -1,0 +1,102 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/privacy/leave.test.ts (27 tests | 4 failed) 34ms
+   ❯ what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) (12)
+     × asks nothing to move once a day is confirmed and someone who hasn't confirmed stays (T33) 11ms
+     × catches an ended proposal given a successor, and one whose days per member moved without a revision 1ms
+     × catches a leave that adds a member, moves a confirmation or changes a day, whatever it does to the state 1ms
+     × catches an earlier week's row that changed, and a week before that isn't kept (0013) 1ms
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 23 passed (27)
+   Start at  06:24:11
+   Duration  546ms (import 66%, transform 17%, tests 15%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) > asks nothing to move once a day is confirmed and someone who hasn't confirmed stays (T33)
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "the first days are open at version 1, not open at version 2 (FQ102)",
++ ]
+
+ ❯ src/privacy/leave.test.ts:467:58
+    465|
+    466|   it("asks nothing to move once a day is confirmed and someone who has…
+    467|     expect(judged(days(["itv_ana"]), days(["itv_ana"]))).toEqual([]);
+       |                                                          ^
+    468|     expect(judged(days(["itv_ana"]), days(["itv_ana"], { version: 2 })…
+    469|       "the first days are open at version 2, not open at version 1 (FQ…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) > catches an ended proposal given a successor, and one whose days per member moved without a revision
+AssertionError: expected [ …(2) ] to deeply equal [ 'each member has 1 days, not 2' ]
+
+- Expected
++ Received
+
+  [
++   "the first days are open at version 1, not open at version 2 (FQ102)",
+    "each member has 1 days, not 2",
+  ]
+
+ ❯ src/privacy/leave.test.ts:516:80
+    514|       "the first days name a successor",
+    515|     ]);
+    516|     expect(judged(days(["itv_ana"]), days(["itv_ana"], { daysPerMember…
+       |                                                                                ^
+    517|       "each member has 1 days, not 2",
+    518|     ]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) > catches a leave that adds a member, moves a confirmation or changes a day, whatever it does to the state
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "the first days are open at version 1, not open at version 2 (FQ102)",
++ ]
+
+ ❯ src/privacy/leave.test.ts:540:30
+    538|     // A day is confirmed and Ben leaves: nothing moves, row by row.
+    539|     const was = days(["itv_ana"], { days: WEEK_OF_THREE });
+    540|     expect(judged(was, was)).toEqual([]);
+       |                              ^
+    541|     expect(judged(was, { ...was, members: [...was.members, { interval:…
+    542|       "the first days' members aren't those they had, with exactly the…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) > catches an earlier week's row that changed, and a week before that isn't kept (0013)
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "the first days are open at version 1, not open at version 2 (FQ102)",
++ ]
+
+ ❯ src/privacy/leave.test.ts:579:30
+    577|     const earlier = [{ ...row("itv_ana", "monday"), weekRevision: 1 }];
+    578|     const was = days(["itv_ana"], { weekRevision: 2, days: WEEK_OF_THR…
+    579|     expect(judged(was, was)).toEqual([]);
+       |                              ^
+    580|     expect(judged(was, { ...was, earlier: [] })).toEqual(["an earlier …
+    581|     expect(judged(was, { ...was, earlier: [{ ...row("itv_ana", "monday…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+

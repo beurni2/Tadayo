@@ -1,0 +1,33 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/db/first-days-roster.test.ts (18 tests | 1 failed) 1938ms
+   ❯ a join before any day is confirmed (FQ55, FQ102) (5)
+     × reads and writes the current week alone once the week was proposed again: a choice, then a fifth member 98ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+   Start at  06:22:04
+   Duration  2.58s (tests 84%, import 11%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a join before any day is confirmed (FQ55, FQ102) > reads and writes the current week alone once the week was proposed again: a choice, then a fifth member
+PostgresError: app.schedule_proposal_days: a day is written, changed or deleted only in its proposal's current week, 2 (FQ102)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ ../packages/domain/src/schedule/choose-days.ts:58:24
+     56|              AND week_revision = ${week}::pg_catalog.int2`;
+     57|       } else if (wanted) {
+     58|         await bound(tx)`
+       |                        ^
+     59|           INSERT INTO app.schedule_proposal_days (proposal_id, interva…
+     60|           VALUES (${proposal.id}, ${callerId}, ${weekday}::app.weekday…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

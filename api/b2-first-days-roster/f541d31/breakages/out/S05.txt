@@ -1,0 +1,171 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/db/first-days-roster.test.ts (18 tests | 6 failed) 1608ms
+   ❯ a join before any day is confirmed (FQ55, FQ102) (5)
+     × includes the new member in the same proposal, at its next version, and moves nobody 198ms
+     × answers a request made with the earlier version VERSION_CONFLICT and the new one, then takes it 113ms
+     × proposes the whole week again when a fourth member joins three, and again when one of four leaves 90ms
+     × reads and writes the current week alone once the week was proposed again: a choice, then a fifth member 81ms
+   ❯ a leave before any day is confirmed (FQ102) (2)
+     × frees the leaver's days in the same week, at the next version 44ms
+   ❯ a leave once a day is confirmed (FQ102) (7)
+     × applies the first days when only confirmed members stay, at the leave's own instant 62ms
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 12 passed (18)
+   Start at  06:21:14
+   Duration  2.35s (tests 79%, import 16%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a join before any day is confirmed (FQ55, FQ102) > includes the new member in the same proposal, at its next version, and moves nobody
+AssertionError: expected [ { …(8) } ] to match object [ { …(6) } ]
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -2,9 +2,9 @@
+    {
+      "days_per_member": 2,
+      "id": "spr_sDN01FYj5SAHttJPIwrpgg",
+      "replaced_by": null,
+      "state": "open",
+-     "version": 2,
++     "version": 1,
+      "week_revision": 1,
+    },
+  ]
+
+ ❯ src/db/first-days-roster.test.ts:194:38
+    192|       await join(tx, c, "Alex", "Ben");
+    193|
+    194|       expect(await proposals(tx, c)).toMatchObject([
+       |                                      ^
+    195|         { id: first.id, state: "open", version: 2, week_revision: 1, d…
+    196|       ]);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/first-days-roster.test.ts:185:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a join before any day is confirmed (FQ55, FQ102) > answers a request made with the earlier version VERSION_CONFLICT and the new one, then takes it
+Error: the request wasn't refused
+ ❯ refusal src/db/roster-world.ts:48:9
+     46|     throw error;
+     47|   }
+     48|   throw new Error("the request wasn't refused");
+       |         ^
+     49| }
+     50|
+ ❯ src/db/first-days-roster.test.ts:216:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/first-days-roster.test.ts:212:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a join before any day is confirmed (FQ55, FQ102) > proposes the whole week again when a fourth member joins three, and again when one of four leaves
+PostgresError: app.schedule_proposals: a new week of spr_Bzz7xI8vEAiDxVE9LU6S0Q comes with its next version (T33)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ settleFirstDays ../packages/domain/src/schedule/settle.ts:163:18
+    161|   if (typeof before !== "number" || !Number.isSafeInteger(before) || b…
+    162|   const week = String(change.newWeek ? before + 1 : before);
+    163|   await bound(tx)`
+       |                  ^
+    164|     UPDATE app.schedule_proposals
+    165|        SET version = version, week_revision = ${week}::pg_catalog.int2,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a join before any day is confirmed (FQ55, FQ102) > reads and writes the current week alone once the week was proposed again: a choice, then a fifth member
+PostgresError: app.schedule_proposals: a new week of spr_k-m7pT3mk-gmTZ0Eq6lbdw comes with its next version (T33)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ settleFirstDays ../packages/domain/src/schedule/settle.ts:163:18
+    161|   if (typeof before !== "number" || !Number.isSafeInteger(before) || b…
+    162|   const week = String(change.newWeek ? before + 1 : before);
+    163|   await bound(tx)`
+       |                  ^
+    164|     UPDATE app.schedule_proposals
+    165|        SET version = version, week_revision = ${week}::pg_catalog.int2,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a leave before any day is confirmed (FQ102) > frees the leaver's days in the same week, at the next version
+AssertionError: expected [ { …(8) } ] to match object [ { …(5) } ]
+(3 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  [
+    {
+      "days_per_member": 2,
+      "id": "spr_pZZ4WjevYe4ESFMyu0dtGg",
+      "state": "open",
+-     "version": 3,
++     "version": 1,
+      "week_revision": 1,
+    },
+  ]
+
+ ❯ src/db/first-days-roster.test.ts:346:38
+    344|       await leaving(tx, c, "Maya");
+    345|
+    346|       expect(await proposals(tx, c)).toMatchObject([
+       |                                      ^
+    347|         { id: before.id, state: "open", version: 3, week_revision: 1, …
+    348|       ]);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/first-days-roster.test.ts:339:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a leave once a day is confirmed (FQ102) > applies the first days when only confirmed members stay, at the leave's own instant
+AssertionError: expected { …(9) } to match object { state: 'open', version: 2 }
+(7 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "state": "open",
+-   "version": 2,
++   "version": 1,
+  }
+
+ ❯ src/db/first-days-roster.test.ts:416:20
+    414|       await confirmOwn(tx, c, "Ben");
+    415|       const open = await confirmOwn(tx, c, "Alex");
+    416|       expect(open).toMatchObject({ state: "open", version: 2 });
+       |                    ^
+    417|       tick(4);
+    418|       await leaving(tx, c, "Maya");
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/first-days-roster.test.ts:411:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+

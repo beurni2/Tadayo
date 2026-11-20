@@ -1,0 +1,12 @@
+diff --git a/packages/domain/src/schedule/roster-change.ts b/packages/domain/src/schedule/roster-change.ts
+index b0b85f0b..c0918845 100644
+--- a/packages/domain/src/schedule/roster-change.ts
++++ b/packages/domain/src/schedule/roster-change.ts
+@@ -108,7 +108,6 @@ export function firstDaysAfter(facts: RosterChangeFacts): FirstDaysChange {
+     for (const weekday of [...wanted, ...WEEKDAYS]) {
+       if (days.length === per) break;
+       if (taken.has(weekday)) continue;
+-      taken.add(weekday);
+       days.push(weekday);
+     }
+     if (days.length !== per) throw new Error("schedule: the week has no free day left for a new member");

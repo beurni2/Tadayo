@@ -1,0 +1,11 @@
+diff --git a/tests/src/privacy/leave.ts b/tests/src/privacy/leave.ts
+index 617855a3..8ba32441 100644
+--- a/tests/src/privacy/leave.ts
++++ b/tests/src/privacy/leave.ts
+@@ -383,6 +383,5 @@ export function firstDaysJoinProblems(
+   }
+   if (now.replacedBy !== null) problems.push("the first days name a successor");
+   problems.push(...weekProblems(was, now, active, joined, revised));
+-  if (fresh.length > 0) problems.push("a join opened new first days beside the open ones");
+   return problems;
+ }

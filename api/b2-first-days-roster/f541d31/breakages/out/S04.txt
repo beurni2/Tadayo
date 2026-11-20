@@ -1,0 +1,39 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/db/first-days-roster.test.ts (18 tests | 1 failed) 1753ms
+   ❯ a leave once a day is confirmed (FQ102) (7)
+     × ends the first days when nobody they include is left, and opens new ones at once for those who remain (FQ123) 83ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+   Start at  06:21:11
+   Duration  2.44s (tests 82%, import 13%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a leave once a day is confirmed (FQ102) > ends the first days when nobody they include is left, and opens new ones at once for those who remain (FQ123)
+AssertionError: expected [ { …(8) } ] to have a length of 2 but got 1
+
+- Expected
++ Received
+
+- 2
++ 1
+
+ ❯ src/db/first-days-roster.test.ts:589:19
+    587|       await leaving(tx, c, "Maya");
+    588|       const all = await proposals(tx, c);
+    589|       expect(all).toHaveLength(2);
+       |                   ^
+    590|       expect(all[0]).toMatchObject({
+    591|         id: first.id,
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/first-days-roster.test.ts:576:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

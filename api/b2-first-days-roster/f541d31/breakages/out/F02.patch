@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/confirm-days.ts b/packages/domain/src/schedule/confirm-days.ts
+index e37bf179..14a0cf29 100644
+--- a/packages/domain/src/schedule/confirm-days.ts
++++ b/packages/domain/src/schedule/confirm-days.ts
+@@ -53,7 +53,7 @@ export function confirmScheduleDays(
+         UPDATE app.schedule_proposal_members SET confirmed_at = ${at}::pg_catalog.timestamptz
+          WHERE proposal_id = ${proposal.id} AND interval_id = ${callerId}`;
+     for (const weekday of judged.days) {
+-      const opens = firstDate(weekday, at, week.club.timezone, start).toString();
++      const opens = firstDate(weekday, at, week.club.timezone).toString();
+       await bound(tx)`
+           INSERT INTO app.schedule_assignments
+             (schedule_version_id, club_id, weekday, star_interval_id, first_date, confirmed_at)

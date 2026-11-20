@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/leave.ts b/tests/src/privacy/leave.ts
+index 617855a3..3e2effa9 100644
+--- a/tests/src/privacy/leave.ts
++++ b/tests/src/privacy/leave.ts
+@@ -363,7 +363,7 @@ export function firstDaysJoinProblems(
+       fresh.length !== 1 ||
+       next?.[1].state !== "open" ||
+       next[1].reason !== "activation" ||
+-      members.join() !== active.join() ||
++
+       next[1].members.some((member) => member.confirmed)
+     ) {
+       problems.push("the join that restarts the club opened no new first days for exactly its members (FQ102)");

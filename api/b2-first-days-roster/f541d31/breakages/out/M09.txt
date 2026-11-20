@@ -1,0 +1,52 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/db/schedule-proposals.test.ts (37 tests | 2 failed) 1133ms
+   ❯ a proposal's week, proposed again (0013; FQ102) (6)
+     × confirms the days a member holds in the current week, whoever held them in an earlier one 23ms
+     × takes no day another member confirmed in a later week, as in the first 13ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 35 passed (37)
+   Start at  06:23:37
+   Duration  2.05s (tests 90%, import 6%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-proposals.test.ts > a proposal's week, proposed again (0013; FQ102) > confirms the days a member holds in the current week, whoever held them in an earlier one
+PostgresError: app.schedule_proposal_members: mem_QWGdoKf_JURROe9E51RbTQ holds 2 of the 1 days a member confirms at once (book p11, FQ99)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ checkAsAtCommit src/db/world.ts:303:11
+    301| /** Runs the checks Postgres runs at COMMIT, now, inside the test's tr…
+    302| export async function checkAsAtCommit(tx: Tx): Promise<void> {
+    303|   await tx`SET CONSTRAINTS ALL IMMEDIATE`;
+       |           ^
+    304|   await tx`SET CONSTRAINTS ALL DEFERRED`;
+    305| }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/schedule-proposals.test.ts > a proposal's week, proposed again (0013; FQ102) > takes no day another member confirmed in a later week, as in the first
+PostgresError: app.schedule_proposal_members: mem_71DtSBP-1kmZGlCDe4QRfg holds 2 of the 1 days a member confirms at once (book p11, FQ99)
+ ❯ ErrorResponse ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:815:30
+ ❯ handle ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:489:6
+ ❯ Socket.data ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/connection.js:324:9
+ ❯ cachedError ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:170:23
+ ❯ new Query ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/query.js:36:24
+ ❯ sql ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:112:11
+ ❯ checkAsAtCommit src/db/world.ts:303:11
+    301| /** Runs the checks Postgres runs at COMMIT, now, inside the test's tr…
+    302| export async function checkAsAtCommit(tx: Tx): Promise<void> {
+    303|   await tx`SET CONSTRAINTS ALL IMMEDIATE`;
+       |           ^
+    304|   await tx`SET CONSTRAINTS ALL DEFERRED`;
+    305| }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

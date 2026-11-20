@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/privacy/leave.test.ts (27 tests | 1 failed) 36ms
+   ❯ what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) (12)
+     × catches an earlier week's row that changed, and a week before that isn't kept (0013) 11ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+   Start at  06:24:20
+   Duration  540ms (import 69%, tests 15%, transform 14%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) > catches an earlier week's row that changed, and a week before that isn't kept (0013)
+AssertionError: expected [] to deeply equal [ 'an earlier week\'s rows changed' ]
+
+- Expected
++ Received
+
+- [
+-   "an earlier week's rows changed",
+- ]
++ []
+
+ ❯ src/privacy/leave.test.ts:580:50
+    578|     const was = days(["itv_ana"], { weekRevision: 2, days: WEEK_OF_THR…
+    579|     expect(judged(was, was)).toEqual([]);
+    580|     expect(judged(was, { ...was, earlier: [] })).toEqual(["an earlier …
+       |                                                  ^
+    581|     expect(judged(was, { ...was, earlier: [{ ...row("itv_ana", "monday…
+    582|       "an earlier week's rows changed",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,69 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/db/first-days-roster.test.ts (18 tests | 2 failed) 1727ms
+   ❯ a leave once a day is confirmed (FQ102) (7)
+     × applies the first days when only confirmed members stay, at the leave's own instant 89ms
+   ❯ a confirmation and a leave at once (T1; docs/plans/api-b2-schedule.md, for PR 3) (3)
+     × applies the first days by the leave when the last other confirmation came first 125ms
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 16 passed (18)
+   Start at  06:21:08
+   Duration  2.38s (tests 84%, import 12%, transform 4%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a leave once a day is confirmed (FQ102) > applies the first days when only confirmed members stay, at the leave's own instant
+AssertionError: expected { …(8) } to match object { …(4) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "days_per_member": 2,
+    "id": "spr_Rpbm14yzvEDvosO4sYiePg",
+-   "state": "applied",
++   "state": "superseded",
+    "version": 3,
+  }
+
+ ❯ src/db/first-days-roster.test.ts:420:23
+    418|       await leaving(tx, c, "Maya");
+    419|       const [applied] = await proposals(tx, c);
+    420|       expect(applied).toMatchObject({ id: open.id, state: "applied", v…
+       |                       ^
+    421|       expect(String(applied?.closed_at)).toBe(current.toString());
+    422|       expect(current.toString()).toBe("2026-11-11T09:02:00.123456Z");
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/first-days-roster.test.ts:411:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a confirmation and a leave at once (T1; docs/plans/api-b2-schedule.md, for PR 3) > applies the first days by the leave when the last other confirmation came first
+AssertionError: expected { state: 'superseded', version: 3 } to deeply equal { state: 'applied', version: 3 }
+
+- Expected
++ Received
+
+  {
+-   "state": "applied",
++   "state": "superseded",
+    "version": 3,
+  }
+
+ ❯ src/db/first-days-roster.test.ts:669:41
+    667|       expect(await confirmed).toMatchObject({ state: "open", myState: …
+    668|       expect(await left).toMatchObject({ club_id: s.c.club });
+    669|       expect(await stateOf(s.proposal)).toEqual({ state: "applied", ve…
+       |                                         ^
+    670|     },
+    671|   );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+

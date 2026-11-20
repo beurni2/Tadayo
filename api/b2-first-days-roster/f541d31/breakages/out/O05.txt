@@ -1,0 +1,38 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/db/schedule-commands.test.ts (54 tests | 1 failed) 2608ms
+   ❯ opening the first days (spec 04, 05; FQ48) (8)
+     × opens them once: a second opening, a club of one and a club that isn't there are the caller's bugs, and write nothing 40ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 53 passed (54)
+   Start at  06:21:53
+   Duration  3.03s (tests 95%, import 3%, transform 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/schedule-commands.test.ts > opening the first days (spec 04, 05; FQ48) > opens them once: a second opening, a club of one and a club that isn't there are the caller's bugs, and write nothing
+AssertionError: expected [Function] to throw error matching /opened once/ but got 'duplicate key value violates unique c…'
+
+- Expected:
+/opened once/
+
++ Received:
+"duplicate key value violates unique constraint \"schedule_proposals_one_open\""
+
+ ❯ src/db/schedule-commands.test.ts:332:75
+    330|       const w = await firstDays(tx, clock, 4);
+    331|       const before = await everything(tx, w);
+    332|       await expect(tx.savepoint((sp) => openFirstDays(sp, clock, w.clu…
+       |                                                                           ^
+    333|       expect(await everything(tx, w)).toBe(before);
+    334|       const alone = await clubOf(tx, 1);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

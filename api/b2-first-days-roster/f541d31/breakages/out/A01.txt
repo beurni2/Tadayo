@@ -1,0 +1,372 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/db/first-days-roster.test.ts (18 tests | 13 failed) 1479ms
+   ❯ a join before any day is confirmed (FQ55, FQ102) (5)
+     × includes the new member in the same proposal, at its next version, and moves nobody 176ms
+     × answers a request made with the earlier version VERSION_CONFLICT and the new one, then takes it 77ms
+     × gives a new member the first free days when someone holds the days of their place 55ms
+     × proposes the whole week again when a fourth member joins three, and again when one of four leaves 83ms
+     × reads and writes the current week alone once the week was proposed again: a choice, then a fifth member 80ms
+   ❯ a leave before any day is confirmed (FQ102) (2)
+     × frees the leaver's days in the same week, at the next version 51ms
+     × ends the first days of a club of two with no successor, and opens new ones at the next join 58ms
+   ❯ a leave once a day is confirmed (FQ102) (7)
+     × applies the first days when only confirmed members stay, at the leave's own instant 55ms
+     × ends the first days when the one member left hasn't confirmed, and starts the next after the days already made (FQ124) 76ms
+     × starts a restarted club's week the day after its first when nothing was made and the day is the same 40ms
+     × starts a restarted club's week today when every day already made is past 41ms
+   ❯ a confirmation and a leave at once (T1; docs/plans/api-b2-schedule.md, for PR 3) (3)
+     × applies the first days by the leave when the last other confirmation came first 106ms
+     × refuses the confirmation of someone whose leave came first 126ms
+
+ Test Files  1 failed (1)
+      Tests  13 failed | 5 passed (18)
+   Start at  06:21:29
+   Duration  2.10s (tests 82%, import 13%, transform 5%)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 13 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a join before any day is confirmed (FQ55, FQ102) > includes the new member in the same proposal, at its next version, and moves nobody
+AssertionError: expected [ { …(8) } ] to match object [ { …(6) } ]
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+@@ -2,9 +2,9 @@
+    {
+      "days_per_member": 2,
+      "id": "spr_5VPDylHgqDZZeZIggChHAA",
+      "replaced_by": null,
+      "state": "open",
+-     "version": 2,
++     "version": 1,
+      "week_revision": 1,
+    },
+  ]
+
+ ❯ src/db/first-days-roster.test.ts:194:38
+    192|       await join(tx, c, "Alex", "Ben");
+    193|
+    194|       expect(await proposals(tx, c)).toMatchObject([
+       |                                      ^
+    195|         { id: first.id, state: "open", version: 2, week_revision: 1, d…
+    196|       ]);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/first-days-roster.test.ts:185:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/13]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a join before any day is confirmed (FQ55, FQ102) > answers a request made with the earlier version VERSION_CONFLICT and the new one, then takes it
+Error: the request wasn't refused
+ ❯ refusal src/db/roster-world.ts:48:9
+     46|     throw error;
+     47|   }
+     48|   throw new Error("the request wasn't refused");
+       |         ^
+     49| }
+     50|
+ ❯ src/db/first-days-roster.test.ts:216:14
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/first-days-roster.test.ts:212:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/13]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a join before any day is confirmed (FQ55, FQ102) > gives a new member the first free days when someone holds the days of their place
+Error: Alex sees no proposal
+ ❯ proposalOf src/db/first-days-roster.test.ts:114:29
+    112| async function proposalOf(tx: WorldTx, c: Club, name: string): Promise…
+    113|   const found = (await sight(tx, c, name))?.proposal ?? null;
+    114|   if (found === null) throw new Error(`${name} sees no proposal`);
+       |                             ^
+    115|   return found;
+    116| }
+ ❯ src/db/first-days-roster.test.ts:235:20
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/first-days-roster.test.ts:230:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/13]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a join before any day is confirmed (FQ55, FQ102) > proposes the whole week again when a fourth member joins three, and again when one of four leaves
+AssertionError: expected [ { …(8) } ] to match object [ { …(5) } ]
+(3 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  [
+    {
+-     "days_per_member": 1,
++     "days_per_member": 2,
+      "id": "spr_F1eODIGuMh1NaenF81Uvwg",
+      "state": "open",
+-     "version": 3,
+-     "week_revision": 2,
++     "version": 1,
++     "week_revision": 1,
+    },
+  ]
+
+ ❯ src/db/first-days-roster.test.ts:251:38
+    249|
+    250|       await join(tx, c, "Sam", "Ben");
+    251|       expect(await proposals(tx, c)).toMatchObject([
+       |                                      ^
+    252|         { id: three.id, state: "open", version: 3, week_revision: 2, d…
+    253|       ]);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/first-days-roster.test.ts:242:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/13]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a join before any day is confirmed (FQ55, FQ102) > reads and writes the current week alone once the week was proposed again: a choice, then a fifth member
+AssertionError: expected { …(9) } to match object { version: 3, myDays: [ 'tuesday' ] }
+(7 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "myDays": [
+      "tuesday",
++     "friday",
+    ],
+-   "version": 3,
++   "version": 1,
+  }
+
+ ❯ src/db/first-days-roster.test.ts:297:20
+    295|       // The second week, one day each. Maya takes Saturday, a day nob…
+    296|       const four = await proposalOf(tx, c, "Maya");
+    297|       expect(four).toMatchObject({ version: 3, myDays: ["tuesday"] });
+       |                    ^
+    298|       await choose(tx, c, "Maya", four.id, four.version, ["saturday"]);
+    299|       expect((await proposalOf(tx, c, "Maya")).myDays).toEqual(["satur…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/first-days-roster.test.ts:291:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/13]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a leave before any day is confirmed (FQ102) > frees the leaver's days in the same week, at the next version
+AssertionError: expected [ { …(8) } ] to match object [ { …(5) } ]
+(3 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  [
+    {
+      "days_per_member": 2,
+      "id": "spr_lpr2sX25_nvonYdQz-0L-A",
+      "state": "open",
+-     "version": 3,
++     "version": 2,
+      "week_revision": 1,
+    },
+  ]
+
+ ❯ src/db/first-days-roster.test.ts:346:38
+    344|       await leaving(tx, c, "Maya");
+    345|
+    346|       expect(await proposals(tx, c)).toMatchObject([
+       |                                      ^
+    347|         { id: before.id, state: "open", version: 3, week_revision: 1, …
+    348|       ]);
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/first-days-roster.test.ts:339:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/13]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a leave before any day is confirmed (FQ102) > ends the first days of a club of two with no successor, and opens new ones at the next join
+AssertionError: expected [ { …(8) } ] to have a length of 2 but got 1
+
+- Expected
++ Received
+
+- 2
++ 1
+
+ ❯ src/db/first-days-roster.test.ts:388:19
+    386|       await join(tx, c, "Sam", "Maya");
+    387|       const all = await proposals(tx, c);
+    388|       expect(all).toHaveLength(2);
+       |                   ^
+    389|       expect(all[1]).toMatchObject({
+    390|         state: "open",
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/first-days-roster.test.ts:363:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/13]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a leave once a day is confirmed (FQ102) > applies the first days when only confirmed members stay, at the leave's own instant
+Error: Alex sees no proposal
+ ❯ proposalOf src/db/first-days-roster.test.ts:114:29
+    112| async function proposalOf(tx: WorldTx, c: Club, name: string): Promise…
+    113|   const found = (await sight(tx, c, name))?.proposal ?? null;
+    114|   if (found === null) throw new Error(`${name} sees no proposal`);
+       |                             ^
+    115|   return found;
+    116| }
+ ❯ confirmOwn src/db/first-days-roster.test.ts:147:16
+ ❯ src/db/first-days-roster.test.ts:415:20
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/first-days-roster.test.ts:411:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/13]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a leave once a day is confirmed (FQ102) > ends the first days when the one member left hasn't confirmed, and starts the next after the days already made (FQ124)
+AssertionError: expected [ { …(8) } ] to have a length of 2 but got 1
+
+- Expected
++ Received
+
+- 2
++ 1
+
+ ❯ src/db/first-days-roster.test.ts:495:19
+    493|       await join(tx, c, "Sam", "Maya");
+    494|       const all = await proposals(tx, c);
+    495|       expect(all).toHaveLength(2);
+       |                   ^
+    496|       expect(all[1]).toMatchObject({ state: "open", version: 1, days_p…
+    497|       expect(all[1]?.schedule_version_id).not.toBe(ended?.schedule_ver…
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/first-days-roster.test.ts:478:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/13]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a leave once a day is confirmed (FQ102) > starts a restarted club's week the day after its first when nothing was made and the day is the same
+AssertionError: expected [ { effective_from: '2026-11-11' } ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+    {
+      "effective_from": "2026-11-11",
+    },
+-   {
+-     "effective_from": "2026-11-12",
+-   },
+  ]
+
+ ❯ src/db/first-days-roster.test.ts:554:24
+    552|         SELECT effective_from::text AS effective_from FROM app.schedul…
+    553|          WHERE club_id = ${c.club} ORDER BY effective_from`;
+    554|       expect(versions).toEqual([{ effective_from: "2026-11-11" }, { ef…
+       |                        ^
+    555|     });
+    556|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/first-days-roster.test.ts:546:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/13]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a leave once a day is confirmed (FQ102) > starts a restarted club's week today when every day already made is past
+AssertionError: expected [ { effective_from: '2026-11-11' } ] to deeply equal [ …(2) ]
+
+- Expected
++ Received
+
+  [
+    {
+      "effective_from": "2026-11-11",
+    },
+-   {
+-     "effective_from": "2026-12-21",
+-   },
+  ]
+
+ ❯ src/db/first-days-roster.test.ts:571:24
+    569|         SELECT effective_from::text AS effective_from FROM app.schedul…
+    570|          WHERE club_id = ${c.club} ORDER BY effective_from`;
+    571|       expect(versions).toEqual([{ effective_from: "2026-11-11" }, { ef…
+       |                        ^
+    572|     });
+    573|   });
+ ❯ src/db/harness.ts:82:25
+ ❯ scope ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:260:18
+ ❯ sql.begin ../node_modules/.pnpm/postgres@3.4.9/node_modules/postgres/src/index.js:243:14
+ ❯ rolledBack src/db/harness.ts:81:5
+ ❯ src/db/first-days-roster.test.ts:559:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/13]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a confirmation and a leave at once (T1; docs/plans/api-b2-schedule.md, for PR 3) > applies the first days by the leave when the last other confirmation came first
+AssertionError: expected { …(9) } to match object { state: 'open', myState: 'confirmed' }
+(7 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "myState": "confirmed",
+-   "state": "open",
++   "state": "applied",
+  }
+
+ ❯ src/db/first-days-roster.test.ts:667:31
+    665|       }
+    666|       // Maya's confirmation saw Alex still choosing, and left the fir…
+    667|       expect(await confirmed).toMatchObject({ state: "open", myState: …
+       |                               ^
+    668|       expect(await left).toMatchObject({ club_id: s.c.club });
+    669|       expect(await stateOf(s.proposal)).toEqual({ state: "applied", ve…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/13]⎯
+
+ FAIL  src/db/first-days-roster.test.ts > a confirmation and a leave at once (T1; docs/plans/api-b2-schedule.md, for PR 3) > refuses the confirmation of someone whose leave came first
+AssertionError: expected { state: 'applied', version: 2 } to deeply equal { state: 'open', version: 1 }
+
+- Expected
++ Received
+
+  {
+-   "state": "open",
+-   "version": 1,
++   "state": "applied",
++   "version": 2,
+  }
+
+ ❯ src/db/first-days-roster.test.ts:707:39
+    705|     expect(await left).toMatchObject({ club_id: s.c.club });
+    706|     expect(await confirmed).toBe("NOT_FOUND");
+    707|     expect(await stateOf(s.proposal)).toEqual({ state: "open", version…
+       |                                       ^
+    708|   });
+    709| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/13]⎯
+

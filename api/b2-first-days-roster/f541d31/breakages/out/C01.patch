@@ -1,0 +1,13 @@
+diff --git a/packages/domain/src/schedule/roster-change.ts b/packages/domain/src/schedule/roster-change.ts
+index b0b85f0b..ffdf9fc2 100644
+--- a/packages/domain/src/schedule/roster-change.ts
++++ b/packages/domain/src/schedule/roster-change.ts
+@@ -72,7 +72,7 @@ export function firstDaysAfter(facts: RosterChangeFacts): FirstDaysChange {
+   if (new Set(active).size !== active.length) throw new Error("schedule: each active member is listed once");
+ 
+   if (open === null) {
+-    return facts.endedWithoutSuccessor && active.length >= 2 ? { kind: "open" } : { kind: "nothing" };
++    return active.length >= 2 ? { kind: "open" } : { kind: "nothing" };
+   }
+   if (open.members.length === 0) throw new Error("schedule: an open proposal includes its members");
+   const included = open.members.filter((member) => member.active);

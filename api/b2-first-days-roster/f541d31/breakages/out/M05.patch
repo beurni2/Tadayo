@@ -1,0 +1,13 @@
+diff --git a/db/migrations/0013_first_days_revision.sql b/db/migrations/0013_first_days_revision.sql
+index 76d0bd9e..bc16efe2 100644
+--- a/db/migrations/0013_first_days_revision.sql
++++ b/db/migrations/0013_first_days_revision.sql
+@@ -73,7 +73,7 @@ BEGIN
+       RAISE EXCEPTION 'app.schedule_proposals: the week of % is proposed again only while nobody has confirmed (FQ102)', NEW.id
+         USING ERRCODE = 'integrity_constraint_violation';
+     END IF;
+-  ELSIF NEW.days_per_member <> OLD.days_per_member THEN
++  ELSIF false THEN
+     RAISE EXCEPTION 'app.schedule_proposals: the days a member takes in % change only with a new week (FQ102)', NEW.id
+       USING ERRCODE = 'integrity_constraint_violation';
+   END IF;

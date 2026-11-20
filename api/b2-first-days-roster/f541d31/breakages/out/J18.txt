@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/privacy/leave.test.ts (27 tests | 1 failed) 33ms
+   ❯ what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) (12)
+     ❯ across four members and three, where the days each member has change (FQ102) (2)
+       × asks a join for the same, the other way, and for the new member in it (firstDaysJoinProblems) 9ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+   Start at  06:24:30
+   Duration  580ms (import 68%, transform 16%, tests 13%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) > across four members and three, where the days each member has change (FQ102) > asks a join for the same, the other way, and for the new member in it (firstDaysJoinProblems)
+AssertionError: expected [] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+- [
+-   "the first days are open at version 1, not open at version 2 (FQ100, FQ102)",
+- ]
++ []
+
+ ❯ src/privacy/leave.test.ts:655:53
+    653|         "the first days' members aren't those they had, with exactly t…
+    654|       ]);
+    655|       expect(join(withDan({ ...now, version: 1 }))).toEqual([
+       |                                                     ^
+    656|         "the first days are open at version 1, not open at version 2 (…
+    657|       ]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

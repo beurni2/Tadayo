@@ -1,0 +1,37 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/privacy/leave.test.ts (27 tests | 1 failed) 33ms
+   ❯ what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) (12)
+     ❯ a join that moves nobody (firstDaysJoinProblems; FQ55, FQ102) (2)
+       × asks the new member two proposed days nobody holds, and every other row as it was 9ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+   Start at  06:24:24
+   Duration  505ms (import 66%, transform 17%, tests 15%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) > a join that moves nobody (firstDaysJoinProblems; FQ55, FQ102) > asks the new member two proposed days nobody holds, and every other row as it was
+AssertionError: expected [] to deeply equal [ Array(1) ]
+
+- Expected
++ Received
+
+- [
+-   "the new member itv_cleo was given monday, which is held",
+- ]
++ []
+
+ ❯ src/privacy/leave.test.ts:697:85
+    695|         "the new member itv_cleo doesn't hold 2 proposed days",
+    696|       ]);
+    697|       expect(join(after([row("itv_cleo", "monday"), row("itv_cleo", "s…
+       |                                                                                     ^
+    698|         "the new member itv_cleo was given monday, which is held",
+    699|       ]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

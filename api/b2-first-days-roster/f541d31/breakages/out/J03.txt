@@ -1,0 +1,36 @@
+
+ RUN  v5.0.5 /home/user/tadayo-b2f-mut/tests
+
+ ❯ src/privacy/leave.test.ts (27 tests | 1 failed) 33ms
+   ❯ what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) (12)
+     × asks them ended when nobody they include is left, with new ones for two or more who remain (FQ123) 9ms
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+   Start at  06:24:12
+   Duration  518ms (import 67%, transform 17%, tests 15%, worker 2%)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/privacy/leave.test.ts > what a leave does to the club's first days (firstDaysProblems; FQ102, FQ123) > asks them ended when nobody they include is left, with new ones for two or more who remain (FQ123)
+AssertionError: expected [ Array(1) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "the first days are superseded at version 2, not applied at version 2 (FQ102)",
++ ]
+
+ ❯ src/privacy/leave.test.ts:492:56
+    490|     const ended = { ...was, state: "superseded" as const, version: 2 };
+    491|     // Ben leaves: only Cleo remains, so no new first days.
+    492|     expect(judged(was, ended, "itv_ben", ["itv_ana"])).toEqual([]);
+       |                                                        ^
+    493|     const next = days([], { version: 1 }, ["itv_cleo"]);
+    494|     expect(judged(was, ended, "itv_ben", ["itv_ana"], [["spr_next", ne…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

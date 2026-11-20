@@ -1,0 +1,13 @@
+diff --git a/tests/src/privacy/leave.ts b/tests/src/privacy/leave.ts
+index 617855a3..96533c2c 100644
+--- a/tests/src/privacy/leave.ts
++++ b/tests/src/privacy/leave.ts
+@@ -302,7 +302,7 @@ export function firstDaysProblems(
+   problems.push(...weekProblems(was, now, stayed, [], revised));
+   const fresh = of(after).filter(([one]) => !before.proposals.has(one));
+   const again = nobodyLeft && stayed.length >= 2;
+-  if (!again && fresh.length > 0) {
++  if (false) {
+     problems.push(
+       stayed.length < 2
+         ? "new first days opened for fewer than two members"
