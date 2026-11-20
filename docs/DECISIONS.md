@@ -390,3 +390,18 @@ Consequences:
 - Gate B's and Gate C's checks change.
 - Four stage handoffs carry the new states.
 Links: the addendum; ADR-006, ADR-007; T3, T17, T35, T63 to T65; FQ104 to FQ110; ND01 to ND15.
+
+## ADR-037 · The app keeps an invitation link until its candidate joins (FQ77) · 2026-11-20 · decided
+Context: The server returns an invitation link to its proposer once and keeps only its token's hash (`packages/contracts/src/schemas/clubs.ts`, `InvitationLink`), so Share again shares a copy the app keeps. FQ77's default kept that copy until the link was used, revoked or expired. Design handoff 8 draws the proposer's row for a candidate who accepted an earlier revision and must accept a newer one with Share again (`G01-invite-people-accept-again`, its frame 12), and asks the app to keep the link longer (`design/reference/claude-design/handoff-8/component-contracts.json`, `handoff8.linkRetention`; `docs/design/handoff-8/check/handoff-8-check.md`, section 5). The founder answered on a card in the ios thread on 20 November 2026 at 20:36 UTC ("How long should the app keep an invitation link you shared?"): "Keep it until they join".
+Decision:
+- The app keeps each link it makes, in the account's own store on the device, while its candidate's proposal is open: through `live`, `accepted` and `used`. Share again shares that copy.
+- It purges the copy when the candidate joins, when the invitation ends, when the server says the link no longer works (revoked, replaced or expired), at logout and at an account switch, as T11's cache is purged.
+- The rest of FQ77's default stands. The server keeps only the hash and never returns a token again. A retry of `createInvitation` with the same key returns the first answer without its link (T19). Where the app no longer holds a link (a reinstall, another phone, an answer lost on the way), the row offers Create new link, except for a used link, which the server won't replace or revoke: that row shows handoff 8's two lines ("This invitation link isn’t saved on this device." and "{name} can reopen the invitation already received.") and no action.
+Alternatives:
+- FQ77's default, dropping the copy once the link is used: every used row would show those two lines and no action, and the candidate would reopen the invitation they already have.
+- Keeping tokens on the server for replays: a server change, and a usable token in a stored answer.
+Consequences:
+- A used link stays on the proposer's phone longer, but it opens the roster only for the account that accepted with it (`InvitationPreview`: any other account gets the neutral not found, T14), so passing it on lets nobody else in (T7). The token stays out of every URL the app builds, every log, analytics event and snapshot (T7, T52).
+- B1's `ios/b1-create` builds the store and Share again on a used row (`docs/plans/ios-b1-clubs.md` section 4).
+- The contract's words for `InvitationLink`, which describe the default's keep, are the api lane's to change (`docs/PROGRESS.md`, the ios lane's needs). No stored data changes.
+Links: FQ77; T7, T11, T14, T19, T52; handoff 8's `linkRetention`; `docs/plans/ios-b1-clubs.md`; `design/reference/INVENTORY.md`, `G01-invite-people-accept-again`.

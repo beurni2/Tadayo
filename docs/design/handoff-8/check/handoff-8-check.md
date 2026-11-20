@@ -9,7 +9,7 @@
 - **The brand is untouched.** The tokens are revision 1.1, byte for byte, and every photograph, font and wordmark in the export is a file the repository already holds.
 - **The new direction is drawn:** Welcome and the signed-out page carry "Your day. Your story. A thought from your friends.", and Welcome explains taking turns: "Take turns sharing what you’ve been up to. Friends can add something that reminded them of you."
 
-**One decision for the founder,** FQ77 (section 5): handoff 8 asks the app to keep an invitation link longer, so the proposer can share it again with someone who must accept a newer roster. FQ77's default, a shorter keep, stands until the founder answers, and handoff 8 also drew what the row shows under it.
+**One decision for the founder,** FQ77 (section 5): handoff 8 asks the app to keep an invitation link longer, so the proposer can share it again with someone who must accept a newer roster. FQ77's default was a shorter keep, and handoff 8 also drew what the row shows under it. The founder chose the longer keep on 20 November 2026 (section 5, ADR-037).
 
 **Three places where the app keeps the earlier frames or the data over these frames** (section 4): Welcome keeps 2.1's "Already here? Sign in", which the redraw drops without saying why; Club details keeps Leave club at the leading edge; and the changed-name roster lists every member, where the frame draws three of six.
 
@@ -93,11 +93,13 @@ Handoff 8 asks for a longer keep (`handoff8.linkRetention`): while the person's 
 
 The lane recommends the longer keep: it is what the design draws, and the token it holds can admit only the person it was used by. The default stands until the founder answers. `docs/QUESTIONS.md` records the ask under FQ77.
 
+**Answered:** the founder chose the longer keep on a card in the ios thread on 20 November 2026 at 20:36 UTC ("Keep it until they join"). `docs/QUESTIONS.md` (FQ77) and ADR-037 record it; `ios/b1-create` builds Sam's row with Share again, and the api lane changes the contract's words for `InvitationLink`.
+
 ## 6. What changes in B1's PRs
 
 `docs/plans/ios-b1-clubs.md` section 4 has these written in:
 - **`ios/b1-clubs-root`:** the selected club's header in two rows at every accessibility size, with the band behind the status bar; `G05-club-details-failed`'s form, with its words, for every screen that loads.
-- **`ios/b1-create`:** `G01-create-failed`'s line under the field; Sam's used row with Share again only, or handoff 8's two lines and no action when the app doesn't hold the link (FQ77); `G01-pending-approve` when the creator must approve.
+- **`ios/b1-create`:** `G01-create-failed`'s line under the field; Sam's used row with Share again only, or handoff 8's two lines and no action when the app doesn't hold the link (FQ77, ADR-037); `G01-pending-approve` when the creator must approve.
 - **`ios/b1-invitation`:** `G02-checking` while a link is checked; a joined link opens the club, with "Opening {clubName}…" only if it waits; `G02-invitation-failed`; `G02-changed-name`, with the relaunch line; the viewer first in the roster.
 - **`ios/b1-approve`:** `G03-approve-failed`'s lines and its two alerts; Invite someone on Club details for an active club (`G05-club-details-active`) and the person's invitation page (`G05-members-invite`).
 - **`ios/b1-welcome`:** Welcome as frames 1 to 3 draw it, with "Already here? Sign in" kept.
