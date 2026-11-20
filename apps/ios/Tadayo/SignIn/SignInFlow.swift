@@ -219,13 +219,15 @@ struct CodeScreen: View {
                 // Frame 19 is scrolled so, the field under the navigation bar and the error
                 // continuing behind the button.
                 // The scroll is made twice: inside the update that pins the button, and again
-                // in the main queue's next turn, once that update has been laid out. Each iOS
-                // needs one of them (`docs/plans/ios-b0-pin-scroll-turn.md`). Made inside the
-                // update alone, it left the screen right and the accessibility tree stale on
-                // iOS 26.5 in about one launch in eight: the field's frame stayed 190 points
-                // low, behind the button, until the person scrolled. Made a turn later alone, it
-                // moved nothing on iOS 27.2 in 10 launches of 13, and the button stood over the
-                // field. The second is the same scroll, so where the first held it moves nothing.
+                // in the main queue's next turn. Each iOS needs one of them, as measured; why
+                // isn't known (`docs/plans/ios-b0-pin-scroll-turn.md`). Made inside the update
+                // alone, it left the screen right and the accessibility tree stale on iOS 26.5
+                // in about one launch in eight: the field's frame stayed 190 points low, behind
+                // the button, until the person scrolled. Made a turn later alone, it moved
+                // nothing on iOS 27.2 in 10 launches of 13, and the button stood over the
+                // field. The second asks for the place the first reached. It isn't held back
+                // if Verify code is unpinned again within that turn: the field at the top of
+                // an unpinned column covers nothing.
                 .onChange(of: pinsVerify) { _, pinned in
                     guard pinned else { return }
                     scroll.scrollTo(Self.field, anchor: .top)
